@@ -1,0 +1,40 @@
+glue_job:
+  glue_version:
+  worker_type:
+  number_of_workers:
+  auto_scaling:
+  max_workers:
+  execution_class:
+  timeout:
+  retries:
+  concurrency:
+  queuing:
+  default_arguments:
+  non_overridable_arguments:
+
+observability:
+  spark_ui:
+  event_logs_s3:
+  continuous_logs:
+  observability_metrics:
+  log_group:
+  dashboard:
+
+dependencies:
+  extra_py_files:
+  additional_python_modules:
+  extra_jars:
+  user_jars_first:
+  data_catalog:
+  iceberg_catalog:
+  lake_formation:
+
+network_security:
+  connections:
+  vpc:
+  subnet:
+  security_groups:
+  iam_role:
+  kms:
+
+findings: []

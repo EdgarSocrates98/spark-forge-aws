@@ -1,0 +1,27 @@
+joins:
+  - id:
+    source_location:
+    left:
+      table:
+      rows:
+      bytes:
+      selected_columns:
+      filters:
+    right:
+      table:
+      rows:
+      bytes:
+      selected_columns:
+      filters:
+    keys: []
+    relationship:
+    null_percentage:
+    top_key_percentage:
+    strategy_initial:
+    strategy_final_aqe:
+    shuffle_read:
+    shuffle_write:
+    spill:
+    output_rows:
+    evidence:
+    recommendation:

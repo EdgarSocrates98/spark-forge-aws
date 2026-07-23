@@ -1,0 +1,8 @@
+[project]
+name = "sparkforge-aws"
+version = "0.3.0"
+description = "Agent skills for AWS Glue PySpark, Parquet and Iceberg performance engineering"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

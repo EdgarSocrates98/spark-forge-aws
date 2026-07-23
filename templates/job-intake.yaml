@@ -1,0 +1,66 @@
+job:
+  name:
+  account:
+  region:
+  glue_version:
+  spark_version:
+  python_version:
+  iceberg_version:
+  worker_type:
+  number_of_workers:
+  auto_scaling:
+  max_workers:
+  execution_class:
+  timeout_minutes:
+  retries:
+  job_arguments: {}
+  spark_conf: {}
+
+workload:
+  schedule:
+  sla_minutes:
+  input_format:
+  output_format:
+  input_rows:
+  input_bytes:
+  output_rows:
+  output_bytes:
+  transformations:
+  joins:
+  aggregations:
+  merge_operations:
+
+storage:
+  input_paths: []
+  output_paths: []
+  catalog:
+  database:
+  table:
+  partition_spec:
+  sort_order:
+  file_count:
+  average_file_size:
+  snapshot_count:
+  manifest_count:
+  delete_file_count:
+
+baseline:
+  runtime_seconds:
+  dpu_hours:
+  shuffle_read_bytes:
+  shuffle_write_bytes:
+  memory_spill_bytes:
+  disk_spill_bytes:
+  peak_driver_heap:
+  peak_executor_heap:
+  output_file_count:
+  failure_rate:
+
+artifacts:
+  source_code:
+  explain_formatted:
+  spark_ui:
+  event_logs_s3:
+  cloudwatch_dashboard:
+  driver_logs:
+  executor_logs:

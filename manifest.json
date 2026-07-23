@@ -1,0 +1,44 @@
+{
+  "name": "sparkforge-aws",
+  "version": "0.3.0",
+  "skills": [
+    "analyze-batch-loop",
+    "analyze-library-call-graph",
+    "analyze-spark-plan",
+    "analyze-spark-ui",
+    "benchmark-pyspark-job",
+    "design-incremental-processing",
+    "diagnose-data-skew",
+    "diagnose-oom",
+    "glue-incremental-performance-architect",
+    "optimize-iceberg-table",
+    "optimize-latest-per-key",
+    "optimize-parquet-layout",
+    "optimize-pyspark-code",
+    "optimize-variable-volume-job",
+    "review-glue-terraform",
+    "review-pyspark-pr",
+    "sparkforge-diagnose",
+    "tune-glue-job"
+  ],
+  "platforms": [
+    "Claude Code",
+    "Devin",
+    "GitHub Copilot",
+    "Agent Skills"
+  ],
+  "focus": [
+    "AWS Glue",
+    "PySpark",
+    "Parquet",
+    "Apache Iceberg",
+    "S3",
+    "CloudWatch",
+    "Spark UI",
+    "Incremental Processing",
+    "OOM",
+    "Terraform",
+    "Latest Per Key"
+  ],
+  "entry_prompt": "PROMPT_INICIAL_MESTRE.md"
+}
