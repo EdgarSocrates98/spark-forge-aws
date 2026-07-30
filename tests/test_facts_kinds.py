@@ -250,3 +250,40 @@ class TestCleanFixtureStaysClean:
         assert "pyspark.driver_collect" not in got
         assert "pyspark.udf" not in got
         assert "pyspark.partitioning" not in got
+
+
+class TestNoDuplicateReadFacts:
+    """`spark.read.format(x).load(y)` e uma operacao de leitura, nao duas.
+
+    O AST da a chamadas encadeadas o mesmo lineno/col_offset, entao dois facts
+    para a mesma expressao recebiam `subject` identico e portanto o mesmo
+    `Fact.id` — dois facts com conteudo diferente colidindo num id. Isso quebra a
+    rastreabilidade que o id existe para garantir.
+    """
+
+    def _reads(self, src):
+        return [f for f in extract_source(src, "a.py") if f.kind == "pyspark.read"]
+
+    def test_format_then_load_is_one_read(self):
+        reads = self._reads('spark.read.format("parquet").load(p)\n')
+        assert len(reads) == 1
+        assert reads[0].attrs["format"] == "load"
+
+    def test_three_hop_builder_chain_is_one_read(self):
+        """`.format().option().load()` tem um elo nao-terminal no meio: uma
+        checagem de um unico hop deixaria `format` e `load` emitirem dois facts."""
+        reads = self._reads('spark.read.format("iceberg").option("k", "v").load(t)\n')
+        assert len(reads) == 1
+        assert reads[0].attrs["format"] == "load"
+
+    def test_plain_parquet_read_is_one_read(self):
+        assert len(self._reads('spark.read.parquet("p")\n')) == 1
+
+    def test_read_followed_by_transformation_is_still_one_read(self):
+        assert len(self._reads('spark.read.format("parquet").load(p).select("a")\n')) == 1
+
+    def test_no_two_facts_share_an_id(self):
+        src = 'spark.read.format("parquet").load(p).select("a").filter("a > 1")\n'
+        facts = extract_source(src, "a.py")
+        ids = [f.id for f in facts]
+        assert len(ids) == len(set(ids)), "facts com id colidente"
