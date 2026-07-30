@@ -87,4 +87,37 @@ modelo foi trocado e nenhuma resposta foi afrouxada.
 Isso é a suíte funcionando como projetada. Ela não mediu qual modelo é melhor — mediu
 onde a nossa própria especificação estava vaga, que é a única coisa acionável.
 
-**Não medido:** Devin e Opus não foram executados nesta rodada.
+
+
+### 2026-07-30 — segunda rodada, três modelos
+
+Depois de desambiguar Q6, uma terceira execução incluiu Opus.
+
+| Modelo | Resultado | O que reportou |
+|---|---|---|
+| Haiku 4.5 | 9/10 | divergência de formato em Q6 |
+| Sonnet 5 | 10/10 | apontou Q6 como ambígua |
+| Opus 5 | 10/10 | apontou Q6 **e Q10**, esta última não vista pelos outros dois |
+
+**O achado do Opus em Q10 é o mais valioso das duas rodadas.** A pergunta era
+"quantas regras não-routing existem no catálogo". Duas leituras: contar o que
+`load_catalog()` devolve (43, porque ele exclui `routing.yaml` por construção), ou
+contar o diretório inteiro e subtrair as 16 de routing (59 − 16 = 43). **As duas
+convergem em 43 por sorte, não por clareza da pergunta.** Um terceiro leitor poderia
+entender "não-routing" como uma categoria dentro das 43 — que não existe — e responder
+certo por caminho errado, ou travar e responder 59.
+
+Uma pergunta cuja resposta certa é alcançável por raciocínio errado não mede nada. Foi
+reescrita para nomear `load_catalog()` explicitamente.
+
+Q6 foi reescrita uma segunda vez: Opus notou que "o caminho pontuado do lado esquerdo...
+o lado do fact" podia sugerir incluir o kind (`pyspark.withcolumn_run.measures.run_length`).
+Agora pede o texto exato copiado do YAML.
+
+**Padrão das duas rodadas:** nenhuma das cinco execuções produziu um erro de análise. Os
+três modelos derivaram os mesmos números do mesmo corpus. Todo desacordo foi sobre o que a
+**pergunta** queria. É o resultado que a arquitetura prevê — a extração e o julgamento são
+determinísticos, então o que sobra para variar é a especificação, e é isso que a eval
+mede.
+
+**Não medido:** Devin não foi executado.

@@ -129,7 +129,7 @@ _CHECKS: tuple[tuple[str, Any], ...] = (
     ("Glue >= 5.1", _compute_glue_51_rule),
     ("GLUE_MATRIX", _compute_glue_matrix),
     ("join_before_reduction", _compute_join_before_reduction),
-    ("categoria athena", _compute_rule_counts),
+    ("load_catalog()", _compute_rule_counts),
 )
 
 
