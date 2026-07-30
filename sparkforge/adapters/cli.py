@@ -295,7 +295,11 @@ def _cmd_next_step(args: argparse.Namespace) -> int:
 def _cmd_resume(args: argparse.Namespace) -> int:
     findings = _load_json_list(args.findings) if args.findings else []
     payload = _core.resume_case(
-        args.repo, findings, unresolved=args.unresolved, in_flight=args.in_flight
+        args.repo,
+        findings,
+        unresolved=args.unresolved,
+        in_flight=args.in_flight,
+        root=Path(args.repo),
     )
     _print(payload)
     return 0
@@ -304,7 +308,11 @@ def _cmd_resume(args: argparse.Namespace) -> int:
 def _cmd_handoff(args: argparse.Namespace) -> int:
     findings = _load_json_list(args.findings) if args.findings else []
     payload = _core.handoff(
-        args.repo, findings, unresolved=args.unresolved, in_flight=args.in_flight
+        args.repo,
+        findings,
+        unresolved=args.unresolved,
+        in_flight=args.in_flight,
+        root=Path(args.repo),
     )
     _print(payload)
     return 0

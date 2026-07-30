@@ -378,6 +378,7 @@ def resume_case(
     findings: list[dict[str, Any]] | None = None,
     unresolved: int = 0,
     in_flight: str = "",
+    root: Path | None = None,
 ) -> dict[str, Any]:
     try:
         case = store.load_case(repo)
@@ -385,7 +386,9 @@ def resume_case(
         raise AdapterError(str(exc), exit_code=2) from exc
 
     try:
-        return run_resume(case, findings or [], unresolved_count=unresolved, in_flight=in_flight)
+        return run_resume(
+            case, findings or [], unresolved_count=unresolved, in_flight=in_flight, root=root
+        )
     except CatalogError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
@@ -395,8 +398,9 @@ def handoff(
     findings: list[dict[str, Any]] | None = None,
     unresolved: int = 0,
     in_flight: str = "",
+    root: Path | None = None,
 ) -> dict[str, Any]:
-    payload = resume_case(repo, findings, unresolved, in_flight)
+    payload = resume_case(repo, findings, unresolved, in_flight, root=root)
     markdown = render_handoff(payload)
     path = Path(repo) / ".sparkforge" / "handoff.md"
     path.parent.mkdir(parents=True, exist_ok=True)
