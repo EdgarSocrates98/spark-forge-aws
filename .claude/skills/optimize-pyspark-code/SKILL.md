@@ -77,3 +77,10 @@ Só recomende se:
 - `cache()`/`persist()` sem reutilização real e sem `unpersist`.
 - `dropDuplicates()`/`distinct()` mascarando erro de modelagem em vez de corrigir a chave.
 - Refatorar sem definir como validar contagem, schema, chaves e agregados de controle.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

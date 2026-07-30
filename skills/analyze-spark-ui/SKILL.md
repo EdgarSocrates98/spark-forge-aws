@@ -55,3 +55,10 @@ Use `checklists/spark-ui.md`.
 - Tratar uma única task lenta como o job todo sem olhar a distribuição (p50/p95/max).
 - Confundir tempo ocioso por espera de I/O com falta de CPU.
 - Ignorar executors perdidos/removidos (podem indicar OOM de container silencioso).
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

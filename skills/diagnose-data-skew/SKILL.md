@@ -78,3 +78,10 @@ Nunca aplique salting global sem:
 - Aplicar salting global sem identificar as hot keys.
 - Usar `repartition` achando que corrige skew (redistribui uniformemente, não a chave quente).
 - Alterar a chave/regra de join sem validar duplicidade e semântica do resultado.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.
