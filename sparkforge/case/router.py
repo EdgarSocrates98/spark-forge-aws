@@ -16,7 +16,12 @@ from typing import Any
 
 import yaml
 
-from sparkforge.rules.loader import ROUTING_FILE, CatalogError, catalog_dir
+from sparkforge.rules.loader import (
+    ROUTING_FILE,
+    CatalogError,
+    catalog_dir,
+    safe_catalog_file,
+)
 
 ROUTING_OPERATORS = frozenset(
     {"equals", "absent", "present", "count_gt", "count_eq", "contains", "any_where"}
@@ -28,7 +33,7 @@ _MISSING = object()
 def load_routing(directory: Path | None = None) -> dict[str, Any]:
     """Lê `routing.yaml`. Levanta CatalogError se ausente ou malformado."""
     base = directory or catalog_dir()
-    path = Path(base) / ROUTING_FILE
+    path = safe_catalog_file(base, ROUTING_FILE)
     if not path.is_file():
         raise CatalogError(f"routing.yaml não encontrado em {path}")
 

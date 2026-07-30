@@ -37,9 +37,22 @@ class CatalogError(ValueError):
 
 
 def catalog_dir() -> Path:
+    """Diretorio do catalogo, resolvido a partir de env var, raiz do repo ou pacote.
+
+    O valor de SPARKFORGE_CATALOG vem do ambiente — em plugin instalado ele e
+    escrito por configuracao externa (`.mcp.json`). Resolvemos para caminho
+    absoluto e exigimos que seja um diretorio existente antes de qualquer leitura,
+    para que um valor com `..` ou apontando para um arquivo nao vire uma leitura
+    arbitraria de sistema de arquivos.
+    """
     override = os.environ.get("SPARKFORGE_CATALOG")
     if override:
-        return Path(override)
+        resolved = Path(override).expanduser().resolve()
+        if not resolved.is_dir():
+            raise CatalogError(
+                f"SPARKFORGE_CATALOG aponta para {resolved}, que nao e um diretorio existente"
+            )
+        return resolved
 
     repo_root = Path(__file__).resolve().parents[2]
     candidate = repo_root / "rules" / "catalog"
@@ -47,6 +60,21 @@ def catalog_dir() -> Path:
         return candidate
 
     return Path(__file__).resolve().parent / "catalog"
+
+
+def safe_catalog_file(base: Path, name: str) -> Path:
+    """Resolve `name` dentro de `base` e recusa qualquer coisa que escape dele.
+
+    `name` e sempre uma constante do proprio codigo hoje, mas `base` vem de
+    variavel de ambiente. Verificar a contencao aqui torna a leitura segura mesmo
+    que `base` contenha `..`, um symlink apontando para fora, ou que um chamador
+    futuro passe um nome vindo de fora.
+    """
+    root = Path(base).expanduser().resolve()
+    target = (root / name).resolve()
+    if root != target and root not in target.parents:
+        raise CatalogError(f"caminho fora do diretorio do catalogo: {target}")
+    return target
 
 
 def _validate_expr(rule_id: str, expr: str) -> None:
@@ -138,7 +166,10 @@ def load_catalog(
     rules: list[dict[str, Any]] = []
     seen: dict[str, str] = {}
 
-    for path in sorted(base.glob("*.yaml")):
+    for entry in sorted(base.glob("*.yaml")):
+        # Contencao verificada tambem aqui: um symlink dentro de `base` pode
+        # apontar para fora dele, e `glob` o devolveria normalmente.
+        path = safe_catalog_file(base, entry.name)
         if path.name == ROUTING_FILE:
             continue
 

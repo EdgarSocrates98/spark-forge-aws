@@ -164,3 +164,47 @@ class TestRejections:
     def test_real_catalog_still_passes_condition_validation(self):
         """As 43 regras commitadas nao podem ter condicao malformada."""
         assert len(load_catalog(validate_exprs=True)) == 43
+
+
+class TestCatalogPathIsContained:
+    """SPARKFORGE_CATALOG vem do ambiente — em plugin instalado e escrito por
+    configuracao externa (.mcp.json). Sem contencao, um valor com `..` ou um
+    symlink apontando para fora vira leitura arbitraria de sistema de arquivos."""
+
+    def test_env_var_pointing_at_a_file_is_rejected(self, tmp_path, monkeypatch):
+        target = tmp_path / "nao-e-diretorio.txt"
+        target.write_text("x", encoding="utf-8")
+        monkeypatch.setenv("SPARKFORGE_CATALOG", str(target))
+        with pytest.raises(CatalogError, match="nao e um diretorio"):
+            catalog_dir()
+
+    def test_env_var_pointing_at_a_missing_dir_is_rejected(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("SPARKFORGE_CATALOG", str(tmp_path / "inexistente"))
+        with pytest.raises(CatalogError, match="nao e um diretorio"):
+            catalog_dir()
+
+    def test_env_var_is_resolved_to_an_absolute_path(self, tmp_path, monkeypatch):
+        nested = tmp_path / "a" / ".." / "a"
+        (tmp_path / "a").mkdir()
+        monkeypatch.setenv("SPARKFORGE_CATALOG", str(nested))
+        resolved = catalog_dir()
+        assert resolved.is_absolute()
+        assert ".." not in resolved.parts
+
+    def test_traversal_out_of_the_catalog_is_refused(self, tmp_path):
+        from sparkforge.rules.loader import safe_catalog_file
+
+        base = tmp_path / "catalog"
+        base.mkdir()
+        with pytest.raises(CatalogError, match="fora do diretorio"):
+            safe_catalog_file(base, "../../etc/passwd")
+
+    def test_a_plain_name_inside_the_catalog_is_allowed(self, tmp_path):
+        from sparkforge.rules.loader import safe_catalog_file
+
+        base = tmp_path / "catalog"
+        base.mkdir()
+        assert safe_catalog_file(base, "pyspark.yaml").parent == base.resolve()
+
+    def test_the_real_catalog_still_loads_through_the_check(self):
+        assert len(load_catalog(validate_exprs=True)) == 43
