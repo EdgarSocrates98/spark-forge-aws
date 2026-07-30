@@ -51,6 +51,16 @@ capabilities:
       devin_cli: [mcp, cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract facts from a Spark physical plan
+    tools: [sparkforge_analyze_plan]
+    cli: [analyze plan]
+    knowledge: [knowledge/spark/plan-reading.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from Terraform aws_glue_job definitions
     tools: [sparkforge_analyze_terraform]
     cli: [analyze terraform]

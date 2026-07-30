@@ -35,6 +35,7 @@ class TestToolSurface:
             "sparkforge_analyze_pyspark",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
+            "sparkforge_analyze_plan",
             "sparkforge_analyze_terraform",
             "sparkforge_analyze_iceberg",
             "sparkforge_analyze_sql",
@@ -279,6 +280,23 @@ CATALOG_DUMP = json.dumps(
 
 _EVENT_LOG_LINE = json.dumps({"Event": "SparkListenerApplicationStart"}) + "\n"
 
+_PLAN_TEXT = (
+    "== Physical Plan ==\n"
+    "* Project (2)\n"
+    "+- Scan parquet db.eventos (1)\n"
+    "\n"
+    "\n"
+    "(1) Scan parquet db.eventos\n"
+    "Output [2]: [cliente_id#10, dt#12]\n"
+    "Batched: true\n"
+    "Location: InMemoryFileIndex [s3://lake/eventos]\n"
+    "ReadSchema: struct<cliente_id:bigint>\n"
+    "\n"
+    "(2) Project [codegen id : 1]\n"
+    "Output [1]: [cliente_id#10]\n"
+    "Input [2]: [cliente_id#10, dt#12]\n"
+)
+
 _TERRAFORM_SOURCE = (
     'resource "aws_glue_job" "etl" {\n'
     '  glue_version = "5.0"\n'
@@ -486,6 +504,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         log_path.write_text(_EVENT_LOG_LINE, encoding="utf-8")
         return call_tool("sparkforge_analyze_event_log", {"path": str(log_path)})
 
+    if name == "sparkforge_analyze_plan":
+        plan_path = tmp_path / "plan.txt"
+        plan_path.write_text(_PLAN_TEXT, encoding="utf-8")
+        return call_tool("sparkforge_analyze_plan", {"path": str(plan_path)})
+
     if name == "sparkforge_analyze_terraform":
         tf_path = tmp_path / "main.tf"
         tf_path.write_text(_TERRAFORM_SOURCE, encoding="utf-8")
@@ -596,6 +619,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_pyspark", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_catalog_schema", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_event_log", {"path": "<tmp>/inexistente.jsonl"}),
+        ("sparkforge_analyze_plan", {"path": "<tmp>/inexistente.txt"}),
         ("sparkforge_analyze_terraform", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_iceberg", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_sql", {"path": "<tmp>/inexistente.sql"}),
