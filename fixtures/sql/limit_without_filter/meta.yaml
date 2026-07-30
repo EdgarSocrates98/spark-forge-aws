@@ -1,0 +1,18 @@
+name: limit_without_filter
+proves: >
+  `SELECT col, col FROM tabela LIMIT 10`, sem WHERE algum -- o anti-pattern
+  "LIMIT como filtro". Produz sql.projection.attrs.has_limit=true e nenhum
+  sql.predicate (nao ha WHERE). SF-ATH-002 nao dispara: alem de
+  sql.predicate estar ausente aqui (requires_facts ja bloqueia), a condicao
+  `absent: sql.predicate.partition_filter` do catalogo referencia um kind
+  que este extrator nunca pode emitir honestamente (precisaria saber qual
+  coluna e a de particao) -- por isso a regra esta marcada blocked_on.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.analyzed
+expects_rules: []
