@@ -32,6 +32,7 @@ from sparkforge.facts import (
     iceberg_metadata,
     pyspark_ast,
     runtime_detect,
+    spark_plan,
     sql_literal,
     terraform,
 )
@@ -46,6 +47,7 @@ EXTRACTORS = (
     iceberg_metadata,
     pyspark_ast,
     runtime_detect,
+    spark_plan,
     sql_literal,
     terraform,
 )
@@ -106,6 +108,35 @@ def test_condicao_absent_nao_e_vacuamente_verdadeira(rule: dict) -> None:
         f"{rule['id']} testa `absent:` sobre {orphans}, que nenhum extrator emite. "
         f"A condicao e vacuamente verdadeira, entao a regra dispara em toda entrada. "
         f"Precisa de um fact sentinela que prove que o artefato foi analisado."
+    )
+
+
+@pytest.mark.parametrize("rule", RULES, ids=RULE_IDS)
+def test_blocked_on_obsoleto_e_mentira_silenciosa(rule: dict) -> None:
+    """`blocked_on` que sobrevive ao extrator e pior que nao ter regra.
+
+    O motor NAO avalia regra com `blocked_on` -- ele pula antes de olhar os
+    facts (`engine.judge`). Entao um `blocked_on` esquecido depois de a
+    capacidade existir nao e um detalhe de documentacao: a regra continua
+    inerte para sempre, e `judge --show-skipped` diz ao operador que "ninguem
+    construiu o extrator" enquanto o extrator esta ali, emitindo o fact, sendo
+    ignorado. Falso negativo com explicacao errada colada em cima -- o operador
+    nem sequer procura o problema.
+
+    Foi exatamente o risco ao desbloquear SF-PQ-002/SF-PQ-004: sem este teste,
+    construir o parser de plano e esquecer de tirar o `blocked_on` deixaria
+    todo o trabalho invisivel, e nada falharia.
+    """
+    if not rule.get("blocked_on"):
+        return
+    required = set(rule.get("requires_facts") or [])
+    present, absent = _referenced_kinds(rule.get("when") or {})
+    orphans = sorted((required | present | absent) - EMITTABLE)
+    assert orphans, (
+        f"{rule['id']} declara `blocked_on: {rule['blocked_on']}`, mas TODO kind que ela "
+        f"exige ja tem extrator. O motor pula a regra antes de olhar os facts, entao ela "
+        f"nunca vai disparar e o operador le 'falta construir o extrator' sobre uma "
+        f"capacidade que existe. Remova o `blocked_on`."
     )
 
 

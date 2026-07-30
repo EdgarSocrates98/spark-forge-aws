@@ -1,23 +1,43 @@
 # Catálogo de regras — layout Parquet e S3
 #
-# TODA REGRA DESTA AREA ESTA INERTE HOJE, e cada uma carrega `blocked_on`.
-# Elas dependem de dois fact kinds que NENHUM extrator do pacote emite:
+# ESTA AREA ESTA PARCIALMENTE DESBLOQUEADA. Duas das cinco regras disparam
+# hoje; tres continuam inertes, e cada uma delas carrega `blocked_on`.
 #
-#   s3.prefix_summary  -> exigiria um extrator de listagem S3 (contagem e
-#                         tamanho de objeto por prefixo). Nao existe.
-#   plan.file_scan     -> exigiria um parser de plano fisico (`explain()`).
-#                         Nao existe; ver skills/analyze-spark-plan/SKILL.md,
-#                         que diz isso ao agente em vez de fingir um verbo.
+# DISPARAM (dependem de `plan.file_scan`, emitido por
+# `sparkforge/facts/spark_plan.py` -- `sparkforge analyze plan --path <arquivo>`
+# sobre a saida de `df.explain("formatted")`):
 #
-# Sem `blocked_on`, `judge` reportaria estas regras como `requires_facts`, o
-# que instrui o operador a coletar um artefato -- e nao ha o que coletar. A
+#   SF-PQ-002  pruning de particao ausente
+#   SF-PQ-004  pruning de coluna ausente
+#
+# INERTES (dependem de `s3.prefix_summary`, que NENHUM extrator do pacote
+# emite: exigiria um extrator de listagem S3 -- contagem e tamanho de objeto
+# por prefixo):
+#
+#   SF-PQ-001, SF-PQ-003, SF-PQ-005
+#
+# Sem `blocked_on`, `judge` reportaria as tres inertes como `requires_facts`,
+# o que instrui o operador a coletar um artefato -- e nao ha o que coletar. A
 # distincao importa: `requires_facts` significa "dispara assim que voce
 # coletar"; `blocked_on` significa "nao dispara ate alguem construir o
 # extrator". Reportar as duas igual faz o operador esperar por um dado que
-# nao esta a caminho. Mesma disciplina de SF-ICE-004 e SF-GLUE-005.
+# nao esta a caminho.
 #
-# O conhecimento fica registrado em vez de removido: o que falta e a
-# capacidade de coleta, nao a validade da regra.
+# O caminho inverso e igualmente perigoso e e por isso que este cabecalho foi
+# reescrito junto com o codigo: `blocked_on` que sobrevive ao extrator deixa a
+# regra inerte PARA SEMPRE (o motor pula antes de olhar os facts) enquanto
+# `--show-skipped` afirma que a capacidade nao existe. `judge` continuaria
+# dizendo "falta construir o parser de plano" com o parser rodando ao lado.
+# `tests/test_rules_catalog_reachability.py::test_blocked_on_obsoleto_e_mentira_silenciosa`
+# fecha essa porta; este texto e a metade humana da mesma garantia.
+#
+# ATENCAO ao ler SF-PQ-002 contra um plano: `PartitionFilters` vazio NAO prova,
+# sozinho, que a tabela e particionada -- uma tabela sem particao nenhuma
+# imprime exatamente a mesma coisa (e, em `explain("formatted")`, o Spark
+# simplesmente omite a chave nos dois casos). O extrator so marca
+# `attrs.table_partitioned: true` com evidencia positiva; sem evidencia o valor
+# e `"unknown"` e a regra nao dispara, de proposito. Ver a docstring de
+# `sparkforge/facts/spark_plan.py`.
 
 catalog_version: 1
 schema_version: 1
@@ -26,6 +46,9 @@ retrieved: 2026-07-29
 
 rules:
 
+  # INERTE: `s3.prefix_summary` exigiria um extrator de listagem S3 (contagem
+  # e tamanho de objeto por prefixo), que nao existe no pacote. Nao ha como
+  # contar small files a partir de codigo, plano ou event log.
   - id: SF-PQ-001
     category: parquet-layout
     blocked_on: extrator-de-listagem-s3
@@ -65,9 +88,13 @@ rules:
     sources:
       - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
 
+  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge/facts/spark_plan.py`.
+  # `attrs.table_partitioned` so e `true` com evidencia positiva de
+  # particionamento; sem evidencia fica `"unknown"` e esta regra nao dispara,
+  # porque `PartitionFilters` vazio numa tabela nao particionada e
+  # indistinguivel de uma particionada sem pruning.
   - id: SF-PQ-002
     category: parquet-layout
-    blocked_on: parser-de-plano-fisico
     title: Partition pruning ausente no plano físico
     requires_facts: [plan.file_scan]
     when:
@@ -99,6 +126,9 @@ rules:
     sources:
       - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
 
+  # INERTE: mesmo bloqueio de SF-PQ-001. Detectar um `.csv.gz` gigante na
+  # entrada exige listar objetos em S3 com tamanho; nenhum artefato local diz
+  # isso.
   - id: SF-PQ-003
     category: parquet-layout
     blocked_on: extrator-de-listagem-s3
@@ -135,9 +165,14 @@ rules:
     sources:
       - {origin: field-heuristic, note: "Não splitabilidade de gzip em arquivo de texto é propriedade do codec, não configurável."}
 
+  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge/facts/spark_plan.py`.
+  # As duas measures so sao emitidas quando as listas de campo do plano vieram
+  # COMPLETAS: o Spark trunca listas longas (`... N more fields`, default 25
+  # campos), e como esta regra e uma RAZAO, contar uma lista parcial infla o
+  # numerador e produz acusacao falsa que parece bem fundamentada. Lista
+  # truncada vira `plan.unresolved` e a regra simplesmente nao avalia.
   - id: SF-PQ-004
     category: parquet-layout
-    blocked_on: parser-de-plano-fisico
     title: Pruning de coluna ausente — ReadSchema muito maior que o uso
     requires_facts: [plan.file_scan]
     when:
@@ -166,6 +201,9 @@ rules:
     sources:
       - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
 
+  # INERTE: exige `s3.prefix_summary` (mesmo bloqueio de SF-PQ-001) alem de
+  # `catalog.table_partitions`. Cardinalidade de particao sem volume por
+  # particao nao decide nada: a metade do catalogo existe, a metade do S3 nao.
   - id: SF-PQ-005
     category: parquet-layout
     blocked_on: extrator-de-listagem-s3
