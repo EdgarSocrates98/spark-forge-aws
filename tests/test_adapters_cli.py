@@ -4,6 +4,7 @@ import json
 import pytest
 
 from sparkforge.adapters.cli import main
+from sparkforge.adapters.tools import call_tool
 from sparkforge.collect import aws as collect_aws
 
 JOB = 'def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n'
@@ -399,3 +400,255 @@ class TestCollect:
         assert payload["mismatched_count"] == 1
         assert payload["artifacts"][0]["present"] is True
         assert payload["artifacts"][0]["hash_matches"] is False
+
+
+EVENT_LOG_LINE = json.dumps({"Event": "SparkListenerApplicationStart"}) + "\n"
+
+TERRAFORM_SOURCE = (
+    'resource "aws_glue_job" "etl" {\n'
+    '  glue_version = "5.0"\n'
+    '  worker_type = "G.1X"\n'
+    "  number_of_workers = 10\n"
+    "}\n"
+)
+
+ICEBERG_DUMP = json.dumps(
+    {
+        "table": "db.tbl",
+        "files": [
+            {"file_path": "s3://b/f1.parquet", "file_size_in_bytes": 1024, "record_count": 10}
+        ],
+    }
+)
+
+SQL_TEXT = "SELECT a, b FROM db.eventos WHERE dt = '2026-01-01'\n"
+
+PYSPARK_SQL_SOURCE = 'spark.sql("SELECT a FROM db.eventos")\n'
+
+ATHENA_WORKGROUP_DUMP = json.dumps(
+    {
+        "workgroups": [
+            {
+                "name": "primary",
+                "engine_version": {
+                    "effective_engine_version": "Athena engine version 2",
+                    "selected_engine_version": "AUTO",
+                },
+                "state": "ENABLED",
+                "bytes_scanned_cutoff": 1099511627776,
+            }
+        ]
+    }
+)
+
+
+class TestAnalyzeEventLog:
+    def test_prints_summary_and_reports_unresolved(self, repo, capsys):
+        log_path = repo / "log.jsonl"
+        log_path.write_text(EVENT_LOG_LINE, encoding="utf-8")
+        code, output = run(["analyze", "event-log", "--path", str(log_path)], capsys)
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["total_count"] >= 1
+        assert payload["unresolved"] == 0
+        assert payload["unresolved_at"] == []
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "event-log", "--path", str(repo / "nope.jsonl")], capsys)
+        assert code == 2
+
+
+class TestAnalyzeTerraform:
+    def test_writes_facts_json(self, repo, capsys):
+        tf_path = repo / "main.tf"
+        tf_path.write_text(TERRAFORM_SOURCE, encoding="utf-8")
+        out = repo / "tf_facts.json"
+        code, _ = run(
+            ["analyze", "terraform", "--path", str(tf_path), "--out", str(out)], capsys
+        )
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        assert any(f["kind"] == "tf.resource" for f in facts)
+
+    def test_directory_is_accepted(self, repo, capsys):
+        tf_dir = repo / "infra"
+        tf_dir.mkdir()
+        (tf_dir / "main.tf").write_text(TERRAFORM_SOURCE, encoding="utf-8")
+        _, output = run(["analyze", "terraform", "--path", str(tf_dir)], capsys)
+        payload = json.loads(output)
+        assert payload["total_count"] >= 1
+        assert payload["unresolved"] == 0
+
+
+class TestAnalyzeIceberg:
+    def test_prints_summary(self, repo, capsys):
+        ice_path = repo / "iceberg.json"
+        ice_path.write_text(ICEBERG_DUMP, encoding="utf-8")
+        _, output = run(["analyze", "iceberg", "--path", str(ice_path)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"]["iceberg.files_summary"] == 1
+        assert payload["unresolved"] == 0
+
+
+class TestAnalyzeSql:
+    def test_path_mode(self, repo, capsys):
+        sql_path = repo / "q.sql"
+        sql_path.write_text(SQL_TEXT, encoding="utf-8")
+        _, output = run(["analyze", "sql", "--path", str(sql_path)], capsys)
+        payload = json.loads(output)
+        assert "sql.projection" in payload["by_kind"]
+
+    def test_from_pyspark_mode(self, repo, capsys):
+        py_path = repo / "q.py"
+        py_path.write_text(PYSPARK_SQL_SOURCE, encoding="utf-8")
+        _, output = run(["analyze", "sql", "--from-pyspark", str(py_path)], capsys)
+        payload = json.loads(output)
+        assert "sql.projection" in payload["by_kind"]
+
+    def test_neither_path_nor_from_pyspark_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "sql"], capsys)
+        assert code == 2
+
+
+class TestAnalyzeAthenaWorkgroup:
+    def test_prints_summary(self, repo, capsys):
+        wg_path = repo / "wg.json"
+        wg_path.write_text(ATHENA_WORKGROUP_DUMP, encoding="utf-8")
+        _, output = run(["analyze", "athena-workgroup", "--path", str(wg_path)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"]["athena.workgroup"] == 1
+        assert payload["unresolved"] == 0
+
+    def test_unparseable_engine_version_is_reported_as_unresolved_not_fabricated(
+        self, repo, capsys
+    ):
+        dump = json.dumps(
+            {
+                "workgroups": [
+                    {"name": "primary", "engine_version": {"effective_engine_version": "AUTO"}}
+                ]
+            }
+        )
+        wg_path = repo / "wg.json"
+        wg_path.write_text(dump, encoding="utf-8")
+        _, output = run(["analyze", "athena-workgroup", "--path", str(wg_path)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"].get("athena.workgroup", 0) == 0
+        assert payload["unresolved"] == 1
+        assert payload["unresolved_at"][0]["reason"] == "unparseable_engine_version"
+
+
+class TestAnalyzeCallGraph:
+    def test_derives_from_pyspark_facts(self, repo, capsys):
+        facts_path = repo / "facts.json"
+        run(
+            ["analyze", "pyspark", "--path", str(repo / "lib"), "--out", str(facts_path)], capsys
+        )
+        _, output = run(["analyze", "call-graph", "--facts", str(facts_path)], capsys)
+        payload = json.loads(output)
+        assert "callgraph.summary" in payload["by_kind"]
+        assert "unresolved" not in payload
+
+    def test_missing_facts_file_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "call-graph", "--facts", str(repo / "nope.json")], capsys)
+        assert code == 2
+
+
+class TestCollectAthenaWorkgroup:
+    def test_writes_artifact_and_registers_manifest(self, repo, capsys, monkeypatch):
+        class _FakeAthenaWorkgroupClient:
+            def get_work_group(self, WorkGroup):  # noqa: N803 - assinatura boto3
+                return {
+                    "WorkGroup": {
+                        "Name": WorkGroup,
+                        "State": "ENABLED",
+                        "Configuration": {
+                            "EngineVersion": {
+                                "EffectiveEngineVersion": "Athena engine version 2",
+                                "SelectedEngineVersion": "AUTO",
+                            },
+                            "BytesScannedCutoffPerQuery": 100,
+                            "ResultConfiguration": {"OutputLocation": "s3://b/results/"},
+                        },
+                    }
+                }
+
+        monkeypatch.setattr(
+            collect_aws,
+            "require_boto3",
+            lambda: _FakeBoto3(athena=_FakeAthenaWorkgroupClient()),
+        )
+        code, output = run(
+            [
+                "collect", "athena-workgroup",
+                "--repo", str(repo),
+                "--workgroup", "primary",
+                "--now", "2026-07-30T00:00:00Z",
+            ],
+            capsys,
+        )
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["kind"] == "athena_workgroup"
+        assert payload["cache_hit"] is False
+        written = json.loads((repo / payload["path"]).read_text(encoding="utf-8"))
+        assert written["workgroups"][0]["engine_version"]["effective_engine_version"] == (
+            "Athena engine version 2"
+        )
+
+
+class TestCliMcpEquivalence:
+    """A garantia central da Fase 1: CLI e MCP chamam a mesma funcao de
+    `_core.py`, entao para o mesmo input o payload precisa ser identico --
+    nunca um subconjunto de campos, nunca uma serializacao diferente. Aqui
+    comparado byte-a-byte (via round-trip JSON, para casar tipos) para pelo
+    menos tres das capacidades novas desta fase."""
+
+    def test_analyze_terraform_matches(self, repo, capsys):
+        tf_path = repo / "main.tf"
+        tf_path.write_text(TERRAFORM_SOURCE, encoding="utf-8")
+
+        _, output = run(["analyze", "terraform", "--path", str(tf_path)], capsys)
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool("sparkforge_analyze_terraform", {"path": str(tf_path)})
+        assert cli_payload == mcp_payload
+
+    def test_analyze_athena_workgroup_matches(self, repo, capsys):
+        wg_path = repo / "wg.json"
+        wg_path.write_text(ATHENA_WORKGROUP_DUMP, encoding="utf-8")
+
+        _, output = run(["analyze", "athena-workgroup", "--path", str(wg_path)], capsys)
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool("sparkforge_analyze_athena_workgroup", {"path": str(wg_path)})
+        assert cli_payload == mcp_payload
+
+    def test_analyze_sql_matches(self, repo, capsys):
+        sql_path = repo / "q.sql"
+        sql_path.write_text(SQL_TEXT, encoding="utf-8")
+
+        _, output = run(["analyze", "sql", "--path", str(sql_path)], capsys)
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool("sparkforge_analyze_sql", {"path": str(sql_path)})
+        assert cli_payload == mcp_payload
+
+    def test_collect_verify_matches(self, repo, capsys):
+        from sparkforge.collect.base import ArtifactEntry, register_artifact
+
+        entry = ArtifactEntry(
+            kind="event_log",
+            path=".sparkforge/artifacts/eventlog/jr_x.jsonl",
+            sha256="a" * 64,
+            source="s3://bucket/prefix/jr_x/",
+            collect_command="sparkforge collect event-log --job-run jr_x",
+            collected_at="2026-07-29T00:00:00Z",
+        )
+        register_artifact(entry, repo)
+
+        _, output = run(["collect", "verify", "--repo", str(repo)], capsys)
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool("sparkforge_collect_verify", {"repo": str(repo)})
+        assert cli_payload == mcp_payload
