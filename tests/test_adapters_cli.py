@@ -54,6 +54,123 @@ class TestAnalyze:
         assert payload["filters_applied"]["limit"] == 1
 
 
+CATALOG_DUMP = json.dumps(
+    {
+        "tables": [
+            {
+                "name": "db.eventos",
+                "storage_format": "parquet",
+                "partition_keys": [{"name": "dt", "type": "string"}],
+                "columns": [
+                    {"name": "cliente_id", "type": "bigint"},
+                    {"name": "dt", "type": "string"},
+                ],
+            }
+        ]
+    }
+)
+
+
+class TestAnalyzeCatalogSchema:
+    def _dump(self, repo):
+        catalog_dir = repo / "catalog"
+        catalog_dir.mkdir()
+        (catalog_dir / "dump.json").write_text(CATALOG_DUMP, encoding="utf-8")
+        return catalog_dir
+
+    def test_writes_facts_json(self, repo, capsys):
+        catalog_dir = self._dump(repo)
+        out = repo / "catalog_facts.json"
+        code, _ = run(
+            ["analyze", "catalog-schema", "--path", str(catalog_dir), "--out", str(out)], capsys
+        )
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        assert any(f["kind"] == "catalog.table_schema" for f in facts)
+
+    def test_prints_summary_to_stdout(self, repo, capsys):
+        catalog_dir = self._dump(repo)
+        _, output = run(["analyze", "catalog-schema", "--path", str(catalog_dir)], capsys)
+        payload = json.loads(output)
+        assert payload["total_count"] >= 1
+        assert "by_kind" in payload
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(
+            ["analyze", "catalog-schema", "--path", str(repo / "nope")], capsys
+        )
+        assert code == 2
+
+
+class TestFuse:
+    def _sql_facts(self, repo, capsys):
+        lib = repo / "sql"
+        lib.mkdir()
+        (lib / "q.sql").write_text("SELECT * FROM db.eventos\n", encoding="utf-8")
+        # Nao ha `analyze sql` na CLI (extrator de SQL nao esta cabeado, mesmo
+        # gap dos outros extratores da Fase 1) -- gera o arquivo de facts
+        # direto pela API Python, como um coletor externo faria.
+        from sparkforge.facts.sql_literal import extract_sql_path
+
+        facts = extract_sql_path(lib / "q.sql", repo_root=lib)
+        path = repo / "sql_facts.json"
+        path.write_text(
+            json.dumps([f.to_dict() for f in facts], indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return path
+
+    def _catalog_facts(self, repo, capsys):
+        catalog_dir = repo / "catalog"
+        catalog_dir.mkdir()
+        (catalog_dir / "dump.json").write_text(CATALOG_DUMP, encoding="utf-8")
+        out = repo / "catalog_facts.json"
+        run(["analyze", "catalog-schema", "--path", str(catalog_dir), "--out", str(out)], capsys)
+        return out
+
+    def test_combines_two_sources_and_produces_enriched_facts(self, repo, capsys):
+        sql_path = self._sql_facts(repo, capsys)
+        catalog_path = self._catalog_facts(repo, capsys)
+        out = repo / "fused.json"
+        code, output = run(
+            [
+                "fuse",
+                "--facts", str(sql_path),
+                "--facts", str(catalog_path),
+                "--out", str(out),
+            ],
+            capsys,
+        )
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["summary"]["measures"]["enriched_count"] == 1
+        fused = json.loads(out.read_text(encoding="utf-8"))
+        assert any(f["kind"] == "sql.projection.enriched" for f in fused)
+
+    def test_fused_facts_feed_judge_directly(self, repo, capsys):
+        sql_path = self._sql_facts(repo, capsys)
+        catalog_path = self._catalog_facts(repo, capsys)
+        fused_path = repo / "fused.json"
+        run(
+            [
+                "fuse",
+                "--facts", str(sql_path),
+                "--facts", str(catalog_path),
+                "--out", str(fused_path),
+            ],
+            capsys,
+        )
+        _, output = run(
+            ["judge", "--facts", str(fused_path), "--athena", "*"], capsys
+        )
+        payload = json.loads(output)
+        assert "SF-ATH-001" in {f["rule_id"] for f in payload["items"]}
+
+    def test_missing_facts_file_is_actionable(self, repo, capsys):
+        code, _ = run(["fuse", "--facts", str(repo / "nope.json")], capsys)
+        assert code == 2
+
+
 class TestJudge:
     def _facts(self, repo, capsys):
         path = repo / "facts.json"
