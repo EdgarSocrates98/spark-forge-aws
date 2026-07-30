@@ -28,6 +28,14 @@ _CMP_OPS = {
 
 ALLOWED_ROOTS = frozenset({"measures", "attrs", "threshold"})
 
+# O catalogo e dado editavel (YAML de terceiros pode ser colado nele), entao a
+# recursao de _eval precisa de um teto explicito: sem isso, uma expressao com
+# encadeamento profundo (ex.: milhares de "+ measures.a") estoura RecursionError
+# em vez de ExprError, derrubando o processo chamador que so trata ExprError.
+# 100 e bem acima do necessario: a regra mais profunda do catalogo real e uma
+# unica divisao comparada a um limiar, profundidade bem abaixo de 10.
+MAX_DEPTH = 100
+
 
 class ExprError(ValueError):
     """Expressão inválida, insegura, ou com caminho ausente no contexto."""
@@ -39,10 +47,13 @@ def evaluate(expr: str, context: dict[str, Any]) -> Any:
         tree = ast.parse(expr, mode="eval")
     except SyntaxError as exc:
         raise ExprError(f"expressao invalida: {expr!r}: {exc}") from exc
-    return _eval(tree.body, context)
+    return _eval(tree.body, context, 0)
 
 
-def _eval(node: ast.AST, ctx: dict[str, Any]) -> Any:
+def _eval(node: ast.AST, ctx: dict[str, Any], depth: int) -> Any:
+    if depth > MAX_DEPTH:
+        raise ExprError(f"expressao aninhada demais (limite {MAX_DEPTH})")
+
     if isinstance(node, ast.Constant):
         if isinstance(node.value, (int, float, str, bool)) or node.value is None:
             return node.value
@@ -50,35 +61,35 @@ def _eval(node: ast.AST, ctx: dict[str, Any]) -> Any:
 
     if isinstance(node, ast.UnaryOp):
         if isinstance(node.op, ast.Not):
-            return not _eval(node.operand, ctx)
+            return not _eval(node.operand, ctx, depth + 1)
         if isinstance(node.op, ast.USub):
-            return -_eval(node.operand, ctx)
+            return -_eval(node.operand, ctx, depth + 1)
         if isinstance(node.op, ast.UAdd):
-            return +_eval(node.operand, ctx)
+            return +_eval(node.operand, ctx, depth + 1)
         raise ExprError("operador unario nao permitido")
 
     if isinstance(node, ast.BoolOp):
-        values = [_eval(v, ctx) for v in node.values]
+        values = [_eval(v, ctx, depth + 1) for v in node.values]
         return all(values) if isinstance(node.op, ast.And) else any(values)
 
     if isinstance(node, ast.BinOp):
         func = _BIN_OPS.get(type(node.op))
         if func is None:
             raise ExprError(f"operador binario nao permitido: {type(node.op).__name__}")
-        left = _eval(node.left, ctx)
-        right = _eval(node.right, ctx)
+        left = _eval(node.left, ctx, depth + 1)
+        right = _eval(node.right, ctx, depth + 1)
         try:
             return func(left, right)
         except ZeroDivisionError as exc:
             raise ExprError(f"divisao por zero em: {ast.dump(node)}") from exc
 
     if isinstance(node, ast.Compare):
-        left = _eval(node.left, ctx)
+        left = _eval(node.left, ctx, depth + 1)
         for op_node, comparator in zip(node.ops, node.comparators, strict=True):
             func = _CMP_OPS.get(type(op_node))
             if func is None:
                 raise ExprError(f"comparador nao permitido: {type(op_node).__name__}")
-            right = _eval(comparator, ctx)
+            right = _eval(comparator, ctx, depth + 1)
             if not func(left, right):
                 return False
             left = right

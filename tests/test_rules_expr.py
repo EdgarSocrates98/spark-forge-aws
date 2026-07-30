@@ -73,3 +73,25 @@ class TestRejections:
         ctx = {"measures": {"a": 1, "b": 0}, "threshold": {}}
         with pytest.raises(ExprError, match="divis"):
             evaluate("measures.a / measures.b > 1", ctx)
+
+
+class TestDepthLimit:
+    """The catalog is attacker-editable data: a deeply nested expr must raise
+    ExprError, not RecursionError, or it crashes the calling process."""
+
+    DEEP_CTX = {"measures": {"a": 1}, "attrs": {}, "threshold": {}}
+
+    def test_deep_binary_chain_rejected(self):
+        expr = "measures.a" + " + measures.a" * 1000
+        with pytest.raises(ExprError, match="aninhada"):
+            evaluate(expr, self.DEEP_CTX)
+
+    def test_deep_unary_chain_rejected(self):
+        expr = "-" * 1000 + "measures.a"
+        with pytest.raises(ExprError, match="aninhada"):
+            evaluate(expr, self.DEEP_CTX)
+
+    def test_legitimately_nested_expression_still_evaluates(self):
+        depth = 10
+        expr = "measures.a" + " + measures.a" * (depth - 1)
+        assert evaluate(expr, self.DEEP_CTX) == depth
