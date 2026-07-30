@@ -25,6 +25,10 @@ include = ["sparkforge*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Torna o pacote importável independente de como o pytest é invocado. Sem isto,
+# `pytest` chamado como script (não `python -m pytest`) não põe o cwd no sys.path
+# e `import sparkforge` falha sem que haja defeito no pacote.
+pythonpath = ["."]
 
 # Regras explícitas: lint de CI que depende do default do ruff quebra em upgrade.
 [tool.ruff]
