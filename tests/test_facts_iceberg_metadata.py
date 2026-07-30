@@ -153,6 +153,186 @@ class TestTableProperty:
         assert fact.attrs["non_empty"] is True
 
 
+def _files(*ids):
+    """Data files de 1 byte, um por `sort_order_id`. `None` = coluna ausente
+    no dump (o coletor nao trouxe `sort_order_id` para aquele arquivo)."""
+    out = []
+    for i, order_id in enumerate(ids):
+        entry = {"file_path": f"s3://b/t/f{i}.parquet", "file_size_in_bytes": 1}
+        if order_id is not None:
+            entry["sort_order_id"] = order_id
+        out.append(entry)
+    return out
+
+
+class TestWrittenBeforeSortOrder:
+    """`attrs.written_before_sort_order` de `iceberg.files_summary` -- o atributo
+    que SF-ICE-004 exige. Derivado de `data_file.sort_order_id` (campo 140 da
+    spec, presente desde o formato v1) comparado com `default-sort-order-id` da
+    tabela. Ver docstring do modulo: `sort_order_id == 0` NAO e evidencia de
+    arquivo nao ordenado, porque o writer do Spark so passou a gravar esse
+    campo no Iceberg 1.11.0 -- depois de todo runtime Glue existente."""
+
+    def test_attribute_absent_when_default_sort_order_id_not_collected(self):
+        fact = one("iceberg.files_summary", {"table": "db.t", "files": _files(0, 0)})
+        assert "written_before_sort_order" not in fact.attrs
+
+    def test_table_that_never_had_a_sort_order_asserts_false(self):
+        payload = {"table": "db.t", "default_sort_order_id": 0, "files": _files(0, 0, 0)}
+        fact = one("iceberg.files_summary", payload)
+        assert fact.attrs["written_before_sort_order"] is False
+        assert fact.measures["files_written_before_sort_order"] == 0
+
+    def test_sort_order_defined_before_any_write_asserts_false(self):
+        payload = {"table": "db.t", "default_sort_order_id": 1, "files": _files(1, 1, 1)}
+        fact = one("iceberg.files_summary", payload)
+        assert fact.attrs["written_before_sort_order"] is False
+        assert fact.measures["files_written_before_sort_order"] == 0
+        assert fact.measures["files_current_sort_order"] == 3
+
+    def test_sort_order_defined_midway_counts_only_the_older_files(self):
+        payload = {"table": "db.t", "default_sort_order_id": 2, "files": _files(1, 1, 2, 2, 2)}
+        fact = one("iceberg.files_summary", payload)
+        assert fact.attrs["written_before_sort_order"] is True
+        assert fact.measures["files_written_before_sort_order"] == 2
+        assert fact.measures["files_stale_sort_order"] == 2
+        assert fact.measures["files_current_sort_order"] == 3
+        assert fact.measures["files_sort_order_unknown"] == 0
+
+    def test_zero_never_asserts_true_because_glue_always_writes_zero(self):
+        """A armadilha central. Ate Iceberg 1.10.0 -- ou seja, em Glue 4.0, 5.0
+        e 5.1 -- `SparkWrite` nunca chama `dataSortOrder`, entao TODO data file
+        escrito pelo Spark carrega `sort_order_id = 0`, inclusive logo depois
+        de um `rewrite_data_files` com estrategia sort. Ler esse 0 como
+        "arquivo nao ordenado" faria a regra disparar em toda tabela Iceberg
+        de Glue, mandando rodar rewrite em tabelas que acabaram de ser
+        compactadas."""
+        payload = {"table": "db.t", "default_sort_order_id": 2, "files": _files(0, 0, 0, 0)}
+        fact = one("iceberg.files_summary", payload)
+        assert "written_before_sort_order" not in fact.attrs
+        assert fact.measures["files_sort_order_unknown"] == 4
+        assert fact.measures["files_stale_sort_order"] == 0
+
+    def test_zero_is_indistinguishable_from_a_missing_column(self):
+        explicit_zero = one(
+            "iceberg.files_summary",
+            {"table": "db.t", "default_sort_order_id": 2, "files": _files(0, 0)},
+        )
+        no_column = one(
+            "iceberg.files_summary",
+            {"table": "db.t", "default_sort_order_id": 2, "files": _files(None, None)},
+        )
+        assert explicit_zero.measures["files_sort_order_unknown"] == 2
+        assert no_column.measures["files_sort_order_unknown"] == 2
+        assert explicit_zero.attrs == no_column.attrs == {}
+
+    def test_file_under_a_previous_non_zero_order_predates_the_current(self):
+        payload = {"table": "db.t", "default_sort_order_id": 3, "files": _files(1, 3)}
+        fact = one("iceberg.files_summary", payload)
+        assert fact.attrs["written_before_sort_order"] is True
+        assert fact.measures["files_stale_sort_order"] == 1
+        assert fact.measures["files_written_before_sort_order"] == 1
+
+    def test_empty_table_with_sort_order_asserts_false(self):
+        payload = {"table": "db.t", "default_sort_order_id": 1, "files": []}
+        fact = one("iceberg.files_summary", payload)
+        assert fact.attrs["written_before_sort_order"] is False
+
+    def test_missing_sort_order_id_leaves_the_attribute_unset(self):
+        """Sem `sort_order_id` por arquivo a pergunta e inrespondivel. A spec diz
+        "assumed to be unsorted"; assumir aqui mandaria alguem rodar
+        rewrite_data_files numa tabela grande sem evidencia."""
+        payload = {"table": "db.t", "default_sort_order_id": 1, "files": _files(None, None)}
+        fact = one("iceberg.files_summary", payload)
+        assert "written_before_sort_order" not in fact.attrs
+        assert fact.measures["files_sort_order_unknown"] == 2
+        # Sem veredito, nao ha total: um zero aqui se leria como "nenhum
+        # arquivo antigo", que e exatamente o que nao se sabe.
+        assert "files_written_before_sort_order" not in fact.measures
+
+    def test_missing_sort_order_id_is_counted_as_unresolved(self):
+        payload = {"table": "db.t", "default_sort_order_id": 1, "files": _files(None, None)}
+        facts = extract_iceberg_metadata(payload, "dump.json")
+        unresolved = facts_of("iceberg.unresolved", facts)
+        assert [u.attrs["reason"] for u in unresolved] == ["sort_order_id_missing"]
+        assert unresolved[0].attrs["file_count"] == 2
+        analyzed = facts_of("iceberg.table_analyzed", facts)[0]
+        assert analyzed.measures["unresolved_count"] == 1
+
+    def test_one_confirmed_old_file_wins_over_unknown_ones(self):
+        """Um arquivo comprovadamente sob outra ordem registrada ja prova o
+        passivo; os desconhecidos so nao entram na contagem, que passa a ser um
+        piso confirmado em vez de um total."""
+        payload = {"table": "db.t", "default_sort_order_id": 2, "files": _files(1, None, 2)}
+        fact = one("iceberg.files_summary", payload)
+        assert fact.attrs["written_before_sort_order"] is True
+        assert fact.measures["files_written_before_sort_order"] == 1
+        assert fact.measures["files_sort_order_unknown"] == 1
+
+    def test_unknown_files_block_the_false_assertion(self):
+        payload = {"table": "db.t", "default_sort_order_id": 1, "files": _files(1, None)}
+        fact = one("iceberg.files_summary", payload)
+        assert "written_before_sort_order" not in fact.attrs
+
+    def test_malformed_default_sort_order_id_is_unresolved_not_a_guess(self):
+        payload = {"table": "db.t", "default_sort_order_id": "1", "files": _files(1)}
+        facts = extract_iceberg_metadata(payload, "dump.json")
+        summary = facts_of("iceberg.files_summary", facts)[0]
+        assert "written_before_sort_order" not in summary.attrs
+        unresolved = facts_of("iceberg.unresolved", facts)
+        assert [u.attrs["reason"] for u in unresolved] == ["malformed_json"]
+        assert unresolved[0].attrs["section"] == "default_sort_order_id"
+
+    def test_non_int_sort_order_id_on_a_file_counts_as_unknown(self):
+        payload = {
+            "table": "db.t",
+            "default_sort_order_id": 1,
+            "files": [{"file_size_in_bytes": 1, "sort_order_id": "zero"}],
+        }
+        fact = one("iceberg.files_summary", payload)
+        assert fact.measures["files_sort_order_unknown"] == 1
+        assert "written_before_sort_order" not in fact.attrs
+
+    def test_boolean_sort_order_id_is_not_read_as_int_zero(self):
+        """`False` e `int` em Python. Sem a guarda de bool, um `sort_order_id:
+        false` viraria "arquivo nao ordenado" e a regra dispararia por lixo."""
+        payload = {
+            "table": "db.t",
+            "default_sort_order_id": 1,
+            "files": [{"file_size_in_bytes": 1, "sort_order_id": False}],
+        }
+        fact = one("iceberg.files_summary", payload)
+        assert fact.measures["files_sort_order_unknown"] == 1
+        assert "written_before_sort_order" not in fact.attrs
+
+    def test_metadata_log_section_never_produces_the_attribute(self):
+        """A spec define cada entrada de `metadata-log` como apenas
+        `metadata-file` + `timestamp-ms`: nao ha sort order nela, entao um dump
+        unico nao consegue datar a mudanca de sort order por esse caminho."""
+        payload = {
+            "table": "db.t",
+            "files": _files(1, 1),
+            "metadata_log": [
+                {"metadata-file": "s3://b/t/metadata/v1.json", "timestamp-ms": 1515100},
+                {"metadata-file": "s3://b/t/metadata/v2.json", "timestamp-ms": 1515200},
+            ],
+        }
+        fact = one("iceberg.files_summary", payload)
+        assert "written_before_sort_order" not in fact.attrs
+
+    def test_files_section_absent_produces_no_summary_at_all(self):
+        facts = extract_iceberg_metadata(
+            {"table": "db.t", "default_sort_order_id": 1}, "dump.json"
+        )
+        assert not facts_of("iceberg.files_summary", facts)
+        assert not facts_of("iceberg.unresolved", facts)
+
+    def test_every_fact_validates_against_the_schema(self):
+        payload = {"table": "db.t", "default_sort_order_id": 2, "files": _files(1, None, 2)}
+        for fact in extract_iceberg_metadata(payload, "dump.json"):
+            validate_fact(fact.to_dict())
+
+
 class TestSentinel:
     def test_section_count_reflects_sections_present(self):
         payload = {

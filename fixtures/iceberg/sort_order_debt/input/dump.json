@@ -1,0 +1,27 @@
+{
+  "table": "analytics.eventos_sort_debt",
+  "format_version": 2,
+  "properties": {
+    "write.distribution-mode": "hash",
+    "format-version": "2"
+  },
+  "default_sort_order_id": 2,
+  "sort_order": [
+    {"column": "cliente_id", "direction": "asc", "null_order": "nulls-first"}
+  ],
+  "partition_spec": [],
+  "files": [
+    {"file_path": "s3://bucket/t/data/ordem-antiga-00.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 1},
+    {"file_path": "s3://bucket/t/data/ordem-antiga-01.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 1},
+    {"file_path": "s3://bucket/t/data/ordem-antiga-02.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 1},
+    {"file_path": "s3://bucket/t/data/ordem-antiga-03.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 1},
+    {"file_path": "s3://bucket/t/data/sem-marca-00.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 0},
+    {"file_path": "s3://bucket/t/data/novo-00.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 2},
+    {"file_path": "s3://bucket/t/data/novo-01.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 2}
+  ],
+  "snapshots": [
+    {"snapshot_id": 101, "committed_at": "2026-01-10T00:00:00Z", "operation": "append"},
+    {"snapshot_id": 102, "committed_at": "2026-04-10T00:00:00Z", "operation": "append"},
+    {"snapshot_id": 103, "committed_at": "2026-07-10T00:00:00Z", "operation": "append"}
+  ]
+}

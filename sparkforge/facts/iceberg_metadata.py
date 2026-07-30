@@ -19,7 +19,8 @@ tabela, e:
   "manifests": [{"path": "...", "length": 100, "added_data_files_count": 3}],
   "partitions": [{"partition": {"dt": "2026-01-01"}, "file_count": 3, "record_count": 30}],
   "partition_spec": [{"name": "dt", "transform": "identity"}],
-  "sort_order": [{"column": "id", "direction": "asc"}]
+  "sort_order": [{"column": "id", "direction": "asc"}],
+  "default_sort_order_id": 2
 }
 ```
 
@@ -35,14 +36,64 @@ sintetiza como tal a partir dessas duas chaves opcionais do dump -- desde que
 o coletor as forneca. `attrs.present`/`attrs.non_empty` refletem exatamente o
 que o dump trouxe: uma lista vazia e "definido, mas vazio", nao "desconhecido".
 
+## `written_before_sort_order`: onde a evidencia esta, e onde ela nao esta
+
+`SF-ICE-004` (`rules/catalog/iceberg.yaml`) precisa saber se data files
+existentes foram escritos ANTES do sort order atual da tabela. Tres caminhos
+foram investigados; so um sobreviveu, e ele e mais estreito do que parece.
+
+1. **Datar a mudanca de sort order pelo `metadata-log`: nao funciona.** A spec
+   define cada entrada como EXATAMENTE `metadata-file` + `timestamp-ms`. Nao
+   ha sort order nela -- so o ponteiro. Nem o snapshot ajuda: a spec registra
+   `schema-id` por snapshot e NAO registra `sort-order-id`, uma assimetria
+   real. Responder por esse caminho exigiria baixar e parsear cada
+   metadata.json historico, artefatos que `write.metadata.previous-versions-max`
+   e `write.metadata.delete-after-commit.enabled` podem ter apagado. Um dump
+   nao responde; uma coleta muito maior talvez.
+
+2. **`data_file.sort_order_id` (campo 140, `int` opcional, presente desde o
+   formato v1): a evidencia certa, mas so num sentido.** Um id nao-zero so
+   aparece quando um writer chamou `withSortOrder` com uma ordem registrada em
+   `sort-orders`. Entao "id nao-zero e diferente do `default-sort-order-id`"
+   prova que o arquivo foi escrito sob outra ordem, e "id igual ao default"
+   prova o contrario. As duas afirmacoes valem em qualquer versao.
+
+3. **`sort_order_id == 0` NAO prova nada, e e a armadilha.** `DataFiles.Builder`
+   inicializa `sortOrderId = SortOrder.unsorted().orderId()` (0), e o writer do
+   Spark so passou a sobrescrever isso no Iceberg **1.11.0**
+   (`SparkWrite.java` ganhou `.dataSortOrder(...)` nessa versao; nao ha
+   mencao nenhuma a sort order no mesmo arquivo em 1.7.1 nem em 1.10.0).
+   Nenhum runtime Glue chega la: 4.0 traz 1.0.0, 5.0 traz 1.7.1, 5.1 traz
+   1.10.0. Na pratica, portanto, TODO data file escrito por Glue sai com
+   `sort_order_id = 0` -- inclusive os que acabaram de ser produzidos por um
+   `rewrite_data_files` com estrategia sort que de fato ordenou os dados.
+
+O efeito de (3) e que a regra so dispara em tabela com passivo escrito por um
+writer que registra sort order (outro engine, ou Iceberg >= 1.11). Na tabela
+Glue tipica ela fica calada -- e o silencio e contabilizado: os arquivos com
+id 0 caem em `files_sort_order_unknown` e viram um `iceberg.unresolved` com
+reason `sort_order_id_missing`, nunca um `false` que se leria como "sem
+passivo". Ver `_sort_order_census` e `_written_before_sort_order`; a
+disciplina `True`/`False`/`None` e a de `fusion._infer_type_mismatch`.
+
+O dump ganha a chave escalar opcional `default_sort_order_id`; `files` ganha
+`sort_order_id` por entrada (o coletor Athena ja o traz, porque consulta
+`SELECT *` e a metadata table `files` expoe todo campo de `data_file`). Sem
+uma das duas, o atributo simplesmente nao e emitido.
+
+Fontes (retrieved 2026-07-30):
+- https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md
+  -- campo 140 `sort_order_id`, "Order id `0` is reserved for the unsorted
+  order", e o `metadata-log` de dois campos. Tag 1.0.0 de proposito: e a
+  versao mais ANTIGA do range Glue suportado.
+- https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/DataFiles.java
+  -- `private Integer sortOrderId = SortOrder.unsorted().orderId();`
+- `spark/v3.5/spark/src/main/java/org/apache/iceberg/spark/source/SparkWrite.java`
+  nas tags `apache-iceberg-1.7.1` e `apache-iceberg-1.10.0` (sem
+  `dataSortOrder`) contra `apache-iceberg-1.11.0` (com).
+
 Como `terraform.py`/`event_log.py`: extrator puro e deterministico. Nunca
 aplica limiar, nunca atribui severidade, nunca infere o que o dump nao diz.
-Em particular, `SF-ICE-004` (`rules/catalog/iceberg.yaml`) precisa saber se
-data files existentes foram escritos ANTES de um sort order ser definido --
-um unico dump, tirado num unico instante, nao tem como saber isso (precisaria
-de historico entre duas coletas). Este extrator nunca fabrica
-`attrs.written_before_sort_order`; a regra fica marcada `blocked_on` no
-catalogo ate existir um extrator de historico.
 """
 from __future__ import annotations
 
@@ -135,8 +186,96 @@ def _get_list_section(
     return None, _unresolved(path, "malformed_json", provenance, section=key)
 
 
+UNSORTED_ORDER_ID = 0
+"""Sentinela da spec: "Order id `0` is reserved for the unsorted order."
+(https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md)"""
+
+
+def _sort_order_census(files: list[Any], default_order_id: int) -> dict[str, int]:
+    """Classifica cada data file pelo `sort_order_id` que ele carrega.
+
+    Tres baldes mutuamente exclusivos, cuja soma e sempre o numero de entradas
+    dict da secao `files`:
+
+    - `files_current_sort_order`: `sort_order_id == default-sort-order-id`.
+      Um id nao-zero so e gravado quando um writer chamou `withSortOrder` com
+      uma ordem registrada, entao isto e evidencia POSITIVA de escrita sob a
+      ordem vigente.
+    - `files_stale_sort_order`: `sort_order_id` inteiro, diferente de 0 e do
+      default. Mesma logica ao contrario: alguem gravou deliberadamente OUTRA
+      ordem registrada, logo o arquivo e anterior a ordem atual.
+    - `files_sort_order_unknown`: `0`, ausente, nulo, ou de tipo que nao e
+      `int`.
+
+    Por que `0` cai em "unknown" e nao em "comprovadamente sem ordenacao":
+    `DataFiles.Builder` inicializa `sortOrderId = SortOrder.unsorted().orderId()`
+    (isto e, 0), e o writer do Spark so passou a sobrescrever isso no Iceberg
+    1.11.0 -- `SparkWrite.java` ganhou `.dataSortOrder(table.sortOrders().get(
+    sortOrderId))` nessa versao, e nao tem nenhuma mencao a sort order em
+    1.7.1 nem em 1.10.0 (verificado nas tres tags). Em TODO runtime Glue de
+    hoje (4.0/1.0.0, 5.0/1.7.1, 5.1/1.10.0), portanto, todo data file escrito
+    pelo Spark sai com `sort_order_id = 0`, inclusive logo depois de um
+    `rewrite_data_files` com estrategia sort que de fato ordenou os dados. Ler
+    esse 0 como "arquivo nao ordenado" faria SF-ICE-004 disparar em toda
+    tabela Iceberg escrita por Glue -- inclusive nas recem-compactadas -- e
+    cada disparo desses e um `rewrite_data_files` caro sobre tabela grande sem
+    motivo. A spec diz "If sort order ID is missing or unknown, then the order
+    is assumed to be unsorted"; esta e uma divergencia deliberada dessa
+    suposicao, porque na pratica 0 significa "o writer nao registrou", nao
+    "nao ordenado".
+
+    O `bool` e excluido de proposito: `False` e `int` em Python.
+    """
+    census = {
+        "files_current_sort_order": 0,
+        "files_stale_sort_order": 0,
+        "files_sort_order_unknown": 0,
+    }
+    for entry in files:
+        if not isinstance(entry, dict):
+            continue
+        order_id = entry.get("sort_order_id")
+        if not isinstance(order_id, int) or isinstance(order_id, bool):
+            census["files_sort_order_unknown"] += 1
+        elif order_id == default_order_id:
+            census["files_current_sort_order"] += 1
+        elif order_id == UNSORTED_ORDER_ID:
+            census["files_sort_order_unknown"] += 1
+        else:
+            census["files_stale_sort_order"] += 1
+    return census
+
+
+def _written_before_sort_order(census: dict[str, int], default_order_id: int) -> bool | None:
+    """`True`/`False`/`None`, na disciplina de `fusion._infer_type_mismatch`.
+
+    `True` so com pelo menos um arquivo carregando outra ordem REGISTRADA --
+    id inteiro, nao-zero, diferente do default. `False` so quando todo arquivo
+    carrega o default, o que tambem exige id nao-zero. `None` (atributo ausente
+    da fact) para todo o resto, e `where: {attrs.written_before_sort_order:
+    true}` de SF-ICE-004 nao casa com atributo ausente.
+
+    Um `True` errado manda alguem rodar `rewrite_data_files` sobre uma tabela
+    grande por nada; um `False` errado esconde o passivo. `None` nao faz nem
+    um nem outro.
+    """
+    if default_order_id == UNSORTED_ORDER_ID:
+        # A tabela nao declara sort order nenhum. "Arquivo escrito antes do
+        # sort order" e vacuo aqui, e a resposta e um `False` bem fundamentado,
+        # nao desconhecimento: nao ha ordem para nenhum arquivo preceder.
+        return False
+    if census["files_stale_sort_order"]:
+        return True
+    if census["files_sort_order_unknown"]:
+        return None
+    return False
+
+
 def _files_summary_fact(
-    files: list[Any], subject: dict[str, Any], provenance: dict[str, Any]
+    files: list[Any],
+    subject: dict[str, Any],
+    provenance: dict[str, Any],
+    default_sort_order_id: int | None = None,
 ) -> tuple[Fact, int]:
     sizes: list[int] = []
     records: list[int] = []
@@ -164,8 +303,28 @@ def _files_summary_fact(
     if records:
         measures["total_records"] = sum(records)
 
+    attrs: dict[str, Any] = {}
+    if default_sort_order_id is not None:
+        census = _sort_order_census(files, default_sort_order_id)
+        measures.update(census)
+        verdict = _written_before_sort_order(census, default_sort_order_id)
+        if verdict is not None:
+            attrs["written_before_sort_order"] = verdict
+            # So sai junto com o veredito. Com o veredito ausente, um
+            # `files_written_before_sort_order: 0` ao lado de tres arquivos
+            # desconhecidos se leria como "nenhum arquivo antigo" -- a
+            # afirmacao que o extrator acabou de se recusar a fazer. Os tres
+            # contadores do censo ficam de qualquer forma: cada um e observacao
+            # crua, nao resposta. Com `files_sort_order_unknown > 0` e veredito
+            # `True`, este numero e um piso confirmado, nao um total.
+            measures["files_written_before_sort_order"] = census["files_stale_sort_order"]
+
     fact = Fact(
-        kind="iceberg.files_summary", subject=subject, measures=measures, provenance=provenance
+        kind="iceberg.files_summary",
+        subject=subject,
+        measures=measures,
+        attrs=attrs,
+        provenance=provenance,
     )
     return fact, data_file_count
 
@@ -361,14 +520,45 @@ def extract_iceberg_metadata(
     facts: list[Fact] = []
     sections_present = 0
 
+    # `default_sort_order_id` e escalar, nao secao de lista: e lido antes de
+    # `files` porque o censo de sort order vive dentro de `iceberg.files_summary`
+    # (SF-ICE-004 avalia `where` contra UM fact, e o motor nunca combina attrs
+    # de dois facts -- mesma restricao documentada em `_delete_files_summary_fact`).
+    default_sort_order_id: int | None = None
+    if "default_sort_order_id" in payload:
+        raw = payload["default_sort_order_id"]
+        if isinstance(raw, int) and not isinstance(raw, bool):
+            default_sort_order_id = raw
+        else:
+            facts.append(
+                _unresolved(path, "malformed_json", provenance, section="default_sort_order_id")
+            )
+
     files, files_error = _get_list_section(payload, "files", path, provenance)
     if files_error is not None:
         facts.append(files_error)
     data_file_count: int | None = None
     if files is not None:
         sections_present += 1
-        fact, data_file_count = _files_summary_fact(files, subject, provenance)
+        fact, data_file_count = _files_summary_fact(
+            files, subject, provenance, default_sort_order_id
+        )
         facts.append(fact)
+        # Ponto cego explicito (AGENT_PROTOCOL regra 7): a pergunta de
+        # SF-ICE-004 foi feita (a tabela declara sort order) e o dump nao tem
+        # `sort_order_id` em parte dos data files. Silencio aqui leria como
+        # "nenhum problema", que e exatamente o que o protocolo proibe.
+        unknown = fact.measures.get("files_sort_order_unknown") or 0
+        if default_sort_order_id not in (None, UNSORTED_ORDER_ID) and unknown:
+            facts.append(
+                _unresolved(
+                    path,
+                    "sort_order_id_missing",
+                    provenance,
+                    section="files",
+                    file_count=unknown,
+                )
+            )
 
     delete_files, delete_error = _get_list_section(payload, "delete_files", path, provenance)
     if delete_error is not None:

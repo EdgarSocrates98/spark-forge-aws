@@ -120,20 +120,29 @@ rules:
     sources:
       - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29}
 
-  # INERTE POR DESENHO ATE EXISTIR EXTRATOR DE HISTORICO ICEBERG.
-  # `attrs.written_before_sort_order` significa "este data file foi escrito antes
-  # do sort order atual ter sido definido na tabela". Um dump de metadata table
-  # tirado num unico instante nao tem como saber isso: precisaria correlacionar o
-  # timestamp de escrita do arquivo com o timestamp em que a table property
-  # `sort-order` foi alterada, ou seja, precisaria de historico entre duas
-  # coletas (ou de um extrator de log de DDL/commits), nao so do dump atual. A
-  # regra nao dispara hoje e nao vai disparar ate que um extrator de historico
-  # produza esse atributo. Fica registrada em vez de removida porque o
-  # conhecimento e valido; o que falta e a capacidade de coleta. Ver o campo
-  # `blocked_on` abaixo.
+  # DESBLOQUEADA EM 2026-07-30. Ficou inerte por muito tempo sob a premissa de
+  # que `attrs.written_before_sort_order` exigiria historico entre duas coletas
+  # -- datar a escrita de cada arquivo e datar a mudanca de sort order. A
+  # premissa estava errada nos dois lados:
+  #   1. Datar a mudanca pelo `metadata-log` do metadata.json nao funciona: a
+  #      spec define cada entrada com exatamente `metadata-file` e
+  #      `timestamp-ms`, sem sort order nenhum. Só o ponteiro. Responder por ai
+  #      exigiria baixar cada metadata.json historico, varios ja apagados por
+  #      `write.metadata.delete-after-commit.enabled`.
+  #   2. E nao e preciso datar nada. O struct `data_file` da spec tem o campo
+  #      140, `sort_order_id` (int, opcional), presente desde o formato v1 --
+  #      ou seja, em Iceberg 1.0.0 (Glue 4.0), 1.7.1 (5.0) e 1.10.0 (5.1). Ele
+  #      diz sob qual sort order CADA arquivo foi escrito. Comparado com o
+  #      `default-sort-order-id` da tabela (0 = a sentinela "unsorted" da spec),
+  #      responde a pergunta a partir de UM dump.
+  # `sparkforge/facts/iceberg_metadata.py::_written_before_sort_order` so
+  # afirma `true` com arquivo comprovadamente fora da ordem vigente, so `false`
+  # com TODOS comprovadamente dentro dela, e deixa o atributo ausente quando
+  # algum arquivo nao traz `sort_order_id` -- caso em que emite
+  # `iceberg.unresolved` com reason `sort_order_id_missing`. O `where` abaixo
+  # exige `true` explicito, entao ambiguidade nao casa.
   - id: SF-ICE-004
     category: iceberg
-    blocked_on: extrator-de-historico-iceberg
     title: Sort order definido sem rewrite dos dados existentes
     requires_facts: [iceberg.table_property, iceberg.files_summary]
     when:
@@ -149,8 +158,12 @@ rules:
       Sort order afeta apenas escritas futuras e o rewrite_data_files com estratégia
       sort. Definir sort order numa tabela existente e esperar melhoria de pruning nos
       dados já gravados é um erro de expectativa comum: nada muda nos arquivos antigos.
-      Estatística min/max só ajuda se os valores estiverem agrupados. Ver
-      knowledge/storage/parquet-layout.md secao 2.
+      Estatística min/max só ajuda se os valores estiverem agrupados. A evidência aqui
+      é por arquivo, não temporal: measures.files_written_before_sort_order conta os
+      data files cujo sort_order_id não é o default-sort-order-id da tabela — seja 0
+      (a sentinela "unsorted" da spec) ou uma ordem anterior. Ver
+      knowledge/storage/parquet-layout.md secao 2 e
+      knowledge/storage/iceberg-performance.md secao 3.
     proposed_change:
       - Executar rewrite_data_files com estratégia sort e o sort_order desejado sobre o passivo.
       - Se os filtros variam entre duas ou três colunas, avaliar zorder em vez de sort.
@@ -161,9 +174,11 @@ rules:
       - Bytes lidos por uma query de referência antes e depois.
       - Contagem total de linhas idêntica.
       - Razão entre bytes lidos e tamanho da tabela, que é a medida direta de pruning.
+      - SELECT sort_order_id, count(*) FROM db.tbl.files GROUP BY 1 antes e depois; depois do rewrite todo arquivo deve carregar o default-sort-order-id.
     rollback: [Time travel para o snapshot anterior ao rewrite.]
     sources:
       - {url: "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction", retrieved: 2026-07-29}
+      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md", retrieved: 2026-07-30, note: "data_file campo 140 sort_order_id e a sentinela order id 0; tag 1.0.0, a versao mais antiga do range Glue suportado"}
 
   - id: SF-ICE-005
     category: iceberg
