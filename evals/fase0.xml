@@ -20,7 +20,7 @@
     <answer>0</answer>
   </qa_pair>
   <qa_pair>
-    <question>Qual o threshold.run_length declarado para SF-PY-007 no catalogo e qual measure ele compara no expr?</question>
+    <question>Qual o limiar declarado da regra SF-PY-007 e qual o caminho pontuado do lado esquerdo da expressao que ela avalia (o lado do fact, nao o do threshold)? Formato: limiar:caminho.pontuado</question>
     <answer>10:measures.run_length</answer>
   </qa_pair>
   <qa_pair>
