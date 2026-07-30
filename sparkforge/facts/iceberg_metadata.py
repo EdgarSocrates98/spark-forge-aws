@@ -195,7 +195,7 @@ def _sort_order_census(files: list[Any], default_order_id: int) -> dict[str, int
     """Classifica cada data file pelo `sort_order_id` que ele carrega.
 
     Tres baldes mutuamente exclusivos, cuja soma e sempre o numero de entradas
-    dict da secao `files`:
+    da secao `files` (`data_file_count`):
 
     - `files_current_sort_order`: `sort_order_id == default-sort-order-id`.
       Um id nao-zero so e gravado quando um writer chamou `withSortOrder` com
@@ -233,6 +233,12 @@ def _sort_order_census(files: list[Any], default_order_id: int) -> dict[str, int
     }
     for entry in files:
         if not isinstance(entry, dict):
+            # Entrada que nem e objeto tem sort order desconhecido como
+            # qualquer outra. Pular em silencio (como as agregacoes de tamanho
+            # fazem) deixaria uma secao `files` inteiramente corrompida com o
+            # censo zerado, e censo zerado se le como "todo arquivo sob a ordem
+            # vigente" -- um `false` afirmado a partir de nada.
+            census["files_sort_order_unknown"] += 1
             continue
         order_id = entry.get("sort_order_id")
         if not isinstance(order_id, int) or isinstance(order_id, bool):

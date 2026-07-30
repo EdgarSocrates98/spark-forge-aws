@@ -342,8 +342,17 @@ class TestWrittenBeforeSortOrder:
         fact = one("iceberg.files_summary", payload)
         assert fact.attrs["written_before_sort_order"] is True
         assert fact.measures["files_stale_sort_order"] == 1
-        # `data_file_count` conta a secao inteira; o censo so as entradas dict.
+        # Os tres nao-dict entram como desconhecidos, nao somem: os baldes do
+        # censo sempre somam `data_file_count`.
+        assert fact.measures["files_sort_order_unknown"] == 3
         assert fact.measures["data_file_count"] == 4
+
+    def test_garbage_files_section_never_asserts_false(self):
+        """Censo zerado nao pode virar "todo arquivo sob a ordem vigente"."""
+        payload = {"table": "db.t", "default_sort_order_id": 2, "files": ["lixo", 42]}
+        fact = one("iceberg.files_summary", payload)
+        assert "written_before_sort_order" not in fact.attrs
+        assert fact.measures["files_sort_order_unknown"] == 2
 
 
 class TestTruncatedDumpOnDisk:
