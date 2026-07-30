@@ -1203,8 +1203,11 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "Aplica o catalogo de regras versionado sobre facts ja extraidos, filtrado "
             "pelo runtime informado. Aceita `facts` inline ou `facts_path` (arquivo gerado "
-            "por sparkforge_analyze_pyspark). Um `facts_path` ausente devolve um dict de "
-            "erro com o comando de recoleta, nunca uma excecao. Regra fora de escopo de "
+            "por sparkforge_analyze_pyspark). `facts_path` aceita tambem uma LISTA de "
+            "caminhos, unidos e deduplicados antes do julgamento: regra que correlaciona "
+            "extratores diferentes (SF-GLUE-004 cruza `tf.attribute` com `pyspark.write`) "
+            "so dispara com as duas fontes na mesma chamada. Um `facts_path` ausente devolve "
+            "um dict de erro com o comando de recoleta, nunca uma excecao. Regra fora de escopo de "
             "versao ou sem fact requerido aparece em `skipped` com o motivo, quando "
             "`show_skipped` e verdadeiro -- nunca descartada em silencio."
         ),
@@ -1212,7 +1215,14 @@ TOOLS: dict[str, dict[str, Any]] = {
             "type": "object",
             "properties": {
                 "facts": {"type": "array", "items": {"type": "object"}},
-                "facts_path": {"type": "string"},
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Um caminho, ou varios: os facts sao unidos e deduplicados antes "
+                        "de julgar."
+                    ),
+                },
                 "glue": {"type": "string"},
                 "spark": {"type": "string"},
                 "python": {"type": "string"},

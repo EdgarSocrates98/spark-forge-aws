@@ -205,7 +205,14 @@ def build_parser() -> argparse.ArgumentParser:
         "judge", help="Aplica o catalogo de regras versionado sobre facts ja extraidos."
     )
     judge_p.add_argument(
-        "--facts", required=True, help="Arquivo de facts gerado por `analyze pyspark --out`."
+        "--facts",
+        required=True,
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) gerado por `analyze`. Repetivel: regra que "
+            "correlaciona extratores diferentes (SF-GLUE-004 cruza tf.attribute com "
+            "pyspark.write) so dispara com as duas fontes na mesma chamada."
+        ),
     )
     judge_p.add_argument("--glue")
     judge_p.add_argument("--spark")

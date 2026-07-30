@@ -73,17 +73,43 @@ def _absent_satisfied(condition: dict[str, Any], facts: Sequence[Fact]) -> bool:
 def _subject_group_key(fact: Fact) -> str:
     """Chave que identifica a entidade a que o fact se refere.
 
-    Para um recurso Terraform e `<tipo>.<nome>`; para um stage Spark e o stage.
-    Usada apenas quando a regra pede `same_subject`.
+    Para um recurso Terraform e `<tipo>.<nome>`; para uma tabela do catalogo e o
+    nome da tabela; para um stage Spark e o stage. Usada apenas quando a regra
+    pede `same_subject`.
+
+    Sem `symbol`, a entidade e a LOCALIZACAO, nunca o arquivo: um subject
+    `source_location` identifica um ponto do codigo, e agrupar so por `file`
+    juntaria coisas independentes. Dois `spark.sql(...)` no mesmo modulo sao
+    duas queries; se uma filtra a coluna de particao e a outra nao, a chave por
+    arquivo poe as duas no mesmo grupo, `absent` falha, e a query ruim fica
+    mascarada pela boa -- exatamente o falso negativo que `same_subject` existe
+    para evitar, so que dentro do arquivo em vez de entre arquivos.
+
+    Isso funciona porque todos os facts de uma unica query compartilham UM
+    subject, construido uma vez por query (`facts/sql_literal.py::_scan_sql`,
+    `subject = _sql_subject(path, line)`) e propagado intacto pelos facts
+    `.enriched` da fusao (`facts/fusion.py`). A linha e portanto a identidade
+    estavel da query, nao um detalhe de formatacao.
+
+    Sentinela de arquivo (`sql.analyzed`, `pyspark.module_analyzed`,
+    `tf.module_analyzed`, ancoradas em `line: 0`) cai no seu proprio grupo, o
+    que e correto: ela prova que o arquivo foi varrido, nao afirma nada sobre
+    uma localizacao especifica dentro dele.
     """
     subject = fact.subject or {}
-    return str(subject.get("symbol") or subject.get("file") or "")
+    symbol = subject.get("symbol")
+    if symbol:
+        return str(symbol)
+    file = subject.get("file")
+    if not file:
+        return ""
+    return f"{file}:{subject.get('line', 0)}"
 
 
 def _evaluate_when(
     when: dict[str, Any], facts: Sequence[Fact], threshold: dict[str, Any]
-) -> list[Fact] | None:
-    """Retorna os facts de evidencia se `when` casa; None caso contrario.
+) -> list[list[Fact]]:
+    """Grupos de evidencia de `when`: um por Finding a emitir. Lista vazia = nao casa.
 
     Com `same_subject: true` no grupo, todas as condicoes precisam ser satisfeitas
     pelo MESMO subject. Sem isso, um arquivo Terraform com dois `aws_glue_job`
@@ -91,17 +117,23 @@ def _evaluate_when(
     de um recurso diferente — cada job correto isoladamente, e a regra acusando.
     Acusar configuracao correta destroi a confianca em todo o resto do relatorio,
     entao regras que correlacionam atributos de uma mesma entidade declaram isso.
+
+    E a regra `same_subject` afirma algo sobre UMA entidade, entao ela produz um
+    Finding POR entidade que casa, nunca so o primeiro. Parar no primeiro grupo
+    faria o relatorio dizer "um job esta errado" quando tres estao: o operador
+    corrige aquele, roda de novo, e descobre o proximo -- sem nunca saber quantos
+    faltam. Subcontar e enganoso da mesma forma que um falso negativo.
+
+    Regra sem `same_subject` continua produzindo no maximo um grupo: ela fala do
+    CONJUNTO de facts, nao de uma entidade, e nao ha por que particionar.
     """
     if when.get("same_subject"):
-        subjects = {_subject_group_key(f) for f in facts}
-        for subject_key in sorted(subjects):
+        narrowed = {k: v for k, v in when.items() if k != "same_subject"}
+        groups: list[list[Fact]] = []
+        for subject_key in sorted({_subject_group_key(f) for f in facts}):
             scoped = [f for f in facts if _subject_group_key(f) == subject_key]
-            narrowed = dict(when)
-            narrowed.pop("same_subject", None)
-            evidence = _evaluate_when(narrowed, scoped, threshold)
-            if evidence:
-                return evidence
-        return None
+            groups.extend(_evaluate_when(narrowed, scoped, threshold))
+        return groups
 
     for group, require_all in (("all", True), ("any", False)):
         conditions = when.get(group)
@@ -116,7 +148,7 @@ def _evaluate_when(
                 if _absent_satisfied(condition, facts):
                     satisfied_count += 1
                 elif require_all:
-                    return None
+                    return []
                 continue
 
             matched = _condition_candidates(condition, facts, threshold)
@@ -124,15 +156,17 @@ def _evaluate_when(
                 satisfied_count += 1
                 evidence.extend(matched)
             elif require_all:
-                return None
+                return []
 
-        if require_all:
-            return evidence
-        if satisfied_count:
-            return evidence
-        return None
+        # Evidencia vazia (grupo so de condicoes `absent`) nao vira Finding:
+        # Finding sem Fact e invalido por contrato (`Finding.__post_init__`).
+        if not evidence:
+            return []
+        if require_all or satisfied_count:
+            return [evidence]
+        return []
 
-    return None
+    return []
 
 
 def _severity_for(rule: dict[str, Any], fact: Fact) -> str:
@@ -227,11 +261,13 @@ def judge(
             continue
 
         threshold = rule.get("threshold") or {}
-        evidence = _evaluate_when(rule.get("when") or {}, fact_list, threshold)
-        if not evidence:
-            continue
-
-        findings.append(_build_finding(rule, evidence))
+        # Um grupo de evidencia por Finding: regra `same_subject` devolve um
+        # grupo por entidade que casa, cada um ancorado no proprio recurso e
+        # carregando so os facts daquele recurso. `sort_findings` no fim
+        # reordena tudo, entao a ordem de saida nao depende da ordem em que os
+        # subjects foram visitados.
+        for evidence in _evaluate_when(rule.get("when") or {}, fact_list, threshold):
+            findings.append(_build_finding(rule, evidence))
 
     ordered = sort_findings(findings)
     return (ordered, skipped) if return_skipped else ordered

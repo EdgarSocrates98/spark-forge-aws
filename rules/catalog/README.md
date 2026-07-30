@@ -92,9 +92,51 @@ todo o resto do relatório.
           where: {attrs.key: number_of_workers, attrs.present: true}
 ```
 
-Com `same_subject: true`, todas as condições do grupo precisam ser satisfeitas pelo mesmo
-`subject.symbol`. Use sempre que a regra fizer afirmação sobre **uma** entidade — um job,
-um stage, uma tabela. Não use quando a afirmação for sobre o conjunto.
+Com `same_subject: true`, todas as condições do grupo precisam ser satisfeitas pela mesma
+entidade. Use sempre que a regra fizer afirmação sobre **uma** entidade — um job, um
+stage, uma tabela, uma query. Não use quando a afirmação for sobre o conjunto.
+
+A entidade é `subject.symbol` quando ele existe (`aws_glue_job.etl`, `db.eventos`). Sem
+`symbol`, um subject `source_location` identifica uma **localização**, e a chave é
+`<arquivo>:<linha>` — nunca só o arquivo. Dois `spark.sql(...)` no mesmo módulo são duas
+queries independentes: agrupar por arquivo poria as duas no mesmo grupo e a query correta
+mascararia a incorreta, que é o falso negativo que `same_subject` existe para evitar. Todos
+os facts de uma query compartilham um único subject, construído uma vez por query em
+`facts/sql_literal.py::_scan_sql` e propagado intacto pelos facts `.enriched` da fusão, então
+a linha é identidade estável, não detalhe de formatação. Sentinela de arquivo
+(`sql.analyzed`, `pyspark.module_analyzed`, `tf.module_analyzed`, ancoradas em `line: 0`)
+cai no próprio grupo: ela prova que o arquivo foi varrido, não afirma nada sobre um ponto
+específico dentro dele.
+
+**Um Finding por subject.** A regra afirma algo sobre uma entidade, então ela emite um
+Finding para **cada** entidade que casa — nunca só a primeira. O `subject` de cada Finding
+é o daquela entidade, e `evidence` carrega apenas os facts dela: evidência nunca vaza de um
+recurso para o achado de outro. Quatro jobs com o mesmo defeito são quatro achados. Reportar
+um só faria o operador corrigir aquele, rodar de novo e descobrir o próximo, sem nunca saber
+quantos faltam — subcontar engana da mesma forma que um falso negativo. Regra sem
+`same_subject` continua produzindo no máximo um Finding: ela fala do conjunto de facts, não
+de uma entidade.
+
+**`absent:` sob `same_subject` é avaliado dentro do grupo do subject**, e é isso que torna a
+combinação útil para "esta entidade não tem X". `SF-GLUE-002` é o exemplo: ancorada em
+`tf.resource` (um por `aws_glue_job`) com `absent: tf.observability.spark_ui`, ela acusa cada
+job sem observabilidade. Ancorada no módulo, o fact existiria globalmente assim que **um**
+job habilitasse Spark UI, `absent` falharia, e a regra não dispararia para ninguém —
+mascarando todos os outros. `SF-ATH-003` (tabela, `catalog.table_partitions`) e `SF-ATH-002`
+(query, `sql.projection`) têm a mesma forma.
+
+**Uma regra com `absent:` e sem `same_subject` está afirmando algo sobre o conjunto
+inteiro**, e precisa realmente ser essa a pergunta. `SF-ENV-003` é o caso legítimo: o
+argumento `--enable-observability-metrics` está no recurso Terraform e `glueContext` está no
+código Python — artefatos diferentes, subjects que nunca coincidem. A pergunta é "este
+código-base inicializa `glueContext` em algum lugar?", e `same_subject` ali faria a regra
+nunca disparar. `tests/test_rules_catalog_reachability.py` obriga qualquer nova regra dessa
+forma a se declarar nessa lista, com o motivo escrito.
+
+Escolha a âncora pela entidade sobre a qual a regra fala. Um fact de nível de arquivo
+(`symbol: ""`, `line: 0` — as sentinelas `*_analyzed`) agrupa pelo arquivo, e esse grupo
+nunca contém o fact de nível de recurso que `absent:` deveria observar: a regra passaria a
+acusar todo módulo, inclusive os corretos.
 
 **`absent:` exige um fact sentinela.** `absent: X` é verdadeiro quando nenhum fact do kind `X` existe — inclusive quando o extrator que produziria `X` nunca rodou. Uma regra que usa `absent:` sem exigir também o sentinela do extrator relevante (`pyspark.module_analyzed` para PySpark) dispara falso positivo numa análise parcial. Sempre inclua o sentinela em `requires_facts`.
 

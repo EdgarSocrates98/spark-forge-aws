@@ -39,13 +39,24 @@ rules:
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html", retrieved: 2026-07-29}
 
+  # A âncora é `tf.resource` (um por bloco `aws_glue_job`), não `tf.module_analyzed`.
+  # `absent:` sob `same_subject` é avaliado dentro do grupo do subject, e observabilidade
+  # é propriedade de UM job: num `.tf` com quatro jobs onde só um habilita Spark UI,
+  # ancorar no módulo esconde os outros três (`absent` falha globalmente e a regra não
+  # dispara para ninguém). Ancorar em `tf.module_analyzed` com `same_subject` seria pior
+  # ainda: o subject dele é o arquivo (`symbol: ""`), grupo que nunca contém fact de
+  # observabilidade — a regra acusaria todo módulo, inclusive o configurado corretamente.
+  # `tf.module_analyzed` continua em `requires_facts` como prova de que o extrator rodou:
+  # sem ele, um repositório sem Terraform nenhum seria acusado em vez de skipped.
   - id: SF-GLUE-002
     category: glue-infra
     title: Observabilidade ausente em job de produção
     requires_facts: [tf.module_analyzed]
     when:
+      same_subject: true
       all:
-        - fact: tf.module_analyzed
+        - fact: tf.resource
+          where: {attrs.resource_type: aws_glue_job}
         - absent: tf.observability.spark_ui
     status: confirmed
     severity_default: P1

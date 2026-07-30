@@ -40,7 +40,7 @@ from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
 from sparkforge.facts.terraform import extract_terraform_path, extract_terraform_tree
-from sparkforge.findings.models import Fact, RuntimeContext
+from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
@@ -598,9 +598,48 @@ def _load_facts_file(facts_path: str) -> list[Fact]:
     return _facts_from_dicts(raw)
 
 
+def _merge_facts_files(facts_paths: list[str]) -> list[Fact]:
+    """Une varios arquivos de facts numa lista unica, sem duplicata e ordenada.
+
+    `judge` correlaciona facts de extratores diferentes (`SF-GLUE-004` cruza
+    `tf.attribute` com `pyspark.write`), e cada extrator escreve o seu proprio
+    arquivo. Sem uniao aqui, avaliar essa classe de regra exigia concatenar
+    dois arrays JSON na mao -- passo manual que, quando ninguem faz, apenas
+    faz a regra nunca disparar.
+
+    A deduplicacao e por conteudo do que o fact AFIRMA (kind + subject +
+    measures + attrs), nao por provenance: dois arquivos que se sobrepoem
+    descrevem a mesma observacao uma vez so. Sem isso, o mesmo fact viraria
+    duas entradas em `Finding.evidence` e o achado pareceria duas vezes mais
+    sustentado do que e. `sort_facts` no fim e a mesma normalizacao que
+    `judge` ja aplica -- a ordem passa a depender do conteudo, nunca da ordem
+    em que os arquivos foram informados na linha de comando.
+    """
+    seen: set[str] = set()
+    merged: list[Fact] = []
+    for facts_path in facts_paths:
+        for fact in _load_facts_file(facts_path):
+            key = json.dumps(
+                {
+                    "kind": fact.kind,
+                    "subject": fact.subject,
+                    "measures": fact.measures,
+                    "attrs": fact.attrs,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+                default=str,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(fact)
+    return sort_facts(merged)
+
+
 def judge_findings(
     facts: list[dict[str, Any]] | None = None,
-    facts_path: str | None = None,
+    facts_path: str | list[str] | None = None,
     glue: str | None = None,
     spark: str | None = None,
     python: str | None = None,
@@ -614,7 +653,18 @@ def judge_findings(
     if facts is not None:
         fact_list = _facts_from_dicts(facts)
     elif facts_path is not None:
-        fact_list = _load_facts_file(facts_path)
+        # `facts_path` aceita um caminho ou uma lista deles: uma regra pode
+        # exigir facts de mais de um extrator (SF-GLUE-004) e cada extrator
+        # escreve o seu arquivo. Um caminho unico continua valendo -- e a forma
+        # que toda skill documenta.
+        paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+        if not paths:
+            raise AdapterError(
+                "informe ao menos um `facts_path` (arquivo gerado por "
+                "`sparkforge analyze pyspark --out <arquivo>`).",
+                exit_code=2,
+            )
+        fact_list = _merge_facts_files(paths)
     else:
         raise AdapterError(
             "informe `facts` (lista inline de facts) ou `facts_path` (arquivo gerado por "

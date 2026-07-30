@@ -1,5 +1,23 @@
 # Catálogo de regras — layout Parquet e S3
-# Depende de extratores de listagem S3 e de plano físico da Fase 1.
+#
+# TODA REGRA DESTA AREA ESTA INERTE HOJE, e cada uma carrega `blocked_on`.
+# Elas dependem de dois fact kinds que NENHUM extrator do pacote emite:
+#
+#   s3.prefix_summary  -> exigiria um extrator de listagem S3 (contagem e
+#                         tamanho de objeto por prefixo). Nao existe.
+#   plan.file_scan     -> exigiria um parser de plano fisico (`explain()`).
+#                         Nao existe; ver skills/analyze-spark-plan/SKILL.md,
+#                         que diz isso ao agente em vez de fingir um verbo.
+#
+# Sem `blocked_on`, `judge` reportaria estas regras como `requires_facts`, o
+# que instrui o operador a coletar um artefato -- e nao ha o que coletar. A
+# distincao importa: `requires_facts` significa "dispara assim que voce
+# coletar"; `blocked_on` significa "nao dispara ate alguem construir o
+# extrator". Reportar as duas igual faz o operador esperar por um dado que
+# nao esta a caminho. Mesma disciplina de SF-ICE-004 e SF-GLUE-005.
+#
+# O conhecimento fica registrado em vez de removido: o que falta e a
+# capacidade de coleta, nao a validade da regra.
 
 catalog_version: 1
 schema_version: 1
@@ -10,6 +28,7 @@ rules:
 
   - id: SF-PQ-001
     category: parquet-layout
+    blocked_on: extrator-de-listagem-s3
     title: Small files na entrada
     requires_facts: [s3.prefix_summary]
     when:
@@ -48,6 +67,7 @@ rules:
 
   - id: SF-PQ-002
     category: parquet-layout
+    blocked_on: parser-de-plano-fisico
     title: Partition pruning ausente no plano físico
     requires_facts: [plan.file_scan]
     when:
@@ -81,6 +101,7 @@ rules:
 
   - id: SF-PQ-003
     category: parquet-layout
+    blocked_on: extrator-de-listagem-s3
     title: Arquivo de texto comprimido não splitável na entrada
     requires_facts: [s3.prefix_summary]
     when:
@@ -116,6 +137,7 @@ rules:
 
   - id: SF-PQ-004
     category: parquet-layout
+    blocked_on: parser-de-plano-fisico
     title: Pruning de coluna ausente — ReadSchema muito maior que o uso
     requires_facts: [plan.file_scan]
     when:
@@ -146,6 +168,7 @@ rules:
 
   - id: SF-PQ-005
     category: parquet-layout
+    blocked_on: extrator-de-listagem-s3
     title: Cardinalidade de partição inadequada
     requires_facts: [s3.prefix_summary, catalog.table_partitions]
     when:

@@ -1,82 +1,87 @@
 ---
 name: optimize-pyspark-code
-description: Use quando revisar ou refatorar código PySpark/Spark SQL para AWS Glue (script, função, módulo, PR ou trecho de DataFrame) suspeito de UDF Python evitável, collect/toPandas, join sem redução prévia, cache indevido, coalesce(1), repartition arbitrário, explode sem controle ou trabalho desnecessário no driver.
+description: Use quando revisar, refatorar ou otimizar código PySpark/Spark SQL para AWS Glue — script, função, módulo, PR ou trecho de DataFrame — suspeito de UDF Python evitável, collect/toPandas, join sem redução prévia, cache indevido, coalesce(1), repartition arbitrário, explode sem controle, sequência longa de withColumn, dropDuplicates sem chave explícita ou spark.conf.set em runtime. Use também quando a pergunta for "por que esse código está lento", "isso vai escalar", "tem algo errado nesse DataFrame" ou "como eu melhoro isso", mesmo que ninguém cite UDF, shuffle ou cardinalidade pelo nome. Se você está prestes a ler o arquivo linha a linha procurando esses padrões, rode `sparkforge analyze pyspark` em vez disso — ele varre a árvore inteira, não uma amostra, e ancora cada achado em file:line:col.
 ---
 
 # Optimize PySpark Code
 
+Ler código à procura de UDF, join mal ordenado, `coalesce(1)` ou cache sem `unpersist` é leitura amostrada: um revisor cansado no arquivo 40 não olha com o mesmo cuidado que no arquivo 2, e dois revisores param em pontos diferentes. O extrator de AST não cansa e não amostra — ele percorre a árvore inteira e emite um fact por ocorrência, com `file:line:col`. O catálogo `SF-PY-001..012` julga esses facts contra critérios versionados, cada um com explicação, risco e plano de validação.
+
+Seu trabalho não é vasculhar o arquivo à procura do padrão. É **extrair, julgar, e decidir o que fazer com o que voltou**.
+
 ## Procedimento
 
-1. Identifique inputs, outputs, volume, SLA e runtime.
-2. Mapeie actions e limites de lazy evaluation.
-3. Localize scans, filters, projections, joins, aggregations, windows, sorts, explode, unions e writes.
-4. Consulte `knowledge/anti-patterns.md`.
-5. Estime mudanças de cardinalidade.
-6. Identifique shuffles e recomputação.
-7. Verifique uso do driver e UDFs.
-8. Produza duas versões:
-   - correção mínima de baixo risco;
-   - refatoração estrutural, quando justificada.
-9. Mostre diff ou blocos antes/depois.
-10. Defina como confirmar a melhoria no plano e nas métricas.
+### 1. Extraia os facts
 
-## Preferências
+```bash
+sparkforge analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json
+```
 
-1. Spark SQL/DataFrame nativo.
-2. Higher-order functions.
-3. Pandas UDF apenas quando inevitável e mensurável.
-4. Python UDF apenas com justificativa.
-5. Nunca mover grandes dados para o driver.
+Leia `by_kind` na saída: se o arquivo tem joins e a contagem de `pyspark.join` é zero, ou o módulo é grande e `by_kind` está vazio, o parser não reconheceu a forma do código antes de concluir "está limpo". Leia `unresolved` sempre — linha que o AST não conseguiu resolver (import dinâmico, `conf.set` com valor não literal) é ponto cego, não ausência de problema.
 
-## Joins
+### 2. Julgue
 
-- Reduza linhas e colunas antes do join.
-- Confirme estratégia física.
-- Não force broadcast sem medir tamanho serializado e margem.
-- Analise nulls, duplicidade e hot keys.
-- Avalie pré-agregação.
-- Use hints como experimentos, não dogma.
+```bash
+sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+```
 
-## Cache
+`--show-skipped` mostra as regras que não avaliaram por falta do fact esperado ou por incompatibilidade de `runtime_scope` — sem isso, "zero findings" e "não consegui avaliar" ficam indistinguíveis.
 
-Só recomende se:
-- houver reutilização real;
-- recomputação for cara;
-- memória útil for suficiente;
-- storage level for adequado;
-- houver plano para `unpersist`.
+### 3. Interprete
 
-## Saída
+Cada finding vem com `explanation`, `proposed_change`, `risks`, `tradeoffs` e `validation` do próprio catálogo — não repita esse texto de memória, ele já está na saída de `judge`. Seu trabalho é decidir a prioridade real no contexto do job (SLA, volume, frequência de execução) e produzir a correção.
 
-- Achados por severidade.
-- Explicação de como Spark executa.
-- Código refatorado.
-- Trade-offs.
-- Plano de validação e benchmark.
+### 4. Produza a saída
+
+- Achados por severidade, cada um citando `rule_id` e `fact_id`.
+- Correção mínima de baixo risco e, quando justificada, refatoração estrutural — mostrando diff ou antes/depois.
+- Plano de validação (contagem, schema, chaves, agregados de controle) e como confirmar o ganho no plano físico e nas métricas reais, encadeando `analyze-spark-plan` ou `benchmark-pyspark-job`.
+
+## Preferências de reescrita
+
+Ordem de preferência, do `knowledge/spark/execution-model.md` seção 4: função Spark SQL nativa → higher-order function (`transform`, `filter`, `aggregate`) → `pandas_udf` medido → `udf` Python só com justificativa registrada. Nunca mover dado não amostrado para o driver. Detalhes de anti-pattern por categoria (driver, transformações, joins, cache, escrita) estão em `knowledge/anti-patterns.md`.
+
+## Limiares
+
+A maioria das 12 regras é estrutural (presença/ausência de um padrão), não numérica — mas `SF-PY-007` (sequência de `withColumn`) tem um limiar de contagem, e ele pode mudar. Não decore:
+
+```bash
+sparkforge rules lookup --id SF-PY-007
+```
+
+Cada regra devolve o limiar atual, a guarda de versão (`runtime_scope`), o risco de aplicar a mudança e a fonte com data.
 
 ## Quando NÃO usar
 
-- O gargalo já está identificado em dados/infra (skew, small files, Iceberg, workers): use a skill específica.
-- Revisão formal de PR com classificação P0–P4: use `review-pyspark-pr`.
-- Precisa do plano físico para decidir: passe antes por `analyze-spark-plan`.
+- O gargalo já está identificado em dados/infra (skew, small files, Iceberg, capacidade de workers): use a skill específica.
+- Revisão formal de PR com classificação P0–P4 e comparação contra a base: use `review-pyspark-pr`.
+- O código é uma biblioteca com múltiplos módulos e o entrypoint não conta a história toda: comece por `analyze-library-call-graph`.
+- Precisa do plano físico para decidir estratégia de join ou confirmar pushdown: passe antes por `analyze-spark-plan`.
+- O padrão é especificamente um loop de batch ou um latest-per-key: use `analyze-batch-loop` ou `optimize-latest-per-key`, que aplicam o mesmo extrator com foco mais estreito.
 
 ## Referência rápida
 
-| Anti-pattern no código | Custo típico | Alternativa nativa |
+| Regra | O que pega | Fact que sustenta |
 |---|---|---|
-| Python UDF em transformação simples | Serialização + sem codegen/pushdown | função Spark SQL / higher-order function |
-| `collect()`/`toPandas()` sem `limit` | Driver OOM, gargalo serial | agregar/escrever distribuído |
-| `join` sem `select`/`filter` antes | Shuffle e bytes desnecessários | projetar e filtrar cedo, pré-agregar |
-| `coalesce(1)` para "1 arquivo" | Todo o dado em 1 task | `repartition` alvo + compactação controlada |
-| `explode` sem estimar fan-out | Explosão de cardinalidade | estimar N; filtrar antes; posexplode seletivo |
-| `withColumn` em loop (dezenas) | Plano gigante / driver | `select` único com todas as colunas |
+| `SF-PY-001` | UDF Python onde existe alternativa nativa | `pyspark.udf` |
+| `SF-PY-002` | `collect()`/`toPandas()` sem limite na cadeia | `pyspark.driver_collect` |
+| `SF-PY-003` | join antes de `select`/`filter` na mesma cadeia | `pyspark.chain` + `pyspark.join` |
+| `SF-PY-004` | action ou write dentro de loop | `pyspark.loop` |
+| `SF-PY-005` | `coalesce(1)` | `pyspark.partitioning` |
+| `SF-PY-006` | `explode` sem redução prévia | `pyspark.explode` + `pyspark.chain` |
+| `SF-PY-007` | sequência longa de `withColumn` | `pyspark.withcolumn_run` |
+| `SF-PY-008` | `cache`/`persist` sem `unpersist` no escopo | `pyspark.cache` |
+| `SF-PY-009` | `broadcast()` forçado por hint | `pyspark.join` |
+| `SF-PY-010` | `repartition(n)` com `n` literal arbitrário | `pyspark.partitioning` |
+| `SF-PY-011` | `dropDuplicates`/`distinct` sem colunas explícitas | `pyspark.dedup` |
+| `SF-PY-012` | `spark.conf.set` em runtime | `pyspark.conf_set` |
 
 ## Red flags
 
-- Forçar `broadcast()` sem medir o tamanho serializado do lado pequeno.
-- `cache()`/`persist()` sem reutilização real e sem `unpersist`.
-- `dropDuplicates()`/`distinct()` mascarando erro de modelagem em vez de corrigir a chave.
-- Refatorar sem definir como validar contagem, schema, chaves e agregados de controle.
+- Aceitar um finding `status: structural` como prova de custo real sem olhar `risks` e `tradeoffs` do próprio catálogo — a regra descreve o padrão, não necessariamente confirma que ele domina o runtime.
+- Forçar `broadcast()` ou remover um hint sem medir o tamanho serializado do lado pequeno.
+- Refatorar `cache()`/`dropDuplicates()` sem antes confirmar reuso real ou a chave de negócio verdadeira.
+- Aplicar a correção proposta sem executar o plano de `validation` da própria regra (contagem, schema, chaves, agregados).
 
 ## Protocolo
 

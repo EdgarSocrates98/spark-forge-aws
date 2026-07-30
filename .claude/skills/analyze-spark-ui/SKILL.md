@@ -1,60 +1,92 @@
 ---
 name: analyze-spark-ui
-description: Use quando tiver screenshots, métricas ou event logs do Spark UI de um job Glue e precisar identificar o stage dominante, skew de task (max/median), spill, GC alto, fetch wait, stragglers, executors perdidos/ociosos ou gargalo de driver.
+description: Use quando houver um Spark event log, um job run id ou um Spark UI aberto de um job AWS Glue e for preciso achar stage dominante, skew de task, spill, GC, executor perdido ou subparalelismo. Use também quando a pergunta for "por que este stage demora", "por que uma task não termina", "o executor sumiu" ou "está com spill", mesmo que ninguém fale em event log. Se você está prestes a ler métrica de execução de Spark no olho, rode `sparkforge collect event-log` e `sparkforge analyze event-log` em vez disso — o extrator calcula p50/p95/max, spill e GC por stage, e o catálogo aplica os limiares versionados.
 ---
 
 # Analyze Spark UI
 
+Ler Spark UI no olho não escala e não é reproduzível: dois analistas olhando o mesmo stage discordam sobre se `max/p50 = 2.8` importa. O extrator resolve isso — ele calcula as distribuições, e o catálogo aplica limiares versionados com fonte datada.
+
+Seu trabalho não é calcular. É **coletar, rodar, e interpretar o que voltou**.
+
 ## Procedimento
 
-1. Identifique job run, duração e configuração.
-2. Localize stages que dominam o runtime.
-3. Compare mediana, p95 e máximo de duração das tasks.
-4. Calcule ou estime:
-   - max/median task duration;
-   - coefficient of variation;
-   - max/median input;
-   - spill/input;
-   - GC/executor run time.
-5. Examine shuffle read/write e fetch wait.
-6. Verifique scheduler delay e serialization.
-7. Analise executors perdidos, ociosos ou desequilibrados.
-8. Correlacione stage com o operador no SQL plan.
-9. Produza hipóteses priorizadas e evidências faltantes.
+### 1. Garanta o event log
 
-## Heurísticas indicativas, não verdades universais
+```bash
+sparkforge collect event-log --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>
+```
 
-- Uma task muito maior que a mediana pode indicar skew.
-- Spill alto pode indicar partições grandes, pressão de memória ou algoritmo inadequado.
-- CPU baixa com leitura/listing elevada pode indicar I/O ou small files.
-- Muitos tasks curtíssimos podem indicar excesso de partições.
-- Poucos tasks longos podem indicar paralelismo insuficiente.
-- Driver heap alto pode indicar metadata explosion ou operações no driver.
+Sem credencial AWS, baixe o log manualmente para `.sparkforge/artifacts/eventlog/<id>.jsonl` e registre com `sparkforge.collect.register_artifact` — o manifesto é o que permite retomar em outra máquina.
 
-Use `checklists/spark-ui.md`.
+Se o job não tem `--enable-spark-ui` e `--spark-event-logs-path`, não há log e não vai haver. Esse é o achado: `SF-GLUE-002`, observabilidade ausente. Reporte e pare — nenhuma métrica de execução existe para analisar.
 
-## Quando NÃO usar
+### 2. Extraia os facts
 
-- Só tem o plano, sem métricas de execução: use `analyze-spark-plan`.
-- O sintoma dominante é skew ou OOM: aprofunde em `diagnose-data-skew` ou `diagnose-oom`.
-- Precisa de comparação controlada antes/depois: use `benchmark-pyspark-job`.
+```bash
+sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json
+```
+
+Leia `unresolved` na saída. Linha malformada ou log truncado vira `spark.unresolved`, e isso é ponto cego, não ausência de problema. Reporte a contagem sempre.
+
+### 3. Julgue
+
+```bash
+sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+```
+
+`--show-skipped` não é opcional. Ele diz quais regras **não** foram avaliadas e por quê — sem isso você não distingue "nenhum problema" de "não coletei o dado que provaria o problema".
+
+### 4. Interprete
+
+Aqui começa seu trabalho de verdade. As regras dizem o que disparou; você diz o que fazer.
+
+## O que cada fact significa
+
+| Fact | O que mede | Por que importa |
+|---|---|---|
+| `spark.stage.task_duration` | p50, p95, max por stage | O stage termina quando a última task termina. Uma task muito acima da mediana é cluster ocioso esperando por ela |
+| `spark.stage.task_input` | mesma distribuição, em bytes lidos | **É o discriminador.** Duração desigual com input uniforme é skew de computação, e repartition não resolve |
+| `spark.stage.spill` | spill de memória e disco vs. input | Spill maior que o input significa algoritmo ou tamanho de partição inadequados, não só falta de memória |
+| `spark.stage.gc` | GC time vs. executor run time | GC alto com heap **não** cheio indica objetos de vida curta, típico de UDF Python. Com heap cheio é dado demais por executor. Correções opostas |
+| `spark.executor.lost` | remoção, com `heap_oom_in_log` | Executor removido **sem** OOM de heap no log é estouro de container fora do heap. A correção é `memoryOverhead`, não `memory`. "Aumentei a memória e continuou" é a assinatura de ter classificado errado |
+| `spark.stage.task_count` | tasks vs. cores disponíveis | Cores pagos e ociosos. Causa comum: arquivo de texto gzip, que é sempre uma task só |
+
+## A pergunta que decide o tratamento
+
+Quando `SF-UI-001` (skew de duração) dispara, olhe imediatamente se `SF-UI-002` (skew de input) também disparou:
+
+- **Os dois juntos** → skew de dados. Tratável na chave: nulls, hot key, valor sentinela.
+- **Só o de duração** → skew de computação. UDF caro em certas linhas, `explode` desigual. Repartition não muda nada, e tentar isso é o erro mais caro dessa análise.
+
+`ROUTE-006` e `ROUTE-007` em `rules/catalog/routing.yaml` já codificam essa bifurcação. `sparkforge next-step` a aplica sozinho.
 
 ## Referência rápida
 
-| Métrica do stage | Heurística de alerta | Hipótese |
+Regras desta área, e o fact que cada uma consome. Os limiares **não** estão aqui de propósito: eles mudam quando aparece evidência nova, e um número decorado vira mentira silenciosa quando o catálogo é atualizado. Consulte com `sparkforge rules lookup --id <ID>`, que devolve limiar, guarda de versão, risco, validação, rollback e fonte com data.
+
+| Regra | Fact que consome | O que acusa |
 |---|---|---|
-| max task time / median | > 3 (e crescente) | skew de dados ou partição |
-| spill (memory+disk) / input | > 1 | partição grande / pressão de memória |
-| GC time / executor run time | > 15% | memory/GC-bound |
-| shuffle read fetch wait | fração alta do task time | shuffle/rede ou stragglers |
-| tasks por stage vs cores | << cores ativos | sub-paralelismo |
-| duração média de task | muito baixa (ms) com milhares de tasks | over-partitioning / small files |
+| `SF-UI-001` | `spark.stage.task_duration` | Duração desigual entre tasks do mesmo stage |
+| `SF-UI-002` | `spark.stage.task_input` | Bytes lidos desiguais — discrimina skew de dados de skew de computação |
+| `SF-UI-003` | `spark.stage.spill` | Spill desproporcional ao input |
+| `SF-UI-004` | `spark.stage.gc` | GC consumindo fração alta do tempo de executor |
+| `SF-UI-005` | `spark.executor.lost` | Executor removido, com ou sem OOM de heap no log |
+| `SF-UI-006` | `spark.stage.task_count` | Tasks abaixo dos cores disponíveis |
+
+## Quando NÃO usar
+
+- Só tem o plano físico, sem métricas de execução → `analyze-spark-plan`
+- Skew já confirmado e quer tratar → `diagnose-data-skew`
+- Executor perdido é o sintoma dominante → `diagnose-oom`
+- Quer provar que uma mudança melhorou → `benchmark-pyspark-job`
 
 ## Red flags
 
-- Tratar uma única task lenta como o job todo sem olhar a distribuição (p50/p95/max).
-- Confundir tempo ocioso por espera de I/O com falta de CPU.
-- Ignorar executors perdidos/removidos (podem indicar OOM de container silencioso).
+- **Tratar a task mais lenta como o job todo.** Olhe a distribuição, não o máximo isolado.
+- **Confundir espera de I/O com falta de CPU.** CPU baixa com listing alto é layout de arquivos, e mais worker não corrige.
+- **Ignorar executor removido.** Pode ser OOM de container silencioso, que não aparece como OOM no log.
+- **Recomendar mais worker antes de descartar skew, small files e trabalho no driver.** Em `knowledge/glue/workers-and-capacity.md`, quatro das oito linhas da tabela de decisão têm capacidade como resposta errada.
 
 ## Protocolo
 

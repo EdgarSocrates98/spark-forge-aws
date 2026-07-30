@@ -1,0 +1,116 @@
+[
+  {
+    "rule_id": "SF-ATH-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tabela com muitas partições Hive sem partition projection",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.cliques_sem_projection_a"
+    },
+    "evidence": [
+      "f_a8773e"
+    ],
+    "measured": {
+      "partition_count": 150000,
+      "distinct_values": 150000
+    },
+    "threshold": {
+      "count": 100000
+    },
+    "runtime_scope": {
+      "athena": "*"
+    },
+    "explanation": "Com particionamento Hive, Athena resolve as partições consultando o Glue Catalog antes de escanear. Com centenas de milhares de partições, essa resolução de metadados vira o gargalo, e a query fica lenta mesmo lendo pouco dado. O sintoma é latência alta e constante, independente da seletividade do WHERE, com bytes escaneados baixos. Partition projection elimina o lookup calculando as partições a partir de um padrão declarado nas table properties.",
+    "proposed_change": [
+      "Avaliar partition projection, desde que o layout seja denso e previsível.",
+      "Se o layout é esparso, não usar projection; reduzir a cardinalidade do particionamento.",
+      "Considerar migrar a tabela para Iceberg, cuja resolução de partição não depende do lookup Hive."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Projection assume que toda partição do padrão existe. Layout esparso gera trabalho inútil.",
+      "Range de data com fim fixo que não é atualizado faz partições novas desaparecerem silenciosamente das queries. É falha por dado faltante, não por erro."
+    ],
+    "tradeoffs": [
+      "Projection dispensa MSCK REPAIR e ADD PARTITION",
+      "mas cria um padrão que precisa ser mantido."
+    ],
+    "validation": [
+      "Latência de uma query de referência antes e depois.",
+      "Contagem de linhas retornada por uma query de janela completa, comparada com a contagem esperada, para provar que nenhuma partição desapareceu.",
+      "Teste explícito sobre a partição mais recente, que é onde o range mal mantido falha primeiro."
+    ],
+    "rollback": [
+      "Remover as table properties de projection restaura a resolução via catálogo."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-ATH-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tabela com muitas partições Hive sem partition projection",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "db.cliques_sem_projection_b"
+    },
+    "evidence": [
+      "f_1c60be"
+    ],
+    "measured": {
+      "partition_count": 300000,
+      "distinct_values": 300000
+    },
+    "threshold": {
+      "count": 100000
+    },
+    "runtime_scope": {
+      "athena": "*"
+    },
+    "explanation": "Com particionamento Hive, Athena resolve as partições consultando o Glue Catalog antes de escanear. Com centenas de milhares de partições, essa resolução de metadados vira o gargalo, e a query fica lenta mesmo lendo pouco dado. O sintoma é latência alta e constante, independente da seletividade do WHERE, com bytes escaneados baixos. Partition projection elimina o lookup calculando as partições a partir de um padrão declarado nas table properties.",
+    "proposed_change": [
+      "Avaliar partition projection, desde que o layout seja denso e previsível.",
+      "Se o layout é esparso, não usar projection; reduzir a cardinalidade do particionamento.",
+      "Considerar migrar a tabela para Iceberg, cuja resolução de partição não depende do lookup Hive."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Projection assume que toda partição do padrão existe. Layout esparso gera trabalho inútil.",
+      "Range de data com fim fixo que não é atualizado faz partições novas desaparecerem silenciosamente das queries. É falha por dado faltante, não por erro."
+    ],
+    "tradeoffs": [
+      "Projection dispensa MSCK REPAIR e ADD PARTITION",
+      "mas cria um padrão que precisa ser mantido."
+    ],
+    "validation": [
+      "Latência de uma query de referência antes e depois.",
+      "Contagem de linhas retornada por uma query de janela completa, comparada com a contagem esperada, para provar que nenhuma partição desapareceu.",
+      "Teste explícito sobre a partição mais recente, que é onde o range mal mantido falha primeiro."
+    ],
+    "rollback": [
+      "Remover as table properties de projection restaura a resolução via catálogo."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]
