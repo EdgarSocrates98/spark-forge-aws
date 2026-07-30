@@ -6,3 +6,17 @@ requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# Regras explícitas: lint de CI que depende do default do ruff quebra em upgrade.
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = [
+    "S101", # assert é o vocabulário do pytest
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S603", "S607"] # subprocess com argv fixo, sem shell
