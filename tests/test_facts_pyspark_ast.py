@@ -1,6 +1,7 @@
+import ast
 import textwrap
 
-from sparkforge.facts.pyspark_ast import EXTRACTOR_ID, extract_source
+from sparkforge.facts.pyspark_ast import EXTRACTOR_ID, extract_path, extract_source, extract_tree
 
 
 def facts_of(kind, facts):
@@ -79,6 +80,13 @@ class TestPartitioning:
         facts = facts_of("pyspark.partitioning", extract_source(src, "a.py"))
         assert facts[0].attrs["has_partition_expr"] is True
 
+    def test_detects_repartition_by_range_with_literal(self):
+        src = 'df.repartitionByRange(50, "col")\n'
+        facts = facts_of("pyspark.partitioning", extract_source(src, "a.py"))
+        assert facts[0].attrs["method"] == "repartitionByRange"
+        assert facts[0].measures["target_count"] == 50
+        assert facts[0].attrs["has_partition_expr"] is True
+
 
 class TestProvenanceAndDeterminism:
     def test_provenance_records_extractor_and_artifact(self):
@@ -115,3 +123,102 @@ class TestSyntaxError:
         assert len(facts) == 1
         assert facts[0].kind == "pyspark.unresolved"
         assert facts[0].attrs["reason"] == "syntax_error"
+
+
+class TestExtractTree:
+    def test_deterministic_order_across_two_runs(self, tmp_path):
+        (tmp_path / "b.py").write_text("df.repartition(10)\n", encoding="utf-8")
+        nested = tmp_path / "lib"
+        nested.mkdir()
+        (nested / "a.py").write_text("df.coalesce(1)\n", encoding="utf-8")
+
+        first = [f.to_dict() for f in extract_tree(tmp_path, repo_root=tmp_path)]
+        second = [f.to_dict() for f in extract_tree(tmp_path, repo_root=tmp_path)]
+        assert first == second
+        assert len(first) == 2
+
+    def test_pycache_is_skipped(self, tmp_path):
+        (tmp_path / "a.py").write_text("df.coalesce(1)\n", encoding="utf-8")
+        cache_dir = tmp_path / "__pycache__"
+        cache_dir.mkdir()
+        (cache_dir / "a.cpython-310.py").write_text("df.coalesce(2)\n", encoding="utf-8")
+
+        facts = extract_tree(tmp_path, repo_root=tmp_path)
+        assert len(facts) == 1
+        assert facts[0].measures["target_count"] == 1
+
+    def test_posix_style_anchor_with_repo_root(self, tmp_path):
+        nested = tmp_path / "lib" / "sub"
+        nested.mkdir(parents=True)
+        (nested / "a.py").write_text("df.coalesce(1)\n", encoding="utf-8")
+
+        facts = extract_tree(tmp_path, repo_root=tmp_path)
+        assert facts[0].subject["file"] == "lib/sub/a.py"
+        assert "\\" not in facts[0].subject["file"]
+
+    def test_posix_style_anchor_without_repo_root(self, tmp_path):
+        (tmp_path / "a.py").write_text("df.coalesce(1)\n", encoding="utf-8")
+
+        facts = extract_tree(tmp_path)
+        assert "\\" not in facts[0].subject["file"]
+
+    def test_syntax_error_file_does_not_erase_others(self, tmp_path):
+        (tmp_path / "good_a.py").write_text("df.coalesce(1)\n", encoding="utf-8")
+        (tmp_path / "bad.py").write_text("def broken(:\n", encoding="utf-8")
+        (tmp_path / "good_b.py").write_text("df.repartition(10)\n", encoding="utf-8")
+
+        facts = extract_tree(tmp_path, repo_root=tmp_path)
+        unresolved = facts_of("pyspark.unresolved", facts)
+        partitioning = facts_of("pyspark.partitioning", facts)
+        assert len(unresolved) == 1
+        assert unresolved[0].attrs["reason"] == "syntax_error"
+        assert len(partitioning) == 2
+
+    def test_over_deep_file_does_not_erase_others(self, tmp_path, monkeypatch):
+        """Regression guard for Defect 1.
+
+        A real interpreter stack exhaustion is not a reliable test trigger:
+        which exception it raises (RecursionError vs. MemoryError) depends
+        on the Python version and on whether the depth comes from a fluent
+        chain (fixed by the explicit-stack `_Context`) or from `ast.parse`
+        itself. `ast.parse` is monkeypatched to simulate a RecursionError
+        deterministically, so this test exercises the `except RecursionError`
+        path in `extract_source` and confirms `extract_tree` does not lose
+        the other files' facts because of it.
+        """
+        (tmp_path / "good_a.py").write_text("df.coalesce(1)\n", encoding="utf-8")
+        (tmp_path / "deep.py").write_text("__SENTINEL_TOO_DEEP__\n", encoding="utf-8")
+        (tmp_path / "good_b.py").write_text("df.repartition(10)\n", encoding="utf-8")
+
+        real_parse = ast.parse
+
+        def fake_parse(source, *args, **kwargs):
+            if source == "__SENTINEL_TOO_DEEP__\n":
+                raise RecursionError("simulated stack exhaustion")
+            return real_parse(source, *args, **kwargs)
+
+        monkeypatch.setattr(ast, "parse", fake_parse)
+
+        facts = extract_tree(tmp_path, repo_root=tmp_path)
+        unresolved = facts_of("pyspark.unresolved", facts)
+        partitioning = facts_of("pyspark.partitioning", facts)
+        assert len(unresolved) == 1
+        assert unresolved[0].attrs["reason"] == "too_deep"
+        assert len(partitioning) == 2
+
+    def test_bom_and_non_bom_twins_produce_identical_facts(self, tmp_path):
+        code = "df.coalesce(1)\n"
+        plain_root = tmp_path / "plain"
+        bom_root = tmp_path / "bom"
+        plain_root.mkdir()
+        bom_root.mkdir()
+        (plain_root / "twin.py").write_bytes(code.encode("utf-8"))
+        (bom_root / "twin.py").write_bytes(code.encode("utf-8-sig"))
+
+        plain_facts = extract_path(plain_root / "twin.py", repo_root=plain_root)
+        bom_facts = extract_path(bom_root / "twin.py", repo_root=bom_root)
+
+        assert len(plain_facts) == len(bom_facts) == 1
+        assert plain_facts[0].kind == "pyspark.partitioning"
+        assert plain_facts[0].id == bom_facts[0].id
+        assert [f.to_dict() for f in plain_facts] == [f.to_dict() for f in bom_facts]
