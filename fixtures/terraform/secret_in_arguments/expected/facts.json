@@ -1,0 +1,335 @@
+[
+  {
+    "id": "f_43a9a6",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 10,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "script_location",
+      "value": "s3://sparkforge-demo/scripts/etl.py",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_16e9c8",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_efe85a",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 19,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ae8135",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 2,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "etl-secret-leak",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_734b18",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 20,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--spark-event-logs-path",
+      "value": "s3://sparkforge-demo/spark-logs/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c1ff8b",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 21,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--aws-access-key-id",
+      "value": "<redigido>",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments",
+      "redacted": true,
+      "secret_pattern_match": true
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_2589da",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 3,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "aws_iam_role.glue_role.arn",
+      "present": true,
+      "literal": false,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_20abfb",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 4,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "5.0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_3be3b3",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.1X",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_a8489f",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {
+      "value": 2
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "2",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_91d3b2",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 9,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_fdc126",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 11,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_b60d88",
+    "schema_version": 1,
+    "kind": "tf.observability.spark_ui",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_07de4f",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_secret"
+    },
+    "measures": {
+      "attribute_count": 11
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "etl_secret"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "4cbbf1eeba0060661a439c540bf55ef58277615a007083825fe1ab90019e8e93",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

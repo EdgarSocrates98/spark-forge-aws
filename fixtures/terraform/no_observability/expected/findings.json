@@ -1,0 +1,59 @@
+[
+  {
+    "rule_id": "SF-GLUE-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Observabilidade ausente em job de produção",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_d9da16"
+    ],
+    "measured": {
+      "resource_count": 1,
+      "attribute_count": 12,
+      "unresolved_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Sem --enable-spark-ui e sem --spark-event-logs-path com destino válido, não há como diagnosticar o job depois do fato. Não é um problema de performance, é um problema de capacidade de diagnóstico: qualquer investigação futura começará sem evidência de execução e dependerá de reproduzir o problema.",
+    "proposed_change": [
+      "Habilitar --enable-spark-ui e definir --spark-event-logs-path para um prefixo S3 com retenção adequada.",
+      "Habilitar --enable-observability-metrics em Glue 4.0 ou superior, confirmando que glueContext é inicializado no código.",
+      "Habilitar --enable-continuous-cloudwatch-log para não depender de log apenas no encerramento."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Event logs consomem armazenamento S3; definir política de retenção."
+    ],
+    "tradeoffs": [
+      "Custo marginal de armazenamento contra capacidade de diagnóstico."
+    ],
+    "validation": [
+      "Event log presente no prefixo S3 após um run.",
+      "Spark UI acessível para o run.",
+      "Métricas de observabilidade presentes no CloudWatch."
+    ],
+    "rollback": [
+      "Remover os argumentos; nenhum efeito sobre o resultado do job."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]
