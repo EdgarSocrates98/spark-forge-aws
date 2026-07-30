@@ -96,6 +96,25 @@ Com `same_subject: true`, todas as condições do grupo precisam ser satisfeitas
 `subject.symbol`. Use sempre que a regra fizer afirmação sobre **uma** entidade — um job,
 um stage, uma tabela. Não use quando a afirmação for sobre o conjunto.
 
+**Um Finding por subject.** A regra afirma algo sobre uma entidade, então ela emite um
+Finding para **cada** entidade que casa — nunca só a primeira. O `subject` de cada Finding
+é o daquela entidade, e `evidence` carrega apenas os facts dela: evidência nunca vaza de um
+recurso para o achado de outro. Quatro jobs com o mesmo defeito são quatro achados. Reportar
+um só faria o operador corrigir aquele, rodar de novo e descobrir o próximo, sem nunca saber
+quantos faltam — subcontar engana da mesma forma que um falso negativo. Regra sem
+`same_subject` continua produzindo no máximo um Finding: ela fala do conjunto de facts, não
+de uma entidade.
+
+**`absent:` sob `same_subject` é avaliado dentro do grupo do subject**, e é isso que torna a
+combinação útil para "esta entidade não tem X". `SF-GLUE-002` é o exemplo: ancorada em
+`tf.resource` (um por `aws_glue_job`) com `absent: tf.observability.spark_ui`, ela acusa cada
+job sem observabilidade. Ancorada no módulo, o fact existiria globalmente assim que **um**
+job habilitasse Spark UI, `absent` falharia, e a regra não dispararia para ninguém —
+mascarando todos os outros. Escolha a âncora pela entidade sobre a qual a regra fala: um
+fact de nível de arquivo (`symbol: ""`) agrupa pelo arquivo, e um grupo de arquivo nunca
+contém o fact de nível de recurso que `absent:` deveria observar — a regra passaria a acusar
+todo módulo, inclusive os corretos.
+
 **`absent:` exige um fact sentinela.** `absent: X` é verdadeiro quando nenhum fact do kind `X` existe — inclusive quando o extrator que produziria `X` nunca rodou. Uma regra que usa `absent:` sem exigir também o sentinela do extrator relevante (`pyspark.module_analyzed` para PySpark) dispara falso positivo numa análise parcial. Sempre inclua o sentinela em `requires_facts`.
 
 ### Facts `.enriched` — correlação de fontes fora do motor

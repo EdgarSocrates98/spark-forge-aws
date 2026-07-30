@@ -13,7 +13,7 @@ Ajustar capacidade sem um gargalo comprovado é tuning por intuição, e a tabel
 2. `sparkforge analyze terraform --path <dir> --out .sparkforge/tf_facts.json` extrai `tf.attribute`, `tf.resource` e `tf.observability.spark_ui` da definição declarada em Terraform.
 3. `sparkforge collect glue-job --repo . --job-name <nome> --now <ISO8601>` baixa a definição real via API do Glue, para comparar contra o declarado e achar drift entre IaC e o que está rodando.
 4. `sparkforge judge --facts .sparkforge/tf_facts.json --glue <versão> --show-skipped` aplica `SF-GLUE-001`, `SF-GLUE-002`, `SF-GLUE-003` e `SF-GLUE-006`.
-5. `SF-GLUE-004` (retry sobre escrita não idempotente) exige facts de duas fontes — `tf.attribute` **e** `pyspark.write`. `judge` só aceita um arquivo de facts por chamada: rode também `sparkforge analyze pyspark --path <job.py> --out .sparkforge/py_facts.json`, combine as duas listas JSON num único arquivo, e julgue esse combinado se quiser essa regra avaliada.
+5. `SF-GLUE-004` (retry sobre escrita não idempotente) exige facts de duas fontes — `tf.attribute` **e** `pyspark.write`. Rode também `sparkforge analyze pyspark --path <job.py> --out .sparkforge/py_facts.json` e passe os dois arquivos na mesma chamada: `--facts` é repetível (`sparkforge judge --facts .sparkforge/tf_facts.json --facts .sparkforge/py_facts.json --glue <versão>`), e `judge` une e deduplica as listas antes de julgar. Julgar os dois arquivos separados nunca faz a regra disparar, porque nenhum dos dois sozinho carrega as duas metades da evidência.
 6. `SF-GLUE-005` (worker maior sem evidência de spill) está `blocked_on: extrator-de-diff-terraform` no catálogo — inerte por desenho até existir um extrator de diff. Ela não vai disparar hoje. Se você está recomendando worker maior sem `SF-UI-003` (spill) ter disparado em `analyze-spark-ui`, essa recomendação é sua, não da regra — rotule como hipótese, não como achado.
 
 ## Qual eixo aumentar
@@ -25,7 +25,7 @@ Não decida o eixo (workers, worker type, disco, Auto Scaling) sem cruzar a evid
 | Regra | Fact que consome | O que acusa |
 |---|---|---|
 | `SF-GLUE-001` | `tf.attribute` | Auto Scaling habilitado junto com `number_of_workers` fixo — contraditório, e deixa a capacidade efetiva ambígua |
-| `SF-GLUE-002` | `tf.attribute` / ausência de `tf.observability.spark_ui` | Observabilidade ausente — sem ela, nenhuma decisão de capacidade futura tem baseline |
+| `SF-GLUE-002` | `tf.resource` + ausência de `tf.observability.spark_ui` no mesmo recurso | Observabilidade ausente — sem ela, nenhuma decisão de capacidade futura tem baseline. Um achado por job sem observabilidade |
 | `SF-GLUE-003` | `tf.attribute` | `max_concurrent_runs` acima de 1 com bookmark habilitado — risco de reprocessamento ou corrida |
 | `SF-GLUE-004` | `tf.attribute` + `pyspark.write` (facts combinados) | Retry configurado sobre escrita append sem controle de idempotência |
 | `SF-GLUE-005` | inerte — falta extrator de diff | Worker maior recomendado sem baseline de spill comprovado; hoje isso é julgamento seu, não da regra |
