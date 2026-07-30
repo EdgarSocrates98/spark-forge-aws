@@ -757,7 +757,10 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
             },
         },
-        "outputSchema": _may_fail(_NEXT_STEP_SCHEMA, "Proximo passo, ou erro se o case nao existe."),
+        "outputSchema": _may_fail(
+            _NEXT_STEP_SCHEMA,
+            "Proximo passo, ou erro se o case nao existe.",
+        ),
         "annotations": _READ_ONLY,
     },
     "sparkforge_resume": {
@@ -777,7 +780,10 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "in_flight": {"type": "string"},
             },
         },
-        "outputSchema": _may_fail(_RESUME_SCHEMA, "Payload de retomada, ou erro se o case nao existe."),
+        "outputSchema": _may_fail(
+            _RESUME_SCHEMA,
+            "Payload de retomada, ou erro se o case nao existe.",
+        ),
         "annotations": _READ_ONLY,
     },
     "sparkforge_runtime_detect": {
@@ -818,7 +824,10 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "cursor": {"type": "string"},
             },
         },
-        "outputSchema": _may_fail(_ANALYZE_PYSPARK_SCHEMA, "Facts extraidos, ou erro se o path nao existe."),
+        "outputSchema": _may_fail(
+            _ANALYZE_PYSPARK_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
         "annotations": _READ_ONLY,
     },
     "sparkforge_judge": {
