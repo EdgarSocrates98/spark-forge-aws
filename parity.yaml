@@ -91,6 +91,20 @@ capabilities:
       devin_cli: [mcp, cli, files]
       copilot_ci: [cli, files]
 
+  - name: collect real AWS artifacts and verify the manifest
+    cli:
+      - collect event-log
+      - collect glue-job
+      - collect cloudwatch
+      - collect iceberg-metadata
+      - collect verify
+    knowledge: [knowledge/glue/observability.md]
+    platforms:
+      claude_code: [cli, files]
+      devin_desktop: [cli, files]
+      devin_cli: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: apply performance knowledge with no tooling at all
     knowledge:
       - knowledge/INDEX.md
