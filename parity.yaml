@@ -1,0 +1,118 @@
+schema_version: 1
+
+platforms: [claude_code, devin_desktop, devin_cli, copilot_ci]
+mechanisms: [mcp, cli, files]
+
+notes: >
+  Devin Desktop configura MCP por serverUrl (HTTP); Claude Code, Devin CLI e CI usam stdio.
+  Devin CLI nao le Knowledge nem Playbooks da conta Devin, por isso o procedimento e
+  autoritativo em arquivo no repo, nunca em Playbook. Copilot CI nao mantem sessao MCP
+  interativa: roda o CLI `sparkforge` como processo de linha de comando dentro do workflow,
+  ou opera diretamente sobre arquivo quando nem isso esta disponivel.
+
+capabilities:
+  - name: detect runtime and version divergence
+    tools: [sparkforge_runtime_detect]
+    cli: [runtime detect]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract anchored facts from PySpark source
+    tools: [sparkforge_analyze_pyspark]
+    cli: [analyze pyspark]
+    knowledge: [knowledge/anti-patterns.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: judge facts against the version-guarded catalog
+    tools: [sparkforge_judge]
+    cli: [judge]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: look up a rule with threshold, version guard and source
+    tools: [sparkforge_rules_lookup]
+    cli: [rules lookup]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: validate a recommendation written by the model
+    tools: [sparkforge_validate_output]
+    cli: [validate]
+    knowledge: [AGENTS.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: maintain investigation state
+    tools: [sparkforge_case_open, sparkforge_case_get, sparkforge_case_update]
+    cli: [case open, case get, case update]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: route the next step deterministically
+    tools: [sparkforge_next_step]
+    cli: [next-step]
+    knowledge: [rules/catalog/routing.yaml]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: resume an investigation started in another tool
+    tools: [sparkforge_resume]
+    cli: [resume, handoff]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: apply performance knowledge with no tooling at all
+    knowledge:
+      - knowledge/INDEX.md
+      - knowledge/spark/execution-model.md
+      - knowledge/spark/config-reference.md
+      - knowledge/spark/shuffle-join-skew.md
+      - knowledge/spark/memory-and-oom.md
+      - knowledge/spark/plan-reading.md
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/glue/workers-and-capacity.md
+      - knowledge/glue/job-arguments.md
+      - knowledge/glue/observability.md
+      - knowledge/athena/performance.md
+      - knowledge/storage/parquet-layout.md
+      - knowledge/storage/iceberg-performance.md
+      - knowledge/cross-service-constraints.md
+      - knowledge/performance-principles.md
+      - knowledge/anti-patterns.md
+      - knowledge/runtime-compatibility.md
+      - rules/catalog/README.md
+    platforms:
+      claude_code: [files]
+      devin_desktop: [files]
+      devin_cli: [files]
+      copilot_ci: [files]

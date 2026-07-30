@@ -33,7 +33,7 @@ rules:
       objetos e round-trips a S3, não CPU. Ver knowledge/storage/parquet-layout.md secao 3.
     proposed_change:
       - Compactar o passivo num job de manutenção separado.
-      - Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita.
+      - "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita."
       - Nunca usar coalesce(1) para isso.
     risks: [Compactação altera o layout físico consumido downstream; validar com os consumidores.]
     tradeoffs: [Arquivos maiores facilitam a leitura em paralelo e dificultam a escrita incremental frequente.]
@@ -170,7 +170,7 @@ rules:
       - Reservar sort order para os filtros de alta cardinalidade.
     risks:
       - Mudar o particionamento de uma tabela existente exige reescrita ou partition evolution.
-      - Em Iceberg, partition evolution não reescreve dados antigos: a tabela passa a ter specs mistos, e o planejamento fica permanentemente mais complexo.
+      - "Em Iceberg, partition evolution não reescreve dados antigos: a tabela passa a ter specs mistos, e o planejamento fica permanentemente mais complexo."
     tradeoffs: [Reescrever é caro e resolve de vez; evoluir o spec é barato e deixa dívida de planejamento.]
     validation:
       - Bytes lidos por um conjunto de queries de referência antes e depois.

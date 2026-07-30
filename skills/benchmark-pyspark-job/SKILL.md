@@ -79,3 +79,10 @@ Tabela antes/depois, variação percentual calculada, limitações, conclusão e
 - Reportar percentual de ganho sem intervalo/variação quando há variabilidade.
 - Aceitar mudança que melhora tempo mas altera contagem/agregados de controle.
 - Comparar execuções em runtimes/inputs diferentes.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

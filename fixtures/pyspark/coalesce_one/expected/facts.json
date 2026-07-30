@@ -1,0 +1,108 @@
+[
+  {
+    "id": "f_57df05",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "salvar",
+      "snippet": "df.coalesce(1).write.mode(\"overwrite\").parquet(destino)"
+    },
+    "measures": {
+      "length": 4
+    },
+    "attrs": {
+      "methods": [
+        "coalesce",
+        "write",
+        "mode",
+        "parquet"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3664cb743d04cec895b0a19885d6bc5da1890ca3594b2fca30690c7b79ed9462",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_7a2abf",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3664cb743d04cec895b0a19885d6bc5da1890ca3594b2fca30690c7b79ed9462",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_18a4cd",
+    "schema_version": 1,
+    "kind": "pyspark.partitioning",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "salvar",
+      "snippet": "df.coalesce(1).write.mode(\"overwrite\").parquet(destino)"
+    },
+    "measures": {
+      "target_count": 1
+    },
+    "attrs": {
+      "method": "coalesce",
+      "literal_arg": true,
+      "has_partition_expr": false,
+      "inside_loop": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3664cb743d04cec895b0a19885d6bc5da1890ca3594b2fca30690c7b79ed9462",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_aa1423",
+    "schema_version": 1,
+    "kind": "pyspark.write",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "salvar",
+      "snippet": "df.coalesce(1).write.mode(\"overwrite\").parquet(destino)"
+    },
+    "measures": {},
+    "attrs": {
+      "mode": "overwrite"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3664cb743d04cec895b0a19885d6bc5da1890ca3594b2fca30690c7b79ed9462",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

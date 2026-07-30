@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-PY-010",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "repartition com argumento literal arbitrário",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "redistribuir",
+      "snippet": "return df.repartition(347)"
+    },
+    "evidence": [
+      "f_37fda2"
+    ],
+    "measured": {
+      "target_count": 347
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "repartition(n) com n fixo adiciona um shuffle completo para atingir um número que raramente foi calculado a partir do volume. Com AQE ativo, o coalescing de partições pós-shuffle já ajusta a contagem em runtime, então o n fixo frequentemente é revertido logo depois, e o shuffle foi pago em vão.",
+    "proposed_change": [
+      "Se o objetivo é equilibrar a saída, usar o hint REBALANCE, que coopera com o AQE.",
+      "Se o objetivo é atingir um tamanho de arquivo, calcular n a partir do volume estimado e do tamanho-alvo.",
+      "Se o objetivo é corrigir skew, repartition por chave não resolve; ver knowledge/spark/shuffle-join-skew.md secao 3."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Remover o repartition pode alterar a contagem de arquivos de saída."
+    ],
+    "tradeoffs": [
+      "REBALANCE é menos previsível na contagem exata de arquivos."
+    ],
+    "validation": [
+      "Contagem e tamanho dos arquivos de saída antes e depois.",
+      "Runtime e DPU-hours antes e depois.",
+      "Contagem total de linhas idêntica."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

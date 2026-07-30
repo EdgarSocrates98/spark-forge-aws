@@ -1,0 +1,13 @@
+name: clean_job
+proves: >
+  Codigo PySpark idiomatico e plausivel de producao -- leitura real,
+  projecao real, filtro real, escrita particionada real -- nao deve
+  produzir nenhum finding. A fixture mais importante do corpus: se ela
+  disparar algo, e falso positivo do catalogo ou do extrator.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.read, pyspark.chain, pyspark.write, pyspark.module_analyzed]
+expects_rules: []

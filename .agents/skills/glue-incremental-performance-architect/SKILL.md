@@ -56,3 +56,10 @@ Não encerrar com:
 - Fazer tuning localizado antes de mapear biblioteca, actions, batching, latest-per-key e OOM.
 - Encerrar só com "mais workers", shuffle partitions, broadcast, compactação ou cache.
 - Não separar e explicar os DAGs de full e incremental.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

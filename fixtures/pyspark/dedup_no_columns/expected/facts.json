@@ -1,0 +1,50 @@
+[
+  {
+    "id": "f_251c39",
+    "schema_version": 1,
+    "kind": "pyspark.dedup",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "deduplicar",
+      "snippet": "return df.dropDuplicates()"
+    },
+    "measures": {},
+    "attrs": {
+      "has_explicit_columns": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "ce88530dcf7bf796a3bb0c12bc9c22c134c39aa8a1fba4241caa3d6e7b00e54c",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_07e474",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "ce88530dcf7bf796a3bb0c12bc9c22c134c39aa8a1fba4241caa3d6e7b00e54c",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

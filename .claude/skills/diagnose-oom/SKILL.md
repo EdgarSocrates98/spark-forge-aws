@@ -86,3 +86,10 @@ oom:
 - Aumentar worker type/memória como primeira e única resposta.
 - Tratar como "pouca memória" um OOM cuja causa raiz é skew, collect, broadcast ou lineage.
 - Não registrar em qual iteração/batch a falha ocorre em jobs com loop.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

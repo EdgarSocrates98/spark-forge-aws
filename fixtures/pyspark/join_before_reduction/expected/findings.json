@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-PY-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "join antes de select ou filter na mesma cadeia",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "transformar",
+      "snippet": "return a.join(b, \"k\").select(\"x\").filter(\"x > 1\")"
+    },
+    "evidence": [
+      "f_ccbeb2"
+    ],
+    "measured": {
+      "length": 3,
+      "join_index": 0,
+      "first_reduction_index": 1
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Todo byte e toda coluna que entram no join atravessam o shuffle. Filtrar e projetar depois do join significa pagar rede, disco local e sort por dado que será descartado. Uma tabela de 80 colunas cujo join usa 6 desperdiça a maior parte da banda de shuffle. Ver knowledge/spark/shuffle-join-skew.md secao 2.",
+    "proposed_change": [
+      "Mover filter para antes do join, garantindo que chegue ao pushdown (verificar PushedFilters no plano).",
+      "Adicionar select das colunas efetivamente usadas antes do join.",
+      "Avaliar pré-agregação quando o join é seguido de groupBy."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Filtro movido para antes de um outer join altera o resultado. Verificar o tipo de join antes de mover."
+    ],
+    "tradeoffs": [
+      "Projeção explícita exige manutenção quando o schema evolui."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem por chave de join.",
+      "Contagem de linhas com chave nula.",
+      "Agregados de controle por dimensão de negócio."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

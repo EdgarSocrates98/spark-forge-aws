@@ -1,0 +1,31 @@
+name: skewed_stage
+proves: >
+  Event log de um job Glue com um stage saudavel mas subparalelizado
+  (2 tasks contra 8 cores disponiveis) e um stage com skew de duracao e de
+  input, spill em disco maior que o input e GC dominando o tempo de
+  executor; mais um executor perdido por overhead de container (nao heap)
+  e uma linha malformada seguida de uma linha em branco. Exercita as seis
+  regras spark-ui de ponta a ponta, com uma stage adicional sem tasks
+  (skip por cache) para cobrir o caminho de contagem zero.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.stage.spill
+  - spark.stage.gc
+  - spark.stage.task_count
+  - spark.cluster.cores
+  - spark.executor.lost
+  - spark.unresolved
+  - spark.log_analyzed
+expects_rules:
+  - SF-UI-001
+  - SF-UI-002
+  - SF-UI-003
+  - SF-UI-004
+  - SF-UI-005
+  - SF-UI-006

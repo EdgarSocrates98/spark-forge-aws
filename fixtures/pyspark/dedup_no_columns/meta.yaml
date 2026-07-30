@@ -1,0 +1,12 @@
+name: dedup_no_columns
+proves: >
+  dropDuplicates() sem colunas explicitas compara o registro inteiro e
+  costuma mascarar um erro de modelagem de chave. SF-PY-011 dispara sobre
+  pyspark.dedup com attrs.has_explicit_columns == false.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.dedup, pyspark.module_analyzed]
+expects_rules: [SF-PY-011]

@@ -67,3 +67,10 @@ Evite comentários genéricos sem ação.
 - Aprovar sem plano de teste de correção (contagem, schema, chaves) para mudanças de escrita.
 - Comentário genérico ("otimize isso") sem correção concreta e como validar.
 - Ignorar operações Iceberg (merge/delete) que multiplicam commits/snapshots.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

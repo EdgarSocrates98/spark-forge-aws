@@ -79,3 +79,10 @@ Avalie:
 - Sugerir mais workers sem baseline de CPU/heap/spill/tasks.
 - Copiar configs entre versões de Glue sem checar `knowledge/runtime-compatibility.md`.
 - Expor segredos em default arguments ou logs.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

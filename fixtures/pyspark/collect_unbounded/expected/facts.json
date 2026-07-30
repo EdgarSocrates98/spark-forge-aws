@@ -1,0 +1,75 @@
+[
+  {
+    "id": "f_8a792c",
+    "schema_version": 1,
+    "kind": "pyspark.action",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "carregar",
+      "snippet": "return df.collect()"
+    },
+    "measures": {},
+    "attrs": {
+      "method": "collect"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6ed5761e86ec568c5f738c694a472d90fd7a83426ac1d7c50d492d477780b5a3",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_4a738c",
+    "schema_version": 1,
+    "kind": "pyspark.driver_collect",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "carregar",
+      "snippet": "return df.collect()"
+    },
+    "measures": {},
+    "attrs": {
+      "method": "collect",
+      "bounded": false,
+      "inside_loop": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6ed5761e86ec568c5f738c694a472d90fd7a83426ac1d7c50d492d477780b5a3",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_07e474",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6ed5761e86ec568c5f738c694a472d90fd7a83426ac1d7c50d492d477780b5a3",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]
