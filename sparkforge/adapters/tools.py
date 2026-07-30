@@ -48,6 +48,21 @@ _WRITE_IDEMPOTENT = {
     "openWorldHint": False,
 }
 
+# Os coletores AWS (`collect_*`, exceto `collect_verify`) sao as primeiras
+# ferramentas deste projeto que tocam a rede: leem de S3/Glue/CloudWatch/Athena
+# de verdade, nunca mudam estado do lado AWS (so `get_object`, `get_job`,
+# `get_metric_data`, `SELECT`/`get_work_group` -- ver docstring de
+# `sparkforge.collect.aws`), e por isso sao `readOnlyHint: True` e
+# `openWorldHint: True` ao mesmo tempo -- leem, mas de fora do sandbox local.
+# `collect_verify` fica de fora deste grupo: so le o manifesto e recalcula
+# sha256 local, nunca toca rede (`openWorldHint: False`, ver `_READ_ONLY`).
+_READ_ONLY_OPEN_WORLD = {
+    "readOnlyHint": True,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": True,
+}
+
 # --------------------------------------------------------------------------- #
 # blocos de schema compartilhados -- ver `sparkforge/findings/models.py` e
 # `sparkforge/findings/schemas/{fact,finding}.schema.json` para a autoridade
@@ -483,6 +498,132 @@ _ANALYZE_PYSPARK_SCHEMA: dict[str, Any] = {
     },
 }
 
+# Shape compartilhado por TODOS os extratores de arquivo/diretorio que
+# reportam ponto cego: `analyze_pyspark`, `analyze_catalog_schema`,
+# `analyze_event_log`, `analyze_terraform`, `analyze_iceberg`, `analyze_sql`,
+# `analyze_athena_workgroup` (`sparkforge/adapters/_core.py::_facts_page`).
+# Reaproveitado por identidade (nao uma copia com outro nome): a forma e
+# genuinamente identica, entao um schema por tool so duplicaria texto sem
+# testar nada a mais -- `TestOutputSchemasAreReal` ainda valida a saida REAL
+# de cada tool contra este schema compartilhado.
+_ANALYZE_FACTS_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
+
+# `analyze_call_graph` deriva de Facts ja resolvidos (nunca reparseia fonte,
+# ver `sparkforge.facts.call_graph`): sem `unresolved`/`unresolved_at`
+# proprios -- as duas chaves ficam ausentes, nunca zeradas, porque a tool nao
+# tem ponto cego para reportar.
+_ANALYZE_CALL_GRAPH_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "total_count",
+        "returned_count",
+        "next_cursor",
+        "filters_applied",
+        "by_kind",
+        "items",
+    ],
+    "properties": {
+        **_PAGE_PROPERTIES,
+        "filters_applied": {
+            "type": "object",
+            "properties": {
+                "kind": {"type": ["array", "null"], "items": {"type": "string"}},
+                "limit": {"type": ["integer", "null"]},
+                "cursor": {"type": ["string", "null"]},
+            },
+        },
+        "by_kind": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "items": {"type": "array", "items": _FACT_ITEM},
+    },
+}
+
+# `fuse_facts` (`sparkforge/adapters/_core.py`) devolve o mesmo envelope
+# paginado, mais `summary`: o fact `fusion.summary` (ou `null` quando a fusao
+# nao produziu nenhum, o que nunca acontece na pratica -- `fuse` sempre emite
+# a sentinela -- mas o tipo fica honesto sobre a possibilidade).
+_FUSE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "total_count",
+        "returned_count",
+        "next_cursor",
+        "filters_applied",
+        "by_kind",
+        "summary",
+        "items",
+    ],
+    "properties": {
+        **_PAGE_PROPERTIES,
+        "filters_applied": {
+            "type": "object",
+            "properties": {
+                "kind": {"type": ["array", "null"], "items": {"type": "string"}},
+                "limit": {"type": ["integer", "null"]},
+                "cursor": {"type": ["string", "null"]},
+            },
+        },
+        "by_kind": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "summary": {"type": ["object", "null"]},
+        "items": {"type": "array", "items": _FACT_ITEM},
+    },
+}
+
+# Shape de `_core._collect_payload`: o manifesto (`ArtifactEntry.to_dict()`)
+# mais `cache_hit`, que prova se a chamada tocou a rede AWS ou foi um no-op
+# local (sha256 ja batia) -- ver docstring de `_core._collect_payload`.
+_COLLECT_ARTIFACT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "kind",
+        "path",
+        "sha256",
+        "source",
+        "collect_command",
+        "collected_at",
+        "cache_hit",
+    ],
+    "properties": {
+        "kind": {"type": "string"},
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source": {"type": "string"},
+        "collect_command": {"type": "string"},
+        "collected_at": {"type": "string"},
+        "cache_hit": {
+            "type": "boolean",
+            "description": (
+                "True quando `collected_at != now`: cache hit local, nenhuma rede "
+                "nem credencial AWS tocada nesta chamada."
+            ),
+        },
+    },
+}
+
+_VERIFY_ARTIFACT_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["kind", "path", "present", "hash_matches", "collect_command", "source"],
+    "properties": {
+        "kind": {"type": ["string", "null"]},
+        "path": {"type": "string"},
+        "present": {"type": "boolean"},
+        "hash_matches": {"type": "boolean"},
+        "collect_command": {"type": ["string", "null"]},
+        "source": {"type": ["string", "null"]},
+    },
+}
+
+_COLLECT_VERIFY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["total_count", "ok_count", "missing_count", "mismatched_count", "artifacts"],
+    "properties": {
+        "total_count": {"type": "integer"},
+        "ok_count": {"type": "integer"},
+        "missing_count": {"type": "integer"},
+        "mismatched_count": {"type": "integer"},
+        "artifacts": {"type": "array", "items": _VERIFY_ARTIFACT_ITEM},
+    },
+}
+
 _JUDGE_SKIPPED_ITEM: dict[str, Any] = {
     "type": "object",
     "required": ["rule_id", "reason"],
@@ -830,6 +971,234 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_catalog_schema": {
+        "description": (
+            "Extrai facts de um dump JSON ja coletado do Glue Data Catalog "
+            "(`GetTables`/`GetTable`): schema, colunas, chaves de particao, contagem de "
+            "particoes e table properties. NAO chama a API do Glue -- so le o JSON ja "
+            "salvo em disco. Correlacionar isso com texto SQL (`sql.projection`/"
+            "`sql.predicate`) e trabalho de `sparkforge_fuse`, nao desta ferramenta."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo ou diretorio com dumps do catalogo.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_event_log": {
+        "description": (
+            "Extrai facts de um Spark event log (.jsonl) ja coletado: duracao/skew de "
+            "task por stage, spill, GC, contagem de tasks, cores do cluster, executor "
+            "perdido. NAO baixa o log de S3 -- so le o arquivo ja presente em disco "
+            "(`sparkforge_collect_event_log` ou coleta manual fazem isso). Um unico "
+            "arquivo por chamada, nunca um diretorio."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo de event log (.jsonl)."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_terraform": {
+        "description": (
+            "Extrai facts de blocos `resource \"aws_glue_job\"` em HCL Terraform: "
+            "glue_version, worker_type, number_of_workers, default_arguments, "
+            "observabilidade do Spark UI. Parser de linha limitado (nao uma gramatica HCL "
+            "geral) -- construcoes nao suportadas (interpolacao, heredoc, dynamic, "
+            "for_each) viram `tf.unresolved` com reason especifico, nunca um valor "
+            "adivinhado. Ver `sparkforge.facts.terraform` para o vocabulario completo."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo ou diretorio .tf."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_iceberg": {
+        "description": (
+            "Extrai facts de um dump JSON das cinco metadata tables Iceberg (`.files`, "
+            "`.delete_files`, `.snapshots`, `.manifests`, `.partitions`): small files, "
+            "delete files, cadencia de snapshot, tamanho de manifesto, skew de particao. "
+            "NAO consulta Athena -- so le o JSON ja salvo em disco "
+            "(`sparkforge_collect_iceberg_metadata` ou coleta manual fazem isso)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo ou diretorio com dumps das metadata tables.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_sql": {
+        "description": (
+            "Extrai facts de texto SQL por regex/varredura de token (nunca uma gramatica "
+            "SQL completa): projecao (`SELECT *` vs. colunas explicitas), predicados de "
+            "WHERE, uso de LIMIT. Dois modos, mutuamente exclusivos: `path` le um arquivo "
+            ".sql; `from_pyspark` varre um arquivo .py via AST e extrai o literal de cada "
+            "chamada `spark.sql(\"...\")` (argumento nao-literal vira `sql.unresolved` com "
+            "reason `non_literal_sql`, nunca uma referencia seguida). NAO sabe se uma "
+            "coluna e de particao nem seu tipo declarado -- isso exige `sparkforge_fuse` "
+            "correlacionando com `sparkforge_analyze_catalog_schema`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo .sql a analisar."},
+                "from_pyspark": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo .py: extrai texto de chamadas spark.sql(\"...\") em vez "
+                        "de ler `path`. Mutuamente exclusivo com `path`."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se nem path nem from_pyspark existem/foram informados.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_athena_workgroup": {
+        "description": (
+            "Extrai facts de um dump JSON de workgroups do Athena (`get_work_group`): "
+            "engine version efetiva, state, bytes_scanned_cutoff. NAO chama a API do "
+            "Athena -- so le o JSON ja salvo em disco (`sparkforge_collect_athena_workgroup` "
+            "ou coleta manual fazem isso). Uma `effective_engine_version` sem inteiro "
+            "reconhecivel (`\"AUTO\"`, string vazia) NUNCA vira `athena.workgroup` com "
+            "valor adivinhado: vira `athena.unresolved` com "
+            "`reason: unparseable_engine_version`, unico fact que desbloqueia SF-ATH-004."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo ou diretorio com dumps de workgroups.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_call_graph": {
+        "description": (
+            "Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA "
+            "extraidos (tipicamente `sparkforge_analyze_pyspark` gravado em disco via "
+            "`--out`) -- funcao pura sobre Facts, nunca reparseia codigo-fonte. Revela "
+            "trabalho Spark (`count()`, `write`, `collect`) escondido dentro de um helper "
+            "chamado varios niveis abaixo do entrypoint, invisivel numa revisao que so olha "
+            "o entrypoint. Sem `unresolved` proprio: so deriva do que ja foi resolvido."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": "Arquivo de facts gerado por `sparkforge_analyze_pyspark`.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_CALL_GRAPH_SCHEMA,
+            "Grafo de chamadas derivado, ou erro se facts_path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_fuse": {
+        "description": (
+            "Correlaciona facts de fontes diferentes (texto SQL de "
+            "`sparkforge_analyze_sql` com schema de `sparkforge_analyze_catalog_schema`) "
+            "pelo nome da tabela, e produz facts `.enriched` (`sql.projection.enriched`, "
+            "`sql.predicate.enriched`) que carregam attrs das duas fontes NO MESMO fact -- "
+            "o que desbloqueia SF-ATH-001, SF-ATH-002 e SF-ATH-005. `facts_paths` e "
+            "repetivel de proposito: a fusao so tem o que correlacionar quando ve as duas "
+            "fontes na MESMA chamada. A saida (facts originais + `.enriched` + "
+            "`fusion.summary`) alimenta `sparkforge_judge` direto, sem outro passo no meio."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_paths"],
+            "properties": {
+                "facts_paths": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1,
+                    "description": (
+                        "Arquivos de facts (JSON) gerados por `sparkforge_analyze_*`. "
+                        "Repetivel: informe todas as fontes a correlacionar na mesma chamada."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _FUSE_SCHEMA,
+            "Facts fundidos, ou erro se facts_paths esta vazio ou algum arquivo nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_judge": {
         "description": (
             "Aplica o catalogo de regras versionado sobre facts ja extraidos, filtrado "
@@ -892,6 +1261,145 @@ TOOLS: dict[str, dict[str, Any]] = {
             "properties": {"finding": {"type": "object"}},
         },
         "outputSchema": _VALIDATE_OUTPUT_SCHEMA,
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_collect_event_log": {
+        "description": (
+            "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` "
+            "e registra no manifesto (`.sparkforge/artifacts/manifest.json`). Le, nunca "
+            "grava nada do lado AWS. Offline-first: uma segunda chamada com o mesmo "
+            "artefato ja presente e integro localmente (`cache_hit: true`) nao toca rede "
+            "nem credenciais. boto3 ausente devolve um erro com o comando `pip install` E "
+            "o caminho exato para registrar uma coleta manual -- nunca deixa a ferramenta "
+            "inutilizavel. NAO interpreta o log; use `sparkforge_analyze_event_log` depois."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "job_run_id", "bucket", "prefix", "now"],
+            "properties": {
+                "repo": {"type": "string", "description": "Raiz do repositorio analisado."},
+                "job_run_id": {"type": "string"},
+                "bucket": {"type": "string"},
+                "prefix": {"type": "string"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
+    "sparkforge_collect_glue_job": {
+        "description": (
+            "Baixa a definicao de um job via `glue.get_job` e registra no manifesto. Le o "
+            "job tal como esta *implantado*, nao o que o `.tf` fonte declara -- os dois "
+            "podem divergir. Mesma politica offline-first e mensagem de boto3 ausente que "
+            "`sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "job_name", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "job_name": {"type": "string"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
+    "sparkforge_collect_cloudwatch": {
+        "description": (
+            "Baixa as metricas de observabilidade Glue via `cloudwatch.get_metric_data` "
+            "(skewness, uso de heap, bytes/records lidos e escritos, sucesso/erro) e "
+            "registra no manifesto. Requer `--enable-observability-metrics=true` no job; "
+            "sem isso o CloudWatch simplesmente nao tem as series, e a chamada grava o que "
+            "veio de volta sem adivinhar. Mesma politica offline-first de "
+            "`sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "job_name", "job_run_id", "start", "end", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "job_name": {"type": "string"},
+                "job_run_id": {"type": "string"},
+                "start": {"type": "string", "description": "Inicio ISO 8601."},
+                "end": {"type": "string", "description": "Fim ISO 8601."},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
+    "sparkforge_collect_iceberg_metadata": {
+        "description": (
+            "Consulta as cinco metadata tables Iceberg de uma tabela via Athena "
+            "(`SELECT * FROM \"db\".\"tabela$secao\"`) e registra no manifesto. "
+            "AccessDeniedException numa metadata table quase sempre e Lake Formation "
+            "(filtro de linha/celula), nao IAM -- o erro aponta para o lugar certo. Mesma "
+            "politica offline-first de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "table", "workgroup", "output_location", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "table": {"type": "string", "description": "db.tabela"},
+                "workgroup": {"type": "string"},
+                "output_location": {"type": "string"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
+    "sparkforge_collect_athena_workgroup": {
+        "description": (
+            "Baixa a configuracao de um workgroup via `athena.get_work_group` (engine "
+            "version efetiva/selecionada, state, bytes_scanned_cutoff, output_location) e "
+            "registra no manifesto, ja no shape que `sparkforge_analyze_athena_workgroup` "
+            "le. Mesma politica offline-first de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "workgroup", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "workgroup": {"type": "string"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
+    "sparkforge_collect_verify": {
+        "description": (
+            "Verifica presenca e integridade (sha256 recalculado) de todos os artefatos "
+            "registrados no manifesto local. So le disco -- nunca toca a rede, ao contrario "
+            "dos outros `collect_*` -- entao serve para checar o que falta ou foi corrompido "
+            "sem gastar uma chamada AWS. Um artefato ausente aparece com seu "
+            "`collect_command` pronto para copiar."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo"],
+            "properties": {"repo": {"type": "string"}},
+        },
+        "outputSchema": _COLLECT_VERIFY_SCHEMA,
         "annotations": _READ_ONLY,
     },
 }
@@ -987,6 +1495,124 @@ def _h_validate_output(args: dict[str, Any]) -> dict[str, Any]:
     return _core.validate_output(args["finding"])
 
 
+def _h_analyze_catalog_schema(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_catalog_schema(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_event_log(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_event_log(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_terraform(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_terraform(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_iceberg(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_iceberg(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_sql(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_sql(
+        path=args.get("path"),
+        from_pyspark=args.get("from_pyspark"),
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_athena_workgroup(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_call_graph(
+        args["facts_path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.fuse_facts(
+        args.get("facts_paths"),
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_collect_event_log(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_event_log(
+        args["repo"],
+        job_run_id=args["job_run_id"],
+        bucket=args["bucket"],
+        prefix=args["prefix"],
+        now=args["now"],
+    )
+
+
+def _h_collect_glue_job(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_glue_job(args["repo"], job_name=args["job_name"], now=args["now"])
+
+
+def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_cloudwatch(
+        args["repo"],
+        job_name=args["job_name"],
+        job_run_id=args["job_run_id"],
+        start=args["start"],
+        end=args["end"],
+        now=args["now"],
+    )
+
+
+def _h_collect_iceberg_metadata(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_iceberg_metadata(
+        args["repo"],
+        table=args["table"],
+        workgroup=args["workgroup"],
+        output_location=args["output_location"],
+        now=args["now"],
+    )
+
+
+def _h_collect_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_athena_workgroup(
+        args["repo"], workgroup=args["workgroup"], now=args["now"]
+    )
+
+
+def _h_collect_verify(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_verify(args["repo"])
+
+
 _HANDLERS = {
     "sparkforge_case_open": _h_case_open,
     "sparkforge_case_get": _h_case_get,
@@ -995,9 +1621,23 @@ _HANDLERS = {
     "sparkforge_resume": _h_resume,
     "sparkforge_runtime_detect": _h_runtime_detect,
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
+    "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
+    "sparkforge_analyze_event_log": _h_analyze_event_log,
+    "sparkforge_analyze_terraform": _h_analyze_terraform,
+    "sparkforge_analyze_iceberg": _h_analyze_iceberg,
+    "sparkforge_analyze_sql": _h_analyze_sql,
+    "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
+    "sparkforge_analyze_call_graph": _h_analyze_call_graph,
+    "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
+    "sparkforge_collect_event_log": _h_collect_event_log,
+    "sparkforge_collect_glue_job": _h_collect_glue_job,
+    "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
+    "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
+    "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
+    "sparkforge_collect_verify": _h_collect_verify,
 }
 
 
