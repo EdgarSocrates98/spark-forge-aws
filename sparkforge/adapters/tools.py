@@ -559,6 +559,18 @@ _ERROR_SCHEMA: dict[str, Any] = {
     },
 }
 
+def _may_fail(success: dict[str, Any], why: str) -> dict[str, Any]:
+    """Declara as DUAS formas que a tool pode devolver: sucesso ou erro de fronteira.
+
+    `call_tool` converte `_core.AdapterError` em `{"error", "exit_code"}` em vez de
+    propagar excecao. Um schema so-de-sucesso e uma promessa falsa: o cliente que
+    validar uma resposta de "case nao existe" recebe falha de validacao em cima de
+    um erro que a tool ja tratou corretamente. As duas formas nao compartilham
+    nenhuma chave, entao `oneOf` casa exatamente um ramo.
+    """
+    return {"description": why, "oneOf": [success, _ERROR_SCHEMA]}
+
+
 _JUDGE_SCHEMA: dict[str, Any] = {
     "description": (
         "Sucesso (paginado, com findings) OU erro de fronteira quando `facts_path` "
@@ -687,7 +699,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "athena": {"type": "string"},
             },
         },
-        "outputSchema": _CASE_SCHEMA,
+        "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
         "annotations": _WRITE_IDEMPOTENT,
     },
     "sparkforge_case_get": {
@@ -701,7 +713,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "required": ["repo"],
             "properties": {"repo": {"type": "string"}},
         },
-        "outputSchema": _CASE_SCHEMA,
+        "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
         "annotations": _READ_ONLY,
     },
     "sparkforge_case_update": {
@@ -723,7 +735,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "outcome": {"type": "string"},
             },
         },
-        "outputSchema": _CASE_SCHEMA,
+        "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
         "annotations": _WRITE_NOT_IDEMPOTENT,
     },
     "sparkforge_next_step": {
@@ -745,7 +757,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 },
             },
         },
-        "outputSchema": _NEXT_STEP_SCHEMA,
+        "outputSchema": _may_fail(_NEXT_STEP_SCHEMA, "Proximo passo, ou erro se o case nao existe."),
         "annotations": _READ_ONLY,
     },
     "sparkforge_resume": {
@@ -765,7 +777,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "in_flight": {"type": "string"},
             },
         },
-        "outputSchema": _RESUME_SCHEMA,
+        "outputSchema": _may_fail(_RESUME_SCHEMA, "Payload de retomada, ou erro se o case nao existe."),
         "annotations": _READ_ONLY,
     },
     "sparkforge_runtime_detect": {
@@ -806,7 +818,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "cursor": {"type": "string"},
             },
         },
-        "outputSchema": _ANALYZE_PYSPARK_SCHEMA,
+        "outputSchema": _may_fail(_ANALYZE_PYSPARK_SCHEMA, "Facts extraidos, ou erro se o path nao existe."),
         "annotations": _READ_ONLY,
     },
     "sparkforge_judge": {

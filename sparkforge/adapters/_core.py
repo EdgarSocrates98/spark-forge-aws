@@ -100,7 +100,16 @@ def build_runtime_context(
 def _extract_facts(path: str) -> list[Fact]:
     target = Path(path)
     if not target.exists():
-        raise AdapterError(f"Caminho nao encontrado para analise: {path}", exit_code=2)
+        # Erro traz causa E o comando que resolve. Dizer so o que esta errado
+        # deixa o operador (ou o agente) adivinhando o proximo passo, que e a
+        # forma mais barata de fazer uma ferramenta parecer quebrada.
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio da biblioteca ou para um arquivo .py:\n"
+            f"    sparkforge analyze pyspark --path <dir-ou-arquivo> "
+            f"--out .sparkforge/facts.json",
+            exit_code=2,
+        )
     if target.is_dir():
         return extract_tree(target, repo_root=target)
     return extract_path(target, repo_root=target.parent)

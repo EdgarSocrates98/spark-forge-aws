@@ -281,3 +281,38 @@ class TestRealOutputValidatesAgainstItsOwnSchema:
         result = call_tool("sparkforge_judge", {"facts_path": str(tmp_path / "nope.json")})
         assert "error" in result
         jsonschema.validate(result, TOOLS["sparkforge_judge"]["outputSchema"])
+
+
+class TestErrorShapesValidateToo:
+    """`call_tool` converte AdapterError em `{"error", "exit_code"}` em vez de
+    propagar excecao. Um schema so-de-sucesso e promessa falsa: o cliente que
+    validar uma resposta de "case nao existe" recebe falha de validacao em cima
+    de um erro que a tool ja tratou corretamente."""
+
+    FAILABLE = (
+        ("sparkforge_case_get", {"repo": "<tmp>"}),
+        ("sparkforge_case_update", {"repo": "<tmp>", "phase": "diagnosis"}),
+        ("sparkforge_next_step", {"repo": "<tmp>"}),
+        ("sparkforge_resume", {"repo": "<tmp>"}),
+        ("sparkforge_analyze_pyspark", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),
+    )
+
+    @pytest.mark.parametrize("name,args", FAILABLE, ids=[n for n, _ in FAILABLE])
+    def test_error_response_validates_against_its_own_schema(self, name, args, tmp_path):
+        import jsonschema
+
+        resolved = {k: str(v).replace("<tmp>", str(tmp_path)) for k, v in args.items()}
+        result = call_tool(name, resolved)
+        assert "error" in result, f"{name} deveria ter falhado neste input"
+        jsonschema.validate(result, TOOLS[name]["outputSchema"])
+
+    @pytest.mark.parametrize("name,args", FAILABLE, ids=[n for n, _ in FAILABLE])
+    def test_error_message_is_actionable(self, name, args, tmp_path):
+        resolved = {k: str(v).replace("<tmp>", str(tmp_path)) for k, v in args.items()}
+        message = call_tool(name, resolved)["error"]
+        assert "sparkforge" in message, f"{name}: erro sem comando que resolve"
+
+    def test_every_failable_tool_declares_both_shapes(self):
+        for name, _ in self.FAILABLE:
+            assert "oneOf" in TOOLS[name]["outputSchema"], name
