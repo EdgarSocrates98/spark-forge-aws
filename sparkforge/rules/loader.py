@@ -61,6 +61,38 @@ def _validate_expr(rule_id: str, expr: str) -> None:
             ) from exc
 
 
+def _validate_conditions(rule_id: str, rule: dict[str, Any]) -> None:
+    """Toda condicao precisa de `fact` ou `absent`.
+
+    Sem esta checagem, um typo na chave (`facts:` em vez de `fact:`) faz a regra
+    nunca disparar, em silencio: o motor nao acha candidato, nao ha erro, e o
+    relatorio sai limpo. Falso negativo mudo e o pior modo de falha de um
+    analisador, entao a regra malformada morre na carga.
+    """
+    when = rule.get("when") or {}
+    if not isinstance(when, dict):
+        raise CatalogError(f"{rule_id}: `when` precisa ser um mapa com `all` ou `any`")
+
+    groups = [g for g in ("all", "any") if g in when]
+    if not groups:
+        raise CatalogError(f"{rule_id}: `when` sem grupo `all` nem `any`")
+
+    for group in groups:
+        conditions = when.get(group) or []
+        if not isinstance(conditions, list):
+            raise CatalogError(f"{rule_id}: `when.{group}` precisa ser uma lista")
+        for index, condition in enumerate(conditions):
+            if not isinstance(condition, dict):
+                raise CatalogError(
+                    f"{rule_id}: `when.{group}[{index}]` precisa ser um mapa"
+                )
+            if "fact" not in condition and "absent" not in condition:
+                raise CatalogError(
+                    f"{rule_id}: `when.{group}[{index}]` sem `fact` nem `absent` "
+                    f"(chaves presentes: {', '.join(sorted(condition)) or 'nenhuma'})"
+                )
+
+
 def _collect_exprs(rule: dict[str, Any]) -> list[str]:
     found: list[str] = []
     when = rule.get("when") or {}
@@ -113,6 +145,10 @@ def load_catalog(
                 raise CatalogError(
                     f"id duplicado: {rule_id} em {seen[rule_id]} e {path.name}"
                 )
+
+            # Sempre, nao so sob validate_exprs: condicao malformada e defeito
+            # estrutural, da mesma classe de campo obrigatorio ausente.
+            _validate_conditions(rule_id, rule)
 
             if validate_exprs:
                 for expr in _collect_exprs(rule):

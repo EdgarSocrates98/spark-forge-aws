@@ -102,3 +102,55 @@ class TestRejections:
         self._write(tmp_path, monkeypatch, "unsafe.yaml", body)
         with pytest.raises(CatalogError, match="SF-X-003"):
             load_catalog(validate_exprs=True)
+
+    def _rule_with_when(self, when_block):
+        return (
+            "catalog_version: 1\n"
+            "area: SF-X\n"
+            "rules:\n"
+            "  - id: SF-X-004\n"
+            "    category: c\n"
+            "    title: t\n"
+            "    requires_facts: [k]\n"
+            "    when:\n" + when_block + "    status: structural\n"
+            "    severity_default: P2\n"
+            '    runtime_scope: {glue: "*"}\n'
+            "    sources: [{origin: field-heuristic}]\n"
+        )
+
+    def test_condition_without_fact_or_absent_raises(self, tmp_path, monkeypatch):
+        """Typo na chave (`facts:` em vez de `fact:`) faria a regra nunca disparar,
+        em silencio: o motor nao acha candidato, nao ha erro, relatorio sai limpo.
+        Falso negativo mudo e o pior modo de falha, entao morre na carga."""
+        body = self._rule_with_when("      all:\n        - {facts: k}\n")
+        self._write(tmp_path, monkeypatch, "typo.yaml", body)
+        with pytest.raises(CatalogError, match="sem `fact` nem `absent`"):
+            load_catalog()
+
+    def test_error_names_the_keys_actually_present(self, tmp_path, monkeypatch):
+        body = self._rule_with_when("      all:\n        - {facts: k, where: {attrs.a: 1}}\n")
+        self._write(tmp_path, monkeypatch, "typo2.yaml", body)
+        with pytest.raises(CatalogError, match="facts, where"):
+            load_catalog()
+
+    def test_when_without_all_or_any_raises(self, tmp_path, monkeypatch):
+        body = self._rule_with_when("      todos:\n        - {fact: k}\n")
+        self._write(tmp_path, monkeypatch, "nogroup.yaml", body)
+        with pytest.raises(CatalogError, match="sem grupo"):
+            load_catalog()
+
+    def test_condition_that_is_not_a_mapping_raises(self, tmp_path, monkeypatch):
+        body = self._rule_with_when("      all:\n        - k\n")
+        self._write(tmp_path, monkeypatch, "scalar.yaml", body)
+        with pytest.raises(CatalogError, match="precisa ser um mapa"):
+            load_catalog()
+
+    def test_absent_only_condition_is_valid(self, tmp_path, monkeypatch):
+        """`absent` sem `fact` e forma legitima: regra que dispara pela ausencia."""
+        body = self._rule_with_when("      all:\n        - {absent: other.kind}\n")
+        self._write(tmp_path, monkeypatch, "absent.yaml", body)
+        assert [r["id"] for r in load_catalog()] == ["SF-X-004"]
+
+    def test_real_catalog_still_passes_condition_validation(self):
+        """As 43 regras commitadas nao podem ter condicao malformada."""
+        assert len(load_catalog(validate_exprs=True)) == 43
