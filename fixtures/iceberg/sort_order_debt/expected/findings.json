@@ -13,15 +13,28 @@
       "symbol": "analytics.eventos_sort_debt"
     },
     "evidence": [
-      "f_6c4205",
-      "f_4cb467"
+      "f_4cb467",
+      "f_6c4205"
     ],
-    "measured": {},
+    "measured": {
+      "data_file_count": 7,
+      "total_bytes": 1879048192,
+      "avg_file_bytes": 268435456.0,
+      "p50_file_bytes": 268435456,
+      "p95_file_bytes": 268435456,
+      "min_file_bytes": 268435456,
+      "max_file_bytes": 268435456,
+      "total_records": 4900000,
+      "files_current_sort_order": 2,
+      "files_stale_sort_order": 4,
+      "files_sort_order_unknown": 1,
+      "files_written_before_sort_order": 4
+    },
     "threshold": {},
     "runtime_scope": {
       "iceberg": ">=1.0.0"
     },
-    "explanation": "Sort order afeta apenas escritas futuras e o rewrite_data_files com estratégia sort. Definir sort order numa tabela existente e esperar melhoria de pruning nos dados já gravados é um erro de expectativa comum: nada muda nos arquivos antigos. Estatística min/max só ajuda se os valores estiverem agrupados. A evidência aqui é por arquivo, não temporal: measures.files_written_before_sort_order conta os data files cujo sort_order_id não é o default-sort-order-id da tabela — seja 0 (a sentinela \"unsorted\" da spec) ou uma ordem anterior. Ver knowledge/storage/parquet-layout.md secao 2 e knowledge/storage/iceberg-performance.md secao 3.",
+    "explanation": "Sort order afeta apenas escritas futuras e o rewrite_data_files com estratégia sort. Definir sort order numa tabela existente e esperar melhoria de pruning nos dados já gravados é um erro de expectativa comum: nada muda nos arquivos antigos. Estatística min/max só ajuda se os valores estiverem agrupados. A evidência aqui é por arquivo, não temporal: measures.files_written_before_sort_order conta os data files cujo sort_order_id é um id de sort order registrado diferente do default-sort-order-id da tabela. É um PISO confirmado, não um total: arquivos com sort_order_id 0 ou sem a coluna ficam de fora, porque até Iceberg 1.10.0 o writer do Spark não grava esse campo e 0 não distingue \"não ordenado\" de \"não registrado\". Ver knowledge/storage/parquet-layout.md secao 2 e knowledge/storage/iceberg-performance.md secao 3.",
     "proposed_change": [
       "Executar rewrite_data_files com estratégia sort e o sort_order desejado sobre o passivo.",
       "Se os filtros variam entre duas ou três colunas, avaliar zorder em vez de sort.",
@@ -52,7 +65,17 @@
       {
         "url": "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md",
         "retrieved": "2026-07-30",
-        "note": "data_file campo 140 sort_order_id e a sentinela order id 0; tag 1.0.0, a versao mais antiga do range Glue suportado"
+        "note": "data_file campo 140 sort_order_id e a sentinela order id 0; metadata-log so tem metadata-file e timestamp-ms; snapshot nao tem sort-order-id. Tag 1.0.0, a versao mais antiga do range Glue suportado"
+      },
+      {
+        "url": "https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/DataFiles.java",
+        "retrieved": "2026-07-30",
+        "note": "private Integer sortOrderId = SortOrder.unsorted().orderId() -- o default 0 que Glue nunca sobrescreve"
+      },
+      {
+        "url": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/spark/v3.5/spark/src/main/java/org/apache/iceberg/spark/source/SparkWrite.java",
+        "retrieved": "2026-07-30",
+        "note": "dataSortOrder(...) so aparece aqui; ausente nas tags 1.7.1 e 1.10.0, que sao Glue 5.0 e 5.1"
       }
     ]
   }

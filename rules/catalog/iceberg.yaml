@@ -120,37 +120,57 @@ rules:
     sources:
       - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29}
 
-  # DESBLOQUEADA EM 2026-07-30. Ficou inerte por muito tempo sob a premissa de
-  # que `attrs.written_before_sort_order` exigiria historico entre duas coletas
-  # -- datar a escrita de cada arquivo e datar a mudanca de sort order. A
-  # premissa estava errada nos dois lados:
-  #   1. Datar a mudanca pelo `metadata-log` do metadata.json nao funciona: a
-  #      spec define cada entrada com exatamente `metadata-file` e
-  #      `timestamp-ms`, sem sort order nenhum. Só o ponteiro. Responder por ai
-  #      exigiria baixar cada metadata.json historico, varios ja apagados por
-  #      `write.metadata.delete-after-commit.enabled`.
-  #   2. E nao e preciso datar nada. O struct `data_file` da spec tem o campo
-  #      140, `sort_order_id` (int, opcional), presente desde o formato v1 --
-  #      ou seja, em Iceberg 1.0.0 (Glue 4.0), 1.7.1 (5.0) e 1.10.0 (5.1). Ele
-  #      diz sob qual sort order CADA arquivo foi escrito. Comparado com o
-  #      `default-sort-order-id` da tabela (0 = a sentinela "unsorted" da spec),
-  #      responde a pergunta a partir de UM dump.
-  # `sparkforge/facts/iceberg_metadata.py::_written_before_sort_order` so
-  # afirma `true` com arquivo comprovadamente fora da ordem vigente, so `false`
-  # com TODOS comprovadamente dentro dela, e deixa o atributo ausente quando
-  # algum arquivo nao traz `sort_order_id` -- caso em que emite
-  # `iceberg.unresolved` com reason `sort_order_id_missing`. O `where` abaixo
-  # exige `true` explicito, entao ambiguidade nao casa.
+  # DESBLOQUEADA EM 2026-07-30, mas leia o parágrafo 3 antes de confiar num
+  # silêncio desta regra. Ela ficou inerte sob a premissa de que
+  # `attrs.written_before_sort_order` exigiria histórico entre duas coletas.
+  # Não exige, e o caminho "óbvio" para o histórico também não funciona:
+  #   1. Datar a mudança de sort order pelo `metadata-log` NÃO funciona. A spec
+  #      define cada entrada com exatamente `metadata-file` e `timestamp-ms`,
+  #      sem sort order. E o snapshot registra `schema-id` mas NÃO registra
+  #      `sort-order-id` -- assimetria real da spec. Responder por aí exigiria
+  #      baixar e parsear cada metadata.json histórico, vários já apagados por
+  #      `write.metadata.previous-versions-max`.
+  #   2. O que responde é o campo 140 do struct `data_file`, `sort_order_id`
+  #      (int, opcional), presente desde o formato v1 -- logo em Iceberg 1.0.0
+  #      (Glue 4.0), 1.7.1 (5.0) e 1.10.0 (5.1). Um id NÃO-ZERO só é gravado
+  #      quando um writer chamou `withSortOrder` com uma ordem registrada em
+  #      `sort-orders`, então "id != 0 e != default-sort-order-id" prova
+  #      escrita sob outra ordem, e "id == default" prova o contrário.
+  #   3. ARMADILHA: `sort_order_id == 0` NÃO prova arquivo não ordenado.
+  #      `DataFiles.Builder` inicializa `sortOrderId =
+  #      SortOrder.unsorted().orderId()` (0), e `SparkWrite` só passou a
+  #      sobrescrever isso no Iceberg 1.11.0 -- depois de TODO runtime Glue
+  #      existente. Na prática todo data file escrito por Glue sai com 0,
+  #      inclusive os recém-produzidos por `rewrite_data_files` com estratégia
+  #      sort. Tratar 0 como "não ordenado" faria esta regra disparar em toda
+  #      tabela Iceberg de Glue, mandando compactar tabelas recém-compactadas.
+  #      Por isso 0 conta como DESCONHECIDO, junto com a coluna ausente.
+  # Consequência operacional: numa tabela escrita só por Glue esta regra fica
+  # calada por falta de evidência, não por ausência de passivo. O silêncio vem
+  # acompanhado de `iceberg.unresolved` com reason `sort_order_id_missing` e
+  # da contagem em `iceberg.table_analyzed.unresolved_count`. Ela dispara de
+  # verdade em tabela com passivo escrito por writer que registra sort order
+  # (outro engine, ou Iceberg >= 1.11).
+  # `sparkforge/facts/iceberg_metadata.py::_written_before_sort_order` só
+  # afirma `true` com arquivo comprovadamente sob outra ordem registrada, só
+  # `false` com TODOS comprovadamente sob a vigente, e deixa o atributo ausente
+  # no resto. O `where` abaixo exige `true` explícito, então ambiguidade não
+  # casa.
   - id: SF-ICE-004
     category: iceberg
     title: Sort order definido sem rewrite dos dados existentes
     requires_facts: [iceberg.table_property, iceberg.files_summary]
+    # `iceberg.files_summary` vem PRIMEIRO de proposito: `engine._build_finding`
+    # usa `evidence[0]` como fact primario, e e dele que sai `measured`. Com
+    # `iceberg.table_property` na frente o finding saia com `measured: {}` --
+    # a regra acusaria passivo de sort order sem mostrar quantos arquivos,
+    # contra AGENT_PROTOCOL regra 3.
     when:
       all:
-        - fact: iceberg.table_property
-          where: {attrs.key: sort-order, attrs.present: true}
         - fact: iceberg.files_summary
           where: {attrs.written_before_sort_order: true}
+        - fact: iceberg.table_property
+          where: {attrs.key: sort-order, attrs.present: true}
     status: confirmed
     severity_default: P2
     runtime_scope: {iceberg: ">=1.0.0"}
@@ -160,9 +180,11 @@ rules:
       dados já gravados é um erro de expectativa comum: nada muda nos arquivos antigos.
       Estatística min/max só ajuda se os valores estiverem agrupados. A evidência aqui
       é por arquivo, não temporal: measures.files_written_before_sort_order conta os
-      data files cujo sort_order_id não é o default-sort-order-id da tabela — seja 0
-      (a sentinela "unsorted" da spec) ou uma ordem anterior. Ver
-      knowledge/storage/parquet-layout.md secao 2 e
+      data files cujo sort_order_id é um id de sort order registrado diferente do
+      default-sort-order-id da tabela. É um PISO confirmado, não um total: arquivos com
+      sort_order_id 0 ou sem a coluna ficam de fora, porque até Iceberg 1.10.0 o writer
+      do Spark não grava esse campo e 0 não distingue "não ordenado" de "não
+      registrado". Ver knowledge/storage/parquet-layout.md secao 2 e
       knowledge/storage/iceberg-performance.md secao 3.
     proposed_change:
       - Executar rewrite_data_files com estratégia sort e o sort_order desejado sobre o passivo.
@@ -178,7 +200,9 @@ rules:
     rollback: [Time travel para o snapshot anterior ao rewrite.]
     sources:
       - {url: "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction", retrieved: 2026-07-29}
-      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md", retrieved: 2026-07-30, note: "data_file campo 140 sort_order_id e a sentinela order id 0; tag 1.0.0, a versao mais antiga do range Glue suportado"}
+      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md", retrieved: 2026-07-30, note: "data_file campo 140 sort_order_id e a sentinela order id 0; metadata-log so tem metadata-file e timestamp-ms; snapshot nao tem sort-order-id. Tag 1.0.0, a versao mais antiga do range Glue suportado"}
+      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/DataFiles.java", retrieved: 2026-07-30, note: "private Integer sortOrderId = SortOrder.unsorted().orderId() -- o default 0 que Glue nunca sobrescreve"}
+      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/spark/v3.5/spark/src/main/java/org/apache/iceberg/spark/source/SparkWrite.java", retrieved: 2026-07-30, note: "dataSortOrder(...) so aparece aqui; ausente nas tags 1.7.1 e 1.10.0, que sao Glue 5.0 e 5.1"}
 
   - id: SF-ICE-005
     category: iceberg

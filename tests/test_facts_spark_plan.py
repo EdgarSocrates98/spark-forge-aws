@@ -117,6 +117,12 @@ FORMATTED_PRUNED = textwrap.dedent(
     """
 )
 
+# Sem a linha `PartitionFilters`: em FORMATTED o Spark FILTRA metadado vazio
+# (`FileSourceScanLike.verboseStringWithOperatorId` descarta value `[]`), entao
+# um scan sem pruning simplesmente nao imprime a chave. `PartitionFilters: []`
+# so aparece no modo simple. Confirmado contra
+# apache/spark@v3.5.6 DataSourceScanExec.scala e contra o golden
+# sql-tests/results/explain.sql.out.
 FORMATTED_NOT_PRUNED = textwrap.dedent(
     """\
     == Physical Plan ==
@@ -128,9 +134,7 @@ FORMATTED_NOT_PRUNED = textwrap.dedent(
     (1) Scan parquet analytics.eventos
     Output [3]: [cliente_id#10, valor#11, dt#12]
     Batched: true
-    Location: InMemoryFileIndex(3 paths)[s3://lake/analytics/eventos/dt=2026-01-01, \
-s3://lake/analytics/eventos/dt=2026-01-02, s3://lake/analytics/eventos/dt=2026-01-03]
-    PartitionFilters: []
+    Location: InMemoryFileIndex [s3://lake/analytics/eventos]
     PushedFilters: [IsNotNull(cliente_id)]
     ReadSchema: struct<cliente_id:bigint,valor:double>
 
@@ -240,9 +244,7 @@ FORMATTED_WIDE_READ_SCHEMA = textwrap.dedent(
     (1) Scan parquet analytics.transacoes
     Output [9]: [c1#1, c2#2, c3#3, c4#4, c5#5, c6#6, c7#7, c8#8, c9#9]
     Batched: true
-    Location: InMemoryFileIndex(1 paths)[s3://lake/analytics/transacoes]
-    PartitionFilters: []
-    PushedFilters: []
+    Location: InMemoryFileIndex [s3://lake/analytics/transacoes]
     ReadSchema: struct<c1:bigint,c2:string,c3:string,c4:string,c5:string,c6:string,\
 c7:struct<x:int,y:int>,c8:string,c9:string>
 
@@ -262,9 +264,7 @@ FORMATTED_TRUNCATED = textwrap.dedent(
     (1) Scan parquet analytics.transacoes
     Output [80]: [c1#1, c2#2, c3#3, ... 77 more fields]
     Batched: true
-    Location: InMemoryFileIndex(1 paths)[s3://lake/analytics/transacoes]
-    PartitionFilters: []
-    PushedFilters: []
+    Location: InMemoryFileIndex [s3://lake/analytics/transacoes]
     ReadSchema: struct<c1:bigint,c2:string,c3:string,... 77 more fields>
 
     (2) Project [codegen id : 1]
@@ -272,7 +272,11 @@ FORMATTED_TRUNCATED = textwrap.dedent(
     """
 )
 
-BATCH_SCAN_NO_PARTITION_FILTERS = textwrap.dedent(
+# API v2 (Iceberg/Delta no Glue). Nao imprime `Batched` -- e por isso que
+# `Batched` e o discriminador de v1 -- e a semantica de `PartitionFilters` de
+# v1 simplesmente nao se aplica: particionamento em Iceberg vive no metadata da
+# tabela, nao no caminho.
+BATCH_SCAN_V2 = textwrap.dedent(
     """\
     == Physical Plan ==
     * Project (2)
@@ -281,8 +285,9 @@ BATCH_SCAN_NO_PARTITION_FILTERS = textwrap.dedent(
 
     (1) BatchScan glue_catalog.db.iceberg_tbl
     Output [2]: [id#1, nome#2]
-    Arguments: id#1, nome#2, IcebergScan(table=glue_catalog.db.iceberg_tbl)
-    RuntimeFilters: []
+    Format: parquet
+    Location: InMemoryFileIndex(1 paths)[s3://lake/iceberg_tbl]
+    ReadSchema: struct<id:bigint,nome:string>
 
     (2) Project [codegen id : 1]
     Output [1]: [id#1]
@@ -420,12 +425,83 @@ class TestPartitionFiltersSemantics:
         reasons = {f.attrs["reason"] for f in of_kind(facts, "plan.unresolved")}
         assert "partition_status_unknown" in reasons
 
-    def test_missing_key_never_claims_empty(self):
-        scan = one(extract_plan(BATCH_SCAN_NO_PARTITION_FILTERS, "p.txt"), "plan.file_scan")
+    def test_v2_batch_scan_never_claims_empty(self):
+        """`BatchScan` (Iceberg/Delta) nao tem a semantica de `PartitionFilters`
+        de v1: particao vive no metadata da tabela, nao no caminho. Tratar os
+        dois como a mesma coisa fabricaria SF-PQ-002 em toda tabela Iceberg."""
+        scan = one(extract_plan(BATCH_SCAN_V2, "p.txt"), "plan.file_scan")
         assert scan.attrs["scan_api"] == "v2_batch_scan"
         assert scan.attrs["partition_filters_present"] is False
         assert scan.attrs["partition_filters_empty"] == "unknown"
         assert scan.attrs["table_partitioned"] == "unknown"
+
+    def test_formatted_omits_the_key_when_the_filter_list_is_empty(self):
+        """Em FORMATTED o Spark DESCARTA metadado de valor `[]`
+        (`FileSourceScanLike.verboseStringWithOperatorId`, v3.3.0 e v3.5.6).
+        Entao, num scan v1, a AUSENCIA de `PartitionFilters` significa lista
+        vazia -- e nao "nao sei". Ler a ausencia como "nao sei" seria o falso
+        NEGATIVO simetrico ao falso positivo que a regra evita: SF-PQ-002
+        nunca dispararia em plano formatado, que e justamente o modo
+        recomendado."""
+        scan = one(extract_plan(FORMATTED_NOT_PRUNED, "p.txt"), "plan.file_scan")
+        assert scan.attrs["partition_filters_present"] is False
+        assert scan.attrs["partition_filters_empty"] is True
+        assert scan.attrs["table_partitioned"] is True
+
+    def test_v1_is_discriminated_by_the_batched_key(self):
+        """`Batched` so existe em FileSourceScanExec (v1); `FileScan` v2 nao o
+        emite. E o unico discriminador confiavel dentro do bloco formatado,
+        onde `Format` e sempre suprimido para v1."""
+        v1 = one(extract_plan(FORMATTED_NOT_PRUNED, "p.txt"), "plan.file_scan")
+        v2 = one(extract_plan(BATCH_SCAN_V2, "p.txt"), "plan.file_scan")
+        assert v1.attrs["scan_api"] == "v1_file_scan"
+        assert v2.attrs["scan_api"] == "v2_batch_scan"
+
+    def test_formatted_v1_infers_zero_pushed_filters_from_absence(self):
+        facts = extract_plan(FORMATTED_WIDE_READ_SCHEMA, "p.txt")
+        scan = one(facts, "plan.file_scan")
+        assert scan.measures["pushed_filter_count"] == 0
+        assert scan.measures["partition_filter_count"] == 0
+
+    def test_literal_empty_list_in_formatted_still_reads_as_empty(self):
+        """Build corrigida/antiga que imprima `PartitionFilters: []` mesmo em
+        FORMATTED continua sendo lida como lista vazia, nao como desconhecida."""
+        text = FORMATTED_NOT_PRUNED.replace(
+            "PushedFilters:", "PartitionFilters: []\nPushedFilters:"
+        )
+        scan = one(extract_plan(text, "p.txt"), "plan.file_scan")
+        assert scan.attrs["partition_filters_present"] is True
+        assert scan.attrs["partition_filters_empty"] is True
+
+
+class TestNonFileScanOperatorsNamedScan:
+    """`Scan` e prefixo de varios operadores que NAO leem arquivo. Trata-los
+    como FileScan produziria `plan.file_scan` sem ReadSchema e um
+    `partition_status_unknown` inventado para um cache em memoria."""
+
+    def test_in_memory_table_scan_is_not_a_file_scan(self):
+        text = textwrap.dedent(
+            """\
+            == Physical Plan ==
+            * Project (2)
+            +- Scan In-memory table clientes (1)
+
+
+            (1) Scan In-memory table clientes
+            Output [1]: [id#1]
+            Arguments: [id#1], false
+
+            (2) Project [codegen id : 1]
+            Output [1]: [id#1]
+            Input [1]: [id#1]
+            """
+        )
+        facts = extract_plan(text, "p.txt")
+        assert not of_kind(facts, "plan.file_scan")
+
+    def test_existing_rdd_is_not_a_file_scan(self):
+        text = "== Physical Plan ==\n*(1) Scan ExistingRDD[id#1,nome#2]\n"
+        assert not of_kind(extract_plan(text, "p.txt"), "plan.file_scan")
 
     def test_partition_column_in_output_but_not_read_schema_proves_partitioned(self):
         scan = one(extract_plan(FORMATTED_NOT_PRUNED, "p.txt"), "plan.file_scan")
@@ -448,6 +524,40 @@ class TestExtendedMode:
         sentinel = one(facts, "plan.analyzed")
         assert sentinel.measures["skipped_logical_lines"] > 0
         assert one(facts, "plan.file_scan").attrs["relation"] == "analytics.eventos"
+
+
+AQE_REWRITTEN = textwrap.dedent(
+    """\
+    AdaptiveSparkPlan isFinalPlan=true
+    +- == Final Plan ==
+       *(2) Project [cliente_id#10]
+       +- FileScan parquet analytics.final_tbl[cliente_id#10,dt#12] Batched: true, \
+DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3://lake/f], \
+PartitionFilters: [], PushedFilters: [], ReadSchema: struct<cliente_id:bigint>
+    +- == Initial Plan ==
+       Project [cliente_id#10]
+       +- FileScan parquet analytics.initial_tbl[cliente_id#10,dt#12] Batched: true, \
+DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3://lake/i], \
+PartitionFilters: [], PushedFilters: [], ReadSchema: struct<cliente_id:bigint>
+    """
+)
+
+
+class TestAqeInitialVersusFinalPlan:
+    """Com AQE, `explain()` pos-execucao traz DUAS arvores. Emitir facts das
+    duas produz o mesmo achado duas vezes e, pior, um achado derivado de um
+    plano que o AQE ja substituiu -- uma acusacao sobre trabalho que nunca
+    rodou."""
+
+    def test_only_the_final_plan_produces_facts(self):
+        facts = extract_plan(AQE_REWRITTEN, "p.txt")
+        relations = {f.attrs["relation"] for f in of_kind(facts, "plan.file_scan")}
+        assert relations == {"analytics.final_tbl"}
+
+    def test_the_discarded_initial_plan_is_declared_not_silent(self):
+        sentinel = one(extract_plan(AQE_REWRITTEN, "p.txt"), "plan.analyzed")
+        assert sentinel.attrs["aqe_sections_seen"] == ["Final Plan", "Initial Plan"]
+        assert sentinel.measures["skipped_initial_plan_lines"] > 0
 
 
 class TestRejectedModes:

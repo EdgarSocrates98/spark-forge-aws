@@ -77,10 +77,18 @@ CLOUDWATCH_METRICS: tuple[tuple[str, str], ...] = (
 CLOUDWATCH_METRIC_NAMES: tuple[str, ...] = tuple(n for n, _ in CLOUDWATCH_METRICS)
 
 # As cinco metadata tables do Iceberg que este coletor consulta via Athena.
-# `partition_spec`/`sort_order` (ver `sparkforge/facts/iceberg_metadata.py`)
-# nao vem de uma metadata table `SELECT *` -- sao metadados estruturais que
-# exigiriam `SHOW CREATE TABLE`/API de catalogo, fora do escopo deste
-# coletor; o extrator ja trata as duas chaves como opcionais por causa disso.
+# `partition_spec`/`sort_order`/`default_sort_order_id` (ver
+# `sparkforge/facts/iceberg_metadata.py`) nao vem de uma metadata table
+# `SELECT *` -- sao metadados estruturais que exigiriam `SHOW CREATE
+# TABLE`/API de catalogo, fora do escopo deste coletor; o extrator ja trata as
+# tres chaves como opcionais por causa disso.
+# Consequencia para SF-ICE-004: a metade que ESTE coletor consegue trazer e a
+# coluna `sort_order_id` de cada data file, que vem de graca no `SELECT *` de
+# `$files` (a metadata table `files` expoe todo campo do struct `data_file`).
+# A outra metade, o `default-sort-order-id` da tabela, precisa vir de fora --
+# `spark.table("db.tbl").sortOrder().orderId()` via Spark, ou o metadata.json.
+# Sem ela o extrator nao emite `attrs.written_before_sort_order`, e a regra
+# fica calada em vez de chutar.
 # ARMADILHA OPERACIONAL, verificada na doc do Athena: consultar `$partitions`,
 # `$files`, `$manifests` ou `$snapshots` numa tabela com filtro de linha ou de
 # celula do Lake Formation ativo falha com AccessDeniedException. Nao e falta de

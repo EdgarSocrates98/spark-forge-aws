@@ -70,8 +70,19 @@ EMITTED_KINDS = frozenset(
 # e a do modo formatted (`nodeName` de FileSourceScanExec muda entre os dois).
 # `BatchScan` e a API v2 (Iceberg, Delta): NAO tem `PartitionFilters` -- tratar
 # os dois como a mesma coisa fabricaria falso positivo de SF-PQ-002.
-_SCAN_V1_RE = re.compile(r"^(?:File)?Scan\s+(\w+)\b\s*(.*)$")
+# O token de formato precisa comecar em MINUSCULA. `Scan` tambem prefixa
+# operadores que nao leem arquivo nenhum: `Scan ExistingRDD[...]`,
+# `Scan In-memory table clientes` (InMemoryTableScanExec sobrescreve `nodeName`
+# quando o cache tem nome), `Scan OneRowRelation`. Trata-los como FileScan
+# produziria um `plan.file_scan` sem ReadSchema e um `partition_status_unknown`
+# inventado para um cache em memoria.
+_SCAN_V1_RE = re.compile(r"^(?:File)?Scan\s+([a-z][\w-]*)\b\s*(.*)$")
 _SCAN_V2_RE = re.compile(r"^BatchScan\b\s*(.*)$")
+
+# Cabecalhos que o AQE emite quando o plano corrente diverge do inicial
+# (`AdaptiveSparkPlanExec.generateTreeStringWithHeader`, v3.3.0 e v3.5.6):
+# `+- == Final Plan ==` / `+- == Current Plan ==` / `+- == Initial Plan ==`.
+_AQE_SECTION_RE = re.compile(r"^[+\-\s]*==\s*(Final Plan|Current Plan|Initial Plan)\s*==\s*$")
 
 _JOIN_OPERATORS = frozenset(
     {
@@ -350,6 +361,8 @@ class _Parser:
         self.nodes: list[_Node] = []
         self.mode = "unknown"
         self.skipped_logical_lines = 0
+        self.skipped_initial_plan_lines = 0
+        self.aqe_sections: list[str] = []
 
     # -- infra ---------------------------------------------------------- #
 
@@ -415,7 +428,7 @@ class _Parser:
             )
             return
 
-        body = self._physical_slice()
+        body = self._drop_superseded_plan(self._physical_slice())
         has_formatted_headers = any(_NODE_HEADER_RE.match(raw.strip()) for _, raw in body)
         has_logical_sections = self.skipped_logical_lines > 0
 
@@ -435,6 +448,43 @@ class _Parser:
                 "nenhum operador de plano fisico reconhecido no texto.",
                 first,
             )
+
+    def _drop_superseded_plan(self, body: list[tuple[int, str]]) -> list[tuple[int, str]]:
+        """Descarta a arvore `== Initial Plan ==` quando existe uma final.
+
+        Com AQE, um `explain()` tirado apos a execucao traz DUAS arvores: a que
+        de fato rodou (`Final Plan`, ou `Current Plan` se ainda executando) e a
+        que o otimizador substituiu (`Initial Plan`). Extrair facts das duas
+        produz o mesmo achado em duplicidade e, pior, um achado derivado de um
+        plano que o AQE ja jogou fora -- uma acusacao sobre trabalho que nunca
+        rodou. O descarte e CONTADO (`skipped_initial_plan_lines`) e as secoes
+        vistas ficam na sentinela: silenciar metade do artefato sem dizer seria
+        o mesmo ponto cego nao declarado que este projeto existe para evitar.
+        """
+        sections = [
+            _AQE_SECTION_RE.match(raw.strip()).group(1)  # type: ignore[union-attr]
+            for _n, raw in body
+            if _AQE_SECTION_RE.match(raw.strip())
+        ]
+        self.aqe_sections = sections
+        if "Initial Plan" not in sections or not (
+            {"Final Plan", "Current Plan"} & set(sections)
+        ):
+            return body
+
+        kept: list[tuple[int, str]] = []
+        current = ""
+        for line_no, raw in body:
+            marker = _AQE_SECTION_RE.match(raw.strip())
+            if marker:
+                current = marker.group(1)
+                continue
+            if current == "Initial Plan":
+                if raw.strip():
+                    self.skipped_initial_plan_lines += 1
+                continue
+            kept.append((line_no, raw))
+        return kept
 
     def _looks_like_plan(self, body: list[tuple[int, str]]) -> bool:
         """Prova de que o texto e um plano fisico, antes de extrair qualquer no.
@@ -558,9 +608,13 @@ class _Parser:
     ) -> tuple[str, str, str, dict[str, str], list[str], bool]:
         api = "v2_batch_scan" if node.operator == "BatchScan" else "v1_file_scan"
         fmt = node.operator.split(" ", 1)[1] if " " in node.operator else ""
-        relation = node.header.split(" ", 2)[-1].strip() if " " in node.header else ""
-        if node.operator == "BatchScan":
+        scan_v1 = _SCAN_V1_RE.match(node.header)
+        if scan_v1:
+            relation = scan_v1.group(2).strip()
+        elif node.operator == "BatchScan":
             relation = node.header[len("BatchScan") :].strip()
+        else:
+            relation = ""
         relation = re.sub(r"\s*\[codegen id : \d+\]\s*$", "", relation).strip()
 
         metadata = {name: value for name, (value, _c) in node.fields.items()}
@@ -613,12 +667,26 @@ class _Parser:
         if read_schema_raw is not None:
             read_schema_names, read_schema_truncated = _read_schema_fields(read_schema_raw)
 
+        # `Batched` so existe em FileSourceScanExec (v1). O `FileScan` v2 nunca
+        # o emite, e no bloco FORMATTED de v1 o `Format` e sempre suprimido --
+        # entao `Batched` e o unico discriminador confiavel de API ali dentro.
+        is_v1 = "Batched" in metadata
+
         partition_raw = metadata.get("PartitionFilters")
         partition_present = partition_raw is not None
         partition_items = split_top_level(_bracketed(partition_raw)) if partition_present else []
 
         pushed_raw = metadata.get("PushedFilters")
         data_raw = metadata.get("DataFilters")
+
+        # O modo FORMATTED DESCARTA metadado de valor `[]`
+        # (`FileSourceScanLike.verboseStringWithOperatorId`, identico em v3.3.0
+        # e v3.5.6). Num scan v1 formatado, portanto, a AUSENCIA de
+        # `PartitionFilters` significa lista VAZIA, nao "nao sei" -- ler a
+        # ausencia como desconhecida faria SF-PQ-002 nunca disparar justamente
+        # no modo que a skill recomenda. Fora dessa combinacao (modo simple, ou
+        # scan v2, ou linha truncada), ausencia continua sendo desconhecida.
+        formatted_v1 = self.mode == "formatted" and is_v1
 
         # `PartitionFilters: []` NAO prova tabela particionada: uma tabela sem
         # particao nenhuma imprime exatamente a mesma coisa. Confundir os dois
@@ -652,6 +720,8 @@ class _Parser:
         partition_filters_empty: Any = "unknown"
         if partition_present:
             partition_filters_empty = not partition_items
+        elif formatted_v1:
+            partition_filters_empty = True
 
         measures: dict[str, Any] = {}
         if read_schema_raw is not None and not read_schema_truncated:
@@ -662,8 +732,12 @@ class _Parser:
             measures["referenced_columns"] = len(scan_ids & self._usage_expr_ids(node))
         if partition_present and not _is_truncated(partition_raw or ""):
             measures["partition_filter_count"] = len(partition_items)
+        elif formatted_v1:
+            measures["partition_filter_count"] = 0
         if pushed_raw is not None and not _is_truncated(pushed_raw):
             measures["pushed_filter_count"] = len(split_top_level(_bracketed(pushed_raw)))
+        elif formatted_v1:
+            measures["pushed_filter_count"] = 0
         if data_raw is not None and not _is_truncated(data_raw):
             measures["data_filter_count"] = len(split_top_level(_bracketed(data_raw)))
 
@@ -701,7 +775,7 @@ class _Parser:
         # Ponto cego que importa: `PartitionFilters: []` sem nenhuma evidencia de
         # particionamento e exatamente o caso em que SF-PQ-002 fica indecidivel.
         # Silenciar isso faria "sem achado" parecer "sem problema".
-        if partition_present and partition_filters_empty is True and partitioned == "unknown":
+        if partition_filters_empty is True and partitioned == "unknown":
             self.unresolved(
                 node.line,
                 "partition_status_unknown",
@@ -829,6 +903,7 @@ class _Parser:
             # shuffle. A sentinela carrega isso para quem le os facts poder
             # distinguir, em vez de tratar os dois planos como equivalentes.
             "aqe_final_plan": aqe[0].attrs["is_final_plan"] if aqe else "unknown",
+            "aqe_sections_seen": list(self.aqe_sections),
         }
         return Fact(
             kind="plan.analyzed",
@@ -839,6 +914,7 @@ class _Parser:
                 "file_scan_count": sum(1 for f in self.facts if f.kind == "plan.file_scan"),
                 "exchange_count": sum(1 for f in self.facts if f.kind == "plan.exchange"),
                 "skipped_logical_lines": self.skipped_logical_lines,
+                "skipped_initial_plan_lines": self.skipped_initial_plan_lines,
                 "unresolved_count": unresolved_count,
             },
             attrs=attrs,
