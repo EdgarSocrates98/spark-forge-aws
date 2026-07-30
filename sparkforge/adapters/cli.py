@@ -92,6 +92,41 @@ def build_parser() -> argparse.ArgumentParser:
     pyspark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     pyspark_p.add_argument("--cursor")
 
+    catalog_p = analyze_sub.add_parser(
+        "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
+    )
+    catalog_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps do catalogo."
+    )
+    catalog_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    catalog_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    catalog_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    catalog_p.add_argument("--cursor")
+
+    # fuse ---------------------------------------------------------------
+    fuse_p = sub.add_parser(
+        "fuse",
+        help=(
+            "Correlaciona facts de SQL com schema do catalogo "
+            "(sparkforge.facts.fusion), antes de judge."
+        ),
+    )
+    fuse_p.add_argument(
+        "--facts",
+        required=True,
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) gerado por `analyze`. Repetivel: fusao precisa "
+            "ver as fontes que quer correlacionar na mesma chamada."
+        ),
+    )
+    fuse_p.add_argument(
+        "--out", help="Escreve a lista completa de facts fundidos (JSON) neste arquivo."
+    )
+    fuse_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    fuse_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    fuse_p.add_argument("--cursor")
+
     # judge ------------------------------------------------------------
     judge_p = sub.add_parser(
         "judge", help="Aplica o catalogo de regras versionado sobre facts ja extraidos."
@@ -262,6 +297,45 @@ def _cmd_analyze_pyspark(args: argparse.Namespace) -> int:
         "next_cursor": next_cursor,
         "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
         "by_kind": full["by_kind"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
+    full = _core.analyze_catalog_schema(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_fuse(args: argparse.Namespace) -> int:
+    full = _core.fuse_facts(args.facts, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "summary": full["summary"],
         "items": page,
     }
     _print(payload)
@@ -449,6 +523,8 @@ def _cmd_collect_verify(args: argparse.Namespace) -> int:
 
 _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
+    ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
+    ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
     ("case", "open"): _cmd_case_open,
     ("case", "get"): _cmd_case_get,

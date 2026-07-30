@@ -1,0 +1,53 @@
+[
+  {
+    "rule_id": "SF-ATH-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "SELECT * em tabela colunar",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_0a31ef"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "athena": "*"
+    },
+    "explanation": "Athena cobra por bytes escaneados. O benefício de Parquet e ORC vem de ler apenas as colunas referenciadas, e SELECT * anula isso por completo. É o anti-pattern de custo mais comum em Athena e é invisível para quem observa apenas a duração da query. Ver knowledge/athena/performance.md secao 1.",
+    "proposed_change": [
+      "Listar explicitamente as colunas usadas.",
+      "Se a query é exploratória, limitar as colunas e usar LIMIT junto de um WHERE sobre coluna de partição."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Projeção explícita quebra quando o schema evolui e a query não é atualizada."
+    ],
+    "tradeoffs": [
+      "Conveniência de exploração contra custo por execução."
+    ],
+    "validation": [
+      "Bytes escaneados antes e depois, obtidos das estatísticas de execução da query.",
+      "Resultado idêntico nas colunas que interessam."
+    ],
+    "rollback": [
+      "Não aplicável; mudança de query."
+    ],
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

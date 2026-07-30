@@ -21,6 +21,11 @@ from sparkforge.case.resume import render_handoff
 from sparkforge.case.resume import resume as run_resume
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect.base import CollectorUnavailable, verify_all
+from sparkforge.facts.catalog_schema import (
+    extract_catalog_schema_path,
+    extract_catalog_schema_tree,
+)
+from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.findings.models import Fact, RuntimeContext
@@ -159,6 +164,126 @@ def analyze_pyspark(
         "by_kind": by_kind,
         "unresolved": unresolved,
         "unresolved_at": unresolved_at,
+        "items": page,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# analyze catalog-schema
+# --------------------------------------------------------------------------- #
+
+
+def _extract_catalog_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com dumps do Glue Data Catalog ou para um "
+            f"arquivo .json:\n"
+            f"    sparkforge analyze catalog-schema --path <dir-ou-arquivo> "
+            f"--out .sparkforge/facts_catalog.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_catalog_schema_tree(target, repo_root=target)
+    return extract_catalog_schema_path(target, repo_root=target.parent)
+
+
+def analyze_catalog_schema(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_catalog_facts(path)
+    wanted_kinds = set(kind) if kind else None
+    filtered = [f for f in facts if wanted_kinds is None or f.kind in wanted_kinds]
+
+    by_kind = _count_by(filtered, lambda f: f.kind)
+    items = [f.to_dict() for f in filtered]
+    page, next_cursor = paginate_items(items, limit, cursor)
+
+    # Mesmo raciocinio de `analyze_pyspark`: `unresolved` conta sobre `facts`,
+    # nao sobre `filtered`, para um filtro por kind nao esconder o ponto cego.
+    unresolved = sum(1 for f in facts if f.kind == "catalog.unresolved")
+    unresolved_at = [
+        {"file": f.subject.get("file", ""), "reason": f.attrs.get("reason", "")}
+        for f in facts
+        if f.kind == "catalog.unresolved"
+    ]
+
+    return {
+        "total_count": len(filtered),
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {
+            "kind": list(kind) if kind else None,
+            "limit": limit,
+            "cursor": cursor,
+        },
+        "by_kind": by_kind,
+        "unresolved": unresolved,
+        "unresolved_at": unresolved_at,
+        "items": page,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# fuse
+# --------------------------------------------------------------------------- #
+
+
+def fuse_facts(
+    facts_paths: list[str] | None,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    """Combina um ou mais arquivos de facts (`analyze pyspark --out`,
+    `analyze catalog-schema --out`, ou qualquer outro produtor de facts) e
+    roda `sparkforge.facts.fusion.fuse` sobre a uniao.
+
+    `--facts` e repetivel de proposito: fusao so tem o que correlacionar
+    quando ve facts de mais de uma fonte na MESMA chamada (texto SQL de um
+    lado, schema do catalogo do outro) -- diferente de `judge --facts`, que
+    aceita um unico arquivo porque so julga o que ja esta combinado. A saida
+    de `fuse` (facts originais + `.enriched` + `fusion.summary`, ver docstring
+    de `sparkforge/facts/fusion.py`) e desenhada para alimentar `judge --facts`
+    direto, sem outro passo de combinacao no meio.
+    """
+    if not facts_paths:
+        raise AdapterError(
+            "informe ao menos um --facts (arquivo gerado por `analyze pyspark --out` "
+            "ou `analyze catalog-schema --out`). Repetivel para combinar as fontes "
+            "que a fusao precisa correlacionar.",
+            exit_code=2,
+        )
+
+    combined: list[Fact] = []
+    for facts_path in facts_paths:
+        combined.extend(_load_facts_file(facts_path))
+
+    fused = run_fuse(combined)
+    wanted_kinds = set(kind) if kind else None
+    filtered = [f for f in fused if wanted_kinds is None or f.kind in wanted_kinds]
+
+    by_kind = _count_by(filtered, lambda f: f.kind)
+    items = [f.to_dict() for f in filtered]
+    page, next_cursor = paginate_items(items, limit, cursor)
+
+    summary = next((f for f in fused if f.kind == "fusion.summary"), None)
+
+    return {
+        "total_count": len(filtered),
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {
+            "kind": list(kind) if kind else None,
+            "limit": limit,
+            "cursor": cursor,
+        },
+        "by_kind": by_kind,
+        "summary": summary.to_dict() if summary is not None else None,
         "items": page,
     }
 
