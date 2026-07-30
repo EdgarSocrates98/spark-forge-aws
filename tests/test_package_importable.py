@@ -14,14 +14,15 @@ def test_package_version_exposed():
 def test_core_imports_without_optional_extras():
     """Core must not import boto3 or the MCP SDK. Devin CLI and CI run without them.
 
-    NOTE: Task 3 will extend this to import sparkforge.findings.models, and
-    Task 2 will extend it to import sparkforge.rules.expr, once those modules exist.
+    NOTE: Task 3 will extend this to import sparkforge.findings.models,
+    once that module exists.
     """
     code = (
         "import sys;"
         "sys.modules['boto3'] = None;"
         "sys.modules['mcp'] = None;"
         "import sparkforge, sparkforge.findings, sparkforge.rules,"
+        "sparkforge.rules.expr,"
         "sparkforge.facts, sparkforge.case, sparkforge.adapters;"
         "print('ok')"
     )
