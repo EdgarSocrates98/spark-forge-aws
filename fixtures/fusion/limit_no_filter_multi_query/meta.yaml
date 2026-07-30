@@ -1,0 +1,37 @@
+name: limit_no_filter_multi_query
+proves: >
+  Prova decisiva contra o defeito de mascaramento por `absent` sem
+  `same_subject` que `limit_no_filter_with_catalog` sozinha nao consegue
+  provar: tres queries contra a mesma tabela `sales.orders` (particionada por
+  `dt`) no mesmo corpus -- uma com WHERE real sobre a coluna de particao
+  (`ok_partition_filter.sql`) e duas so com LIMIT, sem filtro nenhum
+  (`unfiltered_limit_a.sql`, `unfiltered_limit_b.sql`). Cada arquivo `.sql` e
+  uma query independente (`sparkforge/facts/sql_literal.py::extract_sql_path`
+  so reconhece o primeiro SELECT...FROM por arquivo, entao "uma query por
+  arquivo" e a unica forma de ter multiplas queries num unico corpus de
+  fusao). Antes do conserto em `649856f`, a query filtrada fazia
+  `sql.predicate.partition_filter` existir globalmente; `absent:
+  sql.predicate.partition_filter` (SF-ATH-002) avaliava contra a lista
+  inteira de facts fundidos e nao disparava para NENHUMA das duas queries sem
+  filtro. Com `same_subject: true`, o subject de cada fact SQL e a
+  localizacao da propria query (arquivo, nao tabela) -- ver
+  `rules/catalog/athena.yaml` comentario acima de SF-ATH-002 -- entao a query
+  filtrada nunca e acusada e cada query sem filtro produz o seu proprio
+  finding, ancorado ao seu proprio arquivo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.predicate
+  - sql.analyzed
+  - catalog.table_schema
+  - catalog.analyzed
+  - sql.projection.enriched
+  - sql.predicate.enriched
+  - sql.predicate.partition_filter
+  - fusion.summary
+expects_rules:
+  - SF-ATH-002
