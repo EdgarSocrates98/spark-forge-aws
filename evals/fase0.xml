@@ -20,7 +20,7 @@
     <answer>0</answer>
   </qa_pair>
   <qa_pair>
-    <question>Qual o limiar declarado da regra SF-PY-007 e qual o caminho pontuado do lado esquerdo da expressao que ela avalia (o lado do fact, nao o do threshold)? Formato: limiar:caminho.pontuado</question>
+    <question>Qual o limiar declarado da regra SF-PY-007 e qual e o texto exato do lado esquerdo do operador na expressao `expr` dessa regra, copiado literalmente do YAML? Formato: limiar:texto</question>
     <answer>10:measures.run_length</answer>
   </qa_pair>
   <qa_pair>
@@ -36,7 +36,7 @@
     <answer>0:1</answer>
   </qa_pair>
   <qa_pair>
-    <question>Quantas regras nao-routing tem o catalogo e quantas sao categoria athena?</question>
+    <question>Quantas regras `load_catalog()` retorna (ele exclui routing.yaml por construcao), e quantas dessas tem `category` igual a athena? Formato: total:athena</question>
     <answer>43:5</answer>
   </qa_pair>
 </evaluation>
