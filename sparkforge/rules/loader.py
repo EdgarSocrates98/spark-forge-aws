@@ -9,6 +9,7 @@ routing.yaml tem schema proprio e e carregado por sparkforge.case.router.
 """
 from __future__ import annotations
 
+import datetime
 import os
 from pathlib import Path
 from typing import Any
@@ -106,6 +107,26 @@ def _collect_exprs(rule: dict[str, Any]) -> list[str]:
     return found
 
 
+def _json_safe(value: Any) -> Any:
+    """Converte tipos que o YAML cria mas o JSON nao aceita.
+
+    `yaml.safe_load` transforma `retrieved: 2026-07-29` em `datetime.date`. Esse
+    valor viaja da regra para dentro do Finding e chega em `json.dumps`, que
+    levanta TypeError. O catalogo e YAML, o resto do sistema e JSON, entao a
+    conversao pertence a esta fronteira: nao ao serializador, que ja seria tarde,
+    nem ao autor da regra, que nao deveria precisar saber disso.
+    """
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, datetime.datetime):
+        return value.isoformat()
+    if isinstance(value, datetime.date):
+        return value.isoformat()
+    return value
+
+
 def load_catalog(
     directory: Path | None = None, validate_exprs: bool = False
 ) -> list[dict[str, Any]]:
@@ -125,6 +146,8 @@ def load_catalog(
             document = yaml.safe_load(path.read_text(encoding="utf-8-sig")) or {}
         except yaml.YAMLError as exc:
             raise CatalogError(f"{path.name}: YAML invalido: {exc}") from exc
+
+        document = _json_safe(document)
 
         version = document.get("catalog_version", 1)
 
