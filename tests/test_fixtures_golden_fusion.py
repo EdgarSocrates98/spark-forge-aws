@@ -26,6 +26,7 @@ FIXTURES = ROOT / "fixtures" / "fusion"
 REQUIRED_FIXTURES = {
     "select_star_parquet",
     "limit_no_filter_with_catalog",
+    "limit_no_filter_multi_query",
     "limit_partition_filter_guard",
     "partition_type_mismatch",
 }

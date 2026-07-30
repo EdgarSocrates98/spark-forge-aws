@@ -1,0 +1,31 @@
+name: overpartitioned_multi_table
+proves: >
+  Prova decisiva contra o defeito de mascaramento por `absent` sem
+  `same_subject` que `glue_table_schema` sozinha nao consegue provar (la o
+  partition_count fica deliberadamente ABAIXO do limiar de SF-ATH-003, entao
+  a regra nunca dispara para nenhuma tabela). Aqui tres tabelas, todas com
+  `partition_count` acima do limiar (`threshold.count`, ver
+  `rules/catalog/athena.yaml`): `db.eventos_projetado` tem partition
+  projection habilitada (correta, nao pode aparecer nos findings) e
+  `db.cliques_sem_projection_a`/`_b` nao tem (ambas ofensoras). Antes do
+  conserto em `67227e2`, `absent: catalog.table_property.projection_enabled`
+  avaliava contra a lista inteira de facts do dump -- bastava
+  `db.eventos_projetado` ter projection para o fact existir globalmente e a
+  regra nao disparar para NENHUMA das duas tabelas sobre-particionadas sem
+  projection, e o relatorio diria "nenhum problema de metadados" sobre um
+  catalogo com dois casos reais. Com `same_subject: true`, ancorado em
+  `catalog.table_partitions` (subject por tabela), a tabela bem configurada
+  nunca e acusada e cada tabela ofensora produz o seu proprio finding.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - catalog.table_schema
+  - catalog.table_partitions
+  - catalog.table_property
+  - catalog.table_property.projection_enabled
+  - catalog.analyzed
+expects_rules:
+  - SF-ATH-003
