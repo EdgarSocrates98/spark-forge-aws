@@ -20,6 +20,8 @@ EXPECTED_KINDS = {
     "pyspark.dedup",
     "pyspark.callgraph_edge",
     "pyspark.unresolved",
+    "pyspark.module_analyzed",
+    "pyspark.glue_context_init",
 }
 
 
@@ -34,10 +36,13 @@ def one(kind, src):
 
 
 def test_kind_namespace_is_complete_and_documented():
-    """Garante que as 17 kinds da spec secao 6.2 existem como constante."""
+    """Garante que as 19 kinds (17 da spec secao 6.2 + sentinelas) existem como constante."""
     from sparkforge.facts.pyspark_ast import EMITTED_KINDS
 
     assert EMITTED_KINDS == EXPECTED_KINDS
+    assert len(EMITTED_KINDS) == 19
+    assert "pyspark.module_analyzed" in EMITTED_KINDS
+    assert "pyspark.glue_context_init" in EMITTED_KINDS
 
 
 class TestReadWriteAction:
@@ -180,6 +185,50 @@ class TestCallgraph:
         edge = one("pyspark.callgraph_edge", src)
         assert edge.attrs["caller"] == "run"
         assert edge.attrs["callee"] == "helper"
+
+
+class TestModuleAnalyzedSentinel:
+    def test_emitted_once_for_parseable_file(self):
+        facts = [
+            f
+            for f in extract_source("df.coalesce(1)\n", "a.py")
+            if f.kind == "pyspark.module_analyzed"
+        ]
+        assert len(facts) == 1
+        assert facts[0].attrs["parsed"] is True
+
+    def test_not_emitted_for_syntax_error_file(self):
+        facts = extract_source("def broken(:\n", "bad.py")
+        assert {f.kind for f in facts} == {"pyspark.unresolved"}
+
+    def test_not_emitted_for_too_deep_file(self):
+        facts = extract_source("-" * 10000 + "1\n", "deep.py")
+        assert {f.kind for f in facts} == {"pyspark.unresolved"}
+
+    def test_unresolved_count_reflects_real_count(self):
+        src = "getattr(df, m1)(1)\ngetattr(df, m2)(2)\n"
+        fact = one("pyspark.module_analyzed", src)
+        assert fact.measures["unresolved_count"] == 2
+
+
+class TestGlueContextInit:
+    def test_bare_call_form(self):
+        src = "glueContext = GlueContext(sc)\n"
+        assert one("pyspark.glue_context_init", src).attrs["form"] == "call"
+
+    def test_attribute_call_form(self):
+        src = "glueContext = awsglue.context.GlueContext(sc)\n"
+        assert one("pyspark.glue_context_init", src).attrs["form"] == "call"
+
+    def test_not_emitted_for_pure_sparksession_job(self):
+        src = textwrap.dedent(
+            """
+            from pyspark.sql import SparkSession
+
+            spark = SparkSession.builder.appName("job").getOrCreate()
+            """
+        )
+        assert "pyspark.glue_context_init" not in kinds(src)
 
 
 class TestCleanFixtureStaysClean:

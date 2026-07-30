@@ -42,6 +42,8 @@ EMITTED_KINDS = frozenset(
         "pyspark.dedup",
         "pyspark.callgraph_edge",
         "pyspark.unresolved",
+        "pyspark.module_analyzed",
+        "pyspark.glue_context_init",
     }
 )
 
@@ -239,6 +241,17 @@ def extract_source(source: str, path: str) -> list[Fact]:
                 )
                 continue
 
+            if isinstance(node.func, ast.Name) and node.func.id == "GlueContext":
+                facts.append(
+                    Fact(
+                        kind="pyspark.glue_context_init",
+                        subject=_subject(node, path, ctx, lines),
+                        attrs={"form": "call"},
+                        provenance=provenance,
+                    )
+                )
+                continue
+
             if isinstance(node.func, ast.Name) and node.func.id in _UDF_FUNCS:
                 facts.append(_udf_call_fact(node, path, ctx, lines, provenance))
                 continue
@@ -256,6 +269,16 @@ def extract_source(source: str, path: str) -> list[Fact]:
             # exigem `node` seja a raiz de toda a cadeia fluente (read/write:
             # ver comentario junto a `_is_chain_terminal`).
             methods, root = _chain_methods(node)
+
+            if method == "GlueContext":
+                facts.append(
+                    Fact(
+                        kind="pyspark.glue_context_init",
+                        subject=_subject(node, path, ctx, lines),
+                        attrs={"form": "call"},
+                        provenance=provenance,
+                    )
+                )
 
             if method in _PARTITION_METHODS:
                 facts.append(_partitioning_fact(node, method, path, ctx, lines, provenance))
@@ -363,6 +386,35 @@ def extract_source(source: str, path: str) -> list[Fact]:
 
         facts.extend(_udf_decorator_facts(tree, path, ctx, lines, provenance))
         facts.extend(_loop_and_callgraph_facts(tree, path, ctx, lines, provenance))
+
+        # Sentinela: prova de que a extracao PySpark rodou sobre este arquivo.
+        # Sem isso, uma condicao `absent: X` do catalogo e vazamente verdadeira
+        # quando o extrator nunca rodou (nenhum Fact de kind nenhum foi
+        # produzido), nao so quando genuinamente nao encontrou X. So emitido no
+        # caminho de sucesso: SyntaxError/RecursionError/MemoryError abaixo
+        # devolvem cedo e nunca chegam aqui, porque esses arquivos nao foram
+        # de fato analisados.
+        resolved_calls = sum(1 for n in ast.walk(tree) if isinstance(n, ast.Call))
+        unresolved_count = sum(1 for f in facts if f.kind == "pyspark.unresolved")
+        facts.append(
+            Fact(
+                kind="pyspark.module_analyzed",
+                subject={
+                    "type": "source_location",
+                    "file": path,
+                    "line": 0,
+                    "col": 0,
+                    "symbol": "",
+                    "snippet": "",
+                },
+                measures={
+                    "resolved_calls": resolved_calls,
+                    "unresolved_count": unresolved_count,
+                },
+                attrs={"parsed": True},
+                provenance=provenance,
+            )
+        )
 
         unknown = {f.kind for f in facts} - EMITTED_KINDS
         if unknown:
