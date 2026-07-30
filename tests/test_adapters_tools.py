@@ -104,3 +104,45 @@ class TestCallTool:
     def test_error_result_carries_a_collect_command(self, repo):
         result = call_tool("sparkforge_judge", {"facts_path": str(repo / "nope.json")})
         assert "sparkforge analyze pyspark" in json.dumps(result)
+
+
+class TestUnresolvedIsAlwaysReported:
+    """Regra 7 do AGENT_PROTOCOL.md: no nao resolvido e ponto cego, nao ausencia
+    de problema. Se a tool nao devolve a contagem, o protocolo exige do agente
+    algo que a ferramenta nao fornece."""
+
+    def _repo(self, tmp_path):
+        lib = tmp_path / "lib"
+        lib.mkdir()
+        (lib / "a.py").write_text(
+            "getattr(df, metodo)(1)\ndf.coalesce(1)\n", encoding="utf-8"
+        )
+        return lib
+
+    def test_analyze_reports_unresolved_count(self, tmp_path):
+        result = call_tool("sparkforge_analyze_pyspark", {"path": str(self._repo(tmp_path))})
+        assert result["unresolved"] == 1
+
+    def test_analyze_reports_where_each_blind_spot_is(self, tmp_path):
+        result = call_tool("sparkforge_analyze_pyspark", {"path": str(self._repo(tmp_path))})
+        spot = result["unresolved_at"][0]
+        assert spot["reason"] == "getattr"
+        assert spot["line"] == 1
+        assert spot["file"].endswith("a.py")
+
+    def test_filtering_by_kind_cannot_hide_the_blind_spot(self, tmp_path):
+        """Filtrar por kind nao pode fazer o ponto cego sumir do relatorio."""
+        result = call_tool(
+            "sparkforge_analyze_pyspark",
+            {"path": str(self._repo(tmp_path)), "kind": ["pyspark.partitioning"]},
+        )
+        assert result["by_kind"] == {"pyspark.partitioning": 1}
+        assert result["unresolved"] == 1
+
+    def test_clean_source_reports_zero_not_absent(self, tmp_path):
+        lib = tmp_path / "lib"
+        lib.mkdir()
+        (lib / "a.py").write_text('df.select("a")\n', encoding="utf-8")
+        result = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+        assert result["unresolved"] == 0
+        assert result["unresolved_at"] == []

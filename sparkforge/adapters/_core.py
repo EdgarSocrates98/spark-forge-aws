@@ -120,6 +120,22 @@ def analyze_pyspark(
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
 
+    # `unresolved` e contado sobre `facts`, nao sobre `filtered`: um filtro por
+    # kind nao pode fazer o ponto cego desaparecer do relatorio. A regra 7 do
+    # AGENT_PROTOCOL.md exige reportar sempre — no nao resolvido e ponto cego,
+    # nao ausencia de problema, e omiti-lo deixa o operador confundir "nao achei"
+    # com "nao ha".
+    unresolved = sum(1 for f in facts if f.kind == "pyspark.unresolved")
+    unresolved_at = [
+        {
+            "file": f.subject.get("file", ""),
+            "line": f.subject.get("line", 0),
+            "reason": f.attrs.get("reason", ""),
+        }
+        for f in facts
+        if f.kind == "pyspark.unresolved"
+    ]
+
     return {
         "total_count": len(filtered),
         "returned_count": len(page),
@@ -130,6 +146,8 @@ def analyze_pyspark(
             "cursor": cursor,
         },
         "by_kind": by_kind,
+        "unresolved": unresolved,
+        "unresolved_at": unresolved_at,
         "items": page,
     }
 
