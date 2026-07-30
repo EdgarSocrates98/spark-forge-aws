@@ -30,6 +30,67 @@ Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constrain
 
 `rules/catalog/` é a forma **executável** desse conhecimento: 59 regras em YAML com `rule_id`, limiar, guarda de versão e fonte com data. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
+## Camada determinística (Fase 0)
+
+Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
+inclui um analisador determinístico: extração de facts via AST estático
+(nunca importa nem executa código analisado), julgamento contra um catálogo
+de 43 regras versionado em YAML, e um ciclo de vida de case
+(`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
+
+### Sequência mínima
+
+```bash
+pip install -e .
+sparkforge runtime detect --glue 5.0
+sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
+sparkforge judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
+sparkforge next-step --repo . --findings .sparkforge/findings.json
+```
+
+### Por que extração e julgamento são verbos separados
+
+`analyze` (extração) e `judge` (julgamento) nunca são o mesmo passo. Facts
+extraídos de código-fonte são caros de recomputar — exigem re-parsear a
+árvore inteira — mas o catálogo de regras evolui com frequência maior que o
+código: um limiar corrigido, uma regra nova, uma fonte atualizada. Separar os
+dois verbos permite **rejulgar facts antigos com um catálogo novo sem
+reprocessar o código-fonte**, o que torna a evolução do conhecimento
+auditável: cada revisão do catálogo pode ser aplicada retroativamente ao
+mesmo conjunto de facts e o diff do resultado mostra exatamente o que mudou
+no julgamento, isolado de qualquer mudança no código analisado.
+
+### Canais de distribuição
+
+| Canal | Como chega | Para quem |
+|---|---|---|
+| Plugin do Claude Code | `.claude-plugin/plugin.json`, instalado via marketplace ou path local | Claude Code |
+| MCP (`sparkforge.adapters.mcp`) | `.mcp.json`, transportes `stdio` e `http` | Devin Desktop, Devin CLI, GitHub Copilot |
+| `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge` em qualquer shell/CI |
+| Espelhos markdown | `rules/catalog/*.yaml`, `skills/`, `knowledge/` | Sem MCP e sem Python — leitura direta |
+
+### Fluxo de handoff
+
+`sparkforge handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir
+do mesmo payload que `sparkforge resume` produz — os dois nunca divergem
+porque vêm da mesma função. Ao encerrar ou pausar uma investigação, commite:
+
+```bash
+git add .sparkforge/case.yaml .sparkforge/facts.json .sparkforge/findings.json .sparkforge/handoff.md .sparkforge/artifacts/manifest.json
+```
+
+Esses cinco arquivos são pequenos, derivados, e são o barramento de handoff
+entre sessões e ferramentas (Devin, Claude Code, CI).
+
+**`.sparkforge/artifacts/**` nunca é commitado**, exceto o `manifest.json`
+acima — o `.gitignore` já bloqueia isso. É onde ficam os artefatos brutos
+coletados (event logs, planos físicos, saída de Terraform): podem carregar
+dados de negócio e chegar a centenas de MB. O que substitui o artefato bruto
+no commit é o manifesto: ele registra `sha256`, `source` (origem) e
+`collect_command` (comando exato de recoleta) para cada artefato, de modo
+que uma sessão que retome em outra ferramenta saiba exatamente o que falta e
+como coletar de novo.
+
 ## Objetivos
 
 1. Encontrar o gargalo dominante antes de sugerir alterações.

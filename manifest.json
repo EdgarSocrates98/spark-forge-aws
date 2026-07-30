@@ -47,5 +47,31 @@
     "rule_count": 59,
     "retrieved": "2026-07-29"
   },
-  "entry_prompt": "PROMPT_INICIAL_MESTRE.md"
+  "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
+  "tools": [
+    "sparkforge_case_open",
+    "sparkforge_case_get",
+    "sparkforge_case_update",
+    "sparkforge_next_step",
+    "sparkforge_resume",
+    "sparkforge_runtime_detect",
+    "sparkforge_analyze_pyspark",
+    "sparkforge_judge",
+    "sparkforge_rules_lookup",
+    "sparkforge_validate_output"
+  ],
+  "mcp": {
+    "config": ".mcp.json",
+    "module": "sparkforge.adapters.mcp",
+    "transports": ["stdio", "http"]
+  },
+  "schemas": {
+    "fact": "sparkforge/findings/schemas/fact.schema.json",
+    "finding": "sparkforge/findings/schemas/finding.schema.json",
+    "case": ".sparkforge/case.yaml"
+  },
+  "cli": "sparkforge",
+  "plugin": ".claude-plugin/plugin.json",
+  "parity": "parity.yaml",
+  "evals": "evals/fase0.xml"
 }
