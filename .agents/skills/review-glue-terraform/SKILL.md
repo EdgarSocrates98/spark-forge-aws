@@ -25,21 +25,29 @@ Leia `unresolved`: interpolação `${...}`, heredoc, `dynamic`, `for_each` e qua
 sparkforge analyze pyspark --path <lib> --out .sparkforge/facts_pyspark.json
 ```
 
-`SF-GLUE-004` (retry maior que zero com escrita não idempotente) precisa de `tf.attribute` (`max_retries`) e `pyspark.write` (`mode: append`) **na mesma chamada de `judge`**. `judge` lê um único `--facts`; una os dois arrays JSON num arquivo antes de julgar — é mesclagem de lista JSON simples, não existe verbo `sparkforge` para isso. Julgar os dois arquivos separados nunca faz `SF-GLUE-004` disparar, porque nenhum dos dois sozinho carrega as duas metades da evidência.
+`SF-GLUE-004` (retry maior que zero com escrita não idempotente) precisa de `tf.attribute` (`max_retries`) e `pyspark.write` (`mode: append`) **na mesma chamada de `judge`**. `--facts` é repetível: passe os dois arquivos na mesma chamada e `judge` une e deduplica as listas antes de julgar — não mescle JSON na mão. Julgar os dois arquivos separados nunca faz `SF-GLUE-004` disparar, porque nenhum dos dois sozinho carrega as duas metades da evidência.
 
 ### 3. Julgue
 
 ```bash
 sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+
+# com o código junto, para SF-GLUE-004:
+sparkforge judge \
+  --facts .sparkforge/facts.json \
+  --facts .sparkforge/facts_pyspark.json \
+  --glue <versão> --show-skipped
 ```
 
 ### 4. Interprete, e reporte por recurso
 
 ## Por que o motor não combina recursos por acidente — e onde ainda pode
 
-`SF-GLUE-001` (Auto Scaling junto com `number_of_workers`) e `SF-GLUE-003` (`max_concurrent_runs` > 1 com bookmarks) declaram `same_subject: true` no catálogo. Isso obriga todas as condições da regra a serem satisfeitas pelo **mesmo** recurso (`aws_glue_job.<nome>`, não o arquivo inteiro). Sem essa guarda, um arquivo com dois blocos `aws_glue_job`, cada um correto isoladamente, poderia disparar a regra combinando um atributo do primeiro com um atributo do segundo — acusar configuração correta destrói a confiança no resto do relatório. `judge` já garante isso; sua parte é **nunca** escrever "o arquivo X tem o problema Y" quando X tem mais de um recurso — escreva "o recurso `aws_glue_job.foo` tem Y", ancorado em `finding.subject.symbol`.
+`SF-GLUE-001` (Auto Scaling junto com `number_of_workers`), `SF-GLUE-002` (observabilidade ausente) e `SF-GLUE-003` (`max_concurrent_runs` > 1 com bookmarks) declaram `same_subject: true` no catálogo. Isso obriga todas as condições da regra a serem satisfeitas pelo **mesmo** recurso (`aws_glue_job.<nome>`, não o arquivo inteiro). Sem essa guarda, um arquivo com dois blocos `aws_glue_job`, cada um correto isoladamente, poderia disparar a regra combinando um atributo do primeiro com um atributo do segundo — acusar configuração correta destrói a confiança no resto do relatório. `judge` já garante isso; sua parte é **nunca** escrever "o arquivo X tem o problema Y" quando X tem mais de um recurso — escreva "o recurso `aws_glue_job.foo` tem Y", ancorado em `finding.subject.symbol`.
 
-`SF-GLUE-002` (observabilidade ausente) é o caso oposto e vale conhecer: ela não usa `same_subject`, porque checa ausência de `tf.observability.spark_ui` no conjunto inteiro de facts passado a `judge`. Numa análise com vários jobs no mesmo diretório, basta **um** deles ter Spark UI habilitado para que a condição `absent` deixe de disparar — mesmo que outros três jobs no mesmo diretório não tenham. Se precisa confirmar observabilidade job por job, rode `analyze terraform` escopado a um arquivo por vez, ou verifique manualmente `tf.observability.spark_ui` por `subject.symbol` na lista de facts antes de concluir "observabilidade presente" para o conjunto todo.
+Uma regra `same_subject` emite **um finding por recurso** que casa, cada um com a evidência só daquele recurso. Quatro jobs sem observabilidade são quatro achados de `SF-GLUE-002`, não um: a contagem que você reportar é a contagem de recursos afetados, e conferir `subject.symbol` de cada finding é o que separa "um job para corrigir" de "quatro".
+
+`SF-GLUE-002` é o caso que mais depende disso. Ela ancora em `tf.resource` (um por bloco `aws_glue_job`) e checa a ausência de `tf.observability.spark_ui` **dentro daquele recurso**. Ancorada no arquivo, um único job com Spark UI habilitado bastaria para mascarar todos os outros do mesmo diretório. `tf.module_analyzed` continua sendo exigido em `requires_facts`: ele prova que o extrator de Terraform rodou, para que um repositório sem `.tf` nenhum apareça como `skipped`, nunca como "sem observabilidade".
 
 `SF-GLUE-006` (segredo em default argument) tem precedência sobre qualquer achado de performance no mesmo relatório — é achado de segurança, reporte primeiro.
 
@@ -50,7 +58,7 @@ Regras desta área, e o fact que cada uma consome. Os limiares e severidades **n
 | Regra | Fact que consome | O que acusa |
 |---|---|---|
 | `SF-GLUE-001` | `tf.attribute` (`same_subject`) | Auto Scaling habilitado junto com `number_of_workers` no mesmo recurso |
-| `SF-GLUE-002` | `tf.module_analyzed` + ausência de `tf.observability.spark_ui` | Sem `--enable-spark-ui` e `--spark-event-logs-path` — checagem é sobre o conjunto de facts, não por recurso |
+| `SF-GLUE-002` | `tf.resource` (`same_subject`) + ausência de `tf.observability.spark_ui` | Sem `--enable-spark-ui` e `--spark-event-logs-path` naquele recurso — um achado por job afetado |
 | `SF-GLUE-003` | `tf.attribute` (`same_subject`) | `max_concurrent_runs` > 1 com bookmarks habilitados no mesmo recurso |
 | `SF-GLUE-004` | `tf.attribute` + `pyspark.write` | `max_retries` > 0 com escrita `append` — exige unir facts de Terraform e de código |
 | `SF-GLUE-005` | `tf.attribute` + `spark.stage.spill` | **Bloqueada** (`blocked_on: extrator-de-diff-terraform`) — precisa de diff entre duas leituras; nunca dispara hoje |
@@ -65,7 +73,7 @@ Regras desta área, e o fact que cada uma consome. Os limiares e severidades **n
 ## Red flags
 
 - Reportar um achado `same_subject` como se fosse do arquivo, sem citar o `symbol` do recurso — o motor te deu o recurso exato, use-o.
-- Concluir "observabilidade OK para todos os jobs" a partir de `SF-GLUE-002` não disparar, quando o conjunto tem vários recursos e a checagem é global, não por recurso.
+- Reportar "um job sem observabilidade" quando `SF-GLUE-002` disparou para três: a regra emite um finding por recurso, então conte os findings e cite cada `subject.symbol`.
 - Sugerir mais workers sem baseline de CPU/heap/spill/tasks — essa evidência vem de `analyze-spark-ui`, não deste catálogo.
 - Copiar configuração entre versões de Glue sem checar `knowledge/runtime-compatibility.md`.
 - Expor segredo em exemplo, log ou default argument ao documentar o achado de `SF-GLUE-006`.

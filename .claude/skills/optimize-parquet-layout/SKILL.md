@@ -41,7 +41,7 @@ sparkforge analyze event-log --path <log>.jsonl --out .sparkforge/facts_eventlog
 sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
 ```
 
-Rode uma vez por arquivo de facts (pyspark, catálogo, event log) ou consolide-os num único arquivo antes de julgar, se quiser todos os achados numa passada.
+`--facts` é repetível: informe todos os arquivos (pyspark, catálogo, event log) na mesma chamada para ter todos os achados numa passada — `judge` une e deduplica antes de julgar. Regra que correlaciona fontes diferentes só dispara assim.
 
 ### 5. Interprete
 
