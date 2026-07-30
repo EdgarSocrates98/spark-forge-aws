@@ -76,3 +76,10 @@ Matriz:
 - Configurar um job único para o pior caso e pagar isso em toda microcarga.
 - Não ter curto-circuito para execuções sem mudanças (empty/micro).
 - Misturar full, incremental e manutenção Iceberg no mesmo job/fila.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

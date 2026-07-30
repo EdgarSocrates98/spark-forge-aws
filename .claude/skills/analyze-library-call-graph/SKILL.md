@@ -90,3 +90,10 @@ function:
 - Concluir a análise só pelo entrypoint, sem seguir imports até as funções que executam trabalho Spark.
 - Ignorar actions embutidas em logging/validação como fonte de jobs extras.
 - Não marcar funções que retornam DataFrame mas também disparam action (efeito colateral).
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

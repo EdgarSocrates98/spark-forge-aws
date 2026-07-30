@@ -77,3 +77,10 @@ Mapa do loop, custo por iteração, causa do crescimento, refatoração e benchm
 - Assumir que `isin(lista_de_chaves)` garante file pruning (geralmente não garante).
 - "Batching" que apenas filtra um DAG caro antes de cada action, sem reduzir trabalho na origem.
 - Muitos commits Iceberg por lote gerando explosão de snapshots/manifests.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.
