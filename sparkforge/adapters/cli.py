@@ -194,6 +194,53 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_p.add_argument("--findings", required=True)
 
+    # collect -----------------------------------------------------------
+    collect_p = sub.add_parser(
+        "collect",
+        help="Coleta artefatos AWS reais (event log, job Glue, CloudWatch, metadata Iceberg).",
+    )
+    collect_sub = collect_p.add_subparsers(dest="collect_action", required=True)
+
+    event_log_p = collect_sub.add_parser(
+        "event-log", help="Baixa o Spark event log de um job run via S3."
+    )
+    event_log_p.add_argument("--repo", required=True)
+    event_log_p.add_argument("--job-run", required=True)
+    event_log_p.add_argument("--bucket", required=True)
+    event_log_p.add_argument("--prefix", required=True)
+    event_log_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    glue_job_p = collect_sub.add_parser(
+        "glue-job", help="Baixa a definicao de um job via a API do Glue."
+    )
+    glue_job_p.add_argument("--repo", required=True)
+    glue_job_p.add_argument("--job-name", required=True)
+    glue_job_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    cloudwatch_p = collect_sub.add_parser(
+        "cloudwatch", help="Baixa metricas de observabilidade Glue via CloudWatch."
+    )
+    cloudwatch_p.add_argument("--repo", required=True)
+    cloudwatch_p.add_argument("--job-name", required=True)
+    cloudwatch_p.add_argument("--job-run", required=True)
+    cloudwatch_p.add_argument("--start", required=True, help="Inicio ISO 8601.")
+    cloudwatch_p.add_argument("--end", required=True, help="Fim ISO 8601.")
+    cloudwatch_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    iceberg_p = collect_sub.add_parser(
+        "iceberg-metadata", help="Consulta metadata tables Iceberg de uma tabela via Athena."
+    )
+    iceberg_p.add_argument("--repo", required=True)
+    iceberg_p.add_argument("--table", required=True, help="db.tabela")
+    iceberg_p.add_argument("--workgroup", required=True)
+    iceberg_p.add_argument("--output-location", required=True)
+    iceberg_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    verify_p = collect_sub.add_parser(
+        "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
+    )
+    verify_p.add_argument("--repo", required=True)
+
     return parser
 
 
@@ -356,6 +403,50 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_event_log(args: argparse.Namespace) -> int:
+    payload = _core.collect_event_log(
+        args.repo, job_run_id=args.job_run, bucket=args.bucket, prefix=args.prefix, now=args.now
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_glue_job(args: argparse.Namespace) -> int:
+    payload = _core.collect_glue_job(args.repo, job_name=args.job_name, now=args.now)
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_cloudwatch(args: argparse.Namespace) -> int:
+    payload = _core.collect_cloudwatch(
+        args.repo,
+        job_name=args.job_name,
+        job_run_id=args.job_run,
+        start=args.start,
+        end=args.end,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_iceberg_metadata(args: argparse.Namespace) -> int:
+    payload = _core.collect_iceberg_metadata(
+        args.repo,
+        table=args.table,
+        workgroup=args.workgroup,
+        output_location=args.output_location,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_verify(args: argparse.Namespace) -> int:
+    _print(_core.collect_verify(args.repo))
+    return 0
+
+
 _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("judge", None): _cmd_judge,
@@ -368,12 +459,21 @@ _DISPATCH = {
     ("runtime", "detect"): _cmd_runtime_detect,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,
+    ("collect", "event-log"): _cmd_collect_event_log,
+    ("collect", "glue-job"): _cmd_collect_glue_job,
+    ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
+    ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
+    ("collect", "verify"): _cmd_collect_verify,
 }
 
 
 def _dispatch(args: argparse.Namespace) -> int:
-    sub_action = getattr(args, "analyze_target", None) or getattr(args, "case_action", None) or (
-        getattr(args, "runtime_action", None) or getattr(args, "rules_action", None)
+    sub_action = (
+        getattr(args, "analyze_target", None)
+        or getattr(args, "case_action", None)
+        or getattr(args, "runtime_action", None)
+        or getattr(args, "rules_action", None)
+        or getattr(args, "collect_action", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))
     if handler is None:

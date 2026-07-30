@@ -1,8 +1,10 @@
+import io
 import json
 
 import pytest
 
 from sparkforge.adapters.cli import main
+from sparkforge.collect import aws as collect_aws
 
 JOB = 'def gravar(df, dest):\n    df.coalesce(1).write.parquet(dest)\n'
 
@@ -148,3 +150,135 @@ class TestRuntimeAndRules:
         path.write_text(json.dumps([payload]), encoding="utf-8")
         assert main(["validate", "--findings", str(path)]) == 1
         assert "benchmark_ref" in capsys.readouterr().err
+
+
+class _FakeS3Client:
+    def __init__(self):
+        self.calls = []
+
+    def list_objects_v2(self, **kwargs):
+        self.calls.append(("list_objects_v2", kwargs))
+        return {"Contents": [{"Key": f"{kwargs['Prefix']}part-00000"}]}
+
+    def get_object(self, **kwargs):
+        self.calls.append(("get_object", kwargs))
+        return {"Body": io.BytesIO(b'{"Event":"SparkListenerJobStart"}\n')}
+
+
+class _FakeBoto3:
+    def __init__(self, **clients):
+        self._clients = clients
+
+    def client(self, name, **kwargs):
+        return self._clients[name]
+
+
+class TestCollect:
+    def test_event_log_writes_artifact_and_prints_manifest_entry(self, repo, capsys, monkeypatch):
+        s3 = _FakeS3Client()
+        monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3(s3=s3))
+
+        code, output = run(
+            [
+                "collect", "event-log",
+                "--repo", str(repo),
+                "--job-run", "jr_1",
+                "--bucket", "my-bucket",
+                "--prefix", "spark-logs",
+                "--now", "2026-07-30T00:00:00Z",
+            ],
+            capsys,
+        )
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["kind"] == "event_log"
+        assert payload["cache_hit"] is False
+        assert (repo / payload["path"]).is_file()
+
+    def test_event_log_second_call_is_a_cache_hit(self, repo, capsys, monkeypatch):
+        s3 = _FakeS3Client()
+        monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3(s3=s3))
+        args = [
+            "collect", "event-log",
+            "--repo", str(repo),
+            "--job-run", "jr_2",
+            "--bucket", "b",
+            "--prefix", "p",
+            "--now", "2026-07-30T00:00:00Z",
+        ]
+        run(args, capsys)
+        args[-1] = "2026-07-30T01:00:00Z"
+        code, output = run(args, capsys)
+        assert code == 0
+        assert json.loads(output)["cache_hit"] is True
+
+    def test_missing_boto3_names_pip_install_and_manual_path(self, repo, capsys, monkeypatch):
+        from sparkforge.collect.base import CollectorUnavailable
+
+        def boom():
+            raise CollectorUnavailable(
+                "boto3 nao disponivel. Instale com `pip install 'sparkforge-aws[aws]'` "
+                "para usar coletores AWS, ou colete o artefato manualmente (AWS CLI ou "
+                "console) e registre-o com `sparkforge.collect.register_artifact`."
+            )
+
+        monkeypatch.setattr(collect_aws, "require_boto3", boom)
+        code = main(
+            [
+                "collect", "event-log",
+                "--repo", str(repo),
+                "--job-run", "jr_3",
+                "--bucket", "b",
+                "--prefix", "p",
+                "--now", "2026-07-30T00:00:00Z",
+            ]
+        )
+        assert code == 2
+        err = capsys.readouterr().err
+        assert "pip install 'sparkforge-aws[aws]'" in err
+        assert "Alternativa manual" in err
+        assert "jr_3.jsonl" in err
+
+    def test_verify_reports_missing_artifact_with_recollect_command(self, repo, capsys):
+        from sparkforge.collect.base import ArtifactEntry, register_artifact
+
+        entry = ArtifactEntry(
+            kind="event_log",
+            path=".sparkforge/artifacts/eventlog/jr_gone.jsonl",
+            sha256="a" * 64,
+            source="s3://bucket/prefix/jr_gone/",
+            collect_command="sparkforge collect event-log --job-run jr_gone",
+            collected_at="2026-07-29T00:00:00Z",
+        )
+        register_artifact(entry, repo)
+
+        code, output = run(["collect", "verify", "--repo", str(repo)], capsys)
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["missing_count"] == 1
+        assert payload["artifacts"][0]["present"] is False
+        assert payload["artifacts"][0]["collect_command"] == entry.collect_command
+
+    def test_verify_reports_hash_mismatch_after_local_corruption(self, repo, capsys, monkeypatch):
+        s3 = _FakeS3Client()
+        monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3(s3=s3))
+        run(
+            [
+                "collect", "event-log",
+                "--repo", str(repo),
+                "--job-run", "jr_corrupt",
+                "--bucket", "b",
+                "--prefix", "p",
+                "--now", "2026-07-30T00:00:00Z",
+            ],
+            capsys,
+        )
+        target = repo / ".sparkforge" / "artifacts" / "eventlog" / "jr_corrupt.jsonl"
+        target.write_bytes(b"corrupted")
+
+        code, output = run(["collect", "verify", "--repo", str(repo)], capsys)
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["mismatched_count"] == 1
+        assert payload["artifacts"][0]["present"] is True
+        assert payload["artifacts"][0]["hash_matches"] is False

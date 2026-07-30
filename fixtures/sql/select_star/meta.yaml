@@ -1,0 +1,18 @@
+name: select_star
+proves: >
+  `SELECT * FROM tabela`, sem WHERE nem LIMIT. Produz
+  sql.projection.attrs.star=true, mas SF-ATH-001 nao dispara: exige
+  attrs.table_format_columnar na MESMA fact, e formato de armazenamento e
+  propriedade da tabela, nunca do texto SQL. SF-ATH-001 esta marcada
+  blocked_on em rules/catalog/athena.yaml por este motivo exato -- este
+  fixture prova que o fact star=true e produzido corretamente e que a regra,
+  apesar disso, permanece silenciosa (nenhum finding).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.analyzed
+expects_rules: []

@@ -11,8 +11,24 @@ retrieved: 2026-07-29
 
 rules:
 
+  # INERTE POR DESENHO ATE EXISTIR CORRELACAO COM SCHEMA DO CATALOGO.
+  # `attrs.table_format_columnar` e propriedade de ARMAZENAMENTO da tabela
+  # (Parquet/ORC vs. CSV/JSON), nao do texto da query -- nenhum extrator de SQL
+  # pode le-la a partir da propria SQL. Alem disso, o `where` desta regra exige
+  # `attrs.star` e `attrs.table_format_columnar` na MESMA fact `sql.projection`;
+  # o motor de regras (rules/engine.py) so avalia `where`/`expr` contra o
+  # contexto de um unico fact, nunca combina attrs de dois facts diferentes numa
+  # so condicao (ao contrario de duas condicoes separadas em `when.all`, como em
+  # SF-ICE-004/SF-ICE-005). Mesmo com um futuro extrator de catalogo produzindo
+  # o formato de armazenamento como fact proprio, a regra como esta escrita
+  # nunca casaria essa informacao dentro de `sql.projection`. A regra nao
+  # dispara hoje e nao vai disparar ate existir uma etapa de fusao de facts que
+  # essa correlacao exige. Fica registrada em vez de removida porque o
+  # conhecimento e valido; o que falta e a capacidade de correlacao. Ver o
+  # campo `blocked_on` abaixo.
   - id: SF-ATH-001
     category: athena
+    blocked_on: fusao-sql-catalogo-schema
     title: SELECT * em tabela colunar
     requires_facts: [sql.projection]
     when:
@@ -39,8 +55,21 @@ rules:
     sources:
       - {url: "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena", retrieved: 2026-07-29}
 
+  # INERTE POR DESENHO -- E POTENCIALMENTE INSEGURA COMO ESCRITA HOJE.
+  # `absent: sql.predicate.partition_filter` pressupoe um fact kind distinto de
+  # `sql.predicate` (marcador de "este predicado filtra a coluna de particao").
+  # Emiti-lo honestamente exige saber qual coluna e a de particao da tabela --
+  # conhecimento de schema do catalogo que nenhum extrator de SQL tem (mesma
+  # limitacao de SF-ATH-005 abaixo). Sem esse fact, `absent:` (que so checa
+  # ausencia de um `fact.kind` inteiro, nunca um `where` sobre attrs) fica
+  # VACUAMENTE verdadeiro para sempre: a regra dispararia em toda query com
+  # LIMIT, mesmo as que tem um WHERE real sobre a coluna de particao -- falso
+  # positivo sistematico, nao so silencio. Marcar blocked_on aqui nao e so "falta
+  # dado", e prevenir um comportamento ativamente errado ate existir a
+  # correlacao com schema do catalogo. Ver o campo `blocked_on` abaixo.
   - id: SF-ATH-002
     category: athena
+    blocked_on: fusao-sql-catalogo-schema
     title: LIMIT usado como se fosse filtro
     requires_facts: [sql.projection, sql.predicate]
     when:
@@ -130,8 +159,22 @@ rules:
     sources:
       - {url: "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine", retrieved: 2026-07-29}
 
+  # INERTE POR DESENHO ATE EXISTIR CORRELACAO COM SCHEMA DO CATALOGO.
+  # `attrs.on_partition_column` e `attrs.type_mismatch` exigem saber qual coluna
+  # e a de particao e qual o tipo declarado dela -- schema do catalogo, nao
+  # texto SQL. `requires_facts` ja lista `catalog.table_schema`, mas o `when`
+  # abaixo tem uma UNICA condicao sobre `sql.predicate`: mesmo que um futuro
+  # extrator de catalogo produza `catalog.table_schema`, essa fact nunca e
+  # referenciada no `when`, entao a regra nao passaria a disparar so por
+  # `catalog.table_schema` existir -- precisaria de uma etapa de fusao que
+  # escreva esses dois attrs DENTRO da fact `sql.predicate`. Isso e diferente de
+  # "falta coletar o dado": e "a forma como a regra esta escrita nao pode usar
+  # esse dado". Fica registrada em vez de removida porque o conhecimento e
+  # valido; o que falta e a capacidade de correlacao. Ver o campo `blocked_on`
+  # abaixo.
   - id: SF-ATH-005
     category: athena
+    blocked_on: fusao-sql-catalogo-schema
     title: Coluna de partição com tipo incompatível com o filtro
     requires_facts: [sql.predicate, catalog.table_schema]
     when:
