@@ -20,7 +20,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
+from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
+from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
 from sparkforge.facts.terraform import extract_terraform_tree  # noqa: E402
 from sparkforge.rules.engine import judge  # noqa: E402
 from sparkforge.rules.loader import load_catalog  # noqa: E402
@@ -28,6 +30,8 @@ from sparkforge.rules.loader import load_catalog  # noqa: E402
 FIXTURES = ROOT / "fixtures" / "pyspark"
 FIXTURES_EVENTLOG = ROOT / "fixtures" / "eventlog"
 FIXTURES_TERRAFORM = ROOT / "fixtures" / "terraform"
+FIXTURES_ICEBERG = ROOT / "fixtures" / "iceberg"
+FIXTURES_SQL = ROOT / "fixtures" / "sql"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -76,6 +80,28 @@ def regen_terraform(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_iceberg(directory: Path) -> None:
+    """Como `regen`, mas para fixtures de metadata Iceberg: `*.json` sob
+    input/, extraida com `extract_iceberg_metadata_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    facts = extract_iceberg_metadata_tree(directory / "input", repo_root=directory / "input")
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_sql(directory: Path) -> None:
+    """Como `regen_eventlog`, mas para fixtures de SQL: uma unica *.sql sob
+    input/, extraida com `extract_sql_path`. Nao ha `extract_sql_tree` --
+    mesma decisao de `event_log.py`, que tambem nao tem variante `_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for sql_file in sorted(input_dir.glob("*.sql")):
+        facts.extend(extract_sql_path(sql_file, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def main() -> int:
     targets = sys.argv[1:]
 
@@ -90,6 +116,8 @@ def main() -> int:
                 (FIXTURES / name, regen),
                 (FIXTURES_EVENTLOG / name, regen_eventlog),
                 (FIXTURES_TERRAFORM / name, regen_terraform),
+                (FIXTURES_ICEBERG / name, regen_iceberg),
+                (FIXTURES_SQL / name, regen_sql),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -108,6 +136,10 @@ def main() -> int:
         regen_eventlog(directory)
     for directory in sorted(p for p in FIXTURES_TERRAFORM.iterdir() if p.is_dir()):
         regen_terraform(directory)
+    for directory in sorted(p for p in FIXTURES_ICEBERG.iterdir() if p.is_dir()):
+        regen_iceberg(directory)
+    for directory in sorted(p for p in FIXTURES_SQL.iterdir() if p.is_dir()):
+        regen_sql(directory)
     return 0
 
 
