@@ -151,6 +151,43 @@ class TestCallTool:
         result = call_tool("sparkforge_judge", {"facts_path": str(repo / "nope.json")})
         assert "sparkforge analyze pyspark" in json.dumps(result)
 
+    def test_judge_accepts_a_list_of_facts_paths(self, repo, tmp_path):
+        """Paridade com `judge --facts` repetivel na CLI: uma regra que cruza
+        extratores (SF-GLUE-004) precisa das duas fontes na mesma chamada."""
+        tf_dir = tmp_path / "infra"
+        tf_dir.mkdir()
+        (tf_dir / "main.tf").write_text(
+            'resource "aws_glue_job" "etl" {\n'
+            '  name         = "etl"\n'
+            '  glue_version = "5.0"\n'
+            "  max_retries  = 2\n"
+            "\n"
+            "  default_arguments = {\n"
+            '    "--enable-spark-ui"       = "true"\n'
+            '    "--spark-event-logs-path" = "s3://b/logs/"\n'
+            "  }\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        lib = tmp_path / "job"
+        lib.mkdir()
+        (lib / "w.py").write_text('df.write.mode("append").parquet("s3://b/p")\n', encoding="utf-8")
+
+        tf_facts = tmp_path / "tf.json"
+        py_facts = tmp_path / "py.json"
+        for tool, target, out in (
+            ("sparkforge_analyze_terraform", tf_dir, tf_facts),
+            ("sparkforge_analyze_pyspark", lib, py_facts),
+        ):
+            payload = call_tool(tool, {"path": str(target), "limit": 1000})
+            out.write_text(json.dumps(payload["items"], ensure_ascii=False), encoding="utf-8")
+
+        result = call_tool(
+            "sparkforge_judge",
+            {"facts_path": [str(tf_facts), str(py_facts)], "glue": "5.0", "limit": 1000},
+        )
+        assert "SF-GLUE-004" in {f["rule_id"] for f in result["items"]}
+
 
 class TestUnresolvedIsAlwaysReported:
     """Regra 7 do AGENT_PROTOCOL.md: no nao resolvido e ponto cego, nao ausencia
