@@ -1,5 +1,6 @@
 import json
 
+import jsonschema
 import pytest
 
 from sparkforge.adapters.tools import TOOLS, call_tool
@@ -31,8 +32,13 @@ class TestToolSurface:
         }
 
     def test_every_tool_declares_an_output_schema(self):
+        """`sparkforge_judge` pode devolver sucesso ou o shape de erro de
+        fronteira (`facts_path` ausente), entao seu outputSchema usa `oneOf`
+        em vez de um `type` plano na raiz -- ver TestOutputSchemasAreReal
+        para a verificacao real de cada branch."""
         for name, spec in TOOLS.items():
-            assert spec["outputSchema"]["type"] == "object", name
+            schema = spec["outputSchema"]
+            assert schema.get("type") == "object" or "oneOf" in schema, name
 
     def test_every_tool_declares_annotations(self):
         for name, spec in TOOLS.items():
@@ -146,3 +152,132 @@ class TestUnresolvedIsAlwaysReported:
         result = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
         assert result["unresolved"] == 0
         assert result["unresolved_at"] == []
+
+
+class TestOutputSchemasAreReal:
+    """Um outputSchema `{"type": "object"}` generico passa no teste e nao entrega
+    nada: o cliente volta a adivinhar a forma, que e exatamente o que esta
+    arquitetura existe para evitar."""
+
+    def _branches(self, spec):
+        """`sparkforge_judge` descreve sucesso e erro via `oneOf`; as demais
+        ferramentas sao um schema plano. Normaliza os dois casos para uma
+        lista de sub-schemas a inspecionar."""
+        schema = spec["outputSchema"]
+        return schema.get("oneOf") or [schema]
+
+    def test_every_tool_declares_properties(self):
+        for name, spec in TOOLS.items():
+            for branch in self._branches(spec):
+                assert branch.get("properties"), name
+
+    def test_every_tool_declares_required_keys(self):
+        for name, spec in TOOLS.items():
+            for branch in self._branches(spec):
+                assert branch.get("required"), name
+
+    def test_no_tool_uses_a_bare_object_schema(self):
+        for name, spec in TOOLS.items():
+            schema = spec["outputSchema"]
+            assert set(schema) > {"type"} or "oneOf" in schema, name
+
+
+_CASE_OPEN_ARGS = {"case_id": "c1", "now": "2026-07-30T00:00:00Z", "glue": "5.0"}
+
+
+def _open_case(repo):
+    call_tool("sparkforge_case_open", {"repo": str(repo), **_CASE_OPEN_ARGS})
+
+
+def _write_job(repo):
+    lib = repo / "lib"
+    lib.mkdir()
+    (lib / "loader.py").write_text(JOB, encoding="utf-8")
+    return lib
+
+
+def _real_output_for(name, tmp_path):
+    """Chama `name` com argumentos realistas, criando qualquer estado
+    (case, facts) de que a ferramenta dependa, e devolve o dict cru que um
+    cliente MCP receberia como `structuredContent`."""
+    if name == "sparkforge_case_open":
+        return call_tool("sparkforge_case_open", {"repo": str(tmp_path), **_CASE_OPEN_ARGS})
+
+    if name == "sparkforge_case_get":
+        _open_case(tmp_path)
+        return call_tool("sparkforge_case_get", {"repo": str(tmp_path)})
+
+    if name == "sparkforge_case_update":
+        _open_case(tmp_path)
+        return call_tool(
+            "sparkforge_case_update",
+            {
+                "repo": str(tmp_path),
+                "phase": "facts",
+                "gate": "baseline_captured",
+                "gate_value": True,
+                "skill": "analyze-spark-plan",
+                "now": "2026-07-30T01:00:00Z",
+                "outcome": "ok",
+            },
+        )
+
+    if name == "sparkforge_next_step":
+        _open_case(tmp_path)
+        return call_tool("sparkforge_next_step", {"repo": str(tmp_path)})
+
+    if name == "sparkforge_resume":
+        _open_case(tmp_path)
+        return call_tool(
+            "sparkforge_resume", {"repo": str(tmp_path), "findings": [], "unresolved": 0}
+        )
+
+    if name == "sparkforge_runtime_detect":
+        return call_tool("sparkforge_runtime_detect", {"glue": "5.0"})
+
+    if name == "sparkforge_analyze_pyspark":
+        lib = _write_job(tmp_path)
+        return call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+
+    if name == "sparkforge_judge":
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+        return call_tool(
+            "sparkforge_judge",
+            {"facts": facts["items"], "glue": "5.0", "show_skipped": True},
+        )
+
+    if name == "sparkforge_rules_lookup":
+        return call_tool("sparkforge_rules_lookup", {"id": ["SF-PY-007"]})
+
+    if name == "sparkforge_validate_output":
+        payload = {
+            "rule_id": "SF-PY-005",
+            "schema_version": 1,
+            "title": "t",
+            "severity": "P0",
+            "confidence": "high",
+            "status": "structural",
+            "subject": {"type": "source_location"},
+            "evidence": ["f_abc123"],
+        }
+        return call_tool("sparkforge_validate_output", {"finding": payload})
+
+    raise AssertionError(f"sem construtor de argumentos reais para {name}")
+
+
+class TestRealOutputValidatesAgainstItsOwnSchema:
+    """O ponto do trabalho: sem isto, os schemas sao documentacao que pode
+    apodrecer a qualquer refactor de `_core.py` sem que nenhum teste perceba."""
+
+    @pytest.mark.parametrize("name", sorted(TOOLS))
+    def test_real_output_matches_declared_schema(self, name, tmp_path):
+        result = _real_output_for(name, tmp_path)
+        jsonschema.validate(result, TOOLS[name]["outputSchema"])
+
+    def test_judge_error_shape_also_matches_its_schema(self, tmp_path):
+        """`facts_path` ausente e o outro branch do `oneOf` de sparkforge_judge:
+        um dict de erro de fronteira, nunca uma excecao."""
+        result = call_tool("sparkforge_judge", {"facts_path": str(tmp_path / "nope.json")})
+        assert "error" in result
+        jsonschema.validate(result, TOOLS["sparkforge_judge"]["outputSchema"])
