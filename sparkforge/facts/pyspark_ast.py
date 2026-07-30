@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import ast
 import hashlib
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -153,7 +152,11 @@ def extract_source(source: str, path: str) -> list[Fact]:
                 provenance=provenance,
             )
         ]
-    except RecursionError:
+    # MemoryError entra aqui porque o parser do CPython levanta
+    # "Parser stack overflowed" em vez de RecursionError para aninhamento extremo
+    # (ex.: "-" * 10000 + "1"), e a versao exata varia por interpretador. Ambos
+    # significam a mesma coisa para o operador: o analisador nao conseguiu ver.
+    except (RecursionError, MemoryError) as exc:
         return [
             Fact(
                 kind="pyspark.unresolved",
@@ -167,7 +170,7 @@ def extract_source(source: str, path: str) -> list[Fact]:
                 },
                 attrs={
                     "reason": "too_deep",
-                    "detail": f"recursion limit ({sys.getrecursionlimit()}) exceeded",
+                    "detail": f"{type(exc).__name__}: fonte complexa demais para parsear",
                 },
                 provenance=provenance,
             )
