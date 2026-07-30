@@ -19,18 +19,16 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.rules.engine import judge  # noqa: E402
 from sparkforge.rules.loader import load_catalog  # noqa: E402
 
 FIXTURES = ROOT / "fixtures" / "pyspark"
+FIXTURES_EVENTLOG = ROOT / "fixtures" / "eventlog"
 
 
-def regen(directory: Path) -> None:
-    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
-    facts = extract_tree(directory / "input", repo_root=directory / "input")
-    findings = judge(facts, load_catalog(), meta["runtime"])
-
+def _write_expected(directory: Path, facts, findings) -> None:
     out = directory / "expected"
     out.mkdir(exist_ok=True)
     for name, payload in (
@@ -44,15 +42,44 @@ def regen(directory: Path) -> None:
     print(f"{directory.name}: {len(facts)} facts, {len(findings)} findings ({fired})")
 
 
+def regen(directory: Path) -> None:
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    facts = extract_tree(directory / "input", repo_root=directory / "input")
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_eventlog(directory: Path) -> None:
+    """Como `regen`, mas para fixtures de event log: uma unica *.jsonl sob
+    input/, extraida com `extract_event_log_path` em vez de `extract_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    jsonl_files = sorted(input_dir.glob("*.jsonl"))
+    facts = []
+    for jsonl in jsonl_files:
+        facts.extend(extract_event_log_path(jsonl, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def main() -> int:
     targets = sys.argv[1:]
-    dirs = (
-        [FIXTURES / name for name in targets]
-        if targets
-        else sorted(p for p in FIXTURES.iterdir() if p.is_dir())
-    )
-    for directory in dirs:
+
+    if targets:
+        for name in targets:
+            if (FIXTURES / name).is_dir():
+                regen(FIXTURES / name)
+            elif (FIXTURES_EVENTLOG / name).is_dir():
+                regen_eventlog(FIXTURES_EVENTLOG / name)
+            else:
+                print(f"fixture nao encontrada: {name}", file=sys.stderr)
+                return 1
+        return 0
+
+    for directory in sorted(p for p in FIXTURES.iterdir() if p.is_dir()):
         regen(directory)
+    for directory in sorted(p for p in FIXTURES_EVENTLOG.iterdir() if p.is_dir()):
+        regen_eventlog(directory)
     return 0
 
 
