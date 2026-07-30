@@ -1,0 +1,80 @@
+[
+  {
+    "id": "f_e086e4",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 5,
+      "col": 11,
+      "end_line": 5,
+      "symbol": "expandir",
+      "snippet": "return df.select(explode(col(\"itens\")).alias(\"item\")).filter(col(\"item\").isNotNull())"
+    },
+    "measures": {
+      "length": 2,
+      "first_reduction_index": 0
+    },
+    "attrs": {
+      "methods": [
+        "select",
+        "filter"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6f8a926343922153302d923812965096935f3fa14d817714022eac2fe047fcc9",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_13c126",
+    "schema_version": 1,
+    "kind": "pyspark.explode",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 5,
+      "col": 21,
+      "end_line": 5,
+      "symbol": "expandir",
+      "snippet": "return df.select(explode(col(\"itens\")).alias(\"item\")).filter(col(\"item\").isNotNull())"
+    },
+    "measures": {},
+    "attrs": {
+      "variant": "explode",
+      "has_prior_reduction": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6f8a926343922153302d923812965096935f3fa14d817714022eac2fe047fcc9",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_110a02",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 7,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6f8a926343922153302d923812965096935f3fa14d817714022eac2fe047fcc9",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

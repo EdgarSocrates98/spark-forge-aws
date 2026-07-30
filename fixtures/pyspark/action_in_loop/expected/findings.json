@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-PY-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Action ou write dentro de loop",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "for lote in lotes:"
+    },
+    "evidence": [
+      "f_85aa2c"
+    ],
+    "measured": {
+      "loop_depth": 1
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Cada iteração reexecuta o DAG a montante desde o início, salvo materialização explícita. Um loop de 50 lotes sobre um DataFrame caro paga 50 vezes a leitura, os joins e os shuffles, e o filtro de lote descarta a maior parte do resultado a cada volta. O batching reduziu o tamanho da escrita, não o trabalho. É também a causa mais comum de OOM que aparece depois de horas, por acúmulo no driver. Ver knowledge/spark/execution-model.md secao 6.",
+    "proposed_change": [
+      "Escrever tudo numa única action, usando partitionBy pela coluna de lote quando o objetivo é separar a saída.",
+      "Se o loop é inevitável, materializar o DataFrame caro uma vez antes dele (tabela intermediária ou checkpoint).",
+      "Reduzir na origem, com filtro que chegue ao pushdown, em vez de filtrar um DAG caro já construído."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Escrita única muda o perfil de commit; em Iceberg reduz o número de snapshots, o que é desejável, mas altera a granularidade de recuperação parcial.",
+      "Materialização intermediária consome armazenamento e adiciona uma etapa a gerenciar."
+    ],
+    "tradeoffs": [
+      "Perde-se a capacidade de retomar de um lote específico após falha, salvo desenho explícito para isso."
+    ],
+    "validation": [
+      "Contagem total de linhas escritas idêntica.",
+      "Contagem por valor da coluna de lote idêntica.",
+      "Agregados de controle idênticos.",
+      "Ausência de duplicação, por distinct da chave primária do resultado."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita em Iceberg",
+      "usar time travel para o snapshot anterior."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Consequência do modelo lazy; medível por N jobs quase idênticos no Spark UI com o mesmo primeiro stage."
+      }
+    ]
+  }
+]

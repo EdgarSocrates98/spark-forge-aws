@@ -1,0 +1,11 @@
+name: coalesce_one
+proves: >
+  coalesce(1) forca todo o dado por uma task. SF-PY-005 dispara em P0 com
+  ancora exata de linha.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.partitioning, pyspark.write, pyspark.chain, pyspark.module_analyzed]
+expects_rules: [SF-PY-005]

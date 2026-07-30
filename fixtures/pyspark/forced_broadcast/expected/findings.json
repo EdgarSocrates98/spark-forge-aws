@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-PY-009",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "broadcast() forçado por hint",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 5,
+      "col": 11,
+      "end_line": 5,
+      "symbol": "unir",
+      "snippet": "return a.join(broadcast(b), \"k\")"
+    },
+    "evidence": [
+      "f_42b69b"
+    ],
+    "measured": {
+      "on_arity": 1
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Um hint de broadcast é permanente no código, mas o tamanho do lado \"pequeno\" não é. O driver materializa a tabela antes de distribuir, então o modo de falha quando ela cresce é OOM de driver ou broadcastTimeout, não degradação gradual. O limiar automático (autoBroadcastJoinThreshold, default 10MB) e o AQE já convertem sort-merge em broadcast quando é seguro fazê-lo, usando estatística de runtime em vez de uma decisão congelada no código.",
+    "proposed_change": [
+      "Medir o tamanho serializado real do lado pequeno, não o estimado.",
+      "Remover o hint e verificar se o AQE converte sozinho para BroadcastHashJoin.",
+      "Se o broadcast é necessário e o lado é estável, documentar o limite de tamanho assumido e monitorá-lo."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Remover o hint pode fazer o Spark escolher sort-merge join, aumentando o shuffle, se a estatística estiver ausente ou ruim."
+    ],
+    "tradeoffs": [
+      "Hint dá previsibilidade de plano ao custo de não reagir ao crescimento do dado."
+    ],
+    "validation": [
+      "Estratégia física de join confirmada na aba SQL do Spark UI, não apenas no explain.",
+      "Runtime e DPU-hours antes e depois.",
+      "Heap do driver antes e depois."
+    ],
+    "rollback": [
+      "Readicionar o hint."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

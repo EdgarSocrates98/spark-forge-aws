@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-PY-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "coalesce(1)",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "salvar",
+      "snippet": "df.coalesce(1).write.mode(\"overwrite\").parquet(destino)"
+    },
+    "evidence": [
+      "f_18a4cd"
+    ],
+    "measured": {
+      "target_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "coalesce não faz shuffle: ele reduz o número de partições fundindo as existentes. Com alvo 1, todo o dado passa por uma única task, num único executor. Memória e duração deixam de escalar, e o job falha por volume sem nenhuma mudança de código. Praticamente sempre a intenção real era \"um arquivo de saída\".",
+    "proposed_change": [
+      "Se o objetivo é reduzir contagem de arquivos, usar repartition(n) com n calculado a partir do volume e do tamanho-alvo por arquivo.",
+      "Preferir o hint REBALANCE, que produz partições equilibradas e coopera com o AQE.",
+      "Se o objetivo é literalmente um arquivo único para consumo externo, fazer isso como etapa separada de compactação, fora do caminho crítico."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Mudar a contagem de arquivos altera o layout físico consumido downstream."
+    ],
+    "tradeoffs": [
+      "Mais arquivos facilita o paralelismo de leitura e dificulta o consumo por ferramentas que esperam arquivo único."
+    ],
+    "validation": [
+      "Contagem total de linhas idêntica.",
+      "Schema idêntico.",
+      "Contagem e tamanho dos arquivos de saída registrados antes e depois."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

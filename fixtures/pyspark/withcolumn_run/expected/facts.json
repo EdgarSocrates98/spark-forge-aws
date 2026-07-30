@@ -1,0 +1,90 @@
+[
+  {
+    "id": "f_a05b46",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 6,
+      "col": 8,
+      "end_line": 17,
+      "symbol": "enriquecer",
+      "snippet": "df.withColumn(\"c1\", lit(1))"
+    },
+    "measures": {
+      "length": 12
+    },
+    "attrs": {
+      "methods": [
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "528b47771fc72b71b398c7ec9524e119f3ba58a2f1168c3221c990445b72bd31",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_f927c5",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 24,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "528b47771fc72b71b398c7ec9524e119f3ba58a2f1168c3221c990445b72bd31",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_40580f",
+    "schema_version": 1,
+    "kind": "pyspark.withcolumn_run",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 6,
+      "col": 8,
+      "end_line": 17,
+      "symbol": "enriquecer",
+      "snippet": "df.withColumn(\"c1\", lit(1))"
+    },
+    "measures": {
+      "run_length": 12
+    },
+    "attrs": {
+      "inside_loop": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "528b47771fc72b71b398c7ec9524e119f3ba58a2f1168c3221c990445b72bd31",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

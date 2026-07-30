@@ -1,0 +1,12 @@
+name: join_before_reduction
+proves: >
+  join antes de select/filter na mesma cadeia empurra pelo shuffle colunas e
+  linhas que serao descartadas em seguida. SF-PY-003 dispara quando
+  measures.join_index < measures.first_reduction_index no pyspark.chain.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.chain, pyspark.join, pyspark.module_analyzed]
+expects_rules: [SF-PY-003]

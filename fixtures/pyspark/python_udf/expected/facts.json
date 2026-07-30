@@ -1,0 +1,50 @@
+[
+  {
+    "id": "f_9e2037",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "41d792f9e0c955feae464ef7f208bc2eda6464dddae9580737852f83c2de6b3a",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_726c0b",
+    "schema_version": 1,
+    "kind": "pyspark.udf",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 5,
+      "col": 1,
+      "end_line": 5,
+      "symbol": "trivial",
+      "snippet": "@udf(returnType=StringType())"
+    },
+    "measures": {},
+    "attrs": {
+      "udf_type": "python"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "41d792f9e0c955feae464ef7f208bc2eda6464dddae9580737852f83c2de6b3a",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

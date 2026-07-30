@@ -37,6 +37,9 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# fixtures/ contem PySpark deliberadamente defeituoso para golden tests;
+# lintar codigo de amostra ruim de proposito e ruido, nao sinal.
+exclude = ["fixtures"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "S"]

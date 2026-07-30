@@ -1,0 +1,13 @@
+name: repartition_literal
+proves: >
+  repartition(n) com n fixo paga um shuffle completo por um numero raramente
+  calculado a partir do volume real. SF-PY-010 dispara sobre
+  pyspark.partitioning com method repartition, literal_arg true e
+  has_partition_expr false.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.partitioning, pyspark.module_analyzed]
+expects_rules: [SF-PY-010]

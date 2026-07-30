@@ -1,0 +1,12 @@
+name: version_out_of_scope
+proves: >
+  SF-ENV-002 exige glue >=5.1 e iceberg >=1.10.0. Com runtime glue 5.0 e
+  iceberg 1.7.1, a regra deve ser reportada como skipped por runtime_scope,
+  com motivo explicito -- nao descartada em silencio.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.write, pyspark.module_analyzed]
+expects_rules: []

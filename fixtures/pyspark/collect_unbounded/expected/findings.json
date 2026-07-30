@@ -1,0 +1,55 @@
+[
+  {
+    "rule_id": "SF-PY-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "collect() ou toPandas() sem limite na cadeia",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "carregar",
+      "snippet": "return df.collect()"
+    },
+    "evidence": [
+      "f_4a738c"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Traz todo o resultado para o heap do driver. O risco cresce com o volume do resultado, que costuma crescer com o tempo sem que o código mude. Modo de falha é OOM de driver, e o job passa a falhar por crescimento de dado, não por alteração de código. Também serializa no driver o que era distribuído.",
+    "proposed_change": [
+      "Substituir por escrita distribuída (write) ou por agregação que devolva poucas linhas.",
+      "Se precisa mesmo inspecionar, usar limit(n) explícito antes, ou take(n).",
+      "Para iterar sobre resultado grande, toLocalIterator reduz o pico de memória."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Lógica downstream pode assumir uma lista Python em memória."
+    ],
+    "tradeoffs": [
+      "toLocalIterator reduz pico de memória mas aumenta round-trips."
+    ],
+    "validation": [
+      "Contagem de linhas processadas idêntica.",
+      "Resultado final (arquivo ou tabela) idêntico por contagem, schema e agregados de controle."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Consequência direta do modelo de execução; ver knowledge/spark/memory-and-oom.md secao 2, classe driver heap."
+      }
+    ]
+  }
+]

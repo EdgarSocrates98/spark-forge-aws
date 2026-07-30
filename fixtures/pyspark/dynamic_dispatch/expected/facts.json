@@ -1,0 +1,50 @@
+[
+  {
+    "id": "f_c95d4e",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 2,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "79b6688d6b2514194f6d04383e7d905dc98e81160da26b5fead76e35fd961a88",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_58762d",
+    "schema_version": 1,
+    "kind": "pyspark.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "run",
+      "snippet": "return getattr(df, metodo)(1)"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "getattr"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "79b6688d6b2514194f6d04383e7d905dc98e81160da26b5fead76e35fd961a88",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]
