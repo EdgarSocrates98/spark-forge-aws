@@ -374,3 +374,114 @@ class TestCloudwatchStatPerMetric:
         valid = {"Average", "Sum", "Maximum", "Minimum", "SampleCount"}
         for name, stat in CLOUDWATCH_METRICS:
             assert stat in valid, f"{name} com Stat invalido: {stat}"
+
+
+class TestEventLogListingIsRobust:
+    """A AWS documenta `--spark-event-logs-path` e o backup a cada 30s, mas nao
+    documenta a convencao de nome nem o layout de objetos por job run. Por isso o
+    coletor lista em vez de construir chave, e nao para na primeira pagina."""
+
+    def _client(self, pages, bodies):
+        class _Body:
+            def __init__(self, data):
+                self._data = data
+
+            def read(self):
+                return self._data
+
+        class _S3:
+            def __init__(self):
+                self.calls = []
+
+            def list_objects_v2(self, **kwargs):
+                self.calls.append(kwargs)
+                return pages.pop(0) if pages else {"Contents": []}
+
+            def get_object(self, Bucket, Key):  # noqa: N803 - assinatura boto3
+                return {"Body": _Body(bodies[Key])}
+
+        return _S3()
+
+    def test_pagination_is_followed_so_a_long_log_is_not_truncated(self, monkeypatch, tmp_path):
+        from sparkforge.collect import aws
+
+        pages = [
+            {"Contents": [{"Key": "p/jr/1"}], "IsTruncated": True, "NextContinuationToken": "t"},
+            {"Contents": [{"Key": "p/jr/2"}], "IsTruncated": False},
+        ]
+        client = self._client(pages, {"p/jr/1": b'{"Event":"A"}', "p/jr/2": b'{"Event":"B"}'})
+        fake = type("B", (), {"client": lambda *_: client})()
+        monkeypatch.setattr(aws, "require_boto3", lambda: fake)
+        aws.collect_event_log("jr", tmp_path, bucket="b", prefix="p", now="2026-07-30T00:00:00Z")
+        written = (tmp_path / aws.event_log_path("jr")).read_text(encoding="utf-8")
+        assert '{"Event":"A"}' in written and '{"Event":"B"}' in written
+
+    def test_falls_back_to_parent_prefix_when_layout_differs(self, monkeypatch, tmp_path):
+        """Layout diferente do esperado degrada para 'achei por outro caminho',
+        nao para 'nenhum objeto' com o log existindo."""
+        from sparkforge.collect import aws
+
+        pages = [
+            {"Contents": [], "IsTruncated": False},
+            {"Contents": [{"Key": "p/outro-layout-jr-xyz.jsonl"}], "IsTruncated": False},
+        ]
+        client = self._client(pages, {"p/outro-layout-jr-xyz.jsonl": b'{"Event":"C"}'})
+        fake = type("B", (), {"client": lambda *_: client})()
+        monkeypatch.setattr(aws, "require_boto3", lambda: fake)
+        aws.collect_event_log("jr", tmp_path, bucket="b", prefix="p", now="2026-07-30T00:00:00Z")
+        assert '{"Event":"C"}' in (tmp_path / aws.event_log_path("jr")).read_text(encoding="utf-8")
+
+    def test_error_names_the_manual_alternative(self, monkeypatch, tmp_path):
+        from sparkforge.collect import aws
+
+        client = self._client([], {})
+        fake = type("B", (), {"client": lambda *_: client})()
+        monkeypatch.setattr(aws, "require_boto3", lambda: fake)
+        with pytest.raises(aws.CollectionFailed, match="register_artifact"):
+            aws.collect_event_log(
+                "jr", tmp_path, bucket="b", prefix="p", now="2026-07-30T00:00:00Z"
+            )
+
+
+class TestLakeFormationTrapIsNamed:
+    """AccessDenied numa metadata table quase nunca e IAM: o Athena recusa
+    `$files`/`$snapshots` em tabela com filtro de linha/celula do Lake Formation.
+    Mandar revisar IAM manda procurar no lugar errado."""
+
+    def test_iceberg_sections_are_documented_in_the_module(self):
+        import inspect
+
+        from sparkforge.collect import aws
+
+        source = inspect.getsource(aws)
+        assert "Lake Formation" in source
+        assert "AccessDeniedException" in source
+
+    def test_access_denied_error_points_at_lake_formation(self, monkeypatch, tmp_path):
+        from sparkforge.collect import aws
+
+        class _Athena:
+            def start_query_execution(self, **_):
+                return {"QueryExecutionId": "q1"}
+
+            def get_query_execution(self, **_):
+                return {
+                    "QueryExecution": {
+                        "Status": {
+                            "State": "FAILED",
+                            "StateChangeReason": "AccessDeniedException: not authorized",
+                        }
+                    }
+                }
+
+        monkeypatch.setattr(
+            aws, "require_boto3", lambda: type("B", (), {"client": lambda *_: _Athena()})()
+        )
+        with pytest.raises(aws.CollectionFailed, match="Lake Formation"):
+            aws.collect_iceberg_metadata(
+                "db.tbl",
+                tmp_path,
+                workgroup="wg",
+                output_location="s3://o/",
+                now="2026-07-30T00:00:00Z",
+            )

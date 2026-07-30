@@ -75,3 +75,76 @@ class TestManifestMatchesReality:
 
         declared = {t for c in manifest()["capabilities"] for t in (c.get("tools") or [])}
         assert set(TOOLS) - declared == set()
+
+
+class TestNoCliVerbIsAnUndeclaredMcpGap:
+    """A reciproca de `TestManifestMatchesReality`: nao basta cada verbo
+    DECLARADO em parity.yaml existir de verdade -- todo verbo que a CLI real
+    (`build_parser()`) de fato expoe precisa aparecer em alguma capacidade do
+    manifesto, e essa capacidade precisa ter pelo menos um tool MCP, a menos
+    que a ausencia esteja documentada e justificada aqui. Sem este teste, um
+    verbo novo pode ser adicionado a `cli.py` sem que nada perceba que ficou
+    fora do alcance do MCP -- exatamente a classe de drift que esta fase
+    existe para fechar."""
+
+    ALLOWED_CLI_ONLY = {
+        # `resume` e `handoff` sao a MESMA capacidade em parity.yaml (o mesmo
+        # payload de `_core.resume_case`): `handoff` so acrescenta a escrita
+        # de um markdown em disco para commit no git, o que nao faz sentido
+        # para um cliente MCP -- ele ja recebe o payload estruturado direto
+        # via `sparkforge_resume`, sem precisar de um artefato em arquivo.
+        "handoff": (
+            "mesma capacidade que 'resume'; escreve markdown em disco, sem uso "
+            "para um cliente MCP."
+        ),
+        # CLI `validate` valida um ARQUIVO de findings (JSON no disco);
+        # `sparkforge_validate_output` valida um finding inline -- mesma
+        # `_core.validate_output` por baixo, granularidade de I/O diferente
+        # porque um cliente MCP ja tem o finding em mao, nunca um arquivo no
+        # disco do lado do host MCP.
+        "validate": (
+            "mesma _core.validate_output que sparkforge_validate_output, so que "
+            "sobre arquivo."
+        ),
+    }
+
+    def _leaf_cli_verbs(self):
+        from sparkforge.adapters.cli import build_parser
+
+        parser = build_parser()
+        sub = next(
+            a for a in parser._actions if hasattr(a, "choices") and a.choices  # noqa: SLF001
+        )
+        leaves = []
+        for name, subparser in sub.choices.items():
+            nested = next(
+                (
+                    a
+                    for a in subparser._actions  # noqa: SLF001
+                    if hasattr(a, "choices") and a.choices
+                ),
+                None,
+            )
+            if nested:
+                leaves.extend(f"{name} {leaf}" for leaf in sorted(nested.choices))
+            else:
+                leaves.append(name)
+        return leaves
+
+    def test_every_cli_verb_has_an_mcp_tool_or_a_declared_reason(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        declared_cli_to_tools: dict[str, set[str]] = {}
+        for capability in manifest()["capabilities"]:
+            tools = set(capability.get("tools") or [])
+            for verb in capability.get("cli") or []:
+                declared_cli_to_tools.setdefault(verb, set()).update(tools)
+
+        gaps = []
+        for verb in self._leaf_cli_verbs():
+            if verb in self.ALLOWED_CLI_ONLY:
+                continue
+            tools = declared_cli_to_tools.get(verb) or set()
+            if not (tools & set(TOOLS)):
+                gaps.append(verb)
+        assert not gaps, gaps

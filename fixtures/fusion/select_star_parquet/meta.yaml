@@ -1,0 +1,23 @@
+name: select_star_parquet
+proves: >
+  A prova decisiva de SF-ATH-001: `SELECT * FROM db.eventos` (mesma query de
+  fixtures/sql/select_star, que so tem o texto SQL) combinada com um dump de
+  catalogo dizendo que db.eventos e parquet. `sparkforge/facts/fusion.py`
+  correlaciona os dois pelo nome da tabela e produz sql.projection.enriched
+  com attrs.star=true E attrs.table_format_columnar=true no MESMO fact --
+  exatamente o que SF-ATH-001 exige e que nenhum fact isolado (sql.projection
+  OU catalog.table_schema sozinhos) poderia satisfazer.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.analyzed
+  - catalog.table_schema
+  - catalog.analyzed
+  - sql.projection.enriched
+  - fusion.summary
+expects_rules:
+  - SF-ATH-001

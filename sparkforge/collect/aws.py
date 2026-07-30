@@ -81,6 +81,12 @@ CLOUDWATCH_METRIC_NAMES: tuple[str, ...] = tuple(n for n, _ in CLOUDWATCH_METRIC
 # nao vem de uma metadata table `SELECT *` -- sao metadados estruturais que
 # exigiriam `SHOW CREATE TABLE`/API de catalogo, fora do escopo deste
 # coletor; o extrator ja trata as duas chaves como opcionais por causa disso.
+# ARMADILHA OPERACIONAL, verificada na doc do Athena: consultar `$partitions`,
+# `$files`, `$manifests` ou `$snapshots` numa tabela com filtro de linha ou de
+# celula do Lake Formation ativo falha com AccessDeniedException. Nao e falta de
+# permissao no sentido usual -- e uma restricao do proprio Athena para metadata
+# tables sob esses filtros. Quem receber esse erro deve olhar o Lake Formation,
+# nao a policy de IAM, e o erro deste coletor diz isso.
 ICEBERG_METADATA_SECTIONS: tuple[str, ...] = (
     "files",
     "delete_files",
@@ -115,6 +121,10 @@ def cloudwatch_path(job_name: str, job_run_id: str) -> str:
 
 def iceberg_metadata_path(table: str) -> str:
     return f".sparkforge/artifacts/iceberg/{table.replace('.', '_')}.json"
+
+
+def athena_workgroup_path(workgroup: str) -> str:
+    return f".sparkforge/artifacts/athena/{workgroup}.json"
 
 
 def _sha256_bytes(content: bytes) -> str:
@@ -173,16 +183,46 @@ def _write_and_register(
 # --------------------------------------------------------------------------- #
 
 
+def _list_all(client: Any, bucket: str, prefix: str) -> list[dict[str, Any]]:
+    """Lista todas as chaves sob `prefix`, seguindo paginacao.
+
+    `list_objects_v2` devolve no maximo 1000 chaves por chamada. Um event log de
+    run longo, com rollover, passa disso, e parar na primeira pagina truncaria o
+    log em silencio -- analise sobre log truncado e pior que analise nenhuma,
+    porque parece completa.
+    """
+    found: list[dict[str, Any]] = []
+    token: str | None = None
+    while True:
+        kwargs: dict[str, Any] = {"Bucket": bucket, "Prefix": prefix}
+        if token:
+            kwargs["ContinuationToken"] = token
+        page = client.list_objects_v2(**kwargs)
+        found.extend(page.get("Contents") or [])
+        if not page.get("IsTruncated"):
+            return found
+        token = page.get("NextContinuationToken")
+        if not token:
+            return found
+
+
 def collect_event_log(
     job_run_id: str, root: Path, *, bucket: str, prefix: str, now: str
 ) -> ArtifactEntry:
     """Baixa o Spark event log de um job run via `s3.get_object`.
 
-    Glue escreve o event log sob `s3://<bucket>/<prefix>/<job_run_id>/`, e
-    pode particiona-lo em mais de um objeto (rollover para runs longos).
-    `list_objects_v2` enumera os objetos daquele prefixo, e um `get_object`
-    por objeto (ordenados por chave, para saida deterministica) concatena o
-    conteudo no `.jsonl` local que `sparkforge.facts.event_log` le.
+    A documentacao da AWS especifica o parametro `--spark-event-logs-path` e diz
+    que o Glue faz backup do log a cada 30 segundos, mas **nao documenta a
+    convencao de nome nem o layout interno de objetos** por job run. Por isso
+    este coletor nunca constroi uma chave: ele LISTA e pega o que existe.
+
+    Duas tentativas, nessa ordem: o layout mais comum `<prefix>/<job_run_id>/`, e,
+    se vier vazio, uma listagem do prefixo inteiro filtrando chaves que contenham
+    o job run id. Assim uma mudanca de layout do lado da AWS degrada para "achei
+    por outro caminho" em vez de "nenhum objeto encontrado" com o log existindo.
+
+    Runs longos rolam o log em mais de um objeto. Ordenamos por chave para saida
+    deterministica e concatenamos no `.jsonl` que `sparkforge.facts.event_log` le.
     """
     rel_path = event_log_path(job_run_id)
     hit = _offline_hit(root, rel_path)
@@ -193,13 +233,23 @@ def collect_event_log(
     client = boto3.client("s3")
 
     key_prefix = f"{prefix.rstrip('/')}/{job_run_id}/"
-    listing = client.list_objects_v2(Bucket=bucket, Prefix=key_prefix)
-    contents = listing.get("Contents") or []
+    contents = _list_all(client, bucket, key_prefix)
+    if not contents:
+        # Fallback: layout diferente do esperado. Lista o prefixo inteiro e
+        # filtra pelo job run id na chave.
+        contents = [
+            obj
+            for obj in _list_all(client, bucket, f"{prefix.rstrip('/')}/")
+            if job_run_id in obj["Key"]
+        ]
     if not contents:
         raise CollectionFailed(
-            f"nenhum objeto de event log em s3://{bucket}/{key_prefix}. "
-            "Confirme --enable-spark-ui e --spark-event-logs-path no job, e que "
-            "o job run ja terminou de escrever o log."
+            f"nenhum objeto de event log em s3://{bucket}/{key_prefix} nem no "
+            f"prefixo pai contendo {job_run_id!r}.\n"
+            "  Confirme --enable-spark-ui e --spark-event-logs-path no job, e que "
+            "o job run ja terminou de escrever o log (o Glue faz backup a cada 30s).\n"
+            "  Alternativa manual: baixe o log e registre com "
+            "`sparkforge.collect.register_artifact`."
         )
 
     chunks: list[bytes] = []
@@ -407,10 +457,24 @@ def _run_athena_query(
             break
         if state in ("FAILED", "CANCELLED"):
             reason = status["QueryExecution"]["Status"].get("StateChangeReason", "")
-            raise CollectionFailed(
+            message = (
                 f"consulta Athena {execution_id} terminou em {state}: {reason}\n"
                 f"  query: {query}"
             )
+            # AccessDenied numa metadata table quase nunca e policy de IAM: o
+            # Athena recusa `$files`/`$snapshots`/`$manifests`/`$partitions` em
+            # tabela com filtro de linha ou celula do Lake Formation ativo.
+            # Mandar o operador revisar IAM aqui e mandar procurar no lugar errado.
+            if "AccessDenied" in reason or "access denied" in reason.lower():
+                message += (
+                    "\n  Metadata table sob Lake Formation com filtro de linha ou "
+                    "celula retorna AccessDeniedException por restricao do Athena, "
+                    "nao por falta de permissao IAM. Verifique o Lake Formation "
+                    "antes da policy.\n"
+                    "  Alternativa: colete via Spark (`SELECT * FROM db.tbl.files`) "
+                    "e registre com `sparkforge.collect.register_artifact`."
+                )
+            raise CollectionFailed(message)
         time.sleep(_ATHENA_POLL_SECONDS)
 
     results = client.get_query_results(QueryExecutionId=execution_id)
@@ -467,13 +531,75 @@ def collect_iceberg_metadata(
     )
 
 
+# --------------------------------------------------------------------------- #
+# workgroup do Athena (`get_work_group`)
+# --------------------------------------------------------------------------- #
+
+
+def collect_athena_workgroup(workgroup: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa a configuracao de um workgroup via `athena.get_work_group` e grava
+    no shape que `sparkforge.facts.athena_workgroup` le.
+
+    O boto3 devolve `EngineVersion`/`BytesScannedCutoffPerQuery`/etc em
+    PascalCase, aninhados sob `WorkGroup.Configuration` -- forma nativa da API,
+    nao a forma que o extrator entende. Este coletor faz a unica traducao:
+    projeta a resposta no shape documentado no topo de
+    `sparkforge/facts/athena_workgroup.py` (`name`, `engine_version.*`,
+    `state`, `bytes_scanned_cutoff`, `output_location`), sem interpretar nada
+    -- nenhum parsing de versao acontece aqui, isso e trabalho do extrator.
+    """
+    rel_path = athena_workgroup_path(workgroup)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("athena")
+    response = client.get_work_group(WorkGroup=workgroup)
+    wg = response.get("WorkGroup") or {}
+    configuration = wg.get("Configuration") or {}
+    engine_version_raw = configuration.get("EngineVersion") or {}
+    result_configuration = configuration.get("ResultConfiguration") or {}
+
+    entry: dict[str, Any] = {
+        "name": wg.get("Name", workgroup),
+        "state": wg.get("State"),
+        "engine_version": {
+            "effective_engine_version": engine_version_raw.get("EffectiveEngineVersion"),
+            "selected_engine_version": engine_version_raw.get("SelectedEngineVersion"),
+        },
+    }
+    bytes_scanned_cutoff = configuration.get("BytesScannedCutoffPerQuery")
+    if bytes_scanned_cutoff is not None:
+        entry["bytes_scanned_cutoff"] = bytes_scanned_cutoff
+    output_location = result_configuration.get("OutputLocation")
+    if output_location is not None:
+        entry["output_location"] = output_location
+
+    payload = {"workgroups": [entry]}
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="athena_workgroup",
+        source=f"athena:get_work_group:{workgroup}",
+        collect_command=f"sparkforge collect athena-workgroup --workgroup {workgroup}",
+        now=now,
+    )
+
+
 __all__ = [
     "CLOUDWATCH_METRICS",
     "CLOUDWATCH_METRIC_NAMES",
     "ICEBERG_METADATA_SECTIONS",
     "CollectionFailed",
     "CollectorUnavailable",
+    "athena_workgroup_path",
     "cloudwatch_path",
+    "collect_athena_workgroup",
     "collect_cloudwatch",
     "collect_event_log",
     "collect_glue_job",

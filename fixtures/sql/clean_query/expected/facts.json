@@ -41,6 +41,7 @@
       "column": "order_date",
       "operator": "=",
       "value": "'2026-01-01'",
+      "table": "sales.orders",
       "on_partition_column": null,
       "type_mismatch": null
     },
@@ -68,6 +69,7 @@
     "attrs": {
       "star": false,
       "has_limit": false,
+      "table": "sales.orders",
       "table_format_columnar": null
     },
     "provenance": {

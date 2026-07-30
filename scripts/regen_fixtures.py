@@ -19,7 +19,12 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from sparkforge.facts.catalog_schema import (  # noqa: E402
+    extract_catalog_schema_path,
+    extract_catalog_schema_tree,
+)
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
+from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
@@ -32,6 +37,8 @@ FIXTURES_EVENTLOG = ROOT / "fixtures" / "eventlog"
 FIXTURES_TERRAFORM = ROOT / "fixtures" / "terraform"
 FIXTURES_ICEBERG = ROOT / "fixtures" / "iceberg"
 FIXTURES_SQL = ROOT / "fixtures" / "sql"
+FIXTURES_FUSION = ROOT / "fixtures" / "fusion"
+FIXTURES_CATALOG = ROOT / "fixtures" / "catalog"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -102,6 +109,34 @@ def regen_sql(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_catalog(directory: Path) -> None:
+    """Como `regen_iceberg`, mas para fixtures do extrator do Glue Data
+    Catalog: `*.json` sob input/, extraida com `extract_catalog_schema_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    facts = extract_catalog_schema_tree(directory / "input", repo_root=directory / "input")
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_fusion(directory: Path) -> None:
+    """Como `regen_sql`, mas o corpus de fusao: `*.sql` E `*.json` sob
+    input/ na MESMA fixture (a query e o dump de catalogo que ela precisa
+    correlacionar). Extrai as duas fontes, roda `fuse` sobre a uniao, e SO
+    ENTAO julga -- provando as regras SF-ATH-* desbloqueadas disparando (ou
+    corretamente nao disparando) a partir de facts fundidos de verdade, nao
+    so unitariamente."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for sql_file in sorted(input_dir.glob("*.sql")):
+        facts.extend(extract_sql_path(sql_file, repo_root=input_dir))
+    for json_file in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_catalog_schema_path(json_file, repo_root=input_dir))
+    fused = fuse(facts)
+    findings = judge(fused, load_catalog(), meta["runtime"])
+    _write_expected(directory, fused, findings)
+
+
 def main() -> int:
     targets = sys.argv[1:]
 
@@ -118,6 +153,8 @@ def main() -> int:
                 (FIXTURES_TERRAFORM / name, regen_terraform),
                 (FIXTURES_ICEBERG / name, regen_iceberg),
                 (FIXTURES_SQL / name, regen_sql),
+                (FIXTURES_FUSION / name, regen_fusion),
+                (FIXTURES_CATALOG / name, regen_catalog),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -140,6 +177,10 @@ def main() -> int:
         regen_iceberg(directory)
     for directory in sorted(p for p in FIXTURES_SQL.iterdir() if p.is_dir()):
         regen_sql(directory)
+    for directory in sorted(p for p in FIXTURES_FUSION.iterdir() if p.is_dir()):
+        regen_fusion(directory)
+    for directory in sorted(p for p in FIXTURES_CATALOG.iterdir() if p.is_dir()):
+        regen_catalog(directory)
     return 0
 
 

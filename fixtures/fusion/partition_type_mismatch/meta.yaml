@@ -1,0 +1,25 @@
+name: partition_type_mismatch
+proves: >
+  A prova decisiva de SF-ATH-005: dt e a coluna de particao, declarada
+  bigint no catalogo, filtrada com um literal de string ('20260101'). Fusao
+  resolve on_partition_column=true (dt esta em partition_keys) e
+  type_mismatch=true (literal entre aspas contra coluna numerica -- um dos
+  dois casos que fusion.py afirma com confianca, ver docstring do modulo).
+  SF-ATH-005 exige os dois juntos no MESMO fact sql.predicate.enriched.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.predicate
+  - sql.analyzed
+  - catalog.table_schema
+  - catalog.analyzed
+  - sql.projection.enriched
+  - sql.predicate.enriched
+  - sql.predicate.partition_filter
+  - fusion.summary
+expects_rules:
+  - SF-ATH-005

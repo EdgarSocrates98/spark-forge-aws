@@ -31,6 +31,86 @@ capabilities:
       devin_cli: [mcp, cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract facts from a Glue Data Catalog schema dump
+    tools: [sparkforge_analyze_catalog_schema]
+    cli: [analyze catalog-schema]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from a Spark event log
+    tools: [sparkforge_analyze_event_log]
+    cli: [analyze event-log]
+    knowledge: [knowledge/spark/memory-and-oom.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Terraform aws_glue_job definitions
+    tools: [sparkforge_analyze_terraform]
+    cli: [analyze terraform]
+    knowledge: [knowledge/glue/job-arguments.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Iceberg metadata tables
+    tools: [sparkforge_analyze_iceberg]
+    cli: [analyze iceberg]
+    knowledge: [knowledge/storage/iceberg-performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from SQL text and spark.sql literals
+    tools: [sparkforge_analyze_sql]
+    cli: [analyze sql]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Athena workgroup configuration
+    tools: [sparkforge_analyze_athena_workgroup]
+    cli: [analyze athena-workgroup]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: derive a call graph and Spark work reachability from facts
+    tools: [sparkforge_analyze_call_graph]
+    cli: [analyze call-graph]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: correlate facts from multiple extractors before judging
+    tools: [sparkforge_fuse]
+    cli: [fuse]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
   - name: judge facts against the version-guarded catalog
     tools: [sparkforge_judge]
     cli: [judge]
@@ -92,17 +172,25 @@ capabilities:
       copilot_ci: [cli, files]
 
   - name: collect real AWS artifacts and verify the manifest
+    tools:
+      - sparkforge_collect_event_log
+      - sparkforge_collect_glue_job
+      - sparkforge_collect_cloudwatch
+      - sparkforge_collect_iceberg_metadata
+      - sparkforge_collect_athena_workgroup
+      - sparkforge_collect_verify
     cli:
       - collect event-log
       - collect glue-job
       - collect cloudwatch
       - collect iceberg-metadata
+      - collect athena-workgroup
       - collect verify
     knowledge: [knowledge/glue/observability.md]
     platforms:
-      claude_code: [cli, files]
-      devin_desktop: [cli, files]
-      devin_cli: [cli, files]
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
       copilot_ci: [cli, files]
 
   - name: apply performance knowledge with no tooling at all
