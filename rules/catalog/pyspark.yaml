@@ -370,7 +370,7 @@ rules:
     validation:
       - Contagem antes e depois da deduplicação, em ambas as versões.
       - Contagem distinta da chave de negócio.
-      - Verificar determinismo: duas execuções produzem o mesmo resultado.
+      - "Verificar determinismo: duas execuções produzem o mesmo resultado."
     rollback: [Reverter o commit.]
     sources:
       - {origin: field-heuristic, note: "O ponto sobre determinismo na escolha da linha sobrevivente é a razão principal desta regra."}

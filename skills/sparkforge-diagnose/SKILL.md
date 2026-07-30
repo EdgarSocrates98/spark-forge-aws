@@ -84,3 +84,10 @@ Encontrar o gargalo dominante e produzir um plano de otimização baseado em evi
 - Concluir causa a partir do plano sem métricas de execução.
 - Reportar ganho percentual sem benchmark antes/depois.
 - Ignorar validação funcional (contagem, schema, chaves, agregados) ao propor mudança.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

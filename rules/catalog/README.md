@@ -70,6 +70,8 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 - absent: pyspark.cache_unpersist
 ```
 
+**`absent:` exige um fact sentinela.** `absent: X` é verdadeiro quando nenhum fact do kind `X` existe — inclusive quando o extrator que produziria `X` nunca rodou. Uma regra que usa `absent:` sem exigir também o sentinela do extrator relevante (`pyspark.module_analyzed` para PySpark) dispara falso positivo numa análise parcial. Sempre inclua o sentinela em `requires_facts`.
+
 ### Avaliador de `expr`
 
 Whitelist de nós AST: `Compare`, `BinOp`, `BoolOp`, `UnaryOp`, `Constant`, e acesso a atributo restrito a `measures.*`, `attrs.*`, `threshold.*`.
@@ -117,6 +119,25 @@ Regra de roteamento **não** tem `category`, `sources`, `severity` nem `runtime_
 | `blocked_by` | gate não satisfeito. **Advisory na Fase 0**, não fail-closed |
 
 Avaliação em ordem: primeiro match vira `recommended_skill`, os seguintes entram em `alternatives` com `rank`. Há um `fallback` no fim do arquivo — nenhum estado fica sem rota, e cair no fallback é sinal de que falta uma regra.
+
+### Operadores declarativos de roteamento
+
+Predicado de roteamento é **declarativo**, nunca expressão livre. Expressão exigiria
+`Call`/`In`, que a whitelist do avaliador proíbe — e o catálogo é dado editável,
+portanto superfície de execução.
+
+| Operador | Semântica |
+|---|---|
+| `equals: <v>` | valor no caminho é igual a `<v>` |
+| `absent: true` | caminho ausente, vazio ou `null` |
+| `present: true` | caminho existe e é truthy |
+| `count_gt: <n>` | comprimento (lista/dict/str) ou valor numérico maior que `<n>` |
+| `count_eq: <n>` | comprimento ou valor numérico igual a `<n>` |
+| `contains: <v>` | `<v>` está na lista do caminho |
+| `any_where: {k: v}` | algum item da lista tem `k == v` |
+
+`case: <caminho.pontuado>` resolve dentro do case. `finding: <rule_id>` com
+`present: true`/`false` testa a presença de um achado.
 
 O validador de catálogo deve aplicar o schema de `Rule` a todos os arquivos **exceto** `routing.yaml`, que tem o seu.
 

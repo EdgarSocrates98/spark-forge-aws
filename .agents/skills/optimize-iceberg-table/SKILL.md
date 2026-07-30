@@ -94,3 +94,10 @@ Não particionar apenas por cardinalidade. Use hidden partitioning e evolução 
 - Expirar snapshots ou remover órfãos sem retenção, idade mínima e checagem de concorrência.
 - Usar procedure/propriedade da doc `latest` do Iceberg sem confirmar a versão embarcada pelo Glue.
 - Rodar manutenção destrutiva sobre tabela ativa sem avaliar conflito de commit e sem rollback.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

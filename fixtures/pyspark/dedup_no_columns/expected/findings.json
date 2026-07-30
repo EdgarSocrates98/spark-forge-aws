@@ -1,0 +1,56 @@
+[
+  {
+    "rule_id": "SF-PY-011",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "dropDuplicates ou distinct sem colunas explícitas",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 11,
+      "end_line": 2,
+      "symbol": "deduplicar",
+      "snippet": "return df.dropDuplicates()"
+    },
+    "evidence": [
+      "f_251c39"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Deduplicação sobre todas as colunas exige shuffle e comparação do registro inteiro, e costuma mascarar um erro de modelagem da chave em vez de corrigi-lo. Se a duplicação vem de um join com cardinalidade errada, o distinct esconde o defeito e o custo permanece. Além disso, sem colunas explícitas, mudanças de schema alteram silenciosamente o que é considerado duplicado.",
+    "proposed_change": [
+      "Identificar a chave de negócio real e deduplicar por ela explicitamente.",
+      "Investigar a origem da duplicação; se vem de join, corrigir a cardinalidade do join.",
+      "Se a intenção é latest-per-key, usar a estratégia adequada, não distinct."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Deduplicar por subconjunto de colunas escolhe uma linha arbitrária entre as duplicatas, salvo ordenação explícita. Isso pode alterar o resultado de forma não determinística."
+    ],
+    "tradeoffs": [
+      "Chave explícita exige manutenção quando o modelo evolui."
+    ],
+    "validation": [
+      "Contagem antes e depois da deduplicação, em ambas as versões.",
+      "Contagem distinta da chave de negócio.",
+      "Verificar determinismo: duas execuções produzem o mesmo resultado."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "O ponto sobre determinismo na escolha da linha sobrevivente é a razão principal desta regra."
+      }
+    ]
+  }
+]

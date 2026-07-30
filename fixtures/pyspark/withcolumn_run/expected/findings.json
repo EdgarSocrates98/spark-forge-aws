@@ -1,0 +1,59 @@
+[
+  {
+    "rule_id": "SF-PY-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Sequência longa de withColumn na mesma cadeia",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 6,
+      "col": 8,
+      "end_line": 17,
+      "symbol": "enriquecer",
+      "snippet": "df.withColumn(\"c1\", lit(1))"
+    },
+    "evidence": [
+      "f_40580f"
+    ],
+    "measured": {
+      "run_length": 12
+    },
+    "threshold": {
+      "run_length": 10
+    },
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Cada withColumn adiciona uma projeção ao plano lógico. Dezenas em sequência produzem um plano grande, com custo de análise e otimização no driver que cresce de forma não linear. Em loop, é uma das causas de plan explosion e de driver OOM. Ver knowledge/spark/memory-and-oom.md secao 2, classe metadata/plan explosion.",
+    "proposed_change": [
+      "Substituir a sequência por um único select contendo todas as colunas.",
+      "Se as colunas são geradas programaticamente, construir a lista de expressões e passar num único select."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "withColumn em sequência permite referenciar a coluna criada no passo anterior; um select único exige reescrever essas dependências."
+    ],
+    "tradeoffs": [
+      "select único é menos legível quando há muitas colunas com lógica complexa."
+    ],
+    "validation": [
+      "Schema idêntico, na mesma ordem de colunas.",
+      "Comparação linha a linha numa amostra.",
+      "Contagem total idêntica."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Limiar 10 é ponto de partida. O custo real depende da complexidade de cada expressão, não só da contagem."
+      }
+    ]
+  }
+]

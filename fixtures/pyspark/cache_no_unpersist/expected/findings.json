@@ -1,0 +1,56 @@
+[
+  {
+    "rule_id": "SF-PY-008",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "cache ou persist sem unpersist no escopo",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 8,
+      "end_line": 2,
+      "symbol": "calcular",
+      "snippet": "d = df.cache()"
+    },
+    "evidence": [
+      "f_8ea752"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Cache ocupa a memória unificada do executor, competindo com a memória de execução usada por shuffle, sort e agregação. Cache que não é liberado aumenta o spill do resto do pipeline. Execução pode expulsar cache, mas não o contrário, então o cache que se acreditava presente pode nem estar sendo aproveitado. Ver knowledge/spark/execution-model.md secao 5.",
+    "proposed_change": [
+      "Verificar se há reuso real em duas ou mais actions distintas. Se não há, remover o cache.",
+      "Se há reuso, adicionar unpersist quando o DataFrame deixa de ser necessário.",
+      "Confirmar na aba Storage do Spark UI que a fração cacheada é alta; fração baixa indica cache inútil."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Remover cache com reuso real aumenta a recomputação."
+    ],
+    "tradeoffs": [
+      "MEMORY_AND_DISK_SER usa menos memória e mais CPU."
+    ],
+    "validation": [
+      "Runtime e DPU-hours antes e depois.",
+      "Spill do stage dominante antes e depois.",
+      "Resultado funcional idêntico por contagem, schema e agregados."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

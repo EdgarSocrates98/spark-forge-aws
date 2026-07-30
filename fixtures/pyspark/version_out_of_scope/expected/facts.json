@@ -1,0 +1,79 @@
+[
+  {
+    "id": "f_088b6c",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "escrever",
+      "snippet": "df.writeTo(\"db.tbl\").append()"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "writeTo",
+        "append"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "ee38a6c480edfbb63d853260dd83fffcc6643a252ee840c8e47244fb0306c05c",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_9e2037",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "ee38a6c480edfbb63d853260dd83fffcc6643a252ee840c8e47244fb0306c05c",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_cf92ae",
+    "schema_version": 1,
+    "kind": "pyspark.write",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "escrever",
+      "snippet": "df.writeTo(\"db.tbl\").append()"
+    },
+    "measures": {},
+    "attrs": {
+      "mode": "append",
+      "target": "db.tbl"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "ee38a6c480edfbb63d853260dd83fffcc6643a252ee840c8e47244fb0306c05c",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

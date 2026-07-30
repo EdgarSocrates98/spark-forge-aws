@@ -1,16 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "sparkforge-aws"
-version = "0.3.0"
-description = "Agent skills for AWS Glue PySpark, Parquet and Iceberg performance engineering"
+version = "0.4.0"
+description = "Agent skills and deterministic analyzers for AWS Glue PySpark, Parquet, Iceberg and Athena performance engineering"
 requires-python = ">=3.10"
+dependencies = [
+    "PyYAML>=6.0",
+    "jsonschema>=4.0",
+]
+
+[project.optional-dependencies]
+aws = ["boto3>=1.34"]
+mcp = ["mcp>=1.0"]
+dev = ["pytest>=8.0", "ruff>=0.6", "defusedxml>=0.7"]
+
+[project.scripts]
+sparkforge = "sparkforge.adapters.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sparkforge*"]
+
+[tool.setuptools.package-data]
+sparkforge = ["findings/schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Torna o pacote importável independente de como o pytest é invocado. Sem isto,
+# `pytest` chamado como script (não `python -m pytest`) não põe o cwd no sys.path
+# e `import sparkforge` falha sem que haja defeito no pacote.
+pythonpath = ["."]
 
 # Regras explícitas: lint de CI que depende do default do ruff quebra em upgrade.
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# fixtures/ contem PySpark deliberadamente defeituoso para golden tests;
+# lintar codigo de amostra ruim de proposito e ruido, nao sinal.
+exclude = ["fixtures"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "S"]

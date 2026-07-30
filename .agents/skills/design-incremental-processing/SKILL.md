@@ -101,3 +101,10 @@ incremental_design:
 - Tratar `job.commit()`/bookmark do Glue como solução universal de incremental.
 - Confundir "entrada pequena" com "trabalho pequeno" sem medir bytes/arquivos lidos.
 - Misturar estratégia full e incremental quando as cargas são radicalmente diferentes.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.
