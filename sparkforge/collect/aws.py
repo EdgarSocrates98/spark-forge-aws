@@ -48,25 +48,33 @@ _ATHENA_POLL_SECONDS = 1.0
 # "t" -- e como a documentacao da AWS escreve, reproduzido aqui sem
 # "corrigir": uma query CloudWatch com a grafia certa (duas "t") nao acha
 # a metrica.
-CLOUDWATCH_METRICS: tuple[str, ...] = (
-    "glue.driver.skewness.stage",
-    "glue.driver.skewness.job",
-    "glue.driver.workerUtilization",
-    "glue.driver.memory.heap.used.percentage",
-    "glue.driver.memory.total.used.percentage",
-    "glue.ALL.memory.heap.used.percentage",
-    "glue.ALL.memory.total.used.percentage",
-    "glue.driver.disk.used.percentage",
-    "glue.driver.bytesRead",
-    "glue.driver.recordsRead",
-    "glue.driver.filesRead",
-    "glue.driver.partitionsRead",
-    "glue.driver.bytesWrittten",
-    "glue.driver.recordsWritten",
-    "glue.driver.filesWritten",
-    "glue.succeed.ALL",
-    "glue.error.ALL",
+# Nome da metrica -> Stat correta, conforme knowledge/glue/observability.md.
+# `Stat` uniforme e defeito de dado, nao simplificacao: `glue.error.ALL` e
+# `glue.succeed.ALL` sao contadores documentados como SUM, e pedir Average deles
+# devolve um numero errado com aparencia de certo -- exatamente a classe de
+# resultado que este projeto existe para nao produzir. `bytesWrittten` mantem os
+# tres `t` porque e como a AWS escreve.
+CLOUDWATCH_METRICS: tuple[tuple[str, str], ...] = (
+    ("glue.driver.skewness.stage", "Maximum"),
+    ("glue.driver.skewness.job", "Maximum"),
+    ("glue.driver.workerUtilization", "Average"),
+    ("glue.driver.memory.heap.used.percentage", "Maximum"),
+    ("glue.driver.memory.total.used.percentage", "Maximum"),
+    ("glue.ALL.memory.heap.used.percentage", "Maximum"),
+    ("glue.ALL.memory.total.used.percentage", "Maximum"),
+    ("glue.driver.disk.used.percentage", "Maximum"),
+    ("glue.driver.bytesRead", "Average"),
+    ("glue.driver.recordsRead", "Average"),
+    ("glue.driver.filesRead", "Average"),
+    ("glue.driver.partitionsRead", "Average"),
+    ("glue.driver.bytesWrittten", "Average"),
+    ("glue.driver.recordsWritten", "Average"),
+    ("glue.driver.filesWritten", "Average"),
+    ("glue.succeed.ALL", "Sum"),
+    ("glue.error.ALL", "Sum"),
 )
+
+CLOUDWATCH_METRIC_NAMES: tuple[str, ...] = tuple(n for n, _ in CLOUDWATCH_METRICS)
 
 # As cinco metadata tables do Iceberg que este coletor consulta via Athena.
 # `partition_spec`/`sort_order` (ver `sparkforge/facts/iceberg_metadata.py`)
@@ -296,12 +304,12 @@ def collect_cloudwatch(
             "MetricStat": {
                 "Metric": {"Namespace": "Glue", "MetricName": metric, "Dimensions": dimensions},
                 "Period": 30,
-                "Stat": "Average",
+                "Stat": stat,
             },
             "Label": metric,
             "ReturnData": True,
         }
-        for index, metric in enumerate(CLOUDWATCH_METRICS)
+        for index, (metric, stat) in enumerate(CLOUDWATCH_METRICS)
     ]
 
     response = client.get_metric_data(
@@ -461,6 +469,7 @@ def collect_iceberg_metadata(
 
 __all__ = [
     "CLOUDWATCH_METRICS",
+    "CLOUDWATCH_METRIC_NAMES",
     "ICEBERG_METADATA_SECTIONS",
     "CollectionFailed",
     "CollectorUnavailable",

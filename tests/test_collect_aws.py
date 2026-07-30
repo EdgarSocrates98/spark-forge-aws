@@ -334,3 +334,43 @@ def test_path_helpers_match_what_collectors_actually_write(tmp_path, monkeypatch
     )
     assert entry.path == aws.event_log_path("jr_helper")
     assert Path(entry.path) == Path(aws.event_log_path("jr_helper"))
+
+
+class TestCloudwatchStatPerMetric:
+    """`Stat` uniforme e defeito de dado, nao simplificacao. `glue.error.ALL` e um
+    contador documentado como SUM; pedir Average dele devolve numero errado com
+    aparencia de certo, que e a classe de resultado que este projeto existe para
+    nao produzir."""
+
+    def test_counter_metrics_use_sum(self):
+        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+
+        stats = dict(CLOUDWATCH_METRICS)
+        assert stats["glue.error.ALL"] == "Sum"
+        assert stats["glue.succeed.ALL"] == "Sum"
+
+    def test_percentage_metrics_use_maximum_not_average(self):
+        """Pico de heap e o que importa para diagnosticar OOM; a media esconde o pico."""
+        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+
+        stats = dict(CLOUDWATCH_METRICS)
+        assert stats["glue.driver.memory.heap.used.percentage"] == "Maximum"
+        assert stats["glue.ALL.memory.heap.used.percentage"] == "Maximum"
+
+    def test_skewness_uses_maximum(self):
+        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+
+        assert dict(CLOUDWATCH_METRICS)["glue.driver.skewness.job"] == "Maximum"
+
+    def test_aws_three_t_spelling_is_preserved(self):
+        from sparkforge.collect.aws import CLOUDWATCH_METRIC_NAMES
+
+        assert "glue.driver.bytesWrittten" in CLOUDWATCH_METRIC_NAMES
+        assert "glue.driver.bytesWritten" not in CLOUDWATCH_METRIC_NAMES
+
+    def test_every_metric_declares_a_known_stat(self):
+        from sparkforge.collect.aws import CLOUDWATCH_METRICS
+
+        valid = {"Average", "Sum", "Maximum", "Minimum", "SampleCount"}
+        for name, stat in CLOUDWATCH_METRICS:
+            assert stat in valid, f"{name} com Stat invalido: {stat}"
