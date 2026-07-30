@@ -158,7 +158,9 @@ class TestExtractTree:
         first = [f.to_dict() for f in extract_tree(tmp_path, repo_root=tmp_path)]
         second = [f.to_dict() for f in extract_tree(tmp_path, repo_root=tmp_path)]
         assert first == second
-        assert len(first) == 2
+        # 2 arquivos, cada um com 1 fact pyspark.partitioning + 1 sentinela
+        # pyspark.module_analyzed.
+        assert len(first) == 4
 
     def test_pycache_is_skipped(self, tmp_path):
         (tmp_path / "a.py").write_text("df.coalesce(1)\n", encoding="utf-8")
@@ -167,8 +169,10 @@ class TestExtractTree:
         (cache_dir / "a.cpython-310.py").write_text("df.coalesce(2)\n", encoding="utf-8")
 
         facts = extract_tree(tmp_path, repo_root=tmp_path)
-        assert len(facts) == 1
-        assert facts[0].measures["target_count"] == 1
+        # 1 fact pyspark.partitioning + 1 sentinela pyspark.module_analyzed,
+        # de um unico arquivo: se __pycache__ nao fosse pulado, seriam 4.
+        assert len(facts) == 2
+        assert facts_of("pyspark.partitioning", facts)[0].measures["target_count"] == 1
 
     def test_posix_style_anchor_with_repo_root(self, tmp_path):
         nested = tmp_path / "lib" / "sub"
@@ -241,7 +245,9 @@ class TestExtractTree:
         plain_facts = extract_path(plain_root / "twin.py", repo_root=plain_root)
         bom_facts = extract_path(bom_root / "twin.py", repo_root=bom_root)
 
-        assert len(plain_facts) == len(bom_facts) == 1
-        assert plain_facts[0].kind == "pyspark.partitioning"
-        assert plain_facts[0].id == bom_facts[0].id
+        # 1 fact pyspark.partitioning + 1 sentinela pyspark.module_analyzed.
+        assert len(plain_facts) == len(bom_facts) == 2
+        plain_partitioning = facts_of("pyspark.partitioning", plain_facts)[0]
+        bom_partitioning = facts_of("pyspark.partitioning", bom_facts)[0]
+        assert plain_partitioning.id == bom_partitioning.id
         assert [f.to_dict() for f in plain_facts] == [f.to_dict() for f in bom_facts]

@@ -59,6 +59,16 @@ class TestLoadCommittedCatalog:
         for rule in load_catalog():
             assert isinstance(rule["catalog_version"], int)
 
+    def test_sf_env_003_requires_the_pyspark_sentinel(self):
+        """`absent: pyspark.glue_context_init` so e som quando pyspark.module_analyzed
+        provar que o extrator PySpark rodou. Sem isso, analise so-Terraform dispararia
+        falso positivo por ausencia vazia. Guarda contra regressao dessa correcao."""
+        rule = next(r for r in load_catalog() if r["id"] == "SF-ENV-003")
+        assert "pyspark.module_analyzed" in rule["requires_facts"]
+        conditions = rule["when"]["all"]
+        assert any(c.get("fact") == "pyspark.module_analyzed" for c in conditions)
+        assert any(c.get("absent") == "pyspark.glue_context_init" for c in conditions)
+
 
 class TestRejections:
     def _write(self, tmp_path, monkeypatch, name, body):

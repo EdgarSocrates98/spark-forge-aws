@@ -70,6 +70,8 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 - absent: pyspark.cache_unpersist
 ```
 
+**`absent:` exige um fact sentinela.** `absent: X` é verdadeiro quando nenhum fact do kind `X` existe — inclusive quando o extrator que produziria `X` nunca rodou. Uma regra que usa `absent:` sem exigir também o sentinela do extrator relevante (`pyspark.module_analyzed` para PySpark) dispara falso positivo numa análise parcial. Sempre inclua o sentinela em `requires_facts`.
+
 ### Avaliador de `expr`
 
 Whitelist de nós AST: `Compare`, `BinOp`, `BoolOp`, `UnaryOp`, `Constant`, e acesso a atributo restrito a `measures.*`, `attrs.*`, `threshold.*`.
