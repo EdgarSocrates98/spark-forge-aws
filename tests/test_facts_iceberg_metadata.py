@@ -2,6 +2,7 @@ from sparkforge.facts.iceberg_metadata import (
     EMITTED_KINDS,
     EXTRACTOR_ID,
     extract_iceberg_metadata,
+    extract_iceberg_metadata_path,
 )
 from sparkforge.findings.validate import validate_fact
 
@@ -331,6 +332,42 @@ class TestWrittenBeforeSortOrder:
         payload = {"table": "db.t", "default_sort_order_id": 2, "files": _files(1, None, 2)}
         for fact in extract_iceberg_metadata(payload, "dump.json"):
             validate_fact(fact.to_dict())
+
+    def test_file_entry_that_is_not_a_dict_never_crashes_the_census(self):
+        payload = {
+            "table": "db.t",
+            "default_sort_order_id": 2,
+            "files": [{"file_size_in_bytes": 1, "sort_order_id": 1}, "lixo", 42, None],
+        }
+        fact = one("iceberg.files_summary", payload)
+        assert fact.attrs["written_before_sort_order"] is True
+        assert fact.measures["files_stale_sort_order"] == 1
+        # `data_file_count` conta a secao inteira; o censo so as entradas dict.
+        assert fact.measures["data_file_count"] == 4
+
+
+class TestTruncatedDumpOnDisk:
+    """Um dump truncado no meio de uma escrita e a entrada mais provavel de um
+    coletor interrompido. Nao pode virar excecao nem, pior, um fact parcial que
+    parece completo."""
+
+    def test_truncated_json_is_unresolved_not_an_exception(self, tmp_path):
+        path = tmp_path / "dump.json"
+        path.write_text(
+            '{"table": "db.t", "default_sort_order_id": 2, "files": [{"sort_order',
+            encoding="utf-8",
+        )
+        facts = extract_iceberg_metadata_path(path, repo_root=tmp_path)
+        assert [f.kind for f in facts] == ["iceberg.unresolved"]
+        assert facts[0].attrs["reason"] == "malformed_json"
+        # sha256 do texto lido continua registrado: prova de QUAL byte-stream
+        # foi julgado ilegivel.
+        assert len(facts[0].provenance["artifact_sha256"]) == 64
+
+    def test_unreadable_path_is_unresolved_not_an_exception(self, tmp_path):
+        facts = extract_iceberg_metadata_path(tmp_path / "nao-existe.json", repo_root=tmp_path)
+        assert [f.kind for f in facts] == ["iceberg.unresolved"]
+        assert facts[0].attrs["reason"] == "read_error"
 
 
 class TestSentinel:
