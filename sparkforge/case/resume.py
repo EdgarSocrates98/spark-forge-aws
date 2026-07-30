@@ -11,6 +11,7 @@ artefato de código.
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from sparkforge.case.router import next_step
@@ -40,13 +41,51 @@ def _severity_rank(finding: dict[str, Any]) -> int:
     return len(SEVERITY_ORDER)
 
 
+def _missing_artifacts(case: dict[str, Any], root: Path | None) -> list[dict[str, Any]]:
+    """Artefatos do case sem o dado presente no disco.
+
+    Sem `root`, a unica fonte de verdade e a flag `present` gravada no case
+    (comportamento original, preservado para quem chama `resume()` sem
+    acesso a filesystem -- ver tests/test_case_resume.py). Com `root`, o
+    manifesto (`sparkforge.collect`) e a fonte de verdade por artefato: ele
+    reflete o disco agora, enquanto a flag no case pode estar desatualizada
+    desde a ultima vez que o case foi salvo. Importado aqui, nao no topo do
+    modulo, para que `resume()` nao force uma dependencia de `collect` em
+    quem so quer o payload a partir do case em memoria.
+    """
+    artifacts = case.get("artifacts") or []
+    if root is None:
+        return [a for a in artifacts if not a.get("present", False)]
+
+    from sparkforge.collect import verify_all
+
+    verified_by_path = {v["path"]: v for v in verify_all(root)}
+
+    missing = []
+    for artifact in artifacts:
+        verification = verified_by_path.get(artifact.get("path"))
+        if verification is not None:
+            is_present = verification["present"]
+        else:
+            is_present = artifact.get("present", False)
+        if not is_present:
+            missing.append(artifact)
+    return missing
+
+
 def resume(
     case: dict[str, Any],
     findings: list[dict[str, Any]],
     unresolved_count: int = 0,
     in_flight: str = "",
+    root: Path | None = None,
 ) -> dict[str, Any]:
-    """Monta o payload de rehidratação: onde o case parou e o que vem a seguir."""
+    """Monta o payload de rehidratação: onde o case parou e o que vem a seguir.
+
+    `root`, quando informado, faz `missing_artifacts` consultar o manifesto
+    de `sparkforge.collect` em vez de confiar apenas na flag `present`
+    gravada no case -- ver `_missing_artifacts`.
+    """
     ordered_findings = sorted(
         findings, key=lambda f: (_severity_rank(f), f.get("rule_id", ""))
     )
@@ -58,8 +97,7 @@ def resume(
     gates = dict(case.get("gates") or {})
     unsatisfied_gates = [g for g in GATES if not gates.get(g, False)]
 
-    artifacts = case.get("artifacts") or []
-    missing_artifacts = [a for a in artifacts if not a.get("present", False)]
+    missing_artifacts = _missing_artifacts(case, root)
 
     baseline = case.get("baseline")
 
