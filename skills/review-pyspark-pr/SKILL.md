@@ -1,72 +1,89 @@
 ---
 name: review-pyspark-pr
-description: Use quando revisar um Pull Request PySpark/AWS Glue e precisar detectar regressões de performance, custo e escala — novas actions, shuffles, joins com cardinalidade, UDFs, collect, loops de DataFrame, mudança de write mode, particionamento e operações Iceberg/Parquet.
+description: Use quando revisar um Pull Request PySpark/AWS Glue e precisar classificar risco de regressão de performance, custo e escala antes de aprovar — novas actions, shuffles, joins com cardinalidade, UDFs, collect, loops de DataFrame, mudança de write mode, particionamento ou operações Iceberg/Parquet introduzidas pelo diff. Use também quando pedirem "dá uma olhada nesse PR", "isso é seguro de mergear", "o que mudou de performance aqui" ou "aprova esse diff", mesmo sem falar em code review formal. Se você está prestes a ler o diff e apontar problema de cabeça, rode `sparkforge analyze pyspark` nos arquivos alterados e compare contra a versão base em vez de confiar em leitura visual — e valide sua própria recomendação com `sparkforge validate` antes de postar, porque um ganho quantificado sem `benchmark_ref` é rejeitado pelo schema.
 ---
 
 # Review PySpark PR
 
+Revisão de diff por leitura visual erra de dois jeitos: comenta em padrão que já existia antes do PR (fora de escopo, ruído para o autor), ou promete um ganho ("isso deve reduzir 40%") que ninguém mediu. O extrator resolve o primeiro comparando facts da versão nova contra a base. O `validate` resolve o segundo: o schema de finding rejeita `expected_effect` quantificado sem `benchmark_ref`.
+
 ## Escopo
 
-Analise somente impactos introduzidos ou alterados pelo PR, mas considere contexto suficiente para entender a execução.
+Analise impactos introduzidos ou alterados pelo PR. Considere contexto suficiente para entender a execução, mas não repita como "achado do PR" um padrão que já estava lá antes.
 
-## Classificação
+## Procedimento
 
-- P0: corrupção, perda de dados, explosão de custo ou indisponibilidade provável.
-- P1: regressão crítica comprovável.
-- P2: problema relevante de escala/performance.
-- P3: melhoria incremental.
-- P4: sugestão experimental.
+### 1. Extraia os facts da versão nova (HEAD)
 
-## Verificações
+Para cada arquivo `.py` alterado pelo PR:
 
-- Novas actions.
-- Novos shuffles/exchanges.
-- Join e cardinalidade.
-- UDFs.
-- Driver collection.
-- Loops de DataFrame.
-- Cache/persist.
-- Repartition/coalesce.
-- Mudanças de write mode.
-- Particionamento físico.
-- Iceberg merge/delete/snapshots.
-- Arquivos e compactação.
-- Logging que dispara jobs.
-- Testes de correção e performance.
+```bash
+sparkforge analyze pyspark --path <arquivo_alterado.py> --out .sparkforge/facts_head_<n>.json
+```
 
-## Comentário de review
+`--path` recebe um arquivo ou diretório por chamada — não uma lista de caminhos. Se as mudanças estão concentradas num diretório, aponte para ele; senão, uma chamada por arquivo alterado.
 
-Cada comentário deve conter:
-1. Problema.
-2. Evidência no diff/plano.
-3. Impacto.
-4. Correção concreta.
-5. Como testar.
+### 2. Extraia os facts da versão base
 
-Evite comentários genéricos sem ação.
+```bash
+git show <base-ref>:<caminho_do_arquivo> > .sparkforge/base/<arquivo>.py
+sparkforge analyze pyspark --path .sparkforge/base/<arquivo>.py --out .sparkforge/facts_base_<n>.json
+```
+
+### 3. Julgue as duas versões
+
+```bash
+sparkforge judge --facts .sparkforge/facts_head_<n>.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts_base_<n>.json --glue <versão> --show-skipped
+```
+
+Compare os dois conjuntos de findings por `rule_id` + `subject`:
+
+- **Novo no HEAD, ausente na base** → regressão introduzida pelo PR. É o achado principal da revisão.
+- **Presente na base, ausente no HEAD** → o PR corrigiu algo; vale mencionar como ponto positivo.
+- **Presente nos dois** → pré-existente, fora do escopo do diff — cite apenas se for `P0`/`P1`, não repita como se fosse do PR.
+
+### 4. Escreva os comentários
+
+Um finding por comentário, citando `rule_id` e o `fact_id` da evidência (nunca um número solto). Cada comentário precisa de: problema, evidência no diff, impacto, correção concreta, como testar.
+
+### 5. Valide antes de postar
+
+```bash
+sparkforge validate --findings .sparkforge/review_findings.json
+```
+
+Isso pega exatamente o erro mais comum de review sob pressão: afirmar "isso deve reduzir o runtime em ~30%" para soar convincente, sem ter medido nada. O schema rejeita qualquer `expected_effect` com número (`%`, `x`, "vezes") que não venha acompanhado de `benchmark_ref`. Se `validate` falhar, ou você mede antes (`benchmark-pyspark-job`) ou reformula a frase como hipótese, sem número.
+
+## Verificações fora do alcance do extrator
+
+O extrator de AST não substitui julgamento sobre: estratégia de merge/delete Iceberg (snapshots, commits — precisa de `analyze iceberg` ou plano), mudança de particionamento físico, testes de correção ausentes, e logging que dispara job (`count()`/`show()` em `logger` aparece como `pyspark.action`, mas decidir se é aceitável é seu).
 
 ## Quando NÃO usar
 
 - Não é um diff/PR e sim refatoração exploratória: use `optimize-pyspark-code`.
-- A mudança é de infraestrutura/IaC do job: use `review-glue-terraform`.
-- Precisa comprovar o impacto com números: encadeie `benchmark-pyspark-job`.
+- A mudança é de infraestrutura/IaC do job (workers, timeout, argumentos): use `review-glue-terraform`.
+- Precisa comprovar o impacto com números reais antes de reivindicar ganho: encadeie `benchmark-pyspark-job`.
+- O PR mexe numa biblioteca com múltiplos módulos e o entrypoint não conta a história: passe por `analyze-library-call-graph` antes.
 
 ## Referência rápida
 
-| Mudança no diff | Risco de regressão | O que exigir do autor |
-|---|---|---|
-| novo `join` sem filtro/projeção antes | shuffle e custo | evidência de redução prévia; estratégia física |
-| nova UDF Python | perda de codegen/pushdown | justificativa vs função nativa |
-| `collect`/`toPandas`/`.rdd` novo | driver OOM | por que não distribuído |
-| `withColumn` em loop / novos `union` | plano gigante | consolidar em `select` único |
-| troca de write mode (overwrite/append/merge) | perda de dados / small files | escopo, idempotência, contagem |
-| nova action em logging (`count`/`show`) | job extra oculto | remover ou medir custo |
+| Severidade | Critério |
+|---|---|
+| P0 | corrupção, perda de dados, explosão de custo ou indisponibilidade provável |
+| P1 | regressão crítica comprovável pelos facts |
+| P2 | problema relevante de escala/performance |
+| P3 | melhoria incremental |
+| P4 | sugestão experimental |
+
+A severidade default de cada regra vem do catálogo (`sparkforge rules lookup --id <rule_id>`); ajuste apenas com justificativa registrada no comentário, nunca em silêncio.
 
 ## Red flags
 
-- Aprovar sem plano de teste de correção (contagem, schema, chaves) para mudanças de escrita.
-- Comentário genérico ("otimize isso") sem correção concreta e como validar.
-- Ignorar operações Iceberg (merge/delete) que multiplicam commits/snapshots.
+- Aprovar mudança de write mode ou operação Iceberg (merge/delete) sem plano de teste de correção (contagem, schema, chaves).
+- Comentário genérico ("otimize isso") sem correção concreta e sem como validar.
+- Repetir como "achado do PR" um finding que já existia na versão base — sempre compare HEAD contra base antes de comentar.
+- Postar `expected_effect` quantificado sem rodar `sparkforge validate` primeiro.
 
 ## Protocolo
 
