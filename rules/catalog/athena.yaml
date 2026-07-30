@@ -1,0 +1,161 @@
+# Catálogo de regras — Amazon Athena
+# Adição de escopo em 2026-07-29. Depende de extrator de SQL e de metadados de tabela
+# da Fase 1. Regras inertes até ele existir.
+# Athena entra no escopo porque, num lakehouse Glue + Iceberg, ela é o consumidor, e
+# decisões tomadas no job Glue determinam o custo da query meses depois.
+
+catalog_version: 1
+schema_version: 1
+area: SF-ATH
+retrieved: 2026-07-29
+
+rules:
+
+  - id: SF-ATH-001
+    category: athena
+    title: SELECT * em tabela colunar
+    requires_facts: [sql.projection]
+    when:
+      all:
+        - fact: sql.projection
+          where: {attrs.star: true, attrs.table_format_columnar: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Athena cobra por bytes escaneados. O benefício de Parquet e ORC vem de ler apenas
+      as colunas referenciadas, e SELECT * anula isso por completo. É o anti-pattern de
+      custo mais comum em Athena e é invisível para quem observa apenas a duração da
+      query. Ver knowledge/athena/performance.md secao 1.
+    proposed_change:
+      - Listar explicitamente as colunas usadas.
+      - Se a query é exploratória, limitar as colunas e usar LIMIT junto de um WHERE sobre coluna de partição.
+    risks: [Projeção explícita quebra quando o schema evolui e a query não é atualizada.]
+    tradeoffs: [Conveniência de exploração contra custo por execução.]
+    validation:
+      - Bytes escaneados antes e depois, obtidos das estatísticas de execução da query.
+      - Resultado idêntico nas colunas que interessam.
+    rollback: [Não aplicável; mudança de query.]
+    sources:
+      - {url: "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena", retrieved: 2026-07-29}
+
+  - id: SF-ATH-002
+    category: athena
+    title: LIMIT usado como se fosse filtro
+    requires_facts: [sql.projection, sql.predicate]
+    when:
+      all:
+        - fact: sql.projection
+          where: {attrs.has_limit: true}
+        - absent: sql.predicate.partition_filter
+    status: structural
+    severity_default: P2
+    runtime_scope: {athena: "*"}
+    explanation: >
+      LIMIT restringe o resultado, não o escaneamento. SELECT colunas FROM tabela LIMIT
+      10 pode escanear a tabela inteira e cobrar por isso. A intuição de que LIMIT é
+      barato vem de bancos com índice, e não se transfere para Athena sobre S3.
+    proposed_change:
+      - Adicionar WHERE sobre coluna de partição para restringir o escaneamento.
+      - Para amostragem, filtrar por uma partição específica em vez de confiar no LIMIT.
+    risks: [Filtro por partição muda o conjunto amostrado; não é amostra aleatória.]
+    tradeoffs: []
+    validation: [Bytes escaneados antes e depois.]
+    rollback: [Não aplicável.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/athena/latest/ug/partitions.html", retrieved: 2026-07-29}
+
+  - id: SF-ATH-003
+    category: athena
+    title: Tabela com muitas partições Hive sem partition projection
+    requires_facts: [catalog.table_partitions]
+    when:
+      all:
+        - fact: catalog.table_partitions
+          expr: "measures.partition_count >= threshold.count"
+        - absent: catalog.table_property.projection_enabled
+    threshold: {count: 100000}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Com particionamento Hive, Athena resolve as partições consultando o Glue Catalog
+      antes de escanear. Com centenas de milhares de partições, essa resolução de
+      metadados vira o gargalo, e a query fica lenta mesmo lendo pouco dado. O sintoma é
+      latência alta e constante, independente da seletividade do WHERE, com bytes
+      escaneados baixos. Partition projection elimina o lookup calculando as partições a
+      partir de um padrão declarado nas table properties.
+    proposed_change:
+      - Avaliar partition projection, desde que o layout seja denso e previsível.
+      - Se o layout é esparso, não usar projection; reduzir a cardinalidade do particionamento.
+      - Considerar migrar a tabela para Iceberg, cuja resolução de partição não depende do lookup Hive.
+    risks:
+      - Projection assume que toda partição do padrão existe. Layout esparso gera trabalho inútil.
+      - Range de data com fim fixo que não é atualizado faz partições novas desaparecerem silenciosamente das queries. É falha por dado faltante, não por erro.
+    tradeoffs: [Projection dispensa MSCK REPAIR e ADD PARTITION, mas cria um padrão que precisa ser mantido.]
+    validation:
+      - Latência de uma query de referência antes e depois.
+      - Contagem de linhas retornada por uma query de janela completa, comparada com a contagem esperada, para provar que nenhuma partição desapareceu.
+      - Teste explícito sobre a partição mais recente, que é onde o range mal mantido falha primeiro.
+    rollback: [Remover as table properties de projection restaura a resolução via catálogo.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/athena/latest/ug/partitions.html", retrieved: 2026-07-29}
+
+  - id: SF-ATH-004
+    category: athena
+    title: Workgroup em engine version anterior à 3
+    requires_facts: [athena.workgroup]
+    when:
+      all:
+        - fact: athena.workgroup
+          expr: "measures.engine_version < 3"
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Engine version 3 traz otimização dinâmica de memória, melhor execução de JOIN,
+      dynamic filtering, melhor integração com metadados do Glue Catalog e suporte
+      otimizado a Iceberg. Diagnosticar query lenta antes de confirmar a engine version é
+      tuning às cegas: dynamic filtering resolve sozinho parte dos casos de join que a v2
+      exigia reescrever à mão.
+    proposed_change:
+      - Confirmar a engine version do workgroup antes de qualquer reescrita de SQL.
+      - Planejar a migração para v3, validando as queries existentes contra as mudanças de comportamento de SQL.
+    risks: [Mudança de engine altera comportamento de algumas funções e de conversão de tipo; requer teste das queries existentes.]
+    tradeoffs: []
+    validation:
+      - Conjunto de queries de referência executado nas duas engines, comparando resultado e bytes escaneados.
+      - Duração antes e depois.
+    rollback: [Reverter a engine version do workgroup, se a versão anterior ainda estiver disponível.]
+    sources:
+      - {url: "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine", retrieved: 2026-07-29}
+
+  - id: SF-ATH-005
+    category: athena
+    title: Coluna de partição com tipo incompatível com o filtro
+    requires_facts: [sql.predicate, catalog.table_schema]
+    when:
+      all:
+        - fact: sql.predicate
+          where: {attrs.on_partition_column: true, attrs.type_mismatch: true}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Partição gravada como string e filtrada como date, ou o inverso, provoca cast
+      implícito que pode impedir o partition pruning sem gerar erro algum. A query
+      retorna o resultado correto e escaneia a tabela inteira. É a falha mais difícil de
+      ver porque nada quebra. O mesmo mecanismo existe no Spark, e lá se verifica em
+      PartitionFilters no plano físico. Ver knowledge/spark/execution-model.md secao 3.
+    proposed_change:
+      - Alinhar o tipo do literal do filtro ao tipo da coluna de partição.
+      - Ou corrigir o tipo da coluna de partição na definição da tabela, o que exige reescrita ou recriação.
+    risks: [Alterar o tipo da coluna de partição afeta todos os consumidores da tabela.]
+    tradeoffs: [Ajustar o filtro é imediato; ajustar o schema resolve para todos os consumidores.]
+    validation:
+      - Bytes escaneados antes e depois, que é a medida direta do pruning.
+      - Razão entre bytes escaneados e tamanho total da tabela.
+      - Resultado idêntico.
+    rollback: [Reverter a query ou a definição de tabela.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/athena/latest/ug/partitions.html", retrieved: 2026-07-29}
