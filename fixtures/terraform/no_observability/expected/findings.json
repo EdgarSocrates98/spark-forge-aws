@@ -8,20 +8,16 @@
     "confidence": "high",
     "status": "confirmed",
     "subject": {
-      "type": "source_location",
+      "type": "tf_resource",
       "file": "main.tf",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
+      "line": 1,
+      "symbol": "aws_glue_job.etl_no_observability"
     },
     "evidence": [
-      "f_d9da16"
+      "f_805fe2"
     ],
     "measured": {
-      "resource_count": 1,
-      "attribute_count": 12,
-      "unresolved_count": 0
+      "attribute_count": 12
     },
     "threshold": {},
     "runtime_scope": {

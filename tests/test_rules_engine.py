@@ -254,6 +254,230 @@ class TestSameSubjectCorrelation:
         ]
 
 
+class TestSameSubjectReportsEveryOffender:
+    """Uma regra `same_subject` afirma algo sobre UMA entidade. Se quatro jobs
+    tem o mesmo defeito, sao quatro achados, nao um.
+
+    Devolver so o primeiro grupo que casa faz o relatorio dizer "um job esta
+    errado" quando tres estao: o operador corrige aquele, roda de novo, e
+    descobre o proximo -- sem nunca saber quantos faltam. Subcontagem e
+    enganosa da mesma forma que falso negativo.
+    """
+
+    def _rule(self):
+        return rule(
+            requires_facts=["tf.attribute"],
+            when={
+                "same_subject": True,
+                "all": [
+                    {"fact": "tf.attribute", "where": {"attrs.key": "autoscaling"}},
+                    {"fact": "tf.attribute", "where": {"attrs.key": "workers"}},
+                ],
+            },
+        )
+
+    def _attr(self, symbol, key):
+        return Fact(
+            kind="tf.attribute",
+            subject={"type": "tf_resource", "file": "main.tf", "symbol": symbol},
+            attrs={"key": key},
+        )
+
+    def _facts(self):
+        offenders = [
+            f
+            for symbol in ("job_a", "job_b", "job_c")
+            for f in (self._attr(symbol, "workers"), self._attr(symbol, "autoscaling"))
+        ]
+        # Um quarto recurso correto: nao pode virar achado nem emprestar evidencia.
+        return [*offenders, self._attr("job_ok", "workers")]
+
+    def test_every_offending_subject_gets_its_own_finding(self):
+        found = judge(self._facts(), [self._rule()], GLUE_50)
+        assert [f.subject["symbol"] for f in found] == ["job_a", "job_b", "job_c"]
+
+    def test_evidence_never_leaks_across_subjects(self):
+        facts = self._facts()
+        by_id = {f.id: f for f in facts}
+        for finding in judge(facts, [self._rule()], GLUE_50):
+            symbols = {by_id[fid].subject["symbol"] for fid in finding.evidence}
+            assert symbols == {finding.subject["symbol"]}
+
+    def test_order_is_stable_regardless_of_fact_order(self):
+        facts = self._facts()
+        forward = [f.to_dict() for f in judge(facts, [self._rule()], GLUE_50)]
+        backward = [f.to_dict() for f in judge(list(reversed(facts)), [self._rule()], GLUE_50)]
+        assert forward == backward
+
+
+TWO_JOBS_ONE_OBSERVED = '''resource "aws_glue_job" "com_ui" {
+  name         = "job-com-ui"
+  glue_version = "5.0"
+
+  default_arguments = {
+    "--enable-spark-ui"       = "true"
+    "--spark-event-logs-path" = "s3://b/spark-logs/"
+  }
+}
+
+resource "aws_glue_job" "sem_ui" {
+  name         = "job-sem-ui"
+  glue_version = "5.0"
+
+  default_arguments = {
+    "--TempDir" = "s3://b/temp/"
+  }
+}
+'''
+
+
+class TestObservabilityIsJudgedPerResource:
+    """SF-GLUE-002 pergunta "este job tem como ser diagnosticado depois do fato?".
+    A pergunta e por recurso, nunca pelo arquivo: num `.tf` com varios
+    `aws_glue_job`, um unico job com Spark UI habilitado nao prova nada sobre os
+    outros. Checar `absent: tf.observability.spark_ui` contra a lista inteira de
+    facts mascara todos os jobs sem observabilidade assim que UM deles a tem --
+    falso negativo caro, porque observabilidade ausente e justamente o que faz
+    toda investigacao futura comecar sem evidencia.
+    """
+
+    def _judge_002(self, source):
+        from sparkforge.facts.terraform import extract_terraform
+        from sparkforge.rules.loader import load_catalog
+
+        facts = extract_terraform(source, "main.tf")
+        catalog = [r for r in load_catalog() if r["id"] == "SF-GLUE-002"]
+        assert catalog, "SF-GLUE-002 ausente do catalogo"
+        return judge(facts, catalog, GLUE_50)
+
+    def test_job_without_observability_is_reported_even_when_a_sibling_has_it(self):
+        found = self._judge_002(TWO_JOBS_ONE_OBSERVED)
+        assert [f.subject.get("symbol") for f in found] == ["aws_glue_job.sem_ui"]
+
+    def test_correctly_configured_job_is_never_accused(self):
+        """A guarda contra o "conserto" ingenuo (`same_subject: true` sobre
+        `tf.module_analyzed`, cujo subject e o arquivo): ali o grupo do arquivo
+        nunca contem fact de observabilidade, `absent` fica satisfeito, e a regra
+        acusa TODO modulo -- inclusive o configurado corretamente."""
+        only_observed = TWO_JOBS_ONE_OBSERVED.split('resource "aws_glue_job" "sem_ui"')[0]
+        assert self._judge_002(only_observed) == []
+
+
+def _catalog_table(name, *, projection, partition_count=250000):
+    entry = {
+        "name": name,
+        "storage_format": "parquet",
+        "partition_keys": [{"name": "dt", "type": "string"}],
+        "columns": [{"name": "valor", "type": "bigint"}],
+        "partition_count": partition_count,
+    }
+    if projection:
+        entry["properties"] = {"projection.enabled": "true"}
+    return entry
+
+
+class TestPartitionProjectionIsJudgedPerTable:
+    """SF-ATH-003 pergunta "esta TABELA resolve particao por lookup no catalogo?".
+    A pergunta e por tabela, nunca pelo dump: um dump do Glue Data Catalog
+    descreve todas as tabelas do banco, e uma unica tabela com partition
+    projection habilitada nao diz nada sobre as outras.
+
+    Checar `absent: catalog.table_property.projection_enabled` contra a lista
+    inteira de facts mascara TODA tabela sobre-particionada assim que UMA delas
+    tem projection -- e a tabela bem configurada e justamente a que se espera
+    encontrar num catalogo real, entao o mascaramento e a regra, nao a excecao.
+    O relatorio diz "nenhuma tabela com problema de metadados" sobre um catalogo
+    cheio delas.
+    """
+
+    def _judge_003(self, *tables):
+        from sparkforge.facts.catalog_schema import extract_catalog_schema
+        from sparkforge.rules.loader import load_catalog
+
+        facts = extract_catalog_schema({"tables": list(tables)}, "catalog.json")
+        catalog = [r for r in load_catalog() if r["id"] == "SF-ATH-003"]
+        assert catalog, "SF-ATH-003 ausente do catalogo"
+        return judge(facts, catalog, GLUE_50)
+
+    def test_table_without_projection_is_reported_even_when_a_sibling_has_it(self):
+        found = self._judge_003(
+            _catalog_table("db.sem_projection", projection=False),
+            _catalog_table("db.com_projection", projection=True),
+        )
+        assert [f.subject.get("symbol") for f in found] == ["db.sem_projection"]
+
+    def test_every_offending_table_gets_its_own_finding(self):
+        found = self._judge_003(
+            _catalog_table("db.a", projection=False),
+            _catalog_table("db.b", projection=False),
+            _catalog_table("db.ok", projection=True),
+        )
+        assert [f.subject.get("symbol") for f in found] == ["db.a", "db.b"]
+
+    def test_correctly_configured_table_is_never_accused(self):
+        """A guarda contra o "conserto" ingenuo: o dump tambem emite
+        `catalog.analyzed` e `catalog.table_property`, cujos grupos nunca contem
+        `catalog.table_partitions`. Se a ancora escorregasse para um subject de
+        arquivo, `absent` ficaria satisfeito e a regra acusaria o dump inteiro.
+        """
+        assert self._judge_003(_catalog_table("db.com_projection", projection=True)) == []
+
+    def test_table_below_the_threshold_is_never_accused(self):
+        assert self._judge_003(
+            _catalog_table("db.pequena", projection=False, partition_count=10)
+        ) == []
+
+
+TWO_QUERIES_ONE_FILTERED = '''spark.sql("SELECT valor FROM db.eventos LIMIT 10")
+spark.sql("SELECT valor FROM db.eventos WHERE dt = '2026-01-01' LIMIT 10")
+'''
+
+
+class TestPartitionFilterIsJudgedPerQuery:
+    """SF-ATH-002 pergunta "esta QUERY escaneia a tabela inteira?". A pergunta e
+    por query, nunca pelo conjunto analisado: uma query em qualquer lugar do
+    repositorio que filtre a coluna de particao faz
+    `sql.predicate.partition_filter` existir globalmente, `absent` falha, e a
+    regra nao dispara para NENHUMA das queries sem filtro.
+
+    Agrupar por arquivo tambem nao basta: dois `spark.sql(...)` no mesmo modulo
+    sao duas queries independentes, e a boa esconderia a ruim. O subject de um
+    fact de SQL e `source_location` -- a entidade que ele identifica e a
+    LOCALIZACAO da query, nao o arquivo.
+    """
+
+    def _judge_002(self, source):
+        from sparkforge.facts.catalog_schema import extract_catalog_schema
+        from sparkforge.facts.fusion import fuse
+        from sparkforge.facts.sql_literal import extract_sql_from_pyspark
+        from sparkforge.rules.loader import load_catalog
+
+        catalog_facts = extract_catalog_schema(
+            {"tables": [_catalog_table("db.eventos", projection=False)]}, "catalog.json"
+        )
+        facts = fuse([*extract_sql_from_pyspark(source, "a.py"), *catalog_facts])
+        catalog = [r for r in load_catalog() if r["id"] == "SF-ATH-002"]
+        assert catalog, "SF-ATH-002 ausente do catalogo"
+        return judge(facts, catalog, GLUE_50)
+
+    def test_unfiltered_query_is_reported_even_when_a_sibling_query_filters(self):
+        found = self._judge_002(TWO_QUERIES_ONE_FILTERED)
+        assert [(f.subject["file"], f.subject["line"]) for f in found] == [("a.py", 1)]
+
+    def test_filtered_query_is_never_accused(self):
+        only_filtered = TWO_QUERIES_ONE_FILTERED.splitlines(keepends=True)[1]
+        assert self._judge_002(only_filtered) == []
+
+    def test_every_unfiltered_query_gets_its_own_finding(self):
+        source = (
+            'spark.sql("SELECT valor FROM db.eventos LIMIT 10")\n'
+            'spark.sql("SELECT valor FROM db.eventos WHERE dt = \'2026-01-01\' LIMIT 10")\n'
+            'spark.sql("SELECT valor FROM db.eventos LIMIT 20")\n'
+        )
+        found = self._judge_002(source)
+        assert [f.subject["line"] for f in found] == [1, 3]
+
+
 class TestBlockedOnIsDistinctFromMissingData:
     """Regra bloqueada por capacidade inexistente e regra sem dados nesta execucao
     sao situacoes diferentes: a primeira nunca dispara ate alguem construir o

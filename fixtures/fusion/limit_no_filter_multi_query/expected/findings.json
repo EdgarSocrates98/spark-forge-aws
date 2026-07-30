@@ -1,0 +1,102 @@
+[
+  {
+    "rule_id": "SF-ATH-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "LIMIT usado como se fosse filtro",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "unfiltered_limit_a.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_a666e7"
+    ],
+    "measured": {
+      "column_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "athena": "*"
+    },
+    "explanation": "LIMIT restringe o resultado, não o escaneamento. SELECT colunas FROM tabela LIMIT 10 pode escanear a tabela inteira e cobrar por isso. A intuição de que LIMIT é barato vem de bancos com índice, e não se transfere para Athena sobre S3.",
+    "proposed_change": [
+      "Adicionar WHERE sobre coluna de partição para restringir o escaneamento.",
+      "Para amostragem, filtrar por uma partição específica em vez de confiar no LIMIT."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Filtro por partição muda o conjunto amostrado; não é amostra aleatória."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "Bytes escaneados antes e depois."
+    ],
+    "rollback": [
+      "Não aplicável."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-ATH-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "LIMIT usado como se fosse filtro",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "unfiltered_limit_b.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_a228c0"
+    ],
+    "measured": {
+      "column_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "athena": "*"
+    },
+    "explanation": "LIMIT restringe o resultado, não o escaneamento. SELECT colunas FROM tabela LIMIT 10 pode escanear a tabela inteira e cobrar por isso. A intuição de que LIMIT é barato vem de bancos com índice, e não se transfere para Athena sobre S3.",
+    "proposed_change": [
+      "Adicionar WHERE sobre coluna de partição para restringir o escaneamento.",
+      "Para amostragem, filtrar por uma partição específica em vez de confiar no LIMIT."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Filtro por partição muda o conjunto amostrado; não é amostra aleatória."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "Bytes escaneados antes e depois."
+    ],
+    "rollback": [
+      "Não aplicável."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

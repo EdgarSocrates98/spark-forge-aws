@@ -1,0 +1,40 @@
+{
+  "tables": [
+    {
+      "name": "db.eventos_projetado",
+      "storage_format": "parquet",
+      "partition_keys": [{"name": "dt", "type": "string"}],
+      "columns": [
+        {"name": "cliente_id", "type": "bigint"},
+        {"name": "valor", "type": "double"},
+        {"name": "dt", "type": "string"}
+      ],
+      "properties": {"projection.enabled": "true"},
+      "partition_count": 250000
+    },
+    {
+      "name": "db.cliques_sem_projection_a",
+      "storage_format": "parquet",
+      "partition_keys": [{"name": "dt", "type": "string"}, {"name": "hora", "type": "string"}],
+      "columns": [
+        {"name": "cliente_id", "type": "bigint"},
+        {"name": "url", "type": "string"},
+        {"name": "dt", "type": "string"},
+        {"name": "hora", "type": "string"}
+      ],
+      "partition_count": 150000
+    },
+    {
+      "name": "db.cliques_sem_projection_b",
+      "storage_format": "parquet",
+      "partition_keys": [{"name": "dt", "type": "string"}, {"name": "regiao", "type": "string"}],
+      "columns": [
+        {"name": "cliente_id", "type": "bigint"},
+        {"name": "url", "type": "string"},
+        {"name": "dt", "type": "string"},
+        {"name": "regiao", "type": "string"}
+      ],
+      "partition_count": 300000
+    }
+  ]
+}

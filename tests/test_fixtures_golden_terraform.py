@@ -20,7 +20,13 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "terraform"
 
-REQUIRED_FIXTURES = {"autoscaling_conflict", "no_observability", "secret_in_arguments", "clean_job"}
+REQUIRED_FIXTURES = {
+    "autoscaling_conflict",
+    "no_observability",
+    "no_observability_multi_job",
+    "secret_in_arguments",
+    "clean_job",
+}
 
 
 def fixture_dirs():
