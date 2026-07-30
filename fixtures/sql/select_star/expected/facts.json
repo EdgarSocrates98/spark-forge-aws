@@ -1,0 +1,51 @@
+[
+  {
+    "id": "f_4549f5",
+    "schema_version": 1,
+    "kind": "sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "projection_count": 1,
+      "predicate_count": 0,
+      "unresolved_count": 0,
+      "statement_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "1c28dafaeb5c48c2fc98fefec860c0e6c3998d64a84c213ee2c7b38030ae0cdd",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_2f8afa",
+    "schema_version": 1,
+    "kind": "sql.projection",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "star": true,
+      "has_limit": false,
+      "table_format_columnar": null
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "1c28dafaeb5c48c2fc98fefec860c0e6c3998d64a84c213ee2c7b38030ae0cdd",
+      "extractor": "sql_literal@0.1.0"
+    }
+  }
+]

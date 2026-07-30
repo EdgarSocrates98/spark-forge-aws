@@ -120,8 +120,20 @@ rules:
     sources:
       - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29}
 
+  # INERTE POR DESENHO ATE EXISTIR EXTRATOR DE HISTORICO ICEBERG.
+  # `attrs.written_before_sort_order` significa "este data file foi escrito antes
+  # do sort order atual ter sido definido na tabela". Um dump de metadata table
+  # tirado num unico instante nao tem como saber isso: precisaria correlacionar o
+  # timestamp de escrita do arquivo com o timestamp em que a table property
+  # `sort-order` foi alterada, ou seja, precisaria de historico entre duas
+  # coletas (ou de um extrator de log de DDL/commits), nao so do dump atual. A
+  # regra nao dispara hoje e nao vai disparar ate que um extrator de historico
+  # produza esse atributo. Fica registrada em vez de removida porque o
+  # conhecimento e valido; o que falta e a capacidade de coleta. Ver o campo
+  # `blocked_on` abaixo.
   - id: SF-ICE-004
     category: iceberg
+    blocked_on: extrator-de-historico-iceberg
     title: Sort order definido sem rewrite dos dados existentes
     requires_facts: [iceberg.table_property, iceberg.files_summary]
     when:

@@ -19,6 +19,8 @@ from typing import Any
 from sparkforge.case import router, store
 from sparkforge.case.resume import render_handoff
 from sparkforge.case.resume import resume as run_resume
+from sparkforge.collect import aws as collect_aws
+from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.findings.models import Fact, RuntimeContext
@@ -435,3 +437,96 @@ def handoff(
     result = dict(payload)
     result["handoff_path"] = str(path)
     return result
+
+
+# --------------------------------------------------------------------------- #
+# collect (coletores AWS)
+# --------------------------------------------------------------------------- #
+
+
+def _collect_error(exc: Exception, repo: str, rel_path: str) -> AdapterError:
+    """Reembala falha de coleta com o caminho exato onde o artefato coletado
+    manualmente precisa ficar -- sem isto, "colete manualmente e registre"
+    (a mensagem generica de `require_boto3`) deixa o operador adivinhando
+    onde. Perder acesso a AWS nao pode deixar a ferramenta inutilizavel."""
+    message = str(exc)
+    if isinstance(exc, CollectorUnavailable):
+        expected = Path(repo) / rel_path
+        message += (
+            f"\n  Alternativa manual: baixe o artefato (AWS CLI ou console), salve em "
+            f"{expected}, e registre com `sparkforge.collect.register_artifact` "
+            f"(kind, sha256, source e o collect_command acima)."
+        )
+    return AdapterError(message, exit_code=2)
+
+
+def _collect_payload(entry: Any, now: str) -> dict[str, Any]:
+    payload = entry.to_dict()
+    # `collected_at != now` prova que a chamada foi um cache hit local (o
+    # sha256 ja batia) -- nenhuma rede, nenhuma credencial AWS tocada. Sem
+    # este campo, "no-op" e um fato que so existe nos logs internos do
+    # coletor, invisivel para quem le a saida da CLI/MCP.
+    payload["cache_hit"] = entry.collected_at != now
+    return payload
+
+
+def collect_event_log(
+    repo: str, *, job_run_id: str, bucket: str, prefix: str, now: str
+) -> dict[str, Any]:
+    rel_path = collect_aws.event_log_path(job_run_id)
+    try:
+        entry = collect_aws.collect_event_log(
+            job_run_id, Path(repo), bucket=bucket, prefix=prefix, now=now
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_glue_job(repo: str, *, job_name: str, now: str) -> dict[str, Any]:
+    rel_path = collect_aws.glue_job_path(job_name)
+    try:
+        entry = collect_aws.collect_glue_job(job_name, Path(repo), now=now)
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_cloudwatch(
+    repo: str, *, job_name: str, job_run_id: str, start: str, end: str, now: str
+) -> dict[str, Any]:
+    rel_path = collect_aws.cloudwatch_path(job_name, job_run_id)
+    try:
+        entry = collect_aws.collect_cloudwatch(
+            job_name, job_run_id, Path(repo), now=now, start=start, end=end
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_iceberg_metadata(
+    repo: str, *, table: str, workgroup: str, output_location: str, now: str
+) -> dict[str, Any]:
+    rel_path = collect_aws.iceberg_metadata_path(table)
+    try:
+        entry = collect_aws.collect_iceberg_metadata(
+            table, Path(repo), workgroup=workgroup, output_location=output_location, now=now
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_verify(repo: str) -> dict[str, Any]:
+    results = verify_all(repo)
+    missing = [r for r in results if not r["present"]]
+    mismatched = [r for r in results if r["present"] and not r["hash_matches"]]
+    ok = [r for r in results if r["present"] and r["hash_matches"]]
+    return {
+        "total_count": len(results),
+        "ok_count": len(ok),
+        "missing_count": len(missing),
+        "mismatched_count": len(mismatched),
+        "artifacts": results,
+    }
