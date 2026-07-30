@@ -1,0 +1,54 @@
+[
+  {
+    "rule_id": "SF-ATH-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Coluna de partição com tipo incompatível com o filtro",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_7bada2"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "athena": "*"
+    },
+    "explanation": "Partição gravada como string e filtrada como date, ou o inverso, provoca cast implícito que pode impedir o partition pruning sem gerar erro algum. A query retorna o resultado correto e escaneia a tabela inteira. É a falha mais difícil de ver porque nada quebra. O mesmo mecanismo existe no Spark, e lá se verifica em PartitionFilters no plano físico. Ver knowledge/spark/execution-model.md secao 3.",
+    "proposed_change": [
+      "Alinhar o tipo do literal do filtro ao tipo da coluna de partição.",
+      "Ou corrigir o tipo da coluna de partição na definição da tabela, o que exige reescrita ou recriação."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Alterar o tipo da coluna de partição afeta todos os consumidores da tabela."
+    ],
+    "tradeoffs": [
+      "Ajustar o filtro é imediato; ajustar o schema resolve para todos os consumidores."
+    ],
+    "validation": [
+      "Bytes escaneados antes e depois, que é a medida direta do pruning.",
+      "Razão entre bytes escaneados e tamanho total da tabela.",
+      "Resultado idêntico."
+    ],
+    "rollback": [
+      "Reverter a query ou a definição de tabela."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/athena/latest/ug/partitions.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

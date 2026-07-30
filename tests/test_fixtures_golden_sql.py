@@ -87,17 +87,26 @@ class TestAdversarial:
 
     def test_all_ath_rules_blocked_or_missing_facts(self):
         """Nenhuma das cinco SF-ATH-* pode disparar so com texto SQL nesta
-        fase: as tres que dependem de schema do catalogo estao blocked_on; as
-        duas restantes (catalog.table_partitions, athena.workgroup) exigem
-        fact kinds que nenhum extrator desta fase produz."""
+        fase, SEM fusao: SF-ATH-001/002/005 exigem os facts `.enriched` (ou
+        `catalog.table_schema`) que so `sparkforge/facts/fusion.py` produz, a
+        partir de `catalog.table_schema` -- fixture nenhuma deste corpus roda
+        fusao nem tem catalogo. As duas restantes (catalog.table_partitions,
+        athena.workgroup) exigem fact kinds que nenhum extrator deste corpus
+        produz. Ver `tests/test_facts_fusion.py::TestEndToEndProbes` para as
+        tres disparando de fato, uma vez fundidas com catalogo."""
         for name in ("select_star", "limit_without_filter", "clean_query"):
             _, _, findings, _ = run_fixture(FIXTURES / name)
             assert not [f for f in findings if f.rule_id.startswith("SF-ATH-")]
 
-    def test_select_star_reason_is_blocked_not_silent(self):
+    def test_select_star_reason_is_requires_facts_not_silent(self):
+        """SF-ATH-001 deixou de ser `blocked_on` (fusion.py existe agora);
+        sem fusao rodar sobre este fixture, falta o fact `sql.projection.enriched`,
+        entao o motivo do skip passa a ser `requires_facts` -- ainda explicito,
+        nunca silencioso."""
         _, _, _, skipped = run_fixture(FIXTURES / "select_star")
         entry = next(s for s in skipped if s["rule_id"] == "SF-ATH-001")
-        assert entry["reason"] == "blocked_on"
+        assert entry["reason"] == "requires_facts"
+        assert "sql.projection.enriched" in entry["missing"]
 
     def test_table_format_columnar_is_never_fabricated(self):
         _, facts, _, _ = run_fixture(FIXTURES / "select_star")

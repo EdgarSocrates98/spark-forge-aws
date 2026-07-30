@@ -1,0 +1,13 @@
+{
+  "tables": [
+    {
+      "name": "db.eventos",
+      "storage_format": "parquet",
+      "partition_keys": [{"name": "dt", "type": "bigint"}],
+      "columns": [
+        {"name": "a", "type": "string"},
+        {"name": "dt", "type": "bigint"}
+      ]
+    }
+  ]
+}

@@ -92,6 +92,114 @@ def build_parser() -> argparse.ArgumentParser:
     pyspark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     pyspark_p.add_argument("--cursor")
 
+    catalog_p = analyze_sub.add_parser(
+        "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
+    )
+    catalog_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps do catalogo."
+    )
+    catalog_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    catalog_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    catalog_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    catalog_p.add_argument("--cursor")
+
+    event_log_analyze_p = analyze_sub.add_parser(
+        "event-log", help="Extrai facts de um Spark event log (.jsonl) ja coletado."
+    )
+    event_log_analyze_p.add_argument("--path", required=True, help="Arquivo de event log.")
+    event_log_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    event_log_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    event_log_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    event_log_analyze_p.add_argument("--cursor")
+
+    terraform_p = analyze_sub.add_parser(
+        "terraform", help="Extrai facts de blocos aws_glue_job em HCL Terraform."
+    )
+    terraform_p.add_argument("--path", required=True, help="Arquivo ou diretorio .tf a analisar.")
+    terraform_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    terraform_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    terraform_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    terraform_p.add_argument("--cursor")
+
+    iceberg_p = analyze_sub.add_parser(
+        "iceberg", help="Extrai facts de um dump JSON das metadata tables Iceberg."
+    )
+    iceberg_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps das metadata tables."
+    )
+    iceberg_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    iceberg_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    iceberg_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    iceberg_p.add_argument("--cursor")
+
+    sql_p = analyze_sub.add_parser(
+        "sql", help="Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark."
+    )
+    sql_p.add_argument("--path", help="Arquivo .sql a analisar.")
+    sql_p.add_argument(
+        "--from-pyspark",
+        help='Arquivo .py: extrai texto de chamadas spark.sql("...") em vez de ler --path.',
+    )
+    sql_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    sql_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    sql_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    sql_p.add_argument("--cursor")
+
+    athena_wg_analyze_p = analyze_sub.add_parser(
+        "athena-workgroup", help="Extrai facts de um dump JSON de workgroups do Athena."
+    )
+    athena_wg_analyze_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps de workgroups."
+    )
+    athena_wg_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    athena_wg_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    athena_wg_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    athena_wg_analyze_p.add_argument("--cursor")
+
+    call_graph_p = analyze_sub.add_parser(
+        "call-graph",
+        help="Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos.",
+    )
+    call_graph_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts gerado por `analyze pyspark --out`."
+    )
+    call_graph_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    call_graph_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    call_graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    call_graph_p.add_argument("--cursor")
+
+    # fuse ---------------------------------------------------------------
+    fuse_p = sub.add_parser(
+        "fuse",
+        help=(
+            "Correlaciona facts de SQL com schema do catalogo "
+            "(sparkforge.facts.fusion), antes de judge."
+        ),
+    )
+    fuse_p.add_argument(
+        "--facts",
+        required=True,
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) gerado por `analyze`. Repetivel: fusao precisa "
+            "ver as fontes que quer correlacionar na mesma chamada."
+        ),
+    )
+    fuse_p.add_argument(
+        "--out", help="Escreve a lista completa de facts fundidos (JSON) neste arquivo."
+    )
+    fuse_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    fuse_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    fuse_p.add_argument("--cursor")
+
     # judge ------------------------------------------------------------
     judge_p = sub.add_parser(
         "judge", help="Aplica o catalogo de regras versionado sobre facts ja extraidos."
@@ -236,6 +344,13 @@ def build_parser() -> argparse.ArgumentParser:
     iceberg_p.add_argument("--output-location", required=True)
     iceberg_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    athena_wg_collect_p = collect_sub.add_parser(
+        "athena-workgroup", help="Baixa a configuracao de um workgroup via a API do Athena."
+    )
+    athena_wg_collect_p.add_argument("--repo", required=True)
+    athena_wg_collect_p.add_argument("--workgroup", required=True)
+    athena_wg_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
     )
@@ -262,6 +377,169 @@ def _cmd_analyze_pyspark(args: argparse.Namespace) -> int:
         "next_cursor": next_cursor,
         "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
         "by_kind": full["by_kind"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
+    full = _core.analyze_catalog_schema(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
+    full = _core.analyze_event_log(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_terraform(args: argparse.Namespace) -> int:
+    full = _core.analyze_terraform(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_iceberg(args: argparse.Namespace) -> int:
+    full = _core.analyze_iceberg(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_sql(args: argparse.Namespace) -> int:
+    full = _core.analyze_sql(args.path, from_pyspark=args.from_pyspark, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
+    full = _core.analyze_athena_workgroup(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
+    full = _core.analyze_call_graph(args.facts, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_fuse(args: argparse.Namespace) -> int:
+    full = _core.fuse_facts(args.facts, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "summary": full["summary"],
         "items": page,
     }
     _print(payload)
@@ -442,6 +720,12 @@ def _cmd_collect_iceberg_metadata(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_athena_workgroup(args: argparse.Namespace) -> int:
+    payload = _core.collect_athena_workgroup(args.repo, workgroup=args.workgroup, now=args.now)
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_verify(args: argparse.Namespace) -> int:
     _print(_core.collect_verify(args.repo))
     return 0
@@ -449,6 +733,14 @@ def _cmd_collect_verify(args: argparse.Namespace) -> int:
 
 _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
+    ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
+    ("analyze", "event-log"): _cmd_analyze_event_log,
+    ("analyze", "terraform"): _cmd_analyze_terraform,
+    ("analyze", "iceberg"): _cmd_analyze_iceberg,
+    ("analyze", "sql"): _cmd_analyze_sql,
+    ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
+    ("analyze", "call-graph"): _cmd_analyze_call_graph,
+    ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
     ("case", "open"): _cmd_case_open,
     ("case", "get"): _cmd_case_get,
@@ -463,6 +755,7 @@ _DISPATCH = {
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
+    ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
     ("collect", "verify"): _cmd_collect_verify,
 }
 

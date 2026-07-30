@@ -42,6 +42,7 @@
     "attrs": {
       "star": false,
       "has_limit": true,
+      "table": "sales.orders",
       "table_format_columnar": null
     },
     "provenance": {

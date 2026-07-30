@@ -43,6 +43,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |
+| `blocked_on` | não | Nome de uma capacidade que ainda não existe (ex.: um extrator, uma etapa de fusão — ver "Facts `.enriched`" abaixo). Diferente de `requires_facts`: skip por `requires_facts` é "os dados podem chegar na próxima execução"; skip por `blocked_on` é "não vai disparar até alguém construir a capacidade". `rules/engine.py::judge` reporta os dois com `reason` distinto em `skipped` |
 | `when` | sim | `all` / `any` de condições |
 | `status` | sim | `structural` = padrão sem métrica. `confirmed` = há measure |
 | `threshold` | se por limiar | Aparece na saída — o operador vê qual limiar foi aplicado |
@@ -96,6 +97,20 @@ Com `same_subject: true`, todas as condições do grupo precisam ser satisfeitas
 um stage, uma tabela. Não use quando a afirmação for sobre o conjunto.
 
 **`absent:` exige um fact sentinela.** `absent: X` é verdadeiro quando nenhum fact do kind `X` existe — inclusive quando o extrator que produziria `X` nunca rodou. Uma regra que usa `absent:` sem exigir também o sentinela do extrator relevante (`pyspark.module_analyzed` para PySpark) dispara falso positivo numa análise parcial. Sempre inclua o sentinela em `requires_facts`.
+
+### Facts `.enriched` — correlação de fontes fora do motor
+
+`where`/`expr` avaliam SEMPRE contra o contexto de um único fact (`rules/engine.py::_fact_context`). Isso é suficiente enquanto a evidência de uma regra vem inteira de um extrator. Não é suficiente quando a resposta é literalmente metade de uma fonte, metade de outra — por exemplo, "esta query faz `SELECT *`" (do texto SQL) **e** "esta tabela é colunar" (do schema do catálogo) precisam estar no MESMO fact para uma condição `where` casar as duas ao mesmo tempo.
+
+O motor não resolve isso combinando facts dentro de uma condição — não é essa a mudança que se faz (ver "Regras para escrever regra nova" acima: o motor fica simples de propósito). A correlação acontece **antes** de `judge`, numa etapa de fusão que lê os facts das duas fontes e produz um fact novo, de um kind próprio (`<kind original>.enriched`), carregando os attrs das duas fontes juntos. `sparkforge/facts/fusion.py` é a implementação de referência: correlaciona `sql.projection`/`sql.predicate` (`sparkforge/facts/sql_literal.py`) com `catalog.table_schema` (`sparkforge/facts/catalog_schema.py`) pelo nome da tabela e produz `sql.projection.enriched` / `sql.predicate.enriched`.
+
+Uma regra que depende de fusão:
+
+- Referencia o fact `.enriched` em `when`, nunca o fact original das duas fontes numa condição só.
+- Lista o fact `.enriched` (ou o fact da fonte que falta) em `requires_facts`, para não disparar numa análise que nunca rodou a fusão — mesma disciplina do sentinela em `absent:`.
+- Fica marcada `blocked_on: <nome-da-capacidade>` no catálogo até a etapa de fusão que ela precisa existir (ver campo `blocked_on` abaixo), documentando no comentário da regra **o que especificamente falta** — não "falta dado", mas "falta a capacidade de correlacionar X com Y".
+
+`SF-ATH-001`, `SF-ATH-002` e `SF-ATH-005` (`athena.yaml`) são o exemplo: ficaram `blocked_on: fusao-sql-catalogo-schema` até `fusion.py` existir, e o comentário em cada regra explica exatamente qual correlação faltava.
 
 ### Avaliador de `expr`
 

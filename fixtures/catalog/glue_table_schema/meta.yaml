@@ -1,0 +1,23 @@
+name: glue_table_schema
+proves: >
+  Um dump de catalogo com tres tabelas de shape bem diferente: db.eventos
+  (parquet, particionada, com properties e partition_count abaixo do limiar
+  de SF-ATH-003), db.legado_csv (csv, sem partition_keys, sem properties --
+  tolerancia a chaves ausentes) e db.sem_dados (so `name`, o minimo absoluto
+  que o extrator precisa aceitar sem falhar). Nenhuma das tres deve produzir
+  finding: partition_count de db.eventos fica abaixo do limiar de SF-ATH-003
+  E a tabela ja tem projection.enabled=true (dupla garantia contra falso
+  positivo), e nenhuma outra regra SF-ATH-* tem os facts que precisa so com
+  catalogo (sem SQL, sem fusao).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - catalog.table_schema
+  - catalog.table_partitions
+  - catalog.table_property
+  - catalog.table_property.projection_enabled
+  - catalog.analyzed
+expects_rules: []
