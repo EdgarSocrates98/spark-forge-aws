@@ -1,0 +1,181 @@
+[
+  {
+    "id": "f_0a6f59",
+    "schema_version": 1,
+    "kind": "iceberg.delete_files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {
+      "delete_file_count": 2,
+      "data_file_count": 30,
+      "total_bytes": 80000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_13b8aa",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {
+      "data_file_count": 30,
+      "total_bytes": 9000000000,
+      "avg_file_bytes": 300000000.0,
+      "p50_file_bytes": 300000000,
+      "p95_file_bytes": 300000000,
+      "min_file_bytes": 300000000,
+      "max_file_bytes": 300000000,
+      "total_records": 24000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_bc56d1",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {
+      "snapshot_count": 3,
+      "span_hours": 720.0
+    },
+    "attrs": {
+      "operations": [
+        "append"
+      ],
+      "oldest": "2026-06-01T00:00:00+00:00",
+      "newest": "2026-07-01T00:00:00+00:00"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_4ccfc5",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {
+      "section_count": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_eafe08",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "format-version",
+      "value": "2",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_eafe08",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_eafe08",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "sort-order",
+      "present": false,
+      "non_empty": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_eafe08",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.healthy_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "partition-spec",
+      "present": false,
+      "non_empty": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "aa68f6a9d65ef6e3c38d06d1e9d5c6bdf8abdd542f0b98c7a6f8b6e4eb1ccfb6",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  }
+]

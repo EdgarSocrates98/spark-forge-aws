@@ -1,0 +1,124 @@
+[
+  {
+    "rule_id": "SF-ICE-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Data files pequenos — tamanho médio muito abaixo do alvo",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "evidence": [
+      "f_33cb7f"
+    ],
+    "measured": {
+      "data_file_count": 20,
+      "total_bytes": 80000000,
+      "avg_file_bytes": 4000000.0,
+      "p50_file_bytes": 4000000,
+      "p95_file_bytes": 4000000,
+      "min_file_bytes": 4000000,
+      "max_file_bytes": 4000000,
+      "total_records": 100000
+    },
+    "threshold": {
+      "min_avg_bytes": 33554432
+    },
+    "runtime_scope": {
+      "iceberg": ">=1.0.0"
+    },
+    "explanation": "Arquivos pequenos custam listing, abertura e overhead de task. Em Iceberg o custo adicional é de metadados: mais data files significam manifests maiores e planejamento mais lento, inclusive para consumidores como Athena. O limiar de 32MB é conservador contra um alvo usual de 128 a 512MB. Ver knowledge/storage/iceberg-performance.md secao 1 e knowledge/storage/parquet-layout.md secao 3.",
+    "proposed_change": [
+      "Corrigir na origem primeiro, com write.distribution-mode hash ou range, que reduz o número de arquivos por partição na própria escrita.",
+      "Ajustar write.target-file-size-bytes ao alvo desejado.",
+      "Compactar o passivo com rewrite_data_files, estratégia binpack se o problema é contagem.",
+      "Se o pruning também é ruim, usar estratégia sort com a coluna de filtro dominante em vez de binpack."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Compactação reescreve dados e cria um novo snapshot, consumindo DPU e armazenamento temporário.",
+      "Alterar write.distribution-mode adiciona shuffle na escrita, aumentando o custo de cada run."
+    ],
+    "tradeoffs": [
+      "Corrigir na origem encarece cada escrita e evita compactação recorrente. Compactar depois mantém a escrita barata e adiciona um job de manutenção."
+    ],
+    "validation": [
+      "Tamanho médio, p50 e p95 de arquivo antes e depois, via metadata table files.",
+      "Contagem total de linhas idêntica antes e depois da compactação.",
+      "Tempo de planejamento de uma query de referência antes e depois."
+    ],
+    "rollback": [
+      "Time travel para o snapshot anterior à compactação",
+      "se ainda não expirado."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-procedures/",
+        "retrieved": "2026-07-29",
+        "note": "doc latest; confirmar parâmetros contra a versão embarcada"
+      },
+      {
+        "url": "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-ICE-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "write.distribution-mode none com particionamento",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "evidence": [
+      "f_888138",
+      "f_888138"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "iceberg": ">=1.0.0"
+    },
+    "explanation": "Com distribution-mode none não há shuffle antes da escrita, então cada task grava em cada partição que ela contém. O resultado é da ordem de N tasks vezes M partições arquivos. É a causa estrutural de small files em Iceberg, e corrigi-la na escrita é preferível a compactar indefinidamente.",
+    "proposed_change": [
+      "Definir write.distribution-mode como hash, ou range quando há sort order.",
+      "Confirmar o comportamento exato do modo escolhido na documentação da versão embarcada.",
+      "Medir o número de arquivos por partição antes e depois."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Adicionar shuffle na escrita aumenta o custo de cada run; o ganho está no consumo",
+      "não na escrita."
+    ],
+    "tradeoffs": [
+      "Escrita mais cara contra leitura mais barata e menos manutenção."
+    ],
+    "validation": [
+      "Contagem de arquivos por partição antes e depois, via metadata table files.",
+      "Runtime e DPU-hours da escrita antes e depois.",
+      "Contagem total de linhas idêntica."
+    ],
+    "rollback": [
+      "Restaurar write.distribution-mode anterior; afeta apenas escritas futuras."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-procedures/",
+        "retrieved": "2026-07-29",
+        "note": "comportamento exato por versão não reconfirmado nesta coleta"
+      }
+    ]
+  }
+]
