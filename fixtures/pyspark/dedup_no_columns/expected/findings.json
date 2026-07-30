@@ -41,9 +41,7 @@
     "validation": [
       "Contagem antes e depois da deduplicação, em ambas as versões.",
       "Contagem distinta da chave de negócio.",
-      {
-        "Verificar determinismo": "duas execuções produzem o mesmo resultado."
-      }
+      "Verificar determinismo: duas execuções produzem o mesmo resultado."
     ],
     "rollback": [
       "Reverter o commit."

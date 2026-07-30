@@ -166,30 +166,6 @@
     }
   },
   {
-    "id": "f_d224eb",
-    "schema_version": 1,
-    "kind": "pyspark.read",
-    "subject": {
-      "type": "source_location",
-      "file": "lib/job.py",
-      "line": 10,
-      "col": 14,
-      "end_line": 10,
-      "symbol": "executar",
-      "snippet": "pedidos = spark.read.format(\"parquet\").load(entrada)"
-    },
-    "measures": {},
-    "attrs": {
-      "format": "format",
-      "target": "parquet"
-    },
-    "provenance": {
-      "artifact": "lib/job.py",
-      "artifact_sha256": "7322f5e505a69dc65464d15d7bffc7148653ce83427e51120c182a5ebe6778d0",
-      "extractor": "pyspark_ast@0.1.0"
-    }
-  },
-  {
     "id": "f_43f976",
     "schema_version": 1,
     "kind": "pyspark.write",

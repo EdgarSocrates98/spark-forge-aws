@@ -585,13 +585,23 @@ def _is_chain_terminal(node: ast.Call, terminals: frozenset[str], ctx: _Context)
     """True se nenhuma chamada seguinte na mesma cadeia tambem for terminal deste
     mesmo conjunto -- evita contar um builder intermediario (ex.: `.format(x)`
     antes de `.load(y)`) como uma segunda operacao terminal separada."""
-    parent = ctx.parent.get(id(node))
-    return not (
-        isinstance(parent, ast.Call)
-        and isinstance(parent.func, ast.Attribute)
-        and parent.func.value is node
-        and parent.func.attr in terminals
-    )
+    # O pai de um no numa espinha de atributo e sempre o ast.Attribute
+    # intermediario, nunca o ast.Call que o envolve. Checar `isinstance(parent,
+    # ast.Call)` direto daria sempre falso e nunca deduplicaria. Por isso subimos
+    # a espinha inteira, e nao um hop: `.format(x).option(y).load(z)` tem um elo
+    # nao-terminal no meio, e uma checagem de um hop deixaria `format` e `load`
+    # emitirem dois facts para a mesma operacao.
+    current: ast.AST = node
+    while True:
+        parent = ctx.parent.get(id(current))
+        if isinstance(parent, ast.Attribute) and parent.value is current:
+            grandparent = ctx.parent.get(id(parent))
+            if isinstance(grandparent, ast.Call) and grandparent.func is parent:
+                if parent.attr in terminals:
+                    return False
+                current = grandparent
+                continue
+        return True
 
 
 def _read_fact(

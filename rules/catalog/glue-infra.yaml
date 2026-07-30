@@ -151,7 +151,7 @@ rules:
       oito linhas da tabela de decisão têm capacidade como resposta errada.
     proposed_change:
       - Coletar os sete números do baseline antes de mudar capacidade.
-      - Classificar o gargalo por eixo: CPU, memória, disco, skew, driver, I/O.
+      - "Classificar o gargalo por eixo: CPU, memória, disco, skew, driver, I/O."
       - Se for memória comprovada, avaliar a série R, que dobra a memória com o mesmo vCPU, antes de subir na série G.
     risks: [Aumentar capacidade sem diagnóstico eleva o custo sem reduzir o runtime.]
     tradeoffs: [Coletar baseline atrasa a mudança em um ciclo de execução.]
