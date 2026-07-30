@@ -15,7 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 aws = ["boto3>=1.34"]
 mcp = ["mcp>=1.0"]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["pytest>=8.0", "ruff>=0.6", "defusedxml>=0.7"]
 
 [project.scripts]
 sparkforge = "sparkforge.adapters.cli:main"
