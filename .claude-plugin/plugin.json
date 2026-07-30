@@ -1,0 +1,20 @@
+{
+  "name": "sparkforge-aws",
+  "version": "0.4.0",
+  "description": "Analise deterministica de jobs AWS Glue PySpark: extracao de facts via AST estatico, julgamento contra um catalogo de regras versionado, e um ciclo de vida de case que atravessa sessoes (Devin, Claude Code, CI) via .sparkforge/case.yaml.",
+  "author": {
+    "name": "SparkForge AWS"
+  },
+  "license": "MIT",
+  "keywords": [
+    "aws-glue",
+    "pyspark",
+    "spark",
+    "iceberg",
+    "parquet",
+    "athena",
+    "performance",
+    "mcp"
+  ],
+  "homepage": "https://github.com/sparkforge-aws/spark-forge-aws"
+}
