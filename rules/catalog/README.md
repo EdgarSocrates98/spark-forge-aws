@@ -70,6 +70,31 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 - absent: pyspark.cache_unpersist
 ```
 
+### `same_subject` — correlação dentro de uma entidade
+
+Por default, cada condição de um grupo `all` é satisfeita independentemente, contra a
+lista inteira de facts. Isso é correto para a maioria das regras, e **errado** para
+regra que correlaciona atributos de uma mesma entidade.
+
+Um arquivo Terraform com dois `aws_glue_job` mostra o problema: sem `same_subject`, uma
+regra casa juntando um atributo do job A com outro atributo do job B. Cada job está
+correto isoladamente, e a regra acusa. Acusar configuração correta destrói a confiança em
+todo o resto do relatório.
+
+```yaml
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: "--enable-auto-scaling", attrs.value: "true"}
+        - fact: tf.attribute
+          where: {attrs.key: number_of_workers, attrs.present: true}
+```
+
+Com `same_subject: true`, todas as condições do grupo precisam ser satisfeitas pelo mesmo
+`subject.symbol`. Use sempre que a regra fizer afirmação sobre **uma** entidade — um job,
+um stage, uma tabela. Não use quando a afirmação for sobre o conjunto.
+
 **`absent:` exige um fact sentinela.** `absent: X` é verdadeiro quando nenhum fact do kind `X` existe — inclusive quando o extrator que produziria `X` nunca rodou. Uma regra que usa `absent:` sem exigir também o sentinela do extrator relevante (`pyspark.module_analyzed` para PySpark) dispara falso positivo numa análise parcial. Sempre inclua o sentinela em `requires_facts`.
 
 ### Avaliador de `expr`

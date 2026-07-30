@@ -196,3 +196,86 @@ class TestVerticalSliceEndToEnd:
         facts = extract_source("df.repartition(200)\n", "lib/loader.py")
         catalog = [r for r in load_catalog() if r["id"] == "SF-PY-005"]
         assert judge(facts, catalog, GLUE_50) == []
+
+
+class TestSameSubjectCorrelation:
+    """Sem correlacao por subject, uma regra casa juntando um atributo de uma
+    entidade com outro atributo de uma entidade diferente. Cada uma correta
+    isoladamente, e a regra acusa. Falso positivo em config correta destroi a
+    confianca em todo o resto do relatorio."""
+
+    def _rule(self, same_subject):
+        when = {
+            "all": [
+                {"fact": "tf.attribute", "where": {"attrs.key": "autoscaling"}},
+                {"fact": "tf.attribute", "where": {"attrs.key": "workers"}},
+            ]
+        }
+        if same_subject:
+            when["same_subject"] = True
+        return rule(requires_facts=["tf.attribute"], when=when)
+
+    def _attr(self, symbol, key):
+        return Fact(
+            kind="tf.attribute",
+            subject={"type": "tf_resource", "file": "main.tf", "symbol": symbol},
+            attrs={"key": key},
+        )
+
+    def test_split_across_entities_does_not_fire_with_same_subject(self):
+        facts = [self._attr("job_a", "workers"), self._attr("job_b", "autoscaling")]
+        assert judge(facts, [self._rule(True)], GLUE_50) == []
+
+    def test_split_across_entities_does_fire_without_same_subject(self):
+        """Comportamento default preservado: regras que falam do conjunto continuam iguais."""
+        facts = [self._attr("job_a", "workers"), self._attr("job_b", "autoscaling")]
+        assert len(judge(facts, [self._rule(False)], GLUE_50)) == 1
+
+    def test_same_entity_still_fires_with_same_subject(self):
+        facts = [self._attr("job_c", "workers"), self._attr("job_c", "autoscaling")]
+        found = judge(facts, [self._rule(True)], GLUE_50)
+        assert len(found) == 1
+        assert found[0].subject["symbol"] == "job_c"
+
+    def test_evidence_comes_only_from_the_matching_entity(self):
+        facts = [
+            self._attr("job_c", "workers"),
+            self._attr("job_c", "autoscaling"),
+            self._attr("job_d", "workers"),
+        ]
+        found = judge(facts, [self._rule(True)], GLUE_50)
+        assert len(found[0].evidence) == 2
+
+    def test_result_is_deterministic_regardless_of_fact_order(self):
+        a = [self._attr("job_c", "workers"), self._attr("job_c", "autoscaling")]
+        b = list(reversed(a))
+        assert [f.to_dict() for f in judge(a, [self._rule(True)], GLUE_50)] == [
+            f.to_dict() for f in judge(b, [self._rule(True)], GLUE_50)
+        ]
+
+
+class TestBlockedOnIsDistinctFromMissingData:
+    """Regra bloqueada por capacidade inexistente e regra sem dados nesta execucao
+    sao situacoes diferentes: a primeira nunca dispara ate alguem construir o
+    extrator, a segunda dispara assim que o artefato for coletado. Reportar as duas
+    igual faria o operador esperar por dado que nao esta a caminho."""
+
+    def test_blocked_rule_reports_blocked_on_not_requires_facts(self):
+        blocked = rule(blocked_on="extrator-de-diff-terraform")
+        _, skipped = judge([fact()], [blocked], GLUE_50, return_skipped=True)
+        assert skipped[0]["reason"] == "blocked_on"
+        assert skipped[0]["blocked_on"] == "extrator-de-diff-terraform"
+
+    def test_blocked_rule_never_fires_even_with_all_facts_present(self):
+        blocked = rule(blocked_on="capacidade-futura")
+        assert judge([fact()], [blocked], GLUE_50) == []
+
+    def test_unblocked_rule_with_missing_kind_still_says_requires_facts(self):
+        _, skipped = judge([], [rule()], GLUE_50, return_skipped=True)
+        assert skipped[0]["reason"] == "requires_facts"
+
+    def test_the_real_catalog_marks_sf_glue_005_as_blocked(self):
+        from sparkforge.rules.loader import load_catalog
+
+        target = [r for r in load_catalog() if r["id"] == "SF-GLUE-005"]
+        assert target and target[0]["blocked_on"] == "extrator-de-diff-terraform"
