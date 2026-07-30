@@ -204,6 +204,86 @@ class TestJudge:
         assert {"requires_facts", "runtime_scope"} & {s["reason"] for s in payload["skipped"]}
 
 
+TF_WITH_RETRIES = '''resource "aws_glue_job" "etl" {
+  name         = "etl"
+  glue_version = "5.0"
+  max_retries  = 2
+
+  default_arguments = {
+    "--enable-spark-ui"       = "true"
+    "--spark-event-logs-path" = "s3://b/logs/"
+  }
+}
+'''
+
+APPEND_WRITE = 'df.write.mode("append").parquet("s3://b/p")\n'
+
+
+class TestJudgeCombinesFactsFromSeveralExtractors:
+    """`SF-GLUE-004` correlaciona `tf.attribute` (max_retries) com
+    `pyspark.write` (mode append) -- metade da evidencia vem do Terraform,
+    metade do codigo. Com `judge --facts` aceitando um unico arquivo, avaliar
+    essa regra exigia o operador concatenar dois arrays JSON na mao; quem nao
+    fizesse isso simplesmente nunca via a regra disparar. `fuse --facts` ja e
+    repetivel pela mesma razao."""
+
+    def _tf_facts(self, repo, capsys):
+        tf_dir = repo / "infra"
+        tf_dir.mkdir()
+        (tf_dir / "main.tf").write_text(TF_WITH_RETRIES, encoding="utf-8")
+        out = repo / "tf_facts.json"
+        run(["analyze", "terraform", "--path", str(tf_dir), "--out", str(out)], capsys)
+        return out
+
+    def _py_facts(self, repo, capsys):
+        lib = repo / "job"
+        lib.mkdir()
+        (lib / "w.py").write_text(APPEND_WRITE, encoding="utf-8")
+        out = repo / "py_facts.json"
+        run(["analyze", "pyspark", "--path", str(lib), "--out", str(out)], capsys)
+        return out
+
+    def test_repeated_facts_flag_lets_sf_glue_004_fire(self, repo, capsys):
+        tf_path = self._tf_facts(repo, capsys)
+        py_path = self._py_facts(repo, capsys)
+        code, output = run(
+            [
+                "judge",
+                "--facts", str(tf_path),
+                "--facts", str(py_path),
+                "--glue", "5.0",
+            ],
+            capsys,
+        )
+        assert code == 0
+        assert "SF-GLUE-004" in {f["rule_id"] for f in json.loads(output)["items"]}
+
+    def test_each_file_alone_never_fires_the_correlated_rule(self, repo, capsys):
+        for path in (self._tf_facts(repo, capsys), self._py_facts(repo, capsys)):
+            _, output = run(["judge", "--facts", str(path), "--glue", "5.0"], capsys)
+            assert "SF-GLUE-004" not in {f["rule_id"] for f in json.loads(output)["items"]}
+
+    def test_single_file_invocation_is_unchanged(self, repo, capsys):
+        facts_path = repo / "facts.json"
+        run(["analyze", "pyspark", "--path", str(repo / "lib"), "--out", str(facts_path)], capsys)
+        _, output = run(["judge", "--facts", str(facts_path), "--glue", "5.0"], capsys)
+        assert [f["rule_id"] for f in json.loads(output)["items"]] == ["SF-PY-005"]
+
+    def test_overlapping_files_do_not_duplicate_evidence(self, repo, capsys):
+        """O mesmo arquivo duas vezes nao pode virar duas evidencias do mesmo
+        fact: evidencia repetida faz um achado parecer duas vezes mais
+        sustentado do que e."""
+        facts_path = repo / "facts.json"
+        run(["analyze", "pyspark", "--path", str(repo / "lib"), "--out", str(facts_path)], capsys)
+        _, output = run(
+            ["judge", "--facts", str(facts_path), "--facts", str(facts_path), "--glue", "5.0"],
+            capsys,
+        )
+        items = json.loads(output)["items"]
+        assert [f["rule_id"] for f in items] == ["SF-PY-005"]
+        assert len(items[0]["evidence"]) == len(set(items[0]["evidence"]))
+
+
 class TestCaseLifecycle:
     def _open(self, repo, capsys):
         return run(
