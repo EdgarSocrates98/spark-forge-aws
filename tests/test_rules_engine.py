@@ -363,6 +363,71 @@ class TestObservabilityIsJudgedPerResource:
         assert self._judge_002(only_observed) == []
 
 
+def _catalog_table(name, *, projection, partition_count=250000):
+    entry = {
+        "name": name,
+        "storage_format": "parquet",
+        "partition_keys": [{"name": "dt", "type": "string"}],
+        "columns": [{"name": "valor", "type": "bigint"}],
+        "partition_count": partition_count,
+    }
+    if projection:
+        entry["properties"] = {"projection.enabled": "true"}
+    return entry
+
+
+class TestPartitionProjectionIsJudgedPerTable:
+    """SF-ATH-003 pergunta "esta TABELA resolve particao por lookup no catalogo?".
+    A pergunta e por tabela, nunca pelo dump: um dump do Glue Data Catalog
+    descreve todas as tabelas do banco, e uma unica tabela com partition
+    projection habilitada nao diz nada sobre as outras.
+
+    Checar `absent: catalog.table_property.projection_enabled` contra a lista
+    inteira de facts mascara TODA tabela sobre-particionada assim que UMA delas
+    tem projection -- e a tabela bem configurada e justamente a que se espera
+    encontrar num catalogo real, entao o mascaramento e a regra, nao a excecao.
+    O relatorio diz "nenhuma tabela com problema de metadados" sobre um catalogo
+    cheio delas.
+    """
+
+    def _judge_003(self, *tables):
+        from sparkforge.facts.catalog_schema import extract_catalog_schema
+        from sparkforge.rules.loader import load_catalog
+
+        facts = extract_catalog_schema({"tables": list(tables)}, "catalog.json")
+        catalog = [r for r in load_catalog() if r["id"] == "SF-ATH-003"]
+        assert catalog, "SF-ATH-003 ausente do catalogo"
+        return judge(facts, catalog, GLUE_50)
+
+    def test_table_without_projection_is_reported_even_when_a_sibling_has_it(self):
+        found = self._judge_003(
+            _catalog_table("db.sem_projection", projection=False),
+            _catalog_table("db.com_projection", projection=True),
+        )
+        assert [f.subject.get("symbol") for f in found] == ["db.sem_projection"]
+
+    def test_every_offending_table_gets_its_own_finding(self):
+        found = self._judge_003(
+            _catalog_table("db.a", projection=False),
+            _catalog_table("db.b", projection=False),
+            _catalog_table("db.ok", projection=True),
+        )
+        assert [f.subject.get("symbol") for f in found] == ["db.a", "db.b"]
+
+    def test_correctly_configured_table_is_never_accused(self):
+        """A guarda contra o "conserto" ingenuo: o dump tambem emite
+        `catalog.analyzed` e `catalog.table_property`, cujos grupos nunca contem
+        `catalog.table_partitions`. Se a ancora escorregasse para um subject de
+        arquivo, `absent` ficaria satisfeito e a regra acusaria o dump inteiro.
+        """
+        assert self._judge_003(_catalog_table("db.com_projection", projection=True)) == []
+
+    def test_table_below_the_threshold_is_never_accused(self):
+        assert self._judge_003(
+            _catalog_table("db.pequena", projection=False, partition_count=10)
+        ) == []
+
+
 class TestBlockedOnIsDistinctFromMissingData:
     """Regra bloqueada por capacidade inexistente e regra sem dados nesta execucao
     sao situacoes diferentes: a primeira nunca dispara ate alguem construir o
