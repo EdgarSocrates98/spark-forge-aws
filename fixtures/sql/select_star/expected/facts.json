@@ -40,6 +40,7 @@
     "attrs": {
       "star": true,
       "has_limit": false,
+      "table": "sales.transactions",
       "table_format_columnar": null
     },
     "provenance": {

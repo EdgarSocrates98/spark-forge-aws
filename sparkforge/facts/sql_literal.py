@@ -24,12 +24,23 @@ O que este extrator NUNCA sabe, por nao ter acesso a nada alem do texto SQL:
 se a tabela referenciada e colunar (Parquet/ORC) ou por linha (CSV/JSON); se
 uma coluna filtrada e a coluna de particao da tabela; se o tipo do literal do
 filtro bate com o tipo declarado da coluna. As tres exigem conhecimento de
-schema do catalogo (Glue Data Catalog / Iceberg), que nenhum extrator desta
-fase produz. `sql.projection.attrs.table_format_columnar`,
+schema do catalogo (Glue Data Catalog / Iceberg), que este modulo nao produz.
+`sql.projection.attrs.table_format_columnar`,
 `sql.predicate.attrs.on_partition_column` e
 `sql.predicate.attrs.type_mismatch` sao sempre `None` -- nunca adivinhados.
-Ver `rules/catalog/athena.yaml`: SF-ATH-001, SF-ATH-002 e SF-ATH-005 estao
-marcadas `blocked_on` por esse motivo exato (ver comentario no catalogo).
+`sparkforge/facts/fusion.py` resolve os tres, correlacionando estes facts com
+`catalog.table_schema` (`sparkforge/facts/catalog_schema.py`) pelo nome da
+tabela; ver `rules/catalog/athena.yaml` para SF-ATH-001, SF-ATH-002 e
+SF-ATH-005, que passam a disparar a partir dos facts `.enriched` que a fusao
+produz.
+
+`attrs.table` (nome da tabela do `FROM`), ao contrario dos tres acima, NAO
+exige catalogo: e a mesma extracao textual, por regex, que ja produz
+`projection_text` e a clausula `WHERE` -- o nome que aparece logo apos `FROM`
+esta no proprio texto SQL. `fusion.py` usa esse attr para saber qual tabela do
+catalogo correlacionar; sem ele a fusao nao teria nome nenhum para procurar.
+`None` quando o texto apos `FROM` nao casa um identificador reconhecido (ex.:
+subquery `FROM (SELECT ...)`) -- nunca adivinhado.
 
 Como `pyspark_ast.py`/`terraform.py`: extrator puro e deterministico. Nunca
 aplica limiar, nunca atribui severidade.
@@ -69,6 +80,7 @@ _OR_RE = re.compile(r"\bOR\b", re.IGNORECASE)
 _PRED_RE = re.compile(
     r'^\s*("[^"]+"|`[^`]+`|[A-Za-z_][\w.\[\]]*)\s*(<=|>=|<>|!=|=|<|>)\s*(.+?)\s*$'
 )
+_TABLE_RE = re.compile(r'^\s*("[^"]+"|`[^`]+`|[A-Za-z_][\w.]*)')
 
 
 def _strip_comments(sql: str) -> str:
@@ -154,6 +166,7 @@ def _scan_sql(
     counts = {"projection_count": 0, "predicate_count": 0, "unresolved_count": 0}
 
     select_match = _SELECT_FROM_RE.search(cleaned)
+    table: str | None = None
     if select_match is None:
         facts.append(
             Fact(
@@ -165,6 +178,9 @@ def _scan_sql(
         )
         counts["unresolved_count"] += 1
     else:
+        table_match = _TABLE_RE.match(cleaned[select_match.end():])
+        table = _strip_identifier_quotes(table_match.group(1)) if table_match else None
+
         projection_text = select_match.group(1).strip()
         items = _split_top_level(projection_text, _COMMA_RE)
         star = projection_text == "*" or any(
@@ -173,9 +189,14 @@ def _scan_sql(
         attrs: dict[str, Any] = {
             "star": star,
             "has_limit": bool(_LIMIT_RE.search(cleaned)),
+            # Nome da tabela no FROM: texto puro da propria query, ver
+            # docstring do modulo. Usado por `fusion.py` para correlacionar
+            # com `catalog.table_schema`.
+            "table": table,
             # Formato de armazenamento e propriedade da TABELA, nunca da
-            # QUERY -- texto SQL nao carrega essa informacao. Ver docstring
-            # do modulo e o `blocked_on` de SF-ATH-001 no catalogo.
+            # QUERY -- texto SQL nao carrega essa informacao. Resolvido por
+            # `fusion.py` em `sql.projection.enriched`. Ver docstring do
+            # modulo.
             "table_format_columnar": None,
         }
         measures: dict[str, Any] = {}
@@ -222,10 +243,13 @@ def _scan_sql(
                         "column": _strip_identifier_quotes(column),
                         "operator": operator,
                         "value": value.strip(),
+                        # Mesma tabela do FROM desta query (ver `sql.projection`
+                        # acima); usado por `fusion.py` para correlacionar.
+                        "table": table,
                         # Precisam do schema da tabela (qual coluna e a
                         # particao; o tipo declarado da coluna), que este
-                        # extrator nao tem. Ver docstring do modulo e o
-                        # `blocked_on` de SF-ATH-002/SF-ATH-005 no catalogo.
+                        # extrator nao tem. Resolvido por `fusion.py` em
+                        # `sql.predicate.enriched`. Ver docstring do modulo.
                         "on_partition_column": None,
                         "type_mismatch": None,
                     },
