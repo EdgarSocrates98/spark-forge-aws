@@ -49,6 +49,36 @@ class TestPartitioning:
         src = 'df.select("a").filter("a > 1").write.parquet("s3://b/p")\n'
         assert facts_of("pyspark.partitioning", extract_source(src, "a.py")) == []
 
+    def test_negative_literal_is_recognized(self):
+        src = "df.repartition(-5)\n"
+        facts = facts_of("pyspark.partitioning", extract_source(src, "a.py"))
+        assert facts[0].attrs["literal_arg"] is True
+        assert facts[0].measures["target_count"] == -5
+        assert facts[0].attrs["has_partition_expr"] is False
+
+    def test_positive_unary_literal_is_recognized(self):
+        src = "df.repartition(+8)\n"
+        facts = facts_of("pyspark.partitioning", extract_source(src, "a.py"))
+        assert facts[0].attrs["literal_arg"] is True
+        assert facts[0].measures["target_count"] == 8
+        assert facts[0].attrs["has_partition_expr"] is False
+
+    def test_coalesce_true_stays_non_literal(self):
+        src = "df.coalesce(True)\n"
+        facts = facts_of("pyspark.partitioning", extract_source(src, "a.py"))
+        assert facts[0].attrs["literal_arg"] is False
+        assert "target_count" not in facts[0].measures
+
+    def test_double_negation_stays_non_literal(self):
+        src = "df.repartition(--5)\n"
+        facts = facts_of("pyspark.partitioning", extract_source(src, "a.py"))
+        assert facts[0].attrs["literal_arg"] is False
+
+    def test_negative_literal_with_column_marks_partition_expr(self):
+        src = 'df.repartition(-5, "col")\n'
+        facts = facts_of("pyspark.partitioning", extract_source(src, "a.py"))
+        assert facts[0].attrs["has_partition_expr"] is True
+
 
 class TestProvenanceAndDeterminism:
     def test_provenance_records_extractor_and_artifact(self):

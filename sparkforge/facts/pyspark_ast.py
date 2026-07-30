@@ -64,9 +64,24 @@ def _subject(node: ast.AST, path: str, ctx: _Context, lines: list[str]) -> dict[
 
 
 def _literal(node: ast.AST) -> Any | None:
-    """Valor se o no e literal constante; None caso contrario."""
+    """Valor se o no e literal constante; None caso contrario.
+
+    Desembrulha um unico nivel de +/- unario sobre constante numerica: `-5` e
+    `+8` sao literais na fonte, mas o AST os representa como
+    UnaryOp(USub|UAdd, Constant), nao como Constant direto. `--5` (dois
+    niveis) permanece nao-literal de proposito. Bool continua excluido mesmo
+    sob unario, ja que `-True` e `-1` em Python mas nao e uma contagem.
+    """
     if isinstance(node, ast.Constant) and isinstance(node.value, int | float | str | bool):
         return node.value
+    if (
+        isinstance(node, ast.UnaryOp)
+        and isinstance(node.op, ast.UAdd | ast.USub)
+        and isinstance(node.operand, ast.Constant)
+        and isinstance(node.operand.value, int | float)
+        and not isinstance(node.operand.value, bool)
+    ):
+        return node.operand.value if isinstance(node.op, ast.UAdd) else -node.operand.value
     return None
 
 
