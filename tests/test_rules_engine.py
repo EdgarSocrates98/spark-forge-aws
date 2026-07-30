@@ -254,6 +254,59 @@ class TestSameSubjectCorrelation:
         ]
 
 
+TWO_JOBS_ONE_OBSERVED = '''resource "aws_glue_job" "com_ui" {
+  name         = "job-com-ui"
+  glue_version = "5.0"
+
+  default_arguments = {
+    "--enable-spark-ui"       = "true"
+    "--spark-event-logs-path" = "s3://b/spark-logs/"
+  }
+}
+
+resource "aws_glue_job" "sem_ui" {
+  name         = "job-sem-ui"
+  glue_version = "5.0"
+
+  default_arguments = {
+    "--TempDir" = "s3://b/temp/"
+  }
+}
+'''
+
+
+class TestObservabilityIsJudgedPerResource:
+    """SF-GLUE-002 pergunta "este job tem como ser diagnosticado depois do fato?".
+    A pergunta e por recurso, nunca pelo arquivo: num `.tf` com varios
+    `aws_glue_job`, um unico job com Spark UI habilitado nao prova nada sobre os
+    outros. Checar `absent: tf.observability.spark_ui` contra a lista inteira de
+    facts mascara todos os jobs sem observabilidade assim que UM deles a tem --
+    falso negativo caro, porque observabilidade ausente e justamente o que faz
+    toda investigacao futura comecar sem evidencia.
+    """
+
+    def _judge_002(self, source):
+        from sparkforge.facts.terraform import extract_terraform
+        from sparkforge.rules.loader import load_catalog
+
+        facts = extract_terraform(source, "main.tf")
+        catalog = [r for r in load_catalog() if r["id"] == "SF-GLUE-002"]
+        assert catalog, "SF-GLUE-002 ausente do catalogo"
+        return judge(facts, catalog, GLUE_50)
+
+    def test_job_without_observability_is_reported_even_when_a_sibling_has_it(self):
+        found = self._judge_002(TWO_JOBS_ONE_OBSERVED)
+        assert [f.subject.get("symbol") for f in found] == ["aws_glue_job.sem_ui"]
+
+    def test_correctly_configured_job_is_never_accused(self):
+        """A guarda contra o "conserto" ingenuo (`same_subject: true` sobre
+        `tf.module_analyzed`, cujo subject e o arquivo): ali o grupo do arquivo
+        nunca contem fact de observabilidade, `absent` fica satisfeito, e a regra
+        acusa TODO modulo -- inclusive o configurado corretamente."""
+        only_observed = TWO_JOBS_ONE_OBSERVED.split('resource "aws_glue_job" "sem_ui"')[0]
+        assert self._judge_002(only_observed) == []
+
+
 class TestBlockedOnIsDistinctFromMissingData:
     """Regra bloqueada por capacidade inexistente e regra sem dados nesta execucao
     sao situacoes diferentes: a primeira nunca dispara ate alguem construir o
