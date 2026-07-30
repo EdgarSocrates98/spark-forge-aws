@@ -93,11 +93,24 @@ rules:
     sources:
       - {url: "https://docs.aws.amazon.com/athena/latest/ug/partitions.html", retrieved: 2026-07-29}
 
+  # `same_subject: true` ancorado em `catalog.table_partitions`, cujo subject é
+  # a TABELA (`catalog_schema.py::_table_subject`, `symbol: <nome da tabela>`).
+  # Sem isso, `absent: catalog.table_property.projection_enabled` é avaliado
+  # contra a lista inteira de facts: um dump do Glue Data Catalog descreve todas
+  # as tabelas do banco, e basta UMA delas ter partition projection para o fact
+  # existir globalmente, `absent` falhar, e a regra não disparar para NENHUMA das
+  # tabelas sobre-particionadas. Como a tabela bem configurada é justamente o que
+  # se espera encontrar num catálogo real, o mascaramento seria a regra, não a
+  # exceção — o relatório afirmaria "nenhum problema de metadados" sobre um
+  # catálogo cheio deles. Mesmo defeito e mesmo conserto de SF-GLUE-002
+  # (`glue-infra.yaml`). Âncora em `catalog.analyzed` (subject de arquivo,
+  # `symbol: ""`) seria pior: grupo que nunca contém `catalog.table_partitions`.
   - id: SF-ATH-003
     category: athena
     title: Tabela com muitas partições Hive sem partition projection
     requires_facts: [catalog.table_partitions]
     when:
+      same_subject: true
       all:
         - fact: catalog.table_partitions
           expr: "measures.partition_count >= threshold.count"
