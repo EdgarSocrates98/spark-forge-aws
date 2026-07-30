@@ -41,11 +41,11 @@ rules:
   - id: SF-GLUE-002
     category: glue-infra
     title: Observabilidade ausente em job de produção
-    requires_facts: [tf.attribute]
+    requires_facts: [tf.module_analyzed]
     when:
-      any:
-        - absent: tf.attribute.enable_spark_ui
-        - absent: tf.attribute.spark_event_logs_path
+      all:
+        - fact: tf.module_analyzed
+        - absent: tf.observability.spark_ui
     status: confirmed
     severity_default: P1
     runtime_scope: {glue: "*"}
