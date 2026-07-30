@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+
+# SparkForge — estado de investigação.
+# case.yaml, facts.json, findings.json, handoff.md e artifacts/manifest.json SÃO
+# commitados: são o barramento de handoff entre Devin e Claude Code, e são pequenos
+# e derivados. Artefato bruto NÃO é commitado: pode ter dado de negócio e centenas
+# de MB. O manifest registra sha256, origem e comando de recoleta.
+# Ver docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md §8.1
+.sparkforge/artifacts/*
+!.sparkforge/artifacts/manifest.json

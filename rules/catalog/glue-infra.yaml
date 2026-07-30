@@ -1,0 +1,197 @@
+# Catálogo de regras — infraestrutura Glue e Terraform
+# Depende do extrator de Terraform HCL da Fase 1. Regras inertes até ele existir.
+
+catalog_version: 1
+schema_version: 1
+area: SF-GLUE
+retrieved: 2026-07-29
+
+rules:
+
+  - id: SF-GLUE-001
+    category: glue-infra
+    title: Auto Scaling habilitado junto com NumberOfWorkers
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: "--enable-auto-scaling", attrs.value: "true"}
+        - fact: tf.attribute
+          where: {attrs.key: "number_of_workers", attrs.present: true}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: ">=3.0"}
+    explanation: >
+      Com Auto Scaling habilitado, a capacidade é controlada por MinCapacity e
+      MaxCapacity. Definir NumberOfWorkers junto é contraditório e é o erro de IaC mais
+      comum nesta área. O resultado é que o comportamento efetivo de escala fica ambíguo
+      para quem lê o código, e o diagnóstico de superprovisão fica sem baseline claro.
+    proposed_change:
+      - Remover number_of_workers e definir MinCapacity e MaxCapacity.
+      - Dimensionar MaxCapacity a partir do volume de pico observado, não de um número arbitrário.
+    risks: [MaxCapacity muito alto permite gasto inesperado em run anômalo.]
+    tradeoffs: [Auto Scaling não compensa em jobs abaixo de cerca de três minutos, onde o overhead não se paga.]
+    validation:
+      - glue.driver.workerUtilization antes e depois.
+      - Runtime e DPU-hours antes e depois, em runs de volume comparável.
+    rollback: [Reverter a definição do job para capacidade fixa.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html", retrieved: 2026-07-29}
+
+  - id: SF-GLUE-002
+    category: glue-infra
+    title: Observabilidade ausente em job de produção
+    requires_facts: [tf.attribute]
+    when:
+      any:
+        - absent: tf.attribute.enable_spark_ui
+        - absent: tf.attribute.spark_event_logs_path
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Sem --enable-spark-ui e sem --spark-event-logs-path com destino válido, não há
+      como diagnosticar o job depois do fato. Não é um problema de performance, é um
+      problema de capacidade de diagnóstico: qualquer investigação futura começará sem
+      evidência de execução e dependerá de reproduzir o problema.
+    proposed_change:
+      - Habilitar --enable-spark-ui e definir --spark-event-logs-path para um prefixo S3 com retenção adequada.
+      - Habilitar --enable-observability-metrics em Glue 4.0 ou superior, confirmando que glueContext é inicializado no código.
+      - Habilitar --enable-continuous-cloudwatch-log para não depender de log apenas no encerramento.
+    risks: [Event logs consomem armazenamento S3; definir política de retenção.]
+    tradeoffs: [Custo marginal de armazenamento contra capacidade de diagnóstico.]
+    validation:
+      - Event log presente no prefixo S3 após um run.
+      - Spark UI acessível para o run.
+      - Métricas de observabilidade presentes no CloudWatch.
+    rollback: [Remover os argumentos; nenhum efeito sobre o resultado do job.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html", retrieved: 2026-07-29}
+
+  - id: SF-GLUE-003
+    category: glue-infra
+    title: MaxConcurrentRuns maior que 1 com bookmarks habilitados
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: "--job-bookmark-option", attrs.value: "job-bookmark-enable"}
+        - fact: tf.attribute
+          where: {attrs.key: "max_concurrent_runs"}
+          expr: "measures.value > 1"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      O Glue expõe a categoria de erro GLUE_JOB_BOOKMARK_VERSION_MISMATCH_ERROR
+      justamente para o caso de o mesmo job rodar concorrentemente sobre a mesma origem.
+      Além disso, bookmark não é mecanismo de incremental universal: usado como se fosse
+      CDC, leva a reprocessamento ou a perda silenciosa de dados. Para Iceberg, o
+      incremental correto é leitura por snapshot, não bookmark.
+    proposed_change:
+      - Reduzir max_concurrent_runs para 1, ou desabilitar bookmarks e adotar controle de incremental explícito.
+      - Se a fonte é Iceberg, migrar para leitura incremental por snapshot.
+    risks: [Reduzir concorrência pode afetar o SLA se havia dependência real de paralelismo entre runs.]
+    tradeoffs: [Controle explícito de incremental é mais código e mais confiável que bookmark.]
+    validation:
+      - Ausência de GLUE_JOB_BOOKMARK_VERSION_MISMATCH_ERROR nas categorias de erro.
+      - Contagem de linhas processadas por janela, comparada com a contagem esperada na origem.
+      - Verificação de ausência de duplicação e de lacuna no destino.
+    rollback: [Restaurar max_concurrent_runs e a opção de bookmark anteriores.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html", retrieved: 2026-07-29}
+
+  - id: SF-GLUE-004
+    category: glue-infra
+    title: MaxRetries maior que zero em job com escrita não idempotente
+    requires_facts: [tf.attribute, pyspark.write]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: max_retries}
+          expr: "measures.value > 0"
+        - fact: pyspark.write
+          where: {attrs.mode: append}
+    status: structural
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Retry de job inteiro reexecuta o script do começo. Se a escrita é append e não há
+      controle de idempotência, o retry duplica dado. O risco fica disfarçado de
+      resiliência, e a duplicação só aparece depois, numa conferência de números.
+    proposed_change:
+      - Tornar a escrita idempotente, por merge com chave, por overwrite de partição, ou por controle de execução.
+      - Ou reduzir max_retries para zero e tratar a falha explicitamente.
+    risks: [Reduzir retries expõe o pipeline a falhas transitórias que antes eram absorvidas.]
+    tradeoffs: [Idempotência custa desenho e, em merge, custo de escrita maior que append.]
+    validation:
+      - Contagem distinta da chave primária no destino igual à contagem total.
+      - Simular retry num ambiente de teste e confirmar ausência de duplicação.
+    rollback: [Restaurar max_retries anterior.]
+    sources:
+      - {origin: field-heuristic, note: "Idempotência de escrita sob retry é requisito de desenho; a regra apenas expõe a combinação de risco."}
+
+  - id: SF-GLUE-005
+    category: glue-infra
+    title: Worker maior recomendado sem evidência de limitação de memória
+    requires_facts: [tf.attribute, spark.stage.spill, spark.executor.memory_usage]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.key: worker_type, attrs.changed: true}
+        - absent: spark.stage.spill
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Aumentar o worker sem baseline de CPU, heap, disco, spill e distribuição de task é
+      tuning por intuição. As causas mais comuns de lentidão não são resolvidas por
+      capacidade: skew, small files, trabalho no driver, e utilização baixa por
+      superprovisão. Ver knowledge/glue/workers-and-capacity.md secao 2, onde quatro das
+      oito linhas da tabela de decisão têm capacidade como resposta errada.
+    proposed_change:
+      - Coletar os sete números do baseline antes de mudar capacidade.
+      - Classificar o gargalo por eixo: CPU, memória, disco, skew, driver, I/O.
+      - Se for memória comprovada, avaliar a série R, que dobra a memória com o mesmo vCPU, antes de subir na série G.
+    risks: [Aumentar capacidade sem diagnóstico eleva o custo sem reduzir o runtime.]
+    tradeoffs: [Coletar baseline atrasa a mudança em um ciclo de execução.]
+    validation:
+      - Runtime e DPU-hours antes e depois, em runs de volume comparável.
+      - glue.driver.workerUtilization antes e depois.
+      - Spill do stage dominante antes e depois.
+    rollback: [Restaurar worker_type e number_of_workers anteriores.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html", retrieved: 2026-07-29}
+      - {url: "https://aws.amazon.com/about-aws/whats-new/2025/07/aws-glue-supports-new-workers-larger-memory-intensive-workloads", retrieved: 2026-07-29}
+
+  - id: SF-GLUE-006
+    category: glue-infra
+    title: Segredo em default argument
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          where: {attrs.secret_pattern_match: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Default arguments aparecem na job definition, na resposta da API e em logs.
+      Segredo colocado ali é exposto a qualquer principal com permissão de leitura da
+      definição do job. É achado de segurança e tem precedência sobre qualquer
+      recomendação de performance no mesmo relatório.
+    proposed_change:
+      - Mover para AWS Secrets Manager ou Parameter Store, referenciando por nome no argumento.
+      - Rotacionar o segredo exposto, porque ele deve ser considerado comprometido.
+      - Revisar histórico do repositório de IaC, onde o valor pode persistir.
+    risks: [Rotacionar segredo em uso exige coordenação com os consumidores.]
+    tradeoffs: [Nenhum. Não há justificativa de performance para manter segredo em argumento.]
+    validation:
+      - Argumento não contém mais o valor.
+      - Job executa com sucesso lendo do cofre.
+      - Segredo antigo revogado.
+    rollback: >
+      Não reverter para o segredo em texto claro. Se a leitura do cofre falha, corrigir
+      a permissão de IAM, não o método de armazenamento.
+    sources:
+      - {origin: field-heuristic, note: "Prática de segurança padrão; a superfície de exposição de default arguments é documentada no comportamento da API do Glue."}

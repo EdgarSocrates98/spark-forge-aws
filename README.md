@@ -20,6 +20,16 @@ Para casos com latest-per-key, tabelas Iceberg bilionárias, batching, OOM e car
 
 A versão 0.2.0 inclui Skills específicas para arquitetura incremental, latest-per-key, loops de batching, call graph da biblioteca, OOM, Terraform e perfis de volume.
 
+## Base de conhecimento
+
+`knowledge/` é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge/` (estado da investigação). Comece por [`knowledge/INDEX.md`](knowledge/INDEX.md).
+
+Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, performance de Athena, layout Parquet/S3 e Iceberg.
+
+Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
+
+`rules/catalog/` é a forma **executável** desse conhecimento: 59 regras em YAML com `rule_id`, limiar, guarda de versão e fonte com data. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+
 ## Objetivos
 
 1. Encontrar o gargalo dominante antes de sugerir alterações.
