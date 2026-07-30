@@ -124,6 +124,29 @@ class TestSyntaxError:
         assert facts[0].kind == "pyspark.unresolved"
         assert facts[0].attrs["reason"] == "syntax_error"
 
+    def test_parser_stack_overflow_degrades_instead_of_raising(self):
+        """CPython levanta MemoryError, nao RecursionError, quando o parser
+        estoura em aninhamento extremo. Para o operador as duas coisas significam
+        a mesma coisa: o analisador nao conseguiu ler o arquivo. Nenhuma das duas
+        pode vazar, porque quem chama so trata Fact."""
+        facts = extract_source("-" * 10000 + "1\n", "deep.py")
+        assert len(facts) == 1
+        assert facts[0].kind == "pyspark.unresolved"
+        assert facts[0].attrs["reason"] == "too_deep"
+
+    def test_memory_error_from_parse_is_caught(self, monkeypatch):
+        """Trigger deterministico, independente de interpretador: o limite exato
+        que o parser aceita varia por versao, entao o teste acima poderia deixar
+        de estourar num Python futuro sem que a protecao tenha sido removida."""
+        import ast as ast_module
+
+        def boom(*_args, **_kwargs):
+            raise MemoryError("Parser stack overflowed")
+
+        monkeypatch.setattr(ast_module, "parse", boom)
+        facts = extract_source("df.coalesce(1)\n", "a.py")
+        assert [f.attrs["reason"] for f in facts] == ["too_deep"]
+
 
 class TestExtractTree:
     def test_deterministic_order_across_two_runs(self, tmp_path):
