@@ -123,6 +123,10 @@ def iceberg_metadata_path(table: str) -> str:
     return f".sparkforge/artifacts/iceberg/{table.replace('.', '_')}.json"
 
 
+def athena_workgroup_path(workgroup: str) -> str:
+    return f".sparkforge/artifacts/athena/{workgroup}.json"
+
+
 def _sha256_bytes(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
@@ -527,13 +531,75 @@ def collect_iceberg_metadata(
     )
 
 
+# --------------------------------------------------------------------------- #
+# workgroup do Athena (`get_work_group`)
+# --------------------------------------------------------------------------- #
+
+
+def collect_athena_workgroup(workgroup: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa a configuracao de um workgroup via `athena.get_work_group` e grava
+    no shape que `sparkforge.facts.athena_workgroup` le.
+
+    O boto3 devolve `EngineVersion`/`BytesScannedCutoffPerQuery`/etc em
+    PascalCase, aninhados sob `WorkGroup.Configuration` -- forma nativa da API,
+    nao a forma que o extrator entende. Este coletor faz a unica traducao:
+    projeta a resposta no shape documentado no topo de
+    `sparkforge/facts/athena_workgroup.py` (`name`, `engine_version.*`,
+    `state`, `bytes_scanned_cutoff`, `output_location`), sem interpretar nada
+    -- nenhum parsing de versao acontece aqui, isso e trabalho do extrator.
+    """
+    rel_path = athena_workgroup_path(workgroup)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("athena")
+    response = client.get_work_group(WorkGroup=workgroup)
+    wg = response.get("WorkGroup") or {}
+    configuration = wg.get("Configuration") or {}
+    engine_version_raw = configuration.get("EngineVersion") or {}
+    result_configuration = configuration.get("ResultConfiguration") or {}
+
+    entry: dict[str, Any] = {
+        "name": wg.get("Name", workgroup),
+        "state": wg.get("State"),
+        "engine_version": {
+            "effective_engine_version": engine_version_raw.get("EffectiveEngineVersion"),
+            "selected_engine_version": engine_version_raw.get("SelectedEngineVersion"),
+        },
+    }
+    bytes_scanned_cutoff = configuration.get("BytesScannedCutoffPerQuery")
+    if bytes_scanned_cutoff is not None:
+        entry["bytes_scanned_cutoff"] = bytes_scanned_cutoff
+    output_location = result_configuration.get("OutputLocation")
+    if output_location is not None:
+        entry["output_location"] = output_location
+
+    payload = {"workgroups": [entry]}
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="athena_workgroup",
+        source=f"athena:get_work_group:{workgroup}",
+        collect_command=f"sparkforge collect athena-workgroup --workgroup {workgroup}",
+        now=now,
+    )
+
+
 __all__ = [
     "CLOUDWATCH_METRICS",
     "CLOUDWATCH_METRIC_NAMES",
     "ICEBERG_METADATA_SECTIONS",
     "CollectionFailed",
     "CollectorUnavailable",
+    "athena_workgroup_path",
     "cloudwatch_path",
+    "collect_athena_workgroup",
     "collect_cloudwatch",
     "collect_event_log",
     "collect_glue_job",
