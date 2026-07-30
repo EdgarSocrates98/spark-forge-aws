@@ -1,0 +1,12 @@
+name: conf_set_conflict
+proves: >
+  spark.conf.set em runtime tem precedencia sobre os default arguments do
+  Terraform e sobrescreve silenciosamente. SF-PY-012 dispara sobre a mera
+  presenca de pyspark.conf_set.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.conf_set, pyspark.chain, pyspark.module_analyzed]
+expects_rules: [SF-PY-012]

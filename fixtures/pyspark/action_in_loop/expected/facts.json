@@ -1,0 +1,102 @@
+[
+  {
+    "id": "f_1dfc61",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 3,
+      "col": 8,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "lote.write.parquet(destino)"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "write",
+        "parquet"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_85aa2c",
+    "schema_version": 1,
+    "kind": "pyspark.loop",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "for lote in lotes:"
+    },
+    "measures": {
+      "loop_depth": 1
+    },
+    "attrs": {
+      "contains_action": false,
+      "contains_write": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_07e474",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_4c865a",
+    "schema_version": 1,
+    "kind": "pyspark.write",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 3,
+      "col": 8,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "lote.write.parquet(destino)"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

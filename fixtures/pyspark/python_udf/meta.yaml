@@ -1,0 +1,12 @@
+name: python_udf
+proves: >
+  UDF Python em @udf(returnType=...) perde whole-stage codegen e serializa
+  linha a linha para o worker Python. SF-PY-001 dispara sobre pyspark.udf com
+  attrs.udf_type == python.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.udf, pyspark.module_analyzed]
+expects_rules: [SF-PY-001]

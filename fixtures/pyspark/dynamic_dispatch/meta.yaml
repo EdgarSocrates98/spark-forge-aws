@@ -1,0 +1,13 @@
+name: dynamic_dispatch
+proves: >
+  Despacho dinamico via getattr() nao pode ser resolvido estaticamente. O
+  extrator reporta pyspark.unresolved (reason=getattr) em vez de tratar o
+  arquivo como limpo por omissao -- um ponto cego declarado, nao um falso
+  negativo silencioso. Nenhuma regra deve disparar.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.unresolved, pyspark.module_analyzed]
+expects_rules: []

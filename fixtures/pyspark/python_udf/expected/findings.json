@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-PY-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Python UDF em transformação expressável nativamente",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 5,
+      "col": 1,
+      "end_line": 5,
+      "symbol": "trivial",
+      "snippet": "@udf(returnType=StringType())"
+    },
+    "evidence": [
+      "f_726c0b"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Python UDF custa, por linha: serialização JVM->pickle, cópia para o processo Python worker, execução sem vetorização, e o caminho de volta. Além disso perde whole-stage codegen no segmento do plano e torna o operador opaco ao otimizador, eliminando pushdown de predicado e reordenação. Aparece no plano como BatchEvalPython. Ver knowledge/spark/execution-model.md secao 4.",
+    "proposed_change": [
+      "Reescrever com funções Spark SQL nativas.",
+      "Se envolve array/map, usar higher-order functions (transform, filter, aggregate).",
+      "Se realmente inevitável, medir pandas_udf (Arrow, vetorizado por batch) antes de manter Python UDF."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reescrita pode alterar tratamento de null ou de tipo em borda.",
+      "Precisão de ponto flutuante pode diferir entre implementação Python e nativa."
+    ],
+    "tradeoffs": [
+      "Expressão nativa equivalente pode ficar mais verbosa e menos legível."
+    ],
+    "validation": [
+      "Comparar resultado linha a linha entre versão antiga e nova numa amostra representativa que inclua nulls e valores de borda.",
+      "Contagem total idêntica.",
+      "Contagem de nulls na coluna resultado idêntica.",
+      "Confirmar desaparecimento do nó BatchEvalPython no plano."
+    ],
+    "rollback": [
+      "Reverter o commit; a UDF original não depende de mudança de infraestrutura."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

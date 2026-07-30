@@ -1,0 +1,87 @@
+[
+  {
+    "id": "f_8e2c1b",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 6,
+      "col": 8,
+      "end_line": 14,
+      "symbol": "enriquecer",
+      "snippet": "df.withColumn(\"c1\", lit(1))"
+    },
+    "measures": {
+      "length": 9
+    },
+    "attrs": {
+      "methods": [
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn",
+        "withColumn"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "f4f79f83dddef00802e04f9821135a30ad12e62518e71d6b4bd2ee45876f20cd",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_713cfb",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 18,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "f4f79f83dddef00802e04f9821135a30ad12e62518e71d6b4bd2ee45876f20cd",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_77afe0",
+    "schema_version": 1,
+    "kind": "pyspark.withcolumn_run",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 6,
+      "col": 8,
+      "end_line": 14,
+      "symbol": "enriquecer",
+      "snippet": "df.withColumn(\"c1\", lit(1))"
+    },
+    "measures": {
+      "run_length": 9
+    },
+    "attrs": {
+      "inside_loop": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "f4f79f83dddef00802e04f9821135a30ad12e62518e71d6b4bd2ee45876f20cd",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]
