@@ -25,6 +25,12 @@ from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 
 DETECTOR_ID = "runtime_detect@0.1.0"
 
+# Vocabulario fechado de kinds, como nos demais extratores. Serve de fonte
+# unica para `tests/test_rules_catalog_reachability.py`: uma regra que exija um
+# kind fora da uniao de todos os EMITTED_KINDS e inalcancavel e precisa declarar
+# `blocked_on`, em vez de aparecer como "faltou coletar".
+EMITTED_KINDS = frozenset({"env.runtime_signal"})
+
 GLUE_MATRIX: dict[str, dict[str, str]] = {
     "5.1": {"spark": "3.5.6", "python": "3.11", "iceberg": "1.10.0"},
     "5.0": {"spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"},
