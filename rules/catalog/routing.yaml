@@ -19,7 +19,7 @@ rules:
     when:
       any:
         - {case: runtime.glue, absent: true}
-        - {case: runtime.divergences, non_empty: true}
+        - {case: runtime.divergences, count_gt: 0}
     recommended_skill: sparkforge-diagnose
     reason: >
       Sem runtime confirmado, nenhum limiar nem API pode ser aplicado com segurança.
@@ -32,7 +32,7 @@ rules:
     title: Sem inventário de código
     when:
       all:
-        - {case: facts_index.count, expr: "value == 0"}
+        - {case: facts_index.count, count_eq: 0}
     recommended_skill: analyze-library-call-graph
     reason: Nenhum fact extraído. Mapear entrypoint e biblioteca antes de qualquer hipótese.
     collect_commands: ["sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json"]
@@ -42,8 +42,8 @@ rules:
     title: Fluxos full e incremental não separados
     when:
       all:
-        - {case: scope.entrypoints, expr: "len(value) > 1"}
-        - {case: gates.flows_mapped, expr: "value == false"}
+        - {case: scope.entrypoints, count_gt: 1}
+        - {case: gates.flows_mapped, equals: false}
     recommended_skill: design-incremental-processing
     reason: >
       Com dois fluxos, o DAG de cada um precisa ser separado antes de diagnosticar.
@@ -146,8 +146,8 @@ rules:
     title: Gargalo dominante identificado, sem baseline
     when:
       all:
-        - {case: gates.dominant_bottleneck_identified, expr: "value == true"}
-        - {case: gates.baseline_captured, expr: "value == false"}
+        - {case: gates.dominant_bottleneck_identified, equals: true}
+        - {case: gates.baseline_captured, equals: false}
     recommended_skill: benchmark-pyspark-job
     reason: >
       Sem baseline não há como provar impacto, e qualquer número de ganho seria
@@ -159,9 +159,9 @@ rules:
     title: Baseline capturado e gargalo identificado
     when:
       all:
-        - {case: gates.baseline_captured, expr: "value == true"}
-        - {case: gates.dominant_bottleneck_identified, expr: "value == true"}
-        - {case: hypotheses, expr: "any(h.status == 'open')"}
+        - {case: gates.baseline_captured, equals: true}
+        - {case: gates.dominant_bottleneck_identified, equals: true}
+        - {case: hypotheses, any_where: {status: open}}
     recommended_skill: benchmark-pyspark-job
     reason: >
       Alterar uma variável principal por experimento e medir. Hipótese aberta sem
@@ -172,8 +172,8 @@ rules:
     title: Nenhum achado de código, dados ou execução
     when:
       all:
-        - {case: findings_index.count, expr: "value == 0"}
-        - {case: facts_index.count, expr: "value > 0"}
+        - {case: findings_index.count, count_eq: 0}
+        - {case: facts_index.count, count_gt: 0}
     recommended_skill: review-glue-terraform
     reason: >
       Facts extraídos e nenhum finding: o código não é o gargalo. Revisar capacidade,
@@ -185,7 +185,7 @@ rules:
     title: Mudança medida sem validação funcional definida
     when:
       all:
-        - {case: gates.functional_validation_defined, expr: "value == false"}
+        - {case: gates.functional_validation_defined, equals: false}
     recommended_skill: review-pyspark-pr
     reason: >
       Ganho de performance sem validação de contagem, schema, chaves e agregados não é
@@ -197,7 +197,7 @@ rules:
     title: Consumo por Athena presente
     when:
       all:
-        - {case: scope.consumers, expr: "'athena' in value"}
+        - {case: scope.consumers, contains: athena}
     recommended_skill: optimize-iceberg-table
     reason: >
       Decisões de formato, particionamento e format version do job determinam o custo em

@@ -120,6 +120,25 @@ Regra de roteamento **não** tem `category`, `sources`, `severity` nem `runtime_
 
 Avaliação em ordem: primeiro match vira `recommended_skill`, os seguintes entram em `alternatives` com `rank`. Há um `fallback` no fim do arquivo — nenhum estado fica sem rota, e cair no fallback é sinal de que falta uma regra.
 
+### Operadores declarativos de roteamento
+
+Predicado de roteamento é **declarativo**, nunca expressão livre. Expressão exigiria
+`Call`/`In`, que a whitelist do avaliador proíbe — e o catálogo é dado editável,
+portanto superfície de execução.
+
+| Operador | Semântica |
+|---|---|
+| `equals: <v>` | valor no caminho é igual a `<v>` |
+| `absent: true` | caminho ausente, vazio ou `null` |
+| `present: true` | caminho existe e é truthy |
+| `count_gt: <n>` | comprimento (lista/dict/str) ou valor numérico maior que `<n>` |
+| `count_eq: <n>` | comprimento ou valor numérico igual a `<n>` |
+| `contains: <v>` | `<v>` está na lista do caminho |
+| `any_where: {k: v}` | algum item da lista tem `k == v` |
+
+`case: <caminho.pontuado>` resolve dentro do case. `finding: <rule_id>` com
+`present: true`/`false` testa a presença de um achado.
+
 O validador de catálogo deve aplicar o schema de `Rule` a todos os arquivos **exceto** `routing.yaml`, que tem o seu.
 
 Regras que dependem de extrator da Fase 1 já podem ser escritas: elas ficam inertes (`requires_facts` não satisfeito) até o extrator existir, e nesse momento passam a valer sem mudança de código. Escrever agora é o caminho — o conhecimento não espera o parser.
