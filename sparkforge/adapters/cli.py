@@ -114,6 +114,19 @@ def build_parser() -> argparse.ArgumentParser:
     event_log_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     event_log_analyze_p.add_argument("--cursor")
 
+    plan_p = analyze_sub.add_parser(
+        "plan",
+        help=(
+            "Extrai facts do texto de um plano fisico "
+            "(`df.explain(\"formatted\")` / EXPLAIN FORMATTED)."
+        ),
+    )
+    plan_p.add_argument("--path", required=True, help="Arquivo de texto com a saida de explain.")
+    plan_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    plan_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    plan_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    plan_p.add_argument("--cursor")
+
     terraform_p = analyze_sub.add_parser(
         "terraform", help="Extrai facts de blocos aws_glue_job em HCL Terraform."
     )
@@ -411,6 +424,27 @@ def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
     full = _core.analyze_event_log(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_plan(args: argparse.Namespace) -> int:
+    full = _core.analyze_plan(args.path, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -742,6 +776,7 @@ _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
+    ("analyze", "plan"): _cmd_analyze_plan,
     ("analyze", "terraform"): _cmd_analyze_terraform,
     ("analyze", "iceberg"): _cmd_analyze_iceberg,
     ("analyze", "sql"): _cmd_analyze_sql,

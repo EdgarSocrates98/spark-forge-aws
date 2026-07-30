@@ -58,6 +58,7 @@
     "sparkforge_analyze_pyspark",
     "sparkforge_analyze_catalog_schema",
     "sparkforge_analyze_event_log",
+    "sparkforge_analyze_plan",
     "sparkforge_analyze_terraform",
     "sparkforge_analyze_iceberg",
     "sparkforge_analyze_sql",

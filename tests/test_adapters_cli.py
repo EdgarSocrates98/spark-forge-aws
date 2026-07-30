@@ -560,6 +560,58 @@ class TestAnalyzeTerraform:
         assert payload["unresolved"] == 0
 
 
+PLAN_TEXT = (
+    "== Physical Plan ==\n"
+    "* Project (2)\n"
+    "+- Scan parquet analytics.eventos (1)\n"
+    "\n"
+    "\n"
+    "(1) Scan parquet analytics.eventos\n"
+    "Output [3]: [cliente_id#10, valor#11, dt#12]\n"
+    "Batched: true\n"
+    "Location: InMemoryFileIndex [s3://lake/analytics/eventos]\n"
+    "ReadSchema: struct<cliente_id:bigint,valor:double>\n"
+    "\n"
+    "(2) Project [codegen id : 1]\n"
+    "Output [1]: [cliente_id#10]\n"
+    "Input [3]: [cliente_id#10, valor#11, dt#12]\n"
+)
+
+
+class TestAnalyzePlan:
+    def test_writes_facts_json(self, repo, capsys):
+        plan_path = repo / "plan.txt"
+        plan_path.write_text(PLAN_TEXT, encoding="utf-8")
+        out = repo / "plan_facts.json"
+        code, _ = run(["analyze", "plan", "--path", str(plan_path), "--out", str(out)], capsys)
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        assert any(f["kind"] == "plan.file_scan" for f in facts)
+        assert any(f["kind"] == "plan.analyzed" for f in facts)
+
+    def test_prints_summary_and_reports_unresolved(self, repo, capsys):
+        plan_path = repo / "plan.txt"
+        plan_path.write_text(PLAN_TEXT, encoding="utf-8")
+        code, output = run(["analyze", "plan", "--path", str(plan_path)], capsys)
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["total_count"] >= 1
+        assert "unresolved" in payload
+        assert "unresolved_at" in payload
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "plan", "--path", str(repo / "nope.txt")], capsys)
+        assert code == 2
+
+    def test_mcp_tool_matches_the_cli(self, repo, capsys):
+        plan_path = repo / "plan.txt"
+        plan_path.write_text(PLAN_TEXT, encoding="utf-8")
+        _, output = run(["analyze", "plan", "--path", str(plan_path), "--limit", "50"], capsys)
+        from_cli = json.loads(output)
+        from_mcp = call_tool("sparkforge_analyze_plan", {"path": str(plan_path)})
+        assert from_cli["items"] == from_mcp["items"]
+
+
 class TestAnalyzeIceberg:
     def test_prints_summary(self, repo, capsys):
         ice_path = repo / "iceberg.json"

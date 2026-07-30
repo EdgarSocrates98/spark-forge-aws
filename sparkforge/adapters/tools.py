@@ -1037,6 +1037,42 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_plan": {
+        "description": (
+            "Extrai facts do TEXTO de um plano fisico ja salvo em disco: a saida de "
+            "`df.explain(\"formatted\")`, `df.explain()`, `df.explain(True)` ou "
+            "`EXPLAIN [FORMATTED]`. Devolve `plan.file_scan` (relacao, formato, "
+            "PartitionFilters, PushedFilters, contagem de coluna de ReadSchema contra "
+            "colunas realmente referenciadas acima no plano), `plan.join`, "
+            "`plan.exchange`, `plan.python_udf`, `plan.operator`, `plan.aqe`. E o unico "
+            "caminho para SF-PQ-002 (pruning de particao ausente) e SF-PQ-004 (pruning de "
+            "coluna ausente). NAO executa Spark nem gera o plano: quem chama cola a saida "
+            "de explain num arquivo. `explain(\"codegen\")` e REJEITADO com "
+            "`reason: unsupported_mode` -- e codigo Java, nao plano. Lista de campos "
+            "truncada pelo Spark (`... N more fields`) vira `plan.unresolved` e a razao de "
+            "SF-PQ-004 NAO e calculada: SF-PQ-004 e uma razao, e contar uma lista parcial "
+            "infla o numerador em silencio. `PartitionFilters` vazio sem evidencia de "
+            "particionamento devolve `table_partitioned: \"unknown\"`, nunca `false`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo de texto com a saida de explain (um plano).",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_terraform": {
         "description": (
             "Extrai facts de blocos `resource \"aws_glue_job\"` em HCL Terraform: "
@@ -1538,6 +1574,15 @@ def _h_analyze_event_log(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_plan(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_plan(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_analyze_terraform(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_terraform(
         args["path"],
@@ -1648,6 +1693,7 @@ _HANDLERS = {
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
+    "sparkforge_analyze_plan": _h_analyze_plan,
     "sparkforge_analyze_terraform": _h_analyze_terraform,
     "sparkforge_analyze_iceberg": _h_analyze_iceberg,
     "sparkforge_analyze_sql": _h_analyze_sql,

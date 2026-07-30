@@ -38,6 +38,7 @@ from sparkforge.facts.iceberg_metadata import (
 )
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
+from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
 from sparkforge.facts.terraform import extract_terraform_path, extract_terraform_tree
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
@@ -329,6 +330,41 @@ def analyze_event_log(
 ) -> dict[str, Any]:
     facts = _extract_event_log_facts(path)
     return _facts_page(facts, "spark.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze plan
+# --------------------------------------------------------------------------- #
+
+
+def _extract_plan_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.is_file():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um arquivo de texto com a saida de "
+            f"`df.explain(\"formatted\")` (um plano por arquivo):\n"
+            f"    sparkforge analyze plan --path <arquivo> "
+            f"--out .sparkforge/facts_plan.json",
+            exit_code=2,
+        )
+    return extract_plan_path(target, repo_root=target.parent)
+
+
+def analyze_plan(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    """Extrai Facts do texto de um plano fisico ja salvo em disco.
+
+    Um arquivo por chamada, nunca um diretorio: cada arquivo e UM plano, e
+    concatenar planos de queries diferentes na mesma analise misturaria nos com
+    a mesma numeracao `(N)` vindos de arvores distintas.
+    """
+    facts = _extract_plan_facts(path)
+    return _facts_page(facts, "plan.unresolved", kind, limit, cursor)
 
 
 # --------------------------------------------------------------------------- #
