@@ -428,6 +428,56 @@ class TestPartitionProjectionIsJudgedPerTable:
         ) == []
 
 
+TWO_QUERIES_ONE_FILTERED = '''spark.sql("SELECT valor FROM db.eventos LIMIT 10")
+spark.sql("SELECT valor FROM db.eventos WHERE dt = '2026-01-01' LIMIT 10")
+'''
+
+
+class TestPartitionFilterIsJudgedPerQuery:
+    """SF-ATH-002 pergunta "esta QUERY escaneia a tabela inteira?". A pergunta e
+    por query, nunca pelo conjunto analisado: uma query em qualquer lugar do
+    repositorio que filtre a coluna de particao faz
+    `sql.predicate.partition_filter` existir globalmente, `absent` falha, e a
+    regra nao dispara para NENHUMA das queries sem filtro.
+
+    Agrupar por arquivo tambem nao basta: dois `spark.sql(...)` no mesmo modulo
+    sao duas queries independentes, e a boa esconderia a ruim. O subject de um
+    fact de SQL e `source_location` -- a entidade que ele identifica e a
+    LOCALIZACAO da query, nao o arquivo.
+    """
+
+    def _judge_002(self, source):
+        from sparkforge.facts.catalog_schema import extract_catalog_schema
+        from sparkforge.facts.fusion import fuse
+        from sparkforge.facts.sql_literal import extract_sql_from_pyspark
+        from sparkforge.rules.loader import load_catalog
+
+        catalog_facts = extract_catalog_schema(
+            {"tables": [_catalog_table("db.eventos", projection=False)]}, "catalog.json"
+        )
+        facts = fuse([*extract_sql_from_pyspark(source, "a.py"), *catalog_facts])
+        catalog = [r for r in load_catalog() if r["id"] == "SF-ATH-002"]
+        assert catalog, "SF-ATH-002 ausente do catalogo"
+        return judge(facts, catalog, GLUE_50)
+
+    def test_unfiltered_query_is_reported_even_when_a_sibling_query_filters(self):
+        found = self._judge_002(TWO_QUERIES_ONE_FILTERED)
+        assert [(f.subject["file"], f.subject["line"]) for f in found] == [("a.py", 1)]
+
+    def test_filtered_query_is_never_accused(self):
+        only_filtered = TWO_QUERIES_ONE_FILTERED.splitlines(keepends=True)[1]
+        assert self._judge_002(only_filtered) == []
+
+    def test_every_unfiltered_query_gets_its_own_finding(self):
+        source = (
+            'spark.sql("SELECT valor FROM db.eventos LIMIT 10")\n'
+            'spark.sql("SELECT valor FROM db.eventos WHERE dt = \'2026-01-01\' LIMIT 10")\n'
+            'spark.sql("SELECT valor FROM db.eventos LIMIT 20")\n'
+        )
+        found = self._judge_002(source)
+        assert [f.subject["line"] for f in found] == [1, 3]
+
+
 class TestBlockedOnIsDistinctFromMissingData:
     """Regra bloqueada por capacidade inexistente e regra sem dados nesta execucao
     sao situacoes diferentes: a primeira nunca dispara ate alguem construir o

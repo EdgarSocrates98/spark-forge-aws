@@ -67,11 +67,27 @@ rules:
   # catalogo -- mesma disciplina de sentinela que SF-ENV-003 e SF-GLUE-002
   # usam para nao deixar `absent:` vazar como falso positivo quando os dados
   # relevantes simplesmente nao foram coletados.
+  #
+  # `same_subject: true` ancorado em `sql.projection`, cujo subject é a
+  # LOCALIZAÇÃO da query (`sql_literal.py::_sql_subject`: arquivo + linha). Sem
+  # isso, `absent: sql.predicate.partition_filter` é avaliado contra a lista
+  # inteira de facts: UMA query em qualquer lugar do conjunto analisado que
+  # filtre a coluna de partição faz o fact existir globalmente, `absent` falha, e
+  # a regra não dispara para NENHUMA das queries que escaneiam a tabela inteira.
+  # Mesmo defeito de SF-GLUE-002 e SF-ATH-003.
+  #
+  # Agrupar por arquivo não bastaria: dois `spark.sql(...)` no mesmo módulo são
+  # duas queries independentes, e a boa esconderia a ruim. Por isso
+  # `rules/engine.py::_subject_group_key` agrupa subject sem `symbol` por
+  # arquivo E linha — todos os facts de uma query compartilham um único subject,
+  # construído uma vez por query em `sql_literal.py::_scan_sql` e propagado
+  # intacto pelos facts `.enriched` de `fusion.py`.
   - id: SF-ATH-002
     category: athena
     title: LIMIT usado como se fosse filtro
     requires_facts: [sql.projection, catalog.table_schema]
     when:
+      same_subject: true
       all:
         - fact: sql.projection
           where: {attrs.has_limit: true}
