@@ -23,6 +23,9 @@ sparkforge = "sparkforge.adapters.cli:main"
 [tool.setuptools.packages.find]
 include = ["sparkforge*"]
 
+[tool.setuptools.package-data]
+sparkforge = ["findings/schemas/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Torna o pacote importável independente de como o pytest é invocado. Sem isto,
