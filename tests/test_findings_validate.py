@@ -100,3 +100,47 @@ class TestNoInventedGains:
         validate_finding(
             good_finding(expected_effect="hipotese: reduz o tempo do stage dominante")
         )
+
+
+class TestJsonSerializable:
+    """`yaml.safe_load` devolve `datetime.date` para `retrieved: 2026-07-29`. Esse
+    valor viaja da regra para o Finding e quebra `json.dumps`. Como as fixtures da
+    Task 10 e a saida do CLI da Task 15 sao JSON, isso seria bloqueador la, longe
+    da causa."""
+
+    def _real_finding(self):
+        from sparkforge.facts.pyspark_ast import extract_source
+        from sparkforge.rules.engine import judge
+        from sparkforge.rules.loader import load_catalog
+
+        runtime = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
+        facts = extract_source('df.coalesce(1)\n', "a.py")
+        rules = [r for r in load_catalog() if r["id"] == "SF-PY-005"]
+        return judge(facts, rules, runtime)[0]
+
+    def test_real_finding_survives_json_dumps(self):
+        import json
+
+        payload = self._real_finding().to_dict()
+        assert json.loads(json.dumps(payload)) == payload
+
+    def test_retrieved_is_a_string_not_a_date(self):
+        import datetime
+
+        for source in self._real_finding().sources:
+            if "retrieved" in source:
+                assert isinstance(source["retrieved"], str)
+                assert not isinstance(source["retrieved"], datetime.date)
+
+    def test_schema_rejects_a_non_string_retrieved(self):
+        bad = good_finding(sources=[{"url": "http://x", "retrieved": 20260729}])
+        with pytest.raises(ValidationFailed, match="retrieved"):
+            validate_finding(bad)
+
+    def test_every_fact_from_the_extractor_survives_json_dumps(self):
+        import json
+
+        source = 'df.coalesce(1)\ndf.repartition(n)\ngetattr(df, m)(1)\n'
+        for fact in extract_source(source, "a.py"):
+            payload = fact.to_dict()
+            assert json.loads(json.dumps(payload)) == payload
