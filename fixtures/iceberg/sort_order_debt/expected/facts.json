@@ -1,0 +1,190 @@
+[
+  {
+    "id": "f_4cb467",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "measures": {
+      "data_file_count": 7,
+      "total_bytes": 1879048192,
+      "avg_file_bytes": 268435456.0,
+      "p50_file_bytes": 268435456,
+      "p95_file_bytes": 268435456,
+      "min_file_bytes": 268435456,
+      "max_file_bytes": 268435456,
+      "total_records": 4900000,
+      "files_current_sort_order": 2,
+      "files_stale_sort_order": 4,
+      "files_sort_order_unknown": 1,
+      "files_written_before_sort_order": 4
+    },
+    "attrs": {
+      "written_before_sort_order": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_d6371e",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "measures": {
+      "snapshot_count": 3,
+      "span_hours": 4344.0
+    },
+    "attrs": {
+      "operations": [
+        "append"
+      ],
+      "oldest": "2026-01-10T00:00:00+00:00",
+      "newest": "2026-07-10T00:00:00+00:00"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_ee9476",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "measures": {
+      "section_count": 3,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_6c4205",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "format-version",
+      "value": "2",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_6c4205",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_6c4205",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "sort-order",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_6c4205",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "partition-spec",
+      "present": false,
+      "non_empty": false
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_e7ebd2",
+    "schema_version": 1,
+    "kind": "iceberg.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "dump.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "sort_order_id_missing",
+      "section": "files",
+      "file_count": 1
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "0b799cf078ed6816e65e836bcef88b24b751d3451f47925044cf2c610de73e39",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  }
+]

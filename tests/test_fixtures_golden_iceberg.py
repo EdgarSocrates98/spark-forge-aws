@@ -18,7 +18,15 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "iceberg"
 
-REQUIRED_FIXTURES = {"small_files", "delete_debt", "snapshot_churn", "healthy_table"}
+REQUIRED_FIXTURES = {
+    "small_files",
+    "delete_debt",
+    "snapshot_churn",
+    "healthy_table",
+    "sort_order_debt",
+    "sort_order_rewritten",
+    "sort_order_unknown",
+}
 
 
 def fixture_dirs():
@@ -81,13 +89,51 @@ class TestAdversarial:
         _, _, findings, _ = run_fixture(FIXTURES / "healthy_table")
         assert findings == []
 
-    def test_ice_004_is_blocked_not_missing(self):
-        """SF-ICE-004 nunca pode disparar (nenhum dump unico sabe se os data
-        files existentes sao anteriores ao sort order). Isso precisa aparecer
-        como `blocked_on` explicito em `skipped`, nao como silencio."""
-        _, _, _, skipped = run_fixture(FIXTURES / "small_files")
-        entry = next(s for s in skipped if s["rule_id"] == "SF-ICE-004")
-        assert entry["reason"] == "blocked_on"
+    def test_ice_004_nao_dispara_sem_sort_order_id_no_dump(self):
+        """`small_files` tem sort order definido e nenhum `sort_order_id` nos
+        data files -- e nem `default_sort_order_id`. Antes isso aparecia como
+        `blocked_on`; hoje a regra e avaliavel, e o que a protege e o extrator
+        nao emitir o atributo sem evidencia. Um dump velho, coletado antes da
+        coluna existir, nao pode virar finding."""
+        _, facts, findings, skipped = run_fixture(FIXTURES / "small_files")
+        assert not [s for s in skipped if s["rule_id"] == "SF-ICE-004"]
+        summary = next(f for f in facts if f.kind == "iceberg.files_summary")
+        assert "written_before_sort_order" not in summary.attrs
+        assert "SF-ICE-004" not in {f.rule_id for f in findings}
+
+    def test_ice_004_dispara_e_mede_so_os_arquivos_anteriores(self):
+        _, facts, findings, _ = run_fixture(FIXTURES / "sort_order_debt")
+        finding = next(f for f in findings if f.rule_id == "SF-ICE-004")
+        summary = next(f for f in facts if f.kind == "iceberg.files_summary")
+        assert summary.attrs["written_before_sort_order"] is True
+        # 4 sob a ordem registrada anterior (piso confirmado), 2 sob a vigente,
+        # 1 com sort_order_id 0 que continua sem resposta.
+        assert summary.measures["files_written_before_sort_order"] == 4
+        assert summary.measures["files_current_sort_order"] == 2
+        assert summary.measures["files_sort_order_unknown"] == 1
+        assert summary.measures["data_file_count"] == 7
+        assert summary.id in finding.evidence
+
+    def test_ice_004_nao_dispara_depois_do_rewrite(self):
+        _, facts, findings, _ = run_fixture(FIXTURES / "sort_order_rewritten")
+        summary = next(f for f in facts if f.kind == "iceberg.files_summary")
+        assert summary.attrs["written_before_sort_order"] is False
+        assert findings == []
+
+    def test_ice_004_trata_sort_order_id_zero_como_ponto_cego(self):
+        """O caso Glue tipico: todo arquivo com `sort_order_id` 0 ou ausente,
+        porque `SparkWrite` so passou a gravar o campo no Iceberg 1.11.0. A
+        regra fica calada -- mas o dump precisa dizer que nao deu para olhar,
+        nao que esta tudo bem."""
+        _, facts, findings, _ = run_fixture(FIXTURES / "sort_order_unknown")
+        summary = next(f for f in facts if f.kind == "iceberg.files_summary")
+        assert "written_before_sort_order" not in summary.attrs
+        assert summary.measures["files_sort_order_unknown"] == 4
+        assert findings == []
+        unresolved = [f for f in facts if f.kind == "iceberg.unresolved"]
+        assert [u.attrs["reason"] for u in unresolved] == ["sort_order_id_missing"]
+        analyzed = next(f for f in facts if f.kind == "iceberg.table_analyzed")
+        assert analyzed.measures["unresolved_count"] == 1
 
     def test_delete_debt_ratio_lives_on_one_fact(self):
         """SF-ICE-002 divide delete_file_count / data_file_count dentro de uma
@@ -98,7 +144,7 @@ class TestAdversarial:
         assert summary.measures["delete_file_count"] == 10
         assert summary.measures["data_file_count"] == 50
 
-    def test_small_files_sort_order_property_present_but_rule_blocked(self):
+    def test_small_files_sort_order_property_present_sem_evidencia_por_arquivo(self):
         _, facts, findings, _ = run_fixture(FIXTURES / "small_files")
         sort_order = next(
             f

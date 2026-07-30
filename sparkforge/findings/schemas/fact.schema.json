@@ -15,8 +15,20 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["source_location", "stage", "task", "tf_resource", "table", "job_run"]
+          "enum": [
+            "source_location",
+            "stage",
+            "task",
+            "tf_resource",
+            "table",
+            "job_run",
+            "plan_node"
+          ]
         },
+        "node_id": {"type": "integer", "minimum": 0},
+        "operator": {"type": "string"},
+        "relation": {"type": "string"},
+        "stage_id": {"type": "integer", "minimum": 0},
         "file": {"type": "string"},
         "line": {"type": "integer", "minimum": 0},
         "col": {"type": "integer", "minimum": 0},

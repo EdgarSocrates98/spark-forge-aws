@@ -1,0 +1,59 @@
+[
+  {
+    "rule_id": "SF-ICE-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Sort order definido sem rewrite dos dados existentes",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.eventos_sort_debt"
+    },
+    "evidence": [
+      "f_6c4205",
+      "f_4cb467"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "iceberg": ">=1.0.0"
+    },
+    "explanation": "Sort order afeta apenas escritas futuras e o rewrite_data_files com estratégia sort. Definir sort order numa tabela existente e esperar melhoria de pruning nos dados já gravados é um erro de expectativa comum: nada muda nos arquivos antigos. Estatística min/max só ajuda se os valores estiverem agrupados. A evidência aqui é por arquivo, não temporal: measures.files_written_before_sort_order conta os data files cujo sort_order_id não é o default-sort-order-id da tabela — seja 0 (a sentinela \"unsorted\" da spec) ou uma ordem anterior. Ver knowledge/storage/parquet-layout.md secao 2 e knowledge/storage/iceberg-performance.md secao 3.",
+    "proposed_change": [
+      "Executar rewrite_data_files com estratégia sort e o sort_order desejado sobre o passivo.",
+      "Se os filtros variam entre duas ou três colunas, avaliar zorder em vez de sort.",
+      "Confirmar o ganho medindo bytes lidos por uma query de referência, não pela duração."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Rewrite de tabela grande é caro em DPU e cria um snapshot volumoso."
+    ],
+    "tradeoffs": [
+      "Zorder custa mais que sort e só se justifica com evidência de filtros multi-coluna."
+    ],
+    "validation": [
+      "Bytes lidos por uma query de referência antes e depois.",
+      "Contagem total de linhas idêntica.",
+      "Razão entre bytes lidos e tamanho da tabela, que é a medida direta de pruning.",
+      "SELECT sort_order_id, count(*) FROM db.tbl.files GROUP BY 1 antes e depois; depois do rewrite todo arquivo deve carregar o default-sort-order-id."
+    ],
+    "rollback": [
+      "Time travel para o snapshot anterior ao rewrite."
+    ],
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md",
+        "retrieved": "2026-07-30",
+        "note": "data_file campo 140 sort_order_id e a sentinela order id 0; tag 1.0.0, a versao mais antiga do range Glue suportado"
+      }
+    ]
+  }
+]

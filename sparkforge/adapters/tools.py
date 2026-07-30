@@ -95,7 +95,15 @@ _FACT_SUBJECT: dict[str, Any] = {
     "properties": {
         "type": {
             "type": "string",
-            "enum": ["source_location", "stage", "task", "tf_resource", "table", "job_run"],
+            "enum": [
+                "source_location",
+                "stage",
+                "task",
+                "tf_resource",
+                "table",
+                "job_run",
+                "plan_node",
+            ],
         },
         "file": {"type": "string"},
         "line": {"type": "integer"},
@@ -103,6 +111,13 @@ _FACT_SUBJECT: dict[str, Any] = {
         "end_line": {"type": "integer"},
         "symbol": {"type": "string"},
         "snippet": {"type": "string"},
+        # `plan_node` (sparkforge/facts/spark_plan.py): um plano fisico nao tem
+        # arquivo:linha de codigo-fonte, entao a entidade ancorada e o NO do
+        # plano -- mesmo raciocinio de `stage`/`stage_id` no event log.
+        "node_id": {"type": "integer"},
+        "operator": {"type": "string"},
+        "relation": {"type": "string"},
+        "stage_id": {"type": "integer"},
     },
 }
 
