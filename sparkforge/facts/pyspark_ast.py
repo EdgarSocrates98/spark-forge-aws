@@ -6,9 +6,9 @@ inspecionar executaria codigo arbitrario do repositorio analisado.
 Duas passagens: (1) `_Context` mapeia cada no para seu pai, para a
 funcao/metodo que o envolve e para a profundidade de loop em que esta;
 (2) uma varredura sobre as chamadas (`ast.Call`) da arvore casa metodos
-conhecidos e emite Facts diretamente. Reconstrucao de cadeia (encadear
-`.coalesce(1).write(...)` de volta ao DataFrame de origem) nao existe aqui;
-e escopo da Task 8.
+conhecidos e emite Facts diretamente. `_chain_methods` reconstroi a ordem de
+escrita de uma cadeia fluente (`.select(...).join(...).filter(...)`) com um
+`while`, nao recursao, pelo mesmo motivo do `_Context`.
 
 Nao aplica limiar, nao atribui severidade, nao ordena por importancia.
 """
@@ -24,6 +24,9 @@ from sparkforge.findings.models import Fact, sort_facts
 EXTRACTOR_ID = "pyspark_ast@0.1.0"
 
 _PARTITION_METHODS = frozenset({"coalesce", "repartition", "repartitionByRange"})
+_REDUCTION_METHODS = frozenset({"select", "filter", "where", "drop", "selectExpr"})
+_DRIVER_COLLECT = frozenset({"collect", "toPandas", "toLocalIterator"})
+_BOUNDING_METHODS = frozenset({"limit", "take", "head", "first"})
 
 
 class _Context:
@@ -97,6 +100,39 @@ def _literal(node: ast.AST) -> Any | None:
     return None
 
 
+def _chain_methods(node: ast.Call) -> tuple[list[str], ast.AST]:
+    """Caminha a espinha Attribute/Call e devolve os metodos em ordem de escrita.
+
+    Passe 2. A ordem e o que permite transformar 'join antes de filter' em
+    predicado sobre indices, em vez de leitura subjetiva.
+    """
+    methods: list[str] = []
+    current: ast.AST = node
+
+    while True:
+        if isinstance(current, ast.Call) and isinstance(current.func, ast.Attribute):
+            methods.append(current.func.attr)
+            current = current.func.value
+        elif isinstance(current, ast.Attribute):
+            methods.append(current.attr)
+            current = current.value
+        else:
+            break
+
+    methods.reverse()
+    return methods, current
+
+
+def _chain_root_call(node: ast.Call, ctx: _Context) -> bool:
+    """True se `node` e o topo da cadeia, para nao emitir um fact por elo."""
+    parent = ctx.parent.get(id(node))
+    if isinstance(parent, ast.Attribute):
+        return False
+    if isinstance(parent, ast.Call) and parent.func is node:
+        return False
+    return True
+
+
 def extract_source(source: str, path: str) -> list[Fact]:
     """Extrai Facts de `source`. `path` e usado como ancora e procedencia."""
     sha = hashlib.sha256(source.encode("utf-8")).hexdigest()
@@ -136,6 +172,43 @@ def extract_source(source: str, path: str) -> list[Fact]:
             method = node.func.attr
             if method in _PARTITION_METHODS:
                 facts.append(_partitioning_fact(node, method, path, ctx, lines, provenance))
+
+            if method in _DRIVER_COLLECT:
+                collect_methods, _ = _chain_methods(node)
+                bounded = any(m in _BOUNDING_METHODS for m in collect_methods[:-1])
+                facts.append(
+                    Fact(
+                        kind="pyspark.driver_collect",
+                        subject=_subject(node, path, ctx, lines),
+                        attrs={
+                            "method": method,
+                            "bounded": bounded,
+                            "inside_loop": ctx.loop_depth.get(id(node), 0) > 0,
+                        },
+                        provenance=provenance,
+                    )
+                )
+
+            if not _chain_root_call(node, ctx):
+                continue
+
+            methods, _ = _chain_methods(node)
+            if len(methods) < 2:
+                continue
+
+            facts.append(_chain_fact(node, methods, path, ctx, lines, provenance))
+
+            run = _longest_withcolumn_run(methods)
+            if run >= 2:
+                facts.append(
+                    Fact(
+                        kind="pyspark.withcolumn_run",
+                        subject=_subject(node, path, ctx, lines),
+                        measures={"run_length": run},
+                        attrs={"inside_loop": ctx.loop_depth.get(id(node), 0) > 0},
+                        provenance=provenance,
+                    )
+                )
     except SyntaxError as exc:
         return [
             Fact(
@@ -177,6 +250,44 @@ def extract_source(source: str, path: str) -> list[Fact]:
         ]
 
     return sort_facts(facts)
+
+
+def _chain_fact(
+    node: ast.Call,
+    methods: list[str],
+    path: str,
+    ctx: _Context,
+    lines: list[str],
+    provenance: dict[str, Any],
+) -> Fact:
+    measures: dict[str, Any] = {"length": len(methods)}
+
+    join_index = next((i for i, m in enumerate(methods) if m == "join"), None)
+    if join_index is not None:
+        measures["join_index"] = join_index
+
+    reduction_index = next(
+        (i for i, m in enumerate(methods) if m in _REDUCTION_METHODS), None
+    )
+    if reduction_index is not None:
+        measures["first_reduction_index"] = reduction_index
+
+    return Fact(
+        kind="pyspark.chain",
+        subject=_subject(node, path, ctx, lines),
+        measures=measures,
+        attrs={"methods": methods},
+        provenance=provenance,
+    )
+
+
+def _longest_withcolumn_run(methods: list[str]) -> int:
+    best = 0
+    current = 0
+    for method in methods:
+        current = current + 1 if method == "withColumn" else 0
+        best = max(best, current)
+    return best
 
 
 def _partitioning_fact(
