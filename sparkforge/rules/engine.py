@@ -73,11 +73,37 @@ def _absent_satisfied(condition: dict[str, Any], facts: Sequence[Fact]) -> bool:
 def _subject_group_key(fact: Fact) -> str:
     """Chave que identifica a entidade a que o fact se refere.
 
-    Para um recurso Terraform e `<tipo>.<nome>`; para um stage Spark e o stage.
-    Usada apenas quando a regra pede `same_subject`.
+    Para um recurso Terraform e `<tipo>.<nome>`; para uma tabela do catalogo e o
+    nome da tabela; para um stage Spark e o stage. Usada apenas quando a regra
+    pede `same_subject`.
+
+    Sem `symbol`, a entidade e a LOCALIZACAO, nunca o arquivo: um subject
+    `source_location` identifica um ponto do codigo, e agrupar so por `file`
+    juntaria coisas independentes. Dois `spark.sql(...)` no mesmo modulo sao
+    duas queries; se uma filtra a coluna de particao e a outra nao, a chave por
+    arquivo poe as duas no mesmo grupo, `absent` falha, e a query ruim fica
+    mascarada pela boa -- exatamente o falso negativo que `same_subject` existe
+    para evitar, so que dentro do arquivo em vez de entre arquivos.
+
+    Isso funciona porque todos os facts de uma unica query compartilham UM
+    subject, construido uma vez por query (`facts/sql_literal.py::_scan_sql`,
+    `subject = _sql_subject(path, line)`) e propagado intacto pelos facts
+    `.enriched` da fusao (`facts/fusion.py`). A linha e portanto a identidade
+    estavel da query, nao um detalhe de formatacao.
+
+    Sentinela de arquivo (`sql.analyzed`, `pyspark.module_analyzed`,
+    `tf.module_analyzed`, ancoradas em `line: 0`) cai no seu proprio grupo, o
+    que e correto: ela prova que o arquivo foi varrido, nao afirma nada sobre
+    uma localizacao especifica dentro dele.
     """
     subject = fact.subject or {}
-    return str(subject.get("symbol") or subject.get("file") or "")
+    symbol = subject.get("symbol")
+    if symbol:
+        return str(symbol)
+    file = subject.get("file")
+    if not file:
+        return ""
+    return f"{file}:{subject.get('line', 0)}"
 
 
 def _evaluate_when(

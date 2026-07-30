@@ -109,6 +109,83 @@ def test_condicao_absent_nao_e_vacuamente_verdadeira(rule: dict) -> None:
     )
 
 
+class TestAbsentSemSameSubjectSeJustifica:
+    """`absent: X` sem `same_subject` e avaliado contra a lista INTEIRA de facts.
+
+    Se a regra fala de uma entidade (um job, uma tabela, uma query), basta UMA
+    entidade correta em qualquer lugar do conjunto analisado para o fact `X`
+    existir globalmente, `absent` falhar, e a regra nao disparar para NINGUEM --
+    mascarando todas as entidades genuinamente quebradas. E o pior erro que esta
+    ferramenta pode cometer, porque le como "nenhum problema encontrado": o
+    operador nao tem sinal nenhum de que houve subnotificacao.
+
+    Aconteceu tres vezes: SF-GLUE-002 (um job com Spark UI escondia os outros
+    tres), SF-ATH-003 (uma tabela com partition projection escondia todas as
+    sobre-particionadas do mesmo dump) e SF-ATH-002 (uma query com filtro de
+    particao escondia todas as que escaneiam a tabela inteira). Os tres foram
+    corrigidos ancorando num fact por entidade com `same_subject: true`.
+
+    Nem toda regra com `absent:` e esse defeito: existe pergunta legitimamente
+    sobre o CONJUNTO. Mas ela tem que ser declarada aqui, com o motivo escrito,
+    em vez de subnotificar em silencio -- mesmo padrao de
+    `test_capability_parity.py::TestNoCliVerbIsAnUndeclaredMcpGap.ALLOWED_CLI_ONLY`.
+    """
+
+    ALLOWED_SET_LEVEL = {
+        # A pergunta e "este CODIGO-BASE inicializa glueContext em algum lugar?".
+        # `--enable-observability-metrics` esta no recurso Terraform e
+        # `glueContext` esta no codigo Python: artefatos diferentes, subjects que
+        # nunca coincidem (`tf_resource` vs `source_location`). Verificado: com
+        # `same_subject: true` a regra deixa de disparar em qualquer entrada, pois
+        # nenhum grupo contem as duas metades. Um fact `pyspark.glue_context_init`
+        # em qualquer modulo do repositorio e de fato a resposta correta.
+        "SF-ENV-003": (
+            "correlaciona Terraform com codigo Python; a pergunta e sobre o "
+            "codigo-base inteiro, e `same_subject` faria a regra nunca disparar."
+        ),
+        # A pergunta e "houve spill em ALGUM stage deste run?". Spill em qualquer
+        # stage ja justifica o worker maior, entao a ausencia precisa mesmo ser
+        # verificada contra o run inteiro. O subject de `tf.attribute` e um
+        # recurso e o de `spark.stage.spill` e um stage -- nunca coincidem.
+        # (Hoje `blocked_on: extrator-de-diff-terraform`; a justificativa vale
+        # igualmente quando ela for desbloqueada.)
+        "SF-GLUE-005": (
+            "ausencia de spill e propriedade do run inteiro, nao de um recurso; "
+            "subjects de Terraform e de stage Spark nunca coincidem."
+        ),
+    }
+
+    @pytest.mark.parametrize("rule", RULES, ids=RULE_IDS)
+    def test_regra_com_absent_ancora_por_entidade_ou_se_declara(self, rule: dict) -> None:
+        when = rule.get("when") or {}
+        _, absent = _referenced_kinds(when)
+        if not absent or when.get("same_subject"):
+            return
+        assert rule["id"] in self.ALLOWED_SET_LEVEL, (
+            f"{rule['id']} usa `absent: {sorted(absent)}` sem `same_subject: true`. "
+            f"O motor avalia `absent:` contra a lista inteira de facts, entao UMA "
+            f"entidade correta em qualquer lugar da analise faz a regra nao disparar "
+            f"para NENHUMA das quebradas -- e o relatorio diz 'nenhum problema "
+            f"encontrado'. Ancore num fact por entidade com `same_subject: true` "
+            f"(ver SF-GLUE-002, SF-ATH-002, SF-ATH-003), ou, se a pergunta e mesmo "
+            f"sobre o conjunto, declare a regra em ALLOWED_SET_LEVEL com o motivo."
+        )
+
+    def test_a_allowlist_nao_guarda_regra_que_ja_foi_corrigida(self) -> None:
+        """Entrada obsoleta na allowlist e permissao silenciosa para o defeito
+        voltar: se a regra ganhou `same_subject`, a justificativa nao vale mais."""
+        by_id = {r["id"]: r for r in RULES}
+        for rule_id in self.ALLOWED_SET_LEVEL:
+            rule = by_id.get(rule_id)
+            assert rule is not None, f"{rule_id} esta na allowlist e nao existe no catalogo."
+            when = rule.get("when") or {}
+            _, absent = _referenced_kinds(when)
+            assert absent and not when.get("same_subject"), (
+                f"{rule_id} nao precisa mais da isencao: ou perdeu o `absent:`, ou "
+                f"ganhou `same_subject`. Remova a entrada de ALLOWED_SET_LEVEL."
+            )
+
+
 def test_toda_regra_bloqueada_explica_o_bloqueio_em_comentario() -> None:
     """`blocked_on` sozinho nao diz por que a capacidade falta.
 
