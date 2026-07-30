@@ -254,6 +254,62 @@ class TestSameSubjectCorrelation:
         ]
 
 
+class TestSameSubjectReportsEveryOffender:
+    """Uma regra `same_subject` afirma algo sobre UMA entidade. Se quatro jobs
+    tem o mesmo defeito, sao quatro achados, nao um.
+
+    Devolver so o primeiro grupo que casa faz o relatorio dizer "um job esta
+    errado" quando tres estao: o operador corrige aquele, roda de novo, e
+    descobre o proximo -- sem nunca saber quantos faltam. Subcontagem e
+    enganosa da mesma forma que falso negativo.
+    """
+
+    def _rule(self):
+        return rule(
+            requires_facts=["tf.attribute"],
+            when={
+                "same_subject": True,
+                "all": [
+                    {"fact": "tf.attribute", "where": {"attrs.key": "autoscaling"}},
+                    {"fact": "tf.attribute", "where": {"attrs.key": "workers"}},
+                ],
+            },
+        )
+
+    def _attr(self, symbol, key):
+        return Fact(
+            kind="tf.attribute",
+            subject={"type": "tf_resource", "file": "main.tf", "symbol": symbol},
+            attrs={"key": key},
+        )
+
+    def _facts(self):
+        offenders = [
+            f
+            for symbol in ("job_a", "job_b", "job_c")
+            for f in (self._attr(symbol, "workers"), self._attr(symbol, "autoscaling"))
+        ]
+        # Um quarto recurso correto: nao pode virar achado nem emprestar evidencia.
+        return [*offenders, self._attr("job_ok", "workers")]
+
+    def test_every_offending_subject_gets_its_own_finding(self):
+        found = judge(self._facts(), [self._rule()], GLUE_50)
+        assert [f.subject["symbol"] for f in found] == ["job_a", "job_b", "job_c"]
+
+    def test_evidence_never_leaks_across_subjects(self):
+        facts = self._facts()
+        by_id = {f.id: f for f in facts}
+        for finding in judge(facts, [self._rule()], GLUE_50):
+            symbols = {by_id[fid].subject["symbol"] for fid in finding.evidence}
+            assert symbols == {finding.subject["symbol"]}
+
+    def test_order_is_stable_regardless_of_fact_order(self):
+        facts = self._facts()
+        forward = [f.to_dict() for f in judge(facts, [self._rule()], GLUE_50)]
+        backward = [f.to_dict() for f in judge(list(reversed(facts)), [self._rule()], GLUE_50)]
+        assert forward == backward
+
+
 TWO_JOBS_ONE_OBSERVED = '''resource "aws_glue_job" "com_ui" {
   name         = "job-com-ui"
   glue_version = "5.0"
