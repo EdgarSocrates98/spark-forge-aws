@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Logical comparison helpers for before/after Spark DataFrames."""
 from __future__ import annotations
-from pyspark.sql import DataFrame, functions as F
+
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+
 
 def dataset_signature(df: DataFrame, key_columns: list[str] | None = None) -> dict:
     columns = sorted(df.columns)

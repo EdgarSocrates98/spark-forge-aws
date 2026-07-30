@@ -14,7 +14,7 @@
 
 - Local Python: **3.14.6**. `pyproject.toml` declares `requires-python = ">=3.10"`. Core code must avoid syntax newer than 3.10 so the package can run under Glue 4.0 if executed inside a job.
 - Available: `PyYAML 6.0.2`, `jsonschema 4.23.0`, `pytest 8.3.4`.
-- **Not** available: `ruff`. Lint tasks install it as a dev extra; do not assume it is present.
+- Available: `ruff 0.16.0` (installed 2026-07-29). Task 21's lint step runs locally without the extra install.
 - 77 existing tests pass. `tests/` uses plain `pathlib` assertions with `ROOT = Path(__file__).resolve().parents[1]`. Follow that convention.
 - `scripts/sync_skills.py` mirrors `skills/` to `.claude/skills/` and `.agents/skills/` with `--check` for CI. It does **not** yet handle `agents/`.
 - Run tests with `python -m pytest`, never bare `pytest`.
