@@ -1,0 +1,53 @@
+[
+  {
+    "rule_id": "SF-GLUE-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Auto Scaling habilitado junto com NumberOfWorkers",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 23,
+      "symbol": "aws_glue_job.etl_autoscaling"
+    },
+    "evidence": [
+      "f_0377a0",
+      "f_1c5012"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=3.0"
+    },
+    "explanation": "Com Auto Scaling habilitado, a capacidade é controlada por MinCapacity e MaxCapacity. Definir NumberOfWorkers junto é contraditório e é o erro de IaC mais comum nesta área. O resultado é que o comportamento efetivo de escala fica ambíguo para quem lê o código, e o diagnóstico de superprovisão fica sem baseline claro.",
+    "proposed_change": [
+      "Remover number_of_workers e definir MinCapacity e MaxCapacity.",
+      "Dimensionar MaxCapacity a partir do volume de pico observado, não de um número arbitrário."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "MaxCapacity muito alto permite gasto inesperado em run anômalo."
+    ],
+    "tradeoffs": [
+      "Auto Scaling não compensa em jobs abaixo de cerca de três minutos",
+      "onde o overhead não se paga."
+    ],
+    "validation": [
+      "glue.driver.workerUtilization antes e depois.",
+      "Runtime e DPU-hours antes e depois, em runs de volume comparável."
+    ],
+    "rollback": [
+      "Reverter a definição do job para capacidade fixa."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

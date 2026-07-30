@@ -1,0 +1,19 @@
+name: autoscaling_conflict
+proves: >
+  aws_glue_job com --enable-auto-scaling = "true" e number_of_workers
+  definido ao mesmo tempo -- capacidade fica ambigua entre MinCapacity/
+  MaxCapacity e um numero fixo de workers. Job pelo resto configurado
+  corretamente (spark-ui + event-logs-path presentes, bookmark desligado,
+  sem segredo), para isolar SF-GLUE-001 das outras cinco regras.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.resource
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-GLUE-001

@@ -58,3 +58,33 @@ Um agente (humano ou modelo) roda as dez perguntas via as tools MCP ou a CLI
 `sparkforge` e compara a resposta literal com `evals/fase0.xml`. Não há
 harness automatizado de execução de agente neste repositório — isso é
 responsabilidade de quem opera a plataforma de avaliação (Claude, Devin).
+
+
+## Execuções registradas
+
+### 2026-07-30 — primeira execução cruzada
+
+Dois agentes, tamanhos de modelo diferentes, mesmas dez perguntas, sem acesso a
+`fase0.xml`, `check_evals.py` nem a qualquer `expected/*.json`. Ambos derivaram tudo do
+CLI e da API sobre as fixtures.
+
+| Modelo | Resultado | Observação |
+|---|---|---|
+| Haiku 4.5 | 9/10 | única divergência foi de formato em Q6 |
+| Sonnet 5 | 10/10 | apontou Q6 como ambígua por conta própria |
+
+**A divergência não era erro de modelo.** Q6 perguntava "qual o nome do campo de
+`measures` que ela compara". Haiku respondeu `run_length`, o corpus esperava
+`measures.run_length`. As duas leituras estão corretas: uma é o nome do campo, a outra é
+o caminho. Sonnet acertou o formato esperado e ainda assim registrou que
+`threshold.run_length` seria uma terceira leitura defensável, já que a expressão compara
+os dois lados.
+
+Conforme a regra desta suíte, a correção foi **na pergunta**: ela agora pede
+explicitamente o caminho pontuado do lado esquerdo da expressão, o lado do fact. Nenhum
+modelo foi trocado e nenhuma resposta foi afrouxada.
+
+Isso é a suíte funcionando como projetada. Ela não mediu qual modelo é melhor — mediu
+onde a nossa própria especificação estava vaga, que é a única coisa acionável.
+
+**Não medido:** Devin e Opus não foram executados nesta rodada.

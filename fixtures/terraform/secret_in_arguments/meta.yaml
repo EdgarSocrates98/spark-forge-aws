@@ -1,0 +1,21 @@
+name: secret_in_arguments
+proves: >
+  aws_glue_job com um default argument cujo valor casa o padrao de AWS
+  access key id (AKIA + 16 alfanumericos maiusculos) -- SF-GLUE-006. O valor
+  usado e o access key id de exemplo documentado pela AWS, nunca uma
+  credencial real, e o extrator nunca escreve o valor suspeito em
+  attrs.value: o golden desta fixture prova a redacao (attrs.value
+  "<redigido>", attrs.redacted true). Job pelo resto com observabilidade
+  configurada, para isolar SF-GLUE-006 de SF-GLUE-002.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.resource
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-GLUE-006

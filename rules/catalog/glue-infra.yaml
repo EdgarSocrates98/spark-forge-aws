@@ -13,6 +13,7 @@ rules:
     title: Auto Scaling habilitado junto com NumberOfWorkers
     requires_facts: [tf.attribute]
     when:
+      same_subject: true
       all:
         - fact: tf.attribute
           where: {attrs.key: "--enable-auto-scaling", attrs.value: "true"}
@@ -41,11 +42,11 @@ rules:
   - id: SF-GLUE-002
     category: glue-infra
     title: Observabilidade ausente em job de produção
-    requires_facts: [tf.attribute]
+    requires_facts: [tf.module_analyzed]
     when:
-      any:
-        - absent: tf.attribute.enable_spark_ui
-        - absent: tf.attribute.spark_event_logs_path
+      all:
+        - fact: tf.module_analyzed
+        - absent: tf.observability.spark_ui
     status: confirmed
     severity_default: P1
     runtime_scope: {glue: "*"}
@@ -73,6 +74,7 @@ rules:
     title: MaxConcurrentRuns maior que 1 com bookmarks habilitados
     requires_facts: [tf.attribute]
     when:
+      same_subject: true
       all:
         - fact: tf.attribute
           where: {attrs.key: "--job-bookmark-option", attrs.value: "job-bookmark-enable"}
@@ -131,8 +133,16 @@ rules:
     sources:
       - {origin: field-heuristic, note: "Idempotência de escrita sob retry é requisito de desenho; a regra apenas expõe a combinação de risco."}
 
+  # INERTE POR DESENHO ATE EXISTIR EXTRATOR DE DIFF.
+  # `attrs.changed` significa "este atributo mudou em relacao a um estado anterior".
+  # Isso e um diff entre dois pontos no tempo (dois commits, ou plan vs. state), e
+  # nenhum extrator de arquivo unico pode saber. A regra nao dispara hoje e nao vai
+  # disparar ate que um extrator de `terraform plan`/diff produza `attrs.changed`.
+  # Fica registrada em vez de removida porque o conhecimento e valido; o que falta e
+  # a capacidade de coleta. Ver o campo `blocked_on` abaixo.
   - id: SF-GLUE-005
     category: glue-infra
+    blocked_on: extrator-de-diff-terraform
     title: Worker maior recomendado sem evidência de limitação de memória
     requires_facts: [tf.attribute, spark.stage.spill, spark.executor.memory_usage]
     when:
