@@ -70,10 +70,39 @@ def _absent_satisfied(condition: dict[str, Any], facts: Sequence[Fact]) -> bool:
     return not any(f.kind == kind for f in facts)
 
 
+def _subject_group_key(fact: Fact) -> str:
+    """Chave que identifica a entidade a que o fact se refere.
+
+    Para um recurso Terraform e `<tipo>.<nome>`; para um stage Spark e o stage.
+    Usada apenas quando a regra pede `same_subject`.
+    """
+    subject = fact.subject or {}
+    return str(subject.get("symbol") or subject.get("file") or "")
+
+
 def _evaluate_when(
     when: dict[str, Any], facts: Sequence[Fact], threshold: dict[str, Any]
 ) -> list[Fact] | None:
-    """Retorna os facts de evidencia se `when` casa; None caso contrario."""
+    """Retorna os facts de evidencia se `when` casa; None caso contrario.
+
+    Com `same_subject: true` no grupo, todas as condicoes precisam ser satisfeitas
+    pelo MESMO subject. Sem isso, um arquivo Terraform com dois `aws_glue_job`
+    faria uma regra casar juntando um atributo de um recurso com outro atributo
+    de um recurso diferente — cada job correto isoladamente, e a regra acusando.
+    Acusar configuracao correta destroi a confianca em todo o resto do relatorio,
+    entao regras que correlacionam atributos de uma mesma entidade declaram isso.
+    """
+    if when.get("same_subject"):
+        subjects = {_subject_group_key(f) for f in facts}
+        for subject_key in sorted(subjects):
+            scoped = [f for f in facts if _subject_group_key(f) == subject_key]
+            narrowed = dict(when)
+            narrowed.pop("same_subject", None)
+            evidence = _evaluate_when(narrowed, scoped, threshold)
+            if evidence:
+                return evidence
+        return None
+
     for group, require_all in (("all", True), ("any", False)):
         conditions = when.get(group)
         if not conditions:
@@ -172,6 +201,18 @@ def judge(
         scope = rule.get("runtime_scope") or {}
         if not in_scope(scope, runtime):
             skipped.append({"rule_id": rule["id"], "reason": "runtime_scope", "scope": scope})
+            continue
+
+        # Regra bloqueada por capacidade que ainda nao existe e diferente de regra
+        # que so nao teve dados nesta execucao. A primeira nunca vai disparar ate
+        # alguem construir o extrator; a segunda dispara assim que o artefato for
+        # coletado. Reportar as duas como "requires_facts" faria o operador esperar
+        # por um dado que nao esta a caminho.
+        blocked_on = rule.get("blocked_on")
+        if blocked_on:
+            skipped.append(
+                {"rule_id": rule["id"], "reason": "blocked_on", "blocked_on": blocked_on}
+            )
             continue
 
         required = set(rule.get("requires_facts") or [])
