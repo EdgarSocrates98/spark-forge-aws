@@ -1,0 +1,29 @@
+name: observability_without_glue_context
+proves: >
+  `--enable-observability-metrics = true` no Terraform e nenhum
+  `GlueContext(...)` no codigo. As metricas de observabilidade do Glue sao
+  publicadas pelo GlueContext: sem ele o argumento fica ligado, o operador
+  acredita ter metrica, e o painel fica vazio -- o pior tipo de falha de
+  observabilidade, porque so aparece quando alguem precisa dela.
+  E a unica regra do catalogo que correlaciona Terraform com codigo Python, e
+  por isso a fixture carrega os dois artefatos. O `absent:` dela e sobre o
+  CODIGO-BASE inteiro (qualquer modulo que inicialize glueContext responde a
+  pergunta), o que esta declarado em
+  `test_rules_catalog_reachability.py::ALLOWED_SET_LEVEL`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.observability.spark_ui
+  - pyspark.module_analyzed
+  - pyspark.read
+  - pyspark.write
+  - pyspark.chain
+  - pyspark.action
+expects_rules:
+  - SF-ENV-003

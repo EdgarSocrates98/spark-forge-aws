@@ -58,6 +58,7 @@ FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
 FIXTURES_S3 = ROOT / "fixtures" / "s3"
 FIXTURES_CONSUMERS = ROOT / "fixtures" / "consumers"
 FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
+FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -169,6 +170,22 @@ def regen_runtime(directory: Path) -> None:
         sources.update(json.loads(source_file.read_text(encoding="utf-8")))
     context, facts = detect_runtime(sources)
     findings = judge(facts, load_catalog(), context.to_dict())
+    _write_expected(directory, facts, findings)
+
+
+def regen_infra_code(directory: Path) -> None:
+    """Terraform E codigo PySpark do MESMO job, no mesmo `input/`.
+
+    Duas regras do catalogo cruzam infraestrutura com codigo e nao podem ser
+    provadas por nenhum corpus de fonte unica: SF-ENV-003 (argumento de
+    observabilidade ligado sem `GlueContext` no codigo) e SF-GLUE-004
+    (`max_retries` com escrita `append`, que a retentativa duplica).
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_terraform_tree(input_dir, repo_root=input_dir))
+    facts.extend(extract_tree(input_dir, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
 
@@ -301,6 +318,7 @@ def main() -> int:
                 (FIXTURES_S3 / name, regen_s3),
                 (FIXTURES_CONSUMERS / name, regen_consumers),
                 (FIXTURES_TFDIFF / name, regen_tfdiff),
+                (FIXTURES_INFRA_CODE / name, regen_infra_code),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -341,6 +359,8 @@ def main() -> int:
         regen_consumers(directory)
     for directory in sorted(p for p in FIXTURES_TFDIFF.iterdir() if p.is_dir()):
         regen_tfdiff(directory)
+    for directory in sorted(p for p in FIXTURES_INFRA_CODE.iterdir() if p.is_dir()):
+        regen_infra_code(directory)
     return 0
 
 
