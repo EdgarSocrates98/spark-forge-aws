@@ -24,5 +24,6 @@ def test_advanced_skills_exist_on_all_platforms():
         assert (ROOT / ".agents" / "skills" / skill / "SKILL.md").exists()
 
 def test_orchestrator_agents_exist():
-    assert (ROOT / ".claude" / "agents" / "glue-incremental-performance-architect.md").exists()
-    assert (ROOT / ".github" / "agents" / "glue-incremental-performance-architect.agent.md").exists()
+    name = "glue-incremental-performance-architect"
+    assert (ROOT / ".claude" / "agents" / f"{name}.md").exists()
+    assert (ROOT / ".github" / "agents" / f"{name}.agent.md").exists()

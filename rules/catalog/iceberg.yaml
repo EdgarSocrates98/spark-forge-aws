@@ -1,0 +1,237 @@
+# Catálogo de regras — Apache Iceberg
+# Depende do leitor de metadata tables da Fase 1. Regras inertes até ele existir.
+# Atenção: procedimentos e propriedades variam muito entre Iceberg 1.0.0 (Glue 4.0),
+# 1.7.1 (5.0) e 1.10.0 (5.1). Todo runtime_scope aqui é obrigatório.
+
+catalog_version: 1
+schema_version: 1
+area: SF-ICE
+retrieved: 2026-07-29
+
+rules:
+
+  - id: SF-ICE-001
+    category: iceberg
+    title: Data files pequenos — tamanho médio muito abaixo do alvo
+    requires_facts: [iceberg.files_summary]
+    when:
+      all:
+        - fact: iceberg.files_summary
+          expr: "measures.avg_file_bytes < threshold.min_avg_bytes"
+    threshold: {min_avg_bytes: 33554432}
+    status: confirmed
+    severity_by:
+      - {when: "measures.avg_file_bytes < 8388608", severity: P1}
+      - {when: "measures.avg_file_bytes < 33554432", severity: P2}
+    runtime_scope: {iceberg: ">=1.0.0"}
+    explanation: >
+      Arquivos pequenos custam listing, abertura e overhead de task. Em Iceberg o custo
+      adicional é de metadados: mais data files significam manifests maiores e
+      planejamento mais lento, inclusive para consumidores como Athena. O limiar de 32MB
+      é conservador contra um alvo usual de 128 a 512MB. Ver
+      knowledge/storage/iceberg-performance.md secao 1 e knowledge/storage/parquet-layout.md secao 3.
+    proposed_change:
+      - Corrigir na origem primeiro, com write.distribution-mode hash ou range, que reduz o número de arquivos por partição na própria escrita.
+      - Ajustar write.target-file-size-bytes ao alvo desejado.
+      - Compactar o passivo com rewrite_data_files, estratégia binpack se o problema é contagem.
+      - Se o pruning também é ruim, usar estratégia sort com a coluna de filtro dominante em vez de binpack.
+    risks:
+      - Compactação reescreve dados e cria um novo snapshot, consumindo DPU e armazenamento temporário.
+      - Alterar write.distribution-mode adiciona shuffle na escrita, aumentando o custo de cada run.
+    tradeoffs:
+      - Corrigir na origem encarece cada escrita e evita compactação recorrente. Compactar depois mantém a escrita barata e adiciona um job de manutenção.
+    validation:
+      - Tamanho médio, p50 e p95 de arquivo antes e depois, via metadata table files.
+      - Contagem total de linhas idêntica antes e depois da compactação.
+      - Tempo de planejamento de uma query de referência antes e depois.
+    rollback: [Time travel para o snapshot anterior à compactação, se ainda não expirado.]
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29, note: "doc latest; confirmar parâmetros contra a versão embarcada"}
+      - {url: "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction", retrieved: 2026-07-29}
+
+  - id: SF-ICE-002
+    category: iceberg
+    title: Dívida de delete files em tabela merge-on-read
+    requires_facts: [iceberg.delete_files_summary, iceberg.files_summary]
+    when:
+      all:
+        - fact: iceberg.delete_files_summary
+          expr: "measures.delete_file_count / measures.data_file_count >= threshold.ratio"
+    threshold: {ratio: 0.1}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {iceberg: ">=1.0.0"}
+    explanation: >
+      Em merge-on-read, cada leitura reconcilia os delete files com os data files. Sem
+      compactação regular, a degradação é lenta e silenciosa: a query fica mais lenta a
+      cada semana sem que nada tenha mudado nela. É a armadilha de MoR. Iceberg 1.10
+      introduz deletion vectors, que mudam esse trade-off; confirmar disponibilidade na
+      versão em uso antes de assumir o comportamento antigo.
+    proposed_change:
+      - Compactar delete files com rewrite_position_delete_files, ou rewrite_data_files com reconciliação.
+      - Estabelecer manutenção periódica, não pontual.
+      - Reavaliar a escolha MoR versus copy-on-write com base na razão real entre leitura e escrita da tabela.
+      - Em Iceberg 1.10, avaliar deletion vectors.
+    risks: [Compactação de delete files é reescrita e consome DPU; agendar fora do horário crítico.]
+    tradeoffs:
+      - Copy-on-write encarece a escrita e mantém a leitura rápida sem manutenção recorrente.
+    validation:
+      - Contagem de delete files antes e depois, via metadata table delete_files.
+      - Duração de uma query de referência antes e depois.
+      - Contagem de linhas visíveis na tabela idêntica antes e depois.
+    rollback: [Time travel para o snapshot anterior.]
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29}
+      - {url: "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark", retrieved: 2026-07-29, note: "deletion vectors em Iceberg 1.10.0"}
+
+  - id: SF-ICE-003
+    category: iceberg
+    title: Snapshots acumulados por commits frequentes
+    requires_facts: [iceberg.snapshots_summary]
+    when:
+      all:
+        - fact: iceberg.snapshots_summary
+          expr: "measures.snapshot_count >= threshold.count"
+    threshold: {count: 500}
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {iceberg: ">=1.0.0"}
+    explanation: >
+      Cada commit cria um snapshot. Um loop de append por lote cria um snapshot por
+      lote, com manifests correspondentes. O efeito é metadata.json crescendo,
+      planejamento de leitura mais lento, e heap do driver subindo ao longo de runs
+      longos. Correlaciona com SF-PY-004 quando a causa é loop de escrita. Ver
+      knowledge/storage/iceberg-performance.md secao 7.
+    proposed_change:
+      - Reduzir o número de commits, agrupando lotes ou escrevendo numa única action.
+      - Habilitar write.metadata.delete-after-commit.enabled e definir write.metadata.previous-versions-max.
+      - Estabelecer expire_snapshots periódico com retenção acordada.
+    risks:
+      - expire_snapshots é destrutivo e remove capacidade de time travel para os snapshots expirados.
+      - Reduzir commits diminui a granularidade de recuperação parcial após falha.
+    tradeoffs: [Time travel longo custa metadados e armazenamento; retenção é decisão de negócio, não técnica.]
+    validation:
+      - Contagem de snapshots antes e depois.
+      - Tamanho de metadata.json antes e depois.
+      - Tempo de planejamento de uma query de referência antes e depois.
+    rollback: >
+      Não há rollback para expire_snapshots. A mitigação é escolher a retenção com
+      confirmação explícita antes de executar.
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29}
+
+  # DESBLOQUEADA EM 2026-07-30, mas leia o parágrafo 3 antes de confiar num
+  # silêncio desta regra. Ela ficou inerte sob a premissa de que
+  # `attrs.written_before_sort_order` exigiria histórico entre duas coletas.
+  # Não exige, e o caminho "óbvio" para o histórico também não funciona:
+  #   1. Datar a mudança de sort order pelo `metadata-log` NÃO funciona. A spec
+  #      define cada entrada com exatamente `metadata-file` e `timestamp-ms`,
+  #      sem sort order. E o snapshot registra `schema-id` mas NÃO registra
+  #      `sort-order-id` -- assimetria real da spec. Responder por aí exigiria
+  #      baixar e parsear cada metadata.json histórico, vários já apagados por
+  #      `write.metadata.previous-versions-max`.
+  #   2. O que responde é o campo 140 do struct `data_file`, `sort_order_id`
+  #      (int, opcional), presente desde o formato v1 -- logo em Iceberg 1.0.0
+  #      (Glue 4.0), 1.7.1 (5.0) e 1.10.0 (5.1). Um id NÃO-ZERO só é gravado
+  #      quando um writer chamou `withSortOrder` com uma ordem registrada em
+  #      `sort-orders`, então "id != 0 e != default-sort-order-id" prova
+  #      escrita sob outra ordem, e "id == default" prova o contrário.
+  #   3. ARMADILHA: `sort_order_id == 0` NÃO prova arquivo não ordenado.
+  #      `DataFiles.Builder` inicializa `sortOrderId =
+  #      SortOrder.unsorted().orderId()` (0), e `SparkWrite` só passou a
+  #      sobrescrever isso no Iceberg 1.11.0 -- depois de TODO runtime Glue
+  #      existente. Na prática todo data file escrito por Glue sai com 0,
+  #      inclusive os recém-produzidos por `rewrite_data_files` com estratégia
+  #      sort. Tratar 0 como "não ordenado" faria esta regra disparar em toda
+  #      tabela Iceberg de Glue, mandando compactar tabelas recém-compactadas.
+  #      Por isso 0 conta como DESCONHECIDO, junto com a coluna ausente.
+  # Consequência operacional: numa tabela escrita só por Glue esta regra fica
+  # calada por falta de evidência, não por ausência de passivo. O silêncio vem
+  # acompanhado de `iceberg.unresolved` com reason `sort_order_id_missing` e
+  # da contagem em `iceberg.table_analyzed.unresolved_count`. Ela dispara de
+  # verdade em tabela com passivo escrito por writer que registra sort order
+  # (outro engine, ou Iceberg >= 1.11).
+  # `sparkforge/facts/iceberg_metadata.py::_written_before_sort_order` só
+  # afirma `true` com arquivo comprovadamente sob outra ordem registrada, só
+  # `false` com TODOS comprovadamente sob a vigente, e deixa o atributo ausente
+  # no resto. O `where` abaixo exige `true` explícito, então ambiguidade não
+  # casa.
+  - id: SF-ICE-004
+    category: iceberg
+    title: Sort order definido sem rewrite dos dados existentes
+    requires_facts: [iceberg.table_property, iceberg.files_summary]
+    # `iceberg.files_summary` vem PRIMEIRO de proposito: `engine._build_finding`
+    # usa `evidence[0]` como fact primario, e e dele que sai `measured`. Com
+    # `iceberg.table_property` na frente o finding saia com `measured: {}` --
+    # a regra acusaria passivo de sort order sem mostrar quantos arquivos,
+    # contra AGENT_PROTOCOL regra 3.
+    when:
+      all:
+        - fact: iceberg.files_summary
+          where: {attrs.written_before_sort_order: true}
+        - fact: iceberg.table_property
+          where: {attrs.key: sort-order, attrs.present: true}
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {iceberg: ">=1.0.0"}
+    explanation: >
+      Sort order afeta apenas escritas futuras e o rewrite_data_files com estratégia
+      sort. Definir sort order numa tabela existente e esperar melhoria de pruning nos
+      dados já gravados é um erro de expectativa comum: nada muda nos arquivos antigos.
+      Estatística min/max só ajuda se os valores estiverem agrupados. A evidência aqui
+      é por arquivo, não temporal: measures.files_written_before_sort_order conta os
+      data files cujo sort_order_id é um id de sort order registrado diferente do
+      default-sort-order-id da tabela. É um PISO confirmado, não um total: arquivos com
+      sort_order_id 0 ou sem a coluna ficam de fora, porque até Iceberg 1.10.0 o writer
+      do Spark não grava esse campo e 0 não distingue "não ordenado" de "não
+      registrado". Ver knowledge/storage/parquet-layout.md secao 2 e
+      knowledge/storage/iceberg-performance.md secao 3.
+    proposed_change:
+      - Executar rewrite_data_files com estratégia sort e o sort_order desejado sobre o passivo.
+      - Se os filtros variam entre duas ou três colunas, avaliar zorder em vez de sort.
+      - Confirmar o ganho medindo bytes lidos por uma query de referência, não pela duração.
+    risks: [Rewrite de tabela grande é caro em DPU e cria um snapshot volumoso.]
+    tradeoffs: [Zorder custa mais que sort e só se justifica com evidência de filtros multi-coluna.]
+    validation:
+      - Bytes lidos por uma query de referência antes e depois.
+      - Contagem total de linhas idêntica.
+      - Razão entre bytes lidos e tamanho da tabela, que é a medida direta de pruning.
+      - SELECT sort_order_id, count(*) FROM db.tbl.files GROUP BY 1 antes e depois; depois do rewrite todo arquivo deve carregar o default-sort-order-id.
+    rollback: [Time travel para o snapshot anterior ao rewrite.]
+    sources:
+      - {url: "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction", retrieved: 2026-07-29}
+      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md", retrieved: 2026-07-30, note: "data_file campo 140 sort_order_id e a sentinela order id 0; metadata-log so tem metadata-file e timestamp-ms; snapshot nao tem sort-order-id. Tag 1.0.0, a versao mais antiga do range Glue suportado"}
+      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/DataFiles.java", retrieved: 2026-07-30, note: "private Integer sortOrderId = SortOrder.unsorted().orderId() -- o default 0 que Glue nunca sobrescreve"}
+      - {url: "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/spark/v3.5/spark/src/main/java/org/apache/iceberg/spark/source/SparkWrite.java", retrieved: 2026-07-30, note: "dataSortOrder(...) so aparece aqui; ausente nas tags 1.7.1 e 1.10.0, que sao Glue 5.0 e 5.1"}
+
+  - id: SF-ICE-005
+    category: iceberg
+    title: write.distribution-mode none com particionamento
+    requires_facts: [iceberg.table_property]
+    when:
+      all:
+        - fact: iceberg.table_property
+          where: {attrs.key: write.distribution-mode, attrs.value: none}
+        - fact: iceberg.table_property
+          where: {attrs.key: partition-spec, attrs.non_empty: true}
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {iceberg: ">=1.0.0"}
+    explanation: >
+      Com distribution-mode none não há shuffle antes da escrita, então cada task grava
+      em cada partição que ela contém. O resultado é da ordem de N tasks vezes M
+      partições arquivos. É a causa estrutural de small files em Iceberg, e corrigi-la
+      na escrita é preferível a compactar indefinidamente.
+    proposed_change:
+      - Definir write.distribution-mode como hash, ou range quando há sort order.
+      - Confirmar o comportamento exato do modo escolhido na documentação da versão embarcada.
+      - Medir o número de arquivos por partição antes e depois.
+    risks: [Adicionar shuffle na escrita aumenta o custo de cada run; o ganho está no consumo, não na escrita.]
+    tradeoffs: [Escrita mais cara contra leitura mais barata e menos manutenção.]
+    validation:
+      - Contagem de arquivos por partição antes e depois, via metadata table files.
+      - Runtime e DPU-hours da escrita antes e depois.
+      - Contagem total de linhas idêntica.
+    rollback: [Restaurar write.distribution-mode anterior; afeta apenas escritas futuras.]
+    sources:
+      - {url: "https://iceberg.apache.org/docs/latest/spark-procedures/", retrieved: 2026-07-29, note: "comportamento exato por versão não reconfirmado nesta coleta"}

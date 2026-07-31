@@ -1,0 +1,12 @@
+name: withcolumn_run
+proves: >
+  12 withColumn encadeados produzem plano logico grande, com custo de analise
+  no driver crescendo de forma nao linear. SF-PY-007 dispara quando
+  measures.run_length >= threshold.run_length (10).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.chain, pyspark.withcolumn_run, pyspark.module_analyzed]
+expects_rules: [SF-PY-007]

@@ -1,0 +1,30 @@
+name: sort_order_unknown
+proves: >
+  O caso Glue tipico, e o falso positivo que ele quase produziu. A tabela
+  declara sort order, o dump traz default-sort-order-id 2, e os data files
+  carregam sort_order_id 0 (tres deles) ou nem carregam a coluna (um). Ate o
+  Iceberg 1.10.0 -- ou seja, em Glue 4.0, 5.0 e 5.1 -- `SparkWrite` nunca
+  chama `dataSortOrder`, entao `DataFiles.Builder` deixa o default
+  `SortOrder.unsorted().orderId()` e TODO arquivo escrito pelo Spark sai com
+  0, inclusive os recem-produzidos pelo `rewrite_data_files` com estrategia
+  sort desta tabela (ver a operacao `replace` no snapshot 301). Ler esse 0
+  como "arquivo nao ordenado" faria SF-ICE-004 disparar aqui e mandar rodar
+  de novo o rewrite que acabou de rodar. Entao 0 e ausencia de coluna caem no
+  mesmo balde: `written_before_sort_order` fica ausente (nem true nem false),
+  os quatro arquivos entram em `files_sort_order_unknown`, e sai um
+  `iceberg.unresolved` com reason `sort_order_id_missing`. Zero findings, mas
+  com o ponto cego contabilizado em
+  `iceberg.table_analyzed.unresolved_count` -- que e a diferenca entre "nada
+  encontrado" e "nao deu para olhar".
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - iceberg.files_summary
+  - iceberg.snapshots_summary
+  - iceberg.table_property
+  - iceberg.table_analyzed
+  - iceberg.unresolved
+expects_rules: []

@@ -1,0 +1,20 @@
+name: limit_without_filter
+proves: >
+  `SELECT col, col FROM tabela LIMIT 10`, sem WHERE algum -- o anti-pattern
+  "LIMIT como filtro". Produz sql.projection.attrs.has_limit=true e nenhum
+  sql.predicate (nao ha WHERE). SF-ATH-002 nao dispara neste fixture: exige
+  `catalog.table_schema` em requires_facts (sentinela contra disparo vacuo
+  sem catalogo algum), e este corpus e so texto SQL, sem catalogo. Ver
+  fixtures/fusion para a mesma forma de query disparando SF-ATH-002 quando
+  fundida com catalogo (e para o caso irmao, com filtro real de particao,
+  que prova que a regra NAO dispara mesmo com LIMIT quando o pruning ja
+  acontece).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.analyzed
+expects_rules: []

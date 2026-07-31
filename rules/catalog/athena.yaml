@@ -1,0 +1,230 @@
+# Catálogo de regras — Amazon Athena
+# Adição de escopo em 2026-07-29. Depende de extrator de SQL e de metadados de tabela
+# da Fase 1. SF-ATH-001, SF-ATH-002 e SF-ATH-005 ficaram inertes até existir uma etapa
+# de fusão de facts que correlacione texto de query com schema do catálogo -- ver
+# `sparkforge/facts/fusion.py`, adicionado para desbloqueá-las (comentário em cada
+# regra explica o que estava faltando e como `fusion.py` resolve).
+# Athena entra no escopo porque, num lakehouse Glue + Iceberg, ela é o consumidor, e
+# decisões tomadas no job Glue determinam o custo da query meses depois.
+
+catalog_version: 1
+schema_version: 1
+area: SF-ATH
+retrieved: 2026-07-29
+
+rules:
+
+  # DESBLOQUEADA: `sparkforge/facts/fusion.py` correlaciona `sql.projection`
+  # (texto da query) com `catalog.table_schema` (schema do catalogo,
+  # `sparkforge/facts/catalog_schema.py`) pelo nome da tabela e produz
+  # `sql.projection.enriched`, que carrega `attrs.star` (da query) E
+  # `attrs.table_format_columnar` (resolvido do catalogo) NO MESMO fact --
+  # contornando o motor de regras (rules/engine.py) so avaliar `where`/`expr`
+  # contra o contexto de um unico fact por vez, sem combinar attrs de dois
+  # facts numa condicao. Ficou marcada `blocked_on` ate essa etapa de fusao
+  # existir; o historico fica aqui porque o motivo do bloqueio original
+  # continua valido em qualquer regra futura que precise cruzar query com
+  # schema sem ter um fact `.enriched` pronto.
+  - id: SF-ATH-001
+    category: athena
+    title: SELECT * em tabela colunar
+    requires_facts: [sql.projection.enriched]
+    when:
+      all:
+        - fact: sql.projection.enriched
+          where: {attrs.star: true, attrs.table_format_columnar: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Athena cobra por bytes escaneados. O benefício de Parquet e ORC vem de ler apenas
+      as colunas referenciadas, e SELECT * anula isso por completo. É o anti-pattern de
+      custo mais comum em Athena e é invisível para quem observa apenas a duração da
+      query. Ver knowledge/athena/performance.md secao 1.
+    proposed_change:
+      - Listar explicitamente as colunas usadas.
+      - Se a query é exploratória, limitar as colunas e usar LIMIT junto de um WHERE sobre coluna de partição.
+    risks: [Projeção explícita quebra quando o schema evolui e a query não é atualizada.]
+    tradeoffs: [Conveniência de exploração contra custo por execução.]
+    validation:
+      - Bytes escaneados antes e depois, obtidos das estatísticas de execução da query.
+      - Resultado idêntico nas colunas que interessam.
+    rollback: [Não aplicável; mudança de query.]
+    sources:
+      - {url: "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena", retrieved: 2026-07-29}
+
+  # DESBLOQUEADA: `sql.predicate.partition_filter` (emitido por
+  # `sparkforge/facts/fusion.py`, so quando a fusao confirma que a coluna do
+  # predicado esta em `catalog.table_schema.attrs.partition_keys`) e o fact
+  # kind que faltava para `absent:` deixar de ser vacuamente verdadeiro. Antes
+  # da fusao, nenhum extrator de SQL sozinho sabia qual coluna e a de particao
+  # -- `absent: sql.predicate.partition_filter` teria disparado em toda query
+  # com LIMIT, inclusive as que ja filtram a particao corretamente (falso
+  # positivo sistematico, nao so silencio); por isso a regra ficou marcada
+  # `blocked_on` em vez de escrita de outra forma. `catalog.table_schema` foi
+  # ACRESCENTADO a `requires_facts` (alem de `sql.projection`, que ja estava):
+  # sem isso a regra dispararia numa analise que nunca rodou o extrator de
+  # catalogo -- mesma disciplina de sentinela que SF-ENV-003 e SF-GLUE-002
+  # usam para nao deixar `absent:` vazar como falso positivo quando os dados
+  # relevantes simplesmente nao foram coletados.
+  #
+  # `same_subject: true` ancorado em `sql.projection`, cujo subject é a
+  # LOCALIZAÇÃO da query (`sql_literal.py::_sql_subject`: arquivo + linha). Sem
+  # isso, `absent: sql.predicate.partition_filter` é avaliado contra a lista
+  # inteira de facts: UMA query em qualquer lugar do conjunto analisado que
+  # filtre a coluna de partição faz o fact existir globalmente, `absent` falha, e
+  # a regra não dispara para NENHUMA das queries que escaneiam a tabela inteira.
+  # Mesmo defeito de SF-GLUE-002 e SF-ATH-003.
+  #
+  # Agrupar por arquivo não bastaria: dois `spark.sql(...)` no mesmo módulo são
+  # duas queries independentes, e a boa esconderia a ruim. Por isso
+  # `rules/engine.py::_subject_group_key` agrupa subject sem `symbol` por
+  # arquivo E linha — todos os facts de uma query compartilham um único subject,
+  # construído uma vez por query em `sql_literal.py::_scan_sql` e propagado
+  # intacto pelos facts `.enriched` de `fusion.py`.
+  - id: SF-ATH-002
+    category: athena
+    title: LIMIT usado como se fosse filtro
+    requires_facts: [sql.projection, catalog.table_schema]
+    when:
+      same_subject: true
+      all:
+        - fact: sql.projection
+          where: {attrs.has_limit: true}
+        - absent: sql.predicate.partition_filter
+    status: structural
+    severity_default: P2
+    runtime_scope: {athena: "*"}
+    explanation: >
+      LIMIT restringe o resultado, não o escaneamento. SELECT colunas FROM tabela LIMIT
+      10 pode escanear a tabela inteira e cobrar por isso. A intuição de que LIMIT é
+      barato vem de bancos com índice, e não se transfere para Athena sobre S3.
+    proposed_change:
+      - Adicionar WHERE sobre coluna de partição para restringir o escaneamento.
+      - Para amostragem, filtrar por uma partição específica em vez de confiar no LIMIT.
+    risks: [Filtro por partição muda o conjunto amostrado; não é amostra aleatória.]
+    tradeoffs: []
+    validation: [Bytes escaneados antes e depois.]
+    rollback: [Não aplicável.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/athena/latest/ug/partitions.html", retrieved: 2026-07-29}
+
+  # `same_subject: true` ancorado em `catalog.table_partitions`, cujo subject é
+  # a TABELA (`catalog_schema.py::_table_subject`, `symbol: <nome da tabela>`).
+  # Sem isso, `absent: catalog.table_property.projection_enabled` é avaliado
+  # contra a lista inteira de facts: um dump do Glue Data Catalog descreve todas
+  # as tabelas do banco, e basta UMA delas ter partition projection para o fact
+  # existir globalmente, `absent` falhar, e a regra não disparar para NENHUMA das
+  # tabelas sobre-particionadas. Como a tabela bem configurada é justamente o que
+  # se espera encontrar num catálogo real, o mascaramento seria a regra, não a
+  # exceção — o relatório afirmaria "nenhum problema de metadados" sobre um
+  # catálogo cheio deles. Mesmo defeito e mesmo conserto de SF-GLUE-002
+  # (`glue-infra.yaml`). Âncora em `catalog.analyzed` (subject de arquivo,
+  # `symbol: ""`) seria pior: grupo que nunca contém `catalog.table_partitions`.
+  - id: SF-ATH-003
+    category: athena
+    title: Tabela com muitas partições Hive sem partition projection
+    requires_facts: [catalog.table_partitions]
+    when:
+      same_subject: true
+      all:
+        - fact: catalog.table_partitions
+          expr: "measures.partition_count >= threshold.count"
+        - absent: catalog.table_property.projection_enabled
+    threshold: {count: 100000}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Com particionamento Hive, Athena resolve as partições consultando o Glue Catalog
+      antes de escanear. Com centenas de milhares de partições, essa resolução de
+      metadados vira o gargalo, e a query fica lenta mesmo lendo pouco dado. O sintoma é
+      latência alta e constante, independente da seletividade do WHERE, com bytes
+      escaneados baixos. Partition projection elimina o lookup calculando as partições a
+      partir de um padrão declarado nas table properties.
+    proposed_change:
+      - Avaliar partition projection, desde que o layout seja denso e previsível.
+      - Se o layout é esparso, não usar projection; reduzir a cardinalidade do particionamento.
+      - Considerar migrar a tabela para Iceberg, cuja resolução de partição não depende do lookup Hive.
+    risks:
+      - Projection assume que toda partição do padrão existe. Layout esparso gera trabalho inútil.
+      - Range de data com fim fixo que não é atualizado faz partições novas desaparecerem silenciosamente das queries. É falha por dado faltante, não por erro.
+    tradeoffs: [Projection dispensa MSCK REPAIR e ADD PARTITION, mas cria um padrão que precisa ser mantido.]
+    validation:
+      - Latência de uma query de referência antes e depois.
+      - Contagem de linhas retornada por uma query de janela completa, comparada com a contagem esperada, para provar que nenhuma partição desapareceu.
+      - Teste explícito sobre a partição mais recente, que é onde o range mal mantido falha primeiro.
+    rollback: [Remover as table properties de projection restaura a resolução via catálogo.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/athena/latest/ug/partitions.html", retrieved: 2026-07-29}
+
+  - id: SF-ATH-004
+    category: athena
+    title: Workgroup em engine version anterior à 3
+    requires_facts: [athena.workgroup]
+    when:
+      all:
+        - fact: athena.workgroup
+          expr: "measures.engine_version < 3"
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Engine version 3 traz otimização dinâmica de memória, melhor execução de JOIN,
+      dynamic filtering, melhor integração com metadados do Glue Catalog e suporte
+      otimizado a Iceberg. Diagnosticar query lenta antes de confirmar a engine version é
+      tuning às cegas: dynamic filtering resolve sozinho parte dos casos de join que a v2
+      exigia reescrever à mão.
+    proposed_change:
+      - Confirmar a engine version do workgroup antes de qualquer reescrita de SQL.
+      - Planejar a migração para v3, validando as queries existentes contra as mudanças de comportamento de SQL.
+    risks: [Mudança de engine altera comportamento de algumas funções e de conversão de tipo; requer teste das queries existentes.]
+    tradeoffs: []
+    validation:
+      - Conjunto de queries de referência executado nas duas engines, comparando resultado e bytes escaneados.
+      - Duração antes e depois.
+    rollback: [Reverter a engine version do workgroup, se a versão anterior ainda estiver disponível.]
+    sources:
+      - {url: "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine", retrieved: 2026-07-29}
+
+  # DESBLOQUEADA: `sql.predicate.enriched` (`sparkforge/facts/fusion.py`)
+  # carrega `attrs.on_partition_column` e `attrs.type_mismatch` resolvidos a
+  # partir de `catalog.table_schema` (qual coluna e a de particao; o tipo
+  # declarado dela) NO MESMO fact que os attrs vindos da query
+  # (`attrs.column`, `attrs.value`). Antes da fusao, `catalog.table_schema`
+  # estava em `requires_facts` mas nunca era referenciada dentro de `when` --
+  # seu simples aparecimento na analise nunca faria esta regra disparar, ja
+  # que a condicao era sobre `sql.predicate`, que nao tem (e nunca deveria
+  # fabricar) esses dois attrs. `fusion.py` e conservador ao resolver
+  # `type_mismatch`: so afirma `true` quando a evidencia e inequivoca (ver
+  # docstring do modulo); nos demais casos fica `None` e a condicao abaixo,
+  # que exige `true` explicito, simplesmente nao casa.
+  - id: SF-ATH-005
+    category: athena
+    title: Coluna de partição com tipo incompatível com o filtro
+    requires_facts: [sql.predicate.enriched]
+    when:
+      all:
+        - fact: sql.predicate.enriched
+          where: {attrs.on_partition_column: true, attrs.type_mismatch: true}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {athena: "*"}
+    explanation: >
+      Partição gravada como string e filtrada como date, ou o inverso, provoca cast
+      implícito que pode impedir o partition pruning sem gerar erro algum. A query
+      retorna o resultado correto e escaneia a tabela inteira. É a falha mais difícil de
+      ver porque nada quebra. O mesmo mecanismo existe no Spark, e lá se verifica em
+      PartitionFilters no plano físico. Ver knowledge/spark/execution-model.md secao 3.
+    proposed_change:
+      - Alinhar o tipo do literal do filtro ao tipo da coluna de partição.
+      - Ou corrigir o tipo da coluna de partição na definição da tabela, o que exige reescrita ou recriação.
+    risks: [Alterar o tipo da coluna de partição afeta todos os consumidores da tabela.]
+    tradeoffs: [Ajustar o filtro é imediato; ajustar o schema resolve para todos os consumidores.]
+    validation:
+      - Bytes escaneados antes e depois, que é a medida direta do pruning.
+      - Razão entre bytes escaneados e tamanho total da tabela.
+      - Resultado idêntico.
+    rollback: [Reverter a query ou a definição de tabela.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/athena/latest/ug/partitions.html", retrieved: 2026-07-29}

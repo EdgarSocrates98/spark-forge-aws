@@ -1,0 +1,140 @@
+[
+  {
+    "id": "f_7cb016",
+    "schema_version": 1,
+    "kind": "iceberg.delete_files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.delete_debt_demo"
+    },
+    "measures": {
+      "delete_file_count": 10,
+      "data_file_count": 50,
+      "total_bytes": 500000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "d1712088f47646052fcdedaa9bb1714417cbf0c42ffe1450ddc24b805bd0b960",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_7f54d2",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.delete_debt_demo"
+    },
+    "measures": {
+      "data_file_count": 50,
+      "total_bytes": 10000000000,
+      "avg_file_bytes": 200000000.0,
+      "p50_file_bytes": 200000000,
+      "p95_file_bytes": 200000000,
+      "min_file_bytes": 200000000,
+      "max_file_bytes": 200000000,
+      "total_records": 25000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "d1712088f47646052fcdedaa9bb1714417cbf0c42ffe1450ddc24b805bd0b960",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_681537",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.delete_debt_demo"
+    },
+    "measures": {
+      "snapshot_count": 3,
+      "span_hours": 720.0
+    },
+    "attrs": {
+      "operations": [
+        "append",
+        "delete"
+      ],
+      "oldest": "2026-06-01T00:00:00+00:00",
+      "newest": "2026-07-01T00:00:00+00:00"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "d1712088f47646052fcdedaa9bb1714417cbf0c42ffe1450ddc24b805bd0b960",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_679ee1",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.delete_debt_demo"
+    },
+    "measures": {
+      "section_count": 4,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "d1712088f47646052fcdedaa9bb1714417cbf0c42ffe1450ddc24b805bd0b960",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_721df8",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.delete_debt_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "format-version",
+      "value": "2",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "d1712088f47646052fcdedaa9bb1714417cbf0c42ffe1450ddc24b805bd0b960",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_721df8",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.delete_debt_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "d1712088f47646052fcdedaa9bb1714417cbf0c42ffe1450ddc24b805bd0b960",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  }
+]

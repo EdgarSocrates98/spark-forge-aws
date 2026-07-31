@@ -1,0 +1,64 @@
+[
+  {
+    "rule_id": "SF-ICE-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Dívida de delete files em tabela merge-on-read",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.delete_debt_demo"
+    },
+    "evidence": [
+      "f_7cb016"
+    ],
+    "measured": {
+      "delete_file_count": 10,
+      "data_file_count": 50,
+      "total_bytes": 500000
+    },
+    "threshold": {
+      "ratio": 0.1
+    },
+    "runtime_scope": {
+      "iceberg": ">=1.0.0"
+    },
+    "explanation": "Em merge-on-read, cada leitura reconcilia os delete files com os data files. Sem compactação regular, a degradação é lenta e silenciosa: a query fica mais lenta a cada semana sem que nada tenha mudado nela. É a armadilha de MoR. Iceberg 1.10 introduz deletion vectors, que mudam esse trade-off; confirmar disponibilidade na versão em uso antes de assumir o comportamento antigo.",
+    "proposed_change": [
+      "Compactar delete files com rewrite_position_delete_files, ou rewrite_data_files com reconciliação.",
+      "Estabelecer manutenção periódica, não pontual.",
+      "Reavaliar a escolha MoR versus copy-on-write com base na razão real entre leitura e escrita da tabela.",
+      "Em Iceberg 1.10, avaliar deletion vectors."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Compactação de delete files é reescrita e consome DPU; agendar fora do horário crítico."
+    ],
+    "tradeoffs": [
+      "Copy-on-write encarece a escrita e mantém a leitura rápida sem manutenção recorrente."
+    ],
+    "validation": [
+      "Contagem de delete files antes e depois, via metadata table delete_files.",
+      "Duração de uma query de referência antes e depois.",
+      "Contagem de linhas visíveis na tabela idêntica antes e depois."
+    ],
+    "rollback": [
+      "Time travel para o snapshot anterior."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-procedures/",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark",
+        "retrieved": "2026-07-29",
+        "note": "deletion vectors em Iceberg 1.10.0"
+      }
+    ]
+  }
+]

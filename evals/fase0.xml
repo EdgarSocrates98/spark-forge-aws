@@ -1,0 +1,42 @@
+<evaluation>
+  <qa_pair>
+    <question>Na fixture coalesce_one, qual rule_id dispara e em qual linha de lib/job.py?</question>
+    <answer>SF-PY-005:2</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Na fixture action_in_loop, qual a severidade de SF-PY-004 e o measured.loop_depth?</question>
+    <answer>P0:1</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Na fixture near_threshold, qual o measures.run_length do fact pyspark.withcolumn_run e quantos findings o job produz?</question>
+    <answer>9:0</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Na fixture dynamic_dispatch, quantos findings o job produz e qual o attrs.reason do fact pyspark.unresolved?</question>
+    <answer>0:getattr</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quantos findings a fixture clean_job produz?</question>
+    <answer>0</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Qual o limiar declarado da regra SF-PY-007 e qual e o texto exato do lado esquerdo do operador na expressao `expr` dessa regra, copiado literalmente do YAML? Formato: limiar:texto</question>
+    <answer>10:measures.run_length</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Qual rule_id tem runtime_scope exigindo Glue >= 5.1 e qual sua severity_default?</question>
+    <answer>SF-ENV-002:P0</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Segundo GLUE_MATRIX, quais as versoes de Spark e Iceberg para Glue 5.0?</question>
+    <answer>3.5.4:1.7.1</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Na fixture join_before_reduction, quais measured.join_index e measured.first_reduction_index do finding SF-PY-003?</question>
+    <answer>0:1</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Quantas regras `load_catalog()` retorna (ele exclui routing.yaml por construcao), e quantas dessas tem `category` igual a athena? Formato: total:athena</question>
+    <answer>43:5</answer>
+  </qa_pair>
+</evaluation>

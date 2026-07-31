@@ -1,0 +1,59 @@
+[
+  {
+    "rule_id": "SF-ENV-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Divergência de runtime entre fontes de detecção",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "evidence": [
+      "f_87d800"
+    ],
+    "measured": {
+      "distinct_versions": 2,
+      "source_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "A versão do runtime é detectável por event log (spark.version), Terraform (glue_version, --datalake-formats), e arquivos de dependência do projeto. Quando as fontes discordam, o extrator não escolhe uma: registra a divergência. Toda recomendação que dependa de versão fica sem base até isso ser resolvido, porque o limiar aplicado e a API sugerida podem não existir no runtime real. O salto de Iceberg entre Glue 4.0 (1.0.0), 5.0 (1.7.1) e 5.1 (1.10.0) é grande o suficiente para invalidar procedimentos inteiros. Ver knowledge/glue/runtime-matrix.md.",
+    "proposed_change": [
+      "Confirmar a versão efetiva na aba Environment do Spark UI, que é a fonte mais confiável.",
+      "Alinhar o Terraform e os arquivos de dependência ao runtime efetivo.",
+      "Registrar no relatório a matriz detectada e a divergência encontrada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Prosseguir com a investigação sem resolver a divergência produz recomendações que podem não se aplicar."
+    ],
+    "tradeoffs": [
+      "Nenhum. Resolver a divergência é pré-requisito",
+      "não escolha."
+    ],
+    "validation": [
+      "Aba Environment do Spark UI e Terraform concordando após a correção.",
+      "Versão de Iceberg confirmada no classpath, não inferida da versão de Glue."
+    ],
+    "rollback": [
+      "Não aplicável; é correção de metadado de projeto",
+      "não de comportamento."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

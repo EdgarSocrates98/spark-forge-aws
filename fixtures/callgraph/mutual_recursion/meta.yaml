@@ -1,0 +1,23 @@
+name: mutual_recursion
+proves: >
+  `processa_lote` chama `trata_rejeitados`, que reprocessa chamando
+  `processa_lote` -- recursao mutua, forma comum em biblioteca de ingestao com
+  retentativa. O ciclo e detectado, tem `contains_spark_work: true` (ha uma
+  action dentro dele), e `callgraph.summary` marca `has_cycle: true`.
+  E o achado que muda a leitura de todo o resto: uma leitura que aparece UMA
+  vez no codigo, dentro de um ciclo, e trabalho repetido em runtime -- e
+  nenhuma contagem estatica de `pyspark.read` revela isso sozinha. Nenhuma
+  regra consome `callgraph.*`; quem consome e o agente
+  `glue-incremental-performance-architect` e a skill
+  `analyze-library-call-graph`, e por isso o corpus existe.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - callgraph.function
+  - callgraph.reachable_spark_work
+  - callgraph.cycle
+  - callgraph.summary
+expects_rules: []

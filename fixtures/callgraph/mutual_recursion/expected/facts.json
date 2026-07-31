@@ -1,0 +1,290 @@
+[
+  {
+    "id": "f_ab98a8",
+    "schema_version": 1,
+    "kind": "callgraph.cycle",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 16,
+      "col": 0,
+      "symbol": "processa_lote",
+      "snippet": ""
+    },
+    "measures": {
+      "length": 2,
+      "spark_work_count": 1
+    },
+    "attrs": {
+      "functions": [
+        "processa_lote",
+        "trata_rejeitados"
+      ],
+      "contains_spark_work": true
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_89b740",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 12,
+      "col": 0,
+      "symbol": "le_lote",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 1,
+      "spark_work_count": 2
+    },
+    "attrs": {
+      "is_entrypoint": false,
+      "is_leaf": true
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_831018",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 16,
+      "col": 0,
+      "symbol": "processa_lote",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 2,
+      "fan_in": 2,
+      "spark_work_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": false,
+      "is_leaf": false
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_c852fd",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 26,
+      "col": 0,
+      "symbol": "trata_rejeitados",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 1,
+      "fan_in": 1,
+      "spark_work_count": 1
+    },
+    "attrs": {
+      "is_entrypoint": false,
+      "is_leaf": false
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_858d26",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 32,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 1,
+      "fan_in": 0,
+      "spark_work_count": 2
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": false
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_2477bb",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 32,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 0,
+      "occurrence_count": 2
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.chain",
+      "via": [
+        "main"
+      ]
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_90e2bc",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 32,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 0,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.write",
+      "via": [
+        "main"
+      ]
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_b52549",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 32,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 2,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.action",
+      "via": [
+        "main",
+        "processa_lote",
+        "trata_rejeitados"
+      ]
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_b52549",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 32,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 2,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.read",
+      "via": [
+        "main",
+        "processa_lote",
+        "le_lote"
+      ]
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_a5bef8",
+    "schema_version": 1,
+    "kind": "callgraph.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "mutual_recursion",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "function_count": 4,
+      "edge_count": 4,
+      "entrypoint_count": 1,
+      "max_depth": 2,
+      "unreachable_function_count": 0
+    },
+    "attrs": {
+      "entrypoints": [
+        "main"
+      ],
+      "has_cycle": true
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  }
+]

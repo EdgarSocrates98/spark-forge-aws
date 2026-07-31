@@ -1,79 +1,76 @@
 ---
 name: analyze-batch-loop
-description: Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você suspeita de recomputação do DAG, lineage crescente, múltiplos commits Iceberg ou OOM acumulado por iteração.
+description: Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você suspeita de recomputação do DAG, lineage crescente, múltiplos commits Iceberg ou OOM acumulado por iteração. Use também quando perguntarem "por que esse batch demora mais a cada lote", "por que tem tantos commits/snapshots" ou "o job cresce com o número de lotes", mesmo sem mencionar loop explicitamente. Se você está prestes a contar iterações e estimar custo acumulado de cabeça, rode `sparkforge analyze pyspark` e filtre por `pyspark.loop` em vez disso — cada ocorrência já vem marcada com se contém action, write e a profundidade de aninhamento.
 ---
 
 # Analyze Batch Loop
 
-## Localizar
+## Procedimento
 
-- `for` e `while`;
-- `collect`;
-- `toLocalIterator`;
-- `.rdd`;
-- listas de chaves;
-- `isin(list)`;
-- `limit` + subtract;
-- filtros por batch id;
-- actions dentro de loop;
-- `count`, `show`, `write`, `save`, `append`, `merge`;
-- cache/persist/checkpoint dentro de loop;
-- DataFrames armazenados em coleções;
-- funções chamadas por lote.
+### 1. Extraia os facts
 
-## Pergunta principal
+```bash
+sparkforge analyze pyspark --path <arquivo-ou-diretório> --out .sparkforge/facts.json --kind pyspark.loop
+```
 
-> O batch reduz o scan e o shuffle desde a origem, ou o Spark recompõe o pipeline caro para cada action?
+Sem `--kind`, a saída traz todos os facts; com `--kind pyspark.loop`, você já recebe só os loops relevantes. Cada `pyspark.loop` vem com `measures.loop_depth` (aninhamento) e `attrs.contains_action`/`attrs.contains_write`.
 
-## Diagnóstico
+### 2. Julgue
 
-Para cada lote, estime:
-- scans repetidos;
-- exchanges repetidos;
-- joins repetidos;
-- ações;
-- commits;
-- snapshots;
-- arquivos;
-- lineage;
-- objetos mantidos no driver;
-- tempo acumulado.
+```bash
+sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+```
+
+`SF-PY-004` (severidade default `P0`) dispara quando `contains_action` ou `contains_write` é verdadeiro — o padrão "reexecuta o DAG a montante a cada iteração" descrito em `knowledge/spark/execution-model.md` seção 6.
+
+### 3. Interprete o que o extrator não marca
+
+`pyspark.loop` só é emitido quando o `for`/`while` contém uma action ou um write **dentro do próprio loop**. Isso deixa pontos cegos reais:
+
+- Um loop que só acumula DataFrames numa lista Python (`resultados.append(df_lote)`), sem action nem write dentro dele, **não gera** `pyspark.loop` — mesmo crescendo lineage a cada iteração. O sintoma aparece depois, numa action única no fim, com plano gigante. Se suspeitar disso, procure `pyspark.chain` com `measures.length` alto perto do loop.
+- `collect()` de lista de chaves antes do loop (`chaves = df.select("k").distinct().collect()`) aparece como `pyspark.driver_collect`, não como parte do `pyspark.loop` — correlacione os dois manualmente pela proximidade de linha.
+- `isin(lista_de_chaves)` não tem fact próprio; ele aparece dentro de `pyspark.chain` como uma chamada de método comum. Não assuma pruning de arquivo só porque o filtro existe — confirme no plano físico (`analyze-spark-plan`) se há `PushedFilters`/`PartitionFilters` reais.
+
+### 4. Pergunta central
+
+> O batch reduz o scan e o shuffle desde a origem, ou o Spark recompõe o pipeline caro a cada action?
+
+Para responder com evidência de execução (não só de código), correlacione com o Spark UI: N jobs quase idênticos com o mesmo primeiro stage é a assinatura de recomputação por iteração — veja `analyze-spark-ui`.
 
 ## Recomendações possíveis
 
-- remover batching lógico;
-- usar particionamento Spark real;
-- materializar uma etapa intermediária comprovadamente útil;
-- escrever uma vez;
-- usar batch id como coluna distribuída;
-- processar hot keys separadamente;
-- desacoplar regras;
-- checkpoint somente quando necessário;
-- consolidar commits;
-- usar staging table.
-
-## Saída
-
-Mapa do loop, custo por iteração, causa do crescimento, refatoração e benchmark.
+- Escrever tudo numa única action, com `partitionBy` pela coluna de lote quando o objetivo é separar a saída.
+- Se o loop é inevitável, materializar o DataFrame caro uma vez antes dele (tabela intermediária ou checkpoint).
+- Reduzir na origem, com filtro que chegue ao pushdown, em vez de filtrar um DAG caro já construído.
+- Trocar `collect` de chaves + `isin(list)` por join distribuído contra uma tabela de chaves.
 
 ## Quando NÃO usar
 
 - Não há loop; o custo é de uma única passada: use `analyze-spark-plan`/`analyze-spark-ui`.
 - O batching estoura memória e você precisa classificar o OOM: combine com `diagnose-oom`.
-- O objetivo é desenhar o incremental de forma correta: use `design-incremental-processing`.
+- O objetivo é desenhar o incremental de forma correta desde o início, não só consertar um loop existente: use `design-incremental-processing`.
+- O loop existe dentro de uma biblioteca com múltiplos módulos e você ainda não sabe onde ele está: comece por `analyze-library-call-graph`.
 
 ## Referência rápida
 
 | Padrão no loop | Por que dói | Refatoração |
 |---|---|---|
-| `write`/`append`/`merge` por iteração | N commits, snapshots e small files | acumular e escrever/commitar uma vez (staging) |
-| `count`/`show` por iteração | recomputa o DAG caro a cada action | remover ou medir uma vez fora do loop |
-| `collect` de chaves + `isin(list)` | driver carrega tudo; filtro não faz pruning | join distribuído por tabela de chaves |
+| `write`/`append`/`merge` por iteração (`pyspark.loop` com `contains_write`) | N commits, snapshots e small files | acumular e escrever/commitar uma vez (staging) |
+| `count`/`show` por iteração (`pyspark.loop` com `contains_action`) | recomputa o DAG caro a cada action | remover ou medir uma vez fora do loop |
+| `collect` de chaves + `isin(list)` | driver carrega tudo; filtro não garante pruning | join distribuído por tabela de chaves |
 | `cache` dentro do loop sem `unpersist` | memória cresce por iteração | materializar fora; liberar entre iterações |
-| DataFrames acumulados em lista | lineage/plano crescente | `checkpoint` pontual ou reescrever a lógica |
+| DataFrames acumulados em lista, sem action no loop | não gera `pyspark.loop`; lineage cresce sem sinal do extrator até a action final | `checkpoint` pontual ou reescrever a lógica |
 
 ## Red flags
 
-- Assumir que `isin(lista_de_chaves)` garante file pruning (geralmente não garante).
+- Assumir que `isin(lista_de_chaves)` garante file pruning sem confirmar no plano físico.
 - "Batching" que apenas filtra um DAG caro antes de cada action, sem reduzir trabalho na origem.
-- Muitos commits Iceberg por lote gerando explosão de snapshots/manifests.
+- Tratar a ausência de `pyspark.loop` como prova de que não há recomputação — verifique se o loop só acumula DataFrames sem action interna antes de descartar a hipótese.
+- Muitos commits Iceberg por lote gerando explosão de snapshots/manifests sem consolidação.
+
+## Protocolo
+
+Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
+escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
+versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
+manutenção destrutiva só com confirmação explícita.

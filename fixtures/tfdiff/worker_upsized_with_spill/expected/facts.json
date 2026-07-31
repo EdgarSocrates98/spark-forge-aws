@@ -1,0 +1,535 @@
+[
+  {
+    "id": "f_f3a9b0",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 10,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "script_location",
+      "value": "s3://artefatos/scripts/etl.py",
+      "present": true,
+      "literal": true,
+      "block": "command",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4c70f2",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_06f5c8",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_36b7a9",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--spark-event-logs-path",
+      "value": "s3://logs/sparkui/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_753491",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 2,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "etl-pedidos",
+      "present": true,
+      "literal": true,
+      "block": "root",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_13cd0e",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 3,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "aws_iam_role.glue.arn",
+      "present": true,
+      "literal": false,
+      "block": "root",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c9afb8",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 4,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "5.0",
+      "present": true,
+      "literal": true,
+      "block": "root",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c2c586",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.4X",
+      "present": true,
+      "literal": true,
+      "block": "root",
+      "changed": true,
+      "previous_value": "G.1X"
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_de0369",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {
+      "value": 10
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "10",
+      "present": true,
+      "literal": true,
+      "block": "root",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_a59e7d",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 9,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command",
+      "changed": false
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_220530",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "after/main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 10,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_04e5d4",
+    "schema_version": 1,
+    "kind": "tf.observability.spark_ui",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_6ec124",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "measures": {
+      "attribute_count": 10
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "etl_pedidos"
+    },
+    "provenance": {
+      "artifact": "after/main.tf",
+      "artifact_sha256": "12e957f847c2b8894f523be92c5e712f2d9c88a22a65c86b33d4799f04693eaa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_a0a828",
+    "schema_version": 1,
+    "kind": "spark.cluster.cores",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-etl-pedidos"
+    },
+    "measures": {
+      "available_cores": 16,
+      "executor_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_c9c3e2",
+    "schema_version": 1,
+    "kind": "spark.executor.memory_usage",
+    "subject": {
+      "type": "job_run",
+      "symbol": "1"
+    },
+    "measures": {
+      "peak_jvm_heap_bytes": 2100000000,
+      "peak_jvm_offheap_bytes": 180000000,
+      "peak_onheap_execution_bytes": 900000000,
+      "peak_python_rss_bytes": 410000000
+    },
+    "attrs": {
+      "executor_id": "1"
+    },
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_42f297",
+    "schema_version": 1,
+    "kind": "spark.executor.memory_usage",
+    "subject": {
+      "type": "job_run",
+      "symbol": "2"
+    },
+    "measures": {
+      "peak_jvm_heap_bytes": 1950000000,
+      "peak_python_rss_bytes": 395000000
+    },
+    "attrs": {
+      "executor_id": "2"
+    },
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_6b8ac4",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "app-etl-pedidos"
+    },
+    "measures": {
+      "stages_with_spill": 1,
+      "total_memory_spill_bytes": 480000000,
+      "total_disk_spill_bytes": 480000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_1ca5dd",
+    "schema_version": 1,
+    "kind": "spark.log_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "run.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 10,
+      "event_count": 10,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_b68c9c",
+    "schema_version": 1,
+    "kind": "spark.stage.gc",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "measures": {
+      "gc_ms": 8000,
+      "executor_run_ms": 232000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_8942ec",
+    "schema_version": 1,
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "measures": {
+      "memory_spill_bytes": 480000000,
+      "disk_spill_bytes": 480000000,
+      "input_bytes": 8000000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_a08863",
+    "schema_version": 1,
+    "kind": "spark.stage.task_count",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "measures": {
+      "task_count": 4,
+      "available_cores": 16
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_c452f0",
+    "schema_version": 1,
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_ms": 60000,
+      "p50_ms": 60000,
+      "p95_ms": 60000,
+      "max_ms": 60000,
+      "mean_ms": 60000.0,
+      "task_count": 4
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_a17c2d",
+    "schema_version": 1,
+    "kind": "spark.stage.task_input",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_bytes": 2000000000,
+      "p50_bytes": 2000000000,
+      "p95_bytes": 2000000000,
+      "max_bytes": 2000000000,
+      "total_bytes": 8000000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  }
+]

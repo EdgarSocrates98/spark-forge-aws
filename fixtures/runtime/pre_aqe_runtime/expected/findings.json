@@ -1,0 +1,51 @@
+[
+  {
+    "rule_id": "SF-ENV-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Recomendação de AQE em runtime sem AQE por default",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "evidence": [
+      "f_a55de2"
+    ],
+    "measured": {
+      "distinct_versions": 1,
+      "source_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "<4.0"
+    },
+    "explanation": "AQE é habilitado por default a partir do Apache Spark 3.2. Glue 3.0 roda Spark 3.1.1, portanto AQE não está ativo por default e várias sub-configurações de AQE não existem nessa versão. Qualquer raciocínio do tipo \"o AQE cuida do skew\" ou \"o coalescing ajusta as partições\" é inválido nesse runtime. Ver knowledge/cross-service-constraints.md secao 4.",
+    "proposed_change": [
+      "Verificar se AQE está explicitamente habilitado; se não, o skew e a contagem de partições precisam de tratamento manual.",
+      "Avaliar migração de runtime como alternativa a tuning manual extenso."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Habilitar AQE numa versão antiga expõe comportamento menos maduro do que em 3.5."
+    ],
+    "tradeoffs": [
+      "Migrar de runtime é mudança maior, com checklist próprio de breaking changes."
+    ],
+    "validation": [
+      "Valor efetivo de spark.sql.adaptive.enabled na aba Environment."
+    ],
+    "rollback": [
+      "Desabilitar spark.sql.adaptive.enabled restaura o comportamento anterior."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

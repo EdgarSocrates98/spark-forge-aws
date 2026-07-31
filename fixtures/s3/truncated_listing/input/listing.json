@@ -1,0 +1,4008 @@
+{
+  "Name": "lake",
+  "Prefix": "raw/enorme/",
+  "IsTruncated": true,
+  "NextContinuationToken": "1ab2c3d4",
+  "Contents": [
+    {
+      "Key": "raw/enorme/part-0000.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0001.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0002.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0003.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0004.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0005.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0006.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0007.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0008.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0009.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0010.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0011.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0012.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0013.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0014.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0015.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0016.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0017.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0018.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0019.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0020.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0021.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0022.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0023.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0024.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0025.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0026.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0027.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0028.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0029.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0030.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0031.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0032.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0033.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0034.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0035.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0036.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0037.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0038.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0039.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0040.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0041.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0042.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0043.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0044.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0045.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0046.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0047.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0048.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0049.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0050.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0051.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0052.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0053.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0054.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0055.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0056.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0057.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0058.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0059.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0060.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0061.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0062.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0063.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0064.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0065.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0066.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0067.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0068.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0069.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0070.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0071.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0072.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0073.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0074.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0075.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0076.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0077.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0078.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0079.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0080.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0081.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0082.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0083.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0084.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0085.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0086.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0087.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0088.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0089.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0090.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0091.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0092.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0093.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0094.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0095.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0096.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0097.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0098.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0099.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0100.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0101.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0102.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0103.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0104.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0105.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0106.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0107.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0108.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0109.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0110.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0111.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0112.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0113.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0114.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0115.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0116.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0117.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0118.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0119.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0120.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0121.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0122.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0123.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0124.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0125.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0126.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0127.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0128.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0129.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0130.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0131.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0132.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0133.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0134.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0135.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0136.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0137.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0138.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0139.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0140.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0141.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0142.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0143.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0144.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0145.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0146.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0147.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0148.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0149.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0150.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0151.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0152.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0153.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0154.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0155.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0156.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0157.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0158.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0159.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0160.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0161.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0162.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0163.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0164.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0165.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0166.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0167.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0168.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0169.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0170.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0171.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0172.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0173.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0174.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0175.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0176.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0177.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0178.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0179.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0180.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0181.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0182.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0183.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0184.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0185.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0186.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0187.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0188.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0189.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0190.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0191.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0192.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0193.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0194.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0195.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0196.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0197.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0198.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0199.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0200.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0201.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0202.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0203.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0204.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0205.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0206.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0207.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0208.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0209.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0210.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0211.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0212.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0213.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0214.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0215.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0216.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0217.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0218.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0219.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0220.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0221.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0222.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0223.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0224.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0225.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0226.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0227.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0228.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0229.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0230.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0231.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0232.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0233.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0234.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0235.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0236.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0237.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0238.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0239.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0240.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0241.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0242.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0243.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0244.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0245.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0246.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0247.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0248.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0249.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0250.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0251.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0252.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0253.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0254.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0255.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0256.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0257.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0258.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0259.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0260.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0261.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0262.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0263.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0264.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0265.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0266.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0267.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0268.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0269.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0270.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0271.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0272.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0273.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0274.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0275.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0276.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0277.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0278.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0279.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0280.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0281.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0282.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0283.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0284.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0285.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0286.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0287.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0288.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0289.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0290.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0291.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0292.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0293.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0294.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0295.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0296.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0297.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0298.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0299.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0300.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0301.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0302.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0303.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0304.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0305.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0306.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0307.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0308.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0309.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0310.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0311.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0312.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0313.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0314.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0315.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0316.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0317.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0318.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0319.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0320.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0321.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0322.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0323.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0324.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0325.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0326.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0327.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0328.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0329.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0330.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0331.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0332.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0333.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0334.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0335.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0336.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0337.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0338.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0339.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0340.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0341.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0342.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0343.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0344.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0345.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0346.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0347.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0348.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0349.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0350.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0351.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0352.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0353.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0354.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0355.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0356.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0357.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0358.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0359.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0360.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0361.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0362.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0363.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0364.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0365.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0366.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0367.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0368.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0369.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0370.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0371.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0372.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0373.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0374.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0375.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0376.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0377.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0378.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0379.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0380.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0381.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0382.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0383.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0384.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0385.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0386.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0387.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0388.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0389.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0390.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0391.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0392.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0393.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0394.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0395.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0396.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0397.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0398.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0399.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0400.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0401.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0402.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0403.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0404.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0405.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0406.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0407.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0408.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0409.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0410.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0411.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0412.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0413.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0414.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0415.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0416.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0417.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0418.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0419.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0420.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0421.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0422.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0423.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0424.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0425.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0426.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0427.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0428.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0429.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0430.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0431.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0432.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0433.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0434.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0435.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0436.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0437.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0438.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0439.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0440.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0441.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0442.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0443.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0444.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0445.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0446.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0447.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0448.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0449.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0450.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0451.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0452.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0453.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0454.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0455.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0456.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0457.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0458.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0459.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0460.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0461.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0462.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0463.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0464.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0465.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0466.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0467.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0468.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0469.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0470.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0471.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0472.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0473.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0474.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0475.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0476.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0477.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0478.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0479.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0480.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0481.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0482.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0483.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0484.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0485.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0486.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0487.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0488.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0489.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0490.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0491.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0492.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0493.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0494.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0495.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0496.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0497.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0498.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0499.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0500.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0501.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0502.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0503.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0504.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0505.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0506.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0507.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0508.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0509.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0510.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0511.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0512.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0513.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0514.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0515.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0516.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0517.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0518.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0519.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0520.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0521.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0522.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0523.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0524.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0525.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0526.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0527.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0528.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0529.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0530.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0531.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0532.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0533.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0534.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0535.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0536.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0537.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0538.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0539.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0540.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0541.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0542.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0543.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0544.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0545.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0546.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0547.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0548.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0549.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0550.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0551.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0552.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0553.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0554.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0555.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0556.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0557.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0558.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0559.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0560.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0561.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0562.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0563.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0564.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0565.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0566.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0567.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0568.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0569.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0570.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0571.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0572.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0573.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0574.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0575.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0576.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0577.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0578.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0579.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0580.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0581.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0582.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0583.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0584.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0585.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0586.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0587.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0588.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0589.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0590.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0591.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0592.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0593.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0594.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0595.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0596.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0597.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0598.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0599.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0600.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0601.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0602.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0603.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0604.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0605.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0606.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0607.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0608.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0609.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0610.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0611.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0612.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0613.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0614.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0615.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0616.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0617.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0618.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0619.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0620.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0621.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0622.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0623.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0624.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0625.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0626.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0627.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0628.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0629.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0630.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0631.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0632.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0633.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0634.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0635.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0636.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0637.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0638.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0639.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0640.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0641.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0642.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0643.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0644.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0645.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0646.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0647.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0648.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0649.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0650.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0651.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0652.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0653.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0654.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0655.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0656.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0657.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0658.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0659.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0660.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0661.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0662.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0663.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0664.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0665.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0666.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0667.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0668.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0669.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0670.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0671.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0672.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0673.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0674.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0675.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0676.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0677.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0678.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0679.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0680.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0681.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0682.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0683.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0684.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0685.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0686.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0687.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0688.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0689.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0690.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0691.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0692.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0693.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0694.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0695.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0696.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0697.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0698.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0699.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0700.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0701.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0702.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0703.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0704.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0705.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0706.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0707.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0708.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0709.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0710.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0711.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0712.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0713.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0714.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0715.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0716.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0717.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0718.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0719.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0720.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0721.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0722.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0723.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0724.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0725.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0726.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0727.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0728.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0729.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0730.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0731.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0732.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0733.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0734.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0735.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0736.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0737.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0738.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0739.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0740.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0741.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0742.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0743.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0744.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0745.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0746.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0747.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0748.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0749.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0750.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0751.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0752.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0753.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0754.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0755.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0756.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0757.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0758.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0759.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0760.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0761.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0762.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0763.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0764.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0765.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0766.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0767.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0768.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0769.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0770.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0771.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0772.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0773.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0774.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0775.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0776.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0777.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0778.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0779.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0780.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0781.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0782.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0783.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0784.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0785.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0786.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0787.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0788.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0789.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0790.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0791.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0792.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0793.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0794.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0795.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0796.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0797.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0798.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0799.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0800.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0801.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0802.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0803.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0804.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0805.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0806.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0807.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0808.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0809.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0810.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0811.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0812.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0813.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0814.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0815.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0816.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0817.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0818.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0819.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0820.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0821.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0822.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0823.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0824.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0825.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0826.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0827.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0828.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0829.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0830.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0831.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0832.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0833.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0834.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0835.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0836.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0837.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0838.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0839.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0840.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0841.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0842.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0843.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0844.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0845.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0846.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0847.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0848.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0849.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0850.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0851.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0852.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0853.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0854.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0855.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0856.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0857.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0858.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0859.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0860.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0861.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0862.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0863.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0864.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0865.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0866.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0867.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0868.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0869.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0870.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0871.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0872.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0873.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0874.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0875.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0876.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0877.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0878.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0879.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0880.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0881.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0882.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0883.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0884.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0885.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0886.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0887.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0888.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0889.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0890.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0891.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0892.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0893.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0894.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0895.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0896.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0897.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0898.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0899.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0900.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0901.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0902.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0903.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0904.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0905.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0906.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0907.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0908.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0909.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0910.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0911.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0912.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0913.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0914.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0915.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0916.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0917.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0918.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0919.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0920.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0921.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0922.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0923.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0924.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0925.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0926.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0927.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0928.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0929.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0930.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0931.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0932.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0933.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0934.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0935.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0936.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0937.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0938.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0939.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0940.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0941.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0942.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0943.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0944.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0945.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0946.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0947.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0948.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0949.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0950.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0951.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0952.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0953.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0954.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0955.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0956.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0957.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0958.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0959.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0960.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0961.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0962.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0963.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0964.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0965.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0966.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0967.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0968.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0969.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0970.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0971.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0972.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0973.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0974.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0975.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0976.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0977.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0978.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0979.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0980.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0981.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0982.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0983.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0984.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0985.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0986.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0987.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0988.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0989.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0990.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0991.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0992.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0993.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0994.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0995.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0996.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0997.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0998.snappy.parquet",
+      "Size": 1048576
+    },
+    {
+      "Key": "raw/enorme/part-0999.snappy.parquet",
+      "Size": 1048576
+    }
+  ]
+}

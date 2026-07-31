@@ -1,0 +1,28 @@
+name: limit_partition_filter_guard
+proves: >
+  A guarda contra falso positivo que motivou SF-ATH-002 ficar `blocked_on` em
+  vez de escrita ingenuamente: LIMIT 10 continua presente, mas agora ha um
+  WHERE real sobre dt, a coluna de particao de sales.orders. Fusao confirma
+  on_partition_column=true e emite sql.predicate.partition_filter, o que
+  torna `absent: sql.predicate.partition_filter` falso -- a regra NAO
+  dispara. Antes de fusion.py existir, essa distincao era impossivel de
+  fazer (nenhum extrator de SQL sabia qual coluna era a de particao), e
+  escrever a regra sem essa guarda teria acusado esta query, que ja faz
+  pruning corretamente, como o mesmo anti-pattern da query irma em
+  fixtures/fusion/limit_no_filter_with_catalog.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.predicate
+  - sql.analyzed
+  - catalog.table_schema
+  - catalog.analyzed
+  - sql.projection.enriched
+  - sql.predicate.enriched
+  - sql.predicate.partition_filter
+  - fusion.summary
+expects_rules: []

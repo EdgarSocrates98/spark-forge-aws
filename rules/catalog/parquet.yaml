@@ -1,0 +1,244 @@
+# Catálogo de regras — layout Parquet e S3
+#
+# ESTA AREA ESTA INTEIRAMENTE DESBLOQUEADA. As cinco regras disparam, e
+# nenhuma carrega `blocked_on`.
+#
+# Dependem de `plan.file_scan`, emitido por `sparkforge/facts/spark_plan.py`
+# (`sparkforge analyze plan --path <arquivo>` sobre a saida de
+# `df.explain("formatted")`):
+#
+#   SF-PQ-002  pruning de particao ausente
+#   SF-PQ-004  pruning de coluna ausente
+#
+# Dependem de `s3.prefix_summary`, emitido por
+# `sparkforge/facts/s3_listing.py` (`sparkforge analyze s3-listing --path
+# <arquivo>` sobre a saida de `aws s3api list-objects-v2`):
+#
+#   SF-PQ-001  small files na entrada
+#   SF-PQ-003  texto comprimido nao splitavel
+#   SF-PQ-005  cardinalidade de particao (com `catalog.table_partitions`)
+#
+# A distincao que este cabecalho existe para preservar: `requires_facts`
+# significa "dispara assim que voce coletar o artefato"; `blocked_on` significa
+# "nao dispara ate alguem construir o extrator". Reportar as duas igual faz o
+# operador esperar por um dado que nao esta a caminho. Hoje todas as cinco sao
+# do primeiro tipo -- o que falta e sempre coleta, nunca codigo.
+#
+# O caminho inverso e igualmente perigoso e e por isso que este cabecalho foi
+# reescrito junto com o codigo, duas vezes: `blocked_on` que sobrevive ao
+# extrator deixa a regra inerte PARA SEMPRE (o motor pula antes de olhar os
+# facts) enquanto `--show-skipped` afirma que a capacidade nao existe.
+# `tests/test_rules_catalog_reachability.py::test_blocked_on_obsoleto_e_mentira_silenciosa`
+# fecha essa porta; este texto e a metade humana da mesma garantia.
+#
+# ATENCAO ao ler SF-PQ-001 e SF-PQ-003: as measures da listagem so existem
+# quando ela veio COMPLETA. `IsTruncated: true` faz o extrator emitir
+# `s3.unresolved` e nenhum sumario -- contar small files sobre a primeira
+# pagina de um prefixo de milhoes de objetos e pior que nao contar.
+#
+# ATENCAO ao ler SF-PQ-002 contra um plano: `PartitionFilters` vazio NAO prova,
+# sozinho, que a tabela e particionada -- uma tabela sem particao nenhuma
+# imprime exatamente a mesma coisa (e, em `explain("formatted")`, o Spark
+# simplesmente omite a chave nos dois casos). O extrator so marca
+# `attrs.table_partitioned: true` com evidencia positiva; sem evidencia o valor
+# e `"unknown"` e a regra nao dispara, de proposito. Ver a docstring de
+# `sparkforge/facts/spark_plan.py`.
+
+catalog_version: 1
+schema_version: 1
+area: SF-PQ
+retrieved: 2026-07-29
+
+rules:
+
+  # INERTE: `s3.prefix_summary` exigiria um extrator de listagem S3 (contagem
+  # e tamanho de objeto por prefixo), que nao existe no pacote. Nao ha como
+  # contar small files a partir de codigo, plano ou event log.
+  - id: SF-PQ-001
+    category: parquet-layout
+    title: Small files na entrada
+    requires_facts: [s3.prefix_summary]
+    when:
+      all:
+        - fact: s3.prefix_summary
+          expr: "measures.avg_file_bytes < threshold.min_avg_bytes and measures.file_count >= threshold.min_count"
+    threshold: {min_avg_bytes: 33554432, min_count: 1000}
+    status: confirmed
+    severity_by:
+      - {when: "measures.file_count >= 100000", severity: P0}
+      - {when: "measures.file_count >= 10000", severity: P1}
+      - {when: "measures.file_count >= 1000", severity: P2}
+    runtime_scope: {glue: "*"}
+    explanation: >
+      O custo de small files tem quatro componentes distintos: listing no driver,
+      abertura de arquivo no executor, overhead de agendamento de task, e metadados no
+      heap do driver. O parâmetro spark.sql.files.openCostInBytes vale 4MB por default,
+      então um arquivo de 10KB é contabilizado como 4MB no empacotamento de partições:
+      com 100 mil arquivos minúsculos o planejador raciocina sobre cerca de 400GB
+      virtuais. Aumentar workers não corrige nada disso, porque o gargalo é contagem de
+      objetos e round-trips a S3, não CPU. Ver knowledge/storage/parquet-layout.md secao 3.
+    proposed_change:
+      - Compactar o passivo num job de manutenção separado.
+      - "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita."
+      - Nunca usar coalesce(1) para isso.
+    risks: [Compactação altera o layout físico consumido downstream; validar com os consumidores.]
+    tradeoffs: [Arquivos maiores facilitam a leitura em paralelo e dificultam a escrita incremental frequente.]
+    validation:
+      - Contagem de arquivos e tamanho médio, p50 e p95 antes e depois.
+      - Tempo do driver antes da primeira task, que é o proxy de listing.
+      - Contagem total de linhas idêntica.
+      - Runtime e DPU-hours antes e depois.
+    rollback: [Manter os arquivos originais até a validação concluir; então remover.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge/facts/spark_plan.py`.
+  # `attrs.table_partitioned` so e `true` com evidencia positiva de
+  # particionamento; sem evidencia fica `"unknown"` e esta regra nao dispara,
+  # porque `PartitionFilters` vazio numa tabela nao particionada e
+  # indistinguivel de uma particionada sem pruning.
+  - id: SF-PQ-002
+    category: parquet-layout
+    title: Partition pruning ausente no plano físico
+    requires_facts: [plan.file_scan]
+    when:
+      all:
+        - fact: plan.file_scan
+          where: {attrs.table_partitioned: true, attrs.partition_filters_empty: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {spark: ">=3.0"}
+    explanation: >
+      Tabela particionada cuja leitura tem PartitionFilters vazio está lendo tudo. É o
+      achado mais valioso e mais rápido de obter num plano físico. As causas mais comuns
+      são: filtro aplicado depois de um join, filtro dentro de UDF, e incompatibilidade
+      de tipo entre a coluna de partição e o literal do filtro, que provoca cast
+      implícito sem gerar erro. Ver knowledge/spark/plan-reading.md secao 3.
+    proposed_change:
+      - Mover o filtro para antes do join, verificando que aparece em PartitionFilters.
+      - Alinhar o tipo do literal ao tipo da coluna de partição.
+      - Remover UDF do caminho do filtro.
+      - Se a leitura é via DynamicFrame, usar push_down_predicate ou catalogPartitionPredicate.
+    risks: [Mover filtro para antes de outer join altera o resultado; verificar o tipo de join.]
+    tradeoffs: []
+    validation:
+      - PartitionFilters preenchido no plano físico após a mudança.
+      - Bytes lidos antes e depois.
+      - Razão entre bytes lidos e tamanho da tabela, que resume o pruning efetivo.
+      - Contagem total e agregados de controle idênticos.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  # INERTE: mesmo bloqueio de SF-PQ-001. Detectar um `.csv.gz` gigante na
+  # entrada exige listar objetos em S3 com tamanho; nenhum artefato local diz
+  # isso.
+  - id: SF-PQ-003
+    category: parquet-layout
+    title: Arquivo de texto comprimido não splitável na entrada
+    requires_facts: [s3.prefix_summary]
+    when:
+      all:
+        - fact: s3.prefix_summary
+          where: {attrs.format: text, attrs.compression: gzip}
+          expr: "measures.max_file_bytes >= threshold.min_bytes"
+    threshold: {min_bytes: 1073741824}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Um arquivo de texto gzip é sempre uma única task, qualquer que seja o tamanho. Um
+      csv.gz de 20GB é uma task de 20GB, e nenhum aumento de paralelismo ou de workers
+      ajuda. É a causa clássica de poucas tasks muito longas no Spark UI, e é
+      frequentemente diagnosticada como falta de capacidade. Dentro do Parquet a
+      compressão é por página e não afeta a splitabilidade; o problema é exclusivo de
+      arquivos de texto comprimidos.
+    proposed_change:
+      - Converter a entrada para Parquet, o que resolve splitabilidade e pruning de coluna ao mesmo tempo.
+      - Se a conversão não é possível, dividir os arquivos na origem em pedaços menores.
+      - Se nada é possível, reconhecer o teto de paralelismo e reduzir os workers ociosos.
+    risks: [Conversão é mudança no produtor do dado, fora do controle de quem consome.]
+    tradeoffs: [Uma etapa de conversão adiciona custo e latência, e reduz o custo de todas as leituras seguintes.]
+    validation:
+      - Contagem de tasks do stage de leitura antes e depois.
+      - glue.driver.workerUtilization antes e depois.
+      - Runtime e DPU-hours antes e depois.
+      - Contagem total de linhas idêntica após a conversão.
+    rollback: [Manter a origem intacta e reverter o consumo para os arquivos originais.]
+    sources:
+      - {origin: field-heuristic, note: "Não splitabilidade de gzip em arquivo de texto é propriedade do codec, não configurável."}
+
+  # DESBLOQUEADA: `plan.file_scan` vem de `sparkforge/facts/spark_plan.py`.
+  # As duas measures so sao emitidas quando as listas de campo do plano vieram
+  # COMPLETAS: o Spark trunca listas longas (`... N more fields`, default 25
+  # campos), e como esta regra e uma RAZAO, contar uma lista parcial infla o
+  # numerador e produz acusacao falsa que parece bem fundamentada. Lista
+  # truncada vira `plan.unresolved` e a regra simplesmente nao avalia.
+  - id: SF-PQ-004
+    category: parquet-layout
+    title: Pruning de coluna ausente — ReadSchema muito maior que o uso
+    requires_facts: [plan.file_scan]
+    when:
+      all:
+        - fact: plan.file_scan
+          expr: "measures.read_schema_columns / measures.referenced_columns >= threshold.ratio"
+    threshold: {ratio: 3.0}
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {spark: ">=3.0"}
+    explanation: >
+      Ler 80 colunas para usar 6 desperdiça banda de I/O e, se houver join, banda de
+      shuffle. Em Parquet o pruning de coluna é praticamente gratuito, então a ausência
+      dele indica select ausente, SELECT star, ou uma UDF que recebe a linha inteira.
+    proposed_change:
+      - Adicionar select das colunas usadas, o mais cedo possível na cadeia.
+      - Remover SELECT star.
+      - Se uma UDF recebe a linha inteira, passar apenas as colunas necessárias.
+    risks: [Projeção explícita exige manutenção na evolução de schema.]
+    tradeoffs: []
+    validation:
+      - ReadSchema no plano físico antes e depois.
+      - Bytes lidos antes e depois.
+      - Contagem total e schema do resultado idênticos.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  # INERTE: exige `s3.prefix_summary` (mesmo bloqueio de SF-PQ-001) alem de
+  # `catalog.table_partitions`. Cardinalidade de particao sem volume por
+  # particao nao decide nada: a metade do catalogo existe, a metade do S3 nao.
+  - id: SF-PQ-005
+    category: parquet-layout
+    title: Cardinalidade de partição inadequada
+    requires_facts: [s3.prefix_summary, catalog.table_partitions]
+    when:
+      any:
+        - fact: catalog.table_partitions
+          expr: "measures.distinct_values <= threshold.min_cardinality"
+        - fact: catalog.table_partitions
+          expr: "measures.avg_bytes_per_partition < threshold.min_partition_bytes"
+    threshold: {min_cardinality: 5, min_partition_bytes: 134217728}
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Cardinalidade muito baixa faz a partição não filtrar nada: com três valores
+      distintos, o melhor filtro possível ainda lê um terço da tabela. Cardinalidade
+      muito alta produz small files por construção e explode metadados. Uma partição que
+      gera 3MB de dado é small file por desenho, não por acidente. O alvo prático é que
+      cada partição tenha volume suficiente para produzir arquivos de 128 a 512MB.
+    proposed_change:
+      - Escolher a coluna de partição a partir dos filtros que os consumidores realmente usam, o que exige inventariar as queries em Athena e nos jobs downstream.
+      - Para chave de alta cardinalidade usada em lookup, usar bucket em Iceberg em vez de partição.
+      - Reservar sort order para os filtros de alta cardinalidade.
+    risks:
+      - Mudar o particionamento de uma tabela existente exige reescrita ou partition evolution.
+      - "Em Iceberg, partition evolution não reescreve dados antigos: a tabela passa a ter specs mistos, e o planejamento fica permanentemente mais complexo."
+    tradeoffs: [Reescrever é caro e resolve de vez; evoluir o spec é barato e deixa dívida de planejamento.]
+    validation:
+      - Bytes lidos por um conjunto de queries de referência antes e depois.
+      - Tamanho médio de arquivo por partição.
+      - Contagem total de linhas idêntica.
+    rollback: [Time travel em Iceberg, ou manter a tabela antiga até validar a nova.]
+    sources:
+      - {url: "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena", retrieved: 2026-07-29}

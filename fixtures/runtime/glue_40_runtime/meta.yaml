@@ -1,0 +1,16 @@
+name: glue_40_runtime
+proves: >
+  Glue 4.0 -> Spark 3.3.0, Python 3.10, Iceberg 1.0.0. E o lado de CA do limite
+  de SF-ENV-004 (`glue: "<4.0"`): 4.0 ja tem AQE ligado por default, entao a
+  regra nao pode disparar aqui, enquanto dispara em `pre_aqe_runtime` (Glue
+  3.0). O par de fixtures fixa a fronteira em ambos os sentidos -- errar o
+  lado dela produz ou uma recomendacao de AQE inutil, ou a ausencia dela num
+  runtime que precisa.
+runtime:
+  glue: "4.0"
+  spark: "3.3.0"
+  python: "3.10"
+  iceberg: "1.0.0"
+expects_kinds:
+  - env.runtime_signal
+expects_rules: []

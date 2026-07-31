@@ -1,0 +1,12 @@
+name: cache_no_unpersist
+proves: >
+  cache() sem unpersist no mesmo escopo ocupa memoria unificada do executor
+  indefinidamente. SF-PY-008 dispara sobre pyspark.cache com
+  attrs.has_unpersist_in_scope == false.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.cache, pyspark.action, pyspark.module_analyzed]
+expects_rules: [SF-PY-008]

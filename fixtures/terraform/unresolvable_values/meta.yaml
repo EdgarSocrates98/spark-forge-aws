@@ -1,0 +1,27 @@
+name: unresolvable_values
+proves: >
+  As tres formas de o Terraform esconder o valor do extrator, num recurso so:
+  interpolacao (`"s3://${var.bucket_logs}/sparkui/"`), chamada de funcao
+  (`join(",", var.bibliotecas)`) e heredoc (`<<-EOT`). Nenhuma delas pode
+  virar valor adivinhado -- todas viram `tf.unresolved` com o reason
+  correspondente.
+  O achado que esta fixture fecha: antes dela, `--spark-event-logs-path`
+  interpolado -- que e a forma NORMAL de escrever Terraform, porque o valor so
+  existe depois do apply -- fazia `tf.observability.spark_ui` ficar ausente e
+  SF-GLUE-002 acusar em P1 "observabilidade ausente" num job que TEM
+  observabilidade configurada. Agora o extrator emite
+  `tf.observability.unknown` e a regra exige a ausencia dos dois. Ausencia de
+  evidencia nao e evidencia de ausencia; `fixtures/terraform/no_observability`
+  continua disparando, porque la a ausencia e real.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.unresolved
+  - tf.observability.unknown
+expects_rules: []

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "f_684cf4",
+    "schema_version": 1,
+    "kind": "s3.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "object_count": 2,
+      "control_object_count": 0,
+      "group_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "prefix": "s3://lake/raw/clickstream/",
+      "truncated": false
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "3193a81020ae6c54ae8ca725fbf86c7feebb17b8dd1d55b389f7ea0750c3a762",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_901d11",
+    "schema_version": 1,
+    "kind": "s3.prefix_summary",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/raw/clickstream/ [text/gzip]"
+    },
+    "measures": {
+      "file_count": 2,
+      "total_bytes": 7516192768,
+      "avg_file_bytes": 3758096384.0,
+      "min_file_bytes": 3221225472,
+      "p50_file_bytes": 4294967296,
+      "p95_file_bytes": 4294967296,
+      "max_file_bytes": 4294967296
+    },
+    "attrs": {
+      "prefix": "s3://lake/raw/clickstream/",
+      "format": "text",
+      "compression": "gzip"
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "3193a81020ae6c54ae8ca725fbf86c7feebb17b8dd1d55b389f7ea0750c3a762",
+      "extractor": "s3_listing@0.1.0"
+    }
+  }
+]

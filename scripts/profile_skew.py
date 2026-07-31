@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Reusable skew profiler for a Spark DataFrame."""
 from __future__ import annotations
-from pyspark.sql import DataFrame, functions as F
+
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+
 
 def profile_key_skew(df: DataFrame, keys: list[str], top_n: int = 20) -> dict:
     if not keys:
@@ -20,7 +23,8 @@ def profile_key_skew(df: DataFrame, keys: list[str], top_n: int = 20) -> dict:
         F.stddev_pop("count").alias("stddev"),
     ).first()
 
-    top = [row.asDict(recursive=True) for row in counts.orderBy(F.desc("count")).limit(top_n).collect()]
+    top_rows = counts.orderBy(F.desc("count")).limit(top_n).collect()
+    top = [row.asDict(recursive=True) for row in top_rows]
     p50 = stats_row["p50"] or 0
     mean = stats_row["mean"] or 0
 

@@ -1,0 +1,62 @@
+[
+  {
+    "rule_id": "SF-PQ-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Pruning de coluna ausente — ReadSchema muito maior que o uso",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 7,
+      "symbol": "(1) Scan parquet analytics.clientes",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "analytics.clientes"
+    },
+    "evidence": [
+      "f_a9db05"
+    ],
+    "measured": {
+      "read_schema_columns": 12,
+      "output_columns": 12,
+      "referenced_columns": 2,
+      "partition_filter_count": 0,
+      "pushed_filter_count": 1
+    },
+    "threshold": {
+      "ratio": 3.0
+    },
+    "runtime_scope": {
+      "spark": ">=3.0"
+    },
+    "explanation": "Ler 80 colunas para usar 6 desperdiça banda de I/O e, se houver join, banda de shuffle. Em Parquet o pruning de coluna é praticamente gratuito, então a ausência dele indica select ausente, SELECT star, ou uma UDF que recebe a linha inteira.",
+    "proposed_change": [
+      "Adicionar select das colunas usadas, o mais cedo possível na cadeia.",
+      "Remover SELECT star.",
+      "Se uma UDF recebe a linha inteira, passar apenas as colunas necessárias."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Projeção explícita exige manutenção na evolução de schema."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "ReadSchema no plano físico antes e depois.",
+      "Bytes lidos antes e depois.",
+      "Contagem total e schema do resultado idênticos."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

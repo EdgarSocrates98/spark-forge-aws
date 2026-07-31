@@ -1,0 +1,62 @@
+[
+  {
+    "rule_id": "SF-PQ-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Partition pruning ausente no plano físico",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 10,
+      "symbol": "(1) Scan parquet analytics.transacoes",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "analytics.transacoes"
+    },
+    "evidence": [
+      "f_553798"
+    ],
+    "measured": {
+      "read_schema_columns": 3,
+      "output_columns": 4,
+      "referenced_columns": 3,
+      "partition_filter_count": 0,
+      "pushed_filter_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=3.0"
+    },
+    "explanation": "Tabela particionada cuja leitura tem PartitionFilters vazio está lendo tudo. É o achado mais valioso e mais rápido de obter num plano físico. As causas mais comuns são: filtro aplicado depois de um join, filtro dentro de UDF, e incompatibilidade de tipo entre a coluna de partição e o literal do filtro, que provoca cast implícito sem gerar erro. Ver knowledge/spark/plan-reading.md secao 3.",
+    "proposed_change": [
+      "Mover o filtro para antes do join, verificando que aparece em PartitionFilters.",
+      "Alinhar o tipo do literal ao tipo da coluna de partição.",
+      "Remover UDF do caminho do filtro.",
+      "Se a leitura é via DynamicFrame, usar push_down_predicate ou catalogPartitionPredicate."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Mover filtro para antes de outer join altera o resultado; verificar o tipo de join."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "PartitionFilters preenchido no plano físico após a mudança.",
+      "Bytes lidos antes e depois.",
+      "Razão entre bytes lidos e tamanho da tabela, que resume o pruning efetivo.",
+      "Contagem total e agregados de controle idênticos."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]
