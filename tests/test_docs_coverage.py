@@ -41,6 +41,16 @@ class TestReadme:
         assert "artifacts/**" in self.README or "artifacts/" in self.README
         assert "sha256" in self.README.lower()
 
+    def test_documents_pip_install(self):
+        """O canal pip da secao 9 so vale se estiver documentado; agente que
+        nao sabe instalar nao instala."""
+        assert "pip install sparkforge-aws" in self.README
+
+    def test_documents_that_the_installed_package_carries_the_catalog(self):
+        lowered = self.README.lower()
+        assert "catálogo" in lowered or "catalogo" in lowered
+        assert "knowledge" in lowered
+
 
 class TestGuia:
     GUIA = None

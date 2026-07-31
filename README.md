@@ -69,6 +69,46 @@ no julgamento, isolado de qualquer mudança no código analisado.
 | `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge` em qualquer shell/CI |
 | Espelhos markdown | `rules/catalog/*.yaml`, `skills/`, `knowledge/` | Sem MCP e sem Python — leitura direta |
 
+#### `pip install sparkforge-aws`: o pacote carrega o catálogo dentro dele
+
+```bash
+pip install sparkforge-aws            # CLI sparkforge sozinho
+pip install "sparkforge-aws[aws]"     # + boto3, para os extratores que leem AWS
+pip install "sparkforge-aws[mcp]"     # + servidor MCP (stdio e streamable HTTP)
+```
+
+Diferente de um `pip install` comum, este wheel não traz só código: `rules/catalog/`
+(o catálogo de regras em YAML) e `knowledge/` (a base de conhecimento sobre
+Spark, Glue, Athena, Parquet e Iceberg) vêm embarcados dentro do pacote,
+resolvidos por `loader.catalog_dir()` na mesma ordem de sempre — variável de
+ambiente, raiz do repositório e, faltando as duas, o fallback dentro do
+próprio pacote instalado. É esse terceiro degrau que faz `analyze`, `judge`,
+`next-step`, `resume` e `rules lookup` funcionarem **sem o repositório
+clonado**: um agente autônomo que sobe um sandbox efêmero, roda `pip install
+sparkforge-aws` e não tem mais nada em disco ainda assim consegue extrair
+facts, julgar contra o catálogo completo e citar a fonte de cada limiar —
+porque o catálogo veio junto no wheel, não porque o agente clonou o
+repositório antes.
+
+Para localizar `knowledge/` a partir do pacote instalado:
+
+```bash
+sparkforge knowledge path                                  # imprime a raiz
+sparkforge knowledge path --file glue/runtime-matrix.md     # imprime um arquivo específico
+```
+
+`rules lookup` também devolve os caminhos já resolvidos: cada regra retornada
+inclui os arquivos de `knowledge/` que a sua `explanation` cita, com o
+caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
+dentro de `site-packages` quando instalado por `pip`.
+
+Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
+**fora do repositório** e reproduz as 74 fixtures byte a byte a partir do
+pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
+usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
+repositório em vez do `site-packages` nesse processo, o gate falha com
+mensagem explícita em vez de comparar o repositório consigo mesmo.
+
 #### Os dois transportes MCP
 
 ```bash
