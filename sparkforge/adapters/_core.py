@@ -901,31 +901,60 @@ def rules_lookup(
 # --------------------------------------------------------------------------- #
 
 
+def _knowledge_root_missing(cause: str) -> AdapterError:
+    """Erro acionavel unico para toda causa de raiz de knowledge ausente ou
+    invalida (env var errada, ou pacote sem knowledge/ embarcado). `cause` e a
+    frase especifica (o que esta errado); as duas linhas de comando abaixo sao
+    o que fazer a respeito -- sem elas o operador so sabe que algo esta
+    errado, nao o proximo passo.
+    """
+    return AdapterError(
+        f"{cause}\n"
+        f"  Se voce tem o repositorio sparkforge-aws clonado, aponte para a "
+        f"pasta knowledge/ dele:\n"
+        f"    SPARKFORGE_KNOWLEDGE=<caminho-do-repo>/knowledge\n"
+        f"  Sem o repositorio, reinstale o pacote -- a wheel >=0.5.0 embarca "
+        f"knowledge/ dentro do site-packages:\n"
+        f"    pip install --force-reinstall sparkforge-aws",
+        exit_code=2,
+    )
+
+
 def knowledge_path(file: str | None = None) -> dict[str, Any]:
     """Resolve a raiz de knowledge, e opcionalmente um arquivo dentro dela.
 
     Sem `file`, devolve a raiz e a lista do que ha. Um consumidor instalado por
     pip nao tem como adivinhar o caminho dentro do site-packages, e listar e o
     que torna o verbo utilizavel sem tentativa e erro.
+
+    `available` nao pagina, diferente de `rules_lookup`/`analyze_*`: sao 19
+    arquivos estaticos, curados via `knowledge/INDEX.md` e embarcados no wheel
+    -- nao cresce por acao do usuario como uma lista de findings ou regras.
+    Paginar aqui seria complexidade sem consumidor. Revisite se `knowledge/`
+    crescer para dezenas de arquivos por diretorio (o teste
+    `test_available_list_stays_small_enough_to_not_need_pagination` em
+    `tests/test_adapters_knowledge.py` falha propositalmente antes disso virar
+    surpresa). Pelo mesmo motivo o `rglob` abaixo roda mesmo quando so `file`
+    foi pedido: nao vale complicar o caminho feliz para evitar percorrer 19
+    arquivos.
     """
+    # `knowledge_dir()` espelha `catalog_dir()` e nao valida o fallback (ver a
+    # docstring dela): a checagem tem que morar no consumidor, assim como
+    # `load_catalog()` e quem valida `catalog_dir()`. Duas origens convergem
+    # aqui -- `KnowledgeError` de `knowledge_dir()` (env var aponta para path
+    # invalido) e o fallback sem validacao (pacote instalado sem knowledge/
+    # embarcado) -- e as duas passam por `_knowledge_root_missing` para sair
+    # com o mesmo comando de saida, como em `_extract_facts`: a causa sozinha
+    # deixa o operador adivinhando entre corrigir a env var, reinstalar ou
+    # clonar o repositorio, que e a forma mais barata de a ferramenta parecer
+    # quebrada.
     try:
         root = knowledge_dir()
     except KnowledgeError as exc:
-        raise AdapterError(str(exc), exit_code=2) from exc
+        raise _knowledge_root_missing(str(exc)) from exc
 
-    # `knowledge_dir()` espelha `catalog_dir()` e nao valida o fallback (ver a
-    # docstring dela): a checagem tem que morar no consumidor, assim como
-    # `load_catalog()` e quem valida `catalog_dir()`. A mensagem aqui distingue
-    # "diretorio de knowledge ausente" (empacotamento incompleto) de "arquivo
-    # nao existe" (`safe_knowledge_file`, mais abaixo) -- sao causas diferentes
-    # e confundi-las manda quem le procurar no lugar errado.
     if not root.is_dir():
-        raise AdapterError(
-            f"diretorio de knowledge nao encontrado em {root}. O pacote instalado "
-            f"nao embarcou knowledge/, ou SPARKFORGE_KNOWLEDGE aponta para um "
-            f"caminho que nao existe.",
-            exit_code=2,
-        )
+        raise _knowledge_root_missing(f"diretorio de knowledge nao encontrado em {root}.")
 
     available = sorted(
         p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()

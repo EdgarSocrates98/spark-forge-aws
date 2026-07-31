@@ -766,6 +766,15 @@ class TestCliMcpEquivalence:
         mcp_payload = call_tool("sparkforge_analyze_sql", {"path": str(sql_path)})
         assert cli_payload == mcp_payload
 
+    def test_knowledge_path_matches(self, repo, capsys):
+        _, output = run(["knowledge", "path", "--file", "glue/runtime-matrix.md"], capsys)
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool(
+            "sparkforge_knowledge_path", {"file": "glue/runtime-matrix.md"}
+        )
+        assert cli_payload == mcp_payload
+
     def test_collect_verify_matches(self, repo, capsys):
         from sparkforge.collect.base import ArtifactEntry, register_artifact
 
