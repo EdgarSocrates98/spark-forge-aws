@@ -42,7 +42,7 @@ def build_server() -> Any:
     acionavel (SystemExit) se o SDK nao estiver instalado."""
     try:
         from mcp.server import Server
-        from mcp.types import TextContent, Tool
+        from mcp.types import CallToolResult, TextContent, Tool
     except ImportError as exc:
         raise SystemExit(_INSTALL_HINT) from exc
 
@@ -61,9 +61,29 @@ def build_server() -> Any:
         ]
 
     @server.call_tool()
-    async def _call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
+    async def _call_tool(name: str, arguments: dict[str, Any]) -> Any:
+        """Devolve o dict CRU, nao `TextContent`.
+
+        Todo tool declara `outputSchema`, e o SDK exige `structuredContent` de
+        quem declara: devolvendo so texto, TODA chamada de tool falhava com
+        `Output validation error: outputSchema defined but no structured
+        output returned` -- em qualquer transporte, inclusive stdio. Devolver o
+        dict faz o SDK preencher `structuredContent` e ainda serializar o JSON
+        em `content`, entao o cliente continua recebendo o texto de antes.
+
+        Erro de fronteira sai como `CallToolResult(isError=True)`, e nao como
+        dict: `{"error": ..., "exit_code": ...}` nao casa com o `outputSchema`
+        do tool, e a validacao do SDK trocaria a mensagem acionavel do adapter
+        por uma queixa de schema -- o operador perderia justamente o texto que
+        diz o que fazer.
+        """
         result = call_tool(name, arguments)
-        return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+        if isinstance(result, dict) and "error" in result and "exit_code" in result:
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(result, ensure_ascii=False))],
+                isError=True,
+            )
+        return result
 
     return server
 
@@ -96,7 +116,6 @@ def build_http_app(server: Any, *, json_response: bool = False, stateless: bool 
     try:
         from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
         from starlette.applications import Starlette
-        from starlette.routing import Mount
     except ImportError as exc:
         raise SystemExit(_INSTALL_HINT) from exc
 
@@ -105,6 +124,26 @@ def build_http_app(server: Any, *, json_response: bool = False, stateless: bool 
     )
 
     async def _handle(scope: Any, receive: Any, send: Any) -> None:
+        """Atende `/mcp` E `/mcp/`, sem redirect.
+
+        `Mount("/mcp")` do Starlette responde 307 em `/mcp` e so serve
+        `/mcp/`. O serverUrl documentado e `/mcp`, e cliente HTTP que nao siga
+        redirect em POST (httpx nao segue por default) nunca chega ao
+        servidor: o sintoma no Devin Desktop seria "nao conecta", sem pista
+        nenhuma. Desligar `redirect_slashes` no Mount troca o 307 por 404, o
+        que e pior. Dai a rota ser resolvida aqui, comparando o caminho
+        normalizado.
+        """
+        if scope.get("type") == "http" and scope.get("path", "").rstrip("/") != "/mcp":
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 404,
+                    "headers": [(b"content-type", b"text/plain; charset=utf-8")],
+                }
+            )
+            await send({"type": "http.response.body", "body": b"nao encontrado; use /mcp"})
+            return
         await manager.handle_request(scope, receive, send)
 
     @contextlib.asynccontextmanager
@@ -115,7 +154,11 @@ def build_http_app(server: Any, *, json_response: bool = False, stateless: bool 
         async with manager.run():
             yield
 
-    return Starlette(routes=[Mount("/mcp", app=_handle)], lifespan=_lifespan)
+    app = Starlette(lifespan=_lifespan)
+    # Sem rota registrada, tudo cai no `default` do router -- que e onde
+    # `_handle` decide entre servir e devolver 404.
+    app.router.default = _handle
+    return app
 
 
 def _run_http(server: Any, host: str, port: int) -> None:  # pragma: no cover -- sobe servidor
