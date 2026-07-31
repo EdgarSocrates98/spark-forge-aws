@@ -5,8 +5,6 @@ knowledge precisa primeiro saber onde ele esta, e num pacote instalado isso
 esta dentro do site-packages.
 """
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -14,7 +12,18 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 from sparkforge.adapters import _core  # noqa: E402
+from sparkforge.adapters.cli import main  # noqa: E402
 from sparkforge.adapters.tools import TOOLS, call_tool  # noqa: E402
+
+
+def run(args, capsys):
+    """Mesmo helper de `tests/test_adapters_cli.py`: CLI in-process via
+    `main()` + `capsys`, nao `subprocess`. Um `subprocess.run` por teste custa
+    ~0.25s (novo interpretador Python a cada chamada) contra <0.005s de
+    `main()` direto -- 50x mais lento, sem nenhum ganho de cobertura, porque
+    `main()` ja e o mesmo codigo que rodaria via `python -m`."""
+    code = main(args)
+    return code, capsys.readouterr().out
 
 
 class TestCore:
@@ -43,30 +52,28 @@ class TestCore:
         with pytest.raises(_core.AdapterError):
             _core.knowledge_path(file="../pyproject.toml")
 
+    def test_available_list_stays_small_enough_to_not_need_pagination(self):
+        """Guard-rail barato para a decisao (documentada na docstring de
+        `knowledge_path`) de nao paginar `available`: 19 arquivos estaticos
+        hoje, teto generoso aqui para nao disparar por qualquer adicao pontual
+        a `knowledge/`. Se isto falhar um dia, e o sinal de que a decisao
+        precisa ser revisitada, nao um teste para simplesmente alargar o teto."""
+        result = _core.knowledge_path()
+        assert len(result["available"]) < 100
+
 
 class TestCli:
-    def test_knowledge_path_prints_json_with_the_root(self):
-        result = subprocess.run(
-            [sys.executable, "-m", "sparkforge.adapters.cli", "knowledge", "path"],
-            capture_output=True,
-            text=True,
-            cwd=ROOT,
-        )
-        assert result.returncode == 0, result.stderr
-        assert Path(json.loads(result.stdout)["root"]).is_dir()
+    def test_knowledge_path_prints_json_with_the_root(self, capsys):
+        code, output = run(["knowledge", "path"], capsys)
+        assert code == 0
+        assert Path(json.loads(output)["root"]).is_dir()
 
-    def test_knowledge_path_with_file(self):
-        result = subprocess.run(
-            [
-                sys.executable, "-m", "sparkforge.adapters.cli",
-                "knowledge", "path", "--file", "glue/runtime-matrix.md",
-            ],
-            capture_output=True,
-            text=True,
-            cwd=ROOT,
+    def test_knowledge_path_with_file(self, capsys):
+        code, output = run(
+            ["knowledge", "path", "--file", "glue/runtime-matrix.md"], capsys
         )
-        assert result.returncode == 0, result.stderr
-        assert Path(json.loads(result.stdout)["file"]).is_file()
+        assert code == 0
+        assert Path(json.loads(output)["file"]).is_file()
 
 
 class TestMcpTool:

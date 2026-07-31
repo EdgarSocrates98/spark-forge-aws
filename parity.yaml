@@ -163,7 +163,7 @@ capabilities:
       devin_cli: [mcp, cli, files]
       copilot_ci: [cli, files]
 
-  - name: localizar os arquivos de conhecimento versionado
+  - name: locate the version-controlled knowledge files
     tools: [sparkforge_knowledge_path]
     cli: [knowledge path]
     knowledge: [knowledge/INDEX.md]
