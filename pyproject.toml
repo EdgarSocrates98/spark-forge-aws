@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
 
 [project]
 name = "sparkforge-aws"
@@ -70,11 +70,34 @@ dev = [
 [project.scripts]
 sparkforge = "sparkforge.adapters.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["sparkforge*"]
+[tool.hatch.build.targets.wheel]
+packages = ["sparkforge"]
 
-[tool.setuptools.package-data]
-sparkforge = ["findings/schemas/*.json"]
+# `rules/catalog` e `knowledge` moram na RAIZ por decisao D-A da Fase 0: sao o
+# terceiro degrau da escada de portabilidade, o YAML que um agente sem Python
+# le direto. `force-include` os copia para dentro do pacote no momento do build,
+# sem duplicar arquivo em git -- que e a unica forma de servir o pip sem corroer
+# aquela decisao.
+[tool.hatch.build.targets.wheel.force-include]
+"rules/catalog" = "sparkforge/rules/catalog"
+"knowledge" = "sparkforge/knowledge"
+
+# O sdist recebe o MESMO mapeamento. `force-include` do target `wheel` nao cobre
+# o sdist, e quem instalar a partir da fonte ficaria sem catalogo -- a mesma
+# falha, um caminho adiante.
+[tool.hatch.build.targets.sdist]
+include = [
+    "sparkforge",
+    "rules/catalog",
+    "knowledge",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+[tool.hatch.build.targets.sdist.force-include]
+"rules/catalog" = "sparkforge/rules/catalog"
+"knowledge" = "sparkforge/knowledge"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
