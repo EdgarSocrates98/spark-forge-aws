@@ -1,0 +1,20 @@
+# GERADO por scripts/gen_requirements.py -- NAO EDITE A MAO.
+#
+# Fonte da verdade: pyproject.toml. Este espelho existe porque ferramenta de SCA
+# nao le pyproject.toml com backend setuptools sem lockfile, e scan que nao roda
+# nao e scan que passa.
+#
+# Inclui as dependencias do nucleo E de todos os extras, de proposito: o extra
+# `mcp` e o que traz a arvore transitiva maior, e deixar ele de fora esconderia
+# justamente a parte que mais precisa ser vigiada.
+#
+# Regenere com: python scripts/gen_requirements.py
+PyYAML>=6.0
+jsonschema>=4.0
+boto3>=1.34
+mcp>=1.0,<2
+starlette>=0.37
+uvicorn>=0.30
+pytest>=8.0
+ruff>=0.6
+defusedxml>=0.7

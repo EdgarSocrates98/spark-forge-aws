@@ -26,6 +26,8 @@ jobs:
         run: python -m pytest -q
       - name: Mirror sync
         run: python scripts/sync_skills.py --check
+      - name: Requirements mirror
+        run: python scripts/gen_requirements.py --check
       - name: Eval corpus consistency
         run: python scripts/check_evals.py
       - name: Catalog loads with expression validation
