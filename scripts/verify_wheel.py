@@ -55,16 +55,76 @@ def pytest_command(python: Path, root: Path) -> list[str]:
     return [str(python), "-m", "pytest", "-q", "-o", "pythonpath=", *modules]
 
 
-def _run(command: list[str], **kwargs) -> subprocess.CompletedProcess:
-    printable = " ".join(str(c) for c in command)
-    print(f"$ {printable}", flush=True)
-    return subprocess.run(command, check=False, **kwargs)
+def _reproduce_line(command: list, cwd: str | None, env: dict[str, str] | None) -> str:
+    """Monta uma linha copiavel que reproduz esta chamada a mao.
+
+    So o argv nao bastava: um revisor copiou o comando `pytest` impresso numa
+    corrida com `--keep`, rodou do repositorio (sem o `cwd` do gate) e obteve
+    "90 passed, 5 skipped" -- os 5 testes de procedencia pulados em silencio
+    porque `SPARKFORGE_VERIFY_INSTALLED` nao estava setado. Reproduziu OUTRA
+    chamada, nao a que falhou.
+
+    Formato `cd <dir> && VAR=val cmd`: dialeto POSIX (bash/Git Bash), o mesmo
+    que os exemplos deste repositorio (heredocs, CLAUDE.md) ja assumem.
+    cmd.exe e PowerShell usam sintaxe diferente (`set`/`$env:`) -- quem estiver
+    nesses shells adapta a mao, mas o conteudo que faltava era o `cwd` e QUAIS
+    variaveis mudaram em relacao ao ambiente herdado, nao a sintaxe exata de
+    um shell especifico. Variaveis REMOVIDAS (`env.pop` no chamador) tambem
+    entram, como `unset` -- reproduzir sem tirar `SPARKFORGE_CATALOG` do
+    ambiente e reproduzir um gate que pode passar escondendo o defeito que
+    ele existe para pegar (ver comentario no chamador).
+    """
+    parts = []
+    if cwd is not None:
+        parts.append(f"cd {cwd} &&")
+    if env is not None:
+        removed = sorted(set(os.environ) - set(env))
+        if removed:
+            parts.append("unset " + " ".join(removed) + " &&")
+        changed = {k: v for k, v in sorted(env.items()) if os.environ.get(k) != v}
+        parts.extend(f"{k}={v}" for k, v in changed.items())
+    parts.append(" ".join(str(c) for c in command))
+    return " ".join(parts)
+
+
+def _run(
+    command: list[str],
+    *,
+    cwd: str | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess:
+    """Roda um subprocesso e imprime uma linha que reproduz a chamada a mao.
+
+    `cwd` e `env` sao parametros explicitos (nao **kwargs) precisamente para
+    que esta funcao possa inclui-los na linha impressa -- ver `_reproduce_line`.
+    """
+    print(f"$ {_reproduce_line(command, cwd, env)}", flush=True)
+    return subprocess.run(command, check=False, cwd=cwd, env=env)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--keep", action="store_true", help="Nao apaga o diretorio temporario.")
     args = parser.parse_args(argv)
+
+    # Guarda de corpus, DENTRO do gate -- nao basta o teste da suite
+    # (`tests/test_verify_wheel.py::test_there_is_more_than_one`). Aquele
+    # teste roda sob o pytest do REPOSITORIO, nunca dentro desta execucao: se
+    # `tests/test_fixtures_golden*.py` for renomeado ou apagado do disco,
+    # `GOLDEN_MODULES` vira `[]` aqui, `pytest_command()` devolve so o modulo
+    # de procedencia, ele passa (nada para comparar), e o gate imprimiria
+    # "OK: em paridade com os goldens" tendo verificado ZERO das 539
+    # assercoes de golden. Um gate que so prova a si mesmo -- sem numero
+    # minimo exigido DENTRO da propria execucao -- e o antipadrao que este
+    # repositorio existe para evitar (a razao de reusar os goldens em vez de
+    # reimplementar a comparacao, ver docstring do modulo).
+    if len(GOLDEN_MODULES) < 15:
+        print(
+            f"GOLDEN_MODULES tem {len(GOLDEN_MODULES)} modulos, esperava >=15 -- "
+            f"corpus renomeado ou apagado?",
+            file=sys.stderr,
+        )
+        return 1
 
     workdir = Path(tempfile.mkdtemp(prefix="sparkforge-gate-"))
     dist = workdir / "dist"
@@ -78,8 +138,12 @@ def main(argv: list[str] | None = None) -> int:
         wheels = sorted(dist.glob("*.whl"))
         sdists = sorted(dist.glob("*.tar.gz"))
         if not wheels or not sdists:
-            print(f"esperava wheel e sdist em {dist}, achei {[p.name for p in dist.iterdir()]}",
-                  file=sys.stderr)
+            # `dist.iterdir()` cru lançaria FileNotFoundError se `--outdir` nunca
+            # tivesse sido criado (build retornou 0 sem produzir nada, caso raro
+            # mas possivel) -- trocaria a mensagem limpa por um traceback. `[]`
+            # quando o diretorio nao existe mantem a mensagem legivel nesse caso.
+            found = sorted(p.name for p in dist.iterdir()) if dist.exists() else []
+            print(f"esperava wheel e sdist em {dist}, achei {found}", file=sys.stderr)
             return 1
 
         if _run([sys.executable, "-m", "venv", str(venv)]).returncode:
@@ -95,6 +159,21 @@ def main(argv: list[str] | None = None) -> int:
         env = dict(os.environ)
         env["SPARKFORGE_VERIFY_INSTALLED"] = "1"
         env["PYTHONSAFEPATH"] = "1"
+        # Remover SPARKFORGE_CATALOG/SPARKFORGE_KNOWLEDGE nao e limpeza de
+        # ambiente -- e a segunda metade da guarda de procedencia. `.mcp.json`
+        # deste repositorio seta as duas, entao um shell de dev que rode este
+        # gate plausivelmente as herda apontando para `rules/catalog` e
+        # `knowledge` DENTRO do checkout: validos, completos, e nada a ver com
+        # o que o wheel empacotou. Se o `force-include` do wheel estivesse
+        # quebrado -- como esteve ate o commit imediatamente anterior a este
+        # gate, quando o sdist relocava `knowledge` antes do wheel conseguir
+        # encontra-lo -- `load_catalog()`/`knowledge_dir()` teriam sucesso
+        # mesmo assim, so que pelo OVERRIDE herdado do ambiente: os goldens
+        # comparariam o pacote instalado contra o catalogo do REPOSITORIO, nao
+        # contra o que veio dentro do wheel, e o gate passaria escondendo
+        # exatamente o defeito que ele existe para pegar. Remover as duas
+        # variaveis fecha esse buraco: o codigo instalado so pode enxergar o
+        # que veio dentro do artefato.
         env.pop("SPARKFORGE_CATALOG", None)
         env.pop("SPARKFORGE_KNOWLEDGE", None)
 
