@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-UI-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Subparalelismo — tasks muito abaixo dos cores disponíveis",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "evidence": [
+      "f_a08863"
+    ],
+    "measured": {
+      "task_count": 4,
+      "available_cores": 16
+    },
+    "threshold": {
+      "factor": 0.5
+    },
+    "runtime_scope": {
+      "spark": ">=3.0"
+    },
+    "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
+    "proposed_change": [
+      "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
+      "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer.",
+      "Reduzir o número de workers se o paralelismo real não pode aumentar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar partições em job pequeno cria overhead de agendamento sem ganho."
+    ],
+    "tradeoffs": [
+      "Converter formato de entrada é mudança no produtor",
+      "não no consumidor."
+    ],
+    "validation": [
+      "Contagem de tasks versus cores após a mudança.",
+      "glue.driver.workerUtilization antes e depois.",
+      "Runtime e DPU-hours antes e depois."
+    ],
+    "rollback": [
+      "Reverter configuração de partições e de capacidade."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."
+      }
+    ]
+  }
+]

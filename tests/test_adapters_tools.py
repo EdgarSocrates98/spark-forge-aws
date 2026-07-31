@@ -41,6 +41,9 @@ class TestToolSurface:
             "sparkforge_analyze_sql",
             "sparkforge_analyze_athena_workgroup",
             "sparkforge_analyze_call_graph",
+            "sparkforge_analyze_s3_listing",
+            "sparkforge_analyze_consumers",
+            "sparkforge_analyze_terraform_diff",
             "sparkforge_fuse",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
@@ -418,11 +421,27 @@ class _FakeBoto3ForCollect:
         return self._clients[name]
 
 
+_S3_LISTING = json.dumps(
+    {
+        "Name": "lake",
+        "Prefix": "analytics/pedidos/",
+        "IsTruncated": False,
+        "Contents": [
+            {"Key": "analytics/pedidos/dt=2026-07-30/part-0.snappy.parquet", "Size": 4194304}
+        ],
+    }
+)
+
+_CONSUMER_INVENTORY = """consumers:
+  - table: glue_catalog.curated.pedidos
+    service: athena
+"""
+
+
 def _fake_collect_boto3(monkeypatch):
     """Injeta um client AWS falso para as ferramentas `collect_*` -- nunca toca
     rede nem credenciais de verdade, mesma convencao de `tests/test_collect_aws.py`."""
     from sparkforge.collect import aws as collect_aws
-
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
@@ -528,6 +547,29 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         wg_path = tmp_path / "wg.json"
         wg_path.write_text(_ATHENA_WORKGROUP_DUMP, encoding="utf-8")
         return call_tool("sparkforge_analyze_athena_workgroup", {"path": str(wg_path)})
+
+    if name == "sparkforge_analyze_s3_listing":
+        listing = tmp_path / "listing.json"
+        listing.write_text(_S3_LISTING, encoding="utf-8")
+        return call_tool("sparkforge_analyze_s3_listing", {"path": str(listing)})
+
+    if name == "sparkforge_analyze_consumers":
+        inventory = tmp_path / "consumers.yaml"
+        inventory.write_text(_CONSUMER_INVENTORY, encoding="utf-8")
+        return call_tool("sparkforge_analyze_consumers", {"path": str(inventory)})
+
+    if name == "sparkforge_analyze_terraform_diff":
+        before = tmp_path / "before"
+        after = tmp_path / "after"
+        before.mkdir()
+        after.mkdir()
+        (before / "main.tf").write_text(_TERRAFORM_SOURCE, encoding="utf-8")
+        (after / "main.tf").write_text(
+            _TERRAFORM_SOURCE.replace("G.1X", "G.4X"), encoding="utf-8"
+        )
+        return call_tool(
+            "sparkforge_analyze_terraform_diff", {"before": str(before), "after": str(after)}
+        )
 
     if name == "sparkforge_analyze_call_graph":
         facts_path = _write_facts_file(tmp_path)

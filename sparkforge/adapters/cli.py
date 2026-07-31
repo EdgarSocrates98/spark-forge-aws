@@ -175,6 +175,44 @@ def build_parser() -> argparse.ArgumentParser:
     athena_wg_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     athena_wg_analyze_p.add_argument("--cursor")
 
+    s3_p = analyze_sub.add_parser(
+        "s3-listing",
+        help="Extrai facts de um dump de `aws s3api list-objects-v2` (small files, "
+        "compressao nao splitavel).",
+    )
+    s3_p.add_argument(
+        "--path", required=True, help="Arquivo .json ou diretorio com paginas da listagem."
+    )
+    s3_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    s3_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    s3_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    s3_p.add_argument("--cursor")
+
+    consumers_p = analyze_sub.add_parser(
+        "consumers",
+        help="Extrai facts do inventario declarado de consumidores de tabela.",
+    )
+    consumers_p.add_argument(
+        "--path", required=True, help="Arquivo .yaml do inventario, ou diretorio com varios."
+    )
+    consumers_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    consumers_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    consumers_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    consumers_p.add_argument("--cursor")
+
+    tf_diff_p = analyze_sub.add_parser(
+        "terraform-diff",
+        help="Compara dois estados de um modulo Terraform e marca o que mudou.",
+    )
+    tf_diff_p.add_argument("--before", required=True, help="Diretorio do estado anterior.")
+    tf_diff_p.add_argument("--after", required=True, help="Diretorio do estado proposto.")
+    tf_diff_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    tf_diff_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    tf_diff_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    tf_diff_p.add_argument("--cursor")
+
     call_graph_p = analyze_sub.add_parser(
         "call-graph",
         help="Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts ja extraidos.",
@@ -527,6 +565,71 @@ def _cmd_analyze_sql(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_s3_listing(args: argparse.Namespace) -> int:
+    full = _core.analyze_s3_listing(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_consumers(args: argparse.Namespace) -> int:
+    full = _core.analyze_consumers(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
+    full = _core.analyze_terraform_diff(
+        args.before, args.after, kind=args.kind, limit=None
+    )
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
     full = _core.analyze_athena_workgroup(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -782,6 +885,9 @@ _DISPATCH = {
     ("analyze", "sql"): _cmd_analyze_sql,
     ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
+    ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
+    ("analyze", "consumers"): _cmd_analyze_consumers,
+    ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
     ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
     ("case", "open"): _cmd_case_open,

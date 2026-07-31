@@ -1,0 +1,18 @@
+name: malformed_inventory
+proves: >
+  As quatro formas de o inventario nao dizer o que precisa: entrada sem
+  `table`, entrada sem `service`, entrada que nem objeto e, e a mesma dupla
+  tabela+servico declarada duas vezes. As tres primeiras viram `env.unresolved`
+  com reasons distintos; a quarta e deduplicada em silencio, porque declarar o
+  mesmo par duas vezes e erro de edicao e emitir dois facts faria SF-ENV-002
+  produzir dois findings para um unico problema.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - env.consumer
+  - env.consumers_analyzed
+  - env.unresolved
+expects_rules: []

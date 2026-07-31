@@ -1,0 +1,17 @@
+{
+  "Name": "lake",
+  "Prefix": "raw/clickstream/",
+  "IsTruncated": false,
+  "Contents": [
+    {
+      "Key": "raw/clickstream/dt=2026-07-30/eventos.json.gz",
+      "Size": 4294967296,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "raw/clickstream/dt=2026-07-29/eventos.json.gz",
+      "Size": 3221225472,
+      "StorageClass": "STANDARD"
+    }
+  ]
+}

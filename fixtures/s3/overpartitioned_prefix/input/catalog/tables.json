@@ -1,0 +1,25 @@
+{
+  "tables": [
+    {
+      "database_name": "analytics",
+      "name": "pedidos_por_hora",
+      "storage_descriptor": {
+        "columns": [
+          {
+            "name": "pedido_id",
+            "type": "bigint"
+          }
+        ],
+        "location": "s3://lake/analytics/pedidos_por_hora/"
+      },
+      "partition_keys": [
+        {
+          "name": "dt",
+          "type": "string"
+        }
+      ],
+      "partition_count": 3,
+      "total_size_bytes": 25165824
+    }
+  ]
+}

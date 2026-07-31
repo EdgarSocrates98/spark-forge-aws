@@ -1,0 +1,17 @@
+name: small_files_prefix
+proves: >
+  1500 arquivos Parquet de ~2 MB sob um prefixo de particao: media muito abaixo
+  dos 32 MB do limiar e contagem muito acima dos 1000. SF-PQ-001 dispara. Prova
+  junto que o `_SUCCESS` de 0 byte NAO entra na conta -- contar marcador de
+  controle como arquivo de dados derrubaria a media de qualquer prefixo e faria
+  a regra disparar ate em tabela saudavel.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - s3.analyzed
+  - s3.prefix_summary
+expects_rules:
+  - SF-PQ-001

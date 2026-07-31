@@ -30,6 +30,7 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
 )
+from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.iceberg_metadata import (
@@ -38,9 +39,14 @@ from sparkforge.facts.iceberg_metadata import (
 )
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
+from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
-from sparkforge.facts.terraform import extract_terraform_path, extract_terraform_tree
+from sparkforge.facts.terraform import (
+    extract_terraform_diff,
+    extract_terraform_path,
+    extract_terraform_tree,
+)
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.rules.engine import judge as run_judge
@@ -506,6 +512,95 @@ def analyze_athena_workgroup(
 ) -> dict[str, Any]:
     facts = _extract_athena_workgroup_facts(path)
     return _facts_page(facts, "athena.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze s3-listing
+# --------------------------------------------------------------------------- #
+
+
+def _extract_s3_listing_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com paginas de listagem ou para um arquivo .json:\n"
+            f"    aws s3api list-objects-v2 --bucket <b> --prefix <p> > listing.json\n"
+            f"    sparkforge analyze s3-listing --path listing.json "
+            f"--out .sparkforge/facts_s3.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_s3_listing_tree(target, repo_root=target)
+    return extract_s3_listing_path(target, repo_root=target.parent)
+
+
+def analyze_s3_listing(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_s3_listing_facts(path)
+    return _facts_page(facts, "s3.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze consumers
+# --------------------------------------------------------------------------- #
+
+
+def _extract_consumers_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o inventario declarado de consumidores:\n"
+            f"    sparkforge analyze consumers --path .sparkforge/consumers.yaml "
+            f"--out .sparkforge/facts_consumers.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_consumers_tree(target, repo_root=target)
+    return extract_consumers_path(target, repo_root=target.parent)
+
+
+def analyze_consumers(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_consumers_facts(path)
+    return _facts_page(facts, "env.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze terraform-diff
+# --------------------------------------------------------------------------- #
+
+
+def analyze_terraform_diff(
+    before: str,
+    after: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    before_path = Path(before)
+    after_path = Path(after)
+    for label, target in (("--before", before_path), ("--after", after_path)):
+        if not target.is_dir():
+            raise AdapterError(
+                f"Diretorio nao encontrado para {label}: {target}\n"
+                f"  Aponte para dois estados do mesmo modulo Terraform (dois checkouts,\n"
+                f"  dois `git worktree`, o main e o branch do PR):\n"
+                f"    sparkforge analyze terraform-diff --before ./infra-main "
+                f"--after ./infra-pr",
+                exit_code=2,
+            )
+    facts = extract_terraform_diff(before_path, after_path, repo_root=after_path)
+    return _facts_page(facts, "tf.unresolved", kind, limit, cursor)
 
 
 # --------------------------------------------------------------------------- #

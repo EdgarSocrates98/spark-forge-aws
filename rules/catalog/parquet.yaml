@@ -1,35 +1,40 @@
 # Catálogo de regras — layout Parquet e S3
 #
-# ESTA AREA ESTA PARCIALMENTE DESBLOQUEADA. Duas das cinco regras disparam
-# hoje; tres continuam inertes, e cada uma delas carrega `blocked_on`.
+# ESTA AREA ESTA INTEIRAMENTE DESBLOQUEADA. As cinco regras disparam, e
+# nenhuma carrega `blocked_on`.
 #
-# DISPARAM (dependem de `plan.file_scan`, emitido por
-# `sparkforge/facts/spark_plan.py` -- `sparkforge analyze plan --path <arquivo>`
-# sobre a saida de `df.explain("formatted")`):
+# Dependem de `plan.file_scan`, emitido por `sparkforge/facts/spark_plan.py`
+# (`sparkforge analyze plan --path <arquivo>` sobre a saida de
+# `df.explain("formatted")`):
 #
 #   SF-PQ-002  pruning de particao ausente
 #   SF-PQ-004  pruning de coluna ausente
 #
-# INERTES (dependem de `s3.prefix_summary`, que NENHUM extrator do pacote
-# emite: exigiria um extrator de listagem S3 -- contagem e tamanho de objeto
-# por prefixo):
+# Dependem de `s3.prefix_summary`, emitido por
+# `sparkforge/facts/s3_listing.py` (`sparkforge analyze s3-listing --path
+# <arquivo>` sobre a saida de `aws s3api list-objects-v2`):
 #
-#   SF-PQ-001, SF-PQ-003, SF-PQ-005
+#   SF-PQ-001  small files na entrada
+#   SF-PQ-003  texto comprimido nao splitavel
+#   SF-PQ-005  cardinalidade de particao (com `catalog.table_partitions`)
 #
-# Sem `blocked_on`, `judge` reportaria as tres inertes como `requires_facts`,
-# o que instrui o operador a coletar um artefato -- e nao ha o que coletar. A
-# distincao importa: `requires_facts` significa "dispara assim que voce
-# coletar"; `blocked_on` significa "nao dispara ate alguem construir o
-# extrator". Reportar as duas igual faz o operador esperar por um dado que
-# nao esta a caminho.
+# A distincao que este cabecalho existe para preservar: `requires_facts`
+# significa "dispara assim que voce coletar o artefato"; `blocked_on` significa
+# "nao dispara ate alguem construir o extrator". Reportar as duas igual faz o
+# operador esperar por um dado que nao esta a caminho. Hoje todas as cinco sao
+# do primeiro tipo -- o que falta e sempre coleta, nunca codigo.
 #
 # O caminho inverso e igualmente perigoso e e por isso que este cabecalho foi
-# reescrito junto com o codigo: `blocked_on` que sobrevive ao extrator deixa a
-# regra inerte PARA SEMPRE (o motor pula antes de olhar os facts) enquanto
-# `--show-skipped` afirma que a capacidade nao existe. `judge` continuaria
-# dizendo "falta construir o parser de plano" com o parser rodando ao lado.
+# reescrito junto com o codigo, duas vezes: `blocked_on` que sobrevive ao
+# extrator deixa a regra inerte PARA SEMPRE (o motor pula antes de olhar os
+# facts) enquanto `--show-skipped` afirma que a capacidade nao existe.
 # `tests/test_rules_catalog_reachability.py::test_blocked_on_obsoleto_e_mentira_silenciosa`
 # fecha essa porta; este texto e a metade humana da mesma garantia.
+#
+# ATENCAO ao ler SF-PQ-001 e SF-PQ-003: as measures da listagem so existem
+# quando ela veio COMPLETA. `IsTruncated: true` faz o extrator emitir
+# `s3.unresolved` e nenhum sumario -- contar small files sobre a primeira
+# pagina de um prefixo de milhoes de objetos e pior que nao contar.
 #
 # ATENCAO ao ler SF-PQ-002 contra um plano: `PartitionFilters` vazio NAO prova,
 # sozinho, que a tabela e particionada -- uma tabela sem particao nenhuma
@@ -51,7 +56,6 @@ rules:
   # contar small files a partir de codigo, plano ou event log.
   - id: SF-PQ-001
     category: parquet-layout
-    blocked_on: extrator-de-listagem-s3
     title: Small files na entrada
     requires_facts: [s3.prefix_summary]
     when:
@@ -131,7 +135,6 @@ rules:
   # isso.
   - id: SF-PQ-003
     category: parquet-layout
-    blocked_on: extrator-de-listagem-s3
     title: Arquivo de texto comprimido não splitável na entrada
     requires_facts: [s3.prefix_summary]
     when:
@@ -206,7 +209,6 @@ rules:
   # particao nao decide nada: a metade do catalogo existe, a metade do S3 nao.
   - id: SF-PQ-005
     category: parquet-layout
-    blocked_on: extrator-de-listagem-s3
     title: Cardinalidade de partição inadequada
     requires_facts: [s3.prefix_summary, catalog.table_partitions]
     when:

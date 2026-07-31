@@ -223,7 +223,17 @@ portanto superfície de execução.
 
 O validador de catálogo deve aplicar o schema de `Rule` a todos os arquivos **exceto** `routing.yaml`, que tem o seu.
 
-Regras que dependem de extrator da Fase 1 já podem ser escritas: elas ficam inertes (`requires_facts` não satisfeito) até o extrator existir, e nesse momento passam a valer sem mudança de código. Escrever agora é o caminho — o conhecimento não espera o parser.
+Nenhuma regra do catálogo carrega `blocked_on` hoje: as cinco últimas que
+dependiam de capacidade inexistente — `SF-PQ-001/003/005` (listagem S3),
+`SF-GLUE-005` (diff de Terraform) e `SF-ENV-002` (inventário de consumidores)
+— foram desbloqueadas com os extratores correspondentes. O que falta para uma
+regra disparar é sempre **coleta**, nunca código.
+
+Regra nova que dependa de extrator que ainda não existe pode ser escrita assim
+mesmo: marque `blocked_on: <capacidade>` e ela fica inerte até o extrator
+nascer. `tests/test_rules_catalog_reachability.py` garante as duas pontas —
+kind sem extrator exige `blocked_on`, e `blocked_on` que sobrevive ao extrator
+falha o teste.
 
 ## O que este catálogo não é
 

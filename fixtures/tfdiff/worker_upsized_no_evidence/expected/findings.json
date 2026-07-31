@@ -1,0 +1,114 @@
+[
+  {
+    "rule_id": "SF-GLUE-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Worker maior recomendado sem evidência de limitação de memória",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "after/main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.etl_pedidos"
+    },
+    "evidence": [
+      "f_c2c586",
+      "f_43c937"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Aumentar o worker sem baseline de CPU, heap, disco, spill e distribuição de task é tuning por intuição. As causas mais comuns de lentidão não são resolvidas por capacidade: skew, small files, trabalho no driver, e utilização baixa por superprovisão. Ver knowledge/glue/workers-and-capacity.md secao 2, onde quatro das oito linhas da tabela de decisão têm capacidade como resposta errada.",
+    "proposed_change": [
+      "Coletar os sete números do baseline antes de mudar capacidade.",
+      "Classificar o gargalo por eixo: CPU, memória, disco, skew, driver, I/O.",
+      "Se for memória comprovada, avaliar a série R, que dobra a memória com o mesmo vCPU, antes de subir na série G."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar capacidade sem diagnóstico eleva o custo sem reduzir o runtime."
+    ],
+    "tradeoffs": [
+      "Coletar baseline atrasa a mudança em um ciclo de execução."
+    ],
+    "validation": [
+      "Runtime e DPU-hours antes e depois, em runs de volume comparável.",
+      "glue.driver.workerUtilization antes e depois.",
+      "Spill do stage dominante antes e depois."
+    ],
+    "rollback": [
+      "Restaurar worker_type e number_of_workers anteriores."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://aws.amazon.com/about-aws/whats-new/2025/07/aws-glue-supports-new-workers-larger-memory-intensive-workloads",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-UI-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Subparalelismo — tasks muito abaixo dos cores disponíveis",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "evidence": [
+      "f_a08863"
+    ],
+    "measured": {
+      "task_count": 4,
+      "available_cores": 16
+    },
+    "threshold": {
+      "factor": 0.5
+    },
+    "runtime_scope": {
+      "spark": ">=3.0"
+    },
+    "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
+    "proposed_change": [
+      "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
+      "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer.",
+      "Reduzir o número de workers se o paralelismo real não pode aumentar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar partições em job pequeno cria overhead de agendamento sem ganho."
+    ],
+    "tradeoffs": [
+      "Converter formato de entrada é mudança no produtor",
+      "não no consumidor."
+    ],
+    "validation": [
+      "Contagem de tasks versus cores após a mudança.",
+      "glue.driver.workerUtilization antes e depois.",
+      "Runtime e DPU-hours antes e depois."
+    ],
+    "rollback": [
+      "Reverter configuração de partições e de capacidade."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Fator 0.5 é ponto de partida. O sinal decisivo é workerUtilization, não a contagem isolada."
+      }
+    ]
+  }
+]

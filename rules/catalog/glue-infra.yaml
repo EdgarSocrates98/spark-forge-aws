@@ -162,14 +162,35 @@ rules:
   # a capacidade de coleta. Ver o campo `blocked_on` abaixo.
   - id: SF-GLUE-005
     category: glue-infra
-    blocked_on: extrator-de-diff-terraform
     title: Worker maior recomendado sem evidência de limitação de memória
-    requires_facts: [tf.attribute, spark.stage.spill, spark.executor.memory_usage]
+    # Esta regra tinha DOIS defeitos que o `blocked_on` manteve invisíveis
+    # enquanto ela ficou inerte, e os dois só aparecem quando ela roda:
+    #
+    # 1. `spark.stage.spill` estava em `requires_facts` E em `absent:`. O motor
+    #    exige que todo kind de `requires_facts` esteja presente, então a regra
+    #    era uma contradição — não podia disparar nunca.
+    # 2. Mesmo corrigido o item 1, `absent: spark.stage.spill` continuaria
+    #    errado: o extrator emite esse fact para TODO stage analisado, com zero
+    #    byte inclusive, porque "este stage não derramou" é informação. A
+    #    ausência dele significa "não analisei event log", não "não houve
+    #    spill". E `fact:` casa quando ALGUM fact satisfaz a condição, então
+    #    perguntar por stage também não serve: num job com um stage limpo e
+    #    outro derramando, "existe stage sem spill" é verdadeiro.
+    #
+    # Daí `spark.job.spill_summary`, que responde a pergunta no nível em que
+    # ela é feita: o job inteiro derramou alguma coisa? A sentinela
+    # `spark.log_analyzed` continua exigida para que a resposta "não" só possa
+    # vir de um log que foi realmente lido, e `spark.executor.memory_usage`
+    # também: afirmar que não há limitação de memória sem ter visto uma única
+    # medida de memória é o mesmo erro, um passo adiante.
+    requires_facts:
+      [tf.attribute, spark.log_analyzed, spark.job.spill_summary, spark.executor.memory_usage]
     when:
       all:
         - fact: tf.attribute
           where: {attrs.key: worker_type, attrs.changed: true}
-        - absent: spark.stage.spill
+        - fact: spark.job.spill_summary
+          expr: measures.stages_with_spill == 0
     status: structural
     severity_default: P2
     runtime_scope: {glue: "*"}

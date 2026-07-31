@@ -498,8 +498,17 @@ class TestBlockedOnIsDistinctFromMissingData:
         _, skipped = judge([], [rule()], GLUE_50, return_skipped=True)
         assert skipped[0]["reason"] == "requires_facts"
 
-    def test_the_real_catalog_marks_sf_glue_005_as_blocked(self):
+    def test_the_real_catalog_has_no_blocked_rule_left(self):
+        """Este teste era o inverso: fixava SF-GLUE-005 como bloqueada em
+        `extrator-de-diff-terraform`. O extrator existe agora
+        (`terraform.extract_terraform_diff`), e com ele as cinco ultimas regras
+        inertes do catalogo passaram a disparar.
+
+        A checagem vira uma varredura, e nao volta a citar regra por nome de
+        proposito: o proximo `blocked_on` a aparecer no catalogo tem que ser uma
+        decisao consciente de quem o escreve, e nao herdar a passagem por um
+        teste que so olhava uma regra."""
         from sparkforge.rules.loader import load_catalog
 
-        target = [r for r in load_catalog() if r["id"] == "SF-GLUE-005"]
-        assert target and target[0]["blocked_on"] == "extrator-de-diff-terraform"
+        blocked = {r["id"]: r["blocked_on"] for r in load_catalog() if r.get("blocked_on")}
+        assert blocked == {}, blocked

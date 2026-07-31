@@ -48,7 +48,7 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Eleven extractors, all offline — they read artifacts already on disk and never
+Thirteen extractors, all offline — they read artifacts already on disk and never
 call AWS. Each has a CLI verb and an MCP tool with the same name:
 
 | Artifact | CLI verb | Reads |
@@ -62,6 +62,9 @@ call AWS. Each has a CLI verb and an MCP tool with the same name:
 | SQL | `analyze sql` | `*.sql` and `spark.sql(...)` literals |
 | Athena workgroup | `analyze athena-workgroup` | `get_work_group` dump |
 | Call graph | `analyze call-graph` | derived from PySpark facts |
+| S3 object listing | `analyze s3-listing` | `s3api list-objects-v2` dump |
+| Table consumers | `analyze consumers` | declared inventory, versioned in the repo |
+| Terraform change | `analyze terraform-diff` | two states of the same module |
 | Runtime | `runtime detect` | every source above, cross-checked |
 | Correlation | `fuse` | facts from several extractors at once |
 

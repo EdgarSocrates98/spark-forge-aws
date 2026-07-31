@@ -40,10 +40,28 @@ EMITTED_KINDS = frozenset(
         "spark.stage.task_count",
         "spark.cluster.cores",
         "spark.executor.lost",
+        "spark.executor.memory_usage",
+        "spark.job.spill_summary",
         "spark.unresolved",
         "spark.log_analyzed",
     }
 )
+
+# Metricas de memoria de `SparkListenerStageExecutorMetrics` -> nome da measure.
+# So as de MEMORIA: o evento carrega dezenas de campos (GC, disco, shuffle) e
+# copiar todos transformaria o fact num despejo do evento em vez de uma
+# observacao com significado. `ProcessTreePythonRSSMemory` esta aqui porque em
+# job PySpark a memoria do interpretador Python vive FORA do heap da JVM: um
+# executor pode morrer por limite de container com heap folgado, e sem esta
+# measure o diagnostico apontaria para o lugar errado.
+_EXECUTOR_MEMORY_METRICS: dict[str, str] = {
+    "JVMHeapMemory": "peak_jvm_heap_bytes",
+    "JVMOffHeapMemory": "peak_jvm_offheap_bytes",
+    "OnHeapExecutionMemory": "peak_onheap_execution_bytes",
+    "OffHeapExecutionMemory": "peak_offheap_execution_bytes",
+    "OnHeapStorageMemory": "peak_onheap_storage_bytes",
+    "ProcessTreePythonRSSMemory": "peak_python_rss_bytes",
+}
 
 # Assinaturas de OOM de heap JVM no texto livre de "Removed Reason". Presenca
 # de qualquer uma classifica o executor perdido como heap_oom_in_log=True.
@@ -272,6 +290,7 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
     # contra contagem de tasks (SF-UI-006): a pergunta e "quantos cores o job
     # chegou a ter disponiveis", nao "quantos sobraram no ultimo instante".
     active_executor_cores: dict[str, int] = {}
+    executor_peak_memory: dict[str, dict[str, int]] = {}
     peak_cores = 0
     peak_executor_count = 0
     app_id = ""
@@ -356,6 +375,21 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
                     )
                 )
 
+            elif event == "SparkListenerStageExecutorMetrics":
+                # Pico de memoria por executor, por stage. E a unica fonte no
+                # event log que diz quanto de heap o executor REALMENTE usou --
+                # `spark.executor.lost` diz que ele morreu, nao o quao perto do
+                # limite os que sobreviveram chegaram. SF-GLUE-005 depende
+                # disto para separar "precisa de worker maior" de "trocaram o
+                # worker sem evidencia nenhuma".
+                executor_id = str(event_obj["Executor ID"])
+                metrics = event_obj.get("Executor Metrics") or {}
+                peaks = executor_peak_memory.setdefault(executor_id, {})
+                for source, name in _EXECUTOR_MEMORY_METRICS.items():
+                    value = metrics.get(source)
+                    if isinstance(value, int | float) and not isinstance(value, bool):
+                        peaks[name] = max(peaks.get(name, 0), int(value))
+
             elif event == "SparkListenerTaskEnd":
                 stage_id = int(event_obj["Stage ID"])
                 task_info = event_obj.get("Task Info") or {}
@@ -399,6 +433,59 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
         declared = declared_task_counts.get(stage_id)
         facts.extend(
             _stage_facts(stage_id, stage_name, acc, declared, peak_cores or None, provenance)
+        )
+
+    # Visao de JOB do spill, alem da de stage.
+    #
+    # `spark.stage.spill` e emitido para todo stage analisado, inclusive com
+    # zero byte -- e informacao legitima ("este stage nao derramou"). O efeito
+    # colateral e que `absent: spark.stage.spill` nunca vale num log de
+    # verdade, entao nao ha como uma regra perguntar "o job inteiro derramou
+    # alguma coisa?" com o vocabulario por stage: `fact:` casa se ALGUM fact
+    # satisfaz a condicao, e um job com um stage limpo e outro derramando
+    # satisfaria "existe stage sem spill". SF-GLUE-005 precisa exatamente da
+    # pergunta oposta, e por isso ela vive aqui, num unico fact por job.
+    total_memory_spill = 0
+    total_disk_spill = 0
+    stages_with_spill = 0
+    for fact in facts:
+        if fact.kind != "spark.stage.spill":
+            continue
+        memory_spill = int(fact.measures.get("memory_spill_bytes") or 0)
+        disk_spill = int(fact.measures.get("disk_spill_bytes") or 0)
+        total_memory_spill += memory_spill
+        total_disk_spill += disk_spill
+        if memory_spill or disk_spill:
+            stages_with_spill += 1
+
+    facts.append(
+        Fact(
+            kind="spark.job.spill_summary",
+            subject={"type": "job_run", "symbol": app_id},
+            measures={
+                "stages_with_spill": stages_with_spill,
+                "total_memory_spill_bytes": total_memory_spill,
+                "total_disk_spill_bytes": total_disk_spill,
+            },
+            provenance=provenance,
+        )
+    )
+
+    # Um fact por executor, com o pico de cada metrica ao longo de todos os
+    # stages. Agregar tudo num unico fact do job esconderia o caso que mais
+    # importa: um executor no limite entre dez folgados vira media confortavel,
+    # e e ele que vai morrer.
+    for executor_id, peaks in sorted(executor_peak_memory.items()):
+        if not peaks:
+            continue
+        facts.append(
+            Fact(
+                kind="spark.executor.memory_usage",
+                subject={"type": "job_run", "symbol": executor_id},
+                measures=dict(sorted(peaks.items())),
+                attrs={"executor_id": executor_id},
+                provenance=provenance,
+            )
         )
 
     facts.append(
