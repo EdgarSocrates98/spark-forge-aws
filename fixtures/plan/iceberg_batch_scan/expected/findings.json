@@ -1,1 +1,55 @@
-[]
+[
+  {
+    "rule_id": "SF-PLAN-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Plano não-final do AQE — estratégia e partições ainda podem mudar",
+    "severity": "P4",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 32,
+      "symbol": "(5) AdaptiveSparkPlan",
+      "node_id": 5,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "evidence": [
+      "f_c30bcc"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=3.0"
+    },
+    "explanation": "`AdaptiveSparkPlan isFinalPlan=false` significa que este plano é o inicial: o AQE ainda vai reotimizá-lo com estatísticas de runtime. A documentação do Spark lista o que ele troca em execução -- coalescing de partições de shuffle, split de partição enviesada, e conversão de sort-merge join em broadcast join. `EXPLAIN` não executa a query, então o plano exibido é sempre o inicial. Consequência prática, e o motivo desta regra existir: contagem de partições e estratégia de join lidas daqui não são o que vai rodar. Recomendar broadcast manual contra um SortMergeJoin visto neste plano é recomendar o que o AQE já faria sozinho. P4 porque não é defeito do job -- é um limite da evidência, e o relatório precisa dizer isso em vez de deixar o operador tratar plano inicial como final.",
+    "proposed_change": [
+      "Para afirmar estratégia de join ou número de partições, usar o plano final da Spark UI (aba SQL, query concluída) ou o event log, não este.",
+      "Reservar recomendação de join hint para depois de confirmar a estratégia no plano final."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [],
+    "tradeoffs": [
+      "Obter o plano final exige executar o job, o que custa tempo e DPU."
+    ],
+    "validation": [
+      "Conferir na Spark UI se o AdaptiveSparkPlan da query concluída mostra isFinalPlan=true."
+    ],
+    "rollback": [],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-performance-tuning.html",
+        "retrieved": "2026-07-31",
+        "note": "spark.sql.adaptive.enabled default true desde o Spark 3.2.0; lista as reotimizações de runtime, incluindo converter sort-merge join em broadcast join."
+      },
+      {
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html",
+        "retrieved": "2026-07-31",
+        "note": "AQE default no Glue 4.0; no Glue 3.0 exige spark.sql.adaptive.enabled=true."
+      }
+    ]
+  }
+]

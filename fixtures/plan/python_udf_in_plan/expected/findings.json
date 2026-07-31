@@ -1,1 +1,114 @@
-[]
+[
+  {
+    "rule_id": "SF-PLAN-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Python UDF pickled sobrevive até o plano físico",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 23,
+      "symbol": "(3) BatchEvalPython",
+      "node_id": 3,
+      "operator": "BatchEvalPython",
+      "relation": ""
+    },
+    "evidence": [
+      "f_1516d9"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "`BatchEvalPython` no plano é a UDF Python padrão, serializada com pickle entre a JVM e o processo Python worker, linha a linha. A documentação da AWS mede o mesmo cálculo nas três formas: 3,20 s com UDF Python padrão, 0,59 s com pandas_udf (`ArrowEvalPython`) e 0,087 s com Spark SQL nativo. O nó também interrompe o whole-stage codegen e torna a expressão opaca ao otimizador, o que elimina pushdown de predicado através dela. Diferença para SF-PY-001: aquela lê o fonte e é `structural` -- a UDF pode estar num ramo que o Catalyst descartou. Esta lê o plano e é `confirmed`: o nó está no caminho que vai executar. Quando as duas disparam, a segunda é a evidência forte.",
+    "proposed_change": [
+      "Substituir por função Spark SQL nativa equivalente; é a forma mais rápida das três medidas pela AWS.",
+      "Se a lógica for vetorizável sobre batch, migrar para `pandas_udf`, que aparece como ArrowEvalPython.",
+      "Se a UDF for inevitável, isolá-la depois dos filtros e projeções, para que processe o menor número de linhas possível."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reescrita nativa pode divergir da UDF no tratamento de null, de tipo em borda e de precisão de ponto flutuante.",
+      "pandas_udf muda a granularidade de execução para batch; lógica que dependa de estado por linha quebra."
+    ],
+    "tradeoffs": [
+      "A expressão nativa equivalente costuma ficar mais verbosa que a UDF."
+    ],
+    "validation": [
+      "Comparar resultado linha a linha numa amostra que inclua nulls e valores de borda.",
+      "Contagem total e contagem de nulls da coluna resultado idênticas.",
+      "Reextrair o plano e confirmar que o nó BatchEvalPython desapareceu."
+    ],
+    "rollback": [
+      "Reverter o commit; a UDF original não depende de mudança de infraestrutura."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html",
+        "retrieved": "2026-07-31",
+        "note": "Mede 3,20 s / 0,59 s / 0,087 s e mostra BatchEvalPython e ArrowEvalPython no plano."
+      },
+      {
+        "url": "https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html",
+        "retrieved": "2026-07-31"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-PLAN-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "UDF vetorizada no plano — nativo ainda é mais rápido",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 27,
+      "symbol": "(4) ArrowEvalPython",
+      "node_id": 4,
+      "operator": "ArrowEvalPython",
+      "relation": ""
+    },
+    "evidence": [
+      "f_6a6eca"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "`ArrowEvalPython` é `pandas_udf`: transferência colunar por Arrow em vez de pickle linha a linha. É a forma correta quando uma UDF é necessária, e por isso a severidade é baixa. O achado existe porque o runtime Python continua no caminho: na medição da AWS, 0,59 s contra 0,087 s do Spark SQL nativo. Não é defeito; é um candidato a ganho que só vale investigar depois dos P0-P2.",
+    "proposed_change": [
+      "Verificar se a lógica é expressável com funções nativas ou higher-order functions sobre array/map.",
+      "Se não for, manter — pandas_udf já é a escolha certa."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reescrita nativa pode divergir no tratamento de null e de tipo em borda."
+    ],
+    "tradeoffs": [
+      "Trocar pandas_udf por expressão nativa pode reduzir muito a legibilidade para ganho pequeno se a UDF não estiver no caminho quente."
+    ],
+    "validation": [
+      "Comparar resultado linha a linha numa amostra com nulls e bordas.",
+      "Medir antes e depois; sem medição, a troca não se justifica nesta severidade."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html",
+        "retrieved": "2026-07-31"
+      }
+    ]
+  }
+]

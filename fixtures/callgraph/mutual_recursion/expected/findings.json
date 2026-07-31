@@ -1,1 +1,63 @@
-[]
+[
+  {
+    "rule_id": "SF-CG-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Ciclo de chamadas contendo trabalho Spark",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 16,
+      "col": 0,
+      "symbol": "processa_lote",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_ab98a8"
+    ],
+    "measured": {
+      "length": 2,
+      "spark_work_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Um ciclo no grafo de chamadas é recursão -- direta ou mútua, que é a forma que passa despercebida em revisão, porque nenhuma das funções envolvidas parece recursiva sozinha. Quando esse ciclo contém read, write, action ou cadeia Spark, o número de jobs submetidos passa a depender da profundidade da recursão, que depende do dado. Spark é lazy: cada action reexecuta o lineage a partir do último ponto materializado, então a recursão não repete só a chamada, repete o recomputo. O sintoma típico não é erro -- é o job que roda em minutos com o volume de teste e não termina com o de produção. `measures.length` é o tamanho do ciclo e `attrs.functions` nomeia as funções na ordem, que é o que permite fechar o laço na leitura.",
+    "proposed_change": [
+      "Confirmar se a recursão tem condição de parada que dependa de dado, e qual é a profundidade máxima possível com o volume de produção.",
+      "Se a recursão existe para processar níveis de uma hierarquia, substituir por iteração com número de níveis conhecido, materializando o resultado de cada nível antes do próximo.",
+      "Se o trabalho Spark dentro do ciclo é o mesmo em toda iteração, movê-lo para fora do ciclo."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Trocar recursão por iteração com limite fixo muda o resultado se algum dado exceder o número de níveis assumido."
+    ],
+    "tradeoffs": [
+      "Materializar por nível adiciona escrita intermediária e custo de I/O que a versão recursiva não tem."
+    ],
+    "validation": [
+      "Contagem total do resultado antes e depois.",
+      "Número de jobs Spark submetidos antes e depois, na Spark UI.",
+      "Executar com o volume de produção, não com o de teste — é a diferença que esconde o problema."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html",
+        "retrieved": "2026-07-31",
+        "note": "Secao 'Remove unneeded Spark actions': cada RDD transformado pode ser recomputado a cada action."
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A severidade P1 é decisão de campo. Não há measure que distinga recursão de profundidade 2 de recursão sobre hierarquia profunda; quando houver, converter para severity_by sobre measures.length."
+      }
+    ]
+  }
+]

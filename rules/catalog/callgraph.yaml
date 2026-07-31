@@ -1,0 +1,86 @@
+# Catálogo de regras — grafo de chamadas da biblioteca
+# Consome os facts de sparkforge/facts/call_graph.py, que são derivados de outros
+# facts (pyspark.callgraph_edge e os kinds de trabalho Spark), não de artefato bruto.
+#
+# Estas regras respondem à pergunta que nenhuma outra área responde: onde, na
+# ESTRUTURA do código, o trabalho Spark está sendo disparado. Uma action isolada é
+# barata; a mesma action dentro de um ciclo de chamadas é ilimitada. `SF-PY-004`
+# pega action dentro de `for`/`while` no mesmo arquivo; SF-CG-001 pega o caso que
+# ela não vê, porque o laço é feito de chamadas entre funções.
+
+catalog_version: 1
+schema_version: 1
+area: SF-CG
+retrieved: 2026-07-31
+
+rules:
+
+  - id: SF-CG-001
+    category: call-graph
+    title: Ciclo de chamadas contendo trabalho Spark
+    requires_facts: [callgraph.cycle]
+    when:
+      same_subject: true
+      all:
+        - fact: callgraph.cycle
+          where: {attrs.contains_spark_work: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Um ciclo no grafo de chamadas é recursão -- direta ou mútua, que é a forma que
+      passa despercebida em revisão, porque nenhuma das funções envolvidas parece
+      recursiva sozinha. Quando esse ciclo contém read, write, action ou cadeia Spark, o
+      número de jobs submetidos passa a depender da profundidade da recursão, que
+      depende do dado. Spark é lazy: cada action reexecuta o lineage a partir do último
+      ponto materializado, então a recursão não repete só a chamada, repete o
+      recomputo. O sintoma típico não é erro -- é o job que roda em minutos com o volume
+      de teste e não termina com o de produção.
+      `measures.length` é o tamanho do ciclo e `attrs.functions` nomeia as funções na
+      ordem, que é o que permite fechar o laço na leitura.
+    proposed_change:
+      - Confirmar se a recursão tem condição de parada que dependa de dado, e qual é a profundidade máxima possível com o volume de produção.
+      - Se a recursão existe para processar níveis de uma hierarquia, substituir por iteração com número de níveis conhecido, materializando o resultado de cada nível antes do próximo.
+      - Se o trabalho Spark dentro do ciclo é o mesmo em toda iteração, movê-lo para fora do ciclo.
+    risks:
+      - Trocar recursão por iteração com limite fixo muda o resultado se algum dado exceder o número de níveis assumido.
+    tradeoffs:
+      - Materializar por nível adiciona escrita intermediária e custo de I/O que a versão recursiva não tem.
+    validation:
+      - Contagem total do resultado antes e depois.
+      - Número de jobs Spark submetidos antes e depois, na Spark UI.
+      - Executar com o volume de produção, não com o de teste — é a diferença que esconde o problema.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html", retrieved: 2026-07-31, note: "Secao 'Remove unneeded Spark actions': cada RDD transformado pode ser recomputado a cada action."}
+      - {origin: field-heuristic, note: "A severidade P1 é decisão de campo. Não há measure que distinga recursão de profundidade 2 de recursão sobre hierarquia profunda; quando houver, converter para severity_by sobre measures.length."}
+
+# Uma regra que NAO foi escrita, e por que -- `callgraph.summary` continua sem
+# regra que o consuma, de proposito.
+#
+# A tentativa foi "funcoes inalcancaveis = codigo morto", sobre
+# `measures.unreachable_function_count`. A medida NAO significa isso. Em
+# `call_graph.py`, `nodes` contem so funcoes que aparecem em alguma aresta;
+# `entrypoints` sao os nos com zero chamadores; e o BFS parte de TODOS eles.
+# Logo:
+#
+#   - funcao que nao chama ninguem e nao e chamada por ninguem (o codigo morto
+#     tipico) nao entra no grafo, e nao conta como inalcancavel;
+#   - funcao com zero chamadores vira entrypoint, e entrypoint e sempre
+#     alcancavel a partir de si mesmo.
+#
+# Sobra um unico caso: um componente ciclico isolado, em que todo membro tem
+# chamador mas nenhum entrypoint chega ate ele. Isso ja e SF-CG-001 quando
+# contem trabalho Spark, e uma fixture para prova-lo dispararia as duas regras
+# ao mesmo tempo.
+#
+# Escrever a regra assim mesmo daria um `explanation` que descreve uma coisa e
+# um `when` que mede outra -- o defeito exato de SF-GLUE-005, que exigia
+# `spark.stage.spill` presente E ausente e por isso nunca podia disparar. Um
+# achado com explicacao errada e pior que achado nenhum: o operador age sobre a
+# explicacao, nao sobre o predicado.
+#
+# Para detectar codigo morto de verdade seria preciso emitir um no por funcao
+# DEFINIDA, com ou sem aresta, o que e mudanca no extrator, nao no catalogo.
+# Enquanto isso nao existir, `callgraph.summary` cumpre o papel de sentinela e
+# de forma do grafo para o agente, que e o mesmo papel dos kinds `*_analyzed`.

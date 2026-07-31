@@ -1,6 +1,6 @@
 {
   "name": "sparkforge-aws",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Analise deterministica de jobs AWS Glue PySpark: extracao de facts via AST estatico, julgamento contra um catalogo de regras versionado, e um ciclo de vida de case que atravessa sessoes (Devin, Claude Code, CI) via .sparkforge/case.yaml.",
   "author": {
     "name": "SparkForge AWS"

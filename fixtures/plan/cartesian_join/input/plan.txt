@@ -1,0 +1,43 @@
+== Physical Plan ==
+AdaptiveSparkPlan (7)
++- * Project (6)
+   +- CartesianProduct (5)
+      :- * Filter (2)
+      :  +- Scan parquet curated.pedidos (1)
+      +- BroadcastNestedLoopJoin BuildRight (4)
+         +- Scan parquet curated.faixas_frete (3)
+
+
+(1) Scan parquet curated.pedidos
+Output [3]: [pedido_id#1, valor#2, dt#3]
+Format: parquet
+Location: InMemoryFileIndex(1 paths)[s3://lake/curated/pedidos]
+PartitionFilters: [isnotnull(dt#3), (dt#3 = 2026-07-30)]
+PushedFilters: [IsNotNull(valor)]
+ReadSchema: struct<pedido_id:bigint,valor:decimal(10,2),dt:string>
+
+(2) Filter [codegen id : 1]
+Input [3]: [pedido_id#1, valor#2, dt#3]
+Condition : isnotnull(valor#2)
+
+(3) Scan parquet curated.faixas_frete
+Output [3]: [faixa_id#20, valor_min#21, valor_max#22]
+Format: parquet
+Location: InMemoryFileIndex(1 paths)[s3://lake/curated/faixas_frete]
+ReadSchema: struct<faixa_id:bigint,valor_min:decimal(10,2),valor_max:decimal(10,2)>
+
+(4) BroadcastNestedLoopJoin
+Join type: Inner
+Join condition: ((valor#2 >= valor_min#21) AND (valor#2 <= valor_max#22))
+
+(5) CartesianProduct
+Join type: Inner
+Join condition: None
+
+(6) Project [codegen id : 3]
+Output [2]: [pedido_id#1, faixa_id#20]
+Input [6]: [pedido_id#1, valor#2, dt#3, faixa_id#20, valor_min#21, valor_max#22]
+
+(7) AdaptiveSparkPlan
+Output [2]: [pedido_id#1, faixa_id#20]
+Arguments: isFinalPlan=true
