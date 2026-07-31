@@ -1187,6 +1187,92 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_s3_listing": {
+        "description": (
+            "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
+            "p95 e maximo de bytes por prefixo, agrupados por (formato, compressao). "
+            "NAO chama a API da AWS -- so le o JSON ja salvo em disco. Desbloqueia "
+            "SF-PQ-001 (small files), SF-PQ-003 (texto gzip nao splitavel) e, junto "
+            "com `sparkforge_analyze_catalog_schema`, SF-PQ-005 (cardinalidade de "
+            "particao). Listagem com `IsTruncated: true` NAO produz sumario: os "
+            "numeros seriam de uma pagina apresentada como total, entao vira "
+            "`s3.unresolved` com `reason: truncated_listing`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo .json ou diretorio com paginas da listagem.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_consumers": {
+        "description": (
+            "Extrai facts do inventario DECLARADO de consumidores de tabela "
+            "(`.sparkforge/consumers.yaml`, versionado com o repositorio). Unico "
+            "extrator do pacote que le um arquivo escrito por uma pessoa, e de "
+            "proposito: quem consome uma tabela nao esta no codigo, no plano nem no "
+            "event log -- e conhecimento da organizacao. Desbloqueia SF-ENV-002 (a "
+            "tabela Iceberg em format V3 que o Athena nao le). Tabela ausente do "
+            "inventario nao produz fact: ausencia de declaracao nao e declaracao de "
+            "ausencia."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo .yaml do inventario, ou diretorio com varios.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_terraform_diff": {
+        "description": (
+            "Compara dois estados de um modulo Terraform (dois checkouts, dois "
+            "`git worktree`, o main e o branch do PR) e devolve os facts do lado "
+            "DEPOIS, com `attrs.changed` e `attrs.previous_value` no que mudou. Nao "
+            "roda terraform: le o HCL, que e o que o revisor do PR ve. Desbloqueia "
+            "SF-GLUE-005, que pergunta se alguem aumentou o worker sem evidencia de "
+            "pressao de memoria -- e por isso exige tambem o event log do run."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["before", "after"],
+            "properties": {
+                "before": {"type": "string", "description": "Diretorio do estado anterior."},
+                "after": {"type": "string", "description": "Diretorio do estado proposto."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts do lado depois, anotados com o que mudou, ou erro se um path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_call_graph": {
         "description": (
             "Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA "
@@ -1611,6 +1697,34 @@ def _h_analyze_sql(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_s3_listing(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_s3_listing(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_consumers(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_consumers(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_analyze_terraform_diff(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_terraform_diff(
+        args["before"],
+        args["after"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_analyze_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_athena_workgroup(
         args["path"],
@@ -1698,6 +1812,9 @@ _HANDLERS = {
     "sparkforge_analyze_iceberg": _h_analyze_iceberg,
     "sparkforge_analyze_sql": _h_analyze_sql,
     "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
+    "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
+    "sparkforge_analyze_consumers": _h_analyze_consumers,
+    "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
     "sparkforge_analyze_call_graph": _h_analyze_call_graph,
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,

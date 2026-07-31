@@ -88,6 +88,28 @@ limpa resolveria para 2.x e o servidor quebraria no import — nos dois
 transportes. `tests/test_adapters_mcp.py` constrói o servidor e o app ASGI de
 verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
+### Extratores desbloqueados na varredura final
+
+As cinco últimas regras inertes do catálogo passaram a disparar, e com elas
+três extratores novos:
+
+```bash
+# small files, gzip não splitável, cardinalidade de partição
+aws s3api list-objects-v2 --bucket lake --prefix analytics/pedidos/ > listing.json
+sparkforge analyze s3-listing --path listing.json
+
+# quem consome a tabela — arquivo declarado, versionado com o repositório
+sparkforge analyze consumers --path .sparkforge/consumers.yaml
+
+# o que mudou entre dois estados do mesmo módulo Terraform
+sparkforge analyze terraform-diff --before ./infra-main --after ./infra-pr
+```
+
+Nenhum deles chama a AWS: o primeiro lê o dump que você coletou, o segundo lê
+um arquivo que a sua organização escreve, o terceiro lê HCL de dois
+diretórios. `rules/catalog/` não tem mais nenhuma regra com `blocked_on` — o
+que falta para uma regra disparar é sempre coleta, nunca código.
+
 ### Fluxo de handoff
 
 `sparkforge handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir

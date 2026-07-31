@@ -38,6 +38,26 @@
     }
   },
   {
+    "id": "f_dbc14f",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0001"
+    },
+    "measures": {
+      "stages_with_spill": 1,
+      "total_memory_spill_bytes": 50000000,
+      "total_disk_spill_bytes": 300000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_dd9072",
     "schema_version": 1,
     "kind": "spark.log_analyzed",

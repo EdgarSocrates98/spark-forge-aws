@@ -1,0 +1,64 @@
+[
+  {
+    "rule_id": "SF-PQ-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Arquivo de texto comprimido não splitável na entrada",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/raw/clickstream/ [text/gzip]"
+    },
+    "evidence": [
+      "f_901d11"
+    ],
+    "measured": {
+      "file_count": 2,
+      "total_bytes": 7516192768,
+      "avg_file_bytes": 3758096384.0,
+      "min_file_bytes": 3221225472,
+      "p50_file_bytes": 4294967296,
+      "p95_file_bytes": 4294967296,
+      "max_file_bytes": 4294967296
+    },
+    "threshold": {
+      "min_bytes": 1073741824
+    },
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Um arquivo de texto gzip é sempre uma única task, qualquer que seja o tamanho. Um csv.gz de 20GB é uma task de 20GB, e nenhum aumento de paralelismo ou de workers ajuda. É a causa clássica de poucas tasks muito longas no Spark UI, e é frequentemente diagnosticada como falta de capacidade. Dentro do Parquet a compressão é por página e não afeta a splitabilidade; o problema é exclusivo de arquivos de texto comprimidos.",
+    "proposed_change": [
+      "Converter a entrada para Parquet, o que resolve splitabilidade e pruning de coluna ao mesmo tempo.",
+      "Se a conversão não é possível, dividir os arquivos na origem em pedaços menores.",
+      "Se nada é possível, reconhecer o teto de paralelismo e reduzir os workers ociosos."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Conversão é mudança no produtor do dado",
+      "fora do controle de quem consome."
+    ],
+    "tradeoffs": [
+      "Uma etapa de conversão adiciona custo e latência",
+      "e reduz o custo de todas as leituras seguintes."
+    ],
+    "validation": [
+      "Contagem de tasks do stage de leitura antes e depois.",
+      "glue.driver.workerUtilization antes e depois.",
+      "Runtime e DPU-hours antes e depois.",
+      "Contagem total de linhas idêntica após a conversão."
+    ],
+    "rollback": [
+      "Manter a origem intacta e reverter o consumo para os arquivos originais."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Não splitabilidade de gzip em arquivo de texto é propriedade do codec, não configurável."
+      }
+    ]
+  }
+]

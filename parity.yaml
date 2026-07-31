@@ -103,6 +103,36 @@ capabilities:
       devin_cli: [mcp, cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract facts from an S3 object listing
+    tools: [sparkforge_analyze_s3_listing]
+    cli: [analyze s3-listing]
+    knowledge: [knowledge/storage/parquet-layout.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from the declared table consumer inventory
+    tools: [sparkforge_analyze_consumers]
+    cli: [analyze consumers]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compare two Terraform states and mark what changed
+    tools: [sparkforge_analyze_terraform_diff]
+    cli: [analyze terraform-diff]
+    knowledge: [knowledge/glue/workers-and-capacity.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
   - name: derive a call graph and Spark work reachability from facts
     tools: [sparkforge_analyze_call_graph]
     cli: [analyze call-graph]

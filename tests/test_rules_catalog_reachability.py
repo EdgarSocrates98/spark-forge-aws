@@ -27,11 +27,13 @@ from sparkforge.facts import (
     athena_workgroup,
     call_graph,
     catalog_schema,
+    consumers,
     event_log,
     fusion,
     iceberg_metadata,
     pyspark_ast,
     runtime_detect,
+    s3_listing,
     spark_plan,
     sql_literal,
     terraform,
@@ -42,11 +44,13 @@ EXTRACTORS = (
     athena_workgroup,
     call_graph,
     catalog_schema,
+    consumers,
     event_log,
     fusion,
     iceberg_metadata,
     pyspark_ast,
     runtime_detect,
+    s3_listing,
     spark_plan,
     sql_literal,
     terraform,
@@ -174,16 +178,14 @@ class TestAbsentSemSameSubjectSeJustifica:
             "correlaciona Terraform com codigo Python; a pergunta e sobre o "
             "codigo-base inteiro, e `same_subject` faria a regra nunca disparar."
         ),
-        # A pergunta e "houve spill em ALGUM stage deste run?". Spill em qualquer
-        # stage ja justifica o worker maior, entao a ausencia precisa mesmo ser
-        # verificada contra o run inteiro. O subject de `tf.attribute` e um
-        # recurso e o de `spark.stage.spill` e um stage -- nunca coincidem.
-        # (Hoje `blocked_on: extrator-de-diff-terraform`; a justificativa vale
-        # igualmente quando ela for desbloqueada.)
-        "SF-GLUE-005": (
-            "ausencia de spill e propriedade do run inteiro, nao de um recurso; "
-            "subjects de Terraform e de stage Spark nunca coincidem."
-        ),
+        # SF-GLUE-005 saiu desta lista ao ser desbloqueada. A isencao existia
+        # para justificar `absent: spark.stage.spill` sem `same_subject`, e
+        # desbloquear a regra mostrou que o `absent:` era errado por um motivo
+        # mais profundo: o extrator emite `spark.stage.spill` para todo stage
+        # analisado, com zero byte inclusive, entao a ausencia nunca significa
+        # "nao houve spill" -- significa "nao analisei event log". A regra
+        # passou a perguntar no nivel certo, com `spark.job.spill_summary`, e
+        # com isso nao usa mais `absent:` nenhum.
     }
 
     @pytest.mark.parametrize("rule", RULES, ids=RULE_IDS)

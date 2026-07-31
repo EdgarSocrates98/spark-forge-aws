@@ -794,3 +794,90 @@ def extract_terraform_tree(root: Path, repo_root: Path | None = None) -> list[Fa
                 )
             )
     return sort_facts(facts)
+
+
+def _attribute_index(facts: list[Fact]) -> dict[tuple[str, str, str], Any]:
+    """`(recurso, bloco, chave) -> valor` dos `tf.attribute` literais.
+
+    A chave NAO inclui arquivo nem linha: mover o recurso de `main.tf` para
+    `glue.tf`, ou empurrar o bloco dez linhas para baixo, nao e mudanca de
+    configuracao -- e seria lida como uma se a identidade do atributo
+    dependesse da localizacao.
+    """
+    index: dict[tuple[str, str, str], Any] = {}
+    for fact in facts:
+        if fact.kind != "tf.attribute":
+            continue
+        symbol = fact.subject.get("symbol", "")
+        key = fact.attrs.get("key", "")
+        block = fact.attrs.get("block", "")
+        index[(symbol, block, key)] = fact.attrs.get("value")
+    return index
+
+
+def extract_terraform_diff(
+    before: Path, after: Path, repo_root: Path | None = None
+) -> list[Fact]:
+    """Facts do lado DEPOIS, anotados com o que mudou em relacao ao ANTES.
+
+    Recebe dois diretorios -- dois checkouts, dois `git worktree`, o `main` e o
+    branch do PR -- e nao a saida de `terraform plan`: rodar terraform exige
+    backend e credencial, e o nucleo deste pacote e offline. O preco e conhecido
+    e esta declarado aqui: valor que vem de variavel ou de modulo aparece como
+    `tf.unresolved` nos dois lados e nao entra na comparacao. O diff cobre o que
+    esta escrito no HCL, que e o que o revisor do PR ve.
+
+    So os facts do lado DEPOIS voltam. Devolver os dois lados faria toda regra
+    existente contar cada recurso duas vezes -- SF-GLUE-002, por exemplo,
+    acusaria observabilidade ausente no estado antigo, que ninguem pode mais
+    consertar.
+
+    `attrs.changed` e emitido em TODO `tf.attribute` deste caminho, `false`
+    inclusive. Marcar so os alterados tornaria indistinguivel "nao mudou" de
+    "esta extracao nao sabe se mudou", que e o estado dos facts do
+    `extract_terraform_tree` normal -- e uma regra com `where: {changed: true}`
+    nunca deve casar por acidente num fact que nao veio de um diff.
+    """
+    # Cada lado e ancorado na PROPRIA raiz. O lado "antes" costuma estar fora
+    # da arvore do "depois" -- outro checkout, outro worktree -- e ancora-lo em
+    # `repo_root` levanta `ValueError: is not in the subpath of`. Os paths do
+    # lado antigo nunca aparecem no resultado: eles so alimentam o indice de
+    # comparacao, cuja chave e (recurso, bloco, atributo), sem arquivo.
+    before_index = _attribute_index(extract_terraform_tree(before, before))
+    after_facts = extract_terraform_tree(after, repo_root or after)
+
+    annotated: list[Fact] = []
+    for fact in after_facts:
+        if fact.kind != "tf.attribute":
+            annotated.append(fact)
+            continue
+
+        identity = (
+            fact.subject.get("symbol", ""),
+            fact.attrs.get("block", ""),
+            fact.attrs.get("key", ""),
+        )
+        attrs = dict(fact.attrs)
+        if identity in before_index:
+            previous = before_index[identity]
+            attrs["changed"] = previous != fact.attrs.get("value")
+            if attrs["changed"]:
+                attrs["previous_value"] = previous
+        else:
+            # Atributo que nao existia antes. E mudanca, e o valor anterior nao
+            # e `None` nem `""` -- e ausencia, e `previous_value` fica de fora
+            # em vez de fingir um valor que nunca existiu.
+            attrs["changed"] = True
+            attrs["previously_absent"] = True
+
+        annotated.append(
+            Fact(
+                kind=fact.kind,
+                subject=fact.subject,
+                measures=fact.measures,
+                attrs=attrs,
+                provenance=fact.provenance,
+            )
+        )
+
+    return sort_facts(annotated)

@@ -1,0 +1,24 @@
+name: v3_with_athena_consumer
+proves: >
+  A armadilha mais cara documentada em `knowledge/glue/runtime-matrix.md`
+  secao 3, inteira: tabela Iceberg em format V3 (so o Glue 5.1 escreve) COM
+  consumo declarado por Athena (que nao le V3). SF-ENV-002 dispara em P0, e P0
+  e a severidade certa -- o job que migrou continua verde, e quem quebra e o
+  dashboard do outro time, dias depois, sem ninguem ligar uma coisa na outra.
+  O inventario declara dois consumidores para a mesma tabela; so o do Athena
+  satisfaz a regra, e o do QuickSight fica no fact sem virar acusacao.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - env.consumer
+  - env.consumers_analyzed
+  - iceberg.table_analyzed
+  - iceberg.table_property
+  - iceberg.files_summary
+  - iceberg.delete_files_summary
+  - iceberg.snapshots_summary
+expects_rules:
+  - SF-ENV-002

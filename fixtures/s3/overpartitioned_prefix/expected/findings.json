@@ -1,0 +1,62 @@
+[
+  {
+    "rule_id": "SF-PQ-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Cardinalidade de partição inadequada",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "catalog/tables.json",
+      "symbol": "pedidos_por_hora"
+    },
+    "evidence": [
+      "f_d082fc",
+      "f_d082fc"
+    ],
+    "measured": {
+      "partition_count": 3,
+      "distinct_values": 3,
+      "avg_bytes_per_partition": 8388608.0
+    },
+    "threshold": {
+      "min_cardinality": 5,
+      "min_partition_bytes": 134217728
+    },
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Cardinalidade muito baixa faz a partição não filtrar nada: com três valores distintos, o melhor filtro possível ainda lê um terço da tabela. Cardinalidade muito alta produz small files por construção e explode metadados. Uma partição que gera 3MB de dado é small file por desenho, não por acidente. O alvo prático é que cada partição tenha volume suficiente para produzir arquivos de 128 a 512MB.",
+    "proposed_change": [
+      "Escolher a coluna de partição a partir dos filtros que os consumidores realmente usam, o que exige inventariar as queries em Athena e nos jobs downstream.",
+      "Para chave de alta cardinalidade usada em lookup, usar bucket em Iceberg em vez de partição.",
+      "Reservar sort order para os filtros de alta cardinalidade."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Mudar o particionamento de uma tabela existente exige reescrita ou partition evolution.",
+      "Em Iceberg, partition evolution não reescreve dados antigos: a tabela passa a ter specs mistos, e o planejamento fica permanentemente mais complexo."
+    ],
+    "tradeoffs": [
+      "Reescrever é caro e resolve de vez; evoluir o spec é barato e deixa dívida de planejamento."
+    ],
+    "validation": [
+      "Bytes lidos por um conjunto de queries de referência antes e depois.",
+      "Tamanho médio de arquivo por partição.",
+      "Contagem total de linhas idêntica."
+    ],
+    "rollback": [
+      "Time travel em Iceberg",
+      "ou manter a tabela antiga até validar a nova."
+    ],
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

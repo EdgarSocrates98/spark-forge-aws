@@ -20,6 +20,7 @@ expects_kinds:
   - spark.stage.task_count
   - spark.cluster.cores
   - spark.executor.lost
+  - spark.job.spill_summary
   - spark.unresolved
   - spark.log_analyzed
 expects_rules:

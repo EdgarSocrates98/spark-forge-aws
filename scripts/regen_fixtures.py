@@ -25,14 +25,22 @@ from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
 )
+from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
-from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree  # noqa: E402
+from sparkforge.facts.iceberg_metadata import (  # noqa: E402
+    extract_iceberg_metadata_path,
+    extract_iceberg_metadata_tree,
+)
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
+from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
 from sparkforge.facts.spark_plan import extract_plan_path  # noqa: E402
 from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
-from sparkforge.facts.terraform import extract_terraform_tree  # noqa: E402
+from sparkforge.facts.terraform import (  # noqa: E402
+    extract_terraform_diff,
+    extract_terraform_tree,
+)
 from sparkforge.rules.engine import judge  # noqa: E402
 from sparkforge.rules.loader import load_catalog  # noqa: E402
 
@@ -47,6 +55,9 @@ FIXTURES_PLAN = ROOT / "fixtures" / "plan"
 FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
+FIXTURES_S3 = ROOT / "fixtures" / "s3"
+FIXTURES_CONSUMERS = ROOT / "fixtures" / "consumers"
+FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -161,6 +172,63 @@ def regen_runtime(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_s3(directory: Path) -> None:
+    """Listagem S3, e opcionalmente o dump de catalogo que ela precisa.
+
+    `input/*.json` sao listagens; `input/catalog/*.json`, quando existe, e o
+    dump do Glue Data Catalog. SF-PQ-005 e a razao do segundo: ela correlaciona
+    o que esta no armazenamento com a cardinalidade de particao declarada no
+    catalogo, e nenhuma das duas fontes responde sozinha.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for listing in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_s3_listing_path(listing, repo_root=input_dir))
+    catalog_dir_path = input_dir / "catalog"
+    if catalog_dir_path.is_dir():
+        facts.extend(extract_catalog_schema_tree(catalog_dir_path, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_consumers(directory: Path) -> None:
+    """Inventario declarado de consumidores, e o dump Iceberg da tabela.
+
+    SF-ENV-002 so existe na interseccao: a tabela em format V3 vem do metadata
+    Iceberg, e quem a consome vem do inventario. Uma fixture com so uma das
+    metades nao prova nada sobre a regra.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for inventory in sorted(input_dir.glob("*.yaml")):
+        facts.extend(extract_consumers_path(inventory, repo_root=input_dir))
+    for dump in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_iceberg_metadata_path(dump, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_tfdiff(directory: Path) -> None:
+    """Diff de Terraform (`input/before/` e `input/after/`) mais o event log.
+
+    SF-GLUE-005 pergunta se alguem aumentou o worker SEM evidencia de pressao
+    de memoria: a mudanca vem do diff, e a evidencia (ou a falta dela) vem do
+    event log. As duas fontes na mesma fixture, porque a regra so faz sentido
+    com as duas.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(
+        extract_terraform_diff(input_dir / "before", input_dir / "after", repo_root=input_dir)
+    )
+    for log in sorted(input_dir.glob("*.jsonl")):
+        facts.extend(extract_event_log_path(log, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_athena(directory: Path) -> None:
     """Como `regen_catalog`, mas para dumps de workgroup do Athena: `*.json`
     sob input/, extraidos com `extract_athena_workgroup_path`. Nao ha variante
@@ -230,6 +298,9 @@ def main() -> int:
                 (FIXTURES_ATHENA / name, regen_athena),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
+                (FIXTURES_S3 / name, regen_s3),
+                (FIXTURES_CONSUMERS / name, regen_consumers),
+                (FIXTURES_TFDIFF / name, regen_tfdiff),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -264,6 +335,12 @@ def main() -> int:
         regen_runtime(directory)
     for directory in sorted(p for p in FIXTURES_CALLGRAPH.iterdir() if p.is_dir()):
         regen_callgraph(directory)
+    for directory in sorted(p for p in FIXTURES_S3.iterdir() if p.is_dir()):
+        regen_s3(directory)
+    for directory in sorted(p for p in FIXTURES_CONSUMERS.iterdir() if p.is_dir()):
+        regen_consumers(directory)
+    for directory in sorted(p for p in FIXTURES_TFDIFF.iterdir() if p.is_dir()):
+        regen_tfdiff(directory)
     return 0
 
 
