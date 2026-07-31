@@ -1,0 +1,155 @@
+"""Glue 4.0, 5.0 e 5.1: a matriz e o escopo das regras nos runtimes correntes.
+
+Dois riscos distintos, um modulo:
+
+1. **Deriva entre codigo e documento.** `GLUE_MATRIX` e a tabela de
+   `knowledge/glue/runtime-matrix.md` sao a MESMA informacao escrita duas
+   vezes. `test_runtime_detect.py` fixa valores literais no teste, o que pega
+   uma mudanca acidental no codigo mas nao pega o codigo e o documento se
+   afastando -- e e o documento que o agente le para recomendar. Aqui a tabela
+   do markdown e parseada e comparada com o dicionario.
+
+2. **Regra fora de escopo em silencio.** `runtime_scope` faz o motor pular a
+   regra ANTES de olhar fact nenhum, e o operador nao ve diferenca entre
+   "avaliei e nao achei" e "nem avaliei". Uma guarda escrita errada (`>=5.0`
+   onde se queria `>=4.0`) apaga a regra do relatorio inteiro nos runtimes
+   correntes sem nenhum sinal. Este modulo enumera, por versao, exatamente
+   quais regras ficam fora -- e cada excecao tem que estar justificada abaixo.
+"""
+import re
+from pathlib import Path
+
+import pytest
+
+from sparkforge.facts.runtime_detect import GLUE_MATRIX, detect_runtime
+from sparkforge.rules.loader import catalog_dir, load_catalog
+from sparkforge.rules.version_scope import in_scope
+
+ROOT = Path(__file__).resolve().parents[1]
+MATRIX_DOC = ROOT / "knowledge" / "glue" / "runtime-matrix.md"
+
+# Os runtimes correntes. Glue 3.0 esta fora desta lista de proposito: continua
+# na matriz (jobs antigos existem) mas nao e alvo de recomendacao nova.
+CURRENT = ("4.0", "5.0", "5.1")
+
+# Regras que NAO sao avaliadas em cada versao corrente, com a razao. Uma regra
+# que apareca aqui sem justificativa e uma regra apagada do relatorio.
+#
+#   SF-ENV-004  `glue: "<4.0"`  -- AQE passou a ser default no Spark 3.2, que
+#               no vocabulario de Glue e o 4.0. Recomendar AQE em 4.0/5.x seria
+#               recomendar o que ja esta ligado.
+#   SF-ENV-002  `glue: ">=5.1"` + `iceberg: ">=1.10.0"` -- a armadilha do
+#               format V3 do Iceberg, que so existe a partir de 5.1. Em 4.0 e
+#               5.0 nao ha V3 para escrever, entao pular e correto.
+EXPECTED_OUT_OF_SCOPE = {
+    "4.0": {"SF-ENV-002", "SF-ENV-004"},
+    "5.0": {"SF-ENV-002", "SF-ENV-004"},
+    "5.1": {"SF-ENV-004"},
+}
+
+
+def _doc_matrix() -> dict[str, dict[str, str]]:
+    """Le a tabela principal de `runtime-matrix.md`.
+
+    Formato esperado por linha:
+    `| 5.0 | 3.5.4 | 3.11 | 2.12 | 1.7.1 | 0.15.0 | 3.3.0 |`
+    """
+    parsed: dict[str, dict[str, str]] = {}
+    for line in MATRIX_DOC.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 5 or not re.fullmatch(r"\d+\.\d+", cells[0]):
+            continue
+        parsed[cells[0]] = {"spark": cells[1], "python": cells[2], "iceberg": cells[4]}
+    return parsed
+
+
+def _rules():
+    return [r for r in load_catalog(catalog_dir()) if r["id"].startswith("SF-")]
+
+
+class TestMatrixMatchesTheCommittedKnowledge:
+    def test_the_doc_table_is_parseable_at_all(self):
+        """Guarda contra o teste passar por ter lido zero linhas."""
+        assert set(_doc_matrix()) >= set(CURRENT)
+
+    @pytest.mark.parametrize("version", CURRENT)
+    def test_code_matrix_equals_doc_table(self, version):
+        assert GLUE_MATRIX[version] == _doc_matrix()[version], version
+
+    def test_no_version_exists_in_code_but_not_in_the_doc(self):
+        """Uma linha so no codigo e uma versao que o agente nunca vai citar
+        certo, porque ele le o documento."""
+        assert set(GLUE_MATRIX) <= set(_doc_matrix())
+
+
+class TestDetectionOfTheCurrentRuntimes:
+    @pytest.mark.parametrize("version", CURRENT)
+    def test_glue_version_alone_resolves_the_whole_stack(self, version):
+        context, facts = detect_runtime({"terraform": {"glue_version": version}})
+        expected = GLUE_MATRIX[version]
+        assert context.glue == version
+        assert context.spark == expected["spark"]
+        assert context.python == expected["python"]
+        assert context.iceberg == expected["iceberg"]
+        assert facts, version
+
+    @pytest.mark.parametrize("version", CURRENT)
+    def test_agreeing_event_log_is_not_a_divergence(self, version):
+        context, _ = detect_runtime(
+            {
+                "terraform": {"glue_version": version},
+                "event_log": {"spark_version": GLUE_MATRIX[version]["spark"]},
+            }
+        )
+        assert list(context.divergences) == []
+
+    @pytest.mark.parametrize("version", CURRENT)
+    def test_disagreeing_event_log_is_always_a_divergence(self, version):
+        """A fonte observada ganha, mas o conflito e registrado. Em qualquer
+        das tres versoes correntes -- nao so na que a fixture cobre."""
+        context, _ = detect_runtime(
+            {"terraform": {"glue_version": version}, "event_log": {"spark_version": "3.0.0"}}
+        )
+        assert context.spark == "3.0.0"
+        assert context.divergences
+
+
+class TestRuleScopeOnTheCurrentRuntimes:
+    @pytest.mark.parametrize("version", CURRENT)
+    def test_only_the_justified_rules_are_out_of_scope(self, version):
+        context, _ = detect_runtime({"terraform": {"glue_version": version}})
+        runtime = context.to_dict()
+        out = {r["id"] for r in _rules() if not in_scope(r.get("runtime_scope") or {}, runtime)}
+        assert out == EXPECTED_OUT_OF_SCOPE[version], version
+
+    @pytest.mark.parametrize("version", CURRENT)
+    def test_every_area_of_the_catalog_survives_the_version_guard(self, version):
+        """Nenhuma area inteira pode sumir num runtime corrente. SF-ENV e a
+        unica com excecoes, e mesmo ela mantem regra avaliavel nas tres."""
+        context, _ = detect_runtime({"terraform": {"glue_version": version}})
+        runtime = context.to_dict()
+        surviving = {
+            r["id"].rsplit("-", 1)[0]
+            for r in _rules()
+            if in_scope(r.get("runtime_scope") or {}, runtime)
+        }
+        assert surviving == {
+            "SF-ATH",
+            "SF-ENV",
+            "SF-GLUE",
+            "SF-ICE",
+            "SF-PQ",
+            "SF-PY",
+            "SF-UI",
+        }, version
+
+    def test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51(self):
+        """SF-ENV-002 guarda a armadilha do format V3 (Glue 5.1 escreve, Athena
+        nao le). Alargar o escopo para 5.0 acusaria uma tabela que nao pode
+        virar V3; estreitar apagaria o unico aviso sobre ela."""
+        scopes = {r["id"]: r.get("runtime_scope") for r in _rules()}
+        assert scopes["SF-ENV-002"] == {"glue": ">=5.1", "iceberg": ">=1.10.0"}
+
+        for version, expected in (("4.0", False), ("5.0", False), ("5.1", True)):
+            context, _ = detect_runtime({"terraform": {"glue_version": version}})
+            assert in_scope(scopes["SF-ENV-002"], context.to_dict()) is expected, version

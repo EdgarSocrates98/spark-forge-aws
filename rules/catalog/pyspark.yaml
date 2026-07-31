@@ -1,0 +1,408 @@
+# Catálogo de regras — código PySpark
+# Depende dos extratores da Fase 0 (facts/pyspark_ast.py).
+# Ler ../catalog/README.md antes de editar.
+
+catalog_version: 1
+schema_version: 1
+area: SF-PY
+retrieved: 2026-07-29
+
+rules:
+
+  - id: SF-PY-001
+    category: pyspark-code
+    title: Python UDF em transformação expressável nativamente
+    requires_facts: [pyspark.udf]
+    when:
+      all:
+        - fact: pyspark.udf
+          where: {attrs.udf_type: python}
+    status: structural
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Python UDF custa, por linha: serialização JVM->pickle, cópia para o processo
+      Python worker, execução sem vetorização, e o caminho de volta. Além disso perde
+      whole-stage codegen no segmento do plano e torna o operador opaco ao otimizador,
+      eliminando pushdown de predicado e reordenação. Aparece no plano como
+      BatchEvalPython. Ver knowledge/spark/execution-model.md secao 4.
+    proposed_change:
+      - Reescrever com funções Spark SQL nativas.
+      - Se envolve array/map, usar higher-order functions (transform, filter, aggregate).
+      - Se realmente inevitável, medir pandas_udf (Arrow, vetorizado por batch) antes de manter Python UDF.
+    risks:
+      - Reescrita pode alterar tratamento de null ou de tipo em borda.
+      - Precisão de ponto flutuante pode diferir entre implementação Python e nativa.
+    tradeoffs:
+      - Expressão nativa equivalente pode ficar mais verbosa e menos legível.
+    validation:
+      - Comparar resultado linha a linha entre versão antiga e nova numa amostra representativa que inclua nulls e valores de borda.
+      - Contagem total idêntica.
+      - Contagem de nulls na coluna resultado idêntica.
+      - Confirmar desaparecimento do nó BatchEvalPython no plano.
+    rollback: [Reverter o commit; a UDF original não depende de mudança de infraestrutura.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  - id: SF-PY-002
+    category: pyspark-code
+    title: collect() ou toPandas() sem limite na cadeia
+    requires_facts: [pyspark.driver_collect]
+    when:
+      all:
+        - fact: pyspark.driver_collect
+          where: {attrs.bounded: false}
+    status: structural
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Traz todo o resultado para o heap do driver. O risco cresce com o volume do
+      resultado, que costuma crescer com o tempo sem que o código mude. Modo de falha
+      é OOM de driver, e o job passa a falhar por crescimento de dado, não por
+      alteração de código. Também serializa no driver o que era distribuído.
+    proposed_change:
+      - Substituir por escrita distribuída (write) ou por agregação que devolva poucas linhas.
+      - Se precisa mesmo inspecionar, usar limit(n) explícito antes, ou take(n).
+      - Para iterar sobre resultado grande, toLocalIterator reduz o pico de memória.
+    risks:
+      - Lógica downstream pode assumir uma lista Python em memória.
+    tradeoffs:
+      - toLocalIterator reduz pico de memória mas aumenta round-trips.
+    validation:
+      - Contagem de linhas processadas idêntica.
+      - Resultado final (arquivo ou tabela) idêntico por contagem, schema e agregados de controle.
+    rollback: [Reverter o commit.]
+    sources:
+      - {origin: field-heuristic, note: "Consequência direta do modelo de execução; ver knowledge/spark/memory-and-oom.md secao 2, classe driver heap."}
+
+  - id: SF-PY-003
+    category: pyspark-code
+    title: join antes de select ou filter na mesma cadeia
+    requires_facts: [pyspark.chain, pyspark.join]
+    when:
+      all:
+        - fact: pyspark.chain
+          expr: "measures.join_index < measures.first_reduction_index"
+    status: structural
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Todo byte e toda coluna que entram no join atravessam o shuffle. Filtrar e
+      projetar depois do join significa pagar rede, disco local e sort por dado que
+      será descartado. Uma tabela de 80 colunas cujo join usa 6 desperdiça a maior
+      parte da banda de shuffle. Ver knowledge/spark/shuffle-join-skew.md secao 2.
+    proposed_change:
+      - Mover filter para antes do join, garantindo que chegue ao pushdown (verificar PushedFilters no plano).
+      - Adicionar select das colunas efetivamente usadas antes do join.
+      - Avaliar pré-agregação quando o join é seguido de groupBy.
+    risks:
+      - Filtro movido para antes de um outer join altera o resultado. Verificar o tipo de join antes de mover.
+    tradeoffs:
+      - Projeção explícita exige manutenção quando o schema evolui.
+    validation:
+      - Contagem total antes e depois.
+      - Contagem por chave de join.
+      - Contagem de linhas com chave nula.
+      - Agregados de controle por dimensão de negócio.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  - id: SF-PY-004
+    category: pyspark-code
+    title: Action ou write dentro de loop
+    requires_facts: [pyspark.loop]
+    when:
+      any:
+        - fact: pyspark.loop
+          where: {attrs.contains_action: true}
+        - fact: pyspark.loop
+          where: {attrs.contains_write: true}
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Cada iteração reexecuta o DAG a montante desde o início, salvo materialização
+      explícita. Um loop de 50 lotes sobre um DataFrame caro paga 50 vezes a leitura,
+      os joins e os shuffles, e o filtro de lote descarta a maior parte do resultado a
+      cada volta. O batching reduziu o tamanho da escrita, não o trabalho. É também a
+      causa mais comum de OOM que aparece depois de horas, por acúmulo no driver.
+      Ver knowledge/spark/execution-model.md secao 6.
+    proposed_change:
+      - Escrever tudo numa única action, usando partitionBy pela coluna de lote quando o objetivo é separar a saída.
+      - Se o loop é inevitável, materializar o DataFrame caro uma vez antes dele (tabela intermediária ou checkpoint).
+      - Reduzir na origem, com filtro que chegue ao pushdown, em vez de filtrar um DAG caro já construído.
+    risks:
+      - Escrita única muda o perfil de commit; em Iceberg reduz o número de snapshots, o que é desejável, mas altera a granularidade de recuperação parcial.
+      - Materialização intermediária consome armazenamento e adiciona uma etapa a gerenciar.
+    tradeoffs:
+      - Perde-se a capacidade de retomar de um lote específico após falha, salvo desenho explícito para isso.
+    validation:
+      - Contagem total de linhas escritas idêntica.
+      - Contagem por valor da coluna de lote idêntica.
+      - Agregados de controle idênticos.
+      - Ausência de duplicação, por distinct da chave primária do resultado.
+    rollback: [Reverter o commit. Se houve escrita em Iceberg, usar time travel para o snapshot anterior.]
+    sources:
+      - {origin: field-heuristic, note: "Consequência do modelo lazy; medível por N jobs quase idênticos no Spark UI com o mesmo primeiro stage."}
+
+  - id: SF-PY-005
+    category: pyspark-code
+    title: coalesce(1)
+    requires_facts: [pyspark.partitioning]
+    when:
+      all:
+        - fact: pyspark.partitioning
+          where: {attrs.method: coalesce, attrs.literal_arg: true}
+          expr: "measures.target_count == 1"
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: "*"}
+    explanation: >
+      coalesce não faz shuffle: ele reduz o número de partições fundindo as existentes.
+      Com alvo 1, todo o dado passa por uma única task, num único executor. Memória e
+      duração deixam de escalar, e o job falha por volume sem nenhuma mudança de código.
+      Praticamente sempre a intenção real era "um arquivo de saída".
+    proposed_change:
+      - Se o objetivo é reduzir contagem de arquivos, usar repartition(n) com n calculado a partir do volume e do tamanho-alvo por arquivo.
+      - Preferir o hint REBALANCE, que produz partições equilibradas e coopera com o AQE.
+      - Se o objetivo é literalmente um arquivo único para consumo externo, fazer isso como etapa separada de compactação, fora do caminho crítico.
+    risks:
+      - Mudar a contagem de arquivos altera o layout físico consumido downstream.
+    tradeoffs:
+      - Mais arquivos facilita o paralelismo de leitura e dificulta o consumo por ferramentas que esperam arquivo único.
+    validation:
+      - Contagem total de linhas idêntica.
+      - Schema idêntico.
+      - Contagem e tamanho dos arquivos de saída registrados antes e depois.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  - id: SF-PY-006
+    category: pyspark-code
+    title: explode sem filtro nem projeção anterior na cadeia
+    requires_facts: [pyspark.explode, pyspark.chain]
+    when:
+      all:
+        - fact: pyspark.explode
+          where: {attrs.has_prior_reduction: false}
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      explode multiplica a cardinalidade pelo tamanho médio do array. Sem estimativa
+      prévia do fan-out, o volume pós-explode é desconhecido, e arrays de tamanho
+      muito desigual produzem skew de computação que o AQE não trata. Aparece no plano
+      como Generate.
+    proposed_change:
+      - Estimar o fan-out medindo o tamanho médio, p95 e máximo do array antes de explodir.
+      - Filtrar e projetar antes do explode, para não multiplicar colunas e linhas que serão descartadas.
+      - Avaliar higher-order functions (transform, filter, aggregate) quando o objetivo é agregar o array sem materializar uma linha por elemento.
+    risks:
+      - explode descarta linhas com array vazio ou nulo; explode_outer as preserva. Trocar um pelo outro altera o resultado.
+    tradeoffs:
+      - Higher-order functions evitam o fan-out mas expressam menos naturalmente algumas transformações.
+    validation:
+      - Contagem pós-explode antes e depois da mudança.
+      - Contagem de linhas com array nulo ou vazio.
+      - Agregados de controle sobre os elementos.
+    rollback: [Reverter o commit.]
+    sources:
+      - {origin: field-heuristic, note: "Fan-out de cardinalidade é o mecanismo; a assimetria do tamanho de array é a causa do skew de computação."}
+
+  - id: SF-PY-007
+    category: pyspark-code
+    title: Sequência longa de withColumn na mesma cadeia
+    requires_facts: [pyspark.withcolumn_run]
+    when:
+      all:
+        - fact: pyspark.withcolumn_run
+          expr: "measures.run_length >= threshold.run_length"
+    threshold: {run_length: 10}
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Cada withColumn adiciona uma projeção ao plano lógico. Dezenas em sequência
+      produzem um plano grande, com custo de análise e otimização no driver que cresce
+      de forma não linear. Em loop, é uma das causas de plan explosion e de driver OOM.
+      Ver knowledge/spark/memory-and-oom.md secao 2, classe metadata/plan explosion.
+    proposed_change:
+      - Substituir a sequência por um único select contendo todas as colunas.
+      - Se as colunas são geradas programaticamente, construir a lista de expressões e passar num único select.
+    risks:
+      - withColumn em sequência permite referenciar a coluna criada no passo anterior; um select único exige reescrever essas dependências.
+    tradeoffs:
+      - select único é menos legível quando há muitas colunas com lógica complexa.
+    validation:
+      - Schema idêntico, na mesma ordem de colunas.
+      - Comparação linha a linha numa amostra.
+      - Contagem total idêntica.
+    rollback: [Reverter o commit.]
+    sources:
+      - {origin: field-heuristic, note: "Limiar 10 é ponto de partida. O custo real depende da complexidade de cada expressão, não só da contagem."}
+
+  - id: SF-PY-008
+    category: pyspark-code
+    title: cache ou persist sem unpersist no escopo
+    requires_facts: [pyspark.cache]
+    when:
+      all:
+        - fact: pyspark.cache
+          where: {attrs.has_unpersist_in_scope: false}
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Cache ocupa a memória unificada do executor, competindo com a memória de
+      execução usada por shuffle, sort e agregação. Cache que não é liberado aumenta o
+      spill do resto do pipeline. Execução pode expulsar cache, mas não o contrário,
+      então o cache que se acreditava presente pode nem estar sendo aproveitado.
+      Ver knowledge/spark/execution-model.md secao 5.
+    proposed_change:
+      - Verificar se há reuso real em duas ou mais actions distintas. Se não há, remover o cache.
+      - Se há reuso, adicionar unpersist quando o DataFrame deixa de ser necessário.
+      - Confirmar na aba Storage do Spark UI que a fração cacheada é alta; fração baixa indica cache inútil.
+    risks:
+      - Remover cache com reuso real aumenta a recomputação.
+    tradeoffs:
+      - MEMORY_AND_DISK_SER usa menos memória e mais CPU.
+    validation:
+      - Runtime e DPU-hours antes e depois.
+      - Spill do stage dominante antes e depois.
+      - Resultado funcional idêntico por contagem, schema e agregados.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  - id: SF-PY-009
+    category: pyspark-code
+    title: broadcast() forçado por hint
+    requires_facts: [pyspark.join]
+    when:
+      all:
+        - fact: pyspark.join
+          where: {attrs.has_broadcast_hint: true}
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Um hint de broadcast é permanente no código, mas o tamanho do lado "pequeno" não
+      é. O driver materializa a tabela antes de distribuir, então o modo de falha
+      quando ela cresce é OOM de driver ou broadcastTimeout, não degradação gradual.
+      O limiar automático (autoBroadcastJoinThreshold, default 10MB) e o AQE já
+      convertem sort-merge em broadcast quando é seguro fazê-lo, usando estatística de
+      runtime em vez de uma decisão congelada no código.
+    proposed_change:
+      - Medir o tamanho serializado real do lado pequeno, não o estimado.
+      - Remover o hint e verificar se o AQE converte sozinho para BroadcastHashJoin.
+      - Se o broadcast é necessário e o lado é estável, documentar o limite de tamanho assumido e monitorá-lo.
+    risks:
+      - Remover o hint pode fazer o Spark escolher sort-merge join, aumentando o shuffle, se a estatística estiver ausente ou ruim.
+    tradeoffs:
+      - Hint dá previsibilidade de plano ao custo de não reagir ao crescimento do dado.
+    validation:
+      - Estratégia física de join confirmada na aba SQL do Spark UI, não apenas no explain.
+      - Runtime e DPU-hours antes e depois.
+      - Heap do driver antes e depois.
+    rollback: [Readicionar o hint.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  - id: SF-PY-010
+    category: pyspark-code
+    title: repartition com argumento literal arbitrário
+    requires_facts: [pyspark.partitioning]
+    when:
+      all:
+        - fact: pyspark.partitioning
+          where: {attrs.method: repartition, attrs.literal_arg: true, attrs.has_partition_expr: false}
+    status: structural
+    severity_default: P3
+    runtime_scope: {glue: "*"}
+    explanation: >
+      repartition(n) com n fixo adiciona um shuffle completo para atingir um número que
+      raramente foi calculado a partir do volume. Com AQE ativo, o coalescing de
+      partições pós-shuffle já ajusta a contagem em runtime, então o n fixo
+      frequentemente é revertido logo depois, e o shuffle foi pago em vão.
+    proposed_change:
+      - Se o objetivo é equilibrar a saída, usar o hint REBALANCE, que coopera com o AQE.
+      - Se o objetivo é atingir um tamanho de arquivo, calcular n a partir do volume estimado e do tamanho-alvo.
+      - Se o objetivo é corrigir skew, repartition por chave não resolve; ver knowledge/spark/shuffle-join-skew.md secao 3.
+    risks:
+      - Remover o repartition pode alterar a contagem de arquivos de saída.
+    tradeoffs:
+      - REBALANCE é menos previsível na contagem exata de arquivos.
+    validation:
+      - Contagem e tamanho dos arquivos de saída antes e depois.
+      - Runtime e DPU-hours antes e depois.
+      - Contagem total de linhas idêntica.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html", retrieved: 2026-07-29}
+
+  - id: SF-PY-011
+    category: pyspark-code
+    title: dropDuplicates ou distinct sem colunas explícitas
+    requires_facts: [pyspark.dedup]
+    when:
+      all:
+        - fact: pyspark.dedup
+          where: {attrs.has_explicit_columns: false}
+    status: structural
+    severity_default: P2
+    runtime_scope: {glue: "*"}
+    explanation: >
+      Deduplicação sobre todas as colunas exige shuffle e comparação do registro
+      inteiro, e costuma mascarar um erro de modelagem da chave em vez de corrigi-lo.
+      Se a duplicação vem de um join com cardinalidade errada, o distinct esconde o
+      defeito e o custo permanece. Além disso, sem colunas explícitas, mudanças de
+      schema alteram silenciosamente o que é considerado duplicado.
+    proposed_change:
+      - Identificar a chave de negócio real e deduplicar por ela explicitamente.
+      - Investigar a origem da duplicação; se vem de join, corrigir a cardinalidade do join.
+      - Se a intenção é latest-per-key, usar a estratégia adequada, não distinct.
+    risks:
+      - Deduplicar por subconjunto de colunas escolhe uma linha arbitrária entre as duplicatas, salvo ordenação explícita. Isso pode alterar o resultado de forma não determinística.
+    tradeoffs:
+      - Chave explícita exige manutenção quando o modelo evolui.
+    validation:
+      - Contagem antes e depois da deduplicação, em ambas as versões.
+      - Contagem distinta da chave de negócio.
+      - "Verificar determinismo: duas execuções produzem o mesmo resultado."
+    rollback: [Reverter o commit.]
+    sources:
+      - {origin: field-heuristic, note: "O ponto sobre determinismo na escolha da linha sobrevivente é a razão principal desta regra."}
+
+  - id: SF-PY-012
+    category: pyspark-code
+    title: spark.conf.set em runtime conflitando com default arguments
+    requires_facts: [pyspark.conf_set]
+    when:
+      all:
+        - fact: pyspark.conf_set
+    status: structural
+    severity_default: P3
+    runtime_scope: {glue: "*"}
+    explanation: >
+      spark.conf.set em runtime tem precedência sobre os default arguments definidos no
+      Terraform ou na job definition, e sobrescreve silenciosamente. É a causa mais
+      comum de "mudei a configuração no IaC e nada aconteceu". Além disso, algumas
+      configurações não têm efeito nenhum após a sessão iniciar, e defini-las assim dá
+      a falsa impressão de que foram aplicadas. Ver knowledge/spark/config-reference.md
+      secao 6 para a ordem completa de precedência e a lista de configs imutáveis.
+    proposed_change:
+      - Comparar cada chave definida no código com os default arguments do IaC e resolver a divergência num único lugar.
+      - Mover configuração de infraestrutura para os default arguments; deixar no código apenas o que precisa variar por execução.
+      - Confirmar o valor efetivo na aba Environment do Spark UI.
+    risks:
+      - Remover a chamada no código pode desativar uma configuração que só existia ali.
+    tradeoffs:
+      - Configuração no IaC é auditável e versionada; no código é mais flexível por run.
+    validation:
+      - Valor efetivo de cada chave conferido na aba Environment antes e depois.
+      - Runtime e DPU-hours antes e depois, para confirmar que a configuração tinha efeito real.
+    rollback: [Reverter o commit.]
+    sources:
+      - {origin: field-heuristic, note: "A ordem de precedência deve ser verificada na aba Environment do runtime em uso, não assumida."}

@@ -1,0 +1,56 @@
+[
+  {
+    "rule_id": "SF-GLUE-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "MaxRetries maior que zero em job com escrita não idempotente",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 7,
+      "symbol": "aws_glue_job.etl_append"
+    },
+    "evidence": [
+      "f_1bb46a",
+      "f_3699bb"
+    ],
+    "measured": {
+      "value": 3
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "Retry de job inteiro reexecuta o script do começo. Se a escrita é append e não há controle de idempotência, o retry duplica dado. O risco fica disfarçado de resiliência, e a duplicação só aparece depois, numa conferência de números.",
+    "proposed_change": [
+      "Tornar a escrita idempotente, por merge com chave, por overwrite de partição, ou por controle de execução.",
+      "Ou reduzir max_retries para zero e tratar a falha explicitamente."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reduzir retries expõe o pipeline a falhas transitórias que antes eram absorvidas."
+    ],
+    "tradeoffs": [
+      "Idempotência custa desenho e",
+      "em merge",
+      "custo de escrita maior que append."
+    ],
+    "validation": [
+      "Contagem distinta da chave primária no destino igual à contagem total.",
+      "Simular retry num ambiente de teste e confirmar ausência de duplicação."
+    ],
+    "rollback": [
+      "Restaurar max_retries anterior."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Idempotência de escrita sob retry é requisito de desenho; a regra apenas expõe a combinação de risco."
+      }
+    ]
+  }
+]

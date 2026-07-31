@@ -1,0 +1,12 @@
+name: forced_broadcast
+proves: >
+  broadcast() como hint congela a decisao de plano no codigo, mesmo quando o
+  lado "pequeno" cresce. SF-PY-009 dispara sobre pyspark.join com
+  attrs.has_broadcast_hint == true.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.join, pyspark.module_analyzed]
+expects_rules: [SF-PY-009]

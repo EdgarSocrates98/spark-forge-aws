@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sparkforge": {
+      "command": "python",
+      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"],
+      "env": {
+        "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT}",
+        "SPARKFORGE_CATALOG": "${CLAUDE_PLUGIN_ROOT}/rules/catalog"
+      }
+    }
+  }
+}

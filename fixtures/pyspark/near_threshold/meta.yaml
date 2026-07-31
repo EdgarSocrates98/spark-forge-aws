@@ -1,0 +1,12 @@
+name: near_threshold
+proves: >
+  9 withColumn encadeados fica um abaixo do limiar 10 de SF-PY-007. Prova que
+  o extrator apenas reporta run_length e quem decide o limiar e o catalogo,
+  nao o extrator.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.chain, pyspark.withcolumn_run, pyspark.module_analyzed]
+expects_rules: []

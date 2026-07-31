@@ -1,0 +1,56 @@
+[
+  {
+    "rule_id": "SF-PY-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "explode sem filtro nem projeção anterior na cadeia",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 5,
+      "col": 21,
+      "end_line": 5,
+      "symbol": "expandir",
+      "snippet": "return df.select(explode(col(\"itens\")).alias(\"item\")).filter(col(\"item\").isNotNull())"
+    },
+    "evidence": [
+      "f_13c126"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "explode multiplica a cardinalidade pelo tamanho médio do array. Sem estimativa prévia do fan-out, o volume pós-explode é desconhecido, e arrays de tamanho muito desigual produzem skew de computação que o AQE não trata. Aparece no plano como Generate.",
+    "proposed_change": [
+      "Estimar o fan-out medindo o tamanho médio, p95 e máximo do array antes de explodir.",
+      "Filtrar e projetar antes do explode, para não multiplicar colunas e linhas que serão descartadas.",
+      "Avaliar higher-order functions (transform, filter, aggregate) quando o objetivo é agregar o array sem materializar uma linha por elemento."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "explode descarta linhas com array vazio ou nulo; explode_outer as preserva. Trocar um pelo outro altera o resultado."
+    ],
+    "tradeoffs": [
+      "Higher-order functions evitam o fan-out mas expressam menos naturalmente algumas transformações."
+    ],
+    "validation": [
+      "Contagem pós-explode antes e depois da mudança.",
+      "Contagem de linhas com array nulo ou vazio.",
+      "Agregados de controle sobre os elementos."
+    ],
+    "rollback": [
+      "Reverter o commit."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Fan-out de cardinalidade é o mecanismo; a assimetria do tamanho de array é a causa do skew de computação."
+      }
+    ]
+  }
+]

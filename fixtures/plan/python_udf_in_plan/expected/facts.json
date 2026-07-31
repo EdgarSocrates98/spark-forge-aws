@@ -1,0 +1,145 @@
+[
+  {
+    "id": "f_4b3681",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 37,
+      "node_count": 6,
+      "file_scan_count": 1,
+      "exchange_count": 0,
+      "skipped_logical_lines": 0,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": true,
+      "aqe_final_plan": true,
+      "aqe_sections_seen": [
+        "Final Plan"
+      ]
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "4323472983f791d37e121635767cdda45cc13e271eedb68c4f704ad973bc1b69",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_eececc",
+    "schema_version": 1,
+    "kind": "plan.aqe",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 35,
+      "symbol": "(6) AdaptiveSparkPlan",
+      "node_id": 6,
+      "operator": "AdaptiveSparkPlan",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "is_final_plan": true
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "4323472983f791d37e121635767cdda45cc13e271eedb68c4f704ad973bc1b69",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_d22f70",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 11,
+      "symbol": "(1) Scan parquet analytics.pedidos",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "analytics.pedidos"
+    },
+    "measures": {
+      "read_schema_columns": 3,
+      "output_columns": 4,
+      "referenced_columns": 3,
+      "partition_filter_count": 2,
+      "pushed_filter_count": 1
+    },
+    "attrs": {
+      "relation": "analytics.pedidos",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": true,
+      "partitioned_evidence": "partition_filters",
+      "partition_filters_present": true,
+      "partition_filters_empty": false,
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "4323472983f791d37e121635767cdda45cc13e271eedb68c4f704ad973bc1b69",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_1516d9",
+    "schema_version": 1,
+    "kind": "plan.python_udf",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 23,
+      "symbol": "(3) BatchEvalPython",
+      "node_id": 3,
+      "operator": "BatchEvalPython",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "BatchEvalPython",
+      "udf_type": "python"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "4323472983f791d37e121635767cdda45cc13e271eedb68c4f704ad973bc1b69",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_6a6eca",
+    "schema_version": 1,
+    "kind": "plan.python_udf",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 27,
+      "symbol": "(4) ArrowEvalPython",
+      "node_id": 4,
+      "operator": "ArrowEvalPython",
+      "relation": ""
+    },
+    "measures": {},
+    "attrs": {
+      "operator": "ArrowEvalPython",
+      "udf_type": "pandas"
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "4323472983f791d37e121635767cdda45cc13e271eedb68c4f704ad973bc1b69",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

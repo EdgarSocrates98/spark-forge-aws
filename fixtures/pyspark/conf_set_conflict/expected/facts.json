@@ -1,0 +1,79 @@
+[
+  {
+    "id": "f_5d5ad1",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "configurar",
+      "snippet": "spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\")"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "conf",
+        "set"
+      ]
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "593815cc90913d6a602c6c83e30171feea2a2b6386d3b01fd7933754ee9f9c78",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_147a7e",
+    "schema_version": 1,
+    "kind": "pyspark.conf_set",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 2,
+      "col": 4,
+      "end_line": 2,
+      "symbol": "configurar",
+      "snippet": "spark.conf.set(\"spark.sql.shuffle.partitions\", \"800\")"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.shuffle.partitions",
+      "value": "800"
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "593815cc90913d6a602c6c83e30171feea2a2b6386d3b01fd7933754ee9f9c78",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_07e474",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "593815cc90913d6a602c6c83e30171feea2a2b6386d3b01fd7933754ee9f9c78",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,32 @@
+name: worker_upsized_with_spill
+proves: >
+  Mesmo diff de worker, mesmo job -- e agora o event log mostra spill em disco.
+  SF-GLUE-005 NAO dispara, porque existe evidencia de pressao de memoria: o
+  aumento de worker esta justificado. E a metade que impede a regra de virar
+  "toda troca de worker e suspeita", que a tornaria ruido em todo PR de
+  infraestrutura.
+  SF-UI-006 dispara junto e de proposito: 4 tasks contra 16 cores e
+  subparalelismo real, e e a explicacao mais provavel da lentidao que
+  levou alguem a aumentar o worker. As duas regras lendo o mesmo run e o
+  quadro completo que o operador precisa.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.observability.spark_ui
+  - spark.log_analyzed
+  - spark.cluster.cores
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.stage.spill
+  - spark.stage.gc
+  - spark.stage.task_count
+  - spark.job.spill_summary
+  - spark.executor.memory_usage
+expects_rules:
+  - SF-UI-006

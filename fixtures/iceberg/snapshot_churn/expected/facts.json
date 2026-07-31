@@ -1,0 +1,92 @@
+[
+  {
+    "id": "f_4c6c9d",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.snapshot_churn_demo"
+    },
+    "measures": {
+      "snapshot_count": 600,
+      "span_hours": 49.916666666666664
+    },
+    "attrs": {
+      "operations": [
+        "append"
+      ],
+      "oldest": "2026-01-01T00:00:00+00:00",
+      "newest": "2026-01-03T01:55:00+00:00"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "04c55d86d5c107a4538758ac9d101c5f0773a74e4fc6800bd747cc5e2bcd63f8",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_bdd207",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.snapshot_churn_demo"
+    },
+    "measures": {
+      "section_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "04c55d86d5c107a4538758ac9d101c5f0773a74e4fc6800bd747cc5e2bcd63f8",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_3bc170",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.snapshot_churn_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "format-version",
+      "value": "2",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "04c55d86d5c107a4538758ac9d101c5f0773a74e4fc6800bd747cc5e2bcd63f8",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_3bc170",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.snapshot_churn_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "hash",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "04c55d86d5c107a4538758ac9d101c5f0773a74e4fc6800bd747cc5e2bcd63f8",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  }
+]

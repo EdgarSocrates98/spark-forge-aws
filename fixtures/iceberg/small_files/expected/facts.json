@@ -1,0 +1,160 @@
+[
+  {
+    "id": "f_33cb7f",
+    "schema_version": 1,
+    "kind": "iceberg.files_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "measures": {
+      "data_file_count": 20,
+      "total_bytes": 80000000,
+      "avg_file_bytes": 4000000.0,
+      "p50_file_bytes": 4000000,
+      "p95_file_bytes": 4000000,
+      "min_file_bytes": 4000000,
+      "max_file_bytes": 4000000,
+      "total_records": 100000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_62a30e",
+    "schema_version": 1,
+    "kind": "iceberg.snapshots_summary",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "measures": {
+      "snapshot_count": 3,
+      "span_hours": 216.0
+    },
+    "attrs": {
+      "operations": [
+        "append"
+      ],
+      "oldest": "2026-07-01T00:00:00+00:00",
+      "newest": "2026-07-10T00:00:00+00:00"
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_823c14",
+    "schema_version": 1,
+    "kind": "iceberg.table_analyzed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "measures": {
+      "section_count": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_888138",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "format-version",
+      "value": "2",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_888138",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "write.distribution-mode",
+      "value": "none",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_888138",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "sort-order",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  },
+  {
+    "id": "f_888138",
+    "schema_version": 1,
+    "kind": "iceberg.table_property",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.small_files_demo"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "partition-spec",
+      "present": true,
+      "non_empty": true
+    },
+    "provenance": {
+      "artifact": "dump.json",
+      "artifact_sha256": "e4a75f04db431872783e804041b452a4fb98f40ade0b39ef877db9a7809d8161",
+      "extractor": "iceberg_metadata@0.1.0"
+    }
+  }
+]

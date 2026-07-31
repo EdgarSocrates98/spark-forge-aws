@@ -1,0 +1,28 @@
+name: glue_window_job
+proves: >
+  Job Glue correto -- nenhuma regra dispara -- que existe para exercitar os
+  tres facts estruturais que nao alimentam regra nenhuma e por isso nao
+  apareciam em golden algum: `pyspark.glue_context_init`, `pyspark.window` e
+  `pyspark.callgraph_edge`. Sao exatamente os facts que
+  `glue-incremental-performance-architect` e as skills de latest-per-key
+  consomem, e fact sem regra e o que some primeiro numa refatoracao sem que
+  nenhum teste reclame.
+  As duas Windows sao diferentes de proposito: a de latest-per-key tem
+  `partitionBy` E `orderBy` (`has_order_by: true`), a de agregacao tem so
+  `partitionBy`. Colapsar as duas apagaria a distincao que decide se a Window
+  e ranking (ordenada, cara) ou agregacao de janela.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - pyspark.module_analyzed
+  - pyspark.glue_context_init
+  - pyspark.callgraph_edge
+  - pyspark.window
+  - pyspark.chain
+  - pyspark.read
+  - pyspark.write
+  - pyspark.action
+expects_rules: []

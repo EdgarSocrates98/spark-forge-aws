@@ -1,0 +1,27 @@
+name: retries_with_append_write
+proves: >
+  `max_retries = 3` com escrita em modo `append`. A retentativa do Glue
+  reexecuta o job inteiro, e `append` nao e idempotente: cada tentativa soma
+  os mesmos registros de novo. O job "passa" na segunda tentativa e entrega
+  dado duplicado, sem erro nenhum no log.
+  O GlueContext ESTA inicializado aqui de proposito -- serve tambem como a
+  metade negativa de `observability_without_glue_context`: SF-ENV-003 nao
+  dispara neste corpus, provando que ela responde ao codigo e nao so ao
+  Terraform.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.observability.spark_ui
+  - pyspark.module_analyzed
+  - pyspark.glue_context_init
+  - pyspark.read
+  - pyspark.write
+  - pyspark.chain
+expects_rules:
+  - SF-GLUE-004

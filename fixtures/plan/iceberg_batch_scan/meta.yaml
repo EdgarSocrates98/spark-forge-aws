@@ -1,0 +1,18 @@
+name: iceberg_batch_scan
+proves: >
+  `BatchScan` (DSv2, como Iceberg le) nao imprime `PartitionFilters` -- a chave
+  simplesmente nao faz parte do vocabulario do no, e o pruning acontece no
+  planejamento de manifests, fora do plano. Ausencia aqui nao e evidencia de
+  nada: `partition_filters_empty` fica `"unknown"` e SF-PQ-002 nao dispara.
+  Tratar v2 como v1 acusaria toda tabela Iceberg do lake com um P0 falso.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - plan.analyzed
+  - plan.aqe
+  - plan.file_scan
+  - plan.join
+expects_rules: []

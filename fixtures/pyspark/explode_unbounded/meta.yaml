@@ -1,0 +1,12 @@
+name: explode_unbounded
+proves: >
+  explode sem filtro nem projecao previa na cadeia multiplica a cardinalidade
+  pelo tamanho do array sem estimativa de fan-out. SF-PY-006 dispara sobre
+  pyspark.explode com attrs.has_prior_reduction == false.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.chain, pyspark.explode, pyspark.module_analyzed]
+expects_rules: [SF-PY-006]

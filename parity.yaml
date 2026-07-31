@@ -1,0 +1,262 @@
+schema_version: 1
+
+platforms: [claude_code, devin_desktop, devin_cli, copilot_ci]
+mechanisms: [mcp, cli, files]
+
+notes: >
+  Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge.adapters.mcp
+  --transport http` e serverUrl `http://<host>:<port>/mcp`. Claude Code, Devin CLI e CI usam
+  stdio, que e o que `.mcp.json` ja configura.
+  Devin CLI nao le Knowledge nem Playbooks da conta Devin, por isso o procedimento e
+  autoritativo em arquivo no repo, nunca em Playbook. Copilot CI nao mantem sessao MCP
+  interativa: roda o CLI `sparkforge` como processo de linha de comando dentro do workflow,
+  ou opera diretamente sobre arquivo quando nem isso esta disponivel.
+
+capabilities:
+  - name: detect runtime and version divergence
+    tools: [sparkforge_runtime_detect]
+    cli: [runtime detect]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract anchored facts from PySpark source
+    tools: [sparkforge_analyze_pyspark]
+    cli: [analyze pyspark]
+    knowledge: [knowledge/anti-patterns.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from a Glue Data Catalog schema dump
+    tools: [sparkforge_analyze_catalog_schema]
+    cli: [analyze catalog-schema]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from a Spark event log
+    tools: [sparkforge_analyze_event_log]
+    cli: [analyze event-log]
+    knowledge: [knowledge/spark/memory-and-oom.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from a Spark physical plan
+    tools: [sparkforge_analyze_plan]
+    cli: [analyze plan]
+    knowledge: [knowledge/spark/plan-reading.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Terraform aws_glue_job definitions
+    tools: [sparkforge_analyze_terraform]
+    cli: [analyze terraform]
+    knowledge: [knowledge/glue/job-arguments.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Iceberg metadata tables
+    tools: [sparkforge_analyze_iceberg]
+    cli: [analyze iceberg]
+    knowledge: [knowledge/storage/iceberg-performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from SQL text and spark.sql literals
+    tools: [sparkforge_analyze_sql]
+    cli: [analyze sql]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from Athena workgroup configuration
+    tools: [sparkforge_analyze_athena_workgroup]
+    cli: [analyze athena-workgroup]
+    knowledge: [knowledge/athena/performance.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from an S3 object listing
+    tools: [sparkforge_analyze_s3_listing]
+    cli: [analyze s3-listing]
+    knowledge: [knowledge/storage/parquet-layout.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: extract facts from the declared table consumer inventory
+    tools: [sparkforge_analyze_consumers]
+    cli: [analyze consumers]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compare two Terraform states and mark what changed
+    tools: [sparkforge_analyze_terraform_diff]
+    cli: [analyze terraform-diff]
+    knowledge: [knowledge/glue/workers-and-capacity.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: derive a call graph and Spark work reachability from facts
+    tools: [sparkforge_analyze_call_graph]
+    cli: [analyze call-graph]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: correlate facts from multiple extractors before judging
+    tools: [sparkforge_fuse]
+    cli: [fuse]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: judge facts against the version-guarded catalog
+    tools: [sparkforge_judge]
+    cli: [judge]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: look up a rule with threshold, version guard and source
+    tools: [sparkforge_rules_lookup]
+    cli: [rules lookup]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: validate a recommendation written by the model
+    tools: [sparkforge_validate_output]
+    cli: [validate]
+    knowledge: [AGENTS.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: maintain investigation state
+    tools: [sparkforge_case_open, sparkforge_case_get, sparkforge_case_update]
+    cli: [case open, case get, case update]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: route the next step deterministically
+    tools: [sparkforge_next_step]
+    cli: [next-step]
+    knowledge: [rules/catalog/routing.yaml]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: resume an investigation started in another tool
+    tools: [sparkforge_resume]
+    cli: [resume, handoff]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: collect real AWS artifacts and verify the manifest
+    tools:
+      - sparkforge_collect_event_log
+      - sparkforge_collect_glue_job
+      - sparkforge_collect_cloudwatch
+      - sparkforge_collect_iceberg_metadata
+      - sparkforge_collect_athena_workgroup
+      - sparkforge_collect_verify
+    cli:
+      - collect event-log
+      - collect glue-job
+      - collect cloudwatch
+      - collect iceberg-metadata
+      - collect athena-workgroup
+      - collect verify
+    knowledge: [knowledge/glue/observability.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
+  - name: apply performance knowledge with no tooling at all
+    knowledge:
+      - knowledge/INDEX.md
+      - knowledge/spark/execution-model.md
+      - knowledge/spark/config-reference.md
+      - knowledge/spark/shuffle-join-skew.md
+      - knowledge/spark/memory-and-oom.md
+      - knowledge/spark/plan-reading.md
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/glue/workers-and-capacity.md
+      - knowledge/glue/job-arguments.md
+      - knowledge/glue/observability.md
+      - knowledge/athena/performance.md
+      - knowledge/storage/parquet-layout.md
+      - knowledge/storage/iceberg-performance.md
+      - knowledge/cross-service-constraints.md
+      - knowledge/performance-principles.md
+      - knowledge/anti-patterns.md
+      - knowledge/runtime-compatibility.md
+      - rules/catalog/README.md
+    platforms:
+      claude_code: [files]
+      devin_desktop: [files]
+      devin_cli: [files]
+      copilot_ci: [files]

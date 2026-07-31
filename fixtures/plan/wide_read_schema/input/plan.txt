@@ -1,0 +1,20 @@
+== Physical Plan ==
+* Project (3)
++- * Filter (2)
+   +- Scan parquet analytics.clientes (1)
+
+
+(1) Scan parquet analytics.clientes
+Output [12]: [cliente_id#1, nome#2, email#3, telefone#4, cpf#5, endereco#6, cidade#7, uf#8, cep#9, segmento#10, criado_em#11, atualizado_em#12]
+Batched: true
+Location: InMemoryFileIndex [s3://lake/analytics/clientes]
+PushedFilters: [IsNotNull(segmento)]
+ReadSchema: struct<cliente_id:bigint,nome:string,email:string,telefone:string,cpf:string,endereco:struct<logradouro:string,numero:int,complemento:string>,cidade:string,uf:string,cep:string,segmento:string,criado_em:timestamp,atualizado_em:timestamp>
+
+(2) Filter [codegen id : 1]
+Input [12]: [cliente_id#1, nome#2, email#3, telefone#4, cpf#5, endereco#6, cidade#7, uf#8, cep#9, segmento#10, criado_em#11, atualizado_em#12]
+Condition : isnotnull(segmento#10)
+
+(3) Project [codegen id : 1]
+Output [2]: [cliente_id#1, segmento#10]
+Input [12]: [cliente_id#1, nome#2, email#3, telefone#4, cpf#5, endereco#6, cidade#7, uf#8, cep#9, segmento#10, criado_em#11, atualizado_em#12]

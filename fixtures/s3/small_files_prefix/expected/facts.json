@@ -1,0 +1,58 @@
+[
+  {
+    "id": "f_42b453",
+    "schema_version": 1,
+    "kind": "s3.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "listing.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "object_count": 1501,
+      "control_object_count": 1,
+      "group_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "prefix": "s3://lake/analytics/eventos/",
+      "truncated": false
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "ed48e287ae28365836b0daa0c5c7634887f8c4828acd4d12a55910c286f10693",
+      "extractor": "s3_listing@0.1.0"
+    }
+  },
+  {
+    "id": "f_bdc096",
+    "schema_version": 1,
+    "kind": "s3.prefix_summary",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/analytics/eventos/ [parquet/snappy]"
+    },
+    "measures": {
+      "file_count": 1500,
+      "total_bytes": 3146852250,
+      "avg_file_bytes": 2097901.5,
+      "min_file_bytes": 2097152,
+      "p50_file_bytes": 2097902,
+      "p95_file_bytes": 2098577,
+      "max_file_bytes": 2098651
+    },
+    "attrs": {
+      "prefix": "s3://lake/analytics/eventos/",
+      "format": "parquet",
+      "compression": "snappy"
+    },
+    "provenance": {
+      "artifact": "listing.json",
+      "artifact_sha256": "ed48e287ae28365836b0daa0c5c7634887f8c4828acd4d12a55910c286f10693",
+      "extractor": "s3_listing@0.1.0"
+    }
+  }
+]

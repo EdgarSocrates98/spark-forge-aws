@@ -27,6 +27,28 @@ Não trate este trabalho como uma simples revisão de código. Conduza uma inves
 - runtime, DPU-hours e custo;
 - correção funcional.
 
+## Antes de qualquer análise
+
+Nesta ordem, sempre:
+
+1. **Detecte o runtime primeiro** (`sparkforge runtime detect` ou
+   `sparkforge_runtime_detect`). Divergência entre fontes é `SF-ENV-001` em
+   P0 e invalida qualquer limiar citado depois — não cite API nem
+   propriedade de versão antes de resolver a divergência.
+2. **Abra o case** (`sparkforge case open` ou `sparkforge_case_open`) com um
+   timestamp ISO 8601 explícito. Investigação sem `.sparkforge/case.yaml`
+   não é retomável em outra ferramenta ou sessão.
+3. **Leia `AGENT_PROTOCOL.md`.** Ele é injetado em toda skill e todo agente
+   por `scripts/sync_skills.py` e contém as regras duras que fazem o
+   resultado ser igual sob qualquer modelo.
+4. **Deixe `next_step` decidir a rota.** Não escolha a próxima skill por
+   julgamento próprio — a árvore de decisão vive em `rules/catalog/routing.yaml`.
+
+Duas regras não negociáveis, válidas para toda a investigação: **nenhum
+número aparece na saída sem um `fact_id` que o sustente**, e **um ganho
+quantificado sem `benchmark_ref` é rejeitado pelo schema** — não contorne a
+validação para apresentar um número que ainda não foi medido.
+
 ## Skills obrigatórias
 
 Comece com:

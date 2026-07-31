@@ -1,0 +1,216 @@
+# Catálogo de roteamento — direcionamento determinístico
+# Mesmo motor de regras, predicado sobre o estado do case em vez de sobre facts.
+# É isto que faz o próximo passo ser decidido por dado e não por julgamento do modelo,
+# e é o que sobrevive à troca de sessão Devin <-> Claude Code e à troca de modelo.
+#
+# Avaliado em ordem. O primeiro match vira recommended_skill; os seguintes que casarem
+# entram em alternatives, com rank.
+
+catalog_version: 1
+schema_version: 1
+area: ROUTE
+retrieved: 2026-07-29
+
+rules:
+
+  - id: ROUTE-001
+    phase_in: [intake]
+    title: Runtime não detectado
+    when:
+      any:
+        - {case: runtime.glue, absent: true}
+        - {case: runtime.divergences, count_gt: 0}
+    recommended_skill: sparkforge-diagnose
+    reason: >
+      Sem runtime confirmado, nenhum limiar nem API pode ser aplicado com segurança.
+      Divergência entre fontes não é resolvida escolhendo uma.
+    missing_artifacts: [terraform, event_log]
+    collect_commands: ["sparkforge runtime detect", "sparkforge collect eventlog --job-run <id>"]
+
+  - id: ROUTE-002
+    phase_in: [intake, inventory]
+    title: Sem inventário de código
+    when:
+      all:
+        - {case: facts_index.count, count_eq: 0}
+    recommended_skill: analyze-library-call-graph
+    reason: Nenhum fact extraído. Mapear entrypoint e biblioteca antes de qualquer hipótese.
+    collect_commands: ["sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json"]
+
+  - id: ROUTE-003
+    phase_in: [inventory, diagnosis]
+    title: Fluxos full e incremental não separados
+    when:
+      all:
+        - {case: scope.entrypoints, count_gt: 1}
+        - {case: gates.flows_mapped, equals: false}
+    recommended_skill: design-incremental-processing
+    reason: >
+      Com dois fluxos, o DAG de cada um precisa ser separado antes de diagnosticar.
+      Trabalho global executado no fluxo incremental é a suspeita padrão, e não aparece
+      sem essa separação.
+
+  - id: ROUTE-004
+    phase_in: [diagnosis]
+    title: Action ou write dentro de loop encontrado
+    when:
+      all:
+        - {finding: SF-PY-004, present: true}
+    recommended_skill: analyze-batch-loop
+    reason: >
+      Recomputação de DAG por iteração domina qualquer outro custo e mascara os demais
+      diagnósticos. Resolver antes de investigar joins, skew ou capacidade.
+
+  - id: ROUTE-005
+    phase_in: [diagnosis]
+    title: Executor removido sem OOM de heap
+    when:
+      all:
+        - {finding: SF-UI-005, present: true}
+    recommended_skill: diagnose-oom
+    reason: >
+      Assinatura de estouro de container fora do heap. A correção é memoryOverhead, não
+      memory, e classificar errado leva a "aumentei a memória e continuou".
+
+  - id: ROUTE-006
+    phase_in: [diagnosis]
+    title: Skew de duração com input desigual
+    when:
+      all:
+        - {finding: SF-UI-001, present: true}
+        - {finding: SF-UI-002, present: true}
+    recommended_skill: diagnose-data-skew
+    reason: Duração e input ambos desiguais indicam skew de dados, tratável na chave.
+
+  - id: ROUTE-007
+    phase_in: [diagnosis]
+    title: Skew de duração com input uniforme
+    when:
+      all:
+        - {finding: SF-UI-001, present: true}
+        - {finding: SF-UI-002, present: false}
+    recommended_skill: optimize-pyspark-code
+    reason: >
+      Duração desigual com input uniforme é skew de computação, não de dados.
+      Repartition não resolve. Investigar UDF e explode.
+
+  - id: ROUTE-008
+    phase_in: [diagnosis]
+    title: Pruning de partição ausente
+    when:
+      all:
+        - {finding: SF-PQ-002, present: true}
+    recommended_skill: analyze-spark-plan
+    reason: >
+      Ler a tabela inteira invalida qualquer conclusão sobre capacidade. É o achado de
+      maior alavanca e o mais rápido de confirmar no plano físico.
+
+  - id: ROUTE-009
+    phase_in: [diagnosis]
+    title: Small files dominando
+    when:
+      any:
+        - {finding: SF-PQ-001, present: true}
+        - {finding: SF-ICE-001, present: true}
+    recommended_skill: optimize-parquet-layout
+    reason: >
+      Gargalo de contagem de objetos e round-trips S3. Capacidade não corrige. Se a
+      tabela é Iceberg, seguir para optimize-iceberg-table para corrigir na escrita.
+
+  - id: ROUTE-010
+    phase_in: [diagnosis]
+    title: Dívida de metadados Iceberg
+    when:
+      any:
+        - {finding: SF-ICE-002, present: true}
+        - {finding: SF-ICE-003, present: true}
+    recommended_skill: optimize-iceberg-table
+    reason: >
+      Planejamento lento aponta para manifests, snapshots e delete files, não para data
+      files. Compactar dados quando o problema é metadado custa horas de DPU sem ganho.
+
+  - id: ROUTE-011
+    phase_in: [diagnosis]
+    title: Spill dominante sem skew
+    when:
+      all:
+        - {finding: SF-UI-003, present: true}
+        - {finding: SF-UI-001, present: false}
+    recommended_skill: optimize-pyspark-code
+    reason: >
+      Pressão de memória sem skew: reduzir bytes no shuffle por filtro, projeção e
+      pré-agregação antes de considerar capacidade.
+
+  - id: ROUTE-012
+    phase_in: [diagnosis, hypothesis]
+    title: Gargalo dominante identificado, sem baseline
+    when:
+      all:
+        - {case: gates.dominant_bottleneck_identified, equals: true}
+        - {case: gates.baseline_captured, equals: false}
+    recommended_skill: benchmark-pyspark-job
+    reason: >
+      Sem baseline não há como provar impacto, e qualquer número de ganho seria
+      inventado. Capturar antes de mudar.
+    blocked_by: [baseline_captured]
+
+  - id: ROUTE-013
+    phase_in: [hypothesis, experiment]
+    title: Baseline capturado e gargalo identificado
+    when:
+      all:
+        - {case: gates.baseline_captured, equals: true}
+        - {case: gates.dominant_bottleneck_identified, equals: true}
+        - {case: hypotheses, any_where: {status: open}}
+    recommended_skill: benchmark-pyspark-job
+    reason: >
+      Alterar uma variável principal por experimento e medir. Hipótese aberta sem
+      experimento é opinião.
+
+  - id: ROUTE-014
+    phase_in: [diagnosis]
+    title: Nenhum achado de código, dados ou execução
+    when:
+      all:
+        - {case: findings_index.count, count_eq: 0}
+        - {case: facts_index.count, count_gt: 0}
+    recommended_skill: review-glue-terraform
+    reason: >
+      Facts extraídos e nenhum finding: o código não é o gargalo. Revisar capacidade,
+      observabilidade e configuração de IaC, agora com evidência de que o problema não
+      está no código.
+
+  - id: ROUTE-015
+    phase_in: [validation, report]
+    title: Mudança medida sem validação funcional definida
+    when:
+      all:
+        - {case: gates.functional_validation_defined, equals: false}
+    recommended_skill: review-pyspark-pr
+    reason: >
+      Ganho de performance sem validação de contagem, schema, chaves e agregados não é
+      resultado, é risco. Definir a validação antes de fechar o relatório.
+    blocked_by: [functional_validation_defined]
+
+  - id: ROUTE-016
+    phase_in: [diagnosis]
+    title: Consumo por Athena presente
+    when:
+      all:
+        - {case: scope.consumers, contains: athena}
+    recommended_skill: optimize-iceberg-table
+    reason: >
+      Decisões de formato, particionamento e format version do job determinam o custo em
+      Athena. Verificar as restrições cruzadas antes de recomendar mudança de formato ou
+      de versão de Glue.
+    note: >
+      Ver knowledge/cross-service-constraints.md secao 1. Iceberg V3 escrito por Glue
+      5.1 não é legível por Athena.
+
+# Fallback: nenhuma regra casou.
+fallback:
+  recommended_skill: sparkforge-diagnose
+  reason: >
+    Nenhuma regra de roteamento casou com o estado atual do case. Voltar ao diagnóstico
+    ponta a ponta e registrar em open_questions qual evidência falta, para que uma regra
+    nova cubra este estado.

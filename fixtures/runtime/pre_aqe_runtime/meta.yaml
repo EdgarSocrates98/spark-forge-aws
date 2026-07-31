@@ -1,0 +1,16 @@
+name: pre_aqe_runtime
+proves: >
+  Glue 3.0 resolve para Spark 3.1.1, anterior ao 3.2 em que AQE passou a ser
+  ligado por default. SF-ENV-004 dispara para impedir a recomendacao mais
+  comum e mais errada nesse runtime: "confie no AQE". Fonte unica, sem
+  divergencia -- prova junto que SF-ENV-001 NAO dispara so porque a versao e
+  antiga.
+runtime:
+  glue: "3.0"
+  spark: "3.1.1"
+  python: "3.7"
+  iceberg: "0.13.1"
+expects_kinds:
+  - env.runtime_signal
+expects_rules:
+  - SF-ENV-004

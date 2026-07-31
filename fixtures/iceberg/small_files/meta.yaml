@@ -1,0 +1,23 @@
+name: small_files
+proves: >
+  Tabela Iceberg com write.distribution-mode none e particionamento definido
+  (partition-spec nao vazio), escrevendo data files de 4MB de media -- bem
+  abaixo do alvo de 32MB. Exercita SF-ICE-001 (severidade P1, abaixo de 8MB)
+  e SF-ICE-005 (distribution-mode none com partition-spec), a causa
+  estrutural de small files em Iceberg. Tambem traz sort-order definido para
+  provar que iceberg.table_property emite o fact corretamente mesmo sem
+  SF-ICE-004 poder disparar (blocked_on: nenhum dump unico sabe se os data
+  files existentes foram escritos antes do sort order).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - iceberg.files_summary
+  - iceberg.snapshots_summary
+  - iceberg.table_property
+  - iceberg.table_analyzed
+expects_rules:
+  - SF-ICE-001
+  - SF-ICE-005

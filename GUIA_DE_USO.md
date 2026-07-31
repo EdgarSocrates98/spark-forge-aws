@@ -83,3 +83,40 @@ A investigação só está concluída quando houver:
 - custo;
 - risco;
 - rollback.
+
+## 8. Retomando entre Devin e Claude Code
+
+O que atravessa a fronteira entre uma sessão Devin e uma sessão Claude Code é
+um commit, não contexto de conversa. Cinco arquivos pequenos e derivados sob
+`.sparkforge/` são committados — `case.yaml`, `facts.json`, `findings.json`,
+`handoff.md` e `artifacts/manifest.json` — porque são o barramento de handoff.
+Tudo em `.sparkforge/artifacts/**` além do `manifest.json` **não** é
+committado: são artefatos brutos (event logs, planos físicos, saída de
+Terraform) que podem carregar dado de negócio e chegar a centenas de MB. O
+manifesto é o que substitui o artefato ausente no commit: ele registra
+`sha256`, `source` e o `collect_command` exato de cada um.
+
+Checklist de retomada, em ordem:
+
+1. Rode `sparkforge resume --repo <raiz>` (ou `/sf-resume`) para reidratar o
+   payload — onde parou, runtime, achados principais, hipóteses abertas.
+2. Leia `coverage.unresolved`. Um nó não resolvido é **ponto cego**, não
+   ausência de problema — nunca trate contagem zero de achados como "está
+   tudo limpo" sem antes conferir `unresolved`.
+3. Leia `runtime.divergences`. Divergência entre fontes significa que
+   **nenhum limiar é confiável ainda** — corrija a detecção de runtime antes
+   de aplicar qualquer recomendação que dependa de versão.
+4. Para cada artefato em `missing_artifacts`, recolete usando o
+   `collect_command` exato registrado no manifesto — não improvise outro
+   comando nem assuma que o artefato antigo ainda é válido.
+5. Deixe `sparkforge next-step` decidir a rota (via `routing.yaml`). Não
+   escolha a próxima skill por julgamento próprio — é isso que divergiria
+   entre modelos e entre ferramentas.
+
+## 9. Sem MCP e sem Python
+
+Se as tools MCP não estiverem disponíveis, use a CLI `sparkforge` (mesmas
+funções, mesma saída). Se nem Python estiver disponível, leia
+`rules/catalog/*.yaml` diretamente — é YAML legível por humano, com o mesmo
+`rule_id`, o mesmo limiar, a mesma guarda de versão (`runtime_scope`) e a
+mesma fonte datada que o motor usaria. A automação cai; o conhecimento não.

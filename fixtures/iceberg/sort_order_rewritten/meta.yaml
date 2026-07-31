@@ -1,0 +1,22 @@
+name: sort_order_rewritten
+proves: >
+  O negativo de SF-ICE-004: tabela cujo passivo inteiro ja foi reescrito sob
+  a ordem vigente. Sort order definido (present: true, entao a primeira
+  condicao da regra casa), mas TODOS os quatro data files carregam
+  sort_order_id igual ao default-sort-order-id da tabela. Como id nao-zero so
+  e gravado deliberadamente, isso e evidencia positiva de "escrito sob esta
+  ordem", e o extrator afirma `written_before_sort_order: false` -- afirmacao,
+  nao ausencia de dado. A regra nao dispara. Se disparar aqui e falso
+  positivo, e o custo do falso positivo desta regra especifica e mandar
+  alguem rodar rewrite_data_files sobre uma tabela grande por nada.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - iceberg.files_summary
+  - iceberg.snapshots_summary
+  - iceberg.table_property
+  - iceberg.table_analyzed
+expects_rules: []

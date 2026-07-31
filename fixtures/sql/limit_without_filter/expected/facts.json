@@ -1,0 +1,54 @@
+[
+  {
+    "id": "f_4549f5",
+    "schema_version": 1,
+    "kind": "sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "projection_count": 1,
+      "predicate_count": 0,
+      "unresolved_count": 0,
+      "statement_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "1bda048915ea134407fcc298fed256536a7d87bfdfb8aa20c2ea9e799e73d50c",
+      "extractor": "sql_literal@0.1.0"
+    }
+  },
+  {
+    "id": "f_055e6f",
+    "schema_version": 1,
+    "kind": "sql.projection",
+    "subject": {
+      "type": "source_location",
+      "file": "query.sql",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "column_count": 2
+    },
+    "attrs": {
+      "star": false,
+      "has_limit": true,
+      "table": "sales.orders",
+      "table_format_columnar": null
+    },
+    "provenance": {
+      "artifact": "query.sql",
+      "artifact_sha256": "1bda048915ea134407fcc298fed256536a7d87bfdfb8aa20c2ea9e799e73d50c",
+      "extractor": "sql_literal@0.1.0"
+    }
+  }
+]

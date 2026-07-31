@@ -1,0 +1,21 @@
+name: overpartitioned_prefix
+proves: >
+  Tabela particionada por hora com apenas 3 particoes declaradas no catalogo e
+  ~8 MB por particao. SF-PQ-005 dispara pela cardinalidade (3 <= 5). E a unica
+  fixture do corpus que correlaciona duas fontes: a listagem diz o que existe
+  no armazenamento, e o dump do Glue Data Catalog (`input/catalog/`) diz quantas
+  particoes a tabela declara -- nenhuma das duas responde sozinha, e por isso
+  SF-PQ-005 exige as duas em `requires_facts`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - s3.analyzed
+  - s3.prefix_summary
+  - catalog.analyzed
+  - catalog.table_schema
+  - catalog.table_partitions
+expects_rules:
+  - SF-PQ-005

@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge.dev/schemas/finding.schema.json",
+  "title": "Finding",
+  "type": "object",
+  "required": [
+    "rule_id",
+    "schema_version",
+    "title",
+    "severity",
+    "confidence",
+    "status",
+    "subject",
+    "evidence"
+  ],
+  "properties": {
+    "rule_id": {
+      "type": "string",
+      "pattern": "^(SF-[A-Z]+-[0-9]{3})$"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "catalog_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "structural",
+        "confirmed"
+      ]
+    },
+    "subject": {
+      "type": "object",
+      "required": [
+        "type"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Finding sem Fact e invalido.",
+      "items": {
+        "type": "string",
+        "pattern": "^f_[0-9a-f]{6}$"
+      }
+    },
+    "measured": {
+      "type": "object"
+    },
+    "threshold": {
+      "type": "object"
+    },
+    "runtime_scope": {
+      "type": "object"
+    },
+    "explanation": {
+      "type": "string"
+    },
+    "proposed_change": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expected_effect": {
+      "type": "string"
+    },
+    "benchmark_ref": {
+      "type": "string"
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tradeoffs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validation": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rollback": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "anyOf": [
+          {
+            "required": [
+              "url"
+            ]
+          },
+          {
+            "required": [
+              "origin"
+            ]
+          }
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "retrieved": {
+            "type": "string",
+            "description": "ISO 8601. yaml.safe_load devolve datetime.date; o loader normaliza para string, senao json.dumps quebra."
+          }
+        }
+      }
+    }
+  }
+}

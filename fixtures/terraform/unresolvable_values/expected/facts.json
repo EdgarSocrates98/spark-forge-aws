@@ -1,0 +1,455 @@
+[
+  {
+    "id": "f_98b9a4",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ac228b",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--job-language",
+      "value": "python",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_668ee4",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-metrics",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_910a71",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-continuous-cloudwatch-log",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_038a95",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 18,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_3f88eb",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 2,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "etl-interpolado",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_e31a5e",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 28,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {
+      "value": 1
+    },
+    "attrs": {
+      "key": "max_concurrent_runs",
+      "value": "1",
+      "present": true,
+      "literal": true,
+      "block": "execution_property"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_a77566",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 3,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "aws_iam_role.glue.arn",
+      "present": true,
+      "literal": false,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ca8b25",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 4,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "5.0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_f36ada",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.2X",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_311ca7",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {
+      "value": 10
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "10",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_909627",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 9,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_c4dba2",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 12,
+      "unresolved_count": 4
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_34462a",
+    "schema_version": 1,
+    "kind": "tf.observability.unknown",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_435ca1",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {
+      "attribute_count": 12
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "etl_interpolado"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_e09bf5",
+    "schema_version": 1,
+    "kind": "tf.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.tf",
+      "line": 10,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "interpolation",
+      "key": "script_location",
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_9d05f1",
+    "schema_version": 1,
+    "kind": "tf.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.tf",
+      "line": 19,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "interpolation",
+      "key": "--spark-event-logs-path",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_04c411",
+    "schema_version": 1,
+    "kind": "tf.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.tf",
+      "line": 20,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "function_call",
+      "key": "--extra-py-files",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_467155",
+    "schema_version": 1,
+    "kind": "tf.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.tf",
+      "line": 21,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "heredoc",
+      "key": "--conf",
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "table": "analytics.eventos_sort_cego",
+  "format_version": 2,
+  "properties": {
+    "write.distribution-mode": "hash",
+    "format-version": "2"
+  },
+  "default_sort_order_id": 2,
+  "sort_order": [
+    {"column": "cliente_id", "direction": "asc", "null_order": "nulls-first"}
+  ],
+  "partition_spec": [],
+  "files": [
+    {"file_path": "s3://bucket/t/data/p00.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 0},
+    {"file_path": "s3://bucket/t/data/p01.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 0},
+    {"file_path": "s3://bucket/t/data/p02.parquet", "file_size_in_bytes": 268435456, "record_count": 700000, "sort_order_id": 0},
+    {"file_path": "s3://bucket/t/data/p03.parquet", "file_size_in_bytes": 268435456, "record_count": 700000}
+  ],
+  "snapshots": [
+    {"snapshot_id": 301, "committed_at": "2026-07-01T00:00:00Z", "operation": "replace"},
+    {"snapshot_id": 302, "committed_at": "2026-07-20T00:00:00Z", "operation": "append"}
+  ]
+}

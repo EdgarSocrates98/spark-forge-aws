@@ -1,0 +1,261 @@
+[
+  {
+    "id": "f_1852fd",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 12,
+      "col": 0,
+      "symbol": "le_pedidos",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 1,
+      "spark_work_count": 2
+    },
+    "attrs": {
+      "is_entrypoint": false,
+      "is_leaf": true
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_909c60",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 16,
+      "col": 0,
+      "symbol": "deduplica",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 1,
+      "spark_work_count": 5
+    },
+    "attrs": {
+      "is_entrypoint": false,
+      "is_leaf": true
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_0fec0a",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 21,
+      "col": 0,
+      "symbol": "grava",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 0,
+      "fan_in": 1,
+      "spark_work_count": 2
+    },
+    "attrs": {
+      "is_entrypoint": false,
+      "is_leaf": true
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_e76168",
+    "schema_version": 1,
+    "kind": "callgraph.function",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 25,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "fan_out": 3,
+      "fan_in": 0,
+      "spark_work_count": 0
+    },
+    "attrs": {
+      "is_entrypoint": true,
+      "is_leaf": false
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_99b0f4",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 25,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 1,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.read",
+      "via": [
+        "main",
+        "le_pedidos"
+      ]
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_99b0f4",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 25,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 1,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.window",
+      "via": [
+        "main",
+        "deduplica"
+      ]
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_99b0f4",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 25,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 1,
+      "occurrence_count": 1
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.write",
+      "via": [
+        "main",
+        "grava"
+      ]
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_f743c1",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 25,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 1,
+      "occurrence_count": 6
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.chain",
+      "via": [
+        "main",
+        "deduplica"
+      ]
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_e38d00",
+    "schema_version": 1,
+    "kind": "callgraph.summary",
+    "subject": {
+      "type": "source_location",
+      "file": "linear_pipeline",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "function_count": 4,
+      "edge_count": 3,
+      "entrypoint_count": 1,
+      "max_depth": 1,
+      "unreachable_function_count": 0
+    },
+    "attrs": {
+      "entrypoints": [
+        "main"
+      ],
+      "has_cycle": false
+    },
+    "provenance": {
+      "artifact": "linear_pipeline",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  }
+]

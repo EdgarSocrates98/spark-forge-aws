@@ -1,0 +1,20 @@
+name: v2_with_athena_consumer
+proves: >
+  Mesmo inventario, mesma tabela, mesmo consumidor Athena -- e format V2, que o
+  Athena le sem problema. Nenhuma regra dispara. Sem esta metade, uma regra que
+  ignorasse `format-version` e disparasse so por existir consumidor Athena
+  passaria no corpus inteiro, e acusaria toda tabela Iceberg do lake.
+runtime:
+  glue: "5.1"
+  spark: "3.5.6"
+  python: "3.11"
+  iceberg: "1.10.0"
+expects_kinds:
+  - env.consumer
+  - env.consumers_analyzed
+  - iceberg.table_analyzed
+  - iceberg.table_property
+  - iceberg.files_summary
+  - iceberg.delete_files_summary
+  - iceberg.snapshots_summary
+expects_rules: []

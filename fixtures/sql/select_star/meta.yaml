@@ -1,0 +1,21 @@
+name: select_star
+proves: >
+  `SELECT * FROM tabela`, sem WHERE nem LIMIT. Produz
+  sql.projection.attrs.star=true e attrs.table=sales.transactions, mas
+  SF-ATH-001 nao dispara neste fixture: exige o fact `sql.projection.enriched`
+  (requires_facts), que so `sparkforge/facts/fusion.py` produz ao correlacionar
+  esta fact com um `catalog.table_schema` -- este corpus e so texto SQL, sem
+  catalogo, entao a fusao nunca roda. Este fixture prova que star=true e
+  table sao produzidos corretamente e que a regra, apesar disso, permanece
+  silenciosa (skip por requires_facts, nao finding). Ver
+  fixtures/fusion/select_star_parquet para a mesma query disparando SF-ATH-001
+  de fato, uma vez fundida com catalogo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.projection
+  - sql.analyzed
+expects_rules: []

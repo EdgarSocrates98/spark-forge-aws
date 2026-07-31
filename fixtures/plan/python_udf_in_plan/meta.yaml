@@ -1,0 +1,23 @@
+name: python_udf_in_plan
+proves: >
+  UDF Python aparece no plano fisico como no proprio -- `BatchEvalPython` (UDF
+  Python linha a linha) e `ArrowEvalPython` (pandas UDF, vetorizada). O
+  extrator distingue os dois em `attrs.udf_type`, e a distincao muda a
+  recomendacao: trocar uma pandas UDF por funcao nativa e ganho menor que
+  eliminar uma UDF linha a linha, que serializa cada registro para o
+  interpretador Python. Nenhuma regra consome `plan.python_udf` hoje -- o fact
+  existe para o agente e para as skills -- e por isso mesmo precisa de golden:
+  fact sem regra e o que some primeiro numa refatoracao sem ninguem notar.
+  O Scan tem PartitionFilters preenchido de proposito, para que a fixture nao
+  dispare SF-PQ-002 e o corpus continue provando so o que se propoe.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - plan.analyzed
+  - plan.aqe
+  - plan.file_scan
+  - plan.python_udf
+expects_rules: []

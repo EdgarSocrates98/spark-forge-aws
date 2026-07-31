@@ -1,0 +1,11 @@
+name: action_in_loop
+proves: >
+  write dentro de um for reexecuta o DAG a montante a cada iteracao.
+  SF-PY-004 dispara sobre pyspark.loop com attrs.contains_write == true.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds: [pyspark.write, pyspark.chain, pyspark.loop, pyspark.module_analyzed]
+expects_rules: [SF-PY-004]
