@@ -37,7 +37,33 @@ class TestKnowledgeRefsAreResolved:
         payload = _core.rules_lookup(limit=100)
         for rule in payload["rules"]:
             for ref in rule["knowledge_refs"]:
+                # Asserts separados de proposito: `Path(None)` levanta
+                # `TypeError` antes do segundo assert rodar, e a mensagem
+                # acionavel (qual regra, qual ref) nunca apareceria.
+                assert ref["path"] is not None, f"{rule['id']} cita {ref['ref']}, que nao resolve"
                 assert Path(ref["path"]).is_file(), (rule["id"], ref)
+
+    def test_a_citation_inside_sources_note_is_not_omitted(self):
+        """SF-PY-002 cita `knowledge/spark/memory-and-oom.md` dentro de
+        `sources[0].note`, fora dos campos de texto direto da regra. A
+        primeira versao desta funcao so varria explanation/proposed_change/
+        validation/risks/tradeoffs e omitia essa citacao real."""
+        payload = _core.rules_lookup(id=["SF-PY-002"])
+        rule = _rule(payload, "SF-PY-002")
+        cited = {ref["ref"] for ref in rule["knowledge_refs"]}
+        assert "knowledge/spark/memory-and-oom.md" in cited
+
+    def test_a_url_containing_knowledge_slash_is_not_a_false_positive(self):
+        """`https://exemplo.com/knowledge/glue/x.md` nao e uma citacao de
+        knowledge local -- e uma URL que por coincidencia contem o prefixo
+        `knowledge/`. Sem exigir borda de token antes do prefixo, isso vira
+        uma citacao fantasma com `path: None`, indistinguivel de uma citacao
+        quebrada de verdade."""
+        rule = {
+            "id": "SF-TEST-URL",
+            "explanation": "veja https://exemplo.com/knowledge/glue/x.md para mais detalhes",
+        }
+        assert _core.knowledge_refs_of(rule) == []
 
     def test_a_citation_pointing_nowhere_is_reported_not_silently_dropped(self):
         """Citacao quebrada e defeito de catalogo. Sumir com ela esconderia o
