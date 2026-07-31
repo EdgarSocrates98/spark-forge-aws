@@ -27,6 +27,7 @@ REQUIRED_FIXTURES = {
     "secret_in_arguments",
     "clean_job",
     "unresolvable_values",
+    "bookmarks_with_concurrency",
 }
 
 

@@ -1,0 +1,51 @@
+[
+  {
+    "rule_id": "SF-ENV-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Observability metrics habilitado sem glueContext inicializado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.etl_sem_contexto"
+    },
+    "evidence": [
+      "f_33ae5b",
+      "f_83d3bf"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=4.0"
+    },
+    "explanation": "As métricas de observabilidade só são publicadas se glueContext estiver inicializado. Um job escrito como PySpark puro, com SparkSession.builder e sem GlueContext, não emite métrica alguma mesmo com o argumento habilitado. O operador conclui que o job está saudável quando na verdade não há dado. Ver knowledge/cross-service-constraints.md secao 3.",
+    "proposed_change": [
+      "Inicializar GlueContext no job, ainda que o restante do código use DataFrame puro.",
+      "Ou remover o argumento e assumir explicitamente que o diagnóstico dependerá de Spark UI e event logs."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Introduzir GlueContext num job PySpark puro adiciona dependência do runtime Glue, reduzindo a portabilidade para execução local."
+    ],
+    "tradeoffs": [
+      "Portabilidade local versus observabilidade em produção."
+    ],
+    "validation": [
+      "Métricas glue.driver.workerUtilization e glue.ALL.memory.heap.used.percentage presentes no CloudWatch após um run."
+    ],
+    "rollback": [
+      "Reverter o commit; nenhuma mudança de infraestrutura envolvida."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

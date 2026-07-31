@@ -1,0 +1,21 @@
+name: bookmarks_with_concurrency
+proves: >
+  `--job-bookmark-option = job-bookmark-enable` com `max_concurrent_runs = 3`.
+  Bookmark do Glue guarda o progresso por JOB, nao por execucao: com mais de
+  uma execucao concorrente, duas leem o mesmo ponto de partida e a que
+  terminar depois sobrescreve o marcador da outra -- reprocessamento silencioso
+  ou pulo de dado, dependendo da ordem. SF-GLUE-003 exige `same_subject`, entao
+  os dois atributos precisam ser do MESMO recurso: um job com bookmark e outro
+  com concorrencia, no mesmo arquivo, nao e o achado.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-GLUE-003

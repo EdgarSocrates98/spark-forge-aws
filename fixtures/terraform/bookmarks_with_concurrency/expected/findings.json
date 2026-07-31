@@ -1,0 +1,53 @@
+[
+  {
+    "rule_id": "SF-GLUE-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "MaxConcurrentRuns maior que 1 com bookmarks habilitados",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.etl_incremental"
+    },
+    "evidence": [
+      "f_ace9c2",
+      "f_51008f"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": "*"
+    },
+    "explanation": "O Glue expõe a categoria de erro GLUE_JOB_BOOKMARK_VERSION_MISMATCH_ERROR justamente para o caso de o mesmo job rodar concorrentemente sobre a mesma origem. Além disso, bookmark não é mecanismo de incremental universal: usado como se fosse CDC, leva a reprocessamento ou a perda silenciosa de dados. Para Iceberg, o incremental correto é leitura por snapshot, não bookmark.",
+    "proposed_change": [
+      "Reduzir max_concurrent_runs para 1, ou desabilitar bookmarks e adotar controle de incremental explícito.",
+      "Se a fonte é Iceberg, migrar para leitura incremental por snapshot."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reduzir concorrência pode afetar o SLA se havia dependência real de paralelismo entre runs."
+    ],
+    "tradeoffs": [
+      "Controle explícito de incremental é mais código e mais confiável que bookmark."
+    ],
+    "validation": [
+      "Ausência de GLUE_JOB_BOOKMARK_VERSION_MISMATCH_ERROR nas categorias de erro.",
+      "Contagem de linhas processadas por janela, comparada com a contagem esperada na origem.",
+      "Verificação de ausência de duplicação e de lacuna no destino."
+    ],
+    "rollback": [
+      "Restaurar max_concurrent_runs e a opção de bookmark anteriores."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

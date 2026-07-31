@@ -103,3 +103,46 @@ def test_every_unresolved_kind_is_exercised():
     unresolved = {k for k in EMITTABLE if k.endswith(".unresolved")}
     assert unresolved, "nenhum kind de ponto cego encontrado -- o filtro quebrou"
     assert unresolved <= covered, sorted(unresolved - covered)
+
+
+def _rules():
+    from sparkforge.rules.loader import catalog_dir, load_catalog
+
+    return [r for r in load_catalog(catalog_dir()) if r["id"].startswith("SF-")]
+
+
+def _rules_fired_in_goldens() -> set[str]:
+    fired: set[str] = set()
+    for path in FIXTURES.glob("*/*/expected/findings.json"):
+        for finding in json.loads(path.read_text(encoding="utf-8")):
+            fired.add(finding["rule_id"])
+    return fired
+
+
+def test_every_rule_has_a_fixture_that_fires_it():
+    """A contraparte do teste de kinds, no nivel da REGRA.
+
+    `rules/catalog/README.md` item 6 ja exigia fixture por regra, mas nada
+    verificava. Uma regra sem golden que a faca disparar nunca foi provada:
+    ela pode ter limiar invertido, `where` que nao casa com nenhum fact real,
+    ou `requires_facts` contraditorio -- foi exatamente o caso de SF-GLUE-005,
+    que exigia `spark.stage.spill` presente E ausente ao mesmo tempo e por isso
+    nao podia disparar nunca. O defeito sobreviveu porque estava atras de um
+    `blocked_on`, e nenhum teste olhava.
+
+    Regra que passe a nao disparar em nenhuma fixture quebra aqui, e a correcao
+    e uma das duas: criar a fixture que a exercita, ou remover a regra.
+    """
+    missing = sorted({r["id"] for r in _rules()} - _rules_fired_in_goldens())
+    assert not missing, (
+        f"regras sem nenhuma fixture que as faca disparar: {missing}. "
+        "Uma regra sem golden positivo nunca foi provada -- crie a fixture, "
+        "ou remova a regra do catalogo."
+    )
+
+
+def test_no_golden_fires_a_rule_that_left_the_catalog():
+    """A direcao oposta: golden que dispara regra inexistente e golden
+    obsoleto, sobrevivente de uma remocao que ninguem regenerou."""
+    unknown = sorted(_rules_fired_in_goldens() - {r["id"] for r in _rules()})
+    assert not unknown, unknown
