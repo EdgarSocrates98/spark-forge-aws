@@ -10,9 +10,18 @@ class TestManifest:
         assert (ROOT / ".claude-plugin" / "plugin.json").is_file()
 
     def test_manifest_declares_kebab_case_name_and_version(self):
+        """A versao e comparada com o pacote, nao com um literal.
+
+        Literal aqui significa que todo bump quebra este teste sem revelar nada:
+        a falha que importa e o plugin anunciar uma versao diferente da que o
+        `pip install` entrega. A concordancia das quatro fontes esta em
+        `tests/test_package_importable.py`.
+        """
+        import sparkforge
+
         data = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         assert data["name"] == "sparkforge-aws"
-        assert data["version"] == "0.4.0"
+        assert data["version"] == sparkforge.__version__
         assert data["description"]
 
     def test_component_dirs_are_at_root_not_inside_dot_directory(self):

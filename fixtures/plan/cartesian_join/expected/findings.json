@@ -1,0 +1,124 @@
+[
+  {
+    "rule_id": "SF-PLAN-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Join sem equi-condição — nested loop ou produto cartesiano",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 29,
+      "symbol": "(4) BroadcastNestedLoopJoin",
+      "node_id": 4,
+      "operator": "BroadcastNestedLoopJoin",
+      "relation": ""
+    },
+    "evidence": [
+      "f_6c794f"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=3.0"
+    },
+    "explanation": "Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha de um lado contra cada linha do outro: o custo é o produto das cardinalidades, não a soma. Um join que roda em segundos com equi-condição pode não terminar sem ela. Aparecer no plano é evidência de execução, não suspeita -- por isso P0 por default: é a única regra desta área em que o custo cresce de forma não-linear com o dado, e o dado cresce.",
+    "proposed_change": [
+      "Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.",
+      "Se a comparação for por faixa (BETWEEN, >=/<=), derivar uma chave de bucket discreta dos dois lados, fazer equi-join por ela e aplicar a comparação de faixa como filtro depois.",
+      "Se um dos lados for realmente pequeno e o produto for intencional, confirmar a cardinalidade dos dois lados e registrar a decisão no case."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Introduzir chave de bucket muda a cardinalidade intermediária e pode duplicar linhas se o bucket não for determinístico.",
+      "Promover um filtro a condição de join altera a semântica quando há outer join envolvido."
+    ],
+    "tradeoffs": [
+      "A reescrita por bucket adiciona uma coluna derivada e uma etapa de shuffle que não existiam."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem distinta da chave primária do resultado, para detectar duplicação.",
+      "Reextrair o plano e confirmar que a estratégia virou BroadcastHashJoin, ShuffledHashJoin ou SortMergeJoin."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita",
+      "usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html",
+        "retrieved": "2026-07-31",
+        "note": "SHUFFLE_REPLICATE_NL é o hint de shuffle-and-replicate nested loop join."
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A severidade P0 é decisão de campo: o custo é O(N*M) e a regra não tem medida de cardinalidade para calibrar. Quando houver fact de contagem dos dois lados, converter para severity_by."
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-PLAN-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Join sem equi-condição — nested loop ou produto cartesiano",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 33,
+      "symbol": "(5) CartesianProduct",
+      "node_id": 5,
+      "operator": "CartesianProduct",
+      "relation": ""
+    },
+    "evidence": [
+      "f_cad6c5"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=3.0"
+    },
+    "explanation": "Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha de um lado contra cada linha do outro: o custo é o produto das cardinalidades, não a soma. Um join que roda em segundos com equi-condição pode não terminar sem ela. Aparecer no plano é evidência de execução, não suspeita -- por isso P0 por default: é a única regra desta área em que o custo cresce de forma não-linear com o dado, e o dado cresce.",
+    "proposed_change": [
+      "Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.",
+      "Se a comparação for por faixa (BETWEEN, >=/<=), derivar uma chave de bucket discreta dos dois lados, fazer equi-join por ela e aplicar a comparação de faixa como filtro depois.",
+      "Se um dos lados for realmente pequeno e o produto for intencional, confirmar a cardinalidade dos dois lados e registrar a decisão no case."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Introduzir chave de bucket muda a cardinalidade intermediária e pode duplicar linhas se o bucket não for determinístico.",
+      "Promover um filtro a condição de join altera a semântica quando há outer join envolvido."
+    ],
+    "tradeoffs": [
+      "A reescrita por bucket adiciona uma coluna derivada e uma etapa de shuffle que não existiam."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem distinta da chave primária do resultado, para detectar duplicação.",
+      "Reextrair o plano e confirmar que a estratégia virou BroadcastHashJoin, ShuffledHashJoin ou SortMergeJoin."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita",
+      "usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html",
+        "retrieved": "2026-07-31",
+        "note": "SHUFFLE_REPLICATE_NL é o hint de shuffle-and-replicate nested loop join."
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A severidade P0 é decisão de campo: o custo é O(N*M) e a regra não tem medida de cardinalidade para calibrar. Quando houver fact de contagem dos dois lados, converter para severity_by."
+      }
+    ]
+  }
+]

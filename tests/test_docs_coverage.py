@@ -109,9 +109,14 @@ class TestSourcesMd:
 
 
 class TestManifest:
-    def test_version_is_0_4_0(self):
+    def test_version_matches_the_package(self):
+        """A concordancia entre as quatro fontes vive em
+        `tests/test_package_importable.py`. Aqui so se garante que o manifesto
+        nao ficou para tras do pacote."""
+        import sparkforge
+
         manifest = json.loads(_read("manifest.json"))
-        assert manifest["version"] == "0.4.0"
+        assert manifest["version"] == sparkforge.__version__
 
     def test_tools_list_equals_the_real_tools_keys(self):
         manifest = json.loads(_read("manifest.json"))

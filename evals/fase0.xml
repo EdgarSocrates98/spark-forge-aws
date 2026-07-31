@@ -36,7 +36,7 @@
     <answer>0:1</answer>
   </qa_pair>
   <qa_pair>
-    <question>Quantas regras `load_catalog()` retorna (ele exclui routing.yaml por construcao), e quantas dessas tem `category` igual a athena? Formato: total:athena</question>
-    <answer>43:5</answer>
+    <question>Entre as regras que `load_catalog()` retorna, quantas tem `category` igual a routing e quantas tem `category` igual a athena? Formato: routing:athena</question>
+    <answer>0:5</answer>
   </qa_pair>
 </evaluation>

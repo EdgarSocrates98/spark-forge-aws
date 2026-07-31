@@ -20,4 +20,6 @@ expects_kinds:
   - plan.aqe
   - plan.file_scan
   - plan.python_udf
-expects_rules: []
+expects_rules:
+  - SF-PLAN-001
+  - SF-PLAN-002

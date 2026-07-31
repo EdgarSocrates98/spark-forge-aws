@@ -18,3 +18,4 @@ expects_kinds:
   - plan.join
 expects_rules:
   - SF-PQ-002
+  - SF-PLAN-004

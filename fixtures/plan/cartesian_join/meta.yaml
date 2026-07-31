@@ -1,0 +1,30 @@
+name: cartesian_join
+proves: >
+  As duas estrategias que o Spark so escolhe sem equi-condicao utilizavel, no
+  mesmo plano: `CartesianProduct` (nenhuma condicao) e
+  `BroadcastNestedLoopJoin` (condicao de FAIXA, `valor BETWEEN valor_min AND
+  valor_max`, que nao e igualdade). SF-PLAN-003 dispara nas duas.
+
+  A segunda e a que importa para o falso negativo: o plano exibe
+  `Join condition: ((valor >= valor_min) AND (valor <= valor_max))`, entao
+  `attrs.has_condition` e `true`. Uma regra ancorada em "nao tem condicao" nao
+  veria este join -- e ele e exatamente o caso caro, porque a faixa parece uma
+  condicao normal na leitura do codigo. Por isso a regra ancora em
+  `attrs.strategy`, e por isso este plano tem `isFinalPlan=true`: sem isso
+  SF-PLAN-004 tambem dispararia e a fixture provaria duas coisas ao mesmo
+  tempo.
+
+  A metade negativa e `iceberg_batch_scan` e `pruning_ok`, com SortMergeJoin e
+  BroadcastHashJoin, onde SF-PLAN-003 nao pode disparar.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - plan.analyzed
+  - plan.aqe
+  - plan.file_scan
+  - plan.join
+expects_rules:
+  - SF-PLAN-003
