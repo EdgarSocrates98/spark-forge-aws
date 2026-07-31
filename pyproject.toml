@@ -19,7 +19,22 @@ aws = ["boto3>=1.34"]
 # starlette e uvicorn sao do transporte HTTP (Devin Desktop); stdio nao precisa
 # de nenhum dos dois, mas separar em dois extras deixaria o caminho HTTP
 # instalavel pela metade, que e como ele chegou quebrado ate aqui.
-mcp = ["mcp>=1.0,<2", "starlette>=0.37", "uvicorn>=0.30"]
+# `idna` e `python-dotenv` NAO sao usados pelo codigo deste projeto. Estao aqui
+# como PISO de versao para transitiva vulneravel, que e a unica forma de forcar
+# isso em extras de pyproject -- pip nao tem constraints declarativas aqui.
+#   idna          <3.15  CVE-2026-45409 ReDoS, via starlette -> anyio
+#   python-dotenv <1.2.2 CVE-2026-28684 symlink, via mcp -> pydantic-settings
+# Sao pisos (`>=`), nao pins (`==`): teto aqui congelaria a arvore de um pacote
+# que nao e nosso e quebraria resolucao quando starlette ou mcp subirem.
+# Remover quando starlette e mcp subirem os proprios pisos; o scan de SCA no CI
+# avisa se a remocao for cedo demais.
+mcp = [
+    "mcp>=1.0,<2",
+    "starlette>=0.37",
+    "uvicorn>=0.30",
+    "idna>=3.15",
+    "python-dotenv>=1.2.2",
+]
 # O extra `mcp` entra em `dev` para que o teste de construcao do servidor e do
 # app HTTP rode de verdade no CI. Sem isso ele viraria skip permanente -- e um
 # caminho pulado em silencio foi exatamente o defeito que o teste existe para
@@ -31,6 +46,8 @@ dev = [
     "mcp>=1.0,<2",
     "starlette>=0.37",
     "uvicorn>=0.30",
+    "idna>=3.15",
+    "python-dotenv>=1.2.2",
 ]
 
 [project.scripts]
