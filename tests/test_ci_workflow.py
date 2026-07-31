@@ -64,3 +64,63 @@ class TestTriggers:
 class TestNoAutoCommit:
     def test_no_step_runs_git_commit(self):
         assert not any("git commit" in run for run in _all_step_runs())
+
+
+REFRESH = ROOT / ".github" / "workflows" / "refresh-knowledge.yml"
+
+
+def _load_refresh():
+    return yaml.safe_load(REFRESH.read_text(encoding="utf-8"))
+
+
+def _refresh_runs() -> list[str]:
+    doc = _load_refresh()
+    runs: list[str] = []
+    for job in doc["jobs"].values():
+        for step in job.get("steps", []):
+            if step.get("run"):
+                runs.append(step["run"])
+    return runs
+
+
+class TestRefreshKnowledgeWorkflow:
+    """`refresh_knowledge` e o unico workflow que acessa a rede externa e o
+    unico que escreve no repositorio. As duas coisas exigem guarda."""
+
+    def test_file_exists_and_is_valid_yaml(self):
+        assert REFRESH.is_file()
+        assert _load_refresh() is not None
+
+    def test_is_manual_or_scheduled_but_never_runs_on_push_or_pr(self):
+        """Rodar em push faria toda PR depender de rede externa e do humor de
+        docs.aws.amazon.com. O resultado deste workflow nao e um veredito sobre
+        o commit; e tarefa de leitura para uma pessoa."""
+        doc = _load_refresh()
+        triggers = doc.get("on", doc.get(True))
+        assert "workflow_dispatch" in triggers
+        assert "schedule" in triggers
+        assert "push" not in triggers
+        assert "pull_request" not in triggers
+
+    def test_never_commits_to_main(self):
+        """A secao 12.3 da spec da Fase 0 e explicita: refresh_knowledge nunca
+        commita sozinho, abre PR. Um commit direto em main faria conhecimento
+        entrar por scraper, que e o oposto do que o catalogo garante."""
+        for run in _refresh_runs():
+            assert "push origin main" not in run
+            assert "push -u origin main" not in run
+            assert "checkout main" not in run
+
+    def test_the_only_commit_lands_on_a_new_branch_that_becomes_a_pr(self):
+        joined = "\n".join(_refresh_runs())
+        assert "git checkout -b" in joined
+        assert "gh pr create" in joined
+
+    def test_only_the_lock_is_staged(self):
+        """`git add` restrito ao lock. Um `git add -A` aqui varreria para dentro
+        do PR qualquer arquivo que o passo anterior tenha deixado no working
+        tree -- inclusive o proprio relatorio."""
+        joined = "\n".join(_refresh_runs())
+        assert "git add knowledge/sources.lock.json" in joined
+        assert "git add -A" not in joined
+        assert "git add ." not in joined

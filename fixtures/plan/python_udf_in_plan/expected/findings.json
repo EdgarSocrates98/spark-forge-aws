@@ -54,7 +54,7 @@
         "note": "Mede 3,20 s / 0,59 s / 0,087 s e mostra BatchEvalPython e ArrowEvalPython no plano."
       },
       {
-        "url": "https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html",
+        "url": "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html",
         "retrieved": "2026-07-31"
       }
     ]

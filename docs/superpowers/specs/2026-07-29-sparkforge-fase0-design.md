@@ -705,14 +705,21 @@ A tabela de §6.2 lista 17. A implementação precisou de dois sentinelas a mais
 X neste módulo" é vacuamente verdadeiro em módulo nenhum analisado) e
 `pyspark.glue_context_init` (detecção de `GlueContext`, exigida por SF-GLUE).
 
-**D-E. Versionamento não avançou.**
-§12.2 define três eixos independentes. Na prática `schema_version` continua `1`,
-`catalog_version` continua `1` e a versão do pacote continua `0.4.0` mesmo após
-Fases 1 e 2 — que adicionaram 12 extratores e 18 tools. `manifest.json`,
-`pyproject.toml`, `plugin.json` e `sparkforge.__version__` estão consistentes
-entre si, e `tests/test_docs_coverage.py::TestManifest::test_version_is_0_4_0`
-fixa esse número. Dívida consciente: a próxima mudança de contrato ou de limiar
-tem que mexer nos três eixos de uma vez.
+**D-E. Versionamento — resolvido em 2026-07-31, e não do jeito óbvio.**
+§12.2 define três eixos independentes. Até 2026-07-31 os três estavam parados em
+`1` / `1` / `0.4.0`, mesmo após as Fases 1 e 2 terem adicionado 12 extratores e
+18 tools. A correção **não** foi subir os três: o pacote foi para `0.5.0`, e
+`schema_version` e `catalog_version` ficaram em `1` deliberadamente, porque
+nenhum contrato de dados mudou e nenhum limiar existente mudou. Subir os três
+juntos destruiria exatamente a propriedade que a §12.2 quer — um Finding gravado
+com `catalog_version: 2` sugeriria que o limiar que o julgou é outro, e a
+reauditabilidade some.
+
+O teste que fixava o literal `0.4.0` foi trocado pelo invariante que ele tentava
+proteger: as quatro fontes da versão (`pyproject.toml`, `manifest.json`,
+`plugin.json`, `sparkforge.__version__`) têm que concordar entre si. O bump pela
+metade é a falha real — `pip install` entrega uma versão e o plugin anuncia
+outra —, e um literal num teste não pegava isso.
 
 ### 18.2 Números superados
 
@@ -737,7 +744,7 @@ Namespaces de fact que não existiam nesta spec e existem hoje: `spark.*`
 | Fase da §16 | Status | Observação |
 |---|---|---|
 | 1 — extratores restantes + coletores AWS | **entregue** | Ver [spec da Fase 1](2026-07-30-sparkforge-fase1-design.md) |
-| 2 — knowledge: expansão do catálogo, `refresh_knowledge`, matriz de compatibilidade | **parcial** | O catálogo já nasceu expandido (D-C) e as Fases 1–2 o tornaram inteiro alcançável. `refresh_knowledge` **não existe**: nenhum script, nenhum job de CI. A "Fase 2" executada no repositório (branch `feat/fase2-desbloqueios`) é um escopo **diferente** do que §16 chama de Fase 2 — ver [spec da Fase 2 executada](2026-07-31-sparkforge-fase2-design.md) |
+| 2 — knowledge: expansão do catálogo, `refresh_knowledge`, matriz de compatibilidade | **entregue** em 2026-07-31 | `scripts/refresh_knowledge.py` + workflow manual/semanal que abre PR e nunca commita em main; watchlist derivada dos `sources[].url` do próprio catálogo, cobrindo as fontes da matriz de compatibilidade; catálogo expandido com SF-PLAN e SF-CG (43 → 48 regras). Atenção ao nome: a "Fase 2" executada no branch `feat/fase2-desbloqueios` é escopo **diferente** — ver [spec da Fase 2 executada](2026-07-31-sparkforge-fase2-design.md) |
 | 3 — export Devin, MCP HTTP hospedado, marketplace, pip | **não iniciado** | O transporte HTTP existe (`--transport http`), mas hospedagem, export de Playbook e publicação no PyPI/marketplace não |
 | 4 — gates fail-closed, benchmark automatizado, validação funcional automatizada, assinatura de relatório | **não iniciado** | `blocked_by` continua advisory, como §5.5 decidiu |
 
