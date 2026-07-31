@@ -790,6 +790,17 @@ _RULE_ITEM: dict[str, Any] = {
             "type": "string",
             "description": "Capacidade ainda nao implementada que bloqueia esta regra.",
         },
+        "knowledge_refs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["ref", "path"],
+                "properties": {
+                    "ref": {"type": "string"},
+                    "path": {"type": ["string", "null"]},
+                },
+            },
+        },
     },
 }
 

@@ -766,6 +766,16 @@ class TestCliMcpEquivalence:
         mcp_payload = call_tool("sparkforge_analyze_sql", {"path": str(sql_path)})
         assert cli_payload == mcp_payload
 
+    def test_rules_lookup_matches(self, repo, capsys):
+        _, output = run(["rules", "lookup", "--id", "SF-ENV-001"], capsys)
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool("sparkforge_rules_lookup", {"id": ["SF-ENV-001"]})
+        assert cli_payload == mcp_payload
+        # Trava especifica da Task 5: os dois caminhos precisam concordar tambem
+        # no campo novo `knowledge_refs`, nao so no restante do payload.
+        assert cli_payload["rules"][0]["knowledge_refs"]
+
     def test_knowledge_path_matches(self, repo, capsys):
         _, output = run(["knowledge", "path", "--file", "glue/runtime-matrix.md"], capsys)
         cli_payload = json.loads(output)
