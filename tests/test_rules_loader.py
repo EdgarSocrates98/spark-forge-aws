@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from sparkforge.rules.loader import CatalogError, catalog_dir, load_catalog
 
@@ -17,8 +18,34 @@ class TestCatalogDiscovery:
 
 
 class TestLoadCommittedCatalog:
-    def test_loads_all_non_routing_rules(self):
-        assert len(load_catalog()) == 43
+    def test_loads_every_rule_declared_on_disk(self):
+        """O total carregado bate com o que existe nos arquivos, exceto routing.
+
+        Antes este teste fixava o literal 43. Um literal aqui obriga a editar o
+        teste toda vez que o catalogo cresce por um motivo legitimo -- e nao pega
+        a falha que importa, que e um arquivo de area parar de ser lido em
+        silencio e as regras dele sumirem do relatorio. Contar o que esta no
+        disco pega isso; um numero fixo nao.
+        """
+        declared = 0
+        for path in sorted((ROOT / "rules" / "catalog").glob("*.yaml")):
+            if path.name == "routing.yaml":
+                continue
+            document = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            declared += len(document.get("rules") or [])
+
+        assert declared > 0, "nenhuma regra no disco -- o glob esta errado"
+        assert len(load_catalog()) == declared
+
+    def test_every_area_file_contributes_at_least_one_rule(self):
+        """Arquivo de area vazio ou ilegivel e regressao silenciosa."""
+        areas = {r["_source_file"] for r in load_catalog()}
+        on_disk = {
+            p.name
+            for p in (ROOT / "rules" / "catalog").glob("*.yaml")
+            if p.name != "routing.yaml"
+        }
+        assert areas == on_disk
 
     def test_routing_is_excluded(self):
         assert not [r for r in load_catalog() if r["id"].startswith("ROUTE-")]
@@ -162,8 +189,14 @@ class TestRejections:
         assert [r["id"] for r in load_catalog()] == ["SF-X-004"]
 
     def test_real_catalog_still_passes_condition_validation(self):
-        """As 43 regras commitadas nao podem ter condicao malformada."""
-        assert len(load_catalog(validate_exprs=True)) == 43
+        """Nenhuma regra commitada pode ter condicao malformada.
+
+        Sem literal de contagem: o que este teste garante e que
+        `validate_exprs=True` nao levanta CatalogError sobre o catalogo real. A
+        contagem vive em `test_loads_every_rule_declared_on_disk`, comparada com
+        o disco.
+        """
+        assert load_catalog(validate_exprs=True)
 
 
 class TestCatalogPathIsContained:
@@ -207,4 +240,5 @@ class TestCatalogPathIsContained:
         assert safe_catalog_file(base, "pyspark.yaml").parent == base.resolve()
 
     def test_the_real_catalog_still_loads_through_the_check(self):
-        assert len(load_catalog(validate_exprs=True)) == 43
+        """A contencao de path nao pode rejeitar o catalogo legitimo."""
+        assert load_catalog(validate_exprs=True)

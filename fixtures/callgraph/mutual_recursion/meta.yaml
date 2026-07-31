@@ -20,4 +20,5 @@ expects_kinds:
   - callgraph.reachable_spark_work
   - callgraph.cycle
   - callgraph.summary
-expects_rules: []
+expects_rules:
+  - SF-CG-001

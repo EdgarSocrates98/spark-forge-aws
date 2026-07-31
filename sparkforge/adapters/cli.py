@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from sparkforge import __version__ as _pkg_fallback
 from sparkforge.adapters import _core
 
 try:
@@ -26,9 +27,12 @@ try:
     try:
         __version__ = _pkg_version("sparkforge-aws")
     except PackageNotFoundError:
-        __version__ = "0.4.0"
+        # Repo nao instalado (Devin CLI, sandbox, `python -m`). O fallback vem do
+        # pacote, nunca de um literal repetido aqui: tres copias do numero e tres
+        # chances de a CLI reportar uma versao que nao existe.
+        __version__ = _pkg_fallback
 except ImportError:  # pragma: no cover -- importlib.metadata sempre existe em py>=3.10
-    __version__ = "0.4.0"
+    __version__ = _pkg_fallback
 
 
 def _ensure_utf8_streams() -> None:

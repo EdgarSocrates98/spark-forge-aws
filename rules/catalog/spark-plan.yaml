@@ -1,0 +1,172 @@
+# Catálogo de regras — plano físico do Spark (`df.explain()` / `EXPLAIN`)
+# Consome os facts de sparkforge/facts/spark_plan.py.
+#
+# Estas regras julgam o que SOBREVIVEU à otimização do Catalyst, não o que está
+# escrito no código. Essa é a diferença que justifica a área existir ao lado de
+# SF-PY: SF-PY-001 acusa `udf()` no fonte e é `structural` -- o Catalyst poderia
+# ter eliminado aquele ramo. SF-PLAN-001 acusa `BatchEvalPython` no plano e é
+# `confirmed`: a UDF está no caminho que vai executar.
+#
+# Uma regra que NÃO foi escrita, e por quê: "join sem condição de equi-join".
+# O fact `plan.join` carrega `attrs.has_condition`, mas ele vem do campo
+# `Join condition`, que só existe em `EXPLAIN FORMATTED`. Num explain simples o
+# campo não existe e o extrator devolve `false` -- que aí significa "não deu para
+# saber", não "não há condição". Regra em cima disso acusaria todo join de um
+# explain simples. As regras abaixo ancoram em `attrs.strategy`, que é o nome do
+# operador e é inequívoco nos dois formatos. Mesma lição de
+# `tf.observability.unknown`: ausência de evidência não é evidência de ausência.
+
+catalog_version: 1
+schema_version: 1
+area: SF-PLAN
+retrieved: 2026-07-31
+
+rules:
+
+  - id: SF-PLAN-001
+    category: spark-plan
+    title: Python UDF pickled sobrevive até o plano físico
+    requires_facts: [plan.python_udf]
+    when:
+      same_subject: true
+      all:
+        - fact: plan.python_udf
+          where: {attrs.udf_type: python}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: "*"}
+    explanation: >
+      `BatchEvalPython` no plano é a UDF Python padrão, serializada com pickle entre a
+      JVM e o processo Python worker, linha a linha. A documentação da AWS mede o mesmo
+      cálculo nas três formas: 3,20 s com UDF Python padrão, 0,59 s com pandas_udf
+      (`ArrowEvalPython`) e 0,087 s com Spark SQL nativo. O nó também interrompe o
+      whole-stage codegen e torna a expressão opaca ao otimizador, o que elimina
+      pushdown de predicado através dela.
+      Diferença para SF-PY-001: aquela lê o fonte e é `structural` -- a UDF pode estar
+      num ramo que o Catalyst descartou. Esta lê o plano e é `confirmed`: o nó está no
+      caminho que vai executar. Quando as duas disparam, a segunda é a evidência forte.
+    proposed_change:
+      - Substituir por função Spark SQL nativa equivalente; é a forma mais rápida das três medidas pela AWS.
+      - Se a lógica for vetorizável sobre batch, migrar para `pandas_udf`, que aparece como ArrowEvalPython.
+      - Se a UDF for inevitável, isolá-la depois dos filtros e projeções, para que processe o menor número de linhas possível.
+    risks:
+      - Reescrita nativa pode divergir da UDF no tratamento de null, de tipo em borda e de precisão de ponto flutuante.
+      - pandas_udf muda a granularidade de execução para batch; lógica que dependa de estado por linha quebra.
+    tradeoffs:
+      - A expressão nativa equivalente costuma ficar mais verbosa que a UDF.
+    validation:
+      - Comparar resultado linha a linha numa amostra que inclua nulls e valores de borda.
+      - Contagem total e contagem de nulls da coluna resultado idênticas.
+      - Reextrair o plano e confirmar que o nó BatchEvalPython desapareceu.
+    rollback: [Reverter o commit; a UDF original não depende de mudança de infraestrutura.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html", retrieved: 2026-07-31, note: "Mede 3,20 s / 0,59 s / 0,087 s e mostra BatchEvalPython e ArrowEvalPython no plano."}
+      - {url: "https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html", retrieved: 2026-07-31}
+
+  - id: SF-PLAN-002
+    category: spark-plan
+    title: UDF vetorizada no plano — nativo ainda é mais rápido
+    requires_facts: [plan.python_udf]
+    when:
+      same_subject: true
+      all:
+        - fact: plan.python_udf
+          where: {attrs.udf_type: pandas}
+    status: confirmed
+    severity_default: P3
+    runtime_scope: {glue: "*"}
+    explanation: >
+      `ArrowEvalPython` é `pandas_udf`: transferência colunar por Arrow em vez de pickle
+      linha a linha. É a forma correta quando uma UDF é necessária, e por isso a
+      severidade é baixa. O achado existe porque o runtime Python continua no caminho:
+      na medição da AWS, 0,59 s contra 0,087 s do Spark SQL nativo. Não é defeito; é
+      um candidato a ganho que só vale investigar depois dos P0-P2.
+    proposed_change:
+      - Verificar se a lógica é expressável com funções nativas ou higher-order functions sobre array/map.
+      - Se não for, manter — pandas_udf já é a escolha certa.
+    risks:
+      - Reescrita nativa pode divergir no tratamento de null e de tipo em borda.
+    tradeoffs:
+      - Trocar pandas_udf por expressão nativa pode reduzir muito a legibilidade para ganho pequeno se a UDF não estiver no caminho quente.
+    validation:
+      - Comparar resultado linha a linha numa amostra com nulls e bordas.
+      - Medir antes e depois; sem medição, a troca não se justifica nesta severidade.
+    rollback: [Reverter o commit.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html", retrieved: 2026-07-31}
+
+  - id: SF-PLAN-003
+    category: spark-plan
+    title: Join sem equi-condição — nested loop ou produto cartesiano
+    requires_facts: [plan.join]
+    when:
+      same_subject: true
+      any:
+        - fact: plan.join
+          where: {attrs.strategy: CartesianProduct}
+        - fact: plan.join
+          where: {attrs.strategy: BroadcastNestedLoopJoin}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {spark: ">=3.0"}
+    explanation: >
+      Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe
+      condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha
+      de um lado contra cada linha do outro: o custo é o produto das cardinalidades, não
+      a soma. Um join que roda em segundos com equi-condição pode não terminar sem ela.
+      Aparecer no plano é evidência de execução, não suspeita -- por isso P0 por default:
+      é a única regra desta área em que o custo cresce de forma não-linear com o dado, e
+      o dado cresce.
+    proposed_change:
+      - Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.
+      - Se a comparação for por faixa (BETWEEN, >=/<=), derivar uma chave de bucket discreta dos dois lados, fazer equi-join por ela e aplicar a comparação de faixa como filtro depois.
+      - Se um dos lados for realmente pequeno e o produto for intencional, confirmar a cardinalidade dos dois lados e registrar a decisão no case.
+    risks:
+      - Introduzir chave de bucket muda a cardinalidade intermediária e pode duplicar linhas se o bucket não for determinístico.
+      - Promover um filtro a condição de join altera a semântica quando há outer join envolvido.
+    tradeoffs:
+      - A reescrita por bucket adiciona uma coluna derivada e uma etapa de shuffle que não existiam.
+    validation:
+      - Contagem total antes e depois.
+      - Contagem distinta da chave primária do resultado, para detectar duplicação.
+      - Reextrair o plano e confirmar que a estratégia virou BroadcastHashJoin, ShuffledHashJoin ou SortMergeJoin.
+    rollback: [Reverter o commit. Se houve escrita, usar time travel em Iceberg.]
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html", retrieved: 2026-07-31, note: "SHUFFLE_REPLICATE_NL é o hint de shuffle-and-replicate nested loop join."}
+      - {origin: field-heuristic, note: "A severidade P0 é decisão de campo: o custo é O(N*M) e a regra não tem medida de cardinalidade para calibrar. Quando houver fact de contagem dos dois lados, converter para severity_by."}
+
+  - id: SF-PLAN-004
+    category: spark-plan
+    title: Plano não-final do AQE — estratégia e partições ainda podem mudar
+    requires_facts: [plan.aqe]
+    when:
+      same_subject: true
+      all:
+        - fact: plan.aqe
+          where: {attrs.is_final_plan: false}
+    status: structural
+    severity_default: P4
+    runtime_scope: {spark: ">=3.0"}
+    explanation: >
+      `AdaptiveSparkPlan isFinalPlan=false` significa que este plano é o inicial: o AQE
+      ainda vai reotimizá-lo com estatísticas de runtime. A documentação do Spark lista
+      o que ele troca em execução -- coalescing de partições de shuffle, split de
+      partição enviesada, e conversão de sort-merge join em broadcast join. `EXPLAIN`
+      não executa a query, então o plano exibido é sempre o inicial.
+      Consequência prática, e o motivo desta regra existir: contagem de partições e
+      estratégia de join lidas daqui não são o que vai rodar. Recomendar broadcast
+      manual contra um SortMergeJoin visto neste plano é recomendar o que o AQE já faria
+      sozinho. P4 porque não é defeito do job -- é um limite da evidência, e o relatório
+      precisa dizer isso em vez de deixar o operador tratar plano inicial como final.
+    proposed_change:
+      - Para afirmar estratégia de join ou número de partições, usar o plano final da Spark UI (aba SQL, query concluída) ou o event log, não este.
+      - Reservar recomendação de join hint para depois de confirmar a estratégia no plano final.
+    risks: []
+    tradeoffs:
+      - Obter o plano final exige executar o job, o que custa tempo e DPU.
+    validation:
+      - Conferir na Spark UI se o AdaptiveSparkPlan da query concluída mostra isFinalPlan=true.
+    rollback: []
+    sources:
+      - {url: "https://spark.apache.org/docs/latest/sql-performance-tuning.html", retrieved: 2026-07-31, note: "spark.sql.adaptive.enabled default true desde o Spark 3.2.0; lista as reotimizações de runtime, incluindo converter sort-merge join em broadcast join."}
+      - {url: "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html", retrieved: 2026-07-31, note: "AQE default no Glue 4.0; no Glue 3.0 exige spark.sql.adaptive.enabled=true."}
