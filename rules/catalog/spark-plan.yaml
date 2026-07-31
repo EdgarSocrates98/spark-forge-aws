@@ -61,7 +61,7 @@ rules:
     rollback: [Reverter o commit; a UDF original não depende de mudança de infraestrutura.]
     sources:
       - {url: "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html", retrieved: 2026-07-31, note: "Mede 3,20 s / 0,59 s / 0,087 s e mostra BatchEvalPython e ArrowEvalPython no plano."}
-      - {url: "https://spark.apache.org/docs/latest/api/python/user_guide/sql/arrow_pandas.html", retrieved: 2026-07-31}
+      - {url: "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html", retrieved: 2026-07-31}
 
   - id: SF-PLAN-002
     category: spark-plan
