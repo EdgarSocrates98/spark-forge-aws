@@ -6,6 +6,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Defesa em profundidade: o job so faz checkout, lint, teste e build local,
+# nunca escreve no repositorio. Sem isto, herdaria o default do repositorio,
+# que pode ser mais amplo do que o necessario.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

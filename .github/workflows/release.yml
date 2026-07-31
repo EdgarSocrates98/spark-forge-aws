@@ -49,16 +49,24 @@ jobs:
         run: |
           PKG=$(python -c "import sys; sys.path.insert(0,'.'); import sparkforge; print(sparkforge.__version__)")
           if [ "v$PKG" != "$TAG" ]; then
-            echo "tag $TAG diverge da versao do pacote v$PKG" >&2
+            echo "tag $TAG diverge da versao do pacote v$PKG (formato esperado: v<versao>, minusculo)" >&2
             exit 1
           fi
           echo "versao confirmada: $PKG"
 
       - name: Artifact parity gate
-        run: python scripts/verify_wheel.py
-
-      - name: Build artifacts to publish
-        run: python -m build --outdir dist .
+        # `--outdir dist` deposita o wheel e o sdist AQUI, no diretorio que o
+        # passo seguinte anexa -- e so depois que build, instalacao no venv
+        # limpo, os 539 testes de golden e `twine check` passarem.
+        #
+        # Sem isto, o passo seguinte teria que rodar `python -m build` de
+        # novo, do zero: um segundo build gera um IRMAO do artefato provado,
+        # nunca o mesmo arquivo, porque nada neste repositorio fixa
+        # `SOURCE_DATE_EPOCH` -- sdist e wheel carregam timestamp interno no
+        # zip. "Provamos que ESTE artefato reproduz os goldens" viraria
+        # "provamos que UM artefato da mesma arvore reproduz, e publicamos
+        # OUTRO" -- furo fatal num passo que, uma vez publicado, so se yanka.
+        run: python scripts/verify_wheel.py --outdir dist
 
       - name: Draft GitHub Release with the artifacts
         env:
@@ -69,4 +77,4 @@ jobs:
             --draft \
             --title "$TAG" \
             --notes "Artefatos construidos e verificados pelo gate de paridade. Publicacao no PyPI e manual." \
-            dist/*
+            dist/*.whl dist/*.tar.gz

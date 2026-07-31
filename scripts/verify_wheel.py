@@ -17,6 +17,19 @@ pytest importar o repositorio e comparar o codigo-fonte consigo mesmo.
 Uso:
     python scripts/verify_wheel.py                # constroi, instala e verifica
     python scripts/verify_wheel.py --keep         # nao apaga o diretorio temporario
+    python scripts/verify_wheel.py --outdir DIR   # copia o wheel e o sdist
+                                                    # PROVADOS para DIR, so
+                                                    # depois do gate passar
+
+Por que `--outdir` existe: sem ele, o unico exemplar que passou pelos 539
+testes de golden e apagado no `finally` (o diretorio e temporario). Um
+publicador que rode `python -m build` de novo, do zero, para gerar o que vai
+anexar a um release, gera um IRMAO do artefato provado -- nunca o mesmo
+artefato, porque nada neste repositorio fixa `SOURCE_DATE_EPOCH`, e sdist/wheel
+carregam timestamp interno no zip. "Provamos que ESTE artefato reproduz os
+goldens" viraria "provamos que UM artefato construido da mesma arvore
+reproduz, e publicamos OUTRO" -- e essa e exatamente a lacuna que `--outdir`
+fecha: o publicador anexa o arquivo que o gate tocou, nao um refeito.
 """
 from __future__ import annotations
 
@@ -102,10 +115,69 @@ def _run(
     return subprocess.run(command, check=False, cwd=cwd, env=env)
 
 
+def safe_outdir(raw: Path) -> Path:
+    """Normaliza `--outdir` uma vez, no ponto de entrada, e nunca mais.
+
+    `scripts/install_skills.py::install_dest` resolve o mesmo problema confinando
+    o destino a uma raiz. Aqui NAO ha raiz de contencao, e isso e proposital: o
+    proposito do `--outdir` e depositar o artefato onde o chamador quiser --
+    `dist/` no CI, um diretorio de staging, um volume montado. Confinar quebraria
+    a funcao. Quem "consertar" isto confinando a uma raiz vai quebrar o release.
+
+    O que substitui a garantia e quebrar a cadeia de contaminacao, em dois pontos:
+
+    1. Aqui: `resolve()` elimina a semantica de `..` antes de qualquer acesso a
+       disco, e o resultado passa a ser um caminho absoluto normalizado. Depois
+       desta linha, nenhum valor cru da linha de comando circula pelo programa.
+    2. Em `_artifact_dest`: o unico componente concatenado ao destino e um
+       basename provado, vindo do glob do diretorio de build -- nunca de argv.
+
+    Symlink: SEGUE, nao recusa. `install_dest` recusa symlink que aponte para
+    fora da raiz de contencao dele -- mas aqui nao ha raiz para escapar. Um
+    `--outdir` que seja symlink e so mais uma forma legitima do operador
+    apontar para onde ele quer os artefatos (um volume montado via link, por
+    exemplo). `resolve()` ja segue o symlink e devolve o caminho real; e esse
+    caminho real que recebe `mkdir` e `copy2`, e e ele que aparece na mensagem
+    "artefatos provados copiados para ..." impressa no fim de `main` -- o
+    operador nunca fica sem saber onde os artefatos foram parar, entao nao ha
+    superficie de confusao para recusar.
+
+    Recusa arquivo existente no lugar do diretorio: `mkdir(parents=True,
+    exist_ok=True)` levantaria `FileExistsError` cru mais adiante, e o operador
+    receberia um traceback em vez da causa.
+    """
+    resolved = Path(raw).expanduser().resolve()
+    if resolved.exists() and not resolved.is_dir():
+        raise SystemExit(f"--outdir aponta para {resolved}, que existe e nao e diretorio")
+    return resolved
+
+
+def _artifact_dest(outdir: Path, artifact: Path) -> Path:
+    """Destino de um artefato: `<outdir normalizado>/<basename>`.
+
+    `artifact.name` vem do glob de `dist/` construido por este script, entao ja e
+    basename. A assercao existe para que a quebra da cadeia fique VISIVEL aqui,
+    em vez de depender de o leitor rastrear a origem do valor tres funcoes acima.
+    """
+    name = artifact.name
+    if not name or name in (".", "..") or "/" in name or "\\" in name:
+        raise SystemExit(f"nome de artefato inesperado, recusado por seguranca: {name!r}")
+    return outdir / name
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--keep", action="store_true", help="Nao apaga o diretorio temporario.")
+    parser.add_argument(
+        "--outdir",
+        type=Path,
+        default=None,
+        help="Copia o wheel e o sdist PROVADOS para este diretorio, so depois do gate passar.",
+    )
     args = parser.parse_args(argv)
+
+    if args.outdir is not None:
+        args.outdir = safe_outdir(args.outdir)
 
     # Guarda de corpus, DENTRO do gate -- nao basta o teste da suite
     # (`tests/test_verify_wheel.py::test_there_is_more_than_one`). Aquele
@@ -187,6 +259,18 @@ def main(argv: list[str] | None = None) -> int:
         if _run([str(python), "-m", "twine", "check", str(wheels[0]), str(sdists[0])]).returncode:
             print("twine check reprovou", file=sys.stderr)
             return 1
+
+        if args.outdir is not None:
+            # So chega aqui se build, instalacao, golden E twine check ja
+            # passaram -- um artefato reprovado nunca pode aparecer num
+            # diretorio de onde alguem publicaria por engano. `copy2` (nao
+            # `move`) porque `--keep` preserva o workdir inteiro para
+            # inspecao; os dois sinalizadores nao devem brigar por posse do
+            # arquivo.
+            args.outdir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(wheels[0], _artifact_dest(args.outdir, wheels[0]))
+            shutil.copy2(sdists[0], _artifact_dest(args.outdir, sdists[0]))
+            print(f"artefatos provados copiados para {args.outdir}")
 
         print(f"\nOK: {wheels[0].name} e {sdists[0].name} em paridade com os goldens.")
         return 0
