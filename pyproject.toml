@@ -6,11 +6,28 @@ build-backend = "setuptools.build_meta"
 name = "sparkforge-aws"
 version = "0.5.0"
 description = "Agent skills and deterministic analyzers for AWS Glue PySpark, Parquet, Iceberg and Athena performance engineering"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Edgar Socrates Caria" }]
 requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: System :: Monitoring",
+]
 dependencies = [
     "PyYAML>=6.0",
     "jsonschema>=4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/EdgarSocrates98/spark-forge-aws"
+Repository = "https://github.com/EdgarSocrates98/spark-forge-aws"
+Issues = "https://github.com/EdgarSocrates98/spark-forge-aws/issues"
 
 [project.optional-dependencies]
 aws = ["boto3>=1.34"]
