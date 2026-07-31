@@ -1394,6 +1394,33 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _RULES_LOOKUP_SCHEMA,
         "annotations": _READ_ONLY,
     },
+    "sparkforge_knowledge_path": {
+        "description": (
+            "Resolve a raiz dos arquivos de conhecimento versionado e, "
+            "opcionalmente, um arquivo dentro dela. Use antes de tentar LER "
+            "knowledge: num pacote instalado por pip o caminho fica dentro do "
+            "site-packages e nao e adivinhavel."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": "string",
+                    "description": "Caminho relativo, ex.: glue/runtime-matrix.md",
+                }
+            },
+        },
+        "outputSchema": {
+            "type": "object",
+            "required": ["root", "available"],
+            "properties": {
+                "root": {"type": "string"},
+                "file": {"type": ["string", "null"]},
+                "available": {"type": "array", "items": {"type": "string"}},
+            },
+        },
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_validate_output": {
         "description": (
             "Valida um finding proposto contra o JSON Schema e contra a regra de ganho sem "
@@ -1638,6 +1665,10 @@ def _h_rules_lookup(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_knowledge_path(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.knowledge_path(file=args.get("file"))
+
+
 def _h_validate_output(args: dict[str, Any]) -> dict[str, Any]:
     return _core.validate_output(args["finding"])
 
@@ -1804,6 +1835,7 @@ _HANDLERS = {
     "sparkforge_next_step": _h_next_step,
     "sparkforge_resume": _h_resume,
     "sparkforge_runtime_detect": _h_runtime_detect,
+    "sparkforge_knowledge_path": _h_knowledge_path,
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,

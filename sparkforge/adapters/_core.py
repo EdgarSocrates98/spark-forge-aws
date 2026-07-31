@@ -49,6 +49,7 @@ from sparkforge.facts.terraform import (
 )
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.validate import ValidationFailed, validate_finding
+from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 
@@ -893,6 +894,51 @@ def rules_lookup(
         "by_category": by_category,
         "rules": page,
     }
+
+
+# --------------------------------------------------------------------------- #
+# knowledge path
+# --------------------------------------------------------------------------- #
+
+
+def knowledge_path(file: str | None = None) -> dict[str, Any]:
+    """Resolve a raiz de knowledge, e opcionalmente um arquivo dentro dela.
+
+    Sem `file`, devolve a raiz e a lista do que ha. Um consumidor instalado por
+    pip nao tem como adivinhar o caminho dentro do site-packages, e listar e o
+    que torna o verbo utilizavel sem tentativa e erro.
+    """
+    try:
+        root = knowledge_dir()
+    except KnowledgeError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+    # `knowledge_dir()` espelha `catalog_dir()` e nao valida o fallback (ver a
+    # docstring dela): a checagem tem que morar no consumidor, assim como
+    # `load_catalog()` e quem valida `catalog_dir()`. A mensagem aqui distingue
+    # "diretorio de knowledge ausente" (empacotamento incompleto) de "arquivo
+    # nao existe" (`safe_knowledge_file`, mais abaixo) -- sao causas diferentes
+    # e confundi-las manda quem le procurar no lugar errado.
+    if not root.is_dir():
+        raise AdapterError(
+            f"diretorio de knowledge nao encontrado em {root}. O pacote instalado "
+            f"nao embarcou knowledge/, ou SPARKFORGE_KNOWLEDGE aponta para um "
+            f"caminho que nao existe.",
+            exit_code=2,
+        )
+
+    available = sorted(
+        p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()
+    )
+
+    resolved: str | None = None
+    if file:
+        try:
+            resolved = str(safe_knowledge_file(root, file))
+        except KnowledgeError as exc:
+            raise AdapterError(str(exc), exit_code=2) from exc
+
+    return {"root": str(root), "file": resolved, "available": available}
 
 
 # --------------------------------------------------------------------------- #
