@@ -1,0 +1,51 @@
+[
+  {
+    "rule_id": "SF-ATH-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Workgroup em engine version anterior à 3",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "legacy-etl"
+    },
+    "evidence": [
+      "f_8d8720"
+    ],
+    "measured": {
+      "engine_version": 2,
+      "bytes_scanned_cutoff": 10995116277760
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "athena": "*"
+    },
+    "explanation": "Engine version 3 traz otimização dinâmica de memória, melhor execução de JOIN, dynamic filtering, melhor integração com metadados do Glue Catalog e suporte otimizado a Iceberg. Diagnosticar query lenta antes de confirmar a engine version é tuning às cegas: dynamic filtering resolve sozinho parte dos casos de join que a v2 exigia reescrever à mão.",
+    "proposed_change": [
+      "Confirmar a engine version do workgroup antes de qualquer reescrita de SQL.",
+      "Planejar a migração para v3, validando as queries existentes contra as mudanças de comportamento de SQL."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Mudança de engine altera comportamento de algumas funções e de conversão de tipo; requer teste das queries existentes."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "Conjunto de queries de referência executado nas duas engines, comparando resultado e bytes escaneados.",
+      "Duração antes e depois."
+    ],
+    "rollback": [
+      "Reverter a engine version do workgroup",
+      "se a versão anterior ainda estiver disponível."
+    ],
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

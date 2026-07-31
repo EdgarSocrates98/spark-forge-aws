@@ -1,0 +1,19 @@
+name: unparsed_statement
+proves: >
+  `MERGE INTO` nao e `SELECT ... FROM`, e o extrator de SQL so reconhece a
+  segunda forma. A tabela alvo esta escrita ali em texto claro
+  (`glue_catalog.curated.pedidos`) e seria facil "quase" extrair -- e por isso
+  esta fixture existe: extrair meia query produziria `sql.projection` e
+  `sql.predicate` sobre uma sentenca que o parser nao entendeu, e SF-ATH-002
+  (`absent: sql.predicate.partition_filter`) acusaria falta de filtro numa
+  query cujo filtro esta no `ON`. Vira `sql.unresolved` com reason
+  `unparsed_clause`, e nenhuma regra dispara.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - sql.analyzed
+  - sql.unresolved
+expects_rules: []

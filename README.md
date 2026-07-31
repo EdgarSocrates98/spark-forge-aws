@@ -69,6 +69,25 @@ no julgamento, isolado de qualquer mudança no código analisado.
 | `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge` em qualquer shell/CI |
 | Espelhos markdown | `rules/catalog/*.yaml`, `skills/`, `knowledge/` | Sem MCP e sem Python — leitura direta |
 
+#### Os dois transportes MCP
+
+```bash
+pip install -e ".[mcp]"
+
+# stdio — Claude Code, Devin CLI, CI. É o que .mcp.json já configura.
+python -m sparkforge.adapters.mcp --transport stdio
+
+# streamable HTTP — Devin Desktop, que configura MCP por serverUrl.
+python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+# serverUrl: http://127.0.0.1:8765/mcp
+```
+
+O extra `mcp` fixa `mcp>=1.0,<2`: o SDK 2.x removeu os decoradores que
+`build_server()` usa para registrar os tools, e sem o teto uma instalação
+limpa resolveria para 2.x e o servidor quebraria no import — nos dois
+transportes. `tests/test_adapters_mcp.py` constrói o servidor e o app ASGI de
+verdade, para que um erro de API apareça no CI e não na máquina do operador.
+
 ### Fluxo de handoff
 
 `sparkforge handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir
@@ -130,7 +149,7 @@ Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Us
 ### Instalar no próprio repositório
 
 ```bash
-python scripts/install_skills.py --target /caminho/do/repositorio --all
+cd /caminho/do/repositorio && python /caminho/do/sparkforge/scripts/install_skills.py --all
 ```
 
 ### Apenas Claude Code
@@ -152,6 +171,11 @@ python scripts/install_skills.py --target . --copilot
 ```
 
 Use `--force` para substituir arquivos existentes.
+
+A instalação escreve **no diretório atual** — por isso o `cd` no primeiro
+exemplo. `--target` é opcional e serve como confirmação explícita do destino:
+se for passado e não for o diretório atual, o script recusa e mostra o `cd`
+correto, em vez de escrever num lugar que você não estava olhando.
 
 ### Manutenção das cópias (contribuidores)
 

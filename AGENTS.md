@@ -36,16 +36,57 @@ recommendation:
 
 For full/incremental AWS Glue workloads, start with `glue-incremental-performance-architect`. Build the call graph, classify the OOM, prove whether incremental runs still perform global work, and inspect Iceberg commit/file/metadata behavior before infrastructure tuning.
 
-## Deterministic evidence (Fase 0)
+## Deterministic evidence
 
 Evidence for this project comes from deterministic extraction, not from an
 LLM sampling the codebase. A `Fact` is an anchored observation — file, line,
-symbol, snippet — produced by static AST analysis, and it carries no
-judgment: no severity, no threshold, no recommendation. A `Finding` is
-judgment, and it always carries a non-empty `evidence` list of `fact_id`
-values plus a `rule_id` traceable to a dated source in `rules/catalog/`. A
-`Finding` with empty evidence is invalid by construction (see
-`sparkforge.findings.models.Finding.__post_init__`).
+symbol, snippet, or plan node — and it carries no judgment: no severity, no
+threshold, no recommendation. A `Finding` is judgment, and it always carries a
+non-empty `evidence` list of `fact_id` values plus a `rule_id` traceable to a
+dated source in `rules/catalog/`. A `Finding` with empty evidence is invalid
+by construction (see `sparkforge.findings.models.Finding.__post_init__`).
+
+### What can be extracted
+
+Eleven extractors, all offline — they read artifacts already on disk and never
+call AWS. Each has a CLI verb and an MCP tool with the same name:
+
+| Artifact | CLI verb | Reads |
+|---|---|---|
+| PySpark source | `analyze pyspark` | `*.py` tree (AST) |
+| Spark physical plan | `analyze plan` | pasted `explain("formatted")` output |
+| Spark event log | `analyze event-log` | `*.jsonl` event log of a run |
+| Iceberg metadata | `analyze iceberg` | dump of the metadata tables |
+| Glue Data Catalog | `analyze catalog-schema` | `GetTables`/`GetTable` dump |
+| Terraform | `analyze terraform` | `aws_glue_job` HCL |
+| SQL | `analyze sql` | `*.sql` and `spark.sql(...)` literals |
+| Athena workgroup | `analyze athena-workgroup` | `get_work_group` dump |
+| Call graph | `analyze call-graph` | derived from PySpark facts |
+| Runtime | `runtime detect` | every source above, cross-checked |
+| Correlation | `fuse` | facts from several extractors at once |
+
+Collection of the raw artifacts (`collect *`) requires boto3 and credentials
+and is the only part that touches AWS. The core never imports boto3 or the MCP
+SDK, so the CLI and the file-only path work without either.
+
+### Three states, never two
+
+The hardest rule in this codebase, and the one worth stating in every report:
+**absence of evidence is not evidence of absence.** When an artifact does not
+answer a question, the extractor emits an `*.unresolved` fact naming the blind
+spot, and the rule that depended on it does not fire. Empty `PartitionFilters`
+in a plan does not prove the table is partitioned; an interpolated Terraform
+value does not prove the argument is unset; an unparseable Athena engine
+version does not mean version zero. Report the blind spot; never fill it in.
+
+### Version guard
+
+Every rule declares `runtime_scope`, and the engine skips it when the detected
+runtime is out of range — so state the detected runtime before any finding.
+Divergence between sources is never resolved by picking one: it is `SF-ENV-001`
+at P0, because every threshold downstream is evaluated against the wrong
+runtime until it is settled. See `knowledge/glue/runtime-matrix.md` for the
+Glue 4.0 / 5.0 / 5.1 matrix and the Iceberg V3 versus Athena trap in Glue 5.1.
 
 The `recommendation:` schema documented above remains valid: `Finding` is a
 compatible superset of it, with the same fields (`title`, `severity`,

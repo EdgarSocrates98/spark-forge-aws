@@ -29,6 +29,7 @@ REQUIRED_FIXTURES = {
     "clean_job",
     "near_threshold",
     "version_out_of_scope",
+    "glue_window_job",
 }
 
 

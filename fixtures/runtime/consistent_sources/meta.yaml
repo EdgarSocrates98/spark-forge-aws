@@ -1,0 +1,15 @@
+name: consistent_sources
+proves: >
+  Duas fontes concordando (Terraform em Glue 5.0, event log em Spark 3.5.4, que
+  e exatamente o que a matriz preve). Nenhuma regra pode disparar: SF-ENV-001
+  exige `distinct_versions > 1` e SF-ENV-004 exige Spark anterior a 3.2.
+  Cobre tambem `source_count: 2` com `distinct_versions: 1` -- duas fontes que
+  concordam nao podem ser lidas como divergencia.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - env.runtime_signal
+expects_rules: []

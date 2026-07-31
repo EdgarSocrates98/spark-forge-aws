@@ -58,6 +58,15 @@ rules:
         - fact: tf.resource
           where: {attrs.resource_type: aws_glue_job}
         - absent: tf.observability.spark_ui
+        # Sem esta segunda condição a regra confunde "não configurou" com "o
+        # valor só existe depois do apply". `--spark-event-logs-path` escrito
+        # como "s3://${var.bucket_logs}/sparkui/" é a forma normal de escrever
+        # Terraform: o extrator não adivinha o valor (vira `tf.unresolved`) e,
+        # sem `tf.observability.unknown`, isso acusaria em P1 um job que TEM
+        # observabilidade configurada. Ausência de evidência não é evidência
+        # de ausência — mesma guarda de `plan.unresolved` /
+        # `partition_status_unknown` no lado do plano físico.
+        - absent: tf.observability.unknown
     status: confirmed
     severity_default: P1
     runtime_scope: {glue: "*"}

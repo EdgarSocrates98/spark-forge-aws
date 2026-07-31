@@ -18,7 +18,7 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "catalog"
 
-REQUIRED_FIXTURES = {"glue_table_schema", "overpartitioned_multi_table"}
+REQUIRED_FIXTURES = {"glue_table_schema", "overpartitioned_multi_table", "malformed_dump"}
 
 
 def fixture_dirs():

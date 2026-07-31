@@ -11,11 +11,20 @@ em outra ferramenta (Devin Desktop, Claude Code, CI) sem carregar contexto de
 sessao nenhum -- so o commit.
 
 Dois transportes, mesmo nucleo: stdio para Claude Code, Devin CLI e CI;
-streamable HTTP para Devin Desktop, que configura MCP por `serverUrl`.
+streamable HTTP para Devin Desktop, que configura MCP por `serverUrl` --
+`http://<host>:<port>/mcp` com os defaults de `main()`.
+
+O extra `mcp` fixa `mcp>=1.0,<2` de proposito. O SDK 2.x removeu os
+decoradores `@server.list_tools()`/`@server.call_tool()` usados em
+`build_server()` em favor de `add_request_handler`, entao `mcp>=1.0` sozinho
+resolveria para 2.x numa instalacao limpa e o servidor quebraria no import,
+em TODAS as plataformas -- nao so no transporte HTTP. Migrar para 2.x e
+trabalho proprio, com o teste de construcao abaixo como rede.
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 from typing import Any
@@ -28,7 +37,7 @@ _INSTALL_HINT = (
 )
 
 
-def build_server() -> Any:  # pragma: no cover -- exige o SDK do MCP, ausente em CI
+def build_server() -> Any:
     """Constroi um `mcp.server.Server` registrando `TOOLS`. Falha com mensagem
     acionavel (SystemExit) se o SDK nao estiver instalado."""
     try:
@@ -70,18 +79,52 @@ def _run_stdio(server: Any) -> None:  # pragma: no cover -- exige o SDK do MCP
     anyio.run(_run)
 
 
-def _run_http(server: Any, host: str, port: int) -> None:  # pragma: no cover -- exige o SDK do MCP
-    import anyio
-    import uvicorn
-    from mcp.server.streamable_http import StreamableHTTPServerTransport
+def build_http_app(server: Any, *, json_response: bool = False, stateless: bool = True) -> Any:
+    """Monta o app ASGI do transporte streamable HTTP, sem subir servidor.
 
-    async def _run() -> None:
-        transport = StreamableHTTPServerTransport()
-        app = transport.asgi_app(server)
-        config = uvicorn.Config(app, host=host, port=port, log_level="info")
-        await uvicorn.Server(config).serve()
+    Separado de `_run_http` para ser testavel: subir uvicorn exige porta e
+    processo, montar o app nao exige nada -- e e na montagem que moram os
+    erros que passaram despercebidos aqui (construtor com assinatura errada,
+    metodo inexistente). `tests/test_adapters_mcp.py` chama esta funcao e
+    entra no lifespan; um erro de API vira falha de teste, nao um servidor
+    que morre no primeiro segundo na maquina do operador.
 
-    anyio.run(_run)
+    `stateless=True` porque este servidor nao guarda estado de sessao: o
+    estado do case vive em `.sparkforge/case.yaml`, no repositorio analisado.
+    Sessao no servidor daria a impressao de continuidade que o design nao tem.
+    """
+    try:
+        from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+        from starlette.applications import Starlette
+        from starlette.routing import Mount
+    except ImportError as exc:
+        raise SystemExit(_INSTALL_HINT) from exc
+
+    manager = StreamableHTTPSessionManager(
+        app=server, json_response=json_response, stateless=stateless
+    )
+
+    async def _handle(scope: Any, receive: Any, send: Any) -> None:
+        await manager.handle_request(scope, receive, send)
+
+    @contextlib.asynccontextmanager
+    async def _lifespan(_app: Any) -> Any:
+        # `manager.run()` levanta o task group que serve as requisicoes. Sem
+        # entrar nele, o app responde 500 em toda chamada -- por isso ele e
+        # amarrado ao lifespan do Starlette, e nao aberto sob demanda.
+        async with manager.run():
+            yield
+
+    return Starlette(routes=[Mount("/mcp", app=_handle)], lifespan=_lifespan)
+
+
+def _run_http(server: Any, host: str, port: int) -> None:  # pragma: no cover -- sobe servidor
+    try:
+        import uvicorn
+    except ImportError as exc:
+        raise SystemExit(_INSTALL_HINT) from exc
+
+    uvicorn.run(build_http_app(server), host=host, port=port, log_level="info")
 
 
 def main(argv: list[str] | None = None) -> int:  # pragma: no cover -- exige o SDK do MCP
@@ -90,7 +133,10 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover -- exige o S
         "--transport",
         choices=["stdio", "http"],
         default="stdio",
-        help="stdio para Claude Code/Devin CLI/CI; http (streamable) para Devin Desktop.",
+        help=(
+            "stdio para Claude Code/Devin CLI/CI; http (streamable) para Devin Desktop, "
+            "que aponta serverUrl para http://<host>:<port>/mcp."
+        ),
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
