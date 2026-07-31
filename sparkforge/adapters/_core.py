@@ -860,13 +860,76 @@ def runtime_detect(
 # --------------------------------------------------------------------------- #
 
 # Citacao de knowledge no catalogo tem sempre a forma `knowledge/<caminho>.<ext>`.
-# Ancorar no prefixo literal evita casar caminho de outra coisa que termine em
-# `.md`, como um link externo dentro da mesma frase.
-_KNOWLEDGE_REF = re.compile(r"knowledge/[A-Za-z0-9_\-/]+\.(?:md|sql)")
+# A revisao da Task 5 achou um falso positivo real: sem exigir um limite de
+# token antes de `knowledge/`, o trecho "https://exemplo.com/knowledge/glue/x.md"
+# tambem casava, porque o prefixo `knowledge/` aparece embutido numa URL alheia.
+# O resultado virava uma citacao fantasma com `path: None` -- indistinguivel de
+# uma citacao quebrada de verdade (o caso que `path: None` existe para sinalizar).
+# `(?:^|(?<=[\s"'(]))` exige que `knowledge/` comece a citacao (inicio da string)
+# ou venha logo apos espaco, aspas ou abre-parenteses -- nunca no meio de outro
+# caminho ou URL. E zero-width (nao entra no texto casado), entao `ref` continua
+# comecando exatamente em `knowledge/`.
+_KNOWLEDGE_REF = re.compile(r"(?:^|(?<=[\s\"'(]))knowledge/[A-Za-z0-9_\-/]+\.(?:md|sql)")
 
-# Campos onde a citacao aparece hoje. Varrer a regra inteira pegaria tambem o
-# corpo de `sources`, cujo `url` nao e caminho local.
+# Campos-texto onde a citacao aparece hoje. `sources` fica de fora desta lista
+# porque e uma lista de objetos, nao uma string/lista de strings como os demais
+# -- precisa de tratamento proprio (ver `_source_notes_of`), nao porque nao
+# tenha citacao: `SF-PY-002` cita `knowledge/spark/memory-and-oom.md` dentro de
+# `sources[0].note`, e a Task 5 original omitia essa regra por varrer so estes
+# campos. O que continua de fora, de proposito, e `sources[].url`: link externo,
+# nunca caminho local.
 _KNOWLEDGE_FIELDS = ("explanation", "proposed_change", "validation", "risks", "tradeoffs")
+
+
+def _source_notes_of(rule: dict[str, Any]) -> list[str]:
+    """`note` de cada entrada de `sources` -- texto livre que pode citar
+    knowledge, ao contrario de `url` (link externo, nunca escaneado)."""
+    return [
+        str(source["note"])
+        for source in rule.get("sources") or []
+        if isinstance(source, dict) and source.get("note")
+    ]
+
+
+def _citations_of(rule: dict[str, Any]) -> list[str]:
+    """Citacoes `knowledge/...` da regra, unicas e ordenadas, varrendo
+    `_KNOWLEDGE_FIELDS` mais `sources[].note`."""
+    parts = [str(rule.get(field, "")) for field in _KNOWLEDGE_FIELDS]
+    parts.extend(_source_notes_of(rule))
+    blob = " ".join(parts)
+    return sorted(set(_KNOWLEDGE_REF.findall(blob)))
+
+
+def _resolve_knowledge_refs(
+    citations: list[str], root: Path | None, resolved: dict[str, str | None]
+) -> list[dict[str, Any]]:
+    """Resolve cada citacao contra `root`, reaproveitando `resolved` como cache
+    entre chamadas (ver `rules_lookup`, que compartilha o mesmo dict por todas
+    as regras da pagina): das citacoes do catalogo inteiro, so 11 arquivos sao
+    unicos, entao a maioria das resolucoes repete um arquivo ja resolvido.
+
+    O cache e um dict local passado pelo chamador, nunca um `lru_cache` de
+    modulo: `root` pode mudar entre chamadas de processo longo (servidor MCP
+    com `SPARKFORGE_KNOWLEDGE` trocada, ou uma reinstalacao no meio da sessao),
+    e um cache de processo teria que ser invalidado manualmente para nao
+    devolver `path` obsoleto. Escopar o cache a uma unica chamada de
+    `rules_lookup` (ou de `knowledge_refs_of`, que cria o seu proprio) elimina
+    esse risco de estale sem abrir mao do reaproveitamento -- o ganho medido
+    (~12ms, ~10% de `rules_lookup(limit=100)`) nao justifica a complexidade
+    extra de invalidacao que um cache mais longevo exigiria.
+    """
+    refs: list[dict[str, Any]] = []
+    for ref in citations:
+        if ref not in resolved:
+            path: str | None = None
+            if root is not None:
+                try:
+                    path = str(safe_knowledge_file(root, ref[len("knowledge/") :]))
+                except KnowledgeError:
+                    path = None
+            resolved[ref] = path
+        refs.append({"ref": ref, "path": resolved[ref]})
+    return refs
 
 
 def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
@@ -877,7 +940,9 @@ def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
 
     `knowledge_dir()` e resolvido uma unica vez aqui fora do laco: a raiz nao
     muda entre citacoes da mesma regra, e repetir a chamada por citacao seria
-    trabalho redundante sem nenhum ganho de corretude.
+    trabalho redundante sem nenhum ganho de corretude. `rules_lookup` vai alem
+    disso e resolve a raiz uma unica vez para a pagina inteira, via
+    `_resolve_knowledge_refs` direto -- ver a docstring dela.
 
     Ao contrario de `knowledge_path` (que devolve `_knowledge_root_missing`,
     um AdapterError, quando a raiz esta ausente ou invalida), aqui a raiz
@@ -886,10 +951,26 @@ def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
     ...) mesmo sem `knowledge/` instalado -- so a citacao especifica fica
     sem caminho, exatamente como uma citacao quebrada dentro de uma raiz
     valida.
-    """
-    blob = " ".join(str(rule.get(field, "")) for field in _KNOWLEDGE_FIELDS)
 
-    citations = sorted(set(_KNOWLEDGE_REF.findall(blob)))
+    Uma imprecisao da primeira versao desta docstring: no cenario mais comum
+    de raiz ausente -- pacote instalado por pip sem `knowledge/` embarcado --
+    o `path: None` NAO vem deste `except KnowledgeError` em torno de
+    `knowledge_dir()`. `knowledge_dir()` so levanta quando `SPARKFORGE_KNOWLEDGE`
+    aponta para um caminho invalido; o fallback para o pacote (linha final de
+    `knowledge_dir()`) devolve um `Path` sem checar `is_dir()`, entao `root`
+    fica preenchido mesmo sem o diretorio existir. O `None` nesse caso vem do
+    `except KnowledgeError` dentro de `_resolve_knowledge_refs`, por
+    `safe_knowledge_file` falhar no `target.exists()`. O resultado observavel
+    e o mesmo (`path: None`), mas a causa e outra -- e por isso `rules_lookup`
+    nunca aponta o operador para `pip install --force-reinstall sparkforge-aws`
+    do jeito que `knowledge_path` aponta: essa mensagem acionavel e
+    responsabilidade de `knowledge_path`/`sparkforge knowledge path`, que o
+    AGENT_PROTOCOL ja manda consultar antes de desistir de uma citacao. Duplicar
+    o diagnostico aqui, por citacao, quebraria o contrato `{ref, path}` que os
+    testes ja travam (`test_a_citation_pointing_nowhere_is_reported_not_silently_dropped`)
+    por um ganho que o consumidor ja tem em outra tool.
+    """
+    citations = _citations_of(rule)
     if not citations:
         return []
 
@@ -898,17 +979,7 @@ def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
     except KnowledgeError:
         root = None
 
-    refs: list[dict[str, Any]] = []
-    for ref in citations:
-        path: str | None = None
-        if root is not None:
-            try:
-                path = str(safe_knowledge_file(root, ref[len("knowledge/") :]))
-            except KnowledgeError:
-                path = None
-        refs.append({"ref": ref, "path": path})
-
-    return refs
+    return _resolve_knowledge_refs(citations, root, {})
 
 
 def rules_lookup(
@@ -930,10 +1001,22 @@ def rules_lookup(
         filtered = [r for r in filtered if r.get("category") == category]
 
     by_category = _count_by(filtered, lambda r: r.get("category", ""))
+
+    # Raiz resolvida uma vez para a pagina inteira (nao uma vez por regra) e
+    # cache de resolucao compartilhado entre regras -- ver docstring de
+    # `_resolve_knowledge_refs`.
+    try:
+        knowledge_root = knowledge_dir()
+    except KnowledgeError:
+        knowledge_root = None
+    resolved_paths: dict[str, str | None] = {}
+
     clean = []
     for rule in filtered:
         entry = {k: v for k, v in rule.items() if k != "_source_file"}
-        entry["knowledge_refs"] = knowledge_refs_of(rule)
+        entry["knowledge_refs"] = _resolve_knowledge_refs(
+            _citations_of(rule), knowledge_root, resolved_paths
+        )
         clean.append(entry)
     page, next_cursor = paginate_items(clean, limit, cursor)
 
