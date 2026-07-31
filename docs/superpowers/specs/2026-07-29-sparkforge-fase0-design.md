@@ -1,8 +1,14 @@
 # SparkForge AWS — Fase 0: Contratos, Extração Determinística e Paridade Devin ↔ Claude
 
 **Data:** 2026-07-29
-**Status:** aprovado para planejamento
+**Status:** implementado em 2026-07-30. Ver §18 para os desvios entre o que esta spec projetou e o que foi entregue.
 **Escopo:** Fase 0 de 5. Fases 1–4 estão no roadmap ao final, fora do escopo de implementação desta spec.
+
+> **Aviso de leitura.** As seções 1–17 estão preservadas como foram aprovadas em
+> 2026-07-29 — são o registro da decisão, não a descrição do repositório atual.
+> Vários números aqui (17 kinds, 12 regras, 10 tools, 16 fixtures) foram
+> superados pela própria Fase 0 e pelas Fases 1 e 2. **§18 lista cada desvio.**
+> Para o estado corrente do sistema, leia [`../STATUS.md`](../STATUS.md).
 
 ---
 
@@ -655,3 +661,98 @@ A Fase 0 está concluída quando todos forem verdadeiros:
 | Falso positivo treina o operador a ignorar a saída | média | Golden test bidirecional; fixture `clean_job` com zero findings; fixture `near_threshold` |
 | Custo de manter quatro canais de distribuição | média | Fonte única + sync + teste de paridade. O canal que não passa no teste não é publicado |
 | Eval de agente vira teste de modelo em vez de teste de contrato | média | Falha de eval é corrigida na descrição da tool ou no protocolo, nunca trocando o modelo |
+
+---
+
+## 18. Desvios pós-implementação
+
+Escrito em 2026-07-31, depois das Fases 0, 1 e 2. Esta seção é a errata da spec:
+cada item diz o que as seções 1–17 afirmam, o que existe no repositório, e por quê.
+Nada acima foi editado — a spec permanece auditável como decisão de 2026-07-29.
+
+### 18.1 Desvios decididos durante a implementação
+
+**D-A. Catálogo mora na raiz, não dentro do pacote.**
+§14 coloca o catálogo em `sparkforge/rules/catalog/`. Ele está em `rules/catalog/`.
+Motivo: é dado consultável e é o **terceiro degrau da escada de degradação** (§8.2) —
+um agente sem Python lê o YAML direto. Enterrá-lo no pacote destrói a descoberta.
+`loader.catalog_dir()` resolve na ordem `SPARKFORGE_CATALOG` → raiz do repo →
+fallback relativo ao pacote. Registrado no plano de implementação como Desvio 1.
+
+**D-B. Predicados de roteamento são declarativos, não `expr`.**
+§5.5 sugere reaproveitar o motor de `expr` para `routing.yaml`. O `routing.yaml`
+committado precisava de `len(...)`, `any(...)` e `in`, que exigem `ast.Call` e
+`ast.In` — proibidos pela whitelist de §5.3. Enfraquecer o avaliador não era
+aceitável: o catálogo é dado editável, logo superfície de execução (§13).
+As 16 rotas usam operadores declarativos: `equals`, `count_gt`, `contains`,
+`any_where`, `absent`. Registrado no plano como Desvio 2.
+
+**D-C. O catálogo nasceu com 43 regras, não 12.**
+§6.3 projeta um catálogo inicial de 12 regras. O commit `ffcf150`
+(`feat(knowledge): build version-guarded knowledge base and rule catalog`),
+anterior ao código, já entregou 43 regras em 7 áreas: SF-PY 12, SF-UI 6,
+SF-GLUE 6, SF-ATH 5, SF-ICE 5, SF-PQ 5, SF-ENV 4 — mais 16 `ROUTE-*`.
+Consequência não prevista pela spec: **a maioria das regras nasceu inerte**,
+porque os extratores que produzem os `requires_facts` delas só chegaram na Fase 1.
+Isso gerou um mecanismo que a spec não tem: o campo `blocked_on` e o teste
+`tests/test_rules_catalog_reachability.py`, que falha quando uma regra exige um
+kind sem extrator **e** não declara o bloqueio — e falha também quando um
+`blocked_on` sobrevive ao extrator que o resolveu.
+
+**D-D. `pyspark_ast` emite 19 kinds, não 17.**
+A tabela de §6.2 lista 17. A implementação precisou de dois sentinelas a mais:
+`pyspark.module_analyzed` (âncora para condições `absent:` — sem ele, "não existe
+X neste módulo" é vacuamente verdadeiro em módulo nenhum analisado) e
+`pyspark.glue_context_init` (detecção de `GlueContext`, exigida por SF-GLUE).
+
+**D-E. Versionamento não avançou.**
+§12.2 define três eixos independentes. Na prática `schema_version` continua `1`,
+`catalog_version` continua `1` e a versão do pacote continua `0.4.0` mesmo após
+Fases 1 e 2 — que adicionaram 12 extratores e 18 tools. `manifest.json`,
+`pyproject.toml`, `plugin.json` e `sparkforge.__version__` estão consistentes
+entre si, e `tests/test_docs_coverage.py::TestManifest::test_version_is_0_4_0`
+fixa esse número. Dívida consciente: a próxima mudança de contrato ou de limiar
+tem que mexer nos três eixos de uma vez.
+
+### 18.2 Números superados
+
+Referências numéricas das seções 1–17 e o valor de hoje (2026-07-31):
+
+| Seção | Spec diz | Hoje | Causa |
+|---|---|---|---|
+| §6.2, §15.1 | 17 fact kinds, só `pyspark.*` | **80 kinds** em 13 extratores | D-D + Fase 1 |
+| §6.3, §15.2 | catálogo de 12 regras | **43 regras**, nenhuma `blocked_on` | D-C + Fase 2 |
+| §7.1, §15.6 | 10 tools MCP | **28 tools** | Fase 1 |
+| §7.5 | ~11 verbos de CLI | 12 subverbos `analyze` + 6 `collect` + `fuse`, `judge`, `case`, `next-step`, `resume`, `handoff`, `runtime detect`, `rules lookup`, `validate` | Fase 1 |
+| §11.1, §15.4 | 16 fixtures | **73 fixtures** em 15 domínios | Fases 1 e 2 |
+| §11.2 | 7 camadas de teste | mesmas camadas, **1726 testes** | acumulado |
+| §14 | árvore de diretórios | acrescidos `adapters/tools.py`, `adapters/_core.py`, `findings/validate.py`, `rules/version_scope.py`, `facts/` com 13 módulos, `scripts/regen_fixtures.py` | Fase 1 |
+
+Namespaces de fact que não existiam nesta spec e existem hoje: `spark.*`
+(event log), `tf.*` (Terraform), `iceberg.*`, `sql.*`, `athena.*`, `s3.*`,
+`glue.*` (CloudWatch), `consumers.*`.
+
+### 18.3 Roadmap de §16 — situação real
+
+| Fase da §16 | Status | Observação |
+|---|---|---|
+| 1 — extratores restantes + coletores AWS | **entregue** | Ver [spec da Fase 1](2026-07-30-sparkforge-fase1-design.md) |
+| 2 — knowledge: expansão do catálogo, `refresh_knowledge`, matriz de compatibilidade | **parcial** | O catálogo já nasceu expandido (D-C) e as Fases 1–2 o tornaram inteiro alcançável. `refresh_knowledge` **não existe**: nenhum script, nenhum job de CI. A "Fase 2" executada no repositório (branch `feat/fase2-desbloqueios`) é um escopo **diferente** do que §16 chama de Fase 2 — ver [spec da Fase 2 executada](2026-07-31-sparkforge-fase2-design.md) |
+| 3 — export Devin, MCP HTTP hospedado, marketplace, pip | **não iniciado** | O transporte HTTP existe (`--transport http`), mas hospedagem, export de Playbook e publicação no PyPI/marketplace não |
+| 4 — gates fail-closed, benchmark automatizado, validação funcional automatizada, assinatura de relatório | **não iniciado** | `blocked_by` continua advisory, como §5.5 decidiu |
+
+### 18.4 O que continua valendo sem alteração
+
+Para não induzir desconfiança generalizada: as decisões estruturais da spec foram
+implementadas como escritas. Continuam válidas e testadas —
+
+- as fronteiras negativas de §4.2 (extrator não julga, motor de regras não lê artefato bruto, adaptador não contém heurística);
+- os contratos `Fact` / `Finding` / `RuntimeContext` de §5, incluindo `evidence` com `minItems: 1` e a recusa de percentual sem `benchmark_ref`;
+- o avaliador `expr` com whitelist de nós AST e sem `eval` (§5.3, §13);
+- a guarda de versão `runtime_scope`, falha fechada quando a versão não é detectada (§5.3);
+- `pyspark.unresolved` obrigatório — cobertura honesta em vez de silêncio (§6.2);
+- git como barramento de handoff, com `artifacts/**` fora do git e manifest committado (§8.1);
+- a escada de degradação MCP → CLI → markdown+YAML (§8.2);
+- os quatro canais de distribuição de §9;
+- `AGENT_PROTOCOL.md` com as 9 regras duras de §10.2;
+- golden test bidirecional — perder finding e inventar finding falham igual (§11.1).

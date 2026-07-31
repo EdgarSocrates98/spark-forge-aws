@@ -18,7 +18,7 @@ Para casos com latest-per-key, tabelas Iceberg bilionárias, batching, OOM e car
 2. `GUIA_DE_USO.md`
 3. Skill `glue-incremental-performance-architect`
 
-A versão 0.2.0 inclui Skills específicas para arquitetura incremental, latest-per-key, loops de batching, call graph da biblioteca, OOM, Terraform e perfis de volume.
+Há Skills específicas para arquitetura incremental (`design-incremental-processing`), latest-per-key (`optimize-latest-per-key`), loops de batching (`analyze-batch-loop`), call graph da biblioteca (`analyze-library-call-graph`), OOM (`diagnose-oom`), Terraform (`review-glue-terraform`) e perfis de volume (`optimize-variable-volume-job`). Desde a versão 0.4.0 elas são *toolkit-first*: chamam os extratores determinísticos em vez de descrever leitura por amostragem.
 
 ## Base de conhecimento
 
