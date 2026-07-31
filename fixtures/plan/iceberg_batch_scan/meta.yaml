@@ -15,4 +15,5 @@ expects_kinds:
   - plan.aqe
   - plan.file_scan
   - plan.join
-expects_rules: []
+expects_rules:
+  - SF-PLAN-004

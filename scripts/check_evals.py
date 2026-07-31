@@ -108,11 +108,23 @@ def _compute_join_before_reduction() -> str:
 
 
 def _compute_rule_counts() -> str:
+    """Conta por categoria, nunca o total do catalogo.
+
+    A pergunta original devolvia `total:athena`, e o total muda toda vez que o
+    catalogo cresce por um motivo legitimo -- foi o que aconteceu ao entrarem
+    SF-PLAN e SF-CG. A spec da Fase 0, secao 11.3, exige resposta "que nao muda
+    com o tempo", entao a pergunta estava errada, nao a resposta.
+
+    As duas habilidades testadas continuam iguais: `routing` responde 0 porque
+    `load_catalog()` exclui routing.yaml por construcao -- quem nao souber disso
+    responde 16 -- e `athena` exige filtrar por categoria.
+    """
     from sparkforge.rules.loader import load_catalog
 
     rules = load_catalog()
+    routing = sum(1 for r in rules if r.get("category") == "routing")
     athena = sum(1 for r in rules if r.get("category") == "athena")
-    return f"{len(rules)}:{athena}"
+    return f"{routing}:{athena}"
 
 
 # (marker, compute) -- marker deve ser uma substring unica de exatamente uma

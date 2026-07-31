@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "https://aws.amazon.com/about-aws/whats-new/2025/07/aws-glue-supports-new-workers-larger-memory-intensive-workloads": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-GLUE-005"
+      ],
+      "sha256": "75a0f76d58e06dd7008d35ac7885f1161e6011ee1f6e041d6b4490e30088f541"
+    },
+    "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ICE-001",
+        "SF-ICE-004"
+      ],
+      "sha256": "831655bd5cb1533b6e6b35015bf85429fd4a6011c11c151a2cc8970b6fb35048"
+    },
+    "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ENV-001",
+        "SF-ENV-002",
+        "SF-ICE-002"
+      ],
+      "sha256": "6ec33d8b72b6ee91d2f4d892dc22aabcae93ad55f0dbc871d558ef2c18783b7b"
+    },
+    "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ATH-004"
+      ],
+      "sha256": "fb6c38d1cb01b79533e1acd8499b67776ccb3064056d3eb8c96ee45e02445b56"
+    },
+    "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ATH-001",
+        "SF-PQ-005"
+      ],
+      "sha256": "f46960f80928d464b5e92bf1a6ceb8bf355a3e6cb17c0bf2eefbb30ac17a5b35"
+    },
+    "https://docs.aws.amazon.com/athena/latest/ug/partitions.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ATH-002",
+        "SF-ATH-003",
+        "SF-ATH-005"
+      ],
+      "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-GLUE-001"
+      ],
+      "sha256": "710eb1d3d6a14435bb7a85e24b1f525378f0678622f0fec510b5e17db696470e"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ENV-001"
+      ],
+      "sha256": "8df8427d8f815c4d9c443c40d22b5082d9c3129cb8bc053ad5969ad119044439"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ENV-003",
+        "SF-GLUE-002",
+        "SF-GLUE-003",
+        "SF-UI-001",
+        "SF-UI-005"
+      ],
+      "sha256": "db732c3ad0ea1f566cc26dbe6e96226e6dc024c66be1e3755d94c6e8ab367dc3"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-GLUE-005"
+      ],
+      "sha256": "a587377ca988f6727e8031eeb861bcebd9322f7988b6793952f0ef7fd2a95cdb"
+    },
+    "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-31"
+      ],
+      "rules": [
+        "SF-CG-001",
+        "SF-PLAN-004"
+      ],
+      "sha256": "1a3820aae96e7d2edca0ef5bedd41cf7cff918465c3b72cfaa331157d230078a"
+    },
+    "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-31"
+      ],
+      "rules": [
+        "SF-PLAN-001",
+        "SF-PLAN-002"
+      ],
+      "sha256": "e426dc396a6cb32e557e8600437593c20ff8ee5cb024dbee0de7a99385816777"
+    },
+    "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md": {
+      "pinned": true,
+      "retrieved": [
+        "2026-07-30"
+      ],
+      "rules": [
+        "SF-ICE-004"
+      ]
+    },
+    "https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/DataFiles.java": {
+      "pinned": true,
+      "retrieved": [
+        "2026-07-30"
+      ],
+      "rules": [
+        "SF-ICE-004"
+      ]
+    },
+    "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/spark/v3.5/spark/src/main/java/org/apache/iceberg/spark/source/SparkWrite.java": {
+      "pinned": true,
+      "retrieved": [
+        "2026-07-30"
+      ],
+      "rules": [
+        "SF-ICE-004"
+      ]
+    },
+    "https://iceberg.apache.org/docs/latest/spark-procedures/": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ICE-001",
+        "SF-ICE-002",
+        "SF-ICE-003",
+        "SF-ICE-005"
+      ],
+      "sha256": "b5ecdfa5f41670d9876019651bacdfb4bb275ff2fa4d1b8075f9480b6aca84d0"
+    },
+    "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html": {
+      "pinned": true,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": [
+        "SF-ENV-004",
+        "SF-PQ-001",
+        "SF-PQ-002",
+        "SF-PQ-004",
+        "SF-PY-001",
+        "SF-PY-003",
+        "SF-PY-005",
+        "SF-PY-008",
+        "SF-PY-009",
+        "SF-PY-010"
+      ]
+    },
+    "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-31"
+      ],
+      "rules": [
+        "SF-PLAN-001"
+      ],
+      "sha256": "0b640a7519e75ed47c9d3fc074ae7cb109a62420ff0a581302b2ca00c676c627"
+    },
+    "https://spark.apache.org/docs/latest/sql-performance-tuning.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-31"
+      ],
+      "rules": [
+        "SF-PLAN-004"
+      ],
+      "sha256": "f8a6abaec155d6eff86e750b815b2d8059b70304d3e64bde30f9d1978ea6a280"
+    },
+    "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html": {
+      "checked_at": "2026-07-31",
+      "pinned": false,
+      "retrieved": [
+        "2026-07-31"
+      ],
+      "rules": [
+        "SF-PLAN-003"
+      ],
+      "sha256": "0c641ce521fee80c2e09865345b29250149442d0f14d5023bfc1ade7615692a1"
+    }
+  }
+}

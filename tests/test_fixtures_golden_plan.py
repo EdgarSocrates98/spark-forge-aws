@@ -33,6 +33,7 @@ REQUIRED_FIXTURES = {
     "truncated_plan",
     "iceberg_batch_scan",
     "python_udf_in_plan",
+    "cartesian_join",
 }
 
 
@@ -138,15 +139,25 @@ class TestAdversarial:
         """`BatchEvalPython` e `ArrowEvalPython` nao sao a mesma coisa: a
         primeira serializa registro a registro para o interpretador Python, a
         segunda e vetorizada por Arrow. Colapsar as duas em "tem UDF" apaga a
-        diferenca que decide se vale reescrever. Nenhuma regra consome
-        `plan.python_udf` -- e justamente o fact sem regra que some numa
-        refatoracao sem ninguem notar, entao ele tem golden."""
+        diferenca que decide se vale reescrever.
+
+        Ate a Fase 2 nenhuma regra consumia `plan.python_udf`, e este teste
+        afirmava `findings == []` para que o fact sem regra nao sumisse numa
+        refatoracao. Agora SF-PLAN-001 e SF-PLAN-002 consomem o kind, e o
+        invariante que importa passa a ser mais forte: os dois sabores tem que
+        produzir achados DIFERENTES. Uma regra so, ou duas com a mesma
+        severidade, devolveria a perda de informacao que este teste existe para
+        impedir -- P1 para a UDF pickled, P3 para a vetorizada, porque a
+        primeira e defeito e a segunda e candidato a ganho.
+        """
         _, facts, findings, _ = run_fixture(FIXTURES / "python_udf_in_plan")
         udfs = {
             f.attrs["operator"]: f.attrs["udf_type"] for f in facts if f.kind == "plan.python_udf"
         }
         assert udfs == {"BatchEvalPython": "python", "ArrowEvalPython": "pandas"}
-        assert findings == []
+
+        by_rule = {f.rule_id: f.severity for f in findings}
+        assert by_rule == {"SF-PLAN-001": "P1", "SF-PLAN-002": "P3"}
 
     def test_unresolved_is_never_silently_zero_where_it_is_not(self):
         """`plan.analyzed` e a sentinela: prova que a extracao rodou. Sem ela,

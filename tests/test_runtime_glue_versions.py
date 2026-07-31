@@ -133,15 +133,12 @@ class TestRuleScopeOnTheCurrentRuntimes:
             for r in _rules()
             if in_scope(r.get("runtime_scope") or {}, runtime)
         }
-        assert surviving == {
-            "SF-ATH",
-            "SF-ENV",
-            "SF-GLUE",
-            "SF-ICE",
-            "SF-PQ",
-            "SF-PY",
-            "SF-UI",
-        }, version
+        # As areas sao derivadas do catalogo, nao listadas aqui: uma lista fixa
+        # obriga a editar o teste ao criar area nova, e -- pior -- passa a
+        # ESCONDER area nova que sumiu inteira no guard, porque ela nunca chegou
+        # a entrar no conjunto esperado.
+        all_areas = {r["id"].rsplit("-", 1)[0] for r in _rules()}
+        assert surviving == all_areas, version
 
     def test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51(self):
         """SF-ENV-002 guarda a armadilha do format V3 (Glue 5.1 escreve, Athena
