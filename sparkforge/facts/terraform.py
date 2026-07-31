@@ -53,6 +53,11 @@ EMITTED_KINDS = frozenset(
         "tf.unresolved",
         "tf.module_analyzed",
         "tf.observability.spark_ui",
+        # Os dois argumentos de observabilidade existem no recurso, mas ao
+        # menos um tem valor que so o `terraform apply` resolve (interpolacao,
+        # heredoc, chamada de funcao). Nem confirmado nem ausente -- ver
+        # `_check_observability`.
+        "tf.observability.unknown",
     }
 )
 
@@ -570,27 +575,53 @@ def _parse_resource_body(
     return facts, False
 
 
-def _check_observability(resource_facts: list[Fact]) -> bool:
-    """True se o recurso tem `--enable-spark-ui=true` E `--spark-event-logs-path` nao vazio.
+_OBSERVABILITY_KEYS = frozenset({"--enable-spark-ui", "--spark-event-logs-path"})
 
-    Os dois juntos, nao um so: com apenas um habilitado o job ainda fica sem
-    condicao real de ser diagnosticado depois do fato -- ver explanation de
-    SF-GLUE-002 e `knowledge/glue/job-arguments.md` secao 1.
+
+def _check_observability(resource_facts: list[Fact]) -> str:
+    """Estado da observabilidade do recurso: `confirmed`, `unknown` ou `absent`.
+
+    Tres estados, nao dois, e a distincao entre os dois ultimos e a razao de
+    esta funcao nao devolver mais um bool. `--spark-event-logs-path` escrito
+    como `"s3://${var.bucket_logs}/sparkui/"` e a forma NORMAL de escrever
+    Terraform -- o valor so existe depois do `terraform apply`, e o extrator
+    nunca o adivinha (vira `tf.unresolved` com reason `interpolation`).
+    Tratar esse caso como "nao configurou" faz SF-GLUE-002 acusar de
+    observabilidade ausente, em P1, um job que tem observabilidade
+    configurada. E o mesmo defeito que `plan.unresolved` /
+    `partition_status_unknown` fecha do lado do plano fisico: ausencia de
+    evidencia nao e evidencia de ausencia.
+
+    `confirmed` exige os dois argumentos juntos e literais, nao um so: com
+    apenas um habilitado o job ainda fica sem condicao real de ser
+    diagnosticado depois do fato -- ver explanation de SF-GLUE-002 e
+    `knowledge/glue/job-arguments.md` secao 1.
     """
     enabled = False
     has_path = False
+    indeterminate = False
+
     for fact in resource_facts:
-        if fact.kind != "tf.attribute" or fact.attrs.get("block") != "default_arguments":
-            continue
-        if not fact.attrs.get("literal"):
+        if fact.attrs.get("block") != "default_arguments":
             continue
         key = fact.attrs.get("key")
+        if fact.kind == "tf.unresolved":
+            # O argumento ESTA la; o que falta e o valor, que so o apply
+            # resolve. Nao da para afirmar nem confirmar.
+            if key in _OBSERVABILITY_KEYS:
+                indeterminate = True
+            continue
+        if fact.kind != "tf.attribute" or not fact.attrs.get("literal"):
+            continue
         value = fact.attrs.get("value")
         if key == "--enable-spark-ui" and value == "true":
             enabled = True
         elif key == "--spark-event-logs-path" and value:
             has_path = True
-    return enabled and has_path
+
+    if enabled and has_path:
+        return "confirmed"
+    return "unknown" if indeterminate else "absent"
 
 
 def extract_terraform(source: str, path: str) -> list[Fact]:
@@ -671,10 +702,15 @@ def extract_terraform(source: str, path: str) -> list[Fact]:
                     provenance=provenance,
                 )
             )
-            if _check_observability(body_facts):
+            observability = _check_observability(body_facts)
+            if observability != "absent":
                 facts.append(
                     Fact(
-                        kind="tf.observability.spark_ui",
+                        kind=(
+                            "tf.observability.spark_ui"
+                            if observability == "confirmed"
+                            else "tf.observability.unknown"
+                        ),
                         subject=_resource_subject(path, header_line, symbol),
                         provenance=provenance,
                     )

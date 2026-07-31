@@ -1,0 +1,27 @@
+[
+  {
+    "id": "f_a55de2",
+    "schema_version": 1,
+    "kind": "env.runtime_signal",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark"
+    },
+    "measures": {
+      "distinct_versions": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "component": "spark",
+      "resolved": "3.1.1",
+      "observed": [
+        "3.1.1"
+      ],
+      "source": "resolved",
+      "spark_minor": 3.1
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  }
+]

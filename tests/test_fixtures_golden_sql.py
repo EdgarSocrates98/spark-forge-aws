@@ -19,7 +19,7 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "sql"
 
-REQUIRED_FIXTURES = {"select_star", "limit_without_filter", "clean_query"}
+REQUIRED_FIXTURES = {"select_star", "unparsed_statement", "limit_without_filter", "clean_query"}
 
 
 def fixture_dirs():

@@ -19,6 +19,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
+from sparkforge.facts.call_graph import build_call_graph  # noqa: E402
 from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
@@ -27,6 +29,8 @@ from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
+from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
+from sparkforge.facts.spark_plan import extract_plan_path  # noqa: E402
 from sparkforge.facts.sql_literal import extract_sql_path  # noqa: E402
 from sparkforge.facts.terraform import extract_terraform_tree  # noqa: E402
 from sparkforge.rules.engine import judge  # noqa: E402
@@ -39,6 +43,10 @@ FIXTURES_ICEBERG = ROOT / "fixtures" / "iceberg"
 FIXTURES_SQL = ROOT / "fixtures" / "sql"
 FIXTURES_FUSION = ROOT / "fixtures" / "fusion"
 FIXTURES_CATALOG = ROOT / "fixtures" / "catalog"
+FIXTURES_PLAN = ROOT / "fixtures" / "plan"
+FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
+FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
+FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -118,6 +126,69 @@ def regen_catalog(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_callgraph(directory: Path) -> None:
+    """Corpus de grafo de chamadas: `*.py` sob input/, extraidos por
+    `extract_tree` e DERIVADOS por `build_call_graph`.
+
+    O golden guarda so os facts derivados. Os de `pyspark_ast` que serviram de
+    entrada ja tem o corpus `fixtures/pyspark/`; repeti-los aqui faria a mesma
+    mudanca quebrar dois goldens pelo mesmo motivo, escondendo qual dos dois
+    contratos regrediu.
+    """
+    facts = extract_tree(directory / "input", repo_root=directory / "input")
+    derived = build_call_graph(facts, path_hint=directory.name)
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    findings = judge(derived, load_catalog(), meta["runtime"])
+    _write_expected(directory, derived, findings)
+
+
+def regen_runtime(directory: Path) -> None:
+    """Corpus de deteccao de runtime. Unico que NAO julga com `meta["runtime"]`.
+
+    Aqui o runtime nao e premissa da fixture, e o resultado dela: julgar com o
+    runtime declarado no meta esconderia justamente o defeito que este corpus
+    existe para pegar -- uma deteccao que resolve para a versao errada
+    continuaria sendo julgada contra a versao certa, e a guarda
+    `runtime_scope` das regras nunca reprovaria nada. O meta declara o runtime
+    ESPERADO, e o golden test compara com o detectado.
+    """
+    input_dir = directory / "input"
+    sources: dict = {}
+    for source_file in sorted(input_dir.glob("*.json")):
+        sources.update(json.loads(source_file.read_text(encoding="utf-8")))
+    context, facts = detect_runtime(sources)
+    findings = judge(facts, load_catalog(), context.to_dict())
+    _write_expected(directory, facts, findings)
+
+
+def regen_athena(directory: Path) -> None:
+    """Como `regen_catalog`, mas para dumps de workgroup do Athena: `*.json`
+    sob input/, extraidos com `extract_athena_workgroup_path`. Nao ha variante
+    `_tree` neste extrator -- um dump ja descreve varios workgroups."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for dump in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_athena_workgroup_path(dump, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_plan(directory: Path) -> None:
+    """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
+    input/ (a saida colada de `explain("formatted")`), extraida com
+    `extract_plan_path`. Um plano e um arquivo de texto, nao uma arvore de
+    codigo, entao nao ha variante `_tree` -- mesma decisao de `event_log.py`
+    e `sql_literal.py`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for plan_file in sorted(input_dir.glob("*.txt")):
+        facts.extend(extract_plan_path(plan_file, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_fusion(directory: Path) -> None:
     """Como `regen_sql`, mas o corpus de fusao: `*.sql` E `*.json` sob
     input/ na MESMA fixture (a query e o dump de catalogo que ela precisa
@@ -155,6 +226,10 @@ def main() -> int:
                 (FIXTURES_SQL / name, regen_sql),
                 (FIXTURES_FUSION / name, regen_fusion),
                 (FIXTURES_CATALOG / name, regen_catalog),
+                (FIXTURES_PLAN / name, regen_plan),
+                (FIXTURES_ATHENA / name, regen_athena),
+                (FIXTURES_RUNTIME / name, regen_runtime),
+                (FIXTURES_CALLGRAPH / name, regen_callgraph),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -181,6 +256,14 @@ def main() -> int:
         regen_fusion(directory)
     for directory in sorted(p for p in FIXTURES_CATALOG.iterdir() if p.is_dir()):
         regen_catalog(directory)
+    for directory in sorted(p for p in FIXTURES_PLAN.iterdir() if p.is_dir()):
+        regen_plan(directory)
+    for directory in sorted(p for p in FIXTURES_ATHENA.iterdir() if p.is_dir()):
+        regen_athena(directory)
+    for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):
+        regen_runtime(directory)
+    for directory in sorted(p for p in FIXTURES_CALLGRAPH.iterdir() if p.is_dir()):
+        regen_callgraph(directory)
     return 0
 
 

@@ -15,6 +15,7 @@ EXPECTED_KINDS = {
     "tf.unresolved",
     "tf.module_analyzed",
     "tf.observability.spark_ui",
+    "tf.observability.unknown",
 }
 
 
@@ -66,7 +67,7 @@ def job_with_args(*lines: str) -> str:
 
 def test_kind_namespace_is_complete_and_documented():
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 5
+    assert len(EMITTED_KINDS) == 6
     assert EXTRACTOR_ID.startswith("terraform@")
 
 
@@ -181,6 +182,74 @@ class TestObservabilitySentinel:
     def test_no_default_arguments_at_all_does_not_emit_fact(self):
         facts = extract_terraform(job_with_args(), "main.tf")
         assert not facts_of("tf.observability.spark_ui", facts)
+
+
+class TestObservabilityUnknown:
+    """Tres estados, nao dois: confirmado, ausente e indeterminado.
+
+    Confundir indeterminado com ausente faz SF-GLUE-002 acusar em P1 um job
+    que tem observabilidade -- e o valor interpolado e a forma NORMAL de
+    escrever Terraform, entao o falso positivo seria a regra, nao a excecao.
+    """
+
+    def test_interpolated_path_is_unknown_not_absent(self):
+        src = job_with_args(
+            '"--enable-spark-ui" = "true"',
+            '"--spark-event-logs-path" = "s3://${var.bucket}/logs/"',
+        )
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.observability.unknown", facts)
+        assert not facts_of("tf.observability.spark_ui", facts)
+
+    def test_interpolated_enable_flag_is_also_unknown(self):
+        src = job_with_args(
+            '"--enable-spark-ui" = "${var.habilita_ui}"',
+            '"--spark-event-logs-path" = "s3://bucket/logs/"',
+        )
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.observability.unknown", facts)
+        assert not facts_of("tf.observability.spark_ui", facts)
+
+    def test_function_call_value_is_unknown(self):
+        src = job_with_args(
+            '"--enable-spark-ui" = "true"',
+            '"--spark-event-logs-path" = join("/", [var.base, "sparkui"])',
+        )
+        assert facts_of("tf.observability.unknown", extract_terraform(src, "main.tf"))
+
+    def test_absent_stays_absent_when_nothing_is_indeterminate(self):
+        """A outra metade: um argumento nao-observabilidade interpolado nao
+        pode transformar ausencia real em 'nao sei'."""
+        src = job_with_args('"--extra-py-files" = "s3://${var.bucket}/libs.zip"')
+        facts = extract_terraform(src, "main.tf")
+        assert not facts_of("tf.observability.unknown", facts)
+        assert not facts_of("tf.observability.spark_ui", facts)
+
+    def test_confirmed_wins_over_an_unrelated_unresolved_argument(self):
+        src = job_with_args(
+            '"--enable-spark-ui" = "true"',
+            '"--spark-event-logs-path" = "s3://bucket/logs/"',
+            '"--extra-py-files" = "s3://${var.bucket}/libs.zip"',
+        )
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.observability.spark_ui", facts)
+        assert not facts_of("tf.observability.unknown", facts)
+
+    def test_the_two_states_are_mutually_exclusive(self):
+        for src in (
+            job_with_args(
+                '"--enable-spark-ui" = "true"',
+                '"--spark-event-logs-path" = "s3://bucket/logs/"',
+            ),
+            job_with_args(
+                '"--enable-spark-ui" = "true"',
+                '"--spark-event-logs-path" = "s3://${var.bucket}/logs/"',
+            ),
+            job_with_args(),
+        ):
+            facts = extract_terraform(src, "main.tf")
+            emitted = [f for f in facts if f.kind.startswith("tf.observability")]
+            assert len(emitted) <= 1
 
 
 class TestSecretDetection:

@@ -26,6 +26,7 @@ REQUIRED_FIXTURES = {
     "no_observability_multi_job",
     "secret_in_arguments",
     "clean_job",
+    "unresolvable_values",
 }
 
 
@@ -88,6 +89,33 @@ class TestAdversarial:
     def test_clean_job_produces_zero_findings(self):
         _, _, findings, _ = run_fixture(FIXTURES / "clean_job")
         assert findings == []
+
+    def test_interpolated_event_log_path_is_unknown_not_absent(self):
+        """A regressao mais cara deste extrator: `--spark-event-logs-path`
+        interpolado e a forma NORMAL de escrever Terraform (o valor so existe
+        depois do apply). Ler isso como "nao configurou" faz SF-GLUE-002
+        acusar em P1 um job que tem observabilidade -- e o operador vai
+        procurar um defeito que nao existe."""
+        _, facts, findings, _ = run_fixture(FIXTURES / "unresolvable_values")
+        kinds = {f.kind for f in facts}
+        assert "tf.observability.unknown" in kinds
+        assert "tf.observability.spark_ui" not in kinds
+        assert findings == []
+
+    def test_real_absence_still_fires(self):
+        """A outra metade da mesma guarda: tornar a regra tolerante demais
+        apagaria o achado verdadeiro. `no_observability` nao tem os argumentos
+        de forma nenhuma -- nem literal, nem interpolada."""
+        _, facts, findings, _ = run_fixture(FIXTURES / "no_observability")
+        assert not [f for f in facts if f.kind.startswith("tf.observability")]
+        assert "SF-GLUE-002" in {f.rule_id for f in findings}
+
+    def test_every_unresolvable_form_keeps_its_reason(self):
+        """Interpolacao, chamada de funcao e heredoc sao motivos diferentes de
+        nao saber, e o operador resolve cada um de um jeito."""
+        _, facts, _, _ = run_fixture(FIXTURES / "unresolvable_values")
+        reasons = {f.attrs["reason"] for f in facts if f.kind == "tf.unresolved"}
+        assert reasons == {"interpolation", "function_call", "heredoc"}
 
     def test_secret_value_is_never_present_in_facts(self):
         """Nenhum golden pode carregar a credencial de exemplo em claro."""

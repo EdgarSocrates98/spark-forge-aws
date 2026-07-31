@@ -4,7 +4,9 @@ platforms: [claude_code, devin_desktop, devin_cli, copilot_ci]
 mechanisms: [mcp, cli, files]
 
 notes: >
-  Devin Desktop configura MCP por serverUrl (HTTP); Claude Code, Devin CLI e CI usam stdio.
+  Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge.adapters.mcp
+  --transport http` e serverUrl `http://<host>:<port>/mcp`. Claude Code, Devin CLI e CI usam
+  stdio, que e o que `.mcp.json` ja configura.
   Devin CLI nao le Knowledge nem Playbooks da conta Devin, por isso o procedimento e
   autoritativo em arquivo no repo, nunca em Playbook. Copilot CI nao mantem sessao MCP
   interativa: roda o CLI `sparkforge` como processo de linha de comando dentro do workflow,

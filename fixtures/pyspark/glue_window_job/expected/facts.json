@@ -1,0 +1,466 @@
+[
+  {
+    "id": "f_e1e5a3",
+    "schema_version": 1,
+    "kind": "pyspark.action",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 36,
+      "col": 41,
+      "end_line": 36,
+      "symbol": "resumo_por_status",
+      "snippet": "return df.withColumn(\"total_status\", F.count(\"pedido_id\").over(janela))"
+    },
+    "measures": {},
+    "attrs": {
+      "method": "count"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_b82f4c",
+    "schema_version": 1,
+    "kind": "pyspark.callgraph_edge",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 44,
+      "col": 14,
+      "end_line": 44,
+      "symbol": "main",
+      "snippet": "pedidos = read_pedidos(spark, args[\"input_path\"])"
+    },
+    "measures": {},
+    "attrs": {
+      "caller": "main",
+      "callee": "read_pedidos"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_90791e",
+    "schema_version": 1,
+    "kind": "pyspark.callgraph_edge",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 45,
+      "col": 15,
+      "end_line": 45,
+      "symbol": "main",
+      "snippet": "corrente = latest_per_key(pedidos)"
+    },
+    "measures": {},
+    "attrs": {
+      "caller": "main",
+      "callee": "latest_per_key"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_0498f5",
+    "schema_version": 1,
+    "kind": "pyspark.callgraph_edge",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 46,
+      "col": 18,
+      "end_line": 46,
+      "symbol": "main",
+      "snippet": "enriquecido = resumo_por_status(corrente)"
+    },
+    "measures": {},
+    "attrs": {
+      "caller": "main",
+      "callee": "resumo_por_status"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_da94e7",
+    "schema_version": 1,
+    "kind": "pyspark.callgraph_edge",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 41,
+      "col": 19,
+      "end_line": 41,
+      "symbol": "main",
+      "snippet": "glue_context = build_context()"
+    },
+    "measures": {},
+    "attrs": {
+      "caller": "main",
+      "callee": "build_context"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_e38229",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 11,
+      "end_line": 22,
+      "symbol": "read_pedidos",
+      "snippet": "return spark.read.parquet(caminho).select(\"pedido_id\", \"cliente_id\", \"status\", \"atualizado_em\")"
+    },
+    "measures": {
+      "length": 3,
+      "first_reduction_index": 2
+    },
+    "attrs": {
+      "methods": [
+        "read",
+        "parquet",
+        "select"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_e275ef",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 26,
+      "col": 13,
+      "end_line": 26,
+      "symbol": "latest_per_key",
+      "snippet": "janela = Window.partitionBy(\"pedido_id\").orderBy(F.col(\"atualizado_em\").desc())"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "partitionBy",
+        "orderBy"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_d77e6a",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 28,
+      "col": 28,
+      "end_line": 28,
+      "symbol": "latest_per_key",
+      "snippet": "df.withColumn(\"rn\", F.row_number().over(janela))"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "row_number",
+        "over"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_b510ac",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 48,
+      "col": 4,
+      "end_line": 48,
+      "symbol": "main",
+      "snippet": "enriquecido.write.mode(\"overwrite\").parquet(args[\"output_path\"])"
+    },
+    "measures": {
+      "length": 3
+    },
+    "attrs": {
+      "methods": [
+        "write",
+        "mode",
+        "parquet"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_f578c6",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 36,
+      "col": 41,
+      "end_line": 36,
+      "symbol": "resumo_por_status",
+      "snippet": "return df.withColumn(\"total_status\", F.count(\"pedido_id\").over(janela))"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "count",
+        "over"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_de9022",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 26,
+      "col": 53,
+      "end_line": 26,
+      "symbol": "latest_per_key",
+      "snippet": "janela = Window.partitionBy(\"pedido_id\").orderBy(F.col(\"atualizado_em\").desc())"
+    },
+    "measures": {
+      "length": 2
+    },
+    "attrs": {
+      "methods": [
+        "col",
+        "desc"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_1f1386",
+    "schema_version": 1,
+    "kind": "pyspark.chain",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 28,
+      "col": 8,
+      "end_line": 30,
+      "symbol": "latest_per_key",
+      "snippet": "df.withColumn(\"rn\", F.row_number().over(janela))"
+    },
+    "measures": {
+      "length": 3,
+      "first_reduction_index": 1
+    },
+    "attrs": {
+      "methods": [
+        "withColumn",
+        "filter",
+        "drop"
+      ]
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_84a388",
+    "schema_version": 1,
+    "kind": "pyspark.glue_context_init",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 18,
+      "col": 11,
+      "end_line": 18,
+      "symbol": "build_context",
+      "snippet": "return GlueContext(sc)"
+    },
+    "measures": {},
+    "attrs": {
+      "form": "call"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_45679d",
+    "schema_version": 1,
+    "kind": "pyspark.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resolved_calls": 26,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_3f021e",
+    "schema_version": 1,
+    "kind": "pyspark.read",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 11,
+      "end_line": 22,
+      "symbol": "read_pedidos",
+      "snippet": "return spark.read.parquet(caminho).select(\"pedido_id\", \"cliente_id\", \"status\", \"atualizado_em\")"
+    },
+    "measures": {},
+    "attrs": {
+      "format": "parquet"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_8d516f",
+    "schema_version": 1,
+    "kind": "pyspark.window",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 26,
+      "col": 13,
+      "end_line": 26,
+      "symbol": "latest_per_key",
+      "snippet": "janela = Window.partitionBy(\"pedido_id\").orderBy(F.col(\"atualizado_em\").desc())"
+    },
+    "measures": {},
+    "attrs": {
+      "has_partition_by": true,
+      "has_order_by": true,
+      "has_frame": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_c23a9e",
+    "schema_version": 1,
+    "kind": "pyspark.window",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 35,
+      "col": 13,
+      "end_line": 35,
+      "symbol": "resumo_por_status",
+      "snippet": "janela = Window.partitionBy(\"status\")"
+    },
+    "measures": {},
+    "attrs": {
+      "has_partition_by": true,
+      "has_order_by": false,
+      "has_frame": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_47e192",
+    "schema_version": 1,
+    "kind": "pyspark.write",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 48,
+      "col": 4,
+      "end_line": 48,
+      "symbol": "main",
+      "snippet": "enriquecido.write.mode(\"overwrite\").parquet(args[\"output_path\"])"
+    },
+    "measures": {},
+    "attrs": {
+      "mode": "overwrite"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  }
+]

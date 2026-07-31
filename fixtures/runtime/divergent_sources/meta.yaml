@@ -1,0 +1,17 @@
+name: divergent_sources
+proves: >
+  Terraform declara Glue 5.0 (que a matriz mapeia para Spark 3.5.4) e o event
+  log do run observou Spark 3.3.0. SF-ENV-001 dispara em P0, que e a
+  severidade certa: com a versao errada em maos, TODO limiar e toda guarda de
+  API do relatorio seguinte estao avaliados contra o runtime errado. A
+  deteccao nao escolhe um vencedor -- resolve pela precedencia (event log
+  ganha, porque e observacao do run) e registra a divergencia.
+runtime:
+  glue: "5.0"
+  spark: "3.3.0"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - env.runtime_signal
+expects_rules:
+  - SF-ENV-001

@@ -1,0 +1,20 @@
+name: linear_pipeline
+proves: >
+  Grafo aciclico: `main` chama tres auxiliares e nenhuma delas chama outra.
+  Contraparte obrigatoria de `mutual_recursion` -- sem ela, um detector de
+  ciclo que devolvesse "tem ciclo" para qualquer grafo passaria no corpus
+  inteiro. Aqui `callgraph.cycle` tem que estar AUSENTE e
+  `summary.has_cycle` tem que ser `false`.
+  Prova junto o alcance: as quatro formas de trabalho Spark do modulo
+  (leitura, chain, window, escrita) sao alcancaveis a partir do unico
+  entrypoint, e `unreachable_function_count` e zero.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - callgraph.function
+  - callgraph.reachable_spark_work
+  - callgraph.summary
+expects_rules: []

@@ -1,0 +1,99 @@
+[
+  {
+    "id": "f_147530",
+    "schema_version": 1,
+    "kind": "catalog.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "tables.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "table_count": 1,
+      "unresolved_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "tables.json",
+      "artifact_sha256": "2410b2bbd82c1dc275a3f681f5f540d87cce53f6e0bd105c0d3b34998987174b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_18b7e8",
+    "schema_version": 1,
+    "kind": "catalog.table_schema",
+    "subject": {
+      "type": "table",
+      "file": "tables.json",
+      "symbol": "pedidos"
+    },
+    "measures": {
+      "partition_key_count": 1
+    },
+    "attrs": {
+      "table": "pedidos",
+      "storage_format": null,
+      "columnar": null,
+      "partition_keys": [
+        "dt"
+      ],
+      "column_types": {
+        "dt": "string"
+      }
+    },
+    "provenance": {
+      "artifact": "tables.json",
+      "artifact_sha256": "2410b2bbd82c1dc275a3f681f5f540d87cce53f6e0bd105c0d3b34998987174b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_aeaba3",
+    "schema_version": 1,
+    "kind": "catalog.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "tables.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_table_name"
+    },
+    "provenance": {
+      "artifact": "tables.json",
+      "artifact_sha256": "2410b2bbd82c1dc275a3f681f5f540d87cce53f6e0bd105c0d3b34998987174b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  },
+  {
+    "id": "f_aeaba3",
+    "schema_version": 1,
+    "kind": "catalog.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "tables.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "tables[]"
+    },
+    "provenance": {
+      "artifact": "tables.json",
+      "artifact_sha256": "2410b2bbd82c1dc275a3f681f5f540d87cce53f6e0bd105c0d3b34998987174b",
+      "extractor": "catalog_schema@0.1.0"
+    }
+  }
+]

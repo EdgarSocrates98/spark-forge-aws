@@ -1,0 +1,20 @@
+name: pruning_absent
+proves: >
+  A tabela e provadamente particionada -- `dt#11` aparece em Output e NAO em
+  ReadSchema, que e a unica evidencia positiva de coluna de particao disponivel
+  num plano -- e o Scan nao tem PartitionFilters porque o filtro so existe
+  depois do BroadcastHashJoin. SF-PQ-002 dispara como P0, ancorado no no do
+  Scan (nao no arquivo), que e o que torna o achado acionavel.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - plan.analyzed
+  - plan.aqe
+  - plan.exchange
+  - plan.file_scan
+  - plan.join
+expects_rules:
+  - SF-PQ-002

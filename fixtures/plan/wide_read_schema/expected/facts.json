@@ -1,0 +1,95 @@
+[
+  {
+    "id": "f_732c03",
+    "schema_version": 1,
+    "kind": "plan.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 20,
+      "node_count": 3,
+      "file_scan_count": 1,
+      "exchange_count": 0,
+      "skipped_logical_lines": 0,
+      "skipped_initial_plan_lines": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {
+      "mode": "formatted",
+      "aqe_present": false,
+      "aqe_final_plan": "unknown",
+      "aqe_sections_seen": []
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "66bd78df109261e60dd93cf5d684494593d2bcc8f8fb7176ed4a00a6792d72f0",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_a9db05",
+    "schema_version": 1,
+    "kind": "plan.file_scan",
+    "subject": {
+      "type": "plan_node",
+      "file": "plan.txt",
+      "line": 7,
+      "symbol": "(1) Scan parquet analytics.clientes",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "analytics.clientes"
+    },
+    "measures": {
+      "read_schema_columns": 12,
+      "output_columns": 12,
+      "referenced_columns": 2,
+      "partition_filter_count": 0,
+      "pushed_filter_count": 1
+    },
+    "attrs": {
+      "relation": "analytics.clientes",
+      "format": "parquet",
+      "scan_api": "v1_file_scan",
+      "table_partitioned": "unknown",
+      "partitioned_evidence": "none",
+      "partition_filters_present": false,
+      "partition_filters_empty": true,
+      "output_truncated": false,
+      "read_schema_truncated": false
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "66bd78df109261e60dd93cf5d684494593d2bcc8f8fb7176ed4a00a6792d72f0",
+      "extractor": "spark_plan@0.1.0"
+    }
+  },
+  {
+    "id": "f_c859d2",
+    "schema_version": 1,
+    "kind": "plan.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "plan.txt",
+      "line": 7,
+      "col": 0,
+      "symbol": "",
+      "snippet": "Scan parquet analytics.clientes"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "partition_status_unknown",
+      "detail": "analytics.clientes: PartitionFilters vazio, mas o plano nao prova se a tabela e particionada. SF-PQ-002 fica indecidivel; confirme com `sparkforge analyze catalog-schema`."
+    },
+    "provenance": {
+      "artifact": "plan.txt",
+      "artifact_sha256": "66bd78df109261e60dd93cf5d684494593d2bcc8f8fb7176ed4a00a6792d72f0",
+      "extractor": "spark_plan@0.1.0"
+    }
+  }
+]

@@ -26,6 +26,7 @@ REQUIRED_FIXTURES = {
     "sort_order_debt",
     "sort_order_rewritten",
     "sort_order_unknown",
+    "metadata_tables_full",
 }
 
 

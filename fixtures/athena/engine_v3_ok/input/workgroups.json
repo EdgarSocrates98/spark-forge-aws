@@ -1,0 +1,23 @@
+{
+  "workgroups": [
+    {
+      "name": "primary",
+      "engine_version": {
+        "effective_engine_version": "Athena engine version 3",
+        "selected_engine_version": "AUTO"
+      },
+      "state": "ENABLED",
+      "bytes_scanned_cutoff": 1099511627776,
+      "output_location": "s3://lake-athena-results/primary/"
+    },
+    {
+      "name": "analytics",
+      "engine_version": {
+        "effective_engine_version": "Athena engine version 3",
+        "selected_engine_version": "Athena engine version 3"
+      },
+      "state": "ENABLED",
+      "output_location": "s3://lake-athena-results/analytics/"
+    }
+  ]
+}
