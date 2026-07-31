@@ -41,6 +41,10 @@ def knowledge_dir() -> Path:
     if candidate.is_dir():
         return candidate
 
+    # Fallback deliberadamente sem checagem de is_dir(), espelhando catalog_dir().
+    # Quem consumir precisa validar (is_dir() ou o exists() de safe_knowledge_file);
+    # catalog_dir() delega essa rede de seguranca para load_catalog(), que ainda
+    # nao tem equivalente aqui (chega nas Tasks 4 e 5).
     return Path(__file__).resolve().parent / "knowledge"
 
 
