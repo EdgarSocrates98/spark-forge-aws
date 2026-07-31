@@ -40,3 +40,28 @@ jobs:
             echo "artefato bruto rastreado pelo git" >&2
             exit 1
           fi
+
+  wheel:
+    # Job proprio, fora da matriz 3.10/3.11: construir artefato e criar venv
+    # custa mais de um minuto e o resultado nao depende da versao de Python.
+    # Depende do sistema operacional -- golden e gravado com LF forcado e path
+    # de subject e normalizado para `/`. O que escapar disso so aparece no
+    # Windows, por isso os dois sistemas operacionais entram na matriz.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build tooling
+        # `build` ja esta no extra `dev`, mas este job nao instala o pacote em
+        # modo editable -- verify_wheel.py cria o proprio venv isolado e
+        # instala o wheel construido ali dentro. O processo externo (o que
+        # roda `python -m build`) so precisa do modulo `build` em si.
+        run: python -m pip install --quiet build
+      - name: Artifact parity gate
+        run: python scripts/verify_wheel.py
