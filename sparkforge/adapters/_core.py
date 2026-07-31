@@ -13,6 +13,7 @@ divirjam -- os dois chamam exatamente as mesmas funcoes deste modulo.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -858,6 +859,57 @@ def runtime_detect(
 # rules lookup
 # --------------------------------------------------------------------------- #
 
+# Citacao de knowledge no catalogo tem sempre a forma `knowledge/<caminho>.<ext>`.
+# Ancorar no prefixo literal evita casar caminho de outra coisa que termine em
+# `.md`, como um link externo dentro da mesma frase.
+_KNOWLEDGE_REF = re.compile(r"knowledge/[A-Za-z0-9_\-/]+\.(?:md|sql)")
+
+# Campos onde a citacao aparece hoje. Varrer a regra inteira pegaria tambem o
+# corpo de `sources`, cujo `url` nao e caminho local.
+_KNOWLEDGE_FIELDS = ("explanation", "proposed_change", "validation", "risks", "tradeoffs")
+
+
+def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
+    """Citacoes de knowledge da regra, com o caminho resolvido de cada uma.
+
+    `path: None` significa citacao que nao resolve -- defeito de catalogo, e o
+    relatorio precisa mostra-lo em vez de sumir com a citacao.
+
+    `knowledge_dir()` e resolvido uma unica vez aqui fora do laco: a raiz nao
+    muda entre citacoes da mesma regra, e repetir a chamada por citacao seria
+    trabalho redundante sem nenhum ganho de corretude.
+
+    Ao contrario de `knowledge_path` (que devolve `_knowledge_root_missing`,
+    um AdapterError, quando a raiz esta ausente ou invalida), aqui a raiz
+    ausente vira `path: None` em cada citacao, nao uma excecao: `rules_lookup`
+    tem que continuar respondendo o resto da regra (id, severidade, sources,
+    ...) mesmo sem `knowledge/` instalado -- so a citacao especifica fica
+    sem caminho, exatamente como uma citacao quebrada dentro de uma raiz
+    valida.
+    """
+    blob = " ".join(str(rule.get(field, "")) for field in _KNOWLEDGE_FIELDS)
+
+    citations = sorted(set(_KNOWLEDGE_REF.findall(blob)))
+    if not citations:
+        return []
+
+    try:
+        root = knowledge_dir()
+    except KnowledgeError:
+        root = None
+
+    refs: list[dict[str, Any]] = []
+    for ref in citations:
+        path: str | None = None
+        if root is not None:
+            try:
+                path = str(safe_knowledge_file(root, ref[len("knowledge/") :]))
+            except KnowledgeError:
+                path = None
+        refs.append({"ref": ref, "path": path})
+
+    return refs
+
 
 def rules_lookup(
     id: list[str] | None = None,  # noqa: A002 -- nome do parametro espelha o flag --id
@@ -878,7 +930,11 @@ def rules_lookup(
         filtered = [r for r in filtered if r.get("category") == category]
 
     by_category = _count_by(filtered, lambda r: r.get("category", ""))
-    clean = [{k: v for k, v in r.items() if k != "_source_file"} for r in filtered]
+    clean = []
+    for rule in filtered:
+        entry = {k: v for k, v in rule.items() if k != "_source_file"}
+        entry["knowledge_refs"] = knowledge_refs_of(rule)
+        clean.append(entry)
     page, next_cursor = paginate_items(clean, limit, cursor)
 
     return {
