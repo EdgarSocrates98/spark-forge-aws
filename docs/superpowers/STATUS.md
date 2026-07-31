@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-07-31
-**Commit de referência:** branch `feat/fecha-dividas-fase2`
+**Commit de referência:** branch `feat/fase3a-pip`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -25,14 +25,14 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **1783** passando | `python -m pytest -q` |
+| Testes | **1882** passando, 5 skipped | `python -m pytest -q` |
 | Extratores de facts | **13** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **80** | união de `EMITTED_KINDS` |
 | Regras de diagnóstico | **48** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **48 de 48** | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **16** (`ROUTE-001`…`ROUTE-016`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **28** | `sparkforge.adapters.tools.TOOLS` |
+| Tools MCP | **29** | `sparkforge.adapters.tools.TOOLS` |
 | Fixtures golden | **74** em 15 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **20** (16 móveis, 4 fixas) | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -105,14 +105,87 @@ Distinta da "Fase 2 executada" logo acima, que era desbloqueio de catálogo. Est
   sobre grafo de chamadas) cobrem as duas capacidades da Fase 1 que nenhuma
   regra consumia. 43 → 48 regras.
 
-### Fase 3 — integração profunda — **NÃO INICIADA**
+### Fase 3a — distribuição pip — **CONCLUÍDA** (2026-07-31)
 
-Escopo da §16: export de Playbook/Knowledge para conta Devin, MCP HTTP
-hospedado, marketplace de plugin, distribuição pip.
+Documentos: [spec](specs/2026-07-31-sparkforge-fase3a-pip-design.md) ·
+[plan](plans/2026-07-31-sparkforge-fase3a-pip.md).
 
-Parcial existente: o transporte HTTP funciona localmente
-(`python -m sparkforge.adapters.mcp --transport http`) e é testado. Falta
-hospedagem, export Devin e publicação em PyPI/marketplace.
+O defeito de partida: `pip install` entregava só código. O wheel construído
+com o backend `setuptools` anterior tinha 43 arquivos e zero de
+`rules/catalog/`, `knowledge/` ou `skills/` — `judge`, `next-step`, `resume` e
+`rules lookup` morriam num pacote instalado fora do repositório, porque
+`loader.catalog_dir()` caía no fallback `sparkforge/rules/catalog/`, que
+nunca existiu em disco nem no artefato.
+
+**Decisão central: backend `hatchling` com `force-include`, preservando a
+decisão D-A da Fase 0.** `rules/catalog/` e `knowledge/` continuam morando na
+raiz do repositório — são o terceiro degrau da escada de portabilidade, o
+YAML que um agente sem Python lê direto — e `force-include` os copia para
+dentro do pacote **no momento do build**, sem duplicar arquivo em git. Nenhum
+código de `loader.catalog_dir()` foi tocado: a ordem de resolução (variável de
+ambiente → raiz do repo → fallback no pacote) já estava certa desde a Fase 0;
+faltava o arquivo chegar ao fallback.
+
+Um defeito real apareceu no caminho: o sdist não pode carregar o **mesmo**
+`force-include` do wheel, porque isso realoca `knowledge/` para dentro de
+`sparkforge/` já dentro do tarball, e o wheel construído a partir desse sdist
+(o fluxo padrão de `python -m build`, e o que `pip install` usa sem wheel
+compatível) procura `knowledge` na raiz e não acha mais. O sdist usa `include`
+simples, que preserva os diretórios onde o `force-include` do wheel espera
+achá-los. Corrigido no commit `830923e`, exposto pelo gate de paridade desta
+mesma fase — ver §4.3 do spec, corrigida nesta rodada de fechamento.
+
+Entregou também: metadata de publicação completa (`readme`, `license`,
+`classifiers`, `urls` apontando para `EdgarSocrates98/spark-forge-aws`, não
+para a organização inexistente que `plugin.json` citava); o resolvedor de
+`knowledge/` a partir do pacote (`sparkforge knowledge path [--file]`, nos dois
+adaptadores CLI e MCP); `rules lookup` devolvendo os caminhos de knowledge já
+resolvidos; a asserção de procedência que reprova o gate se `sparkforge` for
+importado do repositório em vez do `site-packages`; o gate de paridade
+(`scripts/verify_wheel.py`) que constrói sdist + wheel, instala em venv limpo
+fora do repositório e reproduz as 74 fixtures byte a byte; o job de CI que
+roda esse gate em `ubuntu-latest` e `windows-latest`; e `release.yml`, que
+constrói, prova, anexa artefatos a um GitHub Release em rascunho e **não
+publica** — publicação continua ato manual do mantenedor.
+
+Faixa de commits: `a06d7f5` … `2b6311c`.
+
+### Fase 3b — marketplace de plugin — **NÃO INICIADA**
+
+Escopo da §16: `marketplace.json` e instalação do plugin do Claude Code por
+marketplace, em vez de path local. Spec próprio, ainda não escrito.
+
+### Fase 3c — export Devin (Playbook/Knowledge) — **NÃO INICIADA**
+
+Escopo da §16: exportar `skills/` e `knowledge/` para o formato de
+Playbook/Knowledge de uma conta Devin. Spec próprio, ainda não escrito.
+
+### Fase 3d — MCP hospedado — **NÃO INICIADA**
+
+Escopo da §16: hospedar o transporte `streamable-http` do MCP em vez de rodar
+localmente. Parcial existente: o transporte HTTP já funciona localmente
+(`python -m sparkforge.adapters.mcp --transport http`) e é testado desde a
+Fase 1. Falta hospedagem. Spec próprio, ainda não escrito.
+
+### Próxima na fila, fora da §16 — cobertura de EMR
+
+`RuntimeContext` (`sparkforge/findings/models.py`) conhece `glue`, `spark`,
+`python`, `iceberg` e `athena`, e não conhece `emr` — o dataclass não tem
+campo para release label, instance fleets, EMR Serverless nem EMR on EKS.
+
+Isso não paralisa o motor: medido nesta rodada, com um `RuntimeContext` sem a
+chave `glue` (só `spark`, `python`, `iceberg`), **44 das 48 regras ainda são
+avaliadas** — só as 4 que declaram `runtime_scope` com `glue` são puladas
+(`SF-ENV-002`, `SF-ENV-003`, `SF-ENV-004`, `SF-GLUE-001`). A análise de código
+e execução (`SF-PY`, `SF-UI`, `SF-ATH`, `SF-ICE`, `SF-PQ`, `SF-PLAN`, `SF-CG`)
+é agnóstica de plataforma por construção — ela julga o job, não o serviço que
+o hospeda.
+
+O que falta é o eixo de infraestrutura que só existe hoje para Glue: release
+label do EMR, instance fleets vs. instance groups, EMR Serverless (worker
+config, pre-init capacity), EMR on EKS, e uma área `SF-EMR` própria no
+catálogo para as regras que dependem desses fatos. Fase própria, ainda sem
+spec.
 
 ### Fase 4 — rigor — **NÃO INICIADA**
 
@@ -162,7 +235,9 @@ de Arrow que SF-PLAN-001 citava era 404 (`user_guide/` em vez de `tutorial/`).
 
 | Dívida | Origem | Impacto |
 |---|---|---|
-| Fase 3 e Fase 4 não iniciadas | §16 do spec da Fase 0 | Ver as seções acima |
+| Fases 3b, 3c, 3d e 4 não iniciadas | §16 do spec da Fase 0 | Ver as seções acima |
+| Cobertura de EMR não existe | identificada ao fechar a Fase 3a | `RuntimeContext` não tem eixo de infraestrutura para EMR (release label, instance fleets, EMR Serverless, EMR on EKS); área `SF-EMR` inexistente. 44 das 48 regras já avaliam sem `glue`, mas nenhuma regra de infraestrutura EMR existe. Fase própria, sem spec ainda — ver seção acima |
+| `sdist`/`wheel` não são reproduzíveis bit-a-bit entre duas construções da mesma árvore | Fase 3a, commit `2b6311c` | Nenhum `SOURCE_DATE_EPOCH` é fixado, e o zip carrega timestamp interno; duas chamadas de `python -m build` sobre o mesmo commit produzem artefatos com bytes diferentes. `release.yml` contorna isso copiando (`--outdir`) o artefato que o gate já provou, em vez de reconstruir — mas a build em si segue não-determinística, o que importa para quem quiser verificar um wheel publicado por hash contra uma reconstrução própria |
 | `unreachable_function_count` não detecta código morto | Fase 1 | A medida só pega componente cíclico isolado. Detectar código morto de verdade exige emitir um nó por função **definida**, com ou sem aresta — mudança no extrator. Documentado em `rules/catalog/callgraph.yaml` |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |
 

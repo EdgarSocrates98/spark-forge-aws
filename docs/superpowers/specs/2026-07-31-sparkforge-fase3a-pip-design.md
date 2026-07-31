@@ -103,14 +103,22 @@ packages = ["sparkforge"]
 "rules/catalog" = "sparkforge/rules/catalog"
 "knowledge"     = "sparkforge/knowledge"
 
-[tool.hatch.build.targets.sdist.force-include]
-"rules/catalog" = "sparkforge/rules/catalog"
-"knowledge"     = "sparkforge/knowledge"
+[tool.hatch.build.targets.sdist]
+include = [
+    "sparkforge",
+    "rules/catalog",
+    "knowledge",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
 ```
 
-O `sdist` recebe o mesmo mapeamento. `force-include` no target `wheel` não cobre o sdist, e quem instalar a partir da fonte ficaria sem catálogo — a mesma falha, um caminho adiante.
+O `sdist` **não** leva `force-include`. Ele só precisa **carregar** `rules/catalog` e `knowledge` na raiz do tarball — não realocá-los —, e `include` faz exatamente isso: preserva os dois onde o `force-include` do target `wheel` espera encontrá-los quando o wheel é construído **a partir do sdist**, que é o fluxo padrão de `python -m build` (sem `--wheel`) e o que `pip install` usa quando não há wheel compatível já publicado.
 
-**Validado antes de escrever este spec.** Conversão aplicada, artefato construído, instalado em venv limpo fora do repositório: wheel passou de 43 para 72 arquivos, com 11 de catálogo e 19 de knowledge; `load_catalog()` devolveu 48 regras e `sparkforge rules lookup --id SF-PLAN-003` respondeu. O `pyproject.toml` foi restaurado em seguida.
+**Por que um `force-include` no sdist não funciona, para ninguém reintroduzir.** `force-include` não copia, ele **realoca**: com o mapeamento `"knowledge" = "sparkforge/knowledge"` também no target `sdist`, o diretório `knowledge/` passa a existir só dentro de `sparkforge/` já dentro do tarball do sdist. Quando o backend constrói o wheel a partir desse sdist extraído, o `force-include` do target `wheel` procura `knowledge` na **raiz** do sdist — porque é de lá que ele copia — e não acha mais, porque o passo do sdist já o moveu para dentro de `sparkforge/`. O erro é `FileNotFoundError: Forced include not found`. `tests/test_artifact_contents.py` não pegava isso porque testava com `--wheel`, que constrói direto da árvore-fonte e nunca materializa um sdist intermediário; o caminho quebrado é justamente o que `pip install` sem wheel compatível percorre. O `force-include` do sdist foi removido no commit `830923e`, depois que o gate de paridade (que constrói sem `--wheel`) expôs a falha.
+
+**Validado antes de escrever este spec.** Conversão aplicada, artefato construído, instalado em venv limpo fora do repositório: wheel passou de 43 para 72 arquivos, com 11 de catálogo e 19 de knowledge; `load_catalog()` devolveu 48 regras e `sparkforge rules lookup --id SF-PLAN-003` respondeu. O `pyproject.toml` foi restaurado em seguida. A validação original usava `force-include` também no sdist; o defeito descrito acima só apareceu depois, quando o gate de paridade passou a construir sem `--wheel` — a mesma sequência que levou à correção documentada nesta seção.
 
 ### 4.4 Metadata de publicação
 
