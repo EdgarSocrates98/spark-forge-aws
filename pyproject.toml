@@ -65,6 +65,10 @@ dev = [
     "uvicorn>=0.30",
     "idna>=3.15",
     "python-dotenv>=1.2.2",
+    # Sem isto, tests/test_artifact_contents.py cai no pytest.skip em qualquer
+    # venv que so tenha o extra dev instalado -- inclusive no CI -- e os 5
+    # testes do conteudo do wheel viram skip permanente em vez de pass.
+    "build>=1.0",
 ]
 
 [project.scripts]
