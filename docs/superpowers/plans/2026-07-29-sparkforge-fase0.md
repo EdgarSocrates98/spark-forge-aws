@@ -1,16 +1,42 @@
 # SparkForge Fase 0 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status: CONCLUÍDO em 2026-07-30.** As 23 tasks e os 151 steps abaixo estão
+> implementados e verdes. Faixa de commits: `66fcb6f` (spec) … `7d51664`
+> (Task 23, docs), com o merge `7cc739e "Merge Phase 0 deterministic layer plus
+> Spark event log parser"` fechando a fase.
+>
+> **Este documento é registro histórico, não plano de trabalho.** Todo número
+> dentro dele — contagens de teste, tamanho do catálogo, lista de kinds — vale
+> para o dia em que foi escrito (2026-07-29) e **não** descreve o repositório de
+> hoje. Para o estado atual, leia
+> [`docs/superpowers/STATUS.md`](../STATUS.md).
+>
+> Delta resumido entre este plano e o repositório após as Fases 1 e 2:
+>
+> | | Neste plano (Fase 0) | Hoje |
+> |---|---|---|
+> | Testes na suíte | 79 | 1726 |
+> | Extratores | 1 (`pyspark_ast`) | 13 |
+> | Fact kinds distintos | 17 | 80 |
+> | Tools MCP | 10 | 28 |
+> | Fixtures | 16 | 73 em 15 domínios |
+> | Regras que disparam | 16 (SF-PY + SF-ENV) | 43, nenhuma `blocked_on` |
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking — todos já marcados; não re-execute.
 
 **Goal:** Build the deterministic extraction and judgment layer for SparkForge — anchored Facts from PySpark source, Findings from a version-guarded YAML rule catalog, a case file with deterministic routing, and CLI + MCP adapters — so that two operators on different models in different tools produce identical evidence and identical next steps.
 
-**Architecture:** Six layers with negative boundaries. `facts/` extractors emit anchored observations with no judgment. `rules/` applies a YAML catalog (already committed, 59 rules) via a whitelist-only expression evaluator to produce Findings. `case/` holds investigation state in `.sparkforge/case.yaml` and routes deterministically. `adapters/` are thin CLI and MCP shells with zero domain logic. Knowledge stays outside the code in `rules/catalog/` and `knowledge/`.
+**Architecture:** Six layers with negative boundaries. `facts/` extractors emit anchored observations with no judgment. `rules/` applies a YAML catalog (already committed: 59 entradas = 43 regras de diagnóstico + 16 rotas `ROUTE-*` em `routing.yaml`, que o `loader` exclui — por isso `load_catalog()` retorna 43) via a whitelist-only expression evaluator to produce Findings. `case/` holds investigation state in `.sparkforge/case.yaml` and routes deterministically. `adapters/` are thin CLI and MCP shells with zero domain logic. Knowledge stays outside the code in `rules/catalog/` and `knowledge/`.
 
 **Tech Stack:** Python (stdlib `ast`, `hashlib`, `json`), PyYAML, jsonschema, pytest. Optional extras: boto3 (`[aws]`), MCP Python SDK (`[mcp]`). No mandatory dependency beyond PyYAML + jsonschema.
 
 ---
 
 ## Environment facts verified before writing this plan
+
+> Snapshot de 2026-07-29. Mantido como está para preservar o registro. Hoje a
+> suíte tem 1726 testes e `scripts/sync_skills.py` **já** cobre `agents/`
+> (entregue na Task 18).
 
 - Local Python: **3.14.6**. `pyproject.toml` declares `requires-python = ">=3.10"`. Core code must avoid syntax newer than 3.10 so the package can run under Glue 4.0 if executed inside a job.
 - Available: `PyYAML 6.0.2`, `jsonschema 4.23.0`, `pytest 8.3.4`.
@@ -80,7 +106,7 @@
 - Modify: `pyproject.toml`
 - Test: `tests/test_package_importable.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_package_importable.py
@@ -113,12 +139,12 @@ def test_core_imports_without_optional_extras():
     assert "ok" in result.stdout
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_package_importable.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge'`
 
-- [ ] **Step 3: Create the package files**
+- [x] **Step 3: Create the package files**
 
 ```python
 # sparkforge/__init__.py
@@ -133,7 +159,7 @@ Create these five files with exactly this one-line content each — `sparkforge/
 """Subpacote SparkForge."""
 ```
 
-- [ ] **Step 4: Update `pyproject.toml`**
+- [x] **Step 4: Update `pyproject.toml`**
 
 Replace the entire file with:
 
@@ -167,17 +193,17 @@ include = ["sparkforge*"]
 testpaths = ["tests"]
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_package_importable.py -v`
 Expected: PASS, 2 tests
 
-- [ ] **Step 6: Confirm the existing suite still passes**
+- [x] **Step 6: Confirm the existing suite still passes**
 
 Run: `python -m pytest -q`
 Expected: 79 passed
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add sparkforge pyproject.toml tests/test_package_importable.py
@@ -194,7 +220,7 @@ Built before anything that uses it, because the catalog is editable data and the
 - Create: `sparkforge/rules/expr.py`
 - Test: `tests/test_rules_expr.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_rules_expr.py
@@ -275,12 +301,12 @@ class TestRejections:
             evaluate("measures.a / measures.b > 1", ctx)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_rules_expr.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.rules.expr'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/rules/expr.py
@@ -406,12 +432,12 @@ def _resolve_path(node: ast.Attribute, ctx: Dict[str, Any]) -> Any:
     return value
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_rules_expr.py -v`
 Expected: PASS, 22 tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sparkforge/rules/expr.py tests/test_rules_expr.py
@@ -426,7 +452,7 @@ git commit -m "feat(rules): add whitelist-only expression evaluator with rejecti
 - Create: `sparkforge/findings/models.py`
 - Test: `tests/test_findings_models.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_findings_models.py
@@ -545,12 +571,12 @@ class TestFinding:
         assert SEVERITY_ORDER == ("P0", "P1", "P2", "P3", "P4")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_findings_models.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.findings.models'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/findings/models.py
@@ -730,12 +756,12 @@ def sort_findings(findings: Iterable[Finding]) -> List[Finding]:
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_findings_models.py -v`
 Expected: PASS, 15 tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sparkforge/findings/models.py tests/test_findings_models.py
@@ -752,7 +778,7 @@ Vertical slice starts here. One kind, one rule, end to end, before broadening. `
 - Create: `sparkforge/facts/pyspark_ast.py`
 - Test: `tests/test_facts_pyspark_ast.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_facts_pyspark_ast.py
@@ -845,12 +871,12 @@ class TestSyntaxError:
         assert facts[0].attrs["reason"] == "syntax_error"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_facts_pyspark_ast.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.facts.pyspark_ast'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/facts/pyspark_ast.py
@@ -1030,12 +1056,12 @@ def extract_tree(root: Path, repo_root: Optional[Path] = None) -> List[Fact]:
     return sort_facts(facts)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_facts_pyspark_ast.py -v`
 Expected: PASS, 11 tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sparkforge/facts/pyspark_ast.py tests/test_facts_pyspark_ast.py
@@ -1050,7 +1076,7 @@ git commit -m "feat(facts): add static PySpark AST extractor"
 - Create: `sparkforge/rules/loader.py`, `sparkforge/rules/version_scope.py`
 - Test: `tests/test_rules_loader.py`, `tests/test_rules_version_scope.py`
 
-- [ ] **Step 1: Write the failing version-scope test**
+- [x] **Step 1: Write the failing version-scope test**
 
 ```python
 # tests/test_rules_version_scope.py
@@ -1099,7 +1125,7 @@ class TestInScope:
             in_scope({"glue": "~>5.0"}, {"glue": "5.0"})
 ```
 
-- [ ] **Step 2: Write the failing loader test**
+- [x] **Step 2: Write the failing loader test**
 
 ```python
 # tests/test_rules_loader.py
@@ -1209,12 +1235,12 @@ class TestRejections:
             load_catalog(validate_exprs=True)
 ```
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_rules_loader.py tests/test_rules_version_scope.py -v`
 Expected: FAIL with `ModuleNotFoundError` for both modules
 
-- [ ] **Step 4: Write `version_scope.py`**
+- [x] **Step 4: Write `version_scope.py`**
 
 ```python
 # sparkforge/rules/version_scope.py
@@ -1285,7 +1311,7 @@ def in_scope(scope: Dict[str, str], runtime: Dict[str, str]) -> bool:
     return True
 ```
 
-- [ ] **Step 5: Write `loader.py`**
+- [x] **Step 5: Write `loader.py`**
 
 ```python
 # sparkforge/rules/loader.py
@@ -1419,12 +1445,12 @@ def load_catalog(
     return sorted(rules, key=lambda r: r["id"])
 ```
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `python -m pytest tests/test_rules_loader.py tests/test_rules_version_scope.py -v`
 Expected: PASS, 22 tests. This also proves the 43 committed non-routing rules are structurally valid and every `expr` is accepted by the evaluator.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add sparkforge/rules/loader.py sparkforge/rules/version_scope.py tests/test_rules_loader.py tests/test_rules_version_scope.py
@@ -1441,7 +1467,7 @@ After this task, `coalesce(1)` in source produces a `SF-PY-005` Finding with anc
 - Create: `sparkforge/rules/engine.py`
 - Test: `tests/test_rules_engine.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_rules_engine.py
@@ -1647,12 +1673,12 @@ class TestVerticalSliceEndToEnd:
         assert judge(facts, catalog, GLUE_50) == []
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_rules_engine.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.rules.engine'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/rules/engine.py
@@ -1858,17 +1884,17 @@ def judge(
     return (ordered, skipped) if return_skipped else ordered
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_rules_engine.py -v`
 Expected: PASS, 20 tests. The two `TestVerticalSliceEndToEnd` tests are the Phase 0 proof: source in, anchored Finding out.
 
-- [ ] **Step 5: Run the whole suite**
+- [x] **Step 5: Run the whole suite**
 
 Run: `python -m pytest -q`
 Expected: all pass, no regressions in the 77 existing tests
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add sparkforge/rules/engine.py tests/test_rules_engine.py
@@ -1886,7 +1912,7 @@ The schema is what stops a weak model inventing a gain figure. It rejects a perc
 - Modify: `pyproject.toml` (ship schemas as package data)
 - Test: `tests/test_findings_validate.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_findings_validate.py
@@ -1994,12 +2020,12 @@ class TestNoInventedGains:
         )
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_findings_validate.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.findings.validate'`
 
-- [ ] **Step 3: Write `fact.schema.json`**
+- [x] **Step 3: Write `fact.schema.json`**
 
 ```json
 {
@@ -2047,7 +2073,7 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.findings.v
 }
 ```
 
-- [ ] **Step 4: Write `finding.schema.json`**
+- [x] **Step 4: Write `finding.schema.json`**
 
 ```json
 {
@@ -2102,7 +2128,7 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.findings.v
 }
 ```
 
-- [ ] **Step 5: Write `validate.py`**
+- [x] **Step 5: Write `validate.py`**
 
 ```python
 # sparkforge/findings/validate.py
@@ -2171,7 +2197,7 @@ def validate_finding(payload: Dict[str, Any]) -> None:
     _reject_unbacked_gain(payload)
 ```
 
-- [ ] **Step 6: Ship the schemas as package data**
+- [x] **Step 6: Ship the schemas as package data**
 
 In `pyproject.toml`, add below `[tool.setuptools.packages.find]`:
 
@@ -2180,12 +2206,12 @@ In `pyproject.toml`, add below `[tool.setuptools.packages.find]`:
 sparkforge = ["findings/schemas/*.json"]
 ```
 
-- [ ] **Step 7: Run test to verify it passes**
+- [x] **Step 7: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_findings_validate.py -v`
 Expected: PASS, 13 tests
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add sparkforge/findings/schemas sparkforge/findings/validate.py pyproject.toml tests/test_findings_validate.py
@@ -2202,7 +2228,7 @@ This is what makes "line by line" real. With the ordered method chain, "join bef
 - Modify: `sparkforge/facts/pyspark_ast.py`
 - Test: `tests/test_facts_chain.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_facts_chain.py
@@ -2278,12 +2304,12 @@ class TestWithColumnRun:
         assert fact.measures["run_length"] == 9
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_facts_chain.py -v`
 Expected: FAIL — `pyspark.chain`, `pyspark.driver_collect` and `pyspark.withcolumn_run` are not emitted yet
 
-- [ ] **Step 3: Add chain reconstruction to `pyspark_ast.py`**
+- [x] **Step 3: Add chain reconstruction to `pyspark_ast.py`**
 
 Insert these constants after `_PARTITION_METHODS`:
 
@@ -2329,7 +2355,7 @@ def _chain_root_call(node: ast.Call, ctx: _Context) -> bool:
     return True
 ```
 
-- [ ] **Step 4: Emit the three new kinds**
+- [x] **Step 4: Emit the three new kinds**
 
 Inside `extract_source`, replace the `if method in _PARTITION_METHODS:` block with:
 
@@ -2418,12 +2444,12 @@ def _longest_withcolumn_run(methods: List[str]) -> int:
 
 Add `Tuple` to the `typing` import at the top of the file.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_facts_chain.py tests/test_facts_pyspark_ast.py -v`
 Expected: PASS, 21 tests
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add sparkforge/facts/pyspark_ast.py tests/test_facts_chain.py
@@ -2440,7 +2466,7 @@ Completes the 17 kinds from spec §6.2. `pyspark.callgraph_edge` is emitted but 
 - Modify: `sparkforge/facts/pyspark_ast.py`
 - Test: `tests/test_facts_kinds.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_facts_kinds.py
@@ -2653,12 +2679,12 @@ class TestCleanFixtureStaysClean:
         assert "pyspark.partitioning" not in got
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_facts_kinds.py -v`
 Expected: FAIL with `ImportError: cannot import name 'EMITTED_KINDS'`
 
-- [ ] **Step 3: Implement the remaining kinds**
+- [x] **Step 3: Implement the remaining kinds**
 
 Add near the top of `pyspark_ast.py`:
 
@@ -2785,17 +2811,17 @@ Call it from `extract_source` before the final `sort_facts`, and add a module-le
     return sort_facts(facts)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_facts_kinds.py -v`
 Expected: PASS, 24 tests
 
-- [ ] **Step 5: Run the whole suite**
+- [x] **Step 5: Run the whole suite**
 
 Run: `python -m pytest -q`
 Expected: all pass
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add sparkforge/facts/pyspark_ast.py tests/test_facts_kinds.py
@@ -2812,7 +2838,7 @@ Golden tests fail in both directions. Missing a finding is a false negative; inv
 - Create: `fixtures/pyspark/<16 dirs>/`, `tests/test_fixtures_golden.py`, `scripts/regen_fixtures.py`
 - Test: `tests/test_fixtures_golden.py`
 
-- [ ] **Step 1: Write the failing golden runner**
+- [x] **Step 1: Write the failing golden runner**
 
 ```python
 # tests/test_fixtures_golden.py
@@ -2922,12 +2948,12 @@ class TestAdversarial:
         assert "SF-ENV-002" in {s["rule_id"] for s in by_version}
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_fixtures_golden.py -v`
 Expected: FAIL — `fixtures/pyspark` does not exist
 
-- [ ] **Step 3: Create the fixture layout**
+- [x] **Step 3: Create the fixture layout**
 
 Each of the 16 directories has this shape. `coalesce_one` is the worked example; the other 15 follow it exactly, with the source and `expects_rules` changed.
 
@@ -2974,7 +3000,7 @@ Sources for the other fifteen:
 | `near_threshold` | 9 chained `.withColumn(...)` | *(empty)* |
 | `version_out_of_scope` | `df.writeTo("db.tbl").append()` plus `meta.yaml` with `runtime.glue: "5.0"`, `runtime.iceberg: "1.7.1"` so `SF-ENV-002` (`>=5.1`) is skipped by version | *(empty)* |
 
-- [ ] **Step 4: Write the golden regenerator**
+- [x] **Step 4: Write the golden regenerator**
 
 ```python
 # scripts/regen_fixtures.py
@@ -3046,19 +3072,19 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 5: Generate the goldens and read the diff**
+- [x] **Step 5: Generate the goldens and read the diff**
 
 Run: `python scripts/regen_fixtures.py`
 Expected: 16 lines. Verify each fixture's reported `rule_id` list equals its `expects_rules`, and that `clean_job`, `dynamic_dispatch`, `near_threshold` and `version_out_of_scope` report `nenhum`.
 
 If a fixture reports a rule it should not, that is a **false positive in the analyzer** — fix the extractor or the rule, not the fixture.
 
-- [ ] **Step 6: Run the golden tests**
+- [x] **Step 6: Run the golden tests**
 
 Run: `python -m pytest tests/test_fixtures_golden.py -v`
 Expected: PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add fixtures scripts/regen_fixtures.py tests/test_fixtures_golden.py
@@ -3073,7 +3099,7 @@ git commit -m "test: add 16 fixtures with bidirectional golden checks"
 - Create: `sparkforge/facts/runtime_detect.py`
 - Test: `tests/test_runtime_detect.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_runtime_detect.py
@@ -3153,12 +3179,12 @@ class TestSfEnv001FiresOnDivergence:
         assert findings[0].severity == "P0"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_runtime_detect.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.facts.runtime_detect'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/facts/runtime_detect.py
@@ -3263,12 +3289,12 @@ def detect_runtime(sources: Dict[str, Dict[str, Any]]) -> Tuple[RuntimeContext, 
     return context, sort_facts(facts)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_runtime_detect.py -v`
 Expected: PASS, 8 tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sparkforge/facts/runtime_detect.py tests/test_runtime_detect.py
@@ -3285,7 +3311,7 @@ git commit -m "feat(facts): detect runtime and record version divergence"
 - Create: `sparkforge/case/store.py`
 - Test: `tests/test_case_store.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_case_store.py
@@ -3425,12 +3451,12 @@ class TestMutators:
         assert original["phase"] == "intake"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_case_store.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.case.store'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/case/store.py
@@ -3585,12 +3611,12 @@ def set_index(
     return updated
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_case_store.py -v`
 Expected: PASS, 17 tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sparkforge/case/store.py tests/test_case_store.py
@@ -3608,7 +3634,7 @@ The committed `routing.yaml` uses `len(value) > 1`, `any(h.status == 'open')` an
 - Create: `sparkforge/case/router.py`
 - Test: `tests/test_case_router.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_case_router.py
@@ -3717,12 +3743,12 @@ class TestDeterminism:
             assert step["reason"][:5] in ("ROUTE", "Nenhu")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_case_router.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.case.router'`
 
-- [ ] **Step 3: Convert the four expression-based predicates in `rules/catalog/routing.yaml`**
+- [x] **Step 3: Convert the four expression-based predicates in `rules/catalog/routing.yaml`**
 
 `ROUTE-002`:
 
@@ -3794,7 +3820,7 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.case.route
         - {case: runtime.divergences, count_gt: 0}
 ```
 
-- [ ] **Step 4: Document the operators in `rules/catalog/README.md`**
+- [x] **Step 4: Document the operators in `rules/catalog/README.md`**
 
 Add to the `routing.yaml` section:
 
@@ -3819,7 +3845,7 @@ portanto superfície de execução.
 `present: true`/`false` testa a presença de um achado.
 ```
 
-- [ ] **Step 5: Write `router.py`**
+- [x] **Step 5: Write `router.py`**
 
 ```python
 # sparkforge/case/router.py
@@ -3999,17 +4025,17 @@ def next_step(
     return step
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_case_router.py -v`
 Expected: PASS, 14 tests
 
-- [ ] **Step 7: Re-verify the whole catalog still loads**
+- [x] **Step 7: Re-verify the whole catalog still loads**
 
 Run: `python -m pytest tests/test_rules_loader.py -q`
 Expected: PASS — routing edits did not break rule loading
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add rules/catalog/routing.yaml rules/catalog/README.md sparkforge/case/router.py tests/test_case_router.py
@@ -4026,7 +4052,7 @@ The requirement that started this: run out of tokens in one tool, continue in th
 - Create: `sparkforge/case/resume.py`
 - Test: `tests/test_case_resume.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_case_resume.py
@@ -4124,12 +4150,12 @@ class TestHandoffMarkdown:
         assert render_handoff(payload) == render_handoff(payload)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_case_resume.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.case.resume'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/case/resume.py
@@ -4326,12 +4352,12 @@ def render_handoff(payload: Dict[str, Any]) -> str:
     return "\n".join(parts)
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_case_resume.py -v`
 Expected: PASS, 13 tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add sparkforge/case/resume.py tests/test_case_resume.py
@@ -4348,7 +4374,7 @@ Extraction and judgment are separate verbs on purpose. That enforces the layer b
 - Create: `sparkforge/adapters/cli.py`
 - Test: `tests/test_adapters_cli.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_adapters_cli.py
@@ -4506,12 +4532,12 @@ class TestRuntimeAndRules:
         assert "benchmark_ref" in capsys.readouterr().err
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_adapters_cli.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.adapters.cli'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # sparkforge/adapters/cli.py
@@ -4902,17 +4928,17 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_adapters_cli.py -v`
 Expected: PASS, 16 tests
 
-- [ ] **Step 5: Verify the entry point works after an editable install**
+- [x] **Step 5: Verify the entry point works after an editable install**
 
 Run: `python -m pip install -e . --no-deps --quiet && sparkforge --version`
 Expected: `0.4.0`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add sparkforge/adapters/cli.py tests/test_adapters_cli.py
@@ -4929,7 +4955,7 @@ git commit -m "feat(cli): add sparkforge CLI adapter"
 - Create: `sparkforge/adapters/mcp.py`, `sparkforge/adapters/tools.py`
 - Test: `tests/test_adapters_tools.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Test the tool layer, not the SDK wiring — the SDK is an optional extra and must not be needed to run the suite.
 
@@ -5046,12 +5072,12 @@ class TestCallTool:
         assert "sparkforge analyze pyspark" in json.dumps(result)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_adapters_tools.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.adapters.tools'`
 
-- [ ] **Step 3: Write `tools.py`**
+- [x] **Step 3: Write `tools.py`**
 
 Declare the ten tools with `inputSchema`, `outputSchema` and annotations, and a `call_tool(name, arguments)` dispatcher that reuses the same core functions the CLI calls. Structure:
 
@@ -5172,7 +5198,7 @@ def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 Handlers mirror the CLI commands, returning dicts rather than printing, and returning an error dict with `collect_commands` instead of raising when an artifact is missing.
 
-- [ ] **Step 4: Write `mcp.py`**
+- [x] **Step 4: Write `mcp.py`**
 
 ```python
 # sparkforge/adapters/mcp.py
@@ -5269,17 +5295,17 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_adapters_tools.py -v`
 Expected: PASS, 15 tests
 
-- [ ] **Step 6: Confirm the core still imports without the MCP SDK**
+- [x] **Step 6: Confirm the core still imports without the MCP SDK**
 
 Run: `python -m pytest tests/test_package_importable.py -v`
 Expected: PASS — `sparkforge.adapters.tools` must not import the SDK at module level
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add sparkforge/adapters/tools.py sparkforge/adapters/mcp.py tests/test_adapters_tools.py
@@ -5296,7 +5322,7 @@ The plugin layout expects `skills/` at the repo root, which is already the sourc
 - Create: `.claude-plugin/plugin.json`, `.mcp.json`, `commands/sf-open.md`, `commands/sf-next.md`, `commands/sf-resume.md`, `commands/sf-handoff.md`
 - Test: `tests/test_plugin_structure.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_plugin_structure.py
@@ -5362,12 +5388,12 @@ class TestCommands:
             assert "E:/" not in text
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_plugin_structure.py -v`
 Expected: FAIL — `.claude-plugin/plugin.json` does not exist
 
-- [ ] **Step 3: Write `.claude-plugin/plugin.json`**
+- [x] **Step 3: Write `.claude-plugin/plugin.json`**
 
 ```json
 {
@@ -5379,7 +5405,7 @@ Expected: FAIL — `.claude-plugin/plugin.json` does not exist
 }
 ```
 
-- [ ] **Step 4: Write `.mcp.json`**
+- [x] **Step 4: Write `.mcp.json`**
 
 ```json
 {
@@ -5398,7 +5424,7 @@ Expected: FAIL — `.claude-plugin/plugin.json` does not exist
 
 `SPARKFORGE_CATALOG` is set explicitly so the loader finds the catalog when the plugin is installed outside a checkout, where the repo-root fallback does not apply.
 
-- [ ] **Step 5: Write the four commands**
+- [x] **Step 5: Write the four commands**
 
 `commands/sf-open.md`:
 
@@ -5484,12 +5510,12 @@ Depois:
 3. Do outro lado, comece por `/sf-resume`.
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_plugin_structure.py -v`
 Expected: PASS, 9 tests
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add .claude-plugin .mcp.json commands tests/test_plugin_structure.py
@@ -5507,7 +5533,7 @@ There is already drift: `.claude/agents/spark-performance-architect.md` versus `
 - Modify: `scripts/sync_skills.py`
 - Test: `tests/test_agents_parity.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_agents_parity.py
@@ -5627,12 +5653,12 @@ class TestNoPlatformKnowledge:
         assert not offenders, offenders
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_agents_parity.py -v`
 Expected: FAIL — `agents/` and `AGENT_PROTOCOL.md` do not exist
 
-- [ ] **Step 3: Write `AGENT_PROTOCOL.md`**
+- [x] **Step 3: Write `AGENT_PROTOCOL.md`**
 
 ```markdown
 # Protocolo do agente — SparkForge AWS
@@ -5668,7 +5694,7 @@ disponível: leia `rules/catalog/*.yaml` diretamente — é YAML legível, com o
 mesma guarda de versão e a mesma fonte. Cai a automação, não o conhecimento.
 ```
 
-- [ ] **Step 4: Write the three agents**
+- [x] **Step 4: Write the three agents**
 
 `agents/spark-performance-architect.md`:
 
@@ -5788,7 +5814,7 @@ Revise Terraform só depois de ter evidência. Produza arquitetura-alvo, experim
 funcional e rollback.
 ```
 
-- [ ] **Step 5: Extend `scripts/sync_skills.py`**
+- [x] **Step 5: Extend `scripts/sync_skills.py`**
 
 Add agent mirroring and protocol injection. After the existing `MIRRORS` constant, add:
 
@@ -5844,7 +5870,7 @@ Wire them in: in `check()`, append `problems.extend(check_agents())` before the 
 
 The Copilot mirror is byte-identical to the source, only the filename differs. Copilot reads the frontmatter the same way, so no transformation is needed — and byte identity is what makes the parity test meaningful.
 
-- [ ] **Step 6: Run the sync and the tests**
+- [x] **Step 6: Run the sync and the tests**
 
 Run: `python scripts/sync_skills.py`
 Expected: `COPY` lines for nine agent mirrors, one `DEL` for the stale Copilot file
@@ -5852,7 +5878,7 @@ Expected: `COPY` lines for nine agent mirrors, one `DEL` for the stale Copilot f
 Run: `python -m pytest tests/test_agents_parity.py -v`
 Expected: PASS, 15 tests
 
-- [ ] **Step 7: Inject the protocol reference into every skill**
+- [x] **Step 7: Inject the protocol reference into every skill**
 
 Append this block to each of the 18 files in `skills/*/SKILL.md`, then re-sync:
 
@@ -5869,7 +5895,7 @@ manutenção destrutiva só com confirmação explícita.
 Run: `python scripts/sync_skills.py && python -m pytest tests/test_skill_content.py tests/test_agents_parity.py -q`
 Expected: PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add AGENT_PROTOCOL.md agents skills .claude .agents .github scripts/sync_skills.py tests/test_agents_parity.py
@@ -5884,7 +5910,7 @@ git commit -m "feat(agents): add protocol and single-source agents"
 - Create: `parity.yaml`
 - Test: `tests/test_capability_parity.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_capability_parity.py
@@ -5960,12 +5986,12 @@ class TestManifestMatchesReality:
                 assert (ROOT / path).is_file(), path
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_capability_parity.py -v`
 Expected: FAIL — `parity.yaml` does not exist
 
-- [ ] **Step 3: Write `parity.yaml`**
+- [x] **Step 3: Write `parity.yaml`**
 
 ```yaml
 # Manifesto de paridade: capacidade x plataforma x mecanismo.
@@ -6076,12 +6102,12 @@ capabilities:
       copilot_ci: [files]
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_capability_parity.py -v`
 Expected: PASS, 9 tests
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add parity.yaml tests/test_capability_parity.py
@@ -6099,7 +6125,7 @@ The eval measures whether an agent *uses the tools correctly*. Facts and Finding
 - Modify: `pyproject.toml` (add `defusedxml` to `[dev]`)
 - Test: `tests/test_evals.py`
 
-- [ ] **Step 1: Add the XML parsing dependency**
+- [x] **Step 1: Add the XML parsing dependency**
 
 In `pyproject.toml`, change the `dev` extra to:
 
@@ -6109,7 +6135,7 @@ dev = ["pytest>=8.0", "ruff>=0.6", "defusedxml>=0.7"]
 
 Then: `python -m pip install -e ".[dev]" --quiet`
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 `defusedxml` is used instead of `xml.etree`: the stdlib parsers are vulnerable to XXE and billion-laughs by default. The eval file is repo-controlled today, but a parser that is safe only because of who wrote the input is not safe.
 
@@ -6161,12 +6187,12 @@ class TestAnswersAreDerivableFromTheFixtures:
         assert not failures, failures
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_evals.py -v`
 Expected: FAIL — `evals/fase0.xml` does not exist
 
-- [ ] **Step 4: Write `evals/fase0.xml`**
+- [x] **Step 4: Write `evals/fase0.xml`**
 
 ```xml
 <evaluation>
@@ -6213,7 +6239,7 @@ Expected: FAIL — `evals/fase0.xml` does not exist
 </evaluation>
 ```
 
-- [ ] **Step 5: Write `scripts/check_evals.py`**
+- [x] **Step 5: Write `scripts/check_evals.py`**
 
 ```python
 #!/usr/bin/env python3
@@ -6334,7 +6360,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 6: Write `evals/README.md`**
+- [x] **Step 6: Write `evals/README.md`**
 
 ```markdown
 # Suíte de avaliação — Fase 0
@@ -6372,7 +6398,7 @@ Independente, read-only, exige múltiplas chamadas de tool, resposta única veri
 comparação de string, e estável no tempo.
 ```
 
-- [ ] **Step 7: Run the checker and the tests**
+- [x] **Step 7: Run the checker and the tests**
 
 Run: `python scripts/check_evals.py`
 Expected: `OK: 10 respostas reproduzidas a partir do corpus.`
@@ -6382,7 +6408,7 @@ If any line reports a mismatch, fix the **XML answer** to match the corpus — t
 Run: `python -m pytest tests/test_evals.py -v`
 Expected: PASS, 6 tests
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add evals scripts/check_evals.py tests/test_evals.py
@@ -6397,7 +6423,7 @@ git commit -m "test: add 10-pair eval suite with corpus verification"
 - Create: `.github/workflows/ci.yml`
 - Test: `tests/test_ci_workflow.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_ci_workflow.py
@@ -6445,12 +6471,12 @@ class TestWorkflow:
         assert "git commit" not in steps()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_ci_workflow.py -v`
 Expected: FAIL — the workflow does not exist
 
-- [ ] **Step 3: Write `.github/workflows/ci.yml`**
+- [x] **Step 3: Write `.github/workflows/ci.yml`**
 
 ```yaml
 name: ci
@@ -6506,17 +6532,17 @@ jobs:
 
 The last step encodes the rule from spec §8.1: derived state is committed, raw artifacts are not.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_ci_workflow.py -v`
 Expected: PASS, 7 tests
 
-- [ ] **Step 5: Verify lint passes locally**
+- [x] **Step 5: Verify lint passes locally**
 
 Run: `python -m pip install ruff --quiet && python -m ruff check sparkforge scripts tests`
 Expected: no findings. Fix anything reported before committing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .github/workflows/ci.yml tests/test_ci_workflow.py
@@ -6533,7 +6559,7 @@ Spec §2 places only the *complete* AWS collectors in Phase 1; the interface ske
 - Create: `sparkforge/collect/__init__.py`, `sparkforge/collect/base.py`
 - Test: `tests/test_collect_base.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_collect_base.py
@@ -6676,18 +6702,18 @@ class TestOfflineFirst:
         assert "boto3" not in source.split("require_boto3")[0]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_collect_base.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'sparkforge.collect'`
 
-- [ ] **Step 3: Create `sparkforge/collect/__init__.py`**
+- [x] **Step 3: Create `sparkforge/collect/__init__.py`**
 
 ```python
 """Subpacote SparkForge."""
 ```
 
-- [ ] **Step 4: Write `sparkforge/collect/base.py`**
+- [x] **Step 4: Write `sparkforge/collect/base.py`**
 
 ```python
 # sparkforge/collect/base.py
@@ -6814,12 +6840,12 @@ def require_boto3():
     return boto3
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_collect_base.py -v`
 Expected: PASS, 12 tests
 
-- [ ] **Step 6: Wire the manifest into `resume`**
+- [x] **Step 6: Wire the manifest into `resume`**
 
 In `sparkforge/case/resume.py`, replace the `missing_artifacts` line so it consults the manifest rather than a `present` flag stored in the case:
 
@@ -6854,12 +6880,12 @@ def _missing_artifacts(case: Dict[str, Any], root: Optional[Path]) -> List[Dict[
 
 Add `root: Optional[Path] = None` as the last parameter of `resume`, and pass `Path(args.repo)` from the CLI `resume` and `handoff` commands. Keep the `root=None` path working so the existing `tests/test_case_resume.py` stays green without a filesystem.
 
-- [ ] **Step 7: Run the affected suites**
+- [x] **Step 7: Run the affected suites**
 
 Run: `python -m pytest tests/test_case_resume.py tests/test_collect_base.py tests/test_adapters_cli.py -v`
 Expected: PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add sparkforge/collect sparkforge/case/resume.py sparkforge/adapters/cli.py tests/test_collect_base.py
@@ -6874,7 +6900,7 @@ git commit -m "feat(collect): add artifact manifest and collector interface"
 - Modify: `README.md`, `GUIA_DE_USO.md`, `PROMPT_INICIAL_MESTRE.md`, `AGENTS.md`, `manifest.json`, `SOURCES.md`
 - Test: `tests/test_docs_coverage.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_docs_coverage.py
@@ -6943,12 +6969,12 @@ class TestAcceptanceCriteria:
         assert "Acceptance sweep" in text
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_docs_coverage.py -v`
 Expected: FAIL on the tools/mcp/schemas keys and the CLI markers
 
-- [ ] **Step 3: Update `manifest.json`**
+- [x] **Step 3: Update `manifest.json`**
 
 Add these keys alongside the existing ones:
 
@@ -6981,7 +7007,7 @@ Add these keys alongside the existing ones:
   "evals": "evals/fase0.xml"
 ```
 
-- [ ] **Step 4: Add a section to `README.md` after "Base de conhecimento"**
+- [x] **Step 4: Add a section to `README.md` after "Base de conhecimento"**
 
 ```markdown
 ## Camada determinística
@@ -7027,7 +7053,7 @@ Derivado é commitado; artefato bruto não — pode ter dado de negócio e cente
 nunca fica cega.
 ```
 
-- [ ] **Step 5: Add a section to `GUIA_DE_USO.md`**
+- [x] **Step 5: Add a section to `GUIA_DE_USO.md`**
 
 ```markdown
 ## 8. Retomada entre Devin e Claude Code
@@ -7054,7 +7080,7 @@ O catálogo em `rules/catalog/*.yaml` é YAML legível. Um agente sem tool algum
 guarda de versão e a fonte diretamente. Cai a automação, não o conhecimento.
 ```
 
-- [ ] **Step 6: Add to `PROMPT_INICIAL_MESTRE.md`, right after the mission section**
+- [x] **Step 6: Add to `PROMPT_INICIAL_MESTRE.md`, right after the mission section**
 
 ```markdown
 ## Antes de qualquer análise
@@ -7069,7 +7095,7 @@ guarda de versão e a fonte diretamente. Cai a automação, não o conhecimento.
 Nenhum número na saída sem `fact_id`. Ganho quantificado sem benchmark é rejeitado pelo schema.
 ```
 
-- [ ] **Step 7: Add to `AGENTS.md`, at the end**
+- [x] **Step 7: Add to `AGENTS.md`, at the end**
 
 ```markdown
 ## Camada determinística
@@ -7084,7 +7110,7 @@ Regras duras em `AGENT_PROTOCOL.md`. Contratos em
 `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md`.
 ```
 
-- [ ] **Step 8: Add to `SOURCES.md`**
+- [x] **Step 8: Add to `SOURCES.md`**
 
 ```markdown
 ## Coleta de 2026-07-29
@@ -7098,12 +7124,12 @@ R.2X/R.4X/R.8X; linhas Hudi e Delta de Glue 3.0 e 4.0; limite de partições em 
 comportamento exato de `write.distribution-mode` por versão de Iceberg.
 ```
 
-- [ ] **Step 9: Run test to verify it passes**
+- [x] **Step 9: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_docs_coverage.py -v`
 Expected: PASS, 11 tests
 
-- [ ] **Step 10: Acceptance sweep**
+- [x] **Step 10: Acceptance sweep**
 
 Run the full suite and check each of the fourteen criteria from spec §15:
 
@@ -7131,7 +7157,7 @@ Criterion 12's cross-model gate (10/10 on at least two model sizes) is the one s
 be automated here: run the eval manually against two models and record the result in
 `evals/README.md`.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add README.md GUIA_DE_USO.md PROMPT_INICIAL_MESTRE.md AGENTS.md manifest.json SOURCES.md tests/test_docs_coverage.py
