@@ -87,9 +87,17 @@ packages = ["sparkforge"]
 "rules/catalog" = "sparkforge/rules/catalog"
 "knowledge" = "sparkforge/knowledge"
 
-# O sdist recebe o MESMO mapeamento. `force-include` do target `wheel` nao cobre
-# o sdist, e quem instalar a partir da fonte ficaria sem catalogo -- a mesma
-# falha, um caminho adiante.
+# O sdist so precisa CARREGAR `rules/catalog` e `knowledge` na raiz -- nao
+# realocar. `include` basta: preserva os dois onde o force-include do wheel
+# espera encontra-los quando o wheel e construido A PARTIR do sdist (o fluxo
+# padrao de `python -m build`, e o que `pip install` faz ao instalar por
+# sdist). Um `force-include` aqui tambem, como havia antes, MOVE os diretorios
+# para dentro de `sparkforge/` dentro do proprio sdist -- e quando o backend
+# tenta construir o wheel a partir desse sdist, o `force-include` do target
+# `wheel` procura "knowledge" na raiz e nao acha mais, porque o sdist ja o
+# relocou. `python -m build` (sem `--wheel`) gera sdist e depois constroi o
+# wheel A PARTIR dele por padrao -- e foi esse caminho, exercitado pela
+# primeira vez pelo gate de paridade da Fase 3a, que expos o conflito.
 [tool.hatch.build.targets.sdist]
 include = [
     "sparkforge",
@@ -99,10 +107,6 @@ include = [
     "LICENSE",
     "pyproject.toml",
 ]
-
-[tool.hatch.build.targets.sdist.force-include]
-"rules/catalog" = "sparkforge/rules/catalog"
-"knowledge" = "sparkforge/knowledge"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -127,3 +131,4 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S603", "S607"] # subprocess com argv fixo, sem shell
+"scripts/verify_wheel.py" = ["S603"] # subprocess com argv fixo, sem shell
