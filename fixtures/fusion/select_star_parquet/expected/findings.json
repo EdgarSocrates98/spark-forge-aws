@@ -20,9 +20,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "athena": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Athena cobra por bytes escaneados. O benefício de Parquet e ORC vem de ler apenas as colunas referenciadas, e SELECT * anula isso por completo. É o anti-pattern de custo mais comum em Athena e é invisível para quem observa apenas a duração da query. Ver knowledge/athena/performance.md secao 1.",
     "proposed_change": [
       "Listar explicitamente as colunas usadas.",

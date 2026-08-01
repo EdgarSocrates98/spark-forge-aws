@@ -22,9 +22,7 @@
       "column_count": 2
     },
     "threshold": {},
-    "runtime_scope": {
-      "athena": "*"
-    },
+    "runtime_scope": {},
     "explanation": "LIMIT restringe o resultado, não o escaneamento. SELECT colunas FROM tabela LIMIT 10 pode escanear a tabela inteira e cobrar por isso. A intuição de que LIMIT é barato vem de bancos com índice, e não se transfere para Athena sobre S3.",
     "proposed_change": [
       "Adicionar WHERE sobre coluna de partição para restringir o escaneamento.",
@@ -72,9 +70,7 @@
       "column_count": 2
     },
     "threshold": {},
-    "runtime_scope": {
-      "athena": "*"
-    },
+    "runtime_scope": {},
     "explanation": "LIMIT restringe o resultado, não o escaneamento. SELECT colunas FROM tabela LIMIT 10 pode escanear a tabela inteira e cobrar por isso. A intuição de que LIMIT é barato vem de bancos com índice, e não se transfere para Athena sobre S3.",
     "proposed_change": [
       "Adicionar WHERE sobre coluna de partição para restringir o escaneamento.",
