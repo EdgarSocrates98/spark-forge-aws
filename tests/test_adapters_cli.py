@@ -874,3 +874,43 @@ class TestCliMcpEquivalence:
 
         mcp_payload = call_tool("sparkforge_collect_verify", {"repo": str(repo)})
         assert cli_payload == mcp_payload
+
+
+class TestEmrFlag:
+    """`--emr` nos tres verbos que aceitam runtime, e a mesma flag no MCP.
+
+    A divida era de superficie, nao de motor: `detect_runtime` sempre soube ler
+    `emr_release` de qualquer fonte, e so `emr.cluster` a alimentava. Quem sabe
+    a release e nao tem dump ficava sem caminho -- e o MCP ficaria sem caminho
+    mesmo com a flag na CLI, o que recriaria a assimetria um nivel acima."""
+
+    def test_runtime_detect_derives_the_matrix_from_the_flag(self, capsys):
+        _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
+        payload = json.loads(output)
+        assert payload["emr"] == "7.5.0"
+        assert payload["spark"] == "3.5.2-amzn-1"
+        assert payload["iceberg"] == "1.6.1-amzn-1"
+
+    def test_the_numeric_spelling_reaches_the_same_row(self, capsys):
+        _, output = run(["runtime", "detect", "--emr", "7.5.0"], capsys)
+        assert json.loads(output)["spark"] == "3.5.2-amzn-1"
+
+    def test_judge_reports_the_runtime_the_flag_declared(self, repo, capsys):
+        facts_path = repo / "facts.json"
+        run(["analyze", "pyspark", "--path", str(repo / "lib"), "--out", str(facts_path)], capsys)
+
+        _, output = run(["judge", "--facts", str(facts_path), "--emr", "emr-6.15.0"], capsys)
+        assert json.loads(output)["runtime"]["emr"] == "6.15.0"
+
+    def test_case_open_stores_the_release(self, repo, capsys):
+        run(
+            ["case", "open", "--repo", str(repo), "--case-id", "c-emr",
+             "--now", "2026-08-01T00:00:00Z", "--emr", "emr-7.5.0"],
+            capsys,
+        )
+        _, output = run(["case", "get", "--repo", str(repo)], capsys)
+        assert json.loads(output)["runtime"]["emr"] == "7.5.0"
+
+    def test_cli_and_mcp_agree(self, capsys):
+        _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
+        assert json.loads(output) == call_tool("sparkforge_runtime_detect", {"emr": "emr-7.5.0"})

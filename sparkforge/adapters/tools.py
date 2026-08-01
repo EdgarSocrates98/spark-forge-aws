@@ -250,6 +250,20 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
     },
 }
 
+# O espelho de ENTRADA do campo `emr` do contexto acima. As tools espelham as
+# flags da CLI: deixar `--emr` so na CLI recriaria, um nivel acima, a mesma
+# assimetria que a flag veio fechar -- um agente que fala MCP nao teria como
+# declarar uma release que o operador conhece.
+_EMR_INPUT: dict[str, Any] = {
+    "type": "string",
+    "description": (
+        "Release do EMR on EC2, nas duas grafias ('emr-7.5.0' ou '7.5.0'). "
+        "DECLARACAO, nao observacao: perde para o event log e para um dump de "
+        "describe-cluster, e discordar de um deles vira divergencia reportada "
+        "em `runtime.divergences`, nunca valor substituido em silencio."
+    ),
+}
+
 _ALTERNATIVE_ITEM: dict[str, Any] = {
     "type": "object",
     "required": ["rank", "rule_id", "recommended_skill", "reason"],
@@ -949,7 +963,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
             "Cria um case novo em .sparkforge/case.yaml, detectando o runtime "
-            "Glue/Spark/Python/Iceberg a partir dos parametros informados. E o barramento "
+            "Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. E o barramento "
             "de handoff entre sessoes (Devin, Claude Code): sem case, next-step e resume "
             "nao tem estado sobre o qual operar. `now` e obrigatorio e nunca lido do relogio "
             "pela ferramenta -- quem chama fornece o timestamp."
@@ -962,6 +976,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "case_id": {"type": "string"},
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
                 "glue": {"type": "string"},
+                "emr": _EMR_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -1103,10 +1118,11 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_runtime_detect": {
         "description": (
-            "Deriva glue/spark/python/iceberg/athena dos facts ja extraidos e dos "
-            "parametros informados, usando a matriz oficial de compatibilidade do Glue. "
+            "Deriva glue/emr/spark/python/iceberg/athena dos facts ja extraidos e dos "
+            "parametros informados, usando as matrizes oficiais de compatibilidade do "
+            "Glue e do EMR. "
             "Com `facts_path`, a versao OBSERVADA pelos extratores (`tf.attribute` "
-            "glue_version, `spark.runtime_version`) alimenta a deteccao -- ninguem "
+            "glue_version, `spark.runtime_version`, `emr.cluster`) alimenta a deteccao -- ninguem "
             "precisa saber a versao de cor. Divergencia entre fontes nao e resolvida "
             "escolhendo uma: e reportada em `divergences`, porque aplicar limiar ou API "
             "da versao errada invalida qualquer recomendacao seguinte."
@@ -1115,6 +1131,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "type": "object",
             "properties": {
                 "glue": {"type": "string"},
+                "emr": _EMR_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -1573,6 +1590,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                     ),
                 },
                 "glue": {"type": "string"},
+                "emr": _EMR_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -1822,6 +1840,7 @@ def _h_case_open(args: dict[str, Any]) -> dict[str, Any]:
         args["case_id"],
         args["now"],
         glue=args.get("glue"),
+        emr=args.get("emr"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -1868,6 +1887,7 @@ def _h_playbook(args: dict[str, Any]) -> dict[str, Any]:
 def _h_runtime_detect(args: dict[str, Any]) -> dict[str, Any]:
     return _core.runtime_detect(
         glue=args.get("glue"),
+        emr=args.get("emr"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -1890,6 +1910,7 @@ def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
         facts=args.get("facts"),
         facts_path=args.get("facts_path"),
         glue=args.get("glue"),
+        emr=args.get("emr"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),

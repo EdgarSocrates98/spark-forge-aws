@@ -21,7 +21,7 @@ Rode assim, sem flag, antes de qualquer outra coisa — e leia a saída como um 
 
 `runtime detect` aceita `--facts` (repetível), e é dele que a detecção real sai. As duas únicas fontes que o motor lê são as que algum extrator observou com artefato atrás: `glue_version` literal na raiz de um `aws_glue_job` (via `sparkforge analyze terraform`) e a versão declarada na primeira linha de um Spark event log (via `sparkforge analyze event-log`). Nada é deduzido de sintaxe de API, nome de bucket ou presença de import — isso seria palpite vestido de fato. Por isso este passo costuma render mais **depois** do passo 4, e vale repeti-lo lá.
 
-As flags (`--glue`, `--spark`, `--python`, `--iceberg`, `--athena`) continuam existindo para você **declarar** uma versão que sabe de fonte confiável — o console, o `tfvars`, o job run. Não são campos a preencher por obrigação: uma versão inventada é pior que um campo vazio, porque o vazio pula a regra com motivo visível e o valor errado julga contra o limiar errado em silêncio.
+As flags (`--glue`, `--emr`, `--spark`, `--python`, `--iceberg`, `--athena`) continuam existindo para você **declarar** uma versão que sabe de fonte confiável — o console, o `tfvars`, o job run. Não são campos a preencher por obrigação: uma versão inventada é pior que um campo vazio, porque o vazio pula a regra com motivo visível e o valor errado julga contra o limiar errado em silêncio.
 
 ### 2. Abra o case
 

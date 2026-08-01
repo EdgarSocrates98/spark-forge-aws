@@ -187,3 +187,77 @@ class TestOrchestrationParity:
         for platform, mechanisms in capability["platforms"].items():
             if platform != "claude_code":
                 assert "subagent" not in mechanisms, platform
+
+
+class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
+    """Paridade um nivel abaixo do verbo: a SUPERFICIE DE CADA VERBO.
+
+    `TestNoCliVerbIsAnUndeclaredMcpGap` pergunta se todo verbo alcanca o MCP, e
+    nao percebeu que `--emr` faltava nos tres verbos que aceitam runtime -- o
+    eixo `emr` entrou em `RuntimeContext` na Fase 5b e ficou so como saida.
+    Assimetria de superficie e o tipo de coisa que ninguem percebe ate
+    precisar: quem SABE a release e nao tem dump nao tinha como declara-la, nem
+    pela CLI nem pelo MCP.
+
+    O conjunto esperado e derivado do proprio `RuntimeContext`, nunca de uma
+    lista literal aqui: eixo novo no contexto passa a exigir flag e propriedade
+    de tool no mesmo commit, em vez de virar a mesma divida de novo.
+    """
+
+    # verbo da CLI -> tool MCP que espelha a mesma funcao de `_core`.
+    VERBS = {
+        ("judge",): "sparkforge_judge",
+        ("case", "open"): "sparkforge_case_open",
+        ("runtime", "detect"): "sparkforge_runtime_detect",
+    }
+
+    def _runtime_axes(self):
+        from sparkforge.findings.models import RuntimeContext
+
+        # `detected_from` e `divergences` sao SAIDA -- o que a deteccao concluiu
+        # sobre si mesma --, nunca entrada declaravel.
+        return set(RuntimeContext().to_dict()) - {"detected_from", "divergences"}
+
+    def _subparser(self, path):
+        from sparkforge.adapters.cli import build_parser
+
+        parser = build_parser()
+        for name in path:
+            sub = next(
+                a for a in parser._actions if hasattr(a, "choices") and a.choices  # noqa: SLF001
+            )
+            parser = sub.choices[name]
+        return parser
+
+    def test_every_runtime_axis_is_declarable_on_the_cli(self):
+        axes = self._runtime_axes()
+        for path in self.VERBS:
+            flags = {
+                option.lstrip("-")
+                for action in self._subparser(path)._actions  # noqa: SLF001
+                for option in action.option_strings
+            }
+            assert axes <= flags, (" ".join(path), sorted(axes - flags))
+
+    def test_every_runtime_axis_is_declarable_over_mcp(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        axes = self._runtime_axes()
+        for tool in self.VERBS.values():
+            properties = set(TOOLS[tool]["inputSchema"]["properties"])
+            assert axes <= properties, (tool, sorted(axes - properties))
+
+    def test_the_cli_and_the_tool_expose_the_same_axes(self):
+        """Nao basta os dois cobrirem o contexto: eles precisam cobrir o MESMO
+        conjunto. Um eixo so na CLI e a assimetria de novo, virada do avesso."""
+        from sparkforge.adapters.tools import TOOLS
+
+        axes = self._runtime_axes()
+        for path, tool in self.VERBS.items():
+            flags = {
+                option.lstrip("-")
+                for action in self._subparser(path)._actions  # noqa: SLF001
+                for option in action.option_strings
+            } & axes
+            properties = set(TOOLS[tool]["inputSchema"]["properties"]) & axes
+            assert flags == properties, (" ".join(path), tool)
