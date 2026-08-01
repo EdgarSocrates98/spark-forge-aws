@@ -35,7 +35,9 @@ Num job EMR, as 5 SF-GLUE **avaliam e nunca disparam**, por falta de fact `tf.re
 
 Para um agente autônomo, silêncio lê como "nada encontrado" — quando a verdade é "esse eixo não foi coberto". É a mesma distinção que `pyspark.unresolved` existe para preservar no analisador, um nível acima: a diferença entre *não há problema ali* e *ninguém olhou ali*.
 
-O mecanismo de ausência explicada **já existe**: `judge --show-skipped` reporta regra pulada por guarda de versão, com o motivo. Ele não dispara hoje porque o curinga faz a regra passar pela guarda.
+O mecanismo de ausência explicada **já existe e funciona**: `judge --show-skipped` reporta regra pulada, com o motivo (`runtime_scope`, `blocked_on` ou `requires_facts`). Confirmado por execução na revisão deste spec — não é o caso de documento afirmando caminho inexistente.
+
+Ele não dispara para as SF-GLUE por **dois** motivos independentes, e a §3.1 e a §3.2 tratam cada um: o curinga `"*"` faz a regra passar pela guarda de versão, e `SF-GLUE-002` ainda satisfaz `requires_facts` por ancorar num sentinela genérico.
 
 ## 2. Objetivo
 
@@ -56,10 +58,66 @@ EMR on EC2 como runtime de primeira classe, e escopo de regra dizendo o que a re
 | # | Decisão | Alternativa rejeitada | Razão |
 |---|---|---|---|
 | F5-D1 | Reetiquetar as 20 agnósticas por natureza, antes de acrescentar EMR | Só somar `SF-EMR` e deixar o curinga | Sem isso, as 5 SF-GLUE seguem avaliando em silêncio num job EMR, e a área nova nasce sobre um escopo que mente |
-| F5-D2 | As 5 SF-GLUE mantêm `{glue: "*"}` e passam a ser **puladas** em EMR | Escopo explícito por runtime em toda regra | Toca 48 regras e exige 48 decisões; o ganho está nas 25 com curinga, não nas que já são precisas |
+| F5-D2 | **`in_scope` passa a exigir presença da chave no curinga `"*"`** | Manter o curinga como está; ou dar escopo explícito por runtime às 5 SF-GLUE | Ver §3.1 — sem isto a fase não tem como cumprir o próprio objetivo |
+| F5-D2b | `SF-GLUE-002` é reancorada em fact específico de `aws_glue_job` | Deixar como está | Ver §3.2 — hoje ela some de findings **e** de skipped |
 | F5-D3 | EMR on EC2 primeiro | Os três sabores juntos | EC2 é o mais usado e o de artefato mais próximo do que os extratores já leem |
 | F5-D4 | `emr` entra como chave de `RuntimeContext`, ao lado de `glue` | Um campo `platform` com valor `glue`/`emr` | A guarda de versão já opera por chave; um enum novo exigiria mudar `in_scope`, que é código provado e testado nas bordas |
-| F5-D5 | Detecção de EMR não resolve divergência silenciosamente | Escolher a fonte mais confiável | Herdado da Fase 0: divergência vira `SF-ENV-001`, não é resolvida pelo extrator |
+| F5-D5 | Detecção de EMR não resolve divergência silenciosamente | Escolher a fonte mais confiável | Herdado da Fase 0: divergência é reportada, não resolvida pelo extrator. **Mas `SF-ENV-001` não cobre este caso hoje** — ver §3.3 |
+
+### 3.1 O curinga não filtra nada — e é por isso que a fase existe
+
+Achado de revisão adversarial deste spec, provado por execução antes de qualquer código.
+
+`sparkforge/rules/version_scope.py:41-42`:
+
+```python
+if spec == "*":
+    continue
+```
+
+O ramo do curinga **pula a checagem de presença**. Não lê `runtime.get(key)`. Medido:
+
+```
+in_scope({'glue': '*'}, {'spark': '3.5.6', 'emr': '7.5.0'})  -> True
+in_scope({'glue': '*'}, {})                                  -> True
+in_scope({'glue': '>=3.0'}, {'spark': '3.5.6', 'emr': '7.5.0'}) -> False
+```
+
+Consequência: **`{glue: "*"}` nunca pode produzir skip por `runtime_scope`, em runtime nenhum.** A versão anterior desta decisão dizia que as 5 SF-GLUE seriam "puladas em EMR" mantendo o curinga — isso era impossível, e o critério de aceitação que dependia disso era inatingível.
+
+A correção não é contornar. É fazer o curinga significar o que todo leitor assume: **"qualquer versão deste componente, mas ele precisa estar presente"**. Foi exatamente essa ambiguidade — "qualquer versão de Glue" lido como "qualquer runtime" — que produziu as 20 regras mal etiquetadas em primeiro lugar.
+
+**A ordem importa e é inegociável:** reetiquetar as 20 agnósticas **antes** de mudar a semântica do curinga. Invertido, as 20 param de disparar no instante em que a semântica muda.
+
+`in_scope` é função provada, com teste nas bordas (`tests/test_rules_version_scope.py`). A mudança exige teste novo para o curinga com chave ausente e com chave presente, e revisão de toda regra que dependa do comportamento antigo.
+
+### 3.2 `SF-GLUE-002` some de findings *e* de skipped
+
+O revisor reproduziu o cenário da §1 — repositório com Terraform de infra EMR, sem bloco `aws_glue_job` — e rodou `judge` contra o catálogo real:
+
+```
+SF-GLUE em findings: 0
+SF-GLUE em skipped:  4   (por requires_facts, não por runtime_scope)
+SF-GLUE-002:         AUSENTE dos dois — silêncio total
+```
+
+`SF-GLUE-002` ancora em `tf.module_analyzed`, o sentinela que o extrator emite para **qualquer** arquivo `.tf` escaneado, tenha ou não `aws_glue_job`. `requires_facts` fica satisfeito, o `when` fica falso, e a regra não aparece em lugar nenhum.
+
+É o defeito da §1 reproduzido sob o desenho que o próprio spec propunha. Corrigir a semântica do curinga (§3.1) resolve o caso EMR, mas não este: num runtime que **é** Glue e não tem `aws_glue_job` no Terraform, ela continua sumindo. `SF-GLUE-002` precisa exigir um fact específico de `aws_glue_job` em `requires_facts`.
+
+Nota do revisor a registrar: `SF-GLUE-003/004/005/006` não filtram por `resource_type` — dependem de `tf.attribute`, que só existe hoje porque `sparkforge/facts/terraform.py:678` faz `if resource_type != "aws_glue_job": continue`. A classificação delas como "infra Glue" está correta **hoje**, mas por acidente do extrator, não por declaração da regra. Se o extrator de Terraform for generalizado, elas disparam sobre atributo não-Glue de nome coincidente. Não é urgente — o extrator EMR desta fase lê JSON de `describe-cluster`, não HCL — mas é base frágil para uma decisão tratada como permanente.
+
+### 3.3 Divergência de plataforma não é divergência de versão
+
+A versão anterior deste spec dizia que detectar `glue` e `emr` juntos "vira `SF-ENV-001`, herdado da Fase 0". O revisor leu o código e derrubou.
+
+`sparkforge/facts/runtime_detect.py` coleta `glue_observations` **apenas** para derivar spark/python/iceberg via `GLUE_MATRIX` e popular `divergences` — a própria docstring diz que `glue_version` "não vira um fact `env.runtime_signal`". E `_build_facts` itera só `observations` (spark, python, iceberg, athena). `SF-ENV-001` dispara sobre `env.runtime_signal` com `measures.distinct_versions > 1`.
+
+Logo: detectar Glue e EMR juntos só produziria `SF-ENV-001` se as versões **derivadas** discordassem. Se coincidirem — plausível, já que Glue 4.0 deriva Spark 3.3.0 e algum release EMR também pode — a dupla detecção **passa sem sinal nenhum**.
+
+"Herdado da Fase 0" está certo sobre o padrão de reportar divergência, e **errado** sobre este caso já estar coberto. Divergência de *identidade de plataforma* é pergunta diferente de divergência de *versão de componente*, e exige desenho novo: ou plataforma vira componente rastreado, com fact próprio, ou nasce uma regra irmã de `SF-ENV-001` para o caso.
+
+A decisão de qual caminho fica para o plano. O que este spec registra é que **não está coberto**, para ninguém assumir que está.
 
 ## 4. Arquitetura
 
@@ -116,7 +174,7 @@ O último é o que prova o objetivo desta fase.
 |---|---|
 | Reetiquetagem apaga regra de um runtime onde ela valia | Decisão regra a regra, com teste por runtime nas bordas — o padrão de `test_runtime_glue_versions.py` |
 | `EMR_MATRIX` envelhecer | Guard de drift contra o documento, e a fonte entra na watchlist do `refresh_knowledge` |
-| Escopo agnóstico virar novo curinga disfarçado | `{spark: ">=3.0"}` ainda é falso-fechado quando `spark` não é detectado; a guarda continua valendo |
+| **Reetiquetar apaga as 20 regras quando o runtime não é passado** | Real, não teórico: `build_runtime_context` (`_core.py:104-121`) monta o contexto **só** de flags da CLI (`--glue/--spark/...`), nunca dos facts coletados. Hoje `{glue: "*"}` faz as 20 avaliarem sempre; com `{spark: ">=3.0"}`, qualquer `judge` sem `--spark` nem `--glue` as apaga — com motivo, mas apaga. As skills que chamam `judge` precisam passar runtime; `review-pyspark-pr` já passa `--glue`, as outras precisam ser conferidas uma a uma |
 | Nome do coordenador ficar errado ao alargar escopo | Decisão explícita no plano, não implícita na implementação |
 
 ## 7. Critérios de aceitação
@@ -130,4 +188,8 @@ O último é o que prova o objetivo desta fase.
 7. `SF-EMR` com coordenador; invariante de cobertura verde.
 8. Investigação sobre EMR produz achados de código, plano e armazenamento normalmente.
 9. Suíte verde e maior; ruff, espelhos e evals verdes.
-10. `README.md`, `AGENTS.md`, `STATUS.md`, `knowledge/` e o spec da fase atualizados e referenciando o que é novo.
+10. `SF-GLUE-002` aparece em `judge --show-skipped` — nunca em silêncio — tanto num runtime EMR quanto num Glue sem `aws_glue_job`.
+11. Curinga `"*"` exige presença da chave, com teste para chave ausente e presente, e nenhuma regressão nas 23 regras já específicas.
+12. Detectar Glue e EMR juntos produz sinal **mesmo quando as versões derivadas coincidem**.
+13. Toda skill que chama `judge` passa runtime, ou declara por que não precisa — conferido uma a uma.
+14. `README.md`, `AGENTS.md`, `STATUS.md`, `knowledge/`, as `skills/` afetadas e o spec da fase atualizados e referenciando o que é novo.
