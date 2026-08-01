@@ -118,6 +118,17 @@ git commit -m "feat(runtime): plataforma vira coisa rastreada, com regra propria
 ```
 
 ---
+## Correcoes de fato ao spec, vindas da pesquisa de fontes
+
+> A pesquisa desta fase (2026-08-01) leu a documentacao oficial e derrubou tres premissas do spec. Elas mudam o desenho do extrator, nao so o catalogo. Estao aqui, e nao enterradas numa task, porque quem ler o spec sozinho vai construir a coisa errada.
+
+**1. `aws emr list-configurations` nao existe.** Conferido contra o indice de subcomandos do CLI. As classificacoes (`spark-defaults`, `spark`, `yarn-site`) chegam por **dois** caminhos, e a distincao importa: `Cluster.Configurations` (nivel de cluster, em `describe-cluster`) e `InstanceGroup.Configurations` / `InstanceTypeSpecification.Configurations` (nivel de grupo, nos dumps de instancia). Propriedade no grupo **sobrepoe** a do cluster para aquele grupo.
+
+**2. Faltam dois dumps na lista do spec.** `get-managed-scaling-policy` — managed scaling **nao aparece** em `describe-cluster`, e sem ele tres regras nao tem gatilho — e `get-auto-termination-policy`.
+
+**3. `Cluster.Applications[].Version` vem populado.** O dump **observou** a versao de Spark/Hadoop/Iceberg do cluster real. Isso e estritamente melhor que inferir da matriz, e muda a precedencia da Task 2.
+
+---
 
 ## Task 2: `EMR_MATRIX` e o guard de drift
 
@@ -126,32 +137,52 @@ git commit -m "feat(runtime): plataforma vira coisa rastreada, com regra propria
 - Modify: `sparkforge/facts/runtime_detect.py`, `knowledge/sources.lock.json`
 - Test: `tests/test_runtime_detect.py`
 
-- [ ] **Step 1: O documento primeiro, o código depois**
+- [ ] **Step 1: O documento primeiro, o codigo depois**
 
-`knowledge/emr/runtime-matrix.md`, no formato de `knowledge/glue/runtime-matrix.md` — **leia-o antes**. A tabela é release label → Spark, Python, Iceberg, Hadoop, com a URL oficial e a data de recuperação.
+`knowledge/emr/runtime-matrix.md`, no formato de `knowledge/glue/runtime-matrix.md` — **leia-o antes**. Duas paginas canonicas, uma por serie maior; nao existe uma unica cobrindo as duas:
 
-A pesquisa de fontes desta fase levantou a tabela e a página canônica. Use-a, mas **confirme cada linha contra a fonte** antes de escrever: matriz errada é bug de dado que se propaga para toda regra versionada.
+- `https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-7.x.html`
+- `https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html`
 
-- [ ] **Step 2: `EMR_MATRIX`**
+A pesquisa levantou a tabela inteira (7.0.0 a 7.13.0, e 6.4.0 a 6.15.0). **Confirme cada linha contra a fonte** antes de escrever: matriz errada e bug de dado que se propaga para toda regra versionada.
 
-No formato de `GLUE_MATRIX`, mesmo arquivo. Só releases que o documento sustenta.
+- [ ] **Step 2: Quatro coisas que a matriz EMR tem e a `GLUE_MATRIX` nao**
 
-- [ ] **Step 3: O guard de drift**
+Cada uma e uma decisao de desenho, nao um detalhe. Resolva as quatro **antes** de escrever `EMR_MATRIX`.
 
-`tests/test_runtime_detect.py::test_matrix_matches_committed_knowledge` já faz isso para Glue — **leia-o e siga o mesmo mecanismo**, não invente outro. O teste tem que falhar se o código e o documento divergirem, em qualquer direção.
+**Versoes `-amzn-N`.** `3.5.6-amzn-2` nao e o `3.5.6` do Apache — e um fork com patches da AWS. Todo `runtime_scope` com range compara contra versao Apache. Se o valor resolvido guardar o sufixo cru, **a comparacao falha, a regra e pulada, e a cobertura e apagada em silencio** — exatamente o modo de falha que as Fases 5a e 5a.2 acabaram de fechar. Normalize para comparacao, e decida se o valor cru sobrevive em algum lugar (provavelmente sim: e informacao real sobre o runtime). Escreva a decisao num comentario, e **teste os dois lados**.
+
+**Python e um conjunto, nao um valor.** `"3.9, 3.11"` em 7.x, `"2.7, 3.7"` em 6.x. A `GLUE_MATRIX` declara um Python por release; aqui nao da. Mas o dump resolve: a classificacao `spark-env` carrega `PYSPARK_PYTHON`. Desenho proposto, e voce pode discordar com justificativa: a matriz guarda a **lista**, e `python` so resolve para um valor quando `spark-env`/`PYSPARK_PYTHON` esta no dump. Sem isso, a lista inteira entra em `observations` e a ambiguidade **aparece como divergencia** — que e o comportamento correto do projeto, nao um bug a esconder.
+
+**Iceberg nao existe antes de 6.5.0.** A celula de `emr-6.4.0` e vazia. Regra `SF-ICE-*` ali tem que ser pulada por **ausencia**, nao por range.
+
+**Observacao direta vence a matriz.** `Cluster.Applications[].Version` ja vem no dump. A matriz e **fallback e guard de drift**. Acrescente a fonte `describe_cluster` a `_PRECEDENCE` **acima** da derivacao por matriz — espelhando a decisao ja tomada e documentada para `event_log` vs. `terraform` na Fase 5a.2. A origem derivada mantem o sufixo `:matrix`, como a de Glue, senao `_resolve` a trata como observacao direta.
+
+- [ ] **Step 3: O guard de drift, e ele nao pode ser um so**
+
+`tests/test_runtime_detect.py::test_matrix_matches_committed_knowledge` faz isso para Glue — **leia-o e siga o mecanismo**, nao invente outro.
+
+Mas as duas paginas EMR tem perfis de drift **opostos**, e trata-las igual produz um guard ruidoso — e guard ruidoso e guard ignorado:
+
+- **6.x e estavel.** A serie nao recebe minors novos; o ultimo e 6.15.0. Mudanca na pagina e exatamente o evento que a watchlist existe para pegar.
+- **7.x tem churn estrutural garantido.** A AWS se compromete a lancar um minor a cada 90 dias no maximo, e cada minor **prepende uma coluna** a tabela. Um guard por hash da pagina inteira vai alarmar umas quatro vezes por ano por motivo que nao e drift do que a matriz ja conhece.
+
+Para 7.x, compare **os valores das colunas que `EMR_MATRIX` ja conhece**, nao o hash. Coluna nova e "matriz desatualizada, considere acrescentar" — informativo. Celula existente alterada e drift, e falha.
 
 - [ ] **Step 4: Watchlist**
 
-`knowledge/sources.lock.json` vigia fontes oficiais. Acrescente a página canônica da matriz EMR. Confirme como o `refresh_knowledge` consome esse arquivo antes de escrever a entrada — formato errado quebra o gate.
+`knowledge/sources.lock.json`. Confirme como `refresh_knowledge` consome o arquivo antes de escrever — formato errado quebra o gate. Registre a diferenca de perfil das duas paginas.
+
+Nota para o documento, nao para o codigo: `aws emr describe-release-label` devolve a mesma informacao com contrato de API em vez de HTML, e e a forma melhor de **manter** a matriz. Isso nao viola "entrada e artefato local": o extrator segue sem rede; so a manutencao humana usa a API. A URL citada em `sources` continua sendo a pagina da doc, que e o que um auditor consegue abrir.
 
 - [ ] **Step 5: `emr` observado e derivado**
 
-`detect_runtime` passa a aceitar `emr_version`/`emr` como chave direta, e a derivar Spark/Python/Iceberg de `EMR_MATRIX` — do mesmo jeito que já faz com Glue. A origem derivada tem que carregar o sufixo `:matrix`, como a de Glue, senão `_resolve` a trata como observação direta.
+`detect_runtime` aceita `emr_release`/`emr` como chave direta e deriva Spark/Python/Iceberg/Hadoop de `EMR_MATRIX`, como ja faz com Glue.
 
 - [ ] **Step 6: Verifique e commite**
 
 ```bash
-rtk proxy python -m pytest tests/test_runtime_detect.py tests/test_runtime_inferred_from_facts.py -q
+rtk proxy python -m pytest tests/test_runtime_detect.py tests/test_runtime_inferred_from_facts.py tests/test_platform_divergence.py -q
 rtk proxy python -m pytest -q
 git add sparkforge knowledge tests
 git commit -m "feat(runtime): EMR_MATRIX, com guard de drift contra o knowledge"
@@ -165,36 +196,52 @@ git commit -m "feat(runtime): EMR_MATRIX, com guard de drift contra o knowledge"
 - Create: `sparkforge/facts/emr_cluster.py`, `tests/test_facts_emr_cluster.py`
 - Modify: `sparkforge/collect/aws.py`, `sparkforge/adapters/_core.py`, `cli.py`, `tools.py`
 
-- [ ] **Step 1: Leia o análogo mais próximo**
+- [ ] **Step 1: Leia o analogo mais proximo**
 
-`sparkforge/facts/athena_workgroup.py` é o modelo: lê dump JSON já coletado, **não coleta nada**, tem sentinela e `unresolved`, e o docstring documenta o shape esperado. `iceberg_metadata.py` é o segundo, para dump com várias seções opcionais.
+`sparkforge/facts/athena_workgroup.py` e o modelo: le dump JSON ja coletado, **nao coleta nada**, tem sentinela e `unresolved`, e o docstring documenta o shape. `iceberg_metadata.py` e o segundo, para dump com secoes opcionais.
 
-A disciplina, e ela não é negociável: **entrada é artefato local, sem rede**. A coleta vive em `collect/aws.py`, atrás do extra `[aws]`.
+Disciplina nao negociavel: **entrada e artefato local, sem rede**. A coleta vive em `collect/aws.py`, atras do extra `[aws]`.
 
-- [ ] **Step 2: Feche os kinds**
+- [ ] **Step 2: Os dumps, corrigidos**
 
-O spec deixou os kinds em aberto. Decida-os a partir de **duas** restrições, e diga no relatório como cada uma pesou:
+Nao use a lista do spec. Use esta:
 
-1. o que os dumps realmente devolvem — `describe-cluster`, `list-instance-groups`/`list-instance-fleets`, `list-bootstrap-actions`, `list-configurations`
-2. o que as regras da Task 4 precisam julgar
+| Dump | Traz |
+|---|---|
+| `describe-cluster` | `ReleaseLabel`, `Applications[].Version`, `Configurations` (nivel cluster), `LogUri`, `ScaleDownBehavior`, `AutoTerminate`, `InstanceCollectionType`, `Status.StateChangeReason.Code`, `UnhealthyNodeReplacement` |
+| `list-instance-groups` | `InstanceGroupType`, `Market`, `InstanceType`, `RequestedInstanceCount`, `Configurations`, `LastSuccessfullyAppliedConfigurations`, `ConfigurationsVersion`, `AutoScalingPolicy`, `EbsBlockDevices` |
+| `list-instance-fleets` | `InstanceFleetType`, `TargetSpotCapacity`, `TargetOnDemandCapacity`, `InstanceTypeSpecifications[]`, `LaunchSpecifications.SpotSpecification.AllocationStrategy` |
+| `list-bootstrap-actions` | **so** `{Name, ScriptBootstrapAction{Path, Args}}` — sem status, sem exit code |
+| `get-managed-scaling-policy` | `ComputeLimits{UnitType, Min/MaximumCapacityUnits, MaximumOnDemand/CoreCapacityUnits}` |
+| `get-auto-termination-policy` | `IdleTimeout` |
 
-Não emita kind que nenhuma regra consome: capacidade sem consumidor é mecanismo sem garantia declarada, que é exatamente o que o projeto recusa. E não emita um kind sentinela genérico como único gate de uma regra — foi assim que `SF-GLUE-002` sumia de findings **e** de skipped, e a Fase 5a teve que reancorá-la em `tf.resource`.
+**Ambiguidade de forma, e trate as duas.** O CLI parece embutir `InstanceGroups`/`InstanceFleets`/`BootstrapActions` dentro do objeto `Cluster`, o que contradiz `API_Cluster.html`, onde esses campos nao existem. Provavel forma legada. Leia embutido se existir, senao o dump separado, **sem depender de nenhuma**.
 
-Obrigatórios: a sentinela `emr.analyzed` e o `emr.unresolved` para o que não deu para interpretar. Seção presente mas malformada vira `unresolved`, **não** silêncio.
+- [ ] **Step 3: Feche os kinds**
 
-- [ ] **Step 3: Instance groups e instance fleets**
+Decida a partir de duas restricoes, e diga no relatorio como cada uma pesou: o que os dumps devolvem, e o que as regras da Task 4 precisam julgar.
 
-São dois modelos alternativos e mutuamente exclusivos, com respostas de API de forma diferente. Um cluster tem um ou outro. Trate os dois, e **decida se viram o mesmo kind com um atributo discriminante ou kinds distintos** — justifique. Um dump com nenhum dos dois é dump incompleto, não cluster sem instâncias: isso é `unresolved`.
+Nao emita kind que nenhuma regra consome — capacidade sem consumidor e mecanismo sem garantia declarada. E **nao use sentinela generico como unico gate de regra**: foi assim que `SF-GLUE-002` sumia de findings *e* de skipped, e a Fase 5a teve que reancora-la em `tf.resource`.
 
-- [ ] **Step 4: Teste e fixture**
+Obrigatorios: a sentinela `emr.analyzed` e o `emr.unresolved`. Secao presente mas malformada vira `unresolved`, **nao** silencio.
 
-Fixture golden por caminho, seguindo `fixtures/` — leia um `meta.yaml` existente antes. Cubra: groups, fleets, seção ausente, seção malformada, e dump vazio.
+**Um kind e de qualidade da evidencia, e e o mais importante desta lista.** `InstanceGroup` traz `Configurations`, `LastSuccessfullyAppliedConfigurations` e `ConfigurationsVersion`. Divergencia entre os dois primeiros significa **reconfiguracao pedida e nao aplicada** — o cluster nao esta rodando com o que o dump parece dizer. Emita isso (`emr.configuration.unapplied` ou nome melhor) e use como guarda nas regras que leem `Configurations`, senao elas afirmam sobre configuracao que nao esta em vigor. E o mesmo papel de `tf.observability.unknown` e `plan.unresolved` no resto do projeto.
 
-- [ ] **Step 5: Verbo, tool e coleta**
+- [ ] **Step 4: Instance groups e instance fleets**
 
-`sparkforge analyze emr-cluster` e `sparkforge collect emr-cluster`, mais as tools MCP correspondentes. **Toda tool nova precisa ser alcançável a partir de um coordenador** — `tests/test_agent_coverage.py::test_no_tool_is_orphan` trava isso, e quem fecha é a Task 5. Se você acrescentar a tool antes do coordenador, o teste fica vermelho: isso é esperado, e some quando a Task 5 entrar. **Não contorne o teste.**
+Modelos alternativos e mutuamente exclusivos, com respostas de forma diferente. Um cluster tem um ou outro. Trate os dois, e **decida se viram o mesmo kind com atributo discriminante ou kinds distintos** — justifique. Dump com nenhum dos dois e dump incompleto, nao cluster sem instancias: `unresolved`.
 
-- [ ] **Step 6: Verifique e commite**
+- [ ] **Step 5: Teste e fixture**
+
+Golden por caminho. Cubra: groups, fleets, secao ausente, secao malformada, dump vazio, e configuracao nao aplicada.
+
+- [ ] **Step 6: Verbo, tool e coleta**
+
+`sparkforge analyze emr-cluster` e `sparkforge collect emr-cluster`, mais as tools MCP.
+
+**Toda tool nova precisa ser alcancavel a partir de um coordenador** — `tests/test_agent_coverage.py::test_no_tool_is_orphan` trava, e quem fecha e a Task 5. Vermelho aqui e esperado e some quando a Task 5 entrar. **Nao contorne o teste.**
+
+- [ ] **Step 7: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest tests/test_facts_emr_cluster.py -q
@@ -205,34 +252,56 @@ git commit -m "feat(facts): extrator de cluster EMR on EC2"
 
 ---
 
-## Task 4: A área `SF-EMR`
+## Task 4: A area `SF-EMR`
 
 **Files:**
 - Create: `rules/catalog/emr-infra.yaml`, `knowledge/emr/*.md`, `fixtures/emr/*`
 
-- [ ] **Step 1: Escolha as regras**
+- [ ] **Step 1: As regras, com o que a pesquisa sustentou**
 
-A pesquisa desta fase levantou candidatas com fonte, severidade, limiar e observabilidade no dump. **Não implemente todas por implementar**: cada regra precisa de fixture bidirecional, e regra fraca custa manutenção para sempre.
+Seis com mecanismo duro, fonte oficial e observaveis nos dumps. **Confirme cada fonte lendo antes de escrever** — nao copie desta tabela.
 
-O critério de corte, e ele é do projeto: a regra tem que ser **observável no dump** e **julgável sem julgamento** — condição sobre fact, não impressão. Regra que exige informação que a API não devolve não pode existir; a pesquisa deve ter marcado quais são.
+| # | Regra | Gatilho | Por que custa | Sev |
+|---|---|---|---|---|
+| 1 | AM elegivel a Spot em 6.x sem node labels | release 6.x **e** grupo/fleet TASK com Spot **e** sem `yarn.node-labels.enabled=true` + `am.default-node-label-expression=CORE` | em `deploy-mode cluster` o AM **e** o driver; o EC2 reclama o Spot e a **aplicacao inteira falha**, nao uma task | P1 |
+| 2 | `maximizeResourceAllocation` em cluster de fleets | `spark`.`maximizeResourceAllocation=true` **e** `InstanceCollectionType=INSTANCE_FLEET` | o EMR dimensiona o executor por **um** tipo do fleet, que pode ter ate 30; o executor nao cabe no menor ou desperdica o maior | P1 |
+| 3 | Segredo em `Configurations` ou `Args` de bootstrap | padrao de segredo em qualquer nivel | as APIs Describe/List devolvem em texto claro para quem tem permissao de leitura | P0 |
+| 4 | DRA desligada com managed scaling | `spark.dynamicAllocation.enabled=false` **e** politica de managed scaling | o Spark pede executores fixos e nunca devolve; o scaling le pressao estatica e sobe ate o teto, onde fica | P1 |
+| 5 | Primary em Spot com core On-Demand | MASTER Spot **e** CORE com capacidade On-Demand | contradicao: pagou-se durabilidade no core e deixou-se o ponto unico de falha do cluster em Spot | P1 |
+| 6 | `partitionOverwriteMode=dynamic` em `spark-defaults` | a propriedade no cluster | desliga o committer otimizado do EMRFS; o commit **renomeia diretorio por diretorio no driver**, e em S3 rename e COPY+DELETE | P1 |
 
-- [ ] **Step 2: Escreva-as**
+Mais `LogUri` ausente — analoga de `SF-GLUE-002`, e regra de **capacidade de diagnostico**, nao de performance: em release <= 6.8.0 o log morre com o no, e logging **so pode ser definido na criacao**. `severity_by`: P1 se `AutoTerminate`, senao P2.
 
-Lendo `rules/catalog/README.md` e usando `rules/catalog/glue-infra.yaml` como modelo — é o análogo direto, regras de infraestrutura de job.
+**A #6 tem trade-off de semantica, e ele e obrigatorio declarar.** `static` faz o overwrite apagar o destino inteiro, nao so as particoes escritas. Trocar a propriedade sem mudar o codigo **muda o resultado**. A recomendacao certa nao e "troque"; e retirar do `spark-defaults` do cluster e deixar cada job declarar. A `validation` tem que pedir contagem **por particao**, nao so total — e onde o erro aparece.
 
-Obrigatório por regra: `sources` com URL e data, ou `origin: field-heuristic` declarado; `risks`, `tradeoffs`, `validation`, `rollback`; **sem percentual de ganho**.
+- [ ] **Step 2: O que a pesquisa vetou, e nao reintroduza**
 
-O `runtime_scope` segue o critério que a Fase 5a fixou: **não-vazio só quando o gatilho genuinamente varia com a versão, e essa versão vem do runtime, não de um fact que a regra já lê**. Regra que lê release label do próprio dump **não** precisa de `runtime_scope` — o fact já prova a plataforma. Errar isso aqui é repetir exatamente o defeito que duas fases inteiras acabaram de corrigir.
+Tres dos quatro candidatos do spec nao sobreviveram na forma escrita. Isto esta aqui para ninguem "melhorar" a area depois reinventando-os:
 
-- [ ] **Step 3: Conhecimento**
+- **Bootstrap action que falha em silencio: morto, por dois motivos independentes.** `ListBootstrapActions` devolve **so** `{Name, ScriptBootstrapAction{Path, Args}}` — sem status, sem exit code, sem timestamp. E a premissa esta errada: bootstrap que falha **nao** falha em silencio, o EMR termina a instancia e, com falhas demais, o cluster. O caso genuinamente mudo e script que sai com 0 sem fazer o trabalho, e isso e invisivel a qualquer API por construcao. **O que se salva** e diferente: `Status.StateChangeReason.Code` inclui `BOOTSTRAP_FAILURE`, o que permite uma regra **post-mortem** sobre cluster ja terminado.
+- **Ausencia de EBS: morto como escrito.** EBS **nunca** esta ausente — o EMR aloca gp2/gp3 por default desde 5.22.0, proporcional ao tamanho da instancia. `EbsBlockDevices: []` significa "nenhum volume **adicional**", e a leitura ingenua produziria falso positivo em quase todo cluster. E "se o workload derrama" nao esta no dump. Salvavel so numa forma bem mais estreita, P3, com o limiar declarado como heuristica.
+- **`spark-defaults` conflitando com runtime: morto na forma generica.** A precedencia do Spark e `SparkConf` > `--conf` > `spark-defaults` — entao "o job seta e o cluster tem outro valor" e, quase sempre, **o contrato funcionando**. Uma regra generica acusaria configuracao correta, que o README do catalogo trata como o pior tipo de defeito de regra. Sobrevive so o subconjunto de **propriedades de deploy** que a doc do Spark nomeia como nao afetadas por `SparkConf` em runtime — e essa precisa de fusao com `pyspark.conf_set`, entao **nasce `blocked_on`**, como `SF-ATH-001/002/005` nasceram.
+- **Spot no master: morto como absoluto.** A AWS **recomenda** primary em Spot em dois dos quatro cenarios da propria tabela. Acusar todo primary Spot e acusar a recomendacao oficial. Sobrevive como **correlacao** — e a #5.
+
+- [ ] **Step 3: Escreva-as**
+
+Lendo `rules/catalog/README.md` e usando `rules/catalog/glue-infra.yaml` como modelo — e o analogo direto.
+
+Obrigatorio por regra: `sources` com URL e data de recuperacao (2026-08-01 para as desta pesquisa), ou `origin: field-heuristic` declarado; `risks`, `tradeoffs`, `validation`, `rollback`; **sem percentual de ganho**.
+
+Onde a fonte sustenta so parte da afirmacao, **declare qual parte**. A pesquisa marcou isso caso a caso — por exemplo, a fonte da #1 sustenta o mecanismo e o default de 6.x, e **nao** sustenta incidencia.
+
+`runtime_scope` segue o criterio que a Fase 5a fixou: **nao-vazio so quando o gatilho genuinamente varia com a versao, e essa versao vem do runtime, nao de um fact que a regra ja le**. Regra que le `ReleaseLabel` do proprio dump **nao** precisa de `runtime_scope` — o fact ja prova a plataforma. A #1 e a excecao candidata, porque a serie 6.x vs. 5.x muda o default; leia e decida.
+
+- [ ] **Step 4: Conhecimento**
 
 Regra com profundidade aponta para `knowledge/emr/`. Siga o formato de `knowledge/glue/workers-and-capacity.md`.
 
-- [ ] **Step 4: Fixture bidirecional por regra**
+- [ ] **Step 5: Fixture bidirecional por regra**
 
-Invariante da Fase 2: toda regra precisa de fixture que a faça disparar **e** de contraparte negativa. `tests/test_fixtures_kind_coverage.py` trava.
+Invariante da Fase 2: fixture que dispara **e** contraparte negativa, por regra. `tests/test_fixtures_kind_coverage.py` trava.
 
-- [ ] **Step 5: Verifique e commite**
+- [ ] **Step 6: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest -q
