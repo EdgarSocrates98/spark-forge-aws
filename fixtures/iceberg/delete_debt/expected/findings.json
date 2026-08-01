@@ -23,9 +23,7 @@
     "threshold": {
       "ratio": 0.1
     },
-    "runtime_scope": {
-      "iceberg": ">=1.0.0"
-    },
+    "runtime_scope": {},
     "explanation": "Em merge-on-read, cada leitura reconcilia os delete files com os data files. Sem compactação regular, a degradação é lenta e silenciosa: a query fica mais lenta a cada semana sem que nada tenha mudado nela. É a armadilha de MoR. Iceberg 1.10 introduz deletion vectors, que mudam esse trade-off; confirmar disponibilidade na versão em uso antes de assumir o comportamento antigo.",
     "proposed_change": [
       "Compactar delete files com rewrite_position_delete_files, ou rewrite_data_files com reconciliação.",
