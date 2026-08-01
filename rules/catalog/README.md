@@ -188,7 +188,11 @@ O vocabulário, e o que cada forma faz:
 
 **`"*"` exige presença.** Até a Fase 5a, o ramo do curinga em `sparkforge/rules/version_scope.py` pulava a checagem de presença, então `{glue: "*"}` casava com qualquer runtime — inclusive um sem Glue nenhum. Ele nunca filtrou nada. Um `Finding` antigo com `"runtime_scope": {"glue": "*"}` no payload foi produzido sob essa semântica antiga: a regra pode ter avaliado fora do Glue.
 
-**O guarda falha fechado.** `build_runtime_context` monta o contexto só de flags da CLI, nunca dos facts coletados, e `in_scope` reprova chave ausente ou vazia. Um guarda a mais não é conservador — é cobertura apagada. Foi assim que 20 regras de análise estática ficaram indisponíveis num `sparkforge judge` sem flags: o gatilho delas é AST, mas o escopo exigia um Spark que ninguém tinha declarado.
+**O guarda falha fechado.** `in_scope` reprova chave ausente ou vazia. Um guarda a mais não é conservador — é cobertura apagada. Foi assim que 20 regras de análise estática ficaram indisponíveis num `sparkforge judge` sem flags: o gatilho delas é AST, mas o escopo exigia um Spark que ninguém tinha declarado.
+
+**De onde vem o runtime.** Até a Fase 5a.2, `build_runtime_context` montava o contexto **só** de flags da CLI — a máquina de detecção existia e nunca era alimentada, então todo `runtime_scope` dependia de o operador saber e digitar a versão. Agora as fontes são derivadas dos próprios facts: `tf.attribute` com `key == "glue_version"` (literal, na raiz do `aws_glue_job`) vira a fonte `terraform`, e `spark.runtime_version` vira a fonte `event_log`; `GLUE_MATRIX` completa spark/python/iceberg a partir do Glue. As flags continuam valendo, na precedência declarada em `sparkforge/facts/runtime_detect.py`, e discordância entre fontes vira `divergences` — nunca resolução silenciosa.
+
+**O que continua falhando fechado, e deve.** Quando **nenhum** fact carrega a versão, o campo fica vazio e a regra versionada é pulada com `reason: runtime_scope`, visível em `judge --show-skipped`. Derivar é ler o que um extrator observou; adivinhar versão a partir de sintaxe de API, nome de bucket ou presença de import seria julgamento entrando na camada de fato.
 
 **O teste que trava isso** é `tests/test_rule_scope_by_nature.py`. `TestNoCatalogAreaVanishesEntirely` mede o agregado — nenhuma área do catálogo pode sumir inteira por versão não detectada — com uma exceção declarada e justificada para `SF-GLUE`, que **deve** sumir quando não há infraestrutura Glue. Área nova entra por construção, sem ninguém lembrar de cadastrá-la.
 
