@@ -199,8 +199,38 @@ A superfície não é log nem histórico de IaC: é a **resposta da API**, devol
 
 O mecanismo oficial é referenciar o Secrets Manager em vez do literal. E como configuração de cluster não é editável em cluster em execução, a correção é sempre um cluster novo — mais a rotação do segredo, que é a parte que não pode ser adiada.
 
+## 10. Auto-terminação por ociosidade
+
+Cluster EMR on EC2 tem duas formas de acabar sozinho, e elas não são a mesma coisa.
+
+`AutoTerminate: true` é o **cluster transiente**: ele termina quando o último step acaba. Não há janela, não há ociosidade — acabou o trabalho declarado, acabou o cluster. Um cluster com `AutoTerminate: true` já está resolvido, e nenhuma regra de ociosidade se aplica a ele.
+
+A **política de auto-terminação** (`put-auto-termination-policy`, lida por `get-auto-termination-policy`) é a ferramenta do cluster de longa duração — aquele que fica de pé esperando trabalho. Ela declara um `IdleTimeout` em segundos, e o cluster se termina depois desse tempo ocioso.
+
+Os números são declarados pela AWS: *"Idle timeout defaults to 60 minutes (one hour) when you don't specify an amount. You can specify a minimum idle timeout of one minute, and a maximum idle timeout of 7 days."* Ou seja, 3600 s de default, 60 s de mínimo, 604800 s de máximo. Da release 6.4.0 em diante a auto-terminação vem **ligada por default** nos clusters criados pelo console.
+
+**O que conta como ocioso muda com a release.** Nas séries 5.34.0+ e 6.4.0+ os critérios de ociosidade consideram a atividade que a série anterior não via; nas séries 5.30.0–5.33.0 e 6.1.0–6.3.0 o EMR pode marcar o cluster como ocioso mesmo com um kernel Python3 ativo, porque executar um kernel não submete job Spark, e a própria página recomenda *"use Amazon EMR version 6.4.0 or later"*. O piso do `EMR_MATRIX` deste repositório é justamente 6.4.0, então nenhum cluster que esta ferramenta consegue analisar está naquele recorte.
+
+Da 6.4.0 em diante existe também o escape documentado para trabalho que o EMR não enxerga: o arquivo `/emr/metricscollector/isbusy` no nó primário. Script de shell e aplicação não-YARN que precisem manter o cluster de pé devem tocá-lo periodicamente.
+
+**Restrições que apagam a política inteira**, e que valem conferir antes de discutir o valor:
+
+- Auto-terminação **não é suportada** com aplicações não-YARN — Presto, Trino, HBase. Num cluster desses a política não termina nada, qualquer que seja o `IdleTimeout`.
+- O `metrics-collector` precisa alcançar o endpoint público da API Gateway. Nome DNS privado de VPC para a API Gateway quebra a auto-terminação.
+- Removida a regra de saída `Allow All` do security group primário (5.30.0+), é preciso liberar TCP 9443 nos dois sentidos entre o security group primário e o de service access.
+
+**O defeito que a documentação não nomeia** é a janela larga demais, e é ele que `SF-EMR-009` acusa. Um `IdleTimeout` maior que o intervalo ocioso típico do cluster nunca é alcançado: o cluster fica parado a noite inteira, o relógio reinicia no primeiro job da manhã, e a política — que aparece em auditoria como controle de custo — não termina o cluster nenhuma vez. Enquanto isso o custo é integral, porque cluster ocioso continua faturando EC2 mais o uplift do EMR, e nada disso aparece em métrica de Spark: não há job, não há stage, não há falha, só a fatura.
+
+O limiar de 86400 s (um dia) da regra **não** vem da documentação — ela não declara nenhum ponto a partir do qual a janela é larga demais. É escolha de campo, e a razão é estrutural: todo intervalo ocioso intradiário (fim de expediente, madrugada, folga entre cargas) é menor que 24 h, então uma janela de um dia ou mais não pode ser alcançada por nenhum deles. O ramo P1 em 604800 s, esse sim, é da fonte — é o teto da API, a política mais permissiva que se pode pedir.
+
+**Aplicação interativa não cala a regra.** JupyterHub, Zeppelin e Hue são a razão clássica para não auto-terminar, e ainda assim SF-EMR-009 acusa esses clusters. A política já existe no cluster acusado — quem a anexou já aceitou o comportamento —, o risco documentado para notebook tem o recorte de release acima (abaixo do piso desta ferramenta), e calar a regra em cluster de gente a apagaria exatamente onde o custo de ociosidade é maior. O trade-off vive no achado, não num silêncio.
+
+Diferente de todo o resto desta página: a política é anexável, alterável e removível em **cluster em execução**. É o único item da área cuja correção — e cujo rollback — não exige reprovisionar.
+
 ## Fontes
 
+- Using an auto-termination policy for Amazon EMR cluster cleanup. https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html (retrieved 2026-08-01)
+- Plan for long-running and transient clusters. https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-longrunning-transient.html (retrieved 2026-08-01)
 - Understand node types: primary, core, and task nodes. https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-master-core-task-nodes.html (retrieved 2026-08-01)
 - Configuring Amazon EMR cluster instance types and best practices for Spot instances. https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html (retrieved 2026-08-01)
 - Using managed scaling in Amazon EMR. https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html (retrieved 2026-08-01)

@@ -73,6 +73,15 @@
       ],
       "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
     },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-009"
+      ]
+    },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html": {
       "pinned": false,
       "retrieved": [
@@ -117,6 +126,15 @@
       ],
       "rules": [
         "SF-EMR-004"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-longrunning-transient.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-009"
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html": {
