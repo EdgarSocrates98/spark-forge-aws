@@ -580,9 +580,19 @@ def _build_context(
         )
     ]
 
+    # `emr` guarda a release NUMERICA, nao o label. `RuntimeContext` existe para
+    # ser comparado: `in_scope({"emr": ">=7.0"}, ...)` roda `_parse` sobre este
+    # valor, e `_parse("emr-7.5.0")` le `emr` como 0 -- o range nunca casa, a
+    # regra e pulada, e a cobertura some em silencio. E o mesmo modo de falha que
+    # as Fases 5a e 5a.2 fecharam, e o curinga `"*"` nao o revela porque so checa
+    # presenca. `glue` ja faz assim: guarda `5.0`, nunca `Glue 5.0`.
+    # O label observado nao se perde -- sobrevive em `env.platform.attrs.observed`,
+    # que e onde artefato bruto pertence.
+    emr_resolvido = _resolve(platforms.get("emr", []))
+
     return RuntimeContext(
         glue=_resolve(platforms.get("glue", [])),
-        emr=_resolve(platforms.get("emr", [])),
+        emr=_emr_key(emr_resolvido) if emr_resolvido else "",
         spark=_resolve(observations.get("spark", [])),
         python=_resolve(observations.get("python", [])),
         iceberg=_resolve(observations.get("iceberg", [])),
