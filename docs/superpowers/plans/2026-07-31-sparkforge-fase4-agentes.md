@@ -78,6 +78,14 @@ Primeiro de propósito. O teste tem que **falhar hoje**, listando as 21 tools ó
 
 - [ ] **Step 1: Escreva o teste**
 
+> **Atenção ao `ids=`.** Use lista pré-computada, **nunca** `ids=lambda p: p.stem`.
+> Com `parametrize` sobre lista vazia — o estado desta task, antes de `agents/executors/`
+> existir — o pytest 8.x chama o callable sobre um sentinela interno e estoura
+> `ValueError` **dentro do coletor**, abortando a coleta da suíte inteira em vez de
+> pular o teste. Verificado em repro isolado: com `ids` como lista, o pytest apenas
+> pula. `pyproject.toml` fixa `pytest>=8.0` sem teto, então o CI pega a mesma versão.
+
+
 ```python
 # tests/test_agent_coverage.py
 """Cobertura de capacidade por coordenador, como invariante.
@@ -187,7 +195,7 @@ class TestCoordinatorExecutorWiring:
         orphans = sorted({p.stem for p in executors()} - declared)
         assert not orphans, f"executores que nenhum coordenador despacha: {orphans}"
 
-    @pytest.mark.parametrize("path", executors(), ids=lambda p: p.stem)
+    @pytest.mark.parametrize("path", executors(), ids=[p.stem for p in executors()])
     def test_every_executor_declares_its_negative_boundary(self, path):
         """A secao 4.2 da Fase 0 diz que a fronteira NEGATIVA e o mecanismo que
         garante o determinismo. Executor sem ela vira coordenador disfarcado."""
@@ -209,7 +217,7 @@ class TestHandoffContract:
     estado que sobrevive a troca de sessao, de modelo e de ferramenta.
     """
 
-    @pytest.mark.parametrize("path", executors(), ids=lambda p: p.stem)
+    @pytest.mark.parametrize("path", executors(), ids=[p.stem for p in executors()])
     def test_every_executor_declares_what_it_hands_over(self, path):
         text = path.read_text(encoding="utf-8")
         assert "## Entrega" in text, (
@@ -217,7 +225,7 @@ class TestHandoffContract:
             f"o executor seguinte nao sabe o que pode assumir -- e reconstroi."
         )
 
-    @pytest.mark.parametrize("path", executors(), ids=lambda p: p.stem)
+    @pytest.mark.parametrize("path", executors(), ids=[p.stem for p in executors()])
     def test_every_executor_declares_what_it_expects(self, path):
         """A outra ponta do contrato: o que ele PRESSUPOE ja no case.
 
