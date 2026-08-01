@@ -1,0 +1,69 @@
+{
+  "Cluster": {
+    "Id": "j-8RECONFIGPENDENTE",
+    "Name": "etl-faturamento-reconfigurado",
+    "ReleaseLabel": "emr-7.5.0",
+    "InstanceCollectionType": "INSTANCE_GROUP",
+    "LogUri": "s3://lake-emr-logs/elasticmapreduce/",
+    "ScaleDownBehavior": "TERMINATE_AT_TASK_COMPLETION",
+    "AutoTerminate": false,
+    "Status": {
+      "State": "RUNNING",
+      "StateChangeReason": {"Code": "ALL_STEPS_COMPLETED"}
+    },
+    "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}],
+    "Configurations": [
+      {
+        "Classification": "spark-defaults",
+        "Properties": {"spark.dynamicAllocation.enabled": "false"}
+      }
+    ]
+  },
+  "InstanceGroups": [
+    {
+      "Id": "ig-MASTER",
+      "InstanceGroupType": "MASTER",
+      "Market": "ON_DEMAND",
+      "InstanceType": "m5.xlarge",
+      "RequestedInstanceCount": 1,
+      "RunningInstanceCount": 1
+    },
+    {
+      "Id": "ig-CORE",
+      "InstanceGroupType": "CORE",
+      "Market": "ON_DEMAND",
+      "InstanceType": "r5.2xlarge",
+      "RequestedInstanceCount": 4,
+      "RunningInstanceCount": 4
+    },
+    {
+      "Id": "ig-TASK",
+      "InstanceGroupType": "TASK",
+      "Market": "ON_DEMAND",
+      "InstanceType": "r5.2xlarge",
+      "RequestedInstanceCount": 12,
+      "RunningInstanceCount": 12,
+      "ConfigurationsVersion": 4,
+      "Configurations": [
+        {
+          "Classification": "yarn-site",
+          "Properties": {"yarn.log-aggregation-enable": "true"}
+        }
+      ],
+      "LastSuccessfullyAppliedConfigurations": [
+        {
+          "Classification": "spark-defaults",
+          "Properties": {"spark.dynamicAllocation.enabled": "true"}
+        }
+      ]
+    }
+  ],
+  "ManagedScalingPolicy": {
+    "ComputeLimits": {
+      "UnitType": "Instances",
+      "MinimumCapacityUnits": 5,
+      "MaximumCapacityUnits": 60,
+      "MaximumCoreCapacityUnits": 5
+    }
+  }
+}

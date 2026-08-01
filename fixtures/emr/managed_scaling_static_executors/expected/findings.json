@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-EMR-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Alocação dinâmica de executores desligada em cluster com managed scaling",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-6SCALINGESTATICO/configuration/spark-defaults/spark.dynamicAllocation.enabled"
+    },
+    "evidence": [
+      "f_e63ad8",
+      "f_3d6938"
+    ],
+    "measured": {
+      "overriding_group_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A AWS documenta esta combinação como problema, com o nome dela: \"For Spark workloads, disabling Spark Dynamic Resource Allocator (DRA) by changing the Spark property spark.dynamicAllocation.enabled to FALSE can cause Managed Scaling issues, where clusters can be scaled up more than required for your workloads (up to the maximum compute). When using Managed Scaling for these workloads, we recommend that you keep Spark DRA enabled, which is the default state of this property.\" O efeito é custo: capacidade EC2 provisionada até MaximumCapacityUnits e mantida lá, sem trabalho correspondente. O diagnóstico é enganoso porque o cluster parece saudável — nenhum job falha, nenhuma métrica de erro sobe, e a fatura é a única evidência. Ver knowledge/emr/cluster-configuration.md seção 4.",
+    "proposed_change": [
+      "Remover spark.dynamicAllocation.enabled=false do spark-defaults do cluster; o default do EMR já é true desde a release 4.4.0, com o shuffle service configurado automaticamente.",
+      "Se algum job específico precisa de executores fixos, declarar spark.dynamicAllocation.enabled=false no submit daquele job, não no cluster, para que o alcance seja o job e não toda carga que roda ali.",
+      "Conferir MinimumCapacityUnits e MaximumCapacityUnits contra a demanda observada depois de religar a alocação dinâmica; um teto dimensionado para a demanda estática anterior fica grande demais."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Job que dependia de número fixo de executores para paralelismo previsível pode mudar de perfil de duração até a alocação dinâmica estabilizar.",
+      "Religar a alocação dinâmica exige o external shuffle service ativo; ele é o default do EMR, mas uma configuração customizada de yarn-site pode tê-lo desligado."
+    ],
+    "tradeoffs": [
+      "Alocação dinâmica troca previsibilidade de recurso por elasticidade; em job de duração curta o custo de subir e descer executor pode não se pagar.",
+      "Executores fixos não são sempre errados; o que é errado é combiná-los com managed scaling, que lê demanda para decidir capacidade."
+    ],
+    "validation": [
+      "Unidades de capacidade em uso ao longo do run, antes e depois, comparadas com MaximumCapacityUnits.",
+      "Número de executores registrados por período no event log, antes e depois.",
+      "Custo EC2 do cluster por run de volume comparável, antes e depois.",
+      "Contagem de linhas e agregado de controle do destino iguais antes e depois."
+    ],
+    "rollback": [
+      "Restaurar spark.dynamicAllocation.enabled=false no spark-defaults do cluster, provisionando o cluster com a Configurations anterior."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-configure.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A fonte sustenta o gatilho, o efeito (escalar acima do necessário, até o teto de compute) e a recomendação (manter DRA ligada). Ela NÃO descreve o encadeamento passo a passo -- executores fixos pedidos no início e nunca devolvidos, lidos pelo scaling como pressão persistente. Essa é a leitura de campo do mecanismo, e está aqui como leitura, não como citação."
+      }
+    ]
+  }
+]

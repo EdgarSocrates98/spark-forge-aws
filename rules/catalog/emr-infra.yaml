@@ -1,0 +1,526 @@
+# Catálogo de regras — infraestrutura de cluster Amazon EMR on EC2
+#
+# Depende do extrator `sparkforge/facts/emr_cluster.py` (Fase 5b, Task 3), que lê
+# um dump já coletado dos seis subcomandos de `aws emr` (`describe-cluster`,
+# `list-instance-groups`, `list-instance-fleets`, `list-bootstrap-actions`,
+# `get-managed-scaling-policy`, `get-auto-termination-policy`).
+#
+# ESCOPO. Toda regra desta área declara `runtime_scope: {}`, e isso é decisão, não
+# omissão. O critério fixado pela Fase 5a (`README.md`, seção "O que
+# `runtime_scope` é, e o que ele não é") é: escopo não-vazio só quando o gatilho
+# genuinamente varia com a versão E essa versão vem do RUNTIME, não de um fact
+# que a regra já lê. Aqui o próprio `emr.cluster` carrega `attrs.release` e
+# `measures.release_major`/`release_minor`, lidos do `ReleaseLabel` do dump. Um
+# `runtime_scope: {emr: ...}` em cima disso seria um segundo guarda sobre o mesmo
+# dado — e como `in_scope` falha FECHADA, ele só poderia subtrair cobertura: num
+# `sparkforge judge` sem `--emr`, `RuntimeContext.emr` é vazio e a área inteira
+# sumiria, que é exatamente o silêncio que a Fase 5a acabou. Quando a série da
+# release importa, a condição está no `when`, sobre `measures.release_major`, e
+# então ela só pode ser verdadeira se o dump PROVOU a release.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE A PESQUISA DE 2026-08-01 VETOU. Não reintroduzir.
+#
+# Isto fica registrado aqui para que ninguém "melhore" a área depois reinventando
+# um candidato que já foi lido contra a fonte e reprovado.
+#
+# 1. "Bootstrap action que falha em silêncio" — MORTO, por dois motivos
+#    independentes. `ListBootstrapActions` devolve só `{Name,
+#    ScriptBootstrapAction{Path, Args}}`: sem status, sem exit code, sem
+#    timestamp — não há o que julgar. E a premissa está errada: bootstrap que
+#    falha NÃO falha em silêncio. "If the bootstrap action returns a nonzero
+#    error code, Amazon EMR treats it as a failure and terminates the instance.
+#    If too many instances fail their bootstrap actions, then Amazon EMR
+#    terminates the cluster" (emr-plan-bootstrap.html). O caso genuinamente mudo
+#    é script que sai com 0 sem ter feito o trabalho, e isso é invisível a
+#    qualquer API por construção. O que se salva é a mesma página dizendo "Use
+#    the cluster `lastStateChangeReason` error code to identify failures caused
+#    by a bootstrap action" — e isso é SF-EMR-007, post-mortem, sobre cluster já
+#    terminado.
+#
+# 2. "Ausência de volume EBS" — MORTO como escrito. EBS nunca está ausente: o
+#    EMR aloca gp2/gp3 por default desde 5.22.0, proporcional ao tamanho da
+#    instância. `EbsBlockDevices: []` significa "nenhum volume ADICIONAL", e a
+#    leitura ingênua acusaria quase todo cluster. E "se o workload derrama" não
+#    está no dump — spill vem de event log, não de `describe-cluster`.
+#
+# 3. "`spark-defaults` do cluster conflitando com o que o job seta em runtime" —
+#    MORTO na forma genérica. A precedência do Spark é `SparkConf` > `--conf` >
+#    `spark-defaults`, então "o job seta e o cluster tem outro valor" é, quase
+#    sempre, o contrato FUNCIONANDO. Acusar isso é acusar configuração correta,
+#    que o `README.md` deste diretório trata como o pior tipo de defeito de
+#    regra. Sobreviveria só o subconjunto de propriedades de DEPLOY que
+#    `SparkConf` não afeta em runtime (`spark.driver.memory`,
+#    `spark.driver.extraJavaOptions`, `spark.driver.extraClassPath`,
+#    `spark.executor.instances`) — e essa precisa de fusão entre
+#    `emr.configuration` e `pyspark.conf_set`, que não existe. Ela NÃO nasce
+#    `blocked_on`: `tests/test_fixtures_kind_coverage.py::test_every_rule_has_a_fixture_that_fires_it`
+#    exige golden positivo para TODA regra do catálogo, e o motor pula regra com
+#    `blocked_on` antes de olhar os facts — uma regra bloqueada não pode disparar
+#    em fixture nenhuma, então declará-la hoje quebraria a suíte. Nasce quando a
+#    etapa de fusão nascer, junto.
+#
+# 4. "Primary em Spot" como acusação absoluta — MORTO. A AWS RECOMENDA primary em
+#    Spot em dois dos quatro cenários da própria tabela (cost-driven workloads e
+#    application testing), e nos dois o core também é Spot. Acusar todo primary
+#    Spot é acusar a recomendação oficial. Sobrevive só como CORRELAÇÃO
+#    contraditória — é SF-EMR-004.
+#
+# 5. "ApplicationMaster elegível a Spot sem node labels" — NÃO ESCRITA, e o
+#    motivo é capacidade, não conhecimento. O mecanismo é duro e a fonte sustenta
+#    ("Beginning with Amazon EMR 6.x release series, the YARN node labels feature
+#    is disabled by default. The application primary processes can run on both
+#    core and task nodes by default", emr-master-core-task-nodes.html), mas o
+#    gatilho exige provar a AUSÊNCIA de um par de propriedades específicas
+#    (`yarn.node-labels.enabled=true` e
+#    `yarn.node-labels.am.default-node-label-expression`), e o motor só sabe
+#    `absent: <kind>` — não existe `where` negado, nem `absent` filtrado por
+#    atributo (`rules/engine.py::_absent_satisfied`). Escrita sem esse guarda, a
+#    regra acusaria em P1 todo cluster 6.x/7.x com Spot no TASK, INCLUSIVE os que
+#    fixaram o AM corretamente. O que falta é um fact derivado — algo como
+#    `emr.yarn.node_labels`, emitido pelo extrator só quando as duas
+#    propriedades estão presentes e coerentes — para que a regra possa usar
+#    `absent:` sobre ele. É trabalho de extrator, não de catálogo.
+# ─────────────────────────────────────────────────────────────────────────────
+
+catalog_version: 1
+schema_version: 1
+area: SF-EMR
+retrieved: 2026-08-01
+
+rules:
+
+  # Sem `same_subject`: `emr.cluster` tem subject `<cluster-id>` e
+  # `emr.configuration` tem subject `<cluster-id>/configuration/<class>/<key>` --
+  # símbolos diferentes por construção, então agrupar por subject faria a regra
+  # nunca disparar. A consequência aceita é que um `analyze emr-cluster` sobre
+  # uma ÁRVORE com dois dumps poderia cruzar o `InstanceCollectionType` de um
+  # cluster com a propriedade do outro. Um dump descreve um cluster, e a coleta
+  # (`sparkforge collect emr-cluster`) produz um arquivo por cluster; quando
+  # houver fusão que carregue `cluster_id` para dentro do fact de configuração,
+  # esta regra ganha `same_subject`.
+  - id: SF-EMR-001
+    category: emr-infra
+    title: maximizeResourceAllocation em cluster de instance fleets
+    requires_facts: [emr.cluster, emr.configuration]
+    when:
+      all:
+        - fact: emr.cluster
+          where: {attrs.instance_collection_type: INSTANCE_FLEET}
+        - fact: emr.configuration
+          where:
+            attrs.level: cluster
+            attrs.classification: spark
+            attrs.key: maximizeResourceAllocation
+            attrs.value: "true"
+          # A afirmação é sobre o cluster inteiro, então a propriedade precisa
+          # valer no cluster inteiro. `overriding_group_count` é a measure que o
+          # extrator produz exatamente para isso: maior que zero significa que
+          # algum grupo redefine a chave, e aí o dimensionamento não é o que esta
+          # regra descreve.
+          expr: "measures.overriding_group_count == 0"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Com maximizeResourceAllocation ligado, o EMR calcula o executor a partir de
+      UM tipo de instância do core, e escreve spark.executor.memory,
+      spark.executor.cores, spark.executor.instances, spark.driver.memory e
+      spark.default.parallelism em spark-defaults a partir desse cálculo. Num
+      cluster de instance groups isso é determinístico: o grupo core tem um tipo
+      só. Num cluster de instance fleets a mesma frota pode ter vários tipos com
+      vCPU e memória diferentes, e o executor calculado para um deles não cabe no
+      menor ou desperdiça o maior. A AWS diz literalmente que "the executor
+      configuration that Amazon EMR uses might not be the best for your clusters,
+      so we don't recommend using the default settings when using maximum
+      resource allocation". spark.default.parallelism entra no mesmo problema por
+      outro caminho, porque é derivado de "2X number of CPU cores available to
+      YARN containers" — um número que o fleet não garante entre provisionamentos.
+      Ver knowledge/emr/cluster-configuration.md seção 2.
+    proposed_change:
+      - Remover maximizeResourceAllocation da classificação spark e declarar spark.executor.memory, spark.executor.cores e spark.executor.instances explicitamente em spark-defaults.
+      - Dimensionar o executor pelo MENOR tipo de instância que o core fleet aceita, que é o único que todos os provisionamentos possíveis conseguem hospedar.
+      - Ou reduzir a heterogeneidade do core fleet aos tipos com a mesma razão vCPU/memória, e só então manter o cálculo automático.
+    risks:
+      - Valores explícitos deixam de acompanhar uma troca futura de tipo de instância; ficam registrados na definição do cluster e precisam ser revisados junto com ela.
+      - Dimensionar pelo menor tipo deixa capacidade ociosa quando o fleet provisiona os tipos maiores.
+    tradeoffs:
+      - Cálculo automático é conveniente e é correto em instance groups; a troca aqui é conveniência por previsibilidade, e só vale porque o fleet torna o automático não determinístico.
+      - maximizeResourceAllocation também não deve ser usado em cluster com outras aplicações distribuídas (HBase), onde o EMR usa configuração YARN própria que conflita com ele.
+    validation:
+      - Aba Environment do Spark UI antes e depois, conferindo spark.executor.memory, spark.executor.cores, spark.executor.instances e spark.default.parallelism efetivos.
+      - Número de executores registrados e memória por executor no event log, em runs sobre provisionamentos diferentes do fleet.
+      - Contagem de linhas do destino e agregado de controle iguais antes e depois; mudança de dimensionamento não pode mudar resultado.
+    rollback:
+      - Restaurar a classificação spark com maximizeResourceAllocation e remover as propriedades explícitas. Configuração de cluster EMR não é editável em cluster em execução, então o rollback é o próximo provisionamento.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-configure.html", retrieved: 2026-08-01}
+
+  # `requires_facts` é `emr.cluster`, e NÃO a união de `emr.configuration` com
+  # `emr.bootstrap_action`. As duas superfícies são independentes: um cluster sem
+  # bootstrap action nenhuma não emite `emr.bootstrap_action`, e exigir o kind
+  # faria a regra de P0 ser pulada por `requires_facts` justamente nos clusters
+  # onde só a outra metade se aplica. `emr.cluster` prova o que precisa ser
+  # provado -- um dump de cluster foi lido -- pelo mesmo raciocínio que levou
+  # SF-GLUE-002 a ancorar em `tf.resource` e não na sentinela de módulo.
+  #
+  # NÃO usa o guarda `absent: emr.configuration.unapplied`, e isso é deliberado.
+  # O guarda existe para regra que afirma sobre configuração EM VIGOR. Esta não
+  # afirma sobre efeito: afirma sobre EXPOSIÇÃO. Uma propriedade pedida e nunca
+  # aplicada continua sendo devolvida em texto claro por DescribeCluster e
+  # ListInstanceGroups, então o segredo está exposto do mesmo jeito. Aplicar o
+  # guarda aqui silenciaria um P0 real.
+  - id: SF-EMR-002
+    category: emr-infra
+    title: Segredo em Configurations ou em argumento de bootstrap action
+    requires_facts: [emr.cluster]
+    when:
+      any:
+        - fact: emr.configuration
+          where: {attrs.secret_pattern_match: true}
+        - fact: emr.bootstrap_action
+          where: {attrs.secret_pattern_match: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A documentação da AWS traz um bloco Warning explícito: "Amazon EMR Describe
+      and List API operations emit custom and configurable settings, which are
+      used as a part of Amazon EMR job flows, in plaintext". Não é um risco de
+      log nem de histórico: é a resposta da API, devolvida a qualquer principal
+      com permissão de LEITURA sobre o cluster — que é a permissão amplamente
+      concedida para observabilidade, inventário e FinOps. É achado de segurança
+      e tem precedência sobre qualquer recomendação de performance no mesmo
+      relatório. O valor nunca aparece no Fact: o extrator o substitui por
+      <redigido> e marca attrs.secret_pattern_match, para que o próprio corpus de
+      análise não vire a segunda cópia do segredo.
+    proposed_change:
+      - Mover o valor para AWS Secrets Manager e referenciá-lo pelo mecanismo de referência a segredo das Configurations, em vez do literal.
+      - Rotacionar o segredo exposto; ele deve ser considerado comprometido, porque não há como saber quem chamou DescribeCluster desde a criação do cluster.
+      - Revisar o IaC e o histórico do repositório que criou o cluster, onde o literal costuma persistir depois de removido da definição.
+      - Revisar quem tem elasticmapreduce:DescribeCluster, ListInstanceGroups, ListInstanceFleets e ListBootstrapActions na conta.
+    risks:
+      - Rotacionar segredo em uso exige coordenação com todos os consumidores; a janela entre rotação e reconfiguração derruba o job.
+      - Configurations de cluster EMR não é editável em cluster em execução; corrigir exige provisionar um cluster novo.
+    tradeoffs:
+      - Nenhum. Não existe justificativa de performance para manter segredo em texto claro numa superfície de leitura.
+    validation:
+      - DescribeCluster, ListInstanceGroups, ListInstanceFleets e ListBootstrapActions do cluster novo não contêm mais o literal.
+      - O job executa com sucesso lendo do cofre.
+      - O segredo anterior está revogado, confirmado por uma tentativa de uso que falha.
+    rollback: >
+      Não reverter para o literal em texto claro. Se a leitura do cofre falha, a
+      correção é a política de IAM do perfil de instância EC2 do cluster, não o
+      método de armazenamento.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html", retrieved: 2026-08-01}
+      - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/storing-sensitive-data.html", retrieved: 2026-08-01}
+      - {origin: field-heuristic, note: "A fonte oficial sustenta a metade de `Configurations`: o Warning nomeia as operações Describe e List e a palavra plaintext. Para `Args` de bootstrap action a sustentação é INDIRETA -- `ListBootstrapActions` devolve `Args` como parte da mesma superfície de leitura, mas nenhuma página da AWS nomeia esse campo no aviso. A metade de bootstrap é heurística de campo, e o mecanismo é o mesmo: o valor viaja na resposta da API."}
+
+  # Único uso de `absent:` desta área, e ele é de propósito SEM `same_subject`.
+  # A pergunta é sobre o DUMP inteiro -- "este cluster tem alguma reconfiguração
+  # de instance group pedida e não aplicada?" --, e um dump descreve um cluster.
+  # `same_subject` aqui seria errado: o fact de configuração de nível cluster
+  # (`<cluster>/configuration/...`), o de managed scaling
+  # (`<cluster>/managed-scaling`) e o guarda (`<cluster>/<grupo>`) têm três
+  # símbolos distintos por construção, então nenhum grupo conteria as três
+  # condições e a regra nunca dispararia. Declarada em
+  # `tests/test_rules_catalog_reachability.py::TestAbsentSemSameSubjectSeJustifica.ALLOWED_SET_LEVEL`.
+  #
+  # Por que o guarda importa AQUI e não em SF-EMR-001/005: esta é a única regra
+  # cuja afirmação é sobre o que o cluster está EXECUTANDO agora. O caso que ela
+  # fecha é o `dropped` do guarda -- um grupo cujo `Configurations` deixou de
+  # trazer a chave que `LastSuccessfullyAppliedConfigurations` ainda mostra em
+  # vigor. Nesse caso `overriding_group_count` do fact de cluster é zero (o
+  # override sumiu do pedido) enquanto o cluster continua rodando com ele, e sem
+  # o guarda a regra afirmaria que a alocação dinâmica está desligada em todo
+  # lugar quando não está.
+  - id: SF-EMR-003
+    category: emr-infra
+    title: Alocação dinâmica de executores desligada em cluster com managed scaling
+    requires_facts: [emr.cluster, emr.configuration, emr.managed_scaling]
+    when:
+      all:
+        - fact: emr.configuration
+          where:
+            attrs.level: cluster
+            attrs.classification: spark-defaults
+            attrs.key: spark.dynamicAllocation.enabled
+            attrs.value: "false"
+          expr: "measures.overriding_group_count == 0"
+        - fact: emr.managed_scaling
+        - absent: emr.configuration.unapplied
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A AWS documenta esta combinação como problema, com o nome dela: "For Spark
+      workloads, disabling Spark Dynamic Resource Allocator (DRA) by changing the
+      Spark property spark.dynamicAllocation.enabled to FALSE can cause Managed
+      Scaling issues, where clusters can be scaled up more than required for your
+      workloads (up to the maximum compute). When using Managed Scaling for these
+      workloads, we recommend that you keep Spark DRA enabled, which is the
+      default state of this property." O efeito é custo: capacidade EC2 provisionada
+      até MaximumCapacityUnits e mantida lá, sem trabalho correspondente. O
+      diagnóstico é enganoso porque o cluster parece saudável — nenhum job falha,
+      nenhuma métrica de erro sobe, e a fatura é a única evidência. Ver
+      knowledge/emr/cluster-configuration.md seção 4.
+    proposed_change:
+      - Remover spark.dynamicAllocation.enabled=false do spark-defaults do cluster; o default do EMR já é true desde a release 4.4.0, com o shuffle service configurado automaticamente.
+      - Se algum job específico precisa de executores fixos, declarar spark.dynamicAllocation.enabled=false no submit daquele job, não no cluster, para que o alcance seja o job e não toda carga que roda ali.
+      - Conferir MinimumCapacityUnits e MaximumCapacityUnits contra a demanda observada depois de religar a alocação dinâmica; um teto dimensionado para a demanda estática anterior fica grande demais.
+    risks:
+      - Job que dependia de número fixo de executores para paralelismo previsível pode mudar de perfil de duração até a alocação dinâmica estabilizar.
+      - Religar a alocação dinâmica exige o external shuffle service ativo; ele é o default do EMR, mas uma configuração customizada de yarn-site pode tê-lo desligado.
+    tradeoffs:
+      - Alocação dinâmica troca previsibilidade de recurso por elasticidade; em job de duração curta o custo de subir e descer executor pode não se pagar.
+      - Executores fixos não são sempre errados; o que é errado é combiná-los com managed scaling, que lê demanda para decidir capacidade.
+    validation:
+      - Unidades de capacidade em uso ao longo do run, antes e depois, comparadas com MaximumCapacityUnits.
+      - Número de executores registrados por período no event log, antes e depois.
+      - Custo EC2 do cluster por run de volume comparável, antes e depois.
+      - Contagem de linhas e agregado de controle do destino iguais antes e depois.
+    rollback:
+      - Restaurar spark.dynamicAllocation.enabled=false no spark-defaults do cluster, provisionando o cluster com a Configurations anterior.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html", retrieved: 2026-08-01}
+      - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-configure.html", retrieved: 2026-08-01}
+      - {origin: field-heuristic, note: "A fonte sustenta o gatilho, o efeito (escalar acima do necessário, até o teto de compute) e a recomendação (manter DRA ligada). Ela NÃO descreve o encadeamento passo a passo -- executores fixos pedidos no início e nunca devolvidos, lidos pelo scaling como pressão persistente. Essa é a leitura de campo do mecanismo, e está aqui como leitura, não como citação."}
+
+  # Sem `same_subject`, e este é o caso em que isso é a forma CORRETA: a regra
+  # correlaciona dois papéis do cluster (MASTER e CORE), que são duas entidades
+  # distintas com subjects distintos por construção (`<cluster>/<id-do-grupo>`).
+  # A afirmação é sobre o PAR, não sobre uma entidade -- é a mesma natureza de
+  # SF-ENV-003, que cruza Terraform com código Python. Não usa `absent:`, então
+  # não cai na guarda de `TestAbsentSemSameSubjectSeJustifica`.
+  - id: SF-EMR-004
+    category: emr-infra
+    title: Primary em Spot num cluster que pagou On-Demand no core
+    requires_facts: [emr.cluster, emr.instance_capacity]
+    when:
+      all:
+        - fact: emr.instance_capacity
+          where: {attrs.role: MASTER, attrs.has_spot_capacity: true}
+        - fact: emr.instance_capacity
+          where: {attrs.role: CORE, attrs.has_on_demand_capacity: true}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Primary em Spot não é erro por si: a tabela de cenários da AWS o recomenda
+      em dois dos quatro casos — cost-driven workloads e application testing —, e
+      nos dois o core também é Spot. O que esta regra acusa é a CONTRADIÇÃO entre
+      as duas escolhas. Pagar On-Demand no core é comprar durabilidade de HDFS e
+      proteção contra flutuação do mercado Spot; deixar o primary em Spot mantém
+      o ponto único de falha do cluster inteiro exposto a essa mesma flutuação. A
+      documentação é direta sobre o custo: "The primary node controls and directs
+      the cluster. When it terminates, the cluster ends", e "Typically, you would
+      only run the primary node as a Spot Instance if you are running the entire
+      cluster (all instance groups) as Spot Instances". Nenhuma linha da tabela
+      oficial combina primary Spot com core On-Demand. Ver
+      knowledge/emr/cluster-configuration.md seção 3.
+    proposed_change:
+      - "Decidir de qual linha da tabela o cluster é: se o trabalho tolera terminação súbita, levar o core também para Spot; se não tolera, levar o primary para On-Demand."
+      - Se a motivação for custo e o cluster for longo, avaliar primary On-Demand com três primary nodes (alta disponibilidade, EMR 5.23.0 ou superior) e Spot só no task, que é a linha "long-running clusters and data warehouses".
+      - Confirmar que o resultado do job sobrevive à perda do cluster — persistência em S3 a cada etapa, e não só no fim — antes de escolher a opção Spot.
+    risks:
+      - Levar o primary para On-Demand aumenta o custo fixo do cluster pelo tempo inteiro em que ele existe.
+      - Levar o core para Spot expõe HDFS a perda parcial de dados; só é aceitável quando os dados intermediários são reconstituíveis.
+      - Purchasing option de primary e core não pode ser alterada em cluster em execução; qualquer das duas direções exige terminar o cluster e provisionar outro.
+    tradeoffs:
+      - A escolha é entre custo e tolerância a terminação súbita, e ela precisa ser a mesma para primary e core; o defeito aqui é a incoerência, não o valor escolhido.
+      - Ao lançar o primary como Spot, o cluster só inicia quando a solicitação Spot é atendida, o que adiciona latência imprevisível ao início.
+    validation:
+      - Purchasing option efetiva de cada papel no cluster novo, conferida por DescribeCluster e ListInstanceGroups ou ListInstanceFleets.
+      - Um teste de terminação do primary em ambiente de homologação, confirmando que o pipeline se recupera do jeito que o desenho supõe.
+      - Custo do cluster por run de volume comparável, antes e depois.
+    rollback:
+      - Provisionar o cluster novamente com a combinação anterior de purchasing options.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html", retrieved: 2026-08-01}
+
+  # O que esta regra acusa MUDOU depois de ler a fonte, e o comentário fica aqui
+  # para que a versão anterior não volte. A formulação de partida era de
+  # PERFORMANCE: `partitionOverwriteMode=dynamic` desligaria o committer
+  # otimizado do EMRFS e o commit passaria a renomear diretório por diretório, no
+  # driver, sequencialmente. Isso é verdade para EMR 5.x abaixo de 5.30.0 e 6.x
+  # abaixo de 6.2.0, e SÓ para elas. Da 5.30.0/6.2.0 em diante existe o EMRFS
+  # S3-optimized COMMIT PROTOCOL, que é uma coisa diferente do committer, está
+  # ligado por default, e existe exatamente para este caso: "optimized for
+  # writing files with Spark dynamic partition overwrite to Amazon S3 when using
+  # EMRFS. The protocol improves application performance by avoiding rename
+  # operations". A release mais antiga do `EMR_MATRIX` deste repositório é a
+  # 6.4.0, então o mecanismo de performance está morto em TODO cluster que esta
+  # ferramenta consegue analisar. O que sobrevive -- e é mais grave -- é
+  # SEMÂNTICA.
+  - id: SF-EMR-005
+    category: emr-infra
+    title: partitionOverwriteMode dinâmico no spark-defaults do cluster
+    requires_facts: [emr.cluster, emr.configuration]
+    when:
+      all:
+        - fact: emr.configuration
+          where:
+            attrs.level: cluster
+            attrs.classification: spark-defaults
+            attrs.key: spark.sql.sources.partitionOverwriteMode
+            attrs.value: dynamic
+          expr: "measures.overriding_group_count == 0"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      spark.sql.sources.partitionOverwriteMode decide o que um write com mode
+      overwrite APAGA antes de escrever, e a AWS confirma que o default é static.
+      Posto no spark-defaults do cluster, o valor dynamic muda essa semântica para
+      TODO job que rodar ali, inclusive os que foram escritos e testados supondo o
+      default. Um job que faz overwrite esperando que o destino inteiro seja
+      substituído passa a apagar só as partições que ele escreveu naquela
+      execução, e as partições antigas que deveriam ter sumido sobrevivem. O
+      sintoma não é falha: é resultado errado a jusante, num relatório que soma
+      partições que não deveriam mais existir. Por isso a recomendação não é
+      trocar o valor — trocar sem revisar o código muda o resultado na direção
+      oposta, apagando dado que deveria ficar. A recomendação é tirar a decisão do
+      cluster e devolvê-la a cada job. Ver
+      knowledge/emr/cluster-configuration.md seção 5.
+    proposed_change:
+      - Remover spark.sql.sources.partitionOverwriteMode do spark-defaults do cluster.
+      - "Em cada job que precisa de overwrite por partição, declarar a intenção no próprio write: .option(\"partitionOverwriteMode\", \"dynamic\"), que vale só para aquela escrita."
+      - "Antes de remover, inventariar os jobs que rodam no cluster e classificar cada write com mode overwrite: os que dependem de dynamic recebem a opção; os que supõem static passam a se comportar como o autor escreveu."
+      - Para tabela Iceberg, nenhuma das duas opções é o mecanismo certo — o overwrite por partição é MERGE INTO ou overwrite dinâmico do próprio Iceberg, e a propriedade de fonte de dados de arquivo não se aplica.
+    risks:
+      - "Este é o risco central: remover a propriedade devolve os jobs ao default static, e um job que dependia de dynamic passará a apagar o caminho de destino INTEIRO. Sem o inventário do item anterior, a remoção causa perda de dado."
+      - Configurations de cluster EMR não é editável em cluster em execução; a mudança acontece no próximo provisionamento, e a janela entre a decisão e o provisionamento precisa ser coberta pela opção no job.
+    tradeoffs:
+      - Declarar por job é mais verboso que uma linha no cluster, e é o ponto — a semântica de escrita é decisão do job, e centralizá-la aplica uma decisão a código que não a pediu.
+      - Em release anterior à 5.30.0 (série 5.x) ou 6.2.0 (série 6.x) existe também o custo de commit por rename sequencial; nas releases cobertas pelo EMR_MATRIX deste repositório, esse custo não se aplica.
+    validation:
+      - "Contagem de linhas POR PARTIÇÃO no destino, antes e depois, e não só o total: é exatamente aqui que o erro de static aparece, porque o total pode coincidir enquanto partições inteiras somem ou sobrevivam indevidamente."
+      - Lista de partições existentes no destino antes e depois de um run, comparada com a lista esperada.
+      - Contagem distinta da chave de negócio no destino, para detectar duplicação vinda de partição antiga sobrevivente.
+      - Um run de ensaio sobre um prefixo de cópia antes de aplicar em produção.
+    rollback:
+      - Reprovisionar o cluster com a Configurations anterior. Se dado foi perdido pelo comportamento static, o rollback é a restauração do destino a partir de versionamento de objeto ou backup, não a reversão da propriedade.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-committer-reqs.html", retrieved: 2026-08-01}
+      - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-s3-optimized-commit-protocol.html", retrieved: 2026-08-01}
+      - {url: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-commit-protocol-reqs.html", retrieved: 2026-08-01}
+      - {origin: field-heuristic, note: "As páginas da AWS sustentam: que o default é `static`; que `dynamic` faz o write sobrescrever apenas as partições recebidas; e que o commit protocol otimizado cobre o caso dinâmico da 5.30.0/6.2.0 em diante, o que MATA o argumento de performance. O que elas NÃO afirmam em nenhuma linha é a metade oposta da semântica -- que `static` apaga o caminho de destino inteiro --, que é comportamento do Apache Spark e está aqui como leitura de campo. É essa metade que sustenta o risco de perda de dado ao remover a propriedade, e por isso ela precisa ser declarada em vez de assumida."}
+
+  # Análoga direta de SF-GLUE-002, e ancorada com a mesma disciplina que a Fase 5a
+  # teve que aplicar lá: `requires_facts` é `emr.cluster`, o fact que só existe se
+  # `describe-cluster` foi lido. A sentinela `emr.analyzed` seria genérica demais
+  # -- ela prova que o extrator rodou sobre um arquivo, inclusive sobre um dump
+  # vazio ou ilegível --, e com ela a regra passaria a barreira, o `when` daria
+  # falso e ela sumiria de `findings` E de `skipped`. Ausência sem explicação lê
+  # como "revisei e está tudo bem", que foi exatamente o defeito de SF-GLUE-002.
+  #
+  # `attrs.log_uri_present` e não `attrs.log_uri: null`: `where` só compara
+  # igualdade, e `null` casaria também um dump que simplesmente não coletou o
+  # campo. O booleano diz "o dump respondeu, e a resposta é não há destino".
+  - id: SF-EMR-006
+    category: emr-infra
+    title: Cluster sem LogUri — nenhum log sobrevive ao cluster
+    requires_facts: [emr.cluster]
+    when:
+      all:
+        - fact: emr.cluster
+          where: {attrs.log_uri_present: false}
+    status: confirmed
+    severity_by:
+      # Cluster que se auto-termina não deixa nem a janela de SSH: quando alguém
+      # for investigar, as instâncias já não existem. Com `auto_terminate` falso
+      # ainda resta ler `/mnt/var/log/` no nó enquanto o cluster vive, o que é
+      # ruim mas não é nada. `_severity_for` engole ExprError, então um dump que
+      # não trouxe `AutoTerminate` (attrs `None`) cai no default P2, que é o
+      # comportamento certo: não sabemos, então não agravamos.
+      - {when: "attrs.auto_terminate == True", severity: P1}
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Não é um problema de performance; é de capacidade de diagnóstico, e é a
+      análoga de SF-GLUE-002 no EMR. Sem LogUri não existe destino em S3 para os
+      step logs, os logs de container (stderr, stdout, launch_container.sh), os
+      logs do ResourceManager, os do HDFS e os de provisionamento do nó — a
+      documentação lista cada um desses caminhos sob o bucket de log, e sem o
+      bucket nenhum deles é escrito. Em release 6.8.0 ou anterior o efeito é
+      total: "If you use Amazon EMR release 6.8.0 or earlier, log files are not
+      saved to Amazon S3 during cluster termination, so you can't access the log
+      files once the nodes terminate". E a correção não é retroativa: LogUri é
+      propriedade de criação do cluster, então quando a investigação for
+      necessária já será tarde. Qualquer diagnóstico futuro começa sem evidência
+      de execução e depende de reproduzir o problema. Ver
+      knowledge/emr/cluster-configuration.md seção 6.
+    proposed_change:
+      - Provisionar o cluster com --log-uri apontando para um prefixo S3 com política de retenção definida.
+      - Avaliar a criptografia dos logs com chave gerenciada pelo cliente (EMR 5.30.0 ou superior, exceto 6.0.0), concedendo kms:GenerateDataKey ao perfil de instância EC2 e kms:DescribeKey ao papel de serviço do EMR.
+      - Para releases 6.9.0 ou superiores, confirmar que o arquivamento durante scale-down está chegando ao prefixo, e não só o arquivamento de término.
+      - Se o cluster já está em execução e é crítico, coletar os logs de /mnt/var/log/ nos nós por SSH ANTES de terminá-lo; essa é a única cópia que existe.
+    risks:
+      - Logs consomem armazenamento S3 continuamente; sem política de ciclo de vida o custo cresce sem teto.
+      - Log de container pode conter dado de aplicação; o prefixo precisa da mesma política de acesso do dado que o cluster processa.
+    tradeoffs:
+      - Custo marginal de armazenamento e um pouco de I/O contra a possibilidade de diagnosticar qualquer coisa depois do fato. A própria documentação apresenta reduzir debugging em produção como economia legítima, e a contrapartida declarada é "if something goes wrong, you'll have fewer tools available to investigate the issue".
+    validation:
+      - Objetos presentes sob s3://<bucket>/<cluster-id>/steps/ e /containers/ depois de um run.
+      - Log do ResourceManager presente sob /node/<instância-líder>/applications/hadoop-yarn/.
+      - Um teste de terminação do cluster seguido de leitura dos logs em S3, provando que eles sobreviveram.
+    rollback:
+      - Provisionar sem --log-uri. Nenhum efeito sobre o resultado do job; o único efeito é voltar a não ter evidência.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-debugging.html", retrieved: 2026-08-01}
+      - {origin: field-heuristic, note: "A fonte sustenta que os logs morrem com os nós em release <= 6.8.0, que o arquivamento precisa ser habilitado no lançamento nessas releases, e que a configuração de logging S3 introduzida na 7.13.0 'can only be set at cluster creation time and cannot be modified for running clusters'. Que o próprio `LogUri` não tenha conserto retroativo em NENHUMA release é inferência da ausência de qualquer operação de modificação na API de cluster, não citação."}
+
+  # A OITAVA regra da lista de partida da fase, e a única post-mortem. Ela existe
+  # porque o veto ao candidato "bootstrap que falha em silêncio" (ver cabeçalho,
+  # item 1) não vetou o conhecimento inteiro: vetou a leitura de
+  # `ListBootstrapActions`, que não traz status nenhum. `Status.StateChangeReason.Code`
+  # traz, e a própria página de bootstrap actions manda usá-lo -- "Use the cluster
+  # `lastStateChangeReason` error code to identify failures caused by a bootstrap
+  # action". A regra é barata, tem gatilho de igualdade simples, e transforma um
+  # dump de cluster morto -- que é o dump que alguém coleta JUSTAMENTE quando algo
+  # deu errado -- em achado com caminho de log e lista de scripts a revisar, em
+  # vez de um `describe-cluster` que o operador precisa saber interpretar.
+  - id: SF-EMR-007
+    category: emr-infra
+    title: Cluster terminado por falha de bootstrap action
+    requires_facts: [emr.cluster]
+    when:
+      all:
+        - fact: emr.cluster
+          where: {attrs.state_change_reason_code: BOOTSTRAP_FAILURE}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O cluster não chegou a processar nada: ele terminou antes de instalar as
+      aplicações. O mecanismo é declarado: "If the bootstrap action returns a
+      nonzero error code, Amazon EMR treats it as a failure and terminates the
+      instance. If too many instances fail their bootstrap actions, then Amazon
+      EMR terminates the cluster. If just a few instances fail, Amazon EMR
+      attempts to reallocate the failed instances and continue." O código
+      BOOTSTRAP_FAILURE em Status.StateChangeReason é a evidência que a própria
+      documentação manda usar para atribuir a terminação a bootstrap. Este é um
+      achado post-mortem: ele não previne nada neste cluster, ele diz onde olhar.
+      A causa quase nunca está na definição do bootstrap e sim fora dela — objeto
+      S3 do script ausente ou sem permissão de leitura para o perfil de instância,
+      dependência externa indisponível a partir da subnet, ou tempo de execução
+      além do que o provisionamento tolera.
+    proposed_change:
+      - Ler os logs de bootstrap do cluster terminado em s3://<bucket-de-log>/<cluster-id>/node/<instância>/, que só existem se LogUri estava configurado — ver SF-EMR-006.
+      - Conferir que o perfil de instância EC2 do cluster tem s3:GetObject sobre o Path de cada bootstrap action, e que o objeto existe na mesma região do cluster.
+      - Revisar os argumentos de cada script; argumento errado costuma produzir exit code não-zero cedo, antes de qualquer log útil.
+      - Fazer o script sair com código explícito e mensagem em cada caminho de erro, para que a próxima falha seja legível sem SSH.
+      - "Reduzir o trabalho do bootstrap ao mínimo: dependência pesada instalada por bootstrap é ponto de falha em cada provisionamento e em cada nó adicionado por scaling."
+    risks:
+      - Um bootstrap que agora sai com zero em caminho de erro para de derrubar o cluster e passa a produzir nó silenciosamente incompleto, que é pior. Sair com zero só depois de verificar o efeito, nunca para suprimir a falha.
+    tradeoffs:
+      - Mover a instalação de dependências para uma AMI customizada elimina a classe inteira de falha, ao custo de manter e versionar a AMI.
+    validation:
+      - Provisionamento novo com os mesmos bootstrap actions chega ao estado WAITING ou RUNNING.
+      - Logs de bootstrap do provisionamento novo presentes em S3, com exit code zero em todos os nós.
+      - O efeito que o script deveria produzir conferido diretamente num nó, e não pela ausência de erro.
+    rollback:
+      - Provisionar sem o bootstrap action em questão e instalar a dependência por outro caminho, se o cluster for urgente.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-bootstrap.html", retrieved: 2026-08-01}

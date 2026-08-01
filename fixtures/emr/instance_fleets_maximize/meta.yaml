@@ -15,6 +15,18 @@ proves: >
   `AutoTerminate: true` esta aqui de proposito -- e o par que a regra de
   capacidade de diagnostico le, e `log_uri_present: false` e a unica forma de
   uma regra distinguir "sem destino de log" de "campo nao coletado".
+  Com a area SF-EMR escrita (Task 4), este e o golden positivo de TRES regras, e
+  as tres saem do mesmo dump por construcao. `maximizeResourceAllocation=true`
+  num cluster de FLEETS dispara SF-EMR-001 -- o EMR dimensiona o executor a
+  partir de um tipo da frota de core, e a frota pode ter varios; em
+  `all_spot_groups_maximize` a MESMA propriedade nao dispara nada, porque la o
+  modelo e de grupos e o calculo e deterministico. MASTER inteiramente em Spot
+  com CORE inteiramente On-Demand dispara SF-EMR-004: e a contradicao que a
+  tabela oficial de cenarios nao contem em nenhuma linha, e a prova de que a
+  regra le o PAR de papeis, nao o primary sozinho. E `LogUri` ausente com
+  `AutoTerminate: true` dispara SF-EMR-006 em P1 e nao no default P2 -- cluster
+  que se auto-termina nao deixa nem a janela de SSH para ler `/mnt/var/log/`
+  antes de a instancia sumir.
 runtime:
   emr: "7.5.0"
   spark: "3.5.2-amzn-1"
@@ -26,4 +38,7 @@ expects_kinds:
   - emr.cluster
   - emr.configuration
   - emr.instance_capacity
-expects_rules: []
+expects_rules:
+  - SF-EMR-001
+  - SF-EMR-004
+  - SF-EMR-006
