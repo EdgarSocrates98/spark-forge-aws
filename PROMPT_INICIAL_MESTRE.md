@@ -43,7 +43,14 @@ Nesta ordem, sempre:
    texto. As regras duras que fazem o resultado ser igual sob qualquer modelo
    não chegam ao seu contexto sozinhas — abra o arquivo.
 4. **Deixe `next_step` decidir a rota.** Não escolha a próxima skill por
-   julgamento próprio — a árvore de decisão vive em `rules/catalog/routing.yaml`.
+   julgamento próprio — a árvore de decisão vive em `rules/catalog/routing.yaml`,
+   incluindo as rotas `AGENT-001`…`AGENT-006` que indicam qual dos seis
+   coordenadores (`agents/*.md`) usar a partir da fase do case e do achado
+   dominante. Em Claude Code, o coordenador despacha os cinco executores
+   (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`)
+   como subagentes. Em Devin, Codex ou Copilot CI, sem despacho de subagente,
+   `sparkforge playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_playbook`
+   dá a mesma decomposição em passos.
 
 Duas regras não negociáveis, válidas para toda a investigação: **nenhum
 número aparece na saída sem um `fact_id` que o sustente**, e **um ganho

@@ -5,16 +5,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
-NAMES = (
-    "spark-performance-architect",
-    "iceberg-performance-engineer",
-    "glue-incremental-performance-architect",
-)
+NAMES = tuple(sorted(p.stem for p in AGENTS.glob("*.md")))
 
 
 class TestSingleSource:
-    def test_agents_dir_holds_all_three(self):
-        assert {p.stem for p in AGENTS.glob("*.md")} == set(NAMES)
+    def test_agents_dir_is_not_empty(self):
+        """Antes este teste fixava os tres nomes literais. Lista fixa obriga a
+        editar o teste a cada coordenador novo, e -- pior -- nao pega o caso que
+        importa, que e um agente parar de ser espelhado. A byte-identidade dos
+        espelhos e o invariante; o nome nao e."""
+        assert len(NAMES) >= 3
 
     def test_each_agent_has_name_description_and_tools(self):
         for name in NAMES:

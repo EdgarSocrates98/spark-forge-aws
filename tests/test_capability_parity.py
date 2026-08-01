@@ -3,8 +3,8 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-PLATFORMS = ("claude_code", "devin_desktop", "devin_cli", "copilot_ci")
-MECHANISMS = ("mcp", "cli", "files")
+PLATFORMS = ("claude_code", "devin_desktop", "devin_cli", "codex", "copilot_ci")
+MECHANISMS = ("mcp", "cli", "files", "playbook")
 
 
 def manifest():
@@ -15,10 +15,10 @@ class TestManifestShape:
     def test_exists(self):
         assert (ROOT / "parity.yaml").is_file()
 
-    def test_declares_the_four_platforms(self):
+    def test_declares_the_five_platforms(self):
         assert tuple(manifest()["platforms"]) == PLATFORMS
 
-    def test_declares_the_three_mechanisms(self):
+    def test_declares_the_four_mechanisms(self):
         assert tuple(manifest()["mechanisms"]) == MECHANISMS
 
 
@@ -148,3 +148,42 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             if not (tools & set(TOOLS)):
                 gaps.append(verb)
         assert not gaps, gaps
+
+
+class TestOrchestrationParity:
+    """A capacidade que faltava no manifesto.
+
+    Os 3 agentes eram espelhados com byte-identidade travada, mas nada
+    verificava que "coordenar investigacao" tinha caminho por plataforma --
+    exatamente o que o gate da secao 8.4 da Fase 0 existe para pegar. Agentes
+    escaparam dele porque agente nao era mecanismo declarado.
+    """
+
+    def test_codex_is_a_declared_platform(self):
+        assert "codex" in manifest()["platforms"]
+
+    def test_playbook_is_a_declared_mechanism(self):
+        assert "playbook" in manifest()["mechanisms"]
+
+    def test_coordination_capability_exists(self):
+        names = [c["name"] for c in manifest()["capabilities"]]
+        assert any("coorden" in n.lower() for n in names), names
+
+    def test_coordination_reaches_every_platform(self):
+        capability = next(
+            c for c in manifest()["capabilities"] if "coorden" in c["name"].lower()
+        )
+        for platform in manifest()["platforms"]:
+            assert capability["platforms"].get(platform), platform
+
+    def test_only_claude_code_claims_subagent_dispatch(self):
+        """Despacho de subagente e capacidade de HARNESS. Declarar para outra
+        plataforma seria afirmar paridade que nao existe -- o defeito exato do
+        transporte HTTP na Fase 1, que `parity.yaml` afirmava e nenhum teste
+        tocava."""
+        capability = next(
+            c for c in manifest()["capabilities"] if "coorden" in c["name"].lower()
+        )
+        for platform, mechanisms in capability["platforms"].items():
+            if platform != "claude_code":
+                assert "subagent" not in mechanisms, platform

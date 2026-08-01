@@ -51,6 +51,14 @@ class TestReadme:
         assert "catálogo" in lowered or "catalogo" in lowered
         assert "knowledge" in lowered
 
+    def test_readme_documents_the_playbook(self):
+        assert "sparkforge playbook" in self.README
+
+    def test_readme_documents_the_two_agent_layers(self):
+        lowered = self.README.lower()
+        assert "coordenador" in lowered
+        assert "executor" in lowered
+
 
 class TestGuia:
     GUIA = None
@@ -102,6 +110,12 @@ class TestAgentsMd:
         assert "AGENT_PROTOCOL.md" in self.AGENTS
         assert "Fact" in self.AGENTS
         assert "Finding" in self.AGENTS
+
+    def test_agents_md_lists_every_coordinator(self):
+        from pathlib import Path
+
+        for path in Path(ROOT / "agents").glob("*.md"):
+            assert path.stem in self.AGENTS, path.stem
 
 
 class TestSourcesMd:

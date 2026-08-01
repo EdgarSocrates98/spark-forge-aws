@@ -776,6 +776,28 @@ class TestCliMcpEquivalence:
         # no campo novo `knowledge_refs`, nao so no restante do payload.
         assert cli_payload["rules"][0]["knowledge_refs"]
 
+    def test_playbook_matches(self, repo, capsys):
+        """Omitir este teste ja custou uma rodada de revisao na Fase 3a --
+        `playbook` e capacidade nova da Task 5 e precisa da mesma trava."""
+        _, output = run(["playbook", "glue-infra-reviewer", "--repo", str(repo)], capsys)
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool(
+            "sparkforge_playbook", {"coordinator": "glue-infra-reviewer", "repo": str(repo)}
+        )
+        assert cli_payload == mcp_payload
+        assert cli_payload["steps"][0]["executor"] == "sf-inventory"
+
+    def test_playbook_unknown_coordinator_matches(self, repo, capsys):
+        assert main(["playbook", "nao-existe", "--repo", str(repo)]) == 2
+        cli_message = capsys.readouterr().err.strip()
+
+        mcp_payload = call_tool(
+            "sparkforge_playbook", {"coordinator": "nao-existe", "repo": str(repo)}
+        )
+        assert "error" in mcp_payload
+        assert cli_message == mcp_payload["error"]
+
     def test_knowledge_path_matches(self, repo, capsys):
         _, output = run(["knowledge", "path", "--file", "glue/runtime-matrix.md"], capsys)
         cli_payload = json.loads(output)

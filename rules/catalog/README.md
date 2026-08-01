@@ -192,15 +192,21 @@ Regra de roteamento **não** tem `category`, `sources`, `severity` nem `runtime_
 
 | Campo | Nota |
 |---|---|
-| `id` | `ROUTE-NNN` |
+| `id` | `ROUTE-NNN` (skill) ou `AGENT-NNN` (coordenador) |
 | `phase_in` | fases do case em que a regra é considerada |
-| `when` | predicado sobre `case:` (estado) ou `finding:` (achado presente/ausente) |
-| `recommended_skill` | skill a acionar |
+| `when` | predicado sobre `case:` (estado), `finding:` (achado presente/ausente) ou `findings_area:` (contagem de achados por área) |
+| `recommended_skill` | skill a acionar — rotas `ROUTE-*` |
+| `recommended_agent` | coordenador a acionar — rotas `AGENT-*` |
 | `reason` | **obrigatório** — aparece na saída e é o que o operador lê para entender a rota |
 | `missing_artifacts`, `collect_commands` | o que falta e como coletar |
 | `blocked_by` | gate não satisfeito. **Advisory na Fase 0**, não fail-closed |
 
 Avaliação em ordem: primeiro match vira `recommended_skill`, os seguintes entram em `alternatives` com `rank`. Há um `fallback` no fim do arquivo — nenhum estado fica sem rota, e cair no fallback é sinal de que falta uma regra.
+
+As rotas `AGENT-*` (escolha de coordenador) convivem na mesma lista que as `ROUTE-*`
+(escolha de skill) porque usam o mesmo motor de avaliação, mas `next_step` só resolve
+skill: ele ignora toda regra sem `recommended_skill` antes de casar, para que uma
+regra de agente nunca apareça em `alternatives` sem o campo que essa saída espera.
 
 ### Operadores declarativos de roteamento
 
@@ -219,7 +225,10 @@ portanto superfície de execução.
 | `any_where: {k: v}` | algum item da lista tem `k == v` |
 
 `case: <caminho.pontuado>` resolve dentro do case. `finding: <rule_id>` com
-`present: true`/`false` testa a presença de um achado.
+`present: true`/`false` testa a presença de um achado. `findings_area: <prefixo>` conta
+quantos `finding_ids` têm esse prefixo — o `rule_id` até o último hífen (`SF-GLUE-002` ->
+`SF-GLUE`) — e o resultado alimenta `count_gt`/`count_eq`; é o dado que decide qual
+coordenador tem achado dominante, sem lista de `rule_id` mantida à mão.
 
 O validador de catálogo deve aplicar o schema de `Rule` a todos os arquivos **exceto** `routing.yaml`, que tem o seu.
 

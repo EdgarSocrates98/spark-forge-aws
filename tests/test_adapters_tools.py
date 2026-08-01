@@ -31,6 +31,7 @@ class TestToolSurface:
             "sparkforge_case_update",
             "sparkforge_next_step",
             "sparkforge_resume",
+            "sparkforge_playbook",
             "sparkforge_runtime_detect",
             "sparkforge_knowledge_path",
             "sparkforge_analyze_pyspark",
@@ -482,6 +483,12 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_resume", {"repo": str(tmp_path), "findings": [], "unresolved": 0}
         )
 
+    if name == "sparkforge_playbook":
+        return call_tool(
+            "sparkforge_playbook",
+            {"coordinator": "glue-infra-reviewer", "repo": str(tmp_path)},
+        )
+
     if name == "sparkforge_runtime_detect":
         return call_tool("sparkforge_runtime_detect", {"glue": "5.0"})
 
@@ -662,6 +669,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_case_update", {"repo": "<tmp>", "phase": "diagnosis"}),
         ("sparkforge_next_step", {"repo": "<tmp>"}),
         ("sparkforge_resume", {"repo": "<tmp>"}),
+        ("sparkforge_playbook", {"coordinator": "nao-existe", "repo": "<tmp>"}),
         ("sparkforge_analyze_pyspark", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_catalog_schema", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_event_log", {"path": "<tmp>/inexistente.jsonl"}),

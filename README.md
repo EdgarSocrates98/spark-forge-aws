@@ -28,7 +28,7 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 48 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 16 rotas determinísticas em `routing.yaml`. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 48 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 22 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 6 de coordenador, `AGENT-001`…`AGENT-006`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
 ## Camada determinística (Fase 0)
 
@@ -205,6 +205,32 @@ Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Us
 | `benchmark-pyspark-job` | comprovar (não estimar) o impacto de uma mudança antes/depois |
 | `review-pyspark-pr` | revisar um PR buscando regressões de performance e custo |
 | `review-glue-terraform` | revisar o IaC do job (workers, Auto Scaling, args, observabilidade) |
+
+## Coordenadores e executores
+
+Além das Skills (procedimento) e da camada determinística (extração e julgamento), o
+pacote tem duas camadas de agente:
+
+- **Coordenador** — 6 agentes em `agents/*.md`, um por área de investigação
+  (`spark-performance-architect`, `glue-incremental-performance-architect`,
+  `glue-infra-reviewer`, `athena-query-optimizer`, `pyspark-code-reviewer`,
+  `iceberg-performance-engineer`). Não executa: lê o case, decide qual executor rodar em
+  seguida e registra no case qual executor rodou e com que resultado. Ver a tabela
+  completa em `AGENTS.md`.
+- **Executor** — 5 agentes em `agents/executors/*.md`, um por função do loop de fase
+  (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`). Cada um
+  declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
+  contrato de handoff que fazem a cadeia ser determinística entre modelos.
+
+Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-006` de
+`rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
+coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
+
+Em Claude Code, o coordenador despacha os cinco executores como subagentes. Em qualquer
+outra plataforma sem despacho de subagente — Devin, Codex, Copilot CI —
+**`sparkforge playbook <coordenador>`** (CLI) ou a tool MCP `sparkforge_playbook` devolve a
+mesma decomposição em passos sequenciais, lendo os mesmos arquivos de `agents/`: perde o
+paralelismo do despacho, mantém o método.
 
 ## Instalação
 
