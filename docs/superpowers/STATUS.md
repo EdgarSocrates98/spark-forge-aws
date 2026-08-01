@@ -25,19 +25,19 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **2320** passando, 5 skipped | `python -m pytest -q` |
-| Regras com `runtime_scope` não-vazio | **8 de 48**, todas sobre Glue | `load_catalog()` |
+| Testes | **2362** passando, 5 skipped | `python -m pytest -q` |
+| Regras com `runtime_scope` não-vazio | **8 de 49**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **13** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **80** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **48** | `load_catalog()` |
+| Fact kinds distintos emitidos | **82** | união de `EMITTED_KINDS` |
+| Regras de diagnóstico | **49** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **48 de 48** | `tests/test_fixtures_kind_coverage.py` |
+| Regras com golden que dispara | **49 de 49** | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **22** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-006`) | `rules/catalog/routing.yaml` |
 | Tools MCP | **30** | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **30 de 30** | `tests/test_agent_coverage.py` |
 | Coordenadores | **6** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Fixtures golden | **74** em 15 domínios | `fixtures/` |
+| Fixtures golden | **77** em 15 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **20** (16 móveis, 4 fixas) | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 

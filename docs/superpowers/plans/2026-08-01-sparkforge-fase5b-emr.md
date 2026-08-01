@@ -77,23 +77,23 @@ Primeiro, e independente de todo o resto — fecha o critério 12, que a §3.3 d
 - Create: `tests/test_platform_divergence.py`
 - Modify: `sparkforge/facts/runtime_detect.py`, `rules/catalog/env.yaml`
 
-- [ ] **Step 1: Reproduza o silêncio**
+- [x] **Step 1: Reproduza o silêncio**
 
 Monte um `sources` com Glue e EMR cujas versões derivadas **coincidam**, e mostre que hoje não sai sinal nenhum. Se você não conseguir fazer as versões coincidirem com a matriz atual, force o cenário — o ponto é o mecanismo, não o par de versões.
 
 Cole a saída. Ela é a justificativa da task.
 
-- [ ] **Step 2: O teste, primeiro**
+- [x] **Step 2: O teste, primeiro**
 
 Em `tests/test_platform_divergence.py`. O invariante: **duas plataformas detectadas produzem sinal, independentemente das versões**. Cubra as versões coincidindo e as divergindo — o primeiro caso é o que o critério 12 exige e o que nenhum teste atual pega.
 
-- [ ] **Step 3: `env.platform`**
+- [x] **Step 3: `env.platform`**
 
 `_build_facts` itera só `observations`, e `glue_observations` está fora. Não force plataforma para dentro de `observations`: os dois têm semântica diferente — `observations` são versões de componente, e `SF-ENV-001` conta `distinct_versions`. Plataforma é **identidade**, e a pergunta é "quantas?", não "quais versões?".
 
 Emita um fact próprio, `env.platform`, com as plataformas detectadas e de onde vieram. Decida o formato exato lendo como `env.runtime_signal` é montado, e mantenha `subject`, `attrs` e `provenance` no padrão do arquivo.
 
-- [ ] **Step 4: `SF-ENV-005`**
+- [x] **Step 4: `SF-ENV-005`**
 
 Regra irmã de `SF-ENV-001`, sobre `env.platform`, disparando quando mais de uma plataforma é detectada.
 
@@ -101,13 +101,13 @@ Escreva-a lendo `rules/catalog/README.md` — todos os campos obrigatórios, `so
 
 Fixture bidirecional: uma que dispara, uma limpa.
 
-- [ ] **Step 5: `emr` no `RuntimeContext`**
+- [x] **Step 5: `emr` no `RuntimeContext`**
 
 O campo, com default `""`, e em `to_dict()`. Mínimo para a Task 1 funcionar; a matriz é a Task 2.
 
 **Cuidado:** `to_dict()` sempre emite toda chave, e `in_scope` reprova valor vazio. Acrescentar `emr` significa que um futuro `runtime_scope: {emr: "*"}` falha fechado quando não há EMR — que é correto — mas **confirme que nenhuma regra existente passa a ser pulada**. `tests/test_rule_scope_by_nature.py::TestNoCatalogAreaVanishesEntirely` pega isso; rode-o.
 
-- [ ] **Step 6: Verifique e commite**
+- [x] **Step 6: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest tests/test_platform_divergence.py tests/test_runtime_detect.py tests/test_rule_scope_by_nature.py -q

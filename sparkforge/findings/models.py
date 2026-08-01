@@ -142,6 +142,13 @@ class RuntimeContext:
     """Versões detectadas. `divergences` não vazio significa detecção conflitante."""
 
     glue: str = ""
+    # Release label do EMR on EC2 (`emr-7.5.0`), nao um numero de versao solto.
+    # Fica ao lado de `glue` e nao dentro de um enum `platform` porque a guarda
+    # de versao ja opera por chave (`sparkforge/rules/version_scope.py`): um
+    # enum novo exigiria mudar `in_scope`, que e codigo provado nas bordas.
+    # Identidade de plataforma -- "quantas plataformas foram detectadas" -- e
+    # outra pergunta, e vive no fact `env.platform`, nao aqui.
+    emr: str = ""
     spark: str = ""
     python: str = ""
     iceberg: str = ""
@@ -152,6 +159,7 @@ class RuntimeContext:
     def to_dict(self) -> dict[str, Any]:
         return {
             "glue": self.glue,
+            "emr": self.emr,
             "spark": self.spark,
             "python": self.python,
             "iceberg": self.iceberg,

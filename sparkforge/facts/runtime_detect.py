@@ -15,6 +15,23 @@ porque SF-ENV-004 depende dele mesmo sem divergencia; python/iceberg/athena
 so geram fact quando ha leitura direta (nao so inferida da matriz) ou quando
 divergem -- um unico valor inferido da matriz, sem mais nenhuma fonte, nao
 e informacao nova o suficiente para merecer fact proprio.
+
+PLATAFORMA E OUTRA PERGUNTA, e por isso tem fact proprio.
+`env.runtime_signal` responde "quais versoes?", e SF-ENV-001 conta
+`distinct_versions`. Glue e EMR detectados juntos podem derivar exatamente a
+mesma versao de Spark -- Glue 4.0 deriva 3.3.0, e ha release de EMR que roda
+3.3.0 --, e nesse caso nao ha divergencia de versao alguma: a dupla deteccao
+passava muda (spec da Fase 5, secao 3.3). A pergunta certa e "quantas
+PLATAFORMAS?", que e identidade e nao versao, e nenhum ajuste em SF-ENV-001
+alcanca isso. Dai `env.platform`, com `measures.distinct_platforms`, e
+SF-ENV-005 sobre ele.
+
+`env.platform` e emitido sempre que ha ao menos UMA plataforma observada, e
+nao so quando ha duas. Com uma, a regra e AVALIADA e explicitamente nao
+dispara; sem o fact, ela sumiria por `requires_facts` -- ausencia muda, que
+para um agente autonomo le como "nada encontrado". E a mesma razao de
+`_ALWAYS_EMIT` conter `spark`. Zero plataformas observadas continua sem fact:
+ai nao ha identidade nenhuma para afirmar.
 """
 from __future__ import annotations
 
@@ -29,7 +46,7 @@ DETECTOR_ID = "runtime_detect@0.1.0"
 # unica para `tests/test_rules_catalog_reachability.py`: uma regra que exija um
 # kind fora da uniao de todos os EMITTED_KINDS e inalcancavel e precisa declarar
 # `blocked_on`, em vez de aparecer como "faltou coletar".
-EMITTED_KINDS = frozenset({"env.runtime_signal"})
+EMITTED_KINDS = frozenset({"env.runtime_signal", "env.platform"})
 
 GLUE_MATRIX: dict[str, dict[str, str]] = {
     "5.1": {"spark": "3.5.6", "python": "3.11", "iceberg": "1.10.0"},
@@ -62,6 +79,17 @@ GLUE_MATRIX: dict[str, dict[str, str]] = {
 # em P0. A precedencia so escolhe o que o contexto REPORTA como valor
 # resolvido; ela nao decide quem esta certo, e nunca descarta o outro valor.
 _PRECEDENCE: tuple[str, ...] = ("event_log", "cli", "terraform", "requirements")
+
+# Chaves que identificam a PLATAFORMA de execucao em cada fonte, e o valor que
+# elas carregam (versao de Glue, release label de EMR). O valor so alimenta
+# `RuntimeContext`; a identidade -- a chave do dict -- e o que `env.platform`
+# conta. Glue continua sendo lido por `glue_version` e por mais nada, porque a
+# mesma leitura alimenta GLUE_MATRIX: platform detectada e versao derivada nao
+# podem divergir por lerem chaves diferentes.
+_PLATFORM_KEYS: dict[str, tuple[str, ...]] = {
+    "emr": ("emr_release", "emr_version", "emr"),
+    "glue": ("glue_version",),
+}
 
 _DIRECT_KEYS: dict[str, tuple[str, ...]] = {
     "spark": ("spark_version", "spark"),
@@ -123,10 +151,24 @@ def _spark_minor(version: str) -> float | None:
     return float(f"{digits[0]}.{digits[1]}")
 
 
+def _platform_identity(platforms: dict[str, list[_Observation]]) -> list[_Observation]:
+    """As observacoes de identidade, na forma `(nome_da_plataforma, fonte)`.
+
+    Reusa `_Observation` de proposito: identidade e versao sao perguntas
+    diferentes, mas a forma "alguem observou X na fonte Y" e a mesma, e com ela
+    `_distinct_values`, `_divergence_text` e `_source_rank` valem sem duplicata.
+    """
+    return [
+        (platform, origin)
+        for platform in sorted(platforms)
+        for _, origin in sorted(platforms[platform], key=lambda pair: pair[1])
+    ]
+
+
 def _collect(
     sources: dict[str, dict[str, Any]],
-) -> tuple[list[_Observation], dict[str, list[_Observation]], set[str]]:
-    glue_observations: list[_Observation] = []
+) -> tuple[dict[str, list[_Observation]], dict[str, list[_Observation]], set[str]]:
+    platforms: dict[str, list[_Observation]] = defaultdict(list)
     observations: dict[str, list[_Observation]] = defaultdict(list)
     detected_from: set[str] = set()
 
@@ -135,16 +177,21 @@ def _collect(
         if not isinstance(data, dict):
             continue
 
-        glue_version = data.get("glue_version")
-        if glue_version:
-            glue_str = str(glue_version)
-            glue_observations.append((glue_str, source_name))
-            detected_from.add(source_name)
-            derived = GLUE_MATRIX.get(glue_str)
-            if derived:
-                origin = f"{source_name}:matrix"
-                for component, value in derived.items():
-                    observations[component].append((value, origin))
+        for platform, keys in _PLATFORM_KEYS.items():
+            for key in keys:
+                raw = data.get(key)
+                if not raw:
+                    continue
+                value = str(raw)
+                platforms[platform].append((value, source_name))
+                detected_from.add(source_name)
+                if platform == "glue":
+                    derived = GLUE_MATRIX.get(value)
+                    if derived:
+                        origin = f"{source_name}:matrix"
+                        for component, derived_value in derived.items():
+                            observations[component].append((derived_value, origin))
+                break
 
         for component, keys in _DIRECT_KEYS.items():
             for key in keys:
@@ -154,15 +201,24 @@ def _collect(
                     detected_from.add(source_name)
                     break
 
-    return glue_observations, observations, detected_from
+    return platforms, observations, detected_from
 
 
 def _build_context(
-    glue_observations: list[_Observation],
+    platforms: dict[str, list[_Observation]],
     observations: dict[str, list[_Observation]],
     detected_from: set[str],
 ) -> RuntimeContext:
-    all_components: dict[str, list[_Observation]] = {"glue": glue_observations}
+    all_components: dict[str, list[_Observation]] = {
+        "glue": platforms.get("glue", []),
+        "emr": platforms.get("emr", []),
+        # Divergencia de IDENTIDADE, ao lado das de versao. `divergences` e o
+        # canal que um humano le no relatorio: deixar a plataforma de fora dele
+        # reproduziria, no contexto, o mesmo silencio que `env.platform` remove
+        # do catalogo. O sinal acionavel continua sendo o fact e SF-ENV-005 --
+        # isto aqui e a linha que o operador ve.
+        "platform": _platform_identity(platforms),
+    }
     all_components.update(observations)
 
     divergences = [
@@ -172,7 +228,8 @@ def _build_context(
     ]
 
     return RuntimeContext(
-        glue=_resolve(glue_observations),
+        glue=_resolve(platforms.get("glue", [])),
+        emr=_resolve(platforms.get("emr", [])),
         spark=_resolve(observations.get("spark", [])),
         python=_resolve(observations.get("python", [])),
         iceberg=_resolve(observations.get("iceberg", [])),
@@ -182,8 +239,53 @@ def _build_context(
     )
 
 
-def _build_facts(observations: dict[str, list[_Observation]]) -> list[Fact]:
+def _platform_fact(platforms: dict[str, list[_Observation]]) -> Fact | None:
+    """`env.platform`: identidade, nunca versao.
+
+    `measures.distinct_platforms` e a resposta direta a pergunta que SF-ENV-005
+    faz -- "quantas plataformas?" -- e por isso a regra e um `expr` de uma
+    linha, sem agregacao no motor (que ele nao sabe fazer: `where`/`expr`
+    avaliam sempre contra UM fact). Emitir um fact por plataforma exigiria
+    contar facts, que nao existe. `source_count` acompanha para separar "duas
+    fontes concordando na mesma plataforma" de "duas plataformas" -- o mesmo
+    falso positivo que `distinct_versions` versus `source_count` ja evita para
+    versao.
+    """
+    detected = sorted(name for name in platforms if platforms[name])
+    if not detected:
+        return None
+
+    origins = {
+        name: sorted({origin for _, origin in platforms[name]}) for name in detected
+    }
+    sources = sorted({origin for name in detected for origin in origins[name]})
+    resolved = sorted(
+        detected, key=lambda name: (min(_source_rank(o) for o in origins[name]), name)
+    )[0]
+
+    return Fact(
+        kind="env.platform",
+        subject={"type": "job_run", "symbol": "platform"},
+        measures={"distinct_platforms": len(detected), "source_count": len(sources)},
+        attrs={
+            "resolved": resolved,
+            "observed": detected,
+            "source": "resolved",
+            "origins": origins,
+        },
+        provenance={"extractor": DETECTOR_ID},
+    )
+
+
+def _build_facts(
+    platforms: dict[str, list[_Observation]],
+    observations: dict[str, list[_Observation]],
+) -> list[Fact]:
     facts: list[Fact] = []
+
+    platform_fact = _platform_fact(platforms)
+    if platform_fact is not None:
+        facts.append(platform_fact)
 
     for component in sorted(observations):
         obs = observations[component]
@@ -220,18 +322,19 @@ def _build_facts(observations: dict[str, list[_Observation]]) -> list[Fact]:
 
 
 def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, list[Fact]]:
-    """Deriva RuntimeContext e Facts `env.runtime_signal` a partir de `sources`.
+    """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal`).
 
     `sources` mapeia nome da fonte (ex.: "event_log", "terraform",
     "requirements") para um dict com chaves cruas: `glue_version`,
-    `spark_version`/`spark`, `python_version`/`python`,
-    `iceberg_version`/`iceberg`, `athena_version`/`athena`.
+    `emr_release`/`emr_version`/`emr`, `spark_version`/`spark`,
+    `python_version`/`python`, `iceberg_version`/`iceberg`,
+    `athena_version`/`athena`.
 
     Nao le nada do disco nem de rede -- `sources` ja vem coletado
     (coleta e Task 22). Entrada vazia ou com valores None/vazios nao
     levanta excecao: apenas produz um RuntimeContext vazio e nenhum fact.
     """
-    glue_observations, observations, detected_from = _collect(sources or {})
-    context = _build_context(glue_observations, observations, detected_from)
-    facts = _build_facts(observations)
+    platforms, observations, detected_from = _collect(sources or {})
+    context = _build_context(platforms, observations, detected_from)
+    facts = _build_facts(platforms, observations)
     return context, sort_facts(facts)
