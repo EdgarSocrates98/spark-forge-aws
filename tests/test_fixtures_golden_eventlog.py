@@ -26,7 +26,7 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "eventlog"
 
-REQUIRED_FIXTURES = {"skewed_stage"}
+REQUIRED_FIXTURES = {"skewed_stage", "rolling_parts_version_conflict"}
 
 
 def fixture_dirs():
