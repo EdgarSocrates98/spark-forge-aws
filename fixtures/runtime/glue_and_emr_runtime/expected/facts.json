@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_c4a45b",
+    "id": "f_969a9a",
     "schema_version": 1,
     "kind": "env.platform",
     "subject": {
@@ -8,16 +8,20 @@
       "symbol": "platform"
     },
     "measures": {
-      "distinct_platforms": 1,
-      "source_count": 1
+      "distinct_platforms": 2,
+      "source_count": 2
     },
     "attrs": {
-      "resolved": "glue",
+      "resolved": "emr",
       "observed": [
+        "emr",
         "glue"
       ],
       "source": "resolved",
       "origins": {
+        "emr": [
+          "event_log"
+        ],
         "glue": [
           "terraform"
         ]
@@ -41,12 +45,12 @@
     },
     "attrs": {
       "component": "spark",
-      "resolved": "3.5.4",
+      "resolved": "3.3.0",
       "observed": [
-        "3.5.4"
+        "3.3.0"
       ],
       "source": "resolved",
-      "spark_minor": 3.5
+      "spark_minor": 3.3
     },
     "provenance": {
       "extractor": "runtime_detect@0.1.0"

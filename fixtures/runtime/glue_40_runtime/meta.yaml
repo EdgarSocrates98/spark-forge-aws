@@ -18,5 +18,6 @@ runtime:
   python: "3.10"
   iceberg: "1.0.0"
 expects_kinds:
+  - env.platform
   - env.runtime_signal
 expects_rules: []

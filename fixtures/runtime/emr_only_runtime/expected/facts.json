@@ -12,14 +12,14 @@
       "source_count": 1
     },
     "attrs": {
-      "resolved": "glue",
+      "resolved": "emr",
       "observed": [
-        "glue"
+        "emr"
       ],
       "source": "resolved",
       "origins": {
-        "glue": [
-          "terraform"
+        "emr": [
+          "event_log"
         ]
       }
     },
@@ -28,7 +28,7 @@
     }
   },
   {
-    "id": "f_04444c",
+    "id": "f_a55de2",
     "schema_version": 1,
     "kind": "env.runtime_signal",
     "subject": {
@@ -37,13 +37,13 @@
     },
     "measures": {
       "distinct_versions": 1,
-      "source_count": 2
+      "source_count": 1
     },
     "attrs": {
       "component": "spark",
-      "resolved": "3.5.4",
+      "resolved": "3.5.1",
       "observed": [
-        "3.5.4"
+        "3.5.1"
       ],
       "source": "resolved",
       "spark_minor": 3.5

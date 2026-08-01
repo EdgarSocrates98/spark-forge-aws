@@ -1,0 +1,19 @@
+name: emr_only_runtime
+proves: >
+  A contraparte negativa de glue_and_emr_runtime, e o unico runtime do corpus
+  que nao e Glue. Uma plataforma so detectada: `env.platform` E emitido, com
+  `distinct_platforms: 1`, e SF-ENV-005 e AVALIADA e explicitamente nao dispara.
+  Nao emitir o fact com uma plataforma faria a regra sumir por `requires_facts`
+  em todo relatorio saudavel -- ausencia muda, que para um agente autonomo le
+  como "nada encontrado" em vez de "olhei e esta certo". `glue` fica vazio, o
+  que prova que a deteccao de plataforma nao supoe Glue; `iceberg` e `python`
+  tambem, porque fora do Glue nao ha matriz que os derive -- ate a Task 2 desta
+  fase, que traz a EMR_MATRIX.
+runtime:
+  glue: ""
+  emr: "emr-7.5.0"
+  spark: "3.5.1"
+expects_kinds:
+  - env.platform
+  - env.runtime_signal
+expects_rules: []

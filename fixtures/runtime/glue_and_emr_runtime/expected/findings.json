@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-ENV-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Duas plataformas de runtime detectadas ao mesmo tempo",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "platform"
+    },
+    "evidence": [
+      "f_969a9a"
+    ],
+    "measured": {
+      "distinct_platforms": 2,
+      "source_count": 2
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Um job roda numa plataforma só — ou AWS Glue, ou EMR, nunca as duas ao mesmo tempo. Detectar as duas não significa que o job é híbrido: significa que uma das fontes lidas descreve outra coisa — outro job, outro ambiente, um módulo Terraform que não é o deste job, um event log colado da execução errada. O efeito não se limita a um achado: todo achado de infraestrutura daquele relatório está ancorado na plataforma errada, com o worker type, o autoscaling, o bookmark e os argumentos de job lidos de um recurso que não é o analisado. Não é ruído a filtrar; é o relatório inteiro sob suspeita, e por isso tem a mesma precedência de SF-ENV-001. A divergência não é resolvida pelo extrator: `env.platform` registra as duas identidades e de qual fonte cada uma veio, e a escolha de qual descartar é do operador, que sabe qual artefato pertence a este job.",
+    "proposed_change": [
+      "Identificar, em attrs.origins do fact, qual fonte declarou cada plataforma.",
+      "Remover do conjunto coletado o artefato que não pertence a este job — o módulo Terraform de outro recurso, o dump de cluster de outro ambiente, o event log de outra execução.",
+      "Reexecutar a coleta e confirmar que resta uma única plataforma antes de ler qualquer achado de infraestrutura."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Descartar a fonte errada troca uma âncora incorreta por outra, e o relatório volta a parecer coerente sem estar correto.",
+      "Tratar o achado como ruído e seguir lendo os achados de infraestrutura mantém todos eles ancorados na plataforma errada."
+    ],
+    "tradeoffs": [
+      "Nenhum. Um job tem uma plataforma; determinar qual é pré-requisito da leitura do relatório, não escolha de prioridade."
+    ],
+    "validation": [
+      "Nome e identificador do recurso na fonte remanescente conferidos contra o job efetivamente analisado.",
+      "Nova execução da detecção com uma única plataforma em attrs.observed.",
+      "Achados de infraestrutura relidos após a correção, e comparados com os anteriores — os que mudarem eram os ancorados na fonte errada."
+    ],
+    "rollback": [
+      "Não aplicável; é correção do conjunto de artefatos coletados",
+      "não de comportamento do job."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Exclusividade de plataforma é premissa do modelo de execução — um job Spark roda num runtime só —, não afirmação de documento. O que a detecção observa são declarações de fontes distintas, e duas identidades incompatíveis significam que ao menos uma delas descreve outro sistema."
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "P0 pela mesma razão de SF-ENV-001: o defeito não invalida um achado, invalida a âncora de todo o eixo de infraestrutura do relatório. Severidade menor faria o operador ler os achados antes de resolver a ambiguidade."
+      }
+    ]
+  }
+]

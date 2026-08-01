@@ -316,6 +316,11 @@ def test_no_fact_carries_a_version_leaves_the_context_empty(tmp_path):
 
     assert context.to_dict() == {
         "glue": "",
+        # `emr` entrou na Fase 5b: `to_dict()` emite TODA chave, sempre, e um
+        # dict literal aqui e o teste que registra isso. Vazio e o valor certo
+        # -- nenhum fact PySpark observa plataforma, e adivinhar seria
+        # julgamento entrando na camada de fato.
+        "emr": "",
         "spark": "",
         "python": "",
         "iceberg": "",

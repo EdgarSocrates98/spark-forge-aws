@@ -31,6 +31,11 @@ REQUIRED_FIXTURES = {
     "consistent_sources",
     "glue_40_runtime",
     "glue_51_runtime",
+    # Par bidirecional de SF-ENV-005. O positivo e o unico caso do corpus em que
+    # as VERSOES coincidem e ainda assim ha o que reportar -- divergencia de
+    # plataforma nao e divergencia de versao (spec da Fase 5, secao 3.3).
+    "glue_and_emr_runtime",
+    "emr_only_runtime",
 }
 
 
@@ -99,6 +104,22 @@ class TestGolden:
         assert first[0].to_dict() == second[0].to_dict()
 
 
+def _signal(facts, component: str):
+    """O fact de VERSAO daquele componente.
+
+    Estas assercoes indexavam `facts[0]` posicionalmente, o que so funcionava
+    enquanto `env.runtime_signal` era o unico kind do corpus. Com `env.platform`
+    -- que ordena antes por `sort_facts` -- o indice passou a apontar para outro
+    fact, e as duas assercoes teriam falhado por motivo cosmetico. Selecionar
+    pelo kind e pelo componente diz o que o teste quer dizer.
+    """
+    return next(
+        f
+        for f in facts
+        if f.kind == "env.runtime_signal" and f.attrs["component"] == component
+    )
+
+
 class TestAdversarial:
     def test_divergence_is_recorded_never_silently_resolved(self):
         """Resolver a precedencia e obrigatorio -- ha um so runtime. Esconder
@@ -107,7 +128,7 @@ class TestAdversarial:
         _, context, facts, findings, _ = run_fixture(FIXTURES / "divergent_sources")
         assert context.spark == "3.3.0"
         assert context.divergences
-        assert facts[0].measures["distinct_versions"] == 2
+        assert _signal(facts, "spark").measures["distinct_versions"] == 2
         assert [f.rule_id for f in findings] == ["SF-ENV-001"]
         assert findings[0].severity == "P0"
 
@@ -115,7 +136,7 @@ class TestAdversarial:
         """`source_count: 2` com `distinct_versions: 1`. Contar fontes em vez
         de valores distintos faria toda deteccao multi-fonte virar um P0."""
         _, _, facts, findings, _ = run_fixture(FIXTURES / "consistent_sources")
-        assert facts[0].measures == {"distinct_versions": 1, "source_count": 2}
+        assert _signal(facts, "spark").measures == {"distinct_versions": 1, "source_count": 2}
         assert findings == []
 
     def test_old_runtime_alone_is_not_a_divergence(self):
