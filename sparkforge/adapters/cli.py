@@ -342,6 +342,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     playbook_p.add_argument("coordinator")
     playbook_p.add_argument("--repo", default=".")
+    playbook_p.add_argument(
+        "--findings",
+        help="Arquivo de findings (JSON) usado para resolver o next_step embutido (AGENT-*).",
+    )
 
     # runtime detect ----------------------------------------------------
     runtime_p = sub.add_parser(
@@ -813,7 +817,8 @@ def _cmd_handoff(args: argparse.Namespace) -> int:
 
 
 def _cmd_playbook(args: argparse.Namespace) -> int:
-    _print(_core.playbook(args.coordinator, repo=args.repo))
+    findings = _load_json_list(args.findings) if args.findings else []
+    _print(_core.playbook(args.coordinator, repo=args.repo, findings=findings))
     return 0
 
 

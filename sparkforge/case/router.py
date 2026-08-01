@@ -213,27 +213,27 @@ def _reason_of(rule: dict[str, Any]) -> str:
     return f"{rule['id']}: {str(rule['reason']).strip()}"
 
 
-def next_step(
-    case: dict[str, Any], finding_ids: list[str], directory: Path | None = None
-) -> dict[str, Any]:
-    """Decide o próximo passo, dado o estado do case e os achados atuais.
+def _matching_rules(
+    rules: list[dict[str, Any]],
+    case: dict[str, Any],
+    finding_set: frozenset[str],
+    phase: Any,
+    key: str,
+) -> list[dict[str, Any]]:
+    """Regras com `key` presente cujo `phase_in`/`when` casam, na ordem do YAML.
 
-    Pura: mesma entrada produz sempre a mesma saída. `finding_ids` é ordenado
-    antes de uso, para que a ordem de entrada nunca influencie a resposta.
+    Mesmo motor de avaliação (`_when_matches`) serve às duas famílias de rota --
+    skill (`recommended_skill`) e coordenador (`recommended_agent`, ver AGENT-NNN)
+    -- porque a condição é a mesma linguagem declarativa; só o campo projetado
+    muda. Isolar por `key` (em vez de um `if "recommended_skill" not in rule:
+    continue` genérico) é o que permite às duas famílias conviverem na mesma
+    lista de `routing.yaml` sem uma pisar na outra: uma regra `AGENT-*` nunca
+    entra em `skill_matches`, e vice-versa -- então `alternatives` (que projeta
+    só `recommended_skill`) nunca vê uma regra sem essa chave.
     """
-    routing = load_routing(directory)
-    sorted_ids = sorted(finding_ids)
-    finding_set = frozenset(sorted_ids)
-    phase = case.get("phase")
-
-    matches: list[dict[str, Any]] = []
-    for rule in routing["rules"]:
-        if "recommended_skill" not in rule:
-            # Rota de COORDENADOR (`recommended_agent`, ver AGENT-NNN). Convive na
-            # mesma lista porque o motor de avaliação é o mesmo, mas `next_step`
-            # só resolve skill: incluí-la aqui faria `alternatives` referenciar
-            # `recommended_skill` inexistente e quebrar com KeyError na primeira
-            # regra de agente que casasse ao lado de uma de skill.
+    matches = []
+    for rule in rules:
+        if key not in rule:
             continue
         phase_in = rule.get("phase_in")
         if phase_in and phase not in phase_in:
@@ -241,8 +241,41 @@ def next_step(
         when = rule.get("when") or {}
         if _when_matches(case, finding_set, when):
             matches.append(rule)
+    return matches
 
-    if not matches:
+
+def next_step(
+    case: dict[str, Any], finding_ids: list[str], directory: Path | None = None
+) -> dict[str, Any]:
+    """Decide o próximo passo, dado o estado do case e os achados atuais.
+
+    Pura: mesma entrada produz sempre a mesma saída. `finding_ids` é ordenado
+    antes de uso, para que a ordem de entrada nunca influencie a resposta.
+
+    Resolve duas rotas independentes sobre o mesmo `routing.yaml`: qual skill
+    seguir (`recommended_skill`, regras `ROUTE-*`) e qual coordenador despachar
+    (`recommended_agent`, regras `AGENT-*`). São perguntas diferentes -- uma é
+    "qual agente investiga", a outra é "qual skill executar agora" -- por isso
+    uma pode casar sem a outra, e a ausência de rota de agente não é erro: vira
+    `None` com o motivo correspondente também `None`.
+    """
+    routing = load_routing(directory)
+    sorted_ids = sorted(finding_ids)
+    finding_set = frozenset(sorted_ids)
+    phase = case.get("phase")
+    rules = routing["rules"]
+
+    skill_matches = _matching_rules(rules, case, finding_set, phase, "recommended_skill")
+    agent_matches = _matching_rules(rules, case, finding_set, phase, "recommended_agent")
+
+    if agent_matches:
+        recommended_agent: str | None = agent_matches[0]["recommended_agent"]
+        recommended_agent_reason: str | None = _reason_of(agent_matches[0])
+    else:
+        recommended_agent = None
+        recommended_agent_reason = None
+
+    if not skill_matches:
         fallback = routing["fallback"]
         return {
             "phase": phase,
@@ -253,9 +286,11 @@ def next_step(
             "collect_commands": [],
             "blocked_by": [],
             "alternatives": [],
+            "recommended_agent": recommended_agent,
+            "recommended_agent_reason": recommended_agent_reason,
         }
 
-    primary = matches[0]
+    primary = skill_matches[0]
     gates = case.get("gates") or {}
     blocked_by = [g for g in primary.get("blocked_by", []) if not gates.get(g, False)]
 
@@ -274,8 +309,10 @@ def next_step(
                 "recommended_skill": alt["recommended_skill"],
                 "reason": _reason_of(alt),
             }
-            for rank, alt in enumerate(matches[1:], start=2)
+            for rank, alt in enumerate(skill_matches[1:], start=2)
         ],
+        "recommended_agent": recommended_agent,
+        "recommended_agent_reason": recommended_agent_reason,
     }
     if "note" in primary:
         result["note"] = str(primary["note"]).strip()
