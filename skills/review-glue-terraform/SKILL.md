@@ -27,6 +27,16 @@ sparkforge analyze pyspark --path <lib> --out .sparkforge/facts_pyspark.json
 
 `SF-GLUE-004` (retry maior que zero com escrita não idempotente) precisa de `tf.attribute` (`max_retries`) e `pyspark.write` (`mode: append`) **na mesma chamada de `judge`**. `--facts` é repetível: passe os dois arquivos na mesma chamada e `judge` une e deduplica as listas antes de julgar — não mescle JSON na mão. Julgar os dois arquivos separados nunca faz `SF-GLUE-004` disparar, porque nenhum dos dois sozinho carrega as duas metades da evidência.
 
+Quando a revisão é de um **PR** — e não de um estado parado —, o que mudou é evidência própria, e `analyze terraform` sozinho não a produz: ele lê um estado. Use `terraform-diff`, que compara os dois e marca `tf.attribute` com `changed: true`:
+
+```bash
+sparkforge analyze terraform-diff \
+  --before <dir-do-estado-anterior> --after <dir-do-estado-proposto> \
+  --out .sparkforge/tf_diff.json
+```
+
+É o que `SF-GLUE-005` consome para acusar `worker_type` aumentado no PR. Ela precisa também de `spark.job.spill_summary` e `spark.executor.memory_usage` de um event log real do run que motivou a mudança (`sparkforge analyze event-log`): sem essas duas, "sem evidência de limitação de memória" seria indistinguível de "ninguém mediu", e a regra se recusa a fazer essa confusão — sai em `skipped` com `reason: requires_facts`.
+
 ### 3. Julgue
 
 ```bash
@@ -36,6 +46,12 @@ sparkforge judge --facts .sparkforge/facts.json --show-skipped
 sparkforge judge \
   --facts .sparkforge/facts.json \
   --facts .sparkforge/facts_pyspark.json \
+  --show-skipped
+
+# revisão de PR, para SF-GLUE-005:
+sparkforge judge \
+  --facts .sparkforge/tf_diff.json \
+  --facts .sparkforge/facts_eventlog.json \
   --show-skipped
 ```
 
@@ -72,7 +88,7 @@ Regras desta área, e o fact que cada uma consome. Os limiares e severidades **n
 | `SF-GLUE-002` | `tf.resource` (`same_subject`) + ausência de `tf.observability.spark_ui` | Sem `--enable-spark-ui` e `--spark-event-logs-path` naquele recurso — um achado por job afetado |
 | `SF-GLUE-003` | `tf.attribute` (`same_subject`) | `max_concurrent_runs` > 1 com bookmarks habilitados no mesmo recurso |
 | `SF-GLUE-004` | `tf.attribute` + `pyspark.write` | `max_retries` > 0 com escrita `append` — exige unir facts de Terraform e de código |
-| `SF-GLUE-005` | `tf.attribute` + `spark.stage.spill` | **Bloqueada** (`blocked_on: extrator-de-diff-terraform`) — precisa de diff entre duas leituras; nunca dispara hoje |
+| `SF-GLUE-005` | `tf.attribute` com `changed: true` (via `analyze terraform-diff`) + `spark.job.spill_summary` + `spark.executor.memory_usage` | `worker_type` aumentado no PR sem spill no run que motivou a mudança — exige os dois estados do módulo e um event log real |
 | `SF-GLUE-006` | `tf.attribute` (`attrs.secret_pattern_match`) | Segredo (padrão AKIA, URL com senha, alta entropia sob chave suspeita) em default argument |
 
 ## Quando NÃO usar
