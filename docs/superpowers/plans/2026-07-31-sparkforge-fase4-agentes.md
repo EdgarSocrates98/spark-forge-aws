@@ -193,6 +193,65 @@ class TestCoordinatorExecutorWiring:
         garante o determinismo. Executor sem ela vira coordenador disfarcado."""
         text = path.read_text(encoding="utf-8")
         assert "## Não faz" in text, f"{path.name} sem secao `## Não faz`"
+
+
+class TestHandoffContract:
+    """Executor isolado nao e time; e cinco agentes repetindo trabalho.
+
+    O que faz os executores trabalharem EM CONJUNTO nao e a ordem em que o
+    coordenador os despacha -- e o estado que cada um deixa para o seguinte.
+    Sem contrato de entrega, cada executor reconstroi o que o anterior ja sabia,
+    e a decomposicao vira cinco investigacoes paralelas com o mesmo custo de uma
+    sozinha, so que divergindo entre si.
+
+    O estado compartilhado e `.sparkforge/case.yaml`: nenhum executor guarda
+    contexto proprio, pela mesma razao que a Fase 0 pos o roteamento em dado --
+    estado que sobrevive a troca de sessao, de modelo e de ferramenta.
+    """
+
+    @pytest.mark.parametrize("path", executors(), ids=lambda p: p.stem)
+    def test_every_executor_declares_what_it_hands_over(self, path):
+        text = path.read_text(encoding="utf-8")
+        assert "## Entrega" in text, (
+            f"{path.name} sem secao `## Entrega`. Sem dizer o que escreve no case, "
+            f"o executor seguinte nao sabe o que pode assumir -- e reconstroi."
+        )
+
+    @pytest.mark.parametrize("path", executors(), ids=lambda p: p.stem)
+    def test_every_executor_declares_what_it_expects(self, path):
+        """A outra ponta do contrato: o que ele PRESSUPOE ja no case.
+
+        `sf-inventory` e o unico que pode comecar do zero. Os demais dependem do
+        anterior, e declarar isso e o que permite o coordenador saber que pulou
+        um passo em vez de descobrir por resultado estranho.
+        """
+        text = path.read_text(encoding="utf-8")
+        assert "## Pressupõe" in text, f"{path.name} sem secao `## Pressupõe`"
+
+    def test_the_chain_closes(self):
+        """O que um entrega, o seguinte pressupoe -- nenhum elo solto.
+
+        Compara as chaves de case declaradas por cada executor na ordem do loop
+        de fase. Uma chave pressuposta que ninguem entrega e um elo quebrado: o
+        executor vai procurar no case algo que nunca foi escrito.
+        """
+        order = ["sf-inventory", "sf-extractor", "sf-judge", "sf-verifier", "sf-synthesizer"]
+        delivered: set[str] = set()
+        for name in order:
+            text = (EXECUTORS / f"{name}.md").read_text(encoding="utf-8")
+            expects = set(re.findall(r"`case\.([a-z_.]+)`", _section(text, "Pressupõe")))
+            missing = expects - delivered
+            assert not missing, (
+                f"{name} pressupoe {sorted(missing)}, que nenhum executor anterior "
+                f"entrega. Elo quebrado na cadeia."
+            )
+            delivered |= set(re.findall(r"`case\.([a-z_.]+)`", _section(text, "Entrega")))
+
+
+def _section(text: str, title: str) -> str:
+    """Corpo de uma secao `## <title>` ate a proxima `##` ou o fim."""
+    match = re.search(rf"^## {re.escape(title)}\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    return match.group(1).strip() if match else ""
 ```
 
 - [ ] **Step 2: Rode e confirme que falha exatamente como esperado**
@@ -244,8 +303,20 @@ Mapeia o terreno antes de qualquer análise:
    `sparkforge_collect_glue_job`, `sparkforge_collect_cloudwatch`,
    `sparkforge_collect_iceberg_metadata`, `sparkforge_collect_athena_workgroup`.
 
-Devolve: runtime confirmado, artefatos presentes, artefatos ausentes com comando, e
-divergências de versão.
+## Pressupõe
+
+Nada. É o único executor que pode começar do zero — se o case não existir, ele o abre.
+
+## Entrega
+
+Escreve no case, com `sparkforge_case_update`:
+
+- `case.runtime` — versões confirmadas e `detected_from`
+- `case.runtime.divergences` — vazio, ou o conflito entre fontes
+- `case.artifacts` — o que existe, com sha256 e origem
+- `case.open_questions` — o que falta coletar, com o comando de recoleta
+
+Sem isso, o extrator não sabe quais `analyze` fazem sentido rodar, e roda todos.
 
 ## Não faz
 
@@ -292,6 +363,16 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 Depois, `sparkforge_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
 disparam sobre facts fundidos.
 
+## Pressupõe
+
+`case.runtime` confirmado e `case.artifacts` mapeado. Sem runtime, a guarda de versão
+de qualquer regra falha fechada mais adiante e o julgamento sai vazio sem explicar por quê.
+
+## Entrega
+
+- `case.facts_index` — caminho, contagem e `by_kind`
+- `case.open_questions` — atualizado com os pontos cegos que sobraram
+
 **Reporte sempre os `*.unresolved`.** São a maquinaria de ponto cego: quando param de
 contar, devolvem zero sem levantar erro, e o relatório finge cobertura total.
 
@@ -325,6 +406,16 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    ali, nunca pelo caminho relativo do texto: num pacote instalado por pip o arquivo está
    dentro do `site-packages`. Fora de uma regra, use `sparkforge_knowledge_path`.
 4. Registra no case com `sparkforge_case_update`.
+
+## Pressupõe
+
+`case.facts_index` populado. Julgar sem facts produz o vazio que parece
+"nada encontrado" e na verdade é "nada foi extraído".
+
+## Entrega
+
+- `case.findings_index` — caminho, contagem e `by_severity`
+- `case.skills_used` — a skill aplicada e o resultado
 
 Regra pulada por guarda de versão **é informação**: reporte com o motivo, não omita.
 
@@ -368,6 +459,15 @@ Para cada um, procure ativamente:
 5. **A ausência é evidência?** Condição `absent:` sobre artefato nunca coletado é
    vacuamente verdadeira. Confira a sentinela `*_analyzed`.
 
+## Pressupõe
+
+`case.findings_index` populado. Não há o que refutar antes de haver achado.
+
+## Entrega
+
+- `case.hypotheses` — um por achado P0/P1, com `status: rejected` quando refutado
+  e `open` quando sobreviveu, e o `statement` dizendo o que foi tentado
+
 Devolve, por achado: **refutado** com a razão, ou **sobreviveu** com o que você tentou e
 não conseguiu derrubar.
 
@@ -404,6 +504,17 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
 3. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
 4. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
 5. Registra no case com `sparkforge_case_update`.
+
+## Pressupõe
+
+`case.findings_index` e `case.hypotheses`. Sintetizar sem a verificação apresenta
+achado refutado com a mesma força de um que resistiu — a indistinção que corrói a confiança.
+
+## Entrega
+
+- `case.phase` — avançada
+- `case.gates` — o que foi satisfeito
+- `case.skills_used` — fechado com o desfecho
 
 Toda afirmação quantitativa cita `rule_id` e `fact_id`. Sem fact, é hipótese, e sai
 rotulada como hipótese.
