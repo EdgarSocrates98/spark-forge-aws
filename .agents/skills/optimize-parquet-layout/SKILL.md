@@ -38,10 +38,18 @@ sparkforge analyze event-log --path <log>.jsonl --out .sparkforge/facts_eventlog
 ### 4. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+sparkforge judge \
+  --facts .sparkforge/facts.json \
+  --facts .sparkforge/facts_catalog.json \
+  --facts .sparkforge/facts_eventlog.json \
+  --show-skipped
 ```
 
 `--facts` é repetível: informe todos os arquivos (pyspark, catálogo, event log) na mesma chamada para ter todos os achados numa passada — `judge` une e deduplica antes de julgar. Regra que correlaciona fontes diferentes só dispara assim.
+
+Isso é também o que resolve a versão, sem você digitar nenhuma: unir os facts é unir as fontes de runtime junto. O event log do passo 3 declara a versão do Spark observada (`spark.runtime_version`); se você acrescentar `sparkforge analyze terraform`, o `glue_version` do `.tf` preenche `glue` e a matriz de compatibilidade deriva o resto. Leia o campo `runtime` da saída — ele traz o contexto efetivamente usado, `detected_from` diz de quais fontes saiu, e `divergences` aparece quando elas discordam.
+
+Nenhuma das regras desta skill (`SF-PQ-*`, `SF-PY-005`, `SF-PY-010`) declara `runtime_scope`, então um `runtime` vazio não custa nada aqui: o que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, e o que interessa nesta análise vai aparecer em `skipped` por outro motivo — falta de fact, tratado na seção abaixo. Não confunda os dois motivos ao ler a lista. Use `--glue 5.1` apenas para declarar uma versão que você sabe de fonte confiável.
 
 ### 5. Interprete
 

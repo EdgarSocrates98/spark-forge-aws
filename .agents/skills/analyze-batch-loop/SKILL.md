@@ -18,8 +18,10 @@ Sem `--kind`, a saída traz todos os facts; com `--kind pyspark.loop`, você já
 ### 2. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --show-skipped
 ```
+
+Sem flag de versão: `SF-PY-004`, a regra que decide esta análise, é estrutural e não declara `runtime_scope` — passar ou omitir a versão não muda se ela dispara. E não haveria de onde tirá-la: os facts vêm de `analyze pyspark`, que lê AST e nunca observa versão de runtime. O campo `runtime` da saída volta vazio, com `detected_from: []`, e isso é o retrato correto do que foi observado, não uma falha. As regras que aparecem em `--show-skipped` com `reason: runtime_scope` são as de infraestrutura Glue, fora do alcance deste `facts.json`. Só declare `--glue 5.1` se souber a versão de fonte confiável e a pergunta tiver virado de infra; para inferir em vez de digitar, junte os facts do Terraform na mesma chamada (`--facts` é repetível).
 
 `SF-PY-004` (severidade default `P0`) dispara quando `contains_action` ou `contains_write` é verdadeiro — o padrão "reexecuta o DAG a montante a cada iteração" descrito em `knowledge/spark/execution-model.md` seção 6.
 
