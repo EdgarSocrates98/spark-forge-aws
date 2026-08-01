@@ -82,6 +82,44 @@ def _by_kind(facts, kind):
     return [f for f in facts if f.kind == kind]
 
 
+# Chave de propriedade ou prefixo de argumento que carrega valor sensivel. Mesmo
+# vocabulario que o extrator usa para marcar `secret_pattern_match`; aqui ele
+# serve para EXTRAIR do input o que nao pode aparecer no golden.
+_MARCADORES_DE_SEGREDO = ("secret", "password", "passwd", "token", "credential", "apikey")
+
+
+def _secret_values(node) -> set[str]:
+    """Valores sensiveis do dump de entrada, achados por varredura recursiva.
+
+    Derivado, nunca escrito a mao: o teste que os consome nao pode repetir a
+    credencial, senao ele proprio vira mais um lugar onde ela mora -- e trocar
+    o segredo da fixture faria a assercao parar de testar sem ninguem notar.
+    """
+    achados: set[str] = set()
+
+    def sensivel(chave: str) -> bool:
+        baixo = str(chave).lower()
+        return any(marca in baixo for marca in _MARCADORES_DE_SEGREDO)
+
+    def caminhar(valor) -> None:
+        if isinstance(valor, dict):
+            for chave, filho in valor.items():
+                if sensivel(chave) and isinstance(filho, str) and filho:
+                    achados.add(filho)
+                caminhar(filho)
+        elif isinstance(valor, list):
+            for item in valor:
+                caminhar(item)
+        elif isinstance(valor, str) and "=" in valor:
+            # `--password=xxx` num `Args` de bootstrap: a chave e o proprio token.
+            nome, _, resto = valor.partition("=")
+            if sensivel(nome) and resto:
+                achados.add(resto)
+
+    caminhar(node)
+    return achados
+
+
 def test_all_required_fixtures_exist():
     assert {p.name for p in fixture_dirs()} == REQUIRED_FIXTURES
 
@@ -218,11 +256,30 @@ class TestAdversarial:
         """Um golden commitado com credencial real seria o analisador causando
         o dano que a regra de segredo existe para prevenir. Vale para os dois
         lugares onde as APIs Describe/List devolvem texto claro: propriedade de
-        configuracao e argumento de bootstrap action."""
+        configuracao e argumento de bootstrap action.
+
+        Os valores sao DERIVADOS do input, nunca repetidos aqui. Repeti-los
+        criaria duas verdades: trocar o segredo da fixture faria a assercao
+        parar de testar em silencio, e um segredo NOVO acrescentado ao input
+        nao seria coberto por ninguem. Derivando, a cobertura acompanha a
+        fixture -- e o teste deixa de ser mais um lugar onde credencial mora.
+        """
         directory = FIXTURES / "instance_groups_spot_task"
+        entrada = json.loads(
+            (directory / "input" / "cluster.json").read_text(encoding="utf-8")
+        )
+        segredos = _secret_values(entrada)
+        assert segredos, (
+            "a fixture do teste de segredo nao tem nenhum valor sensivel; ela existe "
+            "para provar redacao, entao sem valor ela passa sem verificar nada"
+        )
+
         raw = (directory / "expected" / "facts.json").read_text(encoding="utf-8")
-        assert "AKIAIOSFODNN7EXAMPLE" not in raw
-        assert "aB3xY9zQw7Lm2Kd8Rt5N" not in raw
+        vazados = sorted(v for v in segredos if v in raw)
+        assert not vazados, (
+            f"{len(vazados)} valor(es) sensivel(is) do input sobreviveram ao golden "
+            f"commitado. O extrator tem que redigir antes de o fact existir."
+        )
 
         _, facts, _, _ = run_fixture(directory)
         flagged = [f for f in facts if f.attrs.get("secret_pattern_match")]
