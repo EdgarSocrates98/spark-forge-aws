@@ -34,7 +34,7 @@ rules:
           where: {attrs.udf_type: python}
     status: confirmed
     severity_default: P1
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       `BatchEvalPython` no plano é a UDF Python padrão, serializada com pickle entre a
       JVM e o processo Python worker, linha a linha. A documentação da AWS mede o mesmo
@@ -74,7 +74,7 @@ rules:
           where: {attrs.udf_type: pandas}
     status: confirmed
     severity_default: P3
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       `ArrowEvalPython` é `pandas_udf`: transferência colunar por Arrow em vez de pickle
       linha a linha. É a forma correta quando uma UDF é necessária, e por isso a

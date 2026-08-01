@@ -22,7 +22,7 @@
     "measured": {},
     "threshold": {},
     "runtime_scope": {
-      "glue": "*"
+      "spark": ">=3.0"
     },
     "explanation": "explode multiplica a cardinalidade pelo tamanho médio do array. Sem estimativa prévia do fan-out, o volume pós-explode é desconhecido, e arrays de tamanho muito desigual produzem skew de computação que o AQE não trata. Aparece no plano como Generate.",
     "proposed_change": [

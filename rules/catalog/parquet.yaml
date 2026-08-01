@@ -68,7 +68,7 @@ rules:
       - {when: "measures.file_count >= 100000", severity: P0}
       - {when: "measures.file_count >= 10000", severity: P1}
       - {when: "measures.file_count >= 1000", severity: P2}
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       O custo de small files tem quatro componentes distintos: listing no driver,
       abertura de arquivo no executor, overhead de agendamento de task, e metadados no
@@ -145,7 +145,7 @@ rules:
     threshold: {min_bytes: 1073741824}
     status: confirmed
     severity_default: P1
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Um arquivo de texto gzip é sempre uma única task, qualquer que seja o tamanho. Um
       csv.gz de 20GB é uma task de 20GB, e nenhum aumento de paralelismo ou de workers
@@ -220,7 +220,7 @@ rules:
     threshold: {min_cardinality: 5, min_partition_bytes: 134217728}
     status: confirmed
     severity_default: P2
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Cardinalidade muito baixa faz a partição não filtrar nada: com três valores
       distintos, o melhor filtro possível ainda lê um terço da tabela. Cardinalidade

@@ -24,7 +24,7 @@
     },
     "threshold": {},
     "runtime_scope": {
-      "glue": "*"
+      "spark": ">=3.0"
     },
     "explanation": "coalesce não faz shuffle: ele reduz o número de partições fundindo as existentes. Com alvo 1, todo o dado passa por uma única task, num único executor. Memória e duração deixam de escalar, e o job falha por volume sem nenhuma mudança de código. Praticamente sempre a intenção real era \"um arquivo de saída\".",
     "proposed_change": [

@@ -24,7 +24,7 @@
     },
     "threshold": {},
     "runtime_scope": {
-      "glue": "*"
+      "spark": ">=3.0"
     },
     "explanation": "repartition(n) com n fixo adiciona um shuffle completo para atingir um número que raramente foi calculado a partir do volume. Com AQE ativo, o coalescing de partições pós-shuffle já ajusta a contagem em runtime, então o n fixo frequentemente é revertido logo depois, e o shuffle foi pago em vão.",
     "proposed_change": [

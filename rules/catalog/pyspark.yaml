@@ -19,7 +19,7 @@ rules:
           where: {attrs.udf_type: python}
     status: structural
     severity_default: P1
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Python UDF custa, por linha: serialização JVM->pickle, cópia para o processo
       Python worker, execução sem vetorização, e o caminho de volta. Além disso perde
@@ -54,7 +54,7 @@ rules:
           where: {attrs.bounded: false}
     status: structural
     severity_default: P1
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Traz todo o resultado para o heap do driver. O risco cresce com o volume do
       resultado, que costuma crescer com o tempo sem que o código mude. Modo de falha
@@ -85,7 +85,7 @@ rules:
           expr: "measures.join_index < measures.first_reduction_index"
     status: structural
     severity_default: P1
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Todo byte e toda coluna que entram no join atravessam o shuffle. Filtrar e
       projetar depois do join significa pagar rede, disco local e sort por dado que
@@ -120,7 +120,7 @@ rules:
           where: {attrs.contains_write: true}
     status: structural
     severity_default: P0
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Cada iteração reexecuta o DAG a montante desde o início, salvo materialização
       explícita. Um loop de 50 lotes sobre um DataFrame caro paga 50 vezes a leitura,
@@ -157,7 +157,7 @@ rules:
           expr: "measures.target_count == 1"
     status: structural
     severity_default: P0
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       coalesce não faz shuffle: ele reduz o número de partições fundindo as existentes.
       Com alvo 1, todo o dado passa por uma única task, num único executor. Memória e
@@ -189,7 +189,7 @@ rules:
           where: {attrs.has_prior_reduction: false}
     status: structural
     severity_default: P2
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       explode multiplica a cardinalidade pelo tamanho médio do array. Sem estimativa
       prévia do fan-out, o volume pós-explode é desconhecido, e arrays de tamanho
@@ -222,7 +222,7 @@ rules:
     threshold: {run_length: 10}
     status: structural
     severity_default: P2
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Cada withColumn adiciona uma projeção ao plano lógico. Dezenas em sequência
       produzem um plano grande, com custo de análise e otimização no driver que cresce
@@ -253,7 +253,7 @@ rules:
           where: {attrs.has_unpersist_in_scope: false}
     status: structural
     severity_default: P2
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Cache ocupa a memória unificada do executor, competindo com a memória de
       execução usada por shuffle, sort e agregação. Cache que não é liberado aumenta o
@@ -286,7 +286,7 @@ rules:
           where: {attrs.has_broadcast_hint: true}
     status: structural
     severity_default: P2
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Um hint de broadcast é permanente no código, mas o tamanho do lado "pequeno" não
       é. O driver materializa a tabela antes de distribuir, então o modo de falha
@@ -320,7 +320,7 @@ rules:
           where: {attrs.method: repartition, attrs.literal_arg: true, attrs.has_partition_expr: false}
     status: structural
     severity_default: P3
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       repartition(n) com n fixo adiciona um shuffle completo para atingir um número que
       raramente foi calculado a partir do volume. Com AQE ativo, o coalescing de
@@ -352,7 +352,7 @@ rules:
           where: {attrs.has_explicit_columns: false}
     status: structural
     severity_default: P2
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Deduplicação sobre todas as colunas exige shuffle e comparação do registro
       inteiro, e costuma mascarar um erro de modelagem da chave em vez de corrigi-lo.
@@ -384,7 +384,7 @@ rules:
         - fact: pyspark.conf_set
     status: structural
     severity_default: P3
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       spark.conf.set em runtime tem precedência sobre os default arguments definidos no
       Terraform ou na job definition, e sobrescreve silenciosamente. É a causa mais

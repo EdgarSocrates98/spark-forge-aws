@@ -26,7 +26,7 @@
       "min_partition_bytes": 134217728
     },
     "runtime_scope": {
-      "glue": "*"
+      "spark": ">=3.0"
     },
     "explanation": "Cardinalidade muito baixa faz a partição não filtrar nada: com três valores distintos, o melhor filtro possível ainda lê um terço da tabela. Cardinalidade muito alta produz small files por construção e explode metadados. Uma partição que gera 3MB de dado é small file por desenho, não por acidente. O alvo prático é que cada partição tenha volume suficiente para produzir arquivos de 128 a 512MB.",
     "proposed_change": [
