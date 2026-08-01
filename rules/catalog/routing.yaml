@@ -207,6 +207,79 @@ rules:
       Ver knowledge/cross-service-constraints.md secao 1. Iceberg V3 escrito por Glue
       5.1 não é legível por Athena.
 
+  # Rotas de COORDENADOR. Escolher agente deixa de ser julgamento e vira consulta,
+  # pelo mesmo motivo que a escolha de skill virou: prosa dizendo "use o agente certo"
+  # multiplica vocabulario quando ha seis deles.
+  - id: AGENT-001
+    phase_in: [intake, inventory]
+    title: Sem runtime nem inventário
+    when:
+      any:
+        - {case: runtime.glue, absent: true}
+    recommended_agent: spark-performance-architect
+    reason: >
+      Coordenador geral enquanto o terreno não está mapeado. Sem runtime confirmado,
+      nenhuma especialização se justifica — a guarda de versão de qualquer área falha
+      fechada.
+
+  - id: AGENT-002
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em infraestrutura Glue
+    when:
+      all:
+        - {findings_area: SF-GLUE, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      O gargalo está na definição do job, não no código: worker, bookmark, retries,
+      observabilidade. Tuning de código não move nenhum deles.
+
+  - id: AGENT-003
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em consulta Athena
+    when:
+      all:
+        - {findings_area: SF-ATH, count_gt: 0}
+    recommended_agent: athena-query-optimizer
+    reason: >
+      Athena cobra por bytes escaneados. O caminho passa por consulta, schema do catálogo
+      e a fusão dos dois — nenhuma das três responde sozinha.
+
+  - id: AGENT-004
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em código PySpark
+    when:
+      any:
+        - {findings_area: SF-PY, count_gt: 0}
+        - {findings_area: SF-PLAN, count_gt: 0}
+        - {findings_area: SF-CG, count_gt: 0}
+    recommended_agent: pyspark-code-reviewer
+    reason: >
+      Fonte, plano físico e grafo de chamadas são três leituras do mesmo código, e o
+      achado só é forte quando elas concordam.
+
+  - id: AGENT-005
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em Iceberg ou layout
+    when:
+      any:
+        - {findings_area: SF-ICE, count_gt: 0}
+        - {findings_area: SF-PQ, count_gt: 0}
+    recommended_agent: iceberg-performance-engineer
+    reason: >
+      Distinguir data files, delete files, manifests, snapshots e metadata files decide
+      qual manutenção resolve — e compactar a camada errada gasta DPU sem efeito.
+
+  - id: AGENT-006
+    phase_in: [diagnosis, hypothesis, experiment]
+    title: Fluxo incremental com latest-per-key
+    when:
+      any:
+        - {case: scope.entrypoints, contains: incremental}
+    recommended_agent: glue-incremental-performance-architect
+    reason: >
+      Fluxo full e incremental no mesmo job, latest-per-key em tabela bilionária e
+      batching exigem mapear a biblioteca inteira antes de qualquer tuning localizado.
+
 # Fallback: nenhuma regra casou.
 fallback:
   recommended_skill: sparkforge-diagnose
