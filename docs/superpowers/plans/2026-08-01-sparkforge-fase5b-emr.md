@@ -1,6 +1,6 @@
 # SparkForge Fase 5b — EMR on EC2: Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** dar ao EMR o eixo de infraestrutura que hoje só existe para Glue, e fazer o motor perceber quando duas plataformas são detectadas ao mesmo tempo — mesmo quando as versões derivadas coincidem.
 
@@ -137,7 +137,7 @@ git commit -m "feat(runtime): plataforma vira coisa rastreada, com regra propria
 - Modify: `sparkforge/facts/runtime_detect.py`, `knowledge/sources.lock.json`
 - Test: `tests/test_runtime_detect.py`
 
-- [ ] **Step 1: O documento primeiro, o codigo depois**
+- [x] **Step 1: O documento primeiro, o codigo depois**
 
 `knowledge/emr/runtime-matrix.md`, no formato de `knowledge/glue/runtime-matrix.md` — **leia-o antes**. Duas paginas canonicas, uma por serie maior; nao existe uma unica cobrindo as duas:
 
@@ -146,7 +146,7 @@ git commit -m "feat(runtime): plataforma vira coisa rastreada, com regra propria
 
 A pesquisa levantou a tabela inteira (7.0.0 a 7.13.0, e 6.4.0 a 6.15.0). **Confirme cada linha contra a fonte** antes de escrever: matriz errada e bug de dado que se propaga para toda regra versionada.
 
-- [ ] **Step 2: Quatro coisas que a matriz EMR tem e a `GLUE_MATRIX` nao**
+- [x] **Step 2: Quatro coisas que a matriz EMR tem e a `GLUE_MATRIX` nao**
 
 Cada uma e uma decisao de desenho, nao um detalhe. Resolva as quatro **antes** de escrever `EMR_MATRIX`.
 
@@ -158,7 +158,7 @@ Cada uma e uma decisao de desenho, nao um detalhe. Resolva as quatro **antes** d
 
 **Observacao direta vence a matriz.** `Cluster.Applications[].Version` ja vem no dump. A matriz e **fallback e guard de drift**. Acrescente a fonte `describe_cluster` a `_PRECEDENCE` **acima** da derivacao por matriz — espelhando a decisao ja tomada e documentada para `event_log` vs. `terraform` na Fase 5a.2. A origem derivada mantem o sufixo `:matrix`, como a de Glue, senao `_resolve` a trata como observacao direta.
 
-- [ ] **Step 3: O guard de drift, e ele nao pode ser um so**
+- [x] **Step 3: O guard de drift, e ele nao pode ser um so**
 
 `tests/test_runtime_detect.py::test_matrix_matches_committed_knowledge` faz isso para Glue — **leia-o e siga o mecanismo**, nao invente outro.
 
@@ -169,17 +169,17 @@ Mas as duas paginas EMR tem perfis de drift **opostos**, e trata-las igual produ
 
 Para 7.x, compare **os valores das colunas que `EMR_MATRIX` ja conhece**, nao o hash. Coluna nova e "matriz desatualizada, considere acrescentar" — informativo. Celula existente alterada e drift, e falha.
 
-- [ ] **Step 4: Watchlist**
+- [x] **Step 4: Watchlist**
 
 `knowledge/sources.lock.json`. Confirme como `refresh_knowledge` consome o arquivo antes de escrever — formato errado quebra o gate. Registre a diferenca de perfil das duas paginas.
 
 Nota para o documento, nao para o codigo: `aws emr describe-release-label` devolve a mesma informacao com contrato de API em vez de HTML, e e a forma melhor de **manter** a matriz. Isso nao viola "entrada e artefato local": o extrator segue sem rede; so a manutencao humana usa a API. A URL citada em `sources` continua sendo a pagina da doc, que e o que um auditor consegue abrir.
 
-- [ ] **Step 5: `emr` observado e derivado**
+- [x] **Step 5: `emr` observado e derivado**
 
 `detect_runtime` aceita `emr_release`/`emr` como chave direta e deriva Spark/Python/Iceberg/Hadoop de `EMR_MATRIX`, como ja faz com Glue.
 
-- [ ] **Step 6: Verifique e commite**
+- [x] **Step 6: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest tests/test_runtime_detect.py tests/test_runtime_inferred_from_facts.py tests/test_platform_divergence.py -q
@@ -196,13 +196,13 @@ git commit -m "feat(runtime): EMR_MATRIX, com guard de drift contra o knowledge"
 - Create: `sparkforge/facts/emr_cluster.py`, `tests/test_facts_emr_cluster.py`
 - Modify: `sparkforge/collect/aws.py`, `sparkforge/adapters/_core.py`, `cli.py`, `tools.py`
 
-- [ ] **Step 1: Leia o analogo mais proximo**
+- [x] **Step 1: Leia o analogo mais proximo**
 
 `sparkforge/facts/athena_workgroup.py` e o modelo: le dump JSON ja coletado, **nao coleta nada**, tem sentinela e `unresolved`, e o docstring documenta o shape. `iceberg_metadata.py` e o segundo, para dump com secoes opcionais.
 
 Disciplina nao negociavel: **entrada e artefato local, sem rede**. A coleta vive em `collect/aws.py`, atras do extra `[aws]`.
 
-- [ ] **Step 2: Os dumps, corrigidos**
+- [x] **Step 2: Os dumps, corrigidos**
 
 Nao use a lista do spec. Use esta:
 
@@ -217,7 +217,7 @@ Nao use a lista do spec. Use esta:
 
 **Ambiguidade de forma, e trate as duas.** O CLI parece embutir `InstanceGroups`/`InstanceFleets`/`BootstrapActions` dentro do objeto `Cluster`, o que contradiz `API_Cluster.html`, onde esses campos nao existem. Provavel forma legada. Leia embutido se existir, senao o dump separado, **sem depender de nenhuma**.
 
-- [ ] **Step 3: Feche os kinds**
+- [x] **Step 3: Feche os kinds**
 
 Decida a partir de duas restricoes, e diga no relatorio como cada uma pesou: o que os dumps devolvem, e o que as regras da Task 4 precisam julgar.
 
@@ -227,21 +227,21 @@ Obrigatorios: a sentinela `emr.analyzed` e o `emr.unresolved`. Secao presente ma
 
 **Um kind e de qualidade da evidencia, e e o mais importante desta lista.** `InstanceGroup` traz `Configurations`, `LastSuccessfullyAppliedConfigurations` e `ConfigurationsVersion`. Divergencia entre os dois primeiros significa **reconfiguracao pedida e nao aplicada** — o cluster nao esta rodando com o que o dump parece dizer. Emita isso (`emr.configuration.unapplied` ou nome melhor) e use como guarda nas regras que leem `Configurations`, senao elas afirmam sobre configuracao que nao esta em vigor. E o mesmo papel de `tf.observability.unknown` e `plan.unresolved` no resto do projeto.
 
-- [ ] **Step 4: Instance groups e instance fleets**
+- [x] **Step 4: Instance groups e instance fleets**
 
 Modelos alternativos e mutuamente exclusivos, com respostas de forma diferente. Um cluster tem um ou outro. Trate os dois, e **decida se viram o mesmo kind com atributo discriminante ou kinds distintos** — justifique. Dump com nenhum dos dois e dump incompleto, nao cluster sem instancias: `unresolved`.
 
-- [ ] **Step 5: Teste e fixture**
+- [x] **Step 5: Teste e fixture**
 
 Golden por caminho. Cubra: groups, fleets, secao ausente, secao malformada, dump vazio, e configuracao nao aplicada.
 
-- [ ] **Step 6: Verbo, tool e coleta**
+- [x] **Step 6: Verbo, tool e coleta**
 
 `sparkforge analyze emr-cluster` e `sparkforge collect emr-cluster`, mais as tools MCP.
 
 **Toda tool nova precisa ser alcancavel a partir de um coordenador** — `tests/test_agent_coverage.py::test_no_tool_is_orphan` trava, e quem fecha e a Task 5. Vermelho aqui e esperado e some quando a Task 5 entrar. **Nao contorne o teste.**
 
-- [ ] **Step 7: Verifique e commite**
+- [x] **Step 7: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest tests/test_facts_emr_cluster.py -q
@@ -257,7 +257,7 @@ git commit -m "feat(facts): extrator de cluster EMR on EC2"
 **Files:**
 - Create: `rules/catalog/emr-infra.yaml`, `knowledge/emr/*.md`, `fixtures/emr/*`
 
-- [ ] **Step 1: As regras, com o que a pesquisa sustentou**
+- [x] **Step 1: As regras, com o que a pesquisa sustentou**
 
 Seis com mecanismo duro, fonte oficial e observaveis nos dumps. **Confirme cada fonte lendo antes de escrever** — nao copie desta tabela.
 
@@ -274,7 +274,7 @@ Mais `LogUri` ausente — analoga de `SF-GLUE-002`, e regra de **capacidade de d
 
 **A #6 tem trade-off de semantica, e ele e obrigatorio declarar.** `static` faz o overwrite apagar o destino inteiro, nao so as particoes escritas. Trocar a propriedade sem mudar o codigo **muda o resultado**. A recomendacao certa nao e "troque"; e retirar do `spark-defaults` do cluster e deixar cada job declarar. A `validation` tem que pedir contagem **por particao**, nao so total — e onde o erro aparece.
 
-- [ ] **Step 2: O que a pesquisa vetou, e nao reintroduza**
+- [x] **Step 2: O que a pesquisa vetou, e nao reintroduza**
 
 Tres dos quatro candidatos do spec nao sobreviveram na forma escrita. Isto esta aqui para ninguem "melhorar" a area depois reinventando-os:
 
@@ -283,7 +283,7 @@ Tres dos quatro candidatos do spec nao sobreviveram na forma escrita. Isto esta 
 - **`spark-defaults` conflitando com runtime: morto na forma generica.** A precedencia do Spark e `SparkConf` > `--conf` > `spark-defaults` — entao "o job seta e o cluster tem outro valor" e, quase sempre, **o contrato funcionando**. Uma regra generica acusaria configuracao correta, que o README do catalogo trata como o pior tipo de defeito de regra. Sobrevive so o subconjunto de **propriedades de deploy** que a doc do Spark nomeia como nao afetadas por `SparkConf` em runtime — e essa precisa de fusao com `pyspark.conf_set`, entao **nasce `blocked_on`**, como `SF-ATH-001/002/005` nasceram.
 - **Spot no master: morto como absoluto.** A AWS **recomenda** primary em Spot em dois dos quatro cenarios da propria tabela. Acusar todo primary Spot e acusar a recomendacao oficial. Sobrevive como **correlacao** — e a #5.
 
-- [ ] **Step 3: Escreva-as**
+- [x] **Step 3: Escreva-as**
 
 Lendo `rules/catalog/README.md` e usando `rules/catalog/glue-infra.yaml` como modelo — e o analogo direto.
 
@@ -293,15 +293,15 @@ Onde a fonte sustenta so parte da afirmacao, **declare qual parte**. A pesquisa 
 
 `runtime_scope` segue o criterio que a Fase 5a fixou: **nao-vazio so quando o gatilho genuinamente varia com a versao, e essa versao vem do runtime, nao de um fact que a regra ja le**. Regra que le `ReleaseLabel` do proprio dump **nao** precisa de `runtime_scope` — o fact ja prova a plataforma. A #1 e a excecao candidata, porque a serie 6.x vs. 5.x muda o default; leia e decida.
 
-- [ ] **Step 4: Conhecimento**
+- [x] **Step 4: Conhecimento**
 
 Regra com profundidade aponta para `knowledge/emr/`. Siga o formato de `knowledge/glue/workers-and-capacity.md`.
 
-- [ ] **Step 5: Fixture bidirecional por regra**
+- [x] **Step 5: Fixture bidirecional por regra**
 
 Invariante da Fase 2: fixture que dispara **e** contraparte negativa, por regra. `tests/test_fixtures_kind_coverage.py` trava.
 
-- [ ] **Step 6: Verifique e commite**
+- [x] **Step 6: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest -q
@@ -319,7 +319,7 @@ Fecha o invariante de órfão que a Task 3 abriu de propósito.
 **Files:**
 - Create: `agents/emr-infra-reviewer.md`, `skills/review-emr-cluster/SKILL.md`
 
-- [ ] **Step 1: A decisão, e ela já está tomada**
+- [x] **Step 1: A decisão, e ela já está tomada**
 
 O spec deixou duas saídas: alargar `glue-infra-reviewer` ou criar um irmão. **Crie `emr-infra-reviewer`.**
 
@@ -327,13 +327,13 @@ A razão: `rule_areas` no frontmatter é contrato de roteamento, não rótulo. U
 
 Se ao escrever você concluir que a duplicação com `glue-infra-reviewer` é grande demais para justificar, **pare e relate** em vez de decidir sozinho.
 
-- [ ] **Step 2: Escreva o coordenador**
+- [x] **Step 2: Escreva o coordenador**
 
 Leia `agents/glue-infra-reviewer.md` inteiro — frontmatter (`name`, `description`, `tools`, `skills`, `rule_areas`, `executors`) e as seções de corpo. A `description` começa com "Use quando" e descreve o **gatilho**, não o que o agente faz.
 
 `rule_areas` inclui `SF-EMR`. `executors` fecha a cadeia de handoff — `tests/test_agent_coverage.py` verifica que todo executor declarado existe.
 
-- [ ] **Step 3: A skill**
+- [x] **Step 3: A skill**
 
 `skills/review-emr-cluster/SKILL.md`, seguindo o padrão: seções `## Quando NÃO usar`, `## Referência rápida`, `## Red flags`, e `description` começando com "Use quando".
 
@@ -341,14 +341,14 @@ Duas coisas que a Fase 5a.2 travou com teste e você vai acertar de primeira len
 - **não negue capacidade que existe**, e não anuncie subcomando que o parser não aceita — o teste é derivado de `build_parser()`
 - **runtime é opcional declarado**, não placeholder `<versão>`: `judge` infere dos facts, e a skill deve dizer de onde vem e o que fazer quando não vem
 
-- [ ] **Step 4: Espelhos**
+- [x] **Step 4: Espelhos**
 
 ```bash
 python scripts/sync_skills.py
 python scripts/sync_skills.py --check
 ```
 
-- [ ] **Step 5: Verifique e commite**
+- [x] **Step 5: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest tests/test_agent_coverage.py tests/test_skill_content.py -q
@@ -366,7 +366,7 @@ O critério 8 e o último da tabela §5 do spec: **investigação sobre EMR prod
 **Files:**
 - Modify: `tests/test_rule_scope_by_nature.py` ou módulo próprio
 
-- [ ] **Step 1: O teste ponta a ponta**
+- [x] **Step 1: O teste ponta a ponta**
 
 Monte facts de um cenário EMR — cluster, código PySpark, e o que mais fizer sentido — e prove numa asserção só:
 
@@ -377,7 +377,7 @@ Monte facts de um cenário EMR — cluster, código PySpark, e o que mais fizer 
 
 `tests/test_rule_scope_by_nature.py` já tem `TestNoCatalogAreaVanishesEntirely` derivando runtimes de `GLUE_MATRIX`. Acrescente os runtimes EMR ao conjunto — derivados de `EMR_MATRIX`, não escritos à mão, para que release novo entre sozinho.
 
-- [ ] **Step 2: Varredura**
+- [x] **Step 2: Varredura**
 
 ```bash
 rtk proxy python -m pytest -q
@@ -389,13 +389,13 @@ python scripts/check_evals.py
 
 Prove com comando cada critério que esta fase fecha: **3, 4, 5, 6, 7, 8, 9, 12**.
 
-- [ ] **Step 3: Docs — critério 14**
+- [x] **Step 3: Docs — critério 14**
 
 `README.md`, `AGENTS.md`, `STATUS.md`, `knowledge/`, as skills afetadas e o spec. Números medidos, não copiados. O spec sai de "implementado em parte" para implementado, e a 5b ganha seção própria em `STATUS.md` com o que ficou de fora.
 
 **O que fica de fora, e deve ser escrito como dívida, não omitido:** EMR Serverless e EMR on EKS. Esta fase é EMR on EC2, por decisão registrada no spec.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs knowledge README.md AGENTS.md
