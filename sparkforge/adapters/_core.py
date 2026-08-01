@@ -33,6 +33,7 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_tree,
 )
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
+from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.iceberg_metadata import (
@@ -153,6 +154,29 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
             return None
         value = str(fact.attrs.get("value") or "").strip()
         return ("terraform", "glue_version", value) if value else None
+
+    # `emr.cluster` carrega o `ReleaseLabel` que a AWS reporta para AQUELE
+    # cluster. E a chave de plataforma de `_PLATFORM_KEYS` e a entrada da
+    # EMR_MATRIX ao mesmo tempo: sem ela, `RuntimeContext.emr` fica vazio e
+    # toda regra com `emr` em `runtime_scope` e pulada num cluster que o dump
+    # descreve inteiro.
+    if fact.kind == "emr.cluster":
+        label = str(fact.attrs.get("release_label") or "").strip()
+        return ("describe_cluster", "emr_release", label) if label else None
+
+    # `Applications[].Version` e a AWS dizendo o que INSTALOU -- observacao com
+    # artefato, nao derivacao. Por isso `describe_cluster` esta acima da matriz
+    # em `_PRECEDENCE`: a matriz e fallback e guard de drift, e uma versao
+    # observada que discorde dela vira divergencia registrada, nunca um valor
+    # substituido em silencio. So Spark e Iceberg entram: Hadoop e Hive nao tem
+    # campo em `RuntimeContext`, e inventar um so para guardar o valor seria
+    # custo sem consumidor (mesma decisao de `hadoop` na EMR_MATRIX).
+    if fact.kind == "emr.application":
+        component = str(fact.attrs.get("name") or "").strip().lower()
+        version = str(fact.attrs.get("version") or "").strip()
+        if not version or component not in ("spark", "iceberg"):
+            return None
+        return ("describe_cluster", f"{component}_version", version)
 
     return None
 
@@ -641,6 +665,37 @@ def analyze_athena_workgroup(
 ) -> dict[str, Any]:
     facts = _extract_athena_workgroup_facts(path)
     return _facts_page(facts, "athena.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze emr-cluster
+# --------------------------------------------------------------------------- #
+
+
+def _extract_emr_cluster_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com dumps de cluster EMR ou para um arquivo .json:\n"
+            f"    sparkforge collect emr-cluster --repo . --cluster-id j-XXXX --now <iso>\n"
+            f"    sparkforge analyze emr-cluster --path <dir-ou-arquivo> "
+            f"--out .sparkforge/facts_emr.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_emr_cluster_tree(target, repo_root=target)
+    return extract_emr_cluster_path(target, repo_root=target.parent)
+
+
+def analyze_emr_cluster(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_emr_cluster_facts(path)
+    return _facts_page(facts, "emr.unresolved", kind, limit, cursor)
 
 
 # --------------------------------------------------------------------------- #
@@ -1496,6 +1551,15 @@ def collect_athena_workgroup(repo: str, *, workgroup: str, now: str) -> dict[str
     rel_path = collect_aws.athena_workgroup_path(workgroup)
     try:
         entry = collect_aws.collect_athena_workgroup(workgroup, Path(repo), now=now)
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_emr_cluster(repo: str, *, cluster_id: str, now: str) -> dict[str, Any]:
+    rel_path = collect_aws.emr_cluster_path(cluster_id)
+    try:
+        entry = collect_aws.collect_emr_cluster(cluster_id, Path(repo), now=now)
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)

@@ -179,6 +179,21 @@ def build_parser() -> argparse.ArgumentParser:
     athena_wg_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     athena_wg_analyze_p.add_argument("--cursor")
 
+    emr_analyze_p = analyze_sub.add_parser(
+        "emr-cluster",
+        help="Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os "
+        "cinco dumps que o completam).",
+    )
+    emr_analyze_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps de cluster EMR."
+    )
+    emr_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    emr_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    emr_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    emr_analyze_p.add_argument("--cursor")
+
     s3_p = analyze_sub.add_parser(
         "s3-listing",
         help="Extrai facts de um dump de `aws s3api list-objects-v2` (small files, "
@@ -457,6 +472,15 @@ def build_parser() -> argparse.ArgumentParser:
     athena_wg_collect_p.add_argument("--workgroup", required=True)
     athena_wg_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    emr_collect_p = collect_sub.add_parser(
+        "emr-cluster",
+        help="Baixa describe-cluster, grupos/fleets, bootstrap actions e as politicas de "
+        "scaling de um cluster EMR on EC2.",
+    )
+    emr_collect_p.add_argument("--repo", required=True)
+    emr_collect_p.add_argument("--cluster-id", required=True, help="j-XXXXXXXXXXXXX")
+    emr_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
     )
@@ -680,6 +704,27 @@ def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
     full = _core.analyze_athena_workgroup(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
+    full = _core.analyze_emr_cluster(args.path, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -936,6 +981,12 @@ def _cmd_collect_athena_workgroup(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_emr_cluster(args: argparse.Namespace) -> int:
+    payload = _core.collect_emr_cluster(args.repo, cluster_id=args.cluster_id, now=args.now)
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_verify(args: argparse.Namespace) -> int:
     _print(_core.collect_verify(args.repo))
     return 0
@@ -950,6 +1001,7 @@ _DISPATCH = {
     ("analyze", "iceberg"): _cmd_analyze_iceberg,
     ("analyze", "sql"): _cmd_analyze_sql,
     ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
+    ("analyze", "emr-cluster"): _cmd_analyze_emr_cluster,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,
@@ -972,6 +1024,7 @@ _DISPATCH = {
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
+    ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "verify"): _cmd_collect_verify,
 }
 

@@ -33,6 +33,7 @@ ARTIFACT_KINDS = (
     "cloudwatch",
     "iceberg_metadata",
     "athena_workgroup",
+    "emr_cluster",
     "source",
 )
 

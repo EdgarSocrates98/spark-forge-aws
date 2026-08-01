@@ -294,6 +294,125 @@ class TestCollectIcebergMetadata:
             )
 
 
+class FakeEmrClient:
+    """Cluster de instance GROUPS, paginado, com fleets inaplicavel.
+
+    `list_instance_fleets` levanta como a API real levanta quando o modelo nao
+    se aplica, e `get_managed_scaling_policy` devolve `{}` como quando nao ha
+    politica: sao os dois caminhos que provam a diferenca entre "secao omitida"
+    e "secao vazia".
+    """
+
+    def __init__(self):
+        self.calls: list[tuple[str, dict]] = []
+
+    def describe_cluster(self, **kwargs):
+        self.calls.append(("describe_cluster", kwargs))
+        return {
+            "Cluster": {
+                "Id": kwargs["ClusterId"],
+                "ReleaseLabel": "emr-7.5.0",
+                "InstanceCollectionType": "INSTANCE_GROUP",
+                "LogUri": "s3://bucket/elasticmapreduce/",
+                "AutoTerminate": False,
+                "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}],
+                "Status": {"State": "RUNNING"},
+            }
+        }
+
+    def list_instance_groups(self, **kwargs):
+        self.calls.append(("list_instance_groups", kwargs))
+        if kwargs.get("Marker") == "pagina-2":
+            return {
+                "InstanceGroups": [
+                    {
+                        "Id": "ig-TASK",
+                        "InstanceGroupType": "TASK",
+                        "Market": "SPOT",
+                        "InstanceType": "r5.xlarge",
+                        "RequestedInstanceCount": 4,
+                    }
+                ]
+            }
+        return {
+            "InstanceGroups": [
+                {
+                    "Id": "ig-MASTER",
+                    "InstanceGroupType": "MASTER",
+                    "Market": "ON_DEMAND",
+                    "InstanceType": "m5.xlarge",
+                    "RequestedInstanceCount": 1,
+                }
+            ],
+            "Marker": "pagina-2",
+        }
+
+    def list_instance_fleets(self, **kwargs):
+        raise RuntimeError("InvalidRequestException: cluster nao usa instance fleets")
+
+    def list_bootstrap_actions(self, **kwargs):
+        self.calls.append(("list_bootstrap_actions", kwargs))
+        return {"BootstrapActions": []}
+
+    def get_managed_scaling_policy(self, **kwargs):
+        return {}
+
+    def get_auto_termination_policy(self, **kwargs):
+        return {"AutoTerminationPolicy": {"IdleTimeout": 3600}}
+
+
+class TestCollectEmrCluster:
+    def _collect(self, tmp_path, monkeypatch):
+        emr = FakeEmrClient()
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(emr=emr))
+        entry = aws.collect_emr_cluster("j-1EXAMPLE", tmp_path, now="2026-08-01T00:00:00Z")
+        return emr, entry, json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
+
+    def test_writes_the_union_of_the_dumps_in_the_shape_the_extractor_reads(
+        self, tmp_path, monkeypatch
+    ):
+        _, entry, payload = self._collect(tmp_path, monkeypatch)
+        assert entry.kind == "emr_cluster"
+        assert payload["Cluster"]["ReleaseLabel"] == "emr-7.5.0"
+        assert payload["AutoTerminationPolicy"] == {"IdleTimeout": 3600}
+
+    def test_paginates_until_the_marker_runs_out(self, tmp_path, monkeypatch):
+        """Parar na primeira pagina esconderia o grupo TASK -- e um cluster sem
+        TASK parece um cluster sem capacidade Spot, que e a conclusao errada."""
+        _, _, payload = self._collect(tmp_path, monkeypatch)
+        assert [g["Id"] for g in payload["InstanceGroups"]] == ["ig-MASTER", "ig-TASK"]
+
+    def test_inapplicable_section_is_omitted_never_written_empty(
+        self, tmp_path, monkeypatch
+    ):
+        """`InstanceFleets: []` num cluster de grupos seria lido pelo extrator
+        como "coletado e vazio", e ele deixaria de reportar dump incompleto.
+        Politica de scaling ausente segue a mesma regra."""
+        _, _, payload = self._collect(tmp_path, monkeypatch)
+        assert "InstanceFleets" not in payload
+        assert "ManagedScalingPolicy" not in payload
+
+    def test_the_written_artifact_is_readable_by_the_extractor(self, tmp_path, monkeypatch):
+        """O contrato entre coletor e extrator, provado ponta a ponta: o
+        arquivo que este coletor grava tem que produzir facts, nao
+        `emr.unresolved`."""
+        from sparkforge.facts.emr_cluster import extract_emr_cluster_path
+
+        _, entry, _ = self._collect(tmp_path, monkeypatch)
+        facts = extract_emr_cluster_path(tmp_path / entry.path, repo_root=tmp_path)
+        kinds = {f.kind for f in facts}
+        assert "emr.unresolved" not in kinds
+        assert {"emr.cluster", "emr.instance_capacity", "emr.application"} <= kinds
+
+    def test_second_call_is_a_local_no_op(self, tmp_path, monkeypatch):
+        emr, first, _ = self._collect(tmp_path, monkeypatch)
+        before = len(emr.calls)
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(emr=emr))
+        second = aws.collect_emr_cluster("j-1EXAMPLE", tmp_path, now="2026-08-01T01:00:00Z")
+        assert second.collected_at == first.collected_at
+        assert len(emr.calls) == before
+
+
 class TestCollectVerifyIntegration:
     def test_verify_reports_missing_artifact_with_its_recollect_command(self, tmp_path):
         from sparkforge.collect.base import ArtifactEntry, register_artifact

@@ -1,0 +1,31 @@
+name: configuration_not_applied
+proves: >
+  O kind de qualidade da evidencia, e o unico fixture do corpus onde ele sai.
+  O grupo CORE pediu `spark.dynamicAllocation.enabled=true` e o cluster ainda
+  roda com `false`: `Configurations` diverge de
+  `LastSuccessfullyAppliedConfigurations`, e isso vira
+  `emr.configuration.unapplied` ancorado NAQUELE grupo, com `pending` (o que
+  foi pedido e nao vigora) separado de `dropped` (o que vigora e o pedido
+  removeria). Os facts `emr.configuration` do grupo continuam vindo de
+  `Configurations` -- o que o dump aparenta dizer --, e e exatamente por isso
+  que o guard precisa existir: sem ele uma regra afirmaria sobre configuracao
+  que NAO esta em vigor, que e o mesmo defeito que `tf.observability.unknown` e
+  `plan.unresolved` fecham nos outros extratores. O grupo TASK esta no mesmo
+  dump com pedido e aplicado IDENTICOS e nao produz guard nenhum: a divergencia
+  e por grupo, nao por cluster, e um guard global apagaria a distincao. A
+  comparacao e por conteudo achatado, nao por igualdade estrutural do JSON --
+  ordem e aninhamento sao serializacao, e trata-los como drift faria o guard
+  disparar sempre, virando ruido que ninguem le.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  python: "3.9"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.configuration
+  - emr.configuration.unapplied
+  - emr.instance_capacity
+expects_rules: []

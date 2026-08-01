@@ -1,0 +1,31 @@
+name: instance_groups_spot_task
+proves: >
+  O caminho de instance GROUPS inteiro, num cluster 6.x realista: MASTER e CORE
+  On-Demand, TASK em Spot, e a resposta "ha capacidade Spot neste papel?" vindo
+  de `Market == "SPOT"` normalizada em `attrs.has_spot_capacity` -- a mesma
+  forma que o fixture de fleets produz a partir de `TargetSpotCapacity`, que e
+  a razao de os dois modelos virarem um kind so. Prova tambem os DOIS niveis de
+  `Configurations`: `spark.dynamicAllocation.enabled` esta `false` no cluster e
+  `true` no grupo TASK, e o par
+  `attrs.overrides_cluster`/`measures.overriding_group_count` registra a
+  sobreposicao nos dois sentidos -- sem isso uma regra afirmaria sobre o
+  cluster inteiro o que so vale onde ninguem redefiniu. E prova a redacao de
+  segredo nas duas superficies que as APIs Describe/List devolvem em texto
+  claro: uma access key numa propriedade de `emrfs-site` e uma senha nos `Args`
+  de bootstrap action, as duas viram `<redigido>` com
+  `attrs.secret_pattern_match`. O grupo TASK tem
+  `LastSuccessfullyAppliedConfigurations` IGUAL a `Configurations`: nenhum
+  `emr.configuration.unapplied` sai daqui, que e o sentido negativo do guard.
+runtime:
+  emr: "6.15.0"
+  spark: "3.4.1-amzn-2"
+  iceberg: "1.4.0-amzn-0"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.bootstrap_action
+  - emr.cluster
+  - emr.configuration
+  - emr.instance_capacity
+  - emr.managed_scaling
+expects_rules: []

@@ -670,6 +670,55 @@ class TestAnalyzeAthenaWorkgroup:
         assert payload["unresolved_at"][0]["reason"] == "unparseable_engine_version"
 
 
+class TestAnalyzeEmrCluster:
+    _DUMP = json.dumps(
+        {
+            "Cluster": {
+                "Id": "j-1EXAMPLE",
+                "ReleaseLabel": "emr-7.5.0",
+                "InstanceCollectionType": "INSTANCE_GROUP",
+                "LogUri": "s3://bucket/elasticmapreduce/",
+                "AutoTerminate": False,
+                "Status": {"State": "RUNNING"},
+            },
+            "InstanceGroups": [
+                {
+                    "Id": "ig-TASK",
+                    "InstanceGroupType": "TASK",
+                    "Market": "SPOT",
+                    "InstanceType": "r5.xlarge",
+                    "RequestedInstanceCount": 4,
+                }
+            ],
+        }
+    )
+
+    def test_prints_summary(self, repo, capsys):
+        dump = repo / "cluster.json"
+        dump.write_text(self._DUMP, encoding="utf-8")
+        _, output = run(["analyze", "emr-cluster", "--path", str(dump)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"]["emr.instance_capacity"] == 1
+        assert payload["unresolved"] == 0
+
+    def test_dump_without_instance_lists_reports_unresolved_not_zero_capacity(
+        self, repo, capsys
+    ):
+        """Pelo verbo, a mesma disciplina do extrator: lista de instancias nao
+        coletada aparece como ponto cego, nao como cluster sem capacidade."""
+        dump = repo / "cluster.json"
+        dump.write_text(json.dumps({"Cluster": {"Id": "j-1", "ReleaseLabel": "emr-7.5.0"}}))
+        _, output = run(["analyze", "emr-cluster", "--path", str(dump)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"].get("emr.instance_capacity", 0) == 0
+        assert payload["unresolved"] == 1
+        assert payload["unresolved_at"][0]["reason"] == "missing_instance_model"
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "emr-cluster", "--path", str(repo / "nope.json")], capsys)
+        assert code == 2
+
+
 class TestAnalyzeCallGraph:
     def test_derives_from_pyspark_facts(self, repo, capsys):
         facts_path = repo / "facts.json"
