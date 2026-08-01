@@ -51,6 +51,11 @@ REQUIRED_FIXTURES = {
     # emr.configuration.unapplied` de SF-EMR-003 seria uma linha que nunca fez
     # diferenca em golden nenhum.
     "reconfiguration_pending_with_managed_scaling",
+    # Task 4b: a proteção PELA METADE. `yarn.node-labels.enabled=true` sozinho
+    # aparenta prender o ApplicationMaster e não prende, e é o único cenário em
+    # que um extrator ingênuo -- "vi propriedade de node label, logo está
+    # protegido" -- calaria SF-EMR-008 sobre um cluster genuinamente exposto.
+    "node_labels_half_configured",
 }
 
 
@@ -333,6 +338,75 @@ class TestAdversarial:
         _, _, groups, _ = run_fixture(FIXTURES / "all_spot_groups_maximize")
         assert "SF-EMR-001" in {f.rule_id for f in fleets}
         assert "SF-EMR-001" not in {f.rule_id for f in groups}
+
+    def test_the_derived_fact_is_what_stops_the_am_rule_not_a_missing_ingredient(self):
+        """SF-EMR-008 e a unica regra da area cujo guarda e um fact DERIVADO, e
+        este teste prova que ele decide.
+
+        `all_spot_groups_maximize` casa as duas primeiras condicoes da regra --
+        release 6.15.0 e Spot no grupo TASK -- e nao dispara. O unico motivo e
+        `absent: emr.yarn.am_node_label` falhando, porque o `yarn-site` daquele
+        cluster tem as DUAS propriedades no nivel cluster. Removido o `absent:`
+        de uma copia do catalogo, a regra dispara: sem o fact derivado ela
+        acusaria um cluster que fixou o AM corretamente, que e o falso positivo
+        que a Task 4 recusou produzir.
+
+        Sem esta prova, alguem poderia apagar a linha do `when` -- ou fazer o
+        extrator parar de emitir o fact -- e a unica coisa a quebrar seria um
+        golden, sem nenhum teste dizendo o que se perdeu.
+        """
+        import copy
+
+        directory = FIXTURES / "all_spot_groups_maximize"
+        meta, facts, findings, _ = run_fixture(directory)
+        assert [f.rule_id for f in findings] == []
+
+        cluster = next(f for f in facts if f.kind == "emr.cluster")
+        assert cluster.measures["release_major"] == 6
+        assert any(
+            f.attrs["role"] == "TASK" and f.attrs["has_spot_capacity"]
+            for f in _by_kind(facts, "emr.instance_capacity")
+        )
+        label = next(f for f in facts if f.kind == "emr.yarn.am_node_label")
+        assert label.attrs["decision"] == "pinned"
+        assert label.attrs["expression"] == "CORE"
+
+        sem_guarda = copy.deepcopy(load_catalog())
+        for rule in sem_guarda:
+            if rule["id"] == "SF-EMR-008":
+                rule["when"]["all"] = [c for c in rule["when"]["all"] if "absent" not in c]
+        degradado = judge(facts, sem_guarda, meta["runtime"])
+        assert [f.rule_id for f in degradado] == ["SF-EMR-008"]
+
+    def test_half_configured_node_labels_are_not_protection(self):
+        """O caso que separa "alguem escreveu algo em yarn-site" de "o AM esta
+        protegido". `node_labels_half_configured` tem
+        `yarn.node-labels.enabled=true` e nao tem a expressao de AM: o AM cai na
+        particao DEFAULT, e o EMR nao rotula nos de task, entao a particao
+        DEFAULT e onde o Spot esta. Um extrator que emitisse o fact ao ver
+        qualquer propriedade de node label calaria a regra aqui -- e o silencio
+        leria como "revisei e esta protegido"."""
+        _, exposto, findings_exposto, _ = run_fixture(FIXTURES / "node_labels_half_configured")
+        assert _by_kind(exposto, "emr.yarn.am_node_label") == []
+        assert [f.rule_id for f in findings_exposto] == ["SF-EMR-008"]
+
+        chaves = {
+            f.attrs["key"]
+            for f in _by_kind(exposto, "emr.configuration")
+            if f.attrs["classification"] == "yarn-site"
+        }
+        assert chaves == {"yarn.node-labels.enabled"}
+
+        _, protegido, findings_protegido, _ = run_fixture(FIXTURES / "all_spot_groups_maximize")
+        protegidas = {
+            f.attrs["key"]
+            for f in _by_kind(protegido, "emr.configuration")
+            if f.attrs["classification"] == "yarn-site"
+        }
+        # A unica diferenca entre os dois dumps, no que esta regra le, e a
+        # segunda propriedade -- e ela e a que decide.
+        assert protegidas - chaves == {"yarn.node-labels.am.default-node-label-expression"}
+        assert "SF-EMR-008" not in {f.rule_id for f in findings_protegido}
 
     def test_empty_dump_still_proves_the_extractor_ran(self):
         _, facts, _, _ = run_fixture(FIXTURES / "empty_dump")

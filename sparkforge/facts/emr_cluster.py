@@ -116,6 +116,59 @@ no resto do projeto. Os facts `emr.configuration` de um grupo continuam vindo
 de `Configurations` (o que foi pedido), nunca do que foi aplicado: o dump
 descreve a intencao, e o guard e quem diz que ela ainda nao virou realidade.
 
+## `emr.yarn.am_node_label`: o unico fact DERIVADO deste extrator
+
+Todos os outros facts deste modulo transcrevem o dump. Este decide. Ele existe
+porque `rules/engine.py::_absent_satisfied` so compara `kind` -- nao ha `where`
+negado nem `absent` filtrado por atributo --, e a pergunta "o ApplicationMaster
+pode cair num no Spot?" e, na forma que o dump permite responder, a AUSENCIA de
+um PAR de propriedades de `yarn-site` com valores especificos. Sem um kind
+proprio, a regra que faz essa pergunta acusaria tambem os clusters que fixaram o
+AM corretamente, que e o pior tipo de defeito de regra
+(`rules/catalog/README.md`). Emitir aqui e mais barato e mais honesto que
+alargar a superficie de execucao do catalogo: o extrator ja e o lugar onde
+"varias propriedades viram uma resposta" acontece.
+
+O fact afirma UMA coisa: **o AM nao esta PROVADAMENTE solto**. `absent:` sobre
+ele significa, entao, "este dump prova que nada restringe onde o AM roda".
+Quatro decisoes constroem essa afirmacao, e cada uma tem teste proprio:
+
+1. **`yarn.node-labels.enabled=true` sozinho NAO protege.** Com as labels
+   ligadas e sem expressao de AM, o AM cai na particao DEFAULT -- e o EMR nao
+   rotula nos de task, entao a particao DEFAULT e justamente onde o Spot esta.
+   Meia configuracao aparenta protecao e nao e; o fact nao sai, e a regra acusa.
+   Este e o PRIMEIRO teste da funcao, antes do de escopo (decisao 4): sem
+   expressao de AM em nivel nenhum do dump, o nivel em que o `enabled` aparece
+   deixa de importar, e tratar o caso como ambiguo calaria a regra sobre um
+   cluster comprovadamente exposto.
+2. **A expressao sozinha tambem NAO protege.** Com `yarn.node-labels.enabled`
+   ausente ou diferente de `true` (o default da serie 6.x em diante e
+   desligado), o YARN nao avalia expressao de label nenhuma. Mesmo desfecho.
+3. **Vocabulario FECHADO de rotulo seguro: `CORE` e `ON_DEMAND`.** Sao os dois
+   que a documentacao nomeia (`ON_DEMAND` e rotulo por market type, da 7.0 em
+   diante). Valor fora daqui nao e "inseguro": e ILEGIVEL -- pode ser rotulo
+   customizado, pode ser `SPOT` (pior que nada), pode ser particao inexistente.
+   O dump nao distingue. Entao o fact SAI com `decision: undetermined` (a regra
+   se cala, porque acusar configuracao que nao conseguimos ler e acusar
+   configuracao possivelmente correta) E um `emr.unresolved` conta o ponto cego.
+   Comparacao por igualdade sobre o texto normalizado (strip + upper), sem
+   remover aspas: `'CORE'` e um rotulo chamado `'CORE'`, e adivinhar a intencao
+   seria inventar parsing que o YARN nao faz.
+4. **Configuracao de GRUPO nao decide pelo cluster.** A expressao de AM e lida
+   pelo ResourceManager, que roda no no primario; um `yarn-site` sobreposto num
+   grupo TASK nunca chega la. Mas um sobreposto no grupo MASTER chegaria, e o
+   dump sozinho nao diz qual valor o RM enxerga. Entao ocorrencia em nivel de
+   grupo com valor diferente do nivel cluster nunca produz `pinned`: produz
+   `undetermined` mais `emr.unresolved`. Isso responde tambem a pergunta da
+   configuracao PEDIDA E NAO APLICADA -- `LastSuccessfullyAppliedConfigurations`
+   so existe em instance group, entao esse caso ja e escopo de grupo e ja cai em
+   `undetermined`, nunca em protecao presumida.
+
+A limitacao de `_absent_satisfied` continua existindo; ela foi CONTORNADA aqui,
+nao removida. O padrao e reaproveitavel: quando o gatilho de uma regra for a
+ausencia de uma COMBINACAO, o extrator emite o kind que representa a combinacao
+satisfeita e a regra usa `absent:` sobre ele.
+
 ## Segredo: mesmo mecanismo de `terraform.py`
 
 Valor de propriedade e argumento de bootstrap action passam pelo mesmo teste de
@@ -150,6 +203,7 @@ EMITTED_KINDS = frozenset(
         "emr.instance_capacity",
         "emr.configuration",
         "emr.configuration.unapplied",
+        "emr.yarn.am_node_label",
         "emr.bootstrap_action",
         "emr.managed_scaling",
         "emr.unresolved",
@@ -162,6 +216,18 @@ EMITTED_KINDS = frozenset(
 # Valor fora daqui nao vira `emr.instance_capacity`: uma regra que pergunta
 # "ha Spot no TASK?" precisa saber que o papel foi LIDO, nao adivinhado.
 INSTANCE_ROLES = frozenset({"MASTER", "CORE", "TASK"})
+
+# As tres constantes de `emr.yarn.am_node_label`. Ver a secao dedicada na
+# docstring do modulo para as quatro decisoes que elas implementam.
+YARN_SITE = "yarn-site"
+NODE_LABELS_ENABLED = "yarn.node-labels.enabled"
+AM_LABEL_EXPRESSION = "yarn.node-labels.am.default-node-label-expression"
+
+# Vocabulario FECHADO. Sao os dois rotulos que a documentacao da AWS nomeia como
+# destino do ApplicationMaster: `CORE` (a forma documentada desde a serie 5.x) e
+# `ON_DEMAND` (rotulo por market type, da release 7.0 em diante). Valor fora
+# daqui nao vira "inseguro" -- vira ilegivel, e ilegivel nunca decide.
+KNOWN_AM_LABELS = frozenset({"CORE", "ON_DEMAND"})
 
 # `emr-7.5.0` -> ("7.5.0", 7, 5). O label e o que a API devolve; a release
 # numerica e o que `RuntimeContext.emr` guarda (ver
@@ -879,6 +945,100 @@ def _unapplied_fact(
     )
 
 
+def _am_node_label_facts(
+    entries: list[tuple[str, str, str, str]],
+    cluster_id: str,
+    path: str,
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """`(level, scope, key, value)` de `yarn-site` -> o fact derivado, ou nada.
+
+    Nada e a resposta mais forte deste modulo: significa "o dump PROVA que nada
+    restringe onde o ApplicationMaster roda". As quatro decisoes que levam a ela
+    -- e as tres que levam a `undetermined` em vez de escolher em silencio --
+    estao na docstring do modulo, na secao `emr.yarn.am_node_label`.
+    """
+    cluster_values: dict[str, str] = {}
+    scoped: list[tuple[str, str, str, str]] = []
+    for level, scope, key, value in entries:
+        if key not in (NODE_LABELS_ENABLED, AM_LABEL_EXPRESSION):
+            continue
+        if level == "cluster":
+            # Ultimo vence, mesma convencao de `cluster_index` em
+            # `_configuration_facts`: duas entradas da mesma classificacao com a
+            # mesma chave sao dado contraditorio, e divergir aqui inventaria uma
+            # precedencia que o resto do extrator nao tem.
+            cluster_values[key] = value
+        else:
+            scoped.append((level, scope, key, value))
+
+    # Primeiro corte, e ele vem ANTES da questao de nivel de proposito: sem
+    # `am.default-node-label-expression` em lugar NENHUM do dump, nada pode
+    # prender o AM, e o nivel em que `yarn.node-labels.enabled` aparece deixa de
+    # importar. Ligar a feature sem dizer onde o AM deve rodar poe o AM na
+    # particao DEFAULT, e o EMR nao rotula nos de task -- a particao DEFAULT e
+    # onde o Spot esta. Fosse este teste feito depois do de escopo, um
+    # `enabled: true` solto num grupo TASK viraria `undetermined` e calaria a
+    # regra sobre um cluster comprovadamente exposto.
+    if not any(key == AM_LABEL_EXPRESSION for _l, _s, key, _v in entries):
+        return []
+
+    # Grupo que repete EXATAMENTE o valor do cluster nao muda nada e nao torna a
+    # leitura ambigua; grupo que diverge (ou que declara o que o cluster nao
+    # declara) pode ou nao alcancar o ResourceManager, e o dump nao diz.
+    divergent = sorted(
+        {scope for _level, scope, key, value in scoped if cluster_values.get(key) != value}
+    )
+
+    enabled_raw = cluster_values.get(NODE_LABELS_ENABLED)
+    expression_raw = cluster_values.get(AM_LABEL_EXPRESSION)
+    enabled = (enabled_raw or "").strip().lower() == "true"
+    expression = (expression_raw or "").strip().upper()
+
+    if divergent:
+        reason: str | None = "am_node_label_scoped_to_instance_group"
+    elif enabled and expression:
+        reason = None if expression in KNOWN_AM_LABELS else "unrecognized_am_node_label_expression"
+    else:
+        # Expressao declarada no cluster sem `yarn.node-labels.enabled=true`: a
+        # serie 6.x em diante vem com a feature desligada, e o YARN nao avalia
+        # expressao de label nenhuma. Meia configuracao, e a metade que falta e
+        # a que liga a outra.
+        return []
+
+    facts: list[Fact] = [
+        Fact(
+            kind="emr.yarn.am_node_label",
+            subject=_entity_subject(f"{cluster_id}/yarn/am-node-label"),
+            attrs={
+                "cluster_id": cluster_id,
+                "decision": "pinned" if reason is None else "undetermined",
+                "reason": reason,
+                "enabled": enabled_raw,
+                "expression": expression_raw,
+                "known_expression": expression in KNOWN_AM_LABELS if expression else None,
+                "scoped_overrides": divergent,
+            },
+            provenance=provenance,
+        )
+    ]
+    if reason is not None:
+        # O fact silencia a regra; este conta o ponto cego. Sem ele, "nao
+        # acusei" e indistinguivel de "nao ha problema" -- que e a ausencia
+        # presumida que o resto do pacote existe para nao produzir.
+        facts.append(
+            _unresolved(
+                path,
+                reason,
+                provenance,
+                cluster_id=cluster_id,
+                expression=expression_raw,
+                scoped_overrides=divergent,
+            )
+        )
+    return facts
+
+
 def _configuration_facts(
     cluster: dict[str, Any],
     scopes: list[tuple[str, dict[str, Any]]],
@@ -898,6 +1058,11 @@ def _configuration_facts(
     # e o fact de cluster precisa dessa lista para dizer onde ele nao vale.
     scoped_facts: list[Fact] = []
     overriding: dict[tuple[str, str], list[str]] = {}
+    # `(level, scope, key, value)` de tudo que for `yarn-site`, nos dois niveis.
+    # Alimenta `_am_node_label_facts`, e e coletado AQUI em vez de num segundo
+    # passe sobre o dump para nao reparsear `Configurations` -- e, sobretudo,
+    # para nao reemitir os `emr.unresolved` de secao malformada em dobro.
+    yarn_site: list[tuple[str, str, str, str]] = []
 
     for level, entry in scopes:
         scope_id = _as_str(entry.get("Id"))
@@ -915,6 +1080,8 @@ def _configuration_facts(
             facts.append(_unresolved(path, provenance=provenance, scope=scope_id, **problem))
 
         for instance_type, classification, key, value in typed_props:
+            if classification == YARN_SITE:
+                yarn_site.append((level, scope_id, key, value))
             overrides = (classification, key) in cluster_index
             if overrides:
                 overriding.setdefault((classification, key), []).append(scope_id)
@@ -945,6 +1112,8 @@ def _configuration_facts(
                 facts.append(unapplied)
 
     for classification, key, value in cluster_props:
+        if classification == YARN_SITE:
+            yarn_site.append(("cluster", "", key, value))
         scopes_overriding = sorted(overriding.get((classification, key), []))
         symbol = pool.take(f"{cluster_id}/configuration/{classification}/{key}")
         facts.append(
@@ -962,6 +1131,7 @@ def _configuration_facts(
         )
 
     facts.extend(scoped_facts)
+    facts.extend(_am_node_label_facts(yarn_site, cluster_id, path, provenance))
     return facts
 
 

@@ -23,6 +23,13 @@ proves: >
   dynamic` no `spark-defaults` do CLUSTER dispara SF-EMR-005: a propriedade
   muda a semantica de `mode("overwrite")` para todo job que rodar aqui,
   inclusive os escritos supondo o default `static`.
+  E dispara SF-EMR-008 (Task 4b): release 6.15.0, Spot no grupo TASK, e nenhuma
+  propriedade de node label em `yarn-site` -- nem no cluster, nem em grupo
+  nenhum. Em `deploy-mode cluster` o ApplicationMaster e o driver, e sem o par
+  `yarn.node-labels.enabled`/`am.default-node-label-expression` ele e elegivel
+  ao no Spot que o EC2 pode reclamar. Este e o cenario mais comum do corpus, e
+  por isso a regra so pode existir com o guarda: `all_spot_groups_maximize` tem
+  os mesmos dois primeiros ingredientes e nao pode ser acusado.
   O que este dump prova NEGATIVAMENTE e o discriminante de SF-EMR-003. A
   propriedade `spark.dynamicAllocation.enabled` esta `false` no nivel cluster e
   ha politica de managed scaling -- os dois ingredientes da regra --, mas o
@@ -47,3 +54,4 @@ expects_kinds:
 expects_rules:
   - SF-EMR-002
   - SF-EMR-005
+  - SF-EMR-008
