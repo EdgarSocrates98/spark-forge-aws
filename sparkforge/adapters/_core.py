@@ -208,9 +208,16 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
     if fact.kind == "emr.application":
         component = str(fact.attrs.get("name") or "").strip().lower()
         version = str(fact.attrs.get("version") or "").strip()
-        if not version or component not in ("spark", "iceberg"):
+        # A chave crua e NOMEADA, nao montada por `f"{component}_version"`. As
+        # duas formas produzem exatamente as mesmas duas strings, mas so esta
+        # deixa `spark_version` e `iceberg_version` VISIVEIS no corpo da funcao
+        # -- e `TestNoRuntimeAxisIsAnUndeclaredProducerGap` deriva os eixos com
+        # produtor exatamente dai. Chave montada em tempo de execucao e um eixo
+        # que o invariante nao consegue ver.
+        key = {"spark": "spark_version", "iceberg": "iceberg_version"}.get(component)
+        if not version or key is None:
             return None
-        return ("describe_cluster", f"{component}_version", version)
+        return ("describe_cluster", key, version)
 
     # `spark-env`/`PYSPARK_PYTHON` e o UNICO lugar do dump onde o Python que o
     # PySpark executa aparece. A coluna `Python` da pagina de release lista os
@@ -229,7 +236,60 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
         version = _python_minor_from_interpreter(str(fact.attrs.get("value") or ""))
         return ("describe_cluster", "python_version", version) if version else None
 
+    # `athena.workgroup.measures.engine_version` e a geracao da engine que o
+    # workgroup EXECUTA -- `effective_engine_version`, nunca a pedida
+    # (`selected_engine_version`, que pode ser `AUTO`) --, ja convertida em
+    # inteiro por `athena_workgroup._parse_engine_version`, que nunca fabrica
+    # default: string que ele nao entende vira `athena.unresolved`, nao um
+    # numero. Existia o dado, com artefato e sha256, e existia o consumidor
+    # (`RuntimeContext.athena`, so preenchivel pela flag `--athena` ate aqui).
+    #
+    # O VALOR VAI COMO INTEIRO EM TEXTO -- `"3"`, nunca `"3.0"`. A engine do
+    # Athena e uma geracao, nao uma versao pontuada: a AWS publica "Athena
+    # engine version 2" e "version 3" e nada entre elas. `"3.0"` inventaria um
+    # segmento que a API nao afirma, e `version_scope._parse` compara
+    # `(3,)` com `(3, 0)` como iguais de qualquer forma (`_compare` preenche com
+    # zeros) -- o segmento inventado nao compraria comparacao nenhuma, so
+    # afirmaria mais do que foi lido.
+    if fact.kind == "athena.workgroup":
+        engine = fact.measures.get("engine_version")
+        if not isinstance(engine, int) or isinstance(engine, bool):
+            return None
+        return ("get_work_group", "athena_version", str(engine))
+
     return None
+
+
+# UM DUMP DE ATHENA DESCREVE VARIOS WORKGROUPS, E ISSO NAO E DIVERGENCIA.
+#
+# `get_work_group` e por conta; uma conta tem muitos workgroups, e dois deles em
+# geracoes diferentes -- `legacy-etl` na 2, `primary` na 3 -- e um fato NORMAL
+# de conta, nao uma contradicao sobre "qual e o runtime". Deixar isso cair no
+# caminho generico de multiplos valores produziria SF-ENV-001 em P0 sobre uma
+# configuracao correta, e falso P0 treina o operador a ignorar o canal de
+# divergencia -- o oposto do que ele existe para fazer. (Pior: o caminho
+# generico qualifica a origem por `provenance.artifact`, e os workgroups de um
+# mesmo dump COMPARTILHAM o artefato; as duas leituras colidiriam na mesma
+# chave e uma sobrescreveria a outra em silencio, que e resolucao arbitraria.)
+#
+# A resposta honesta e UNANIMIDADE OU NADA. So existe "a engine version desta
+# conta" quando todo workgroup lido diz o mesmo numero; discordando, nao ha um
+# valor para reportar, o campo fica vazio e regra com `athena` em
+# `runtime_scope` e pulada por ausencia -- falha fechada, a semantica do projeto
+# para "nao detectada". Nada se perde: o numero de CADA workgroup continua em
+# seu proprio `athena.workgroup`, e `SF-ATH-004` avalia workgroup a workgroup,
+# que e a granularidade onde a pergunta tem resposta.
+#
+# O conjunto de kinds ANULA a fonte pela mesma logica: `athena.unresolved`
+# significa que o extrator viu um workgroup e nao conseguiu ler a engine dele
+# (ou o dump inteiro). Com um workgroup ilegivel, "todos dizem 3" deixa de ser
+# demonstravel, entao a leitura nao sai. O ponto cego nao fica sem registro --
+# ele ja tem fact proprio e entra em `athena.analyzed.measures.unresolved_count`
+# --, e aqui ele faz o que ponto cego deve fazer: impedir a afirmacao, em vez de
+# ser ignorado por ela.
+_UNANIMOUS_SOURCES: dict[str, frozenset[str]] = {
+    "get_work_group": frozenset({"athena.unresolved"}),
+}
 
 
 def _observation_origin(source: str, fact: Fact) -> str:
@@ -264,7 +324,11 @@ def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, 
     arquivo onde o operador espera ler "terraform".
     """
     observed: dict[tuple[str, str], dict[str, Fact]] = {}
+    voided: set[str] = set()
     for fact in facts or []:
+        for source, blinding in _UNANIMOUS_SOURCES.items():
+            if fact.kind in blinding:
+                voided.add(source)
         reading = _runtime_reading(fact)
         if reading is None:
             continue
@@ -273,6 +337,12 @@ def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, 
 
     sources: dict[str, dict[str, Any]] = {}
     for (source, key), by_value in sorted(observed.items()):
+        # Ver `_UNANIMOUS_SOURCES`: nestas fontes multiplicidade nao e
+        # divergencia e ilegibilidade nao e ausencia. Discordancia ou ponto cego
+        # apagam a leitura, em vez de virarem um SF-ENV-001 falso ou uma escolha
+        # arbitraria entre valores igualmente verdadeiros.
+        if source in _UNANIMOUS_SOURCES and (source in voided or len(by_value) > 1):
+            continue
         if len(by_value) == 1:
             sources.setdefault(source, {})[key] = next(iter(by_value))
             continue

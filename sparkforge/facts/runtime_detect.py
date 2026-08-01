@@ -321,9 +321,37 @@ EMR_MATRIX: dict[str, dict[str, Any]] = {
 #
 # O extrator que produz esse dump e a Task 3 desta fase. A fonte fica declarada
 # e funcionando desde ja, sem alimentador -- e esperado.
+#
+# `get_work_group` e o dump de `athena.get_work_group`, e entra COLADO em
+# `describe_cluster` porque e a mesma classe de evidencia: uma API da AWS
+# reportando o que esta em vigor, com artefato e sha256 atras --
+# `engine_version.effective_engine_version` e a engine EFETIVA do workgroup,
+# nao a pedida (`selected_engine_version`, que pode ser `AUTO`). Fica abaixo de
+# `event_log` pela mesma razao que `describe_cluster`: quem observou o RUN sob
+# analise e so o event log. Acima de `cli`/`terraform`/`requirements` porque
+# esses tres sao declaracao de intencao.
+#
+# A ordem RELATIVA entre `describe_cluster` e `get_work_group` nunca decide
+# nada: os dois nunca disputam o mesmo componente. `describe_cluster` produz
+# `emr_release`/`spark_version`/`iceberg_version`/`python_version` e jamais
+# `athena_version`; `get_work_group` produz `athena_version` e mais nada. A
+# adjacencia e agrupamento por natureza da evidencia, nao afirmacao de que um
+# vence o outro.
+#
+# `requirements` E A UNICA FONTE DESTA TUPLA SEM PRODUTOR, e e produtor
+# PREVISTO, nao vestigio: `knowledge/glue/runtime-matrix.md` secao 5 lista
+# `requirements.txt`/`pyproject.toml` como a fonte de menor confiabilidade
+# ("indica intencao, nao runtime"), e a precedencia foi desenhada com ela no
+# fim justamente por isso. Ninguem escreveu o extrator -- nenhum modulo de
+# `sparkforge/facts/` le manifesto de dependencia --, e ate escrever,
+# `RuntimeContext` nunca recebe nada por esta fonte. Fica declarada com esta
+# nota pela mesma razao que `describe_cluster` ficou antes da Task 3: fonte sem
+# produtor e superficie que parece existir, e o comentario e o que impede o
+# proximo leitor de procurar o alimentador que nao existe.
 _PRECEDENCE: tuple[str, ...] = (
     "event_log",
     "describe_cluster",
+    "get_work_group",
     "cli",
     "terraform",
     "requirements",
@@ -716,7 +744,7 @@ def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, 
     """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal`).
 
     `sources` mapeia nome da fonte (ex.: "event_log", "describe_cluster",
-    "terraform", "requirements") para um dict com chaves cruas: `glue_version`,
+    "get_work_group", "terraform") para um dict com chaves cruas: `glue_version`,
     `emr_release`/`emr_version`/`emr`, `spark_version`/`spark`,
     `python_version`/`python`, `iceberg_version`/`iceberg`,
     `athena_version`/`athena`.
