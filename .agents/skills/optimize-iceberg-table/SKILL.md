@@ -30,8 +30,21 @@ Todas as seções do dump são opcionais: um dump com só `files` ainda produz o
 ### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --iceberg <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --show-skipped
 ```
+
+`--iceberg` saiu daqui porque, sozinha, ela não destrava nada. Nenhuma das cinco regras `SF-ICE-*` declara `runtime_scope` — todas avaliam em qualquer versão. A única regra deste eixo que guarda versão é `SF-ENV-002` (tabela em format V3 consumida por Athena), e o guarda dela é `glue >= 5.1` **e** `iceberg >= 1.10.0`, com os dois obrigatórios: a checagem falha fechada, então declarar só `--iceberg` deixa `glue` vazio e a regra continua pulada com `reason: runtime_scope`. Digitar a versão do Iceberg dava a impressão de cobrir esse eixo sem cobrir.
+
+O caminho que de fato funciona é dar a versão do **Glue**, de onde a do Iceberg é derivada pela matriz de compatibilidade — é a versão embarcada no runtime que decide quais procedures e propriedades existem, não a que está escrita no dump. Extraia do Terraform e junte tudo na mesma chamada, já que `--facts` é repetível:
+
+```bash
+sparkforge analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
+sparkforge analyze consumers  --path <inventario.yaml> --out .sparkforge/facts_consumers.json
+sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json \
+                 --facts .sparkforge/facts_consumers.json --show-skipped
+```
+
+Leia o campo `runtime` da saída: ele traz o contexto efetivamente usado, `detected_from` diz de onde veio (`["terraform"]`), e `divergences` denuncia fontes que discordam. `--glue 5.1` continua válido quando você sabe a versão de fonte confiável e não tem o `.tf` — mas prefira a fonte ao palpite, porque aqui a versão errada não gera só um finding errado: ela sustenta uma recomendação de manutenção destrutiva.
 
 `--show-skipped` mostra por que cada regra não avaliou, e aqui isso importa mais que em outras áreas: `SF-ICE-004` vai aparecer em `skipped` **sempre**, porque está `blocked_on: extrator-de-historico-iceberg` no catálogo. Saber se um data file foi escrito antes do sort order atual exige comparar duas coletas no tempo; um dump único não tem essa informação. Não apresente `SF-ICE-004` como achado ativo.
 

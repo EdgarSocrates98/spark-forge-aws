@@ -32,10 +32,21 @@ Leia `unresolved` na saída. Linha malformada ou log truncado vira `spark.unreso
 ### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --show-skipped
 ```
 
 `--show-skipped` não é opcional. Ele diz quais regras **não** foram avaliadas e por quê — sem isso você não distingue "nenhum problema" de "não coletei o dado que provaria o problema".
+
+A flag de versão também não é: o event log declara o runtime na própria primeira linha (`SparkListenerLogStart`), o extrator emite isso como `spark.runtime_version`, e `judge` usa como fonte. Leia o campo `runtime` da saída para ver o que ele usou, com `detected_from: ["event_log"]`.
+
+**Mas o event log preenche `spark`, não `glue`.** A derivação é de mão única — sabendo a versão do Glue sai a do Spark pela matriz de compatibilidade, e não o contrário, porque uma mesma versão de Spark aparece em mais de uma versão de Glue. Consequência prática: as seis regras `SF-GLUE-*` continuam puladas com `reason: runtime_scope` mesmo com o log inteiro em mãos. Nenhuma regra `SF-UI-*` guarda versão, então a análise desta skill não perde nada — mas se `--show-skipped` mostrar `SF-GLUE-002` (observabilidade) e você quiser cobrir esse eixo, junte os facts do Terraform na mesma chamada (`--facts` é repetível) em vez de digitar a versão:
+
+```bash
+sparkforge analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
+sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json --show-skipped
+```
+
+Se o log e o `.tf` discordarem sobre a versão do Spark, `runtime.divergences` mostra os dois valores — e essa é a leitura mais valiosa desta saída, porque um job rodando em runtime diferente do declarado invalida todo limiar versionado aplicado depois.
 
 ### 4. Interprete
 

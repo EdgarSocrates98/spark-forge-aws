@@ -30,14 +30,25 @@ sparkforge analyze pyspark --path <lib> --out .sparkforge/facts_pyspark.json
 ### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --show-skipped
 
 # com o código junto, para SF-GLUE-004:
 sparkforge judge \
   --facts .sparkforge/facts.json \
   --facts .sparkforge/facts_pyspark.json \
-  --glue <versão> --show-skipped
+  --show-skipped
 ```
+
+Sem flag de versão, de propósito: esta é a skill em que o próprio fact já carrega a versão. `judge` lê o `tf.attribute` de `key: glue_version` dos facts da mesma chamada e preenche `glue`; `spark`, `python` e `iceberg` saem daí pela matriz de compatibilidade do Glue. Confirme no campo `runtime` da saída, que traz o contexto efetivamente usado para filtrar por versão — `detected_from: ["terraform"]` é a prova de que veio do `.tf`, não de palpite.
+
+Dois casos em que o `.tf` **não** alimenta a detecção, e nos dois `runtime.glue` volta vazio:
+
+- `glue_version = var.glue_version` (ou `local.`, ou interpolação): o extrator guarda o texto da referência, não a versão, e a leitura é descartada em vez de gravar `"var.glue_version"` como se fosse versão — é o mesmo `tf.unresolved` do passo 1.
+- `glue_version` dentro de `default_arguments`: chave homônima que é argumento de job, não a versão do runtime.
+
+Nesses casos, e só neles, declare você: `--glue 5.1`, com a versão vinda de onde ela realmente está (o `tfvars`, o módulo chamador, o console). A flag é declaração de quem sabe, não campo a preencher por obrigação. Sem versão nenhuma, `SF-GLUE-001..006` são puladas com `reason: runtime_scope`, visível em `--show-skipped` — o eixo fica descoberto, mas você **sabe** que ficou. Chutar a versão é pior: julga as seis contra o limiar errado sem nada na saída denunciando isso.
+
+Se dois módulos declararem `glue_version` diferentes, nenhum vence em silêncio — `runtime.divergences` lista os dois valores com o arquivo de cada um, e a discordância é achado próprio (`SF-ENV-001`), não detalhe de configuração.
 
 ### 4. Interprete, e reporte por recurso
 
