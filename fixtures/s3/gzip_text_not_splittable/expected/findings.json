@@ -27,7 +27,7 @@
       "min_bytes": 1073741824
     },
     "runtime_scope": {
-      "glue": "*"
+      "spark": ">=3.0"
     },
     "explanation": "Um arquivo de texto gzip é sempre uma única task, qualquer que seja o tamanho. Um csv.gz de 20GB é uma task de 20GB, e nenhum aumento de paralelismo ou de workers ajuda. É a causa clássica de poucas tasks muito longas no Spark UI, e é frequentemente diagnosticada como falta de capacidade. Dentro do Parquet a compressão é por página e não afeta a splitabilidade; o problema é exclusivo de arquivos de texto comprimidos.",
     "proposed_change": [

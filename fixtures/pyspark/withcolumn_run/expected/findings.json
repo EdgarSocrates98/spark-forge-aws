@@ -26,7 +26,7 @@
       "run_length": 10
     },
     "runtime_scope": {
-      "glue": "*"
+      "spark": ">=3.0"
     },
     "explanation": "Cada withColumn adiciona uma projeção ao plano lógico. Dezenas em sequência produzem um plano grande, com custo de análise e otimização no driver que cresce de forma não linear. Em loop, é uma das causas de plan explosion e de driver OOM. Ver knowledge/spark/memory-and-oom.md secao 2, classe metadata/plan explosion.",
     "proposed_change": [

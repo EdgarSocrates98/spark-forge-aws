@@ -152,7 +152,7 @@ rules:
           where: {attrs.heap_oom_in_log: false}
     status: confirmed
     severity_default: P0
-    runtime_scope: {glue: "*"}
+    runtime_scope: {spark: ">=3.0"}
     explanation: >
       Executor desaparecendo sem OOM de heap no log aponta para estouro de memória do
       container, fora do heap: Python worker, buffers Arrow, buffers de rede, metaspace.
