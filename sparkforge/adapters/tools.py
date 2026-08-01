@@ -209,9 +209,31 @@ _FINDING_ITEM: dict[str, Any] = {
 
 _RUNTIME_CONTEXT: dict[str, Any] = {
     "type": "object",
-    "required": ["glue", "spark", "python", "iceberg", "athena", "detected_from", "divergences"],
+    "required": [
+        "glue",
+        "emr",
+        "spark",
+        "python",
+        "iceberg",
+        "athena",
+        "detected_from",
+        "divergences",
+    ],
     "properties": {
         "glue": {"type": "string"},
+        # `emr` entrou em `RuntimeContext.to_dict()` na Task 1 da Fase 5b e nao
+        # foi declarado aqui. Nao quebrava nada -- JSON Schema permite chave
+        # extra por default --, mas o cliente MCP que le o schema nao ficava
+        # sabendo que a plataforma existe no payload, e o campo so passa a ser
+        # acionavel quando alguem sabe le-lo.
+        "emr": {
+            "type": "string",
+            "description": (
+                "Release label do EMR on EC2 ('emr-7.5.0'), vazio fora do EMR. "
+                "Deriva spark/iceberg/python por EMR_MATRIX; ver "
+                "knowledge/emr/runtime-matrix.md."
+            ),
+        },
         "spark": {"type": "string"},
         "python": {"type": "string"},
         "iceberg": {"type": "string"},

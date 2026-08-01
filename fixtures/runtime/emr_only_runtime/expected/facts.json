@@ -41,9 +41,10 @@
     },
     "attrs": {
       "component": "spark",
-      "resolved": "3.5.1",
+      "resolved": "3.5.2",
       "observed": [
-        "3.5.1"
+        "3.5.2",
+        "3.5.2-amzn-1"
       ],
       "source": "resolved",
       "spark_minor": 3.5

@@ -4,6 +4,6 @@
   },
   "event_log": {
     "spark_version": "3.3.0",
-    "emr_release": "emr-6.10.0"
+    "emr_release": "emr-6.9.0"
   }
 }
