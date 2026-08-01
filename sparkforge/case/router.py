@@ -132,6 +132,20 @@ def _condition_operator(condition: dict[str, Any]) -> tuple[str, Any]:
     return key, condition[key]
 
 
+def _finding_area(rule_id: str) -> str:
+    """Área de um `rule_id`: o prefixo até o último hífen.
+
+    `SF-GLUE-002` -> `SF-GLUE`. É o mesmo agrupamento que separa os coordenadores —
+    infra Glue, Athena, PySpark, Iceberg/layout — então a rota de agente conta
+    achados por área sem precisar de uma lista de `rule_id` mantida à mão.
+    """
+    return rule_id.rsplit("-", 1)[0]
+
+
+def _count_finding_area(finding_ids: frozenset[str], area: str) -> int:
+    return sum(1 for fid in finding_ids if _finding_area(fid) == area)
+
+
 def _eval_condition(
     case: dict[str, Any], finding_ids: frozenset[str], condition: dict[str, Any]
 ) -> bool:
@@ -140,17 +154,21 @@ def _eval_condition(
 
     has_case = "case" in condition
     has_finding = "finding" in condition
-    if has_case == has_finding:  # nenhum dos dois, ou os dois ao mesmo tempo
+    has_area = "findings_area" in condition
+    if has_case + has_finding + has_area != 1:
         raise CatalogError(
-            f"condição precisa de exatamente um de `case` ou `finding`: {condition!r}"
+            "condição precisa de exatamente um de `case`, `finding` ou "
+            f"`findings_area`: {condition!r}"
         )
 
     op, op_value = _condition_operator(condition)
 
     if has_case:
         value = _resolve_case_path(case, condition["case"])
-    else:
+    elif has_finding:
         value = True if condition["finding"] in finding_ids else _MISSING
+    else:
+        value = _count_finding_area(finding_ids, condition["findings_area"])
 
     return _apply_operator(op, op_value, value)
 
@@ -179,8 +197,12 @@ def _evidence_for(rule: dict[str, Any]) -> list[str]:
     lines: list[str] = []
     for group in ("all", "any"):
         for condition in when.get(group) or []:
-            subject_kind = "case" if "case" in condition else "finding"
-            subject = condition.get("case", condition.get("finding"))
+            if "case" in condition:
+                subject_kind, subject = "case", condition["case"]
+            elif "finding" in condition:
+                subject_kind, subject = "finding", condition["finding"]
+            else:
+                subject_kind, subject = "findings_area", condition.get("findings_area")
             op_keys = [k for k in condition if k in ROUTING_OPERATORS]
             op = op_keys[0] if op_keys else "?"
             lines.append(f"{subject_kind}:{subject} {op}={condition.get(op)}")
@@ -206,6 +228,13 @@ def next_step(
 
     matches: list[dict[str, Any]] = []
     for rule in routing["rules"]:
+        if "recommended_skill" not in rule:
+            # Rota de COORDENADOR (`recommended_agent`, ver AGENT-NNN). Convive na
+            # mesma lista porque o motor de avaliação é o mesmo, mas `next_step`
+            # só resolve skill: incluí-la aqui faria `alternatives` referenciar
+            # `recommended_skill` inexistente e quebrar com KeyError na primeira
+            # regra de agente que casasse ao lado de uma de skill.
+            continue
         phase_in = rule.get("phase_in")
         if phase_in and phase not in phase_in:
             continue
