@@ -1,6 +1,6 @@
 # SparkForge Fase 5a.2 — Cobrir as dívidas da 5a: Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** fechar as duas dívidas que a Fase 5a abriu, e tornar real a Task 5 que ela entregou fraca. Hoje o runtime só existe se o operador digitar a versão; nenhum extrator alimenta a detecção. E cinco regras recomendam AQE e `REBALANCE` sem saber se a versão suporta.
 
@@ -53,23 +53,23 @@ Hoje `EMITTED_KINDS` tem 11 kinds e nenhum carrega versão, apesar de o event lo
 - Modify: `sparkforge/facts/event_log.py`
 - Test: `tests/test_facts_event_log.py`
 
-- [ ] **Step 1: Descubra onde a versão está**
+- [x] **Step 1: Descubra onde a versão está**
 
 O event log do Spark carrega a versão em pelo menos dois eventos: `SparkListenerLogStart` tem o campo `Spark Version`, e `SparkListenerEnvironmentUpdate` traz `Spark Properties`. **Leia uma fixture real** em `fixtures/` antes de escolher, e diga no relatório qual evento você achou e em quais fixtures ele aparece. Se nenhuma fixture tiver o evento, diga — o extrator ainda deve saber lê-lo, mas a fixture precisa nascer.
 
-- [ ] **Step 2: Escreva o teste primeiro**
+- [x] **Step 2: Escreva o teste primeiro**
 
 Em `tests/test_facts_event_log.py`, seguindo o estilo do arquivo. O fact novo é `spark.runtime_version`, com a versão em `attrs`. Cubra: evento presente, evento ausente (não emite nada, e **não** é erro), e versão malformada (vira `spark.unresolved`, o padrão que o extrator já usa para o que não deu para interpretar).
 
-- [ ] **Step 3: Implemente**
+- [x] **Step 3: Implemente**
 
 Acrescente o kind a `EMITTED_KINDS`. `event_log.py:524` tem a guarda `unknown = {f.kind for f in facts} - EMITTED_KINDS` — ela vai pegar se você esquecer.
 
-- [ ] **Step 4: Fixture**
+- [x] **Step 4: Fixture**
 
 Toda capacidade nova precisa de fixture golden. Siga o que `fixtures/` já faz para event log.
 
-- [ ] **Step 5: Verifique e commite**
+- [x] **Step 5: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest tests/test_facts_event_log.py -q
@@ -89,7 +89,7 @@ A dívida central. `build_runtime_context` monta o contexto só de flags de CLI,
 - Modify: `sparkforge/adapters/_core.py`, `sparkforge/facts/runtime_detect.py`, `sparkforge/adapters/cli.py`
 - Create: `tests/test_runtime_inferred_from_facts.py`
 
-- [ ] **Step 1: Declare `cli` na precedência**
+- [x] **Step 1: Declare `cli` na precedência**
 
 `_PRECEDENCE` não menciona `cli`, então `_source_rank` a joga para o fim por acidente de implementação, não por decisão. Torne explícito.
 
@@ -99,7 +99,7 @@ A dívida central. `build_runtime_context` monta o contexto só de flags de CLI,
 
 Seja qual for, a discordância entre fontes tem que continuar virando divergência em `env.runtime_signal` — nunca ser resolvida em silêncio. Prove isso com teste.
 
-- [ ] **Step 2: Derive fontes a partir dos facts**
+- [x] **Step 2: Derive fontes a partir dos facts**
 
 `build_runtime_context` ganha um parâmetro de facts, opcional, com default que preserva o comportamento atual para todo chamador existente.
 
@@ -114,11 +114,11 @@ Mapeamento mínimo, e **verifique cada um lendo o extrator** antes de escrever:
 
 **Fronteira negativa, e ela importa:** derivar é ler o que o extrator já observou. Se nenhum fact carrega a informação, o campo fica vazio e a regra é pulada com motivo. Não adivinhe versão a partir de sintaxe de API, nome de bucket, ou qualquer outro sinal indireto — isso seria julgamento entrando na camada de fato, que é o inimigo declarado do projeto.
 
-- [ ] **Step 3: `judge` passa os facts**
+- [x] **Step 3: `judge` passa os facts**
 
 O comando já carregou os facts para julgar. Passe-os. Cuidado com a ordem: o contexto tem que estar montado antes de `in_scope` rodar.
 
-- [ ] **Step 4: O invariante**
+- [x] **Step 4: O invariante**
 
 Crie `tests/test_runtime_inferred_from_facts.py`. Cubra, no mínimo:
 
@@ -129,7 +129,7 @@ Crie `tests/test_runtime_inferred_from_facts.py`. Cubra, no mínimo:
 
 Prove sensibilidade: com a inferência desligada, o teste tem que ficar vermelho.
 
-- [ ] **Step 5: Verifique e commite**
+- [x] **Step 5: Verifique e commite**
 
 ```bash
 rtk proxy python -m pytest tests/test_runtime_inferred_from_facts.py -q
@@ -158,11 +158,11 @@ Cinco regras têm gatilho agnóstico — corretamente, a Fase 5a mediu isso — 
 **Files:**
 - Modify: `rules/catalog/pyspark.yaml`, `parquet.yaml`, `spark-ui.yaml`
 
-- [ ] **Step 1: Confirme a lista lendo**
+- [x] **Step 1: Confirme a lista lendo**
 
 Não confie na tabela acima. Releia as cinco e confirme o trecho exato. Se achar uma sexta com a mesma propriedade, **inclua e diga**. Se alguma da lista não tiver a propriedade, exclua e diga.
 
-- [ ] **Step 2: Escolha o mecanismo, e ele não pode ser um `if` escondido**
+- [x] **Step 2: Escolha o mecanismo, e ele não pode ser um `if` escondido**
 
 `proposed_change` é uma lista de strings no YAML. Você **não** vai inventar um mini-motor de template — o catálogo é dado editável e superfície de execução, e a Fase 0 restringe deliberadamente o que se avalia nele.
 
@@ -170,7 +170,7 @@ A saída barata e honesta: o texto do bullet declara a condição em vez de assu
 
 Se você defender um mecanismo estruturado — por exemplo um campo novo `since` por bullet — **descreva antes de implementar** e relate: isso muda o schema do catálogo, o validador, os goldens e a renderização, e é decisão de arquitetura, não de redação.
 
-- [ ] **Step 3: Verifique e commite**
+- [x] **Step 3: Verifique e commite**
 
 Golden vai mudar — `proposed_change` entra no payload do `Finding`. Diferencie campo a campo; só esse campo pode divergir.
 
@@ -191,7 +191,7 @@ Com a Task 2, `judge` infere. As skills mudam de "digite a versão" para "o moto
 **Files:**
 - Modify: `skills/*/SKILL.md`, `tests/test_skill_content.py`
 
-- [ ] **Step 1: Levante o estado**
+- [x] **Step 1: Levante o estado**
 
 ```bash
 grep -n "sparkforge judge" skills/*/SKILL.md
@@ -199,19 +199,19 @@ grep -n "sparkforge judge" skills/*/SKILL.md
 
 São 24 invocações em 16 skills, todas com `--glue <versão>` ou equivalente.
 
-- [ ] **Step 2: Reescreva a orientação**
+- [x] **Step 2: Reescreva a orientação**
 
 A flag vira **opcional declarada**, não obrigação: passe-a quando souber a versão; caso contrário o motor infere dos facts, e `--show-skipped` diz o que não deu para cobrir e por quê.
 
 Não faça substituição mecânica. Cada skill investiga uma coisa: uma de infra Glue tem razão para insistir na versão; uma de código PySpark não tem. Leia cada uma e escreva o que faz sentido ali. **Diga no relatório quais você tratou de forma diferente e por quê.**
 
-- [ ] **Step 3: Fortaleça o teste**
+- [x] **Step 3: Fortaleça o teste**
 
 `test_toda_invocacao_de_judge_passa_runtime` em `tests/test_skill_content.py` só exige *alguma* flag. Torne-o real: a skill tem que ou passar a flag correspondente ao que investiga, ou dizer explicitamente que confia na inferência. Escreva de forma que uma skill nova que só copie o comando alheio seja cobrada.
 
 Prove sensibilidade por injeção, como a Fase 5a fez.
 
-- [ ] **Step 4: Espelhos, verificação e commit**
+- [x] **Step 4: Espelhos, verificação e commit**
 
 ```bash
 python scripts/sync_skills.py
@@ -225,15 +225,15 @@ git commit -m "fix(skills): versao vira opcional declarada, nao placeholder obri
 
 ## Task 5: Documentação e varredura
 
-- [ ] **Step 1: `rules/catalog/README.md`**
+- [x] **Step 1: `rules/catalog/README.md`**
 
 A seção "O que `runtime_scope` é, e o que ele não é" afirma que o guarda falha fechado porque `build_runtime_context` só lê flags. Isso deixa de ser verdade. Reescreva com o que passa a valer, e diga o que ainda falha fechado — porque algo sempre vai: quando nenhum extrator observou a versão, a regra continua sendo pulada, e isso é correto.
 
-- [ ] **Step 2: `STATUS.md`**
+- [x] **Step 2: `STATUS.md`**
 
 Números medidos. As duas dívidas saem da tabela como fechadas, com commit. A Task 5 da 5a deixa de ser descrita como entregue fraca. Registre o que a inferência **não** faz — a fronteira negativa do Step 2 da Task 2.
 
-- [ ] **Step 3: Varredura**
+- [x] **Step 3: Varredura**
 
 ```bash
 rtk proxy python -m pytest -q
@@ -245,7 +245,7 @@ python scripts/check_evals.py
 
 Prove com comando, não com afirmação, que `sparkforge judge` sem flag nenhuma sobre um repositório com Terraform de Glue avalia as 8 regras de Glue.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/superpowers rules/catalog/README.md
