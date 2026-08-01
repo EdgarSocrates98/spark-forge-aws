@@ -16,6 +16,7 @@ alimentam regra nenhuma -- que sao os mais faceis de perder, porque ninguem
 sente falta deles ate um agente precisar.
 """
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -148,3 +149,98 @@ def test_no_golden_fires_a_rule_that_left_the_catalog():
     obsoleto, sobrevivente de uma remocao que ninguem regenerou."""
     unknown = sorted(_rules_fired_in_goldens() - {r["id"] for r in _rules()})
     assert not unknown, unknown
+
+
+# --------------------------------------------------------------------------- #
+# Todo dominio de fixture precisa de um modulo golden que o exercite
+# --------------------------------------------------------------------------- #
+#
+# `scripts/verify_wheel.py` monta o gate de paridade assim:
+#
+#     GOLDEN_MODULES = sorted(p.name for p in (ROOT / "tests").glob("test_fixtures_*.py"))
+#
+# Derivado do disco, entao um modulo novo entra sozinho -- foi o que aconteceu
+# com `test_fixtures_golden_emr.py` na Fase 5b. Mas a ponta oposta nao tinha
+# guarda: um DIRETORIO de fixture sem modulo que o rode nao quebra nada. Ele
+# fica no repositorio parecendo cobertura, o gate de wheel nunca o executa
+# contra o pacote instalado, e a suite segue verde.
+#
+# E risco vivo, nao hipotetico: `docs/superpowers/STATUS.md` registra EMR
+# Serverless e EMR on EKS como divida aberta, e as duas nascem como
+# `fixtures/<dominio>/` novo. Esquecer o modulo golden e o erro natural.
+#
+# A mesma familia de defeito que este arquivo inteiro existe para impedir:
+# ausencia que se parece com cobertura.
+
+_FIXTURES_ROOT = Path(__file__).resolve().parents[1] / "fixtures"
+_TESTS_ROOT = Path(__file__).resolve().parent
+
+# Aceita as duas grafias que o corpus usa hoje, e a segunda so por acidente
+# historico: `pyspark` mora em `test_fixtures_golden.py`, sem sufixo.
+_DOMINIO_SEM_SUFIXO = {"pyspark": "test_fixtures_golden.py"}
+
+
+def _dominios_de_fixture() -> set[str]:
+    return {p.name for p in _FIXTURES_ROOT.iterdir() if p.is_dir()}
+
+
+def _dominios_reivindicados() -> dict[str, str]:
+    """Dominio -> modulo que o exercita, lido do `FIXTURES = ROOT / "fixtures" / "<x>"`.
+
+    Derivado do fonte, nunca de lista escrita a mao: lista a mao e mais um lugar
+    para esquecer de atualizar, e o esquecimento seria invisivel.
+    """
+    padrao = re.compile(r'FIXTURES\s*=\s*ROOT\s*/\s*"fixtures"\s*/\s*"([a-z0-9_]+)"')
+    reivindicados: dict[str, str] = {}
+    for modulo in sorted(_TESTS_ROOT.glob("test_fixtures_golden*.py")):
+        for dominio in padrao.findall(modulo.read_text(encoding="utf-8")):
+            reivindicados[dominio] = modulo.name
+    return reivindicados
+
+
+def test_every_fixture_domain_has_a_golden_module():
+    """Diretorio de fixture sem modulo golden e cobertura aparente.
+
+    O gate de `verify_wheel.py` roda os modulos, nao os diretorios: um dominio
+    que nenhum modulo carrega nunca e verificado contra o pacote instalado, e
+    ninguem reclama.
+    """
+    reivindicados = _dominios_reivindicados()
+    orfaos = sorted(_dominios_de_fixture() - set(reivindicados))
+    assert not orfaos, (
+        f"dominios de fixture sem modulo golden: {orfaos}. Crie "
+        f"tests/test_fixtures_golden_<dominio>.py com "
+        f'`FIXTURES = ROOT / "fixtures" / "<dominio>"` -- sem isso o corpus existe, '
+        f"parece cobertura, e o gate de wheel nunca o executa."
+    )
+
+
+def test_no_golden_module_points_at_a_domain_that_does_not_exist():
+    """A ponta oposta: modulo apontando para diretorio que sumiu."""
+    reivindicados = _dominios_reivindicados()
+    fantasmas = sorted(set(reivindicados) - _dominios_de_fixture())
+    assert not fantasmas, (
+        f"modulos golden apontam para dominios inexistentes: "
+        f"{ {d: reivindicados[d] for d in fantasmas} }. O modulo passa sem verificar "
+        f"nada, que e pior que falhar."
+    )
+
+
+def test_the_domain_map_is_not_vacuous():
+    """Guarda do proprio invariante.
+
+    Se o padrao de leitura parar de casar -- alguem troca aspas duplas por
+    simples, ou usa uma variavel -- os dois testes acima passariam sobre
+    conjuntos vazios e aprovariam qualquer coisa.
+    """
+    reivindicados = _dominios_reivindicados()
+    assert len(reivindicados) >= 15, (
+        f"so {len(reivindicados)} dominios reivindicados; o corpus tem "
+        f"{len(_dominios_de_fixture())}. O padrao de leitura provavelmente parou de "
+        f"casar, e os invariantes de dominio viraram assercao sobre conjunto vazio."
+    )
+    for dominio, modulo in _DOMINIO_SEM_SUFIXO.items():
+        assert reivindicados.get(dominio) == modulo, (
+            f"`{dominio}` deveria ser exercitado por {modulo}; a excecao historica "
+            f"mudou e este mapa nao acompanhou."
+        )
