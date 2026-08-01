@@ -44,8 +44,8 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 59,
-    "retrieved": "2026-07-29"
+    "rule_count": 48,
+    "retrieved": "2026-07-31"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
   "tools": [
@@ -72,6 +72,7 @@
     "sparkforge_collect_verify",
     "sparkforge_fuse",
     "sparkforge_judge",
+    "sparkforge_knowledge_path",
     "sparkforge_next_step",
     "sparkforge_resume",
     "sparkforge_rules_lookup",

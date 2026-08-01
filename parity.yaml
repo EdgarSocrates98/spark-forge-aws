@@ -163,6 +163,16 @@ capabilities:
       devin_cli: [mcp, cli, files]
       copilot_ci: [cli, files]
 
+  - name: locate the version-controlled knowledge files
+    tools: [sparkforge_knowledge_path]
+    cli: [knowledge path]
+    knowledge: [knowledge/INDEX.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      copilot_ci: [cli, files]
+
   - name: look up a rule with threshold, version guard and source
     tools: [sparkforge_rules_lookup]
     cli: [rules lookup]

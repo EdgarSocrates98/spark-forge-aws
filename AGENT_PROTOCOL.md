@@ -1,14 +1,19 @@
 # Protocolo do agente — SparkForge AWS
 
-Injetado em todo agente e toda skill por `scripts/sync_skills.py`. Estas regras são duras:
-elas são o que faz o resultado ser igual sob qualquer modelo e qualquer ferramenta.
+Todo agente e toda skill **apontam** para este arquivo; nenhum o embute. `scripts/sync_skills.py`
+espelha `skills/` e `agents/` para `.claude/`, `.agents/` e `.github/` byte a byte — ele não injeta
+texto em lugar nenhum. Então **leia este arquivo**: as regras abaixo não chegam ao seu contexto
+sozinhas.
+
+Estas regras são duras: elas são o que faz o resultado ser igual sob qualquer modelo e qualquer
+ferramenta.
 
 ## Regras
 
 1. **Abra ou carregue o case antes de qualquer análise.** Investigação sem `.sparkforge/case.yaml` não é retomável em outra ferramenta, e retomabilidade é requisito, não conveniência.
 2. **Chame `next_step` antes de escolher skill.** A árvore de decisão vive em `rules/catalog/routing.yaml`. Não escolha a rota por julgamento próprio — é isso que divergiria entre modelos.
 3. **Nenhum número na saída sem `fact_id` que o sustente.** Toda afirmação quantitativa cita `rule_id` e o `fact_id` da evidência. Sem Fact, é hipótese, e tem que estar rotulada como hipótese.
-4. **Use `rules_lookup` em vez de memória** para limiar, guarda de versão e fonte. Você não precisa saber o conhecimento; precisa consultá-lo.
+4. **Use `rules_lookup` em vez de memória** para limiar, guarda de versão e fonte. Você não precisa saber o conhecimento; precisa consultá-lo. A resposta traz `knowledge_refs` com o **caminho resolvido** de cada arquivo de `knowledge/` que a regra cita — abra por ali, nunca pelo caminho relativo do texto: num pacote instalado por pip o arquivo está dentro do `site-packages`. Para achar knowledge fora de uma regra, use `sparkforge_knowledge_path` (ou `sparkforge knowledge path --file <rel>` na CLI).
 5. **Chame `validate_output` antes de apresentar recomendação.** Ganho quantificado sem `benchmark_ref` é rejeitado pelo schema. Não contorne.
 6. **Registre no case** cada skill usada, o resultado, e o motivo de não usar as descartadas.
 7. **Reporte `unresolved` sempre.** Nó não resolvido é ponto cego, não ausência de problema. Nunca omita a contagem.

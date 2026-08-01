@@ -20,3 +20,4 @@ python-dotenv>=1.2.2
 pytest>=8.0
 ruff>=0.6
 defusedxml>=0.7
+build>=1.0

@@ -124,3 +124,66 @@ class TestRefreshKnowledgeWorkflow:
         assert "git add knowledge/sources.lock.json" in joined
         assert "git add -A" not in joined
         assert "git add ." not in joined
+
+
+RELEASE = ROOT / ".github" / "workflows" / "release.yml"
+
+
+def _load_release():
+    return yaml.safe_load(RELEASE.read_text(encoding="utf-8"))
+
+
+class TestWheelGateJob:
+    """O gate do artefato roda nos dois sistemas operacionais.
+
+    Golden e gravado com LF forcado e path de subject e normalizado para `/`. O
+    que escapar disso so aparece no Windows.
+    """
+
+    def test_ci_has_a_wheel_job(self):
+        assert "wheel" in _load()["jobs"]
+
+    def test_the_wheel_job_runs_on_both_operating_systems(self):
+        matrix = _load()["jobs"]["wheel"]["strategy"]["matrix"]
+        assert "ubuntu-latest" in matrix["os"]
+        assert "windows-latest" in matrix["os"]
+
+    def test_the_wheel_job_calls_the_gate(self):
+        runs = [step.get("run", "") for step in _load()["jobs"]["wheel"]["steps"]]
+        assert any("verify_wheel.py" in run for run in runs)
+
+    def test_the_wheel_job_is_separate_from_the_test_job(self):
+        """Construir artefato e criar venv custa mais de um minuto e nao depende
+        da versao de Python. Dentro da matriz 3.10/3.11 rodaria quatro vezes."""
+        assert "verify_wheel" not in str(_load()["jobs"]["test"])
+
+
+class TestReleaseWorkflow:
+    def test_exists_and_is_valid_yaml(self):
+        assert RELEASE.is_file()
+        assert _load_release() is not None
+
+    def test_is_manual_only(self):
+        """Release automatico em push publicaria por acidente, e versao no PyPI
+        nao se reescreve -- so se yanka."""
+        triggers = _load_release().get("on", _load_release().get(True))
+        assert "workflow_dispatch" in triggers
+        assert "push" not in triggers
+        assert "pull_request" not in triggers
+
+    def test_does_not_publish_to_pypi(self):
+        text = RELEASE.read_text(encoding="utf-8")
+        assert "twine upload" not in text
+        assert "pypa/gh-action-pypi-publish" not in text
+
+    def test_refuses_a_tag_that_disagrees_with_the_package_version(self):
+        text = RELEASE.read_text(encoding="utf-8")
+        assert "__version__" in text
+
+    def test_runs_the_gate_before_producing_anything(self):
+        runs = [
+            step.get("run", "")
+            for job in _load_release()["jobs"].values()
+            for step in job.get("steps", [])
+        ]
+        assert any("verify_wheel.py" in run for run in runs)

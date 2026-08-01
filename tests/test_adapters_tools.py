@@ -32,6 +32,7 @@ class TestToolSurface:
             "sparkforge_next_step",
             "sparkforge_resume",
             "sparkforge_runtime_detect",
+            "sparkforge_knowledge_path",
             "sparkforge_analyze_pyspark",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
@@ -483,6 +484,9 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
 
     if name == "sparkforge_runtime_detect":
         return call_tool("sparkforge_runtime_detect", {"glue": "5.0"})
+
+    if name == "sparkforge_knowledge_path":
+        return call_tool("sparkforge_knowledge_path", {"file": "glue/runtime-matrix.md"})
 
     if name == "sparkforge_analyze_pyspark":
         lib = _write_job(tmp_path)
