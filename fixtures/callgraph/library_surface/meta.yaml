@@ -1,0 +1,27 @@
+name: library_surface
+proves: >
+  A metade NEGATIVA da medida de símbolo sem referência, que é a metade que
+  decide se ela é usável. Sete funções deste corpus não têm chamador local, e
+  só uma é sobra: `carrega` e `grava` estão em `__all__` (quem chama é a
+  aplicação, fora do corpus); `aplica_normalizacao` é chamada de `job.py`,
+  cross-módulo, onde nenhuma aresta chega; `_normaliza_linha` é passada por
+  nome a `foreach`, que é referência sem chamada; `esquema_do_contrato` é
+  decorada; `executa` e `__init__` são métodos, invocados por atributo; e
+  `main` é chamada no nível do módulo sob `if __name__`.
+  Sobra `_rotina_abandonada`, e é a única que `unreferenced_functions` lista.
+  Se essa lista crescer nesta fixture, a medida passou a acusar código vivo —
+  o falso positivo em massa que `rules/catalog/README.md` trata como o pior
+  defeito de regra, porque destrói a confiança no relatório inteiro.
+  Prova junto que `defined_function_count` conta as funções DEFINIDAS: até a
+  Fase 5b os nós vinham só das arestas, e uma função definida e nunca chamada
+  não existia no grafo.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - callgraph.function
+  - callgraph.reachable_spark_work
+  - callgraph.summary
+expects_rules: []

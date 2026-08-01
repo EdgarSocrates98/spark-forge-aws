@@ -1,12 +1,14 @@
 """Construtor de grafo de chamadas a partir de Facts ja extraidos.
 
-Consome os fatos `pyspark.callgraph_edge` (caller -> callee) que
-`pyspark_ast.py` ja produz durante a extracao AST -- passe 2, funcao
-`_loop_and_callgraph_facts` -- mais os fatos de trabalho Spark (leitura,
-action, write, cache, join, ...) que a mesma extracao ja produz, e deriva:
-quais funcoes existem no grafo, quanto trabalho Spark cada uma concentra,
-o que e alcancavel a partir de cada entrypoint e a que profundidade minima,
-quais ciclos existem, e um resumo do grafo inteiro.
+Consome os fatos `pyspark.callgraph_edge` (caller -> callee) e
+`pyspark.function_def` (uma funcao definida, com ou sem chamada) que
+`pyspark_ast.py` ja produz durante a extracao AST -- passe 2, funcoes
+`_loop_and_callgraph_facts` e `_function_def_facts` -- mais os fatos de
+trabalho Spark (leitura, action, write, cache, join, ...) que a mesma extracao
+ja produz, e deriva: quais funcoes existem no grafo, quanto trabalho Spark cada
+uma concentra, o que e alcancavel a partir de cada entrypoint e a que
+profundidade minima, quais ciclos existem, quais simbolos ninguem referencia no
+corpus, e um resumo do grafo inteiro.
 
 Por que isto importa (ver `knowledge/spark/execution-model.md` secoes 6 e 7):
 um `count()` dentro de um helper chamado tres niveis abaixo do entrypoint e
@@ -46,11 +48,22 @@ EMITTED_KINDS = frozenset(
 )
 
 # "Trabalho Spark": qualquer fato pyspark.* ancorado numa funcao, exceto os
-# tres que descrevem a propria extracao/grafo (a aresta em si, o sentinela de
-# modulo analisado, e o "nao consegui resolver") -- nenhum dos tres e
-# trabalho que o Spark executa.
+# quatro que descrevem a propria extracao/grafo (a aresta em si, a definicao de
+# funcao, o sentinela de modulo analisado, e o "nao consegui resolver") --
+# nenhum dos quatro e trabalho que o Spark executa.
+#
+# `pyspark.function_def` PRECISA estar aqui: ele existe uma vez por funcao
+# definida, entao conta-lo como trabalho daria `spark_work_count >= 1` a toda
+# funcao do corpus e faria `callgraph.cycle.contains_spark_work` virar sempre
+# verdadeiro -- SF-CG-001 (P1) passaria a disparar em qualquer recursao, com ou
+# sem Spark dentro.
 _NON_WORK_KINDS = frozenset(
-    {"pyspark.callgraph_edge", "pyspark.module_analyzed", "pyspark.unresolved"}
+    {
+        "pyspark.callgraph_edge",
+        "pyspark.function_def",
+        "pyspark.module_analyzed",
+        "pyspark.unresolved",
+    }
 )
 
 # (file, symbol) identifica uma funcao. Arestas de `pyspark_ast` sao sempre
@@ -174,16 +187,25 @@ def build_call_graph(facts: Sequence[Fact], path_hint: str = "") -> list[Fact]:
     fiquem vazios. `path_hint` ancora o fato `callgraph.summary` quando
     `facts` cobre uma arvore inteira (varios arquivos) em vez de um unico.
 
-    Uma funcao que nunca aparece como caller nem callee (nenhuma aresta a
-    menciona) nao produz `callgraph.function`: o grafo so cobre o que
-    `pyspark_ast` conseguiu resolver como chamada local a uma funcao
-    conhecida -- callables dinamicos, chamadas cross-modulo e afins ficam de
-    fora por construcao do extrator upstream, nao deste modulo.
+    Ha um no por funcao DEFINIDA (`pyspark.function_def`), com ou sem aresta,
+    mais qualquer ponta de aresta que apareca sem definicao. Ate a Fase 5b os
+    nos vinham SO das arestas, e uma funcao definida e nunca chamada nao existia
+    no grafo -- ver a secao sobre `unreferenced_function_count` abaixo.
+
+    Quando `facts` nao traz nenhum `pyspark.function_def` (entrada sintetica, ou
+    facts de uma versao anterior do extrator), o grafo degrada para o
+    comportamento antigo: so os nos das arestas, `defined_function_count` zero e
+    `unreferenced_function_count` zero. Zero por ausencia de definicao,
+    nao por ausencia de orfa -- a diferenca esta em `defined_function_count`.
     """
     provenance = {"artifact": path_hint, "artifact_sha256": "", "extractor": EXTRACTOR_ID}
 
     edges: set[tuple[NodeKey, NodeKey]] = set()
     facts_by_node: dict[NodeKey, list[Fact]] = {}
+    definitions: dict[NodeKey, Fact] = {}
+    definition_counts: dict[NodeKey, int] = {}
+    referenced_names: dict[str, set[str]] = {}
+    dynamic_dispatch = False
 
     for fact in facts:
         subject = fact.subject if isinstance(fact.subject, dict) else {}
@@ -198,7 +220,27 @@ def build_call_graph(facts: Sequence[Fact], path_hint: str = "") -> list[Fact]:
             if caller and callee:
                 edges.add(((file, caller), (file, callee)))
 
-    nodes: set[NodeKey] = set()
+        elif fact.kind == "pyspark.function_def" and symbol:
+            node = (file, symbol)
+            definition_counts[node] = definition_counts.get(node, 0) + 1
+            # Dois `def` com o mesmo nome no mesmo arquivo (metodos homonimos em
+            # classes diferentes, redefinicao condicional) colapsam num no so --
+            # a chave do grafo e (arquivo, nome), como a aresta. Vence a
+            # definicao de menor linha, criterio deterministico, e
+            # `definition_count` deixa a colisao VISIVEL em vez de silenciosa.
+            current = definitions.get(node)
+            if current is None or subject.get("line", 0) < current.subject.get("line", 0):
+                definitions[node] = fact
+
+        elif fact.kind == "pyspark.module_analyzed":
+            names = fact.attrs.get("referenced_names")
+            if isinstance(names, list):
+                referenced_names.setdefault(file, set()).update(str(n) for n in names)
+
+        elif fact.kind == "pyspark.unresolved" and fact.attrs.get("reason") == "getattr":
+            dynamic_dispatch = True
+
+    nodes: set[NodeKey] = set(definitions)
     callers: dict[NodeKey, set[NodeKey]] = {}
     for caller_node, callee_node in edges:
         nodes.add(caller_node)
@@ -229,9 +271,62 @@ def build_call_graph(facts: Sequence[Fact], path_hint: str = "") -> list[Fact]:
     out: list[Fact] = []
 
     # callgraph.function -----------------------------------------------
+    #
+    # `caller_visibility` responde a pergunta que decide se a AUSENCIA de
+    # chamador significa alguma coisa:
+    #
+    #   resolvable -- funcao de nivel de modulo ou aninhada, sem decorator e
+    #                 fora de `__all__`. Todo uso dela passa por uma leitura do
+    #                 nome -- chamada, callback, entrada de dicionario, retorno
+    #                 de fechamento -- e leitura de nome e observavel. Aqui, e
+    #                 so aqui, "ninguem chama" e observacao sobre o CODIGO.
+    #   opaque     -- metodo (invocado por `self.x()`/`obj.x()`, que e
+    #                 `ast.Attribute` e nunca vira aresta nem leitura do nome
+    #                 da funcao), decorada (o framework que registrou pode
+    #                 invocar) ou exportada em `__all__` (o chamador esta fora
+    #                 do corpus por definicao). "Ninguem chama" aqui e
+    #                 propriedade do EXTRATOR, nao do codigo.
+    #   unknown    -- no que so existe porque uma aresta o citou; nenhuma
+    #                 definicao foi observada.
+    #
+    # Sem essa separacao, listar "funcao sem chamador" num corpus de biblioteca
+    # devolveria a API publica inteira como achado.
+    unreferenced: list[NodeKey] = []
+    opaque_nodes: list[NodeKey] = []
     for node in sorted_nodes:
+        file, symbol = node
         fan_out = len(callees.get(node, []))
         fan_in = len(callers.get(node, set()))
+        definition = definitions.get(node)
+
+        if definition is None:
+            def_kind = ""
+            visibility = "unknown"
+            local_references = 0
+        else:
+            def_kind = str(definition.attrs.get("def_kind", ""))
+            local_references = int(definition.measures.get("name_reference_count", 0))
+            opaque = (
+                def_kind == "method"
+                or bool(definition.attrs.get("decorators"))
+                or bool(definition.attrs.get("exported"))
+            )
+            visibility = "opaque" if opaque else "resolvable"
+
+        # Referencia ao nome em OUTRO arquivo do corpus: `from lib import f` +
+        # `f(df)`, ou `lib.f(df)`. Nao vira aresta (as arestas sao intra-arquivo)
+        # e sem esta consulta toda funcao usada entre modulos pareceria orfa.
+        referenced_elsewhere = any(
+            symbol in names for other, names in referenced_names.items() if other != file
+        )
+        is_referenced = fan_in > 0 or local_references > 0 or referenced_elsewhere
+        is_unreferenced = visibility == "resolvable" and not is_referenced
+
+        if is_unreferenced:
+            unreferenced.append(node)
+        if visibility == "opaque":
+            opaque_nodes.append(node)
+
         out.append(
             Fact(
                 kind="callgraph.function",
@@ -240,8 +335,18 @@ def build_call_graph(facts: Sequence[Fact], path_hint: str = "") -> list[Fact]:
                     "fan_out": fan_out,
                     "fan_in": fan_in,
                     "spark_work_count": sum(work_counters[node].values()),
+                    "definition_count": definition_counts.get(node, 0),
+                    "name_reference_count": local_references,
                 },
-                attrs={"is_entrypoint": fan_in == 0, "is_leaf": fan_out == 0},
+                attrs={
+                    "is_entrypoint": fan_in == 0,
+                    "is_leaf": fan_out == 0,
+                    "is_defined": definition is not None,
+                    "def_kind": def_kind,
+                    "caller_visibility": visibility,
+                    "referenced_in_other_module": referenced_elsewhere,
+                    "is_unreferenced": is_unreferenced,
+                },
                 provenance=provenance,
             )
         )
@@ -303,6 +408,25 @@ def build_call_graph(facts: Sequence[Fact], path_hint: str = "") -> list[Fact]:
         )
 
     # callgraph.summary -----------------------------------------------------
+    #
+    # `unreachable_from_entrypoint_count` era `unreachable_function_count` ate a
+    # Fase 5b. A conta e a mesma -- nos que nenhum BFS alcancou -- mas o nome
+    # prometia deteccao de codigo morto e entregava outra coisa: como todo no
+    # sem chamador vira entrypoint, e todo entrypoint se alcanca a si mesmo com
+    # profundidade zero, o unico jeito de um no nao ser alcancado e estar num
+    # componente ciclico sem entrada. Funcao definida e nunca chamada dava ZERO,
+    # e zero e indistinguivel de "nao ha codigo morto". O nome novo diz o que a
+    # conta faz.
+    #
+    # `unreferenced_function_count` e a medida que responde de verdade, e ela
+    # afirma exatamente isto e nada alem: funcao definida (nivel de modulo ou
+    # aninhada), sem decorator, fora de `__all__`, que nenhuma outra funcao
+    # deste corpus chama e cujo nome nao e lido em nenhum arquivo deste corpus.
+    # Nao afirma "codigo morto": a chamada pode vir de fora do corpus (aplicacao
+    # que importa a biblioteca), de string (`getattr`, tabela por nome, entry
+    # point de pacote) ou de framework. `attrs.dynamic_dispatch_present` marca
+    # quando o proprio corpus tem `getattr` -- nesse caso a lista e ainda mais
+    # fraca, e o consumidor tem que saber disso pelo fact.
     unreachable = len(nodes) - len(reachable_all)
     max_depth = max(reachable_all.values()) if reachable_all else 0
     out.append(
@@ -318,14 +442,22 @@ def build_call_graph(facts: Sequence[Fact], path_hint: str = "") -> list[Fact]:
             },
             measures={
                 "function_count": len(nodes),
+                "defined_function_count": len(definitions),
                 "edge_count": len(edges),
                 "entrypoint_count": len(entrypoints),
                 "max_depth": max_depth,
-                "unreachable_function_count": unreachable,
+                "unreachable_from_entrypoint_count": unreachable,
+                "unreferenced_function_count": len(unreferenced),
+                "opaque_caller_function_count": len(opaque_nodes),
             },
             attrs={
                 "entrypoints": [n[1] for n in entrypoints],
                 "has_cycle": bool(cycles),
+                # A lista, nao so a contagem: contagem sem nome nao e
+                # acionavel, e o operador nao consegue verificar uma afirmacao
+                # cujo sujeito ele nao conhece.
+                "unreferenced_functions": [n[1] for n in unreferenced],
+                "dynamic_dispatch_present": dynamic_dispatch,
             },
             provenance=provenance,
         )

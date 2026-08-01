@@ -390,6 +390,35 @@
     }
   },
   {
+    "id": "f_8e9dd1",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 13,
+      "col": 0,
+      "end_line": 19,
+      "symbol": "main",
+      "snippet": "def main():"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "5c0b0785abe26c41c4db947a6438b419628ce97cbe3f101feb899f5dc29ad2f6",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_0f5d16",
     "schema_version": 1,
     "kind": "pyspark.glue_context_init",
@@ -429,7 +458,25 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "GlueContext",
+        "SparkContext",
+        "__name__",
+        "argv",
+        "eventos",
+        "getOrCreate",
+        "getResolvedOptions",
+        "glue_context",
+        "main",
+        "mode",
+        "parquet",
+        "read",
+        "spark",
+        "spark_session",
+        "sys",
+        "write"
+      ]
     },
     "provenance": {
       "artifact": "job.py",

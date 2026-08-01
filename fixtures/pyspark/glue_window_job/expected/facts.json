@@ -320,6 +320,151 @@
     }
   },
   {
+    "id": "f_7f71fe",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 16,
+      "col": 0,
+      "end_line": 18,
+      "symbol": "build_context",
+      "snippet": "def build_context():"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_1e482f",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 21,
+      "col": 0,
+      "end_line": 22,
+      "symbol": "read_pedidos",
+      "snippet": "def read_pedidos(spark, caminho):"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_169088",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 25,
+      "col": 0,
+      "end_line": 31,
+      "symbol": "latest_per_key",
+      "snippet": "def latest_per_key(df):"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_726043",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 34,
+      "col": 0,
+      "end_line": 36,
+      "symbol": "resumo_por_status",
+      "snippet": "def resumo_por_status(df):"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
+    "id": "f_5bf102",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 39,
+      "col": 0,
+      "end_line": 48,
+      "symbol": "main",
+      "snippet": "def main():"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9f2d472f83549cab5b870d8f7b919a90720252fc69d0bdbe14fb6c2b45729762",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_84a388",
     "schema_version": 1,
     "kind": "pyspark.glue_context_init",
@@ -359,7 +504,49 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "F",
+        "GlueContext",
+        "SparkContext",
+        "Window",
+        "__name__",
+        "args",
+        "argv",
+        "build_context",
+        "caminho",
+        "col",
+        "corrente",
+        "count",
+        "desc",
+        "df",
+        "drop",
+        "enriquecido",
+        "filter",
+        "getOrCreate",
+        "getResolvedOptions",
+        "glue_context",
+        "janela",
+        "latest_per_key",
+        "main",
+        "mode",
+        "orderBy",
+        "over",
+        "parquet",
+        "partitionBy",
+        "pedidos",
+        "read",
+        "read_pedidos",
+        "resumo_por_status",
+        "row_number",
+        "sc",
+        "select",
+        "spark",
+        "spark_session",
+        "sys",
+        "withColumn",
+        "write"
+      ]
     },
     "provenance": {
       "artifact": "job.py",
