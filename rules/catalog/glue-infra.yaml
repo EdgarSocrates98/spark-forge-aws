@@ -46,12 +46,21 @@ rules:
   # dispara para ninguém). Ancorar em `tf.module_analyzed` com `same_subject` seria pior
   # ainda: o subject dele é o arquivo (`symbol: ""`), grupo que nunca contém fact de
   # observabilidade — a regra acusaria todo módulo, inclusive o configurado corretamente.
-  # `tf.module_analyzed` continua em `requires_facts` como prova de que o extrator rodou:
-  # sem ele, um repositório sem Terraform nenhum seria acusado em vez de skipped.
+  #
+  # `requires_facts` também é `tf.resource`, e não `tf.module_analyzed`, porque a
+  # sentinela é genérica demais para gatear esta regra: ela prova que ALGUM `.tf` foi
+  # lido, não que existe um `aws_glue_job` para revisar. Num repositório com Terraform
+  # mas sem job Glue, a sentinela deixava a regra passar a barreira, o `when` dava falso,
+  # e a regra sumia de `findings` E de `skipped` — e ausência sem explicação lê como
+  # "revisei e está tudo bem". `tf.resource` só é emitido para bloco `aws_glue_job`
+  # (`facts/terraform.py` ignora qualquer outro `resource_type`), e só depois de o bloco
+  # ser parseado inteiro, então ele prova as duas coisas ao mesmo tempo: o extrator rodou
+  # E há um job Glue aqui. Exigir `tf.module_analyzed` junto seria redundante — todo
+  # arquivo que produz `tf.resource` produz a sentinela também.
   - id: SF-GLUE-002
     category: glue-infra
     title: Observabilidade ausente em job de produção
-    requires_facts: [tf.module_analyzed]
+    requires_facts: [tf.resource]
     when:
       same_subject: true
       all:

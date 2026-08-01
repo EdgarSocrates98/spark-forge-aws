@@ -20,9 +20,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "athena": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Partição gravada como string e filtrada como date, ou o inverso, provoca cast implícito que pode impedir o partition pruning sem gerar erro algum. A query retorna o resultado correto e escaneia a tabela inteira. É a falha mais difícil de ver porque nada quebra. O mesmo mecanismo existe no Spark, e lá se verifica em PartitionFilters no plano físico. Ver knowledge/spark/execution-model.md secao 3.",
     "proposed_change": [
       "Alinhar o tipo do literal do filtro ao tipo da coluna de partição.",

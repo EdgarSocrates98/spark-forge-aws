@@ -19,9 +19,7 @@
       "source_count": 1
     },
     "threshold": {},
-    "runtime_scope": {
-      "glue": "<4.0"
-    },
+    "runtime_scope": {},
     "explanation": "AQE é habilitado por default a partir do Apache Spark 3.2. Glue 3.0 roda Spark 3.1.1, portanto AQE não está ativo por default e várias sub-configurações de AQE não existem nessa versão. Qualquer raciocínio do tipo \"o AQE cuida do skew\" ou \"o coalescing ajusta as partições\" é inválido nesse runtime. Ver knowledge/cross-service-constraints.md secao 4.",
     "proposed_change": [
       "Verificar se AQE está explicitamente habilitado; se não, o skew e a contagem de partições precisam de tratamento manual.",

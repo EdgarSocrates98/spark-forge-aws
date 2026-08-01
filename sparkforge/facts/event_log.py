@@ -23,6 +23,7 @@ Campos do Spark event log usam nomes com maiuscula e espaco ("Task Metrics",
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
@@ -42,10 +43,27 @@ EMITTED_KINDS = frozenset(
         "spark.executor.lost",
         "spark.executor.memory_usage",
         "spark.job.spill_summary",
+        "spark.runtime_version",
         "spark.unresolved",
         "spark.log_analyzed",
     }
 )
+
+# Versao aceitavel: comeca por digito e so contem caracteres de versao.
+# Aceita "3.5.4" e "3.5.4-amzn-0" (o que Glue reporta); rejeita "", "unknown",
+# "v3.5.4" e qualquer texto livre. O extrator nao normaliza o que aceita -- o
+# sufixo de vendor e parte da versao que o run reportou, e apagar isso seria
+# transformar observacao em interpretacao.
+_VERSION_PATTERN = re.compile(r"^\d[0-9A-Za-z._+-]*$")
+
+
+def _clean_version(raw: Any) -> str:
+    """Devolve a versao utilizavel, ou "" se o campo nao der para interpretar."""
+    if not isinstance(raw, str):
+        return ""
+    value = raw.strip()
+    return value if _VERSION_PATTERN.match(value) else ""
+
 
 # Metricas de memoria de `SparkListenerStageExecutorMetrics` -> nome da measure.
 # So as de MEMORIA: o evento carrega dezenas de campos (GC, disco, shuffle) e
@@ -274,6 +292,10 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
         tipo incompativel.
       - "read_error": o iteravel de linhas quebrou no meio da leitura (ex.:
         erro de decode do file handle subjacente).
+      - "conflicting_runtime_version": um segundo "SparkListenerLogStart"
+        declarou uma versao de Spark diferente da primeira. Ver o tratamento
+        de "SparkListenerLogStart" abaixo para por que isso nao vira escolha
+        silenciosa.
     """
     provenance = {"artifact": path, "artifact_sha256": "", "extractor": EXTRACTOR_ID}
     facts: list[Fact] = []
@@ -294,6 +316,7 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
     peak_cores = 0
     peak_executor_count = 0
     app_id = ""
+    spark_version = ""
 
     line_count = 0
     event_count = 0
@@ -352,7 +375,60 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
         event = event_obj.get("Event")
 
         try:
-            if event == "SparkListenerApplicationStart":
+            if event == "SparkListenerLogStart":
+                # Primeira linha de todo event log moderno, escrita pelo proprio
+                # EventLoggingListener antes de qualquer evento do job. E a
+                # leitura mais confiavel da versao de Spark porque nao e uma
+                # propriedade que o job possa definir: "spark.version" dentro de
+                # "Spark Properties" (SparkListenerEnvironmentUpdate) e apenas o
+                # eco de uma conf, e qualquer `--conf spark.version=...` apareceria
+                # ali com valor arbitrario. Ver `detect_runtime`: a fonte
+                # "event_log" tem a maior precedencia justamente por ser o que o
+                # run reportou, nao o que alguem declarou.
+                raw_version = event_obj.get("Spark Version")
+                version = _clean_version(raw_version)
+                if not version:
+                    facts.append(
+                        Fact(
+                            kind="spark.unresolved",
+                            subject=_line_subject(path, line_count, stripped[:200]),
+                            attrs={
+                                "reason": "missing_event_field",
+                                "detail": f"Spark Version ausente ou invalido: {raw_version!r}",
+                            },
+                            provenance=provenance,
+                        )
+                    )
+                    unresolved_count += 1
+                elif not spark_version:
+                    spark_version = version
+                elif version != spark_version:
+                    # Duas versoes num unico log significam partes de runs
+                    # diferentes concatenadas. Escolher em silencio deixaria a
+                    # versao errada gatilhar as regras versionadas de `judge`;
+                    # abortar jogaria fora o log inteiro. O primeiro cabecalho
+                    # vence (e o que o arquivo abriu) e a divergencia vira ponto
+                    # cego ancorado na linha que discordou. Repeticao com o MESMO
+                    # valor nao e anomalia: event log rolante
+                    # (`spark.eventLog.rolling.enabled`) repete o cabecalho em
+                    # cada parte.
+                    facts.append(
+                        Fact(
+                            kind="spark.unresolved",
+                            subject=_line_subject(path, line_count, stripped[:200]),
+                            attrs={
+                                "reason": "conflicting_runtime_version",
+                                "detail": (
+                                    f"Spark Version divergente: {spark_version} "
+                                    f"(primeiro) != {version}"
+                                ),
+                            },
+                            provenance=provenance,
+                        )
+                    )
+                    unresolved_count += 1
+
+            elif event == "SparkListenerApplicationStart":
                 app_id = str(event_obj.get("App ID") or app_id)
 
             elif event == "SparkListenerExecutorAdded":
@@ -484,6 +560,26 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
                 subject={"type": "job_run", "symbol": executor_id},
                 measures=dict(sorted(peaks.items())),
                 attrs={"executor_id": executor_id},
+                provenance=provenance,
+            )
+        )
+
+    # Versao de Spark observada no run. Emitido so quando o log de fato
+    # declarou uma: event log sem SparkListenerLogStart (log truncado pelo
+    # inicio, recorte, log sintetico) e event log valido, e ausencia de versao
+    # e silencio, nao ponto cego -- um fact com versao vazia seria pior que
+    # nenhum, porque `detect_runtime` o trataria como observacao da fonte de
+    # maior precedencia.
+    if spark_version:
+        facts.append(
+            Fact(
+                kind="spark.runtime_version",
+                subject={"type": "job_run", "symbol": app_id},
+                attrs={
+                    "component": "spark",
+                    "version": spark_version,
+                    "source_event": "SparkListenerLogStart",
+                },
                 provenance=provenance,
             )
         )

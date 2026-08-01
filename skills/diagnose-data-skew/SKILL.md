@@ -11,7 +11,7 @@ Skew de duração sozinho não diz o que fazer. O tratamento depende inteirament
 
 1. `sparkforge collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>` — sem credencial, baixe manualmente e registre com `sparkforge.collect.register_artifact`.
 2. `sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts.json`. Leia `unresolved`: log truncado é ponto cego, não ausência de skew.
-3. `sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped`. `--show-skipped` não é opcional aqui — distingue "não há skew" de "não coletei o dado que provaria skew".
+3. `sparkforge judge --facts .sparkforge/facts.json --show-skipped`. `--show-skipped` não é opcional aqui — distingue "não há skew" de "não coletei o dado que provaria skew". Sem flag de versão: `SF-UI-001` e `SF-UI-002`, as duas regras que decidem esta investigação, não guardam versão, então declarar runtime não muda o resultado. O que o event log declara (`spark.runtime_version`, a primeira linha do log) `judge` já lê sozinho — confira no campo `runtime` da saída, com `detected_from` dizendo de onde veio. Passe `--glue 5.1` só se souber a versão de fonte confiável e quiser cobrir também `SF-GLUE-*`; senão elas aparecem em `--show-skipped` com `reason: runtime_scope`, que aqui é ruído esperado e não lacuna de skew.
 4. `sparkforge next-step --repo . --findings .sparkforge/findings.json` — a árvore de roteamento já resolve o discriminador abaixo sozinha (`ROUTE-006`/`ROUTE-007` em `rules/catalog/routing.yaml`); não escolha o caminho por julgamento próprio.
 
 ## O discriminador que decide o tratamento

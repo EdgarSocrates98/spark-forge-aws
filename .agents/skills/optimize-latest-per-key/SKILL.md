@@ -32,10 +32,12 @@ sparkforge analyze pyspark --path <arquivo> --kind pyspark.window --kind pyspark
 ### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --show-skipped
 ```
 
-`SF-PY-003` cobre o join-back mal ordenado. Não existe regra estrutural própria para "Window sem partitionBy" no catálogo `SF-PY` — é um fact (`pyspark.window`) que você interpreta diretamente, não um `rule_id` pronto. Registre a leitura como hipótese com o `fact_id` do `pyspark.window`, não como se fosse um finding do catálogo.
+Sem flag de versão, porque não há de onde tirá-la e ela não faria diferença aqui: os facts saem de `analyze pyspark`, que lê AST e nunca observa runtime, e `SF-PY-003` é estrutural, sem `runtime_scope`. A saída de `judge` traz o campo `runtime` com o contexto efetivamente usado — vazio, `detected_from: []` — e as regras que `--show-skipped` listar com `reason: runtime_scope` são de infraestrutura Glue, que estes facts não alimentam.
+
+Isso tem uma consequência direta para esta skill: `max_by` e a semântica de empate **variam por versão**, e o motor não vai te avisar disso a partir deste `facts.json` — não existe regra de catálogo que guarde essa escolha. Antes de recomendar `max_by`, confirme a versão numa fonte real (o `.tf` do job, com `sparkforge analyze terraform` e os dois arquivos na mesma chamada, já que `--facts` é repetível; ou `--glue 5.1` declarado por você) e consulte `knowledge/runtime-compatibility.md`. Um `runtime` vazio na saída é o lembrete de que essa confirmação ainda não foi feita. Não existe regra estrutural própria para "Window sem partitionBy" no catálogo `SF-PY` — é um fact (`pyspark.window`) que você interpreta diretamente, não um `rule_id` pronto. Registre a leitura como hipótese com o `fact_id` do `pyspark.window`, não como se fosse um finding do catálogo.
 
 ### 4. Confirme com execução, se disponível
 

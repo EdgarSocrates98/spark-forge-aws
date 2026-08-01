@@ -1532,8 +1532,8 @@ Em `docs/superpowers/STATUS.md`, na seção de fases, substitua o bloco da Fase 
 ```markdown
 ### Fase 3a — distribuição pip — **CONCLUÍDA** (2026-07-31)
 
-Documentos: [spec](specs/2026-07-31-sparkforge-fase3a-pip-design.md) ·
-[plan](plans/2026-07-31-sparkforge-fase3a-pip.md).
+Documentos: [spec](../specs/2026-07-31-sparkforge-fase3a-pip-design.md) ·
+[plan](2026-07-31-sparkforge-fase3a-pip.md).
 
 `pip install sparkforge-aws` entrega o ciclo determinístico inteiro sem o
 repositório em disco. Backend `hatchling` com `force-include` embarca

@@ -101,13 +101,126 @@ def paginate_items(
     return page, next_cursor
 
 
-def build_runtime_context(
+# --------------------------------------------------------------------------- #
+# runtime a partir dos facts
+# --------------------------------------------------------------------------- #
+
+# FRONTEIRA NEGATIVA -- o coracao deste modulo, e nao negociavel.
+#
+# Derivar runtime dos facts e LER o que um extrator ja OBSERVOU, com artefato,
+# linha e sha256 atras. Nada aqui adivinha versao a partir de sinal indireto:
+# nem sintaxe de API ("usou `df.observe`, logo Spark >= 3.3"), nem nome de
+# bucket, nem presenca de import, nem heuristica de qualquer outra especie.
+# Se nenhum fact carrega a versao, o campo fica VAZIO e a regra versionada e
+# pulada com `reason: runtime_scope` -- isso e o comportamento correto, nao uma
+# lacuna a ser preenchida por palpite. Inferir versao de sintaxe seria
+# julgamento entrando na camada de fato, que e o inimigo declarado da secao 1
+# do spec da Fase 0: fato e o que tem artefato; o resto precisa de mecanismo
+# proprio, com garantia declarada.
+#
+# A unica inferencia permitida e a que `detect_runtime` ja faz e ja documenta:
+# `GLUE_MATRIX`, a matriz oficial de compatibilidade. Sabendo `glue_version`
+# (observado no Terraform), spark/python/iceberg saem da tabela publicada da
+# AWS, nao de palpite -- e ficam marcados como `:matrix` para nunca vencerem
+# uma leitura direta.
+
+# fact -> (fonte de `detect_runtime`, chave crua, valor). Uma entrada nova aqui
+# exige LER o extrator que emite o kind: o mapeamento e um contrato com o
+# formato exato dos attrs, nao um palpite sobre o nome do campo.
+def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
+    """Leitura de versao que ESTE fact carrega, ou None.
+
+    `spark.runtime_version` vem de `SparkListenerLogStart`, a primeira linha do
+    event log, escrita pelo proprio EventLoggingListener -- ver
+    `sparkforge/facts/event_log.py`. `attrs.component` espelha o vocabulario de
+    `env.runtime_signal` de proposito, entao a checagem e direta.
+
+    `tf.attribute` com `key == "glue_version"` so conta quando e literal e esta
+    na raiz do `resource "aws_glue_job"`. Nao-literal significa `var.x` /
+    `local.x`: o extrator guarda o TEXTO da referencia em `attrs.value`, e
+    trata-lo como versao gravaria "var.glue_version" no contexto. Fora da raiz
+    significa uma chave homonima dentro de `default_arguments`, que e argumento
+    de job, nao a versao do runtime.
+    """
+    if fact.kind == "spark.runtime_version":
+        if fact.attrs.get("component") != "spark":
+            return None
+        version = str(fact.attrs.get("version") or "").strip()
+        return ("event_log", "spark_version", version) if version else None
+
+    if fact.kind == "tf.attribute" and fact.attrs.get("key") == "glue_version":
+        if not fact.attrs.get("literal") or fact.attrs.get("block") != "root":
+            return None
+        value = str(fact.attrs.get("value") or "").strip()
+        return ("terraform", "glue_version", value) if value else None
+
+    return None
+
+
+def _observation_origin(source: str, fact: Fact) -> str:
+    """`<fonte>:<artefato>` -- nome de fonte que diz DE ONDE veio a leitura.
+
+    O sufixo depois de `:` e ignorado por `_source_rank` (que corta em `:`),
+    entao a origem qualificada herda exatamente a precedencia da fonte base.
+    Isso e o que permite duas leituras discordantes da MESMA fonte coexistirem
+    em `detect_runtime`, em vez de uma sobrescrever a outra num dict.
+    """
+    anchor = str(fact.provenance.get("artifact") or fact.subject.get("symbol") or "").strip()
+    return f"{source}:{anchor}" if anchor else source
+
+
+def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, Any]]:
+    """Fontes para `detect_runtime` derivadas do que os extratores observaram.
+
+    Dois facts do mesmo kind com valores DIFERENTES -- dois modulos Terraform
+    declarando `glue_version` distintos, dois event logs de runs diferentes --
+    nao sao colapsados aqui, e nenhum e escolhido. Viram duas OBSERVACOES, sob
+    origens qualificadas pelo artefato de cada uma, e `detect_runtime` faz o
+    que existe para fazer: registra a divergencia em `RuntimeContext.divergences`
+    e no fact `env.runtime_signal`, que e o gatilho de SF-ENV-001 em P0.
+    Resolver aqui, em silencio, seria esconder do operador exatamente o defeito
+    de configuracao que ele precisa ver -- e a versao errada invalida toda
+    recomendacao versionada que vier depois.
+
+    Valores repetidos NAO sao divergencia: o mesmo `glue_version` em tres
+    arquivos e uma observacao, nao tres. Por isso a deduplicacao e por valor, e
+    a qualificacao por artefato so aparece quando ha mais de um valor distinto
+    -- caso contrario `detected_from` do contexto encheria de caminhos de
+    arquivo onde o operador espera ler "terraform".
+    """
+    observed: dict[tuple[str, str], dict[str, Fact]] = {}
+    for fact in facts or []:
+        reading = _runtime_reading(fact)
+        if reading is None:
+            continue
+        source, key, value = reading
+        observed.setdefault((source, key), {}).setdefault(value, fact)
+
+    sources: dict[str, dict[str, Any]] = {}
+    for (source, key), by_value in sorted(observed.items()):
+        if len(by_value) == 1:
+            sources.setdefault(source, {})[key] = next(iter(by_value))
+            continue
+        for value, fact in sorted(by_value.items()):
+            sources.setdefault(_observation_origin(source, fact), {})[key] = value
+    return sources
+
+
+def build_runtime(
     glue: str | None = None,
     spark: str | None = None,
     python: str | None = None,
     iceberg: str | None = None,
     athena: str | None = None,
-) -> RuntimeContext:
+    facts: list[Fact] | None = None,
+) -> tuple[RuntimeContext, list[Fact]]:
+    """Contexto de runtime E os facts `env.runtime_signal` que o justificam.
+
+    `facts` e opcional e o default (`None`) reproduz exatamente o comportamento
+    anterior -- so as flags. Quando informado, as versoes JA OBSERVADAS pelos
+    extratores entram como fontes proprias, e o operador deixa de precisar
+    saber de cor a versao do Glue para que as regras versionadas avaliem.
+    """
     raw = {
         "glue_version": glue,
         "spark_version": spark,
@@ -116,8 +229,21 @@ def build_runtime_context(
         "athena_version": athena,
     }
     cleaned = {k: v for k, v in raw.items() if v}
-    sources = {"cli": cleaned} if cleaned else {}
-    context, _facts = detect_runtime(sources)
+    sources = runtime_sources_from_facts(facts)
+    if cleaned:
+        sources["cli"] = cleaned
+    return detect_runtime(sources)
+
+
+def build_runtime_context(
+    glue: str | None = None,
+    spark: str | None = None,
+    python: str | None = None,
+    iceberg: str | None = None,
+    athena: str | None = None,
+    facts: list[Fact] | None = None,
+) -> RuntimeContext:
+    context, _facts = build_runtime(glue, spark, python, iceberg, athena, facts)
     return context
 
 
@@ -811,7 +937,11 @@ def judge_findings(
     except CatalogError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
-    context = build_runtime_context(glue, spark, python, iceberg, athena)
+    # O contexto e montado DEPOIS de `fact_list` existir e ANTES de `run_judge`
+    # -- e `run_judge` que chama `in_scope`. Os facts que serao julgados sao os
+    # mesmos que alimentam a deteccao: uma regra guardada por `glue: "*"` passa
+    # a avaliar quando o Terraform ja disse qual e a versao, sem flag nenhuma.
+    context = build_runtime_context(glue, spark, python, iceberg, athena, facts=fact_list)
     runtime = context.to_dict()
 
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
@@ -834,6 +964,13 @@ def judge_findings(
             "cursor": cursor,
         },
         "by_severity": by_severity,
+        # O runtime EFETIVAMENTE usado para filtrar por versao, sempre -- nao
+        # so quando `show_skipped`. Agora que ele pode vir dos facts e nao so
+        # das flags, omiti-lo tornaria invisivel a unica coisa que explica por
+        # que uma regra avaliou ou foi pulada. E carrega `divergences`: com
+        # flag e fact discordando, a precedencia escolhe o valor reportado, mas
+        # a discordancia aparece aqui em vez de ser resolvida em silencio.
+        "runtime": runtime,
         "items": page,
     }
     if show_skipped:
@@ -846,14 +983,30 @@ def judge_findings(
 # --------------------------------------------------------------------------- #
 
 
+def _facts_for_runtime(facts_path: str | list[str] | None) -> list[Fact] | None:
+    """Facts opcionais para alimentar a deteccao de runtime.
+
+    Mesma forma de `judge_findings`: um caminho ou varios. Ausente devolve
+    `None`, que preserva o comportamento so-de-flags para quem nao informa
+    nada.
+    """
+    if facts_path is None:
+        return None
+    paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+    return _merge_facts_files(paths) if paths else None
+
+
 def runtime_detect(
     glue: str | None = None,
     spark: str | None = None,
     python: str | None = None,
     iceberg: str | None = None,
     athena: str | None = None,
+    facts_path: str | list[str] | None = None,
 ) -> dict[str, Any]:
-    return build_runtime_context(glue, spark, python, iceberg, athena).to_dict()
+    return build_runtime_context(
+        glue, spark, python, iceberg, athena, facts=_facts_for_runtime(facts_path)
+    ).to_dict()
 
 
 # --------------------------------------------------------------------------- #
@@ -1137,8 +1290,14 @@ def case_open(
     python: str | None = None,
     iceberg: str | None = None,
     athena: str | None = None,
+    facts_path: str | list[str] | None = None,
 ) -> dict[str, Any]:
-    context = build_runtime_context(glue, spark, python, iceberg, athena)
+    # O case guarda o runtime da investigacao inteira. Aceitar facts aqui e o
+    # que evita abrir um case com runtime vazio quando o repositorio ja diz a
+    # versao -- toda skill que ler o case depois herda a deteccao.
+    context = build_runtime_context(
+        glue, spark, python, iceberg, athena, facts=_facts_for_runtime(facts_path)
+    )
     case = store.new_case(case_id, now, context.to_dict(), repo=repo)
     store.save_case(case, root=repo)
     return case

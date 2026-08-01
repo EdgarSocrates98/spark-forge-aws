@@ -31,9 +31,7 @@
       "files_written_before_sort_order": 4
     },
     "threshold": {},
-    "runtime_scope": {
-      "iceberg": ">=1.0.0"
-    },
+    "runtime_scope": {},
     "explanation": "Sort order afeta apenas escritas futuras e o rewrite_data_files com estratégia sort. Definir sort order numa tabela existente e esperar melhoria de pruning nos dados já gravados é um erro de expectativa comum: nada muda nos arquivos antigos. Estatística min/max só ajuda se os valores estiverem agrupados. A evidência aqui é por arquivo, não temporal: measures.files_written_before_sort_order conta os data files cujo sort_order_id é um id de sort order registrado diferente do default-sort-order-id da tabela. É um PISO confirmado, não um total: arquivos com sort_order_id 0 ou sem a coluna ficam de fora, porque até Iceberg 1.10.0 o writer do Spark não grava esse campo e 0 não distingue \"não ordenado\" de \"não registrado\". Ver knowledge/storage/parquet-layout.md secao 2 e knowledge/storage/iceberg-performance.md secao 3.",
     "proposed_change": [
       "Executar rewrite_data_files com estratégia sort e o sort_order desejado sobre o passivo.",

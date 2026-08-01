@@ -1,0 +1,32 @@
+name: rolling_parts_version_conflict
+proves: >
+  Event log rolante (`spark.eventLog.rolling.enabled`) com as partes
+  concatenadas: o cabecalho SparkListenerLogStart aparece tres vezes. Duas
+  declaram a mesma versao ("3.5.4-amzn-0") e a repeticao e absorvida sem ruido
+  -- e o caso normal de log em partes, nao anomalia. A terceira declara
+  "3.3.0-amzn-1", de outro run que entrou no mesmo arquivo por engano: o fact
+  `spark.runtime_version` mantem a versao do PRIMEIRO cabecalho, e a
+  divergencia vira `spark.unresolved` com reason "conflicting_runtime_version",
+  ancorada na linha que discordou. Escolher em silencio deixaria a versao
+  errada gatilhar as regras versionadas de `judge`. O sufixo de vendor e
+  preservado verbatim: o extrator reporta o que o run reportou. O job em si e
+  deliberadamente saudavel (8 tasks uniformes contra 8 cores, sem spill, sem
+  GC relevante, sem executor perdido) para que nenhuma regra dispare e a
+  fixture prove apenas a versao e o ponto cego.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.stage.spill
+  - spark.stage.gc
+  - spark.stage.task_count
+  - spark.cluster.cores
+  - spark.job.spill_summary
+  - spark.runtime_version
+  - spark.unresolved
+  - spark.log_analyzed
+expects_rules: []

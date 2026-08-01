@@ -21,9 +21,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Python UDF custa, por linha: serialização JVM->pickle, cópia para o processo Python worker, execução sem vetorização, e o caminho de volta. Além disso perde whole-stage codegen no segmento do plano e torna o operador opaco ao otimizador, eliminando pushdown de predicado e reordenação. Aparece no plano como BatchEvalPython. Ver knowledge/spark/execution-model.md secao 4.",
     "proposed_change": [
       "Reescrever com funções Spark SQL nativas.",

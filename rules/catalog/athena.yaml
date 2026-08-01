@@ -6,6 +6,35 @@
 # regra explica o que estava faltando e como `fusion.py` resolve).
 # Athena entra no escopo porque, num lakehouse Glue + Iceberg, ela é o consumidor, e
 # decisões tomadas no job Glue determinam o custo da query meses depois.
+#
+# ESCOPO (Fase 5a): as cinco regras desta área declaravam `runtime_scope:
+# {athena: "*"}`. Isso era etiqueta de SERVIÇO escrita no mecanismo de VERSÃO --
+# o mesmo erro de camada que a Fase 5a desfaz no resto do catálogo.
+# `runtime_scope` guarda versão de runtime; quem gateia por natureza do
+# artefato analisado é `requires_facts`.
+#
+# Duas razões concretas para o escopo ser vazio, não `{athena: "*"}`:
+#
+#   1. A versão de engine do Athena NÃO é detectada. `RuntimeContext.athena`
+#      (`sparkforge/findings/models.py`) tem default `""`, `to_dict()` sempre
+#      emite a chave, e o único caminho que a preenche é a flag `--athena` da
+#      CLI -- nenhum extrator observa Athena. Depois que o curinga passou a
+#      exigir presença da chave (`sparkforge/rules/version_scope.py`),
+#      `{athena: "*"}` apagaria a ÁREA INTEIRA em todo runtime real: Glue 4.0,
+#      5.0, 5.1 e EMR-like. Silêncio total, que é exatamente o defeito que esta
+#      fase existe para eliminar.
+#
+#   2. O gate real já existe e é mais preciso. Nenhuma destas regras dispara
+#      sem que alguém tenha analisado uma query, um schema de catálogo ou um
+#      workgroup: SF-ATH-001 exige `sql.projection.enriched`; SF-ATH-002,
+#      `sql.projection` + `catalog.table_schema`; SF-ATH-003,
+#      `catalog.table_partitions`; SF-ATH-004, `athena.workgroup`; SF-ATH-005,
+#      `sql.predicate.enriched`. Sem esses facts a regra nem é considerada, e
+#      com eles ela é pertinente independentemente do motor Spark do runtime.
+#
+# Se um dia houver detecção de engine version do Athena, o lugar de guardá-la é
+# um `runtime_scope: {athena: ">=3"}` de verdade em regra que dependa da
+# versão -- não um curinga.
 
 catalog_version: 1
 schema_version: 1
@@ -35,7 +64,9 @@ rules:
           where: {attrs.star: true, attrs.table_format_columnar: true}
     status: structural
     severity_default: P1
-    runtime_scope: {athena: "*"}
+    # Escopo vazio: gate por `sql.projection.enriched` acima, nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho -- engine version do Athena nao e detectada.
+    runtime_scope: {}
     explanation: >
       Athena cobra por bytes escaneados. O benefício de Parquet e ORC vem de ler apenas
       as colunas referenciadas, e SELECT * anula isso por completo. É o anti-pattern de
@@ -94,7 +125,9 @@ rules:
         - absent: sql.predicate.partition_filter
     status: structural
     severity_default: P2
-    runtime_scope: {athena: "*"}
+    # Escopo vazio: gate por `sql.projection` + `catalog.table_schema` acima, nao
+    # por versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       LIMIT restringe o resultado, não o escaneamento. SELECT colunas FROM tabela LIMIT
       10 pode escanear a tabela inteira e cobrar por isso. A intuição de que LIMIT é
@@ -134,7 +167,9 @@ rules:
     threshold: {count: 100000}
     status: confirmed
     severity_default: P1
-    runtime_scope: {athena: "*"}
+    # Escopo vazio: gate por `catalog.table_partitions` acima, nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Com particionamento Hive, Athena resolve as partições consultando o Glue Catalog
       antes de escanear. Com centenas de milhares de partições, essa resolução de
@@ -168,7 +203,12 @@ rules:
           expr: "measures.engine_version < 3"
     status: confirmed
     severity_default: P2
-    runtime_scope: {athena: "*"}
+    # Escopo vazio: gate por `athena.workgroup` acima, que carrega a propria
+    # engine version em `measures.engine_version` -- a condicao ja compara a
+    # versao OBSERVADA no dump do workgroup, entao amarrar tambem a um
+    # `runtime_scope` de Athena (que ninguem detecta) so apagaria a regra.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Engine version 3 traz otimização dinâmica de memória, melhor execução de JOIN,
       dynamic filtering, melhor integração com metadados do Glue Catalog e suporte
@@ -209,7 +249,9 @@ rules:
           where: {attrs.on_partition_column: true, attrs.type_mismatch: true}
     status: confirmed
     severity_default: P1
-    runtime_scope: {athena: "*"}
+    # Escopo vazio: gate por `sql.predicate.enriched` acima, nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Partição gravada como string e filtrada como date, ou o inverso, provoca cast
       implícito que pode impedir o partition pruning sem gerar erro algum. A query

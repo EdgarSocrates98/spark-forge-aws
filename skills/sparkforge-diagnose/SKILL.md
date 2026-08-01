@@ -14,14 +14,28 @@ Sem case aberto, a investigação não é retomável entre sessões nem entre fe
 ### 1. Detecte o runtime
 
 ```bash
-sparkforge runtime detect --glue <versão-se-souber> --spark <> --python <> --iceberg <> --athena <>
+sparkforge runtime detect
 ```
+
+Rode assim, sem flag, antes de qualquer outra coisa — e leia a saída como um **retrato do que se sabe agora**, não como falha. Num repositório ainda sem facts extraídos, tudo volta vazio e `detected_from: []`: correto, porque nada foi observado ainda.
+
+`runtime detect` aceita `--facts` (repetível), e é dele que a detecção real sai. As duas únicas fontes que o motor lê são as que algum extrator observou com artefato atrás: `glue_version` literal na raiz de um `aws_glue_job` (via `sparkforge analyze terraform`) e a versão declarada na primeira linha de um Spark event log (via `sparkforge analyze event-log`). Nada é deduzido de sintaxe de API, nome de bucket ou presença de import — isso seria palpite vestido de fato. Por isso este passo costuma render mais **depois** do passo 4, e vale repeti-lo lá.
+
+As flags (`--glue`, `--spark`, `--python`, `--iceberg`, `--athena`) continuam existindo para você **declarar** uma versão que sabe de fonte confiável — o console, o `tfvars`, o job run. Não são campos a preencher por obrigação: uma versão inventada é pior que um campo vazio, porque o vazio pula a regra com motivo visível e o valor errado julga contra o limiar errado em silêncio.
 
 ### 2. Abra o case
 
 ```bash
-sparkforge case open --repo <repo> --case-id <id> --now <ISO8601> --glue <versão> --spark <> --python <> --iceberg <>
+sparkforge case open --repo <repo> --case-id <id> --now <ISO8601>
 ```
+
+O case guarda o runtime da investigação inteira, e toda skill que ler o case depois herda o que estiver aqui — por isso vale abri-lo com a melhor detecção disponível, não com o que você digitou. Se já houver facts extraídos, `case open` também aceita `--facts` (repetível):
+
+```bash
+sparkforge case open --repo <repo> --case-id <id> --now <ISO8601> --facts .sparkforge/facts_tf.json
+```
+
+Se ainda não houver, abra o case mesmo assim — o loop não pode esperar pelo runtime, e `judge` refaz a detecção por conta própria a cada chamada.
 
 ### 3. Colete o que existir
 
@@ -46,10 +60,15 @@ Use `analyze iceberg` e `analyze catalog-schema` quando o escopo incluir tabela 
 ### 5. Julgue com --show-skipped
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json \
+                 --facts .sparkforge/facts_eventlog.json --show-skipped
 ```
 
-`--show-skipped` não é opcional aqui. Sem event log, todo `SF-UI-*` aparece em `skipped` por falta de fact — não por ausência de skew ou spill. Sem isso você não distingue "nenhum problema" de "não coletei o dado que provaria o problema", e essa é a confusão mais cara desta skill.
+`--facts` é repetível, e passar tudo que o passo 4 extraiu numa chamada só é o que fecha o eixo de versão sem digitar nada: `judge` refaz a detecção a partir desses mesmos facts antes de filtrar as regras. Leia o campo `runtime` da saída — ele traz o contexto **efetivamente usado**, `detected_from` diz de onde veio, e `divergences` lista as fontes que discordam. Divergência não é detalhe: é `SF-ENV-001` em P0, e trava qualquer conclusão dependente de versão até ser resolvida.
+
+`--show-skipped` não é opcional aqui, e agora tem dois motivos distintos para ler. Sem event log, todo `SF-UI-*` aparece em `skipped` por falta de fact — não por ausência de skew ou spill. Sem nenhuma fonte de versão, as oito regras versionadas (`SF-ENV-002`, `SF-ENV-003`, `SF-GLUE-001..006`) aparecem com `reason: runtime_scope` — não por estarem corretas, mas por não haver contexto para avaliá-las. Nos dois casos a confusão a evitar é a mesma, e é a mais cara desta skill: "nenhum problema" e "não coletei o dado que provaria o problema" são coisas diferentes.
+
+Se `runtime.glue` voltar vazio e não houver `.tf` no repositório, aí sim declare: `--glue 5.1`, com a versão vinda de fonte confiável e registrada no case. Não preencha por hábito.
 
 ### 6. Deixe next-step decidir a rota
 

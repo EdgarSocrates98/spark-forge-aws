@@ -22,10 +22,14 @@ Leia `by_kind` na saída: se o arquivo tem joins e a contagem de `pyspark.join` 
 ### 2. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --show-skipped
 ```
 
 `--show-skipped` mostra as regras que não avaliaram por falta do fact esperado ou por incompatibilidade de `runtime_scope` — sem isso, "zero findings" e "não consegui avaliar" ficam indistinguíveis.
+
+**Sobre a versão: aqui não há de onde tirá-la, e isso não custa nada.** `analyze pyspark` lê a árvore sintática; nenhum fact que ele emite carrega versão de runtime, e o motor não deduz versão de sintaxe de API de propósito — "usou `df.observe`, logo Spark >= 3.3" seria julgamento disfarçado de fato. Então `runtime` volta com os campos vazios e `detected_from: []`, e é isso mesmo. Nenhuma das doze regras `SF-PY-*` declara `runtime_scope`: elas são estruturais, valem em toda versão suportada, e um `runtime` vazio não pula nenhuma delas.
+
+O que aparece em `--show-skipped` com `reason: runtime_scope` são as regras de infraestrutura Glue, que este `facts.json` não teria como disparar de qualquer forma. Não preencha `--glue` com um chute para "limpar" essa lista — a flag é para declarar uma versão que você sabe de fonte confiável (o `.tf`, o console, o job run), e é o que muda quando a pergunta passa a ser de infra. Se ela for, o caminho é dar ao motor a fonte, não o palpite: `sparkforge analyze terraform` e os dois arquivos na mesma chamada (`--facts` é repetível), e aí `runtime.detected_from` passa a dizer `["terraform"]`.
 
 ### 3. Interprete
 

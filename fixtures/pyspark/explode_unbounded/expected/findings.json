@@ -21,9 +21,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "explode multiplica a cardinalidade pelo tamanho médio do array. Sem estimativa prévia do fan-out, o volume pós-explode é desconhecido, e arrays de tamanho muito desigual produzem skew de computação que o AQE não trata. Aparece no plano como Generate.",
     "proposed_change": [
       "Estimar o fan-out medindo o tamanho médio, p95 e máximo do array antes de explodir.",

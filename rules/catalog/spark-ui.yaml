@@ -2,6 +2,40 @@
 # Depende do extrator de event log da Fase 1. Regras ficam inertes até ele existir
 # (requires_facts não satisfeito) e passam a valer sem mudança de código.
 # Estas são as únicas regras com status confirmed por natureza: há measure de execução.
+#
+# ESCOPO (Fase 5a, Task 3c): as seis declaravam `runtime_scope:
+# {spark: ">=3.0"}`, herdado da Task 2, que as moveu de `{glue: "*"}` --
+# permissivo e errado -- para um guarda estrito e igualmente errado. Passaram
+# para `{}`.
+#
+# O CRITÉRIO: `runtime_scope` só pode ser não-vazio quando o GATILHO varia com a
+# versão E essa versão vem do runtime detectado. Aqui o gatilho é MEDIDA DE
+# EXECUÇÃO tirada do event log: razão max/p50 de duração de task, bytes de
+# spill, tempo de GC, executor perdido, contagem de tasks contra cores. Uma task
+# 10x mais lenta que a mediana é skew em Spark 3.0 e em 3.5.
+#
+# O EFEITO MEDIDO, e o mais absurdo do catálogo: o event log é justamente a
+# fonte MAIS confiável de `spark.version` -- mas `judge` recebe o runtime que a
+# CLI montou, não o que o extrator viu. Com `build_runtime_context()` sem flags,
+# que é o padrão de `sparkforge judge`, o contexto sai com `spark: ""`,
+# `in_scope` falha fechada (`sparkforge/rules/version_scope.py`), e a ÁREA SF-UI
+# INTEIRA sumia: 6 puladas, 0 avaliadas -- inclusive sobre um event log que
+# carrega a versão. Se um dia o runtime for propagado do extrator para o
+# `judge`, o lugar de usá-lo continua sendo uma regra cujo GATILHO dependa da
+# versão; nenhuma destas seis é.
+#
+# RECOMENDAÇÃO VERSIONADA (Fase 5a.2, Task 3): SF-UI-006 manda "deixar o AQE
+# coalescer" num bullet de `proposed_change`, e o AQE só é default a partir do
+# Spark 3.2. SF-UI-002 cita AQE no `explanation`, e não como contexto: a frase
+# nomeia o TRATAMENTO do skew que a regra classificou, e `proposed_change`
+# aponta de volta para ela ("seguir o caminho de skew de dados"), então o
+# operador decide por ali. As duas estão no remédio, nunca no gatilho -- cores
+# ociosos e input desigual são o que são em qualquer versão, e o escopo segue
+# vazio. O que mudou é o TEXTO: declara a condição e o que fazer em 3.0 e 3.1.
+# AQE existe desde o Spark 3.0; o que mudou em 3.2 foi o default de
+# `spark.sql.adaptive.enabled`, então nos dois casos a alternativa é habilitar a
+# flag, ou dimensionar à mão o que o AQE ajustaria.
+# Ramificar a recomendação por versão é decisão da Fase 5b.
 
 catalog_version: 1
 schema_version: 1
@@ -23,7 +57,9 @@ rules:
     severity_by:
       - {when: "measures.max_ms / measures.p50_ms >= 10", severity: P0}
       - {when: "measures.max_ms / measures.p50_ms >= 3", severity: P2}
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.task_duration` (event log), nao por
+    # versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       O stage termina quando a última task termina. Uma task muito mais longa que a
       mediana significa que a maior parte do cluster está ociosa esperando por ela.
@@ -60,13 +96,22 @@ rules:
     threshold: {ratio: 3.0}
     status: confirmed
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.task_input` (event log), nao por
+    # versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    # RECOMENDACAO VERSIONADA: `explanation` nomeia o tratamento do skew de
+    # dados, e um dos tres e o skew join do AQE (default so a partir do Spark
+    # 3.2). Agora declara a condicao; os outros dois nao dependem de versao.
+    # Ver RECOMENDACAO VERSIONADA no cabecalho.
+    runtime_scope: {}
     explanation: >
       Distingue skew de dados de skew de computação, e essa distinção muda a ação.
       Duração desigual com input uniforme indica computação desigual: UDF caro em
       certas linhas, explode com fan-out variável. Repartition não resolve esse caso.
-      Duração desigual com input desigual é skew de dados clássico, tratável por AQE,
-      separação de nulls ou isolamento de hot key.
+      Duração desigual com input desigual é skew de dados clássico, tratável pelo skew
+      join do AQE — ligado por default a partir do Spark 3.2, e em 3.0 e 3.1 só com
+      spark.sql.adaptive.enabled=true —, por separação de nulls ou por isolamento de hot
+      key; estes dois últimos não dependem de versão e são o caminho quando o AQE não
+      está disponível.
     proposed_change:
       - Se input é uniforme e duração não é, investigar UDF e explode, não a distribuição da chave.
       - Se input é desigual, seguir o caminho de skew de dados.
@@ -88,7 +133,9 @@ rules:
     threshold: {ratio: 1.0}
     status: confirmed
     severity_default: P1
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.spill` (event log), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Escrever em disco mais bytes do que leu indica que o algoritmo ou o tamanho de
       partição são inadequados, não apenas que falta memória. A correção começa por
@@ -123,7 +170,9 @@ rules:
     severity_by:
       - {when: "measures.gc_ms / measures.executor_run_ms >= 0.20", severity: P1}
       - {when: "measures.gc_ms / measures.executor_run_ms >= 0.15", severity: P2}
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.gc` (event log), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF
       Python e de conversão linha a linha. GC alto com heap cheio indica dado demais
@@ -152,7 +201,9 @@ rules:
           where: {attrs.heap_oom_in_log: false}
     status: confirmed
     severity_default: P0
-    runtime_scope: {glue: "*"}
+    # Escopo vazio: gate por `spark.executor.lost` (event log), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Executor desaparecendo sem OOM de heap no log aponta para estouro de memória do
       container, fora do heap: Python worker, buffers Arrow, buffers de rede, metaspace.
@@ -186,7 +237,14 @@ rules:
     threshold: {factor: 0.5}
     status: confirmed
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.task_count` +
+    # `spark.cluster.cores` (event log), nao por versao.
+    # RECOMENDACAO VERSIONADA: o segundo bullet de `proposed_change` manda
+    # 'deixar o AQE coalescer', que so e default a partir do Spark 3.2, e agora
+    # declara a condicao e o que fazer em 3.0/3.1. Cores ociosos sao cores
+    # ociosos em qualquer versao. Ver ESCOPO (Fase 5a) e RECOMENDACAO
+    # VERSIONADA no cabecalho.
+    runtime_scope: {}
     explanation: >
       Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns:
       poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que
@@ -195,7 +253,7 @@ rules:
       paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.
     proposed_change:
       - Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.
-      - Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer.
+      - Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.
       - Reduzir o número de workers se o paralelismo real não pode aumentar.
     risks: [Aumentar partições em job pequeno cria overhead de agendamento sem ganho.]
     tradeoffs: [Converter formato de entrada é mudança no produtor, não no consumidor.]

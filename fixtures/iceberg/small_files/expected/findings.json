@@ -28,9 +28,7 @@
     "threshold": {
       "min_avg_bytes": 33554432
     },
-    "runtime_scope": {
-      "iceberg": ">=1.0.0"
-    },
+    "runtime_scope": {},
     "explanation": "Arquivos pequenos custam listing, abertura e overhead de task. Em Iceberg o custo adicional é de metadados: mais data files significam manifests maiores e planejamento mais lento, inclusive para consumidores como Athena. O limiar de 32MB é conservador contra um alvo usual de 128 a 512MB. Ver knowledge/storage/iceberg-performance.md secao 1 e knowledge/storage/parquet-layout.md secao 3.",
     "proposed_change": [
       "Corrigir na origem primeiro, com write.distribution-mode hash ou range, que reduz o número de arquivos por partição na própria escrita.",
@@ -87,9 +85,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "iceberg": ">=1.0.0"
-    },
+    "runtime_scope": {},
     "explanation": "Com distribution-mode none não há shuffle antes da escrita, então cada task grava em cada partição que ela contém. O resultado é da ordem de N tasks vezes M partições arquivos. É a causa estrutural de small files em Iceberg, e corrigi-la na escrita é preferível a compactar indefinidamente.",
     "proposed_change": [
       "Definir write.distribution-mode como hash, ou range quando há sort order.",

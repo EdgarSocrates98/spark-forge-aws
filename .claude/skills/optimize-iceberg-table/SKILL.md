@@ -30,10 +30,26 @@ Todas as seções do dump são opcionais: um dump com só `files` ainda produz o
 ### 3. Julgue
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --iceberg <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts.json --show-skipped
 ```
 
-`--show-skipped` mostra por que cada regra não avaliou, e aqui isso importa mais que em outras áreas: `SF-ICE-004` vai aparecer em `skipped` **sempre**, porque está `blocked_on: extrator-de-historico-iceberg` no catálogo. Saber se um data file foi escrito antes do sort order atual exige comparar duas coletas no tempo; um dump único não tem essa informação. Não apresente `SF-ICE-004` como achado ativo.
+`--iceberg` saiu daqui porque, sozinha, ela não destrava nada. Nenhuma das cinco regras `SF-ICE-*` declara `runtime_scope` — todas avaliam em qualquer versão. A única regra deste eixo que guarda versão é `SF-ENV-002` (tabela em format V3 consumida por Athena), e o guarda dela é `glue >= 5.1` **e** `iceberg >= 1.10.0`, com os dois obrigatórios: a checagem falha fechada, então declarar só `--iceberg` deixa `glue` vazio e a regra continua pulada com `reason: runtime_scope`. Digitar a versão do Iceberg dava a impressão de cobrir esse eixo sem cobrir.
+
+O caminho que de fato funciona é dar a versão do **Glue**, de onde a do Iceberg é derivada pela matriz de compatibilidade — é a versão embarcada no runtime que decide quais procedures e propriedades existem, não a que está escrita no dump. Extraia do Terraform e junte tudo na mesma chamada, já que `--facts` é repetível:
+
+```bash
+sparkforge analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
+sparkforge analyze consumers  --path <inventario.yaml> --out .sparkforge/facts_consumers.json
+sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json \
+                 --facts .sparkforge/facts_consumers.json --show-skipped
+```
+
+Leia o campo `runtime` da saída: ele traz o contexto efetivamente usado, `detected_from` diz de onde veio (`["terraform"]`), e `divergences` denuncia fontes que discordam. `--glue 5.1` continua válido quando você sabe a versão de fonte confiável e não tem o `.tf` — mas prefira a fonte ao palpite, porque aqui a versão errada não gera só um finding errado: ela sustenta uma recomendação de manutenção destrutiva.
+
+`--show-skipped` mostra por que cada regra não avaliou, e aqui isso importa mais que em outras áreas por causa de `SF-ICE-004`. Ela **dispara** a partir de um dump único — a evidência é por arquivo, não temporal: `iceberg.files_summary` conta os data files cujo `sort_order_id` é um id registrado diferente do `default-sort-order-id` da tabela, e um id não-zero só é gravado quando um writer chamou `withSortOrder` deliberadamente. Duas condições para ela chegar até lá:
+
+- O dump precisa trazer a coluna `sort_order_id` da metadata table `.files` (campo 140). Se a sua coleta projetou só um subconjunto de colunas, a regra sai em `skipped` com `reason: requires_facts` — recolha com a coluna.
+- O número é um **piso confirmado, não um total**. Arquivos com `sort_order_id` 0 ficam de fora e viram `iceberg.unresolved`, porque até o Iceberg 1.10.0 o writer do Spark não gravava esse campo e 0 não distingue "não ordenado" de "não registrado". Reporte "pelo menos N arquivos", nunca "N arquivos".
 
 ### 4. Interprete
 
@@ -70,7 +86,7 @@ Regras desta área, e o fact que cada uma consome. Os limiares **não** estão a
 | `SF-ICE-001` | `iceberg.files_summary` | Tamanho médio de data file muito abaixo do alvo — small files |
 | `SF-ICE-002` | `iceberg.delete_files_summary` + `iceberg.files_summary` | Razão delete files / data files alta — dívida de merge-on-read |
 | `SF-ICE-003` | `iceberg.snapshots_summary` | Contagem de snapshots alta — metadata growth por commits frequentes |
-| `SF-ICE-004` | `iceberg.table_property` + `iceberg.files_summary` | **Bloqueada** (`blocked_on: extrator-de-historico-iceberg`) — nunca dispara hoje |
+| `SF-ICE-004` | `iceberg.table_property` + `iceberg.files_summary` | Sort order definido sem rewrite do passivo — conta os data files sob uma ordem registrada anterior. Piso, não total |
 | `SF-ICE-005` | `iceberg.table_property` (`write.distribution-mode` + `partition-spec`) | `distribution-mode: none` com particionamento — causa estrutural de small files |
 
 ## Quando NÃO usar
@@ -83,7 +99,7 @@ Regras desta área, e o fact que cada uma consome. Os limiares **não** estão a
 ## Red flags
 
 - Propor `expire_snapshots` ou `remove_orphan_files` com retenção decidida por você, sem confirmação explícita de escopo.
-- Apresentar `SF-ICE-004` como achado ativo — está bloqueada por desenho, não por falta de dado neste dump específico.
+- Apresentar `measures.files_written_before_sort_order` de `SF-ICE-004` como o total do passivo. É um piso: os arquivos com `sort_order_id` 0 estão em `iceberg.unresolved`, fora da conta, e dimensionar o `rewrite_data_files` por esse número subestima o custo.
 - Compactar data files quando o sintoma real é manifests ou snapshots crescendo (`ROUTE-010` em `routing.yaml`): planejamento lento aponta para metadado, não para data file, e compactar dado custa horas de DPU sem tocar a causa.
 - Rodar procedure ou propriedade da doc `latest` do Iceberg sem confirmar suporte na versão embarcada pelo Glue.
 
