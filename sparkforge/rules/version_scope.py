@@ -39,6 +39,13 @@ def in_scope(scope: dict[str, str], runtime: dict[str, str]) -> bool:
     for key, raw_spec in (scope or {}).items():
         spec = str(raw_spec).strip()
         if spec == "*":
+            # `"*"` e "qualquer VERSAO deste componente", nao "qualquer runtime":
+            # a chave precisa estar presente. Antes desta fase o ramo pulava a
+            # checagem inteira e o curinga nunca filtrava nada -- foi essa
+            # ambiguidade que fez 20 regras agnosticas serem etiquetadas como de
+            # Glue, e as 5 de infra Glue avaliarem em silencio num job EMR.
+            if not runtime.get(key):
+                return False
             continue
 
         actual = runtime.get(key)
