@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -22,7 +23,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts import verify_wheel  # noqa: E402
-from scripts.verify_wheel import GOLDEN_MODULES, main, pytest_command  # noqa: E402
+from scripts.verify_wheel import (  # noqa: E402
+    GOLDEN_MODULES,
+    compare_builds,
+    main,
+    pytest_command,
+    sha256_of,
+    zip_divergence,
+)
 
 
 class TestPytestCommand:
@@ -74,7 +82,7 @@ class _FakeRun:
         return subprocess.CompletedProcess(command, returncode)
 
 
-def _prep_fake_workdir(tmp_path: Path, monkeypatch) -> Path:
+def _prep_fake_workdir(tmp_path: Path, monkeypatch, *, rebuild_bytes: bytes = b"") -> Path:
     """Prepara um workdir com wheel e sdist ja presentes, e faz
     `tempfile.mkdtemp` devolve-lo.
 
@@ -82,13 +90,31 @@ def _prep_fake_workdir(tmp_path: Path, monkeypatch) -> Path:
     entao os artefatos que `main()` procura via glob apos o build precisam
     existir de antemao -- senao todo teste alem do build cairia na checagem
     "esperava wheel e sdist em ..." em vez de exercitar o caminho pretendido.
+
+    `rebuild/` recebe os mesmos nomes, e por padrao o mesmo conteudo, para que
+    a checagem de reprodutibilidade passe. `rebuild_bytes` diferente simula uma
+    build nao-reproduzivel.
     """
     dist = tmp_path / "dist"
     dist.mkdir()
-    (dist / "sparkforge_aws-0.0.0-py3-none-any.whl").write_bytes(b"")
-    (dist / "sparkforge_aws-0.0.0.tar.gz").write_bytes(b"")
+    rebuild = tmp_path / "rebuild"
+    rebuild.mkdir()
+    for name in ("sparkforge_aws-0.0.0-py3-none-any.whl", "sparkforge_aws-0.0.0.tar.gz"):
+        (dist / name).write_bytes(b"")
+        (rebuild / name).write_bytes(rebuild_bytes)
     monkeypatch.setattr(tempfile, "mkdtemp", lambda prefix="": str(tmp_path))
     return tmp_path
+
+
+def _whl(path: Path, entries: list[tuple[str, bytes]], *, date_time=(2020, 2, 2, 0, 0, 0)) -> Path:
+    """Escreve um zip minimo com metadado de entrada controlado."""
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, payload in entries:
+            info = zipfile.ZipInfo(name, date_time)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = (0o644 & 0xFFFF) << 16
+            archive.writestr(info, payload)
+    return path
 
 
 class TestGoldenCorpusGuard:
@@ -119,36 +145,49 @@ class TestGoldenCorpusGuard:
 
 class TestMainReturnCodes:
     """Cada ponto de falha de `main()` tem que devolver 1; sucesso, 0. Antes
-    desta classe, isso so tinha sido observado rodando o gate de verdade."""
+    desta classe, isso so tinha sido observado rodando o gate de verdade.
+
+    Os indices de `fail_at` sao a ORDEM das chamadas a `_run` dentro de
+    `main()`: 0 build, 1 rebuild, 2 venv, 3 pip install, 4 pytest, 5 pip
+    install twine, 6 twine check. Inserir um passo novo no meio desloca todos
+    os que vem depois -- por isso cada teste nomeia o passo que exercita.
+    """
 
     def test_build_failure_returns_1(self, monkeypatch, tmp_path):
         _prep_fake_workdir(tmp_path, monkeypatch)
         monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=0))
         assert main([]) == 1
 
-    def test_venv_creation_failure_returns_1(self, monkeypatch, tmp_path):
+    def test_rebuild_failure_returns_1(self, monkeypatch, tmp_path):
+        """A segunda build (checagem de reprodutibilidade) falhando reprova o
+        gate como qualquer outro passo -- nao e um aviso."""
         _prep_fake_workdir(tmp_path, monkeypatch)
         monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=1))
         assert main([]) == 1
 
-    def test_wheel_install_failure_returns_1(self, monkeypatch, tmp_path):
+    def test_venv_creation_failure_returns_1(self, monkeypatch, tmp_path):
         _prep_fake_workdir(tmp_path, monkeypatch)
         monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=2))
         assert main([]) == 1
 
-    def test_golden_pytest_failure_returns_1(self, monkeypatch, tmp_path):
+    def test_wheel_install_failure_returns_1(self, monkeypatch, tmp_path):
         _prep_fake_workdir(tmp_path, monkeypatch)
         monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=3))
         assert main([]) == 1
 
-    def test_twine_install_failure_returns_1(self, monkeypatch, tmp_path):
+    def test_golden_pytest_failure_returns_1(self, monkeypatch, tmp_path):
         _prep_fake_workdir(tmp_path, monkeypatch)
         monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=4))
         assert main([]) == 1
 
-    def test_twine_check_failure_returns_1(self, monkeypatch, tmp_path):
+    def test_twine_install_failure_returns_1(self, monkeypatch, tmp_path):
         _prep_fake_workdir(tmp_path, monkeypatch)
         monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=5))
+        assert main([]) == 1
+
+    def test_twine_check_failure_returns_1(self, monkeypatch, tmp_path):
+        _prep_fake_workdir(tmp_path, monkeypatch)
+        monkeypatch.setattr(verify_wheel, "_run", _FakeRun(fail_at=6))
         assert main([]) == 1
 
     def test_all_steps_succeeding_returns_0(self, monkeypatch, tmp_path):
@@ -186,12 +225,115 @@ class TestWorkdirCleanup:
         assert calls
 
 
+class TestReproducibility:
+    """A build tem que ser funcao da arvore, nao do instante.
+
+    A construcao dupla de verdade roda dentro do gate (`ci.yml`, job `wheel`,
+    em ubuntu e windows). Aqui se prova a LOGICA da comparacao, que e onde o
+    erro silencioso mora: um comparador que devolve `[]` para tudo faria o
+    gate imprimir "reprodutibilidade OK" sem ter comparado nada -- o mesmo
+    antipadrao que a guarda de `GOLDEN_MODULES` existe para evitar.
+    """
+
+    def test_identical_directories_have_no_divergence(self, tmp_path):
+        a, b = tmp_path / "a", tmp_path / "b"
+        for d in (a, b):
+            d.mkdir()
+            _whl(d / "p-1.0-py3-none-any.whl", [("m.py", b"x = 1")])
+            (d / "p-1.0.tar.gz").write_bytes(b"same")
+        assert compare_builds(a, b) == []
+
+    def test_differing_bytes_are_reported_with_both_hashes(self, tmp_path):
+        a, b = tmp_path / "a", tmp_path / "b"
+        a.mkdir()
+        b.mkdir()
+        _whl(a / "p-1.0-py3-none-any.whl", [("m.py", b"x = 1")])
+        _whl(b / "p-1.0-py3-none-any.whl", [("m.py", b"x = 2")])
+        report = "\n".join(compare_builds(a, b))
+        assert "sha256=" in report
+        # Nomeia o arquivo DENTRO do zip, nao so o zip -- e a diferenca entre
+        # "diverge" e "diverge aqui".
+        assert "m.py" in report
+
+    def test_an_empty_directory_never_passes_as_reproducible(self, tmp_path):
+        """Sem esta guarda, um build que nao produziu nada e um build que
+        produziu artefatos identicos dariam a mesma resposta: `[]`."""
+        a, b = tmp_path / "a", tmp_path / "b"
+        a.mkdir()
+        b.mkdir()
+        assert compare_builds(a, b)
+
+    def test_a_missing_artifact_is_reported(self, tmp_path):
+        a, b = tmp_path / "a", tmp_path / "b"
+        a.mkdir()
+        b.mkdir()
+        _whl(a / "p-1.0-py3-none-any.whl", [("m.py", b"x = 1")])
+        (a / "p-1.0.tar.gz").write_bytes(b"s")
+        _whl(b / "p-1.0-py3-none-any.whl", [("m.py", b"x = 1")])
+        assert "p-1.0.tar.gz" in "\n".join(compare_builds(a, b))
+
+    def test_timestamp_divergence_names_the_date_time_field(self, tmp_path):
+        """O eixo classico: mesmo conteudo, `date_time` diferente. O relatorio
+        tem que mostrar os dois valores, senao quem le nao sabe qual eixo
+        fechar."""
+        a = _whl(tmp_path / "a.whl", [("m.py", b"x = 1")])
+        b = _whl(tmp_path / "b.whl", [("m.py", b"x = 1")], date_time=(2024, 6, 1, 12, 0, 0))
+        report = "\n".join(zip_divergence(a, b))
+        assert "2020" in report and "2024" in report
+
+    def test_entry_order_divergence_is_named_as_such(self, tmp_path):
+        """Mesmas entradas em ordem diferente e um eixo proprio -- ordem de
+        caminhada do sistema de arquivos -- e nao se ve olhando entrada por
+        entrada, so comparando as listas."""
+        a = _whl(tmp_path / "a.whl", [("x.py", b"1"), ("y.py", b"2")])
+        b = _whl(tmp_path / "b.whl", [("y.py", b"2"), ("x.py", b"1")])
+        assert any("ORDEM" in line for line in zip_divergence(a, b))
+
+    def test_the_tarball_is_not_decomposed(self, tmp_path):
+        """`zip_divergence` so entende `.whl`; para o sdist o gate para no
+        sha256, o que e deliberado (ver docstring)."""
+        (tmp_path / "a.tar.gz").write_bytes(b"a")
+        (tmp_path / "b.tar.gz").write_bytes(b"b")
+        assert zip_divergence(tmp_path / "a.tar.gz", tmp_path / "b.tar.gz") == []
+
+    def test_sha256_matches_hashlib(self, tmp_path):
+        import hashlib
+
+        payload = b"conteudo qualquer" * 5000  # maior que o chunk de leitura
+        target = tmp_path / "f.bin"
+        target.write_bytes(payload)
+        assert sha256_of(target) == hashlib.sha256(payload).hexdigest()
+
+    def test_a_non_reproducible_build_fails_the_gate(self, monkeypatch, tmp_path):
+        """O teste que fecha a divida: artefatos diferentes entre as duas
+        builds reprovam `main()`, e reprovam ANTES de instalar o venv."""
+        _prep_fake_workdir(tmp_path, monkeypatch, rebuild_bytes=b"bytes diferentes")
+        fake = _FakeRun()
+        monkeypatch.setattr(verify_wheel, "_run", fake)
+        assert main([]) == 1
+        assert len(fake.calls) == 2, "so as duas builds; nada depois da reprovacao"
+
+    def test_a_non_reproducible_build_never_reaches_outdir(
+        self, monkeypatch, tmp_path, tmp_path_factory
+    ):
+        _prep_fake_workdir(tmp_path, monkeypatch, rebuild_bytes=b"diferente")
+        monkeypatch.setattr(verify_wheel, "_run", _FakeRun())
+        outdir = tmp_path_factory.mktemp("released") / "nao-deve-existir"
+        assert main(["--outdir", str(outdir)]) == 1
+        assert not outdir.exists()
+
+
 class TestOutdir:
     """`--outdir` e a correcao do buraco apontado na revisao da Task 8: sem
     ele, o unico exemplar provado pelos 539 testes de golden e apagado no
-    `finally` (o workdir e temporario), e quem publica reconstroi do zero --
-    um IRMAO do artefato provado, nunca comprovadamente o mesmo, porque nada
-    neste repositorio fixa `SOURCE_DATE_EPOCH`."""
+    `finally` (o workdir e temporario), e o passo de publicacao teria que
+    reconstruir para ter o que anexar.
+
+    A build hoje E reproduzivel bit-a-bit (o gate prova isso a cada execucao),
+    entao reconstruir daria o mesmo arquivo. `--outdir` fica assim mesmo: a
+    igualdade vale sob condicoes (mesmo hatchling, mesmo zlib, mesmo
+    `SOURCE_DATE_EPOCH`), e a versao do backend nao esta pinada -- copiar torna
+    "o byte publicado e o byte testado" estrutural em vez de inferido."""
 
     def test_outdir_receives_the_verified_wheel_and_sdist(
         self, monkeypatch, tmp_path, tmp_path_factory
