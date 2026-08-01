@@ -1,6 +1,36 @@
 # Catálogo de regras — código PySpark
 # Depende dos extratores da Fase 0 (facts/pyspark_ast.py).
 # Ler ../catalog/README.md antes de editar.
+#
+# ESCOPO (Fase 5a, Task 3c): as doze declaravam `runtime_scope: {spark: ">=3.0"}`.
+# Passaram para `{}`. A Task 2 desta mesma fase as havia movido de `{glue: "*"}`
+# -- um rótulo permissivo e ERRADO -- para `{spark: ">=3.0"}`, que é um guarda
+# estrito e igualmente errado. Esta task corrige a camada, não o valor.
+#
+# O CRITÉRIO. `runtime_scope` só pode ser não-vazio quando o GATILHO da regra
+# genuinamente varia com a versão E essa versão vem do runtime detectado, não de
+# um fact que a própria regra já lê. Nenhuma destas doze é assim: o `when` de
+# todas casa contra um fact `pyspark.*` que `sparkforge/facts/pyspark_ast.py`
+# produz do texto do módulo. `coalesce(1)` é P0 em Spark 3.0 e em 3.5; `udf()` é
+# Python UDF nas duas; `collect()` traz tudo para o heap do driver nas duas.
+#
+# O QUE O GUARDA FAZIA NA PRÁTICA. `RuntimeContext.spark` só é preenchido por
+# três caminhos (`sparkforge/facts/runtime_detect.py`): event log com
+# `spark.version`, derivação de `GLUE_MATRIX` a partir de `glue_version`, ou a
+# flag `--spark` da CLI. Análise estática de código-fonte não tem nenhum dos
+# três. Com `build_runtime_context()` sem flags -- o padrão de `sparkforge
+# judge` -- o contexto sai `{'glue':'','spark':'','python':'','iceberg':'',
+# 'athena':''}`, `in_scope` falha fechada (`sparkforge/rules/version_scope.py`)
+# e a ÁREA SF-PY INTEIRA sumia: 12 puladas, 0 avaliadas. Analisar um `.py` não
+# precisa de Spark detectado para valer.
+#
+# ACEITO CONSCIENTEMENTE. SF-PY-005, SF-PY-009 e SF-PY-010 citam AQE e o hint
+# `REBALANCE` (default/introduzidos no Spark 3.2) no `proposed_change` e no
+# `explanation` -- nunca no gatilho. Com escopo vazio elas disparam onde a
+# RECOMENDAÇÃO pode não se aplicar. O achado continua verdadeiro, e apagar um P0
+# real por causa de um bullet de remediação é o erro maior. Ramificar
+# `proposed_change` por versão é decisão da Fase 5b, e o lugar disso é o texto da
+# recomendação, não `runtime_scope`.
 
 catalog_version: 1
 schema_version: 1
@@ -19,7 +49,9 @@ rules:
           where: {attrs.udf_type: python}
     status: structural
     severity_default: P1
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.udf` (AST do fonte), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Python UDF custa, por linha: serialização JVM->pickle, cópia para o processo
       Python worker, execução sem vetorização, e o caminho de volta. Além disso perde
@@ -54,7 +86,9 @@ rules:
           where: {attrs.bounded: false}
     status: structural
     severity_default: P1
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.driver_collect` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Traz todo o resultado para o heap do driver. O risco cresce com o volume do
       resultado, que costuma crescer com o tempo sem que o código mude. Modo de falha
@@ -85,7 +119,9 @@ rules:
           expr: "measures.join_index < measures.first_reduction_index"
     status: structural
     severity_default: P1
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.chain` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Todo byte e toda coluna que entram no join atravessam o shuffle. Filtrar e
       projetar depois do join significa pagar rede, disco local e sort por dado que
@@ -120,7 +156,9 @@ rules:
           where: {attrs.contains_write: true}
     status: structural
     severity_default: P0
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.loop` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Cada iteração reexecuta o DAG a montante desde o início, salvo materialização
       explícita. Um loop de 50 lotes sobre um DataFrame caro paga 50 vezes a leitura,
@@ -157,7 +195,12 @@ rules:
           expr: "measures.target_count == 1"
     status: structural
     severity_default: P0
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.partitioning` (AST), nao por versao --
+    # `coalesce(1)` e P0 em Spark 3.0 e em 3.5.
+    # RECOMENDACAO VERSIONADA, aceita: o segundo bullet de `proposed_change`
+    # sugere o hint `REBALANCE` (Spark 3.2+). Esta no remedio, nunca no
+    # gatilho. Ver ACEITO CONSCIENTEMENTE no cabecalho.
+    runtime_scope: {}
     explanation: >
       coalesce não faz shuffle: ele reduz o número de partições fundindo as existentes.
       Com alvo 1, todo o dado passa por uma única task, num único executor. Memória e
@@ -189,7 +232,9 @@ rules:
           where: {attrs.has_prior_reduction: false}
     status: structural
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.explode` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       explode multiplica a cardinalidade pelo tamanho médio do array. Sem estimativa
       prévia do fan-out, o volume pós-explode é desconhecido, e arrays de tamanho
@@ -222,7 +267,9 @@ rules:
     threshold: {run_length: 10}
     status: structural
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.withcolumn_run` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Cada withColumn adiciona uma projeção ao plano lógico. Dezenas em sequência
       produzem um plano grande, com custo de análise e otimização no driver que cresce
@@ -253,7 +300,9 @@ rules:
           where: {attrs.has_unpersist_in_scope: false}
     status: structural
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.cache` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Cache ocupa a memória unificada do executor, competindo com a memória de
       execução usada por shuffle, sort e agregação. Cache que não é liberado aumenta o
@@ -286,7 +335,12 @@ rules:
           where: {attrs.has_broadcast_hint: true}
     status: structural
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.join` (AST), nao por versao.
+    # RECOMENDACAO VERSIONADA, aceita: `explanation` e `proposed_change`
+    # apoiam-se no AQE converter sort-merge em broadcast sozinho (default
+    # so a partir do Spark 3.2). O hint forcado continua sendo o achado em
+    # qualquer versao. Ver ACEITO CONSCIENTEMENTE no cabecalho.
+    runtime_scope: {}
     explanation: >
       Um hint de broadcast é permanente no código, mas o tamanho do lado "pequeno" não
       é. O driver materializa a tabela antes de distribuir, então o modo de falha
@@ -320,7 +374,12 @@ rules:
           where: {attrs.method: repartition, attrs.literal_arg: true, attrs.has_partition_expr: false}
     status: structural
     severity_default: P3
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.partitioning` (AST), nao por versao.
+    # RECOMENDACAO VERSIONADA, aceita: `explanation` cita o coalescing de
+    # particoes do AQE e o primeiro bullet sugere o hint `REBALANCE` (Spark
+    # 3.2+). Gatilho e o literal no fonte. Ver ACEITO CONSCIENTEMENTE no
+    # cabecalho.
+    runtime_scope: {}
     explanation: >
       repartition(n) com n fixo adiciona um shuffle completo para atingir um número que
       raramente foi calculado a partir do volume. Com AQE ativo, o coalescing de
@@ -352,7 +411,9 @@ rules:
           where: {attrs.has_explicit_columns: false}
     status: structural
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.dedup` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Deduplicação sobre todas as colunas exige shuffle e comparação do registro
       inteiro, e costuma mascarar um erro de modelagem da chave em vez de corrigi-lo.
@@ -384,7 +445,9 @@ rules:
         - fact: pyspark.conf_set
     status: structural
     severity_default: P3
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `pyspark.conf_set` (AST), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       spark.conf.set em runtime tem precedência sobre os default arguments definidos no
       Terraform ou na job definition, e sobrescreve silenciosamente. É a causa mais

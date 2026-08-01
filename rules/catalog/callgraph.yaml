@@ -7,6 +7,24 @@
 # barata; a mesma action dentro de um ciclo de chamadas é ilimitada. `SF-PY-004`
 # pega action dentro de `for`/`while` no mesmo arquivo; SF-CG-001 pega o caso que
 # ela não vê, porque o laço é feito de chamadas entre funções.
+#
+# ESCOPO (Fase 5a, Task 3c): SF-CG-001 declarava `runtime_scope:
+# {spark: ">=3.0"}`. Passou para `{}`.
+#
+# O CRITÉRIO: `runtime_scope` só pode ser não-vazio quando o GATILHO varia com a
+# versão E essa versão vem do runtime detectado. O gatilho aqui é ESTRUTURA DE
+# CÓDIGO: um ciclo no grafo de chamadas, derivado de `pyspark.callgraph_edge`,
+# que sai do AST. Recursão mútua contendo trabalho Spark é recursão mútua
+# contendo trabalho Spark em Spark 3.0 e em 3.5 -- o laziness que faz cada action
+# reexecutar o lineage é o modelo de execução, não um comportamento de versão.
+#
+# O EFEITO MEDIDO: `RuntimeContext.spark` só vem de event log, de `GLUE_MATRIX`
+# (via `glue_version`) ou da flag `--spark`. Ler um `.py` não traz nenhum dos
+# três. Com `build_runtime_context()` sem flags -- o padrão de `sparkforge
+# judge` -- o contexto sai com `spark: ""`, `in_scope` falha fechada
+# (`sparkforge/rules/version_scope.py`), e a ÁREA SF-CG INTEIRA sumia. Área de
+# uma regra só: o guarda apagava 100% dela, e como não havia segunda regra para
+# sobrar, o relatório perdia o eixo inteiro em silêncio.
 
 catalog_version: 1
 schema_version: 1
@@ -26,7 +44,10 @@ rules:
           where: {attrs.contains_spark_work: true}
     status: structural
     severity_default: P1
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `callgraph.cycle`, derivado de arestas de
+    # chamada extraidas do AST -- estrutura de codigo, nao versao de motor.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Um ciclo no grafo de chamadas é recursão -- direta ou mútua, que é a forma que
       passa despercebida em revisão, porque nenhuma das funções envolvidas parece

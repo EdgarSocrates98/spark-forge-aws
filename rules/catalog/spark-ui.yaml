@@ -2,6 +2,32 @@
 # Depende do extrator de event log da Fase 1. Regras ficam inertes até ele existir
 # (requires_facts não satisfeito) e passam a valer sem mudança de código.
 # Estas são as únicas regras com status confirmed por natureza: há measure de execução.
+#
+# ESCOPO (Fase 5a, Task 3c): as seis declaravam `runtime_scope:
+# {spark: ">=3.0"}`, herdado da Task 2, que as moveu de `{glue: "*"}` --
+# permissivo e errado -- para um guarda estrito e igualmente errado. Passaram
+# para `{}`.
+#
+# O CRITÉRIO: `runtime_scope` só pode ser não-vazio quando o GATILHO varia com a
+# versão E essa versão vem do runtime detectado. Aqui o gatilho é MEDIDA DE
+# EXECUÇÃO tirada do event log: razão max/p50 de duração de task, bytes de
+# spill, tempo de GC, executor perdido, contagem de tasks contra cores. Uma task
+# 10x mais lenta que a mediana é skew em Spark 3.0 e em 3.5.
+#
+# O EFEITO MEDIDO, e o mais absurdo do catálogo: o event log é justamente a
+# fonte MAIS confiável de `spark.version` -- mas `judge` recebe o runtime que a
+# CLI montou, não o que o extrator viu. Com `build_runtime_context()` sem flags,
+# que é o padrão de `sparkforge judge`, o contexto sai com `spark: ""`,
+# `in_scope` falha fechada (`sparkforge/rules/version_scope.py`), e a ÁREA SF-UI
+# INTEIRA sumia: 6 puladas, 0 avaliadas -- inclusive sobre um event log que
+# carrega a versão. Se um dia o runtime for propagado do extrator para o
+# `judge`, o lugar de usá-lo continua sendo uma regra cujo GATILHO dependa da
+# versão; nenhuma destas seis é.
+#
+# ACEITO CONSCIENTEMENTE: SF-UI-006 manda "deixar o AQE coalescer" num bullet de
+# `proposed_change`, e o AQE só é default a partir do Spark 3.2. SF-UI-002 cita
+# AQE no `explanation`. Está no remédio e na exposição, nunca no gatilho.
+# Ramificar a recomendação por versão é decisão da Fase 5b.
 
 catalog_version: 1
 schema_version: 1
@@ -23,7 +49,9 @@ rules:
     severity_by:
       - {when: "measures.max_ms / measures.p50_ms >= 10", severity: P0}
       - {when: "measures.max_ms / measures.p50_ms >= 3", severity: P2}
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.task_duration` (event log), nao por
+    # versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       O stage termina quando a última task termina. Uma task muito mais longa que a
       mediana significa que a maior parte do cluster está ociosa esperando por ela.
@@ -60,7 +88,9 @@ rules:
     threshold: {ratio: 3.0}
     status: confirmed
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.task_input` (event log), nao por
+    # versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Distingue skew de dados de skew de computação, e essa distinção muda a ação.
       Duração desigual com input uniforme indica computação desigual: UDF caro em
@@ -88,7 +118,9 @@ rules:
     threshold: {ratio: 1.0}
     status: confirmed
     severity_default: P1
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.spill` (event log), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Escrever em disco mais bytes do que leu indica que o algoritmo ou o tamanho de
       partição são inadequados, não apenas que falta memória. A correção começa por
@@ -123,7 +155,9 @@ rules:
     severity_by:
       - {when: "measures.gc_ms / measures.executor_run_ms >= 0.20", severity: P1}
       - {when: "measures.gc_ms / measures.executor_run_ms >= 0.15", severity: P2}
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.gc` (event log), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF
       Python e de conversão linha a linha. GC alto com heap cheio indica dado demais
@@ -152,7 +186,9 @@ rules:
           where: {attrs.heap_oom_in_log: false}
     status: confirmed
     severity_default: P0
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.executor.lost` (event log), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Executor desaparecendo sem OOM de heap no log aponta para estouro de memória do
       container, fora do heap: Python worker, buffers Arrow, buffers de rede, metaspace.
@@ -186,7 +222,13 @@ rules:
     threshold: {factor: 0.5}
     status: confirmed
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `spark.stage.task_count` +
+    # `spark.cluster.cores` (event log), nao por versao.
+    # RECOMENDACAO VERSIONADA, aceita: o segundo bullet de `proposed_change`
+    # manda 'deixar o AQE coalescer', que so e default a partir do Spark 3.2.
+    # Cores ociosos sao cores ociosos em qualquer versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns:
       poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que

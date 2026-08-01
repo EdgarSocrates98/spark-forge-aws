@@ -23,9 +23,7 @@
       "on_arity": 1
     },
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Um hint de broadcast é permanente no código, mas o tamanho do lado \"pequeno\" não é. O driver materializa a tabela antes de distribuir, então o modo de falha quando ela cresce é OOM de driver ou broadcastTimeout, não degradação gradual. O limiar automático (autoBroadcastJoinThreshold, default 10MB) e o AQE já convertem sort-merge em broadcast quando é seguro fazê-lo, usando estatística de runtime em vez de uma decisão congelada no código.",
     "proposed_change": [
       "Medir o tamanho serializado real do lado pequeno, não o estimado.",

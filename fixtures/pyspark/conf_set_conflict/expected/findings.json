@@ -21,9 +21,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "spark.conf.set em runtime tem precedência sobre os default arguments definidos no Terraform ou na job definition, e sobrescreve silenciosamente. É a causa mais comum de \"mudei a configuração no IaC e nada aconteceu\". Além disso, algumas configurações não têm efeito nenhum após a sessão iniciar, e defini-las assim dá a falsa impressão de que foram aplicadas. Ver knowledge/spark/config-reference.md secao 6 para a ordem completa de precedência e a lista de configs imutáveis.",
     "proposed_change": [
       "Comparar cada chave definida no código com os default arguments do IaC e resolver a divergência num único lugar.",

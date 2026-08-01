@@ -12,6 +12,7 @@ autonomo, le como "nada encontrado" -- e a versao de orientacao do defeito que
 
 import pytest
 
+from sparkforge.adapters._core import build_runtime_context
 from sparkforge.facts.runtime_detect import GLUE_MATRIX, detect_runtime
 from sparkforge.rules.loader import load_catalog
 from sparkforge.rules.version_scope import in_scope
@@ -44,9 +45,32 @@ def _detected(**sources: dict[str, str]) -> dict[str, str]:
 # 'athena': '', ...}` -- e o caso que EMR_LIKE nunca exercitou.
 EMR_MINIMAL = _detected(event_log={"spark_version": "3.5.1"})
 
-# Os dois runtimes sem Glue, para as duas pontas abaixo. Nomeados porque o `id`
+# Runtime VAZIO -- o padrao real da CLI, nao um cenario exotico.
+# `sparkforge judge` sem `--glue/--spark/--python/--iceberg/--athena` chama
+# `build_runtime_context()` sem argumento nenhum, e o resultado e
+# `{'glue': '', 'spark': '', 'python': '', 'iceberg': '', 'athena': '', ...}`:
+# TODA chave presente e TODA chave vazia, entao `in_scope` falha fechada em
+# qualquer `runtime_scope` nao-vazio.
+#
+# E o caso que os dois EMR acima nao pegam, porque os dois trazem `spark`
+# preenchido. Foi por baixo dessa folga que a Task 3c passou: a Task 2 moveu 19
+# regras de `{glue: "*"}` para `{spark: ">=3.0"}`, os testes viram `spark`
+# detectado nos dois runtimes e aprovaram -- enquanto `sparkforge judge` sobre
+# um `.py`, um plano ou um event log apagava SF-PY, SF-PQ, SF-PLAN, SF-UI e
+# SF-CG inteiras. Analise estatica nao precisa de Spark detectado para valer.
+#
+# Passa por `build_runtime_context` e nao por `detect_runtime({})` de proposito:
+# e o ponto de entrada que a CLI usa, entao um dia em que ele passe a preencher
+# defaults, este teste muda de comportamento junto -- que e o que se quer.
+EMPTY_RUNTIME = build_runtime_context().to_dict()
+
+# Os runtimes sem Glue, para as duas pontas abaixo. Nomeados porque o `id`
 # do parametrize precisa dizer QUAL cenario falhou.
-NON_GLUE_RUNTIMES = [("emr-rico", EMR_LIKE), ("emr-pobre", EMR_MINIMAL)]
+NON_GLUE_RUNTIMES = [
+    ("emr-rico", EMR_LIKE),
+    ("emr-pobre", EMR_MINIMAL),
+    ("vazio-cli", EMPTY_RUNTIME),
+]
 NON_GLUE_IDS = [nome for nome, _ in NON_GLUE_RUNTIMES]
 
 # As que dependem de Glue. Listas explicitas porque sao curtas, fechadas, e sao
@@ -56,7 +80,14 @@ NON_GLUE_IDS = [nome for nome, _ in NON_GLUE_RUNTIMES]
 # Estas ja fixam uma versao de Glue no `runtime_scope`, entao ja sao puladas
 # corretamente fora do Glue. Nao sao alvo desta fase; estao aqui para que a
 # fronteira fique inteira num lugar so.
-GLUE_VERSIONED = {"SF-ENV-002", "SF-ENV-003", "SF-ENV-004", "SF-GLUE-001"}
+#
+# SF-ENV-004 SAIU deste conjunto na Task 3c. Ela declarava `{glue: "<4.0"}` mas
+# a condicao do `when` e `attrs.spark_minor < 3.2` -- puramente Spark. Num EMR
+# com Spark 3.1.1 o guarda a apagava exatamente onde ela e mais necessaria.
+# Hoje tem `runtime_scope: {}` e o gate e a propria condicao, que so pode ser
+# verdadeira quando a versao FOI resolvida. Ver o comentario dela em
+# `rules/catalog/env.yaml`.
+GLUE_VERSIONED = {"SF-ENV-002", "SF-ENV-003", "SF-GLUE-001"}
 
 # Estas leem infraestrutura Glue do Terraform mas declaram `{glue: "*"}`, que
 # hoje nao filtra nada -- sao o alvo da fase.
@@ -214,13 +245,15 @@ def _vanished_areas(runtime: dict[str, str]) -> set[str]:
     return {area for area, count in evaluated.items() if count == 0}
 
 
-# Runtimes conhecidos, todos vindos de `detect_runtime`. Os de Glue saem de
-# `GLUE_MATRIX` para que uma versao nova na matriz seja coberta sem editar
-# este arquivo.
+# Runtimes conhecidos. Os de Glue saem de `GLUE_MATRIX` para que uma versao
+# nova na matriz seja coberta sem editar este arquivo; os sem Glue saem de
+# `NON_GLUE_RUNTIMES`, entao o runtime VAZIO -- o padrao real de `sparkforge
+# judge` -- e exercitado aqui pela mesma definicao usada la em cima, sem
+# segunda copia que possa divergir.
 ALL_RUNTIMES: list[tuple[str, dict[str, str]]] = [
     (f"glue-{version}", _detected(terraform={"glue_version": version}))
     for version in sorted(GLUE_MATRIX)
-] + [("emr-rico", EMR_LIKE), ("emr-pobre", EMR_MINIMAL)]
+] + NON_GLUE_RUNTIMES
 ALL_RUNTIME_IDS = [nome for nome, _ in ALL_RUNTIMES]
 
 # UNICA excecao ao invariante, com a condicao exata em que vale.

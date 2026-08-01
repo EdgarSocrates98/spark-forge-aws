@@ -1,11 +1,17 @@
 name: glue_40_runtime
 proves: >
   Glue 4.0 -> Spark 3.3.0, Python 3.10, Iceberg 1.0.0. E o lado de CA do limite
-  de SF-ENV-004 (`glue: "<4.0"`): 4.0 ja tem AQE ligado por default, entao a
-  regra nao pode disparar aqui, enquanto dispara em `pre_aqe_runtime` (Glue
-  3.0). O par de fixtures fixa a fronteira em ambos os sentidos -- errar o
-  lado dela produz ou uma recomendacao de AQE inutil, ou a ausencia dela num
-  runtime que precisa.
+  de SF-ENV-004: 4.0 ja tem AQE ligado por default, entao a regra nao pode
+  disparar aqui, enquanto dispara em `pre_aqe_runtime` (Glue 3.0). O par de
+  fixtures fixa a fronteira em ambos os sentidos -- errar o lado dela produz
+  ou uma recomendacao de AQE inutil, ou a ausencia dela num runtime que
+  precisa.
+  Quem segura a fronteira e a CONDICAO, nao mais o `runtime_scope`. Ate a Task
+  3c da Fase 5a a regra declarava `{glue: "<4.0"}` e esta fixture nao
+  distinguia "o guarda barrou" de "a condicao deu falso" -- as duas produzem
+  `expects_rules: []`. Hoje o escopo e `{}`, a regra E avaliada aqui, e nao
+  dispara porque `attrs.spark_minor` e 3.3 e a condicao exige `< 3.2`. E a
+  mesma fronteira, agora medida onde ela existe de verdade.
 runtime:
   glue: "4.0"
   spark: "3.3.0"

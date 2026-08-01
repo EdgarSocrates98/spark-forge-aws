@@ -23,9 +23,7 @@
       "target_count": 347
     },
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "repartition(n) com n fixo adiciona um shuffle completo para atingir um número que raramente foi calculado a partir do volume. Com AQE ativo, o coalescing de partições pós-shuffle já ajusta a contagem em runtime, então o n fixo frequentemente é revertido logo depois, e o shuffle foi pago em vão.",
     "proposed_change": [
       "Se o objetivo é equilibrar a saída, usar o hint REBALANCE, que coopera com o AQE.",
