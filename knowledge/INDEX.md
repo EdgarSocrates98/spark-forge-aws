@@ -28,6 +28,11 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`glue/job-arguments.md`](glue/job-arguments.md) | Argumentos que afetam performance, precedência código × IaC |
 | [`glue/observability.md`](glue/observability.md) | Métricas CloudWatch exatas, 28 categorias de erro, o que cada uma prova |
 
+### Amazon EMR
+| Arquivo | Conteúdo |
+|---|---|
+| [`emr/runtime-matrix.md`](emr/runtime-matrix.md) | Matriz EMR × Spark × Hadoop × Iceberg × Python, 6.4.0 a 7.13.0, com o significado do sufixo `-amzn-N` |
+
 ### Amazon Athena
 | Arquivo | Conteúdo |
 |---|---|

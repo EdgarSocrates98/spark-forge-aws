@@ -26,9 +26,15 @@ from sparkforge.rules.loader import load_catalog
 # Glue 4.0 deriva Spark 3.3.0 pela GLUE_MATRIX. O cluster EMR observado reporta
 # o mesmo 3.3.0 -- as versoes derivadas COINCIDEM, entao `distinct_versions` e 1
 # e SF-ENV-001 nao tem como disparar. E exatamente esse o caso do criterio 12.
+#
+# A release era `emr-6.10.0` ate a Task 2 da Fase 5b, e o par era impossivel:
+# emr-6.10.0 embarca Spark 3.3.1-amzn-0, nao 3.3.0. Enquanto nao havia
+# EMR_MATRIX ninguem podia notar; com ela, a propria matriz denunciou o dado.
+# `emr-6.9.0` e a release que de fato embarca Spark 3.3.0 (3.3.0-amzn-1), e o
+# caso deixa de ser estipulado para ser verdadeiro.
 COINCIDENT = {
     "terraform": {"glue_version": "4.0"},
-    "event_log": {"spark_version": "3.3.0", "emr_release": "emr-6.10.0"},
+    "event_log": {"spark_version": "3.3.0", "emr_release": "emr-6.9.0"},
 }
 
 # As mesmas duas plataformas, agora com as versoes discordando. SF-ENV-001 e
@@ -36,7 +42,7 @@ COINCIDENT = {
 # discordam sobre a versao, a outra que discordam sobre a propria plataforma.
 DIVERGENT = {
     "terraform": {"glue_version": "5.0"},
-    "event_log": {"spark_version": "3.3.0", "emr_release": "emr-6.10.0"},
+    "event_log": {"spark_version": "3.3.0", "emr_release": "emr-6.9.0"},
 }
 
 # `ids` como lista pre-computada, NUNCA `ids=lambda`: com `parametrize` sobre
@@ -123,7 +129,7 @@ class TestOnePlatformIsNotDivergence:
         "nome,sources",
         [
             ("so-glue", {"terraform": {"glue_version": "5.0"}}),
-            ("so-emr", {"event_log": {"emr_release": "emr-7.5.0", "spark_version": "3.5.1"}}),
+            ("so-emr", {"event_log": {"emr_release": "emr-7.5.0", "spark_version": "3.5.2"}}),
         ],
         ids=["so-glue", "so-emr"],
     )
@@ -201,7 +207,7 @@ class TestRuntimeContextKnowsEmr:
 
     def test_the_detected_release_label_reaches_the_context(self):
         context, _ = detect_runtime(
-            {"event_log": {"emr_release": "emr-7.5.0", "spark_version": "3.5.1"}}
+            {"event_log": {"emr_release": "emr-7.5.0", "spark_version": "3.5.2"}}
         )
         assert context.emr == "emr-7.5.0"
         assert context.glue == ""

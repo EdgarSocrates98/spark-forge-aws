@@ -51,6 +51,14 @@
       {
         "url": "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark",
         "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-7.x.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html",
+        "retrieved": "2026-08-01"
       }
     ]
   }

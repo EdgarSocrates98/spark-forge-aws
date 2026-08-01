@@ -55,6 +55,239 @@ GLUE_MATRIX: dict[str, dict[str, str]] = {
     "3.0": {"spark": "3.1.1", "python": "3.7", "iceberg": "0.13.1"},
 }
 
+# Espelha knowledge/emr/runtime-matrix.md, secoes 2 e 3. Chave sem o prefixo
+# `emr-`; `_emr_key` aceita as duas grafias.
+#
+# QUATRO DECISOES DE DESENHO, todas justificadas na pagina de knowledge:
+#
+# 1. `-amzn-N` E GUARDADO CRU. `3.5.6-amzn-2` nao e o `3.5.6` da Apache: e um
+#    fork com patches da AWS, e descartar o sufixo esconderia que o cluster
+#    roda um fork -- a unica pista de um NoSuchMethodError que so existe la.
+#    A comparacao de `runtime_scope` continua sendo contra versao Apache
+#    porque `version_scope._parse` trunca no sufixo. Isso ja valia para a forma
+#    de um nivel; a forma de dois niveis de 6.x (`3.3.2-amzn-0.1`) quebrava, e
+#    foi corrigida na mesma entrega desta matriz.
+#
+# 2. `python` E O DEFAULT DO PYSPARK, e so existe onde a AWS o documenta.
+#    A coluna `Python` da pagina oficial lista os interpretadores INSTALADOS
+#    (`3.9, 3.11`), nao o que o PySpark executa -- isso e `PYSPARK_PYTHON`, na
+#    classificacao `spark-env`. A release note de 7.13.0 declara a virada para
+#    3.11; antes dela 3.9 e o default de sistema desde 7.0.0. Para 6.x a AWS
+#    nao reafirma o default do PySpark por release, entao a chave e OMITIDA:
+#    `RuntimeContext.python` fica vazio e regra com `python` em `runtime_scope`
+#    e pulada por ausencia. Escolher o maior da lista em silencio seria
+#    inventar. `python_installed` fica registrado porque e fato conferido, mas
+#    NAO deriva (ver `_DERIVABLE`).
+#
+# 3. ICEBERG NAO EXISTE ANTES DE 6.5.0, e a chave e OMITIDA em 6.4.0 --
+#    nem `"0.0.0"` (afirma versao que nao existe) nem `""` (afirma leitura que
+#    nao aconteceu). `in_scope` reprova chave ausente, entao SF-ICE-* ali e
+#    pulada por AUSENCIA, nao por range.
+#
+# 4. `hadoop` E GUARDADO E NAO DERIVA. Nenhuma regra do catalogo tem `hadoop`
+#    em `runtime_scope`, e `_DIRECT_KEYS` nao o coleta de fonte nenhuma -- um
+#    campo em `RuntimeContext` so poderia receber valor de matriz, a forma mais
+#    fraca do dado, e `to_dict()` passaria a emiti-lo em TODO golden com
+#    `runtime` no payload. Custo sem consumidor. Fica na matriz porque e fato
+#    conferido e porque o guard de drift compara a matriz contra a pagina de
+#    knowledge, que tem a coluna.
+EMR_MATRIX: dict[str, dict[str, Any]] = {
+    "7.13.0": {
+        "spark": "3.5.6-amzn-2",
+        "hadoop": "3.4.2-amzn-0",
+        "iceberg": "1.10.0-amzn-1",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.11",
+    },
+    "7.12.0": {
+        "spark": "3.5.6-amzn-1",
+        "hadoop": "3.4.1-amzn-4",
+        "iceberg": "1.10.0-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.11.0": {
+        "spark": "3.5.6-amzn-0",
+        "hadoop": "3.4.1-amzn-3",
+        "iceberg": "1.9.1-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.10.0": {
+        "spark": "3.5.5-amzn-1",
+        "hadoop": "3.4.1-amzn-2",
+        "iceberg": "1.8.1-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.9.0": {
+        "spark": "3.5.5-amzn-0",
+        "hadoop": "3.4.1-amzn-1",
+        "iceberg": "1.7.1-amzn-2",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.8.0": {
+        "spark": "3.5.4-amzn-0",
+        "hadoop": "3.4.1-amzn-0",
+        "iceberg": "1.7.1-amzn-1",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.7.0": {
+        "spark": "3.5.3-amzn-1",
+        "hadoop": "3.4.0-amzn-3",
+        "iceberg": "1.7.1-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.6.0": {
+        "spark": "3.5.3-amzn-0",
+        "hadoop": "3.4.0-amzn-2",
+        "iceberg": "1.6.1-amzn-2",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.5.0": {
+        "spark": "3.5.2-amzn-1",
+        "hadoop": "3.4.0-amzn-1",
+        "iceberg": "1.6.1-amzn-1",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.4.0": {
+        "spark": "3.5.2-amzn-0",
+        "hadoop": "3.4.0-amzn-0",
+        "iceberg": "1.6.1-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.3.0": {
+        "spark": "3.5.1-amzn-1",
+        "hadoop": "3.3.6-amzn-5",
+        "iceberg": "1.5.2-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.2.0": {
+        "spark": "3.5.1-amzn-0",
+        "hadoop": "3.3.6-amzn-4",
+        "iceberg": "1.5.0-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.1.0": {
+        "spark": "3.5.0-amzn-1",
+        "hadoop": "3.3.6-amzn-3",
+        "iceberg": "1.4.3-amzn-0",
+        "python_installed": ("3.9", "3.11"),
+        "python": "3.9",
+    },
+    "7.0.0": {
+        "spark": "3.5.0-amzn-0",
+        "hadoop": "3.3.6-amzn-2",
+        "iceberg": "1.4.2-amzn-0",
+        "python_installed": ("3.9",),
+        "python": "3.9",
+    },
+    "6.15.0": {
+        "spark": "3.4.1-amzn-2",
+        "hadoop": "3.3.6-amzn-1",
+        "iceberg": "1.4.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.14.0": {
+        "spark": "3.4.1-amzn-1",
+        "hadoop": "3.3.3-amzn-6",
+        "iceberg": "1.3.1-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.13.0": {
+        "spark": "3.4.1-amzn-0",
+        "hadoop": "3.3.3-amzn-5",
+        "iceberg": "1.3.0-amzn-1",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.12.0": {
+        "spark": "3.4.0-amzn-0",
+        "hadoop": "3.3.3-amzn-4",
+        "iceberg": "1.3.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.11.1": {
+        "spark": "3.3.2-amzn-0.1",
+        "hadoop": "3.3.3-amzn-3.1",
+        "iceberg": "1.2.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.11.0": {
+        "spark": "3.3.2-amzn-0",
+        "hadoop": "3.3.3-amzn-3",
+        "iceberg": "1.2.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.10.1": {
+        "spark": "3.3.1-amzn-0.1",
+        "hadoop": "3.3.3-amzn-2.1",
+        "iceberg": "1.1.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.10.0": {
+        "spark": "3.3.1-amzn-0",
+        "hadoop": "3.3.3-amzn-2",
+        "iceberg": "1.1.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.9.1": {
+        "spark": "3.3.0-amzn-1.1",
+        "hadoop": "3.3.3-amzn-1.1",
+        "iceberg": "0.14.1-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.9.0": {
+        "spark": "3.3.0-amzn-1",
+        "hadoop": "3.3.3-amzn-1",
+        "iceberg": "0.14.1-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.8.1": {
+        "spark": "3.3.0-amzn-0.1",
+        "hadoop": "3.2.1-amzn-8.1",
+        "iceberg": "0.14.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.8.0": {
+        "spark": "3.3.0-amzn-0",
+        "hadoop": "3.2.1-amzn-8",
+        "iceberg": "0.14.0-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.7.0": {
+        "spark": "3.2.1-amzn-0",
+        "hadoop": "3.2.1-amzn-7",
+        "iceberg": "0.13.1-amzn-0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.6.0": {
+        "spark": "3.2.0-amzn-0",
+        "hadoop": "3.2.1-amzn-6",
+        "iceberg": "0.13.1",
+        "python_installed": ("2.7", "3.7"),
+    },
+    "6.5.0": {
+        "spark": "3.1.2-amzn-1",
+        "hadoop": "3.2.1-amzn-5",
+        "iceberg": "0.12.0",
+        "python_installed": ("2.7", "3.7"),
+    },
+    # Sem chave `iceberg`: a celula da pagina oficial e vazia. Ver decisao 3.
+    "6.4.0": {
+        "spark": "3.1.2-amzn-0",
+        "hadoop": "3.2.1-amzn-4",
+        "python_installed": ("2.7", "3.7"),
+    },
+}
+
 # Precedencia de resolucao quando ha mais de uma fonte para o mesmo
 # componente: event_log (Spark UI / event log do run) e o mais confiavel,
 # depois cli (a flag que o operador digitou), depois terraform (glue_version,
@@ -78,7 +311,23 @@ GLUE_MATRIX: dict[str, dict[str, str]] = {
 # fact `env.runtime_signal` com `observed` completo -- o gatilho de SF-ENV-001
 # em P0. A precedencia so escolhe o que o contexto REPORTA como valor
 # resolvido; ela nao decide quem esta certo, e nunca descarta o outro valor.
-_PRECEDENCE: tuple[str, ...] = ("event_log", "cli", "terraform", "requirements")
+#
+# `describe_cluster` entrou na Fase 5b, ABAIXO de `event_log` e ACIMA de `cli`,
+# espelhando exatamente a decisao ja tomada para `event_log` vs `terraform`:
+# `Cluster.Applications[].Version` e a AWS reportando o que INSTALOU no cluster
+# -- observacao com artefato, nao declaracao --, mas quem observou o RUN sob
+# analise continua sendo so o event log. Acima de `cli`/`terraform`/
+# `requirements` porque esses tres sao declaracao de intencao.
+#
+# O extrator que produz esse dump e a Task 3 desta fase. A fonte fica declarada
+# e funcionando desde ja, sem alimentador -- e esperado.
+_PRECEDENCE: tuple[str, ...] = (
+    "event_log",
+    "describe_cluster",
+    "cli",
+    "terraform",
+    "requirements",
+)
 
 # Chaves que identificam a PLATAFORMA de execucao em cada fonte, e o valor que
 # elas carregam (versao de Glue, release label de EMR). O valor so alimenta
@@ -100,9 +349,43 @@ _DIRECT_KEYS: dict[str, tuple[str, ...]] = {
 
 _ALWAYS_EMIT = frozenset({"spark"})
 
+# O que uma matriz pode virar observacao. `hadoop` e `python_installed` estao
+# na EMR_MATRIX como fato conferido e ficam de fora daqui de proposito: nao ha
+# campo em `RuntimeContext` nem chave em `_DIRECT_KEYS` para eles, e derivar
+# valor que nada consome so acrescentaria ruido ao contexto e a todo golden.
+_DERIVABLE = frozenset(_DIRECT_KEYS)
+
 # (valor, origem). origem e o nome da fonte, ou "<fonte>:matrix" quando o
-# valor foi inferido de GLUE_MATRIX em vez de lido diretamente.
+# valor foi inferido de GLUE_MATRIX/EMR_MATRIX em vez de lido diretamente.
 _Observation = tuple[str, str]
+
+
+def _emr_key(value: str) -> str:
+    """`emr-7.5.0` e `7.5.0` sao a mesma release. Chave da matriz e a segunda.
+
+    O release label e o que o `describe-cluster` e o Terraform carregam; o
+    numero solto e o que alguem digita. As duas grafias tem que achar a mesma
+    linha, senao metade das deteccoes cai no fallback vazio em silencio.
+    """
+    text = str(value).strip()
+    lowered = text.lower()
+    return text[4:] if lowered.startswith("emr-") else text
+
+
+def _apache_version(version: str) -> str:
+    """`3.3.2-amzn-0.1` -> `3.3.2`. So para COMPARAR; nunca para reportar.
+
+    Espelha o truncamento de `sparkforge.rules.version_scope._parse` sem
+    importa-lo -- `facts/` nao depende de `rules/`. O teste
+    `test_apache_version_agrees_with_version_scope` percorre a EMR_MATRIX
+    inteira e falha se as duas implementacoes divergirem em qualquer celula.
+
+    O valor CRU nunca e substituido por este: ele continua em
+    `RuntimeContext.spark`, em `attrs.observed` e no texto de divergencia,
+    porque o sufixo `-amzn-N` e informacao real sobre o runtime -- descarta-la
+    esconderia que o cluster roda um fork da AWS, nao o artefato da Apache.
+    """
+    return str(version).split("-", 1)[0].strip()
 
 
 def _source_rank(origin: str) -> tuple[int, str]:
@@ -124,6 +407,48 @@ def _resolve(observations: list[_Observation]) -> str:
 
 def _distinct_values(observations: list[_Observation]) -> list[str]:
     return sorted({value for value, _ in observations})
+
+
+def _divergent_count(
+    component: str,
+    observations: list[_Observation],
+    derived: dict[str, dict[str, list[_Observation]]],
+) -> int:
+    """Quantas VERSOES distintas as fontes atribuem a este componente.
+
+    Duas diferencas em relacao a `len(_distinct_values(...))`, e as duas
+    existem para nao transformar um defeito ja reportado num segundo P0 com o
+    remedio errado:
+
+    1. CONTA VERSAO APACHE, nao string crua. `3.3.0` (derivado de Glue 4.0) e
+       `3.3.0-amzn-1` (derivado de emr-6.9.0) sao o mesmo Spark com patches
+       diferentes, nao duas versoes divergentes. `attrs.observed` continua
+       listando as duas strings cruas -- e por isso que `observed` pode ter
+       mais entradas do que `distinct_versions`: uma responde "o que foi
+       lido", a outra "quantas versoes sao".
+
+    2. COMPARA POR PLATAFORMA. Quando Glue e EMR sao detectados juntos, as duas
+       matrizes derivam valores para o mesmo componente e eles quase sempre
+       discordam -- nao ha release de EMR que case com Glue 4.0 em Spark E
+       Iceberg. Contar isso como divergencia de versao mandaria o operador
+       "alinhar o Terraform a versao efetiva" quando o remedio e remover o
+       artefato que nao e deste job. Multiplicidade de plataforma tem regra
+       propria, SF-ENV-005, tambem P0. Entao cada plataforma e conferida
+       contra as observacoes DIRETAS e contra as derivacoes dela mesma, nunca
+       contra as da outra -- e observacao direta nunca e excluida, porque ela
+       nao depende de nenhuma matriz para existir.
+    """
+    direct = {
+        _apache_version(value)
+        for value, origin in observations
+        if not origin.endswith(":matrix")
+    }
+    views = [
+        direct | {_apache_version(value) for value, _ in rows[component]}
+        for rows in derived.values()
+        if rows.get(component)
+    ]
+    return max(len(view) for view in views) if views else len(direct)
 
 
 def _divergence_text(component: str, observations: list[_Observation]) -> str:
@@ -165,12 +490,31 @@ def _platform_identity(platforms: dict[str, list[_Observation]]) -> list[_Observ
     ]
 
 
+def _matrix_row(platform: str, value: str) -> dict[str, Any] | None:
+    if platform == "glue":
+        return GLUE_MATRIX.get(value)
+    if platform == "emr":
+        return EMR_MATRIX.get(_emr_key(value))
+    return None
+
+
 def _collect(
     sources: dict[str, dict[str, Any]],
-) -> tuple[dict[str, list[_Observation]], dict[str, list[_Observation]], set[str]]:
+) -> tuple[
+    dict[str, list[_Observation]],
+    dict[str, list[_Observation]],
+    set[str],
+    dict[str, dict[str, list[_Observation]]],
+]:
     platforms: dict[str, list[_Observation]] = defaultdict(list)
     observations: dict[str, list[_Observation]] = defaultdict(list)
     detected_from: set[str] = set()
+    # plataforma -> componente -> observacoes derivadas DAQUELA matriz.
+    # Existe so para `_divergent_count`: sem saber de qual matriz cada valor
+    # derivado veio, nao ha como comparar cada plataforma consigo mesma.
+    derived: dict[str, dict[str, list[_Observation]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
 
     for source_name in sorted(sources):
         data = sources[source_name]
@@ -185,12 +529,13 @@ def _collect(
                 value = str(raw)
                 platforms[platform].append((value, source_name))
                 detected_from.add(source_name)
-                if platform == "glue":
-                    derived = GLUE_MATRIX.get(value)
-                    if derived:
-                        origin = f"{source_name}:matrix"
-                        for component, derived_value in derived.items():
-                            observations[component].append((derived_value, origin))
+                row = _matrix_row(platform, value)
+                if row:
+                    origin = f"{source_name}:matrix"
+                    for component in sorted(_DERIVABLE & set(row)):
+                        pair = (str(row[component]), origin)
+                        observations[component].append(pair)
+                        derived[platform][component].append(pair)
                 break
 
         for component, keys in _DIRECT_KEYS.items():
@@ -201,13 +546,14 @@ def _collect(
                     detected_from.add(source_name)
                     break
 
-    return platforms, observations, detected_from
+    return platforms, observations, detected_from, derived
 
 
 def _build_context(
     platforms: dict[str, list[_Observation]],
     observations: dict[str, list[_Observation]],
     detected_from: set[str],
+    derived: dict[str, dict[str, list[_Observation]]],
 ) -> RuntimeContext:
     all_components: dict[str, list[_Observation]] = {
         "glue": platforms.get("glue", []),
@@ -221,10 +567,17 @@ def _build_context(
     }
     all_components.update(observations)
 
+    # `glue`, `emr` e `platform` nao passam por matriz nenhuma: sao a propria
+    # identidade lida da fonte, e ali string crua distinta E divergencia.
+    identity = {"glue", "emr", "platform"}
     divergences = [
         _divergence_text(name, all_components[name])
         for name in sorted(all_components)
-        if len(_distinct_values(all_components[name])) > 1
+        if (
+            len(_distinct_values(all_components[name])) > 1
+            if name in identity
+            else _divergent_count(name, all_components[name], derived) > 1
+        )
     ]
 
     return RuntimeContext(
@@ -280,6 +633,7 @@ def _platform_fact(platforms: dict[str, list[_Observation]]) -> Fact | None:
 def _build_facts(
     platforms: dict[str, list[_Observation]],
     observations: dict[str, list[_Observation]],
+    derived: dict[str, dict[str, list[_Observation]]],
 ) -> list[Fact]:
     facts: list[Fact] = []
 
@@ -290,13 +644,18 @@ def _build_facts(
     for component in sorted(observations):
         obs = observations[component]
         distinct = _distinct_values(obs)
+        count = _divergent_count(component, obs, derived)
         has_direct = any(not origin.endswith(":matrix") for _, origin in obs)
-        if component not in _ALWAYS_EMIT and not has_direct and len(distinct) <= 1:
+        # A condicao de emissao usa a MESMA contagem que a medida. Usar
+        # `len(distinct)` aqui faria duas matrizes de plataformas diferentes
+        # emitirem um fact de iceberg cujo `distinct_versions` e 1 -- um fact
+        # que nao dispara nada e que ninguem sabe ler.
+        if component not in _ALWAYS_EMIT and not has_direct and count <= 1:
             continue
 
         resolved = _resolve(obs)
         source_count = len({origin.split(":", 1)[0] for _, origin in obs})
-        measures = {"distinct_versions": len(distinct), "source_count": source_count}
+        measures = {"distinct_versions": count, "source_count": source_count}
         attrs: dict[str, Any] = {
             "component": component,
             "resolved": resolved,
@@ -324,17 +683,22 @@ def _build_facts(
 def detect_runtime(sources: dict[str, dict[str, Any]]) -> tuple[RuntimeContext, list[Fact]]:
     """Deriva RuntimeContext e Facts (`env.platform`, `env.runtime_signal`).
 
-    `sources` mapeia nome da fonte (ex.: "event_log", "terraform",
-    "requirements") para um dict com chaves cruas: `glue_version`,
+    `sources` mapeia nome da fonte (ex.: "event_log", "describe_cluster",
+    "terraform", "requirements") para um dict com chaves cruas: `glue_version`,
     `emr_release`/`emr_version`/`emr`, `spark_version`/`spark`,
     `python_version`/`python`, `iceberg_version`/`iceberg`,
     `athena_version`/`athena`.
+
+    `glue_version` deriva spark/python/iceberg por `GLUE_MATRIX`;
+    `emr_release` deriva spark/iceberg -- e python so em 7.x -- por
+    `EMR_MATRIX`. Derivacao sempre perde para leitura direta, e o
+    `PYSPARK_PYTHON` da classificacao `spark-env` chega como `python_version`.
 
     Nao le nada do disco nem de rede -- `sources` ja vem coletado
     (coleta e Task 22). Entrada vazia ou com valores None/vazios nao
     levanta excecao: apenas produz um RuntimeContext vazio e nenhum fact.
     """
-    platforms, observations, detected_from = _collect(sources or {})
-    context = _build_context(platforms, observations, detected_from)
-    facts = _build_facts(platforms, observations)
+    platforms, observations, detected_from, derived = _collect(sources or {})
+    context = _build_context(platforms, observations, detected_from, derived)
+    facts = _build_facts(platforms, observations, derived)
     return context, sort_facts(facts)

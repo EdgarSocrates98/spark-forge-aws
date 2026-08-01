@@ -6,13 +6,21 @@ proves: >
   Nao emitir o fact com uma plataforma faria a regra sumir por `requires_facts`
   em todo relatorio saudavel -- ausencia muda, que para um agente autonomo le
   como "nada encontrado" em vez de "olhei e esta certo". `glue` fica vazio, o
-  que prova que a deteccao de plataforma nao supoe Glue; `iceberg` e `python`
-  tambem, porque fora do Glue nao ha matriz que os derive -- ate a Task 2 desta
-  fase, que traz a EMR_MATRIX.
+  que prova que a deteccao de plataforma nao supoe Glue.
+
+  Com a EMR_MATRIX da Task 2, `iceberg` e `python` deixam de ficar vazios: a
+  release label passa a derivar como `glue_version` sempre derivou. E o
+  event log declarava Spark 3.5.1 num cluster emr-7.5.0, que embarca
+  3.5.2-amzn-1 -- par impossivel que so a matriz podia denunciar. Corrigido
+  para 3.5.2; `observed` guarda as duas grafias porque o sufixo `-amzn-1` e
+  informacao real sobre o fork, e `distinct_versions` continua 1 porque a
+  versao Apache e a mesma.
 runtime:
   glue: ""
   emr: "emr-7.5.0"
-  spark: "3.5.1"
+  spark: "3.5.2"
+  iceberg: "1.6.1-amzn-1"
+  python: "3.9"
 expects_kinds:
   - env.platform
   - env.runtime_signal
