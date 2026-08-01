@@ -217,6 +217,100 @@ class TestStageWithoutTasks:
         assert duration[0].subject["symbol"] == ""
 
 
+class TestRuntimeVersion:
+    def _log_start(self, version, key="Spark Version"):
+        return _line("SparkListenerLogStart", **{key: version})
+
+    def test_log_start_emits_runtime_version_anchored_no_app_id(self):
+        lines = [
+            self._log_start("3.5.4"),
+            _line("SparkListenerApplicationStart", **{"App ID": "application_1_0001"}),
+        ]
+        facts = extract_event_log(lines, "log.jsonl")
+        version = facts_of("spark.runtime_version", facts)
+        assert len(version) == 1
+        assert version[0].attrs["version"] == "3.5.4"
+        assert version[0].attrs["component"] == "spark"
+        assert version[0].attrs["source_event"] == "SparkListenerLogStart"
+        assert version[0].subject == {"type": "job_run", "symbol": "application_1_0001"}
+        assert version[0].provenance["extractor"] == EXTRACTOR_ID
+        validate_fact(version[0].to_dict())
+
+    def test_vendor_suffixed_version_is_preserved_verbatim(self):
+        """Glue reporta '3.5.4-amzn-0'. Truncar para '3.5.4' seria normalizar
+        uma observacao -- o extrator reporta o que o run reportou."""
+        facts = extract_event_log([self._log_start("3.5.4-amzn-0")], "log.jsonl")
+        assert facts_of("spark.runtime_version", facts)[0].attrs["version"] == "3.5.4-amzn-0"
+
+    def test_absent_log_start_emits_nothing_and_is_not_an_error(self):
+        """Event log sem SparkListenerLogStart e event log valido (log
+        truncado pelo inicio, log sintetico, recorte). Ausencia de versao nao
+        e ponto cego: e simplesmente silencio."""
+        lines = [_task_end(0, 0, 1000, 1500), _stage_completed(0, "s", 1)]
+        facts = extract_event_log(lines, "log.jsonl")
+        assert facts_of("spark.runtime_version", facts) == []
+        assert facts_of("spark.unresolved", facts) == []
+        assert facts_of("spark.log_analyzed", facts)[0].measures["unresolved_count"] == 0
+
+    @pytest.mark.parametrize(
+        "version",
+        ["", "   ", "unknown", "v3.5.4", "3.5.4 (amzn)"],
+        ids=["empty", "blank", "not_a_version", "prefixed", "with_space"],
+    )
+    def test_malformed_or_empty_version_becomes_unresolved(self, version):
+        facts = extract_event_log([self._log_start(version)], "log.jsonl")
+        assert facts_of("spark.runtime_version", facts) == []
+        unresolved = facts_of("spark.unresolved", facts)
+        assert len(unresolved) == 1
+        assert unresolved[0].attrs["reason"] == "missing_event_field"
+        assert unresolved[0].subject["line"] == 1
+        assert facts_of("spark.log_analyzed", facts)[0].measures["unresolved_count"] == 1
+
+    def test_non_string_version_becomes_unresolved(self):
+        facts = extract_event_log([self._log_start(3.5)], "log.jsonl")
+        assert facts_of("spark.runtime_version", facts) == []
+        assert facts_of("spark.unresolved", facts)[0].attrs["reason"] == "missing_event_field"
+
+    def test_log_start_without_the_version_key_becomes_unresolved(self):
+        """Evento presente mas sem o campo esperado e estrutura interna
+        quebrada -- categoria diferente de evento ausente."""
+        facts = extract_event_log([_line("SparkListenerLogStart")], "log.jsonl")
+        assert facts_of("spark.runtime_version", facts) == []
+        assert facts_of("spark.unresolved", facts)[0].attrs["reason"] == "missing_event_field"
+
+    def test_repeated_log_start_with_same_version_is_idempotent(self):
+        """Event log rolante (`spark.eventLog.rolling.enabled`) e escrito em
+        varios arquivos, cada um comecando por SparkListenerLogStart. Quem
+        concatena as partes ve o cabecalho repetido: repeticao com o MESMO
+        valor e o caso normal, nao anomalia."""
+        lines = [self._log_start("3.5.4"), _task_end(0, 0, 1, 2), self._log_start("3.5.4")]
+        facts = extract_event_log(lines, "log.jsonl")
+        assert len(facts_of("spark.runtime_version", facts)) == 1
+        assert facts_of("spark.unresolved", facts) == []
+
+    def test_conflicting_log_start_keeps_the_first_and_flags_the_conflict(self):
+        """Duas versoes diferentes num unico log significam partes de runs
+        distintos concatenadas: um unico fact nao consegue afirmar as duas.
+        Escolher em silencio deixaria uma versao errada gatilhar as regras
+        versionadas de `judge`; abortar jogaria fora o log inteiro. O primeiro
+        cabecalho vence (e o que o arquivo abriu) e a divergencia vira ponto
+        cego explicito, ancorado na linha que discordou."""
+        lines = [self._log_start("3.5.4"), self._log_start("3.3.0")]
+        facts = extract_event_log(lines, "log.jsonl")
+        version = facts_of("spark.runtime_version", facts)
+        assert len(version) == 1
+        assert version[0].attrs["version"] == "3.5.4"
+        unresolved = facts_of("spark.unresolved", facts)
+        assert len(unresolved) == 1
+        assert unresolved[0].attrs["reason"] == "conflicting_runtime_version"
+        assert unresolved[0].subject["line"] == 2
+        assert "3.5.4" in unresolved[0].attrs["detail"]
+        assert "3.3.0" in unresolved[0].attrs["detail"]
+
+    def test_kind_is_declared_in_the_namespace(self):
+        assert "spark.runtime_version" in EMITTED_KINDS
+
+
 class TestSchemaCompliance:
     def test_every_emitted_kind_is_declared(self):
         lines = [

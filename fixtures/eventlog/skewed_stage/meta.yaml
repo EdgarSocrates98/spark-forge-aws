@@ -21,6 +21,7 @@ expects_kinds:
   - spark.cluster.cores
   - spark.executor.lost
   - spark.job.spill_summary
+  - spark.runtime_version
   - spark.unresolved
   - spark.log_analyzed
 expects_rules:

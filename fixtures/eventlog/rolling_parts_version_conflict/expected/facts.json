@@ -1,0 +1,216 @@
+[
+  {
+    "id": "f_5f583b",
+    "schema_version": 1,
+    "kind": "spark.cluster.cores",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0007"
+    },
+    "measures": {
+      "available_cores": 8,
+      "executor_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_03c3e7",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0007"
+    },
+    "measures": {
+      "stages_with_spill": 0,
+      "total_memory_spill_bytes": 0,
+      "total_disk_spill_bytes": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_d15c01",
+    "schema_version": 1,
+    "kind": "spark.log_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 20,
+      "event_count": 20,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_c4482c",
+    "schema_version": 1,
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0007"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.4-amzn-0",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_97228a",
+    "schema_version": 1,
+    "kind": "spark.stage.gc",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_uniform_scan",
+      "stage_id": 0
+    },
+    "measures": {
+      "gc_ms": 80,
+      "executor_run_ms": 7200
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_fc629b",
+    "schema_version": 1,
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_uniform_scan",
+      "stage_id": 0
+    },
+    "measures": {
+      "memory_spill_bytes": 0,
+      "disk_spill_bytes": 0,
+      "input_bytes": 80000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_e9b230",
+    "schema_version": 1,
+    "kind": "spark.stage.task_count",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_uniform_scan",
+      "stage_id": 0
+    },
+    "measures": {
+      "task_count": 8,
+      "available_cores": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_e2dd29",
+    "schema_version": 1,
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_uniform_scan",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_ms": 1000,
+      "p50_ms": 1000,
+      "p95_ms": 1000,
+      "max_ms": 1000,
+      "mean_ms": 1000.0,
+      "task_count": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_b82420",
+    "schema_version": 1,
+    "kind": "spark.stage.task_input",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_uniform_scan",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_bytes": 10000000,
+      "p50_bytes": 10000000,
+      "p95_bytes": 10000000,
+      "max_bytes": 10000000,
+      "total_bytes": 80000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_ea43a3",
+    "schema_version": 1,
+    "kind": "spark.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 19,
+      "col": 0,
+      "symbol": "",
+      "snippet": "{\"Event\":\"SparkListenerLogStart\",\"Spark Version\":\"3.3.0-amzn-1\"}"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "conflicting_runtime_version",
+      "detail": "Spark Version divergente: 3.5.4-amzn-0 (primeiro) != 3.3.0-amzn-1"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  }
+]
