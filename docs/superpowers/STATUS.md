@@ -283,9 +283,13 @@ Herda três decisões que a 5a mediu e deixou registradas:
 3. **`SF-ENV-002` é o guarda não-vazio mais fraco.** Seu `when` já lê
    `format-version == 3` de `iceberg.table_property`, então
    `{glue: ">=5.1", iceberg: ">=1.10.0"}` é redundante do mesmo jeito que o de
-   `SF-ENV-004` era. Hoje sem efeito medível — a regra é inerte, `env.consumer`
-   não tem extrator — e `test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51`
-   a fixa deliberadamente.
+   `SF-ENV-004` era. **Deixou de ser sem efeito medível**: `env.consumer` ganhou
+   extrator (`sparkforge/facts/consumers.py`, via `sparkforge analyze consumers`),
+   e a regra dispara em P0 — `fixtures/consumers/v3_with_athena_consumer` é o
+   golden positivo, e `fixtures/pyspark/version_out_of_scope` prova o guarda
+   pulando por `runtime_scope` em Glue 5.0. `test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51`
+   fixa o escopo deliberadamente. A redundância entre o `when` e o `runtime_scope`
+   continua real; o que mudou é que agora ela é observável.
 
 ### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
 

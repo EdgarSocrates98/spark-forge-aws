@@ -15,7 +15,15 @@ Ajustar capacidade sem um gargalo comprovado é tuning por intuição, e a tabel
 4. `sparkforge judge --facts .sparkforge/tf_facts.json --show-skipped` aplica `SF-GLUE-001`, `SF-GLUE-002`, `SF-GLUE-003` e `SF-GLUE-006`. Não precisa de `--glue`: o `tf.attribute` de `key: glue_version` extraído no passo 2 já é a fonte, e a saída devolve o campo `runtime` com o que foi usado — `detected_from: ["terraform"]` confirma a origem. Passe `--glue 5.1` só quando o `.tf` declara a versão por `var.`/`local.` (o extrator não adivinha a referência) e você a conhece de fonte confiável. Com `runtime.glue` vazio, as seis regras Glue são puladas com `reason: runtime_scope` em `--show-skipped`: decisão de capacidade sem o eixo Glue coberto, e você precisa saber disso antes de recomendar worker.
 5. **A definição real da API não alimenta a detecção.** O artefato de `collect glue-job` do passo 3 é comparação de drift — não existe extrator que o transforme em fact, então ele nunca preenche `runtime`. Se o drift for justamente na versão, `runtime` continua mostrando o que o Terraform declara, não o que está rodando; nesse caso declare a versão real com `--glue` e trate a diferença como achado.
 6. `SF-GLUE-004` (retry sobre escrita não idempotente) exige facts de duas fontes — `tf.attribute` **e** `pyspark.write`. Rode também `sparkforge analyze pyspark --path <job.py> --out .sparkforge/py_facts.json` e passe os dois arquivos na mesma chamada: `--facts` é repetível (`sparkforge judge --facts .sparkforge/tf_facts.json --facts .sparkforge/py_facts.json`), e `judge` une e deduplica as listas antes de julgar. Julgar os dois arquivos separados nunca faz a regra disparar, porque nenhum dos dois sozinho carrega as duas metades da evidência — e unir os facts também é o que mantém a versão do `.tf` disponível para a regra ser avaliada.
-7. `SF-GLUE-005` (worker maior sem evidência de spill) está `blocked_on: extrator-de-diff-terraform` no catálogo — inerte por desenho até existir um extrator de diff. Ela não vai disparar hoje. Se você está recomendando worker maior sem `SF-UI-003` (spill) ter disparado em `analyze-spark-ui`, essa recomendação é sua, não da regra — rotule como hipótese, não como achado.
+7. `SF-GLUE-005` (worker maior sem evidência de spill) **dispara**, e é a regra que existe para segurar a sua mão exatamente aqui — mas ela exige três coisas, e nenhuma responde sozinha:
+
+   ```bash
+   sparkforge analyze terraform-diff --before <dir-antes> --after <dir-depois> --out .sparkforge/tf_diff.json
+   sparkforge analyze event-log --path <log>.jsonl --out .sparkforge/facts_eventlog.json
+   sparkforge judge --facts .sparkforge/tf_diff.json --facts .sparkforge/facts_eventlog.json --show-skipped
+   ```
+
+   O `terraform-diff` marca `tf.attribute` de `worker_type` com `changed: true` — é o que diz **o que mudou**, e por isso exige os dois estados do módulo em disco, não um só. O event log traz `spark.job.spill_summary` (zero spill) e `spark.executor.memory_usage` — essa última é o que separa "medimos e não havia limitação de memória" de "ninguém olhou". Sem o diff, ou sem um event log real do run, a regra sai em `skipped` com `reason: requires_facts`, e aí a recomendação de worker maior é sua, não da regra: rotule como hipótese.
 
 ## Qual eixo aumentar
 
@@ -29,7 +37,7 @@ Não decida o eixo (workers, worker type, disco, Auto Scaling) sem cruzar a evid
 | `SF-GLUE-002` | `tf.resource` + ausência de `tf.observability.spark_ui` no mesmo recurso | Observabilidade ausente — sem ela, nenhuma decisão de capacidade futura tem baseline. Um achado por job sem observabilidade |
 | `SF-GLUE-003` | `tf.attribute` | `max_concurrent_runs` acima de 1 com bookmark habilitado — risco de reprocessamento ou corrida |
 | `SF-GLUE-004` | `tf.attribute` + `pyspark.write` (facts combinados) | Retry configurado sobre escrita append sem controle de idempotência |
-| `SF-GLUE-005` | inerte — falta extrator de diff | Worker maior recomendado sem baseline de spill comprovado; hoje isso é julgamento seu, não da regra |
+| `SF-GLUE-005` | `tf.attribute` com `changed: true` (via `analyze terraform-diff`) + `spark.job.spill_summary` + `spark.executor.memory_usage` | Worker maior sem evidência de limitação de memória — exige os dois estados do Terraform e um event log real |
 | `SF-GLUE-006` | `tf.attribute` | Segredo em default argument — achado de segurança, tem precedência sobre qualquer recomendação de performance |
 
 Limiares e severidade vêm de `sparkforge rules lookup --id <ID>`, nunca de memória.
@@ -44,7 +52,7 @@ Limiares e severidade vêm de `sparkforge rules lookup --id <ID>`, nunca de mem�
 ## Red flags
 
 - Escalar workers para esconder skew, small files ou `collect` no driver.
-- Recomendar worker maior sem `SF-UI-003` (spill) ter disparado — lembre que `SF-GLUE-005` está inerte, então nada aqui vai te impedir automaticamente.
+- Recomendar worker maior sem `SF-UI-003` (spill) ter disparado. `SF-GLUE-005` pega isso — mas só se você tiver dado a ela o diff do Terraform **e** o event log; se ela saiu em `skipped` por `requires_facts`, nada te impediu automaticamente e a recomendação corre sem rede.
 - Comparar só runtime de parede e ignorar DPU-hours — duração sozinha esconde superprovisão.
 - Copiar configuração de uma versão de Spark/Glue para outra sem confirmar com `sparkforge runtime detect`.
 
