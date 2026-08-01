@@ -1,7 +1,17 @@
 # SparkForge AWS — Fase 5: Cobertura de EMR e Escopo por Natureza
 
 **Data:** 2026-08-01
-**Status:** aprovado para planejamento
+**Status:** implementado em parte. A fase foi **partida em duas**.
+
+- **5a — correção de escopo: CONCLUÍDA** em 2026-08-01, branch `feat/fase5a-escopo`.
+  Fecha §3.1, §3.2 e os critérios 10, 11 e 13. Plano:
+  [`../plans/2026-08-01-sparkforge-fase5a-escopo.md`](../plans/2026-08-01-sparkforge-fase5a-escopo.md).
+  A execução encontrou três famílias do mesmo erro de camada que este spec não
+  previu — `{athena: "*"}`, `{iceberg: ">=1.0.0"}` e o `{spark: ">=3.0"}` que a
+  própria correção introduziu. Ver `STATUS.md`, seção "Fase 5a".
+- **5b — EMR: NÃO INICIADA.** O restante deste documento — `emr` no
+  `RuntimeContext`, `EMR_MATRIX`, extrator de cluster, área `SF-EMR`, coordenador,
+  e a divergência de plataforma da §3.3 — segue válido e sem plano escrito.
 **Depende de:** [Fase 4](2026-07-31-sparkforge-fase4-agentes-design.md) — os coordenadores são onde a área nova se pendura
 **Estado corrente:** [`../STATUS.md`](../STATUS.md)
 
