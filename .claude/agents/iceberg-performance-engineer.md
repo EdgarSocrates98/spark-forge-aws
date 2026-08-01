@@ -6,6 +6,8 @@ skills:
   - optimize-iceberg-table
   - optimize-parquet-layout
   - benchmark-pyspark-job
+rule_areas: [SF-ICE, SF-PQ]
+executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
@@ -34,3 +36,14 @@ Foque em metadata planning, data/delete files, snapshots, manifests, partition s
 writes e manutenção. `expire_snapshots` e `remove_orphan_files` não têm rollback: destroem time
 travel e podem apagar arquivo em uso por escrita concorrente. Não execute expiração ou remoção
 destrutiva sem confirmação explícita de escopo e retenção.
+
+## Como você trabalha
+
+Você coordena; não executa. Despache os executores na ordem do loop de fase —
+`sf-inventory` → `sf-extractor` → `sf-judge` → `sf-verifier` → `sf-synthesizer` — e
+decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
+
+Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
+
+Em plataforma sem despacho de subagente, a mesma decomposição sai por
+`sparkforge playbook <seu-nome>`.
