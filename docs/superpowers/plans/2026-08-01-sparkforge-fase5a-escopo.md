@@ -62,6 +62,7 @@ Outros fatos:
 - 10 skills chamam `judge`; nem todas passam `--glue` ou `--spark`.
 - `judge --show-skipped` existe e funciona: `engine.judge(..., return_skipped=True)` devolve `skipped` com `reason` em `{runtime_scope, blocked_on, requires_facts}`.
 - `tests/test_runtime_glue_versions.py` já testa escopo por runtime nas bordas — é o padrão a seguir.
+- **Achado durante a execução:** `SF-ATH-001..005` usam `{athena: "*"}`, e `RuntimeContext.athena` tem default `""` que `to_dict()` sempre emite — a chave nunca é detectada, só preenchida pela flag `--athena`. Segunda família de curinga, mesmo defeito. Ver Task 3, Step 0.
 
 ---
 
@@ -282,10 +283,30 @@ git commit -m "fix(rules): 20 regras agnosticas estavam marcadas como de Glue"
 
 ## Task 3: O curinga passa a exigir presença
 
-Só agora. Com as 20 já reetiquetadas, mudar a semântica afeta apenas as 5 que devem ser afetadas.
+Só agora. Com as 20 já reetiquetadas, mudar a semântica afeta apenas as regras que devem ser afetadas.
+
+> **Corrigido durante a execução.** A Task 2 encontrou uma segunda família de curinga que este plano não previu: `SF-ATH-001..005` declaram `runtime_scope: {athena: "*"}`, e `athena` **nunca é detectado** — `RuntimeContext.athena` tem default `""`, `to_dict()` sempre emite a chave, e o valor só é preenchido pela flag `--athena` explícita. Depois da mudança de semântica, `runtime.get("athena")` devolve `""`, que é falso, e as 5 somem **em todo runtime**: Glue 4.0, 5.0, 5.1 e EMR-like. Isso quebraria `test_every_area_of_the_catalog_survives_the_version_guard` (área SF-ATH inteira desaparece) e `TestAgnosticRulesSurviveWithoutGlue` (as 5 não estão em `GLUE_DEPENDENT`). A mesma razão de ordem que motivou a Task 2 vale aqui: **reetiquetar antes de mudar a semântica.** Daí o Step 0 abaixo.
 
 **Files:**
-- Modify: `sparkforge/rules/version_scope.py`, `tests/test_rules_version_scope.py`
+- Modify: `rules/catalog/athena.yaml`, `sparkforge/rules/version_scope.py`, `tests/test_rules_version_scope.py`, `tests/test_rule_scope_by_nature.py`
+
+- [ ] **Step 0: Reetiquetar as SF-ATH, antes de tudo**
+
+O gate real dessas 5 é `requires_facts`, não versão:
+
+| Regra | `requires_facts` |
+|---|---|
+| SF-ATH-001 | `sql.projection.enriched` |
+| SF-ATH-002 | `sql.projection`, `catalog.table_schema` |
+| SF-ATH-003 | `catalog.table_partitions` |
+| SF-ATH-004 | `athena.workgroup` |
+| SF-ATH-005 | `sql.predicate.enriched` |
+
+Nenhuma dispara sem que alguém tenha analisado uma consulta, um schema de catálogo ou um workgroup. `{athena: "*"}` foi escrito querendo dizer "estas são regras de Athena" — uma etiqueta de serviço — mas o mecanismo que ele usa é guarda de versão. É exatamente o erro de camada que esta fase existe para desfazer: `runtime_scope` guarda versão; quem gateia por natureza do artefato é `requires_facts`.
+
+Dê às 5 escopo vazio `{}`, com comentário YAML explicando que o gate é `requires_facts` e que a versão de engine do Athena não é detectada — só declarada por flag. Se você discordar e defender outro escopo, **diga qual e por quê** em vez de seguir.
+
+Generalize também `TestNoRuleUsesTheAmbiguousWildcardAnymore` em `tests/test_rule_scope_by_nature.py`: hoje ele procura a string literal `{'glue': '*'}`. Ele tem que pegar **qualquer** `runtime_scope` de valor `"*"` cuja chave não esteja declarada como dependente daquele serviço — foi a literalidade dele que deixou `{athena: "*"}` passar.
 
 - [ ] **Step 1: Escreva os testes primeiro**
 
@@ -573,6 +594,7 @@ git commit -m "docs: semantica do curinga, e fecha a Fase 5a"
 | | Antes | Depois |
 |---|---|---|
 | Regras com `{glue: "*"}` | 25 | 5 (só as de infra Glue) |
+| Regras com `{athena: "*"}` | 5 | 0 — gate é `requires_facts` |
 | Curinga filtra | nada | exige presença da chave |
 | Regras avaliadas num runtime EMR-like | 44, com 5 em silêncio | 43, com as 5 **em `skipped`, com motivo** |
 | `SF-GLUE-002` sem `aws_glue_job` | some dos dois lados | aparece em `skipped` |
