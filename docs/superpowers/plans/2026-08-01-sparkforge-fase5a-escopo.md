@@ -386,6 +386,66 @@ git commit -m "fix(scope): curinga exige presenca da chave, como todo leitor ass
 
 ---
 
+## Task 3b: `SF-ICE` sumia inteira quando a versão não era detectada
+
+> **Acrescentada durante a execução.** A Task 3 mediu, num runtime EMR realista em que só o event log observou Spark, que a área `SF-ICE` inteira desaparecia. `SF-GLUE` sumir ali é o objetivo da fase — não há infraestrutura Glue a revisar, e agora isso aparece como pulado com motivo. `SF-ICE` sumir é falso negativo: tabelas Iceberg existem em EMR, e a área apagava porque ninguém **detectou** a versão.
+
+As 5 declaravam `{iceberg: ">=1.0.0"}`, e `iceberg` só é resolvido por flag explícita ou inferido de `GLUE_MATRIX` quando há Glue — ou seja, era um gate de Glue disfarçado sobre regras que nada têm de Glue. O gate real é `requires_facts` (`iceberg.files_summary`, `.delete_files_summary`, `.snapshots_summary`, `.table_property`), que só existe se alguém apontou o extrator para metadados Iceberg.
+
+**Concluída** no commit `cb80f17`. As 5 ficaram com `{}`, e `tests/test_rule_scope_by_nature.py` ganhou `TestNoCatalogAreaVanishesEntirely`, que mede o **agregado** — foi o agregado que escapou, não a regra individual — com runtimes derivados de `GLUE_MATRIX` e exceção declarada só para `SF-GLUE`.
+
+---
+
+## Task 3c: esvaziar os guardas de versão falsos
+
+> **Acrescentada durante a execução, e decidida pelo usuário.** A Task 3b mediu a consequência das Tasks 2 e 3 juntas: com `build_runtime_context()` sem flags — que é o padrão de `sparkforge judge` — **6 das 9 áreas do catálogo somem**. As 19 regras que a Task 2 moveu de `{glue: "*"}` para `{spark: ">=3.0"}` trocaram um rótulo permissivo e errado por um guarda estrito e errado. Medido:
+>
+> ```
+> build_runtime_context() -> {'glue':'','spark':'','python':'','iceberg':'','athena':''}
+> SF-CG 0/1  SF-GLUE 0/6  SF-PLAN 0/4  SF-PQ 0/5  SF-PY 0/12  SF-UI 0/6
+> ```
+
+**Files:**
+- Modify: `rules/catalog/pyspark.yaml`, `parquet.yaml`, `spark-plan.yaml`, `spark-ui.yaml`, `callgraph.yaml`, `env.yaml`
+- Modify: `tests/test_rule_scope_by_nature.py`
+
+- [ ] **Step 1: O critério, e ele é o da fase**
+
+`runtime_scope` só pode ser não-vazio quando o **gatilho** da regra genuinamente varia com a versão **e** essa versão vem do runtime, não de um fact que a própria regra já lê.
+
+Regra cujo gatilho é AST (`SF-PY`, `SF-CG`), plano físico (`SF-PLAN`), event log (`SF-UI`) ou layout de armazenamento (`SF-PQ`) não depende de versão detectada para valer: `coalesce(1)` é P0 em Spark 3.0 e em 3.5. O gate certo é `requires_facts`.
+
+**Cuidado com o caso inverso**, e ele existe: regra cujo *gatilho* é agnóstico mas cuja *recomendação* cita algo versionado — a Task 2 registrou que `SF-PY-005`, `SF-PY-009`, `SF-PY-010` e `SF-PQ-001` mencionam AQE e o hint `REBALANCE` (Spark 3.2) no `proposed_change`. Esvaziar o guarda faz elas dispararem onde o conselho pode não se aplicar. **Isso é aceito**: o achado continua verdadeiro, e apagar um P0 real por causa de um bullet de remediação é o erro maior. Mas verifique cada uma e **diga no relatório quais têm essa propriedade**, para que a 5b decida se o `proposed_change` precisa de ramo por versão.
+
+- [ ] **Step 2: `SF-ENV-004` — o guarda está na camada errada**
+
+Ela declara `{glue: "<4.0"}`, mas a condição do `when` é `attrs.spark_minor < 3.2` — puramente Spark. Num cluster EMR com Spark 3.1.1 ela é apagada exatamente quando é mais necessária.
+
+Duas leituras, e você decide com justificativa: `{spark: "<3.2"}`, que ao menos é verdadeiro e casa com a condição; ou `{}`, porque o `when` já lê a versão do fact e o guarda é redundante — e `{spark: "<3.2"}` falharia fechado quando `spark` não é detectado, que é o defeito que esta task existe para fechar. Leia a regra inteira antes.
+
+- [ ] **Step 3: O teste que trava**
+
+`TestNoCatalogAreaVanishesEntirely` já existe e deriva runtimes de `GLUE_MATRIX`. Acrescente o runtime **vazio** — `build_runtime_context()` sem argumento nenhum, o padrão real da CLI — ao conjunto exercitado. A exceção declarada para `SF-GLUE` continua valendo; nenhuma outra área pode sumir.
+
+- [ ] **Step 4: Verificação**
+
+```bash
+rtk proxy python -m pytest tests/test_rule_scope_by_nature.py -q
+rtk proxy python -m pytest -q
+python -m ruff check sparkforge scripts tests
+```
+
+Golden vai mudar em massa — só o campo `runtime_scope` do payload pode divergir. **Leia o diff antes de regenerar.**
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add rules/catalog tests fixtures
+git commit -m "fix(rules): guarda de versao apagava analise estatica sem runtime detectado"
+```
+
+---
+
 ## Task 4: `SF-GLUE-002` some de findings e de skipped
 
 Independente do curinga. Mesmo num runtime que **é** Glue, se o Terraform não tem `aws_glue_job`, ela desaparece dos dois lados.
@@ -595,6 +655,8 @@ git commit -m "docs: semantica do curinga, e fecha a Fase 5a"
 |---|---|---|
 | Regras com `{glue: "*"}` | 25 | 5 (só as de infra Glue) |
 | Regras com `{athena: "*"}` | 5 | 0 — gate é `requires_facts` |
+| Regras com `{iceberg: ">=1.0.0"}` | 5 | 0 — era gate de Glue disfarçado |
+| Áreas que somem num runtime sem flags | 6 de 9 | 1 — só `SF-GLUE`, e é o correto |
 | Curinga filtra | nada | exige presença da chave |
 | Regras avaliadas num runtime EMR-like | 44, com 5 em silêncio | 43, com as 5 **em `skipped`, com motivo** |
 | `SF-GLUE-002` sem `aws_glue_job` | some dos dois lados | aparece em `skipped` |
