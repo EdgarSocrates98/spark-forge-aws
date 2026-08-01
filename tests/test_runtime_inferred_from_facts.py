@@ -435,3 +435,109 @@ def test_case_open_records_the_runtime_detected_from_the_facts(tmp_path):
 
     assert case["runtime"]["glue"] == "5.1"
     assert case["runtime"]["spark"] == GLUE_MATRIX["5.1"]["spark"]
+
+
+# --------------------------------------------------------------------------- #
+# 8. O dump de EMR observou o runtime, e e por isso que ele vira fonte
+# --------------------------------------------------------------------------- #
+
+EMR_CLUSTER_DUMP = {
+    "Cluster": {
+        "Id": "j-1EXAMPLE",
+        "ReleaseLabel": "emr-7.5.0",
+        "InstanceCollectionType": "INSTANCE_GROUP",
+        "LogUri": "s3://bucket/elasticmapreduce/",
+        "AutoTerminate": False,
+        "Status": {"State": "RUNNING"},
+        "Applications": [
+            {"Name": "Spark", "Version": "3.5.2-amzn-1"},
+            {"Name": "Hadoop", "Version": "3.4.0-amzn-1"},
+        ],
+    },
+    "InstanceGroups": [
+        {
+            "Id": "ig-MASTER",
+            "InstanceGroupType": "MASTER",
+            "Market": "ON_DEMAND",
+            "InstanceType": "m5.xlarge",
+            "RequestedInstanceCount": 1,
+        }
+    ],
+}
+
+
+def _emr_facts(tmp_path, dump=None):
+    from sparkforge.facts.emr_cluster import extract_emr_cluster_path
+
+    path = _write(
+        tmp_path,
+        "artifacts/cluster.json",
+        json.dumps(dump if dump is not None else EMR_CLUSTER_DUMP),
+    )
+    return extract_emr_cluster_path(path, repo_root=tmp_path)
+
+
+def test_emr_release_from_the_cluster_dump_fills_the_platform_and_the_matrix(tmp_path):
+    """`emr.cluster` carrega o `ReleaseLabel`, que e chave de plataforma E
+    entrada da EMR_MATRIX. Sem esta leitura, `RuntimeContext.emr` fica vazio
+    num cluster que o dump descreve inteiro, e toda regra com `emr` em
+    `runtime_scope` e pulada por ausencia."""
+    from sparkforge.facts.runtime_detect import EMR_MATRIX
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path))
+
+    assert context.emr == "7.5.0"
+    assert context.iceberg == EMR_MATRIX["7.5.0"]["iceberg"]
+    assert "describe_cluster" in context.detected_from
+
+
+def test_the_observed_spark_version_beats_the_matrix_derivation(tmp_path):
+    """`Applications[].Version` e a AWS reportando o que INSTALOU: observacao
+    com artefato, e por isso `describe_cluster` esta acima da derivacao por
+    matriz. O sufixo `-amzn-N` observado sobrevive cru no valor resolvido: ele
+    e a unica pista de um erro que so existe no fork da AWS."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark", "Version": "3.5.2-amzn-9"}]
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == "3.5.2-amzn-9"
+    # Mesmo Spark da Apache com patch diferente da AWS nao e divergencia de
+    # versao -- e a decisao 1 de `_divergent_count`, que existe para nao virar
+    # um P0 com o remedio errado.
+    assert context.divergences == []
+
+
+def test_a_spark_the_matrix_does_not_predict_is_reported_as_divergence(tmp_path):
+    """Release 7.5.0 declara Spark 3.5.2; um cluster reportando 3.4.1 significa
+    que uma das duas leituras descreve outra coisa. Resolver em silencio pela
+    observacao esconderia do operador que a matriz e o cluster discordam."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark", "Version": "3.4.1-amzn-0"}]
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == "3.4.1-amzn-0"
+    assert any("spark" in d for d in context.divergences), context.divergences
+
+
+def test_an_application_without_a_version_never_becomes_a_runtime_reading(tmp_path):
+    """Aplicacao instalada sem versao reportada e fato; versao inventada a
+    partir dela seria juizo entrando na camada de fato."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark"}]
+    dump["Cluster"]["ReleaseLabel"] = "emr-preview"
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == ""
+
+
+def test_hadoop_is_read_from_the_dump_but_has_nowhere_to_go(tmp_path):
+    """`Hadoop` vira `emr.application` como qualquer outra, mas nao alimenta o
+    contexto: nao ha campo em `RuntimeContext` nem regra que o consulte, e
+    inventar um so para guardar o valor seria custo sem consumidor -- a mesma
+    decisao ja tomada para `hadoop` na EMR_MATRIX."""
+    facts = _emr_facts(tmp_path)
+    assert "Hadoop" in {f.attrs.get("name") for f in facts if f.kind == "emr.application"}
+    assert "hadoop" not in _core.build_runtime_context(facts=facts).to_dict()

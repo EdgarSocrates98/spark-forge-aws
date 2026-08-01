@@ -128,6 +128,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract facts from an EMR on EC2 cluster dump
+    tools: [sparkforge_analyze_emr_cluster]
+    cli: [analyze emr-cluster]
+    knowledge: [knowledge/emr/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from an S3 object listing
     tools: [sparkforge_analyze_s3_listing]
     cli: [analyze s3-listing]
@@ -278,6 +289,7 @@ capabilities:
       - sparkforge_collect_cloudwatch
       - sparkforge_collect_iceberg_metadata
       - sparkforge_collect_athena_workgroup
+      - sparkforge_collect_emr_cluster
       - sparkforge_collect_verify
     cli:
       - collect event-log
@@ -285,6 +297,7 @@ capabilities:
       - collect cloudwatch
       - collect iceberg-metadata
       - collect athena-workgroup
+      - collect emr-cluster
       - collect verify
     knowledge: [knowledge/glue/observability.md]
     platforms:

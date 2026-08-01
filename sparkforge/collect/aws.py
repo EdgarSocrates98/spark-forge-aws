@@ -135,6 +135,10 @@ def athena_workgroup_path(workgroup: str) -> str:
     return f".sparkforge/artifacts/athena/{workgroup}.json"
 
 
+def emr_cluster_path(cluster_id: str) -> str:
+    return f".sparkforge/artifacts/emr/{cluster_id}.json"
+
+
 def _sha256_bytes(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
@@ -599,6 +603,118 @@ def collect_athena_workgroup(workgroup: str, root: Path, *, now: str) -> Artifac
     )
 
 
+# --------------------------------------------------------------------------- #
+# cluster EMR on EC2 (`describe-cluster` e os cinco dumps que o completam)
+# --------------------------------------------------------------------------- #
+
+# Secao do dump -> (metodo boto3, chave da resposta). A ordem e a de leitura, e
+# e o que o JSON gravado preserva. `list-configurations` NAO existe na API do
+# EMR: as classificacoes chegam dentro de `Cluster.Configurations` e de
+# `InstanceGroup.Configurations`/`InstanceTypeSpecification.Configurations`,
+# entao nao ha chamada propria para elas.
+_EMR_LIST_SECTIONS: tuple[tuple[str, str], ...] = (
+    ("list_instance_groups", "InstanceGroups"),
+    ("list_instance_fleets", "InstanceFleets"),
+    ("list_bootstrap_actions", "BootstrapActions"),
+)
+
+_EMR_POLICY_SECTIONS: tuple[tuple[str, str], ...] = (
+    ("get_managed_scaling_policy", "ManagedScalingPolicy"),
+    ("get_auto_termination_policy", "AutoTerminationPolicy"),
+)
+
+
+def _emr_list_all(client: Any, method: str, cluster_id: str, key: str) -> list[dict[str, Any]]:
+    """Pagina uma API `List*` do EMR pelo `Marker`, ate o fim.
+
+    Parar na primeira pagina truncaria a lista de grupos de um cluster grande
+    em silencio -- e um cluster com o grupo TASK faltando parece um cluster sem
+    capacidade Spot, que e exatamente a conclusao errada.
+    """
+    found: list[dict[str, Any]] = []
+    marker: str | None = None
+    while True:
+        kwargs: dict[str, Any] = {"ClusterId": cluster_id}
+        if marker:
+            kwargs["Marker"] = marker
+        page = getattr(client, method)(**kwargs)
+        found.extend(page.get(key) or [])
+        marker = page.get("Marker")
+        if not marker:
+            return found
+
+
+def _emr_optional(call: Any) -> Any:
+    """Roda uma chamada de secao OPCIONAL; `None` quando ela nao se aplica.
+
+    `list_instance_fleets` falha num cluster de instance groups (e vice-versa,
+    porque os dois modelos sao exclusivos), e as duas politicas nao existem em
+    cluster que nao as configurou. Os tres casos sao "esta secao nao existe
+    para este cluster", nao falha de coleta. A chamada OBRIGATORIA
+    (`describe_cluster`) fica de fora deste helper de proposito: credencial
+    expirada ou cluster inexistente precisa estourar, e estoura la.
+    """
+    try:
+        return call()
+    except Exception:
+        return None
+
+
+def collect_emr_cluster(cluster_id: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa os seis dumps de um cluster EMR on EC2 e grava a uniao deles.
+
+    O shape gravado e exatamente o que `sparkforge.facts.emr_cluster` documenta
+    -- PascalCase, sem traducao -- pela mesma razao que o extrator o le assim:
+    o artefato tem que ser indistinguivel do que sai de `aws emr ...` rodado a
+    mao, para que a coleta manual e a automatica produzam o MESMO arquivo.
+
+    `describe_cluster` e a unica chamada obrigatoria: sem ela nao ha release,
+    nem LogUri, nem identidade para ancorar o resto, e uma falha ali (perfil
+    errado, cluster inexistente, credencial expirada) tem que aparecer, nao ser
+    engolida. As outras cinco sao opcionais por construcao da API:
+    `list_instance_fleets` FALHA num cluster de instance groups e vice-versa
+    (os modelos sao exclusivos), e as duas politicas simplesmente nao existem
+    em cluster que nao as configurou. Nesses casos a secao e OMITIDA do dump --
+    nunca gravada como lista vazia, que o extrator leria como "coletado e
+    vazio" em vez de "nao coletado".
+    """
+    rel_path = emr_cluster_path(cluster_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("emr")
+
+    cluster = client.describe_cluster(ClusterId=cluster_id).get("Cluster") or {}
+    payload: dict[str, Any] = {"Cluster": cluster}
+
+    for method, key in _EMR_LIST_SECTIONS:
+        section = _emr_optional(lambda m=method, k=key: _emr_list_all(client, m, cluster_id, k))
+        if section is not None:
+            payload[key] = section
+
+    for method, key in _EMR_POLICY_SECTIONS:
+        policy = _emr_optional(
+            lambda m=method, k=key: getattr(client, m)(ClusterId=cluster_id).get(k)
+        )
+        if policy:
+            payload[key] = policy
+
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="emr_cluster",
+        source=f"emr:describe_cluster:{cluster_id}",
+        collect_command=f"sparkforge collect emr-cluster --cluster-id {cluster_id}",
+        now=now,
+    )
+
+
 __all__ = [
     "CLOUDWATCH_METRICS",
     "CLOUDWATCH_METRIC_NAMES",
@@ -609,9 +725,11 @@ __all__ = [
     "cloudwatch_path",
     "collect_athena_workgroup",
     "collect_cloudwatch",
+    "collect_emr_cluster",
     "collect_event_log",
     "collect_glue_job",
     "collect_iceberg_metadata",
+    "emr_cluster_path",
     "event_log_path",
     "glue_job_path",
     "iceberg_metadata_path",

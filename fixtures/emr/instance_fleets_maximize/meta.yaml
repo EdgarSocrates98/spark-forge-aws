@@ -1,0 +1,29 @@
+name: instance_fleets_maximize
+proves: >
+  O outro modelo de instancia, e a forma LEGADA do dump: `InstanceFleets` e
+  `BootstrapActions` vem embutidos dentro de `Cluster`, nao no nivel raiz, e o
+  extrator le os dois lugares sem depender de nenhum. Prova que a pergunta
+  "ha capacidade Spot neste papel?" chega ao mesmo `attrs.has_spot_capacity` do
+  fixture de grupos, aqui a partir de `TargetSpotCapacity > 0` -- e que o que e
+  especifico do modelo continua distinguivel: `market` e `None` porque um fleet
+  pode ter as duas capacidades ao mesmo tempo (a pergunta nao se aplica),
+  `allocation_strategy` so existe aqui, e `has_auto_scaling_policy` e `None` em
+  vez do `false` que seria mentira. Configuracao de fleet vive em
+  `InstanceTypeSpecifications[].Configurations`, um nivel abaixo de onde vive
+  num grupo: o fact sai com `level: instance_fleet` e `attrs.instance_type`,
+  provando que o extrator nao confunde os dois. `LogUri` ausente com
+  `AutoTerminate: true` esta aqui de proposito -- e o par que a regra de
+  capacidade de diagnostico le, e `log_uri_present: false` e a unica forma de
+  uma regra distinguir "sem destino de log" de "campo nao coletado".
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  python: "3.9"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.configuration
+  - emr.instance_capacity
+expects_rules: []

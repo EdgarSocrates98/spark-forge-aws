@@ -1357,6 +1357,40 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_emr_cluster": {
+        "description": (
+            "Extrai facts de um dump JSON de cluster EMR on EC2 (`describe-cluster` mais "
+            "`list-instance-groups`/`list-instance-fleets`/`list-bootstrap-actions`/"
+            "`get-managed-scaling-policy`/`get-auto-termination-policy`): release, "
+            "aplicacoes com a versao observada, capacidade por papel (Spot/On-Demand, "
+            "grupo OU fleet no mesmo kind), configuracoes nos DOIS niveis (cluster e "
+            "grupo, com quem sobrepoe quem), bootstrap actions e a politica de managed "
+            "scaling. NAO chama a API do EMR -- so le o JSON ja salvo em disco "
+            "(`sparkforge_collect_emr_cluster` ou `aws emr ...` a mao fazem isso). "
+            "Grupo cujo `Configurations` diverge de `LastSuccessfullyAppliedConfigurations` "
+            "vira `emr.configuration.unapplied`: a reconfiguracao foi pedida e NAO "
+            "aplicada, entao o cluster nao roda com o que o dump aparenta dizer, e toda "
+            "regra que le configuracao daquele grupo precisa desse fact como guarda."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo ou diretorio com dumps de cluster EMR.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -1734,6 +1768,31 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY_OPEN_WORLD,
     },
+    "sparkforge_collect_emr_cluster": {
+        "description": (
+            "Baixa os seis dumps de um cluster EMR on EC2 (`describe_cluster`, grupos OU "
+            "fleets, bootstrap actions, managed scaling e auto termination) e registra a "
+            "uniao deles no manifesto, no mesmo shape PascalCase que `aws emr ...` "
+            "devolve -- coleta manual e automatica produzem o mesmo arquivo. Secao que "
+            "nao se aplica ao cluster (fleets num cluster de grupos, politica nao "
+            "configurada) e OMITIDA, nunca gravada vazia. Mesma politica offline-first "
+            "de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "cluster_id", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "cluster_id": {"type": "string", "description": "j-XXXXXXXXXXXXX"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
     "sparkforge_collect_verify": {
         "description": (
             "Verifica presenca e integridade (sha256 recalculado) de todos os artefatos "
@@ -1947,6 +2006,15 @@ def _h_analyze_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_emr_cluster(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_call_graph(
         args["facts_path"],
@@ -2006,6 +2074,12 @@ def _h_collect_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_emr_cluster(
+        args["repo"], cluster_id=args["cluster_id"], now=args["now"]
+    )
+
+
 def _h_collect_verify(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_verify(args["repo"])
 
@@ -2027,6 +2101,7 @@ _HANDLERS = {
     "sparkforge_analyze_iceberg": _h_analyze_iceberg,
     "sparkforge_analyze_sql": _h_analyze_sql,
     "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
+    "sparkforge_analyze_emr_cluster": _h_analyze_emr_cluster,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
@@ -2040,6 +2115,7 @@ _HANDLERS = {
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
+    "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,
     "sparkforge_collect_verify": _h_collect_verify,
 }
 

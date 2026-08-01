@@ -42,6 +42,7 @@ class TestToolSurface:
             "sparkforge_analyze_iceberg",
             "sparkforge_analyze_sql",
             "sparkforge_analyze_athena_workgroup",
+            "sparkforge_analyze_emr_cluster",
             "sparkforge_analyze_call_graph",
             "sparkforge_analyze_s3_listing",
             "sparkforge_analyze_consumers",
@@ -55,6 +56,7 @@ class TestToolSurface:
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
+            "sparkforge_collect_emr_cluster",
             "sparkforge_collect_verify",
         }
 
@@ -88,6 +90,7 @@ class TestToolSurface:
             "sparkforge_collect_cloudwatch",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
+            "sparkforge_collect_emr_cluster",
         }
 
     def test_every_open_world_tool_is_still_read_only(self):
@@ -410,6 +413,51 @@ class _FakeAthenaClient:
         }
 
 
+class _FakeEmrClient:
+    """Cluster de instance GROUPS: `list_instance_fleets` levanta, como a API
+    real faz quando o modelo nao se aplica -- e o caminho que prova que o
+    coletor omite a secao em vez de gravar lista vazia."""
+
+    def describe_cluster(self, **kwargs):
+        return {
+            "Cluster": {
+                "Id": kwargs.get("ClusterId", "j-1EXAMPLE"),
+                "Name": "etl",
+                "ReleaseLabel": "emr-7.5.0",
+                "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}],
+                "InstanceCollectionType": "INSTANCE_GROUP",
+                "LogUri": "s3://bucket/elasticmapreduce/",
+                "AutoTerminate": False,
+                "Status": {"State": "RUNNING"},
+            }
+        }
+
+    def list_instance_groups(self, **kwargs):
+        return {
+            "InstanceGroups": [
+                {
+                    "Id": "ig-1",
+                    "InstanceGroupType": "MASTER",
+                    "Market": "ON_DEMAND",
+                    "InstanceType": "m5.xlarge",
+                    "RequestedInstanceCount": 1,
+                }
+            ]
+        }
+
+    def list_instance_fleets(self, **kwargs):
+        raise RuntimeError("InvalidRequestException: cluster nao usa instance fleets")
+
+    def list_bootstrap_actions(self, **kwargs):
+        return {"BootstrapActions": []}
+
+    def get_managed_scaling_policy(self, **kwargs):
+        return {}
+
+    def get_auto_termination_policy(self, **kwargs):
+        return {"AutoTerminationPolicy": {"IdleTimeout": 3600}}
+
+
 class _FakeBoto3ForCollect:
     def __init__(self):
         self._clients = {
@@ -417,6 +465,7 @@ class _FakeBoto3ForCollect:
             "glue": _FakeGlueClient(),
             "cloudwatch": _FakeCloudWatchClient(),
             "athena": _FakeAthenaClient(),
+            "emr": _FakeEmrClient(),
         }
 
     def client(self, name, **kwargs):
@@ -430,6 +479,34 @@ _S3_LISTING = json.dumps(
         "IsTruncated": False,
         "Contents": [
             {"Key": "analytics/pedidos/dt=2026-07-30/part-0.snappy.parquet", "Size": 4194304}
+        ],
+    }
+)
+
+_EMR_CLUSTER_DUMP = json.dumps(
+    {
+        "Cluster": {
+            "Id": "j-1EXAMPLE",
+            "ReleaseLabel": "emr-7.5.0",
+            "InstanceCollectionType": "INSTANCE_GROUP",
+            "LogUri": "s3://bucket/elasticmapreduce/",
+            "AutoTerminate": False,
+            "Applications": [{"Name": "Spark", "Version": "3.5.2-amzn-1"}],
+            "Configurations": [
+                {
+                    "Classification": "spark-defaults",
+                    "Properties": {"spark.dynamicAllocation.enabled": "true"},
+                }
+            ],
+        },
+        "InstanceGroups": [
+            {
+                "Id": "ig-1",
+                "InstanceGroupType": "MASTER",
+                "Market": "ON_DEMAND",
+                "InstanceType": "m5.xlarge",
+                "RequestedInstanceCount": 1,
+            }
         ],
     }
 )
@@ -559,6 +636,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         wg_path.write_text(_ATHENA_WORKGROUP_DUMP, encoding="utf-8")
         return call_tool("sparkforge_analyze_athena_workgroup", {"path": str(wg_path)})
 
+    if name == "sparkforge_analyze_emr_cluster":
+        emr_path = tmp_path / "cluster.json"
+        emr_path.write_text(_EMR_CLUSTER_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_analyze_emr_cluster", {"path": str(emr_path)})
+
     if name == "sparkforge_analyze_s3_listing":
         listing = tmp_path / "listing.json"
         listing.write_text(_S3_LISTING, encoding="utf-8")
@@ -596,6 +678,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_cloudwatch",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
+        "sparkforge_collect_emr_cluster",
     ):
         assert monkeypatch is not None, f"{name} precisa de monkeypatch para o client AWS falso"
         _fake_collect_boto3(monkeypatch)
@@ -630,6 +713,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_collect_athena_workgroup": {
                 "repo": str(tmp_path),
                 "workgroup": "primary",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_emr_cluster": {
+                "repo": str(tmp_path),
+                "cluster_id": "j-1EXAMPLE",
                 "now": "2026-07-30T00:00:00Z",
             },
         }[name]
@@ -678,6 +766,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_iceberg", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_sql", {"path": "<tmp>/inexistente.sql"}),
         ("sparkforge_analyze_athena_workgroup", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),
