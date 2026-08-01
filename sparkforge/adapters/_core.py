@@ -125,6 +125,40 @@ def paginate_items(
 # AWS, nao de palpite -- e ficam marcados como `:matrix` para nunca vencerem
 # uma leitura direta.
 
+# `python3.11`, e SO essa forma. O nome do executavel do CPython carrega o
+# minor por construcao -- `python3.11` e o binario do 3.11 em `/usr/bin`, no
+# `bin/` de um venv (criado com o nome do interpretador base) e no de um env
+# conda. Ler dai nao e inferir de sinal indireto; e decodificar um nome que
+# JA declara a versao.
+#
+# O que esta regex NAO casa, de proposito, porque emitir errado aqui e pior que
+# nao emitir -- a leitura entra como `describe_cluster`, ACIMA da matriz e da
+# flag em `_PRECEDENCE`, e versao errada com precedencia alta alimenta
+# `runtime_scope`:
+#
+#   `/usr/bin/python3`   -- so o MAJOR. `"3"` seria lido por `version_scope`
+#                           como 3.0.0, afirmando um Python que nao existe em
+#                           EMR nenhum. Em 6.x pode ser 3.7, em 7.x 3.9 ou
+#                           3.11, e o caminho nao distingue.
+#   `/usr/bin/python`    -- nem o major.
+#   `/opt/venv/bin/run`  -- wrapper com nome arbitrario: o nome nao afirma nada.
+#   `/usr/bin/env python3.11` -- forma com argumento; o nome do executavel e
+#                           `env`, e o resto e parsing de linha de comando.
+#
+# Nesses casos `RuntimeContext.python` continua vazio e regra com `python` em
+# `runtime_scope` e pulada por ausencia -- falha fechada, que e a semantica do
+# projeto para "nao detectada", e o que a fixture `emr/*/input/cluster.json`
+# (com `/usr/bin/python3`) exercita.
+_PYSPARK_INTERPRETER_RE = re.compile(r"^python(\d+\.\d+)$")
+
+
+def _python_minor_from_interpreter(value: str) -> str:
+    """`/usr/bin/python3.11` -> `3.11`. Qualquer forma ambigua -> `""`."""
+    name = value.strip().rsplit("/", 1)[-1]
+    match = _PYSPARK_INTERPRETER_RE.match(name)
+    return match.group(1) if match else ""
+
+
 # fact -> (fonte de `detect_runtime`, chave crua, valor). Uma entrada nova aqui
 # exige LER o extrator que emite o kind: o mapeamento e um contrato com o
 # formato exato dos attrs, nao um palpite sobre o nome do campo.
@@ -177,6 +211,23 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
         if not version or component not in ("spark", "iceberg"):
             return None
         return ("describe_cluster", f"{component}_version", version)
+
+    # `spark-env`/`PYSPARK_PYTHON` e o UNICO lugar do dump onde o Python que o
+    # PySpark executa aparece. A coluna `Python` da pagina de release lista os
+    # interpretadores INSTALADOS (`2.7, 3.7` em 6.x), e por isso a EMR_MATRIX
+    # omite `python` na serie 6.x inteira -- escolher um dos dois seria
+    # inventar. Existia o dado e existia o consumidor, e nada ligava os dois.
+    #
+    # SO NIVEL CLUSTER. Uma propriedade de instance group vale para AQUELE
+    # grupo, e `emr.configuration.unapplied` existe justamente porque a
+    # configuracao de grupo no dump e a PEDIDA, que pode nao estar em vigor.
+    # Leitura de runtime a partir de configuracao que talvez nao vigore seria
+    # afirmar sobre o cluster o que nao se sabe nem sobre o grupo.
+    if fact.kind == "emr.configuration":
+        if fact.attrs.get("key") != "PYSPARK_PYTHON" or fact.attrs.get("level") != "cluster":
+            return None
+        version = _python_minor_from_interpreter(str(fact.attrs.get("value") or ""))
+        return ("describe_cluster", "python_version", version) if version else None
 
     return None
 
