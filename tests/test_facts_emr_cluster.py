@@ -386,6 +386,270 @@ class TestConfigurationLevels:
         assert sorted(f.attrs["value"] for f in facts) == ["a", "b"]
 
 
+class TestAmNodeLabel:
+    """`emr.yarn.am_node_label` -- o unico fact DERIVADO do extrator.
+
+    Ele existe porque `rules/engine.py::_absent_satisfied` so compara `kind`, e
+    o gatilho de SF-EMR-008 e a ausencia de uma COMBINACAO. Cada teste desta
+    classe e uma das decisoes documentadas na secao homonima da docstring de
+    `sparkforge/facts/emr_cluster.py`, e o invariante que as costura e: o fact
+    afirma "o AM nao esta PROVADAMENTE solto", entao ele SO pode faltar quando o
+    dump prova que nada restringe o AM. Fact emitido de menos acusa cluster
+    correto; emitido de mais cala a regra sobre cluster exposto.
+    """
+
+    def _yarn(self, properties, **sections):
+        # Grupo default para o dump nao virar `missing_instance_model` e poluir
+        # `_reasons`, que estes testes usam para conferir o ponto cego DESTE
+        # fact e de nenhum outro.
+        sections.setdefault("InstanceGroups", [_group()])
+        return _dump(
+            {"Configurations": [{"Classification": "yarn-site", "Properties": properties}]},
+            **sections,
+        )
+
+    def _label(self, facts):
+        found = _of(facts, "emr.yarn.am_node_label")
+        return found[0] if found else None
+
+    # -- decisao 1: `enabled` sozinho nao protege -------------------------- #
+
+    def test_nothing_configured_leaves_the_am_provably_loose(self):
+        assert self._label(_extract(_dump(InstanceGroups=[_group()]))) is None
+
+    def test_enabled_without_an_expression_is_not_protection(self):
+        """Com as labels ligadas e sem expressao de AM, o AM cai na particao
+        DEFAULT -- e o EMR nao rotula nos de task, entao a particao DEFAULT e
+        onde o Spot esta. Meia configuracao aparenta protecao e nao e."""
+        facts = _extract(self._yarn({"yarn.node-labels.enabled": "true"}))
+        assert self._label(facts) is None
+        assert _reasons(facts) == []
+
+    def test_enabled_alone_in_a_group_does_not_become_ambiguity(self):
+        """A ordem dos testes dentro da funcao importa: a ausencia da expressao
+        e verificada ANTES da questao de nivel. Fosse o contrario, um `enabled`
+        solto num grupo TASK viraria `undetermined`, e o fact calaria a regra
+        sobre um cluster comprovadamente exposto."""
+        payload = _dump(
+            InstanceGroups=[
+                _group(
+                    Configurations=[
+                        {
+                            "Classification": "yarn-site",
+                            "Properties": {"yarn.node-labels.enabled": "true"},
+                        }
+                    ]
+                )
+            ]
+        )
+        facts = _extract(payload)
+        assert self._label(facts) is None
+        assert _reasons(facts) == []
+
+    # -- decisao 2: a expressao sozinha tambem nao protege ----------------- #
+
+    def test_expression_without_the_feature_enabled_is_not_protection(self):
+        """Da serie 6.x em diante as node labels vem DESLIGADAS por default, e
+        o YARN nao avalia expressao de label nenhuma com a feature off."""
+        facts = _extract(
+            self._yarn({"yarn.node-labels.am.default-node-label-expression": "CORE"})
+        )
+        assert self._label(facts) is None
+
+    def test_enabled_explicitly_false_is_not_protection(self):
+        facts = _extract(
+            self._yarn(
+                {
+                    "yarn.node-labels.enabled": "false",
+                    "yarn.node-labels.am.default-node-label-expression": "CORE",
+                }
+            )
+        )
+        assert self._label(facts) is None
+
+    # -- decisao 3: vocabulario fechado de rotulo -------------------------- #
+
+    @pytest.mark.parametrize("expression", ["CORE", "core", " ON_DEMAND "])
+    def test_the_documented_labels_pin_the_am(self, expression):
+        """`CORE` e o rotulo documentado desde a serie 5.x; `ON_DEMAND` e o
+        rotulo por market type, da 7.0 em diante. Normalizacao e strip mais
+        upper, e so."""
+        facts = _extract(
+            self._yarn(
+                {
+                    "yarn.node-labels.enabled": "TRUE",
+                    "yarn.node-labels.am.default-node-label-expression": expression,
+                }
+            )
+        )
+        label = self._label(facts)
+        assert label.attrs["decision"] == "pinned"
+        assert label.attrs["known_expression"] is True
+        assert label.attrs["reason"] is None
+        assert _reasons(facts) == []
+
+    def test_an_unrecognized_expression_is_counted_not_decided(self):
+        """Valor fora do vocabulario nao e "inseguro": e ILEGIVEL. Pode ser
+        rotulo customizado, pode ser `SPOT` (pior que nada), pode ser particao
+        inexistente. O fact SAI -- para a regra nao acusar configuracao que nao
+        conseguimos ler -- e o `emr.unresolved` conta o ponto cego."""
+        facts = _extract(
+            self._yarn(
+                {
+                    "yarn.node-labels.enabled": "true",
+                    "yarn.node-labels.am.default-node-label-expression": "PARTICAO_DA_CASA",
+                }
+            )
+        )
+        label = self._label(facts)
+        assert label.attrs["decision"] == "undetermined"
+        assert label.attrs["known_expression"] is False
+        assert _reasons(facts) == ["unrecognized_am_node_label_expression"]
+
+    def test_a_quoted_label_is_not_silently_unquoted(self):
+        """`'CORE'` e, para o YARN, um rotulo chamado `'CORE'`. Adivinhar a
+        intencao seria inventar um parsing que o YARN nao faz -- entao o valor
+        cai em `undetermined`, com o ponto cego contado."""
+        facts = _extract(
+            self._yarn(
+                {
+                    "yarn.node-labels.enabled": "true",
+                    "yarn.node-labels.am.default-node-label-expression": "'CORE'",
+                }
+            )
+        )
+        assert self._label(facts).attrs["decision"] == "undetermined"
+        assert _reasons(facts) == ["unrecognized_am_node_label_expression"]
+
+    # -- decisao 4: escopo de grupo nao decide pelo cluster ---------------- #
+
+    def test_the_pair_declared_only_in_a_group_never_becomes_pinned(self):
+        """A expressao de AM e lida pelo ResourceManager, que roda no no
+        primario: um `yarn-site` sobreposto num grupo TASK nunca chega la. Mas
+        um sobreposto no grupo MASTER chegaria, e o dump nao diz qual valor o RM
+        enxerga -- entao `undetermined`, nunca protecao presumida."""
+        payload = _dump(
+            InstanceGroups=[
+                _group(
+                    Configurations=[
+                        {
+                            "Classification": "yarn-site",
+                            "Properties": {
+                                "yarn.node-labels.enabled": "true",
+                                "yarn.node-labels.am.default-node-label-expression": "CORE",
+                            },
+                        }
+                    ]
+                )
+            ]
+        )
+        facts = _extract(payload)
+        label = self._label(facts)
+        assert label.attrs["decision"] == "undetermined"
+        assert label.attrs["scoped_overrides"] == ["ig-1"]
+        assert _reasons(facts) == ["am_node_label_scoped_to_instance_group"]
+
+    def test_a_group_that_repeats_the_cluster_value_does_not_create_ambiguity(self):
+        """Repetir o mesmo valor nao muda nada e nao torna a leitura ambigua.
+        Tratar repeticao como divergencia faria o `undetermined` virar ruido, e
+        ruido cala a regra sem ninguem perceber."""
+        pair = {
+            "yarn.node-labels.enabled": "true",
+            "yarn.node-labels.am.default-node-label-expression": "CORE",
+        }
+        payload = self._yarn(
+            pair,
+            InstanceGroups=[
+                _group(Configurations=[{"Classification": "yarn-site", "Properties": pair}])
+            ],
+        )
+        label = self._label(_extract(payload))
+        assert label.attrs["decision"] == "pinned"
+        assert label.attrs["scoped_overrides"] == []
+
+    def test_a_group_that_contradicts_the_cluster_gives_up_the_decision(self):
+        payload = self._yarn(
+            {
+                "yarn.node-labels.enabled": "true",
+                "yarn.node-labels.am.default-node-label-expression": "CORE",
+            },
+            InstanceGroups=[
+                _group(
+                    Configurations=[
+                        {
+                            "Classification": "yarn-site",
+                            "Properties": {"yarn.node-labels.enabled": "false"},
+                        }
+                    ]
+                )
+            ],
+        )
+        facts = _extract(payload)
+        assert self._label(facts).attrs["decision"] == "undetermined"
+        assert _reasons(facts) == ["am_node_label_scoped_to_instance_group"]
+
+    def test_requested_and_not_applied_never_becomes_protection(self):
+        """A quarta pergunta do desenho, e ela se resolve pela terceira:
+        `LastSuccessfullyAppliedConfigurations` so existe em instance group,
+        entao configuracao pedida-e-nao-aplicada ja e escopo de grupo e ja cai
+        em `undetermined`. Protecao pedida nunca vira protecao presumida."""
+        payload = _dump(
+            InstanceGroups=[
+                _group(
+                    Configurations=[
+                        {
+                            "Classification": "yarn-site",
+                            "Properties": {
+                                "yarn.node-labels.enabled": "true",
+                                "yarn.node-labels.am.default-node-label-expression": "CORE",
+                            },
+                        }
+                    ],
+                    LastSuccessfullyAppliedConfigurations=[],
+                )
+            ]
+        )
+        facts = _extract(payload)
+        assert self._label(facts).attrs["decision"] == "undetermined"
+        assert _of(facts, "emr.configuration.unapplied")
+
+    # -- contrato ---------------------------------------------------------- #
+
+    def test_only_yarn_site_is_read(self):
+        """As mesmas chaves noutra classificacao nao sao configuracao de YARN.
+        Ler qualquer classificacao faria o extrator inventar protecao a partir
+        de um `spark-defaults` com nome parecido."""
+        payload = _dump(
+            {
+                "Configurations": [
+                    {
+                        "Classification": "spark-defaults",
+                        "Properties": {
+                            "yarn.node-labels.enabled": "true",
+                            "yarn.node-labels.am.default-node-label-expression": "CORE",
+                        },
+                    }
+                ]
+            }
+        )
+        assert self._label(_extract(payload)) is None
+
+    def test_at_most_one_label_fact_per_dump(self):
+        """O ResourceManager e um por cluster, entao a pergunta nao tem versao
+        por grupo -- e o subject e ancorado no cluster."""
+        payload = self._yarn(
+            {
+                "yarn.node-labels.enabled": "true",
+                "yarn.node-labels.am.default-node-label-expression": "CORE",
+            },
+            InstanceGroups=[_group(), _group(Id="ig-2", InstanceGroupType="TASK", Market="SPOT")],
+        )
+        facts = _extract(payload)
+        assert len(_of(facts, "emr.yarn.am_node_label")) == 1
+        assert facts[0].provenance["extractor"]
+        assert self._label(facts).subject["symbol"] == "j-1/yarn/am-node-label"
+
+
 class TestUnappliedConfiguration:
     def _payload(self, requested, applied):
         group = _group(

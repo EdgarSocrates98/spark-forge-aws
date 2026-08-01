@@ -160,7 +160,22 @@ Restrições que a página de managed scaling acrescenta:
 - as labels são criadas no provisionamento; o EMR **não** aceita adicionar node labels ao reconfigurar o cluster;
 - com labels e managed scaling, `yarn.scheduler.capacity.maximum-am-resource-percent: 1` quando houver aplicações em paralelo, e `yarn.resourcemanager.decommissioning.timeout` maior que a aplicação mais longa.
 
-**Não há regra no catálogo para isto**, e o motivo está registrado no cabeçalho de `emr-infra.yaml`: o gatilho exige provar a **ausência** de um par de propriedades, e o motor de regras só sabe `absent: <kind>` — não existe `absent` filtrado por atributo. Escrita sem esse guarda, a regra acusaria todo cluster 6.x/7.x com Spot no task, inclusive os configurados corretamente. Falta um fact derivado do extrator para que ela possa nascer.
+**A regra é `SF-EMR-008`**, e ela precisou de um fact derivado para existir. O gatilho exige provar a **ausência** de um par de propriedades com valores específicos, num nível específico, e o motor de regras só sabe `absent: <kind>` — não existe `where` negado nem `absent` filtrado por atributo (`sparkforge/rules/engine.py::_absent_satisfied`). Essa limitação **continua existindo**; ela foi contornada, não removida: `sparkforge/facts/emr_cluster.py::_am_node_label_facts` decide a combinação e emite `emr.yarn.am_node_label` quando o AM **não está provadamente solto**, e a regra usa `absent:` sobre esse kind. É padrão reaproveitável — quando o gatilho for a ausência de uma combinação, o extrator emite o kind que representa a combinação satisfeita, em vez de o catálogo ganhar negação.
+
+O que o extrator decide, e por quê:
+
+| Configuração observada | Decisão | Efeito em SF-EMR-008 |
+|---|---|---|
+| nenhuma das duas propriedades | fact ausente | **acusa** |
+| `enabled=true` sozinho, em qualquer nível | fact ausente | **acusa** — o AM cai na partição `DEFAULT`, e o EMR não rotula nós de task, então `DEFAULT` é onde o Spot está |
+| expressão sozinha, sem `enabled=true` | fact ausente | **acusa** — a série 6.x em diante vem com a feature desligada |
+| par no nível **cluster**, expressão `CORE` ou `ON_DEMAND` | `pinned` | cala |
+| par no nível cluster, expressão fora desse vocabulário | `undetermined` + `emr.unresolved` | cala, e conta o ponto cego |
+| propriedade em nível de **grupo** divergindo do cluster | `undetermined` + `emr.unresolved` | cala, e conta o ponto cego |
+
+As duas linhas de `undetermined` são a mesma decisão: a expressão é lida pelo ResourceManager, que roda no nó primário, e um valor ilegível ou de escopo incerto não permite afirmar nem proteção nem exposição. Acusar ali seria acusar configuração possivelmente correta, que `rules/catalog/README.md` trata como o pior tipo de defeito de regra — então a regra se cala e o `emr.unresolved` registra que houve um ponto cego, em vez de a ausência de achado ser lida como "revisei e está tudo bem".
+
+**Limite declarado da regra:** ela acusa a *ausência de restrição*, não a presença do AM em Spot. Num cluster inteiramente Spot que fixou o AM em `CORE`, o AM continua num nó reclamável e SF-EMR-008 não dispara; a coerência entre as opções de compra dos papéis é assunto de `SF-EMR-004`.
 
 ## 8. Bootstrap actions
 

@@ -9,15 +9,15 @@
     "status": "confirmed",
     "subject": {
       "type": "job_run",
-      "symbol": "j-3RECONFIGCLUSTER"
+      "symbol": "j-3AMSOLTONOTASK"
     },
     "evidence": [
-      "f_5792f7",
-      "f_d526c2"
+      "f_6f596b",
+      "f_b8cf55"
     ],
     "measured": {
       "release_major": 7,
-      "release_minor": 5
+      "release_minor": 3
     },
     "threshold": {},
     "runtime_scope": {},

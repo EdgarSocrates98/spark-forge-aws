@@ -1370,7 +1370,11 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Grupo cujo `Configurations` diverge de `LastSuccessfullyAppliedConfigurations` "
             "vira `emr.configuration.unapplied`: a reconfiguracao foi pedida e NAO "
             "aplicada, entao o cluster nao roda com o que o dump aparenta dizer, e toda "
-            "regra que le configuracao daquele grupo precisa desse fact como guarda."
+            "regra que le configuracao daquele grupo precisa desse fact como guarda. "
+            "Emite tambem um unico fact DERIVADO, `emr.yarn.am_node_label`, que decide a "
+            "partir do `yarn-site` se o ApplicationMaster -- que em deploy-mode cluster E "
+            "o driver -- esta preso a um rotulo de no seguro; ele so aparece quando o AM "
+            "NAO esta provadamente solto, e e o guarda de SF-EMR-008."
         ),
         "inputSchema": {
             "type": "object",

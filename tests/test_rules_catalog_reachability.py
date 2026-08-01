@@ -199,6 +199,22 @@ class TestAbsentSemSameSubjectSeJustifica:
             "evidencia do DUMP inteiro, e um dump descreve um cluster; "
             "`same_subject` faria a regra nunca disparar."
         ),
+        # Mesma natureza de SF-EMR-003, e pelo mesmo motivo de forma: os tres
+        # facts que a regra correlaciona tem simbolos distintos por construcao
+        # -- `<cluster>` (`emr.cluster`), `<cluster>/<grupo>`
+        # (`emr.instance_capacity`) e `<cluster>/yarn/am-node-label` (o fact
+        # derivado) --, entao nenhum grupo de subject conteria as tres condicoes
+        # e `same_subject: true` faria a regra nunca disparar. E a pergunta e
+        # genuinamente sobre o conjunto: `yarn.node-labels.am.default-node-label-expression`
+        # e lida pelo ResourceManager, que e UM por cluster, entao "o AM esta
+        # preso?" nao tem versao por grupo. Verificado: com `same_subject` a
+        # regra deixa de disparar em `instance_groups_spot_task`.
+        "SF-EMR-008": (
+            "`absent: emr.yarn.am_node_label` pergunta se o CLUSTER restringe "
+            "onde o ApplicationMaster roda -- o ResourceManager e um so, entao "
+            "nao ha versao por grupo dessa pergunta; `same_subject` faria a "
+            "regra nunca disparar."
+        ),
         # SF-GLUE-005 saiu desta lista ao ser desbloqueada. A isencao existia
         # para justificar `absent: spark.stage.spill` sem `same_subject`, e
         # desbloquear a regra mostrou que o `absent:` era errado por um motivo

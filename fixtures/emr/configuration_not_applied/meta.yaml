@@ -16,6 +16,14 @@ proves: >
   comparacao e por conteudo achatado, nao por igualdade estrutural do JSON --
   ordem e aninhamento sao serializacao, e trata-los como drift faria o guard
   disparar sempre, virando ruido que ninguem le.
+  Dispara SF-EMR-008, e o `yarn-site` do grupo TASK e a razao de este dump ser
+  um teste da regra e nao um acidente. Ele tem `yarn.node-labels.enabled=true` e
+  NAO tem `am.default-node-label-expression` em lugar nenhum. Ligar a feature
+  sem dizer onde o AM deve rodar poe o AM na particao DEFAULT, e o EMR nao
+  rotula nos de task -- a particao DEFAULT e onde o Spot deste cluster esta.
+  `_am_node_label_facts` testa a ausencia da expressao ANTES da questao de nivel
+  justamente por isto: tratar um `enabled` solto num grupo como configuracao
+  ambigua calaria a regra sobre um cluster comprovadamente exposto.
 runtime:
   emr: "7.5.0"
   spark: "3.5.2-amzn-1"
@@ -28,4 +36,5 @@ expects_kinds:
   - emr.configuration
   - emr.configuration.unapplied
   - emr.instance_capacity
-expects_rules: []
+expects_rules:
+  - SF-EMR-008

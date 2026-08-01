@@ -17,13 +17,19 @@ proves: >
   instancia so e o calculo do executor e deterministico. O defeito so existe em
   `INSTANCE_FLEET`, onde a frota pode ter varios tipos e o EMR dimensiona por
   um deles.
-  O `yarn-site` com as duas propriedades de node label esta no dump por um
-  motivo que nao e regra nenhuma: e a forma de registrar no corpus como um
-  cluster 6.x com Spot no TASK prende o ApplicationMaster no CORE. Nenhuma regra
-  le essas propriedades hoje, e o motivo esta no cabecalho de
-  `rules/catalog/emr-infra.yaml` -- o motor so sabe `absent: <kind>`, entao a
-  regra que precisaria provar a AUSENCIA delas nao pode ser escrita sem acusar
-  tambem os clusters corretos, como este.
+  SF-EMR-008 tambem NAO dispara, e este e o terceiro discriminante -- o unico
+  que precisou de um fact derivado para existir. O cluster e 6.x, tem Spot no
+  TASK, e portanto casa as duas primeiras condicoes da regra; o que o barra e o
+  `yarn-site` com as DUAS propriedades de node label no nivel cluster
+  (`yarn.node-labels.enabled=true` e
+  `yarn.node-labels.am.default-node-label-expression=CORE`), que faz
+  `sparkforge/facts/emr_cluster.py::_am_node_label_facts` emitir
+  `emr.yarn.am_node_label` e o `absent:` da regra falhar. Sem esse fact a regra
+  nao poderia existir: o motor so sabe `absent: <kind>`, sem `where` negado e
+  sem `absent` filtrado por atributo, entao ela acusaria em P1 todo cluster
+  6.x/7.x com Spot no TASK -- inclusive este, que fixou o AM corretamente.
+  `node_labels_half_configured` e o par positivo, com so uma das duas
+  propriedades.
   Bootstrap action sem segredo nos `Args` e `LogUri` presente fecham os lados
   negativos de SF-EMR-002 e SF-EMR-006, e `ALL_STEPS_COMPLETED` num cluster ja
   TERMINATED fecha o de SF-EMR-007: terminar nao e falhar.
@@ -38,4 +44,5 @@ expects_kinds:
   - emr.cluster
   - emr.configuration
   - emr.instance_capacity
+  - emr.yarn.am_node_label
 expects_rules: []

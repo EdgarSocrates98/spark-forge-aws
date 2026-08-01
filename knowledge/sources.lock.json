@@ -79,7 +79,17 @@
         "2026-08-01"
       ],
       "rules": [
-        "SF-EMR-003"
+        "SF-EMR-003",
+        "SF-EMR-008"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-master-core-task-nodes.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-008"
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-bootstrap.html": {

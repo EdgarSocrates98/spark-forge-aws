@@ -292,5 +292,29 @@
       "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
       "extractor": "emr_cluster@0.1.0"
     }
+  },
+  {
+    "id": "f_3837ef",
+    "schema_version": 1,
+    "kind": "emr.yarn.am_node_label",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-7CUSTOACIMADETEMPO/yarn/am-node-label"
+    },
+    "measures": {},
+    "attrs": {
+      "cluster_id": "j-7CUSTOACIMADETEMPO",
+      "decision": "pinned",
+      "reason": null,
+      "enabled": "true",
+      "expression": "CORE",
+      "known_expression": true,
+      "scoped_overrides": []
+    },
+    "provenance": {
+      "artifact": "cluster.json",
+      "artifact_sha256": "2ee4e8a387ca66af0f30de16267efb50b91128e059bd543d29d910821b66c3fa",
+      "extractor": "emr_cluster@0.1.0"
+    }
   }
 ]
