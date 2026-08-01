@@ -205,12 +205,19 @@ class TestRuntimeContextKnowsEmr:
         assert RuntimeContext().emr == ""
         assert "emr" in RuntimeContext().to_dict()
 
-    def test_the_detected_release_label_reaches_the_context(self):
-        context, _ = detect_runtime(
-            {"event_log": {"emr_release": "emr-7.5.0", "spark_version": "3.5.2"}}
-        )
-        assert context.emr == "emr-7.5.0"
-        assert context.glue == ""
+    def test_the_detected_release_reaches_the_context_in_comparable_form(self):
+        """O campo guarda `7.5.0`, nao `emr-7.5.0`.
+
+        `RuntimeContext` existe para ser comparado, e `version_scope._parse`
+        leria `emr` como 0 no label -- todo range falharia em silencio. `glue` ja
+        guarda `5.0`, nunca `Glue 5.0`. O label observado vive em
+        `env.platform.attrs`."""
+        for grafia in ("emr-7.5.0", "7.5.0"):
+            context, _ = detect_runtime(
+                {"event_log": {"emr_release": grafia, "spark_version": "3.5.2"}}
+            )
+            assert context.emr == "7.5.0"
+            assert context.glue == ""
 
     def test_platform_divergence_is_recorded_in_the_context_too(self):
         """`divergences` e o canal que um humano le no relatorio. Deixar a

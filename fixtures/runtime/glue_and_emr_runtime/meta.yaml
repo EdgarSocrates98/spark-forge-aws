@@ -19,7 +19,7 @@ proves: >
   um achado: invalida a ancora de todo o eixo de infraestrutura do relatorio.
 runtime:
   glue: "4.0"
-  emr: "emr-6.9.0"
+  emr: "6.9.0"
   spark: "3.3.0"
 expects_kinds:
   - env.platform

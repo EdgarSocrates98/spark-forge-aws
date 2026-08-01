@@ -17,7 +17,7 @@ proves: >
   versao Apache e a mesma.
 runtime:
   glue: ""
-  emr: "emr-7.5.0"
+  emr: "7.5.0"
   spark: "3.5.2"
   iceberg: "1.6.1-amzn-1"
   python: "3.9"

@@ -291,22 +291,37 @@ class TestTheReleaseLabelIsAcceptedInBothSpellings:
 
     def test_an_unknown_release_derives_nothing_and_does_not_raise(self):
         context, _ = detect_runtime({"terraform": {"emr_release": "emr-9.9.9"}})
-        assert context.emr == "emr-9.9.9"
+        assert context.emr == "9.9.9"
         assert context.spark == ""
 
-    def test_the_label_form_is_not_comparable_by_in_scope(self):
-        """ARMADILHA CONHECIDA, fixada aqui de proposito em vez de deixada muda.
+    def test_the_context_stores_the_comparable_release_not_the_label(self):
+        """`RuntimeContext` existe para ser comparado.
 
-        `RuntimeContext.emr` guarda o release label (`emr-7.5.0`), decisao da
-        Task 1 e documentada no campo. Mas `version_scope._parse` le o primeiro
-        segmento como `emr` -> 0, e um `runtime_scope: {"emr": ">=7.0"}` nunca
-        casaria -- perda de cobertura muda, o modo de falha que as Fases 5a e
-        5a.2 fecharam. Nenhuma regra do catalogo usa `emr` em `runtime_scope`
-        hoje, entao nada esta quebrado; a primeira que usar precisa decidir
-        entre normalizar o campo ou ensinar `_parse` a ignorar o prefixo."""
-        assert _parse("emr-7.5.0") == (0,)
-        assert in_scope({"emr": ">=7.0"}, {"emr": "emr-7.5.0"}) is False
-        assert in_scope({"emr": ">=7.0"}, {"emr": "7.5.0"}) is True
+        A armadilha era real: `version_scope._parse("emr-7.5.0")` le o primeiro
+        segmento como `emr` -> 0, entao `{"emr": ">=7.0"}` nunca casaria, a
+        regra seria pulada, e a cobertura sumiria em silencio -- o modo de falha
+        que as Fases 5a e 5a.2 fecharam. O curinga `"*"` nao a revelava, porque
+        so checa presenca.
+
+        Fechada guardando a release numerica, como `glue` ja fazia (`5.0`, nunca
+        `Glue 5.0`). O label observado nao se perde: sobrevive em
+        `env.platform.attrs.observed`, que e onde artefato bruto pertence."""
+        assert _parse("emr-7.5.0") == (0,), "o parser generico segue sem saber de EMR"
+
+        for grafia in ("emr-7.5.0", "7.5.0"):
+            context, _ = detect_runtime({"terraform": {"emr_release": grafia}})
+            assert context.emr == "7.5.0"
+            assert in_scope({"emr": ">=7.0"}, context.to_dict()) is True
+            assert in_scope({"emr": ">=8.0"}, context.to_dict()) is False
+            assert in_scope({"emr": "*"}, context.to_dict()) is True
+
+    def test_the_observed_label_survives_in_the_platform_fact(self):
+        """Normalizar o campo comparavel nao pode apagar o que foi observado."""
+        _, facts = detect_runtime({"terraform": {"emr_release": "emr-7.5.0"}})
+        plataforma = [f for f in facts if f.kind == "env.platform"]
+        assert plataforma, "env.platform tem que ser emitido"
+        bruto = str(plataforma[0].attrs)
+        assert "emr" in bruto
 
 
 class TestTwoPlatformsDoNotProduceAVersionDivergence:
