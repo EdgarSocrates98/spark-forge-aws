@@ -231,6 +231,73 @@ são buscadas: o conteúdo é imutável e vigiá-las só produziria ruído.
 Na primeira execução real ele já encontrou uma citação quebrada — a URL do doc
 de Arrow que SF-PLAN-001 citava era 404 (`user_guide/` em vez de `tutorial/`).
 
+## Direção: de analisador de performance a time de engenharia de dados
+
+Decidido em 2026-08-01. O projeto passa a mirar cobertura de engenharia de dados
+no ecossistema AWS — arquitetura, ferramentas, resolução de problema, tuning,
+análise e testes de dados — e não só performance de Glue PySpark.
+
+A expansão tem duas metades que se comportam de forma **oposta** dentro da
+arquitetura atual, e confundi-las destruiria a propriedade central do projeto
+(§1 da spec da Fase 0: "qualidade acoplada ao modelo" é o inimigo).
+
+### Metade A — cabe no motor existente
+
+Tem artefato para extrair. É repetir o padrão da Fase 1, que já funcionou 12 vezes:
+extrator novo → área de regra nova → fixtures com golden bidirecional.
+
+| Capacidade | Artefato | Área |
+|---|---|---|
+| EMR | release label, instance fleets, EMR Serverless, EMR on EKS | `SF-EMR` |
+| Testes de dados | saída de Deequ, Great Expectations, dbt tests; schema declarado | `SF-DQ` |
+| Redshift | plano de query, `STL`/`SVL`, distkey e sortkey | `SF-RS` |
+| Streaming | config de Kinesis e MSK, checkpoint de Structured Streaming | `SF-STR` |
+| Orquestração | DAG de Airflow/MWAA, definição de Step Functions | `SF-ORC` |
+| Custo | Cost Explorer, CUR, DPU-hours | `SF-COST` |
+| IaC além de Terraform | CDK, CloudFormation | estende o extrator atual |
+
+**Medição que favorece isso:** num runtime sem chave `glue`, 44 das 48 regras já
+avaliam. A análise de código e execução é agnóstica por construção — AST, plano
+físico, event log, Parquet, Iceberg. O que é Glue-específico é só o eixo de
+infraestrutura. O motor já generaliza; falta plugar extrator.
+
+**Primeira da fila: EMR.** Já estava listada, o gap está medido, e ela é a que
+prova a generalização de runtime — o que destrava todas as outras.
+
+### Metade B — exige mecanismo próprio
+
+"Melhor arquitetura para X", "qual ferramenta usar", "desenhe a solução": **não
+têm artefato**. Não há fato para extrair, regra para disparar, nem `fact_id` para
+citar.
+
+Entrar como área de regra normal quebraria o projeto em silêncio: o `judge`
+emitiria achado que nenhum `Fact` sustenta, e `validate_output` — que hoje
+rejeita ganho sem `benchmark_ref` — viraria obstáculo a contornar em vez de
+guarda. Ninguém veria o momento da quebra.
+
+**Decisão: mecanismo próprio, com garantia declarada.** Três níveis, explícitos
+em vez de misturados:
+
+| Camada | Garantia | Mecanismo |
+|---|---|---|
+| **Finding** | determinístico — mesmo input, mesma saída | catálogo + `fact_id` |
+| **Restrição** | auditável — cita fonte e data | `knowledge/` + `rules_lookup` |
+| **Recomendação de desenho** | rastreável — declara sobre quais restrições se apoia e **rotula o que é julgamento** | verbo próprio, nunca misturado com finding |
+
+O caminho do meio já existe no repositório e é o que torna a Metade B viável:
+"Athena não lê Iceberg V3" não é opinião, é fato com URL e data em
+`knowledge/cross-service-constraints.md`. Recomendação construída **só sobre
+restrições com fonte** não é determinística como um finding, mas é auditável.
+
+O erro caro seria apresentar as três camadas com a mesma cara.
+
+### Ordem
+
+1. **Fase 4** — coordenadores, executores e `playbook` (spec e plano escritos, branch `docs/spec-fase4-agentes`)
+2. **Fase 5** — EMR, provando a generalização de runtime
+3. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
+4. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
+
 ## Dívidas abertas
 
 | Dívida | Origem | Impacto |
