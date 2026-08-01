@@ -35,16 +35,22 @@ CURRENT = ("4.0", "5.0", "5.1")
 # Regras que NAO sao avaliadas em cada versao corrente, com a razao. Uma regra
 # que apareca aqui sem justificativa e uma regra apagada do relatorio.
 #
-#   SF-ENV-004  `glue: "<4.0"`  -- AQE passou a ser default no Spark 3.2, que
-#               no vocabulario de Glue e o 4.0. Recomendar AQE em 4.0/5.x seria
-#               recomendar o que ja esta ligado.
 #   SF-ENV-002  `glue: ">=5.1"` + `iceberg: ">=1.10.0"` -- a armadilha do
 #               format V3 do Iceberg, que so existe a partir de 5.1. Em 4.0 e
 #               5.0 nao ha V3 para escrever, entao pular e correto.
+#
+# SF-ENV-004 ESTAVA aqui, com `glue: "<4.0"`, e saiu na Task 3c da Fase 5a. O
+# guarda estava na camada errada: a condicao do `when` e `attrs.spark_minor <
+# 3.2`, puramente Spark, e um EMR com Spark 3.1.1 nao tem chave `glue` -- a
+# regra era apagada justamente onde e mais necessaria. Hoje ela tem
+# `runtime_scope: {}` e e AVALIADA em 4.0, 5.0 e 5.1; nao dispara em nenhuma
+# porque as tres resolvem para Spark >= 3.3, o que a CONDICAO barra. A fronteira
+# do AQE continua fixada nos dois sentidos por
+# `test_fixtures_golden_runtime.py::test_aqe_boundary_holds_on_both_sides`.
 EXPECTED_OUT_OF_SCOPE = {
-    "4.0": {"SF-ENV-002", "SF-ENV-004"},
-    "5.0": {"SF-ENV-002", "SF-ENV-004"},
-    "5.1": {"SF-ENV-004"},
+    "4.0": {"SF-ENV-002"},
+    "5.0": {"SF-ENV-002"},
+    "5.1": set(),
 }
 
 

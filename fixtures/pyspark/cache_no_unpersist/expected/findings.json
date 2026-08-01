@@ -21,9 +21,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Cache ocupa a memória unificada do executor, competindo com a memória de execução usada por shuffle, sort e agregação. Cache que não é liberado aumenta o spill do resto do pipeline. Execução pode expulsar cache, mas não o contrário, então o cache que se acreditava presente pode nem estar sendo aproveitado. Ver knowledge/spark/execution-model.md secao 5.",
     "proposed_change": [
       "Verificar se há reuso real em duas ou mais actions distintas. Se não há, remover o cache.",

@@ -23,9 +23,7 @@
       "target_count": 1
     },
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "coalesce não faz shuffle: ele reduz o número de partições fundindo as existentes. Com alvo 1, todo o dado passa por uma única task, num único executor. Memória e duração deixam de escalar, e o job falha por volume sem nenhuma mudança de código. Praticamente sempre a intenção real era \"um arquivo de saída\".",
     "proposed_change": [
       "Se o objetivo é reduzir contagem de arquivos, usar repartition(n) com n calculado a partir do volume e do tamanho-alvo por arquivo.",

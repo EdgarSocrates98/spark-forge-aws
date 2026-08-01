@@ -25,9 +25,7 @@
       "first_reduction_index": 1
     },
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Todo byte e toda coluna que entram no join atravessam o shuffle. Filtrar e projetar depois do join significa pagar rede, disco local e sort por dado que será descartado. Uma tabela de 80 colunas cujo join usa 6 desperdiça a maior parte da banda de shuffle. Ver knowledge/spark/shuffle-join-skew.md secao 2.",
     "proposed_change": [
       "Mover filter para antes do join, garantindo que chegue ao pushdown (verificar PushedFilters no plano).",

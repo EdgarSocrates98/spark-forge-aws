@@ -22,9 +22,7 @@
     "threshold": {
       "factor": 0.5
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
     "proposed_change": [
       "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",

@@ -27,9 +27,7 @@
       "min_avg_bytes": 33554432,
       "min_count": 1000
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "O custo de small files tem quatro componentes distintos: listing no driver, abertura de arquivo no executor, overhead de agendamento de task, e metadados no heap do driver. O parâmetro spark.sql.files.openCostInBytes vale 4MB por default, então um arquivo de 10KB é contabilizado como 4MB no empacotamento de partições: com 100 mil arquivos minúsculos o planejador raciocina sobre cerca de 400GB virtuais. Aumentar workers não corrige nada disso, porque o gargalo é contagem de objetos e round-trips a S3, não CPU. Ver knowledge/storage/parquet-layout.md secao 3.",
     "proposed_change": [
       "Compactar o passivo num job de manutenção separado.",

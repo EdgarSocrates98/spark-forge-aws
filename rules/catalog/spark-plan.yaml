@@ -15,6 +15,31 @@
 # explain simples. As regras abaixo ancoram em `attrs.strategy`, que é o nome do
 # operador e é inequívoco nos dois formatos. Mesma lição de
 # `tf.observability.unknown`: ausência de evidência não é evidência de ausência.
+#
+# ESCOPO (Fase 5a, Task 3c): as quatro declaravam `runtime_scope:
+# {spark: ">=3.0"}`, herdado da Task 2, que as moveu de `{glue: "*"}` --
+# permissivo e errado -- para um guarda estrito e igualmente errado. Passaram
+# para `{}`.
+#
+# O CRITÉRIO: `runtime_scope` só pode ser não-vazio quando o GATILHO varia com a
+# versão E essa versão vem do runtime detectado, não de um artefato que a própria
+# regra já lê. Aqui o gatilho é o PLANO FÍSICO: um nó `BatchEvalPython`,
+# `ArrowEvalPython`, `CartesianProduct` ou `AdaptiveSparkPlan` só vira fact
+# porque estava impresso no `explain()` que alguém coletou. O artefato é
+# testemunha do runtime que o produziu; um guarda de versão por cima não
+# acrescenta informação, só acrescenta a chance de apagar a regra.
+#
+# O EFEITO MEDIDO: `RuntimeContext.spark` vem de event log, de `GLUE_MATRIX` (via
+# `glue_version`) ou da flag `--spark` -- e nenhum deles acompanha um arquivo de
+# plano. Com `build_runtime_context()` sem flags, que é o padrão de `sparkforge
+# judge`, o contexto sai com `spark: ""`, `in_scope` falha fechada
+# (`sparkforge/rules/version_scope.py`), e a ÁREA SF-PLAN INTEIRA sumia: 4
+# puladas, 0 avaliadas. Julgar um plano físico não precisa de Spark detectado
+# para valer -- o plano É a detecção.
+#
+# SF-PLAN-004 é o caso-limite e está comentada uma a uma: ela fala do AQE, cujo
+# default mudou no Spark 3.2, e ainda assim não leva guarda. Ver o comentário
+# dela.
 
 catalog_version: 1
 schema_version: 1
@@ -34,7 +59,10 @@ rules:
           where: {attrs.udf_type: python}
     status: confirmed
     severity_default: P1
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `plan.python_udf`, nao por versao.
+    # `BatchEvalPython` no plano e evidencia direta; o extrator so o emite
+    # porque ele estava LA. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       `BatchEvalPython` no plano é a UDF Python padrão, serializada com pickle entre a
       JVM e o processo Python worker, linha a linha. A documentação da AWS mede o mesmo
@@ -74,7 +102,9 @@ rules:
           where: {attrs.udf_type: pandas}
     status: confirmed
     severity_default: P3
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `plan.python_udf` (`ArrowEvalPython`), nao por
+    # versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       `ArrowEvalPython` é `pandas_udf`: transferência colunar por Arrow em vez de pickle
       linha a linha. É a forma correta quando uma UDF é necessária, e por isso a
@@ -108,7 +138,10 @@ rules:
           where: {attrs.strategy: BroadcastNestedLoopJoin}
     status: confirmed
     severity_default: P0
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `plan.join`, nao por versao. `CartesianProduct`
+    # e `BroadcastNestedLoopJoin` sao O(N*M) em qualquer versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe
       condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha
@@ -146,7 +179,14 @@ rules:
           where: {attrs.is_final_plan: false}
     status: structural
     severity_default: P4
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `plan.aqe`, nao por versao -- e este e o caso
+    # que mais parece exigir guarda e menos precisa dele. A regra fala do
+    # AQE, cujo default mudou no Spark 3.2; mas o fact `plan.aqe` so existe
+    # porque o no `AdaptiveSparkPlan` ESTAVA no plano extraido. O artefato
+    # ja provou que o AQE esta ligado neste runtime; um `{spark: '>=3.2'}`
+    # por cima so acrescentaria a chance de apagar a regra quando ninguem
+    # detectou versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       `AdaptiveSparkPlan isFinalPlan=false` significa que este plano é o inicial: o AQE
       ainda vai reotimizá-lo com estatísticas de runtime. A documentação do Spark lista
