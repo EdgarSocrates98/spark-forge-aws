@@ -203,25 +203,41 @@ localmente. Parcial existente: o transporte HTTP já funciona localmente
 (`python -m sparkforge.adapters.mcp --transport http`) e é testado desde a
 Fase 1. Falta hospedagem. Spec próprio, ainda não escrito.
 
-### Próxima na fila, fora da §16 — cobertura de EMR
+### Próxima na fila, fora da §16 — Fase 5, cobertura de EMR
+
+Spec escrito e revisado:
+[`specs/2026-08-01-sparkforge-fase5-emr-design.md`](specs/2026-08-01-sparkforge-fase5-emr-design.md).
+A revisão adversarial derrubou o mecanismo central da primeira versão e
+partiu a fase em duas.
 
 `RuntimeContext` (`sparkforge/findings/models.py`) conhece `glue`, `spark`,
 `python`, `iceberg` e `athena`, e não conhece `emr` — o dataclass não tem
 campo para release label, instance fleets, EMR Serverless nem EMR on EKS.
 
-Isso não paralisa o motor: medido nesta rodada, com um `RuntimeContext` sem a
-chave `glue` (só `spark`, `python`, `iceberg`), **44 das 48 regras ainda são
-avaliadas** — só as 4 que declaram `runtime_scope` com `glue` são puladas
-(`SF-ENV-002`, `SF-ENV-003`, `SF-ENV-004`, `SF-GLUE-001`). A análise de código
-e execução (`SF-PY`, `SF-UI`, `SF-ATH`, `SF-ICE`, `SF-PQ`, `SF-PLAN`, `SF-CG`)
-é agnóstica de plataforma por construção — ela julga o job, não o serviço que
-o hospeda.
+**Fase 5a — correção de escopo.** Plano escrito:
+[`plans/2026-08-01-sparkforge-fase5a-escopo.md`](plans/2026-08-01-sparkforge-fase5a-escopo.md).
+Consertar um defeito que existe hoje, independente de EMR: o ramo do curinga
+em `sparkforge/rules/version_scope.py` trata `"*"` como "qualquer runtime"
+quando o vocabulário diz "qualquer versão deste componente" — ele nem checa
+presença da chave, então nunca filtrou nada. O resultado medido: das 25
+regras com `runtime_scope: {glue: "*"}`, **20 são agnósticas de plataforma**
+(SF-PY, SF-PQ, SF-PLAN, SF-CG, SF-UI, SF-ENV-001) e só 5 dependem mesmo de
+infraestrutura Glue (SF-GLUE-002..006). Essas 5 avaliam em silêncio num
+runtime que não é Glue: não disparam, e também não aparecem em
+`judge --show-skipped`. Para um agente autônomo, silêncio lê como "nada
+encontrado".
 
-O que falta é o eixo de infraestrutura que só existe hoje para Glue: release
-label do EMR, instance fleets vs. instance groups, EMR Serverless (worker
-config, pre-init capacity), EMR on EKS, e uma área `SF-EMR` própria no
-catálogo para as regras que dependem desses fatos. Fase própria, ainda sem
-spec.
+`SF-GLUE-002` é o caso agudo, e independe do curinga: seu `requires_facts` é
+`tf.module_analyzed`, sentinela de "algum `.tf` foi lido", não de "há job
+Glue aqui". Sem `aws_glue_job` no Terraform ela some de findings **e** de
+skipped, mesmo num runtime que é Glue.
+
+**Fase 5b — EMR propriamente.** O eixo de infraestrutura que só existe hoje
+para Glue: `emr` no `RuntimeContext`, `EMR_MATRIX`, extrator de cluster
+(EMR on EC2 primeiro), release label, instance fleets vs. instance groups,
+EMR Serverless, EMR on EKS, área `SF-EMR` no catálogo, coordenador próprio,
+e a divergência de plataforma da §3.3 do spec. Plano ainda não escrito —
+nasce sobre o escopo que a 5a corrige.
 
 ### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
 
@@ -333,16 +349,21 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 
 1. **Fase 4** — coordenadores, executores e `playbook` — **CONCLUÍDA** em 2026-07-31,
    branch `feat/fase4-agentes`. Ver seção própria acima.
-2. **Fase 5** — EMR, provando a generalização de runtime
-3. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
-4. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
+2. **Fase 5a** — correção de escopo: semântica do curinga, reetiquetar as 20
+   agnósticas, reancorar `SF-GLUE-002`, skills passando runtime. Plano escrito,
+   não executado
+3. **Fase 5b** — EMR, provando a generalização de runtime. Spec escrito, plano não
+4. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
+5. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
 
 ## Dívidas abertas
 
 | Dívida | Origem | Impacto |
 |---|---|---|
 | Fases 3b, 3c, 3d e a Fase 4 do roadmap (§16, rigor) não iniciadas | §16 do spec da Fase 0 | Ver as seções acima. A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
-| Cobertura de EMR não existe | identificada ao fechar a Fase 3a | `RuntimeContext` não tem eixo de infraestrutura para EMR (release label, instance fleets, EMR Serverless, EMR on EKS); área `SF-EMR` inexistente. 44 das 48 regras já avaliam sem `glue`, mas nenhuma regra de infraestrutura EMR existe. Fase própria, sem spec ainda — ver seção acima |
+| Cobertura de EMR não existe | identificada ao fechar a Fase 3a | `RuntimeContext` não tem eixo de infraestrutura para EMR (release label, instance fleets, EMR Serverless, EMR on EKS); área `SF-EMR` inexistente. Spec escrito e revisado; plano da 5a escrito, 5b sem plano — ver seção acima |
+| O curinga `"*"` de `runtime_scope` não filtra nada | revisão adversarial do spec da Fase 5, 2026-08-01 | `version_scope.py` pula a checagem de presença da chave, então `{glue: "*"}` casa com qualquer runtime. 20 regras agnósticas ficaram etiquetadas como de Glue, e as 5 de infra Glue avaliam em silêncio fora do Glue. Fase 5a corrige |
+| `SF-GLUE-002` some de findings e de skipped ao mesmo tempo | revisão adversarial do spec da Fase 5, 2026-08-01 | `requires_facts: tf.module_analyzed` é sentinela de "algum `.tf` foi lido", não de "há job Glue aqui": sem `aws_glue_job`, ela passa a barreira, avalia, dá falso, e desaparece dos dois lados. Fase 5a corrige |
 | `sdist`/`wheel` não são reproduzíveis bit-a-bit entre duas construções da mesma árvore | Fase 3a, commit `2b6311c` | Nenhum `SOURCE_DATE_EPOCH` é fixado, e o zip carrega timestamp interno; duas chamadas de `python -m build` sobre o mesmo commit produzem artefatos com bytes diferentes. `release.yml` contorna isso copiando (`--outdir`) o artefato que o gate já provou, em vez de reconstruir — mas a build em si segue não-determinística, o que importa para quem quiser verificar um wheel publicado por hash contra uma reconstrução própria |
 | `unreachable_function_count` não detecta código morto | Fase 1 | A medida só pega componente cíclico isolado. Detectar código morto de verdade exige emitir um nó por função **definida**, com ou sem aresta — mudança no extrator. Documentado em `rules/catalog/callgraph.yaml` |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |
