@@ -45,7 +45,22 @@ No Copilot Chat:
 
 Ou selecione o agente **Glue Incremental Performance Architect**.
 
-## 5. Ordem prática dos artefatos
+## 5. Coordenador e playbook: como entrar sem escolher à mão
+
+Qual coordenador usar não é escolha manual. `sparkforge next-step` (CLI) ou
+`sparkforge_next_step` (MCP) consulta as rotas `AGENT-001`…`AGENT-006` de
+`rules/catalog/routing.yaml` e devolve `recommended_agent` a partir do estado do case —
+fase da investigação e área do achado dominante. Há seis coordenadores, cada um com
+executores declarados: ver a tabela em `AGENTS.md`.
+
+Em Claude Code, o coordenador indicado despacha os cinco executores (`sf-inventory`,
+`sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`) como subagentes, na ordem do
+loop de fase. Em Devin, Codex ou Copilot CI — que não despacham subagente —
+`sparkforge playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_playbook` devolve a
+mesma decomposição em passos sequenciais: o que cada executor faz, não faz, pressupõe e
+entrega, na ordem certa.
+
+## 6. Ordem prática dos artefatos
 
 Forneça nesta ordem:
 
@@ -60,7 +75,7 @@ Forneça nesta ordem:
 9. Metadata tables Iceberg.
 10. Baseline.
 
-## 6. Quando faltarem dados
+## 7. Quando faltarem dados
 
 Peça ao agente para gerar:
 
@@ -71,7 +86,7 @@ Peça ao agente para gerar:
 - métricas por etapa;
 - benchmark reprodutível.
 
-## 7. Critério de conclusão
+## 8. Critério de conclusão
 
 A investigação só está concluída quando houver:
 
@@ -84,7 +99,7 @@ A investigação só está concluída quando houver:
 - risco;
 - rollback.
 
-## 8. Retomando entre Devin e Claude Code
+## 9. Retomando entre Devin e Claude Code
 
 O que atravessa a fronteira entre uma sessão Devin e uma sessão Claude Code é
 um commit, não contexto de conversa. Cinco arquivos pequenos e derivados sob
@@ -113,7 +128,7 @@ Checklist de retomada, em ordem:
    escolha a próxima skill por julgamento próprio — é isso que divergiria
    entre modelos e entre ferramentas.
 
-## 9. Sem MCP e sem Python
+## 10. Sem MCP e sem Python
 
 Se as tools MCP não estiverem disponíveis, use a CLI `sparkforge` (mesmas
 funções, mesma saída). Se nem Python estiver disponível, leia

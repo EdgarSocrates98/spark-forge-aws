@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-07-31
-**Commit de referência:** branch `feat/fase3a-pip`
+**Commit de referência:** branch `feat/fase4-agentes`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -25,14 +25,17 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **1882** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **1932** passando, 5 skipped | `python -m pytest -q` |
 | Extratores de facts | **13** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **80** | união de `EMITTED_KINDS` |
 | Regras de diagnóstico | **48** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **48 de 48** | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **16** (`ROUTE-001`…`ROUTE-016`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **29** | `sparkforge.adapters.tools.TOOLS` |
+| Rotas determinísticas | **22** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-006`) | `rules/catalog/routing.yaml` |
+| Tools MCP | **30** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **30 de 30** | `tests/test_agent_coverage.py` |
+| Coordenadores | **6** | `agents/*.md` |
+| Executores | **5** | `agents/executors/*.md` |
 | Fixtures golden | **74** em 15 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **20** (16 móveis, 4 fixas) | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -150,6 +153,39 @@ publica** — publicação continua ato manual do mantenedor.
 
 Faixa de commits: `a06d7f5` … `2b6311c`.
 
+### Fase 4 (executada) — coordenadores, executores e espelho de orquestração — **CONCLUÍDA** (2026-07-31)
+
+Documentos: [spec](specs/2026-07-31-sparkforge-fase4-agentes-design.md) ·
+[plan](plans/2026-07-31-sparkforge-fase4-agentes.md).
+
+> **Atenção ao nome**, mesma advertência da "Fase 2 executada" acima. Esta é a Fase 4 da
+> seção "Direção: de analisador de performance a time de engenharia de dados" mais abaixo
+> neste arquivo — **não** é a Fase 4 do roadmap da §16 do spec da Fase 0, que a seção "Fase
+> 4 do roadmap (§16) — rigor" continua descrevendo, ainda não iniciada.
+
+O defeito de partida não era falta de agente, era falta de alcance: medido na abertura,
+**21 das 29 tools MCP não eram citadas em agente nenhum nem em skill nenhuma** — capacidade
+que existe e não é alcançável não é capacidade. Entregou 6 coordenadores (os 3 existentes
+mais `glue-infra-reviewer`, `athena-query-optimizer` e `pyspark-code-reviewer`) e 5
+executores em `agents/executors/`, um por função do loop de fase (`sf-inventory`,
+`sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`), cada um com fronteira
+negativa (`## Não faz`) e contrato de handoff (`## Pressupõe`/`## Entrega`) que fecha a
+cadeia sem elo solto.
+
+As 30 tools MCP de hoje (a Fase 4 acrescentou `sparkforge_playbook` às 29 do início) são
+**alcançáveis a partir de algum coordenador**, travado por
+`tests/test_agent_coverage.py::TestEveryToolIsReachable`. As 9 áreas de regra têm
+coordenador. Roteamento de coordenador virou dado: rotas `AGENT-001`…`AGENT-006` em
+`rules/catalog/routing.yaml`, que `sparkforge_next_step` consulta como as demais. `sparkforge
+playbook <coordenador>` (CLI) e a tool MCP `sparkforge_playbook` dão a mesma decomposição
+sequencial, lendo `agents/` e `agents/executors/`, para quem não despacha subagente —
+`parity.yaml` ganhou `codex` como plataforma e `playbook` como mecanismo, com caminho
+verificado nas cinco plataformas. Isso fecha a dívida "Agente não é mecanismo de paridade
+declarado" (ver seção de dívidas abaixo).
+
+Faixa de commits: `4cf81c8` (spec) … `d366eb9`, fechada pelo commit de documentação desta
+mesma fase.
+
 ### Fase 3b — marketplace de plugin — **NÃO INICIADA**
 
 Escopo da §16: `marketplace.json` e instalação do plugin do Claude Code por
@@ -187,12 +223,14 @@ config, pre-init capacity), EMR on EKS, e uma área `SF-EMR` própria no
 catálogo para as regras que dependem desses fatos. Fase própria, ainda sem
 spec.
 
-### Fase 4 — rigor — **NÃO INICIADA**
+### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
 
-Escopo da §16: gates fail-closed opcionais, benchmark automatizado antes/depois,
-validação funcional automatizada (contagem, schema, chaves, agregados),
-assinatura de relatório. `blocked_by` segue advisory, como a §5.5 da Fase 0
-decidiu conscientemente.
+Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
+orquestração), que é a Fase 4 na nova numeração da seção "Direção" mais abaixo. Esta
+continua sendo a Fase 4 do roadmap original: escopo da §16 — gates fail-closed opcionais,
+benchmark automatizado antes/depois, validação funcional automatizada (contagem, schema,
+chaves, agregados), assinatura de relatório. `blocked_by` segue advisory, como a §5.5 da
+Fase 0 decidiu conscientemente.
 
 ---
 
@@ -293,7 +331,8 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 
 ### Ordem
 
-1. **Fase 4** — coordenadores, executores e `playbook` (spec e plano escritos, branch `docs/spec-fase4-agentes`)
+1. **Fase 4** — coordenadores, executores e `playbook` — **CONCLUÍDA** em 2026-07-31,
+   branch `feat/fase4-agentes`. Ver seção própria acima.
 2. **Fase 5** — EMR, provando a generalização de runtime
 3. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
 4. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
@@ -302,8 +341,7 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 
 | Dívida | Origem | Impacto |
 |---|---|---|
-| Fases 3b, 3c, 3d e 4 não iniciadas | §16 do spec da Fase 0 | Ver as seções acima |
-| **Agente não é mecanismo de paridade declarado** | identificada em 2026-07-31 | `parity.yaml` declara `mechanisms: [mcp, cli, files]`. Os 3 agentes são espelhados para `.claude/agents/`, `.agents/agents/` e `.github/agents/`, com byte-identidade travada por `tests/test_agents_parity.py` — mas **nenhum teste verifica que a capacidade "coordenar investigação por agente" tem caminho em cada plataforma**, que é exatamente o que o gate da §8.4 existe para pegar. Some-se a isso que o frontmatter (`tools: Read, Grep, Glob, ...`) é vocabulário do Claude Code e não mapeia para o Devin, e que despacho de subagente é capacidade de *harness*, não conteúdo deste repositório: fora do Claude Code, os agentes valem como prosa orientadora, não como mecanismo verificado |
+| Fases 3b, 3c, 3d e a Fase 4 do roadmap (§16, rigor) não iniciadas | §16 do spec da Fase 0 | Ver as seções acima. A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
 | Cobertura de EMR não existe | identificada ao fechar a Fase 3a | `RuntimeContext` não tem eixo de infraestrutura para EMR (release label, instance fleets, EMR Serverless, EMR on EKS); área `SF-EMR` inexistente. 44 das 48 regras já avaliam sem `glue`, mas nenhuma regra de infraestrutura EMR existe. Fase própria, sem spec ainda — ver seção acima |
 | `sdist`/`wheel` não são reproduzíveis bit-a-bit entre duas construções da mesma árvore | Fase 3a, commit `2b6311c` | Nenhum `SOURCE_DATE_EPOCH` é fixado, e o zip carrega timestamp interno; duas chamadas de `python -m build` sobre o mesmo commit produzem artefatos com bytes diferentes. `release.yml` contorna isso copiando (`--outdir`) o artefato que o gate já provou, em vez de reconstruir — mas a build em si segue não-determinística, o que importa para quem quiser verificar um wheel publicado por hash contra uma reconstrução própria |
 | `unreachable_function_count` não detecta código morto | Fase 1 | A medida só pega componente cíclico isolado. Detectar código morto de verdade exige emitir um nó por função **definida**, com ou sem aresta — mudança no extrator. Documentado em `rules/catalog/callgraph.yaml` |

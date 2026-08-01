@@ -1,7 +1,7 @@
 # SparkForge AWS — Fase 4: Coordenadores Especializados, Executores e Espelho de Orquestração
 
 **Data:** 2026-07-31
-**Status:** aprovado para planejamento
+**Status:** implementado em 2026-07-31. Faixa de commits `4cf81c8` … `d366eb9`, fechada por este commit.
 **Depende de:** [Fase 3a](2026-07-31-sparkforge-fase3a-pip-design.md) — o pacote instalável é o que torna o espelho executável em qualquer plataforma
 **Estado corrente:** [`../STATUS.md`](../STATUS.md)
 

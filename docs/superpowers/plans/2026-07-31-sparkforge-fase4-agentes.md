@@ -1,5 +1,12 @@
 # SparkForge Fase 4 — Coordenadores, Executores e Espelho: Implementation Plan
 
+> **Status: CONCLUÍDO em 2026-07-31.** As 7 tasks abaixo estão implementadas e
+> verdes: 1882 → 1932 testes. Faixa de commits `4cf81c8` (spec) … este commit
+> (Task 7, docs).
+>
+> Documento é registro histórico. Para o estado atual do repositório, leia
+> [`../STATUS.md`](../STATUS.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** toda capacidade do toolkit alcançável a partir de um coordenador, em toda plataforma suportada — verificado por invariante de CI, não prometido em prosa. Hoje 21 das 29 tools MCP não são citadas em agente nenhum nem em skill nenhuma.
