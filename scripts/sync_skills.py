@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Sincroniza skills e agents canônicos para os adaptadores de plataforma.
 
-Fontes da verdade: skills/ e agents/
+Fontes da verdade: skills/ e agents/ (incluindo agents/executors/)
 Espelhos gerados:
-    - skills/  -> .claude/skills/ e .agents/skills/
-    - agents/  -> .claude/agents/, .agents/agents/ e .github/agents/ (sufixo .agent.md)
+    - skills/           -> .claude/skills/ e .agents/skills/
+    - agents/*.md       -> .claude/agents/, .agents/agents/ e .github/agents/ (sufixo .agent.md)
+    - agents/executors/ -> .claude/agents/executors/, .agents/agents/executors/ e
+                            .github/agents/executors/ (nome preservado, sem sufixo)
 
 Uso:
     python scripts/sync_skills.py          # regenera os espelhos a partir de skills/ e agents/
@@ -24,10 +26,18 @@ CANONICAL = ROOT / "skills"
 MIRRORS = (ROOT / ".claude" / "skills", ROOT / ".agents" / "skills")
 
 AGENTS_SRC = ROOT / "agents"
+EXECUTORS_SRC = AGENTS_SRC / "executors"
 AGENT_MIRRORS = (
     (ROOT / ".claude" / "agents", "{stem}.md"),
     (ROOT / ".agents" / "agents", "{stem}.md"),
     (ROOT / ".github" / "agents", "{stem}.agent.md"),
+)
+# Executores nao levam sufixo de plataforma: nenhum adaptador os trata como
+# agente de topo, entao preservam o nome e o subdiretorio `executors/`.
+EXECUTOR_MIRRORS = (
+    ROOT / ".claude" / "agents" / "executors",
+    ROOT / ".agents" / "agents" / "executors",
+    ROOT / ".github" / "agents" / "executors",
 )
 STALE_AGENTS = (ROOT / ".github" / "agents" / "spark-performance-engineer.agent.md",)
 
@@ -38,6 +48,10 @@ def iter_skill_files() -> list[Path]:
 
 def iter_agent_files() -> list[Path]:
     return sorted(p for p in AGENTS_SRC.glob("*.md") if p.is_file())
+
+
+def iter_executor_files() -> list[Path]:
+    return sorted(p for p in EXECUTORS_SRC.glob("*.md") if p.is_file())
 
 
 def check_skills() -> list[str]:
@@ -92,8 +106,33 @@ def check_agents() -> list[str]:
     return problems
 
 
+def check_executors() -> list[str]:
+    problems: list[str] = []
+    executor_files = iter_executor_files()
+    expected_names = {p.name for p in executor_files}
+
+    for mirror_dir in EXECUTOR_MIRRORS:
+        mirror_names = (
+            {p.name for p in mirror_dir.glob("*.md") if p.is_file()}
+            if mirror_dir.exists()
+            else set()
+        )
+
+        for src in executor_files:
+            dst = mirror_dir / src.name
+            if not dst.exists():
+                problems.append(f"AUSENTE {dst}")
+            elif not filecmp.cmp(src, dst, shallow=False):
+                problems.append(f"DIVERGENTE {dst}")
+
+        for orphan_name in sorted(mirror_names - expected_names):
+            problems.append(f"ORFAO {mirror_dir / orphan_name}")
+
+    return problems
+
+
 def check() -> int:
-    problems = check_skills() + check_agents()
+    problems = check_skills() + check_agents() + check_executors()
 
     if problems:
         print(
@@ -171,8 +210,35 @@ def sync_agents() -> int:
     return changed
 
 
+def sync_executors() -> int:
+    executor_files = iter_executor_files()
+    expected_names = {p.name for p in executor_files}
+    changed = 0
+
+    for mirror_dir in EXECUTOR_MIRRORS:
+        for src in executor_files:
+            dst = mirror_dir / src.name
+            if dst.exists() and filecmp.cmp(src, dst, shallow=False):
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            print(f"COPY {dst}")
+            changed += 1
+
+        if mirror_dir.exists():
+            for path in sorted(
+                (p for p in mirror_dir.glob("*.md") if p.is_file()), reverse=True
+            ):
+                if path.name not in expected_names:
+                    path.unlink()
+                    print(f"DEL  {path}")
+                    changed += 1
+
+    return changed
+
+
 def sync() -> int:
-    changed = sync_skills() + sync_agents()
+    changed = sync_skills() + sync_agents() + sync_executors()
     print(f"Sync concluído ({changed} alteração(ões)).")
     return 0
 

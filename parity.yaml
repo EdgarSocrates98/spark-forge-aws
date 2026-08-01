@@ -1,7 +1,7 @@
 schema_version: 1
 
-platforms: [claude_code, devin_desktop, devin_cli, copilot_ci]
-mechanisms: [mcp, cli, files]
+platforms: [claude_code, devin_desktop, devin_cli, codex, copilot_ci]
+mechanisms: [mcp, cli, files, playbook]
 
 notes: >
   Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge.adapters.mcp
@@ -11,6 +11,22 @@ notes: >
   autoritativo em arquivo no repo, nunca em Playbook. Copilot CI nao mantem sessao MCP
   interativa: roda o CLI `sparkforge` como processo de linha de comando dentro do workflow,
   ou opera diretamente sobre arquivo quando nem isso esta disponivel.
+  Codex, como Copilot CI, nao mantem sessao MCP interativa da mesma forma: roda o CLI
+  `sparkforge` como processo de linha de comando dentro do seu ambiente de execucao, ou
+  opera diretamente sobre arquivo. Por isso `codex` nunca declara `mcp` em nenhuma
+  capacidade -- o mesmo raciocinio ja aplicado a `copilot_ci`, nao um caso novo.
+  `subagent` NAO e mecanismo declarado neste manifesto, de proposito. Despacho de
+  subagente e capacidade de HARNESS do Claude Code (o `Agent` tool desta CLI), nao
+  conteudo deste repositorio: nenhuma outra plataforma tem um equivalente que este
+  repositorio possa acionar. Declara-lo como mecanismo portavel faria o manifesto
+  afirmar paridade que nao existe -- o defeito exato do transporte HTTP na Fase 1, que
+  `parity.yaml` afirmava e nenhum teste tocava, e que so apareceu quando alguem subiu o
+  servidor de verdade. Em vez disso, a capacidade "coordenar investigacao por agente
+  especializado" declara `playbook`: a tool/CLI `sparkforge_playbook` le os mesmos
+  arquivos em `agents/` e `agents/executors/` que um coordenador Claude Code despacharia
+  como subagente, e devolve a mesma decomposicao em passos sequenciais -- perde o
+  paralelismo do despacho, mantem o metodo. E o que Devin Desktop, Devin CLI, Codex e
+  Copilot CI conseguem consumir sem harness de subagente.
 
 capabilities:
   - name: detect runtime and version divergence
@@ -21,6 +37,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract anchored facts from PySpark source
@@ -31,6 +48,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from a Glue Data Catalog schema dump
@@ -41,6 +59,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from a Spark event log
@@ -51,6 +70,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from a Spark physical plan
@@ -61,6 +81,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from Terraform aws_glue_job definitions
@@ -71,6 +92,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from Iceberg metadata tables
@@ -81,6 +103,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from SQL text and spark.sql literals
@@ -91,6 +114,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from Athena workgroup configuration
@@ -101,6 +125,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from an S3 object listing
@@ -111,6 +136,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: extract facts from the declared table consumer inventory
@@ -121,6 +147,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: compare two Terraform states and mark what changed
@@ -131,6 +158,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: derive a call graph and Spark work reachability from facts
@@ -141,6 +169,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: correlate facts from multiple extractors before judging
@@ -151,6 +180,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: judge facts against the version-guarded catalog
@@ -161,6 +191,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: locate the version-controlled knowledge files
@@ -171,6 +202,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: look up a rule with threshold, version guard and source
@@ -181,6 +213,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: validate a recommendation written by the model
@@ -191,6 +224,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: maintain investigation state
@@ -201,6 +235,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: route the next step deterministically
@@ -211,6 +246,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: resume an investigation started in another tool
@@ -221,7 +257,19 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
+
+  - name: coordenar investigacao por agente especializado
+    tools: [sparkforge_playbook]
+    cli: [playbook]
+    knowledge: [AGENT_PROTOCOL.md]
+    platforms:
+      claude_code: [mcp, cli, files, playbook]
+      devin_desktop: [mcp, cli, files, playbook]
+      devin_cli: [mcp, cli, files, playbook]
+      codex: [cli, files, playbook]
+      copilot_ci: [cli, files, playbook]
 
   - name: collect real AWS artifacts and verify the manifest
     tools:
@@ -243,6 +291,7 @@ capabilities:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
       devin_cli: [mcp, cli, files]
+      codex: [cli, files]
       copilot_ci: [cli, files]
 
   - name: apply performance knowledge with no tooling at all
@@ -269,4 +318,5 @@ capabilities:
       claude_code: [files]
       devin_desktop: [files]
       devin_cli: [files]
+      codex: [files]
       copilot_ci: [files]

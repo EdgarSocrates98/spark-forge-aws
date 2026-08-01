@@ -207,6 +207,9 @@ def _next_step_lines(payload: dict[str, Any]) -> list[str]:
         f"- skill recomendada: {step.get('recommended_skill')}",
         f"- motivo: {step.get('reason')}",
     ]
+    if step.get("recommended_agent"):
+        lines.append(f"- coordenador recomendado: {step['recommended_agent']}")
+        lines.append(f"- motivo do coordenador: {step.get('recommended_agent_reason')}")
     if step.get("blocked_by"):
         lines.append(f"- bloqueado por (advisory): {', '.join(step['blocked_by'])}")
     return lines

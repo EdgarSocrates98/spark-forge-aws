@@ -132,6 +132,20 @@ def _condition_operator(condition: dict[str, Any]) -> tuple[str, Any]:
     return key, condition[key]
 
 
+def _finding_area(rule_id: str) -> str:
+    """Área de um `rule_id`: o prefixo até o último hífen.
+
+    `SF-GLUE-002` -> `SF-GLUE`. É o mesmo agrupamento que separa os coordenadores —
+    infra Glue, Athena, PySpark, Iceberg/layout — então a rota de agente conta
+    achados por área sem precisar de uma lista de `rule_id` mantida à mão.
+    """
+    return rule_id.rsplit("-", 1)[0]
+
+
+def _count_finding_area(finding_ids: frozenset[str], area: str) -> int:
+    return sum(1 for fid in finding_ids if _finding_area(fid) == area)
+
+
 def _eval_condition(
     case: dict[str, Any], finding_ids: frozenset[str], condition: dict[str, Any]
 ) -> bool:
@@ -140,17 +154,21 @@ def _eval_condition(
 
     has_case = "case" in condition
     has_finding = "finding" in condition
-    if has_case == has_finding:  # nenhum dos dois, ou os dois ao mesmo tempo
+    has_area = "findings_area" in condition
+    if has_case + has_finding + has_area != 1:
         raise CatalogError(
-            f"condição precisa de exatamente um de `case` ou `finding`: {condition!r}"
+            "condição precisa de exatamente um de `case`, `finding` ou "
+            f"`findings_area`: {condition!r}"
         )
 
     op, op_value = _condition_operator(condition)
 
     if has_case:
         value = _resolve_case_path(case, condition["case"])
-    else:
+    elif has_finding:
         value = True if condition["finding"] in finding_ids else _MISSING
+    else:
+        value = _count_finding_area(finding_ids, condition["findings_area"])
 
     return _apply_operator(op, op_value, value)
 
@@ -179,8 +197,12 @@ def _evidence_for(rule: dict[str, Any]) -> list[str]:
     lines: list[str] = []
     for group in ("all", "any"):
         for condition in when.get(group) or []:
-            subject_kind = "case" if "case" in condition else "finding"
-            subject = condition.get("case", condition.get("finding"))
+            if "case" in condition:
+                subject_kind, subject = "case", condition["case"]
+            elif "finding" in condition:
+                subject_kind, subject = "finding", condition["finding"]
+            else:
+                subject_kind, subject = "findings_area", condition.get("findings_area")
             op_keys = [k for k in condition if k in ROUTING_OPERATORS]
             op = op_keys[0] if op_keys else "?"
             lines.append(f"{subject_kind}:{subject} {op}={condition.get(op)}")
@@ -191,6 +213,37 @@ def _reason_of(rule: dict[str, Any]) -> str:
     return f"{rule['id']}: {str(rule['reason']).strip()}"
 
 
+def _matching_rules(
+    rules: list[dict[str, Any]],
+    case: dict[str, Any],
+    finding_set: frozenset[str],
+    phase: Any,
+    key: str,
+) -> list[dict[str, Any]]:
+    """Regras com `key` presente cujo `phase_in`/`when` casam, na ordem do YAML.
+
+    Mesmo motor de avaliação (`_when_matches`) serve às duas famílias de rota --
+    skill (`recommended_skill`) e coordenador (`recommended_agent`, ver AGENT-NNN)
+    -- porque a condição é a mesma linguagem declarativa; só o campo projetado
+    muda. Isolar por `key` (em vez de um `if "recommended_skill" not in rule:
+    continue` genérico) é o que permite às duas famílias conviverem na mesma
+    lista de `routing.yaml` sem uma pisar na outra: uma regra `AGENT-*` nunca
+    entra em `skill_matches`, e vice-versa -- então `alternatives` (que projeta
+    só `recommended_skill`) nunca vê uma regra sem essa chave.
+    """
+    matches = []
+    for rule in rules:
+        if key not in rule:
+            continue
+        phase_in = rule.get("phase_in")
+        if phase_in and phase not in phase_in:
+            continue
+        when = rule.get("when") or {}
+        if _when_matches(case, finding_set, when):
+            matches.append(rule)
+    return matches
+
+
 def next_step(
     case: dict[str, Any], finding_ids: list[str], directory: Path | None = None
 ) -> dict[str, Any]:
@@ -198,22 +251,31 @@ def next_step(
 
     Pura: mesma entrada produz sempre a mesma saída. `finding_ids` é ordenado
     antes de uso, para que a ordem de entrada nunca influencie a resposta.
+
+    Resolve duas rotas independentes sobre o mesmo `routing.yaml`: qual skill
+    seguir (`recommended_skill`, regras `ROUTE-*`) e qual coordenador despachar
+    (`recommended_agent`, regras `AGENT-*`). São perguntas diferentes -- uma é
+    "qual agente investiga", a outra é "qual skill executar agora" -- por isso
+    uma pode casar sem a outra, e a ausência de rota de agente não é erro: vira
+    `None` com o motivo correspondente também `None`.
     """
     routing = load_routing(directory)
     sorted_ids = sorted(finding_ids)
     finding_set = frozenset(sorted_ids)
     phase = case.get("phase")
+    rules = routing["rules"]
 
-    matches: list[dict[str, Any]] = []
-    for rule in routing["rules"]:
-        phase_in = rule.get("phase_in")
-        if phase_in and phase not in phase_in:
-            continue
-        when = rule.get("when") or {}
-        if _when_matches(case, finding_set, when):
-            matches.append(rule)
+    skill_matches = _matching_rules(rules, case, finding_set, phase, "recommended_skill")
+    agent_matches = _matching_rules(rules, case, finding_set, phase, "recommended_agent")
 
-    if not matches:
+    if agent_matches:
+        recommended_agent: str | None = agent_matches[0]["recommended_agent"]
+        recommended_agent_reason: str | None = _reason_of(agent_matches[0])
+    else:
+        recommended_agent = None
+        recommended_agent_reason = None
+
+    if not skill_matches:
         fallback = routing["fallback"]
         return {
             "phase": phase,
@@ -224,9 +286,11 @@ def next_step(
             "collect_commands": [],
             "blocked_by": [],
             "alternatives": [],
+            "recommended_agent": recommended_agent,
+            "recommended_agent_reason": recommended_agent_reason,
         }
 
-    primary = matches[0]
+    primary = skill_matches[0]
     gates = case.get("gates") or {}
     blocked_by = [g for g in primary.get("blocked_by", []) if not gates.get(g, False)]
 
@@ -245,8 +309,10 @@ def next_step(
                 "recommended_skill": alt["recommended_skill"],
                 "reason": _reason_of(alt),
             }
-            for rank, alt in enumerate(matches[1:], start=2)
+            for rank, alt in enumerate(skill_matches[1:], start=2)
         ],
+        "recommended_agent": recommended_agent,
+        "recommended_agent_reason": recommended_agent_reason,
     }
     if "note" in primary:
         result["note"] = str(primary["note"]).strip()

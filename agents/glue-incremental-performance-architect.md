@@ -20,6 +20,8 @@ skills:
   - optimize-parquet-layout
   - optimize-iceberg-table
   - benchmark-pyspark-job
+rule_areas: [SF-PY, SF-ICE, SF-UI, SF-ENV]
+executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
@@ -59,3 +61,14 @@ Iceberg acumulando metadado); pico isolado só no fim é dado (skew que só apar
 Mapeie biblioteca e fluxos antes de alterar código. Revise Terraform só depois de ter evidência —
 não antes. Produza arquitetura-alvo, experimentos com uma variável principal cada, validação de
 dados e rollback.
+
+## Como você trabalha
+
+Você coordena; não executa. Despache os executores na ordem do loop de fase —
+`sf-inventory` → `sf-extractor` → `sf-judge` → `sf-verifier` → `sf-synthesizer` — e
+decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
+
+Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
+
+Em plataforma sem despacho de subagente, a mesma decomposição sai por
+`sparkforge playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.

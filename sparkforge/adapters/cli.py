@@ -332,6 +332,21 @@ def build_parser() -> argparse.ArgumentParser:
     handoff_p.add_argument("--unresolved", type=int, default=0)
     handoff_p.add_argument("--in-flight", default="")
 
+    playbook_p = sub.add_parser(
+        "playbook",
+        help=(
+            "Decomposicao de um coordenador em passos sequenciais -- o espelho de "
+            "orquestracao para plataforma sem despacho de subagente (Devin, Codex, "
+            "Copilot). Le agents/, nunca repete a lista de executores."
+        ),
+    )
+    playbook_p.add_argument("coordinator")
+    playbook_p.add_argument("--repo", default=".")
+    playbook_p.add_argument(
+        "--findings",
+        help="Arquivo de findings (JSON) usado para resolver o next_step embutido (AGENT-*).",
+    )
+
     # runtime detect ----------------------------------------------------
     runtime_p = sub.add_parser(
         "runtime", help="Deteccao de runtime Glue/Spark/Python/Iceberg/Athena."
@@ -801,6 +816,12 @@ def _cmd_handoff(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_playbook(args: argparse.Namespace) -> int:
+    findings = _load_json_list(args.findings) if args.findings else []
+    _print(_core.playbook(args.coordinator, repo=args.repo, findings=findings))
+    return 0
+
+
 def _cmd_runtime_detect(args: argparse.Namespace) -> int:
     payload = _core.runtime_detect(
         glue=args.glue,
@@ -915,6 +936,7 @@ _DISPATCH = {
     ("next-step", None): _cmd_next_step,
     ("resume", None): _cmd_resume,
     ("handoff", None): _cmd_handoff,
+    ("playbook", None): _cmd_playbook,
     ("runtime", "detect"): _cmd_runtime_detect,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("rules", "lookup"): _cmd_rules_lookup,
