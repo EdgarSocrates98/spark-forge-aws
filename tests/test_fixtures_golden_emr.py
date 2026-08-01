@@ -5,12 +5,19 @@ um dump `*.json` sob `input/`, extraido por `extract_emr_cluster_path` -- um
 dump ja e a uniao das saidas dos seis subcomandos de um cluster, entao nao ha
 variante `_tree`.
 
-Nenhuma fixture deste corpus dispara regra: a area `SF-EMR` e a Task 4 desta
-fase, e o extrator entra antes dela de proposito (regra sem fact e regra que
-nunca foi provada). O que o corpus trava agora e o contrato dos facts -- e
-`expects_rules: []` em todas passa a ser um golden negativo real assim que as
-regras existirem: se alguma delas disparar sobre um dump que nao a justifica,
-o diff aparece aqui.
+Ate a Task 3 nenhuma fixture deste corpus disparava regra: o extrator entrou
+antes da area `SF-EMR` de proposito (regra sem fact e regra que nunca foi
+provada). Com a Task 4 as regras existem, e `expects_rules` deixou de ser
+uniformemente vazio -- os `[]` que sobraram passaram a ser goldens NEGATIVOS
+reais: se alguma regra disparar sobre um dump que nao a justifica, o diff
+aparece aqui.
+
+Tres deles carregam essa carga de proposito, e `TestAdversarial` abaixo trava
+cada um: `all_spot_groups_maximize` e a recomendacao oficial da AWS escrita como
+dump (primary Spot com core Spot), `reconfiguration_pending_with_managed_scaling`
+tem todos os ingredientes de SF-EMR-003 e e barrado so pelo guarda de evidencia,
+e `configuration_not_applied` prova que a divergencia de configuracao e por
+grupo.
 """
 import json
 from pathlib import Path
@@ -33,6 +40,17 @@ REQUIRED_FIXTURES = {
     "missing_instance_model",
     "malformed_sections",
     "empty_dump",
+    # Task 4: os dois que a area SF-EMR acrescentou. O primeiro e o unico golden
+    # positivo de SF-EMR-003; o segundo e a contraparte NEGATIVA de SF-EMR-001 e
+    # SF-EMR-004, e e um cluster que a AWS recomenda -- e o corpus precisa provar
+    # que a ferramenta nao acusa a recomendacao oficial.
+    "managed_scaling_static_executors",
+    "all_spot_groups_maximize",
+    # O par de `managed_scaling_static_executors`: mesmo gatilho, e a unica
+    # diferenca e a qualidade da evidencia. Sem ele o `absent:
+    # emr.configuration.unapplied` de SF-EMR-003 seria uma linha que nunca fez
+    # diferenca em golden nenhum.
+    "reconfiguration_pending_with_managed_scaling",
 }
 
 
@@ -244,6 +262,77 @@ class TestAdversarial:
             assert sentinel.measures["configuration_count"] == len(
                 _by_kind(facts, "emr.configuration")
             ), directory.name
+
+    def test_the_evidence_guard_is_what_stops_the_rule_not_a_missing_ingredient(self):
+        """`- absent: emr.configuration.unapplied` em SF-EMR-003 tem que ser a
+        linha que decide, e nao decoracao ao lado de uma condicao que ja daria
+        falso sozinha.
+
+        `reconfiguration_pending_with_managed_scaling` tem os TRES ingredientes
+        da regra -- `spark.dynamicAllocation.enabled=false` no nivel cluster,
+        `overriding_group_count == 0`, e politica de managed scaling --, e
+        mesmo assim nao dispara. Este teste remove o guarda de uma copia do
+        catalogo e mostra que sem ele a regra dispararia: e a prova de que o
+        cluster esta rodando com alocacao dinamica LIGADA no grupo TASK (o
+        `dropped` do guarda) enquanto o dump aparenta o contrario.
+
+        Sem esta prova, alguem poderia apagar a linha do `when` e a suite
+        inteira continuaria verde.
+        """
+        import copy
+
+        directory = FIXTURES / "reconfiguration_pending_with_managed_scaling"
+        meta, facts, findings, _ = run_fixture(directory)
+        assert [f.rule_id for f in findings] == []
+
+        sem_guarda = copy.deepcopy(load_catalog())
+        for rule in sem_guarda:
+            if rule["id"] == "SF-EMR-003":
+                rule["when"]["all"] = [
+                    c for c in rule["when"]["all"] if "absent" not in c
+                ]
+        degradado = judge(facts, sem_guarda, meta["runtime"])
+        assert [f.rule_id for f in degradado] == ["SF-EMR-003"]
+
+    def test_the_official_recommendation_is_never_accused(self):
+        """Primary em Spot e RECOMENDADO pela AWS em dois dos quatro cenarios da
+        tabela oficial, e nos dois o core tambem e Spot. Uma versao ingenua de
+        SF-EMR-004 -- "MASTER com Spot" -- acusaria exatamente a recomendacao.
+
+        `all_spot_groups_maximize` e essa recomendacao escrita como dump, e ela
+        nao pode produzir achado nenhum. O lado positivo e
+        `instance_fleets_maximize`, onde o core e On-Demand e a contradicao
+        existe.
+        """
+        _, limpo, findings_limpo, _ = run_fixture(FIXTURES / "all_spot_groups_maximize")
+        papeis_spot = {
+            f.attrs["role"]
+            for f in _by_kind(limpo, "emr.instance_capacity")
+            if f.attrs["has_spot_capacity"]
+        }
+        assert papeis_spot == {"MASTER", "CORE", "TASK"}
+        assert [f.rule_id for f in findings_limpo] == []
+
+        _, _, findings_contraditorio, _ = run_fixture(FIXTURES / "instance_fleets_maximize")
+        assert "SF-EMR-004" in {f.rule_id for f in findings_contraditorio}
+
+    def test_maximize_resource_allocation_is_only_a_defect_on_fleets(self):
+        """A mesma propriedade, com o mesmo valor, nos dois modelos de instancia:
+        defeito num, correto no outro. Se o `when` perder a condicao sobre
+        `instance_collection_type`, esta assercao quebra em vez de a regra
+        passar a acusar todo cluster que usa o calculo automatico."""
+        for name in ("instance_fleets_maximize", "all_spot_groups_maximize"):
+            directory = FIXTURES / name
+            _, facts, _, _ = run_fixture(directory)
+            assert any(
+                f.attrs["key"] == "maximizeResourceAllocation" and f.attrs["value"] == "true"
+                for f in _by_kind(facts, "emr.configuration")
+            ), directory.name
+
+        _, _, fleets, _ = run_fixture(FIXTURES / "instance_fleets_maximize")
+        _, _, groups, _ = run_fixture(FIXTURES / "all_spot_groups_maximize")
+        assert "SF-EMR-001" in {f.rule_id for f in fleets}
+        assert "SF-EMR-001" not in {f.rule_id for f in groups}
 
     def test_empty_dump_still_proves_the_extractor_ran(self):
         _, facts, _, _ = run_fixture(FIXTURES / "empty_dump")

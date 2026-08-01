@@ -1,0 +1,41 @@
+name: all_spot_groups_maximize
+proves: >
+  A contraparte negativa das duas regras desta area que sao mais faceis de
+  escrever errado, e ela e um cluster que a AWS RECOMENDA, nao um cluster
+  neutro. E a linha "cost-driven workloads" da tabela oficial de cenarios --
+  primary, core e task inteiramente em Spot, transiente, com `AutoTerminate` --,
+  e nela primary em Spot e a escolha certa.
+  SF-EMR-004 NAO dispara aqui, e e esse o ponto: a regra acusa a CONTRADICAO
+  entre primary Spot e core On-Demand, nunca primary Spot por si. Uma versao
+  ingenua da regra -- "MASTER com Spot" -- acusaria esta fixture, ou seja,
+  acusaria a recomendacao oficial, que o `rules/catalog/README.md` trata como o
+  pior tipo de defeito de regra. `instance_fleets_maximize` e o lado positivo:
+  la o core e On-Demand e a contradicao existe.
+  SF-EMR-001 tambem NAO dispara, pelo outro discriminante:
+  `maximizeResourceAllocation=true` esta aqui no nivel cluster, e e correto --
+  `InstanceCollectionType` e `INSTANCE_GROUP`, onde o grupo core tem um tipo de
+  instancia so e o calculo do executor e deterministico. O defeito so existe em
+  `INSTANCE_FLEET`, onde a frota pode ter varios tipos e o EMR dimensiona por
+  um deles.
+  O `yarn-site` com as duas propriedades de node label esta no dump por um
+  motivo que nao e regra nenhuma: e a forma de registrar no corpus como um
+  cluster 6.x com Spot no TASK prende o ApplicationMaster no CORE. Nenhuma regra
+  le essas propriedades hoje, e o motivo esta no cabecalho de
+  `rules/catalog/emr-infra.yaml` -- o motor so sabe `absent: <kind>`, entao a
+  regra que precisaria provar a AUSENCIA delas nao pode ser escrita sem acusar
+  tambem os clusters corretos, como este.
+  Bootstrap action sem segredo nos `Args` e `LogUri` presente fecham os lados
+  negativos de SF-EMR-002 e SF-EMR-006, e `ALL_STEPS_COMPLETED` num cluster ja
+  TERMINATED fecha o de SF-EMR-007: terminar nao e falhar.
+runtime:
+  emr: "6.15.0"
+  spark: "3.4.1-amzn-2"
+  iceberg: "1.4.0-amzn-0"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.bootstrap_action
+  - emr.cluster
+  - emr.configuration
+  - emr.instance_capacity
+expects_rules: []

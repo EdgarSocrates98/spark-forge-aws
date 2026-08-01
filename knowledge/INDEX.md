@@ -32,6 +32,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | Arquivo | Conteúdo |
 |---|---|
 | [`emr/runtime-matrix.md`](emr/runtime-matrix.md) | Matriz EMR × Spark × Hadoop × Iceberg × Python, 6.4.0 a 7.13.0, com o significado do sufixo `-amzn-N` |
+| [`emr/cluster-configuration.md`](emr/cluster-configuration.md) | Instance groups × fleets, níveis de `Configurations`, `maximizeResourceAllocation`, Spot por papel, managed scaling × alocação dinâmica, committer × commit protocol em S3, `LogUri`, node labels e o ApplicationMaster, bootstrap actions |
 
 ### Amazon Athena
 | Arquivo | Conteúdo |

@@ -16,6 +16,22 @@ proves: >
   `attrs.secret_pattern_match`. O grupo TASK tem
   `LastSuccessfullyAppliedConfigurations` IGUAL a `Configurations`: nenhum
   `emr.configuration.unapplied` sai daqui, que e o sentido negativo do guard.
+  Com a area SF-EMR escrita (Task 4), as duas redacoes de segredo viram um unico
+  achado P0 de SF-EMR-002 -- a regra pergunta pelas duas superficies num grupo
+  `any`, porque um cluster sem bootstrap action nenhuma nao pode ficar sem a
+  metade de `Configurations`. E `spark.sql.sources.partitionOverwriteMode:
+  dynamic` no `spark-defaults` do CLUSTER dispara SF-EMR-005: a propriedade
+  muda a semantica de `mode("overwrite")` para todo job que rodar aqui,
+  inclusive os escritos supondo o default `static`.
+  O que este dump prova NEGATIVAMENTE e o discriminante de SF-EMR-003. A
+  propriedade `spark.dynamicAllocation.enabled` esta `false` no nivel cluster e
+  ha politica de managed scaling -- os dois ingredientes da regra --, mas o
+  grupo TASK a redefine para `true`, `measures.overriding_group_count` vale 1, e
+  a regra NAO dispara. "O cluster esta com alocacao dinamica desligada" deixa de
+  ser verdade assim que um grupo discorda, e sem essa measure no `when` a regra
+  afirmaria sobre o cluster inteiro o que so vale onde ninguem redefiniu. O
+  golden positivo dela e `managed_scaling_static_executors`, o mesmo cenario sem
+  o override.
 runtime:
   emr: "6.15.0"
   spark: "3.4.1-amzn-2"
@@ -28,4 +44,6 @@ expects_kinds:
   - emr.configuration
   - emr.instance_capacity
   - emr.managed_scaling
-expects_rules: []
+expects_rules:
+  - SF-EMR-002
+  - SF-EMR-005
