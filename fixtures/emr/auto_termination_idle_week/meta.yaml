@@ -1,0 +1,37 @@
+name: auto_termination_idle_week
+proves: >
+  O teto da API escrito como dump, e o gate de aplicação interativa que NÃO é
+  gate. `AutoTerminationPolicy.IdleTimeout` é 604800 — os 7 dias que a
+  documentação declara como máximo aceito —, então SF-EMR-009 dispara pelo ramo
+  `severity_by` e sai P1, não pelo P2 do caso geral. É o único golden que
+  exercita esse ramo: sem ele, a linha de `severity_by` poderia estar invertida e
+  nenhum teste notaria.
+  A segunda coisa que este dump prova é a decisão de escopo da regra. As
+  `Applications` incluem JupyterHub, Zeppelin e Hue — as três aplicações que a
+  pesquisa levantou como razão para NÃO acusar, porque auto-terminação derruba
+  sessão de usuário. A regra acusa mesmo assim, e a justificativa está inteira no
+  primeiro item de `tradeoffs`: a política já existe (quem a anexou já aceitou o
+  comportamento), o risco documentado para notebook vale para 5.30.0-5.33.0 e
+  6.1.0-6.3.0 e a própria página recomenda 6.4.0 ou superior — que é o piso do
+  `EMR_MATRIX` deste repositório —, e calar a regra em cluster de gente a
+  apagaria justamente onde o custo de ociosidade é maior. Como a regra dispara,
+  o operador lê o trade-off no próprio achado; ele não vira silêncio nem
+  `skipped`.
+  `measures.idle_timeout_seconds` deixou de ser capacidade de extrator sem
+  consumidor aqui: é a única measure que o `when` desta regra lê.
+  Nenhuma outra regra da área dispara, de propósito: `LogUri` presente fecha
+  SF-EMR-006, MASTER e CORE On-Demand fecham SF-EMR-004 e SF-EMR-008 (sem Spot em
+  papel nenhum), não há `Configurations` — logo nem `maximizeResourceAllocation`,
+  nem `partitionOverwriteMode`, nem segredo —, não há managed scaling e o
+  `StateChangeReason` não existe. O golden isola a regra nova.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.instance_capacity
+expects_rules:
+  - SF-EMR-009

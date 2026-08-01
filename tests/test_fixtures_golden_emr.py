@@ -56,6 +56,16 @@ REQUIRED_FIXTURES = {
     # que um extrator ingênuo -- "vi propriedade de node label, logo está
     # protegido" -- calaria SF-EMR-008 sobre um cluster genuinamente exposto.
     "node_labels_half_configured",
+    # Task 5: os tres de SF-EMR-009, a regra que fechou a divida de
+    # `measures.idle_timeout_seconds` -- measure que o extrator emitia e nenhuma
+    # regra consumia. O primeiro e o teto da API (604800 s) com JupyterHub,
+    # Zeppelin e Hue instalados, e prova as duas coisas de uma vez: o ramo P1 de
+    # `severity_by`, e que a aplicacao interativa NAO cala a regra. Os outros dois
+    # sao o par do limiar, identicos entre si exceto pelo numero: 86400 dispara,
+    # 82800 nao.
+    "auto_termination_idle_week",
+    "auto_termination_idle_day",
+    "auto_termination_near_threshold",
 }
 
 
@@ -464,6 +474,93 @@ class TestAdversarial:
         # segunda propriedade -- e ela e a que decide.
         assert protegidas - chaves == {"yarn.node-labels.am.default-node-label-expression"}
         assert "SF-EMR-008" not in {f.rule_id for f in findings_protegido}
+
+    def test_the_idle_timeout_threshold_is_read_and_compared(self):
+        """O par near-threshold de SF-EMR-009.
+
+        `auto_termination_idle_day` e `auto_termination_near_threshold` sao o
+        MESMO dump com uma unica diferenca -- 86400 contra 82800 segundos --, e
+        so um dos dois e acusado. Sem o par, a regra poderia estar disparando
+        pela mera PRESENCA de `measures.idle_timeout_seconds` e os dois goldens
+        continuariam verdes; o negativo e o unico lugar onde a comparacao com o
+        limiar precisa acontecer de verdade.
+
+        A assercao sobre o limiar vem do catalogo, nunca de um numero repetido
+        aqui: um limiar escrito em dois lugares vira dois limiares no dia em que
+        alguem ajustar so um.
+        """
+        regra = next(r for r in load_catalog() if r["id"] == "SF-EMR-009")
+        limiar = regra["threshold"]["idle_timeout_seconds"]
+
+        _, dispara, findings_dispara, _ = run_fixture(FIXTURES / "auto_termination_idle_day")
+        _, cala, findings_cala, _ = run_fixture(FIXTURES / "auto_termination_near_threshold")
+
+        acima = next(f for f in dispara if f.kind == "emr.cluster")
+        abaixo = next(f for f in cala if f.kind == "emr.cluster")
+        assert acima.measures["idle_timeout_seconds"] == limiar
+        assert abaixo.measures["idle_timeout_seconds"] < limiar
+
+        assert [f.rule_id for f in findings_dispara] == ["SF-EMR-009"]
+        assert [f.rule_id for f in findings_cala] == []
+
+        # A measure existe nos DOIS. O que separa os dois e a comparacao, e nao
+        # a presenca do dado -- que era a unica coisa que o corpus provava antes.
+        assert "idle_timeout_seconds" in abaixo.measures
+
+    def test_an_absent_policy_never_accuses(self):
+        """A terceira direcao de SF-EMR-009, e a que o motor decide sozinho.
+
+        Dump sem `AutoTerminationPolicy` nao tem a measure; o avaliador levanta
+        "caminho ausente no contexto", `_expr_matches` engole o `ExprError` e
+        devolve falso. E por isso que a AUSENCIA de politica nao pode ser o
+        gatilho desta regra (item 6 do cabecalho de `emr-infra.yaml`): ausencia
+        de measure falha FECHADA nas duas superficies do `when`.
+
+        `instance_groups_spot_task` cobre o caso vizinho -- politica presente com
+        o default da AWS, 3600 s --, e tambem nao dispara.
+        """
+        sem_measure = []
+        for directory in fixture_dirs():
+            _, facts, findings, _ = run_fixture(directory)
+            clusters = _by_kind(facts, "emr.cluster")
+            if clusters and "idle_timeout_seconds" not in clusters[0].measures:
+                sem_measure.append(directory.name)
+                assert "SF-EMR-009" not in {f.rule_id for f in findings}, directory.name
+
+        assert len(sem_measure) >= 5, (
+            "quase todo o corpus deveria estar sem politica de auto-terminacao; "
+            f"so {len(sem_measure)} estao, e a assercao virou quase vazia"
+        )
+
+        _, com_default, findings_default, _ = run_fixture(FIXTURES / "instance_groups_spot_task")
+        cluster = next(f for f in com_default if f.kind == "emr.cluster")
+        assert cluster.measures["idle_timeout_seconds"] == 3600
+        assert "SF-EMR-009" not in {f.rule_id for f in findings_default}
+
+    def test_an_interactive_cluster_is_accused_not_silenced(self):
+        """A decisao de escopo de SF-EMR-009, travada.
+
+        A pesquisa propos calar a regra em cluster com JupyterHub, Zeppelin ou
+        Hue, porque auto-terminacao derruba sessao de usuario.
+        `auto_termination_idle_week` tem as tres aplicacoes E a janela no teto da
+        API, e e acusado assim mesmo -- a justificativa esta no primeiro item de
+        `tradeoffs` da regra, e o ponto operacional e que ela chega ao operador
+        DENTRO do achado, em vez de virar um `skipped` que ninguem le.
+
+        Se alguem acrescentar o gate depois, este teste quebra e obriga a decisao
+        a ser tomada de novo, com a fonte na mao.
+        """
+        _, facts, findings, skipped = run_fixture(FIXTURES / "auto_termination_idle_week")
+
+        aplicacoes = {f.attrs["name"] for f in _by_kind(facts, "emr.application")}
+        assert {"JupyterHub", "Zeppelin", "Hue"} <= aplicacoes
+
+        achado = next(f for f in findings if f.rule_id == "SF-EMR-009")
+        # O ramo de `severity_by`: 604800 s e o maximo que a API aceita.
+        assert achado.severity == "P1"
+        assert achado.measured["idle_timeout_seconds"] == 604800
+        assert "SF-EMR-009" not in {s["rule_id"] for s in skipped}
+        assert any("JupyterHub" in t for t in achado.tradeoffs)
 
     def test_empty_dump_still_proves_the_extractor_ran(self):
         _, facts, _, _ = run_fixture(FIXTURES / "empty_dump")
