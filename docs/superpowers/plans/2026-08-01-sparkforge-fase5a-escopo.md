@@ -1,6 +1,6 @@
 # SparkForge Fase 5a — Correção de Escopo: Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** fazer o escopo de regra dizer o que a regra significa, e fazer a ausência ser explicada em vez de silenciosa. Hoje `runtime_scope: {glue: "*"}` não filtra nada, 20 regras agnósticas estão marcadas como se fossem de Glue, e `SF-GLUE-002` some de findings **e** de skipped.
 
@@ -100,7 +100,7 @@ Primeiro, e vermelho. Ele descreve o estado desejado e é o que prova que a reet
 **Files:**
 - Create: `tests/test_rule_scope_by_nature.py`
 
-- [ ] **Step 1: Escreva o teste**
+- [x] **Step 1: Escreva o teste**
 
 ```python
 # tests/test_rule_scope_by_nature.py
@@ -186,7 +186,7 @@ class TestNoRuleUsesTheAmbiguousWildcardAnymore:
         )
 ```
 
-- [ ] **Step 2: Rode e leia a falha**
+- [x] **Step 2: Rode e leia a falha**
 
 Run: `python -m pytest tests/test_rule_scope_by_nature.py -v`
 
@@ -194,7 +194,7 @@ Esperado hoje: `TestAgnosticRulesSurviveWithoutGlue` **passa** (o curinga permis
 
 Cole a saída no relatório. A assimetria é o diagnóstico: o curinga faz o lado errado passar e o lado certo falhar.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/test_rule_scope_by_nature.py
@@ -210,7 +210,7 @@ git commit -m "test: invariante de escopo por natureza da regra"
 **Files:**
 - Modify: `rules/catalog/pyspark.yaml`, `parquet.yaml`, `spark-plan.yaml`, `callgraph.yaml`, `spark-ui.yaml`, `env.yaml`
 
-- [ ] **Step 1: Decida o escopo de cada grupo, lendo o que a regra exige**
+- [x] **Step 1: Decida o escopo de cada grupo, lendo o que a regra exige**
 
 Não é substituição em massa. O critério é o `requires_facts`:
 
@@ -226,7 +226,7 @@ Não é substituição em massa. O critério é o `requires_facts`:
 
 **Antes de aplicar, leia cada uma das 13 regras de código e plano** e confirme que nenhuma depende de comportamento posterior a Spark 3.0. Se alguma depender, dê a ela o escopo mais estreito e **diga qual e por quê** no relatório.
 
-- [ ] **Step 2: SF-PQ — decida e justifique**
+- [x] **Step 2: SF-PQ — decida e justifique**
 
 As três leem `s3.prefix_summary` e `catalog.table_partitions`. Armazenamento não depende do motor de execução: um prefixo com small files é small files independentemente de quem escreveu.
 
@@ -236,13 +236,13 @@ Duas saídas, e você escolhe com justificativa:
 
 **Confirme o comportamento de `{}` lendo `version_scope.py`** antes de decidir. Se `{}` for equivalente ao curinga de hoje, ele carrega o mesmo problema — e aí a primeira saída é a certa.
 
-- [ ] **Step 3: SF-ENV-001 — o caso que exige cuidado**
+- [x] **Step 3: SF-ENV-001 — o caso que exige cuidado**
 
 Ela **detecta divergência de runtime**. Se ganhar `{glue: ">=3.0"}` ou qualquer escopo que exija Glue, para de funcionar num job EMR — exatamente onde divergência entre fontes é mais provável, porque há duas plataformas em jogo.
 
 Decida entre escopo vazio, `{spark: ">=3.0"}`, ou outro que você defenda. Escreva a justificativa **no comentário da regra**, não só no relatório: quem mexer nela depois precisa entender por que ela é diferente das outras.
 
-- [ ] **Step 4: Aplique e confirme que nada sumiu**
+- [x] **Step 4: Aplique e confirme que nada sumiu**
 
 ```bash
 python -m pytest tests/test_rule_scope_by_nature.py -v
@@ -254,7 +254,7 @@ Esperado: `TestNoRuleUsesTheAmbiguousWildcardAnymore` passa. `TestAgnosticRulesS
 
 `test_runtime_glue_versions.py` tem `test_every_area_of_the_catalog_survives_the_version_guard` para Glue 4.0, 5.0 e 5.1. Ele **não pode regredir**: as regras reetiquetadas precisam continuar valendo em Glue.
 
-- [ ] **Step 5: Prove nos dois runtimes**
+- [x] **Step 5: Prove nos dois runtimes**
 
 ```bash
 python - <<'EOF'
@@ -272,7 +272,7 @@ EOF
 
 Esperado: em Glue, todas as 48 avaliadas (ou só as que já eram puladas antes). Em EMR-like, as 5 SF-GLUE puladas — **mas só depois da Task 3**; aqui elas ainda passam pelo curinga. Relate os dois números.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add rules/catalog
@@ -290,7 +290,7 @@ Só agora. Com as 20 já reetiquetadas, mudar a semântica afeta apenas as regra
 **Files:**
 - Modify: `rules/catalog/athena.yaml`, `sparkforge/rules/version_scope.py`, `tests/test_rules_version_scope.py`, `tests/test_rule_scope_by_nature.py`
 
-- [ ] **Step 0: Reetiquetar as SF-ATH, antes de tudo**
+- [x] **Step 0: Reetiquetar as SF-ATH, antes de tudo**
 
 O gate real dessas 5 é `requires_facts`, não versão:
 
@@ -308,7 +308,7 @@ Dê às 5 escopo vazio `{}`, com comentário YAML explicando que o gate é `requ
 
 Generalize também `TestNoRuleUsesTheAmbiguousWildcardAnymore` em `tests/test_rule_scope_by_nature.py`: hoje ele procura a string literal `{'glue': '*'}`. Ele tem que pegar **qualquer** `runtime_scope` de valor `"*"` cuja chave não esteja declarada como dependente daquele serviço — foi a literalidade dele que deixou `{athena: "*"}` passar.
 
-- [ ] **Step 1: Escreva os testes primeiro**
+- [x] **Step 1: Escreva os testes primeiro**
 
 Acrescente a `tests/test_rules_version_scope.py`, na classe `TestInScope`:
 
@@ -333,12 +333,12 @@ Acrescente a `tests/test_rules_version_scope.py`, na classe `TestInScope`:
         assert in_scope(scope, {"iceberg": "1.7.1"}) is False
 ```
 
-- [ ] **Step 2: Veja falhar**
+- [x] **Step 2: Veja falhar**
 
 Run: `python -m pytest tests/test_rules_version_scope.py -v`
 Esperado: os casos de chave ausente falham — hoje devolvem `True`.
 
-- [ ] **Step 3: Mude o ramo do curinga**
+- [x] **Step 3: Mude o ramo do curinga**
 
 Em `sparkforge/rules/version_scope.py`, substitua:
 
@@ -361,7 +361,7 @@ por:
             continue
 ```
 
-- [ ] **Step 4: Veja passar, e confirme que o resto não regrediu**
+- [x] **Step 4: Veja passar, e confirme que o resto não regrediu**
 
 ```bash
 python -m pytest tests/test_rules_version_scope.py tests/test_rule_scope_by_nature.py -v
@@ -373,11 +373,11 @@ Esperado: `TestGlueInfraRulesAreSkippedWithoutGlue` **passa agora** — as 5 sã
 
 Se algum golden de fixture mudar, **leia o diff antes de regenerar**: significa que uma regra parou de disparar onde disparava, e você precisa entender qual e por quê.
 
-- [ ] **Step 5: Rode o Step 5 da Task 2 de novo**
+- [x] **Step 5: Rode o Step 5 da Task 2 de novo**
 
 O mesmo script dos dois runtimes. Agora as 5 SF-GLUE têm que aparecer como puladas em EMR-like. Cole a saída — é a prova do objetivo desta fase.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add sparkforge/rules/version_scope.py tests/test_rules_version_scope.py
@@ -409,7 +409,7 @@ As 5 declaravam `{iceberg: ">=1.0.0"}`, e `iceberg` só é resolvido por flag ex
 - Modify: `rules/catalog/pyspark.yaml`, `parquet.yaml`, `spark-plan.yaml`, `spark-ui.yaml`, `callgraph.yaml`, `env.yaml`
 - Modify: `tests/test_rule_scope_by_nature.py`
 
-- [ ] **Step 1: O critério, e ele é o da fase**
+- [x] **Step 1: O critério, e ele é o da fase**
 
 `runtime_scope` só pode ser não-vazio quando o **gatilho** da regra genuinamente varia com a versão **e** essa versão vem do runtime, não de um fact que a própria regra já lê.
 
@@ -417,17 +417,17 @@ Regra cujo gatilho é AST (`SF-PY`, `SF-CG`), plano físico (`SF-PLAN`), event l
 
 **Cuidado com o caso inverso**, e ele existe: regra cujo *gatilho* é agnóstico mas cuja *recomendação* cita algo versionado — a Task 2 registrou que `SF-PY-005`, `SF-PY-009`, `SF-PY-010` e `SF-PQ-001` mencionam AQE e o hint `REBALANCE` (Spark 3.2) no `proposed_change`. Esvaziar o guarda faz elas dispararem onde o conselho pode não se aplicar. **Isso é aceito**: o achado continua verdadeiro, e apagar um P0 real por causa de um bullet de remediação é o erro maior. Mas verifique cada uma e **diga no relatório quais têm essa propriedade**, para que a 5b decida se o `proposed_change` precisa de ramo por versão.
 
-- [ ] **Step 2: `SF-ENV-004` — o guarda está na camada errada**
+- [x] **Step 2: `SF-ENV-004` — o guarda está na camada errada**
 
 Ela declara `{glue: "<4.0"}`, mas a condição do `when` é `attrs.spark_minor < 3.2` — puramente Spark. Num cluster EMR com Spark 3.1.1 ela é apagada exatamente quando é mais necessária.
 
 Duas leituras, e você decide com justificativa: `{spark: "<3.2"}`, que ao menos é verdadeiro e casa com a condição; ou `{}`, porque o `when` já lê a versão do fact e o guarda é redundante — e `{spark: "<3.2"}` falharia fechado quando `spark` não é detectado, que é o defeito que esta task existe para fechar. Leia a regra inteira antes.
 
-- [ ] **Step 3: O teste que trava**
+- [x] **Step 3: O teste que trava**
 
 `TestNoCatalogAreaVanishesEntirely` já existe e deriva runtimes de `GLUE_MATRIX`. Acrescente o runtime **vazio** — `build_runtime_context()` sem argumento nenhum, o padrão real da CLI — ao conjunto exercitado. A exceção declarada para `SF-GLUE` continua valendo; nenhuma outra área pode sumir.
 
-- [ ] **Step 4: Verificação**
+- [x] **Step 4: Verificação**
 
 ```bash
 rtk proxy python -m pytest tests/test_rule_scope_by_nature.py -q
@@ -437,7 +437,7 @@ python -m ruff check sparkforge scripts tests
 
 Golden vai mudar em massa — só o campo `runtime_scope` do payload pode divergir. **Leia o diff antes de regenerar.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rules/catalog tests fixtures
@@ -454,7 +454,7 @@ Independente do curinga. Mesmo num runtime que **é** Glue, se o Terraform não 
 - Modify: `rules/catalog/glue-infra.yaml`, possivelmente `sparkforge/facts/terraform.py`
 - Test: `tests/test_rule_scope_by_nature.py` (acrescentar)
 
-- [ ] **Step 1: Reproduza o silêncio**
+- [x] **Step 1: Reproduza o silêncio**
 
 ```bash
 python - <<'EOF'
@@ -480,7 +480,7 @@ Confirme a assinatura real de `judge(..., return_skipped=True)` lendo `sparkforg
 
 Esperado: `SF-GLUE-002` **não aparece em nenhum dos dois**. Cole a saída.
 
-- [ ] **Step 2: Escreva o teste que trava**
+- [x] **Step 2: Escreva o teste que trava**
 
 Acrescente a `tests/test_rule_scope_by_nature.py`:
 
@@ -515,7 +515,7 @@ class TestNoRuleVanishesFromBothSides:
         )
 ```
 
-- [ ] **Step 3: Veja falhar, e conserte**
+- [x] **Step 3: Veja falhar, e conserte**
 
 Run: `python -m pytest tests/test_rule_scope_by_nature.py::TestNoRuleVanishesFromBothSides -v`
 Esperado: falha listando `SF-GLUE-002`.
@@ -526,7 +526,7 @@ O conserto é trocar o `requires_facts` dela: `tf.module_analyzed` é sentinela 
 
 Cuidado: mudar `requires_facts` de uma regra pode fazê-la parar de disparar onde disparava. `fixtures/terraform/` e `fixtures/infra_code/` têm goldens que a exercitam. Rode-os e **leia qualquer diff antes de regenerar**.
 
-- [ ] **Step 4: Verifique**
+- [x] **Step 4: Verifique**
 
 ```bash
 python -m pytest tests/test_rule_scope_by_nature.py tests/test_fixtures_golden_terraform.py tests/test_fixtures_golden_infra_code.py -v
@@ -534,7 +534,7 @@ python -m pytest -q
 python -m ruff check sparkforge scripts tests
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rules/catalog/glue-infra.yaml sparkforge/facts tests/ fixtures/
@@ -551,7 +551,7 @@ Depois da Task 3, `{spark: ">=3.0"}` é falso-fechado quando `spark` não é det
 - Modify: `skills/*/SKILL.md` (as que chamam `judge`)
 - Test: `tests/test_skill_content.py`
 
-- [ ] **Step 1: Levante quais precisam**
+- [x] **Step 1: Levante quais precisam**
 
 ```bash
 grep -ln "judge" skills/*/SKILL.md
@@ -560,7 +560,7 @@ grep -c -- "--glue\|--spark\|--emr" skills/*/SKILL.md | grep ":0$"
 
 A segunda lista é a que importa: skills que chamam `judge` e não passam runtime.
 
-- [ ] **Step 2: Escreva o teste**
+- [x] **Step 2: Escreva o teste**
 
 Acrescente a `tests/test_skill_content.py`:
 
@@ -591,18 +591,18 @@ class TestSkillsPassRuntimeToJudge:
         )
 ```
 
-- [ ] **Step 3: Veja falhar, corrija as skills, veja passar**
+- [x] **Step 3: Veja falhar, corrija as skills, veja passar**
 
 Ao corrigir, **não cole a flag mecanicamente**: leia cada skill e escreva a chamada que faz sentido para o que ela investiga. Uma skill de código pode precisar só de `--spark`; uma de infra Glue precisa de `--glue`. Se alguma skill legitimamente não precisa de runtime, **diga qual e por quê** — e então o teste precisa de uma exceção declarada, não de afrouxamento.
 
-- [ ] **Step 4: Espelhos**
+- [x] **Step 4: Espelhos**
 
 ```bash
 python scripts/sync_skills.py
 python scripts/sync_skills.py --check
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add skills tests/test_skill_content.py .claude .agents .github
@@ -616,19 +616,19 @@ git commit -m "fix(skills): judge sem runtime apagava as regras com guarda de ve
 **Files:**
 - Modify: `rules/catalog/README.md`, `docs/superpowers/STATUS.md`, o spec da fase
 
-- [ ] **Step 1: Documente a semântica do curinga**
+- [x] **Step 1: Documente a semântica do curinga**
 
 `rules/catalog/README.md` documenta o vocabulário de `runtime_scope`. Acrescente o que `"*"` significa **agora** — "qualquer versão deste componente, mas ele precisa estar presente" — e o que significava antes, para quem ler um Finding antigo entender.
 
-- [ ] **Step 2: `STATUS.md`**
+- [x] **Step 2: `STATUS.md`**
 
 Números medidos. Fase 5a concluída com faixa de commits. E registre o que sobra para a 5b: `emr` no `RuntimeContext`, `EMR_MATRIX`, extrator de cluster, área `SF-EMR`, coordenador, e a divergência de plataforma da §3.3 do spec.
 
-- [ ] **Step 3: Spec**
+- [x] **Step 3: Spec**
 
 Trocar `**Status:** aprovado para planejamento` por implementado-parcial, deixando claro que a 5a fechou §3.1, §3.2 e os critérios 10, 11 e 13, e que EMR é a 5b.
 
-- [ ] **Step 4: Varredura**
+- [x] **Step 4: Varredura**
 
 Confira, com comando, cada critério que esta fase se propôs a fechar: **10** (`SF-GLUE-002` nunca em silêncio), **11** (curinga exige presença, sem regressão), **13** (skills passam runtime). Os demais são da 5b.
 
@@ -640,7 +640,7 @@ python scripts/gen_requirements.py --check
 python scripts/check_evals.py
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rules/catalog/README.md docs/superpowers
