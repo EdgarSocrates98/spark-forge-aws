@@ -726,3 +726,180 @@ def test_another_configuration_key_never_becomes_a_python_reading(tmp_path):
     }
 
     assert _core.build_runtime_context(facts=_emr_facts(tmp_path, dump)).python == ""
+
+
+# --------------------------------------------------------------------------- #
+# 11. `athena`: o eixo que tinha flag, tinha dado, e nao tinha ligacao
+# --------------------------------------------------------------------------- #
+#
+# `athena.workgroup` carrega `measures.engine_version` -- numero, observado, com
+# artefato e sha256 -- desde que o extrator existe, e `_runtime_reading` nao o
+# lia: `RuntimeContext.athena` so era preenchivel pela flag `--athena`. E a
+# divida de `PYSPARK_PYTHON` virada do avesso, e foi ela que obrigou a Fase 5a a
+# ESVAZIAR o `runtime_scope` das cinco regras `SF-ATH` -- um guarda que falha
+# fechado em todo runtime nao guarda nada.
+
+
+def _athena_facts(tmp_path, workgroups, name: str = "artifacts/workgroups.json"):
+    from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path
+
+    path = _write(tmp_path, name, json.dumps({"workgroups": workgroups}))
+    return extract_athena_workgroup_path(path, repo_root=tmp_path)
+
+
+def _workgroup(name: str, effective: str, **extra):
+    return {
+        "name": name,
+        "engine_version": {
+            "effective_engine_version": effective,
+            "selected_engine_version": "AUTO",
+        },
+        "state": "ENABLED",
+        **extra,
+    }
+
+
+def test_the_workgroup_dump_fills_athena_without_any_flag(tmp_path):
+    """O numero ja estava no fact. So faltava alguem ler."""
+    facts = _athena_facts(tmp_path, [_workgroup("primary", "Athena engine version 3")])
+
+    context = _core.build_runtime_context(facts=facts)
+
+    assert context.athena == "3"
+    assert "get_work_group" in context.detected_from
+
+
+def test_athena_is_an_integer_generation_never_a_dotted_version(tmp_path):
+    """A AWS publica "Athena engine version 2" e "version 3", e nada entre elas.
+    `"3.0"` afirmaria um segmento que a API nao diz -- e nao compraria
+    comparacao nenhuma, porque `_compare` ja preenche com zeros."""
+    from sparkforge.rules.version_scope import in_scope
+
+    context = _core.build_runtime_context(
+        facts=_athena_facts(tmp_path, [_workgroup("primary", "Athena engine version 3")])
+    )
+
+    assert context.athena == "3"
+    assert in_scope({"athena": ">=3"}, context.to_dict()) is True
+    assert in_scope({"athena": "==3"}, context.to_dict()) is True
+    assert in_scope({"athena": "<3"}, context.to_dict()) is False
+
+
+def test_two_workgroups_on_the_same_engine_are_one_observation(tmp_path):
+    """Varios workgroups nao sao varias fontes. Dois na mesma geracao respondem
+    a pergunta uma vez, e nao ha divergencia a reportar."""
+    context = _core.build_runtime_context(
+        facts=_athena_facts(
+            tmp_path,
+            [
+                _workgroup("primary", "Athena engine version 3"),
+                _workgroup("analytics", "Athena engine version 3"),
+            ],
+        )
+    )
+
+    assert context.athena == "3"
+    assert not [d for d in context.divergences if "athena" in d]
+
+
+def test_workgroups_on_different_engines_are_not_a_divergence_and_not_a_pick(tmp_path):
+    """O caso que decide o desenho. Uma conta com `legacy-etl` na 2 e `primary`
+    na 3 esta CORRETA -- e configuracao normal, nao uma contradicao sobre "qual
+    e o runtime". Chamar isso de divergencia geraria SF-ENV-001 em P0 sobre nada,
+    e falso P0 treina o operador a ignorar o canal. Escolher um dos dois seria
+    resolucao arbitraria com cara de fato. Sobra a unica saida honesta: nao ha
+    "a" engine version desta conta, o campo fica vazio, e a regra com `athena` em
+    `runtime_scope` e pulada por ausencia."""
+    from sparkforge.rules.version_scope import in_scope
+
+    facts = _athena_facts(
+        tmp_path,
+        [
+            _workgroup("legacy-etl", "Athena engine version 2"),
+            _workgroup("primary", "Athena engine version 3"),
+        ],
+    )
+
+    context = _core.build_runtime_context(facts=facts)
+
+    assert context.athena == ""
+    assert not [d for d in context.divergences if "athena" in d]
+    assert in_scope({"athena": ">=3"}, context.to_dict()) is False
+
+
+def test_the_per_workgroup_number_survives_the_silence(tmp_path):
+    """A prova de que nada e escondido pelo silencio acima: o numero de CADA
+    workgroup continua no seu proprio fact, e `SF-ATH-004` avalia workgroup a
+    workgroup -- que e a granularidade onde a pergunta tem resposta. O eixo de
+    runtime e uma pergunta sobre a conta inteira; a regra e sobre um workgroup."""
+    facts = _athena_facts(
+        tmp_path,
+        [
+            _workgroup("legacy-etl", "Athena engine version 2"),
+            _workgroup("primary", "Athena engine version 3"),
+        ],
+    )
+
+    lidos = {
+        f.subject["symbol"]: f.measures["engine_version"]
+        for f in facts
+        if f.kind == "athena.workgroup"
+    }
+
+    assert lidos == {"legacy-etl": 2, "primary": 3}
+
+
+def test_an_unreadable_workgroup_voids_the_reading_instead_of_being_ignored(tmp_path):
+    """`athena.unresolved` e o extrator dizendo "vi um workgroup e nao consegui
+    ler a engine dele". Com um ilegivel, "todos dizem 3" deixa de ser
+    demonstravel -- entao a leitura nao sai. O ponto cego nao e ignorado pela
+    afirmacao: ele e o que a impede."""
+    facts = _athena_facts(
+        tmp_path,
+        [
+            _workgroup("primary", "Athena engine version 3"),
+            _workgroup("preview", "Athena engine version PREVIEW"),
+        ],
+    )
+
+    assert any(
+        f.attrs.get("reason") == "unparseable_engine_version"
+        for f in facts
+        if f.kind == "athena.unresolved"
+    )
+    assert _core.build_runtime_context(facts=facts).athena == ""
+
+
+def test_the_blind_spot_stays_counted_where_the_report_reads_it(tmp_path):
+    """Silenciar a deteccao nao pode silenciar o ponto cego. Ele continua com
+    fact proprio e contado em `athena.analyzed`, que e onde o relatorio le."""
+    facts = _athena_facts(tmp_path, [_workgroup("preview", "Athena engine version PREVIEW")])
+
+    analyzed = next(f for f in facts if f.kind == "athena.analyzed")
+
+    assert analyzed.measures["unresolved_count"] == 1
+    assert _core.build_runtime_context(facts=facts).athena == ""
+
+
+def test_the_dump_beats_the_flag_and_the_disagreement_is_reported(tmp_path):
+    """`get_work_group` esta ACIMA de `cli` em `_PRECEDENCE`: o dump e a AWS
+    reportando a engine EFETIVA, com artefato; a flag e uma declaracao. Discordar
+    vira divergencia registrada -- SF-ENV-001 em P0 --, nunca resolucao
+    silenciosa. Aqui a multiplicidade e de FONTES, e ai divergencia e o veredito
+    certo."""
+    context = _core.build_runtime_context(
+        athena="2",
+        facts=_athena_facts(tmp_path, [_workgroup("primary", "Athena engine version 3")]),
+    )
+
+    assert context.athena == "3"
+    assert any("athena" in d for d in context.divergences), context.divergences
+
+
+def test_a_dump_with_no_workgroups_reads_nothing(tmp_path):
+    """Dump valido e vazio nao e leitura. Sem workgroup nenhum, nao ha engine
+    version a afirmar -- e `athena.analyzed` sozinho nunca vira versao."""
+    context = _core.build_runtime_context(facts=_athena_facts(tmp_path, []))
+
+    assert context.athena == ""
+    assert "get_work_group" not in context.detected_from

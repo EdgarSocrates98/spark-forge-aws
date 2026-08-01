@@ -261,3 +261,133 @@ class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
             } & axes
             properties = set(TOOLS[tool]["inputSchema"]["properties"]) & axes
             assert flags == properties, (" ".join(path), tool)
+
+
+class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
+    """A mesma assimetria, virada para o outro lado: eixo com FLAG e sem
+    PRODUTOR.
+
+    `TestNoRuntimeAxisIsAnUndeclaredFlagGap` cobra a entrada declarada -- flag e
+    propriedade de tool -- para cada eixo de `RuntimeContext`. Ela nao ve o
+    inverso, que e a divida que este teste fecha: `athena` tinha flag nos tres
+    verbos e nas tres tools desde sempre, `athena.workgroup` carregava
+    `measures.engine_version` com artefato e sha256, e `_runtime_reading` nao
+    lia -- o eixo so era preenchivel por alguem digitar o numero. A Fase 5a
+    esvaziou o `runtime_scope` das cinco regras `SF-ATH` exatamente por isso: um
+    guarda que falha fechado em TODO runtime nao guarda nada.
+
+    Assimetria assim nao aparece em teste de comportamento: cada teste de
+    deteccao prova o eixo que ele exercita, e o eixo que ninguem exercita passa
+    por nao existir em lugar nenhum. So um invariante derivado a pega.
+
+    COMO O PRODUTOR E DERIVADO, e por que assim. `_runtime_reading` e o unico
+    lugar do projeto onde um fact vira leitura de runtime; tudo depois dele
+    (`runtime_sources_from_facts`, `detect_runtime`) so agrega o que ele
+    devolveu. Entao a pergunta "existe produtor para o eixo X?" e a pergunta
+    "algum ramo de `_runtime_reading` nomeia uma chave crua de X?", e a resposta
+    sai do AST da propria funcao -- nunca de uma lista mantida aqui, que viraria
+    a mesma divida um nivel acima.
+
+    As duas fronteiras da leitura de AST, declaradas para que ninguem confie
+    nela mais do que ela merece:
+
+    - Mencao nao e prova de retorno. Um ramo que nomeasse `athena_version` so
+      para RECUSAR ainda contaria como produtor. E alarme de fumaca, nao
+      certificado.
+    - Chave montada em tempo de execucao e invisivel. Foi por isso que
+      `f"{component}_version"` virou dict literal no ramo de `emr.application`,
+      no mesmo commit deste teste: sem essa troca, `iceberg` so era visto pelo
+      `"iceberg"` solto da tupla de guarda -- passava por acidente, e um
+      refactor que movesse a tupla para fora da funcao quebraria o invariante
+      sem quebrar o codigo.
+
+    SEM EXCECAO DECLARADA, e isso e resultado medido, nao omissao. `glue` e
+    `emr` sao identidade de plataforma e poderiam precisar de regra propria --
+    mas os dois TEM produtor (`tf.attribute`/`glue_version` e
+    `emr.cluster`/`emr_release`), entao a regra geral vale para os seis eixos
+    sem ressalva. Declarar excecao que nao e exercida seria criar a permissao
+    antes do caso, no padrao oposto ao de `AREA_MAY_VANISH_WHEN` em
+    `tests/test_rule_scope_by_nature.py`, que existe porque `SF-GLUE` de fato
+    some.
+    """
+
+    def _axes(self):
+        from sparkforge.findings.models import RuntimeContext
+
+        return set(RuntimeContext().to_dict()) - {"detected_from", "divergences"}
+
+    def _raw_keys_by_axis(self):
+        """eixo -> chaves cruas que `detect_runtime` aceita para ele.
+
+        Derivado de `_DIRECT_KEYS`/`_PLATFORM_KEYS`, que sao o vocabulario que
+        `_collect` de fato le. Eixo sem chave crua nenhuma nao tem como ser
+        alimentado por fonte alguma, e cai como gap -- que e o veredito certo.
+        """
+        from sparkforge.facts.runtime_detect import _DIRECT_KEYS, _PLATFORM_KEYS
+
+        merged = {**_PLATFORM_KEYS, **_DIRECT_KEYS}
+        return {axis: set(merged.get(axis, ())) for axis in self._axes()}
+
+    def _named_in_the_reader(self):
+        """Todo literal de texto do CORPO de `_runtime_reading`.
+
+        Escopo na funcao, e nao no modulo, de proposito: `build_runtime` monta
+        um dict com TODAS as chaves cruas para as flags da CLI, e varrer o
+        modulo faria todo eixo parecer produzido pelo simples fato de existir
+        uma flag -- o teste provaria a si mesmo. O docstring fica de fora pelo
+        mesmo motivo: prosa citando uma chave nao alimenta ninguem.
+        """
+        import ast
+        import inspect
+        import textwrap
+
+        from sparkforge.adapters import _core
+
+        tree = ast.parse(textwrap.dedent(inspect.getsource(_core._runtime_reading)))  # noqa: SLF001
+        function = tree.body[0]
+        body = function.body
+        if ast.get_docstring(function) is not None:
+            body = body[1:]
+
+        return {
+            node.value
+            for statement in body
+            for node in ast.walk(statement)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+
+    def test_every_runtime_axis_has_a_producer(self):
+        named = self._named_in_the_reader()
+        gaps = sorted(
+            axis for axis, keys in self._raw_keys_by_axis().items() if not (keys & named)
+        )
+        assert not gaps, (
+            f"eixo de RuntimeContext sem produtor em _runtime_reading: {gaps}. "
+            f"Ha flag para declara-lo e nenhum extrator o alimenta -- o guarda "
+            f"runtime_scope desse eixo falha fechado em todo runtime."
+        )
+
+    def test_the_flag_surface_and_the_producer_surface_cover_the_same_axes(self):
+        """Os dois lados TEM que fechar no mesmo conjunto. Produtor sem flag e a
+        assimetria original (`--emr`, commit `b9c2c87`); flag sem produtor e
+        esta. Sao a mesma falha em espelho, e nenhuma sobrevive a este par."""
+        from sparkforge.adapters.tools import TOOLS
+
+        axes = self._axes()
+        named = self._named_in_the_reader()
+        produced = {axis for axis, keys in self._raw_keys_by_axis().items() if keys & named}
+        declared = set(TOOLS["sparkforge_judge"]["inputSchema"]["properties"]) & axes
+
+        assert produced == declared, sorted(produced ^ declared)
+
+    def test_the_derivation_is_not_vacuous(self):
+        """Um invariante derivado por AST falha para o lado errado quando a
+        derivacao para de achar qualquer coisa: `getsource` mudando de forma,
+        `_runtime_reading` sendo renomeada, o corpo virando uma tabela de
+        despacho. Ai `named` fica vazio, `produced` fica vazio, e o teste acima
+        vira `set() == set()` -- verde permanente sobre nada. Esta e a linha que
+        transforma esse modo de falha silencioso em falha barulhenta."""
+        named = self._named_in_the_reader()
+
+        assert "spark.runtime_version" in named, sorted(named)
+        assert "athena.workgroup" in named, sorted(named)
