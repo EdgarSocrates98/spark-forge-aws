@@ -248,6 +248,19 @@ python scripts/sync_skills.py          # regenera os espelhos
 python scripts/sync_skills.py --check   # falha se algo divergir (útil em CI)
 ```
 
+O repositório tem **três** espelhos gerados, e cada um tem seu `--check` rodando no CI.
+Editar a fonte e esquecer o espelho quebra a build — de propósito, porque drift em
+manifesto silencioso é pior que erro barulhento:
+
+| Espelho | Fonte | Comando | Por que existe |
+|---|---|---|---|
+| `.claude/`, `.agents/`, `.github/` | `skills/`, `agents/` | `python scripts/sync_skills.py --check` | Cada plataforma lê de um diretório próprio |
+| `requirements.txt` | `pyproject.toml` | `python scripts/gen_requirements.py --check` | Ferramenta de SCA não lê `pyproject.toml` sem lockfile — e scan que não roda não é scan que passa |
+| `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
+
+O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
+constrói o artefato, instala num venv limpo e reproduz as 74 fixtures byte a byte.
+
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e paridade das três cópias.
 
 ## Uso rápido

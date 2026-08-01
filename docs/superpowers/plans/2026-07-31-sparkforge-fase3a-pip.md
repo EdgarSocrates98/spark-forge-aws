@@ -1,5 +1,11 @@
 # SparkForge Fase 3a — Distribuição pip: Implementation Plan
 
+> **Status: CONCLUÍDO em 2026-07-31.** As 9 tasks abaixo estão implementadas e
+> verdes: 1792 → 1882 testes. Faixa de commits `a06d7f5` … `937799f`.
+>
+> Documento é registro histórico. Para o estado atual do repositório, leia
+> [`../STATUS.md`](../STATUS.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** fazer `pip install sparkforge-aws` entregar o ciclo determinístico inteiro — extrair, julgar, rotear, retomar — em máquina que nunca viu o repositório, provado por paridade byte a byte com os goldens em Linux e Windows.

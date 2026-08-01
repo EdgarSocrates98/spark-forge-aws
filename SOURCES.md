@@ -15,6 +15,27 @@ A base deve ser atualizada periodicamente com documentação oficial:
 
 As Skills não devem tratar esta lista como substituta da documentação do runtime real.
 
+## Vigilância automatizada do frescor
+
+"Atualizada periodicamente" deixou de ser só intenção. `scripts/refresh_knowledge.py`
+confere se alguma fonte oficial **citada por uma regra** mudou desde a última leitura,
+e o workflow `.github/workflows/refresh-knowledge.yml` roda semanalmente (e sob demanda)
+abrindo PR quando há o que reler. Ele **nunca commita em `main`**: conhecimento entra por
+revisão humana, não por scraper.
+
+A watchlist não é mantida à mão — é o conjunto de `sources[].url` do próprio catálogo,
+então regra nova com fonte nova passa a ser vigiada sozinha. O estado fica em
+[`knowledge/sources.lock.json`](knowledge/sources.lock.json): por URL, o hash do texto
+normalizado, a data da conferência e **quais `rule_id` dependem daquela fonte** — o
+relatório não diz "a doc mudou assim", diz "a doc mudou, e as regras X e Y dependem dela".
+
+Fonte com versão no path (`docs/3.5.6/`, `apache-iceberg-1.0.0`) não é buscada: o conteúdo
+é imutável e vigiá-la só produziria ruído. Hoje são 20 fontes, 16 móveis e 4 fixas.
+
+O que ele guarda é hash e procedência, nunca o texto das docs — copiar documentação de
+terceiro para o repositório é decisão de licenciamento que ninguém tomou, e o diff de uma
+página da AWS é quase todo ruído de navegação.
+
 ## Rastreabilidade por entrada
 
 `knowledge/` e `rules/catalog/` registram `url` e `retrieved` por entrada —

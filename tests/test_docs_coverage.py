@@ -132,3 +132,20 @@ class TestManifest:
         manifest = json.loads(_read("manifest.json"))
         assert set(manifest["tools"]) == set(TOOLS.keys())
         assert len(manifest["tools"]) == len(TOOLS)
+
+    def test_rule_count_equals_the_real_catalog(self):
+        """Este numero ja apodreceu tres vezes.
+
+        Foi 59 (43 diagnosticas + 16 rotas somadas, contagem da Fase 0) e 43
+        (anterior a Fase 2 desbloquear o catalogo), enquanto `load_catalog()`
+        devolvia outra coisa. Duas dessas vezes o valor errado estava no
+        `README.md`, que um agente autonomo le como verdade; a terceira estava
+        aqui no manifesto, onde nenhum teste olhava.
+
+        `load_catalog()` exclui `routing.yaml` por construcao, entao o numero
+        certo e o de regras de DIAGNOSTICO -- as rotas se contam a parte.
+        """
+        from sparkforge.rules.loader import load_catalog
+
+        manifest = json.loads(_read("manifest.json"))
+        assert manifest["knowledge_base"]["rule_count"] == len(load_catalog())
