@@ -72,3 +72,33 @@ def test_copias_identicas(skill_dir: Path) -> None:
         assert dst.read_bytes() == canonical, (
             f"{dst} divergente. Rode: python scripts/sync_skills.py"
         )
+
+
+# `runtime_scope` so sobra em 8 regras do catalogo, todas sobre Glue -- a Fase 5a
+# esvaziou os guardas de versao que nao guardavam versao nenhuma. Mas essas 8
+# continuam falhando fechado: `build_runtime_context` monta o contexto so de
+# flags de CLI, nunca dos facts coletados, entao `judge` sem `--glue` pula o eixo
+# de infraestrutura Glue inteiro. Aparece em `--show-skipped`, o que e melhor que
+# silencio, mas segue sendo cobertura perdida numa skill que investiga Glue.
+JUDGE_INVOCATION = re.compile(r"^\s*(?:\d+\.\s*)?`?sparkforge judge\b")
+RUNTIME_FLAGS = ("--glue", "--spark", "--iceberg", "--athena")
+
+
+@pytest.mark.parametrize("skill_dir", SKILL_DIRS, ids=SKILL_IDS)
+def test_toda_invocacao_de_judge_passa_runtime(skill_dir: Path) -> None:
+    text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if not JUDGE_INVOCATION.match(line):
+            continue
+        # Comando pode continuar em linhas seguintes via `\` no fim.
+        bloco, j = line, i
+        while bloco.rstrip().endswith("\\") and j + 1 < len(lines):
+            j += 1
+            bloco += lines[j]
+        assert any(flag in bloco for flag in RUNTIME_FLAGS), (
+            f"{skill_dir.name}:{i + 1} chama `sparkforge judge` sem passar runtime. "
+            f"Sem isso, as 8 regras com `runtime_scope` sobre Glue sao puladas -- "
+            f"o eixo de infraestrutura Glue nao e coberto. Acrescente `--glue <versao>` "
+            f"ou a flag que a skill investiga.\n  {line.strip()}"
+        )
