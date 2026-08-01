@@ -71,15 +71,75 @@ class TestGlueInfraRulesAreSkippedWithoutGlue:
         )
 
 
+# Quem pode usar curinga, por chave de `runtime_scope`. Uma entrada `{X: "*"}`
+# so e legitima quando a regra depende MESMO da infraestrutura X e a presenca de
+# X e detectada por algum extrator -- porque desde a Fase 5a o curinga exige a
+# chave presente, e o que nao e detectado vira regra apagada em silencio.
+#
+# Mapa e nao lista solta: a pergunta "quem pode usar curinga" tem uma resposta
+# por chave, e um curinga numa chave sem entrada aqui e um curinga que ninguem
+# decidiu. `athena` NAO esta aqui de proposito -- `RuntimeContext.athena` so e
+# preenchido pela flag `--athena` da CLI, entao `{athena: "*"}` apagaria a area
+# SF-ATH inteira em todo runtime real; aquelas 5 sao gateadas por
+# `requires_facts` e tem `runtime_scope: {}`.
+WILDCARD_ALLOWED_BY_KEY: dict[str, set[str]] = {"glue": GLUE_INFRA}
+
+
 class TestNoRuleUsesTheAmbiguousWildcardAnymore:
-    def test_glue_wildcard_is_gone_from_agnostic_rules(self):
-        """`{glue: "*"}` so pode sobrar nas regras que sao mesmo de Glue."""
-        offenders = sorted(
-            r["id"]
-            for r in _rules()
-            if str(r.get("runtime_scope")) == "{'glue': '*'}" and r["id"] not in GLUE_DEPENDENT
-        )
+    """A checagem e sobre QUALQUER chave com `"*"`, nao sobre a string literal
+    `{'glue': '*'}` que a versao anterior deste teste procurava. Foi essa
+    literalidade que deixou `{athena: "*"}` -- a mesma confusao de camada, em
+    outra chave -- passar despercebida ate a Fase 5a. Uma familia nova de
+    curinga que alguem acrescente amanha cai aqui por construcao."""
+
+    def test_no_rule_declares_a_wildcard_outside_its_declared_allowlist(self):
+        offenders: list[str] = []
+        for rule in _rules():
+            for key, spec in (rule.get("runtime_scope") or {}).items():
+                if str(spec).strip() != "*":
+                    continue
+                if rule["id"] not in WILDCARD_ALLOWED_BY_KEY.get(key, set()):
+                    offenders.append(f"{rule['id']} -> {{{key}: '*'}}")
+
         assert not offenders, (
-            f"regras agnosticas ainda com `{{glue: '*'}}`: {offenders}. "
-            f"O curinga diz 'qualquer versao de Glue', nao 'qualquer runtime'."
+            f"curinga de `runtime_scope` sem dependencia declarada: {sorted(offenders)}.\n"
+            f"`{{X: '*'}}` diz 'qualquer VERSAO de X', nao 'qualquer runtime': desde a "
+            f"Fase 5a ele exige que a chave X esteja PRESENTE no runtime detectado.\n"
+            f"Escolha uma das tres:\n"
+            f"  1. a regra depende mesmo de X e X e detectado -> acrescente o id ao "
+            f"conjunto de WILDCARD_ALLOWED_BY_KEY['{{X}}'] (criando a entrada se for "
+            f"chave nova) e justifique no comentario;\n"
+            f"  2. a regra so precisa de uma versao minima -> troque por um range "
+            f"de verdade, ex. `{{spark: '>=3.0'}}`;\n"
+            f"  3. o curinga era etiqueta de servico e o gate real e a natureza do "
+            f"artefato -> use `runtime_scope: {{}}` e deixe `requires_facts` gatear, "
+            f"como SF-ATH-001..005.\n"
+            f"Chave que NAO e detectada por nenhum extrator nunca pode entrar em (1): "
+            f"apaga a regra em todo runtime, que e o silencio que a Fase 5a acabou."
         )
+
+    def test_the_allowlist_itself_names_only_rules_that_exist(self):
+        """Guarda contra a allowlist virar letra morta: id renomeado ou removido
+        deixaria uma excecao aberta que ninguem mais usa, e o teste acima
+        passaria a nao cobrar nada naquela chave."""
+        known = {r["id"] for r in _rules()}
+        for key, allowed in WILDCARD_ALLOWED_BY_KEY.items():
+            missing = sorted(allowed - known)
+            assert not missing, f"WILDCARD_ALLOWED_BY_KEY['{key}'] cita ids inexistentes: {missing}"
+
+    def test_every_allowlisted_rule_actually_uses_the_wildcard(self):
+        """A outra ponta: se a regra deixou de usar curinga, a excecao tem que
+        sair da allowlist -- senao ela fica pre-aprovando um curinga futuro que
+        ninguem examinou."""
+        scopes = {r["id"]: (r.get("runtime_scope") or {}) for r in _rules()}
+        for key, allowed in WILDCARD_ALLOWED_BY_KEY.items():
+            stale = sorted(
+                rule_id
+                for rule_id in allowed
+                if str(scopes.get(rule_id, {}).get(key, "")).strip() != "*"
+            )
+            assert not stale, (
+                f"WILDCARD_ALLOWED_BY_KEY['{key}'] ainda libera curinga para {stale}, "
+                f"mas essas regras nao declaram mais `{{{key}: '*'}}`. Remova-as da "
+                f"allowlist."
+            )
