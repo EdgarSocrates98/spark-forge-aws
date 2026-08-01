@@ -244,7 +244,7 @@
       "ratio": 3.0
     },
     "runtime_scope": {},
-    "explanation": "Distingue skew de dados de skew de computação, e essa distinção muda a ação. Duração desigual com input uniforme indica computação desigual: UDF caro em certas linhas, explode com fan-out variável. Repartition não resolve esse caso. Duração desigual com input desigual é skew de dados clássico, tratável por AQE, separação de nulls ou isolamento de hot key.",
+    "explanation": "Distingue skew de dados de skew de computação, e essa distinção muda a ação. Duração desigual com input uniforme indica computação desigual: UDF caro em certas linhas, explode com fan-out variável. Repartition não resolve esse caso. Duração desigual com input desigual é skew de dados clássico, tratável pelo skew join do AQE — ligado por default a partir do Spark 3.2, e em 3.0 e 3.1 só com spark.sql.adaptive.enabled=true —, por separação de nulls ou por isolamento de hot key; estes dois últimos não dependem de versão e são o caminho quando o AQE não está disponível.",
     "proposed_change": [
       "Se input é uniforme e duração não é, investigar UDF e explode, não a distribuição da chave.",
       "Se input é desigual, seguir o caminho de skew de dados."
@@ -298,7 +298,7 @@
     "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
     "proposed_change": [
       "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
-      "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer.",
+      "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.",
       "Reduzir o número de workers se o paralelismo real não pode aumentar."
     ],
     "expected_effect": "",

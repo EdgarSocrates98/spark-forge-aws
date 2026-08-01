@@ -64,10 +64,13 @@
 # (`sparkforge/rules/version_scope.py`), e a AREA SF-PQ INTEIRA sumia: 5
 # puladas, 0 avaliadas.
 #
-# ACEITO CONSCIENTEMENTE: SF-PQ-001 sugere o hint `REBALANCE` (Spark 3.2+) num
+# RECOMENDACAO VERSIONADA (Fase 5a.2, Task 3): SF-PQ-001 sugere o hint
+# `REBALANCE` (INTRODUZIDO no Spark 3.2, nao apenas ligado por default nele) num
 # bullet de `proposed_change`. Esta no remedio, nunca no gatilho -- small files
-# continuam sendo small files. Ramificar a recomendacao por versao e decisao da
-# Fase 5b.
+# continuam sendo small files em qualquer versao, e por isso o escopo segue
+# vazio. O que mudou e o TEXTO do bullet: ele declara a versao que exige e nomeia
+# a acao que vale em 3.0 e 3.1, onde o hint nao existe e nenhuma flag o traz de
+# volta. Redacao, nao `if` -- o motor continua sem avaliar nada disso.
 
 catalog_version: 1
 schema_version: 1
@@ -96,8 +99,9 @@ rules:
     # Escopo vazio: gate por `s3.prefix_summary` (listagem de objetos),
     # nao por versao. Contagem e tamanho de arquivo em S3 nao mudam com a
     # versao do motor.
-    # RECOMENDACAO VERSIONADA, aceita: o segundo bullet de `proposed_change`
-    # sugere o hint `REBALANCE` (Spark 3.2+). Ver ESCOPO no cabecalho.
+    # RECOMENDACAO VERSIONADA: o segundo bullet de `proposed_change` sugere o
+    # hint `REBALANCE` (Spark 3.2+) e agora declara a condicao e a alternativa
+    # em 3.0/3.1. Ver RECOMENDACAO VERSIONADA no cabecalho.
     runtime_scope: {}
     explanation: >
       O custo de small files tem quatro componentes distintos: listing no driver,
@@ -109,7 +113,7 @@ rules:
       objetos e round-trips a S3, não CPU. Ver knowledge/storage/parquet-layout.md secao 3.
     proposed_change:
       - Compactar o passivo num job de manutenção separado.
-      - "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita."
+      - "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita. O hint exige Spark 3.2 ou superior com spark.sql.adaptive.enabled=true; em 3.0 e 3.1 ele não existe, e a ação equivalente é um repartition(n) dimensionado pelo volume antes da escrita."
       - Nunca usar coalesce(1) para isso.
     risks: [Compactação altera o layout físico consumido downstream; validar com os consumidores.]
     tradeoffs: [Arquivos maiores facilitam a leitura em paralelo e dificultam a escrita incremental frequente.]

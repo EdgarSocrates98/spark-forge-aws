@@ -24,10 +24,10 @@
     },
     "threshold": {},
     "runtime_scope": {},
-    "explanation": "Um hint de broadcast é permanente no código, mas o tamanho do lado \"pequeno\" não é. O driver materializa a tabela antes de distribuir, então o modo de falha quando ela cresce é OOM de driver ou broadcastTimeout, não degradação gradual. O limiar automático (autoBroadcastJoinThreshold, default 10MB) e o AQE já convertem sort-merge em broadcast quando é seguro fazê-lo, usando estatística de runtime em vez de uma decisão congelada no código.",
+    "explanation": "Um hint de broadcast é permanente no código, mas o tamanho do lado \"pequeno\" não é. O driver materializa a tabela antes de distribuir, então o modo de falha quando ela cresce é OOM de driver ou broadcastTimeout, não degradação gradual. O limiar automático (autoBroadcastJoinThreshold, default 10MB) decide sem hint em qualquer versão. Já a conversão de sort-merge em broadcast com estatística de runtime, em vez de uma decisão congelada no código, é do AQE, ligado por default só a partir do Spark 3.2; em 3.0 e 3.1 ela só acontece com spark.sql.adaptive.enabled=true, e sem isso a escolha fica inteira com o limiar estático.",
     "proposed_change": [
       "Medir o tamanho serializado real do lado pequeno, não o estimado.",
-      "Remover o hint e verificar se o AQE converte sozinho para BroadcastHashJoin.",
+      "Remover o hint e verificar se o AQE converte sozinho para BroadcastHashJoin. Em Spark 3.0 e 3.1, confirmar antes que spark.sql.adaptive.enabled esteja true; sem AQE não há conversão em runtime, e o lado pequeno precisa caber em autoBroadcastJoinThreshold para o broadcast acontecer.",
       "Se o broadcast é necessário e o lado é estável, documentar o limite de tamanho assumido e monitorá-lo."
     ],
     "expected_effect": "",

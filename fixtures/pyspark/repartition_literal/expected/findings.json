@@ -24,9 +24,9 @@
     },
     "threshold": {},
     "runtime_scope": {},
-    "explanation": "repartition(n) com n fixo adiciona um shuffle completo para atingir um número que raramente foi calculado a partir do volume. Com AQE ativo, o coalescing de partições pós-shuffle já ajusta a contagem em runtime, então o n fixo frequentemente é revertido logo depois, e o shuffle foi pago em vão.",
+    "explanation": "repartition(n) com n fixo adiciona um shuffle completo para atingir um número que raramente foi calculado a partir do volume. Com AQE ativo — default a partir do Spark 3.2, e em 3.0 e 3.1 só com spark.sql.adaptive.enabled=true — o coalescing de partições pós-shuffle já ajusta a contagem em runtime, então o n fixo frequentemente é revertido logo depois, e o shuffle foi pago em vão. Sem AQE o n fixo é de fato a contagem final, e o defeito deixa de ser trabalho desperdiçado e passa a ser um número escolhido sem base no volume — o achado se mantém, a justificativa muda.",
     "proposed_change": [
-      "Se o objetivo é equilibrar a saída, usar o hint REBALANCE, que coopera com o AQE.",
+      "Se o objetivo é equilibrar a saída, usar o hint REBALANCE, que coopera com o AQE. Exige Spark 3.2 ou superior com spark.sql.adaptive.enabled=true; em 3.0 e 3.1 o hint não existe, e a ação equivalente é calcular n a partir do volume estimado e do tamanho-alvo.",
       "Se o objetivo é atingir um tamanho de arquivo, calcular n a partir do volume estimado e do tamanho-alvo.",
       "Se o objetivo é corrigir skew, repartition por chave não resolve; ver knowledge/spark/shuffle-join-skew.md secao 3."
     ],

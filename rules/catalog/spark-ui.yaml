@@ -24,9 +24,17 @@
 # `judge`, o lugar de usá-lo continua sendo uma regra cujo GATILHO dependa da
 # versão; nenhuma destas seis é.
 #
-# ACEITO CONSCIENTEMENTE: SF-UI-006 manda "deixar o AQE coalescer" num bullet de
-# `proposed_change`, e o AQE só é default a partir do Spark 3.2. SF-UI-002 cita
-# AQE no `explanation`. Está no remédio e na exposição, nunca no gatilho.
+# RECOMENDAÇÃO VERSIONADA (Fase 5a.2, Task 3): SF-UI-006 manda "deixar o AQE
+# coalescer" num bullet de `proposed_change`, e o AQE só é default a partir do
+# Spark 3.2. SF-UI-002 cita AQE no `explanation`, e não como contexto: a frase
+# nomeia o TRATAMENTO do skew que a regra classificou, e `proposed_change`
+# aponta de volta para ela ("seguir o caminho de skew de dados"), então o
+# operador decide por ali. As duas estão no remédio, nunca no gatilho -- cores
+# ociosos e input desigual são o que são em qualquer versão, e o escopo segue
+# vazio. O que mudou é o TEXTO: declara a condição e o que fazer em 3.0 e 3.1.
+# AQE existe desde o Spark 3.0; o que mudou em 3.2 foi o default de
+# `spark.sql.adaptive.enabled`, então nos dois casos a alternativa é habilitar a
+# flag, ou dimensionar à mão o que o AQE ajustaria.
 # Ramificar a recomendação por versão é decisão da Fase 5b.
 
 catalog_version: 1
@@ -90,13 +98,20 @@ rules:
     severity_default: P2
     # Escopo vazio: gate por `spark.stage.task_input` (event log), nao por
     # versao. Ver ESCOPO (Fase 5a) no cabecalho.
+    # RECOMENDACAO VERSIONADA: `explanation` nomeia o tratamento do skew de
+    # dados, e um dos tres e o skew join do AQE (default so a partir do Spark
+    # 3.2). Agora declara a condicao; os outros dois nao dependem de versao.
+    # Ver RECOMENDACAO VERSIONADA no cabecalho.
     runtime_scope: {}
     explanation: >
       Distingue skew de dados de skew de computação, e essa distinção muda a ação.
       Duração desigual com input uniforme indica computação desigual: UDF caro em
       certas linhas, explode com fan-out variável. Repartition não resolve esse caso.
-      Duração desigual com input desigual é skew de dados clássico, tratável por AQE,
-      separação de nulls ou isolamento de hot key.
+      Duração desigual com input desigual é skew de dados clássico, tratável pelo skew
+      join do AQE — ligado por default a partir do Spark 3.2, e em 3.0 e 3.1 só com
+      spark.sql.adaptive.enabled=true —, por separação de nulls ou por isolamento de hot
+      key; estes dois últimos não dependem de versão e são o caminho quando o AQE não
+      está disponível.
     proposed_change:
       - Se input é uniforme e duração não é, investigar UDF e explode, não a distribuição da chave.
       - Se input é desigual, seguir o caminho de skew de dados.
@@ -224,10 +239,11 @@ rules:
     severity_default: P2
     # Escopo vazio: gate por `spark.stage.task_count` +
     # `spark.cluster.cores` (event log), nao por versao.
-    # RECOMENDACAO VERSIONADA, aceita: o segundo bullet de `proposed_change`
-    # manda 'deixar o AQE coalescer', que so e default a partir do Spark 3.2.
-    # Cores ociosos sao cores ociosos em qualquer versao.
-    # Ver ESCOPO (Fase 5a) no cabecalho.
+    # RECOMENDACAO VERSIONADA: o segundo bullet de `proposed_change` manda
+    # 'deixar o AQE coalescer', que so e default a partir do Spark 3.2, e agora
+    # declara a condicao e o que fazer em 3.0/3.1. Cores ociosos sao cores
+    # ociosos em qualquer versao. Ver ESCOPO (Fase 5a) e RECOMENDACAO
+    # VERSIONADA no cabecalho.
     runtime_scope: {}
     explanation: >
       Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns:
@@ -237,7 +253,7 @@ rules:
       paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.
     proposed_change:
       - Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.
-      - Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer.
+      - Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.
       - Reduzir o número de workers se o paralelismo real não pode aumentar.
     risks: [Aumentar partições em job pequeno cria overhead de agendamento sem ganho.]
     tradeoffs: [Converter formato de entrada é mudança no produtor, não no consumidor.]
