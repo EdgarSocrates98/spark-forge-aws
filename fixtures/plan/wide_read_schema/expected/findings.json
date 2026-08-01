@@ -29,9 +29,7 @@
     "threshold": {
       "ratio": 3.0
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Ler 80 colunas para usar 6 desperdiça banda de I/O e, se houver join, banda de shuffle. Em Parquet o pruning de coluna é praticamente gratuito, então a ausência dele indica select ausente, SELECT star, ou uma UDF que recebe a linha inteira.",
     "proposed_change": [
       "Adicionar select das colunas usadas, o mais cedo possível na cadeia.",

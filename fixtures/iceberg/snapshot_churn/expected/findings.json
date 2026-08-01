@@ -22,9 +22,7 @@
     "threshold": {
       "count": 500
     },
-    "runtime_scope": {
-      "iceberg": ">=1.0.0"
-    },
+    "runtime_scope": {},
     "explanation": "Cada commit cria um snapshot. Um loop de append por lote cria um snapshot por lote, com manifests correspondentes. O efeito é metadata.json crescendo, planejamento de leitura mais lento, e heap do driver subindo ao longo de runs longos. Correlaciona com SF-PY-004 quando a causa é loop de escrita. Ver knowledge/storage/iceberg-performance.md secao 7.",
     "proposed_change": [
       "Reduzir o número de commits, agrupando lotes ou escrevendo numa única action.",

@@ -33,8 +33,13 @@ No caminho incremental, o filtro pela chave/janela de controle deveria aparecer 
 ### 4. Julgue cada caminho separadamente
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_incremental.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts_incremental.json --show-skipped
+sparkforge judge --facts .sparkforge/facts_full.json --show-skipped
 ```
+
+Sem flag de versão: estes facts vêm de `analyze pyspark`, que lê AST e não observa runtime, e as regras `SF-PY-*` que julgam forma de código são estruturais, sem `runtime_scope`. O campo `runtime` da saída volta vazio com `detected_from: []` — leia-o mesmo assim, porque é ele que diz se o julgamento teve ou não contexto de versão. O que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, fora do escopo desta comparação.
+
+Declare `--glue 5.1` só quando souber a versão de fonte confiável. Melhor que declarar, quando o repositório tem o `.tf`: rode `sparkforge analyze terraform` e junte os facts na mesma chamada (`--facts` é repetível) — aí `runtime` passa a vir preenchido com `detected_from: ["terraform"]`, e a matriz de compatibilidade preenche `iceberg` junto, que é o que decide quais modos de escrita e operações de `MERGE` estão disponíveis para o desenho que você vai propor.
 
 Um `pyspark.window` sem `partitionBy` no cálculo de current-state, ou um `pyspark.loop` escrevendo por lote, dentro do caminho "incremental" são sinais de que ele herdou os mesmos problemas do full — combine com `optimize-latest-per-key`/`analyze-batch-loop` quando aparecerem.
 

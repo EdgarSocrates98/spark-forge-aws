@@ -23,9 +23,7 @@
       "loop_depth": 1
     },
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Cada iteração reexecuta o DAG a montante desde o início, salvo materialização explícita. Um loop de 50 lotes sobre um DataFrame caro paga 50 vezes a leitura, os joins e os shuffles, e o filtro de lote descarta a maior parte do resultado a cada volta. O batching reduziu o tamanho da escrita, não o trabalho. É também a causa mais comum de OOM que aparece depois de horas, por acúmulo no driver. Ver knowledge/spark/execution-model.md secao 6.",
     "proposed_change": [
       "Escrever tudo numa única action, usando partitionBy pela coluna de lote quando o objetivo é separar a saída.",

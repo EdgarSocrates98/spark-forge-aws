@@ -24,7 +24,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
         where: {attrs.contains_action: true}
   status: structural               # structural | confirmed
   severity_default: P1             # P0..P4
-  runtime_scope: {glue: "*"}
+  runtime_scope: {}                # vazio: gatilho nao varia com versao
   explanation: >
     ...
   proposed_change: [...]
@@ -48,7 +48,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 | `status` | sim | `structural` = padrão sem métrica. `confirmed` = há measure |
 | `threshold` | se por limiar | Aparece na saída — o operador vê qual limiar foi aplicado |
 | `severity_default` ou `severity_by` | sim | `severity_by` avaliado em ordem, primeiro match ganha |
-| `runtime_scope` | sim | Fora do range: regra **skipped por versão**, com motivo no relatório |
+| `runtime_scope` | sim | Guarda de **versão**, nunca etiqueta de serviço. Fora do range: regra **skipped por versão**, com motivo no relatório. Falha **fechada**: chave ausente ou vazia no runtime reprova a regra, então só declare o que a regra realmente precisa — ver "O que `runtime_scope` é, e o que ele não é" |
 | `explanation` | sim | Por que custa. Aponta para `knowledge/` quando há profundidade |
 | `proposed_change` | sim | Ações concretas |
 | `risks`, `tradeoffs` | sim | Sem isso não é recomendação, é opinião |
@@ -165,12 +165,36 @@ Motivo: o catálogo é dado editável. Um dia alguém cola YAML de terceiro aqui
 ## Regras para escrever regra nova
 
 1. **Nenhuma regra sem fonte.** Heurística de campo é permitida, mas declarada: `sources: [{origin: field-heuristic, note: "..."}]`.
-2. **Nenhum limiar sem `runtime_scope`.** Se vale para tudo, escreva `"*"` explicitamente.
+2. **`runtime_scope` só quando a versão importa.** Se o gatilho não varia com a versão, escreva `{}` e deixe `requires_facts` gatear. Nunca use `"*"` para dizer "esta regra é sobre o serviço X" — ver a seção abaixo.
 3. **`status: structural` para análise estática.** Só use `confirmed` quando há `measures` de execução real.
 4. **Sem percentual de ganho em `explanation` ou em qualquer campo.** Ganho previsto só existe com benchmark, e vive no `Finding`, não na regra.
 5. **`requires_facts` completo.** Regra que depende de um kind não listado gera falso negativo mudo.
 6. **Fixture obrigatória.** Toda regra nova precisa de fixture em `fixtures/` com golden output — provando que dispara no caso positivo **e que não dispara** no caso limpo e no near-threshold.
 7. **`validation` real.** "Validar o resultado" não é validação. Diga o quê: contagem total, contagem por chave, agregado de controle, contagem de nulos, distinct da PK.
+
+### O que `runtime_scope` é, e o que ele não é
+
+`runtime_scope` é **guarda de versão**. Ele responde uma única pergunta: *este achado ainda é verdadeiro nesta versão?*
+
+Ele **não** é etiqueta de serviço. Para dizer "esta regra é sobre Iceberg", o mecanismo é `requires_facts: [iceberg.files_summary]` — que é estritamente mais preciso, porque prova que alguém realmente coletou metadados Iceberg, em vez de supor a partir de um número de versão.
+
+O vocabulário, e o que cada forma faz:
+
+| Forma | Significa | Casa quando |
+|---|---|---|
+| `{}` | a regra não depende de versão | sempre |
+| `{glue: "*"}` | qualquer **versão** de Glue | a chave `glue` está presente **e não vazia** |
+| `{glue: ">=4.0"}` | Glue 4.0 ou superior | a chave está presente e a versão satisfaz o range |
+
+**`"*"` exige presença.** Até a Fase 5a, o ramo do curinga em `sparkforge/rules/version_scope.py` pulava a checagem de presença, então `{glue: "*"}` casava com qualquer runtime — inclusive um sem Glue nenhum. Ele nunca filtrou nada. Um `Finding` antigo com `"runtime_scope": {"glue": "*"}` no payload foi produzido sob essa semântica antiga: a regra pode ter avaliado fora do Glue.
+
+**O guarda falha fechado.** `in_scope` reprova chave ausente ou vazia. Um guarda a mais não é conservador — é cobertura apagada. Foi assim que 20 regras de análise estática ficaram indisponíveis num `sparkforge judge` sem flags: o gatilho delas é AST, mas o escopo exigia um Spark que ninguém tinha declarado.
+
+**De onde vem o runtime.** Até a Fase 5a.2, `build_runtime_context` montava o contexto **só** de flags da CLI — a máquina de detecção existia e nunca era alimentada, então todo `runtime_scope` dependia de o operador saber e digitar a versão. Agora as fontes são derivadas dos próprios facts: `tf.attribute` com `key == "glue_version"` (literal, na raiz do `aws_glue_job`) vira a fonte `terraform`, e `spark.runtime_version` vira a fonte `event_log`; `GLUE_MATRIX` completa spark/python/iceberg a partir do Glue. As flags continuam valendo, na precedência declarada em `sparkforge/facts/runtime_detect.py`, e discordância entre fontes vira `divergences` — nunca resolução silenciosa.
+
+**O que continua falhando fechado, e deve.** Quando **nenhum** fact carrega a versão, o campo fica vazio e a regra versionada é pulada com `reason: runtime_scope`, visível em `judge --show-skipped`. Derivar é ler o que um extrator observou; adivinhar versão a partir de sintaxe de API, nome de bucket ou presença de import seria julgamento entrando na camada de fato.
+
+**O teste que trava isso** é `tests/test_rule_scope_by_nature.py`. `TestNoCatalogAreaVanishesEntirely` mede o agregado — nenhuma área do catálogo pode sumir inteira por versão não detectada — com uma exceção declarada e justificada para `SF-GLUE`, que **deve** sumir quando não há infraestrutura Glue. Área nova entra por construção, sem ninguém lembrar de cadastrá-la.
 
 ## Arquivos
 

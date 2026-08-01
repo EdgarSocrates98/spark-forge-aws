@@ -25,7 +25,8 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **1932** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **2320** passando, 5 skipped | `python -m pytest -q` |
+| Regras com `runtime_scope` não-vazio | **8 de 48**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **13** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **80** | união de `EMITTED_KINDS` |
 | Regras de diagnóstico | **48** | `load_catalog()` |
@@ -203,25 +204,163 @@ localmente. Parcial existente: o transporte HTTP já funciona localmente
 (`python -m sparkforge.adapters.mcp --transport http`) e é testado desde a
 Fase 1. Falta hospedagem. Spec próprio, ainda não escrito.
 
-### Próxima na fila, fora da §16 — cobertura de EMR
+### Fase 5a — correção de escopo — **CONCLUÍDA** em 2026-08-01
 
-`RuntimeContext` (`sparkforge/findings/models.py`) conhece `glue`, `spark`,
-`python`, `iceberg` e `athena`, e não conhece `emr` — o dataclass não tem
-campo para release label, instance fleets, EMR Serverless nem EMR on EKS.
+Branch `feat/fase5a-escopo`. Plano:
+[`plans/2026-08-01-sparkforge-fase5a-escopo.md`](plans/2026-08-01-sparkforge-fase5a-escopo.md).
+Spec: [`specs/2026-08-01-sparkforge-fase5-emr-design.md`](specs/2026-08-01-sparkforge-fase5-emr-design.md),
+§3.1, §3.2 e critérios 10, 11 e 13.
 
-Isso não paralisa o motor: medido nesta rodada, com um `RuntimeContext` sem a
-chave `glue` (só `spark`, `python`, `iceberg`), **44 das 48 regras ainda são
-avaliadas** — só as 4 que declaram `runtime_scope` com `glue` são puladas
-(`SF-ENV-002`, `SF-ENV-003`, `SF-ENV-004`, `SF-GLUE-001`). A análise de código
-e execução (`SF-PY`, `SF-UI`, `SF-ATH`, `SF-ICE`, `SF-PQ`, `SF-PLAN`, `SF-CG`)
-é agnóstica de plataforma por construção — ela julga o job, não o serviço que
-o hospeda.
+**O defeito.** `runtime_scope` é guarda de **versão**. Vinha sendo usado como
+etiqueta de **serviço** — e o ramo do curinga em
+`sparkforge/rules/version_scope.py` pulava a checagem de presença da chave,
+então `{glue: "*"}` casava com qualquer runtime. Ele nunca filtrou nada.
 
-O que falta é o eixo de infraestrutura que só existe hoje para Glue: release
-label do EMR, instance fleets vs. instance groups, EMR Serverless (worker
-config, pre-init capacity), EMR on EKS, e uma área `SF-EMR` própria no
-catálogo para as regras que dependem desses fatos. Fase própria, ainda sem
-spec.
+A execução encontrou quatro famílias do mesmo erro de camada, três delas não
+previstas pelo plano:
+
+| Família | Regras | O que era | O que virou |
+|---|---|---|---|
+| `{glue: "*"}` em regra agnóstica | 20 | AST, plano, armazenamento, execução | escopo vazio, gate por `requires_facts` |
+| `{athena: "*"}` | 5 | `athena` **nunca é detectado** — default `""`, só a flag `--athena` preenche | escopo vazio |
+| `{iceberg: ">=1.0.0"}` | 5 | gate de Glue disfarçado: `iceberg` só é resolvido por flag ou inferido de `GLUE_MATRIX` | escopo vazio |
+| `{spark: ">=3.0"}` | 28 | falhava fechado num `judge` sem flags — **6 das 9 áreas do catálogo sumiam** | escopo vazio |
+
+A quarta foi criada pela própria fase: mover 19 regras de `{glue: "*"}` para
+`{spark: ">=3.0"}` trocou um rótulo permissivo e errado por um guarda estrito e
+errado. Medido e corrigido antes de sair da branch.
+
+**O critério que ficou.** `runtime_scope` só pode ser não-vazio quando o
+**gatilho** da regra genuinamente varia com a versão **e** essa versão vem do
+runtime, não de um fact que a própria regra já lê. Restaram 8 de 48, todas
+sobre Glue: `SF-ENV-002`, `SF-ENV-003`, `SF-GLUE-001` e as 5 `SF-GLUE-002..006`.
+
+**`SF-GLUE-002` reancorada.** Seu `requires_facts` era `tf.module_analyzed`,
+sentinela de "algum `.tf` foi lido". Num repositório sem `aws_glue_job` ela
+passava a barreira, avaliava, dava falso, e sumia de findings **e** de skipped —
+mesmo num runtime que era Glue. Passou a exigir `tf.resource`, que
+`sparkforge/facts/terraform.py:678` só emite depois do filtro
+`resource_type == "aws_glue_job"`. Prova as duas coisas de uma vez: o extrator
+rodou **e** há job Glue. Nenhum golden mudou.
+
+**Números correntes.** 48 regras, 40 com escopo vazio, 8 com guarda de versão.
+Num `judge` sem flags, 40 avaliadas e só `SF-GLUE` pulada — que é o correto.
+2124 testes passando, ruff limpo, espelhos conferindo.
+
+**Invariantes novos**, em `tests/test_rule_scope_by_nature.py` e
+`tests/test_skill_content.py`:
+
+- regra agnóstica não some num runtime sem `glue`
+- regra dependente de Glue aparece como **pulada**, não avalia em silêncio
+- nenhum `runtime_scope` com valor `"*"` fora de uma allowlist por chave — foi a
+  literalidade do teste antigo, que procurava a string `{'glue': '*'}`, que
+  deixou `{athena: "*"}` passar
+- **nenhuma área do catálogo some inteira** por versão não detectada, com
+  exceção declarada e justificada para `SF-GLUE`. Runtimes derivados de
+  `GLUE_MATRIX` mais o contexto vazio da CLI, então versão nova entra sozinha
+- toda invocação de `sparkforge judge` nas skills passa runtime
+
+### Fase 5b — EMR — **NÃO INICIADA**
+
+Spec escrito e revisado; plano ainda não. O eixo de infraestrutura que só existe
+hoje para Glue: `emr` no `RuntimeContext`, `EMR_MATRIX`, extrator de cluster
+(EMR on EC2 primeiro), release label, instance fleets vs. instance groups, EMR
+Serverless, EMR on EKS, área `SF-EMR` no catálogo, coordenador próprio, e a
+divergência de plataforma da §3.3 do spec.
+
+Herda uma decisão da 5a. As outras duas foram fechadas pela **Fase 5a.2**,
+na mesma branch — ver seção própria abaixo.
+
+1. **`SF-ENV-002` é o guarda não-vazio mais fraco.** Seu `when` já lê
+   `format-version == 3` de `iceberg.table_property`, então
+   `{glue: ">=5.1", iceberg: ">=1.10.0"}` é redundante do mesmo jeito que o de
+   `SF-ENV-004` era. **Deixou de ser sem efeito medível**: `env.consumer` ganhou
+   extrator (`sparkforge/facts/consumers.py`, via `sparkforge analyze consumers`),
+   e a regra dispara em P0 — `fixtures/consumers/v3_with_athena_consumer` é o
+   golden positivo, e `fixtures/pyspark/version_out_of_scope` prova o guarda
+   pulando por `runtime_scope` em Glue 5.0. `test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51`
+   fixa o escopo deliberadamente. A redundância entre o `when` e o `runtime_scope`
+   continua real; o que mudou é que agora ela é observável.
+
+### Fase 5a.2 — cobrir as dívidas da 5a — **CONCLUÍDA** em 2026-08-01
+
+Mesma branch, `feat/fase5a-escopo`. Plano:
+[`plans/2026-08-01-sparkforge-fase5a2-dividas.md`](plans/2026-08-01-sparkforge-fase5a2-dividas.md).
+
+A 5a esvaziou 40 dos 48 `runtime_scope` porque não guardavam versão nenhuma.
+Os 8 que restaram seguiam expostos ao defeito de origem: **o runtime só existia
+se o operador digitasse a versão**. A máquina de detecção era boa e completa —
+`detect_runtime` tem precedência por fonte, resolve divergência e emite
+`env.runtime_signal` — e nunca era alimentada.
+
+**O event log passou a observar a versão.** `sparkforge/facts/event_log.py`
+tinha 11 kinds e nenhum carregava versão, apesar de `event_log` ser a fonte mais
+confiável da precedência declarada. Ganhou `spark.runtime_version`, lido de
+`SparkListenerLogStart` — escolhido em vez de `SparkListenerEnvironmentUpdate`
+porque `spark.version` dentro de `Spark Properties` é eco de conf, e qualquer
+`--conf spark.version=4.0.0` apareceria ali com valor arbitrário. Versão
+conflitante entre partes de um log rolante vira `spark.unresolved`, não escolha
+silenciosa.
+
+**`judge` passou a inferir.** `build_runtime_context` deriva fontes dos facts:
+`spark.runtime_version` do event log, `tf.attribute` com `glue_version` do
+Terraform, e `GLUE_MATRIX` faz o resto. `cli` entrou em `_PRECEDENCE`
+explicitamente — logo abaixo de `event_log`, porque o log **observou** o runtime
+com artefato e provenance, enquanto a flag é declaração sem artefato; mas acima
+de `terraform` e `requirements`, que também são declaração e menos específicas.
+Vencer nunca apaga: o valor perdedor continua em `divergences` e em
+`env.runtime_signal`. `runtime detect` e `case open` também ganharam `--facts`, e
+a saída de `judge` passou a carregar o `runtime` efetivamente usado — sem isso a
+divergência seria resolvida em silêncio aos olhos de quem lê.
+
+Prova, num repositório com Terraform de job Glue, `judge` **sem flag nenhuma**:
+
+```
+ANTES   runtime.glue=''    | puladas por runtime_scope: 8/8 | findings: []
+DEPOIS  runtime.glue='5.1' | puladas por runtime_scope: 0/8 | findings: 2
+        detected_from: ["terraform"]  spark=3.5.6 python=3.11 iceberg=1.10.0
+```
+
+**Fronteira negativa, e ela é o coração.** Derivar é ler o que o extrator já
+observou. Sem fact que carregue a informação, o campo fica vazio e a regra é
+pulada com motivo — correto, e continua acontecendo. Nada de adivinhar versão a
+partir de sintaxe de API, nome de bucket ou presença de import: seria julgamento
+entrando na camada de fato, o inimigo declarado da §1 do spec da Fase 0.
+
+**Recomendação versionada.** Seis regras — as cinco medidas na 5a mais
+`SF-UI-002`, achada na varredura — tinham gatilho agnóstico e recomendação que
+cita AQE ou o hint `REBALANCE`. A condição foi para o **texto do bullet**, não
+para `runtime_scope`: o catálogo é dado editável e superfície de execução, e um
+mini-motor de template ali seria um `if` escondido. Cada bullet passou a dizer
+o que fazer na versão em que a recomendação não vale — e os textos distinguem
+os dois casos, porque AQE **existe** desde 3.0 e só o default mudou em 3.2,
+enquanto `REBALANCE` **foi introduzido** em 3.2 e nenhuma flag o traz de volta.
+
+**Skills: a versão virou opcional declarada.** O `--glue <versão>` era um
+placeholder que pedia ao agente um valor que ele não tinha de onde tirar. As 16
+skills foram reescritas por grupo, não em massa: as de Terraform ganharam os
+dois casos em que o fact **não** carrega a versão (`var.`/`local.` não-literal, e
+`glue_version` dentro de `default_arguments`); as de event log ganharam a
+correção de que o log preenche `spark`, não `glue`; as 7 de PySpark puro
+perderam a flag, que era cerimônia — nenhuma regra `SF-PY-*` declara
+`runtime_scope`; e `optimize-iceberg-table` perdeu um `--iceberg` **inerte**.
+
+**Skills negavam capacidade que o motor já tem.** Achado colateral e o mais
+grave da fase. Os commits `081a570` e `bb72f9f`, já em `main`, desbloquearam o
+catálogo e acrescentaram extratores; as skills não acompanharam e seguiam
+afirmando o contrário — `analyze-spark-plan` dizia três vezes que "não existe
+parser de plano no toolkit", `optimize-parquet-layout` que os facts de
+`SF-PQ-001..004` não têm extrator, e três skills citavam `blocked_on` de regras
+que não têm nenhum. **Zero regras têm `blocked_on` hoje.** Duas dessas
+afirmações estavam na `description`, que é o gatilho de seleção da skill: o
+agente descartava a ferramenta certa antes de abrir o arquivo.
+
+O invariante que impede a reincidência é **derivado do motor**: os verbos saem
+de `build_parser()` por introspecção do argparse, e as regras de
+`load_catalog()`. Acrescentar um verbo amanhã cobre a documentação sozinho;
+marcar uma regra com `blocked_on` libera a citação dela automaticamente.
+
+**Números.** 2320 testes passando, ruff limpo, espelhos conferindo.
 
 ### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
 
@@ -333,16 +472,24 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 
 1. **Fase 4** — coordenadores, executores e `playbook` — **CONCLUÍDA** em 2026-07-31,
    branch `feat/fase4-agentes`. Ver seção própria acima.
-2. **Fase 5** — EMR, provando a generalização de runtime
-3. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
-4. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
+2. **Fase 5a** — correção de escopo — **CONCLUÍDA** em 2026-08-01, branch
+   `feat/fase5a-escopo`. Ver seção própria acima
+3. **Fase 5a.2** — cobrir as dívidas da 5a — **CONCLUÍDA** em 2026-08-01, mesma
+   branch. Ver seção própria acima
+4. **Fase 5b** — EMR, provando a generalização de runtime. Spec escrito, plano não
+5. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
+6. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
 
 ## Dívidas abertas
 
 | Dívida | Origem | Impacto |
 |---|---|---|
 | Fases 3b, 3c, 3d e a Fase 4 do roadmap (§16, rigor) não iniciadas | §16 do spec da Fase 0 | Ver as seções acima. A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
-| Cobertura de EMR não existe | identificada ao fechar a Fase 3a | `RuntimeContext` não tem eixo de infraestrutura para EMR (release label, instance fleets, EMR Serverless, EMR on EKS); área `SF-EMR` inexistente. 44 das 48 regras já avaliam sem `glue`, mas nenhuma regra de infraestrutura EMR existe. Fase própria, sem spec ainda — ver seção acima |
+| Cobertura de EMR não existe | identificada ao fechar a Fase 3a | `RuntimeContext` não tem eixo de infraestrutura para EMR (release label, instance fleets, EMR Serverless, EMR on EKS); área `SF-EMR` inexistente. Spec escrito e revisado; plano da 5a escrito, 5b sem plano — ver seção acima |
+| ~~O curinga `"*"` de `runtime_scope` não filtra nada~~ — **fechada** na Fase 5a, commit `fcb8402` | revisão adversarial do spec da Fase 5, 2026-08-01 | `version_scope.py` pula a checagem de presença da chave, então `{glue: "*"}` casa com qualquer runtime. 20 regras agnósticas ficaram etiquetadas como de Glue, e as 5 de infra Glue avaliam em silêncio fora do Glue. Fase 5a corrige |
+| ~~`SF-GLUE-002` some de findings e de skipped ao mesmo tempo~~ — **fechada** na Fase 5a, commit `8815f53` | revisão adversarial do spec da Fase 5, 2026-08-01 | `requires_facts: tf.module_analyzed` é sentinela de "algum `.tf` foi lido", não de "há job Glue aqui": sem `aws_glue_job`, ela passa a barreira, avalia, dá falso, e desaparece dos dois lados. Fase 5a corrige |
+| ~~Runtime não é inferido dos facts coletados~~ — **fechada** na Fase 5a.2, commits `0513dc2` e `8a7d506` | Fase 5a, medido em 2026-08-01 | `build_runtime_context` monta o contexto só de flags da CLI. Todo `runtime_scope` falha fechado quando a versão não foi declarada, e nenhum extrator alimenta a detecção. A 5a contornou esvaziando os guardas que não guardavam versão nenhuma; os 8 que restaram seguem expostos. Trabalho da 5b, onde é necessário de qualquer forma para detectar EMR |
+| ~~`proposed_change` cita AQE e `REBALANCE` sem ramo por versão~~ — **fechada** na Fase 5a.2, commit `3641f46`; `SF-UI-002` entrou, somando seis | Fase 5a, medido em 2026-08-01 | `SF-PY-005`, `SF-PY-009`, `SF-PY-010`, `SF-PQ-001` e `SF-UI-006` têm gatilho agnóstico mas recomendação de Spark 3.2. Com escopo vazio disparam onde o conselho pode não se aplicar — aceito, porque apagar um P0 real por causa de um bullet de remediação é pior |
 | `sdist`/`wheel` não são reproduzíveis bit-a-bit entre duas construções da mesma árvore | Fase 3a, commit `2b6311c` | Nenhum `SOURCE_DATE_EPOCH` é fixado, e o zip carrega timestamp interno; duas chamadas de `python -m build` sobre o mesmo commit produzem artefatos com bytes diferentes. `release.yml` contorna isso copiando (`--outdir`) o artefato que o gate já provou, em vez de reconstruir — mas a build em si segue não-determinística, o que importa para quem quiser verificar um wheel publicado por hash contra uma reconstrução própria |
 | `unreachable_function_count` não detecta código morto | Fase 1 | A medida só pega componente cíclico isolado. Detectar código morto de verdade exige emitir um nó por função **definida**, com ou sem aresta — mudança no extrator. Documentado em `rules/catalog/callgraph.yaml` |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |

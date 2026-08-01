@@ -22,9 +22,7 @@
     "threshold": {
       "count": 100000
     },
-    "runtime_scope": {
-      "athena": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Com particionamento Hive, Athena resolve as partições consultando o Glue Catalog antes de escanear. Com centenas de milhares de partições, essa resolução de metadados vira o gargalo, e a query fica lenta mesmo lendo pouco dado. O sintoma é latência alta e constante, independente da seletividade do WHERE, com bytes escaneados baixos. Partition projection elimina o lookup calculando as partições a partir de um padrão declarado nas table properties.",
     "proposed_change": [
       "Avaliar partition projection, desde que o layout seja denso e previsível.",
@@ -79,9 +77,7 @@
     "threshold": {
       "count": 100000
     },
-    "runtime_scope": {
-      "athena": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Com particionamento Hive, Athena resolve as partições consultando o Glue Catalog antes de escanear. Com centenas de milhares de partições, essa resolução de metadados vira o gargalo, e a query fica lenta mesmo lendo pouco dado. O sintoma é latência alta e constante, independente da seletividade do WHERE, com bytes escaneados baixos. Partition projection elimina o lookup calculando as partições a partir de um padrão declarado nas table properties.",
     "proposed_change": [
       "Avaliar partition projection, desde que o layout seja denso e previsível.",

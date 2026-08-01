@@ -12,7 +12,13 @@ description: Use quando precisar comprovar — não estimar — o efeito de uma 
 1. **Antes da mudança:** `sparkforge collect event-log --repo . --job-run <id_antes> --bucket <bucket> --prefix <prefix> --now <ISO8601>`, depois `sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id_antes>.jsonl --out .sparkforge/baseline_facts.json`.
 2. Aplique a mudança — uma variável principal por comparação. Duas mudanças juntas tornam a causa indistinguível.
 3. **Depois da mudança:** repita coleta e extração para o novo run, gerando `.sparkforge/after_facts.json`.
-4. Confirme runtime idêntico entre os dois runs com `sparkforge runtime detect` antes de comparar — Glue/Spark/Python/Iceberg diferentes invalidam a comparação.
+4. **Confirme runtime idêntico entre os dois runs** antes de comparar — Glue/Spark/Python/Iceberg diferentes invalidam a comparação. Isto deixou de ser conferência no olho: `runtime detect` aceita `--facts` (repetível) e cada event log declara a própria versão do Spark na primeira linha, extraída como `spark.runtime_version`.
+
+   ```bash
+   sparkforge runtime detect --facts .sparkforge/baseline_facts.json --facts .sparkforge/after_facts.json
+   ```
+
+   Leia `divergences`: **vazio é a condição de aceite** desta etapa. Se os dois runs rodaram em versões diferentes, aparece uma linha nomeando o componente e o valor de cada artefato (`spark: valores divergentes entre fontes (event_log:<a>=..., event_log:<b>=...)`), e a comparação está invalidada na origem — nenhum percentual medido depois disso vale como `benchmark_ref`. `detected_from` diz de quais fontes a detecção saiu; passe `--glue 5.1` apenas se souber a versão de fonte confiável e quiser preencher o eixo que o event log não preenche — o log declara `spark`, não `glue`, porque a matriz de compatibilidade deriva do Glue para o Spark e não o inverso.
 5. **Compare stage a stage.** O extrator calcula a distribuição de cada run isoladamente; ele não diferencia dois arquivos entre si. Achar o mesmo stage dominante nos dois facts.json e comparar suas medidas é o seu trabalho.
 6. Se houver variabilidade relevante entre execuções, repita a coleta (n ≥ 3) e reporte mediana e dispersão — uma única execução vira "ganho" por ruído.
 7. Registre o achado com `expected_effect` (ex.: "42% mais rápido no stage dominante") e `benchmark_ref` apontando para os dois `job-run` ids ou os dois arquivos de facts comparados.

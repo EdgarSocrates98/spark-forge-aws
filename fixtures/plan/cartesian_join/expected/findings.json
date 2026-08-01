@@ -21,9 +21,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha de um lado contra cada linha do outro: o custo é o produto das cardinalidades, não a soma. Um join que roda em segundos com equi-condição pode não terminar sem ela. Aparecer no plano é evidência de execução, não suspeita -- por isso P0 por default: é a única regra desta área em que o custo cresce de forma não-linear com o dado, e o dado cresce.",
     "proposed_change": [
       "Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.",
@@ -82,9 +80,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Spark só escolhe `CartesianProduct` ou `BroadcastNestedLoopJoin` quando não existe condição de igualdade utilizável entre os dois lados. Os dois comparam cada linha de um lado contra cada linha do outro: o custo é o produto das cardinalidades, não a soma. Um join que roda em segundos com equi-condição pode não terminar sem ela. Aparecer no plano é evidência de execução, não suspeita -- por isso P0 por default: é a única regra desta área em que o custo cresce de forma não-linear com o dado, e o dado cresce.",
     "proposed_change": [
       "Procurar a condição de igualdade que falta; com frequência ela existe mas está escrita dentro de um `filter` posterior, onde o otimizador não consegue promovê-la a condição de join.",

@@ -43,6 +43,34 @@
 # `attrs.table_partitioned: true` com evidencia positiva; sem evidencia o valor
 # e `"unknown"` e a regra nao dispara, de proposito. Ver a docstring de
 # `sparkforge/facts/spark_plan.py`.
+#
+# ESCOPO (Fase 5a, Task 3c): as cinco declaravam `runtime_scope:
+# {spark: ">=3.0"}`, herdado da Task 2 desta fase, que as moveu de `{glue: "*"}`
+# -- rotulo permissivo e errado -- para um guarda estrito e igualmente errado.
+# Passaram para `{}`.
+#
+# O CRITERIO: `runtime_scope` so pode ser nao-vazio quando o GATILHO varia com a
+# versao E essa versao vem do runtime detectado. O gatilho destas cinco e LAYOUT
+# DE ARMAZENAMENTO -- contagem e tamanho de objeto em S3 (`s3.prefix_summary`),
+# ou o que o plano fisico diz ter lido (`plan.file_scan`). Cem mil arquivos de
+# 10KB custam o mesmo em Spark 3.0 e em 3.5; um `.csv.gz` de 20GB e uma unica
+# task nas duas, porque isso e propriedade do codec.
+#
+# O EFEITO MEDIDO do guarda: `RuntimeContext.spark` so e preenchido por event
+# log, por `GLUE_MATRIX` (via `glue_version`) ou pela flag `--spark`. Uma
+# listagem S3 ou um `explain()` em arquivo nao trazem nenhum dos tres. Com
+# `build_runtime_context()` sem flags -- o padrao de `sparkforge judge` -- o
+# contexto sai com `spark: ""`, `in_scope` falha fechada
+# (`sparkforge/rules/version_scope.py`), e a AREA SF-PQ INTEIRA sumia: 5
+# puladas, 0 avaliadas.
+#
+# RECOMENDACAO VERSIONADA (Fase 5a.2, Task 3): SF-PQ-001 sugere o hint
+# `REBALANCE` (INTRODUZIDO no Spark 3.2, nao apenas ligado por default nele) num
+# bullet de `proposed_change`. Esta no remedio, nunca no gatilho -- small files
+# continuam sendo small files em qualquer versao, e por isso o escopo segue
+# vazio. O que mudou e o TEXTO do bullet: ele declara a versao que exige e nomeia
+# a acao que vale em 3.0 e 3.1, onde o hint nao existe e nenhuma flag o traz de
+# volta. Redacao, nao `if` -- o motor continua sem avaliar nada disso.
 
 catalog_version: 1
 schema_version: 1
@@ -68,7 +96,13 @@ rules:
       - {when: "measures.file_count >= 100000", severity: P0}
       - {when: "measures.file_count >= 10000", severity: P1}
       - {when: "measures.file_count >= 1000", severity: P2}
-    runtime_scope: {glue: "*"}
+    # Escopo vazio: gate por `s3.prefix_summary` (listagem de objetos),
+    # nao por versao. Contagem e tamanho de arquivo em S3 nao mudam com a
+    # versao do motor.
+    # RECOMENDACAO VERSIONADA: o segundo bullet de `proposed_change` sugere o
+    # hint `REBALANCE` (Spark 3.2+) e agora declara a condicao e a alternativa
+    # em 3.0/3.1. Ver RECOMENDACAO VERSIONADA no cabecalho.
+    runtime_scope: {}
     explanation: >
       O custo de small files tem quatro componentes distintos: listing no driver,
       abertura de arquivo no executor, overhead de agendamento de task, e metadados no
@@ -79,7 +113,7 @@ rules:
       objetos e round-trips a S3, não CPU. Ver knowledge/storage/parquet-layout.md secao 3.
     proposed_change:
       - Compactar o passivo num job de manutenção separado.
-      - "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita."
+      - "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita. O hint exige Spark 3.2 ou superior com spark.sql.adaptive.enabled=true; em 3.0 e 3.1 ele não existe, e a ação equivalente é um repartition(n) dimensionado pelo volume antes da escrita."
       - Nunca usar coalesce(1) para isso.
     risks: [Compactação altera o layout físico consumido downstream; validar com os consumidores.]
     tradeoffs: [Arquivos maiores facilitam a leitura em paralelo e dificultam a escrita incremental frequente.]
@@ -107,7 +141,10 @@ rules:
           where: {attrs.table_partitioned: true, attrs.partition_filters_empty: true}
     status: confirmed
     severity_default: P0
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `plan.file_scan` (plano fisico), nao por
+    # versao. `PartitionFilters` vazio le igual em 3.0 e em 3.5.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Tabela particionada cuja leitura tem PartitionFilters vazio está lendo tudo. É o
       achado mais valioso e mais rápido de obter num plano físico. As causas mais comuns
@@ -145,7 +182,10 @@ rules:
     threshold: {min_bytes: 1073741824}
     status: confirmed
     severity_default: P1
-    runtime_scope: {glue: "*"}
+    # Escopo vazio: gate por `s3.prefix_summary`, nao por versao. Gzip de
+    # texto nao e splitavel em nenhuma versao -- e propriedade do codec.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Um arquivo de texto gzip é sempre uma única task, qualquer que seja o tamanho. Um
       csv.gz de 20GB é uma task de 20GB, e nenhum aumento de paralelismo ou de workers
@@ -185,7 +225,9 @@ rules:
     threshold: {ratio: 3.0}
     status: confirmed
     severity_default: P2
-    runtime_scope: {spark: ">=3.0"}
+    # Escopo vazio: gate por `plan.file_scan` (plano fisico), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Ler 80 colunas para usar 6 desperdiça banda de I/O e, se houver join, banda de
       shuffle. Em Parquet o pruning de coluna é praticamente gratuito, então a ausência
@@ -220,7 +262,10 @@ rules:
     threshold: {min_cardinality: 5, min_partition_bytes: 134217728}
     status: confirmed
     severity_default: P2
-    runtime_scope: {glue: "*"}
+    # Escopo vazio: gate por `s3.prefix_summary` + `catalog.table_partitions`
+    # (layout de armazenamento), nao por versao.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Cardinalidade muito baixa faz a partição não filtrar nada: com três valores
       distintos, o melhor filtro possível ainda lê um terço da tabela. Cardinalidade

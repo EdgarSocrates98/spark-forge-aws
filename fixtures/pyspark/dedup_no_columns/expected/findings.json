@@ -21,9 +21,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Deduplicação sobre todas as colunas exige shuffle e comparação do registro inteiro, e costuma mascarar um erro de modelagem da chave em vez de corrigi-lo. Se a duplicação vem de um join com cardinalidade errada, o distinct esconde o defeito e o custo permanece. Além disso, sem colunas explícitas, mudanças de schema alteram silenciosamente o que é considerado duplicado.",
     "proposed_change": [
       "Identificar a chave de negócio real e deduplicar por ela explicitamente.",

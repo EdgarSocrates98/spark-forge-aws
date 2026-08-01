@@ -21,9 +21,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Traz todo o resultado para o heap do driver. O risco cresce com o volume do resultado, que costuma crescer com o tempo sem que o código mude. Modo de falha é OOM de driver, e o job passa a falhar por crescimento de dado, não por alteração de código. Também serializa no driver o que era distribuído.",
     "proposed_change": [
       "Substituir por escrita distribuída (write) ou por agregação que devolva poucas linhas.",

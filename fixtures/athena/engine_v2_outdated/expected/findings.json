@@ -19,9 +19,7 @@
       "bytes_scanned_cutoff": 10995116277760
     },
     "threshold": {},
-    "runtime_scope": {
-      "athena": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Engine version 3 traz otimização dinâmica de memória, melhor execução de JOIN, dynamic filtering, melhor integração com metadados do Glue Catalog e suporte otimizado a Iceberg. Diagnosticar query lenta antes de confirmar a engine version é tuning às cegas: dynamic filtering resolve sozinho parte dos casos de join que a v2 exigia reescrever à mão.",
     "proposed_change": [
       "Confirmar a engine version do workgroup antes de qualquer reescrita de SQL.",

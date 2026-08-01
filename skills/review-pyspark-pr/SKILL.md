@@ -33,9 +33,13 @@ sparkforge analyze pyspark --path .sparkforge/base/<arquivo>.py --out .sparkforg
 ### 3. Julgue as duas versões
 
 ```bash
-sparkforge judge --facts .sparkforge/facts_head_<n>.json --glue <versão> --show-skipped
-sparkforge judge --facts .sparkforge/facts_base_<n>.json --glue <versão> --show-skipped
+sparkforge judge --facts .sparkforge/facts_head_<n>.json --show-skipped
+sparkforge judge --facts .sparkforge/facts_base_<n>.json --show-skipped
 ```
+
+As duas chamadas precisam do **mesmo** contexto de runtime, ou a comparação HEAD-contra-base compara duas coisas diferentes e você reporta como regressão do PR uma regra que só passou a ser avaliada. Omitir a flag nas duas é a forma mais segura de garantir isso: os facts vêm de `analyze pyspark`, que não observa runtime, então as duas saídas trazem o mesmo `runtime` vazio com `detected_from: []`, e nenhuma regra `SF-PY-*` guarda versão. Se você passar a versão, passe idêntica nas duas — e confira o campo `runtime` de cada saída antes de comparar, em vez de confiar que digitou igual.
+
+O que `--show-skipped` listar com `reason: runtime_scope` é infraestrutura Glue, que um diff de `.py` não alimenta. Se o PR mexe no `.tf` junto, isso deixa de ser ruído: extraia o Terraform das duas versões também e junte na mesma chamada (`--facts` é repetível), e o runtime passa a sair do próprio diff — inclusive uma mudança de `glue_version` no PR, que aparece como `runtime.divergences` se as duas leituras forem julgadas juntas.
 
 Compare os dois conjuntos de findings por `rule_id` + `subject`:
 

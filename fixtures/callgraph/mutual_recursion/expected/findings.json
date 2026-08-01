@@ -23,9 +23,7 @@
       "spark_work_count": 1
     },
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Um ciclo no grafo de chamadas é recursão -- direta ou mútua, que é a forma que passa despercebida em revisão, porque nenhuma das funções envolvidas parece recursiva sozinha. Quando esse ciclo contém read, write, action ou cadeia Spark, o número de jobs submetidos passa a depender da profundidade da recursão, que depende do dado. Spark é lazy: cada action reexecuta o lineage a partir do último ponto materializado, então a recursão não repete só a chamada, repete o recomputo. O sintoma típico não é erro -- é o job que roda em minutos com o volume de teste e não termina com o de produção. `measures.length` é o tamanho do ciclo e `attrs.functions` nomeia as funções na ordem, que é o que permite fechar o laço na leitura.",
     "proposed_change": [
       "Confirmar se a recursão tem condição de parada que dependa de dado, e qual é a profundidade máxima possível com o volume de produção.",

@@ -26,9 +26,7 @@
     "threshold": {
       "ratio": 3.0
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "O stage termina quando a última task termina. Uma task muito mais longa que a mediana significa que a maior parte do cluster está ociosa esperando por ela. Este achado sozinho não distingue skew de dados de skew de computação: cruzar com SF-UI-002 para separá-los, porque o tratamento é diferente. Ver knowledge/spark/shuffle-join-skew.md secao 3.",
     "proposed_change": [
       "Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.",
@@ -82,9 +80,7 @@
     ],
     "measured": {},
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "Executor desaparecendo sem OOM de heap no log aponta para estouro de memória do container, fora do heap: Python worker, buffers Arrow, buffers de rede, metaspace. A correção é spark.executor.memoryOverhead, não spark.executor.memory. É o OOM mais mal diagnosticado que existe, e a assinatura de que foi mal diagnosticado é \"aumentei a memória e continuou\". Ver knowledge/spark/memory-and-oom.md secao 2, classe container/overhead.",
     "proposed_change": [
       "Aumentar spark.executor.memoryOverhead, não spark.executor.memory.",
@@ -140,9 +136,7 @@
     "threshold": {
       "ratio": 1.0
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Escrever em disco mais bytes do que leu indica que o algoritmo ou o tamanho de partição são inadequados, não apenas que falta memória. A correção começa por reduzir o volume que entra no shuffle, e só termina em mais memória. Aumentar memória primeiro trata o sintoma e mantém o custo. Ver knowledge/spark/memory-and-oom.md secao 4.",
     "proposed_change": [
       "Reduzir bytes no shuffle por filtro, projeção e pré-agregação.",
@@ -196,9 +190,7 @@
     "threshold": {
       "ratio": 0.15
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir.",
     "proposed_change": [
       "Cruzar com a série temporal de heap dos executores para classificar a causa.",
@@ -251,10 +243,8 @@
     "threshold": {
       "ratio": 3.0
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
-    "explanation": "Distingue skew de dados de skew de computação, e essa distinção muda a ação. Duração desigual com input uniforme indica computação desigual: UDF caro em certas linhas, explode com fan-out variável. Repartition não resolve esse caso. Duração desigual com input desigual é skew de dados clássico, tratável por AQE, separação de nulls ou isolamento de hot key.",
+    "runtime_scope": {},
+    "explanation": "Distingue skew de dados de skew de computação, e essa distinção muda a ação. Duração desigual com input uniforme indica computação desigual: UDF caro em certas linhas, explode com fan-out variável. Repartition não resolve esse caso. Duração desigual com input desigual é skew de dados clássico, tratável pelo skew join do AQE — ligado por default a partir do Spark 3.2, e em 3.0 e 3.1 só com spark.sql.adaptive.enabled=true —, por separação de nulls ou por isolamento de hot key; estes dois últimos não dependem de versão e são o caminho quando o AQE não está disponível.",
     "proposed_change": [
       "Se input é uniforme e duração não é, investigar UDF e explode, não a distribuição da chave.",
       "Se input é desigual, seguir o caminho de skew de dados."
@@ -304,13 +294,11 @@
     "threshold": {
       "factor": 0.5
     },
-    "runtime_scope": {
-      "spark": ">=3.0"
-    },
+    "runtime_scope": {},
     "explanation": "Cores alocados e ociosos são DPU-hours pagas sem trabalho. Causas mais comuns: poucos arquivos de entrada grandes, arquivos de texto comprimidos com gzip que não são splitáveis, ou spark.sql.shuffle.partitions baixo para o volume. Um arquivo .csv.gz de 20 GB é sempre uma única task, e nenhum aumento de paralelismo ajuda. Ver knowledge/storage/parquet-layout.md secao 4.",
     "proposed_change": [
       "Verificar splitabilidade dos arquivos de entrada; converter texto gzip para Parquet.",
-      "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer.",
+      "Aumentar spark.sql.shuffle.partitions e deixar o AQE coalescer o excesso. O coalescing só age com AQE ligado, default a partir do Spark 3.2; em 3.0 e 3.1, habilitar spark.sql.adaptive.enabled antes, ou dimensionar o valor pelo volume, porque sem AQE ele é a contagem final e um número alto demais só troca cores ociosos por overhead de agendamento.",
       "Reduzir o número de workers se o paralelismo real não pode aumentar."
     ],
     "expected_effect": "",

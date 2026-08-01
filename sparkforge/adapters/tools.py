@@ -741,6 +741,7 @@ _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
         "next_cursor",
         "filters_applied",
         "by_severity",
+        "runtime",
         "items",
     ],
     "properties": {
@@ -759,6 +760,15 @@ _JUDGE_SUCCESS_SCHEMA: dict[str, Any] = {
             "description": "Contagem sobre o conjunto completo apos filtro de severidade.",
         },
         "items": {"type": "array", "items": _FINDING_ITEM},
+        "runtime": {
+            **_RUNTIME_CONTEXT,
+            "description": (
+                "O runtime efetivamente usado para filtrar por versao -- derivado dos "
+                "facts (tf.attribute glue_version, spark.runtime_version) e das flags. "
+                "Explica por que uma regra versionada avaliou ou entrou em `skipped`, e "
+                "carrega `divergences` quando flag e fact discordam."
+            ),
+        },
         "skipped": {
             "type": "array",
             "items": _JUDGE_SKIPPED_ITEM,
@@ -934,6 +944,14 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
                 "athena": {"type": "string"},
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Facts ja extraidos: o runtime do case sai do que os "
+                        "extratores observaram, nao so das flags."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
@@ -1063,10 +1081,13 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_runtime_detect": {
         "description": (
-            "Deriva glue/spark/python/iceberg/athena a partir dos parametros informados, "
-            "usando a matriz oficial de compatibilidade do Glue. Divergencia entre fontes "
-            "nao e resolvida escolhendo uma: e reportada em `divergences`, porque aplicar "
-            "limiar ou API da versao errada invalida qualquer recomendacao seguinte."
+            "Deriva glue/spark/python/iceberg/athena dos facts ja extraidos e dos "
+            "parametros informados, usando a matriz oficial de compatibilidade do Glue. "
+            "Com `facts_path`, a versao OBSERVADA pelos extratores (`tf.attribute` "
+            "glue_version, `spark.runtime_version`) alimenta a deteccao -- ninguem "
+            "precisa saber a versao de cor. Divergencia entre fontes nao e resolvida "
+            "escolhendo uma: e reportada em `divergences`, porque aplicar limiar ou API "
+            "da versao errada invalida qualquer recomendacao seguinte."
         ),
         "inputSchema": {
             "type": "object",
@@ -1076,6 +1097,14 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
                 "athena": {"type": "string"},
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Um caminho, ou varios: os facts sao unidos e deduplicados "
+                        "antes de derivar as fontes de versao."
+                    ),
+                },
             },
         },
         "outputSchema": _RUNTIME_CONTEXT,
@@ -1458,7 +1487,11 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_judge": {
         "description": (
             "Aplica o catalogo de regras versionado sobre facts ja extraidos, filtrado "
-            "pelo runtime informado. Aceita `facts` inline ou `facts_path` (arquivo gerado "
+            "pelo runtime -- que sai dos PROPRIOS facts quando eles o carregam "
+            "(`tf.attribute` glue_version, `spark.runtime_version`), e so entao das "
+            "flags: nao e preciso saber a versao de cor para as regras versionadas "
+            "avaliarem. O runtime usado volta em `runtime`, com `divergences`. "
+            "Aceita `facts` inline ou `facts_path` (arquivo gerado "
             "por sparkforge_analyze_pyspark). `facts_path` aceita tambem uma LISTA de "
             "caminhos, unidos e deduplicados antes do julgamento: regra que correlaciona "
             "extratores diferentes (SF-GLUE-004 cruza `tf.attribute` com `pyspark.write`) "
@@ -1708,6 +1741,7 @@ def _h_case_open(args: dict[str, Any]) -> dict[str, Any]:
         python=args.get("python"),
         iceberg=args.get("iceberg"),
         athena=args.get("athena"),
+        facts_path=args.get("facts_path"),
     )
 
 
@@ -1753,6 +1787,7 @@ def _h_runtime_detect(args: dict[str, Any]) -> dict[str, Any]:
         python=args.get("python"),
         iceberg=args.get("iceberg"),
         athena=args.get("athena"),
+        facts_path=args.get("facts_path"),
     )
 
 

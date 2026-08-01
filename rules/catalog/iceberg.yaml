@@ -1,7 +1,54 @@
 # Catálogo de regras — Apache Iceberg
 # Depende do leitor de metadata tables da Fase 1. Regras inertes até ele existir.
 # Atenção: procedimentos e propriedades variam muito entre Iceberg 1.0.0 (Glue 4.0),
-# 1.7.1 (5.0) e 1.10.0 (5.1). Todo runtime_scope aqui é obrigatório.
+# 1.7.1 (5.0) e 1.10.0 (5.1). Onde uma regra depender de comportamento introduzido
+# numa versão, o `runtime_scope` dela tem que dizer qual — ver SF-ENV-002
+# (`env.yaml`), que declara `{glue: ">=5.1", iceberg: ">=1.10.0"}` porque fala de
+# deletion vectors, que não existem antes disso. Nenhuma das cinco regras DESTE
+# arquivo é assim.
+#
+# ESCOPO (Fase 5a): as cinco declaravam `runtime_scope: {iceberg: ">=1.0.0"}`.
+# Passaram para `{}`. Três razões, em ordem de gravidade:
+#
+#   1. FALSO NEGATIVO MEDIDO. `RuntimeContext.iceberg` não é observado por
+#      extrator nenhum. `sparkforge/facts/runtime_detect.py` só o preenche por
+#      dois caminhos: derivando de `GLUE_MATRIX` quando alguma fonte trouxe
+#      `glue_version`, ou lendo `iceberg_version`/`iceberg` de uma fonte -- que
+#      na prática é a flag `--iceberg` da CLI. `iceberg_metadata.py` extrai
+#      metadados de tabela Iceberg e não emite versão de runtime.
+#      Consequência: fora do Glue, e sem alguém digitar a versão à mão, o campo
+#      é `""`. Depois que o curinga e as comparações passaram a exigir a chave
+#      presente (`sparkforge/rules/version_scope.py`), um runtime EMR realista
+#      -- `{'glue':'','spark':'3.5.1','python':'','iceberg':'','athena':''}`,
+#      em que só o event log observou Spark -- apagava a ÁREA SF-ICE INTEIRA.
+#      Tabelas Iceberg existem em EMR; a área sumia porque ninguém DETECTOU a
+#      versão, não porque ela não se aplicava. Um guarda derivado de Glue
+#      gateando regras que nada têm de Glue é o mesmo erro de camada que a
+#      Fase 5a desfaz no resto do catálogo. (Contraste: SF-GLUE sumir nesse
+#      runtime é o resultado CORRETO -- não há infraestrutura Glue para
+#      revisar, e agora isso aparece como pulado, com motivo.)
+#
+#   2. O GATE REAL JÁ EXISTE E É ESTRITAMENTE MAIS PRECISO. Nenhuma destas
+#      regras é sequer considerada sem facts de metadados Iceberg:
+#      SF-ICE-001 exige `iceberg.files_summary`; SF-ICE-002,
+#      `iceberg.delete_files_summary` + `iceberg.files_summary`; SF-ICE-003,
+#      `iceberg.snapshots_summary`; SF-ICE-004, `iceberg.table_property` +
+#      `iceberg.files_summary`; SF-ICE-005, `iceberg.table_property`. Esses
+#      facts só existem se alguém apontou `analyze iceberg` para um dump de
+#      metadata tables -- ou seja, se há tabela Iceberg. É a natureza do
+#      artefato analisado, e quem gateia por isso é `requires_facts`.
+#
+#   3. O GUARDA ERA QUASE VAZIO. `>=1.0.0` antecede toda versão de Glue
+#      suportada exceto a 3.0 (Iceberg 0.13.1). Seu único efeito real era
+#      calar SF-ICE em Glue 3.0 -- e mesmo lá `requires_facts` faz o trabalho
+#      melhor: um dump de 0.13.1 não tem a metadata table `delete_files`,
+#      `extract_iceberg_metadata` não emite fact para seção ausente, e
+#      SF-ICE-002 não é considerada. O guarda de versão respondia por
+#      suposição o que o fact responde por medição.
+#
+# Se um dia um extrator observar a versão de Iceberg em uso, o lugar de usá-la
+# é uma regra que dependa MESMO da versão, com o range de verdade -- não um
+# piso genérico repetido na área inteira.
 
 catalog_version: 1
 schema_version: 1
@@ -23,7 +70,10 @@ rules:
     severity_by:
       - {when: "measures.avg_file_bytes < 8388608", severity: P1}
       - {when: "measures.avg_file_bytes < 33554432", severity: P2}
-    runtime_scope: {iceberg: ">=1.0.0"}
+    # Escopo vazio: gate por `iceberg.files_summary`, nao por versao. Tamanho
+    # medio de data file e o mesmo problema em qualquer versao de Iceberg, e a
+    # medida vem do fact. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Arquivos pequenos custam listing, abertura e overhead de task. Em Iceberg o custo
       adicional é de metadados: mais data files significam manifests maiores e
@@ -60,7 +110,16 @@ rules:
     threshold: {ratio: 0.1}
     status: confirmed
     severity_default: P1
-    runtime_scope: {iceberg: ">=1.0.0"}
+    # Escopo vazio: gate por `iceberg.delete_files_summary` +
+    # `iceberg.files_summary`, nao por versao. A explicacao cita Iceberg 1.10
+    # (deletion vectors), mas como MUDANCA DE TRADE-OFF na correcao, nao como
+    # condicao de disparo: divida de delete files continua sendo divida em
+    # 1.10, e o `expr` compara contagens medidas, nao versao. Quem tem regra de
+    # verdade sobre deletion vectors e SF-ENV-002, com `{glue: ">=5.1",
+    # iceberg: ">=1.10.0"}`. Se a metadata table `delete_files` nao existe na
+    # versao em uso, nao ha fact e a regra nem e considerada.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Em merge-on-read, cada leitura reconcilia os delete files com os data files. Sem
       compactação regular, a degradação é lenta e silenciosa: a query fica mais lenta a
@@ -95,7 +154,10 @@ rules:
     threshold: {count: 500}
     status: confirmed
     severity_default: P2
-    runtime_scope: {iceberg: ">=1.0.0"}
+    # Escopo vazio: gate por `iceberg.snapshots_summary`, nao por versao. Um
+    # snapshot por commit e a semantica do formato desde a v1; nada aqui depende
+    # da versao do engine. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Cada commit cria um snapshot. Um loop de append por lote cria um snapshot por
       lote, com manifests correspondentes. O efeito é metadata.json crescendo,
@@ -173,7 +235,24 @@ rules:
           where: {attrs.key: sort-order, attrs.present: true}
     status: confirmed
     severity_default: P2
-    runtime_scope: {iceberg: ">=1.0.0"}
+    # Escopo vazio: gate por `iceberg.files_summary` + `iceberg.table_property`,
+    # nao por versao. Esta e a regra da area com mais raciocinio de versao no
+    # comentario acima, e por isso o caso foi examinado antes de esvaziar o
+    # escopo: NADA nesse raciocinio e satisfeito por `{iceberg: ">=1.0.0"}`.
+    #   - O campo 140 `sort_order_id` existe desde o formato v1, ou seja em
+    #     TODA versao do range -- inclusive 0.13.1 (Glue 3.0), que `>=1.0.0`
+    #     excluia sem motivo.
+    #   - A versao que importa e a do WRITER que gravou os data files da tabela
+    #     analisada (so Iceberg >= 1.11 grava sort order no `SparkWrite`), nao a
+    #     do runtime que roda a analise. Sao coisas diferentes, e `runtime_scope`
+    #     so sabe falar da segunda. `>=1.0.0` nem sequer aproxima a primeira.
+    #   - Quem responde por essa distincao e a evidencia:
+    #     `iceberg_metadata.py::_written_before_sort_order` so afirma `true` com
+    #     arquivo comprovadamente sob outra ordem registrada, e o `where` abaixo
+    #     exige `true` explicito. Ambiguidade nao casa, e o ponto cego sai como
+    #     `iceberg.unresolved` com reason `sort_order_id_missing`.
+    # Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Sort order afeta apenas escritas futuras e o rewrite_data_files com estratégia
       sort. Definir sort order numa tabela existente e esperar melhoria de pruning nos
@@ -216,7 +295,11 @@ rules:
           where: {attrs.key: partition-spec, attrs.non_empty: true}
     status: confirmed
     severity_default: P2
-    runtime_scope: {iceberg: ">=1.0.0"}
+    # Escopo vazio: gate por `iceberg.table_property`, nao por versao. A regra
+    # dispara sobre o valor OBSERVADO de `write.distribution-mode` no dump; se a
+    # propriedade nao existir na versao em uso, nao ha fact e a regra nem e
+    # considerada. Ver ESCOPO (Fase 5a) no cabecalho.
+    runtime_scope: {}
     explanation: >
       Com distribution-mode none não há shuffle antes da escrita, então cada task grava
       em cada partição que ela contém. O resultado é da ordem de N tasks vezes M

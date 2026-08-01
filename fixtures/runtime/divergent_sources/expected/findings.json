@@ -19,9 +19,7 @@
       "source_count": 2
     },
     "threshold": {},
-    "runtime_scope": {
-      "glue": "*"
-    },
+    "runtime_scope": {},
     "explanation": "A versão do runtime é detectável por event log (spark.version), Terraform (glue_version, --datalake-formats), e arquivos de dependência do projeto. Quando as fontes discordam, o extrator não escolhe uma: registra a divergência. Toda recomendação que dependa de versão fica sem base até isso ser resolvido, porque o limiar aplicado e a API sugerida podem não existir no runtime real. O salto de Iceberg entre Glue 4.0 (1.0.0), 5.0 (1.7.1) e 5.1 (1.10.0) é grande o suficiente para invalidar procedimentos inteiros. Ver knowledge/glue/runtime-matrix.md.",
     "proposed_change": [
       "Confirmar a versão efetiva na aba Environment do Spark UI, que é a fonte mais confiável.",
