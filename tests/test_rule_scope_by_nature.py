@@ -290,3 +290,33 @@ class TestNoCatalogAreaVanishesEntirely:
             f"AREA_MAY_VANISH_WHEN cita areas inexistentes: {unknown}. Area renomeada "
             f"deixa a excecao aberta sem cobrir nada."
         )
+
+
+class TestNoRuleVanishesFromBothSides:
+    """Regra que nao dispara TEM que aparecer em `skipped`, com motivo.
+
+    `judge --show-skipped` e o mecanismo de ausencia explicada, e ele funciona --
+    mas so ve regra que foi barrada por `runtime_scope`, `blocked_on` ou
+    `requires_facts`. Uma regra cujo `requires_facts` e satisfeito por um
+    sentinela generico passa pela barreira, avalia o `when`, da falso, e some dos
+    dois lados. Para quem le o relatorio isso e indistinguivel de "esta tudo bem".
+    """
+
+    def test_a_glue_rule_without_glue_job_terraform_is_reported(self, tmp_path):
+        from sparkforge.facts.terraform import extract_terraform_tree
+        from sparkforge.rules.engine import judge
+
+        (tmp_path / "main.tf").write_text(
+            'resource "aws_emr_cluster" "x" {\n  release_label = "emr-7.5.0"\n}\n',
+            encoding="utf-8",
+        )
+        facts = extract_terraform_tree(tmp_path, repo_root=tmp_path)
+        runtime = {"glue": "5.0", "spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"}
+        findings, skipped = judge(facts, load_catalog(), runtime, return_skipped=True)
+
+        visiveis = {f.rule_id for f in findings} | {s["rule_id"] for s in skipped}
+        sumidas = sorted(GLUE_INFRA - visiveis)
+        assert not sumidas, (
+            f"{sumidas} nao aparecem nem em findings nem em skipped. O operador nao "
+            f"fica sabendo que o eixo de infraestrutura Glue nao foi coberto."
+        )
