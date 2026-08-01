@@ -346,6 +346,16 @@ def build_parser() -> argparse.ArgumentParser:
     detect_p.add_argument("--iceberg")
     detect_p.add_argument("--athena")
 
+    # knowledge path --------------------------------------------------------
+    knowledge_p = sub.add_parser(
+        "knowledge", help="Localiza os arquivos de conhecimento versionado."
+    )
+    knowledge_sub = knowledge_p.add_subparsers(dest="knowledge_action", required=True)
+    knowledge_path_p = knowledge_sub.add_parser(
+        "path", help="Imprime a raiz de knowledge e, com --file, um arquivo dentro dela."
+    )
+    knowledge_path_p.add_argument("--file")
+
     # rules lookup --------------------------------------------------------
     rules_p = sub.add_parser("rules", help="Consulta o catalogo de regras versionado.")
     rules_sub = rules_p.add_subparsers(dest="rules_action", required=True)
@@ -803,6 +813,11 @@ def _cmd_runtime_detect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_knowledge_path(args: argparse.Namespace) -> int:
+    _print(_core.knowledge_path(file=args.file))
+    return 0
+
+
 def _cmd_rules_lookup(args: argparse.Namespace) -> int:
     payload = _core.rules_lookup(
         id=args.id, category=args.category, limit=args.limit, cursor=args.cursor
@@ -901,6 +916,7 @@ _DISPATCH = {
     ("resume", None): _cmd_resume,
     ("handoff", None): _cmd_handoff,
     ("runtime", "detect"): _cmd_runtime_detect,
+    ("knowledge", "path"): _cmd_knowledge_path,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,
     ("collect", "event-log"): _cmd_collect_event_log,
@@ -917,6 +933,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         getattr(args, "analyze_target", None)
         or getattr(args, "case_action", None)
         or getattr(args, "runtime_action", None)
+        or getattr(args, "knowledge_action", None)
         or getattr(args, "rules_action", None)
         or getattr(args, "collect_action", None)
     )

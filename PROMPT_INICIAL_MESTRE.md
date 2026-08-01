@@ -38,9 +38,10 @@ Nesta ordem, sempre:
 2. **Abra o case** (`sparkforge case open` ou `sparkforge_case_open`) com um
    timestamp ISO 8601 explícito. Investigação sem `.sparkforge/case.yaml`
    não é retomável em outra ferramenta ou sessão.
-3. **Leia `AGENT_PROTOCOL.md`.** Ele é injetado em toda skill e todo agente
-   por `scripts/sync_skills.py` e contém as regras duras que fazem o
-   resultado ser igual sob qualquer modelo.
+3. **Leia `AGENT_PROTOCOL.md`.** Skills e agentes apenas APONTAM para ele;
+   nenhum o embute, e `scripts/sync_skills.py` só espelha arquivos, não injeta
+   texto. As regras duras que fazem o resultado ser igual sob qualquer modelo
+   não chegam ao seu contexto sozinhas — abra o arquivo.
 4. **Deixe `next_step` decidir a rota.** Não escolha a próxima skill por
    julgamento próprio — a árvore de decisão vive em `rules/catalog/routing.yaml`.
 

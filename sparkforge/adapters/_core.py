@@ -13,6 +13,7 @@ divirjam -- os dois chamam exatamente as mesmas funcoes deste modulo.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,7 @@ from sparkforge.facts.terraform import (
 )
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.validate import ValidationFailed, validate_finding
+from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 
@@ -857,6 +859,128 @@ def runtime_detect(
 # rules lookup
 # --------------------------------------------------------------------------- #
 
+# Citacao de knowledge no catalogo tem sempre a forma `knowledge/<caminho>.<ext>`.
+# A revisao da Task 5 achou um falso positivo real: sem exigir um limite de
+# token antes de `knowledge/`, o trecho "https://exemplo.com/knowledge/glue/x.md"
+# tambem casava, porque o prefixo `knowledge/` aparece embutido numa URL alheia.
+# O resultado virava uma citacao fantasma com `path: None` -- indistinguivel de
+# uma citacao quebrada de verdade (o caso que `path: None` existe para sinalizar).
+# `(?:^|(?<=[\s"'(]))` exige que `knowledge/` comece a citacao (inicio da string)
+# ou venha logo apos espaco, aspas ou abre-parenteses -- nunca no meio de outro
+# caminho ou URL. E zero-width (nao entra no texto casado), entao `ref` continua
+# comecando exatamente em `knowledge/`.
+_KNOWLEDGE_REF = re.compile(r"(?:^|(?<=[\s\"'(]))knowledge/[A-Za-z0-9_\-/]+\.(?:md|sql)")
+
+# Campos-texto onde a citacao aparece hoje. `sources` fica de fora desta lista
+# porque e uma lista de objetos, nao uma string/lista de strings como os demais
+# -- precisa de tratamento proprio (ver `_source_notes_of`), nao porque nao
+# tenha citacao: `SF-PY-002` cita `knowledge/spark/memory-and-oom.md` dentro de
+# `sources[0].note`, e a Task 5 original omitia essa regra por varrer so estes
+# campos. O que continua de fora, de proposito, e `sources[].url`: link externo,
+# nunca caminho local.
+_KNOWLEDGE_FIELDS = ("explanation", "proposed_change", "validation", "risks", "tradeoffs")
+
+
+def _source_notes_of(rule: dict[str, Any]) -> list[str]:
+    """`note` de cada entrada de `sources` -- texto livre que pode citar
+    knowledge, ao contrario de `url` (link externo, nunca escaneado)."""
+    return [
+        str(source["note"])
+        for source in rule.get("sources") or []
+        if isinstance(source, dict) and source.get("note")
+    ]
+
+
+def _citations_of(rule: dict[str, Any]) -> list[str]:
+    """Citacoes `knowledge/...` da regra, unicas e ordenadas, varrendo
+    `_KNOWLEDGE_FIELDS` mais `sources[].note`."""
+    parts = [str(rule.get(field, "")) for field in _KNOWLEDGE_FIELDS]
+    parts.extend(_source_notes_of(rule))
+    blob = " ".join(parts)
+    return sorted(set(_KNOWLEDGE_REF.findall(blob)))
+
+
+def _resolve_knowledge_refs(
+    citations: list[str], root: Path | None, resolved: dict[str, str | None]
+) -> list[dict[str, Any]]:
+    """Resolve cada citacao contra `root`, reaproveitando `resolved` como cache
+    entre chamadas (ver `rules_lookup`, que compartilha o mesmo dict por todas
+    as regras da pagina): das citacoes do catalogo inteiro, so 11 arquivos sao
+    unicos, entao a maioria das resolucoes repete um arquivo ja resolvido.
+
+    O cache e um dict local passado pelo chamador, nunca um `lru_cache` de
+    modulo: `root` pode mudar entre chamadas de processo longo (servidor MCP
+    com `SPARKFORGE_KNOWLEDGE` trocada, ou uma reinstalacao no meio da sessao),
+    e um cache de processo teria que ser invalidado manualmente para nao
+    devolver `path` obsoleto. Escopar o cache a uma unica chamada de
+    `rules_lookup` (ou de `knowledge_refs_of`, que cria o seu proprio) elimina
+    esse risco de estale sem abrir mao do reaproveitamento -- o ganho medido
+    (~12ms, ~10% de `rules_lookup(limit=100)`) nao justifica a complexidade
+    extra de invalidacao que um cache mais longevo exigiria.
+    """
+    refs: list[dict[str, Any]] = []
+    for ref in citations:
+        if ref not in resolved:
+            path: str | None = None
+            if root is not None:
+                try:
+                    path = str(safe_knowledge_file(root, ref[len("knowledge/") :]))
+                except KnowledgeError:
+                    path = None
+            resolved[ref] = path
+        refs.append({"ref": ref, "path": resolved[ref]})
+    return refs
+
+
+def knowledge_refs_of(rule: dict[str, Any]) -> list[dict[str, Any]]:
+    """Citacoes de knowledge da regra, com o caminho resolvido de cada uma.
+
+    `path: None` significa citacao que nao resolve -- defeito de catalogo, e o
+    relatorio precisa mostra-lo em vez de sumir com a citacao.
+
+    `knowledge_dir()` e resolvido uma unica vez aqui fora do laco: a raiz nao
+    muda entre citacoes da mesma regra, e repetir a chamada por citacao seria
+    trabalho redundante sem nenhum ganho de corretude. `rules_lookup` vai alem
+    disso e resolve a raiz uma unica vez para a pagina inteira, via
+    `_resolve_knowledge_refs` direto -- ver a docstring dela.
+
+    Ao contrario de `knowledge_path` (que devolve `_knowledge_root_missing`,
+    um AdapterError, quando a raiz esta ausente ou invalida), aqui a raiz
+    ausente vira `path: None` em cada citacao, nao uma excecao: `rules_lookup`
+    tem que continuar respondendo o resto da regra (id, severidade, sources,
+    ...) mesmo sem `knowledge/` instalado -- so a citacao especifica fica
+    sem caminho, exatamente como uma citacao quebrada dentro de uma raiz
+    valida.
+
+    Uma imprecisao da primeira versao desta docstring: no cenario mais comum
+    de raiz ausente -- pacote instalado por pip sem `knowledge/` embarcado --
+    o `path: None` NAO vem deste `except KnowledgeError` em torno de
+    `knowledge_dir()`. `knowledge_dir()` so levanta quando `SPARKFORGE_KNOWLEDGE`
+    aponta para um caminho invalido; o fallback para o pacote (linha final de
+    `knowledge_dir()`) devolve um `Path` sem checar `is_dir()`, entao `root`
+    fica preenchido mesmo sem o diretorio existir. O `None` nesse caso vem do
+    `except KnowledgeError` dentro de `_resolve_knowledge_refs`, por
+    `safe_knowledge_file` falhar no `target.exists()`. O resultado observavel
+    e o mesmo (`path: None`), mas a causa e outra -- e por isso `rules_lookup`
+    nunca aponta o operador para `pip install --force-reinstall sparkforge-aws`
+    do jeito que `knowledge_path` aponta: essa mensagem acionavel e
+    responsabilidade de `knowledge_path`/`sparkforge knowledge path`, que o
+    AGENT_PROTOCOL ja manda consultar antes de desistir de uma citacao. Duplicar
+    o diagnostico aqui, por citacao, quebraria o contrato `{ref, path}` que os
+    testes ja travam (`test_a_citation_pointing_nowhere_is_reported_not_silently_dropped`)
+    por um ganho que o consumidor ja tem em outra tool.
+    """
+    citations = _citations_of(rule)
+    if not citations:
+        return []
+
+    try:
+        root = knowledge_dir()
+    except KnowledgeError:
+        root = None
+
+    return _resolve_knowledge_refs(citations, root, {})
+
 
 def rules_lookup(
     id: list[str] | None = None,  # noqa: A002 -- nome do parametro espelha o flag --id
@@ -877,7 +1001,23 @@ def rules_lookup(
         filtered = [r for r in filtered if r.get("category") == category]
 
     by_category = _count_by(filtered, lambda r: r.get("category", ""))
-    clean = [{k: v for k, v in r.items() if k != "_source_file"} for r in filtered]
+
+    # Raiz resolvida uma vez para a pagina inteira (nao uma vez por regra) e
+    # cache de resolucao compartilhado entre regras -- ver docstring de
+    # `_resolve_knowledge_refs`.
+    try:
+        knowledge_root = knowledge_dir()
+    except KnowledgeError:
+        knowledge_root = None
+    resolved_paths: dict[str, str | None] = {}
+
+    clean = []
+    for rule in filtered:
+        entry = {k: v for k, v in rule.items() if k != "_source_file"}
+        entry["knowledge_refs"] = _resolve_knowledge_refs(
+            _citations_of(rule), knowledge_root, resolved_paths
+        )
+        clean.append(entry)
     page, next_cursor = paginate_items(clean, limit, cursor)
 
     return {
@@ -893,6 +1033,80 @@ def rules_lookup(
         "by_category": by_category,
         "rules": page,
     }
+
+
+# --------------------------------------------------------------------------- #
+# knowledge path
+# --------------------------------------------------------------------------- #
+
+
+def _knowledge_root_missing(cause: str) -> AdapterError:
+    """Erro acionavel unico para toda causa de raiz de knowledge ausente ou
+    invalida (env var errada, ou pacote sem knowledge/ embarcado). `cause` e a
+    frase especifica (o que esta errado); as duas linhas de comando abaixo sao
+    o que fazer a respeito -- sem elas o operador so sabe que algo esta
+    errado, nao o proximo passo.
+    """
+    return AdapterError(
+        f"{cause}\n"
+        f"  Se voce tem o repositorio sparkforge-aws clonado, aponte para a "
+        f"pasta knowledge/ dele:\n"
+        f"    SPARKFORGE_KNOWLEDGE=<caminho-do-repo>/knowledge\n"
+        f"  Sem o repositorio, reinstale o pacote -- a wheel >=0.5.0 embarca "
+        f"knowledge/ dentro do site-packages:\n"
+        f"    pip install --force-reinstall sparkforge-aws",
+        exit_code=2,
+    )
+
+
+def knowledge_path(file: str | None = None) -> dict[str, Any]:
+    """Resolve a raiz de knowledge, e opcionalmente um arquivo dentro dela.
+
+    Sem `file`, devolve a raiz e a lista do que ha. Um consumidor instalado por
+    pip nao tem como adivinhar o caminho dentro do site-packages, e listar e o
+    que torna o verbo utilizavel sem tentativa e erro.
+
+    `available` nao pagina, diferente de `rules_lookup`/`analyze_*`: sao 19
+    arquivos estaticos, curados via `knowledge/INDEX.md` e embarcados no wheel
+    -- nao cresce por acao do usuario como uma lista de findings ou regras.
+    Paginar aqui seria complexidade sem consumidor. Revisite se `knowledge/`
+    crescer para dezenas de arquivos por diretorio (o teste
+    `test_available_list_stays_small_enough_to_not_need_pagination` em
+    `tests/test_adapters_knowledge.py` falha propositalmente antes disso virar
+    surpresa). Pelo mesmo motivo o `rglob` abaixo roda mesmo quando so `file`
+    foi pedido: nao vale complicar o caminho feliz para evitar percorrer 19
+    arquivos.
+    """
+    # `knowledge_dir()` espelha `catalog_dir()` e nao valida o fallback (ver a
+    # docstring dela): a checagem tem que morar no consumidor, assim como
+    # `load_catalog()` e quem valida `catalog_dir()`. Duas origens convergem
+    # aqui -- `KnowledgeError` de `knowledge_dir()` (env var aponta para path
+    # invalido) e o fallback sem validacao (pacote instalado sem knowledge/
+    # embarcado) -- e as duas passam por `_knowledge_root_missing` para sair
+    # com o mesmo comando de saida, como em `_extract_facts`: a causa sozinha
+    # deixa o operador adivinhando entre corrigir a env var, reinstalar ou
+    # clonar o repositorio, que e a forma mais barata de a ferramenta parecer
+    # quebrada.
+    try:
+        root = knowledge_dir()
+    except KnowledgeError as exc:
+        raise _knowledge_root_missing(str(exc)) from exc
+
+    if not root.is_dir():
+        raise _knowledge_root_missing(f"diretorio de knowledge nao encontrado em {root}.")
+
+    available = sorted(
+        p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()
+    )
+
+    resolved: str | None = None
+    if file:
+        try:
+            resolved = str(safe_knowledge_file(root, file))
+        except KnowledgeError as exc:
+            raise AdapterError(str(exc), exit_code=2) from exc
+
+    return {"root": str(root), "file": resolved, "available": available}
 
 
 # --------------------------------------------------------------------------- #

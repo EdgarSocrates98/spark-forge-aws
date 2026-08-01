@@ -1,16 +1,33 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
 
 [project]
 name = "sparkforge-aws"
 version = "0.5.0"
 description = "Agent skills and deterministic analyzers for AWS Glue PySpark, Parquet, Iceberg and Athena performance engineering"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Edgar Socrates Caria" }]
 requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: System :: Monitoring",
+]
 dependencies = [
     "PyYAML>=6.0",
     "jsonschema>=4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/EdgarSocrates98/spark-forge-aws"
+Repository = "https://github.com/EdgarSocrates98/spark-forge-aws"
+Issues = "https://github.com/EdgarSocrates98/spark-forge-aws/issues"
 
 [project.optional-dependencies]
 aws = ["boto3>=1.34"]
@@ -48,16 +65,48 @@ dev = [
     "uvicorn>=0.30",
     "idna>=3.15",
     "python-dotenv>=1.2.2",
+    # Sem isto, `pip install -e ".[dev]"` nao traz build, e
+    # tests/test_artifact_contents.py cai no pytest.skip em qualquer venv que
+    # so tenha o extra dev instalado -- inclusive no CI -- e os 5 testes do
+    # conteudo do wheel viram skip permanente em vez de pass.
+    "build>=1.0",
 ]
 
 [project.scripts]
 sparkforge = "sparkforge.adapters.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["sparkforge*"]
+[tool.hatch.build.targets.wheel]
+packages = ["sparkforge"]
 
-[tool.setuptools.package-data]
-sparkforge = ["findings/schemas/*.json"]
+# `rules/catalog` e `knowledge` moram na RAIZ por decisao D-A da Fase 0: sao o
+# terceiro degrau da escada de portabilidade, o YAML que um agente sem Python
+# le direto. `force-include` os copia para dentro do pacote no momento do build,
+# sem duplicar arquivo em git -- que e a unica forma de servir o pip sem corroer
+# aquela decisao.
+[tool.hatch.build.targets.wheel.force-include]
+"rules/catalog" = "sparkforge/rules/catalog"
+"knowledge" = "sparkforge/knowledge"
+
+# O sdist so precisa CARREGAR `rules/catalog` e `knowledge` na raiz -- nao
+# realocar. `include` basta: preserva os dois onde o force-include do wheel
+# espera encontra-los quando o wheel e construido A PARTIR do sdist (o fluxo
+# padrao de `python -m build`, e o que `pip install` faz ao instalar por
+# sdist). Um `force-include` aqui tambem, como havia antes, MOVE os diretorios
+# para dentro de `sparkforge/` dentro do proprio sdist -- e quando o backend
+# tenta construir o wheel a partir desse sdist, o `force-include` do target
+# `wheel` procura "knowledge" na raiz e nao acha mais, porque o sdist ja o
+# relocou. `python -m build` (sem `--wheel`) gera sdist e depois constroi o
+# wheel A PARTIR dele por padrao -- e foi esse caminho, exercitado pela
+# primeira vez pelo gate de paridade da Fase 3a, que expos o conflito.
+[tool.hatch.build.targets.sdist]
+include = [
+    "sparkforge",
+    "rules/catalog",
+    "knowledge",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -82,3 +131,4 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S603", "S607"] # subprocess com argv fixo, sem shell
+"scripts/verify_wheel.py" = ["S603"] # subprocess com argv fixo, sem shell

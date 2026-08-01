@@ -58,12 +58,65 @@ HEADER = """\
 # Regenere com: python scripts/gen_requirements.py
 """
 
-# Captura o conteudo de `dependencies = [...]` e de cada extra em
-# `[project.optional-dependencies]`, parando em `[project.scripts]`.
-_ARRAY = re.compile(
-    r"^\s*(?:dependencies|[A-Za-z][\w-]*)\s*=\s*\[(.*?)\]", re.DOTALL | re.MULTILINE
-)
-_REQ = re.compile(r'"([^"]+)"')
+# Localiza o INICIO de `dependencies = [...]` e de cada extra em
+# `[project.optional-dependencies]`, parando em `[project.scripts]`. So o
+# inicio: onde o array termina e trabalho do scanner abaixo, nao da regex.
+#
+# Por que nao regex ate o fim: um array TOML pode ter comentario de linha no
+# meio (`# pip install -e ".[dev]"`), e esse comentario pode conter `]` ou
+# `[` sem fechar nem abrir nada de verdade. Regex nao-guloso (`.*?\]`) para
+# no PRIMEIRO `]` do texto, esteja ele dentro de comentario ou nao -- e um
+# `]` de comentario truncando a captura descarta em silencio todo requisito
+# que vem depois dele, exatamente o defeito que mordeu `build>=1.0` nesta
+# sessao. Regex ganancioso (`.*\]`) erra para o outro lado: vai ate o
+# ULTIMO `]` do arquivo, atravessando arrays seguintes. Nenhum dos dois
+# entende profundidade de colchete, e comentario/string dentro do TOML nao
+# tem como ser modelado por uma classe de caracteres sem, no fim, reescrever
+# um mini-parser dentro da regex -- nesse ponto e mais claro escrever o
+# parser como codigo. `_scan_array`, abaixo, conta colchete de verdade e
+# pula comentario e string inteiros antes de olhar para `[` ou `]`.
+_ARRAY_START = re.compile(r"^\s*(?:dependencies|[A-Za-z][\w-]*)\s*=\s*\[", re.MULTILINE)
+
+
+def _scan_array(text: str, open_bracket: int) -> tuple[list[str], int]:
+    """Varre `text` a partir do `[` em `open_bracket` e devolve as strings
+    entre aspas achadas dentro do array, mais o indice logo apos o `]` que
+    fecha esse array (contando profundidade, entao aninhamento funciona).
+
+    Comentario (`#` ate o fim da linha) e pulado inteiro antes de qualquer
+    checagem de colchete ou aspas -- por isso `]`/`[`/`#` dentro de
+    comentario nao contam. String entre aspas tambem e pulada inteira antes
+    de procurar `#` -- por isso `#` dentro de string nao vira comentario.
+    """
+    n = len(text)
+    depth = 0
+    i = open_bracket
+    strings: list[str] = []
+    while i < n:
+        ch = text[i]
+        if ch == "#":
+            nl = text.find("\n", i)
+            i = n if nl == -1 else nl + 1
+            continue
+        if ch == '"' or ch == "'":
+            quote = ch
+            j = i + 1
+            while j < n and text[j] != quote:
+                if quote == '"' and text[j] == "\\":
+                    j += 1
+                j += 1
+            if depth >= 1:
+                strings.append(text[i + 1 : j])
+            i = j + 1
+            continue
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                return strings, i + 1
+        i += 1
+    raise SystemExit("array sem colchete de fechamento em pyproject.toml")
 
 
 def _section(text: str) -> str:
@@ -85,8 +138,9 @@ def requirements_from_pyproject() -> list[str]:
 
     found: list[str] = []
     seen: set[str] = set()
-    for array in _ARRAY.findall(section):
-        for requirement in _REQ.findall(array):
+    for match in _ARRAY_START.finditer(section):
+        strings, _ = _scan_array(section, match.end() - 1)
+        for requirement in strings:
             # Um requisito sempre comeca com o nome do pacote. Descarta valores
             # que casaram por acidente (build-backend, nome do projeto).
             if not re.match(r"^[A-Za-z][A-Za-z0-9_.\-]*\s*(?:[<>=!~\[]|$)", requirement):
