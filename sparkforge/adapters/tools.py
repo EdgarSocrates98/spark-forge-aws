@@ -250,9 +250,17 @@ _NEXT_STEP_SCHEMA: dict[str, Any] = {
         "collect_commands",
         "blocked_by",
         "alternatives",
+        "recommended_agent",
+        "recommended_agent_reason",
     ],
     "properties": {
-        "phase": {"type": "string"},
+        "phase": {
+            "type": ["string", "null"],
+            "description": (
+                "Fase do case; null quando `next_step` roda sobre um case ausente "
+                "(ex.: `sparkforge_playbook` sem case aberto -- ver `_PLAYBOOK_SCHEMA`)."
+            ),
+        },
         "recommended_skill": {"type": "string"},
         "reason": {"type": "string"},
         "evidence": {"type": "array", "items": {"type": "string"}},
@@ -264,6 +272,21 @@ _NEXT_STEP_SCHEMA: dict[str, Any] = {
             "description": "Gates nao satisfeitos; advisory, nao impede a rota.",
         },
         "alternatives": {"type": "array", "items": _ALTERNATIVE_ITEM},
+        "recommended_agent": {
+            "type": ["string", "null"],
+            "description": (
+                "Coordenador (agents/*.md) resolvido pelas rotas AGENT-* de "
+                "routing.yaml a partir da fase e da area de achado dominante. "
+                "`null` quando nenhuma rota de agente casa com o estado atual."
+            ),
+        },
+        "recommended_agent_reason": {
+            "type": ["string", "null"],
+            "description": (
+                "Motivo da rota AGENT-* escolhida, no mesmo formato de `reason` "
+                "(prefixo `AGENT-NNN:`). `null` junto com `recommended_agent: null`."
+            ),
+        },
         "note": {
             "type": "string",
             "description": "So presente quando a regra de routing.yaml que casou declara `note`.",
@@ -491,6 +514,7 @@ _PLAYBOOK_SCHEMA: dict[str, Any] = {
         "skills",
         "phase",
         "steps",
+        "next_step",
         "note",
     ],
     "properties": {
@@ -503,6 +527,7 @@ _PLAYBOOK_SCHEMA: dict[str, Any] = {
             "description": "Fase do case quando um case existe; null se nenhum foi aberto.",
         },
         "steps": {"type": "array", "items": _PLAYBOOK_STEP_ITEM},
+        "next_step": _NEXT_STEP_SCHEMA,
         "note": {"type": "string"},
     },
 }
@@ -1005,7 +1030,9 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Codex, Copilot). Le os arquivos de agents/ e agents/executors/ em vez de "
             "repetir a lista: uma copia divergiria do coordenador na primeira mudanca. "
             "`does_not` de cada passo vem da secao `## Não faz` do executor, nunca "
-            "reescrito aqui. Case ausente nao e erro -- os passos saem com `phase: null`."
+            "reescrito aqui. Case ausente nao e erro -- os passos saem com `phase: null`. "
+            "Traz tambem o `next_step` do case (mesmo calculo de sparkforge_next_step), "
+            "incluindo `recommended_agent` -- ver secao 4.5 da spec de Fase 4."
         ),
         "inputSchema": {
             "type": "object",
@@ -1018,6 +1045,14 @@ TOOLS: dict[str, dict[str, Any]] = {
                     ),
                 },
                 "repo": {"type": "string", "description": "Raiz do repositorio analisado."},
+                "findings": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": (
+                        "Findings atuais, usados para resolver o `next_step` embutido "
+                        "(so `rule_id` importa)."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1706,7 +1741,9 @@ def _h_resume(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _h_playbook(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.playbook(args["coordinator"], repo=args.get("repo", "."))
+    return _core.playbook(
+        args["coordinator"], repo=args.get("repo", "."), findings=args.get("findings") or []
+    )
 
 
 def _h_runtime_detect(args: dict[str, Any]) -> dict[str, Any]:

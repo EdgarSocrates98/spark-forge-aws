@@ -1226,20 +1226,31 @@ def handoff(
     return result
 
 
-def playbook(coordinator: str, repo: str = ".") -> dict[str, Any]:
+def playbook(
+    coordinator: str, repo: str = ".", findings: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
     """Decomposicao do coordenador, com o estado do case quando existir.
 
     Case ausente e caso normal, nao erro: a plataforma sem despacho de
     subagente pode consultar os passos antes mesmo de abrir um case --
     `case={}` so faz `phase` sair vazio no payload.
+
+    `findings`, quando informado, alimenta o `next_step` embutido no playbook
+    (ver `build_playbook`) do mesmo jeito que `next_step()` acima: cada item e
+    um dict de finding, e so o `rule_id` importa aqui.
     """
     try:
         case = store.load_case(repo)
     except store.CaseError:
         case = {}
+    finding_ids = [
+        f.get("rule_id") for f in (findings or []) if isinstance(f, dict) and f.get("rule_id")
+    ]
     try:
-        return build_playbook(coordinator, case)
+        return build_playbook(coordinator, case, finding_ids)
     except ValueError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    except CatalogError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
