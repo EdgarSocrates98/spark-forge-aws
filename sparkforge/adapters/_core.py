@@ -237,6 +237,7 @@ def build_runtime(
     iceberg: str | None = None,
     athena: str | None = None,
     facts: list[Fact] | None = None,
+    emr: str | None = None,
 ) -> tuple[RuntimeContext, list[Fact]]:
     """Contexto de runtime E os facts `env.runtime_signal` que o justificam.
 
@@ -244,9 +245,22 @@ def build_runtime(
     anterior -- so as flags. Quando informado, as versoes JA OBSERVADAS pelos
     extratores entram como fontes proprias, e o operador deixa de precisar
     saber de cor a versao do Glue para que as regras versionadas avaliem.
+
+    `emr` entra DEPOIS de `facts` na assinatura, e nao ao lado de `glue`, onde
+    pertenceria por semantica: os chamadores existentes passam as cinco
+    primeiras posicionalmente, e inserir um parametro no meio trocaria
+    silenciosamente o significado de cada argumento deles. Ordem de assinatura e
+    compatibilidade, nao taxonomia.
     """
     raw = {
         "glue_version": glue,
+        # `emr_release` e a primeira chave de `_PLATFORM_KEYS["emr"]`, e
+        # `_emr_key` aceita `emr-7.5.0` e `7.5.0` indiferentemente -- a flag nao
+        # obriga o operador a saber qual das duas grafias o projeto guarda.
+        # A flag e uma DECLARACAO, e por isso a fonte e `cli`, abaixo de
+        # `event_log` e de `describe_cluster` em `_PRECEDENCE`: discordar de um
+        # dump vira divergencia registrada, nunca resolucao silenciosa.
+        "emr_release": emr,
         "spark_version": spark,
         "python_version": python,
         "iceberg_version": iceberg,
@@ -266,8 +280,11 @@ def build_runtime_context(
     iceberg: str | None = None,
     athena: str | None = None,
     facts: list[Fact] | None = None,
+    emr: str | None = None,
 ) -> RuntimeContext:
-    context, _facts = build_runtime(glue, spark, python, iceberg, athena, facts)
+    context, _facts = build_runtime(
+        glue, spark, python, iceberg, athena, facts=facts, emr=emr
+    )
     return context
 
 
@@ -960,6 +977,7 @@ def judge_findings(
     python: str | None = None,
     iceberg: str | None = None,
     athena: str | None = None,
+    emr: str | None = None,
     severity: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
@@ -996,7 +1014,9 @@ def judge_findings(
     # -- e `run_judge` que chama `in_scope`. Os facts que serao julgados sao os
     # mesmos que alimentam a deteccao: uma regra guardada por `glue: "*"` passa
     # a avaliar quando o Terraform ja disse qual e a versao, sem flag nenhuma.
-    context = build_runtime_context(glue, spark, python, iceberg, athena, facts=fact_list)
+    context = build_runtime_context(
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+    )
     runtime = context.to_dict()
 
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
@@ -1058,9 +1078,16 @@ def runtime_detect(
     iceberg: str | None = None,
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
+    emr: str | None = None,
 ) -> dict[str, Any]:
     return build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=_facts_for_runtime(facts_path)
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=_facts_for_runtime(facts_path),
+        emr=emr,
     ).to_dict()
 
 
@@ -1346,12 +1373,19 @@ def case_open(
     iceberg: str | None = None,
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
+    emr: str | None = None,
 ) -> dict[str, Any]:
     # O case guarda o runtime da investigacao inteira. Aceitar facts aqui e o
     # que evita abrir um case com runtime vazio quando o repositorio ja diz a
     # versao -- toda skill que ler o case depois herda a deteccao.
     context = build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=_facts_for_runtime(facts_path)
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=_facts_for_runtime(facts_path),
+        emr=emr,
     )
     case = store.new_case(case_id, now, context.to_dict(), repo=repo)
     store.save_case(case, root=repo)

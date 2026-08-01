@@ -541,3 +541,76 @@ def test_hadoop_is_read_from_the_dump_but_has_nowhere_to_go(tmp_path):
     facts = _emr_facts(tmp_path)
     assert "Hadoop" in {f.attrs.get("name") for f in facts if f.kind == "emr.application"}
     assert "hadoop" not in _core.build_runtime_context(facts=facts).to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# 9. A flag `--emr`: declaracao, e o que acontece quando ela discorda do dump
+# --------------------------------------------------------------------------- #
+
+
+def test_the_emr_flag_fills_the_platform_without_any_dump():
+    """A razao de a flag existir. Havia `--glue`, `--spark`, `--python`,
+    `--iceberg` e `--athena`, e a release do EMR so entrava pelo fact
+    `emr.cluster` -- quem SABE a release e nao tem dump nao conseguia
+    declara-la, o que e assimetria com as outras cinco plataformas."""
+    context = _core.build_runtime_context(emr="emr-7.5.0")
+
+    assert context.emr == "7.5.0"
+    assert context.detected_from == ["cli"]
+    # A matriz deriva a partir da flag como derivaria a partir do dump: a flag
+    # e outra FONTE, nao um caminho paralelo.
+    assert context.spark == "3.5.2-amzn-1"
+
+
+@pytest.mark.parametrize("digitado", ["emr-7.5.0", "7.5.0"])
+def test_both_spellings_of_the_release_reach_the_same_row(digitado):
+    """`_emr_key` ja normaliza as duas grafias, e a flag nao pode obrigar o
+    operador a saber qual delas o projeto guarda. `RuntimeContext.emr` fica com
+    a NUMERICA nos dois casos, por decisao do commit a38242c: `in_scope` roda
+    `_parse` sobre este valor, e `_parse("emr-7.5.0")` le `emr` como 0."""
+    context = _core.build_runtime_context(emr=digitado)
+
+    assert context.emr == "7.5.0"
+    assert context.divergences == []
+
+
+def test_the_flag_disagreeing_with_the_dump_is_a_divergence_never_a_resolution(tmp_path):
+    """O ponto inteiro da precedencia. `cli` esta ABAIXO de `describe_cluster`
+    em `_PRECEDENCE`: o dump observou o cluster, a flag e declaracao sem
+    artefato. Entao o valor REPORTADO e o do dump -- mas a discordancia nao
+    desaparece, porque versao errada invalida toda recomendacao versionada que
+    vier depois, e o operador precisa ver que as duas fontes nao batem."""
+    context = _core.build_runtime_context(emr="emr-6.15.0", facts=_emr_facts(tmp_path))
+
+    assert context.emr == "7.5.0"  # o dump vence
+    assert any("emr" in d for d in context.divergences), context.divergences
+    # E a divergencia imprime o valor CRU de cada fonte, nao a forma
+    # normalizada: quem le precisa saber exatamente o que cada uma disse.
+    assert "cli=emr-6.15.0" in " ".join(context.divergences)
+    assert "describe_cluster=emr-7.5.0" in " ".join(context.divergences)
+
+
+def test_the_flag_agreeing_in_the_other_spelling_is_not_a_divergence(tmp_path):
+    """O falso positivo que a normalizacao de identidade existe para evitar. O
+    dump carrega `emr-7.5.0` e alguem digita `7.5.0`: e a MESMA release, e
+    contar as duas strings como identidades distintas transformaria uma flag
+    que concorda num P0 -- ruido que treina o operador a ignorar o canal de
+    divergencia, que e o oposto do que ele existe para fazer."""
+    context = _core.build_runtime_context(emr="7.5.0", facts=_emr_facts(tmp_path))
+
+    assert context.emr == "7.5.0"
+    assert context.divergences == []
+
+
+def test_the_flag_does_not_shadow_a_directly_observed_version(tmp_path):
+    """Precedencia, do outro lado: a flag esta ACIMA de `terraform` e de
+    `requirements` (declaracao mais especifica e mais recente), e ABAIXO do que
+    foi observado com artefato. Aqui ela declara a release e o dump reporta o
+    Spark instalado; a leitura direta continua vencendo a derivacao por matriz
+    que a flag alimentou."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark", "Version": "3.5.2-amzn-9"}]
+
+    context = _core.build_runtime_context(emr="7.5.0", facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == "3.5.2-amzn-9"

@@ -409,6 +409,28 @@ def _distinct_values(observations: list[_Observation]) -> list[str]:
     return sorted({value for value, _ in observations})
 
 
+# Como comparar DUAS GRAFIAS da mesma identidade antes de chamar a diferenca de
+# divergencia. So `emr` precisa: `emr-7.5.0` (o que o dump e o Terraform
+# carregam) e `7.5.0` (o que alguem digita em `--emr`) sao a MESMA release, e
+# contar as duas strings como identidades distintas transformaria uma flag que
+# CONCORDA com o dump num SF-ENV-005 em P0 -- ruido que treina o operador a
+# ignorar o canal de divergencia, que e o oposto do que ele existe para fazer.
+# `glue` nao entra porque nao tem segunda grafia; `platform` compara nomes de
+# plataforma, que ja sao vocabulario fechado.
+#
+# A normalizacao vale so para CONTAR. `_divergence_text` continua imprimindo o
+# valor cru de cada fonte: quando ha divergencia de verdade, o operador precisa
+# ver exatamente o que cada fonte disse, nao a forma normalizada.
+_IDENTITY_NORMALIZE: dict[str, Any] = {"emr": _emr_key}
+
+
+def _distinct_identities(component: str, observations: list[_Observation]) -> list[str]:
+    normalize = _IDENTITY_NORMALIZE.get(component)
+    if normalize is None:
+        return _distinct_values(observations)
+    return sorted({normalize(value) for value, _ in observations})
+
+
 def _divergent_count(
     component: str,
     observations: list[_Observation],
@@ -574,7 +596,7 @@ def _build_context(
         _divergence_text(name, all_components[name])
         for name in sorted(all_components)
         if (
-            len(_distinct_values(all_components[name])) > 1
+            len(_distinct_identities(name, all_components[name])) > 1
             if name in identity
             else _divergent_count(name, all_components[name], derived) > 1
         )

@@ -71,6 +71,17 @@ def _load_json_list(path: str) -> list[dict[str, Any]]:
     return data
 
 
+# Uma unica redacao para os tres verbos que aceitam a flag. Repetir o texto tres
+# vezes e como uma delas fica desatualizada.
+_EMR_FLAG_HELP = (
+    "Release do EMR on EC2. Aceita as duas grafias -- `emr-7.5.0` e `7.5.0`. "
+    "E DECLARACAO, nao observacao: perde para o event log e para um dump de "
+    "`describe-cluster`, e discordar de um deles vira divergencia reportada, "
+    "nunca valor substituido em silencio. Serve a quem sabe a release e nao tem "
+    "o dump -- com o dump, `--facts` ja resolve sozinho."
+)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sparkforge",
@@ -285,6 +296,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     judge_p.add_argument("--glue")
+    judge_p.add_argument("--emr", help=_EMR_FLAG_HELP)
     judge_p.add_argument("--spark")
     judge_p.add_argument("--python")
     judge_p.add_argument("--iceberg")
@@ -306,6 +318,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--now", required=True, help="Timestamp ISO 8601. Nunca lido do relogio pela CLI."
     )
     open_p.add_argument("--glue")
+    open_p.add_argument("--emr", help=_EMR_FLAG_HELP)
     open_p.add_argument("--spark")
     open_p.add_argument("--python")
     open_p.add_argument("--iceberg")
@@ -373,13 +386,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     # runtime detect ----------------------------------------------------
     runtime_p = sub.add_parser(
-        "runtime", help="Deteccao de runtime Glue/Spark/Python/Iceberg/Athena."
+        "runtime", help="Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena."
     )
     runtime_sub = runtime_p.add_subparsers(dest="runtime_action", required=True)
     detect_p = runtime_sub.add_parser(
         "detect", help="Deriva a matriz de runtime a partir de facts ja extraidos e de flags."
     )
     detect_p.add_argument("--glue")
+    detect_p.add_argument("--emr", help=_EMR_FLAG_HELP)
     detect_p.add_argument("--spark")
     detect_p.add_argument("--python")
     detect_p.add_argument("--iceberg")
@@ -787,6 +801,7 @@ def _cmd_judge(args: argparse.Namespace) -> int:
     full = _core.judge_findings(
         facts_path=args.facts,
         glue=args.glue,
+        emr=args.emr,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -825,6 +840,7 @@ def _cmd_case_open(args: argparse.Namespace) -> int:
         args.case_id,
         args.now,
         glue=args.glue,
+        emr=args.emr,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -895,6 +911,7 @@ def _cmd_playbook(args: argparse.Namespace) -> int:
 def _cmd_runtime_detect(args: argparse.Namespace) -> int:
     payload = _core.runtime_detect(
         glue=args.glue,
+        emr=args.emr,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
