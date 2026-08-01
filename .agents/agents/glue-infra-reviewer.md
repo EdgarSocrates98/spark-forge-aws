@@ -47,4 +47,5 @@ não "não tem". Acusar ali produz P1 falso num job que está correto.
 Você coordena; não executa. Despache os executores na ordem do loop de fase e decida,
 entre um e outro, se o achado justifica seguir ou se falta coleta.
 
-Em plataforma sem despacho de subagente: `sparkforge playbook glue-infra-reviewer`.
+Em plataforma sem despacho de subagente: `sparkforge playbook glue-infra-reviewer` (CLI) ou
+a tool MCP `sparkforge_playbook`.

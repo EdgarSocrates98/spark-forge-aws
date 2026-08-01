@@ -462,6 +462,51 @@ _RESUME_SCHEMA: dict[str, Any] = {
     },
 }
 
+_PLAYBOOK_STEP_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["order", "executor", "function", "does", "does_not"],
+    "properties": {
+        "order": {"type": "integer"},
+        "executor": {"type": "string"},
+        "function": {"type": "string"},
+        "does": {"type": "string"},
+        "does_not": {
+            "type": "string",
+            "description": "Vem da secao `## Não faz` do executor -- nunca reescrito.",
+        },
+    },
+}
+
+_PLAYBOOK_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "description": (
+        "Decomposicao sequencial de um coordenador -- os mesmos passos que ele "
+        "despacharia como subagentes em Claude Code, para quem nao tem essa capacidade "
+        "de harness (Devin, Codex, Copilot)."
+    ),
+    "required": [
+        "coordinator",
+        "description",
+        "rule_areas",
+        "skills",
+        "phase",
+        "steps",
+        "note",
+    ],
+    "properties": {
+        "coordinator": {"type": "string"},
+        "description": {"type": "string"},
+        "rule_areas": {"type": "array", "items": {"type": "string"}},
+        "skills": {"type": "array", "items": {"type": "string"}},
+        "phase": {
+            "type": ["string", "null"],
+            "description": "Fase do case quando um case existe; null se nenhum foi aberto.",
+        },
+        "steps": {"type": "array", "items": _PLAYBOOK_STEP_ITEM},
+        "note": {"type": "string"},
+    },
+}
+
 _ANALYZE_PYSPARK_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -950,6 +995,34 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _may_fail(
             _RESUME_SCHEMA,
             "Payload de retomada, ou erro se o case nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_playbook": {
+        "description": (
+            "Decomposicao de um coordenador (agents/*.md) em passos sequenciais -- o "
+            "espelho de orquestracao para plataforma sem despacho de subagente (Devin, "
+            "Codex, Copilot). Le os arquivos de agents/ e agents/executors/ em vez de "
+            "repetir a lista: uma copia divergiria do coordenador na primeira mudanca. "
+            "`does_not` de cada passo vem da secao `## Não faz` do executor, nunca "
+            "reescrito aqui. Case ausente nao e erro -- os passos saem com `phase: null`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["coordinator"],
+            "properties": {
+                "coordinator": {
+                    "type": "string",
+                    "description": (
+                        "Nome do arquivo em agents/ (sem .md), ex.: glue-infra-reviewer."
+                    ),
+                },
+                "repo": {"type": "string", "description": "Raiz do repositorio analisado."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _PLAYBOOK_SCHEMA,
+            "Passos do coordenador, ou erro se o coordenador nao existe.",
         ),
         "annotations": _READ_ONLY,
     },
@@ -1632,6 +1705,10 @@ def _h_resume(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_playbook(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.playbook(args["coordinator"], repo=args.get("repo", "."))
+
+
 def _h_runtime_detect(args: dict[str, Any]) -> dict[str, Any]:
     return _core.runtime_detect(
         glue=args.get("glue"),
@@ -1845,6 +1922,7 @@ _HANDLERS = {
     "sparkforge_case_update": _h_case_update,
     "sparkforge_next_step": _h_next_step,
     "sparkforge_resume": _h_resume,
+    "sparkforge_playbook": _h_playbook,
     "sparkforge_runtime_detect": _h_runtime_detect,
     "sparkforge_knowledge_path": _h_knowledge_path,
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,

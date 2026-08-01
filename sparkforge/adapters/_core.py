@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.case import router, store
+from sparkforge.case.playbook import build_playbook
 from sparkforge.case.resume import render_handoff
 from sparkforge.case.resume import resume as run_resume
 from sparkforge.collect import aws as collect_aws
@@ -1223,6 +1224,23 @@ def handoff(
     result = dict(payload)
     result["handoff_path"] = str(path)
     return result
+
+
+def playbook(coordinator: str, repo: str = ".") -> dict[str, Any]:
+    """Decomposicao do coordenador, com o estado do case quando existir.
+
+    Case ausente e caso normal, nao erro: a plataforma sem despacho de
+    subagente pode consultar os passos antes mesmo de abrir um case --
+    `case={}` so faz `phase` sair vazio no payload.
+    """
+    try:
+        case = store.load_case(repo)
+    except store.CaseError:
+        case = {}
+    try:
+        return build_playbook(coordinator, case)
+    except ValueError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
 
 
 # --------------------------------------------------------------------------- #

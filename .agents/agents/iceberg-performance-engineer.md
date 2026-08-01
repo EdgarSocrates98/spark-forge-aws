@@ -46,4 +46,4 @@ decida, entre um e outro, se o achado justifica seguir ou se falta coleta.
 Nem toda investigação passa pelos cinco. `sparkforge_next_step` diz onde entrar.
 
 Em plataforma sem despacho de subagente, a mesma decomposição sai por
-`sparkforge playbook <seu-nome>`.
+`sparkforge playbook <seu-nome>` (CLI) ou pela tool MCP `sparkforge_playbook`.

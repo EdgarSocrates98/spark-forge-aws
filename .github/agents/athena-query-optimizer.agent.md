@@ -43,4 +43,5 @@ silenciosamente no consumidor dias depois.
 
 Você coordena; não executa. Despache os executores na ordem do loop de fase.
 
-Em plataforma sem despacho de subagente: `sparkforge playbook athena-query-optimizer`.
+Em plataforma sem despacho de subagente: `sparkforge playbook athena-query-optimizer` (CLI) ou
+a tool MCP `sparkforge_playbook`.
