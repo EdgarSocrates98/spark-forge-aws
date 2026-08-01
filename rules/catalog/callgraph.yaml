@@ -77,31 +77,64 @@ rules:
       - {origin: field-heuristic, note: "A severidade P1 é decisão de campo. Não há measure que distinga recursão de profundidade 2 de recursão sobre hierarquia profunda; quando houver, converter para severity_by sobre measures.length."}
 
 # Uma regra que NAO foi escrita, e por que -- `callgraph.summary` continua sem
-# regra que o consuma, de proposito.
+# regra que o consuma, de proposito. O MOTIVO mudou na Fase 5b; a decisao, nao.
 #
-# A tentativa foi "funcoes inalcancaveis = codigo morto", sobre
-# `measures.unreachable_function_count`. A medida NAO significa isso. Em
-# `call_graph.py`, `nodes` contem so funcoes que aparecem em alguma aresta;
-# `entrypoints` sao os nos com zero chamadores; e o BFS parte de TODOS eles.
-# Logo:
+# O QUE ERA (Fase 1 ate a 5b): a medida mentia.
+# `measures.unreachable_function_count` parecia dizer "codigo morto" e dizia
+# outra coisa. `nodes` continha so funcoes que apareciam em alguma aresta,
+# `entrypoints` eram os nos com zero chamadores, e o BFS partia de TODOS eles.
+# Logo, funcao que nao chama ninguem e ninguem chama -- o codigo morto tipico --
+# nao entrava no grafo, e a medida devolvia ZERO. Zero indistinguivel de "nao ha
+# codigo morto": o falso negativo silencioso que o item 4 do README deste
+# diretorio persegue. Sobrava um unico caso real, o componente ciclico isolado,
+# que ja e SF-CG-001 quando contem trabalho Spark.
 #
-#   - funcao que nao chama ninguem e nao e chamada por ninguem (o codigo morto
-#     tipico) nao entra no grafo, e nao conta como inalcancavel;
-#   - funcao com zero chamadores vira entrypoint, e entrypoint e sempre
-#     alcancavel a partir de si mesmo.
+# O QUE MUDOU: `pyspark_ast` passou a emitir `pyspark.function_def`, um fact por
+# funcao DEFINIDA, com ou sem aresta, e `call_graph` semeia os nos com ele. Como
+# a semantica mudou, o nome mudou junto -- nome que promete mais do que entrega
+# e da mesma familia de defeito que a Fase 5a.2 achou nas skills:
 #
-# Sobra um unico caso: um componente ciclico isolado, em que todo membro tem
-# chamador mas nenhum entrypoint chega ate ele. Isso ja e SF-CG-001 quando
-# contem trabalho Spark, e uma fixture para prova-lo dispararia as duas regras
-# ao mesmo tempo.
+#   `unreachable_function_count` -> `unreachable_from_entrypoint_count`
+#       Mesma conta, nome honesto: no que nenhum BFS alcanca, o que so acontece
+#       em componente ciclico sem entrada. Nunca foi deteccao de codigo morto.
 #
-# Escrever a regra assim mesmo daria um `explanation` que descreve uma coisa e
-# um `when` que mede outra -- o defeito exato de SF-GLUE-005, que exigia
-# `spark.stage.spill` presente E ausente e por isso nunca podia disparar. Um
-# achado com explicacao errada e pior que achado nenhum: o operador age sobre a
-# explicacao, nao sobre o predicado.
+#   novo: `unreferenced_function_count` + `attrs.unreferenced_functions`
+#       Funcao definida (nivel de modulo ou aninhada), sem decorator, fora de
+#       `__all__`, que nenhuma funcao deste corpus chama e cujo nome nao e lido
+#       em nenhum arquivo deste corpus. A lista vem junto: contagem sem nome nao
+#       e acionavel, e o operador nao consegue verificar o que nao pode nomear.
 #
-# Para detectar codigo morto de verdade seria preciso emitir um no por funcao
-# DEFINIDA, com ou sem aresta, o que e mudanca no extrator, nao no catalogo.
-# Enquanto isso nao existir, `callgraph.summary` cumpre o papel de sentinela e
-# de forma do grafo para o agente, que e o mesmo papel dos kinds `*_analyzed`.
+#   novo: `opaque_caller_function_count`
+#       Quantas funcoes ficaram FORA da populacao medida por serem metodo
+#       (invocado por atributo), decorada (o framework invoca) ou exportada em
+#       `__all__` (o chamador esta fora do corpus). Exclusao contada, nunca
+#       silenciosa -- mesma disciplina dos kinds `*.unresolved`.
+#
+# POR QUE AINDA NAO NASCE REGRA: porque "sem referencia neste corpus" e
+# verdadeiro e util, e nao e achado. O corpus e o recorte que o operador passou
+# na linha de comando, nao o universo de chamadores:
+#
+#   - biblioteca Glue -- o caso CENTRAL deste repositorio -- tem funcao publica
+#     cujo chamador e a aplicacao, que nao esta no recorte;
+#   - despacho por string (`getattr`, tabela por nome, entry point de pacote,
+#     handler de framework) nao e observavel em AST;
+#     `attrs.dynamic_dispatch_present` marca quando o proprio corpus tem
+#     `getattr`, e a fixture `pyspark/dynamic_dispatch` mostra a forma;
+#   - `main` de um job sem bloco `if __name__` e chamado pelo runtime.
+#
+# Uma regra sobre isso produziria achado em cima de codigo vivo, em volume
+# proporcional ao tamanho da API publica -- o falso positivo em massa que o item
+# 4 do README trata como pior que achado nenhum, porque contamina a leitura de
+# todo o resto do relatorio.
+#
+# Entao `callgraph.summary` segue cumprindo o papel de sentinela e de forma do
+# grafo para o agente `glue-incremental-performance-architect` e para a skill
+# `analyze-library-call-graph`, que cruzam a lista com o que o operador sabe do
+# sistema -- exatamente o julgamento que o motor de regras nao pode fazer.
+# `tests/test_fixtures_golden_callgraph.py::test_no_rule_consumes_the_summary`
+# trava a decisao: se alguem escrever uma regra sobre este fact, o teste quebra
+# e obriga a decisao a ser explicita, com fixture bidirecional, `risks`,
+# `tradeoffs`, `validation` e `rollback` como qualquer outra.
+#
+# A fixture `callgraph/library_surface` prova a metade negativa: oito funcoes
+# sem chamador local, uma unica sobra na lista.

@@ -9,5 +9,5 @@ runtime:
   spark: "3.5.4"
   python: "3.11"
   iceberg: "1.7.1"
-expects_kinds: [pyspark.unresolved, pyspark.module_analyzed]
+expects_kinds: [pyspark.unresolved, pyspark.module_analyzed, pyspark.function_def]
 expects_rules: []

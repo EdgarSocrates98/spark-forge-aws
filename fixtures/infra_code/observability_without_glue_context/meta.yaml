@@ -25,5 +25,6 @@ expects_kinds:
   - pyspark.write
   - pyspark.chain
   - pyspark.action
+  - pyspark.function_def
 expects_rules:
   - SF-ENV-003

@@ -23,6 +23,35 @@
     }
   },
   {
+    "id": "f_23f0a4",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 2,
+      "symbol": "deduplicar",
+      "snippet": "def deduplicar(df):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "ce88530dcf7bf796a3bb0c12bc9c22c134c39aa8a1fba4241caa3d6e7b00e54c",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_07e474",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -39,7 +68,11 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "df",
+        "dropDuplicates"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

@@ -1,12 +1,12 @@
 [
   {
-    "id": "f_ab98a8",
+    "id": "f_2bee5c",
     "schema_version": 1,
     "kind": "callgraph.cycle",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 16,
+      "line": 15,
       "col": 0,
       "symbol": "processa_lote",
       "snippet": ""
@@ -29,13 +29,13 @@
     }
   },
   {
-    "id": "f_89b740",
+    "id": "f_82a99e",
     "schema_version": 1,
     "kind": "callgraph.function",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 12,
+      "line": 11,
       "col": 0,
       "symbol": "le_lote",
       "snippet": ""
@@ -43,11 +43,18 @@
     "measures": {
       "fan_out": 0,
       "fan_in": 1,
-      "spark_work_count": 2
+      "spark_work_count": 2,
+      "definition_count": 1,
+      "name_reference_count": 1
     },
     "attrs": {
       "is_entrypoint": false,
-      "is_leaf": true
+      "is_leaf": true,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
     },
     "provenance": {
       "artifact": "mutual_recursion",
@@ -56,13 +63,13 @@
     }
   },
   {
-    "id": "f_831018",
+    "id": "f_a22944",
     "schema_version": 1,
     "kind": "callgraph.function",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 16,
+      "line": 15,
       "col": 0,
       "symbol": "processa_lote",
       "snippet": ""
@@ -70,11 +77,18 @@
     "measures": {
       "fan_out": 2,
       "fan_in": 2,
-      "spark_work_count": 0
+      "spark_work_count": 0,
+      "definition_count": 1,
+      "name_reference_count": 2
     },
     "attrs": {
       "is_entrypoint": false,
-      "is_leaf": false
+      "is_leaf": false,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
     },
     "provenance": {
       "artifact": "mutual_recursion",
@@ -83,13 +97,13 @@
     }
   },
   {
-    "id": "f_c852fd",
+    "id": "f_883f5b",
     "schema_version": 1,
     "kind": "callgraph.function",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 26,
+      "line": 24,
       "col": 0,
       "symbol": "trata_rejeitados",
       "snippet": ""
@@ -97,11 +111,18 @@
     "measures": {
       "fan_out": 1,
       "fan_in": 1,
-      "spark_work_count": 1
+      "spark_work_count": 1,
+      "definition_count": 1,
+      "name_reference_count": 1
     },
     "attrs": {
       "is_entrypoint": false,
-      "is_leaf": false
+      "is_leaf": false,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": false,
+      "is_unreferenced": false
     },
     "provenance": {
       "artifact": "mutual_recursion",
@@ -110,13 +131,13 @@
     }
   },
   {
-    "id": "f_858d26",
+    "id": "f_1dfb6e",
     "schema_version": 1,
     "kind": "callgraph.function",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 32,
+      "line": 31,
       "col": 0,
       "symbol": "main",
       "snippet": ""
@@ -124,11 +145,18 @@
     "measures": {
       "fan_out": 1,
       "fan_in": 0,
-      "spark_work_count": 2
+      "spark_work_count": 2,
+      "definition_count": 1,
+      "name_reference_count": 0
     },
     "attrs": {
       "is_entrypoint": true,
-      "is_leaf": false
+      "is_leaf": false,
+      "is_defined": true,
+      "def_kind": "module",
+      "caller_visibility": "resolvable",
+      "referenced_in_other_module": false,
+      "is_unreferenced": true
     },
     "provenance": {
       "artifact": "mutual_recursion",
@@ -137,42 +165,13 @@
     }
   },
   {
-    "id": "f_2477bb",
+    "id": "f_5c84df",
     "schema_version": 1,
     "kind": "callgraph.reachable_spark_work",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 32,
-      "col": 0,
-      "symbol": "main",
-      "snippet": ""
-    },
-    "measures": {
-      "min_depth": 0,
-      "occurrence_count": 2
-    },
-    "attrs": {
-      "entrypoint": "main",
-      "work_kind": "pyspark.chain",
-      "via": [
-        "main"
-      ]
-    },
-    "provenance": {
-      "artifact": "mutual_recursion",
-      "artifact_sha256": "",
-      "extractor": "call_graph@0.1.0"
-    }
-  },
-  {
-    "id": "f_90e2bc",
-    "schema_version": 1,
-    "kind": "callgraph.reachable_spark_work",
-    "subject": {
-      "type": "source_location",
-      "file": "pipeline.py",
-      "line": 32,
+      "line": 31,
       "col": 0,
       "symbol": "main",
       "snippet": ""
@@ -195,13 +194,42 @@
     }
   },
   {
-    "id": "f_b52549",
+    "id": "f_b59733",
     "schema_version": 1,
     "kind": "callgraph.reachable_spark_work",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 32,
+      "line": 31,
+      "col": 0,
+      "symbol": "main",
+      "snippet": ""
+    },
+    "measures": {
+      "min_depth": 0,
+      "occurrence_count": 2
+    },
+    "attrs": {
+      "entrypoint": "main",
+      "work_kind": "pyspark.chain",
+      "via": [
+        "main"
+      ]
+    },
+    "provenance": {
+      "artifact": "mutual_recursion",
+      "artifact_sha256": "",
+      "extractor": "call_graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_fc8a42",
+    "schema_version": 1,
+    "kind": "callgraph.reachable_spark_work",
+    "subject": {
+      "type": "source_location",
+      "file": "pipeline.py",
+      "line": 31,
       "col": 0,
       "symbol": "main",
       "snippet": ""
@@ -226,13 +254,13 @@
     }
   },
   {
-    "id": "f_b52549",
+    "id": "f_fc8a42",
     "schema_version": 1,
     "kind": "callgraph.reachable_spark_work",
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 32,
+      "line": 31,
       "col": 0,
       "symbol": "main",
       "snippet": ""
@@ -257,7 +285,7 @@
     }
   },
   {
-    "id": "f_a5bef8",
+    "id": "f_6a3267",
     "schema_version": 1,
     "kind": "callgraph.summary",
     "subject": {
@@ -270,16 +298,23 @@
     },
     "measures": {
       "function_count": 4,
+      "defined_function_count": 4,
       "edge_count": 4,
       "entrypoint_count": 1,
       "max_depth": 2,
-      "unreachable_function_count": 0
+      "unreachable_from_entrypoint_count": 0,
+      "unreferenced_function_count": 1,
+      "opaque_caller_function_count": 0
     },
     "attrs": {
       "entrypoints": [
         "main"
       ],
-      "has_cycle": true
+      "has_cycle": true,
+      "unreferenced_functions": [
+        "main"
+      ],
+      "dynamic_dispatch_present": false
     },
     "provenance": {
       "artifact": "mutual_recursion",
