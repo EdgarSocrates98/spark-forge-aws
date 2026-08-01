@@ -36,6 +36,37 @@ recommendation:
 
 For full/incremental AWS Glue workloads, start with `glue-incremental-performance-architect`. Build the call graph, classify the OOM, prove whether incremental runs still perform global work, and inspect Iceberg commit/file/metadata behavior before infrastructure tuning.
 
+## Coordinators and executors
+
+Six coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
+declares `rule_areas`, the `skills` it draws on, and the five `executors` it dispatches
+(`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer` — one per
+function of the phase loop, in `agents/executors/*.md`, each with an explicit `## Não faz`
+negative boundary and a `## Pressupõe`/`## Entrega` handoff contract). A coordinator does
+not execute: it reads the case, decides which executor runs next, and records in the case
+which executor ran and with what result — same mechanism as skill tracking
+(`sparkforge_case_update` with `skills_used`, executor name in place of skill name; see
+`AGENT_PROTOCOL.md` rule 6).
+
+| Coordinator | Use quando… | `rule_areas` |
+|---|---|---|
+| `spark-performance-architect` | diagnóstico geral de um job PySpark no Glue, gargalo dominante ainda não localizado | SF-PY, SF-UI, SF-PLAN |
+| `glue-incremental-performance-architect` | fluxo full + incremental, latest-per-key em Iceberg bilionário, batching, OOM após horas | orquestra as demais áreas antes de tuning localizado |
+| `glue-infra-reviewer` | gargalo ou risco na definição do job Glue, não no código — worker, auto scaling, bookmark, retries, Terraform | SF-GLUE, SF-ENV |
+| `athena-query-optimizer` | custo ou latência na consulta Athena, não no job — bytes escaneados, pruning de partição, engine, workgroup | SF-ATH, SF-PQ |
+| `pyspark-code-reviewer` | revisar código PySpark — PR, biblioteca ou job — correlacionando fonte, plano físico e call graph | SF-PY, SF-PLAN, SF-CG |
+| `iceberg-performance-engineer` | dívida de data files, delete files, manifests, snapshots e manutenção de tabela Iceberg | SF-ICE, SF-PQ |
+
+Which coordinator to use is data, not judgment: routes `AGENT-001`…`AGENT-006` in
+`rules/catalog/routing.yaml` map the case's phase and dominant finding area to a
+`recommended_agent`, and `sparkforge_next_step` / `sparkforge next-step` reads them —
+never pick a coordinator by inspection.
+
+On a platform without subagent dispatch (Devin, Codex, Copilot CI), `sparkforge playbook
+<coordinator>` (CLI) or the `sparkforge_playbook` MCP tool returns the same decomposition
+as a sequence of steps, reading the same `agents/` files a Claude Code coordinator would
+dispatch as subagents: it loses the dispatch's parallelism, keeps the method.
+
 ## Deterministic evidence
 
 Evidence for this project comes from deterministic extraction, not from an
