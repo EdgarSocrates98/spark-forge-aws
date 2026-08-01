@@ -1,7 +1,8 @@
 # SparkForge AWS — Fase 3a: Distribuição pip
 
 **Data:** 2026-07-31
-**Status:** aprovado para planejamento
+**Status:** implementado em 2026-07-31. Faixa de commits `a06d7f5` … `937799f`.
+Estado corrente do repositório: [`../STATUS.md`](../STATUS.md).
 **Escopo:** primeiro dos quatro sub-projetos da Fase 3. Marketplace, export Devin e MCP hospedado ficam fora, cada um com seu próprio spec.
 **Depende de:** contratos da [Fase 0](2026-07-29-sparkforge-fase0-design.md); catálogo completo da [Fase 2](2026-07-31-sparkforge-fase2-design.md)
 

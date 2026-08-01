@@ -13,7 +13,7 @@ motor de regras é uma máquina de avaliação sobre YAML versionado. Nenhum LLM
 participa da extração ou do julgamento.
 
 Este nível é garantido pelos golden tests (`tests/test_fixtures_golden.py`,
-16 fixtures, ambas as direções: facts e findings) e por
+17 fixtures, ambas as direções: facts e findings) e por
 `scripts/check_evals.py`, que recomputa cada uma das dez respostas deste
 diretório a partir do corpus real antes de aceitar o arquivo.
 
@@ -109,6 +109,14 @@ certo por caminho errado, ou travar e responder 59.
 
 Uma pergunta cuja resposta certa é alcançável por raciocínio errado não mede nada. Foi
 reescrita para nomear `load_catalog()` explicitamente.
+
+> **Os números deste relato são de 2026-07-30 e não valem hoje.** O catálogo tinha 43
+> regras de diagnóstico; hoje tem **48**, depois de a Fase 2 desbloqueá-lo e a Fase 3a
+> acrescentar SF-PLAN e SF-CG. As 16 rotas seguem 16. A pergunta acabou reescrita uma
+> terceira vez, justamente porque **contagem total é resposta que envelhece** — a §11.3
+> do spec da Fase 0 exige resposta que não mude com o tempo, então a pergunta é que
+> estava errada, não o número. Hoje ela pergunta `routing:athena`, cujo primeiro termo é
+> 0 por construção.
 
 Q6 foi reescrita uma segunda vez: Opus notou que "o caminho pontuado do lado esquerdo...
 o lado do fact" podia sugerir incluir o kind (`pyspark.withcolumn_run.measures.run_length`).
