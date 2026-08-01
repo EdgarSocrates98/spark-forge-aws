@@ -295,6 +295,15 @@ def build_parser() -> argparse.ArgumentParser:
     open_p.add_argument("--python")
     open_p.add_argument("--iceberg")
     open_p.add_argument("--athena")
+    open_p.add_argument(
+        "--facts",
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) gerado por `analyze`. Repetivel. O runtime "
+            "do case passa a sair do que os extratores observaram, nao so das "
+            "flags."
+        ),
+    )
 
     get_p = case_sub.add_parser("get", help="Le o case atual.")
     get_p.add_argument("--repo", required=True)
@@ -353,13 +362,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     runtime_sub = runtime_p.add_subparsers(dest="runtime_action", required=True)
     detect_p = runtime_sub.add_parser(
-        "detect", help="Deriva a matriz de runtime a partir de flags."
+        "detect", help="Deriva a matriz de runtime a partir de facts ja extraidos e de flags."
     )
     detect_p.add_argument("--glue")
     detect_p.add_argument("--spark")
     detect_p.add_argument("--python")
     detect_p.add_argument("--iceberg")
     detect_p.add_argument("--athena")
+    detect_p.add_argument(
+        "--facts",
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) gerado por `analyze`. Repetivel. A versao "
+            "OBSERVADA pelos extratores (`tf.attribute` glue_version, "
+            "`spark.runtime_version`) entra como fonte propria -- sem isto, so "
+            "as flags alimentam a deteccao."
+        ),
+    )
 
     # knowledge path --------------------------------------------------------
     knowledge_p = sub.add_parser(
@@ -742,6 +761,11 @@ def _cmd_judge(args: argparse.Namespace) -> int:
         "next_cursor": next_cursor,
         "filters_applied": {"severity": args.severity, "limit": args.limit, "cursor": args.cursor},
         "by_severity": full["by_severity"],
+        # O runtime que filtrou por versao, sempre. Ele agora pode vir dos
+        # facts e nao so das flags: sem ele na saida, "por que SF-GLUE-001 nao
+        # apareceu?" nao tem resposta -- e uma divergencia entre flag e fact
+        # seria resolvida em silencio para quem le a CLI.
+        "runtime": full["runtime"],
         "items": page,
     }
     if args.show_skipped:
@@ -760,6 +784,7 @@ def _cmd_case_open(args: argparse.Namespace) -> int:
         python=args.python,
         iceberg=args.iceberg,
         athena=args.athena,
+        facts_path=args.facts,
     )
     _print(case)
     return 0
@@ -829,6 +854,7 @@ def _cmd_runtime_detect(args: argparse.Namespace) -> int:
         python=args.python,
         iceberg=args.iceberg,
         athena=args.athena,
+        facts_path=args.facts,
     )
     _print(payload)
     return 0

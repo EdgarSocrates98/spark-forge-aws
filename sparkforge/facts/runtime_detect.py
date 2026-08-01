@@ -40,10 +40,28 @@ GLUE_MATRIX: dict[str, dict[str, str]] = {
 
 # Precedencia de resolucao quando ha mais de uma fonte para o mesmo
 # componente: event_log (Spark UI / event log do run) e o mais confiavel,
-# depois terraform (glue_version, --datalake-formats), depois requirements
-# (intencao do projeto, nao runtime observado). Ver
-# knowledge/glue/runtime-matrix.md secao 5.
-_PRECEDENCE: tuple[str, ...] = ("event_log", "terraform", "requirements")
+# depois cli (a flag que o operador digitou), depois terraform (glue_version,
+# --datalake-formats), depois requirements (intencao do projeto, nao runtime
+# observado). Ver knowledge/glue/runtime-matrix.md secao 5.
+#
+# `cli` estava FORA desta tupla e caia por ultimo por acidente de
+# implementacao -- `_source_rank` empurra qualquer origem desconhecida para o
+# fim --, nao por decisao. Declarada agora, e declarada ABAIXO de `event_log`:
+# o event log e a unica fonte que OBSERVOU o runtime do run sob analise, com
+# artefato, provenance e sha256; a flag e uma declaracao sem artefato. Quando o
+# run reporta 3.5.4 e alguem digitou 3.3.0, quem sabe de si e o run. Acima de
+# `terraform`/`requirements`, porem, porque esses tambem sao declaracao (a
+# intencao registrada no repositorio) e a flag e a declaracao mais especifica e
+# mais recente -- o operador pode saber de uma mudanca aplicada no console que
+# o IaC ainda nao reflete.
+#
+# Isto NAO e resolucao silenciosa, e nao pode virar. Perder a precedencia nunca
+# apaga a observacao: todo valor lido continua entrando em `observations`, e
+# qualquer discordancia continua virando `divergences` no RuntimeContext e um
+# fact `env.runtime_signal` com `observed` completo -- o gatilho de SF-ENV-001
+# em P0. A precedencia so escolhe o que o contexto REPORTA como valor
+# resolvido; ela nao decide quem esta certo, e nunca descarta o outro valor.
+_PRECEDENCE: tuple[str, ...] = ("event_log", "cli", "terraform", "requirements")
 
 _DIRECT_KEYS: dict[str, tuple[str, ...]] = {
     "spark": ("spark_version", "spark"),

@@ -75,11 +75,18 @@ def test_copias_identicas(skill_dir: Path) -> None:
 
 
 # `runtime_scope` so sobra em 8 regras do catalogo, todas sobre Glue -- a Fase 5a
-# esvaziou os guardas de versao que nao guardavam versao nenhuma. Mas essas 8
-# continuam falhando fechado: `build_runtime_context` monta o contexto so de
-# flags de CLI, nunca dos facts coletados, entao `judge` sem `--glue` pula o eixo
-# de infraestrutura Glue inteiro. Aparece em `--show-skipped`, o que e melhor que
-# silencio, mas segue sendo cobertura perdida numa skill que investiga Glue.
+# esvaziou os guardas de versao que nao guardavam versao nenhuma. Essas 8 falham
+# fechado quando o runtime nao e conhecido, e `judge` sem `--glue` pulava o eixo
+# de infraestrutura Glue inteiro.
+#
+# Desde a Fase 5a.2 isso deixou de depender SO da flag: `build_runtime_context`
+# deriva fontes dos proprios facts (`tf.attribute` glue_version,
+# `spark.runtime_version`), entao um `judge --facts <terraform>` ja resolve o
+# runtime sozinho. A exigencia de flag continua travada aqui de proposito
+# ate as skills serem reescritas para o fluxo novo: uma skill que hoje instrui o
+# operador a digitar a versao nao esta errada, so esta pedindo mais do que
+# precisa. Relaxar esta regra e mudanca de texto de skill, nao de motor -- ver o
+# plano da Fase 5a.2.
 JUDGE_INVOCATION = re.compile(r"^\s*(?:\d+\.\s*)?`?sparkforge judge\b")
 RUNTIME_FLAGS = ("--glue", "--spark", "--iceberg", "--athena")
 
