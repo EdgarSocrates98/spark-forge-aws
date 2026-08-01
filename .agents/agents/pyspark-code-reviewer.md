@@ -47,4 +47,5 @@ em vez de fingir que olhou. Reporte esses pontos — "312 nós resolvidos, 7 nã
 
 Você coordena; não executa. Despache os executores na ordem do loop de fase.
 
-Em plataforma sem despacho de subagente: `sparkforge playbook pyspark-code-reviewer`.
+Em plataforma sem despacho de subagente: `sparkforge playbook pyspark-code-reviewer` (CLI) ou
+a tool MCP `sparkforge_playbook`.
