@@ -294,6 +294,19 @@ def _scope_index(nodes: list[ast.AST]) -> _ScopeIndex:
     )
 
 
+def _rebound_between(target: str, low: int, high: int, index: _ScopeIndex) -> bool:
+    """Ha religacao do nome ESTRITAMENTE entre duas linhas do mesmo escopo.
+
+    Os tres atributos que correlacionam por nome fazem esta mesma pergunta, e o
+    que muda entre eles nao e o predicado: e o que cada um FAZ com a resposta --
+    omitir a chave, emitir `false`, ou descartar uma candidata. Manter o
+    predicado em tres formas distintas garantiria divergencia na proxima
+    mudanca, e divergencia aqui e falso positivo ou falso negativo, nunca so
+    inconsistencia de estilo.
+    """
+    return any(low < rebind < high for rebind in index.rebinds.get(target, ()))
+
+
 def _position_vs_write(target: str, line: int, index: _ScopeIndex) -> str | None:
     """Tres valores, nunca um booleano -- ou nenhum valor, quando nao da para saber.
 
@@ -317,7 +330,7 @@ def _position_vs_write(target: str, line: int, index: _ScopeIndex) -> str | None
         return "no_write_in_module"
     write_line = min(lines)
     low, high = sorted((line, write_line))
-    if any(low < rebind < high for rebind in index.rebinds.get(target, ())):
+    if _rebound_between(target, low, high, index):
         return None
     return "after_write" if line > write_line else "before_write"
 
@@ -345,7 +358,7 @@ def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool:
     (last_line, _), persisted = events[-1]
     if not persisted:
         return False
-    return not any(last_line < rebind < line for rebind in index.rebinds.get(target, ()))
+    return not _rebound_between(target, last_line, line, index)
 
 
 def _action_after_check(target: str, line: int, index: _ScopeIndex) -> bool:
@@ -371,9 +384,8 @@ def _action_after_check(target: str, line: int, index: _ScopeIndex) -> bool:
     quem ler o campo como "o dado e reusado" se engana: o reuso aqui e recomputo,
     nao releitura de algo materializado.
     """
-    rebinds = index.rebinds.get(target, ())
     return any(
-        action > line and not any(line < rebind < action for rebind in rebinds)
+        action > line and not _rebound_between(target, line, action, index)
         for action in index.actions.get(target, ())
     )
 
