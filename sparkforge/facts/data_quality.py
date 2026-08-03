@@ -91,20 +91,34 @@ _WRITE_ATTRS = frozenset({"write", "writeTo", "writeStream"})
 _ACTION_METHODS = frozenset({"count", "collect", "show", "foreach", "save", "saveAsTable"})
 
 _PERSIST_METHODS = frozenset({"cache", "persist"})
+_UNPERSIST_METHODS = frozenset({"unpersist"})
 
 
-class _ModuleIndex(NamedTuple):
-    """Linhas, por variavel-alvo, dos eventos que datam um check.
+class _ScopeIndex(NamedTuple):
+    """Eventos que datam um check, por variavel-alvo, DENTRO DE UM ESCOPO.
 
     O motor de regras nao correlaciona dois facts -- `engine._condition_candidates`
     avalia um fact por vez e `engine._absent_satisfied` compara so `kind` -- entao
-    quem enxerga o modulo inteiro e quem responde. Este indice e o que o extrator
+    quem enxerga o codigo inteiro e quem responde. Este indice e o que o extrator
     enxerga e o catalogo nao enxergaria.
+
+    O indice e por escopo, e nao por modulo, porque nome nu nao identifica objeto
+    entre escopos: `def a(vendas)` e `def b(vendas)` recebem dois DataFrames
+    diferentes, e datar o check de `b` contra o write de `a` seria a mesma
+    acusacao falsa que `_SOURCE_TERMINALS` evita do lado da cadeia.
+
+    LIMITE conhecido: a separacao vale para `FunctionDef`/`AsyncFunctionDef`.
+    `lambda` e corpo de `class` continuam no escopo que os contem, e um
+    parametro de lambda homonimo ao alvo ainda colide -- forma rara, registrada
+    e nao corrigida. O preco inverso tambem existe: funcao que le um DataFrame
+    global perde a correlacao com o write feito no modulo, e sai
+    `no_write_in_module`. E subnotificacao, nao acusacao.
     """
 
     writes: dict[str, set[int]]
-    persists: dict[str, set[int]]
+    persists: dict[str, list[tuple[tuple[int, int], bool]]]
     actions: dict[str, set[int]]
+    rebinds: dict[str, set[int]]
 
 
 def _subject(path: str, line: int = 0) -> dict[str, Any]:
@@ -158,19 +172,47 @@ def _chain_target(node: ast.AST) -> str | None:
     return root
 
 
+def _scopes(tree: ast.AST) -> list[list[ast.AST]]:
+    """Os nos de cada escopo de nome, cada escopo numa lista propria.
+
+    Corpo do modulo e cada `FunctionDef`/`AsyncFunctionDef` sao escopos
+    separados: dentro de um escopo, o mesmo nome e o mesmo objeto (a menos de
+    rebind, que `_rebind_lines` apura); entre escopos, nao e.
+    """
+    scopes: list[list[ast.AST]] = []
+    pending: list[ast.AST] = [tree]
+    while pending:
+        own: list[ast.AST] = []
+        stack = list(ast.iter_child_nodes(pending.pop()))
+        while stack:
+            node = stack.pop()
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                pending.append(node)
+                continue
+            own.append(node)
+            stack.extend(ast.iter_child_nodes(node))
+        scopes.append(own)
+    return scopes
+
+
 def _lines_by_target(
-    tree: ast.AST, attrs: frozenset[str], methods: frozenset[str]
+    nodes: list[ast.AST], attrs: frozenset[str], methods: frozenset[str]
 ) -> dict[str, set[int]]:
     """Linhas em que cada variavel-alvo aparece na raiz de `df.<attr>` ou de
     `df....<method>()`.
 
-    Guarda o CONJUNTO de linhas, nao a primeira encontrada: `ast.walk` percorre
-    por nivel, entao um write dentro de um laco e visitado depois de um write no
-    corpo do modulo, e "a primeira linha vista" nao e a primeira linha do
+    Guarda o CONJUNTO de linhas, nao a primeira encontrada: a travessia nao e
+    por linha -- um write dentro de um laco e visitado depois de um write no
+    corpo do modulo -- e "a primeira linha vista" nao e a primeira linha do
     arquivo. Quem consome escolhe o extremo que lhe interessa.
+
+    LIMITE conhecido: alias nao e seguido. `df2 = vendas` seguido de
+    `df2.write...` deixa o check sobre `vendas` como `no_write_in_module`. E
+    subnotificacao -- o campo diz menos do que o arquivo contem -- e nunca
+    acusacao falsa, que e o erro que esta fase recusa.
     """
     found: dict[str, set[int]] = {}
-    for node in ast.walk(tree):
+    for node in nodes:
         if isinstance(node, ast.Attribute) and node.attr in attrs:
             chain: ast.AST = node.value
         elif (
@@ -187,30 +229,96 @@ def _lines_by_target(
     return found
 
 
-def _module_index(tree: ast.AST) -> _ModuleIndex:
-    return _ModuleIndex(
-        writes=_lines_by_target(tree, _WRITE_ATTRS, frozenset()),
-        persists=_lines_by_target(tree, frozenset(), _PERSIST_METHODS),
+def _persist_events(nodes: list[ast.AST]) -> dict[str, list[tuple[tuple[int, int], bool]]]:
+    """Eventos de persistencia por alvo, ordenados por posicao no arquivo.
+
+    Guarda `cache`/`persist` E `unpersist`, porque `target_persisted` afirma
+    ESTADO e nao ocorrencia. A posicao e (linha, coluna) para que dois eventos
+    na mesma linha (`vendas.cache(); vendas.unpersist()`) ainda se ordenem.
+    """
+    events: dict[str, list[tuple[tuple[int, int], bool]]] = {}
+    for node in nodes:
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
+            continue
+        method = node.func.attr
+        if method not in _PERSIST_METHODS and method not in _UNPERSIST_METHODS:
+            continue
+        target = _chain_target(node)
+        if target is not None:
+            events.setdefault(target, []).append(
+                ((node.lineno, node.col_offset), method in _PERSIST_METHODS)
+            )
+    for sequence in events.values():
+        sequence.sort()
+    return events
+
+
+def _rebind_lines(nodes: list[ast.AST]) -> dict[str, set[int]]:
+    """Linhas em que cada nome e ligado a outro objeto.
+
+    Todo `ast.Name` em contexto `Store` conta, o que cobre de uma vez `Assign`,
+    `AnnAssign`, `AugAssign`, alvo de `for` e `with ... as` -- e tambem alvo de
+    comprehension e walrus, que ligam do mesmo jeito.
+    """
+    lines: dict[str, set[int]] = {}
+    for node in nodes:
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            lines.setdefault(node.id, set()).add(node.lineno)
+    return lines
+
+
+def _scope_index(nodes: list[ast.AST]) -> _ScopeIndex:
+    return _ScopeIndex(
+        writes=_lines_by_target(nodes, _WRITE_ATTRS, frozenset()),
+        persists=_persist_events(nodes),
         # `.write` tambem e action: e o que dispara o trabalho de publicar.
-        actions=_lines_by_target(tree, _WRITE_ATTRS, _ACTION_METHODS),
+        actions=_lines_by_target(nodes, _WRITE_ATTRS, _ACTION_METHODS),
+        rebinds=_rebind_lines(nodes),
     )
 
 
-def _position_vs_write(target: str, line: int, writes: dict[str, set[int]]) -> str:
-    """Tres valores, nunca um booleano.
+def _position_vs_write(target: str, line: int, index: _ScopeIndex) -> str | None:
+    """Tres valores, nunca um booleano -- ou nenhum valor, quando nao da para saber.
 
     `no_write_in_module` e o modulo que valida e nao escreve -- uma biblioteca de
     validacao, um job de auditoria. Achatar isso em `before_write` afirmaria uma
     ordem que o arquivo nao contem.
+
+    `None` (chave OMITIDA, nunca um quarto valor) e o nome religado entre o check
+    e o write: em `vendas.write...` / `vendas = carrega(...)` / check, o alvo
+    validado e um DataFrame que nunca foi escrito, e qualquer dos tres valores
+    seria mentira. Chave ausente e a forma de dizer "nao sei" --
+    `engine._where_matches` reprova caminho ausente e a regra nao avalia este
+    check --, o mesmo mecanismo que o desvio D-5c-3 fixou para `shares_scan`.
+
+    LIMITE conhecido: write e check na MESMA linha (`;`) caem em `before_write`,
+    porque a comparacao e estrita e `lineno` nao tem sub-linha. Raro e de baixo
+    impacto. LIMITE conhecido: o rebind so omite `position_vs_write`;
+    `target_persisted` e `action_after_check` ainda nao o levam em conta.
     """
-    lines = writes.get(target)
+    lines = index.writes.get(target)
     if not lines:
         return "no_write_in_module"
-    return "after_write" if line > min(lines) else "before_write"
+    write_line = min(lines)
+    low, high = sorted((line, write_line))
+    if any(low < rebind < high for rebind in index.rebinds.get(target, ())):
+        return None
+    return "after_write" if line > write_line else "before_write"
+
+
+def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool:
+    """Estado no momento do check: o ULTIMO evento antes dele decide.
+
+    `vendas.cache()` seguido de `vendas.unpersist()` deixa o alvo NAO persistido
+    quando o check chega -- o campo afirma estado, nao que um `cache()` existiu
+    em algum lugar do arquivo.
+    """
+    before = [state for position, state in index.persists.get(target, ()) if position[0] < line]
+    return bool(before) and before[-1]
 
 
 def _handmade_check(
-    node: ast.Call, path: str, index: _ModuleIndex, provenance: dict[str, Any]
+    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
 ) -> Fact | None:
     if not isinstance(node.func, ast.Attribute) or node.func.attr != "count":
         return None
@@ -222,49 +330,61 @@ def _handmade_check(
             path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
         )
     line = node.lineno
+    attrs: dict[str, Any] = {
+        "framework": "handmade",
+        "check_type": "count_of_violations",
+        "target": target,
+        "target_persisted": _target_persisted(target, line, index),
+        # Estritamente posterior: a linha do proprio check tem a action que o
+        # define -- o `count()` -- e o check nao e action depois de si.
+        #
+        # LIMITE conhecido: um check IRMAO sobre o mesmo alvo conta como action
+        # posterior, e e verdade -- sem cache, os dois recomputam o lineage --,
+        # mas quem ler o campo como "o dado e reusado" se engana: o reuso aqui e
+        # recomputo, nao releitura de algo materializado.
+        "action_after_check": any(n > line for n in index.actions.get(target, ())),
+        # Todo check artesanal paga varredura propria: cada `count()` e uma
+        # passada sobre o alvo, sem compartilhamento com os outros checks do
+        # modulo. So a `VerificationSuite` do Deequ agrupa agregacoes
+        # (knowledge/dq/validation-frameworks.md, §2.3).
+        "shares_scan": False,
+    }
+    position = _position_vs_write(target, line, index)
+    if position is not None:
+        attrs["position_vs_write"] = position
     return Fact(
         kind="dq.check",
         subject=_subject(path, line),
         measures={"line": line},
-        attrs={
-            "framework": "handmade",
-            "check_type": "count_of_violations",
-            "target": target,
-            "position_vs_write": _position_vs_write(target, line, index.writes),
-            "target_persisted": any(n < line for n in index.persists.get(target, ())),
-            # Estritamente posterior: a linha do proprio check tem a action que
-            # o define -- o `count()` -- e o check nao e action depois de si.
-            "action_after_check": any(n > line for n in index.actions.get(target, ())),
-            # Todo check artesanal paga varredura propria: cada `count()` e uma
-            # passada sobre o alvo, sem compartilhamento com os outros checks do
-            # modulo. So a `VerificationSuite` do Deequ agrupa agregacoes
-            # (knowledge/dq/validation-frameworks.md, §2.3).
-            "shares_scan": False,
-        },
+        attrs=attrs,
         provenance=provenance,
     )
 
 
 def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") -> list[Fact]:
     provenance = {"artifact": path, "artifact_sha256": artifact_sha256, "extractor": EXTRACTOR_ID}
-    index = _module_index(tree)
     facts: list[Fact] = []
 
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
-            fact = _handmade_check(node, path, index, provenance)
-            if fact is not None:
-                facts.append(fact)
+    for nodes in _scopes(tree):
+        index = _scope_index(nodes)
+        found: list[Fact] = []
+        for node in nodes:
+            if isinstance(node, ast.Call):
+                fact = _handmade_check(node, path, index, provenance)
+                if fact is not None:
+                    found.append(fact)
 
-    # Segundo passe: quantos checks ha sobre o mesmo alvo so e conhecido depois
-    # de a travessia terminar.
-    per_target = Counter(f.attrs["target"] for f in facts if f.kind == "dq.check")
-    facts = [
-        replace(f, measures={**f.measures, "checks_on_target": per_target[f.attrs["target"]]})
-        if f.kind == "dq.check"
-        else f
-        for f in facts
-    ]
+        # Segundo passe: quantos checks ha sobre o mesmo alvo so e conhecido
+        # depois de a travessia terminar. Por escopo, pelo mesmo motivo que o
+        # indice: dois checks sobre `vendas` em duas funcoes diferentes nao sao
+        # dois checks sobre o mesmo alvo.
+        per_target = Counter(f.attrs["target"] for f in found if f.kind == "dq.check")
+        facts.extend(
+            replace(f, measures={**f.measures, "checks_on_target": per_target[f.attrs["target"]]})
+            if f.kind == "dq.check"
+            else f
+            for f in found
+        )
 
     check_count = sum(1 for f in facts if f.kind == "dq.check")
     unresolved_count = sum(1 for f in facts if f.kind == "dq.unresolved")

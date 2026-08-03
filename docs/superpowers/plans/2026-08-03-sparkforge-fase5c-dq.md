@@ -538,6 +538,44 @@ Implemente contando os checks por alvo **depois** de construí-los, num segundo 
 
 Run: PASS.
 
+**Dois falsos positivos medidos na revisão** (desvio D-5c-9). Os quatro atributos correlacionam
+por **nome nu**, e nome nu não identifica objeto. A revisão da Task 2 reproduziu duas fontes em
+que o extrator acusava código correto:
+
+```python
+def a(vendas):                       # colisão entre escopos
+    vendas.write.parquet(1)
+def b(vendas):
+    return vendas.filter(1).count()  # saía after_write, datado contra o write de `a`
+
+vendas.write.parquet(p)              # rebind entre o write e o check
+vendas = carrega('outra')
+ruins = vendas.filter(...).count()   # saía after_write, sobre um DF nunca escrito
+```
+
+As correções, ambas no padrão que a fase já usa:
+
+1. **Índice por escopo.** Corpo do módulo e cada `FunctionDef`/`AsyncFunctionDef` viram escopos
+   separados (`_scopes`), e write, persist, action e `checks_on_target` só correlacionam dentro
+   do próprio escopo. `_ModuleIndex` virou `_ScopeIndex`. `checks_on_target` também passou a ser
+   por escopo: dois checks homônimos em duas funções não são dois checks sobre o mesmo alvo, e
+   contá-los juntos afirmaria varredura repetida sobre um dado que não é o mesmo.
+2. **Rebind omite a chave.** Se o nome do alvo é religado entre a linha do check e a do write
+   comparado, `position_vs_write` **não é emitido** — chave ausente, não um quarto valor.
+   `engine._where_matches` reprova caminho ausente, então `SF-DQ-001` não avalia o check, que é o
+   correto. É o mecanismo de D-5c-3. Todo `ast.Name` em contexto `Store` conta como religação, o
+   que cobre `Assign`, `AnnAssign`, `AugAssign`, alvo de `for` e `with ... as` de uma vez.
+3. **`target_persisted` afirma estado, não ocorrência.** `cache()` / `unpersist()` / check saía
+   `True`. O último evento antes do check decide, e a posição é `(linha, coluna)` para que dois
+   eventos na mesma linha ainda se ordenem.
+
+Quatro limites ficam **documentados no ponto do código e não corrigidos**, porque todos erram
+para menos: alias não é seguido (`df2 = vendas`); check irmão conta como `action_after_check` — é
+verdade, mas quem ler "o dado é reusado" se engana, porque o reuso é recomputo; write e check na
+mesma linha via `;` caem em `before_write`; e `lambda`/corpo de `class` não são escopos
+separados. A separação por escopo introduz um quinto: função que lê um DataFrame global perde a
+correlação com o write do módulo e sai `no_write_in_module` — subnotificação, nunca acusação.
+
 - [x] **Step 4: Commit**
 
 ```bash
