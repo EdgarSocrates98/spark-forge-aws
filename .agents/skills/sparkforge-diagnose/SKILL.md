@@ -51,16 +51,22 @@ Nem tudo vai existir na primeira passada — o job pode não ter Spark UI habili
 
 ```bash
 sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json
+sparkforge analyze data-quality --path <lib> --out .sparkforge/facts_dq.json
 sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts_eventlog.json
 sparkforge analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
 ```
 
+**`analyze data-quality` roda sobre o mesmo `<lib>` do `analyze pyspark`, e as duas leituras não se repetem.** `pyspark` vê "há uma action aqui"; `data-quality` vê "esta action é uma validação, e ela está depois do write, ou não tem consequência, ou recomputa o lineage". Nenhuma regra `SF-PY` lê fact `dq.*` e nenhuma `SF-DQ` lê fact `pyspark.*` — a fronteira é por construção, não por supressão, e há invariante que a trava. Pular esta linha não deixa a investigação mais enxuta: apaga a área `SF-DQ` inteira do relatório, em silêncio.
+
 Use `analyze iceberg` e `analyze catalog-schema` quando o escopo incluir tabela Iceberg ou revisão de catálogo.
+
+Se o job roda em **EMR on EC2** em vez de Glue, o eixo de infraestrutura muda de artefato: `sparkforge collect emr-cluster --repo <repo> --cluster-id j-XXXX --now <ISO8601>` e `sparkforge analyze emr-cluster --path <dir-ou-arquivo>` substituem o par `collect glue-job` / `analyze terraform`. O resto — código, plano, event log, armazenamento — é agnóstico e não muda.
 
 ### 5. Julgue com --show-skipped
 
 ```bash
-sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_tf.json \
+sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_dq.json \
+                 --facts .sparkforge/facts_tf.json \
                  --facts .sparkforge/facts_eventlog.json --show-skipped
 ```
 
