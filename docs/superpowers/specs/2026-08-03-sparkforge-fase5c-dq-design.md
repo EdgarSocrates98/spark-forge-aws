@@ -163,6 +163,42 @@ documento estão explicitamente marcadas como não verificadas:
    `assert` deixa de contar como consequência, ou conta com ressalva escrita
    dentro do achado. Decidir com a fonte na mão.
 
+### 4.4 Como os gatilhos de 4.2 viram condição avaliável
+
+Medido em `sparkforge/rules/engine.py` antes de escrever o plano: `_condition_candidates`
+avalia **um fact por vez** — `where` e `expr` leem o contexto de um único fact — e
+`_absent_satisfied` compara só `kind`. O motor **não** correlaciona dois facts.
+"Linha do check posterior à linha do write" não é expressável como condição.
+
+Isso não é obstáculo novo: é o mesmo limite que produziu D-4, e a resposta é a
+mesma. O extrator caminha a AST inteira do módulo, então ele **já vê** os
+`write`, os `cache` e os demais checks; a correlação é feita lá, e o catálogo lê
+atributo de um fact só.
+
+| Regra | Condição real no YAML |
+|---|---|
+| `SF-DQ-001` | `where: {attrs.position_vs_write: after_write}` |
+| `SF-DQ-002` | `same_subject: true`, `dq.check` presente + `absent: dq.enforcement` |
+| `SF-DQ-003` | `where: {attrs.target_persisted: false, attrs.action_after_check: true}` |
+| `SF-DQ-004` | `expr: "measures.checks_on_target >= 2"` + `where: {attrs.single_pass: false}` |
+
+`attrs.position_vs_write` tem três valores, nunca um booleano: `before_write`,
+`after_write` e `no_write_in_module`. O terceiro é o caso em que o módulo valida
+e não escreve — biblioteca de validação, ou job cujo write está noutro arquivo —
+e ele **não é** `before_write`. Achatar os dois num booleano faria `SF-DQ-001`
+calar por um motivo e o leitor entender outro.
+
+`attrs.single_pass` é o que impede `SF-DQ-004` de acusar quem faz certo: uma
+`VerificationSuite` do Deequ com cinco checks é **uma** passada por construção, e
+sai com `single_pass: true`. Cinco `df.filter(...).count()` separados saem com
+`false`. A regra separa as duas, que era o ponto.
+
+Subject de `dq.enforcement` é **o mesmo** subject do check que ela protege —
+`source_location` com o arquivo e a linha do check, sem `symbol`. É o que faz
+`_subject_group_key` cair na mesma chave e `same_subject` funcionar em
+`SF-DQ-002`. Enforcement com subject próprio faria a regra disparar sobre check
+protegido, porque o `absent` seria avaliado num grupo onde a proteção não está.
+
 ## 5. Superfície e registro
 
 Cada ponto abaixo foi medido no código, com `emr_cluster`/`SF-EMR` como caso de
