@@ -1,0 +1,20 @@
+name: empty_dump
+proves: >
+  JSON valido e vazio: nem `Cluster`. Vira UM `emr.unresolved` com
+  `reason: missing_cluster` mais a sentinela `emr.analyzed` com tudo em zero --
+  e a sentinela e o ponto. Sem ela, uma condicao `absent:` sobre qualquer fact
+  de EMR seria vacuamente verdadeira num repositorio onde o extrator nunca
+  rodou, e a regra dispararia sobre um cluster que ninguem olhou. Com ela, a
+  diferenca entre "analisei e nao ha" e "nunca analisei" fica no proprio corpus
+  de facts. `missing_cluster` e distinto de `missing_instance_model` de
+  proposito: aqui nao ha nem identidade para ancorar fact nenhum, e o operador
+  precisa saber que falta o `describe-cluster`, nao um dump de instancias.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+  python: "3.9"
+  iceberg: "1.6.1-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.unresolved
+expects_rules: []

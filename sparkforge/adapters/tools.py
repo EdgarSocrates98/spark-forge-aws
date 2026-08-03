@@ -209,9 +209,31 @@ _FINDING_ITEM: dict[str, Any] = {
 
 _RUNTIME_CONTEXT: dict[str, Any] = {
     "type": "object",
-    "required": ["glue", "spark", "python", "iceberg", "athena", "detected_from", "divergences"],
+    "required": [
+        "glue",
+        "emr",
+        "spark",
+        "python",
+        "iceberg",
+        "athena",
+        "detected_from",
+        "divergences",
+    ],
     "properties": {
         "glue": {"type": "string"},
+        # `emr` entrou em `RuntimeContext.to_dict()` na Task 1 da Fase 5b e nao
+        # foi declarado aqui. Nao quebrava nada -- JSON Schema permite chave
+        # extra por default --, mas o cliente MCP que le o schema nao ficava
+        # sabendo que a plataforma existe no payload, e o campo so passa a ser
+        # acionavel quando alguem sabe le-lo.
+        "emr": {
+            "type": "string",
+            "description": (
+                "Release label do EMR on EC2 ('emr-7.5.0'), vazio fora do EMR. "
+                "Deriva spark/iceberg/python por EMR_MATRIX; ver "
+                "knowledge/emr/runtime-matrix.md."
+            ),
+        },
         "spark": {"type": "string"},
         "python": {"type": "string"},
         "iceberg": {"type": "string"},
@@ -226,6 +248,20 @@ _RUNTIME_CONTEXT: dict[str, Any] = {
             ),
         },
     },
+}
+
+# O espelho de ENTRADA do campo `emr` do contexto acima. As tools espelham as
+# flags da CLI: deixar `--emr` so na CLI recriaria, um nivel acima, a mesma
+# assimetria que a flag veio fechar -- um agente que fala MCP nao teria como
+# declarar uma release que o operador conhece.
+_EMR_INPUT: dict[str, Any] = {
+    "type": "string",
+    "description": (
+        "Release do EMR on EC2, nas duas grafias ('emr-7.5.0' ou '7.5.0'). "
+        "DECLARACAO, nao observacao: perde para o event log e para um dump de "
+        "describe-cluster, e discordar de um deles vira divergencia reportada "
+        "em `runtime.divergences`, nunca valor substituido em silencio."
+    ),
 }
 
 _ALTERNATIVE_ITEM: dict[str, Any] = {
@@ -927,7 +963,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
             "Cria um case novo em .sparkforge/case.yaml, detectando o runtime "
-            "Glue/Spark/Python/Iceberg a partir dos parametros informados. E o barramento "
+            "Glue/EMR/Spark/Python/Iceberg a partir dos parametros informados. E o barramento "
             "de handoff entre sessoes (Devin, Claude Code): sem case, next-step e resume "
             "nao tem estado sobre o qual operar. `now` e obrigatorio e nunca lido do relogio "
             "pela ferramenta -- quem chama fornece o timestamp."
@@ -940,6 +976,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "case_id": {"type": "string"},
                 "now": {"type": "string", "description": "Timestamp ISO 8601."},
                 "glue": {"type": "string"},
+                "emr": _EMR_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -1081,10 +1118,11 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_runtime_detect": {
         "description": (
-            "Deriva glue/spark/python/iceberg/athena dos facts ja extraidos e dos "
-            "parametros informados, usando a matriz oficial de compatibilidade do Glue. "
+            "Deriva glue/emr/spark/python/iceberg/athena dos facts ja extraidos e dos "
+            "parametros informados, usando as matrizes oficiais de compatibilidade do "
+            "Glue e do EMR. "
             "Com `facts_path`, a versao OBSERVADA pelos extratores (`tf.attribute` "
-            "glue_version, `spark.runtime_version`) alimenta a deteccao -- ninguem "
+            "glue_version, `spark.runtime_version`, `emr.cluster`) alimenta a deteccao -- ninguem "
             "precisa saber a versao de cor. Divergencia entre fontes nao e resolvida "
             "escolhendo uma: e reportada em `divergences`, porque aplicar limiar ou API "
             "da versao errada invalida qualquer recomendacao seguinte."
@@ -1093,6 +1131,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "type": "object",
             "properties": {
                 "glue": {"type": "string"},
+                "emr": _EMR_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -1335,6 +1374,44 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_emr_cluster": {
+        "description": (
+            "Extrai facts de um dump JSON de cluster EMR on EC2 (`describe-cluster` mais "
+            "`list-instance-groups`/`list-instance-fleets`/`list-bootstrap-actions`/"
+            "`get-managed-scaling-policy`/`get-auto-termination-policy`): release, "
+            "aplicacoes com a versao observada, capacidade por papel (Spot/On-Demand, "
+            "grupo OU fleet no mesmo kind), configuracoes nos DOIS niveis (cluster e "
+            "grupo, com quem sobrepoe quem), bootstrap actions e a politica de managed "
+            "scaling. NAO chama a API do EMR -- so le o JSON ja salvo em disco "
+            "(`sparkforge_collect_emr_cluster` ou `aws emr ...` a mao fazem isso). "
+            "Grupo cujo `Configurations` diverge de `LastSuccessfullyAppliedConfigurations` "
+            "vira `emr.configuration.unapplied`: a reconfiguracao foi pedida e NAO "
+            "aplicada, entao o cluster nao roda com o que o dump aparenta dizer, e toda "
+            "regra que le configuracao daquele grupo precisa desse fact como guarda. "
+            "Emite tambem um unico fact DERIVADO, `emr.yarn.am_node_label`, que decide a "
+            "partir do `yarn-site` se o ApplicationMaster -- que em deploy-mode cluster E "
+            "o driver -- esta preso a um rotulo de no seguro; ele so aparece quando o AM "
+            "NAO esta provadamente solto, e e o guarda de SF-EMR-008."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo ou diretorio com dumps de cluster EMR.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -1513,6 +1590,7 @@ TOOLS: dict[str, dict[str, Any]] = {
                     ),
                 },
                 "glue": {"type": "string"},
+                "emr": _EMR_INPUT,
                 "spark": {"type": "string"},
                 "python": {"type": "string"},
                 "iceberg": {"type": "string"},
@@ -1712,6 +1790,31 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY_OPEN_WORLD,
     },
+    "sparkforge_collect_emr_cluster": {
+        "description": (
+            "Baixa os seis dumps de um cluster EMR on EC2 (`describe_cluster`, grupos OU "
+            "fleets, bootstrap actions, managed scaling e auto termination) e registra a "
+            "uniao deles no manifesto, no mesmo shape PascalCase que `aws emr ...` "
+            "devolve -- coleta manual e automatica produzem o mesmo arquivo. Secao que "
+            "nao se aplica ao cluster (fleets num cluster de grupos, politica nao "
+            "configurada) e OMITIDA, nunca gravada vazia. Mesma politica offline-first "
+            "de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "cluster_id", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "cluster_id": {"type": "string", "description": "j-XXXXXXXXXXXXX"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
     "sparkforge_collect_verify": {
         "description": (
             "Verifica presenca e integridade (sha256 recalculado) de todos os artefatos "
@@ -1737,6 +1840,7 @@ def _h_case_open(args: dict[str, Any]) -> dict[str, Any]:
         args["case_id"],
         args["now"],
         glue=args.get("glue"),
+        emr=args.get("emr"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -1783,6 +1887,7 @@ def _h_playbook(args: dict[str, Any]) -> dict[str, Any]:
 def _h_runtime_detect(args: dict[str, Any]) -> dict[str, Any]:
     return _core.runtime_detect(
         glue=args.get("glue"),
+        emr=args.get("emr"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -1805,6 +1910,7 @@ def _h_judge(args: dict[str, Any]) -> dict[str, Any]:
         facts=args.get("facts"),
         facts_path=args.get("facts_path"),
         glue=args.get("glue"),
+        emr=args.get("emr"),
         spark=args.get("spark"),
         python=args.get("python"),
         iceberg=args.get("iceberg"),
@@ -1925,6 +2031,15 @@ def _h_analyze_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_emr_cluster(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_call_graph(
         args["facts_path"],
@@ -1984,6 +2099,12 @@ def _h_collect_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_emr_cluster(
+        args["repo"], cluster_id=args["cluster_id"], now=args["now"]
+    )
+
+
 def _h_collect_verify(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_verify(args["repo"])
 
@@ -2005,6 +2126,7 @@ _HANDLERS = {
     "sparkforge_analyze_iceberg": _h_analyze_iceberg,
     "sparkforge_analyze_sql": _h_analyze_sql,
     "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
+    "sparkforge_analyze_emr_cluster": _h_analyze_emr_cluster,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
@@ -2018,6 +2140,7 @@ _HANDLERS = {
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
+    "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,
     "sparkforge_collect_verify": _h_collect_verify,
 }
 

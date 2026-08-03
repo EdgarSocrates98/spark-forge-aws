@@ -31,6 +31,35 @@
     }
   },
   {
+    "id": "f_a60ce3",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 2,
+      "symbol": "transformar",
+      "snippet": "def transformar(a, b):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6238bff723c7f905c54acf2e189ff5477216e143a8ab4ce0940553e13b679359",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_4c3177",
     "schema_version": 1,
     "kind": "pyspark.join",
@@ -73,7 +102,14 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "a",
+        "b",
+        "filter",
+        "join",
+        "select"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

@@ -25,4 +25,5 @@ expects_kinds:
   - pyspark.read
   - pyspark.write
   - pyspark.action
+  - pyspark.function_def
 expects_rules: []

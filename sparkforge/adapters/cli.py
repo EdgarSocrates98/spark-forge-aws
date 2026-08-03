@@ -71,6 +71,17 @@ def _load_json_list(path: str) -> list[dict[str, Any]]:
     return data
 
 
+# Uma unica redacao para os tres verbos que aceitam a flag. Repetir o texto tres
+# vezes e como uma delas fica desatualizada.
+_EMR_FLAG_HELP = (
+    "Release do EMR on EC2. Aceita as duas grafias -- `emr-7.5.0` e `7.5.0`. "
+    "E DECLARACAO, nao observacao: perde para o event log e para um dump de "
+    "`describe-cluster`, e discordar de um deles vira divergencia reportada, "
+    "nunca valor substituido em silencio. Serve a quem sabe a release e nao tem "
+    "o dump -- com o dump, `--facts` ja resolve sozinho."
+)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sparkforge",
@@ -179,6 +190,21 @@ def build_parser() -> argparse.ArgumentParser:
     athena_wg_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     athena_wg_analyze_p.add_argument("--cursor")
 
+    emr_analyze_p = analyze_sub.add_parser(
+        "emr-cluster",
+        help="Extrai facts de um dump JSON de cluster EMR on EC2 (describe-cluster e os "
+        "cinco dumps que o completam).",
+    )
+    emr_analyze_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps de cluster EMR."
+    )
+    emr_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    emr_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    emr_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    emr_analyze_p.add_argument("--cursor")
+
     s3_p = analyze_sub.add_parser(
         "s3-listing",
         help="Extrai facts de um dump de `aws s3api list-objects-v2` (small files, "
@@ -270,6 +296,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     judge_p.add_argument("--glue")
+    judge_p.add_argument("--emr", help=_EMR_FLAG_HELP)
     judge_p.add_argument("--spark")
     judge_p.add_argument("--python")
     judge_p.add_argument("--iceberg")
@@ -291,6 +318,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--now", required=True, help="Timestamp ISO 8601. Nunca lido do relogio pela CLI."
     )
     open_p.add_argument("--glue")
+    open_p.add_argument("--emr", help=_EMR_FLAG_HELP)
     open_p.add_argument("--spark")
     open_p.add_argument("--python")
     open_p.add_argument("--iceberg")
@@ -358,13 +386,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     # runtime detect ----------------------------------------------------
     runtime_p = sub.add_parser(
-        "runtime", help="Deteccao de runtime Glue/Spark/Python/Iceberg/Athena."
+        "runtime", help="Deteccao de runtime Glue/EMR/Spark/Python/Iceberg/Athena."
     )
     runtime_sub = runtime_p.add_subparsers(dest="runtime_action", required=True)
     detect_p = runtime_sub.add_parser(
         "detect", help="Deriva a matriz de runtime a partir de facts ja extraidos e de flags."
     )
     detect_p.add_argument("--glue")
+    detect_p.add_argument("--emr", help=_EMR_FLAG_HELP)
     detect_p.add_argument("--spark")
     detect_p.add_argument("--python")
     detect_p.add_argument("--iceberg")
@@ -456,6 +485,15 @@ def build_parser() -> argparse.ArgumentParser:
     athena_wg_collect_p.add_argument("--repo", required=True)
     athena_wg_collect_p.add_argument("--workgroup", required=True)
     athena_wg_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
+    emr_collect_p = collect_sub.add_parser(
+        "emr-cluster",
+        help="Baixa describe-cluster, grupos/fleets, bootstrap actions e as politicas de "
+        "scaling de um cluster EMR on EC2.",
+    )
+    emr_collect_p.add_argument("--repo", required=True)
+    emr_collect_p.add_argument("--cluster-id", required=True, help="j-XXXXXXXXXXXXX")
+    emr_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
@@ -699,6 +737,27 @@ def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
+    full = _core.analyze_emr_cluster(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
     full = _core.analyze_call_graph(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -742,6 +801,7 @@ def _cmd_judge(args: argparse.Namespace) -> int:
     full = _core.judge_findings(
         facts_path=args.facts,
         glue=args.glue,
+        emr=args.emr,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -780,6 +840,7 @@ def _cmd_case_open(args: argparse.Namespace) -> int:
         args.case_id,
         args.now,
         glue=args.glue,
+        emr=args.emr,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -850,6 +911,7 @@ def _cmd_playbook(args: argparse.Namespace) -> int:
 def _cmd_runtime_detect(args: argparse.Namespace) -> int:
     payload = _core.runtime_detect(
         glue=args.glue,
+        emr=args.emr,
         spark=args.spark,
         python=args.python,
         iceberg=args.iceberg,
@@ -936,6 +998,12 @@ def _cmd_collect_athena_workgroup(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_emr_cluster(args: argparse.Namespace) -> int:
+    payload = _core.collect_emr_cluster(args.repo, cluster_id=args.cluster_id, now=args.now)
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_verify(args: argparse.Namespace) -> int:
     _print(_core.collect_verify(args.repo))
     return 0
@@ -950,6 +1018,7 @@ _DISPATCH = {
     ("analyze", "iceberg"): _cmd_analyze_iceberg,
     ("analyze", "sql"): _cmd_analyze_sql,
     ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
+    ("analyze", "emr-cluster"): _cmd_analyze_emr_cluster,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,
@@ -972,6 +1041,7 @@ _DISPATCH = {
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
+    ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "verify"): _cmd_collect_verify,
 }
 

@@ -1,0 +1,54 @@
+[
+  {
+    "rule_id": "SF-EMR-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Cluster terminado por falha de bootstrap action",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-4SEMINSTANCIAS"
+    },
+    "evidence": [
+      "f_ed26a1"
+    ],
+    "measured": {
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O cluster não chegou a processar nada: ele terminou antes de instalar as aplicações. O mecanismo é declarado: \"If the bootstrap action returns a nonzero error code, Amazon EMR treats it as a failure and terminates the instance. If too many instances fail their bootstrap actions, then Amazon EMR terminates the cluster. If just a few instances fail, Amazon EMR attempts to reallocate the failed instances and continue.\" O código BOOTSTRAP_FAILURE em Status.StateChangeReason é a evidência que a própria documentação manda usar para atribuir a terminação a bootstrap. Este é um achado post-mortem: ele não previne nada neste cluster, ele diz onde olhar. A causa quase nunca está na definição do bootstrap e sim fora dela — objeto S3 do script ausente ou sem permissão de leitura para o perfil de instância, dependência externa indisponível a partir da subnet, ou tempo de execução além do que o provisionamento tolera.",
+    "proposed_change": [
+      "Ler os logs de bootstrap do cluster terminado em s3://<bucket-de-log>/<cluster-id>/node/<instância>/, que só existem se LogUri estava configurado — ver SF-EMR-006.",
+      "Conferir que o perfil de instância EC2 do cluster tem s3:GetObject sobre o Path de cada bootstrap action, e que o objeto existe na mesma região do cluster.",
+      "Revisar os argumentos de cada script; argumento errado costuma produzir exit code não-zero cedo, antes de qualquer log útil.",
+      "Fazer o script sair com código explícito e mensagem em cada caminho de erro, para que a próxima falha seja legível sem SSH.",
+      "Reduzir o trabalho do bootstrap ao mínimo: dependência pesada instalada por bootstrap é ponto de falha em cada provisionamento e em cada nó adicionado por scaling."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Um bootstrap que agora sai com zero em caminho de erro para de derrubar o cluster e passa a produzir nó silenciosamente incompleto, que é pior. Sair com zero só depois de verificar o efeito, nunca para suprimir a falha."
+    ],
+    "tradeoffs": [
+      "Mover a instalação de dependências para uma AMI customizada elimina a classe inteira de falha, ao custo de manter e versionar a AMI."
+    ],
+    "validation": [
+      "Provisionamento novo com os mesmos bootstrap actions chega ao estado WAITING ou RUNNING.",
+      "Logs de bootstrap do provisionamento novo presentes em S3, com exit code zero em todos os nós.",
+      "O efeito que o script deveria produzir conferido diretamente num nó, e não pela ausência de erro."
+    ],
+    "rollback": [
+      "Provisionar sem o bootstrap action em questão e instalar a dependência por outro caminho, se o cluster for urgente."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-bootstrap.html",
+        "retrieved": "2026-08-01"
+      }
+    ]
+  }
+]

@@ -670,6 +670,55 @@ class TestAnalyzeAthenaWorkgroup:
         assert payload["unresolved_at"][0]["reason"] == "unparseable_engine_version"
 
 
+class TestAnalyzeEmrCluster:
+    _DUMP = json.dumps(
+        {
+            "Cluster": {
+                "Id": "j-1EXAMPLE",
+                "ReleaseLabel": "emr-7.5.0",
+                "InstanceCollectionType": "INSTANCE_GROUP",
+                "LogUri": "s3://bucket/elasticmapreduce/",
+                "AutoTerminate": False,
+                "Status": {"State": "RUNNING"},
+            },
+            "InstanceGroups": [
+                {
+                    "Id": "ig-TASK",
+                    "InstanceGroupType": "TASK",
+                    "Market": "SPOT",
+                    "InstanceType": "r5.xlarge",
+                    "RequestedInstanceCount": 4,
+                }
+            ],
+        }
+    )
+
+    def test_prints_summary(self, repo, capsys):
+        dump = repo / "cluster.json"
+        dump.write_text(self._DUMP, encoding="utf-8")
+        _, output = run(["analyze", "emr-cluster", "--path", str(dump)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"]["emr.instance_capacity"] == 1
+        assert payload["unresolved"] == 0
+
+    def test_dump_without_instance_lists_reports_unresolved_not_zero_capacity(
+        self, repo, capsys
+    ):
+        """Pelo verbo, a mesma disciplina do extrator: lista de instancias nao
+        coletada aparece como ponto cego, nao como cluster sem capacidade."""
+        dump = repo / "cluster.json"
+        dump.write_text(json.dumps({"Cluster": {"Id": "j-1", "ReleaseLabel": "emr-7.5.0"}}))
+        _, output = run(["analyze", "emr-cluster", "--path", str(dump)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"].get("emr.instance_capacity", 0) == 0
+        assert payload["unresolved"] == 1
+        assert payload["unresolved_at"][0]["reason"] == "missing_instance_model"
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "emr-cluster", "--path", str(repo / "nope.json")], capsys)
+        assert code == 2
+
+
 class TestAnalyzeCallGraph:
     def test_derives_from_pyspark_facts(self, repo, capsys):
         facts_path = repo / "facts.json"
@@ -825,3 +874,43 @@ class TestCliMcpEquivalence:
 
         mcp_payload = call_tool("sparkforge_collect_verify", {"repo": str(repo)})
         assert cli_payload == mcp_payload
+
+
+class TestEmrFlag:
+    """`--emr` nos tres verbos que aceitam runtime, e a mesma flag no MCP.
+
+    A divida era de superficie, nao de motor: `detect_runtime` sempre soube ler
+    `emr_release` de qualquer fonte, e so `emr.cluster` a alimentava. Quem sabe
+    a release e nao tem dump ficava sem caminho -- e o MCP ficaria sem caminho
+    mesmo com a flag na CLI, o que recriaria a assimetria um nivel acima."""
+
+    def test_runtime_detect_derives_the_matrix_from_the_flag(self, capsys):
+        _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
+        payload = json.loads(output)
+        assert payload["emr"] == "7.5.0"
+        assert payload["spark"] == "3.5.2-amzn-1"
+        assert payload["iceberg"] == "1.6.1-amzn-1"
+
+    def test_the_numeric_spelling_reaches_the_same_row(self, capsys):
+        _, output = run(["runtime", "detect", "--emr", "7.5.0"], capsys)
+        assert json.loads(output)["spark"] == "3.5.2-amzn-1"
+
+    def test_judge_reports_the_runtime_the_flag_declared(self, repo, capsys):
+        facts_path = repo / "facts.json"
+        run(["analyze", "pyspark", "--path", str(repo / "lib"), "--out", str(facts_path)], capsys)
+
+        _, output = run(["judge", "--facts", str(facts_path), "--emr", "emr-6.15.0"], capsys)
+        assert json.loads(output)["runtime"]["emr"] == "6.15.0"
+
+    def test_case_open_stores_the_release(self, repo, capsys):
+        run(
+            ["case", "open", "--repo", str(repo), "--case-id", "c-emr",
+             "--now", "2026-08-01T00:00:00Z", "--emr", "emr-7.5.0"],
+            capsys,
+        )
+        _, output = run(["case", "get", "--repo", str(repo)], capsys)
+        assert json.loads(output)["runtime"]["emr"] == "7.5.0"
+
+    def test_cli_and_mcp_agree(self, capsys):
+        _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
+        assert json.loads(output) == call_tool("sparkforge_runtime_detect", {"emr": "emr-7.5.0"})

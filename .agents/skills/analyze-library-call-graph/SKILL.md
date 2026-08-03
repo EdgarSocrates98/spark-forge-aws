@@ -29,7 +29,13 @@ Isso deriva estrutura a partir dos facts já extraídos — não reparseia nada.
 
 ### 3. Comece pelo summary
 
-`callgraph.summary` traz `entrypoint_count`, `max_depth`, `unreachable_function_count` e `has_cycle`. Um `unreachable_function_count` alto costuma indicar dispatch dinâmico ou dead code — não confunda um com o outro sem checar o código.
+`callgraph.summary` traz `function_count`, `defined_function_count`, `entrypoint_count`, `max_depth`, `has_cycle` e três medidas que precisam ser lidas juntas:
+
+- `unreachable_from_entrypoint_count` — nós que nenhuma travessia alcança. Só acontece em componente cíclico sem entrada; **não** é medida de código morto.
+- `unreferenced_function_count` + `attrs.unreferenced_functions` — funções definidas (nível de módulo ou aninhadas), sem decorator, fora de `__all__`, que ninguém neste corpus chama e cujo nome não é lido em nenhum arquivo do corpus. A lista vem com os nomes: é ela que se leva ao operador, nunca a contagem sozinha.
+- `opaque_caller_function_count` — quantas funções ficaram **fora** dessa população por serem método, decoradas ou exportadas. Se esse número é grande, a lista acima cobre pouco do módulo.
+
+`attrs.dynamic_dispatch_present: true` significa que há `getattr` no corpus — com ele, qualquer nome da lista pode estar sendo chamado por string.
 
 ### 4. Leia `callgraph.reachable_spark_work` ordenado por `min_depth`
 
@@ -81,12 +87,13 @@ Arestas só existem entre chamadas **estaticamente resolvidas dentro do mesmo ar
 | `callgraph.function` | `fan_in`, `fan_out`, `spark_work_count`, `is_entrypoint`, `is_leaf` por função | Localiza concentração de trabalho e funções nunca chamadas |
 | `callgraph.reachable_spark_work` | `min_depth` + `via` por par (entrypoint, tipo de trabalho) | Responde "a que profundidade, por qual caminho" — o que a lista de arestas sozinha não responde |
 | `callgraph.cycle` | funções em ciclo + se carregam trabalho Spark | Recursão/recursão mútua com trabalho Spark embutido |
-| `callgraph.summary` | contagem de funções, arestas, entrypoints, profundidade máxima, funções inalcançáveis | Visão geral antes de mergulhar caso a caso |
+| `callgraph.summary` | contagem de funções definidas, arestas, entrypoints, profundidade máxima, símbolos sem referência no corpus | Visão geral antes de mergulhar caso a caso |
 
 ## Red flags
 
 - Concluir a análise só pelo entrypoint, sem consultar `callgraph.reachable_spark_work`.
-- Tratar `unreachable_function_count` como prova de dead code sem checar dispatch dinâmico ou chamada cross-módulo.
+- Tratar `unreferenced_functions` como prova de código morto. A medida diz "sem referência **neste corpus**" — se o recorte é uma biblioteca, o chamador é a aplicação que a importa, e ela não está no recorte. Antes de propor remoção, confirme com o operador quem consome o módulo, e cheque `dynamic_dispatch_present`.
+- Tratar `unreachable_from_entrypoint_count` como código morto: ele só marca componente cíclico sem entrada.
 - Ignorar `callgraph.cycle` com `contains_spark_work: true` como só um risco de recursão, quando também é recomputação.
 - Assumir que a ausência de aresta entre dois módulos significa que eles não se chamam — pode só significar que o extrator não resolve chamada cross-arquivo.
 

@@ -1,0 +1,74 @@
+[
+  {
+    "rule_id": "SF-EMR-009",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Janela de ociosidade da auto-terminação larga demais para terminar o cluster",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-9SEMANAOCIOSA"
+    },
+    "evidence": [
+      "f_385a17"
+    ],
+    "measured": {
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_seconds": 604800
+    },
+    "threshold": {
+      "idle_timeout_seconds": 86400
+    },
+    "runtime_scope": {},
+    "explanation": "A política de auto-terminação existe para desligar cluster ocioso sem alguém precisar vigiar, e a AWS declara os três números que definem o espaço: \"Idle timeout defaults to 60 minutes (one hour) when you don't specify an amount. You can specify a minimum idle timeout of one minute, and a maximum idle timeout of 7 days.\" O defeito que esta regra acusa não é a política — é a janela. Um IdleTimeout maior que o intervalo ocioso típico do cluster nunca é alcançado: o cluster fica parado a noite inteira, o relógio de ociosidade reinicia no primeiro job da manhã, e a política nunca termina nada. O controle existe no papel e não age nenhuma vez. O custo enquanto isso é integral, e a AWS o declara sem rodeio para o cluster de longa duração, que é exatamente o cluster ao qual esta política se aplica: \"Long-running clusters continue to run, accept work, and accrue charges until you take action to shut them down.\" Nada disso aparece em métrica de Spark: não há job, não há stage, não há falha — só a fatura. É também o único eixo desta área que a leitura do código nunca alcança. Ver knowledge/emr/cluster-configuration.md seção 10.",
+    "proposed_change": [
+      "Dimensionar o IdleTimeout pelo maior intervalo ocioso que ainda vale a pena manter o cluster de pé, medido no histórico de submissão de steps e não estimado — a AWS publica métricas CloudWatch de alta resolução de ociosidade justamente quando a auto-terminação está ligada.",
+      "Se a janela larga existe para preservar cache quente ou HDFS entre execuções, tornar isso explícito: nomear o dado que se está preservando e conferir se ele não poderia estar em S3, o que devolve a liberdade de terminar o cluster.",
+      "Confirmar que o cluster é YARN: a auto-terminação não é suportada com aplicações não-YARN (Presto, Trino, HBase), e num cluster desses a política não termina nada, qualquer que seja o valor. Ali a correção é outra — orquestrar a terminação fora do EMR.",
+      "Para cluster que roda uma carga por dia com folga longa entre execuções, avaliar cluster transiente (AutoTerminate) em vez de política de ociosidade; a política é a ferramenta do cluster de longa duração, não substituta do transiente.",
+      "Se a auto-terminação não estiver funcionando com a janela atual, conferir as duas restrições de rede documentadas antes de mexer no número: endpoint público da API Gateway alcançável pelo metrics-collector, e conectividade TCP na porta 9443 entre o security group primário e o de service access."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Este é o risco central: encurtar a janela termina o cluster no meio de trabalho que os critérios de ociosidade do EMR não enxergam. Script de shell e aplicação não-YARN rodando no nó primário não contam como atividade; a saída documentada, da release 6.4.0 em diante, é o arquivo /emr/metricscollector/isbusy, que o processo deve tocar periodicamente.",
+      "Terminar o cluster destrói o HDFS dele. Qualquer dado intermediário que só existisse ali precisa estar em S3 antes de a janela encurtar, e essa verificação vem antes da mudança, não depois.",
+      "A política é editável em cluster em execução (put/remove-auto-termination-policy), então o efeito é imediato — inclusive o efeito indesejado. Aplicar em janela de baixo movimento, não no meio do dia.",
+      "Cluster interativo perde a sessão do usuário junto com o cluster. Notebook não salvo em S3 ou em repositório morre com o nó."
+    ],
+    "tradeoffs": [
+      "A aplicação interativa é o trade-off declarado desta regra, e ela NÃO é gatilho. Um cluster com JupyterHub, Zeppelin ou Hue é acusado como qualquer outro, por três motivos. Primeiro, a regra pressupõe que a política JÁ existe: quem a anexou já aceitou que o cluster se termina sozinho, e o que se discute aqui é o valor, não a introdução do comportamento. Segundo, o risco documentado para notebook tem recorte de release -- a página diz que o EMR pode marcar o cluster como ocioso mesmo com um kernel Python3 ativo nas séries 5.30.0-5.33.0 e 6.1.0-6.3.0, e recomenda literalmente \"use Amazon EMR version 6.4.0 or later\"; 6.4.0 é a release mais antiga do EMR_MATRIX deste repositório, então nenhum cluster que esta ferramenta consegue analisar está naquele recorte. Terceiro, calar a regra onde há aplicação interativa a apagaria exatamente onde o custo de ociosidade é maior, porque cluster de gente é o que mais fica parado.",
+      "Janela larga compra tempo de espera com dinheiro. Isso pode ser a decisão certa quando religar o cluster custa minutos de provisionamento no meio de um turno de trabalho; o que a regra recusa é que a decisão fique implícita num número que ninguém escolheu.",
+      "Da release 6.4.0 em diante a auto-terminação vem ligada por default nos clusters criados pelo console, com uma hora. Uma janela muito maior que isso quase sempre foi digitada por alguém, e vale perguntar contra o quê.",
+      "Limite declarado do gatilho: a regra lê o VALOR da política e não pergunta se o cluster é de longa duração. Num cluster com AutoTerminate ligado -- transiente, que \"terminates the cluster's Amazon EC2 instances\" assim que o último step acaba -- a política de ociosidade nunca chega a ser avaliada, e o achado muda de sentido: em vez de \"a janela é larga demais\", ele diz \"esta política não faz nada, porque o cluster já termina no último step\". A recomendação correta ali é remover a política, não encurtá-la. A combinação é contraditória por construção e é rara, e acusá-la continua sendo verdade; o que não se pode fazer é pôr AutoTerminate no `when`, porque um dump que não reportou o campo passaria a calar a regra."
+    ],
+    "validation": [
+      "Métrica CloudWatch de alta resolução de ociosidade do cluster ao longo de uma semana, comparada com o IdleTimeout configurado — é o dado que diz se a política alguma vez chegaria a disparar.",
+      "Histórico de término de cluster antes e depois: quantas vezes a política terminou o cluster no período, e não só que ela está configurada.",
+      "Custo EC2 mais uplift do EMR do cluster por período comparável, antes e depois.",
+      "Contagem de linhas do destino e agregado de controle iguais antes e depois; mudar quando o cluster desliga não pode mudar resultado, e se mudar é porque havia estado no HDFS que ninguém declarou.",
+      "Um teste de ociosidade em homologação com a janela nova, confirmando que o cluster termina quando deve e que nenhum trabalho legítimo foi interrompido."
+    ],
+    "rollback": [
+      "Restaurar o valor anterior com `aws emr put-auto-termination-policy --cluster-id <id> --auto-termination-policy IdleTimeout=<valor-anterior>`. Diferente do resto desta área, este rollback NÃO exige reprovisionar: a política é anexável, alterável e removível em cluster em execução.",
+      "Se o cluster já terminou por causa da janela nova, o rollback é provisionar outro; o que não volta é o HDFS, e por isso a validação de estado em S3 vem antes da mudança."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-longrunning-transient.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A fonte sustenta TODOS os números citados: default de 3600 s, mínimo de 60 s, máximo de 604800 s (7 dias), a auto-terminação ligada por default no console da 6.4.0 em diante, os critérios de ociosidade por série de release, o arquivo `/emr/metricscollector/isbusy` da 6.4.0 em diante, a não-suportabilidade com Presto/Trino/HBase e as duas restrições de rede. O que ela NÃO declara é um ponto a partir do qual a janela passa a ser larga demais -- esse ponto não existe na documentação, e o limiar de 86400 s é escolha de campo. Ele é um dia inteiro, e a razão da escolha é estrutural, não estatística: qualquer intervalo ocioso INTRADIÁRIO -- fim de expediente, madrugada, janela entre cargas -- é menor que 24 h, então uma política de um dia ou mais não pode ser alcançada por nenhum deles e existe sem nunca agir. O ramo P1 em 604800 s, esse sim, é o valor da fonte: é o teto da API. Nenhuma taxa de incidência é afirmada aqui, e a severidade P2 do caso geral vem de ser custo puro, sem efeito sobre correção de resultado."
+      }
+    ]
+  }
+]

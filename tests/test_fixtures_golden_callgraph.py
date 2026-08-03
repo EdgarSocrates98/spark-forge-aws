@@ -26,7 +26,7 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "callgraph"
 
-REQUIRED_FIXTURES = {"mutual_recursion", "linear_pipeline"}
+REQUIRED_FIXTURES = {"mutual_recursion", "linear_pipeline", "library_surface"}
 
 
 def fixture_dirs():
@@ -123,7 +123,61 @@ class TestAdversarial:
     def test_every_function_is_reachable_from_the_entrypoint(self):
         for directory in fixture_dirs():
             _, facts, _, _ = run_fixture(directory)
-            assert _summary(facts).measures["unreachable_function_count"] == 0, directory.name
+            summary = _summary(facts)
+            assert summary.measures["unreachable_from_entrypoint_count"] == 0, directory.name
+
+    def test_every_defined_function_became_a_node(self):
+        """A divida da Fase 1, fechada: o no vem da DEFINICAO, nao da aresta.
+
+        Enquanto `nodes` vinha so das arestas, uma funcao definida e nunca
+        chamada nao existia no grafo -- e `unreachable_function_count`, o nome
+        antigo da medida, devolvia zero justamente no caso que ele parecia
+        medir. Aqui as duas contagens tem que fechar contra os facts
+        `pyspark.function_def` que a extracao produziu.
+        """
+        for directory in fixture_dirs():
+            derived = _derive(directory)
+            defined = {
+                (f.subject["file"], f.subject["symbol"])
+                for f in extract_tree(directory / "input", repo_root=directory / "input")
+                if f.kind == "pyspark.function_def"
+            }
+            nodes = {
+                (f.subject["file"], f.subject["symbol"])
+                for f in _by_kind(derived, "callgraph.function")
+            }
+            assert defined <= nodes, directory.name
+            counted = _summary(derived).measures["defined_function_count"]
+            assert counted == len(defined), directory.name
+
+    def test_the_library_surface_yields_exactly_one_unreferenced_symbol(self):
+        """A metade negativa da medida, que e a que decide se ela e usavel.
+
+        Oito das nove funcoes de `library_surface` nao tem chamador local e
+        NENHUMA delas e sobra: duas estao em `__all__`, uma e chamada
+        cross-modulo, uma e callback, uma e decorada, duas sao metodos e uma e
+        `main` sob `if __name__`. Se esta lista crescer, a medida passou a
+        acusar codigo vivo -- o falso positivo em massa que
+        `rules/catalog/README.md` trata como o pior defeito possivel.
+        """
+        _, facts, _, _ = run_fixture(FIXTURES / "library_surface")
+        summary = _summary(facts)
+        assert summary.attrs["unreferenced_functions"] == ["_rotina_abandonada"]
+        assert summary.measures["unreferenced_function_count"] == 1
+        assert summary.measures["opaque_caller_function_count"] == 5
+
+    def test_no_rule_consumes_the_summary(self):
+        """`callgraph.summary` segue sem regra DE PROPOSITO (ver o comentario
+        final de `rules/catalog/callgraph.yaml`): "sem referencia neste corpus"
+        e informacao util para o agente, nao achado. Se alguem escrever uma
+        regra sobre ela, este teste quebra e obriga a decisao a ser explicita.
+        """
+        rules = [
+            rule
+            for rule in load_catalog()
+            if "callgraph.summary" in rule.get("requires_facts", [])
+        ]
+        assert rules == [], [r["id"] for r in rules]
 
     def test_spark_work_is_attributed_to_the_entrypoint_that_reaches_it(self):
         """`via` e o caminho, e e o que torna o achado acionavel: sem ele o

@@ -92,7 +92,7 @@ class TestLinearChainDepth:
         assert summary.measures["max_depth"] == 2
         assert summary.measures["function_count"] == 3
         assert summary.measures["edge_count"] == 2
-        assert summary.measures["unreachable_function_count"] == 0
+        assert summary.measures["unreachable_from_entrypoint_count"] == 0
         assert summary.attrs["entrypoints"] == ["main"]
         assert summary.attrs["has_cycle"] is False
 
@@ -131,23 +131,261 @@ class TestCycles:
 
     def test_cycle_with_no_entrypoint_counts_as_unreachable(self):
         # f <-> g calling each other, nothing outside calls either: no
-        # entrypoint exists, so no BFS ever visits them.
+        # entrypoint exists, so no BFS ever visits them. Este e o UNICO caso
+        # que a medida antiga pegava -- e o motivo de ela ter sido renomeada
+        # para `unreachable_from_entrypoint_count`.
         facts = [edge("f", "g"), edge("g", "f")]
         out = build_call_graph(facts, path_hint=FILE)
         summary = by_kind(out, "callgraph.summary")[0]
         assert summary.measures["entrypoint_count"] == 0
-        assert summary.measures["unreachable_function_count"] == 2
+        assert summary.measures["unreachable_from_entrypoint_count"] == 2
         assert by_kind(out, "callgraph.reachable_spark_work") == []
 
 
 class TestIsolatedFunction:
-    def test_function_with_no_edges_produces_no_node_and_does_not_crash(self):
+    def test_work_fact_without_definition_or_edge_produces_no_node(self):
+        """Degradacao explicita: sem `pyspark.function_def` na entrada, o grafo
+        volta ao comportamento anterior a Fase 5b -- so nos de aresta. E o que
+        acontece com facts gravados por um extrator antigo, e
+        `defined_function_count` e o que denuncia a diferenca."""
         facts = [work("solo", "pyspark.action")]
         out = build_call_graph(facts, path_hint=FILE)
         assert by_kind(out, "callgraph.function") == []
         summary = by_kind(out, "callgraph.summary")[0]
         assert summary.measures["function_count"] == 0
+        assert summary.measures["defined_function_count"] == 0
         assert summary.measures["edge_count"] == 0
+        assert summary.measures["unreferenced_function_count"] == 0
+
+
+def graph_of(source: str, path: str = FILE):
+    return build_call_graph(extract_source(textwrap.dedent(source), path), path_hint=path)
+
+
+def summary_of(source: str):
+    return by_kind(graph_of(source), "callgraph.summary")[0]
+
+
+def functions_of(source: str):
+    return {f.subject["symbol"]: f for f in by_kind(graph_of(source), "callgraph.function")}
+
+
+class TestDefinedFunctionBecomesANode:
+    """A divida da Fase 1: uma funcao DEFINIDA e nunca chamada nao existia.
+
+    Antes, `nodes` vinha so das arestas, entao a funcao morta tipica -- a que
+    nao chama ninguem e ninguem chama -- nao entrava no grafo, e
+    `unreachable_function_count` devolvia ZERO. Zero indistinguivel de "nao ha
+    codigo morto" e o falso negativo silencioso que este repositorio trata como
+    o pior defeito.
+    """
+
+    def test_function_never_called_that_calls_nobody_is_a_node(self):
+        src = """
+            def main():
+                spark.read.parquet("s3://in").count()
+
+            def orfa():
+                return 1
+        """
+        summary = summary_of(src)
+        assert summary.measures["function_count"] == 2
+        assert summary.measures["defined_function_count"] == 2
+        assert "orfa" in summary.attrs["unreferenced_functions"]
+
+    def test_function_never_called_that_calls_another_is_still_flagged(self):
+        src = """
+            def orfa():
+                return ajudante()
+
+            def ajudante():
+                return 2
+        """
+        summary = summary_of(src)
+        assert summary.attrs["unreferenced_functions"] == ["orfa"]
+
+    def test_the_entrypoint_itself_becomes_a_node_and_carries_its_spark_work(self):
+        """Antes, um script cujo unico `main` faz `collect()` produzia ZERO
+        fact de grafo: `main` nao aparecia em aresta nenhuma."""
+        src = """
+            def main():
+                spark.read.parquet("s3://in").collect()
+        """
+        out = graph_of(src)
+        assert [f.subject["symbol"] for f in by_kind(out, "callgraph.function")] == ["main"]
+        reachable = by_kind(out, "callgraph.reachable_spark_work")
+        assert {f.attrs["work_kind"] for f in reachable} >= {"pyspark.driver_collect"}
+
+
+class TestWhatAbsenceOfCallerCanMean:
+    """Onde "ninguem chama" NAO e informacao sobre o codigo.
+
+    Cada caso aqui e uma forma de invocacao que o extrator intra-arquivo nao
+    ve. Contar qualquer um deles como orfao seria falso positivo em massa --
+    o defeito que `rules/catalog/README.md` considera pior que achado nenhum,
+    porque destroi a confianca no relatorio inteiro.
+    """
+
+    def test_method_is_opaque_because_the_call_is_an_attribute(self):
+        src = """
+            class Pipeline:
+                def nunca_chamado(self):
+                    return 1
+        """
+        fact = functions_of(src)["nunca_chamado"]
+        assert fact.attrs["def_kind"] == "method"
+        assert fact.attrs["caller_visibility"] == "opaque"
+        assert fact.attrs["is_unreferenced"] is False
+
+    def test_nested_function_stays_measurable_because_any_use_reads_its_name(self):
+        """Funcao aninhada NAO e opaca: devolve-la (`return interna`), chama-la
+        ou passa-la adiante sao todas leituras do nome, e leitura de nome e
+        contada. Excluir aninhada seria abrir um buraco onde codigo morto
+        cabe."""
+        usada = """
+            def externa():
+                def interna():
+                    return 1
+                return interna
+        """
+        fact = functions_of(usada)["interna"]
+        assert fact.attrs["def_kind"] == "nested"
+        assert fact.attrs["caller_visibility"] == "resolvable"
+        assert fact.attrs["is_unreferenced"] is False
+
+        nunca_usada = """
+            def externa():
+                def interna():
+                    return 1
+                return 2
+        """
+        assert functions_of(nunca_usada)["interna"].attrs["is_unreferenced"] is True
+
+    def test_decorated_function_is_opaque_because_a_framework_may_invoke_it(self):
+        src = """
+            import functools
+
+            @functools.lru_cache
+            def registrada():
+                return 1
+        """
+        assert functions_of(src)["registrada"].attrs["caller_visibility"] == "opaque"
+
+    def test_function_exported_in_all_is_opaque_because_the_caller_is_outside(self):
+        """O caso CENTRAL: este repositorio existe para analisar bibliotecas
+        Glue, onde a funcao publica nunca tem chamador dentro do corpus."""
+        src = """
+            __all__ = ["limpa"]
+
+            def limpa(df):
+                return df.dropDuplicates()
+        """
+        fact = functions_of(src)["limpa"]
+        assert fact.attrs["caller_visibility"] == "opaque"
+        assert fact.attrs["is_unreferenced"] is False
+
+    def test_callback_passed_by_name_is_referenced_without_any_edge(self):
+        src = """
+            def main():
+                rdd.foreach(trata)
+
+            def trata(row):
+                return row
+        """
+        fact = functions_of(src)["trata"]
+        assert fact.measures["fan_in"] == 0
+        assert fact.measures["name_reference_count"] == 1
+        assert fact.attrs["is_unreferenced"] is False
+
+    def test_dispatch_table_entry_is_referenced_without_any_edge(self):
+        src = """
+            def main():
+                return {"limpa": limpa}
+
+            def limpa(df):
+                return df
+        """
+        assert functions_of(src)["limpa"].attrs["is_unreferenced"] is False
+
+    def test_module_level_call_keeps_main_out_of_the_list(self):
+        src = """
+            def main():
+                spark.read.parquet("s3://in").count()
+
+            if __name__ == "__main__":
+                main()
+        """
+        assert summary_of(src).attrs["unreferenced_functions"] == []
+
+    def test_getattr_in_the_corpus_is_declared_on_the_summary(self):
+        """Despacho por string nao e observavel. A medida nao pode fingir que
+        e: quem le a lista precisa saber que existe `getattr` no corpus."""
+        src = """
+            def main():
+                getattr(mod, nome)()
+
+            def talvez_chamada():
+                return 1
+        """
+        summary = summary_of(src)
+        assert summary.attrs["dynamic_dispatch_present"] is True
+        assert "talvez_chamada" in summary.attrs["unreferenced_functions"]
+
+
+class TestCrossModuleReference:
+    def test_function_used_only_by_another_file_is_not_reported_as_orphan(self):
+        """Sem isto, a biblioteca inteira apareceria como orfa: as arestas de
+        `pyspark_ast` sao intra-arquivo por construcao."""
+        lib = "def limpa(df):\n    return df.dropDuplicates()\n\ndef morta(df):\n    return df\n"
+        job = "from lib import limpa\n\ndef main():\n    limpa(df)\n"
+        facts = extract_source(lib, "lib.py") + extract_source(job, "job.py")
+        out = build_call_graph(facts, path_hint="corpus")
+        functions = {(f.subject["file"], f.subject["symbol"]): f for f in
+                     by_kind(out, "callgraph.function")}
+        assert functions[("lib.py", "limpa")].attrs["referenced_in_other_module"] is True
+        assert functions[("lib.py", "limpa")].attrs["is_unreferenced"] is False
+        assert functions[("lib.py", "morta")].attrs["is_unreferenced"] is True
+
+    def test_attribute_call_form_also_counts(self):
+        lib = "def limpa(df):\n    return df\n"
+        job = "import lib\n\ndef main():\n    lib.limpa(df)\n"
+        facts = extract_source(lib, "lib.py") + extract_source(job, "job.py")
+        summary = by_kind(build_call_graph(facts, path_hint="corpus"), "callgraph.summary")[0]
+        assert "limpa" not in summary.attrs["unreferenced_functions"]
+
+
+class TestHomonymDefinitions:
+    def test_two_definitions_with_the_same_name_are_counted_not_hidden(self):
+        """Dois `def` homonimos no mesmo arquivo colapsam num no -- a chave e
+        (arquivo, nome). `definition_count` deixa a colisao visivel em vez de
+        fazer o grafo mentir sobre quantas funcoes existem."""
+        src = """
+            class A:
+                def run(self):
+                    return 1
+
+            class B:
+                def run(self):
+                    return 2
+        """
+        fact = functions_of(src)["run"]
+        assert fact.measures["definition_count"] == 2
+
+
+class TestDefinitionFactsAreNotSparkWork:
+    def test_a_cycle_of_plain_functions_is_not_marked_as_containing_spark_work(self):
+        """`pyspark.function_def` existe uma vez por funcao. Se ele contasse
+        como trabalho Spark, TODA recursao dispararia SF-CG-001 (P1)."""
+        src = """
+            def f(n):
+                return g(n)
+
+            def g(n):
+                return f(n)
+        """
+        cycle = by_kind(graph_of(src), "callgraph.cycle")[0]
+        assert cycle.measures["spark_work_count"] == 0
+        assert cycle.attrs["contains_spark_work"] is False
 
 
 class TestDeterminism:

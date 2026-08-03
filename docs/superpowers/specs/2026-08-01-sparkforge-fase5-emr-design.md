@@ -9,7 +9,15 @@
   A execução encontrou três famílias do mesmo erro de camada que este spec não
   previu — `{athena: "*"}`, `{iceberg: ">=1.0.0"}` e o `{spark: ">=3.0"}` que a
   própria correção introduziu. Ver `STATUS.md`, seção "Fase 5a".
-- **5b — EMR: NÃO INICIADA.** O restante deste documento — `emr` no
+- **5b — EMR on EC2: CONCLUÍDA** em 2026-08-01, branch `feat/fase5b-emr`. Fecha
+  os critérios 3, 4, 5, 6, 7, 8, 9, 12 e 14. Plano:
+  [`../plans/2026-08-01-sparkforge-fase5b-emr.md`](../plans/2026-08-01-sparkforge-fase5b-emr.md).
+  A pesquisa de fontes derrubou três premissas deste documento — `aws emr
+  list-configurations` não existe, faltavam dois dumps na lista da §4.3, e três
+  dos quatro candidatos de regra da §4.4 não sobreviveram na forma escrita. Ver
+  `STATUS.md`, seção "Fase 5b". **EMR Serverless e EMR on EKS ficam de fora**,
+  por decisão registrada aqui: esta fase é EMR on EC2.
+- **O restante deste documento** — `emr` no
   `RuntimeContext`, `EMR_MATRIX`, extrator de cluster, área `SF-EMR`, coordenador,
   e a divergência de plataforma da §3.3 — segue válido e sem plano escrito.
 **Depende de:** [Fase 4](2026-07-31-sparkforge-fase4-agentes-design.md) — os coordenadores são onde a área nova se pendura

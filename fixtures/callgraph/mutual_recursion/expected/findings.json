@@ -10,13 +10,13 @@
     "subject": {
       "type": "source_location",
       "file": "pipeline.py",
-      "line": 16,
+      "line": 15,
       "col": 0,
       "symbol": "processa_lote",
       "snippet": ""
     },
     "evidence": [
-      "f_ab98a8"
+      "f_2bee5c"
     ],
     "measured": {
       "length": 2,

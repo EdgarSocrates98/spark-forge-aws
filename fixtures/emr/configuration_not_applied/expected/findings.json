@@ -1,0 +1,70 @@
+[
+  {
+    "rule_id": "SF-EMR-008",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "ApplicationMaster elegível a nó Spot — o driver do Spark sem node label",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3RECONFIGCLUSTER"
+    },
+    "evidence": [
+      "f_5792f7",
+      "f_d526c2"
+    ],
+    "measured": {
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Em deploy-mode cluster o ApplicationMaster do YARN É o driver do Spark. Onde ele roda decide se a perda de um nó custa o retry de umas tasks ou a aplicação inteira. Na série 5.19.0 em diante a AWS ligava node labels por default e o AM ficava preso a nós com label CORE; a partir da série 6.x isso mudou, e a documentação é literal: \"Beginning with Amazon EMR 6.x release series, the YARN node labels feature is disabled by default. The application primary processes can run on both core and task nodes by default\". Num cluster 6.x ou superior com capacidade Spot no papel TASK, isso significa que o driver é elegível a um nó que o EC2 pode reclamar a qualquer momento — e quando reclama, não há retry: a aplicação termina. O sintoma é uma falha sem causa aparente do lado do Spark, porque o processo que reportaria a causa é justamente o que morreu. É um defeito invisível para quem lê só o código PySpark: nada no job muda, e nada no job pode consertá-lo. Ver knowledge/emr/cluster-configuration.md seção 7.",
+    "proposed_change": [
+      "Declarar no yarn-site do cluster, na criação, as DUAS propriedades juntas: yarn.node-labels.enabled=true e yarn.node-labels.am.default-node-label-expression=CORE. Qualquer uma sozinha não prende o AM — com as labels ligadas e sem expressão, o AM cai na partição DEFAULT, e o EMR não rotula nós de task, então a partição DEFAULT é onde o Spot está.",
+      "Em release 7.0 ou superior, avaliar ON_DEMAND em vez de CORE. As labels por market type existem a partir dessa série e prendem o AM à capacidade On-Demand de qualquer papel, o que preserva a elasticidade do task sem confinar o AM ao core.",
+      "As node labels são criadas no provisionamento, e o EMR não aceita adicioná-las ao reconfigurar um cluster em execução. A correção é o próximo provisionamento, não uma reconfiguração.",
+      "Com labels e managed scaling, revisar yarn.scheduler.capacity.maximum-am-resource-percent quando houver aplicações em paralelo, e deixar yarn.resourcemanager.decommissioning.timeout maior que a aplicação mais longa.",
+      "Se prender o AM não for aceitável, a alternativa é assumir a terminação explicitamente — pipeline idempotente, checkpoint em S3 a cada etapa, e reprocessamento barato — em vez de deixar a escolha implícita no default."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Este é o risco central da correção: prender o AM em CORE reduz o pool onde ele pode ser escalonado. Num cluster com core pequeno e task grande, os AMs passam a disputar a capacidade do core e aplicações ficam na fila esperando container de AM. A mitigação documentada é yarn.scheduler.capacity.maximum-am-resource-percent.",
+      "Não existe a direção oposta: o EMR não rotula nós de task, então não há como restringir o AM apenas ao task. As únicas âncoras possíveis são CORE e, da 7.0 em diante, ON_DEMAND.",
+      "Node labels não são adicionáveis por reconfiguração; qualquer correção exige provisionar outro cluster, com a janela de indisponibilidade que isso implica.",
+      "Com managed scaling, decommissioning.timeout menor que a aplicação mais longa faz o scale-down interromper trabalho em curso — o problema muda de lugar em vez de sumir."
+    ],
+    "tradeoffs": [
+      "Prender o AM ao core troca elasticidade por sobrevivência do driver. Em release 7.0 ou superior a expressão ON_DEMAND compra a mesma sobrevivência sem confinar o AM ao core, ao custo de pagar On-Demand para a capacidade que hospedar o AM.",
+      "Limite declarado do gatilho: esta regra acusa a AUSÊNCIA de restrição, não a presença do AM em Spot. Num cluster inteiramente Spot — a linha cost-driven workloads da tabela oficial, onde a AWS recomenda até o primary em Spot — prender o AM em CORE não protege de nada, porque o core também é reclamável; lá a decisão certa é desenhar para a terminação, e a coerência entre as opções de compra é assunto de SF-EMR-004. Um cluster nessa forma que declarou o par de propriedades não é acusado aqui, e isso é deliberado.",
+      "A documentação de managed scaling recomenda diretamente não usar Spot para os processos primários de aplicação. Levar o task inteiro para On-Demand resolveria o mesmo problema, e custa muito mais que uma node label."
+    ],
+    "validation": [
+      "Labels e partição de cada nó conferidas depois do provisionamento, no ResourceManager ou por yarn node -list -showDetails.",
+      "Container do AM (sufixo _000001) na partição esperada, conferido no ResourceManager ou nos logs de container em S3 — o efeito precisa ser observado, não deduzido da presença da propriedade.",
+      "Um teste de interrupção em homologação, terminando um nó task durante a execução, confirmando que a aplicação sobrevive com retry de task em vez de falhar inteira.",
+      "Contagem de linhas do destino e agregado de controle iguais antes e depois; mudar onde o AM roda não pode mudar resultado.",
+      "Tempo de espera por container de AM antes e depois, para detectar a contenção que prender o AM ao core pode introduzir."
+    ],
+    "rollback": [
+      "Provisionar o cluster sem o par de propriedades de yarn-site. O efeito é voltar a permitir o AM no task, ou seja, voltar ao defeito; node label não é editável em cluster em execução, então o rollback também é o próximo provisionamento."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-master-core-task-nodes.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A página de tipos de nó sustenta o mecanismo e o recorte de release: o AM roda em core E task por default a partir da série 6.x, porque as node labels passaram a vir desligadas. A página de managed scaling sustenta as restrições operacionais e confirma o comportamento na série 7.x -- o EMR não rotula nós de task, `We don't recommend using Spot nodes for application primary processes`, labels criadas no provisionamento e não adicionáveis por reconfiguração, e o par maximum-am-resource-percent/decommissioning.timeout. O que NENHUMA das duas afirma é INCIDÊNCIA: com que frequência o AM efetivamente cai num nó task, ou com que frequência aquele Spot é reclamado. Nada aqui diz isso, e o P1 vem do TAMANHO da consequência -- a aplicação inteira falha, não uma task --, nunca de uma taxa."
+      }
+    ]
+  }
+]

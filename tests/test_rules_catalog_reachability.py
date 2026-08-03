@@ -28,6 +28,7 @@ from sparkforge.facts import (
     call_graph,
     catalog_schema,
     consumers,
+    emr_cluster,
     event_log,
     fusion,
     iceberg_metadata,
@@ -45,6 +46,11 @@ EXTRACTORS = (
     call_graph,
     catalog_schema,
     consumers,
+    # `emr_cluster` faltava aqui, e a omissao era invisivel enquanto a area
+    # SF-EMR nao existia: sem ele, todo kind `emr.*` conta como orfao, e a
+    # primeira regra de EMR seria obrigada a declarar `blocked_on` sobre um
+    # extrator que ja esta no repositorio desde a Task 3 da Fase 5b.
+    emr_cluster,
     event_log,
     fusion,
     iceberg_metadata,
@@ -177,6 +183,37 @@ class TestAbsentSemSameSubjectSeJustifica:
         "SF-ENV-003": (
             "correlaciona Terraform com codigo Python; a pergunta e sobre o "
             "codigo-base inteiro, e `same_subject` faria a regra nunca disparar."
+        ),
+        # A pergunta e sobre o DUMP inteiro: "este cluster tem alguma
+        # reconfiguracao de instance group pedida e nao aplicada?". Um dump de
+        # EMR descreve UM cluster, entao "o conjunto" e "o cluster" sao a mesma
+        # coisa aqui, e a afirmacao da regra tambem e sobre o cluster inteiro
+        # (`spark.dynamicAllocation.enabled` no nivel cluster, sem nenhum grupo
+        # redefinindo). Verificado: os tres facts que a regra correlaciona tem
+        # simbolos distintos por construcao -- `<cluster>/configuration/...`,
+        # `<cluster>/managed-scaling` e `<cluster>/<grupo>` --, entao com
+        # `same_subject: true` nenhum grupo conteria as tres condicoes e a regra
+        # deixaria de disparar em qualquer entrada.
+        "SF-EMR-003": (
+            "o guarda `emr.configuration.unapplied` pergunta pela qualidade da "
+            "evidencia do DUMP inteiro, e um dump descreve um cluster; "
+            "`same_subject` faria a regra nunca disparar."
+        ),
+        # Mesma natureza de SF-EMR-003, e pelo mesmo motivo de forma: os tres
+        # facts que a regra correlaciona tem simbolos distintos por construcao
+        # -- `<cluster>` (`emr.cluster`), `<cluster>/<grupo>`
+        # (`emr.instance_capacity`) e `<cluster>/yarn/am-node-label` (o fact
+        # derivado) --, entao nenhum grupo de subject conteria as tres condicoes
+        # e `same_subject: true` faria a regra nunca disparar. E a pergunta e
+        # genuinamente sobre o conjunto: `yarn.node-labels.am.default-node-label-expression`
+        # e lida pelo ResourceManager, que e UM por cluster, entao "o AM esta
+        # preso?" nao tem versao por grupo. Verificado: com `same_subject` a
+        # regra deixa de disparar em `instance_groups_spot_task`.
+        "SF-EMR-008": (
+            "`absent: emr.yarn.am_node_label` pergunta se o CLUSTER restringe "
+            "onde o ApplicationMaster roda -- o ResourceManager e um so, entao "
+            "nao ha versao por grupo dessa pergunta; `same_subject` faria a "
+            "regra nunca disparar."
         ),
         # SF-GLUE-005 saiu desta lista ao ser desbloqueada. A isencao existia
         # para justificar `absent: spark.stage.spill` sem `same_subject`, e

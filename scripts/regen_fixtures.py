@@ -26,6 +26,7 @@ from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_tree,
 )
 from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
+from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.iceberg_metadata import (  # noqa: E402
@@ -53,6 +54,7 @@ FIXTURES_FUSION = ROOT / "fixtures" / "fusion"
 FIXTURES_CATALOG = ROOT / "fixtures" / "catalog"
 FIXTURES_PLAN = ROOT / "fixtures" / "plan"
 FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
+FIXTURES_EMR = ROOT / "fixtures" / "emr"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
 FIXTURES_S3 = ROOT / "fixtures" / "s3"
@@ -259,6 +261,19 @@ def regen_athena(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_emr(directory: Path) -> None:
+    """Como `regen_athena`, mas para dumps de cluster EMR on EC2: `*.json` sob
+    input/, extraidos com `extract_emr_cluster_path`. Um dump ja e a uniao dos
+    seis subcomandos de um cluster, entao nao ha variante `_tree`."""
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = []
+    for dump in sorted(input_dir.glob("*.json")):
+        facts.extend(extract_emr_cluster_path(dump, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_plan(directory: Path) -> None:
     """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
     input/ (a saida colada de `explain("formatted")`), extraida com
@@ -313,6 +328,7 @@ def main() -> int:
                 (FIXTURES_CATALOG / name, regen_catalog),
                 (FIXTURES_PLAN / name, regen_plan),
                 (FIXTURES_ATHENA / name, regen_athena),
+                (FIXTURES_EMR / name, regen_emr),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
                 (FIXTURES_S3 / name, regen_s3),
@@ -349,6 +365,8 @@ def main() -> int:
         regen_plan(directory)
     for directory in sorted(p for p in FIXTURES_ATHENA.iterdir() if p.is_dir()):
         regen_athena(directory)
+    for directory in sorted(p for p in FIXTURES_EMR.iterdir() if p.is_dir()):
+        regen_emr(directory)
     for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):
         regen_runtime(directory)
     for directory in sorted(p for p in FIXTURES_CALLGRAPH.iterdir() if p.is_dir()):

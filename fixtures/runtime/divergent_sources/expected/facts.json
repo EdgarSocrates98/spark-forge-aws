@@ -1,5 +1,33 @@
 [
   {
+    "id": "f_c4a45b",
+    "schema_version": 1,
+    "kind": "env.platform",
+    "subject": {
+      "type": "job_run",
+      "symbol": "platform"
+    },
+    "measures": {
+      "distinct_platforms": 1,
+      "source_count": 1
+    },
+    "attrs": {
+      "resolved": "glue",
+      "observed": [
+        "glue"
+      ],
+      "source": "resolved",
+      "origins": {
+        "glue": [
+          "terraform"
+        ]
+      }
+    },
+    "provenance": {
+      "extractor": "runtime_detect@0.1.0"
+    }
+  },
+  {
     "id": "f_87d800",
     "schema_version": 1,
     "kind": "env.runtime_signal",

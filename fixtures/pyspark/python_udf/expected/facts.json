@@ -1,5 +1,36 @@
 [
   {
+    "id": "f_5fa5ca",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 6,
+      "col": 0,
+      "end_line": 7,
+      "symbol": "trivial",
+      "snippet": "def trivial(valor):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [
+        "udf"
+      ],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "41d792f9e0c955feae464ef7f208bc2eda6464dddae9580737852f83c2de6b3a",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_9e2037",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -16,7 +47,12 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "StringType",
+        "udf",
+        "valor"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

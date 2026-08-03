@@ -28,6 +28,35 @@
     }
   },
   {
+    "id": "f_0564ad",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 3,
+      "symbol": "processar",
+      "snippet": "def processar(lotes, destino):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3eb6d9a56ced864cbb5a58e0923b118b7913d45993410c9f40d4a92f20d747a7",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_85aa2c",
     "schema_version": 1,
     "kind": "pyspark.loop",
@@ -70,7 +99,14 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "destino",
+        "lote",
+        "lotes",
+        "parquet",
+        "write"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

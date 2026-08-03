@@ -1,0 +1,369 @@
+[
+  {
+    "rule_id": "SF-EMR-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Segredo em Configurations ou em argumento de bootstrap action",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/configuration/emrfs-site/fs.s3.awsSecretAccessKey"
+    },
+    "evidence": [
+      "f_d6f2a7",
+      "f_d502bf"
+    ],
+    "measured": {
+      "overriding_group_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A documentação da AWS traz um bloco Warning explícito: \"Amazon EMR Describe and List API operations emit custom and configurable settings, which are used as a part of Amazon EMR job flows, in plaintext\". Não é um risco de log nem de histórico: é a resposta da API, devolvida a qualquer principal com permissão de LEITURA sobre o cluster — que é a permissão amplamente concedida para observabilidade, inventário e FinOps. É achado de segurança e tem precedência sobre qualquer recomendação de performance no mesmo relatório. O valor nunca aparece no Fact: o extrator o substitui por <redigido> e marca attrs.secret_pattern_match, para que o próprio corpus de análise não vire a segunda cópia do segredo.",
+    "proposed_change": [
+      "Mover o valor para AWS Secrets Manager e referenciá-lo pelo mecanismo de referência a segredo das Configurations, em vez do literal.",
+      "Rotacionar o segredo exposto; ele deve ser considerado comprometido, porque não há como saber quem chamou DescribeCluster desde a criação do cluster.",
+      "Revisar o IaC e o histórico do repositório que criou o cluster, onde o literal costuma persistir depois de removido da definição.",
+      "Revisar quem tem elasticmapreduce:DescribeCluster, ListInstanceGroups, ListInstanceFleets e ListBootstrapActions na conta."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Rotacionar segredo em uso exige coordenação com todos os consumidores; a janela entre rotação e reconfiguração derruba o job.",
+      "Configurations de cluster EMR não é editável em cluster em execução; corrigir exige provisionar um cluster novo."
+    ],
+    "tradeoffs": [
+      "Nenhum. Não existe justificativa de performance para manter segredo em texto claro numa superfície de leitura."
+    ],
+    "validation": [
+      "DescribeCluster, ListInstanceGroups, ListInstanceFleets e ListBootstrapActions do cluster novo não contêm mais o literal.",
+      "O job executa com sucesso lendo do cofre.",
+      "O segredo anterior está revogado, confirmado por uma tentativa de uso que falha."
+    ],
+    "rollback": [
+      "N",
+      "ã",
+      "o",
+      " ",
+      "r",
+      "e",
+      "v",
+      "e",
+      "r",
+      "t",
+      "e",
+      "r",
+      " ",
+      "p",
+      "a",
+      "r",
+      "a",
+      " ",
+      "o",
+      " ",
+      "l",
+      "i",
+      "t",
+      "e",
+      "r",
+      "a",
+      "l",
+      " ",
+      "e",
+      "m",
+      " ",
+      "t",
+      "e",
+      "x",
+      "t",
+      "o",
+      " ",
+      "c",
+      "l",
+      "a",
+      "r",
+      "o",
+      ".",
+      " ",
+      "S",
+      "e",
+      " ",
+      "a",
+      " ",
+      "l",
+      "e",
+      "i",
+      "t",
+      "u",
+      "r",
+      "a",
+      " ",
+      "d",
+      "o",
+      " ",
+      "c",
+      "o",
+      "f",
+      "r",
+      "e",
+      " ",
+      "f",
+      "a",
+      "l",
+      "h",
+      "a",
+      ",",
+      " ",
+      "a",
+      " ",
+      "c",
+      "o",
+      "r",
+      "r",
+      "e",
+      "ç",
+      "ã",
+      "o",
+      " ",
+      "é",
+      " ",
+      "a",
+      " ",
+      "p",
+      "o",
+      "l",
+      "í",
+      "t",
+      "i",
+      "c",
+      "a",
+      " ",
+      "d",
+      "e",
+      " ",
+      "I",
+      "A",
+      "M",
+      " ",
+      "d",
+      "o",
+      " ",
+      "p",
+      "e",
+      "r",
+      "f",
+      "i",
+      "l",
+      " ",
+      "d",
+      "e",
+      " ",
+      "i",
+      "n",
+      "s",
+      "t",
+      "â",
+      "n",
+      "c",
+      "i",
+      "a",
+      " ",
+      "E",
+      "C",
+      "2",
+      " ",
+      "d",
+      "o",
+      " ",
+      "c",
+      "l",
+      "u",
+      "s",
+      "t",
+      "e",
+      "r",
+      ",",
+      " ",
+      "n",
+      "ã",
+      "o",
+      " ",
+      "o",
+      " ",
+      "m",
+      "é",
+      "t",
+      "o",
+      "d",
+      "o",
+      " ",
+      "d",
+      "e",
+      " ",
+      "a",
+      "r",
+      "m",
+      "a",
+      "z",
+      "e",
+      "n",
+      "a",
+      "m",
+      "e",
+      "n",
+      "t",
+      "o",
+      ".",
+      "\n"
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/storing-sensitive-data.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A fonte oficial sustenta a metade de `Configurations`: o Warning nomeia as operações Describe e List e a palavra plaintext. Para `Args` de bootstrap action a sustentação é INDIRETA -- `ListBootstrapActions` devolve `Args` como parte da mesma superfície de leitura, mas nenhuma página da AWS nomeia esse campo no aviso. A metade de bootstrap é heurística de campo, e o mecanismo é o mesmo: o valor viaja na resposta da API."
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-EMR-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "partitionOverwriteMode dinâmico no spark-defaults do cluster",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER/configuration/spark-defaults/spark.sql.sources.partitionOverwriteMode"
+    },
+    "evidence": [
+      "f_ada21e"
+    ],
+    "measured": {
+      "overriding_group_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "spark.sql.sources.partitionOverwriteMode decide o que um write com mode overwrite APAGA antes de escrever, e a AWS confirma que o default é static. Posto no spark-defaults do cluster, o valor dynamic muda essa semântica para TODO job que rodar ali, inclusive os que foram escritos e testados supondo o default. Um job que faz overwrite esperando que o destino inteiro seja substituído passa a apagar só as partições que ele escreveu naquela execução, e as partições antigas que deveriam ter sumido sobrevivem. O sintoma não é falha: é resultado errado a jusante, num relatório que soma partições que não deveriam mais existir. Por isso a recomendação não é trocar o valor — trocar sem revisar o código muda o resultado na direção oposta, apagando dado que deveria ficar. A recomendação é tirar a decisão do cluster e devolvê-la a cada job. Ver knowledge/emr/cluster-configuration.md seção 5.",
+    "proposed_change": [
+      "Remover spark.sql.sources.partitionOverwriteMode do spark-defaults do cluster.",
+      "Em cada job que precisa de overwrite por partição, declarar a intenção no próprio write: .option(\"partitionOverwriteMode\", \"dynamic\"), que vale só para aquela escrita.",
+      "Antes de remover, inventariar os jobs que rodam no cluster e classificar cada write com mode overwrite: os que dependem de dynamic recebem a opção; os que supõem static passam a se comportar como o autor escreveu.",
+      "Para tabela Iceberg, nenhuma das duas opções é o mecanismo certo — o overwrite por partição é MERGE INTO ou overwrite dinâmico do próprio Iceberg, e a propriedade de fonte de dados de arquivo não se aplica."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Este é o risco central: remover a propriedade devolve os jobs ao default static, e um job que dependia de dynamic passará a apagar o caminho de destino INTEIRO. Sem o inventário do item anterior, a remoção causa perda de dado.",
+      "Configurations de cluster EMR não é editável em cluster em execução; a mudança acontece no próximo provisionamento, e a janela entre a decisão e o provisionamento precisa ser coberta pela opção no job."
+    ],
+    "tradeoffs": [
+      "Declarar por job é mais verboso que uma linha no cluster, e é o ponto — a semântica de escrita é decisão do job, e centralizá-la aplica uma decisão a código que não a pediu.",
+      "Em release anterior à 5.30.0 (série 5.x) ou 6.2.0 (série 6.x) existe também o custo de commit por rename sequencial; nas releases cobertas pelo EMR_MATRIX deste repositório, esse custo não se aplica."
+    ],
+    "validation": [
+      "Contagem de linhas POR PARTIÇÃO no destino, antes e depois, e não só o total: é exatamente aqui que o erro de static aparece, porque o total pode coincidir enquanto partições inteiras somem ou sobrevivam indevidamente.",
+      "Lista de partições existentes no destino antes e depois de um run, comparada com a lista esperada.",
+      "Contagem distinta da chave de negócio no destino, para detectar duplicação vinda de partição antiga sobrevivente.",
+      "Um run de ensaio sobre um prefixo de cópia antes de aplicar em produção."
+    ],
+    "rollback": [
+      "Reprovisionar o cluster com a Configurations anterior. Se dado foi perdido pelo comportamento static, o rollback é a restauração do destino a partir de versionamento de objeto ou backup, não a reversão da propriedade."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-committer-reqs.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-s3-optimized-commit-protocol.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-commit-protocol-reqs.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "As páginas da AWS sustentam: que o default é `static`; que `dynamic` faz o write sobrescrever apenas as partições recebidas; e que o commit protocol otimizado cobre o caso dinâmico da 5.30.0/6.2.0 em diante, o que MATA o argumento de performance. O que elas NÃO afirmam em nenhuma linha é a metade oposta da semântica -- que `static` apaga o caminho de destino inteiro --, que é comportamento do Apache Spark e está aqui como leitura de campo. É essa metade que sustenta o risco de perda de dado ao remover a propriedade, e por isso ela precisa ser declarada em vez de assumida."
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-EMR-008",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "ApplicationMaster elegível a nó Spot — o driver do Spark sem node label",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-1GROUPSCLUSTER"
+    },
+    "evidence": [
+      "f_18d4fd",
+      "f_95f5c2"
+    ],
+    "measured": {
+      "release_major": 6,
+      "release_minor": 15,
+      "idle_timeout_seconds": 3600
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Em deploy-mode cluster o ApplicationMaster do YARN É o driver do Spark. Onde ele roda decide se a perda de um nó custa o retry de umas tasks ou a aplicação inteira. Na série 5.19.0 em diante a AWS ligava node labels por default e o AM ficava preso a nós com label CORE; a partir da série 6.x isso mudou, e a documentação é literal: \"Beginning with Amazon EMR 6.x release series, the YARN node labels feature is disabled by default. The application primary processes can run on both core and task nodes by default\". Num cluster 6.x ou superior com capacidade Spot no papel TASK, isso significa que o driver é elegível a um nó que o EC2 pode reclamar a qualquer momento — e quando reclama, não há retry: a aplicação termina. O sintoma é uma falha sem causa aparente do lado do Spark, porque o processo que reportaria a causa é justamente o que morreu. É um defeito invisível para quem lê só o código PySpark: nada no job muda, e nada no job pode consertá-lo. Ver knowledge/emr/cluster-configuration.md seção 7.",
+    "proposed_change": [
+      "Declarar no yarn-site do cluster, na criação, as DUAS propriedades juntas: yarn.node-labels.enabled=true e yarn.node-labels.am.default-node-label-expression=CORE. Qualquer uma sozinha não prende o AM — com as labels ligadas e sem expressão, o AM cai na partição DEFAULT, e o EMR não rotula nós de task, então a partição DEFAULT é onde o Spot está.",
+      "Em release 7.0 ou superior, avaliar ON_DEMAND em vez de CORE. As labels por market type existem a partir dessa série e prendem o AM à capacidade On-Demand de qualquer papel, o que preserva a elasticidade do task sem confinar o AM ao core.",
+      "As node labels são criadas no provisionamento, e o EMR não aceita adicioná-las ao reconfigurar um cluster em execução. A correção é o próximo provisionamento, não uma reconfiguração.",
+      "Com labels e managed scaling, revisar yarn.scheduler.capacity.maximum-am-resource-percent quando houver aplicações em paralelo, e deixar yarn.resourcemanager.decommissioning.timeout maior que a aplicação mais longa.",
+      "Se prender o AM não for aceitável, a alternativa é assumir a terminação explicitamente — pipeline idempotente, checkpoint em S3 a cada etapa, e reprocessamento barato — em vez de deixar a escolha implícita no default."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Este é o risco central da correção: prender o AM em CORE reduz o pool onde ele pode ser escalonado. Num cluster com core pequeno e task grande, os AMs passam a disputar a capacidade do core e aplicações ficam na fila esperando container de AM. A mitigação documentada é yarn.scheduler.capacity.maximum-am-resource-percent.",
+      "Não existe a direção oposta: o EMR não rotula nós de task, então não há como restringir o AM apenas ao task. As únicas âncoras possíveis são CORE e, da 7.0 em diante, ON_DEMAND.",
+      "Node labels não são adicionáveis por reconfiguração; qualquer correção exige provisionar outro cluster, com a janela de indisponibilidade que isso implica.",
+      "Com managed scaling, decommissioning.timeout menor que a aplicação mais longa faz o scale-down interromper trabalho em curso — o problema muda de lugar em vez de sumir."
+    ],
+    "tradeoffs": [
+      "Prender o AM ao core troca elasticidade por sobrevivência do driver. Em release 7.0 ou superior a expressão ON_DEMAND compra a mesma sobrevivência sem confinar o AM ao core, ao custo de pagar On-Demand para a capacidade que hospedar o AM.",
+      "Limite declarado do gatilho: esta regra acusa a AUSÊNCIA de restrição, não a presença do AM em Spot. Num cluster inteiramente Spot — a linha cost-driven workloads da tabela oficial, onde a AWS recomenda até o primary em Spot — prender o AM em CORE não protege de nada, porque o core também é reclamável; lá a decisão certa é desenhar para a terminação, e a coerência entre as opções de compra é assunto de SF-EMR-004. Um cluster nessa forma que declarou o par de propriedades não é acusado aqui, e isso é deliberado.",
+      "A documentação de managed scaling recomenda diretamente não usar Spot para os processos primários de aplicação. Levar o task inteiro para On-Demand resolveria o mesmo problema, e custa muito mais que uma node label."
+    ],
+    "validation": [
+      "Labels e partição de cada nó conferidas depois do provisionamento, no ResourceManager ou por yarn node -list -showDetails.",
+      "Container do AM (sufixo _000001) na partição esperada, conferido no ResourceManager ou nos logs de container em S3 — o efeito precisa ser observado, não deduzido da presença da propriedade.",
+      "Um teste de interrupção em homologação, terminando um nó task durante a execução, confirmando que a aplicação sobrevive com retry de task em vez de falhar inteira.",
+      "Contagem de linhas do destino e agregado de controle iguais antes e depois; mudar onde o AM roda não pode mudar resultado.",
+      "Tempo de espera por container de AM antes e depois, para detectar a contenção que prender o AM ao core pode introduzir."
+    ],
+    "rollback": [
+      "Provisionar o cluster sem o par de propriedades de yarn-site. O efeito é voltar a permitir o AM no task, ou seja, voltar ao defeito; node label não é editável em cluster em execução, então o rollback também é o próximo provisionamento."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-master-core-task-nodes.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A página de tipos de nó sustenta o mecanismo e o recorte de release: o AM roda em core E task por default a partir da série 6.x, porque as node labels passaram a vir desligadas. A página de managed scaling sustenta as restrições operacionais e confirma o comportamento na série 7.x -- o EMR não rotula nós de task, `We don't recommend using Spot nodes for application primary processes`, labels criadas no provisionamento e não adicionáveis por reconfiguração, e o par maximum-am-resource-percent/decommissioning.timeout. O que NENHUMA das duas afirma é INCIDÊNCIA: com que frequência o AM efetivamente cai num nó task, ou com que frequência aquele Spot é reclamado. Nada aqui diz isso, e o P1 vem do TAMANHO da consequência -- a aplicação inteira falha, não uma task --, nunca de uma taxa."
+      }
+    ]
+  }
+]

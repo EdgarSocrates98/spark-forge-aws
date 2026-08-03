@@ -7,7 +7,11 @@ proves: >
   `summary.has_cycle` tem que ser `false`.
   Prova junto o alcance: as quatro formas de trabalho Spark do modulo
   (leitura, chain, window, escrita) sao alcancaveis a partir do unico
-  entrypoint, e `unreachable_function_count` e zero.
+  entrypoint, e `unreachable_from_entrypoint_count` e zero.
+  `unreferenced_functions` lista `main` -- e correto: este modulo e uma
+  biblioteca sem bloco `if __name__`, entao nada NESTE corpus referencia
+  `main`. A medida diz "sem referencia no corpus", nao "codigo morto"; quem
+  prova a diferenca com um chamador de nivel de modulo e `library_surface`.
 runtime:
   glue: "5.0"
   spark: "3.5.4"

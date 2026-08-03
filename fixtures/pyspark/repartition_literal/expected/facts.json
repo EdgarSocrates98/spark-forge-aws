@@ -1,5 +1,34 @@
 [
   {
+    "id": "f_060edb",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 2,
+      "symbol": "redistribuir",
+      "snippet": "def redistribuir(df):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "3424078685b0853f7cdf72d36d52617b54e0d6818243b856b7c162c0adea4a00",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_07e474",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -16,7 +45,11 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "df",
+        "repartition"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",
