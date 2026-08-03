@@ -1282,12 +1282,14 @@ Expected: PASS
 
 **D-5c-33 — `manifest.json` e `README.md` carregam a contagem de regras, e ela é testada.** `tests/test_docs_coverage.py::test_rule_count_equals_the_real_catalog` compara `manifest.json.knowledge_base.rule_count` com `len(load_catalog())`: duas regras novas quebram o teste até o manifesto acompanhar. 58 -> 60 no manifesto e nas duas menções do `README.md` (o próprio teste registra que esse número já apodreceu três vezes). Junto, `rules/catalog/README.md` ganhou as quatro áreas que faltavam na tabela "Arquivos" (`spark-plan`, `callgraph`, `emr-infra` e a nova `data-quality`) e as quatro siglas que faltavam na linha do campo `id` — a tabela tinha parado na Fase 1. `knowledge/sources.lock.json` NÃO muda: as duas regras citam `origin: field-heuristic` com `note` apontando para `knowledge/dq/validation-frameworks.md`, e o lock só vigia `sources` com `url`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add rules/catalog/data-quality.yaml fixtures/dq
 git commit -m "feat(rules): SF-DQ-001 e SF-DQ-002, posicao e consequencia"
 ```
+
+Commitado em `6f370eb`, com quatro arquivos a mais do que o plano listava: `rules/catalog/README.md`, `manifest.json`, `README.md` e este plano (D-5c-33).
 
 ---
 
