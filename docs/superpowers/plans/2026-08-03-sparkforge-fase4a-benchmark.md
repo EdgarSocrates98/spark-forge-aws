@@ -355,7 +355,54 @@ git commit -m "feat(facts): comparador de duas execucoes, com o total que nao me
 **Files:**
 - Modify: `sparkforge/facts/benchmark.py`, `tests/test_facts_benchmark.py`
 
-- [ ] **Step 1: Teste primeiro**
+- [x] **Step 1: Teste primeiro**
+
+> **Três desvios medidos contra os testes e o esqueleto desta task.**
+>
+> **D-4a-8 — `matched_stage_count` conta STAGE, não par casado: 2 e não 1 no
+> teste do Step 1.** O plano assertava `matched_stage_count == 1` e
+> `unmatched_stage_count == 2` no mesmo par, e as duas chaves passariam a contar
+> unidades diferentes — a primeira, casamentos; a segunda, stages —, com nome
+> idêntico. Medido: `before_stage_count` e `after_stage_count`, que a Task 1 já
+> emitia, contam subjects `(stage_id, symbol)` distintos; sob a leitura do plano
+> nada fecha, e a pergunta "quanto da comparação está coberto por delta de stage"
+> fica sem resposta. Sob a leitura de stage, `matched + unmatched ==
+> before + after` **exatamente**, e há teste da identidade. Quantos deltas saíram
+> continua respondível contando os próprios `bench.stage_delta` — a sentinela não
+> precisa duplicar isso. É a disciplina de `opaque_caller_function_count` da Fase
+> 5b feita aritmética: nenhum stage cai fora da conta.
+>
+> **D-4a-9 — o lado entra no *subject* de `bench.unmatched`.** `Fact.id` é sha1
+> de (kind, subject, measures) e ignora `attrs` (D-4a-2 de novo). Dois stages sem
+> nome com o mesmo `stage_id`, um em cada run, sairiam com o **mesmo id** se o
+> lado vivesse só em `attrs` — e um dos dois desapareceria da saída. O subject é
+> `{"type": "stage", "symbol": "<symbol>#<side>"}`, mesma forma de
+> `_unresolved_subject`; `attrs["symbol"]` guarda o símbolo limpo, que é o que o
+> teste do plano já lia. `stage_id` entra no subject **só** para stage sem nome,
+> onde é a única identidade que resta — e ali ele não instabiliza nada, porque o
+> fact afirma sobre **um** lado, não sobre o par. Há teste de id distinto.
+>
+> **D-4a-10 — o recorte de stage não repete `bench.unresolved`, e não carrega a
+> medida do job.** Duas medidas do plano não sobreviveram ao recorte:
+> `total_spill_bytes` vem de `spark.job.spill_summary`, cujo subject é o **job** —
+> no recorte de um stage ela não está ausente, ela não existe, e rateá-la entre os
+> stages inventaria atribuição que o event log não dá. Sai por construção
+> (`_STAGE_MEASURES`), não por falta de dado. E o furo de medida por símbolo
+> **não** emite `bench.unresolved`: o furo é da comparação e já foi nomeado uma
+> vez no recorte do run; repeti-lo por símbolo daria ruído proporcional ao número
+> de stages e afogaria o resto da saída. A chave simplesmente falta no delta — que
+> é como este motor diz "não sei". As regras de presença por chave (`usable` /
+> `partial` / `absent`) valem no recorte de stage pelo **mesmo** código:
+> `_side_totals` passou a receber a spec e `_compare` é um caminho só para os dois
+> recortes.
+>
+> **Símbolo repetido no mesmo lado** (o caso que o plano não previa): o recorte é
+> o **símbolo**, não o stage. O mesmo `symbol` nasce várias vezes num run — linha
+> dentro de laço, função chamada duas vezes — e as medidas somam todos os stages
+> dele. Casar par a par exigiria ordem ou `stage_id`, que é justamente o que D-3
+> proíbe. Para que a soma não minta, o próprio `bench.stage_delta` carrega
+> `before_stage_count` e `after_stage_count`: sem eles, dois stages antes contra um
+> depois sairia como "acelerou 50%" quando um stage apenas sumiu. Há teste.
 
 ```python
 def test_stage_com_symbol_identico_casa_e_o_resto_e_contado():
@@ -385,23 +432,27 @@ def test_stage_id_diferente_nao_impede_o_casamento():
     assert len([f for f in build_benchmark(before, after) if f.kind == "bench.stage_delta"]) == 1
 ```
 
-- [ ] **Step 2: Rode e veja falhar**
+- [x] **Step 2: Rode e veja falhar**
 
 Run: `python -m pytest tests/test_facts_benchmark.py -k stage -v`
 Expected: FAIL — nenhum `bench.stage_delta`
+Medido: 13 falhas, 24 passando. Todas pelo motivo previsto (`assert [] == ['scan']`, `assert 0 == 3`) — nenhuma por erro de construção do teste.
 
-- [ ] **Step 3: Implemente**
+- [x] **Step 3: Implemente**
 
 Agrupe os facts de stage por `subject["symbol"]` em cada lado. `symbol` presente nos dois → `bench.stage_delta`, com subject `{"type": "stage", "symbol": <symbol>}` — **sem `stage_id`**, porque ele difere entre os runs e entraria no `Fact.id` fazendo a identidade do delta depender de um número instável. `symbol` num lado só → `bench.unmatched`, com `attrs.side` em `{"before", "after"}`.
 
-Símbolo vazio ou ausente **não casa com nada**: vira `bench.unmatched` com `attrs.reason: "empty_symbol"`. Casar dois vazios juntaria stages que só têm em comum o fato de não terem nome.
+Símbolo vazio ou ausente **não casa com nada**: vira `bench.unmatched` com `attrs.reason: "empty_symbol"`. Casar dois vazios juntaria stages que só têm em comum o fato de não terem nome. **Um fact por stage sem nome**, e não um por lado: agrupá-los repetiria dentro do lado o erro que o casamento recusa entre os lados.
 
-- [ ] **Step 4: Rode**
+O `reason` do outro caso é `"symbol_absent_on_other_side"`, com `attrs.side`, `attrs.symbol`, `attrs.stage_ids` e `measures.stage_count` — o grupo pode cobrir mais de um stage.
+
+- [x] **Step 4: Rode**
 
 Run: `python -m pytest tests/test_facts_benchmark.py -q`
 Expected: PASS
+Medido: 37 passando (24 da Task 1 + 13 novos). `ruff check .` limpo.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ---
 
