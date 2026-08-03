@@ -1298,7 +1298,7 @@ Commitado em `6f370eb`, com quatro arquivos a mais do que o plano listava: `rule
 **Files:**
 - Modify: `rules/catalog/data-quality.yaml`, `fixtures/dq/*`
 
-- [ ] **Step 1: `SF-DQ-003`**
+- [x] **Step 1: `SF-DQ-003`**
 
 ```yaml
   - id: SF-DQ-003
@@ -1333,7 +1333,7 @@ Commitado em `6f370eb`, com quatro arquivos a mais do que o plano listava: `rule
       - {url: "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html", retrieved: 2026-08-03, note: "Secao 'Remove unneeded Spark actions': cada RDD transformado pode ser recomputado a cada action."}
 ```
 
-- [ ] **Step 2: Meça o gate de `SF-DQ-004` antes de escrevê-la**
+- [x] **Step 2: Meça o gate de `SF-DQ-004` antes de escrevê-la**
 
 A §4.2 do spec condiciona esta regra a um número. Rode:
 
@@ -1350,7 +1350,7 @@ print('checks', len(checks), 'alvo nao resolvido', len(unresolved))
 
 Cole a saída no commit. **Se `unresolved` for maior que `checks`**, `SF-DQ-004` não entra: escreva no cabeçalho do catálogo o veto com o número medido, no lugar da regra, e pule para o Step 4. Regra cujo gatilho depende de um alvo que o AST erra mais da metade das vezes dispara por acidente.
 
-- [ ] **Step 3: `SF-DQ-004`, se o gate passou**
+- [x] **Step 3: `SF-DQ-004`, se o gate passou**
 
 ```yaml
   - id: SF-DQ-004
@@ -1392,17 +1392,42 @@ Cole a saída no commit. **Se `unresolved` for maior que `checks`**, `SF-DQ-004`
       - {origin: field-heuristic, note: "P2: o custo é real e proporcional ao número de checks, mas nenhum dado disponível mede o tamanho do lineage varrido."}
 ```
 
-- [ ] **Step 4: Regenere, leia o diff, rode**
+- [x] **Step 4: Regenere, leia o diff, rode**
 
 Run: `python scripts/regen_fixtures.py && python -m pytest tests/test_fixtures_golden_dq.py -q`
 Expected: PASS, com `check_recomputes_lineage` e `repeated_checks_same_target` disparando as regras novas e `validated_correctly` ainda vazio
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rules/catalog/data-quality.yaml fixtures/dq
 git commit -m "feat(rules): SF-DQ-003 e SF-DQ-004, o custo da validacao"
 ```
+
+**Feito em `c153b9e`.** Os cinco steps fechados, com quatro desvios do plano:
+
+1. **`same_subject: true` nas duas regras**, que o YAML deste plano não tinha.
+   D-5c-31 já fixou o motivo na Task 7: sem ele o motor produz UM grupo de
+   evidência e N ocorrências viram um achado ancorado na primeira.
+   `repeated_checks_same_target` prova o efeito — os dois `count()` saem como
+   DOIS achados de `SF-DQ-004`, e não um.
+2. **`SF-DQ-003` dispara em quatro fixtures, e não em uma.**
+   `great_expectations_suite` e `suite_without_enforcement` também validam um
+   DataFrame não persistido e o reusam no write depois; o recomputo de lineage
+   não depende de framework. Os dois `meta.yaml` ganharam a prosa que explica
+   por quê, e `pydeequ_suite` continua calada por ter o alvo em `cache()` — o
+   contraste que prova que o gatilho não é "é uma suíte".
+3. **`knowledge/sources.lock.json`**, que este plano não previa: as duas URLs
+   novas de `SF-DQ-004` quebraram
+   `test_refresh_knowledge.py::test_the_committed_lock_matches_the_catalog`.
+   Entraram só as duas, com hash medido; `refresh_knowledge.py --update`
+   recarimbaria as 35 existentes e enterraria a mudança real.
+4. **`README.md` junto do `manifest.json`** no 60 → 62: o número aparece duas
+   vezes no README e nenhum teste olha para lá.
+
+Gate do Step 2, medido: `checks 8 alvo nao resolvido 1` — 1 em 9 (~11%), o
+mesmo da Task 6. O número ficou como comentário acima de `SF-DQ-004` no
+catálogo, e não só na mensagem de commit.
 
 ---
 
