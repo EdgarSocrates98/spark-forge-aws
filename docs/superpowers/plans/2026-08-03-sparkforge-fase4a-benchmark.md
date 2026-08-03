@@ -61,7 +61,7 @@ Duração vive por stage, em `task_duration`. O total honesto é **tempo de task
 **Files:**
 - Create: `sparkforge/facts/benchmark.py`, `tests/test_facts_benchmark.py`
 
-- [ ] **Step 1: Escreva o teste que falha**
+- [x] **Step 1: Escreva o teste que falha**
 
 ```python
 # tests/test_facts_benchmark.py
@@ -115,12 +115,43 @@ def test_o_namespace_declarado_cobre_os_cinco_kinds():
     }
 ```
 
-- [ ] **Step 2: Rode e veja falhar**
+- [x] **Step 2: Rode e veja falhar**
 
 Run: `python -m pytest tests/test_facts_benchmark.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'sparkforge.facts.benchmark'`
+Medido: exatamente isso, na coleta do módulo.
 
-- [ ] **Step 3: Implemente o mínimo**
+- [x] **Step 3: Implemente o mínimo**
+
+> **Cinco desvios medidos contra o esqueleto abaixo.**
+>
+> **D-4a-1 — `DERIVER_ID` virou `EXTRACTOR_ID`.** Os onze módulos de
+> `sparkforge/facts/`, inclusive os dois derivados (`call_graph.py`, `fusion.py`),
+> declaram `EXTRACTOR_ID`, e `tests/test_facts_fusion.py` e
+> `tests/test_facts_catalog_schema.py` asseguram o prefixo por esse nome. Um nome
+> só para este módulo seria diferença sem diferença.
+>
+> **D-4a-2 — `bench.unresolved` precisa de subject próprio por motivo.**
+> `Fact.id` é sha1 de `(kind, subject, measures)` e **`attrs` fica de fora**: os
+> cinco unresolved de medida ausente têm o mesmo subject e nenhuma measure, então
+> sairiam todos com o **mesmo id**, indistinguíveis na saída e no `evidence` de um
+> achado. `_unresolved_subject` ancora em `"<hint>#<detalhe>"`. Há teste.
+>
+> **D-4a-3 — medida ausente de UM lado é caso próprio.** O plano só previa
+> ausência dos dois lados. Preencher o lado que falta com zero afirmaria uma queda
+> (ou uma subida) que ninguém observou — é o "nunca zero" do §8 do spec. Sai o
+> valor do lado que tem, **sem** `_delta_pct`, mais um `bench.unresolved` com
+> `reason: "measure_absent_one_side"` e o lado que faltou.
+>
+> **D-4a-4 — `before_artifact` virou `before_artifacts`, lista ordenada.** Não há
+> exatamente um `spark.log_analyzed` por lado: event log rolante
+> (`spark.eventLog.rolling.enabled`) e extração de vários arquivos produzem
+> vários. Pegar o primeiro esconderia os outros.
+>
+> **D-4a-5 — totais passam por `_round`.** `mean_ms` é média (`sum/n`), então
+> `mean_ms * task_count` carrega ruído de ponto flutuante que entraria no
+> `Fact.id` e faria o golden depender de bit de arredondamento. Arredonda só o que
+> é `float`; byte e contagem de task continuam inteiros.
 
 ```python
 # sparkforge/facts/benchmark.py
@@ -244,22 +275,31 @@ def build_benchmark(
     return sort_facts(facts)
 ```
 
-- [ ] **Step 4: Rode e veja passar**
+- [x] **Step 4: Rode e veja passar**
 
 Run: `python -m pytest tests/test_facts_benchmark.py -v`
 Expected: PASS, 3 testes
+Medido: PASS. São 19 testes ao fim da task, não 3 — os Steps 5 e 6 entram no mesmo arquivo.
 
-- [ ] **Step 5: As outras quatro medidas do run**
+- [x] **Step 5: As outras quatro medidas do run**
 
 Teste primeiro, com a mesma forma do Step 1: `total_input_bytes` (soma de `spark.stage.task_input.total_bytes`), `total_spill_bytes` (de `spark.job.spill_summary`, somando memória e disco), `total_gc_ms` (soma de `spark.stage.gc.gc_ms`) e `total_task_count` (soma de `spark.stage.task_count.task_count`).
 
 Cada uma sai com sufixo `_before`, `_after` e `_delta_pct`, e o `_delta_pct` é **omitido** quando o lado antes é zero — a chave ausente é como este motor diz "não sei", e `engine._where_matches` reprova caminho ausente, então a regra não avalia. Medida ausente dos **dois** lados vira `bench.unresolved` com `reason: "measure_absent_both_sides"` e o nome da medida em `attrs`.
 
-- [ ] **Step 6: `bench.analyzed`, a sentinela**
+> **A presença é por kind, não por valor** (medido no Step 5): `total_task_count`
+> vem de `spark.stage.task_count` e não do `task_count` que
+> `spark.stage.task_duration` também carrega — o primeiro conta as tasks
+> declaradas pelo stage, o segundo conta as amostras de duração que o log trouxe.
+> Confundi-los somaria a mesma medida por duas definições diferentes.
+
+- [x] **Step 6: `bench.analyzed`, a sentinela**
 
 `measures`: `matched_stage_count`, `unmatched_stage_count` (zero até a Task 2), `before_stage_count`, `after_stage_count`. `attrs`: os dois artefatos. Ela prova que a comparação rodou — sem ela, "nenhum achado" e "nunca comparei" ficam indistinguíveis.
 
-- [ ] **Step 7: Commit**
+Contagem de stage por lado é de **subjects distintos** `(stage_id, symbol)`, não de facts: cinco kinds descrevem o mesmo stage.
+
+- [x] **Step 7: Commit**
 
 ```bash
 git add sparkforge/facts/benchmark.py tests/test_facts_benchmark.py
