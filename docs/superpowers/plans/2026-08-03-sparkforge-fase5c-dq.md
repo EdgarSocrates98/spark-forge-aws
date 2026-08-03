@@ -1436,12 +1436,30 @@ catálogo, e não só na mensagem de commit.
 **Files:**
 - Create: `agents/data-quality-reviewer.md`, `skills/review-data-validation/SKILL.md`
 
-- [ ] **Step 1: Rode o teste que prova a órfã**
+- [x] **Step 1: Rode o teste que prova a órfã**
 
 Run: `python -m pytest tests/test_agent_coverage.py -v`
 Expected: FAIL em `test_no_area_is_orphan` — `SF-DQ` não tem coordenador. Cole a saída: é a justificativa da task.
 
-- [ ] **Step 2: `agents/data-quality-reviewer.md`**
+**Medido.** Foram **dois** vermelhos, e não um — o plano previu só o de área. `19 passed, 2 failed`:
+
+```
+E   AssertionError: 1 de 33 tools nao sao alcancaveis a partir de nenhum coordenador:
+E   ['sparkforge_analyze_data_quality']. Cite a tool no coordenador, numa skill que ele
+E   declare, ou num executor que ele despache.
+tests\test_agent_coverage.py:67: AssertionError
+
+E   AssertionError: areas de regra sem coordenador: ['SF-DQ']. Toda area precisa de
+E   alguem que saiba quando investiga-la.
+tests\test_agent_coverage.py:81: AssertionError
+```
+
+O primeiro é o D-5c-23, aceso desde a Task 5; o segundo, desde a Task 7. Os dois fecham com
+o mesmo arquivo, e por motivos diferentes: `test_no_area_is_orphan` lê `rule_areas` do
+frontmatter, e `test_no_tool_is_orphan` lê o **corpus alcançável** — o texto do coordenador
+mais o das skills e executores que ele declara.
+
+- [x] **Step 2: `agents/data-quality-reviewer.md`**
 
 Frontmatter na forma de `agents/emr-infra-reviewer.md`:
 
@@ -1461,24 +1479,50 @@ executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 
 O corpo precisa de uma seção **"Quando você entra, e quando o irmão entra"**, como o `emr-infra-reviewer` tem: `pyspark-code-reviewer` revisa o código; você revisa a validação dentro dele. O que decide é a pergunta, não o artefato — os dois leem o mesmo `.py`. E uma fronteira negativa (`## Não faz`): **você não julga o dado**. Se o check reprova, quem responde é a ferramenta de DQ, não este motor.
 
-- [ ] **Step 3: `skills/review-data-validation/SKILL.md`**
+**Entrou como o plano pediu, com a distinção escrita em forma aplicável** — um teste de decisão ("apague mentalmente as linhas de validação; a pergunta continua de pé?"), uma tabela de seis perguntas, e a âncora verificável: os dois lados saem de extratores diferentes sobre a mesma AST, com namespaces de fact disjuntos (`pyspark.*` contra `dq.*`) e áreas disjuntas. A seção também declara que um achado `SF-PY` e um `SF-DQ` sobre a mesma linha **não** são duplicação — é a mesma afirmação que a Task 10 Step 1 vai provar por teste.
+
+- [x] **Step 3: `skills/review-data-validation/SKILL.md`**
 
 Fluxo focado, na forma de `skills/review-emr-cluster/SKILL.md`. Toda invocação de `sparkforge judge` dentro da skill **passa runtime** — invariante de `tests/test_skill_content.py` desde a Fase 5a.
 
-- [ ] **Step 4: Espelhe**
+- [x] **Step 4: Espelhe**
 
 Run: `python scripts/sync_skills.py`
 Depois: `git status --short` — devem aparecer as cópias em `.claude/`, `.agents/` e `.github/agents/`.
 
-- [ ] **Step 5: Rode**
+**Cinco cópias, todas geradas pelo script**: `.claude/skills/`, `.agents/skills/`, `.claude/agents/`, `.agents/agents/` e `.github/agents/data-quality-reviewer.agent.md` (sufixo de plataforma). Nenhum destino ficou de fora, e nada foi copiado à mão.
+
+- [x] **Step 5: Rode**
 
 Run: `python -m pytest tests/test_agent_coverage.py tests/test_skill_content.py -q`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+**Medido nesta task.** `tests/test_agent_coverage.py` e `tests/test_skill_content.py` passaram (308 testes com `test_agents_parity.py` junto), e os **dois** vermelhos do Step 1 fecharam. Mas a suíte inteira acendeu **outros dois**, que o plano não previu e que nenhum dos arquivos da Task 9 fecha sozinho — ver D-5c-31 e D-5c-32. Depois deles, suíte inteira: **3095 passed / 0 failed / 5 skipped**, e `ruff check .` limpo. Era a primeira vez desde a Task 5 que a suíte fechou sem vermelho.
+
+**Dois desvios medidos nesta task.**
+
+**D-5c-31 — registrar um coordenador custa QUATRO pontos, não dois.** O plano listou `agents/` e `skills/` (com os espelhos derivados do script). A suíte inteira cobra mais dois, e nenhum deles é derivado:
+
+1. `tests/test_router_agents.py::TestAgentRoutes::test_there_is_at_least_one_route_per_coordinator` — `coordenadores sem rota: ['data-quality-reviewer']`. Toda entrada de `agents/*.md` precisa de uma rota `AGENT-*` em `rules/catalog/routing.yaml` com `recommended_agent`, `id` prefixado e `reason`. É o invariante que impede o coordenador de existir e nunca ser recomendado por `next_step` — a mesma família do órfão de tool, do outro lado do roteamento.
+2. `tests/test_docs_coverage.py::TestAgentsMd::test_agents_md_lists_every_coordinator` — o `stem` de cada arquivo de `agents/` tem que aparecer em `AGENTS.md`.
+
+Os dois foram atendidos: `AGENT-008` em `routing.yaml` e uma linha nova na tabela de coordenadores de `AGENTS.md` (com a faixa `AGENT-001`…`AGENT-007` corrigida para `AGENT-008` no parágrafo seguinte). `routing.yaml` fica em `rules/catalog/`, mas **não é catálogo de regra**: `load_catalog()` o exclui por construção (`tests/test_rules_loader.py::test_routing_is_excluded`), então nenhuma contagem de regra e nenhum golden de finding se move por causa dele.
+
+**D-5c-32 — a posição da rota nova é precedência, e o lugar óbvio a deixaria morta.** `router._matching_rules` devolve na ordem do YAML e `next_step` projeta `agent_matches[0]`. Acrescentar `AGENT-008` no fim da lista — o gesto natural — a colocaria **depois** da `AGENT-004` (SF-PY, SF-PLAN, SF-CG), e SF-PY dispara em quase todo job PySpark: a rota nunca casaria na prática. É o mesmo defeito que os invariantes de cobertura desta fase existem para pegar, só que dentro do roteamento. A rota foi inserida **antes** da `AGENT-004`, com o motivo escrito no próprio YAML: é o único par da tabela que lê o MESMO artefato, e SF-DQ é estritamente mais estreita. Nenhuma decisão anterior muda — facts `dq.*` não existiam antes desta fase, então nenhum case já resolvido tinha como casar aqui. Medido depois da mudança:
+
+```
+['SF-DQ-001']              -> data-quality-reviewer  (AGENT-008)
+['SF-DQ-001', 'SF-PY-004'] -> data-quality-reviewer  (AGENT-008)
+['SF-PY-004']              -> pyspark-code-reviewer  (AGENT-004)
+['SF-GLUE-002','SF-DQ-002']-> glue-infra-reviewer    (AGENT-002)
+```
+
+**Dívida deixada aberta, e nomeada:** `pyspark-code-reviewer` não tem a seção recíproca dizendo quando entregar a investigação ao `data-quality-reviewer`. A distinção está escrita só de um lado. Editar o outro coordenador está fora da Task 9, e a assimetria não acende teste nenhum — é justamente por isso que fica registrada aqui.
+
+- [x] **Step 6: Commit**
 
 ```bash
-git add agents skills .claude .agents .github
+git add agents skills .claude .agents .github rules/catalog/routing.yaml AGENTS.md
 git commit -m "feat(agents): data-quality-reviewer, coordenador da area SF-DQ"
 ```
 
