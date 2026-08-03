@@ -12,7 +12,12 @@ proves: >
   validacao nao compartilha varredura, e isso seria mentira.
   Os quatro atributos de correlacao continuam presentes, porque eles nao
   dependem do framework: target, target_persisted, action_after_check e
-  position_vs_write saem do mesmo `_check` das outras duas formas.
+  position_vs_write saem do mesmo `_check` das outras duas formas. E e por isso
+  que SF-DQ-003 dispara aqui e SF-DQ-004 nao: `faturas` nao esta persistido e e
+  reusado depois da validacao (o recomputo de lineage nao depende de framework
+  nenhum), enquanto a regra da varredura repetida precisa de `shares_scan`, que
+  este check nao tem. As duas juntas provam que a ausencia da chave silencia
+  UMA regra, e nao o fact inteiro.
 runtime:
   glue: "5.0"
   spark: "3.5.4"
@@ -22,4 +27,5 @@ expects_kinds:
   - dq.check
   - dq.enforcement
   - dq.module_analyzed
-expects_rules: []
+expects_rules:
+  - SF-DQ-003

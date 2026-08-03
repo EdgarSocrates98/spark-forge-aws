@@ -1,1 +1,61 @@
-[]
+[
+  {
+    "rule_id": "SF-DQ-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Validação recomputa o lineage",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 35,
+      "col": 18,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_5baf27"
+    ],
+    "measured": {
+      "line": 35,
+      "checks_on_target": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Spark é lazy: a action do check materializa o DataFrame, e a próxima action sobre o mesmo DataFrame recomeça do último ponto materializado. Sem `cache`/`persist`, o lineage inteiro — leitura, joins, transformações — roda duas vezes, uma para validar e outra para escrever. O custo é proporcional ao lineage, não ao tamanho do check. OS DOIS ATRIBUTOS SÃO NECESSÁRIOS, e cada um sozinho não prova nada. Alvo não persistido sem reuso depois não recomputa coisa alguma — a action do check é a única que passa por ali. E reuso sobre alvo persistido não recomputa — é o caso correto, e é por isso que a fixture negativa desta área tem `action_after_check: true` sem disparar nada. O extrator só afirma `target_persisted: false` quando não viu `cache`/`persist` no escopo; quando o alvo não pôde ser resolvido, ele não inventa a chave, e `engine._where_matches` reprova caminho ausente.",
+    "proposed_change": [
+      "Persistir o DataFrame antes do check, com o nível de storage adequado ao tamanho, e liberar com `unpersist` depois da última action.",
+      "Alternativa sem cache: calcular a métrica de validação junto do resultado, numa única agregação, em vez de numa passada separada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Cache de DataFrame grande pressiona memória de executor e pode causar spill ou OOM — o remédio de um gargalo vira outro.",
+      "`unpersist` esquecido mantém blocos ocupando memória e disco até o fim do job, e o efeito aparece longe da mudança."
+    ],
+    "tradeoffs": [
+      "Persistir troca CPU e I/O de recomputo por memória; qual é melhor depende de qual recurso está saturado."
+    ],
+    "validation": [
+      "Número de jobs Spark submetidos antes e depois, na Spark UI.",
+      "Tempo de execução com o volume de produção.",
+      "Contagem e schema do resultado, inalterados."
+    ],
+    "rollback": [
+      "Remover o `cache`/`persist` e o `unpersist` correspondente, e reverter o commit."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html",
+        "retrieved": "2026-08-03",
+        "note": "Secao 'Remove unneeded Spark actions': cada RDD transformado pode ser recomputado a cada action."
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "P2 e nao P1: o defeito e custo, nao correcao -- o dado publicado esta certo, so foi pago duas vezes. Nenhum fact disponivel mede o tamanho do lineage recomputado."
+      }
+    ]
+  }
+]

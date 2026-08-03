@@ -313,6 +313,17 @@
         "SF-ICE-004"
       ]
     },
+    "https://github.com/awslabs/python-deequ": {
+      "checked_at": "2026-08-03",
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": [
+        "SF-DQ-004"
+      ],
+      "sha256": "68e7ef8d4659c195276280ac4e7393d91b72bcfc4687f05fb2d3cbfecbacd625"
+    },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {
       "checked_at": "2026-07-31",
       "pinned": false,
@@ -377,6 +388,17 @@
         "SF-PLAN-003"
       ],
       "sha256": "0c641ce521fee80c2e09865345b29250149442d0f14d5023bfc1ade7615692a1"
+    },
+    "https://www.vldb.org/pvldb/vol11/p1781-schelter.pdf": {
+      "checked_at": "2026-08-03",
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": [
+        "SF-DQ-004"
+      ],
+      "sha256": "c97f2fe3402691fa6cdf6cdaa4bf238db32b14575e79835f8b21e14aac66a519"
     }
   }
 }
