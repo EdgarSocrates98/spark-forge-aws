@@ -16,6 +16,8 @@
     "optimize-parquet-layout",
     "optimize-pyspark-code",
     "optimize-variable-volume-job",
+    "review-data-validation",
+    "review-emr-cluster",
     "review-glue-terraform",
     "review-pyspark-pr",
     "sparkforge-diagnose",
