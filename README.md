@@ -1,6 +1,8 @@
 # SparkForge AWS
 
-Sistema especialista de diagnóstico, tuning, revisão e benchmarking para jobs **PySpark no AWS Glue**, com foco em **Amazon S3, Parquet, Apache Iceberg, Glue Data Catalog, Spark UI e CloudWatch**.
+Sistema especialista de diagnóstico, tuning, revisão e benchmarking para jobs **PySpark no AWS Glue e no Amazon EMR on EC2**, com foco em **Amazon S3, Parquet, Apache Iceberg, Glue Data Catalog, Spark UI e CloudWatch**.
+
+O eixo de infraestrutura é o único que é específico da plataforma: a análise de código, plano físico, event log, Parquet e Iceberg é agnóstica por construção, e por isso o mesmo motor julga um job Glue definido em Terraform e um cluster EMR on EC2 definido por `describe-cluster`. Além de performance, o pacote lê **validação de dados** dentro do job — onde o check roda, se ele tem consequência e quantas passadas sobre o dado ele custa — que é pergunta de engenharia de dados, não de tuning.
 
 O pacote foi estruturado para funcionar em:
 
@@ -22,13 +24,15 @@ Há Skills específicas para arquitetura incremental (`design-incremental-proces
 
 ## Base de conhecimento
 
-`knowledge/` é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge/` (estado da investigação). Comece por [`knowledge/INDEX.md`](knowledge/INDEX.md).
+`knowledge/` é a fonte de verdade sobre **como Spark, Glue, EMR, Athena, Parquet e Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge/` (estado da investigação). Comece por [`knowledge/INDEX.md`](knowledge/INDEX.md).
 
-Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, performance de Athena, layout Parquet/S3 e Iceberg.
+Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR on EC2, superfície corrente dos frameworks de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 62 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 22 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 6 de coordenador, `AGENT-001`…`AGENT-006`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 62 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+
+As 62 regras se distribuem em 11 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## Camada determinística (Fase 0)
 
@@ -47,6 +51,24 @@ sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
 sparkforge judge --facts .sparkforge/facts.json --glue 5.0 --out .sparkforge/findings.json
 sparkforge next-step --repo . --findings .sparkforge/findings.json
 ```
+
+No EMR on EC2 a sequência é a mesma, com uma diferença que importa: a release
+não precisa ser declarada, porque o dump do cluster a carrega. `--facts` é
+repetível, e `judge` correlaciona as fontes numa chamada só — código e
+infraestrutura juntos, que é o que faz um achado de código ser julgado contra
+o Spark que aquele cluster realmente roda.
+
+```bash
+sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts-emr.json
+sparkforge analyze pyspark --path lib/ --out .sparkforge/facts.json
+sparkforge judge --facts .sparkforge/facts-emr.json --facts .sparkforge/facts.json \
+  --out .sparkforge/findings.json
+```
+
+`--emr` existe nos três verbos que aceitam runtime (`judge`, `case open`,
+`runtime detect`) e serve a quem sabe a release e **não** tem o dump. É
+declaração, não observação: perde para o dump e para o event log, e discordar
+de um deles vira divergência reportada — nunca valor substituído em silêncio.
 
 ### Por que extração e julgamento são verbos separados
 
@@ -79,7 +101,7 @@ pip install "sparkforge-aws[mcp]"     # + servidor MCP (stdio e streamable HTTP)
 
 Diferente de um `pip install` comum, este wheel não traz só código: `rules/catalog/`
 (o catálogo de regras em YAML) e `knowledge/` (a base de conhecimento sobre
-Spark, Glue, Athena, Parquet e Iceberg) vêm embarcados dentro do pacote,
+Spark, Glue, EMR, Athena, Parquet e Iceberg) vêm embarcados dentro do pacote,
 resolvidos por `loader.catalog_dir()` na mesma ordem de sempre — variável de
 ambiente, raiz do repositório e, faltando as duas, o fallback dentro do
 próprio pacote instalado. É esse terceiro degrau que faz `analyze`, `judge`,
@@ -103,7 +125,7 @@ caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
 dentro de `site-packages` quando instalado por `pip`.
 
 Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
-**fora do repositório** e reproduz as 74 fixtures byte a byte a partir do
+**fora do repositório** e reproduz as 101 fixtures golden byte a byte a partir do
 pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
 usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
@@ -128,27 +150,58 @@ limpa resolveria para 2.x e o servidor quebraria no import — nos dois
 transportes. `tests/test_adapters_mcp.py` constrói o servidor e o app ASGI de
 verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
-### Extratores desbloqueados na varredura final
+### O que pode ser extraído
 
-As cinco últimas regras inertes do catálogo passaram a disparar, e com elas
-três extratores novos:
+Os 15 extratores emitem 97 kinds distintos de fact, e todos são offline: leem
+artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
+tool MCP de mesmo nome.
+
+| Artefato | Verbo | Lê |
+|---|---|---|
+| Código PySpark | `analyze pyspark` | árvore `*.py`, por AST — nunca importa o código |
+| Plano físico | `analyze plan` | saída colada de `explain("formatted")` |
+| Event log do Spark | `analyze event-log` | `*.jsonl` de uma execução |
+| Metadata Iceberg | `analyze iceberg` | dump das metadata tables |
+| Glue Data Catalog | `analyze catalog-schema` | dump de `GetTables`/`GetTable` |
+| Terraform do Glue | `analyze terraform` | HCL com `aws_glue_job` |
+| SQL | `analyze sql` | `*.sql` e literais de `spark.sql(...)` |
+| Workgroup do Athena | `analyze athena-workgroup` | dump de `get_work_group` |
+| **Cluster EMR on EC2** | `analyze emr-cluster` | dump de `describe-cluster` e os cinco que o completam |
+| **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
+| Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
+| Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
+| Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
+| Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
+| Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
+| Runtime | `runtime detect` | todas as fontes acima, cruzadas |
+
+Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
+AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
+essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
+o que falta para uma regra disparar é sempre coleta, nunca código.
+
+Dois desses verbos mudam o alcance do projeto, e é por isso que aparecem
+em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
+instance fleets contra instance groups, opção de compra por papel, managed
+scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
+alimenta a release do EMR no `RuntimeContext`, de modo que os limiares passem
+a ser avaliados contra a versão certa fora do Glue. `analyze data-quality`
+responde sobre **onde a validação está**, não sobre se o dado está correto:
+reconhece o check artesanal, a `VerificationSuite` do PyDeequ e o Great
+Expectations pela forma do código — nunca por lista de nomes —, e o achado é
+sobre o check rodar depois do write, não ter consequência nenhuma, ou pesar N
+passadas sobre um alvo que ninguém persistiu. Uma suíte não custa "uma
+passada": ela compartilha scan por agrupamento, e restrição de unicidade paga
+a sua própria.
 
 ```bash
-# small files, gzip não splitável, cardinalidade de partição
-aws s3api list-objects-v2 --bucket lake --prefix analytics/pedidos/ > listing.json
-sparkforge analyze s3-listing --path listing.json
+# o cluster inteiro num dump, e o julgamento sem flag de versão nenhuma
+aws emr describe-cluster --cluster-id j-XXXX > cluster.json
+sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
 
-# quem consome a tabela — arquivo declarado, versionado com o repositório
-sparkforge analyze consumers --path .sparkforge/consumers.yaml
-
-# o que mudou entre dois estados do mesmo módulo Terraform
-sparkforge analyze terraform-diff --before ./infra-main --after ./infra-pr
+# onde o job valida dado, e o que acontece quando o check falha
+sparkforge analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
 ```
-
-Nenhum deles chama a AWS: o primeiro lê o dump que você coletou, o segundo lê
-um arquivo que a sua organização escreve, o terceiro lê HCL de dois
-diretórios. `rules/catalog/` não tem mais nenhuma regra com `blocked_on` — o
-que falta para uma regra disparar é sempre coleta, nunca código.
 
 ### Fluxo de handoff
 
@@ -175,11 +228,12 @@ como coletar de novo.
 ## Objetivos
 
 1. Encontrar o gargalo dominante antes de sugerir alterações.
-2. Correlacionar código, plano físico, Spark UI, CloudWatch, configuração do Glue e layout de dados.
+2. Correlacionar código, plano físico, Spark UI, CloudWatch, definição do job Glue ou do cluster EMR, e layout de dados.
 3. Produzir recomendações baseadas em evidências, com riscos, trade-offs, validação e rollback.
 4. Melhorar runtime, DPU-hours, custo, escalabilidade e confiabilidade sem alterar o resultado funcional.
 5. Tratar Parquet e Iceberg como camadas diferentes de otimização.
-6. Ser consciente da versão do AWS Glue, Spark e Iceberg.
+6. Ser consciente da versão do AWS Glue, da release do EMR, do Spark e do Iceberg.
+7. Dizer onde a validação de dados está e o que ela custa, sem opinar se o dado está correto.
 
 ## Skills incluídas
 
@@ -205,24 +259,28 @@ Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Us
 | `benchmark-pyspark-job` | comprovar (não estimar) o impacto de uma mudança antes/depois |
 | `review-pyspark-pr` | revisar um PR buscando regressões de performance e custo |
 | `review-glue-terraform` | revisar o IaC do job (workers, Auto Scaling, args, observabilidade) |
+| `review-emr-cluster` | o risco estiver na definição do cluster EMR on EC2 (fleets/groups, Spot por papel, managed scaling, `Configurations`, `LogUri`) |
+| `review-data-validation` | o job validar dado e a pergunta for onde o check está, se ele tem consequência e quanto custa |
 
 ## Coordenadores e executores
 
 Além das Skills (procedimento) e da camada determinística (extração e julgamento), o
 pacote tem duas camadas de agente:
 
-- **Coordenador** — 6 agentes em `agents/*.md`, um por área de investigação
+- **Coordenador** — 8 agentes em `agents/*.md`, um por área de investigação
   (`spark-performance-architect`, `glue-incremental-performance-architect`,
   `glue-infra-reviewer`, `athena-query-optimizer`, `pyspark-code-reviewer`,
-  `iceberg-performance-engineer`). Não executa: lê o case, decide qual executor rodar em
-  seguida e registra no case qual executor rodou e com que resultado. Ver a tabela
-  completa em `AGENTS.md`.
+  `iceberg-performance-engineer`, `emr-infra-reviewer` e `data-quality-reviewer`). Não
+  executa: lê o case, decide qual executor rodar em seguida e registra no case qual
+  executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
+  `emr-infra-reviewer` lê `SF-EMR`/`SF-ENV` e `data-quality-reviewer` lê `SF-DQ` — e é
+  isso, não o nome, que faz o roteamento funcionar. Ver a tabela completa em `AGENTS.md`.
 - **Executor** — 5 agentes em `agents/executors/*.md`, um por função do loop de fase
   (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`). Cada um
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
   contrato de handoff que fazem a cadeia ser determinística entre modelos.
 
-Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-006` de
+Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-008` de
 `rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
 coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
 
@@ -285,7 +343,7 @@ manifesto silencioso é pior que erro barulhento:
 | `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
 
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
-constrói o artefato, instala num venv limpo e reproduz as 74 fixtures byte a byte.
+constrói o artefato, instala num venv limpo e reproduz as 101 fixtures golden byte a byte.
 
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e paridade das três cópias.
 
@@ -298,6 +356,8 @@ Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e 
 /optimize-pyspark-code
 /analyze-spark-plan
 /optimize-iceberg-table
+/review-emr-cluster
+/review-data-validation
 ```
 
 ### GitHub Copilot
@@ -323,8 +383,8 @@ Use a skill sparkforge-diagnose para analisar este job Glue.
 Forneça, sempre que possível:
 
 - Código do job.
-- Versão do AWS Glue.
-- Tipo e quantidade de workers.
+- Versão do AWS Glue, ou a release do EMR e o `describe-cluster` do cluster.
+- Tipo e quantidade de workers (ou instance groups/fleets, no EMR).
 - Argumentos e Spark configs.
 - Runtime e DPU-hours.
 - Volume de entrada e saída.

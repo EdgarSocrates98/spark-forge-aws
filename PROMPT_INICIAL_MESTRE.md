@@ -44,7 +44,7 @@ Nesta ordem, sempre:
    não chegam ao seu contexto sozinhas — abra o arquivo.
 4. **Deixe `next_step` decidir a rota.** Não escolha a próxima skill por
    julgamento próprio — a árvore de decisão vive em `rules/catalog/routing.yaml`,
-   incluindo as rotas `AGENT-001`…`AGENT-006` que indicam qual dos seis
+   incluindo as rotas `AGENT-001`…`AGENT-008` que indicam qual dos oito
    coordenadores (`agents/*.md`) usar a partir da fase do case e do achado
    dominante. Em Claude Code, o coordenador despacha os cinco executores
    (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`)
@@ -82,6 +82,12 @@ Depois acione, conforme as evidências:
 - `optimize-iceberg-table`
 - `benchmark-pyspark-job`
 - `review-pyspark-pr`
+- `review-emr-cluster` — se o Spark roda em Amazon EMR on EC2 e não no Glue, esta
+  substitui `review-glue-terraform`: o artefato de infraestrutura passa a ser o dump de
+  `describe-cluster`, e o resto da investigação não muda
+- `review-data-validation` — se a biblioteca valida dado em qualquer forma (check
+  artesanal, PyDeequ, Great Expectations). A pergunta é onde o check está, se ele tem
+  consequência e quanto custa, nunca se o dado está correto
 
 Não ignore uma Skill relevante. Registre quais Skills foram usadas, quais não foram necessárias e por quê.
 

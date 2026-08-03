@@ -46,11 +46,15 @@ REQUIRED_FIXTURES = {
     "great_expectations_suite",
     # A maquinaria de ponto cego, que e a que apodrece em silencio.
     "unresolved_helper",
-    # A guarda contra o falso positivo de D-5c-11: alvo que chega por parametro
-    # sai SEM `target_persisted`, e `SF-DQ-003` nao avalia o check. Nenhuma das
-    # oito acima tem check sobre parametro, entao sem esta fixture remover a
-    # omissao no extrator passaria por `fixtures/dq/` inteiro sem quebrar nada.
+    # O PAR da heranca de chamador (Fase 5c.2), e ele so prova o que promete
+    # junto: alvo que chega por parametro herda a evidencia do unico call site
+    # do modulo, e a heranca resolve nos dois sentidos. Separados, cada um
+    # deixa passar o erro que o outro pega -- so o positivo esconderia uma
+    # heranca que nunca diz `false` (regra morta, golden verde), e so o
+    # negativo esconderia uma que sempre diz `false` (a acusacao que D-5c-11
+    # existiu para evitar). Nenhuma das oito acima tem check sobre parametro.
     "helper_validates_cached_param",
+    "helper_validates_uncached_param",
 }
 
 
@@ -222,6 +226,35 @@ class TestAdversarial:
         # Sem `dq.check` nao ha subject a proteger: o `raise` do helper existe,
         # e ainda assim nao vira enforcement solto.
         assert _by_kind(facts, "dq.enforcement") == []
+
+    def test_the_param_pair_differs_only_in_the_inherited_key(self):
+        """O par da heranca de chamador, e ele so prova junto.
+
+        Os dois jobs sao o mesmo arquivo menos uma linha -- o `cache()` do
+        chamador --, entao TODO o resto dos attrs tem de ser identico. Se algum
+        outro atributo divergir, a diferenca entre as duas fixtures deixou de
+        ser a persistencia herdada, e o par para de isolar o que promete
+        isolar.
+        """
+        cached = _only_check("helper_validates_cached_param")
+        uncached = _only_check("helper_validates_uncached_param")
+        assert cached.attrs["target_persisted"] is True
+        assert uncached.attrs["target_persisted"] is False
+        def resto(attrs):
+            return {k: v for k, v in attrs.items() if k != "target_persisted"}
+
+        assert resto(cached.attrs) == resto(uncached.attrs)
+        assert cached.attrs["action_after_check"] is True
+
+    def test_the_uncached_param_actually_fires_the_rule(self):
+        """A heranca que resolve CONTRA a persistencia chega ate o achado.
+
+        Sem esta assercao, uma heranca que so soubesse dizer `true` deixaria os
+        dois goldens verdes e `SF-DQ-003` morta para todo helper -- que e
+        exatamente a cegueira que a Fase 5c.2 existiu para tirar.
+        """
+        _, _, findings, _ = run_fixture(FIXTURES / "helper_validates_uncached_param")
+        assert [f.rule_id for f in findings] == ["SF-DQ-003"]
 
     def test_the_corpus_covers_every_kind_the_extractor_emits(self):
         """Recorte local do invariante global de `test_fixtures_kind_coverage`.
