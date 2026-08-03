@@ -310,6 +310,30 @@ Glue ou EMR rodando o driver assim, e no Glue o caminho documentado
 `explanation` de `SF-DQ-002` — não vira `dq.unresolved`, como o plano previa no
 outro ramo.
 
+**D-5c-10 — a correlação é por escopo, e `checks_on_target` conta por escopo.**
+Medido na revisão da Task 2: indexar write, persist e action por **nome nu**
+data o check de uma função contra o write de outra. Duas funções com um
+parâmetro `vendas` cada produziam `after_write` sobre um DataFrame que nunca foi
+escrito — acusação falsa, que é o modo de falha que o item 4 do
+`rules/catalog/README.md` trata como pior que achado nenhum.
+
+O índice passou a ser por escopo: corpo do módulo e cada `FunctionDef` /
+`AsyncFunctionDef` separados. `measures.checks_on_target` foi junto, e isso
+**contraria a letra da §4.4** deste documento, que diz "no módulo". A letra
+estava errada pelo mesmo motivo: dois homônimos em escopos diferentes não são
+dois checks sobre o mesmo alvo, e contá-los juntos faria `SF-DQ-004` afirmar
+varredura repetida sobre dado que não é o mesmo.
+
+Segunda decisão da mesma família: quando o nome do alvo é **religado** entre a
+linha do check e a linha do write comparada, `attrs.position_vs_write` **não é
+emitido** — chave ausente, nunca um quarto valor, no mecanismo já usado por
+`shares_scan` em D-5c-3. `attrs.target_persisted`, ao contrário, sai `false` sob
+religação em vez de ausente: ali a omissão calaria `SF-DQ-003`, e o rebind
+viraria um jeito de sumir com a regra.
+
+O preço, registrado: função que lê um DataFrame global perde a correlação com o
+write do módulo e sai `no_write_in_module`. Erra para menos, que é o lado certo.
+
 **D-5c-5 — `proposed_change` que recomende suíte precisa de guarda de versão.**
 PyDeequ não alcança Glue 3.0 nem nenhuma release EMR 6.x (piso Python 3.9), e o
 Spark 3.4 não está no mapa de `pydeequ/configs.py`. GX 1.x exige Python ≥ 3.10.
