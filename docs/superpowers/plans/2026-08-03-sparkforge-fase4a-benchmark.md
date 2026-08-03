@@ -125,11 +125,13 @@ Medido: exatamente isso, na coleta do módulo.
 
 > **Cinco desvios medidos contra o esqueleto abaixo.**
 >
-> **D-4a-1 — `DERIVER_ID` virou `EXTRACTOR_ID`.** Os onze módulos de
-> `sparkforge/facts/`, inclusive os dois derivados (`call_graph.py`, `fusion.py`),
-> declaram `EXTRACTOR_ID`, e `tests/test_facts_fusion.py` e
-> `tests/test_facts_catalog_schema.py` asseguram o prefixo por esse nome. Um nome
-> só para este módulo seria diferença sem diferença.
+> **D-4a-1 — `DERIVER_ID` virou `EXTRACTOR_ID`.** Os **quatorze** módulos
+> pré-existentes de `sparkforge/facts/` — quinze com este, medido por
+> `grep -rl "^EXTRACTOR_ID" sparkforge/facts/` —, inclusive os dois derivados
+> (`call_graph.py`, `fusion.py`), declaram `EXTRACTOR_ID`, e
+> `tests/test_facts_fusion.py` e `tests/test_facts_catalog_schema.py` asseguram o
+> prefixo por esse nome. Um nome só para este módulo seria diferença sem
+> diferença.
 >
 > **D-4a-2 — `bench.unresolved` precisa de subject próprio por motivo.**
 > `Fact.id` é sha1 de `(kind, subject, measures)` e **`attrs` fica de fora**: os
@@ -143,15 +145,55 @@ Medido: exatamente isso, na coleta do módulo.
 > valor do lado que tem, **sem** `_delta_pct`, mais um `bench.unresolved` com
 > `reason: "measure_absent_one_side"` e o lado que faltou.
 >
-> **D-4a-4 — `before_artifact` virou `before_artifacts`, lista ordenada.** Não há
-> exatamente um `spark.log_analyzed` por lado: event log rolante
-> (`spark.eventLog.rolling.enabled`) e extração de vários arquivos produzem
-> vários. Pegar o primeiro esconderia os outros.
+> **D-4a-4 — `before_artifact` virou `before_artifacts`, lista ordenada e
+> deduplicada.** Não há exatamente um `spark.log_analyzed` por lado: event log
+> rolante (`spark.eventLog.rolling.enabled`) e extração de vários arquivos
+> produzem vários. Pegar o primeiro esconderia os outros. A coleta é `set` e
+> depois `sorted`: dois `spark.log_analyzed` do **mesmo** artefato aparecem uma
+> vez só — a lista responde "de que arquivos este lado veio", não "quantos facts
+> sentinela havia".
 >
 > **D-4a-5 — totais passam por `_round`.** `mean_ms` é média (`sum/n`), então
 > `mean_ms * task_count` carrega ruído de ponto flutuante que entraria no
 > `Fact.id` e faria o golden depender de bit de arredondamento. Arredonda só o que
-> é `float`; byte e contagem de task continuam inteiros.
+> é `float`; byte e contagem de task continuam inteiros. A revisão mediu um efeito
+> que eu não tinha alegado: sob 300 permutações da ordem de entrada de 60 stages,
+> o `Fact.id` fica único — o arredondamento também absorve a **não
+> associatividade** da soma de float. Três casas valem até ~1e12 (≈31 anos de
+> tempo de task somado); acima disso o eps do float de 64 bits passa de 1e-3, e o
+> limite está escrito no docstring de `_round`.
+>
+> **D-4a-6 (revisão da Task 1) — presença é por CHAVE, não por kind.** Medido pelo
+> revisor: `spark.stage.task_duration` **sem** `task_count` dava
+> `total_task_ms_before = 0` e nenhum `bench.unresolved`, contradizendo o
+> docstring do próprio módulo. Hoje é inalcançável, porque `event_log.py:204-211`
+> co-emite as chaves — **a Task 3 o torna alcançável**, porque o verbo `benchmark`
+> lê facts de um *arquivo*, que alguém edita e que outra ferramenta gera. Mesmo
+> raciocínio da colisão de `Fact.id` (D-4a-2): barato agora, caro depois das
+> fixtures.
+>
+> Cada medida declara as chaves que exige (`_RUN_MEASURES`), e um fact do kind sem
+> todas elas não contribui. Daí três estados por lado: `usable`, `absent` (nenhum
+> fact completo) e `partial` (uns completos, outros não). **Parcial também é
+> ausência**, com `reason: "measure_partial_keys"` e
+> `missing_key_fact_count`: somar só os completos produziria um **piso**, e piso
+> de um lado contra total do outro *fabrica melhora* — `SF-BENCH-002` acusaria
+> regressão inexistente, ou calaria uma real. Errar para o silêncio é o lado certo
+> aqui. Valor não numérico (`"400"`, `True`) conta como chave ausente.
+>
+> **Ruído medido: zero.** As duas fixtures de `fixtures/eventlog/` comparadas nas
+> quatro combinações não produzem um `bench.unresolved` sequer, e as cinco medidas
+> saem completas — a única chave omitida é `total_spill_bytes_delta_pct` quando o
+> lado antes não derramou, que é a regra de divisão por zero funcionando.
+>
+> **D-4a-7 — a presunção de base não negativa, escrita e sem guarda.** Com
+> `before` negativo o sinal de `_delta_pct` inverte, e uma subida sairia como
+> −120%. Inalcançável pelas cinco medidas de hoje (tempo, byte, GC e contagem são
+> não negativos), então **não há guarda** — guarda para caso inalcançável é código
+> que ninguém consegue provar. A presunção está no docstring de `_delta_pct`, com
+> a condição de reabertura: medida nova que possa ser negativa reabre a decisão
+> antes de entrar em `_RUN_MEASURES`. Presunção escrita é decisão; presunção
+> silenciosa é acidente esperando fact novo.
 
 ```python
 # sparkforge/facts/benchmark.py

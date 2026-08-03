@@ -222,6 +222,105 @@ class TestOQueOModuloRecusaAAfirmar:
         assert [f.attrs["reason"] for f in de_um_lado] == ["measure_absent_one_side"]
         assert de_um_lado[0].attrs["sides"] == ["after"]
 
+    def test_kind_presente_sem_a_chave_da_medida_nao_vira_zero(self):
+        """Presenca e por CHAVE, nao por kind. `spark.stage.task_duration` sem
+        `task_count` nao sustenta `total_task_ms`; somar o que sobrou daria zero,
+        e zero de um lado contra total do outro fabrica melhora de 100%."""
+        sem_chave = Fact(
+            kind="spark.stage.task_duration",
+            subject={"type": "stage", "symbol": "scan", "stage_id": 0},
+            measures={"mean_ms": 200},
+            provenance=_prov("a.jsonl"),
+        )
+        before = [_analyzed("a.jsonl"), sem_chave]
+        after = [_analyzed("b.jsonl"), _stage("scan", 0, mean_ms=100, task_count=10)]
+
+        facts = build_benchmark(before, after)
+
+        delta = only_delta(facts)
+        assert "total_task_ms_before" not in delta.measures
+        assert delta.measures["total_task_ms_after"] == 1000
+        assert "total_task_ms_delta_pct" not in delta.measures
+        furo = [
+            f for f in by_kind(facts, "bench.unresolved") if f.attrs["measure"] == "total_task_ms"
+        ]
+        assert [f.attrs["reason"] for f in furo] == ["measure_absent_one_side"]
+        assert furo[0].attrs["sides"] == ["before"]
+        assert furo[0].attrs["missing_key_fact_count"] == {"before": 1, "after": 0}
+
+    def test_chave_faltando_nos_dois_lados_e_ausencia_apesar_do_kind_existir(self):
+        def _sem_chave(artifact: str) -> Fact:
+            return Fact(
+                kind="spark.stage.gc",
+                subject={"type": "stage", "symbol": "scan", "stage_id": 0},
+                measures={"executor_run_ms": 1000},
+                provenance=_prov(artifact),
+            )
+
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), _sem_chave("a.jsonl")],
+            [_analyzed("b.jsonl"), _sem_chave("b.jsonl")],
+        )
+
+        gc = [f for f in by_kind(facts, "bench.unresolved") if f.attrs["measure"] == "total_gc_ms"]
+        assert [f.attrs["reason"] for f in gc] == ["measure_absent_both_sides"]
+        assert gc[0].attrs["sides"] == ["before", "after"]
+        assert "total_gc_ms_before" not in only_delta(facts).measures
+
+    def test_lado_parcial_nao_vira_piso(self):
+        """Alguns facts do kind com a chave e outros sem: somar so os presentes
+        produz PISO, e piso de um lado contra total do outro fabrica melhora."""
+        parcial = Fact(
+            kind="spark.stage.task_input",
+            subject={"type": "stage", "symbol": "join", "stage_id": 1},
+            measures={"max_bytes": 10},
+            provenance=_prov("a.jsonl"),
+        )
+        before = [_analyzed("a.jsonl"), _task_input("scan", 0, 1000), parcial]
+        after = [_analyzed("b.jsonl"), _task_input("scan", 0, 1500, artifact="b.jsonl")]
+
+        facts = build_benchmark(before, after)
+
+        delta = only_delta(facts)
+        assert "total_input_bytes_before" not in delta.measures
+        assert delta.measures["total_input_bytes_after"] == 1500
+        assert "total_input_bytes_delta_pct" not in delta.measures
+        furo = [
+            f
+            for f in by_kind(facts, "bench.unresolved")
+            if f.attrs["measure"] == "total_input_bytes"
+        ]
+        assert [f.attrs["reason"] for f in furo] == ["measure_partial_keys"]
+        assert furo[0].attrs["sides"] == ["before"]
+        assert furo[0].attrs["missing_key_fact_count"] == {"before": 1, "after": 0}
+
+    def test_valor_nao_numerico_conta_como_chave_ausente(self):
+        texto = Fact(
+            kind="spark.stage.gc",
+            subject={"type": "stage", "symbol": "scan", "stage_id": 0},
+            measures={"gc_ms": "400", "executor_run_ms": 1000},
+            provenance=_prov("a.jsonl"),
+        )
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), texto],
+            [_analyzed("b.jsonl"), _gc("scan", 0, 200, artifact="b.jsonl")],
+        )
+
+        assert "total_gc_ms_before" not in only_delta(facts).measures
+        gc = [f for f in by_kind(facts, "bench.unresolved") if f.attrs["measure"] == "total_gc_ms"]
+        assert gc[0].attrs["sides"] == ["before"]
+
+    def test_a_medida_declara_as_chaves_que_ela_exige(self):
+        facts = build_benchmark([_analyzed("a.jsonl")], [_analyzed("b.jsonl")])
+        por_medida = {
+            f.attrs["measure"]: f.attrs["keys"] for f in by_kind(facts, "bench.unresolved")
+        }
+        assert por_medida["total_task_ms"] == ["mean_ms", "task_count"]
+        assert por_medida["total_spill_bytes"] == [
+            "total_memory_spill_bytes",
+            "total_disk_spill_bytes",
+        ]
+
     def test_cada_unresolved_tem_id_proprio(self):
         """`Fact.id` e sha1 de (kind, subject, measures) -- `attrs` fica de fora.
         Unresolved sem subject proprio colidiria com os outros quatro."""
