@@ -28,6 +28,7 @@ from sparkforge.facts import (
     call_graph,
     catalog_schema,
     consumers,
+    data_quality,
     emr_cluster,
     event_log,
     fusion,
@@ -46,6 +47,9 @@ EXTRACTORS = (
     call_graph,
     catalog_schema,
     consumers,
+    # Esta lista e manual e duplicada em `tests/test_fixtures_kind_coverage.py`:
+    # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
+    data_quality,
     # `emr_cluster` faltava aqui, e a omissao era invisivel enquanto a area
     # SF-EMR nao existia: sem ele, todo kind `emr.*` conta como orfao, e a
     # primeira regra de EMR seria obrigada a declarar `blocked_on` sobre um

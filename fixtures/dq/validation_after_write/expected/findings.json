@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-DQ-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Validação roda depois da escrita",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 38,
+      "col": 16,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_70ebba"
+    ],
+    "measured": {
+      "line": 38,
+      "checks_on_target": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A validação existe para impedir que dado ruim chegue ao consumidor, e aqui ela roda depois de o dado já ter sido escrito. Quando ela acusa, o estrago já é público: o consumidor a jusante pode ter lido, e reverter exige apagar ou reescrever partição. `attrs.position_vs_write` distingue três situações, e só uma delas é esta — `no_write_in_module` significa que o módulo valida e não escreve, que é legítimo e não dispara, e `before_write` é o caso correto. Quando o nome do alvo é religado entre o check e o write, o extrator OMITE a chave em vez de inventar um quarto valor, e a regra simplesmente não avalia aquele check: `engine._where_matches` reprova caminho ausente. O recorte é o escopo de nomes, e não o arquivo: a comparação vale dentro do corpo do módulo ou de uma função, porque `def a(vendas)` e `def b(vendas)` não recebem o mesmo DataFrame. Validação numa função e write noutra saem como `no_write_in_module` — erra para menos, e não acusa.",
+    "proposed_change": [
+      "Mover a validação para antes do `write`, sobre o DataFrame já transformado.",
+      "Se a validação precisa do dado escrito (contagem no destino, por exemplo), escrever primeiro numa área de staging e só promover ao destino final depois de a validação passar.",
+      "Antes de trocar o check artesanal por uma suíte, conferir o alcance em knowledge/dq/validation-frameworks.md — PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e Great Expectations 1.x exige Python 3.10 ou superior."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Validar antes do write adiciona uma action antes da escrita; sobre DataFrame não persistido isso recomputa o lineage inteiro.",
+      "Promoção a partir de staging muda o instante em que o dado fica visível para o consumidor, e quem depende do horário de publicação precisa saber."
+    ],
+    "tradeoffs": [
+      "Staging mais promoção dobra a escrita e o custo de S3, e é o preço de não publicar dado inválido.",
+      "Abortar antes do write deixa o destino com o conteúdo do ciclo anterior; abortar depois deixa o destino com dado que reprovou. As duas exigem decisão de operação, e nenhuma é neutra."
+    ],
+    "validation": [
+      "Rodar com um lote que viole a regra e confirmar que nada é escrito no destino final.",
+      "Contagem total no destino antes e depois da mudança, com um lote que PASSA na validação, para provar que a semântica do write não mudou.",
+      "Contagem por chave de partição no destino, para provar que a promoção não perdeu nem duplicou partição."
+    ],
+    "rollback": [
+      "Reverter o commit. Quando houve staging, apagar o prefixo de staging depois de confirmar que o destino final está íntegro."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "A severidade P1 é decisão de campo: o custo depende de haver consumidor a jusante, e nenhum fact disponível mede isso. Contexto e alcance dos frameworks em knowledge/dq/validation-frameworks.md."
+      }
+    ]
+  }
+]

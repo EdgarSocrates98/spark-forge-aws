@@ -1,0 +1,36 @@
+name: helper_validates_cached_param
+proves: >
+  A guarda contra o falso positivo do desvio D-5c-11: alvo que chega por
+  PARAMETRO tem persistencia vivendo fora do escopo, e o extrator omite a chave
+  em vez de afirmar o que nao sabe.
+  `valida_e_publica` recebe `entregas` e valida; `main` cacheia antes de chamar.
+  As duas metades vivem em escopos diferentes, e o indice de correlacao e por
+  escopo (D-5c-10) -- de dentro do helper, o `cache()` do chamador e invisivel.
+  O `dq.check` sai SEM attrs.target_persisted, e nao com `false`. A diferenca e
+  a fixture inteira: `SF-DQ-003` dispara sobre `target_persisted: false`, entao
+  o valor errado acusaria um DataFrame que ESTA em cache -- a forma canonica de
+  biblioteca Glue, punida por ter sido escrita direito. Chave ausente e
+  reprovada por `engine._where_matches`, e a regra nao avalia o check.
+  attrs.action_after_check CONTINUA presente e `true`, e a assimetria e o outro
+  lado da prova: o write posterior esta DENTRO do helper e e observado de fato.
+  So a persistencia vem de fora. Um extrator que omitisse os dois estaria
+  cego onde nao precisa; um que afirmasse os dois acusaria.
+  Nenhuma das quatro regras SF-DQ dispara aqui, e cada uma por um motivo
+  proprio: SF-DQ-001 nao, porque a validacao vem antes do write
+  (position_vs_write == before_write, medido dentro do helper); SF-DQ-002 nao,
+  porque ha `dq.enforcement` (form: raise) sobre o mesmo subject; SF-DQ-003 nao,
+  porque a chave que ela le esta AUSENTE -- que e o que esta fixture existe para
+  travar; SF-DQ-004 nao, porque ha um unico check (checks_on_target == 1).
+  Sem ela, remover a omissao de `target_persisted` no extrator passaria por
+  `fixtures/dq/` inteiro sem quebrar nada: nenhuma das outras oito tem check
+  sobre parametro.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules: []
