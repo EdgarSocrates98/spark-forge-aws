@@ -19,6 +19,7 @@ EXPECTED_KINDS = {
     "pyspark.conf_set",
     "pyspark.dedup",
     "pyspark.callgraph_edge",
+    "pyspark.function_def",
     "pyspark.unresolved",
     "pyspark.module_analyzed",
     "pyspark.glue_context_init",
@@ -36,11 +37,16 @@ def one(kind, src):
 
 
 def test_kind_namespace_is_complete_and_documented():
-    """Garante que as 19 kinds (17 da spec secao 6.2 + sentinelas) existem como constante."""
+    """Garante que as 20 kinds (17 da spec secao 6.2 + sentinelas + `function_def`).
+
+    `pyspark.function_def` entrou na Fase 5b: sem um fact por funcao DEFINIDA,
+    o grafo de chamadas so conhecia funcoes que aparecem em alguma aresta, e
+    uma funcao definida e nunca chamada era invisivel.
+    """
     from sparkforge.facts.pyspark_ast import EMITTED_KINDS
 
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 19
+    assert len(EMITTED_KINDS) == 20
     assert "pyspark.module_analyzed" in EMITTED_KINDS
     assert "pyspark.glue_context_init" in EMITTED_KINDS
 
@@ -187,6 +193,101 @@ class TestCallgraph:
         assert edge.attrs["callee"] == "helper"
 
 
+class TestFunctionDef:
+    """Um fact por funcao DEFINIDA -- a base do no de grafo sem aresta.
+
+    Cada atributo aqui existe para decidir uma coisa so: se a ausencia de
+    chamador significa algo. Metodo, funcao aninhada e funcao decorada sao
+    chamados por caminhos que o AST intra-arquivo nao ve; sem `def_kind` e
+    `decorators`, "ninguem chama" seria lido como "e codigo morto" nos tres.
+    """
+
+    @staticmethod
+    def defs(src):
+        return {
+            f.subject["symbol"]: f
+            for f in extract_source(textwrap.dedent(src), "a.py")
+            if f.kind == "pyspark.function_def"
+        }
+
+    def test_module_level_function_is_emitted_even_without_any_call(self):
+        found = self.defs("def orfa():\n    return 1\n")
+        assert set(found) == {"orfa"}
+        assert found["orfa"].attrs["def_kind"] == "module"
+        assert found["orfa"].measures["name_reference_count"] == 0
+
+    def test_symbol_is_the_function_itself_not_the_enclosing_scope(self):
+        """O no do grafo e chaveado por (arquivo, simbolo): se o subject
+        trouxesse o escopo de fora, a definicao aninhada seria contada como se
+        fosse a de fora."""
+        found = self.defs("def externa():\n    def interna():\n        return 1\n")
+        assert set(found) == {"externa", "interna"}
+        assert found["interna"].attrs["def_kind"] == "nested"
+        assert found["interna"].attrs["enclosing"] == "externa"
+
+    def test_method_is_marked_with_its_class(self):
+        found = self.defs("class Pipeline:\n    def run(self):\n        return 1\n")
+        assert found["run"].attrs["def_kind"] == "method"
+        assert found["run"].attrs["enclosing"] == "Pipeline"
+
+    def test_decorators_are_recorded_with_dotted_name(self):
+        src = """
+            import functools
+
+            @functools.lru_cache
+            def cara():
+                return 1
+        """
+        assert self.defs(src)["cara"].attrs["decorators"] == ["functools.lru_cache"]
+
+    def test_all_declares_the_function_as_exported(self):
+        src = """
+            __all__ = ["publica"]
+
+            def publica():
+                return 1
+
+            def privada():
+                return 2
+        """
+        found = self.defs(src)
+        assert found["publica"].attrs["exported"] is True
+        assert found["privada"].attrs["exported"] is False
+
+    def test_reference_by_name_is_counted_even_without_a_call(self):
+        """Callback e tabela de despacho nao produzem aresta nenhuma. Sem esta
+        contagem, `trata` pareceria uma funcao que ninguem usa."""
+        src = """
+            def main():
+                rdd.foreach(trata)
+
+            def trata(row):
+                return row
+        """
+        assert self.defs(src)["trata"].measures["name_reference_count"] == 1
+
+    def test_module_level_call_counts_as_a_reference(self):
+        src = """
+            def main():
+                return 1
+
+            if __name__ == "__main__":
+                main()
+        """
+        assert self.defs(src)["main"].measures["name_reference_count"] == 1
+
+    def test_self_recursion_does_not_count_as_an_external_reference(self):
+        src = """
+            def sozinha(n):
+                return sozinha(n - 1)
+        """
+        assert self.defs(src)["sozinha"].measures["name_reference_count"] == 0
+
+    def test_async_function_is_emitted_and_marked(self):
+        found = self.defs("async def busca():\n    return 1\n")
+        assert found["busca"].attrs["is_async"] is True
+
+
 class TestModuleAnalyzedSentinel:
     def test_emitted_once_for_parseable_file(self):
         facts = [
@@ -209,6 +310,17 @@ class TestModuleAnalyzedSentinel:
         src = "getattr(df, m1)(1)\ngetattr(df, m2)(2)\n"
         fact = one("pyspark.module_analyzed", src)
         assert fact.measures["unresolved_count"] == 2
+
+    def test_referenced_names_covers_both_import_forms(self):
+        """As duas formas de usar uma funcao de OUTRO modulo: `from lib import
+        limpa` chama `limpa(df)` (um Name), `import lib` chama `lib.limpa(df)`
+        (um Attribute). Quem consome cruza esta lista para nao acusar de orfa
+        uma funcao que so e usada entre arquivos."""
+        src = "from lib import limpa\nimport outra\n\nlimpa(df)\noutra.trata(df)\n"
+        names = one("pyspark.module_analyzed", src).attrs["referenced_names"]
+        assert "limpa" in names
+        assert "trata" in names
+        assert names == sorted(set(names))
 
 
 class TestGlueContextInit:

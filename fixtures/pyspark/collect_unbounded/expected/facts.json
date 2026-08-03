@@ -48,6 +48,35 @@
     }
   },
   {
+    "id": "f_0488c0",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 2,
+      "symbol": "carregar",
+      "snippet": "def carregar(df):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "6ed5761e86ec568c5f738c694a472d90fd7a83426ac1d7c50d492d477780b5a3",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_07e474",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -64,7 +93,11 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "collect",
+        "df"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

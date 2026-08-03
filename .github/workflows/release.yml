@@ -56,16 +56,24 @@ jobs:
 
       - name: Artifact parity gate
         # `--outdir dist` deposita o wheel e o sdist AQUI, no diretorio que o
-        # passo seguinte anexa -- e so depois que build, instalacao no venv
-        # limpo, os 539 testes de golden e `twine check` passarem.
+        # passo seguinte anexa -- e so depois que build, checagem de
+        # reprodutibilidade, instalacao no venv limpo, os 539 testes de golden
+        # e `twine check` passarem.
         #
-        # Sem isto, o passo seguinte teria que rodar `python -m build` de
-        # novo, do zero: um segundo build gera um IRMAO do artefato provado,
-        # nunca o mesmo arquivo, porque nada neste repositorio fixa
-        # `SOURCE_DATE_EPOCH` -- sdist e wheel carregam timestamp interno no
-        # zip. "Provamos que ESTE artefato reproduz os goldens" viraria
-        # "provamos que UM artefato da mesma arvore reproduz, e publicamos
-        # OUTRO" -- furo fatal num passo que, uma vez publicado, so se yanka.
+        # O gate constroi duas vezes e exige artefatos identicos por sha256
+        # (`compare_builds`), entao um passo que reconstruisse produziria hoje
+        # o MESMO arquivo -- a razao original do `--outdir` ("nada fixa
+        # `SOURCE_DATE_EPOCH`") deixou de valer quando `reproducible = true`
+        # entrou declarado no `pyproject.toml`.
+        #
+        # `--outdir` fica, por uma razao que sobrevive a isso: copiar torna "o
+        # byte publicado e o byte testado" uma propriedade ESTRUTURAL, nao uma
+        # inferencia. A igualdade bit-a-bit vale sob condicoes -- mesma versao
+        # de hatchling, mesmo zlib, mesmo `SOURCE_DATE_EPOCH` no ambiente --, e
+        # a versao do backend nao esta pinada: `hatchling>=1.25` resolve para o
+        # que existir no indice no instante de cada invocacao, e ela vaza para
+        # `WHEEL` como `Generator:`. Num passo que, uma vez publicado, so se
+        # yanka, "o mesmo arquivo" e melhor que "provavelmente o mesmo".
         run: python scripts/verify_wheel.py --outdir dist
 
       - name: Draft GitHub Release with the artifacts

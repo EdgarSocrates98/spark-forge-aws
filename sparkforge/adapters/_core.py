@@ -33,6 +33,7 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_tree,
 )
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
+from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.iceberg_metadata import (
@@ -124,6 +125,40 @@ def paginate_items(
 # AWS, nao de palpite -- e ficam marcados como `:matrix` para nunca vencerem
 # uma leitura direta.
 
+# `python3.11`, e SO essa forma. O nome do executavel do CPython carrega o
+# minor por construcao -- `python3.11` e o binario do 3.11 em `/usr/bin`, no
+# `bin/` de um venv (criado com o nome do interpretador base) e no de um env
+# conda. Ler dai nao e inferir de sinal indireto; e decodificar um nome que
+# JA declara a versao.
+#
+# O que esta regex NAO casa, de proposito, porque emitir errado aqui e pior que
+# nao emitir -- a leitura entra como `describe_cluster`, ACIMA da matriz e da
+# flag em `_PRECEDENCE`, e versao errada com precedencia alta alimenta
+# `runtime_scope`:
+#
+#   `/usr/bin/python3`   -- so o MAJOR. `"3"` seria lido por `version_scope`
+#                           como 3.0.0, afirmando um Python que nao existe em
+#                           EMR nenhum. Em 6.x pode ser 3.7, em 7.x 3.9 ou
+#                           3.11, e o caminho nao distingue.
+#   `/usr/bin/python`    -- nem o major.
+#   `/opt/venv/bin/run`  -- wrapper com nome arbitrario: o nome nao afirma nada.
+#   `/usr/bin/env python3.11` -- forma com argumento; o nome do executavel e
+#                           `env`, e o resto e parsing de linha de comando.
+#
+# Nesses casos `RuntimeContext.python` continua vazio e regra com `python` em
+# `runtime_scope` e pulada por ausencia -- falha fechada, que e a semantica do
+# projeto para "nao detectada", e o que a fixture `emr/*/input/cluster.json`
+# (com `/usr/bin/python3`) exercita.
+_PYSPARK_INTERPRETER_RE = re.compile(r"^python(\d+\.\d+)$")
+
+
+def _python_minor_from_interpreter(value: str) -> str:
+    """`/usr/bin/python3.11` -> `3.11`. Qualquer forma ambigua -> `""`."""
+    name = value.strip().rsplit("/", 1)[-1]
+    match = _PYSPARK_INTERPRETER_RE.match(name)
+    return match.group(1) if match else ""
+
+
 # fact -> (fonte de `detect_runtime`, chave crua, valor). Uma entrada nova aqui
 # exige LER o extrator que emite o kind: o mapeamento e um contrato com o
 # formato exato dos attrs, nao um palpite sobre o nome do campo.
@@ -154,7 +189,107 @@ def _runtime_reading(fact: Fact) -> tuple[str, str, str] | None:
         value = str(fact.attrs.get("value") or "").strip()
         return ("terraform", "glue_version", value) if value else None
 
+    # `emr.cluster` carrega o `ReleaseLabel` que a AWS reporta para AQUELE
+    # cluster. E a chave de plataforma de `_PLATFORM_KEYS` e a entrada da
+    # EMR_MATRIX ao mesmo tempo: sem ela, `RuntimeContext.emr` fica vazio e
+    # toda regra com `emr` em `runtime_scope` e pulada num cluster que o dump
+    # descreve inteiro.
+    if fact.kind == "emr.cluster":
+        label = str(fact.attrs.get("release_label") or "").strip()
+        return ("describe_cluster", "emr_release", label) if label else None
+
+    # `Applications[].Version` e a AWS dizendo o que INSTALOU -- observacao com
+    # artefato, nao derivacao. Por isso `describe_cluster` esta acima da matriz
+    # em `_PRECEDENCE`: a matriz e fallback e guard de drift, e uma versao
+    # observada que discorde dela vira divergencia registrada, nunca um valor
+    # substituido em silencio. So Spark e Iceberg entram: Hadoop e Hive nao tem
+    # campo em `RuntimeContext`, e inventar um so para guardar o valor seria
+    # custo sem consumidor (mesma decisao de `hadoop` na EMR_MATRIX).
+    if fact.kind == "emr.application":
+        component = str(fact.attrs.get("name") or "").strip().lower()
+        version = str(fact.attrs.get("version") or "").strip()
+        # A chave crua e NOMEADA, nao montada por `f"{component}_version"`. As
+        # duas formas produzem exatamente as mesmas duas strings, mas so esta
+        # deixa `spark_version` e `iceberg_version` VISIVEIS no corpo da funcao
+        # -- e `TestNoRuntimeAxisIsAnUndeclaredProducerGap` deriva os eixos com
+        # produtor exatamente dai. Chave montada em tempo de execucao e um eixo
+        # que o invariante nao consegue ver.
+        key = {"spark": "spark_version", "iceberg": "iceberg_version"}.get(component)
+        if not version or key is None:
+            return None
+        return ("describe_cluster", key, version)
+
+    # `spark-env`/`PYSPARK_PYTHON` e o UNICO lugar do dump onde o Python que o
+    # PySpark executa aparece. A coluna `Python` da pagina de release lista os
+    # interpretadores INSTALADOS (`2.7, 3.7` em 6.x), e por isso a EMR_MATRIX
+    # omite `python` na serie 6.x inteira -- escolher um dos dois seria
+    # inventar. Existia o dado e existia o consumidor, e nada ligava os dois.
+    #
+    # SO NIVEL CLUSTER. Uma propriedade de instance group vale para AQUELE
+    # grupo, e `emr.configuration.unapplied` existe justamente porque a
+    # configuracao de grupo no dump e a PEDIDA, que pode nao estar em vigor.
+    # Leitura de runtime a partir de configuracao que talvez nao vigore seria
+    # afirmar sobre o cluster o que nao se sabe nem sobre o grupo.
+    if fact.kind == "emr.configuration":
+        if fact.attrs.get("key") != "PYSPARK_PYTHON" or fact.attrs.get("level") != "cluster":
+            return None
+        version = _python_minor_from_interpreter(str(fact.attrs.get("value") or ""))
+        return ("describe_cluster", "python_version", version) if version else None
+
+    # `athena.workgroup.measures.engine_version` e a geracao da engine que o
+    # workgroup EXECUTA -- `effective_engine_version`, nunca a pedida
+    # (`selected_engine_version`, que pode ser `AUTO`) --, ja convertida em
+    # inteiro por `athena_workgroup._parse_engine_version`, que nunca fabrica
+    # default: string que ele nao entende vira `athena.unresolved`, nao um
+    # numero. Existia o dado, com artefato e sha256, e existia o consumidor
+    # (`RuntimeContext.athena`, so preenchivel pela flag `--athena` ate aqui).
+    #
+    # O VALOR VAI COMO INTEIRO EM TEXTO -- `"3"`, nunca `"3.0"`. A engine do
+    # Athena e uma geracao, nao uma versao pontuada: a AWS publica "Athena
+    # engine version 2" e "version 3" e nada entre elas. `"3.0"` inventaria um
+    # segmento que a API nao afirma, e `version_scope._parse` compara
+    # `(3,)` com `(3, 0)` como iguais de qualquer forma (`_compare` preenche com
+    # zeros) -- o segmento inventado nao compraria comparacao nenhuma, so
+    # afirmaria mais do que foi lido.
+    if fact.kind == "athena.workgroup":
+        engine = fact.measures.get("engine_version")
+        if not isinstance(engine, int) or isinstance(engine, bool):
+            return None
+        return ("get_work_group", "athena_version", str(engine))
+
     return None
+
+
+# UM DUMP DE ATHENA DESCREVE VARIOS WORKGROUPS, E ISSO NAO E DIVERGENCIA.
+#
+# `get_work_group` e por conta; uma conta tem muitos workgroups, e dois deles em
+# geracoes diferentes -- `legacy-etl` na 2, `primary` na 3 -- e um fato NORMAL
+# de conta, nao uma contradicao sobre "qual e o runtime". Deixar isso cair no
+# caminho generico de multiplos valores produziria SF-ENV-001 em P0 sobre uma
+# configuracao correta, e falso P0 treina o operador a ignorar o canal de
+# divergencia -- o oposto do que ele existe para fazer. (Pior: o caminho
+# generico qualifica a origem por `provenance.artifact`, e os workgroups de um
+# mesmo dump COMPARTILHAM o artefato; as duas leituras colidiriam na mesma
+# chave e uma sobrescreveria a outra em silencio, que e resolucao arbitraria.)
+#
+# A resposta honesta e UNANIMIDADE OU NADA. So existe "a engine version desta
+# conta" quando todo workgroup lido diz o mesmo numero; discordando, nao ha um
+# valor para reportar, o campo fica vazio e regra com `athena` em
+# `runtime_scope` e pulada por ausencia -- falha fechada, a semantica do projeto
+# para "nao detectada". Nada se perde: o numero de CADA workgroup continua em
+# seu proprio `athena.workgroup`, e `SF-ATH-004` avalia workgroup a workgroup,
+# que e a granularidade onde a pergunta tem resposta.
+#
+# O conjunto de kinds ANULA a fonte pela mesma logica: `athena.unresolved`
+# significa que o extrator viu um workgroup e nao conseguiu ler a engine dele
+# (ou o dump inteiro). Com um workgroup ilegivel, "todos dizem 3" deixa de ser
+# demonstravel, entao a leitura nao sai. O ponto cego nao fica sem registro --
+# ele ja tem fact proprio e entra em `athena.analyzed.measures.unresolved_count`
+# --, e aqui ele faz o que ponto cego deve fazer: impedir a afirmacao, em vez de
+# ser ignorado por ela.
+_UNANIMOUS_SOURCES: dict[str, frozenset[str]] = {
+    "get_work_group": frozenset({"athena.unresolved"}),
+}
 
 
 def _observation_origin(source: str, fact: Fact) -> str:
@@ -189,7 +324,11 @@ def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, 
     arquivo onde o operador espera ler "terraform".
     """
     observed: dict[tuple[str, str], dict[str, Fact]] = {}
+    voided: set[str] = set()
     for fact in facts or []:
+        for source, blinding in _UNANIMOUS_SOURCES.items():
+            if fact.kind in blinding:
+                voided.add(source)
         reading = _runtime_reading(fact)
         if reading is None:
             continue
@@ -198,6 +337,12 @@ def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, 
 
     sources: dict[str, dict[str, Any]] = {}
     for (source, key), by_value in sorted(observed.items()):
+        # Ver `_UNANIMOUS_SOURCES`: nestas fontes multiplicidade nao e
+        # divergencia e ilegibilidade nao e ausencia. Discordancia ou ponto cego
+        # apagam a leitura, em vez de virarem um SF-ENV-001 falso ou uma escolha
+        # arbitraria entre valores igualmente verdadeiros.
+        if source in _UNANIMOUS_SOURCES and (source in voided or len(by_value) > 1):
+            continue
         if len(by_value) == 1:
             sources.setdefault(source, {})[key] = next(iter(by_value))
             continue
@@ -213,6 +358,7 @@ def build_runtime(
     iceberg: str | None = None,
     athena: str | None = None,
     facts: list[Fact] | None = None,
+    emr: str | None = None,
 ) -> tuple[RuntimeContext, list[Fact]]:
     """Contexto de runtime E os facts `env.runtime_signal` que o justificam.
 
@@ -220,9 +366,22 @@ def build_runtime(
     anterior -- so as flags. Quando informado, as versoes JA OBSERVADAS pelos
     extratores entram como fontes proprias, e o operador deixa de precisar
     saber de cor a versao do Glue para que as regras versionadas avaliem.
+
+    `emr` entra DEPOIS de `facts` na assinatura, e nao ao lado de `glue`, onde
+    pertenceria por semantica: os chamadores existentes passam as cinco
+    primeiras posicionalmente, e inserir um parametro no meio trocaria
+    silenciosamente o significado de cada argumento deles. Ordem de assinatura e
+    compatibilidade, nao taxonomia.
     """
     raw = {
         "glue_version": glue,
+        # `emr_release` e a primeira chave de `_PLATFORM_KEYS["emr"]`, e
+        # `_emr_key` aceita `emr-7.5.0` e `7.5.0` indiferentemente -- a flag nao
+        # obriga o operador a saber qual das duas grafias o projeto guarda.
+        # A flag e uma DECLARACAO, e por isso a fonte e `cli`, abaixo de
+        # `event_log` e de `describe_cluster` em `_PRECEDENCE`: discordar de um
+        # dump vira divergencia registrada, nunca resolucao silenciosa.
+        "emr_release": emr,
         "spark_version": spark,
         "python_version": python,
         "iceberg_version": iceberg,
@@ -242,8 +401,11 @@ def build_runtime_context(
     iceberg: str | None = None,
     athena: str | None = None,
     facts: list[Fact] | None = None,
+    emr: str | None = None,
 ) -> RuntimeContext:
-    context, _facts = build_runtime(glue, spark, python, iceberg, athena, facts)
+    context, _facts = build_runtime(
+        glue, spark, python, iceberg, athena, facts=facts, emr=emr
+    )
     return context
 
 
@@ -644,6 +806,37 @@ def analyze_athena_workgroup(
 
 
 # --------------------------------------------------------------------------- #
+# analyze emr-cluster
+# --------------------------------------------------------------------------- #
+
+
+def _extract_emr_cluster_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com dumps de cluster EMR ou para um arquivo .json:\n"
+            f"    sparkforge collect emr-cluster --repo . --cluster-id j-XXXX --now <iso>\n"
+            f"    sparkforge analyze emr-cluster --path <dir-ou-arquivo> "
+            f"--out .sparkforge/facts_emr.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_emr_cluster_tree(target, repo_root=target)
+    return extract_emr_cluster_path(target, repo_root=target.parent)
+
+
+def analyze_emr_cluster(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_emr_cluster_facts(path)
+    return _facts_page(facts, "emr.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
 # analyze s3-listing
 # --------------------------------------------------------------------------- #
 
@@ -905,6 +1098,7 @@ def judge_findings(
     python: str | None = None,
     iceberg: str | None = None,
     athena: str | None = None,
+    emr: str | None = None,
     severity: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
@@ -941,7 +1135,9 @@ def judge_findings(
     # -- e `run_judge` que chama `in_scope`. Os facts que serao julgados sao os
     # mesmos que alimentam a deteccao: uma regra guardada por `glue: "*"` passa
     # a avaliar quando o Terraform ja disse qual e a versao, sem flag nenhuma.
-    context = build_runtime_context(glue, spark, python, iceberg, athena, facts=fact_list)
+    context = build_runtime_context(
+        glue, spark, python, iceberg, athena, facts=fact_list, emr=emr
+    )
     runtime = context.to_dict()
 
     findings, skipped = run_judge(fact_list, rules, runtime, return_skipped=True)
@@ -1003,9 +1199,16 @@ def runtime_detect(
     iceberg: str | None = None,
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
+    emr: str | None = None,
 ) -> dict[str, Any]:
     return build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=_facts_for_runtime(facts_path)
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=_facts_for_runtime(facts_path),
+        emr=emr,
     ).to_dict()
 
 
@@ -1291,12 +1494,19 @@ def case_open(
     iceberg: str | None = None,
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
+    emr: str | None = None,
 ) -> dict[str, Any]:
     # O case guarda o runtime da investigacao inteira. Aceitar facts aqui e o
     # que evita abrir um case com runtime vazio quando o repositorio ja diz a
     # versao -- toda skill que ler o case depois herda a deteccao.
     context = build_runtime_context(
-        glue, spark, python, iceberg, athena, facts=_facts_for_runtime(facts_path)
+        glue,
+        spark,
+        python,
+        iceberg,
+        athena,
+        facts=_facts_for_runtime(facts_path),
+        emr=emr,
     )
     case = store.new_case(case_id, now, context.to_dict(), repo=repo)
     store.save_case(case, root=repo)
@@ -1496,6 +1706,15 @@ def collect_athena_workgroup(repo: str, *, workgroup: str, now: str) -> dict[str
     rel_path = collect_aws.athena_workgroup_path(workgroup)
     try:
         entry = collect_aws.collect_athena_workgroup(workgroup, Path(repo), now=now)
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_emr_cluster(repo: str, *, cluster_id: str, now: str) -> dict[str, Any]:
+    rel_path = collect_aws.emr_cluster_path(cluster_id)
+    try:
+        entry = collect_aws.collect_emr_cluster(cluster_id, Path(repo), now=now)
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)

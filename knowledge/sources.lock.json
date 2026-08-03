@@ -73,6 +73,147 @@
       ],
       "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
     },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-009"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-003",
+        "SF-EMR-008"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-master-core-task-nodes.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-008"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-bootstrap.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-007"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-debugging.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-006"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-004"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-longrunning-transient.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-009"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html": {
+      "checked_at": "2026-08-01",
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-ENV-001"
+      ],
+      "sha256": "01de6295778aa672ec1c782a3dda23f0abb955b6d5ee490eeb855dd134f9b40f"
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-7.x.html": {
+      "checked_at": "2026-08-01",
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-ENV-001"
+      ],
+      "sha256": "17d7c767deae8fae9a6bdeed6180831777395e610827998e546919796974c515"
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-commit-protocol-reqs.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-005"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-committer-reqs.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-005"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-configure.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-001",
+        "SF-EMR-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-s3-optimized-commit-protocol.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-005"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/storing-sensitive-data.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": [
+        "SF-EMR-002"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html": {
       "checked_at": "2026-07-31",
       "pinned": false,

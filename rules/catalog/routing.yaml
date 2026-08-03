@@ -280,6 +280,19 @@ rules:
       Fluxo full e incremental no mesmo job, latest-per-key em tabela bilionária e
       batching exigem mapear a biblioteca inteira antes de qualquer tuning localizado.
 
+  - id: AGENT-007
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em infraestrutura de cluster EMR
+    when:
+      all:
+        - {findings_area: SF-EMR, count_gt: 0}
+    recommended_agent: emr-infra-reviewer
+    reason: >
+      O gargalo ou o risco está na definição do cluster, não no código: modelo de
+      instância, purchasing option por papel, managed scaling e Configurations em dois
+      níveis. Nenhum deles tem equivalente em Glue, e a correção é o próximo
+      provisionamento — não uma edição no cluster em execução.
+
 # Fallback: nenhuma regra casou.
 fallback:
   recommended_skill: sparkforge-diagnose

@@ -14,6 +14,10 @@ A guarda que sustenta tudo esta em `tests/test_installed_provenance.py`, ligada
 aqui por `SPARKFORGE_VERIFY_INSTALLED=1`. Sem ela, um `sys.path` errado faria o
 pytest importar o repositorio e comparar o codigo-fonte consigo mesmo.
 
+O gate tambem constroi DUAS vezes a mesma arvore e compara os artefatos por
+sha256. Ver `compare_builds` para por que a comparacao mora aqui, e nao na
+suite.
+
 Uso:
     python scripts/verify_wheel.py                # constroi, instala e verifica
     python scripts/verify_wheel.py --keep         # nao apaga o diretorio temporario
@@ -22,29 +26,169 @@ Uso:
                                                     # depois do gate passar
 
 Por que `--outdir` existe: sem ele, o unico exemplar que passou pelos 539
-testes de golden e apagado no `finally` (o diretorio e temporario). Um
-publicador que rode `python -m build` de novo, do zero, para gerar o que vai
-anexar a um release, gera um IRMAO do artefato provado -- nunca o mesmo
-artefato, porque nada neste repositorio fixa `SOURCE_DATE_EPOCH`, e sdist/wheel
-carregam timestamp interno no zip. "Provamos que ESTE artefato reproduz os
-goldens" viraria "provamos que UM artefato construido da mesma arvore
-reproduz, e publicamos OUTRO" -- e essa e exatamente a lacuna que `--outdir`
-fecha: o publicador anexa o arquivo que o gate tocou, nao um refeito.
+testes de golden e apagado no `finally` (o diretorio e temporario), e o passo
+de publicacao teria que rodar `python -m build` de novo para ter o que anexar.
+
+A build E reproduzivel bit-a-bit -- e este gate prova isso a cada execucao --
+entao um segundo build produziria hoje o MESMO arquivo. `--outdir` continua
+sendo o desenho certo assim mesmo, por uma razao que sobrevive a
+reprodutibilidade: ele torna "o byte publicado e o byte testado" uma
+propriedade ESTRUTURAL, nao uma inferencia. A igualdade bit-a-bit vale sob
+condicoes (mesma versao de hatchling, mesmo zlib, mesmo `SOURCE_DATE_EPOCH`
+no ambiente); um passo de publicacao que reconstroi depende dessas condicoes
+se manterem entre dois passos do mesmo workflow, e uma delas -- a versao do
+backend, que `python -m pip install build` resolve sem pin -- pode mudar entre
+duas invocacoes. Copiar nao depende de condicao nenhuma.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 GOLDEN_MODULES = sorted(p.name for p in (ROOT / "tests").glob("test_fixtures_golden*.py"))
 PROVENANCE_MODULE = "test_installed_provenance.py"
+
+ARTIFACT_PATTERNS = ("*.whl", "*.tar.gz")
+# Teto do relatorio de divergencia: um zip com 78 entradas que diverge em todas
+# viraria uma parede de log onde o primeiro exemplo -- que e o que se lê -- fica
+# soterrado. O numero total de entradas divergentes vai na linha de resumo.
+MAX_REPORTED_ENTRIES = 10
+
+
+def sha256_of(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        while chunk := handle.read(1 << 16):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _artifacts(directory: Path) -> dict[str, Path]:
+    """Artefatos publicaveis de um diretorio de build, por nome de arquivo."""
+    found: dict[str, Path] = {}
+    for pattern in ARTIFACT_PATTERNS:
+        for path in sorted(directory.glob(pattern)):
+            found[path.name] = path
+    return found
+
+
+def zip_divergence(first: Path, second: Path) -> list[str]:
+    """ONDE, dentro de dois zips, as construcoes diferem.
+
+    "Os hashes diferem" nao diz o que consertar. Cada eixo de nao-determinismo
+    do zip aparece num campo diferente do cabecalho da entrada, e o campo que
+    diverge nomeia o eixo:
+
+      `date_time`      -> timestamp (`SOURCE_DATE_EPOCH` / `reproducible`)
+      `external_attr`  -> modo/permissao herdado do umask ou do sistema
+      `compress_type`  -> metodo de compressao
+      ordem dos nomes  -> ordem de caminhada do sistema de arquivos
+      `CRC`/`file_size`-> o CONTEUDO mudou; nao e o empacotador, e a arvore
+
+    `.tar.gz` nao e decomposto: o membro que diverge exigiria descompactar
+    dois tars inteiros, e na pratica a causa e sempre visivel no wheel, que
+    passa pelo mesmo empacotador.
+    """
+    if first.suffix != ".whl" or second.suffix != ".whl":
+        return []
+
+    def entries(path: Path) -> dict[str, tuple] | None:
+        # Um `.whl` ilegivel e uma divergencia a mais para relatar, nao um
+        # traceback: esta funcao roda DEPOIS de os hashes ja terem divergido,
+        # e o gate ja esta reprovando. Estourar aqui trocaria um relatorio
+        # acionavel por um `BadZipFile` que nao diz qual dos dois quebrou.
+        try:
+            with zipfile.ZipFile(path) as archive:
+                return {
+                    info.filename: (
+                        info.date_time,
+                        hex(info.external_attr),
+                        info.compress_type,
+                        info.CRC,
+                        info.file_size,
+                    )
+                    for info in archive.infolist()
+                }
+        except (zipfile.BadZipFile, OSError):
+            return None
+
+    a, b = entries(first), entries(second)
+    unreadable = [str(p) for p, e in ((first, a), (second, b)) if e is None]
+    if unreadable:
+        return [f"nao e um zip legivel: {', '.join(unreadable)}"]
+    lines: list[str] = []
+
+    if list(a) != list(b):
+        only_a = sorted(set(a) - set(b))
+        only_b = sorted(set(b) - set(a))
+        if only_a or only_b:
+            lines.append(f"conjunto de entradas diverge: so na 1a {only_a}, so na 2a {only_b}")
+        else:
+            lines.append("mesmas entradas, ORDEM diferente (ordem de caminhada do FS)")
+
+    differing = [name for name in a if name in b and a[name] != b[name]]
+    for name in differing[:MAX_REPORTED_ENTRIES]:
+        lines.append(f"{name}: 1a {a[name]} != 2a {b[name]}")
+    if len(differing) > MAX_REPORTED_ENTRIES:
+        lines.append(f"... e mais {len(differing) - MAX_REPORTED_ENTRIES} entradas divergentes")
+
+    if not lines:
+        # Entradas identicas em nome, ordem, metadado e CRC, mas os bytes do
+        # arquivo diferem: sobrou o proprio fluxo de deflate (implementacao ou
+        # nivel de zlib) ou o cabecalho gzip. Dizer isso e mais util do que
+        # devolver lista vazia e deixar o leitor achar que nao ha divergencia.
+        lines.append(
+            "entradas identicas em metadado e CRC -- diverge no fluxo comprimido "
+            "(implementacao/nivel de zlib) ou fora das entradas"
+        )
+    return lines
+
+
+def compare_builds(first: Path, second: Path) -> list[str]:
+    """Divergencias entre dois diretorios de build da MESMA arvore.
+
+    Lista vazia significa reproduzivel bit-a-bit. Cada string e uma linha de
+    relatorio pronta para o stderr.
+
+    Por que a comparacao mora no gate e nao na suite: ela custa uma segunda
+    construcao completa, e a suite roda a cada commit. O gate ja gasta minutos
+    construindo, instalando num venv limpo e rodando os goldens, e o `ci.yml` o
+    executa em ubuntu E windows a cada push e PR -- entao a checagem tem
+    cobertura de CI incondicional sem transformar `pytest -q` num teste de
+    build. A suite cobre os INVARIANTES baratos sobre o wheel que ja construiu
+    (`tests/test_artifact_contents.py`) e esta funcao com dublês
+    (`tests/test_verify_wheel.py`), que e onde a logica erra.
+    """
+    a, b = _artifacts(first), _artifacts(second)
+    problems: list[str] = []
+
+    if not a:
+        problems.append(f"nenhum artefato para comparar em {first}")
+        return problems
+
+    only_a = sorted(set(a) - set(b))
+    only_b = sorted(set(b) - set(a))
+    if only_a or only_b:
+        problems.append(
+            f"conjunto de artefatos diverge: so na 1a build {only_a}, so na 2a build {only_b}"
+        )
+
+    for name in sorted(set(a) & set(b)):
+        first_hash, second_hash = sha256_of(a[name]), sha256_of(b[name])
+        if first_hash != second_hash:
+            problems.append(f"{name}: 1a build sha256={first_hash}, 2a build sha256={second_hash}")
+            problems.extend(f"    {line}" for line in zip_divergence(a[name], b[name]))
+
+    return problems
 
 
 def venv_python(venv: Path) -> Path:
@@ -200,6 +344,7 @@ def main(argv: list[str] | None = None) -> int:
 
     workdir = Path(tempfile.mkdtemp(prefix="sparkforge-gate-"))
     dist = workdir / "dist"
+    rebuild = workdir / "rebuild"
     venv = workdir / "venv"
 
     try:
@@ -217,6 +362,23 @@ def main(argv: list[str] | None = None) -> int:
             found = sorted(p.name for p in dist.iterdir()) if dist.exists() else []
             print(f"esperava wheel e sdist em {dist}, achei {found}", file=sys.stderr)
             return 1
+
+        # Segunda construcao da MESMA arvore. Vem logo depois da primeira, e
+        # nao no fim, porque uma build nao-reproduzivel invalida a leitura de
+        # tudo que vem depois: "provamos que ESTE wheel reproduz os goldens"
+        # so vale como afirmacao sobre o pacote se o wheel for uma funcao da
+        # arvore, e nao do instante em que foi construido.
+        if _run([sys.executable, "-m", "build", "--outdir", str(rebuild), str(ROOT)]).returncode:
+            print("segunda build (checagem de reprodutibilidade) falhou", file=sys.stderr)
+            return 1
+
+        divergences = compare_builds(dist, rebuild)
+        if divergences:
+            print("build NAO e reproduzivel bit-a-bit:", file=sys.stderr)
+            for line in divergences:
+                print(f"  {line}", file=sys.stderr)
+            return 1
+        print(f"reprodutibilidade OK: {len(_artifacts(dist))} artefatos identicos em duas builds")
 
         if _run([sys.executable, "-m", "venv", str(venv)]).returncode:
             return 1

@@ -316,6 +316,11 @@ def test_no_fact_carries_a_version_leaves_the_context_empty(tmp_path):
 
     assert context.to_dict() == {
         "glue": "",
+        # `emr` entrou na Fase 5b: `to_dict()` emite TODA chave, sempre, e um
+        # dict literal aqui e o teste que registra isso. Vazio e o valor certo
+        # -- nenhum fact PySpark observa plataforma, e adivinhar seria
+        # julgamento entrando na camada de fato.
+        "emr": "",
         "spark": "",
         "python": "",
         "iceberg": "",
@@ -430,3 +435,471 @@ def test_case_open_records_the_runtime_detected_from_the_facts(tmp_path):
 
     assert case["runtime"]["glue"] == "5.1"
     assert case["runtime"]["spark"] == GLUE_MATRIX["5.1"]["spark"]
+
+
+# --------------------------------------------------------------------------- #
+# 8. O dump de EMR observou o runtime, e e por isso que ele vira fonte
+# --------------------------------------------------------------------------- #
+
+EMR_CLUSTER_DUMP = {
+    "Cluster": {
+        "Id": "j-1EXAMPLE",
+        "ReleaseLabel": "emr-7.5.0",
+        "InstanceCollectionType": "INSTANCE_GROUP",
+        "LogUri": "s3://bucket/elasticmapreduce/",
+        "AutoTerminate": False,
+        "Status": {"State": "RUNNING"},
+        "Applications": [
+            {"Name": "Spark", "Version": "3.5.2-amzn-1"},
+            {"Name": "Hadoop", "Version": "3.4.0-amzn-1"},
+        ],
+    },
+    "InstanceGroups": [
+        {
+            "Id": "ig-MASTER",
+            "InstanceGroupType": "MASTER",
+            "Market": "ON_DEMAND",
+            "InstanceType": "m5.xlarge",
+            "RequestedInstanceCount": 1,
+        }
+    ],
+}
+
+
+def _emr_facts(tmp_path, dump=None):
+    from sparkforge.facts.emr_cluster import extract_emr_cluster_path
+
+    path = _write(
+        tmp_path,
+        "artifacts/cluster.json",
+        json.dumps(dump if dump is not None else EMR_CLUSTER_DUMP),
+    )
+    return extract_emr_cluster_path(path, repo_root=tmp_path)
+
+
+def test_emr_release_from_the_cluster_dump_fills_the_platform_and_the_matrix(tmp_path):
+    """`emr.cluster` carrega o `ReleaseLabel`, que e chave de plataforma E
+    entrada da EMR_MATRIX. Sem esta leitura, `RuntimeContext.emr` fica vazio
+    num cluster que o dump descreve inteiro, e toda regra com `emr` em
+    `runtime_scope` e pulada por ausencia."""
+    from sparkforge.facts.runtime_detect import EMR_MATRIX
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path))
+
+    assert context.emr == "7.5.0"
+    assert context.iceberg == EMR_MATRIX["7.5.0"]["iceberg"]
+    assert "describe_cluster" in context.detected_from
+
+
+def test_the_observed_spark_version_beats_the_matrix_derivation(tmp_path):
+    """`Applications[].Version` e a AWS reportando o que INSTALOU: observacao
+    com artefato, e por isso `describe_cluster` esta acima da derivacao por
+    matriz. O sufixo `-amzn-N` observado sobrevive cru no valor resolvido: ele
+    e a unica pista de um erro que so existe no fork da AWS."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark", "Version": "3.5.2-amzn-9"}]
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == "3.5.2-amzn-9"
+    # Mesmo Spark da Apache com patch diferente da AWS nao e divergencia de
+    # versao -- e a decisao 1 de `_divergent_count`, que existe para nao virar
+    # um P0 com o remedio errado.
+    assert context.divergences == []
+
+
+def test_a_spark_the_matrix_does_not_predict_is_reported_as_divergence(tmp_path):
+    """Release 7.5.0 declara Spark 3.5.2; um cluster reportando 3.4.1 significa
+    que uma das duas leituras descreve outra coisa. Resolver em silencio pela
+    observacao esconderia do operador que a matriz e o cluster discordam."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark", "Version": "3.4.1-amzn-0"}]
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == "3.4.1-amzn-0"
+    assert any("spark" in d for d in context.divergences), context.divergences
+
+
+def test_an_application_without_a_version_never_becomes_a_runtime_reading(tmp_path):
+    """Aplicacao instalada sem versao reportada e fato; versao inventada a
+    partir dela seria juizo entrando na camada de fato."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark"}]
+    dump["Cluster"]["ReleaseLabel"] = "emr-preview"
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == ""
+
+
+def test_hadoop_is_read_from_the_dump_but_has_nowhere_to_go(tmp_path):
+    """`Hadoop` vira `emr.application` como qualquer outra, mas nao alimenta o
+    contexto: nao ha campo em `RuntimeContext` nem regra que o consulte, e
+    inventar um so para guardar o valor seria custo sem consumidor -- a mesma
+    decisao ja tomada para `hadoop` na EMR_MATRIX."""
+    facts = _emr_facts(tmp_path)
+    assert "Hadoop" in {f.attrs.get("name") for f in facts if f.kind == "emr.application"}
+    assert "hadoop" not in _core.build_runtime_context(facts=facts).to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# 9. A flag `--emr`: declaracao, e o que acontece quando ela discorda do dump
+# --------------------------------------------------------------------------- #
+
+
+def test_the_emr_flag_fills_the_platform_without_any_dump():
+    """A razao de a flag existir. Havia `--glue`, `--spark`, `--python`,
+    `--iceberg` e `--athena`, e a release do EMR so entrava pelo fact
+    `emr.cluster` -- quem SABE a release e nao tem dump nao conseguia
+    declara-la, o que e assimetria com as outras cinco plataformas."""
+    context = _core.build_runtime_context(emr="emr-7.5.0")
+
+    assert context.emr == "7.5.0"
+    assert context.detected_from == ["cli"]
+    # A matriz deriva a partir da flag como derivaria a partir do dump: a flag
+    # e outra FONTE, nao um caminho paralelo.
+    assert context.spark == "3.5.2-amzn-1"
+
+
+@pytest.mark.parametrize("digitado", ["emr-7.5.0", "7.5.0"])
+def test_both_spellings_of_the_release_reach_the_same_row(digitado):
+    """`_emr_key` ja normaliza as duas grafias, e a flag nao pode obrigar o
+    operador a saber qual delas o projeto guarda. `RuntimeContext.emr` fica com
+    a NUMERICA nos dois casos, por decisao do commit a38242c: `in_scope` roda
+    `_parse` sobre este valor, e `_parse("emr-7.5.0")` le `emr` como 0."""
+    context = _core.build_runtime_context(emr=digitado)
+
+    assert context.emr == "7.5.0"
+    assert context.divergences == []
+
+
+def test_the_flag_disagreeing_with_the_dump_is_a_divergence_never_a_resolution(tmp_path):
+    """O ponto inteiro da precedencia. `cli` esta ABAIXO de `describe_cluster`
+    em `_PRECEDENCE`: o dump observou o cluster, a flag e declaracao sem
+    artefato. Entao o valor REPORTADO e o do dump -- mas a discordancia nao
+    desaparece, porque versao errada invalida toda recomendacao versionada que
+    vier depois, e o operador precisa ver que as duas fontes nao batem."""
+    context = _core.build_runtime_context(emr="emr-6.15.0", facts=_emr_facts(tmp_path))
+
+    assert context.emr == "7.5.0"  # o dump vence
+    assert any("emr" in d for d in context.divergences), context.divergences
+    # E a divergencia imprime o valor CRU de cada fonte, nao a forma
+    # normalizada: quem le precisa saber exatamente o que cada uma disse.
+    assert "cli=emr-6.15.0" in " ".join(context.divergences)
+    assert "describe_cluster=emr-7.5.0" in " ".join(context.divergences)
+
+
+def test_the_flag_agreeing_in_the_other_spelling_is_not_a_divergence(tmp_path):
+    """O falso positivo que a normalizacao de identidade existe para evitar. O
+    dump carrega `emr-7.5.0` e alguem digita `7.5.0`: e a MESMA release, e
+    contar as duas strings como identidades distintas transformaria uma flag
+    que concorda num P0 -- ruido que treina o operador a ignorar o canal de
+    divergencia, que e o oposto do que ele existe para fazer."""
+    context = _core.build_runtime_context(emr="7.5.0", facts=_emr_facts(tmp_path))
+
+    assert context.emr == "7.5.0"
+    assert context.divergences == []
+
+
+def test_the_flag_does_not_shadow_a_directly_observed_version(tmp_path):
+    """Precedencia, do outro lado: a flag esta ACIMA de `terraform` e de
+    `requirements` (declaracao mais especifica e mais recente), e ABAIXO do que
+    foi observado com artefato. Aqui ela declara a release e o dump reporta o
+    Spark instalado; a leitura direta continua vencendo a derivacao por matriz
+    que a flag alimentou."""
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["Applications"] = [{"Name": "Spark", "Version": "3.5.2-amzn-9"}]
+
+    context = _core.build_runtime_context(emr="7.5.0", facts=_emr_facts(tmp_path, dump))
+
+    assert context.spark == "3.5.2-amzn-9"
+
+
+# --------------------------------------------------------------------------- #
+# 10. `PYSPARK_PYTHON`: o unico lugar do dump que diz qual Python o PySpark usa
+# --------------------------------------------------------------------------- #
+#
+# A `EMR_MATRIX` omite `python` na serie 6.x inteira de proposito -- a AWS lista
+# `"2.7, 3.7"` como INSTALADOS e nao reafirma o default do PySpark por release,
+# e escolher um dos dois seria inventar. O dump resolve, quando o operador
+# declarou: `spark-env`/`PYSPARK_PYTHON`. O extrator ja emitia isso como
+# `emr.configuration` com o valor cru, e nada lia. Existia o dado, existia o
+# consumidor, e ninguem ligava os dois.
+
+
+def _with_pyspark_python(value, *, level="cluster", release="emr-6.15.0"):
+    dump = json.loads(json.dumps(EMR_CLUSTER_DUMP))
+    dump["Cluster"]["ReleaseLabel"] = release
+    dump["Cluster"]["Applications"] = [{"Name": "Hadoop", "Version": "3.3.6-amzn-1"}]
+    config = [
+        {
+            "Classification": "spark-env",
+            "Properties": {},
+            "Configurations": [
+                {"Classification": "export", "Properties": {"PYSPARK_PYTHON": value}}
+            ],
+        }
+    ]
+    if level == "cluster":
+        dump["Cluster"]["Configurations"] = config
+    else:
+        dump["InstanceGroups"][0]["Configurations"] = config
+    return dump
+
+
+def test_pyspark_python_resolves_the_python_the_matrix_refuses_to_guess(tmp_path):
+    """6.15.0 nao declara `python` na matriz. Com `PYSPARK_PYTHON` no dump, o
+    valor deixa de ser desconhecido -- e passa a ser LIDO, nao escolhido."""
+    from sparkforge.facts.runtime_detect import EMR_MATRIX
+
+    assert "python" not in EMR_MATRIX["6.15.0"]
+
+    context = _core.build_runtime_context(
+        facts=_emr_facts(tmp_path, _with_pyspark_python("/usr/bin/python3.11"))
+    )
+
+    assert context.python == "3.11"
+
+
+@pytest.mark.parametrize(
+    "caminho",
+    [
+        "/usr/bin/python3",  # so o major: 3.7? 3.9? 3.11? o caminho nao diz
+        "/usr/bin/python",  # nem o major
+        "/opt/tools/bin/run-pyspark",  # wrapper com nome arbitrario
+        "/usr/bin/env python3.11",  # o executavel e `env`; o resto e linha de comando
+    ],
+)
+def test_an_ambiguous_interpreter_path_emits_nothing(tmp_path, caminho):
+    """A fronteira. Emitir aqui entraria como `describe_cluster`, ACIMA da
+    matriz e da flag em `_PRECEDENCE` -- versao errada com precedencia alta
+    alimentando `runtime_scope`. Vazio e falha fechada, que e a semantica do
+    projeto para `nao detectada`; chute e versao errada com cara de fato."""
+    from sparkforge.rules.version_scope import in_scope
+
+    context = _core.build_runtime_context(facts=_emr_facts(tmp_path, _with_pyspark_python(caminho)))
+
+    assert context.python == ""
+    assert in_scope({"python": ">=3.7"}, context.to_dict()) is False
+
+
+def test_the_declared_interpreter_beats_the_matrix_and_the_disagreement_is_reported(tmp_path):
+    """7.12.0 tem `python: 3.9` na matriz, e um cluster com
+    `PYSPARK_PYTHON=/usr/bin/python3.11` esta rodando 3.11 -- e o par que a
+    propria doc da AWS chama de armadilha operacional (o `pip3` do bootstrap
+    continua no site-packages do 3.9). A leitura direta vence a derivacao, e a
+    discordancia aparece em vez de ser resolvida em silencio."""
+    context = _core.build_runtime_context(
+        facts=_emr_facts(
+            tmp_path, _with_pyspark_python("/usr/bin/python3.11", release="emr-7.12.0")
+        )
+    )
+
+    assert context.python == "3.11"
+    assert any("python" in d for d in context.divergences), context.divergences
+
+
+def test_an_instance_group_property_is_not_a_reading_about_the_cluster(tmp_path):
+    """Propriedade de grupo vale para AQUELE grupo, e `emr.configuration` de
+    grupo e a configuracao PEDIDA -- e por isso que `emr.configuration.unapplied`
+    existe. Ler runtime de algo que pode nao estar em vigor seria afirmar sobre
+    o cluster o que nao se sabe nem sobre o grupo."""
+    facts = _emr_facts(
+        tmp_path, _with_pyspark_python("/usr/bin/python3.11", level="instance_group")
+    )
+
+    # O fact continua existindo, com o valor cru: a leitura de runtime e que nao
+    # sai dele.
+    assert any(
+        f.attrs.get("key") == "PYSPARK_PYTHON" for f in facts if f.kind == "emr.configuration"
+    )
+    assert _core.build_runtime_context(facts=facts).python == ""
+
+
+def test_another_configuration_key_never_becomes_a_python_reading(tmp_path):
+    """`PYSPARK_PYTHON` e a chave, nao qualquer coisa que pareca um caminho de
+    interpretador."""
+    dump = _with_pyspark_python("/usr/bin/python3.11")
+    dump["Cluster"]["Configurations"][0]["Configurations"][0]["Properties"] = {
+        "PYSPARK_DRIVER_PYTHON": "/usr/bin/python3.11"
+    }
+
+    assert _core.build_runtime_context(facts=_emr_facts(tmp_path, dump)).python == ""
+
+
+# --------------------------------------------------------------------------- #
+# 11. `athena`: o eixo que tinha flag, tinha dado, e nao tinha ligacao
+# --------------------------------------------------------------------------- #
+#
+# `athena.workgroup` carrega `measures.engine_version` -- numero, observado, com
+# artefato e sha256 -- desde que o extrator existe, e `_runtime_reading` nao o
+# lia: `RuntimeContext.athena` so era preenchivel pela flag `--athena`. E a
+# divida de `PYSPARK_PYTHON` virada do avesso, e foi ela que obrigou a Fase 5a a
+# ESVAZIAR o `runtime_scope` das cinco regras `SF-ATH` -- um guarda que falha
+# fechado em todo runtime nao guarda nada.
+
+
+def _athena_facts(tmp_path, workgroups, name: str = "artifacts/workgroups.json"):
+    from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path
+
+    path = _write(tmp_path, name, json.dumps({"workgroups": workgroups}))
+    return extract_athena_workgroup_path(path, repo_root=tmp_path)
+
+
+def _workgroup(name: str, effective: str, **extra):
+    return {
+        "name": name,
+        "engine_version": {
+            "effective_engine_version": effective,
+            "selected_engine_version": "AUTO",
+        },
+        "state": "ENABLED",
+        **extra,
+    }
+
+
+def test_the_workgroup_dump_fills_athena_without_any_flag(tmp_path):
+    """O numero ja estava no fact. So faltava alguem ler."""
+    facts = _athena_facts(tmp_path, [_workgroup("primary", "Athena engine version 3")])
+
+    context = _core.build_runtime_context(facts=facts)
+
+    assert context.athena == "3"
+    assert "get_work_group" in context.detected_from
+
+
+def test_athena_is_an_integer_generation_never_a_dotted_version(tmp_path):
+    """A AWS publica "Athena engine version 2" e "version 3", e nada entre elas.
+    `"3.0"` afirmaria um segmento que a API nao diz -- e nao compraria
+    comparacao nenhuma, porque `_compare` ja preenche com zeros."""
+    from sparkforge.rules.version_scope import in_scope
+
+    context = _core.build_runtime_context(
+        facts=_athena_facts(tmp_path, [_workgroup("primary", "Athena engine version 3")])
+    )
+
+    assert context.athena == "3"
+    assert in_scope({"athena": ">=3"}, context.to_dict()) is True
+    assert in_scope({"athena": "==3"}, context.to_dict()) is True
+    assert in_scope({"athena": "<3"}, context.to_dict()) is False
+
+
+def test_two_workgroups_on_the_same_engine_are_one_observation(tmp_path):
+    """Varios workgroups nao sao varias fontes. Dois na mesma geracao respondem
+    a pergunta uma vez, e nao ha divergencia a reportar."""
+    context = _core.build_runtime_context(
+        facts=_athena_facts(
+            tmp_path,
+            [
+                _workgroup("primary", "Athena engine version 3"),
+                _workgroup("analytics", "Athena engine version 3"),
+            ],
+        )
+    )
+
+    assert context.athena == "3"
+    assert not [d for d in context.divergences if "athena" in d]
+
+
+def test_workgroups_on_different_engines_are_not_a_divergence_and_not_a_pick(tmp_path):
+    """O caso que decide o desenho. Uma conta com `legacy-etl` na 2 e `primary`
+    na 3 esta CORRETA -- e configuracao normal, nao uma contradicao sobre "qual
+    e o runtime". Chamar isso de divergencia geraria SF-ENV-001 em P0 sobre nada,
+    e falso P0 treina o operador a ignorar o canal. Escolher um dos dois seria
+    resolucao arbitraria com cara de fato. Sobra a unica saida honesta: nao ha
+    "a" engine version desta conta, o campo fica vazio, e a regra com `athena` em
+    `runtime_scope` e pulada por ausencia."""
+    from sparkforge.rules.version_scope import in_scope
+
+    facts = _athena_facts(
+        tmp_path,
+        [
+            _workgroup("legacy-etl", "Athena engine version 2"),
+            _workgroup("primary", "Athena engine version 3"),
+        ],
+    )
+
+    context = _core.build_runtime_context(facts=facts)
+
+    assert context.athena == ""
+    assert not [d for d in context.divergences if "athena" in d]
+    assert in_scope({"athena": ">=3"}, context.to_dict()) is False
+
+
+def test_the_per_workgroup_number_survives_the_silence(tmp_path):
+    """A prova de que nada e escondido pelo silencio acima: o numero de CADA
+    workgroup continua no seu proprio fact, e `SF-ATH-004` avalia workgroup a
+    workgroup -- que e a granularidade onde a pergunta tem resposta. O eixo de
+    runtime e uma pergunta sobre a conta inteira; a regra e sobre um workgroup."""
+    facts = _athena_facts(
+        tmp_path,
+        [
+            _workgroup("legacy-etl", "Athena engine version 2"),
+            _workgroup("primary", "Athena engine version 3"),
+        ],
+    )
+
+    lidos = {
+        f.subject["symbol"]: f.measures["engine_version"]
+        for f in facts
+        if f.kind == "athena.workgroup"
+    }
+
+    assert lidos == {"legacy-etl": 2, "primary": 3}
+
+
+def test_an_unreadable_workgroup_voids_the_reading_instead_of_being_ignored(tmp_path):
+    """`athena.unresolved` e o extrator dizendo "vi um workgroup e nao consegui
+    ler a engine dele". Com um ilegivel, "todos dizem 3" deixa de ser
+    demonstravel -- entao a leitura nao sai. O ponto cego nao e ignorado pela
+    afirmacao: ele e o que a impede."""
+    facts = _athena_facts(
+        tmp_path,
+        [
+            _workgroup("primary", "Athena engine version 3"),
+            _workgroup("preview", "Athena engine version PREVIEW"),
+        ],
+    )
+
+    assert any(
+        f.attrs.get("reason") == "unparseable_engine_version"
+        for f in facts
+        if f.kind == "athena.unresolved"
+    )
+    assert _core.build_runtime_context(facts=facts).athena == ""
+
+
+def test_the_blind_spot_stays_counted_where_the_report_reads_it(tmp_path):
+    """Silenciar a deteccao nao pode silenciar o ponto cego. Ele continua com
+    fact proprio e contado em `athena.analyzed`, que e onde o relatorio le."""
+    facts = _athena_facts(tmp_path, [_workgroup("preview", "Athena engine version PREVIEW")])
+
+    analyzed = next(f for f in facts if f.kind == "athena.analyzed")
+
+    assert analyzed.measures["unresolved_count"] == 1
+    assert _core.build_runtime_context(facts=facts).athena == ""
+
+
+def test_the_dump_beats_the_flag_and_the_disagreement_is_reported(tmp_path):
+    """`get_work_group` esta ACIMA de `cli` em `_PRECEDENCE`: o dump e a AWS
+    reportando a engine EFETIVA, com artefato; a flag e uma declaracao. Discordar
+    vira divergencia registrada -- SF-ENV-001 em P0 --, nunca resolucao
+    silenciosa. Aqui a multiplicidade e de FONTES, e ai divergencia e o veredito
+    certo."""
+    context = _core.build_runtime_context(
+        athena="2",
+        facts=_athena_facts(tmp_path, [_workgroup("primary", "Athena engine version 3")]),
+    )
+
+    assert context.athena == "3"
+    assert any("athena" in d for d in context.divergences), context.divergences
+
+
+def test_a_dump_with_no_workgroups_reads_nothing(tmp_path):
+    """Dump valido e vazio nao e leitura. Sem workgroup nenhum, nao ha engine
+    version a afirmar -- e `athena.analyzed` sozinho nunca vira versao."""
+    context = _core.build_runtime_context(facts=_athena_facts(tmp_path, []))
+
+    assert context.athena == ""
+    assert "get_work_group" not in context.detected_from

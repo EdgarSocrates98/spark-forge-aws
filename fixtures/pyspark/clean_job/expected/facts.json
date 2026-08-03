@@ -117,6 +117,35 @@
     }
   },
   {
+    "id": "f_13d066",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 9,
+      "col": 0,
+      "end_line": 16,
+      "symbol": "executar",
+      "snippet": "def executar(spark: SparkSession, entrada: str, saida: str) -> None:"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "7322f5e505a69dc65464d15d7bffc7148653ce83427e51120c182a5ebe6778d0",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_d93bd2",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -133,7 +162,32 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "SparkSession",
+        "__name__",
+        "appName",
+        "builder",
+        "entrada",
+        "executar",
+        "filter",
+        "format",
+        "getOrCreate",
+        "load",
+        "mode",
+        "parquet",
+        "partitionBy",
+        "pedidos",
+        "read",
+        "relevantes",
+        "saida",
+        "select",
+        "spark",
+        "spark_session",
+        "stop",
+        "str",
+        "write"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

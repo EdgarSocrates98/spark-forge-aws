@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-07-31
-**Commit de referência:** branch `feat/fase4-agentes`
+**Atualizado em:** 2026-08-03
+**Commit de referência:** `main`, após o merge da branch `feat/fase5b-emr`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -25,28 +25,28 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **2320** passando, 5 skipped | `python -m pytest -q` |
-| Regras com `runtime_scope` não-vazio | **8 de 48**, todas sobre Glue | `load_catalog()` |
-| Extratores de facts | **13** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **80** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **48** | `load_catalog()` |
+| Testes | **2852** passando, 5 skipped | `python -m pytest -q` |
+| Regras com `runtime_scope` não-vazio | **8 de 58**, todas sobre Glue | `load_catalog()` |
+| Extratores de facts | **14** | `sparkforge/facts/*.py` |
+| Fact kinds distintos emitidos | **93** | união de `EMITTED_KINDS` |
+| Regras de diagnóstico | **58** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **48 de 48** | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **22** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-006`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **30** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **30 de 30** | `tests/test_agent_coverage.py` |
-| Coordenadores | **6** | `agents/*.md` |
+| Regras com golden que dispara | **58 de 58** | `tests/test_fixtures_kind_coverage.py` |
+| Rotas determinísticas | **23** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-007`) | `rules/catalog/routing.yaml` |
+| Tools MCP | **32** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **32 de 32** | `tests/test_agent_coverage.py` |
+| Coordenadores | **7** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Fixtures golden | **74** em 15 domínios | `fixtures/` |
-| Fontes oficiais vigiadas | **20** (16 móveis, 4 fixas) | `knowledge/sources.lock.json` |
+| Fixtures golden | **91** em 16 domínios | `fixtures/` |
+| Fontes oficiais vigiadas | **35** (31 móveis, 4 fixas) | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 
-Regras por área: SF-PY 12, SF-UI 6, SF-GLUE 6, SF-ATH 5, SF-ICE 5, SF-PQ 5,
-SF-PLAN 4, SF-ENV 4, SF-CG 1.
+Regras por área: SF-PY 12, SF-EMR 9, SF-GLUE 6, SF-UI 6, SF-ATH 5, SF-ENV 5,
+SF-ICE 5, SF-PQ 5, SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `pyspark` 17, `iceberg` 8, `plan` 7, `terraform` 7,
-`fusion` 5, `runtime` 5, `s3` 5, `sql` 4, `athena` 3, `catalog` 3, `consumers` 3,
-`callgraph` 2, `infra_code` 2, `tfdiff` 2, `eventlog` 1.
+Fixtures por domínio: `pyspark` 17, `emr` 13, `iceberg` 8, `plan` 7, `runtime` 7,
+`terraform` 7, `fusion` 5, `s3` 5, `sql` 4, `athena` 3, `callgraph` 3,
+`catalog` 3, `consumers` 3, `eventlog` 2, `infra_code` 2, `tfdiff` 2.
 
 ---
 
@@ -222,7 +222,7 @@ previstas pelo plano:
 | Família | Regras | O que era | O que virou |
 |---|---|---|---|
 | `{glue: "*"}` em regra agnóstica | 20 | AST, plano, armazenamento, execução | escopo vazio, gate por `requires_facts` |
-| `{athena: "*"}` | 5 | `athena` **nunca é detectado** — default `""`, só a flag `--athena` preenche | escopo vazio |
+| `{athena: "*"}` | 5 | `athena` **nunca é detectado** — default `""`, só a flag `--athena` preenche | escopo vazio  (a premissa mudou na 5b — ver a dívida fechada de `athena.workgroup` abaixo; reabrir o guarda é decisão de catálogo, não feita aqui) |
 | `{iceberg: ">=1.0.0"}` | 5 | gate de Glue disfarçado: `iceberg` só é resolvido por flag ou inferido de `GLUE_MATRIX` | escopo vazio |
 | `{spark: ">=3.0"}` | 28 | falhava fechado num `judge` sem flags — **6 das 9 áreas do catálogo sumiam** | escopo vazio |
 
@@ -260,107 +260,122 @@ Num `judge` sem flags, 40 avaliadas e só `SF-GLUE` pulada — que é o correto.
   `GLUE_MATRIX` mais o contexto vazio da CLI, então versão nova entra sozinha
 - toda invocação de `sparkforge judge` nas skills passa runtime
 
-### Fase 5b — EMR — **NÃO INICIADA**
+### Fase 5b — EMR on EC2 — **CONCLUÍDA** em 2026-08-01
 
-Spec escrito e revisado; plano ainda não. O eixo de infraestrutura que só existe
-hoje para Glue: `emr` no `RuntimeContext`, `EMR_MATRIX`, extrator de cluster
-(EMR on EC2 primeiro), release label, instance fleets vs. instance groups, EMR
-Serverless, EMR on EKS, área `SF-EMR` no catálogo, coordenador próprio, e a
-divergência de plataforma da §3.3 do spec.
+Branch `feat/fase5b-emr`. Plano:
+[`plans/2026-08-01-sparkforge-fase5b-emr.md`](plans/2026-08-01-sparkforge-fase5b-emr.md).
+Fecha os critérios 3, 4, 5, 6, 7, 8, 9, 12 e 14 do
+[spec da Fase 5](specs/2026-08-01-sparkforge-fase5-emr-design.md).
 
-Herda uma decisão da 5a. As outras duas foram fechadas pela **Fase 5a.2**,
-na mesma branch — ver seção própria abaixo.
+**Plataforma virou coisa rastreada.** O critério 12 exigia sinal quando Glue e
+EMR são detectados juntos **mesmo com as versões derivadas coincidindo**. Isso
+não era alcançável por comparação de versão sob nenhum ajuste: `SF-ENV-001`
+dispara sobre `distinct_versions > 1`, e se Glue 4.0 e um release EMR derivam o
+mesmo Spark, não há divergência de versão alguma. Confirmado no código —
+`glue_observations` era separado de `observations`, e `_build_facts` iterava só
+o segundo, então plataforma nunca virava `env.runtime_signal`. Nasceu
+`env.platform`, com `SF-ENV-005` contando identidades em vez de versões.
 
-1. **`SF-ENV-002` é o guarda não-vazio mais fraco.** Seu `when` já lê
-   `format-version == 3` de `iceberg.table_property`, então
-   `{glue: ">=5.1", iceberg: ">=1.10.0"}` é redundante do mesmo jeito que o de
-   `SF-ENV-004` era. **Deixou de ser sem efeito medível**: `env.consumer` ganhou
-   extrator (`sparkforge/facts/consumers.py`, via `sparkforge analyze consumers`),
-   e a regra dispara em P0 — `fixtures/consumers/v3_with_athena_consumer` é o
-   golden positivo, e `fixtures/pyspark/version_out_of_scope` prova o guarda
-   pulando por `runtime_scope` em Glue 5.0. `test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51`
-   fixa o escopo deliberadamente. A redundância entre o `when` e o `runtime_scope`
-   continua real; o que mudou é que agora ela é observável.
+**`EMR_MATRIX`, e quatro coisas que a `GLUE_MATRIX` não tem.** A primeira era
+uma armadilha: `3.5.6-amzn-2` não é o `3.5.6` do Apache, e a comparação de
+versão quebrava em duas releases da série `-amzn-N.M` — `6.11.1`, `6.10.1`,
+`6.9.1` e `6.8.1` sofriam skip silencioso de toda regra com range exato. Python
+é conjunto, não valor, e a matriz guarda a lista mais o default documentado do
+PySpark. Iceberg não existe antes de 6.5.0, e a chave é **omitida** em vez de
+receber `"0.0.0"` — as duas grafias mentem diferente. E observação direta vence
+a matriz: `Cluster.Applications[].Version` vem populado no dump.
 
-### Fase 5a.2 — cobrir as dívidas da 5a — **CONCLUÍDA** em 2026-08-01
+O guard de drift é **assimétrico**, porque as duas páginas canônicas têm perfis
+opostos: a série 6.x não recebe minors novos, então mudança ali é o evento que
+a watchlist existe para pegar; a 7.x ganha uma coluna a cada 90 dias por
+compromisso da AWS, e um guard por hash da página alarmaria quatro vezes por ano
+por motivo que não é drift. Guard ruidoso é guard ignorado.
 
-Mesma branch, `feat/fase5a-escopo`. Plano:
-[`plans/2026-08-01-sparkforge-fase5a2-dividas.md`](plans/2026-08-01-sparkforge-fase5a2-dividas.md).
+**`RuntimeContext.emr` guarda a release numérica**, não o label. `_parse` lê
+`emr` de `emr-7.5.0` como zero, então `{emr: ">=7.0"}` nunca casaria — regra
+pulada, cobertura apagada em silêncio, o modo de falha que as Fases 5a e 5a.2
+fecharam. O curinga `"*"` não revelava, porque só checa presença. `glue` já
+fazia certo: guarda `5.0`, nunca `Glue 5.0`. O label observado vive em
+`env.platform.attrs`.
 
-A 5a esvaziou 40 dos 48 `runtime_scope` porque não guardavam versão nenhuma.
-Os 8 que restaram seguiam expostos ao defeito de origem: **o runtime só existia
-se o operador digitasse a versão**. A máquina de detecção era boa e completa —
-`detect_runtime` tem precedência por fonte, resolve divergência e emite
-`env.runtime_signal` — e nunca era alimentada.
+**O extrator, e a lista de dumps do spec estava errada.** A pesquisa de fontes
+derrubou três premissas: `aws emr list-configurations` **não existe** — as
+classificações vêm de `Cluster.Configurations` e dos grupos, e a distinção
+importa porque grupo sobrepõe cluster; faltavam `get-managed-scaling-policy` e
+`get-auto-termination-policy`, sem os quais três regras não têm gatilho; e
+`Applications[].Version` vem populado.
 
-**O event log passou a observar a versão.** `sparkforge/facts/event_log.py`
-tinha 11 kinds e nenhum carregava versão, apesar de `event_log` ser a fonte mais
-confiável da precedência declarada. Ganhou `spark.runtime_version`, lido de
-`SparkListenerLogStart` — escolhido em vez de `SparkListenerEnvironmentUpdate`
-porque `spark.version` dentro de `Spark Properties` é eco de conf, e qualquer
-`--conf spark.version=4.0.0` apareceria ali com valor arbitrário. Versão
-conflitante entre partes de um log rolante vira `spark.unresolved`, não escolha
-silenciosa.
+Um kind é de **qualidade da evidência**: `emr.configuration.unapplied` compara
+`Configurations` com `LastSuccessfullyAppliedConfigurations` e diz que o cluster
+não está rodando o que o dump parece dizer. `SF-EMR-003` o usa como guarda — sem
+ele, afirmaria sobre configuração que não vigora.
 
-**`judge` passou a inferir.** `build_runtime_context` deriva fontes dos facts:
-`spark.runtime_version` do event log, `tf.attribute` com `glue_version` do
-Terraform, e `GLUE_MATRIX` faz o resto. `cli` entrou em `_PRECEDENCE`
-explicitamente — logo abaixo de `event_log`, porque o log **observou** o runtime
-com artefato e provenance, enquanto a flag é declaração sem artefato; mas acima
-de `terraform` e `requirements`, que também são declaração e menos específicas.
-Vencer nunca apaga: o valor perdedor continua em `divergences` e em
-`env.runtime_signal`. `runtime detect` e `case open` também ganharam `--facts`, e
-a saída de `judge` passou a carregar o `runtime` efetivamente usado — sem isso a
-divergência seria resolvida em silêncio aos olhos de quem lê.
+**Nove regras `SF-EMR`.** Todas com `runtime_scope: {}`, e a justificativa está
+no cabeçalho do YAML: a série vem de `measures.release_major` do próprio
+`emr.cluster`, e um `{emr: ...}` em cima disso é segundo guarda sobre o mesmo
+dado, que falharia fechado num `judge` sem `--emr`.
 
-Prova, num repositório com Terraform de job Glue, `judge` **sem flag nenhuma**:
+Três dos quatro candidatos do spec **não sobreviveram** à leitura das fontes, e
+os vetos estão registrados no cabeçalho do catálogo para ninguém reinventá-los:
 
-```
-ANTES   runtime.glue=''    | puladas por runtime_scope: 8/8 | findings: []
-DEPOIS  runtime.glue='5.1' | puladas por runtime_scope: 0/8 | findings: 2
-        detected_from: ["terraform"]  spark=3.5.6 python=3.11 iceberg=1.10.0
-```
+- **Bootstrap action que falha em silêncio** é duplamente morto:
+  `ListBootstrapActions` não devolve status nem exit code, e bootstrap que falha
+  **não** falha em silêncio — o EMR termina a instância. O que se salvou é
+  diferente: `SF-EMR-007`, post-mortem sobre `BOOTSTRAP_FAILURE`.
+- **Ausência de EBS** — EBS nunca está ausente; o EMR aloca gp2/gp3 por default
+  desde 5.22.0. A leitura ingênua daria falso positivo em quase todo cluster.
+- **Spot no master como absoluto** acusaria a recomendação oficial da AWS, que
+  prevê primary Spot em dois dos quatro cenários da própria tabela. Sobreviveu
+  como correlação: `SF-EMR-004`, primary Spot **com core On-Demand**.
+- E `SF-EMR-005` teve o argumento corrigido pela fonte: o commit protocol
+  otimizado do EMRFS cobre overwrite dinâmico desde 5.30.0/6.2.0, então o
+  argumento de **performance** está morto em toda release analisável. A regra
+  ficou sobre a **semântica** — alcance cluster-wide mudando o que
+  `mode("overwrite")` apaga.
 
-**Fronteira negativa, e ela é o coração.** Derivar é ler o que o extrator já
-observou. Sem fact que carregue a informação, o campo fica vazio e a regra é
-pulada com motivo — correto, e continua acontecendo. Nada de adivinhar versão a
-partir de sintaxe de API, nome de bucket ou presença de import: seria julgamento
-entrando na camada de fato, o inimigo declarado da §1 do spec da Fase 0.
+**`SF-EMR-008` exigiu um padrão novo.** A melhor regra do conjunto — o
+ApplicationMaster elegível a nó Spot, em que o AM **é** o driver e a aplicação
+inteira falha — não podia ser escrita: o gatilho é a ausência de uma
+**combinação** de propriedades, e `engine._absent_satisfied` só compara `kind`.
+Em vez de alargar o motor, que é superfície de execução do catálogo, o extrator
+decide e emite `emr.yarn.am_node_label` só quando a proteção está presente e
+coerente; a regra usa `absent:` sobre ele. Proteção pela metade não emite, e o
+que não dá para ler vira `unresolved` — contado, não presumido. O padrão está
+escrito no cabeçalho do catálogo: se a resposta depende de mais de uma
+propriedade, o extrator decide e emite.
 
-**Recomendação versionada.** Seis regras — as cinco medidas na 5a mais
-`SF-UI-002`, achada na varredura — tinham gatilho agnóstico e recomendação que
-cita AQE ou o hint `REBALANCE`. A condição foi para o **texto do bullet**, não
-para `runtime_scope`: o catálogo é dado editável e superfície de execução, e um
-mini-motor de template ali seria um `if` escondido. Cada bullet passou a dizer
-o que fazer na versão em que a recomendação não vale — e os textos distinguem
-os dois casos, porque AQE **existe** desde 3.0 e só o default mudou em 3.2,
-enquanto `REBALANCE` **foi introduzido** em 3.2 e nenhuma flag o traz de volta.
+**`SF-EMR-009` fechou a única capacidade sem consumidor que a fase deixou.**
+`measures.idle_timeout_seconds` chegava ao `emr.cluster` vindo de
+`get-auto-termination-policy` e nenhuma regra o lia — mecanismo sem garantia
+declarada. A forma óbvia da regra, *acusar a AUSÊNCIA de política*, **não pode
+existir** no motor de hoje: `_where_matches` reprova caminho ausente e
+`_expr_matches` engole o `ExprError` de caminho ausente, então ausência de
+measure falha fechada nas duas superfícies do `when`. O que sobrou é a metade que
+lê o valor — política que existe com janela larga demais para alcançar qualquer
+intervalo ocioso real. O limiar de 86400 s é `field-heuristic` declarada (a
+documentação dá o default de 3600 s, o mínimo de 60 s e o máximo de 604800 s, e
+não dá nenhum ponto de "larga demais"); o ramo P1 em 604800 s, esse, é o teto da
+API. O gate de aplicação interativa que a pesquisa propôs **não** virou gatilho:
+cluster com JupyterHub, Zeppelin ou Hue é acusado como qualquer outro, e o
+trade-off vive dentro do achado em vez de virar um `skipped` que ninguém lê — o
+risco documentado para notebook tem recorte 5.30.0–5.33.0 / 6.1.0–6.3.0, abaixo
+do piso 6.4.0 do `EMR_MATRIX`.
 
-**Skills: a versão virou opcional declarada.** O `--glue <versão>` era um
-placeholder que pedia ao agente um valor que ele não tinha de onde tirar. As 16
-skills foram reescritas por grupo, não em massa: as de Terraform ganharam os
-dois casos em que o fact **não** carrega a versão (`var.`/`local.` não-literal, e
-`glue_version` dentro de `default_arguments`); as de event log ganharam a
-correção de que o log preenche `spark`, não `glue`; as 7 de PySpark puro
-perderam a flag, que era cerimônia — nenhuma regra `SF-PY-*` declara
-`runtime_scope`; e `optimize-iceberg-table` perdeu um `--iceberg` **inerte**.
+**A prova do objetivo**, em `tests/test_emr_investigation_end_to_end.py`: uma
+investigação real — cluster mais código PySpark, sem flag de runtime nenhuma —
+produz 5 achados, 3 de infraestrutura EMR e 2 de código, e as 6 regras `SF-GLUE`
+aparecem em `skipped` com `reason: runtime_scope`. Antes da fase, elas
+avaliavam, nunca disparavam, e não apareciam de lado nenhum.
 
-**Skills negavam capacidade que o motor já tem.** Achado colateral e o mais
-grave da fase. Os commits `081a570` e `bb72f9f`, já em `main`, desbloquearam o
-catálogo e acrescentaram extratores; as skills não acompanharam e seguiam
-afirmando o contrário — `analyze-spark-plan` dizia três vezes que "não existe
-parser de plano no toolkit", `optimize-parquet-layout` que os facts de
-`SF-PQ-001..004` não têm extrator, e três skills citavam `blocked_on` de regras
-que não têm nenhum. **Zero regras têm `blocked_on` hoje.** Duas dessas
-afirmações estavam na `description`, que é o gatilho de seleção da skill: o
-agente descartava a ferramenta certa antes de abrir o arquivo.
+**Números no fechamento da branch.** 58 regras em 10 áreas, 9 delas `SF-EMR`. 14
+extratores, 93 kinds, 32 tools, 7 coordenadores, 91 fixtures. 2852 testes
+passando. Os commits que vieram depois do commit de documentação da fase —
+`--emr` nos verbos, `PYSPARK_PYTHON`, reprodutibilidade de build, o nó por
+função definida do call graph, `SF-EMR-009` e a leitura de `athena` — são desta
+mesma fase e estão contados aqui.
 
-O invariante que impede a reincidência é **derivado do motor**: os verbos saem
-de `build_parser()` por introspecção do argparse, e as regras de
-`load_catalog()`. Acrescentar um verbo amanhã cobre a documentação sozinho;
-marcar uma regra com `blocked_on` libera a citação dela automaticamente.
-
-**Números.** 2320 testes passando, ruff limpo, espelhos conferindo.
+**O que ficou de fora, por decisão registrada no spec:** EMR Serverless e EMR on
+EKS. Esta fase é EMR on EC2.
 
 ### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
 
@@ -476,7 +491,8 @@ O erro caro seria apresentar as três camadas com a mesma cara.
    `feat/fase5a-escopo`. Ver seção própria acima
 3. **Fase 5a.2** — cobrir as dívidas da 5a — **CONCLUÍDA** em 2026-08-01, mesma
    branch. Ver seção própria acima
-4. **Fase 5b** — EMR, provando a generalização de runtime. Spec escrito, plano não
+4. **Fase 5b** — EMR on EC2 — **CONCLUÍDA** em 2026-08-01, branch
+   `feat/fase5b-emr`. Ver seção própria abaixo
 5. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
 6. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
 
@@ -488,10 +504,16 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 | Cobertura de EMR não existe | identificada ao fechar a Fase 3a | `RuntimeContext` não tem eixo de infraestrutura para EMR (release label, instance fleets, EMR Serverless, EMR on EKS); área `SF-EMR` inexistente. Spec escrito e revisado; plano da 5a escrito, 5b sem plano — ver seção acima |
 | ~~O curinga `"*"` de `runtime_scope` não filtra nada~~ — **fechada** na Fase 5a, commit `fcb8402` | revisão adversarial do spec da Fase 5, 2026-08-01 | `version_scope.py` pula a checagem de presença da chave, então `{glue: "*"}` casa com qualquer runtime. 20 regras agnósticas ficaram etiquetadas como de Glue, e as 5 de infra Glue avaliam em silêncio fora do Glue. Fase 5a corrige |
 | ~~`SF-GLUE-002` some de findings e de skipped ao mesmo tempo~~ — **fechada** na Fase 5a, commit `8815f53` | revisão adversarial do spec da Fase 5, 2026-08-01 | `requires_facts: tf.module_analyzed` é sentinela de "algum `.tf` foi lido", não de "há job Glue aqui": sem `aws_glue_job`, ela passa a barreira, avalia, dá falso, e desaparece dos dois lados. Fase 5a corrige |
+| ~~`sparkforge judge` não tem flag `--emr`~~ — **fechada** em 2026-08-01, commit `b9c2c87` | Fase 5b, 2026-08-01 | Há `--glue`, `--spark`, `--python`, `--iceberg` e `--athena`; a release do EMR só entra no `RuntimeContext` pelo fact `emr.cluster`. Hoje inócuo — toda regra `SF-EMR` lê a release do próprio fact — mas quem sabe a release e não tem dump não consegue declará-la, e é assimetria com as outras cinco plataformas. **Entrou nos três verbos que aceitam runtime** (`judge`, `case open`, `runtime detect`) e nas três tools MCP que os espelham — deixar o MCP para trás recriaria a assimetria um nível acima. A flag perde para o dump (`cli` está abaixo de `describe_cluster` em `_PRECEDENCE`) e discordar dele vira divergência, nunca resolução silenciosa; concordar na **outra grafia** (`7.5.0` contra `emr-7.5.0`) deixou de virar divergência falsa, porque a comparação de identidade passou a normalizar por `_emr_key`. O conjunto esperado de flags agora é derivado de `RuntimeContext`, não de lista literal: eixo novo cobra flag **e** propriedade de tool no mesmo commit |
+| ~~`PYSPARK_PYTHON` sai como `emr.configuration` e não alimenta a detecção de Python~~ — **fechada** em 2026-08-01, commit `9dea76b` | Fase 5b, Task 3 | A `EMR_MATRIX` omite `python` na série 6.x de propósito (a AWS lista `"2.7, 3.7"` como *instalados*), e o desenho previa `python` resolver quando `spark-env`/`PYSPARK_PYTHON` estivesse no dump. O extrator já emitia o valor cru e nada lia. **Ligado, com fronteira estreita:** só o nome de executável `pythonX.Y`, que carrega o minor por construção. `/usr/bin/python3` (só o major), `/usr/bin/python`, wrapper de nome arbitrário e `env python3.11` **não emitem** — a leitura entra como `describe_cluster`, acima da matriz e da flag, e versão errada com precedência alta alimenta `runtime_scope`. Só nível cluster: configuração de instance group é a **pedida**, e é para isso que `emr.configuration.unapplied` existe. Nenhum golden mudou — a fixture existente usa `/usr/bin/python3`, que é justamente o caso que não emite |
+| ~~`athena.workgroup` carrega `engine_version` e não alimenta a detecção de Athena~~ — **fechada** em 2026-08-01 | Fase 5b, ao fechar a dívida acima | A mesma dívida virada do avesso: o número era observado, com artefato e sha256, e `RuntimeContext.athena` só era preenchível pela flag `--athena` — foi por isso que a Fase 5a esvaziou o `runtime_scope` das cinco `SF-ATH` (linha `{athena: "*"}` da tabela acima). **Ligado, e só quando é inequívoco:** o valor vai como geração inteira (`"3"`, nunca `"3.0"` — a AWS não publica nada entre as duas), sob a fonte nova `get_work_group`, colada em `describe_cluster` em `_PRECEDENCE` (mesma classe de evidência: API da AWS reportando o que está **em vigor**; a ordem relativa entre as duas nunca decide nada porque elas jamais disputam o mesmo componente). **Multiplicidade de workgroup não é divergência:** `legacy-etl` na 2 e `primary` na 3 é configuração normal de conta, e chamar isso de SF-ENV-001 seria P0 falso; unanimidade ou nada, e o número de cada workgroup continua no seu próprio fact, onde `SF-ATH-004` o lê. `athena.unresolved` **anula** a leitura em vez de ser ignorado por ela. Com isso `runtime_scope: {athena: ">=3"}` volta a ser possível — medido nas três fixtures de `fixtures/athena/`, `True`/`False`/`False`. Invariante novo em `tests/test_capability_parity.py`: eixo com flag e **sem produtor** falha, derivado do AST de `_runtime_reading` |
+| `requirements` está em `_PRECEDENCE` e nenhum extrator a alimenta | Fase 5b, ao ligar `athena` | Produtor **previsto e não escrito**, não vestígio: `knowledge/glue/runtime-matrix.md` seção 5 lista `requirements.txt`/`pyproject.toml` como a fonte de menor confiabilidade ("indica intenção, não runtime"), e a precedência foi desenhada com ela no fim por isso. Nenhum módulo de `sparkforge/facts/` lê manifesto de dependência, então a fonte nunca recebe nada. Fica declarada **com nota no código**, no padrão que `describe_cluster` usou até ter extrator — fonte sem produtor e sem nota é superfície que parece existir |
+| EMR Serverless e EMR on EKS sem cobertura | Fase 5b, por decisão registrada no spec | O extrator lê `describe-cluster` de EMR on EC2. Serverless tem worker config e pre-init capacity; EKS tem virtual cluster e job run. Nenhum dos dois tem fact, regra ou coordenador |
 | ~~Runtime não é inferido dos facts coletados~~ — **fechada** na Fase 5a.2, commits `0513dc2` e `8a7d506` | Fase 5a, medido em 2026-08-01 | `build_runtime_context` monta o contexto só de flags da CLI. Todo `runtime_scope` falha fechado quando a versão não foi declarada, e nenhum extrator alimenta a detecção. A 5a contornou esvaziando os guardas que não guardavam versão nenhuma; os 8 que restaram seguem expostos. Trabalho da 5b, onde é necessário de qualquer forma para detectar EMR |
 | ~~`proposed_change` cita AQE e `REBALANCE` sem ramo por versão~~ — **fechada** na Fase 5a.2, commit `3641f46`; `SF-UI-002` entrou, somando seis | Fase 5a, medido em 2026-08-01 | `SF-PY-005`, `SF-PY-009`, `SF-PY-010`, `SF-PQ-001` e `SF-UI-006` têm gatilho agnóstico mas recomendação de Spark 3.2. Com escopo vazio disparam onde o conselho pode não se aplicar — aceito, porque apagar um P0 real por causa de um bullet de remediação é pior |
-| `sdist`/`wheel` não são reproduzíveis bit-a-bit entre duas construções da mesma árvore | Fase 3a, commit `2b6311c` | Nenhum `SOURCE_DATE_EPOCH` é fixado, e o zip carrega timestamp interno; duas chamadas de `python -m build` sobre o mesmo commit produzem artefatos com bytes diferentes. `release.yml` contorna isso copiando (`--outdir`) o artefato que o gate já provou, em vez de reconstruir — mas a build em si segue não-determinística, o que importa para quem quiser verificar um wheel publicado por hash contra uma reconstrução própria |
-| `unreachable_function_count` não detecta código morto | Fase 1 | A medida só pega componente cíclico isolado. Detectar código morto de verdade exige emitir um nó por função **definida**, com ou sem aresta — mudança no extrator. Documentado em `rules/catalog/callgraph.yaml` |
+| ~~`sdist`/`wheel` não são reproduzíveis bit-a-bit entre duas construções da mesma árvore~~ — **medida e fechada** em 2026-08-01, ver `[tool.hatch.build]` em `pyproject.toml` e `compare_builds` em `scripts/verify_wheel.py` | Fase 3a, commit `2b6311c` | **A dívida não se confirmou como escrita.** Foi registrada por inspeção, nunca medida: duas chamadas de `python -m build` sobre a mesma árvore produzem artefatos com **sha256 idêntico**, inclusive depois de `touch` em 1012 arquivos. `reproducible = true` já era o *default* do hatchling e fecha os quatro eixos (timestamp via `SOURCE_DATE_EPOCH` com fallback na constante 1580601600; permissão normalizada para 644/755; uid/gid 0 no tar; caminhada do FS ordenada). O que era real e foi fechado: a garantia era um **default implícito, sem contrato e sem teste**. Agora está declarada no `pyproject.toml`, medida a cada execução do gate (segunda build + comparação por sha256, com o relatório nomeando o campo do zip que divergiu) e travada por invariantes baratos em `tests/test_artifact_contents.py`. `--outdir` em `release.yml` **fica** — por "o byte publicado é o byte testado", que é propriedade separada da reprodutibilidade |
+| Igualdade bit-a-bit não vale entre plataformas nem entre versões do backend | medido em 2026-08-01, ao fechar a dívida acima | Dois eixos sobrevivem à `reproducible = true`, e nenhum é do hatchling. (1) A versão do backend vaza para `WHEEL` como `Generator: hatchling X.Y.Z`, e `requires = ["hatchling>=1.25"]` não é pin — dois builds separados por um release do hatchling divergem. (2) O fluxo de deflate depende da implementação de zlib do interpretador: o CPython 3.14 do Windows usado na medição roda `zlib-ng` (`ZLIB_RUNTIME_VERSION = 1.3.1.zlib-ng`), o `ubuntu-latest`/3.11 do CI roda zlib padrão, e as duas comprimem os mesmos bytes de formas diferentes. Consequência: `verify_wheel.py` prova reprodutibilidade **dentro de uma plataforma**, que é o que o job `wheel` mede nos dois SOs separadamente — não entre elas. Fechar exigiria pinar `hatchling==` e nomear um interpretador de referência; nenhum dos dois foi feito, porque o artefato publicado já declara o `Generator:` que o produziu |
+| ~~`unreachable_function_count` não detecta código morto~~ — **fechada** na Fase 5b | Fase 1 | `pyspark_ast` passou a emitir `pyspark.function_def` (um fact por função **definida**, com ou sem aresta) e `call_graph` semeia os nós com ele. A medida antiga virou `unreachable_from_entrypoint_count` (mesma conta, nome honesto: componente cíclico sem entrada) e entrou `unreferenced_function_count` + `attrs.unreferenced_functions`, que afirma "sem referência **neste corpus**" e nada além. Método, decorada e exportada em `__all__` ficam fora da população e são contadas em `opaque_caller_function_count`. Continua **sem regra**, agora por decisão registrada e travada por teste, não por defeito: ver `rules/catalog/callgraph.yaml` e a fixture `fixtures/callgraph/library_surface` |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |
 
 ## Como manter este arquivo honesto

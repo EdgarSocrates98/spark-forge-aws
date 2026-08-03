@@ -46,6 +46,35 @@
     }
   },
   {
+    "id": "f_953bf5",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 3,
+      "symbol": "calcular",
+      "snippet": "def calcular(df):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "b7c109b836db7fc6e2ca03c9ae9c57e1ff8cba58c76d0ff6eb50e18bcf7c01de",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_9e2037",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -62,7 +91,13 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "cache",
+        "count",
+        "d",
+        "df"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

@@ -14,6 +14,15 @@ def _parse(version: str) -> tuple[int, ...]:
     # do segmento ("4" + "0") produz um numero maior que o real e inverte
     # uma comparacao >=, que e exatamente o defeito que a guarda existe
     # para prevenir.
+    #
+    # E a leitura PARA no primeiro segmento que carrega sufixo de vendor. Sem
+    # isso, a forma de dois niveis que so existe em EMR 6.x --
+    # "3.3.2-amzn-0.1", em emr-6.11.1, 6.10.1, 6.9.1 e 6.8.1 -- era partida em
+    # ["3", "3", "2-amzn-0", "1"] e virava (3, 3, 2, 1): MAIOR que (3, 3, 2),
+    # com "==3.3.2" e "<=3.3.2" falsos. Quatro releases inteiras tinham toda
+    # regra de range exato pulada em silencio, que e a perda de cobertura muda
+    # que as Fases 5a e 5a.2 fecharam. A versao Apache termina onde o sufixo
+    # comeca; o que vem depois e numero de patch da AWS, nao segmento de versao.
     parts = []
     for chunk in str(version).split("."):
         digits = ""
@@ -22,6 +31,8 @@ def _parse(version: str) -> tuple[int, ...]:
                 break
             digits += char
         parts.append(int(digits) if digits else 0)
+        if digits != chunk:
+            break
     return tuple(parts)
 
 

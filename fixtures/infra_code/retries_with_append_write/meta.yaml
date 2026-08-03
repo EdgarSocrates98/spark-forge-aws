@@ -23,5 +23,6 @@ expects_kinds:
   - pyspark.read
   - pyspark.write
   - pyspark.chain
+  - pyspark.function_def
 expects_rules:
   - SF-GLUE-004

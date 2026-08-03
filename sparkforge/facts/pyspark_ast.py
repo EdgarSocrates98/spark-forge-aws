@@ -41,6 +41,7 @@ EMITTED_KINDS = frozenset(
         "pyspark.conf_set",
         "pyspark.dedup",
         "pyspark.callgraph_edge",
+        "pyspark.function_def",
         "pyspark.unresolved",
         "pyspark.module_analyzed",
         "pyspark.glue_context_init",
@@ -385,6 +386,7 @@ def extract_source(source: str, path: str) -> list[Fact]:
                 )
 
         facts.extend(_udf_decorator_facts(tree, path, ctx, lines, provenance))
+        facts.extend(_function_def_facts(tree, path, ctx, lines, provenance))
         facts.extend(_loop_and_callgraph_facts(tree, path, ctx, lines, provenance))
 
         # Sentinela: prova de que a extracao PySpark rodou sobre este arquivo.
@@ -411,7 +413,11 @@ def extract_source(source: str, path: str) -> list[Fact]:
                     "resolved_calls": resolved_calls,
                     "unresolved_count": unresolved_count,
                 },
-                attrs={"parsed": True},
+                # `referenced_names` e o que permite a um consumidor multi-arquivo
+                # (call_graph) saber que o nome de uma funcao definida AQUI e lido
+                # LA. Sem isso, toda funcao usada so entre modulos -- o caso normal
+                # de uma biblioteca -- pareceria orfa.
+                attrs={"parsed": True, "referenced_names": _referenced_names(tree)},
                 provenance=provenance,
             )
         )
@@ -861,6 +867,155 @@ def _udf_decorator_facts(
                         provenance=provenance,
                     )
                 )
+    return facts
+
+
+def _decorator_name(node: ast.expr) -> str:
+    """Nome pontilhado do decorator (`functools.lru_cache`), ou "" se nao for nome."""
+    target: ast.AST = node.func if isinstance(node, ast.Call) else node
+    parts: list[str] = []
+    while isinstance(target, ast.Attribute):
+        parts.append(target.attr)
+        target = target.value
+    if isinstance(target, ast.Name):
+        parts.append(target.id)
+        return ".".join(reversed(parts))
+    return ""
+
+
+def _module_all(tree: ast.AST) -> frozenset[str]:
+    """Nomes declarados em `__all__` no nivel do modulo.
+
+    So le a forma literal (`__all__ = ["a", "b"]`): `__all__ += outra_lista` ou
+    construcao dinamica ficam de fora, e ficam de fora em silencio de proposito
+    -- inventar o conteudo de um `__all__` calculado seria julgamento, nao
+    observacao. O efeito de nao ver um nome exportado e conservador na direcao
+    certa: ele apenas deixa de ganhar o marcador `exported`.
+    """
+    names: set[str] = set()
+    for stmt in getattr(tree, "body", []):
+        if isinstance(stmt, ast.Assign):
+            targets: list[ast.expr] = list(stmt.targets)
+            value = stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and stmt.value is not None:
+            targets = [stmt.target]
+            value = stmt.value
+        else:
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == "__all__" for t in targets):
+            continue
+        if isinstance(value, ast.List | ast.Tuple):
+            for elt in value.elts:
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                    names.add(elt.value)
+    return frozenset(names)
+
+
+def _referenced_names(tree: ast.AST) -> list[str]:
+    """Todo identificador LIDO no modulo: `ast.Name` em Load e `ast.Attribute.attr`.
+
+    Serve a uma pergunta so: o nome de uma funcao definida em OUTRO arquivo do
+    corpus aparece aqui? Depois de `from lib import limpa`, a chamada e
+    `limpa(df)` -- um `Name` em Load; depois de `import lib`, e `lib.limpa(df)`
+    -- um `Attribute.attr`. Sem as duas formas, toda funcao usada apenas
+    entre modulos pareceria nao referenciada, que e o falso positivo em massa
+    que `rules/catalog/README.md` trata como o pior defeito possivel.
+
+    Deliberadamente um SUPERCONJUNTO: `.count()` de DataFrame entra na lista e
+    faz uma funcao local chamada `count` parecer referenciada. O erro cai para
+    o lado de nao acusar, que e o lado certo -- deixar de apontar um simbolo
+    orfao custa uma informacao; apontar um simbolo vivo custa a confianca no
+    relatorio inteiro.
+    """
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+            names.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            names.add(node.attr)
+    return sorted(names)
+
+
+def _enclosing_def_kind(node: ast.AST, ctx: _Context) -> tuple[str, str]:
+    """Onde a funcao foi definida: modulo, corpo de classe, ou dentro de outra funcao.
+
+    Nao e classificacao estetica: decide se a AUSENCIA de chamador diz alguma
+    coisa. Metodo e chamado por `self.x()`/`obj.x()`, que e `ast.Attribute` e
+    nunca vira aresta; funcao aninhada e chamada de dentro de um fechamento.
+    Nos dois casos "ninguem chama" e artefato do extrator, nao propriedade do
+    codigo -- e o consumidor precisa saber disso pelo fact, nao por folclore.
+    """
+    parent = ctx.parent.get(id(node))
+    while parent is not None:
+        if isinstance(parent, ast.FunctionDef | ast.AsyncFunctionDef):
+            return "nested", parent.name
+        if isinstance(parent, ast.ClassDef):
+            return "method", parent.name
+        parent = ctx.parent.get(id(parent))
+    return "module", ""
+
+
+def _function_def_facts(
+    tree: ast.AST, path: str, ctx: _Context, lines: list[str], provenance: dict[str, Any]
+) -> list[Fact]:
+    """Um fact por funcao DEFINIDA, com ou sem chamada.
+
+    `pyspark.callgraph_edge` so existe quando ha chamada; uma funcao definida e
+    nunca chamada nao aparecia em lugar nenhum, e por isso
+    `callgraph.summary.unreachable_function_count` devolvia zero para o caso
+    exato que ele parecia medir (divida da Fase 1, registrada em
+    `docs/superpowers/STATUS.md`). Zero indistinguivel de "nao ha nada" e a
+    forma de silencio que este repositorio persegue.
+
+    `measures.name_reference_count` conta as leituras do nome DENTRO deste
+    modulo, fora do corpo da propria funcao -- o que cobre callback
+    (`rdd.foreach(trata)`), tabela de despacho (`{"a": trata}`) e chamada de
+    nivel de modulo (`main()` sob `if __name__`), nenhuma das quais produz
+    aresta. Chamada por string (`getattr(mod, nome)`) continua invisivel, e ja
+    tem seu proprio `pyspark.unresolved`.
+    """
+    exported = _module_all(tree)
+
+    loads: dict[tuple[str, str], int] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+            key = (node.id, ctx.function.get(id(node), ""))
+            loads[key] = loads.get(key, 0) + 1
+
+    facts: list[Fact] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        def_kind, enclosing = _enclosing_def_kind(node, ctx)
+        subject = _subject(node, path, ctx, lines)
+        # `_subject` ancora no escopo QUE CONTEM o no; para a propria definicao
+        # o simbolo tem que ser o nome dela, senao o no do grafo de chamadas
+        # nasceria com a chave da funcao de fora.
+        subject["symbol"] = node.name
+        # Referencia de dentro do proprio corpo e recursao, nao uso externo:
+        # sem excluir, toda funcao recursiva morta pareceria viva.
+        references = sum(
+            count
+            for (name, scope), count in loads.items()
+            if name == node.name and scope != node.name
+        )
+        facts.append(
+            Fact(
+                kind="pyspark.function_def",
+                subject=subject,
+                measures={"name_reference_count": references},
+                attrs={
+                    "def_kind": def_kind,
+                    "enclosing": enclosing,
+                    "decorators": [
+                        name for name in map(_decorator_name, node.decorator_list) if name
+                    ],
+                    "is_async": isinstance(node, ast.AsyncFunctionDef),
+                    "exported": node.name in exported,
+                },
+                provenance=provenance,
+            )
+        )
     return facts
 
 

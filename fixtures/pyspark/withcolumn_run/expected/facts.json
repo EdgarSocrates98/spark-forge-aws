@@ -38,6 +38,35 @@
     }
   },
   {
+    "id": "f_88ce56",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 4,
+      "col": 0,
+      "end_line": 18,
+      "symbol": "enriquecer",
+      "snippet": "def enriquecer(df):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "528b47771fc72b71b398c7ec9524e119f3ba58a2f1168c3221c990445b72bd31",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_f927c5",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -54,7 +83,12 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "df",
+        "lit",
+        "withColumn"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",

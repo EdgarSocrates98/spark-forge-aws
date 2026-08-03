@@ -75,6 +75,32 @@ dev = [
 [project.scripts]
 sparkforge = "sparkforge.adapters.cli:main"
 
+# Reprodutibilidade bit-a-bit do artefato. `reproducible = true` JA e o default
+# do hatchling -- esta declarado aqui porque default implicito nao e contrato:
+# nada no repositorio impedia que uma futura inversao do default, ou um
+# `reproducible = false` colado num target, tirasse a propriedade em silencio.
+#
+# O que a flag faz, e que sao os quatro eixos de nao-determinismo do zip/tar:
+#   1. timestamp -- toda entrada recebe `SOURCE_DATE_EPOCH`, com fallback para
+#      a constante 1580601600 (2020-02-02T00:00:00Z). O fallback e proposital:
+#      um epoch derivado do commit (`git log -1 --format=%ct`) so existe DENTRO
+#      de um checkout git, e `python -m build` constroi o wheel A PARTIR do
+#      sdist, onde nao ha `.git` -- o epoch mudaria entre os dois caminhos e
+#      quebraria justamente o que se quer garantir.
+#   2. permissao -- `normalize_file_permissions` colapsa o modo para 644/755
+#      conforme o bit de execucao, apagando a variacao de umask.
+#   3. dono -- o tar do sdist recebe uid/gid 0 e uname/gname vazios.
+#   4. ordem -- a caminhada do sistema de arquivos e ordenada antes de emitir,
+#      entao a ordem das entradas nao herda a ordem do diretorio.
+#
+# O que a flag NAO cobre, e que segue medido em `scripts/verify_wheel.py`:
+# a versao do backend vaza para `WHEEL` como `Generator: hatchling X.Y.Z`, e o
+# fluxo de deflate depende da implementacao de zlib do interpretador (zlib
+# contra zlib-ng). Reproduzir um wheel publicado por hash exige o mesmo
+# hatchling -- que o proprio artefato declara -- e um zlib equivalente.
+[tool.hatch.build]
+reproducible = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["sparkforge"]
 

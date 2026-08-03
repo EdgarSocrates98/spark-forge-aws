@@ -493,6 +493,35 @@
     }
   },
   {
+    "id": "f_956c1f",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 10,
+      "col": 0,
+      "end_line": 14,
+      "symbol": "main",
+      "snippet": "def main():"
+    },
+    "measures": {
+      "name_reference_count": 1
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "9008b82cc3d760b5834d14a45dd8d01356b9d5afa508d8ac99924dd8cc2480a1",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_83d3bf",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -509,7 +538,23 @@
       "unresolved_count": 0
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "SparkSession",
+        "__name__",
+        "builder",
+        "count",
+        "getOrCreate",
+        "groupBy",
+        "main",
+        "mode",
+        "parquet",
+        "pedidos",
+        "read",
+        "resumo",
+        "spark",
+        "write"
+      ]
     },
     "provenance": {
       "artifact": "job.py",

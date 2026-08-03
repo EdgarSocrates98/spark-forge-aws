@@ -1,5 +1,34 @@
 [
   {
+    "id": "f_391a73",
+    "schema_version": 1,
+    "kind": "pyspark.function_def",
+    "subject": {
+      "type": "source_location",
+      "file": "lib/job.py",
+      "line": 1,
+      "col": 0,
+      "end_line": 2,
+      "symbol": "run",
+      "snippet": "def run(df, metodo):"
+    },
+    "measures": {
+      "name_reference_count": 0
+    },
+    "attrs": {
+      "def_kind": "module",
+      "enclosing": "",
+      "decorators": [],
+      "is_async": false,
+      "exported": false
+    },
+    "provenance": {
+      "artifact": "lib/job.py",
+      "artifact_sha256": "79b6688d6b2514194f6d04383e7d905dc98e81160da26b5fead76e35fd961a88",
+      "extractor": "pyspark_ast@0.1.0"
+    }
+  },
+  {
     "id": "f_c95d4e",
     "schema_version": 1,
     "kind": "pyspark.module_analyzed",
@@ -16,7 +45,12 @@
       "unresolved_count": 1
     },
     "attrs": {
-      "parsed": true
+      "parsed": true,
+      "referenced_names": [
+        "df",
+        "getattr",
+        "metodo"
+      ]
     },
     "provenance": {
       "artifact": "lib/job.py",
