@@ -1,0 +1,260 @@
+# Catálogo de regras — validação de dados dentro do job PySpark
+#
+# Consome os facts de `sparkforge/facts/data_quality.py` (Fase 5c), que lê o
+# `.py` e reconhece TRÊS formas de validação pela FORMA, nunca por lista de
+# nomes: o check artesanal (`df.filter(...).count()`), a `VerificationSuite` do
+# PyDeequ (cadeia que contém `onData` e termina em `run`) e a validação do Great
+# Expectations (DataFrame sob a chave literal `"dataframe"` de
+# `batch_parameters`).
+#
+# A pergunta desta área não é "o dado está correto" -- nenhum artefato estático
+# responde isso. É a pergunta anterior, e é a que ninguém faz: a validação que
+# existe no código chega a proteger alguém? Ela roda antes de publicar? O
+# resultado dela leva a alguma consequência?
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# ESCOPO. Toda regra desta área declara `runtime_scope: {}`, e isso é decisão,
+# não omissão.
+#
+# O CRITÉRIO é o fixado pela Fase 5a (`README.md` deste diretório, seção "O que
+# `runtime_scope` é, e o que ele não é"): escopo não-vazio só quando o GATILHO
+# genuinamente varia com a versão E essa versão vem do RUNTIME. O gatilho aqui é
+# a POSIÇÃO e a ESTRUTURA de chamadas num AST -- validar depois de escrever é
+# validar depois de escrever em Glue 3.0 e em Glue 5.1, em EMR 6 e em EMR 7;
+# validar sem consequência não passa a ter consequência numa versão nova de
+# Spark.
+#
+# O EFEITO MEDIDO, que é o que torna isto mais do que estética: analisar um
+# `.py` não traz versão nenhuma. `RuntimeContext.spark` vem de event log, de
+# `GLUE_MATRIX` (via `glue_version` no Terraform) ou de flag da CLI; nenhum dos
+# três está num arquivo Python. Com `build_runtime_context()` sem flags -- o
+# padrão de `sparkforge judge` -- o contexto sai vazio, `in_scope` falha FECHADA
+# (`sparkforge/rules/version_scope.py`), e um `runtime_scope` não-vazio apagaria
+# a ÁREA SF-DQ INTEIRA em silêncio. Foi assim que 20 regras de análise estática
+# ficaram indisponíveis até a Fase 5a.
+#
+# O que a versão de fato governa nesta área não é o gatilho, é a RECOMENDAÇÃO --
+# PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e GX 1.x exige Python >=
+# 3.10 (desvio D-5c-5). Por isso nenhuma `proposed_change` daqui manda "use uma
+# suíte" sem apontar para `knowledge/dq/validation-frameworks.md`, onde o
+# alcance está medido release a release.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# POR QUE A CORRELAÇÃO NÃO ESTÁ NO `when`, e sim no extrator.
+#
+# Medido em `sparkforge/rules/engine.py` antes de escrever estas regras:
+# `_condition_candidates` avalia UM FACT POR VEZ -- `where` e `expr` leem o
+# contexto de um único fact (`_fact_context`) -- e `_absent_satisfied` compara
+# só `kind`. O motor não correlaciona dois facts dentro de uma condição, e não é
+# essa a mudança que se faz: o catálogo é dado editável, e a superfície de
+# execução dele é restrita de propósito (whitelist de AST no avaliador de
+# `expr`).
+#
+# Então "a linha do check é posterior à linha do write" NÃO é expressável aqui.
+# Quem enxerga o módulo inteiro é o extrator, e é ele quem decide: a posição
+# relativa ao write, a persistência do alvo, o reuso depois do check e quantos
+# checks pesam sobre o mesmo alvo viram ATRIBUTOS de um fact só, e o catálogo lê
+# atributo. Mesmo padrão que `SF-EMR-008` fixou na Fase 5b -- quando a resposta
+# depende de mais de uma propriedade, o extrator decide e emite.
+#
+# `dq.enforcement` é a mesma jogada do outro lado: consequência é a combinação
+# de "o resultado é lido" com "a leitura leva a aborto", e o motor não sabe
+# compor a AUSÊNCIA de uma combinação. O extrator emite o kind quando a
+# combinação está satisfeita, e `SF-DQ-002` pergunta `absent: dq.enforcement`
+# sobre um kind só.
+#
+# CONSEQUÊNCIA PRÁTICA para quem for escrever regra nova aqui: se o gatilho que
+# você quer exige olhar dois facts ao mesmo tempo, a resposta NÃO é alargar o
+# `when`. É verificar se o extrator já decide -- e, se não decide, discutir o
+# atributo antes de mexer no motor.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# VETOS APURADOS NA PESQUISA DE FONTES (2026-08-03).
+# Detalhe e URLs: knowledge/dq/validation-frameworks.md
+#
+# Isto fica aqui para que ninguem "melhore" a area depois reinventando uma
+# premissa que ja foi lida contra a fonte e reprovada. Nao reintroduzir.
+#
+# V-GE-1  SparkDFDataset nao existe desde great_expectations 1.0.0 (2024-08-22):
+#         great_expectations/dataset/ foi removido do pacote. Detectar por ele
+#         marca codigo 0.x; proposed_change NUNCA pode recomenda-lo.
+# V-GE-2  Nao reconhecer validacao por metodo com prefixo `expect_`. O prefixo
+#         sobrevive no Validator via __getattr__, e o AST nao sabe se a variavel
+#         e um Validator. Sobre um DataFrame puro, expect_* nunca existiu.
+# V-GE-3  Nao emitir declared_checks nem single_pass para great_expectations:
+#         no caminho canonico as expectativas vivem no store do contexto, fora
+#         do .py, e nenhuma fonte declara quantas passadas uma run GE faz.
+# V-GE-4  GX 1.x exige Python >= 3.10: nao recomendar em Glue 3.0, EMR 6.x, nem
+#         EMR 7.0.0-7.12.0 sem trocar PYSPARK_PYTHON para o 3.11 instalado.
+#
+# V-DQ-1  "VerificationSuite com N checks e UMA passada" e FALSO. A fonte
+#         primaria (VLDB 2018, secoes 4.1 e 5.1) garante scan sharing por
+#         AGRUPAMENTO: uma passada por agrupamento distinto. isUnique e
+#         entropia exigem re-particionamento e pagam passada propria -- e o
+#         quickstart oficial do PyDeequ contem isUnique. O contraste com N
+#         count() separados continua valido; a redacao "uma passada por
+#         construcao" nao.
+# V-DQ-2  PyDeequ 1.6.0 mapeia Spark 3.1/3.2/3.3/3.5 e exige Python >= 3.9.
+#         Spark 3.4 NAO esta no mapa (EMR 6.12.0-6.15.0). Toda a serie EMR 6.x
+#         e Glue 3.0 ficam de fora pelo Python. proposed_change com guarda.
+# V-DQ-3  Contar chamadas `addCheck` nao conta restricoes: a forma oficial
+#         encadeia varias restricoes dentro de UM addCheck.
+#
+# V-AS-1  `assert` NAO e removido por padrao em Glue nem em EMR: nenhuma fonte
+#         oficial mostra o driver rodando com -O ou com PYTHONOPTIMIZE, e no
+#         Glue o unico mecanismo documentado de env var do driver exige prefixo
+#         CUSTOMER_, que impede definir PYTHONOPTIMIZE. Logo assert CONTA como
+#         dq.enforcement.
+# V-AS-2  ... com ressalva escrita dentro do achado: -O e fato de AMBIENTE, e
+#         esta area le apenas o .py. `raise` nao tem essa condicional.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE O EXTRATOR JÁ EMITE E NENHUMA REGRA DESTE ARQUIVO LÊ AINDA.
+#
+# `attrs.target_persisted`, `attrs.action_after_check`, `attrs.shares_scan` e
+# `measures.checks_on_target` existem no `dq.check` e não têm consumidor neste
+# arquivo. Pelo critério que `emr-infra.yaml` fixou na Fase 5b, capacidade de
+# extrator sem consumidor é dívida, e não atributo descritivo que caiu de graça:
+# os quatro custam travessia própria (`_ScopeIndex`, o segundo passe do
+# contador) e existem para responder ao CUSTO da validação -- recomputo de
+# lineage e varredura repetida. A dívida está nomeada aqui em vez de invisível;
+# ela fecha quando as regras que a consomem entrarem, com fixture bidirecional
+# como qualquer outra.
+
+catalog_version: 1
+schema_version: 1
+area: SF-DQ
+retrieved: 2026-08-03
+
+rules:
+
+  - id: SF-DQ-001
+    category: data-quality
+    title: Validação roda depois da escrita
+    requires_facts: [dq.check]
+    # `same_subject` com uma condicao so: a regra afirma algo sobre UM check, e
+    # o motor emite um Finding por grupo de subject que casa
+    # (`engine._evaluate_when`). Sem isso, tres validacoes tardias no mesmo
+    # recorte virariam UM achado ancorado na primeira, e o operador corrigiria
+    # aquela sem nunca saber das outras duas -- a subcontagem que o README deste
+    # diretorio trata como enganosa do mesmo jeito que um falso negativo. Mesma
+    # forma de SF-CG-001 e SF-PLAN-001/002/004.
+    when:
+      same_subject: true
+      all:
+        - fact: dq.check
+          where: {attrs.position_vs_write: after_write}
+    status: structural
+    severity_default: P1
+    # Escopo vazio: o gatilho e a POSICAO de uma chamada no AST. Nao varia com
+    # versao de Glue, Spark, EMR ou Iceberg. Criterio da Fase 5a -- ver ESCOPO
+    # no cabecalho deste arquivo.
+    runtime_scope: {}
+    explanation: >
+      A validação existe para impedir que dado ruim chegue ao consumidor, e aqui ela roda
+      depois de o dado já ter sido escrito. Quando ela acusa, o estrago já é público: o
+      consumidor a jusante pode ter lido, e reverter exige apagar ou reescrever partição.
+      `attrs.position_vs_write` distingue três situações, e só uma delas é esta —
+      `no_write_in_module` significa que o módulo valida e não escreve, que é legítimo e
+      não dispara, e `before_write` é o caso correto. Quando o nome do alvo é religado
+      entre o check e o write, o extrator OMITE a chave em vez de inventar um quarto
+      valor, e a regra simplesmente não avalia aquele check: `engine._where_matches`
+      reprova caminho ausente.
+      O recorte é o escopo de nomes, e não o arquivo: a comparação vale dentro do corpo do
+      módulo ou de uma função, porque `def a(vendas)` e `def b(vendas)` não recebem o mesmo
+      DataFrame. Validação numa função e write noutra saem como `no_write_in_module` —
+      erra para menos, e não acusa.
+    proposed_change:
+      - Mover a validação para antes do `write`, sobre o DataFrame já transformado.
+      - Se a validação precisa do dado escrito (contagem no destino, por exemplo), escrever primeiro numa área de staging e só promover ao destino final depois de a validação passar.
+      - Antes de trocar o check artesanal por uma suíte, conferir o alcance em knowledge/dq/validation-frameworks.md — PyDeequ não alcança Glue 3.0 nem a série EMR 6.x, e Great Expectations 1.x exige Python 3.10 ou superior.
+    risks:
+      - Validar antes do write adiciona uma action antes da escrita; sobre DataFrame não persistido isso recomputa o lineage inteiro.
+      - Promoção a partir de staging muda o instante em que o dado fica visível para o consumidor, e quem depende do horário de publicação precisa saber.
+    tradeoffs:
+      - Staging mais promoção dobra a escrita e o custo de S3, e é o preço de não publicar dado inválido.
+      - Abortar antes do write deixa o destino com o conteúdo do ciclo anterior; abortar depois deixa o destino com dado que reprovou. As duas exigem decisão de operação, e nenhuma é neutra.
+    validation:
+      - Rodar com um lote que viole a regra e confirmar que nada é escrito no destino final.
+      - Contagem total no destino antes e depois da mudança, com um lote que PASSA na validação, para provar que a semântica do write não mudou.
+      - Contagem por chave de partição no destino, para provar que a promoção não perdeu nem duplicou partição.
+    # Lista em bloco, e nao `[...]` inline: a virgula de uma frase separaria o
+    # item em dois no fluxo YAML, e o `rollback` chegaria picado ao operador.
+    rollback:
+      - "Reverter o commit. Quando houve staging, apagar o prefixo de staging depois de confirmar que o destino final está íntegro."
+    sources:
+      - {origin: field-heuristic, note: "A severidade P1 é decisão de campo: o custo depende de haver consumidor a jusante, e nenhum fact disponível mede isso. Contexto e alcance dos frameworks em knowledge/dq/validation-frameworks.md."}
+
+  - id: SF-DQ-002
+    category: data-quality
+    title: Validação sem consequência
+    # `dq.module_analyzed` entra pela disciplina de sentinela do README deste
+    # diretorio: `absent: X` e verdadeiro tambem quando o extrator que produziria
+    # `X` nunca rodou. Aqui `dq.check` ja prova que ele rodou -- os dois kinds
+    # saem do mesmo extrator --, entao a sentinela e redundante e nao custa nada;
+    # o que ela evita e alguem, um dia, afrouxar `requires_facts` e reintroduzir
+    # o falso positivo por ausencia vazia.
+    requires_facts: [dq.check, dq.module_analyzed]
+    # `same_subject` NAO e opcional aqui, e nao e sobre contagem de achados: sem
+    # ele, `_absent_satisfied` avalia `absent: dq.enforcement` contra a lista
+    # INTEIRA de facts, e UM unico check protegido em qualquer lugar do recorte
+    # faria a regra calar sobre todos os outros -- o falso negativo em massa que
+    # SF-GLUE-002, SF-ATH-002 e SF-ATH-003 ja pagaram. Funciona porque
+    # `_enforcements` copia o subject do CHECK para o fact de consequencia
+    # (`facts/data_quality.py`), entao `_subject_group_key` poe os dois no mesmo
+    # grupo `<arquivo>:<linha>`.
+    when:
+      same_subject: true
+      all:
+        - fact: dq.check
+        - absent: dq.enforcement
+    status: structural
+    severity_default: P1
+    # Escopo vazio: o gatilho e a ESTRUTURA do codigo -- ha leitura do resultado
+    # que leve a aborto. Nao varia com versao. Ver ESCOPO no cabecalho.
+    runtime_scope: {}
+    explanation: >
+      O check roda, gasta uma passada sobre o dado, e o resultado não leva a lugar nenhum:
+      não há `raise`, não há `assert`, não há saída com código de erro. O job termina verde
+      com dado inválido, que é pior do que não validar — a suíte cria a crença de que há
+      uma garantia, e é essa crença que faz ninguém procurar o problema quando ele aparece
+      a jusante. `dq.enforcement` só é emitido quando a consequência está presente e é
+      coerente; proteção pela metade — ler o resultado e apenas registrar em log — não
+      emite, de propósito, porque chamar isso de consequência calaria a regra exatamente
+      sobre o defeito que ela existe para achar. O que não pôde ser lido virou
+      `dq.unresolved`, contado, e não conta como ausência de proteção.
+      O RECORTE É O CORPUS ANALISADO, e o achado precisa ser lido assim: "sem consequência
+      neste corpus". Consequência atrás de um helper (`aborta_se(ruins)`) não é vista —
+      provar isso exige seguir o valor para dentro da função, o que esta análise não faz.
+      Se a consequência está noutro módulo fora do recorte, o achado é um convite a
+      verificar, não uma sentença. É a mesma disciplina que `unreferenced_function_count`
+      passou a adotar na Fase 5b: declarar o recorte junto com o número.
+      RESSALVA SOBRE `assert` (desvio D-5c-4). `assert` conta como consequência aqui,
+      porque nenhuma fonte oficial da AWS mostra Glue ou EMR rodando o driver com `-O`, e
+      no Glue o único mecanismo documentado de variável de ambiente do driver
+      (`--customer-driver-env-vars`) exige o prefixo `CUSTOMER_`, que impede definir
+      `PYTHONOPTIMIZE`. Sem fonte que sustente o contrário, vale o comportamento padrão do
+      interpretador: `__debug__` é verdadeiro e o `assert` executa. Mas a linguagem é
+      explícita — sob `-O` ou com `PYTHONOPTIMIZE` definido, o interpretador não gera
+      código nenhum para `assert` —, então validação cuja ÚNICA consequência é um `assert`
+      fica a uma variável de ambiente de não ter consequência nenhuma, e isso desaparece
+      sem aviso. `-O` é fato de ambiente, e esta análise lê apenas o `.py`: `raise` com
+      exceção explícita não depende de nenhuma dessas condições.
+    proposed_change:
+      - Ler o resultado do check e abortar o job quando ele reprovar, com exceção explícita — `raise`, e não `assert`, quando a proteção precisa sobreviver a um interpretador otimizado.
+      - Se o job deve seguir com dado parcial de propósito, registrar a decisão em métrica ou log estruturado e declarar o contrato — validação que só observa precisa dizer que só observa, no código e para quem consome.
+      - Se a consequência já existe atrás de um helper ou noutro módulo, confirmar que ela roda neste caminho antes de mudar qualquer coisa — este achado lê apenas o corpus passado na linha de comando.
+    risks:
+      # Aspas obrigatorias: `texto: texto` num item de lista vira MAPA em YAML, e
+      # o `risks` chegaria ao operador como um dicionario de uma chave so.
+      - "Passar a abortar o job muda o comportamento de produção: pipeline que hoje termina verde passará a falhar quando o dado violar a regra. É o efeito pretendido, e precisa ser combinado com quem opera."
+      - Um limiar mal calibrado transforma a proteção em interrupção recorrente, e a resposta usual a isso é desligar a validação inteira — pior do que o estado inicial.
+    tradeoffs:
+      - Abortar cedo protege o consumidor e interrompe a carga; seguir e sinalizar preserva a carga e transfere o risco a jusante. As duas são posições defensáveis, e a que não é defensável é não escolher.
+    validation:
+      - Rodar com um lote que viole a regra e confirmar que o job falha com código de saída diferente de zero.
+      - Rodar com um lote válido e confirmar que a contagem total e a contagem por chave no destino não mudaram.
+      - Se a consequência for `assert`, rodar o mesmo lote inválido com `PYTHONOPTIMIZE=1` e observar que o job passa — é a prova de que a proteção é condicional ao ambiente.
+    rollback: [Reverter o commit.]
+    sources:
+      - {origin: field-heuristic, note: "P1 e não P0: o defeito é a garantia inexistente, não um dado comprovadamente inválido — o motor não sabe se o check reprovaria. A ressalva sobre `assert` e `-O` está apurada, com URL e data, em knowledge/dq/validation-frameworks.md seção 3."}

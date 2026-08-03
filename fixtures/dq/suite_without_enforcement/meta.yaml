@@ -5,8 +5,9 @@ proves: >
   reprovado e publicado do mesmo jeito.
   A prova e uma AUSENCIA -- ha `dq.check` e NAO ha `dq.enforcement` --, e e por
   isso que os `expects_kinds` desta fixture sao a evidencia principal dela.
-  SF-DQ-002 dispara sobre `absent: dq.enforcement` com `same_subject`, e nasce
-  na Task 7.
+  SF-DQ-002 dispara sobre `absent: dq.enforcement` com `same_subject`: o
+  enforcement herda o subject do check, entao check protegido e check
+  desprotegido caem em grupos distintos e um nao mascara o outro.
   Contraparte obrigatoria de `pydeequ_suite`, que e a MESMA forma de suite com
   consequencia: sem as duas, uma regra que nunca reconhecesse enforcement
   passaria aqui por acidente.
@@ -18,4 +19,5 @@ runtime:
 expects_kinds:
   - dq.check
   - dq.module_analyzed
-expects_rules: []
+expects_rules:
+  - SF-DQ-002
