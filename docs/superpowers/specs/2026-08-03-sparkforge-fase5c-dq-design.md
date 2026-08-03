@@ -180,7 +180,7 @@ atributo de um fact só.
 | `SF-DQ-001` | `where: {attrs.position_vs_write: after_write}` |
 | `SF-DQ-002` | `same_subject: true`, `dq.check` presente + `absent: dq.enforcement` |
 | `SF-DQ-003` | `where: {attrs.target_persisted: false, attrs.action_after_check: true}` |
-| `SF-DQ-004` | `expr: "measures.checks_on_target >= 2"` + `where: {attrs.single_pass: false}` |
+| `SF-DQ-004` | `expr: "measures.checks_on_target >= 2"` + `where: {attrs.shares_scan: false}` — **era `single_pass`**, nome aposentado por D-5c-1; corrigido aqui porque a Task 7 escreve o YAML copiando desta tabela |
 
 `attrs.position_vs_write` tem três valores, nunca um booleano: `before_write`,
 `after_write` e `no_write_in_module`. O terceiro é o caso em que o módulo valida
