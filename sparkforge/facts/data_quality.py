@@ -40,6 +40,14 @@ A escolha entre omitir e emitir `false` nao e estilo; e a direcao do erro. Um
 atributo que erra para menos cala a regra e custa subnotificacao; um que erra
 para mais faz o motor ACUSAR codigo correto. `action_after_check` e o unico dos
 quatro do lado da acusacao, e por isso e o que mais precisa da guarda.
+
+`dq.enforcement` inverte essa direcao, e por isso as decisoes de borda dele
+apontam para o outro lado. `SF-DQ-002` dispara sobre a AUSENCIA dele
+(`absent: dq.enforcement` com `same_subject`), entao emitir um enforcement que
+nao existe CALA a regra sobre validacao desprotegida -- subnotificacao --, e
+deixar de emitir um que existe faz a regra ACUSAR codigo correto. Na duvida
+entre reconhecer e nao reconhecer uma forma de consequencia, este kind
+reconhece; o que ele nao faz e inventar consequencia onde nao ha nenhuma.
 """
 from __future__ import annotations
 
@@ -136,6 +144,28 @@ _SUITE_TERMINAL = "run"
 # nomeia a EVIDENCIA lida e nao um objeto que o extrator nao enxerga.
 _BATCH_PARAMETERS = "batch_parameters"
 _DATAFRAME_KEY = "dataframe"
+
+# Formas de aborto que contam como consequencia de um check. `raise` e `assert`
+# sao SINTAXE -- nao ha lista de nomes a manter, e e por isso que a deteccao
+# nao envelhece. Os `exit` sao chamada, e a lista e curta de proposito.
+#
+# `assert` CONTA, e isso e uma decisao contra a leitura ingenua da referencia da
+# linguagem -- desvio D-5c-4, knowledge/dq/validation-frameworks.md §3.4. Sim,
+# `-O`/`PYTHONOPTIMIZE` apagam todo `assert`; NENHUMA fonte da AWS mostra Glue ou
+# EMR rodando o driver assim, e no Glue o unico caminho documentado de variavel
+# de ambiente do driver (`--customer-driver-env-vars`) exige o prefixo
+# `CUSTOMER_`, que impede definir `PYTHONOPTIMIZE`. Sem fonte, vale o
+# comportamento padrao do interpretador: `__debug__` e True e o `assert` roda.
+# Tratar `assert` como nao-consequencia -- ou como `dq.unresolved`, que o plano
+# previa no outro ramo -- faria `SF-DQ-002` ACUSAR justamente quem protegeu o
+# pipeline (veto V-AS-1). A ressalva, que e de ambiente e nao de codigo, vive na
+# `explanation` da regra (veto V-AS-2). NAO "corrija" isto sem ler a §3.4.
+_EXIT_CALLS = frozenset({("sys", "exit"), ("os", "_exit")})
+
+# `from sys import exit` deixa a chamada nua. Reconhecer o nome nu arrisca casar
+# uma funcao homonima do usuario; nao reconhecer arrisca acusar quem abortou de
+# verdade. A segunda e a acusacao falsa, que e o pior modo de falha deste kind.
+_BARE_EXIT = "exit"
 
 
 class _ScopeIndex(NamedTuple):
@@ -709,6 +739,176 @@ def _great_expectations_check(
 _DETECTORS = (_handmade_check, _pydeequ_check, _great_expectations_check)
 
 
+class _Read(NamedTuple):
+    """Como um teste alcanca o resultado do check: pelo no, ou por nome."""
+
+    # O proprio no do check esta DENTRO do teste (`if df.filter(...).count()`).
+    # Identidade de no, nao nome: nao ha o que religar, e nada a verificar.
+    inline: bool
+    # Nomes ligados ao resultado do check que o teste le. Nome nu nao identifica
+    # objeto, entao cada um ainda paga a guarda de religacao.
+    names: frozenset[str]
+
+
+def _is_exit_call(node: ast.AST) -> bool:
+    if not isinstance(node, ast.Call):
+        return False
+    func = node.func
+    if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+        return (func.value.id, func.attr) in _EXIT_CALLS
+    return isinstance(func, ast.Name) and func.id == _BARE_EXIT
+
+
+def _abort_in(branches: list[ast.stmt]) -> tuple[str, int] | None:
+    """(forma, linha) do PRIMEIRO aborto dentro dos ramos, em ordem de fonte.
+
+    Um `if` que le o resultado pode abortar de mais de um jeito e em mais de um
+    ponto; o fact afirma que ha consequencia, e a linha que ele mede e a da
+    primeira. Ordenar por (linha, coluna) e o que torna a escolha independente
+    da ordem de travessia, que nao e ordem de fonte.
+
+    LIMITE conhecido: um `raise` dentro de um `def` aninhado no ramo conta, e
+    nao deveria -- ele nao roda ali. A forma e rara o bastante para nao pagar
+    uma travessia com escopo proprio, e o erro cai do lado da subnotificacao de
+    `SF-DQ-002`, nunca da acusacao.
+    """
+    found: list[tuple[int, int, str]] = []
+    for branch in branches:
+        for node in ast.walk(branch):
+            if isinstance(node, ast.Raise):
+                found.append((node.lineno, node.col_offset, "raise"))
+            elif isinstance(node, ast.Assert):
+                found.append((node.lineno, node.col_offset, "assert"))
+            elif _is_exit_call(node):
+                found.append((node.lineno, node.col_offset, "exit"))
+    if not found:
+        return None
+    line, _, form = min(found)
+    return form, line
+
+
+def _bound_names(nodes: list[ast.AST], check: ast.AST) -> frozenset[str]:
+    """Nomes que carregam o resultado do check no escopo.
+
+    CONTEM o no, e nao "e" o no: `ha_ruins = df.filter(...).count() > 0` liga o
+    nome a uma comparacao, e a forma e tao comum quanto a atribuicao direta. Os
+    tres frameworks caem aqui pelo mesmo caminho -- `ruins = ....count()`,
+    `r = VerificationSuite(...).run()`, `res = validation_definition.run(...)` --
+    porque o que se procura e o no do check, e nao a forma da cadeia que o
+    produziu. Um percurso por framework divergiria na proxima mudanca, como o
+    caminho unico de `_check` ja registrou.
+
+    `NamedExpr` entra porque `if (ruins := ....count()) > 0` liga e le na mesma
+    linha, e o walrus e a forma que o `if` inline usa quando o valor e reusado.
+    """
+    names: set[str] = set()
+    for node in nodes:
+        if isinstance(node, ast.Assign):
+            value, targets = node.value, list(node.targets)
+        elif isinstance(node, ast.AnnAssign | ast.NamedExpr) and node.value is not None:
+            value, targets = node.value, [node.target]
+        else:
+            continue
+        if not any(child is check for child in ast.walk(value)):
+            continue
+        names.update(t.id for t in targets if isinstance(t, ast.Name))
+    return frozenset(names)
+
+
+def _read_of(test: ast.expr, check: ast.AST, bound: frozenset[str]) -> _Read:
+    inline = False
+    names: set[str] = set()
+    for node in ast.walk(test):
+        if node is check:
+            inline = True
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id in bound:
+            names.add(node.id)
+    return _Read(inline, frozenset(names))
+
+
+def _reads_this_check(read: _Read, check_line: int, read_line: int, index: _ScopeIndex) -> bool:
+    """O teste le o resultado DESTE check, e nao um homonimo de outro momento.
+
+    Pelo no, nao ha o que perguntar. Por nome, valem as duas guardas que o resto
+    do modulo ja aplica: a leitura tem de vir DEPOIS do check -- ler `ruins`
+    antes da linha que o liga e ler outra coisa -- e o nome nao pode ter sido
+    religado no meio, senao o valor testado nao e o do check. Cada nome responde
+    por si: `a = b = check` com `a` religado ainda vale se o teste le `b`.
+    """
+    if read.inline:
+        return True
+    return any(
+        read_line > check_line and not _rebound_between(name, check_line, read_line, index)
+        for name in read.names
+    )
+
+
+def _enforcements(
+    check: ast.Call,
+    subject: dict[str, Any],
+    nodes: list[ast.AST],
+    index: _ScopeIndex,
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """`dq.enforcement` para um check: consequencia PRESENTE e COERENTE.
+
+    Consequencia e combinacao de duas propriedades -- o resultado e lido, e a
+    leitura leva a aborto --, e `engine._absent_satisfied` compara so `kind`: o
+    motor nao sabe compor a ausencia de uma combinacao. Entao a combinacao e
+    decidida aqui, e `SF-DQ-002` le `absent: dq.enforcement`. Mesmo padrao de
+    `SF-EMR-008` na Fase 5b.
+
+    Protecao pela metade NAO emite: `if ruins > 0: log(...)` le o resultado e
+    segue publicando o dado ruim, e chamar isso de consequencia calaria a regra
+    exatamente sobre o defeito que ela existe para achar.
+
+    O subject e o do CHECK, copiado -- arquivo e linha do check, sem `symbol`.
+    E o que faz `_subject_group_key` cair na mesma chave e o `same_subject` de
+    `SF-DQ-002` funcionar. Subject proprio poria a protecao num grupo onde o
+    check nao esta, e a regra dispararia sobre check protegido.
+
+    `measures.line` e a linha da propria consequencia, que e a unica coisa que o
+    fact tem para distinguir dois enforcements do mesmo check: dois consumidores
+    do mesmo resultado sao dois facts, e o par (forma, linha) e a identidade
+    deles. Sem isso, `Fact.id` -- sha de kind+subject+measures -- colidiria.
+
+    LIMITE conhecido: consequencia atras de helper (`aborta_se(ruins)`) nao e
+    vista, e `SF-DQ-002` acusa um codigo que protege. Provar isso exige seguir o
+    valor para dentro da funcao, o que esta fase nao faz; o achado declara o
+    recorte -- "sem consequencia NESTE corpus" --, como a 5b passou a fazer em
+    `unreferenced_function_count`.
+    """
+    bound = _bound_names(nodes, check)
+    check_line = check.lineno
+    seen: set[tuple[str, int]] = set()
+    for node in nodes:
+        if isinstance(node, ast.If):
+            branches = node.body + node.orelse
+        elif isinstance(node, ast.Assert):
+            # O `assert` E o aborto: nao ha ramo a inspecionar.
+            branches = [node]
+        else:
+            continue
+        read = _read_of(node.test, check, bound)
+        if not (read.inline or read.names):
+            continue
+        if not _reads_this_check(read, check_line, node.lineno, index):
+            continue
+        consequence = _abort_in(branches)
+        if consequence is not None:
+            seen.add(consequence)
+    return [
+        Fact(
+            kind="dq.enforcement",
+            subject=dict(subject),
+            measures={"line": line},
+            attrs={"form": form},
+            provenance=provenance,
+        )
+        for line, form in sorted((line, form) for form, line in seen)
+    ]
+
+
 def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") -> list[Fact]:
     provenance = {"artifact": path, "artifact_sha256": artifact_sha256, "extractor": EXTRACTOR_ID}
     facts: list[Fact] = []
@@ -723,6 +923,11 @@ def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") ->
                 fact = detector(node, path, index, provenance)
                 if fact is not None:
                     found.append(fact)
+                    if fact.kind == "dq.check":
+                        # Sem check nao ha subject a proteger: um enforcement
+                        # sobre alvo nao resolvido seria um fact solto, e o
+                        # `same_subject` de SF-DQ-002 nao teria par para ele.
+                        found.extend(_enforcements(node, fact.subject, nodes, index, provenance))
                     break
 
         # Segundo passe: quantos checks ha sobre o mesmo alvo so e conhecido
