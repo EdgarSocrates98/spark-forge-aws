@@ -740,13 +740,55 @@ A chave `shares_scan` fica **fora** dos `attrs` deste framework, de propósito: 
    a validação **está** reconhecida e o alvo é que não se lê — `{'dataframe': spark.table('t')}`.
    Erra para menos, que é a direção aceita nesta área.
 
+**Dois buracos medidos na revisão da Task 3, e os dois fechados.**
+
+**D-5c-13 — só o dict inline era detectado, e a documentação não usa dict inline.** A forma da §1.2
+de `knowledge/dq/validation-frameworks.md` monta o dict numa linha e o passa por nome na seguinte:
+
+```python
+batch_parameters = {"dataframe": dataframe}
+validation_definition.run(batch_parameters=batch_parameters)
+```
+
+Com só o dict inline reconhecido, isso produzia **fact nenhum** — o suporte a GE reconhecia a forma
+que a fonte oficial não usa, e o recall em código real ficava perto de zero. A correção segue o
+nome **um passo**, dentro do escopo: `_dict_bindings` indexa os dicts literais ligados a cada nome,
+e `_dict_bound_to` devolve o último ligado antes da linha do uso. Duas guardas, ambas reusando o
+que já existia em vez de reescrever:
+
+- **Religação invalida**, pelo mesmo `_rebound_between` dos quatro atributos: em `params = {...}` /
+  `params = f()` / `run(batch_parameters=params)`, o dict lido não é o que chega à chamada. Isso
+  também é o que faz um nome ligado a chamada de função (`params = monta()`) não produzir alvo.
+- **Mesmo escopo**, pelo mesmo motivo que o índice inteiro é por escopo.
+
+Sem ligação legível não há `dq.unresolved`: o argumento do D-5c-12 continua valendo, porque sem a
+chave literal nada prova que a chamada é do Great Expectations.
+
+**D-5c-14 — suíte com `onData` e sem `run` era ponto cego não contado.**
+`VerificationSuite(spark).onData(vendas).addCheck(c).useRepository(rep)` produzia nada e não entrava
+em `unresolved_count`, o que contraria a disciplina que a 5b fixou com
+`opaque_caller_function_count`: exclusão contada, nunca silenciosa. Passa a sair `dq.unresolved` com
+`reason: "suite_run_not_visible"`.
+
+É ponto cego e **não** achado, e a razão está escrita no código porque quem vier depois vai querer
+transformá-la em regra: a cadeia pode ser guardada numa variável e executada em outro lugar
+(`s = VerificationSuite(...).onData(df)` / `s.run()`), e o extrator não segue o objeto. A afirmação
+honesta é "há uma suíte aqui cuja execução eu não enxergo", nunca "esta suíte não roda".
+
+A implementação obrigou uma mudança de forma no `_pydeequ_check`: a detecção deixou de exigir que o
+terminal seja `run` e passa a exigir que `run` **esteja na cadeia** — senão `.run().printResults()`
+seria lido como suíte não executada —, e só o nó **mais externo** da cadeia responde por ela
+(`_ScopeIndex.chained`, o `id()` de todo nó que é receptor de outra chamada). Sem esse recorte, uma
+cadeia de quatro elos emitiria um fact por elo, já que `onData` está nos `methods` de todos.
+
 - [x] **Step 5: Rode a suíte inteira do extrator**
 
 Run: `python -m pytest tests/test_facts_data_quality.py -v`
 Expected: PASS
 
-Medido: **72 passed** no arquivo (50 antes desta task), e **2924 passed / 5 skipped** na suíte
-inteira. `ruff check .` limpo, e `git diff --stat main -- fixtures/pyspark/` vazio.
+Medido: **86 passed** no arquivo (50 antes desta task; 72 antes de D-5c-13 e D-5c-14), e **2938
+passed / 5 skipped** na suíte inteira. `ruff check .` limpo, e
+`git diff --stat main -- fixtures/pyspark/` vazio.
 
 - [x] **Step 6: Commit**
 
