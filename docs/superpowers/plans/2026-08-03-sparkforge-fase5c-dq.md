@@ -567,14 +567,26 @@ As correções, ambas no padrão que a fase já usa:
    que cobre `Assign`, `AnnAssign`, `AugAssign`, alvo de `for` e `with ... as` de uma vez.
 3. **`target_persisted` afirma estado, não ocorrência.** `cache()` / `unpersist()` / check saía
    `True`. O último evento antes do check decide, e a posição é `(linha, coluna)` para que dois
-   eventos na mesma linha ainda se ordenem.
+   eventos na mesma linha ainda se ordenem. O mesmo intervalo do item 2 vale aqui:
+   `vendas.cache()` / `vendas = carrega('outra')` / check é `false`, porque o DataFrame validado
+   não é o que foi persistido. Aqui a chave **não** é omitida, ao contrário de
+   `position_vs_write`: `SF-DQ-003` dispara sobre `target_persisted: false`, então o valor errado
+   *e* a ausência calariam a regra sobre um DataFrame que de fato não está persistido — falso
+   negativo silencioso, que é o pior modo de falha deste repositório, e omitir faria do rebind um
+   jeito de sumir com a regra.
 
-Quatro limites ficam **documentados no ponto do código e não corrigidos**, porque todos erram
-para menos: alias não é seguido (`df2 = vendas`); check irmão conta como `action_after_check` — é
-verdade, mas quem ler "o dado é reusado" se engana, porque o reuso é recomputo; write e check na
-mesma linha via `;` caem em `before_write`; e `lambda`/corpo de `class` não são escopos
-separados. A separação por escopo introduz um quinto: função que lê um DataFrame global perde a
-correlação com o write do módulo e sai `no_write_in_module` — subnotificação, nunca acusação.
+`checks_on_target` também passou a ser por escopo, e a decisão está registrada como **D-5c-10** na
+§10 do spec: dois homônimos em duas funções não são dois checks sobre o mesmo alvo, e contá-los
+juntos faria `SF-DQ-004` afirmar varredura repetida sobre dado que não é o mesmo. Vence a letra da
+§4.4, que dizia "no módulo".
+
+Cinco limites ficam **documentados no ponto do código e não corrigidos**: alias não é seguido
+(`df2 = vendas`); check irmão conta como `action_after_check` — é verdade, mas quem ler "o dado é
+reusado" se engana, porque o reuso é recomputo; write e check na mesma linha via `;` caem em
+`before_write`; `lambda`/corpo de `class` não são escopos separados; e a separação por escopo
+introduz o quinto — função que lê um DataFrame global perde a correlação com o write do módulo e
+sai `no_write_in_module`. Todos erram para menos, exceto `action_after_check`, que é o único dos
+quatro atributos que não leva o rebind em conta e portanto erra para mais.
 
 - [x] **Step 4: Commit**
 

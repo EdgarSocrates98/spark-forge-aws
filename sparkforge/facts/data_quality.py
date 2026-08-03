@@ -293,8 +293,9 @@ def _position_vs_write(target: str, line: int, index: _ScopeIndex) -> str | None
 
     LIMITE conhecido: write e check na MESMA linha (`;`) caem em `before_write`,
     porque a comparacao e estrita e `lineno` nao tem sub-linha. Raro e de baixo
-    impacto. LIMITE conhecido: o rebind so omite `position_vs_write`;
-    `target_persisted` e `action_after_check` ainda nao o levam em conta.
+    impacto. LIMITE conhecido: `action_after_check` ainda nao leva o rebind em
+    conta -- e o unico dos quatro que nao leva, e erra para MAIS (afirma reuso de
+    um nome que ja aponta para outro objeto), nao para menos.
     """
     lines = index.writes.get(target)
     if not lines:
@@ -312,9 +313,24 @@ def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool:
     `vendas.cache()` seguido de `vendas.unpersist()` deixa o alvo NAO persistido
     quando o check chega -- o campo afirma estado, nao que um `cache()` existiu
     em algum lugar do arquivo.
+
+    Religar o nome entre o ultimo evento e o check tambem derruba a evidencia: em
+    `vendas.cache()` / `vendas = carrega(...)` / check, o DataFrame validado nao e
+    o que foi persistido. Aqui a chave NAO e omitida, ao contrario de
+    `position_vs_write`: `SF-DQ-003` dispara sobre `target_persisted: false`, entao
+    tanto o valor errado quanto a ausencia CALARIAM a regra sobre um DataFrame que
+    de fato nao esta persistido -- e omitir faria do rebind um jeito de sumir com
+    ela. `false` e a resposta honesta a "este DataFrame esta persistido quando o
+    check roda", e um falso negativo silencioso e o pior modo de falha deste
+    repositorio.
     """
-    before = [state for position, state in index.persists.get(target, ()) if position[0] < line]
-    return bool(before) and before[-1]
+    events = [event for event in index.persists.get(target, ()) if event[0][0] < line]
+    if not events:
+        return False
+    (last_line, _), persisted = events[-1]
+    if not persisted:
+        return False
+    return not any(last_line < rebind < line for rebind in index.rebinds.get(target, ()))
 
 
 def _handmade_check(
