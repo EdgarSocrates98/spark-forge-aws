@@ -1085,7 +1085,7 @@ git commit -m "feat(adapters): analyze data-quality na CLI, no MCP e nos manifes
 **Files:**
 - Create: `fixtures/dq/*` (oito), `tests/test_fixtures_golden_dq.py`
 
-- [ ] **Step 1: Os oito diretórios**
+- [x] **Step 1: Os oito diretórios**
 
 Cada um com `input/*.py`, `meta.yaml` e `expected/` gerado. Os `meta.yaml` seguem a forma de `fixtures/pyspark/*/meta.yaml`:
 
@@ -1119,23 +1119,40 @@ Os oito, e o que cada um prova:
 
 `expects_kinds` de `validated_correctly` e de `unresolved_helper` juntos precisam cobrir os quatro kinds de `EMITTED_KINDS`, senão a Task 5 Step 1 continua vermelha.
 
-- [ ] **Step 2: `tests/test_fixtures_golden_dq.py`**
+- [x] **Step 2: `tests/test_fixtures_golden_dq.py`**
 
 Copie a estrutura de `tests/test_fixtures_golden_callgraph.py`: `REQUIRED_FIXTURES` com os oito nomes, `run_fixture` chamando `extract_data_quality_tree` + `judge`, e a classe `TestGolden` com os quatro testes (`facts_match_golden`, `findings_match_golden`, `declared_kinds_all_present`, `declared_rules_all_fire`).
 
-- [ ] **Step 3: Gere os goldens e LEIA o diff**
+- [x] **Step 3: Gere os goldens e LEIA o diff**
 
 Run: `python scripts/regen_fixtures.py`
 Depois: `git diff --stat fixtures/dq/`
 
 Nesta etapa `findings.json` sai vazio em todas — o catálogo `SF-DQ` só nasce na Task 7. **Isso é esperado**, e os goldens de findings são regenerados de novo lá.
 
-- [ ] **Step 4: Rode**
+- [x] **Step 4: Rode**
 
 Run: `python -m pytest tests/test_fixtures_golden_dq.py tests/test_fixtures_kind_coverage.py -v`
 Expected: PASS, incluindo `test_every_kind_of_every_extractor_appears_in_some_golden[data_quality]`, que a Task 5 deixou vermelho
 
-- [ ] **Step 5: Commit**
+**Medido nesta task.** Os oito corpora produzem **24 facts**: 8 `dq.check`, 7 `dq.enforcement`, 1 `dq.unresolved` e 8 `dq.module_analyzed` — os quatro kinds de `EMITTED_KINDS`, e os dois vermelhos de fixture da Task 5 fecharam. Suíte inteira: **3050 passed / 1 failed / 5 skipped**, e o único vermelho é `test_no_tool_is_orphan`, que é da Task 9 (D-5c-23). Nenhum golden de outro corpus mudou (`git status` depois de `regen_fixtures.py` sem argumento: só `fixtures/dq/` novo), e `git diff --stat main -- fixtures/pyspark/` continua vazio.
+
+**Base para o gate da Task 8:** a taxa de alvo não resolvido deste corpus é **1 em 9** (`unresolved_count / (check_count + unresolved_count)`), ≈ 11%. O único não resolvido é o `spark.table(tabela)` de `unresolved_helper`, e ele é intencional.
+
+**Quatro desvios medidos nesta task.**
+
+**D-5c-27 — `unresolved_helper` prova alvo ilegível, e não "validação atrás de helper".** O plano (Step 1, tabela) escreveu "validação atrás de helper — `dq.unresolved`". Medido, a forma que o plano descreve não produz `dq.unresolved` nenhum: um check dentro de uma função auxiliar é um `dq.check` normal, com o escopo daquela função; o que a ausência do helper apaga é o `dq.enforcement`, e apagar um fact não emite outro. Quem produz `dq.unresolved` é o **alvo que não se lê** — `spark.table(tabela).filter(...).count()`, cuja raiz de cadeia é a sessão. A fixture ficou com a forma que de fato exercita o kind, e o helper continua no arquivo porque é o que torna o alvo ilegível (o nome da tabela chega por parâmetro).
+
+**D-5c-28 — a âncora de uma cadeia multilinha é a PRIMEIRA linha da expressão, não a do terminal.** `_check` usa `node.lineno`, e para `(VerificationSuite(spark)
+.onData(df)
+...
+.run())` o `lineno` do `ast.Call` mais externo é a linha do `VerificationSuite`, e não a do `.run()`. Em `pydeequ_suite` a suite ocupa as linhas 33–41 e o `dq.check` sai ancorado em `L33:8`. Consequência real, e não cosmética: um `write` colocado **entre** o início da cadeia e o `run()` seria lido como posterior ao check, e `position_vs_write` sairia `before_write` sobre um código que valida depois de publicar. Nenhuma fixture depende disso hoje (as duas suites escrevem depois da cadeia inteira); quem escrever o corpus de `SF-DQ-001` com suite multilinha precisa saber.
+
+**D-5c-29 — o `meta.yaml` de exemplo do plano não é aplicável nesta task.** Ele traz `expects_rules: [SF-DQ-001]`, e o catálogo `SF-DQ` só nasce na Task 7: `test_declared_rules_all_fire` reprovaria os oito. Todos os oito nasceram com `expects_rules: []`, e sete deles serão preenchidos nas Tasks 7 e 8 — `validated_correctly` fica vazio para sempre, e é essa permanência que faz dele a metade negativa das quatro regras.
+
+**D-5c-30 — todo o corpus valida DENTRO de `main()`, e isso é exigência do extrator, não estilo.** `_ScopeIndex` é por escopo: leitura, transformação, check e write precisam do mesmo escopo para que `position_vs_write`, `target_persisted` e `action_after_check` tenham o que comparar. Escrever a validação numa função e o write no corpo do módulo faria `position_vs_write` sair `no_write_in_module` — subnotificação silenciosa, e a fixture deixaria de provar o que o nome dela diz sem que nenhum teste reclamasse. Registrado porque o corpus é o material da Task 8: um job que valide num escopo e escreva noutro é forma REAL, e o dia em que ela entrar aqui vai parecer um bug do extrator sem esta nota. `TestAdversarial` em `tests/test_fixtures_golden_dq.py` trava o atributo decisivo de cada fixture justamente para que essa regressão apareça como falha, e não como golden verde.
+
+- [x] **Step 5: Commit**
 
 ```bash
 git add fixtures/dq tests/test_fixtures_golden_dq.py

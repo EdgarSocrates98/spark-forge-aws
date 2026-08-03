@@ -1,0 +1,23 @@
+name: validation_after_write
+proves: >
+  A validacao roda DEPOIS do write: quando ela acusa, o dado ruim ja esta
+  publicado em `s3://lake/curated/vendas/` e ja e visivel para o Athena.
+  O `dq.check` sai com attrs.position_vs_write == after_write -- e o positivo
+  de SF-DQ-001, que nasce na Task 7.
+  Prova junto que a ordem e lida no MESMO escopo: leitura, transformacao,
+  write e check vivem todos dentro de `main`, entao `vendas` e o mesmo objeto
+  nos dois lados da comparacao. Se a validacao migrasse para outra funcao, o
+  atributo viraria `no_write_in_module` e a fixture deixaria de provar o que o
+  nome dela diz.
+  Ha `dq.enforcement` (form: raise): o job ATE aborta -- so aborta tarde
+  demais. E o que separa este defeito do de `suite_without_enforcement`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.enforcement
+  - dq.module_analyzed
+expects_rules: []
