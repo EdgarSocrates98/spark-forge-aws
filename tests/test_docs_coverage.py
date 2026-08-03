@@ -147,6 +147,25 @@ class TestManifest:
         assert set(manifest["tools"]) == set(TOOLS.keys())
         assert len(manifest["tools"]) == len(TOOLS)
 
+    def test_skills_list_equals_the_skills_on_disk(self):
+        """O irmao de `test_tools_list_equals_the_real_tools_keys`, que faltava.
+
+        A lista de tools e derivada de `TOOLS` desde a Fase 0 e nunca divergiu.
+        A de skills nao tinha teste nenhum, e divergiu DUAS vezes sem que nada
+        acendesse: `review-emr-cluster` ficou de fora na Fase 5b e
+        `review-data-validation` na 5c -- a segunda omissao aconteceu com a
+        primeira ainda aberta, que e a assinatura de invariante ausente e nao de
+        descuido.
+
+        Skill que existe e nao e declarada no manifesto e invisivel para quem le
+        o manifesto em vez do disco, que e exatamente o caso de uma plataforma
+        que instala o pacote: o mesmo modo de falha que a Fase 3a corrigiu no
+        wheel, um nivel acima.
+        """
+        manifest = json.loads(_read("manifest.json"))
+        on_disk = {p.name for p in (ROOT / "skills").iterdir() if p.is_dir()}
+        assert set(manifest["skills"]) == on_disk
+
     def test_rule_count_equals_the_real_catalog(self):
         """Este numero ja apodreceu tres vezes.
 
