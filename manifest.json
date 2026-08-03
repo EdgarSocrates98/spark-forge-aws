@@ -31,6 +31,7 @@
   ],
   "focus": [
     "AWS Glue",
+    "Amazon EMR on EC2",
     "PySpark",
     "Parquet",
     "Apache Iceberg",
@@ -41,7 +42,8 @@
     "Incremental Processing",
     "OOM",
     "Terraform",
-    "Latest Per Key"
+    "Latest Per Key",
+    "Data Validation"
   ],
   "knowledge_base": {
     "index": "knowledge/INDEX.md",

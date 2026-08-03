@@ -25,7 +25,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **3104** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **3141** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 62**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **15** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **97** | união de `EMITTED_KINDS` |
