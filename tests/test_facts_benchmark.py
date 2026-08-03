@@ -330,6 +330,216 @@ class TestOQueOModuloRecusaAAfirmar:
         assert len({f.id for f in unresolved}) == 5
 
 
+class TestCasamentoDeStage:
+    def test_stage_com_symbol_identico_casa_e_o_resto_e_contado(self):
+        before = [_analyzed("a.jsonl"), _stage("scan", 0, mean_ms=200), _stage("join_antigo", 1)]
+        after = [_analyzed("b.jsonl"), _stage("scan", 7, mean_ms=100), _stage("join_novo", 8)]
+
+        facts = build_benchmark(before, after)
+
+        matched = by_kind(facts, "bench.stage_delta")
+        assert [f.subject["symbol"] for f in matched] == ["scan"]
+        assert matched[0].measures["total_task_ms_delta_pct"] == -50.0
+
+        unmatched = sorted(f.attrs["symbol"] for f in by_kind(facts, "bench.unmatched"))
+        assert unmatched == ["join_antigo", "join_novo"]
+
+        sentinela = by_kind(facts, "bench.analyzed")[0]
+        # Contagem de STAGE, dos dois lados: `scan` casou com um stage de cada
+        # lado, entao dois stages estao cobertos por um delta. O plano dizia 1
+        # aqui -- ver D-4a-8.
+        assert sentinela.measures["matched_stage_count"] == 2
+        assert sentinela.measures["unmatched_stage_count"] == 2
+
+    def test_stage_id_diferente_nao_impede_o_casamento(self):
+        """`stage_id` NAO e estavel entre execucoes -- o mesmo stage sai com id
+        diferente em cada run. Casar por id produziria pares errados."""
+        before = [_analyzed("a.jsonl"), _stage("scan", 0)]
+        after = [_analyzed("b.jsonl"), _stage("scan", 99)]
+        assert len(by_kind(build_benchmark(before, after), "bench.stage_delta")) == 1
+
+    def test_o_subject_do_delta_nao_carrega_stage_id(self):
+        """`stage_id` no subject faria o `Fact.id` do delta depender de um numero
+        instavel: o mesmo par de execucoes daria ids diferentes so porque o
+        scheduler numerou os stages de outro jeito."""
+        def _delta(antes: int, depois: int) -> Fact:
+            facts = build_benchmark(
+                [_analyzed("a.jsonl"), _stage("scan", antes)],
+                [_analyzed("b.jsonl"), _stage("scan", depois)],
+            )
+            return by_kind(facts, "bench.stage_delta")[0]
+
+        um, outro = _delta(0, 1), _delta(4, 9)
+
+        assert "stage_id" not in um.subject
+        assert um.subject == {"type": "stage", "symbol": "scan"}
+        assert um.id == outro.id
+
+    def test_symbol_vazio_nunca_casa(self):
+        """Casar dois vazios juntaria stages que so tem em comum o fato de nao
+        terem nome."""
+        before = [_analyzed("a.jsonl"), _stage("", 0)]
+        after = [_analyzed("b.jsonl"), _stage("", 0)]
+
+        facts = build_benchmark(before, after)
+
+        assert by_kind(facts, "bench.stage_delta") == []
+        unmatched = by_kind(facts, "bench.unmatched")
+        assert [f.attrs["reason"] for f in unmatched] == ["empty_symbol", "empty_symbol"]
+        assert sorted(f.attrs["side"] for f in unmatched) == ["after", "before"]
+        sentinela = by_kind(facts, "bench.analyzed")[0]
+        assert sentinela.measures["matched_stage_count"] == 0
+        assert sentinela.measures["unmatched_stage_count"] == 2
+
+    def test_stage_sem_nome_dos_dois_lados_nao_colide_no_id(self):
+        """`Fact.id` e sha1 de (kind, subject, measures) e ignora `attrs`: sem o
+        lado no subject, o mesmo stage sem nome nos dois runs sairia com um id
+        so, e um dos dois sumiria da saida."""
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), _stage("", 0), _stage("", 1)],
+            [_analyzed("b.jsonl"), _stage("", 0)],
+        )
+        unmatched = by_kind(facts, "bench.unmatched")
+        assert len(unmatched) == 3
+        assert len({f.id for f in unmatched}) == 3
+
+    def test_dois_stages_com_o_mesmo_symbol_no_mesmo_lado_somam_juntos(self):
+        """O mesmo `symbol` pode nascer varias vezes num run (linha dentro de
+        laco, funcao chamada duas vezes). O recorte e o SIMBOLO: as medidas somam
+        os stages dele, e as duas contagens dizem quantos stages entraram de cada
+        lado -- sem elas, um stage que sumiu seria lido como stage que acelerou."""
+        before = [
+            _analyzed("a.jsonl"),
+            _stage("scan", 0, mean_ms=100),
+            _stage("scan", 1, mean_ms=100),
+        ]
+        after = [_analyzed("b.jsonl"), _stage("scan", 5, mean_ms=100)]
+
+        facts = build_benchmark(before, after)
+
+        delta = by_kind(facts, "bench.stage_delta")[0]
+        assert delta.measures["total_task_ms_before"] == 2000
+        assert delta.measures["total_task_ms_after"] == 1000
+        assert delta.measures["before_stage_count"] == 2
+        assert delta.measures["after_stage_count"] == 1
+        assert delta.attrs["before_stage_ids"] == ["0", "1"]
+        assert delta.attrs["after_stage_ids"] == ["5"]
+        assert by_kind(facts, "bench.analyzed")[0].measures["matched_stage_count"] == 3
+
+    def test_nenhum_stage_fica_fora_da_contagem(self):
+        """Casados mais nao casados fecham a conta dos dois lados: e a disciplina
+        de `opaque_caller_function_count` da Fase 5b, aritmetica."""
+        before = [
+            _analyzed("a.jsonl"),
+            _stage("scan", 0),
+            _stage("scan", 1),
+            _stage("so_no_antes", 2),
+            _stage("", 3),
+        ]
+        after = [_analyzed("b.jsonl"), _stage("scan", 9), _stage("so_no_depois", 8)]
+
+        sentinela = by_kind(build_benchmark(before, after), "bench.analyzed")[0]
+
+        assert sentinela.measures["before_stage_count"] == 4
+        assert sentinela.measures["after_stage_count"] == 2
+        assert sentinela.measures["matched_stage_count"] == 3
+        assert sentinela.measures["unmatched_stage_count"] == 3
+        assert (
+            sentinela.measures["matched_stage_count"]
+            + sentinela.measures["unmatched_stage_count"]
+            == sentinela.measures["before_stage_count"] + sentinela.measures["after_stage_count"]
+        )
+
+    def test_o_unmatched_nomeia_o_lado_e_os_stages(self):
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), _stage("sumiu", 10), _stage("sumiu", 2)],
+            [_analyzed("b.jsonl"), _stage("nasceu", 1)],
+        )
+
+        por_symbol = {f.attrs["symbol"]: f for f in by_kind(facts, "bench.unmatched")}
+        assert por_symbol["sumiu"].attrs["side"] == "before"
+        assert por_symbol["sumiu"].attrs["reason"] == "symbol_absent_on_other_side"
+        # Ordem numerica, nao lexica: `["10", "2"]` seria deterministico e
+        # ilegivel na evidencia.
+        assert por_symbol["sumiu"].attrs["stage_ids"] == ["2", "10"]
+        assert por_symbol["sumiu"].measures["stage_count"] == 2
+        assert por_symbol["nasceu"].attrs["side"] == "after"
+
+
+class TestOStageHerdaAsRegrasDePresenca:
+    def test_chave_ausente_no_recorte_do_stage_nao_vira_zero(self):
+        sem_chave = Fact(
+            kind="spark.stage.task_duration",
+            subject={"type": "stage", "symbol": "scan", "stage_id": 0},
+            measures={"mean_ms": 200},
+            provenance=_prov("a.jsonl"),
+        )
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), sem_chave],
+            [_analyzed("b.jsonl"), _stage("scan", 0, mean_ms=100)],
+        )
+
+        delta = by_kind(facts, "bench.stage_delta")[0]
+        assert "total_task_ms_before" not in delta.measures
+        assert delta.measures["total_task_ms_after"] == 1000
+        assert "total_task_ms_delta_pct" not in delta.measures
+
+    def test_lado_parcial_no_recorte_do_stage_tambem_e_ausencia(self):
+        parcial = Fact(
+            kind="spark.stage.task_input",
+            subject={"type": "stage", "symbol": "scan", "stage_id": 1},
+            measures={"max_bytes": 10},
+            provenance=_prov("a.jsonl"),
+        )
+        before = [_analyzed("a.jsonl"), _stage("scan", 0), _task_input("scan", 0, 1000), parcial]
+        after = [
+            _analyzed("b.jsonl"),
+            _stage("scan", 0),
+            _task_input("scan", 0, 1500, artifact="b.jsonl"),
+        ]
+
+        delta = by_kind(build_benchmark(before, after), "bench.stage_delta")[0]
+
+        assert "total_input_bytes_before" not in delta.measures
+        assert delta.measures["total_input_bytes_after"] == 1500
+        assert "total_input_bytes_delta_pct" not in delta.measures
+
+    def test_delta_pct_do_stage_some_quando_o_lado_antes_e_zero(self):
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), _stage("scan", 0, mean_ms=0)],
+            [_analyzed("b.jsonl"), _stage("scan", 0, mean_ms=100)],
+        )
+        delta = by_kind(facts, "bench.stage_delta")[0]
+        assert delta.measures["total_task_ms_before"] == 0
+        assert "total_task_ms_delta_pct" not in delta.measures
+
+    def test_o_stage_nao_carrega_a_medida_que_e_do_job(self):
+        """`total_spill_bytes` vem de `spark.job.spill_summary`, cujo subject e o
+        JOB: no recorte de stage ela nao esta ausente, ela nao existe."""
+        before = [_analyzed("a.jsonl"), _stage("scan", 0), _spill_summary("app-1", 600, 400)]
+        after = [
+            _analyzed("b.jsonl"),
+            _stage("scan", 0),
+            _spill_summary("app-2", 300, 200, artifact="b.jsonl"),
+        ]
+
+        delta = by_kind(build_benchmark(before, after), "bench.stage_delta")[0]
+
+        assert not [k for k in delta.measures if k.startswith("total_spill_bytes")]
+
+    def test_o_recorte_de_stage_nao_multiplica_o_unresolved(self):
+        """Um `bench.unresolved` por medida ausente, nao um por medida por stage:
+        o furo e da comparacao, e repeti-lo por stage seria ruido proporcional ao
+        numero de stages, escondendo os outros achados."""
+        before = [_analyzed("a.jsonl"), _stage("a", 0), _stage("b", 1), _stage("c", 2)]
+        after = [_analyzed("b.jsonl"), _stage("a", 0), _stage("b", 1), _stage("c", 2)]
+
+        facts = build_benchmark(before, after)
+
+        gc = [f for f in by_kind(facts, "bench.unresolved") if f.attrs["measure"] == "total_gc_ms"]
+        assert len(gc) == 1
+
+
 class TestSentinela:
     def test_a_sentinela_conta_os_stages_dos_dois_lados(self):
         before = [_analyzed("a.jsonl"), _stage("scan", 0), _stage("join", 1), _gc("scan", 0, 1)]
@@ -339,9 +549,8 @@ class TestSentinela:
 
         assert sentinela.measures["before_stage_count"] == 2
         assert sentinela.measures["after_stage_count"] == 1
-        # Casamento de stage e a Task 2; ate la os dois contadores sao zero.
-        assert sentinela.measures["matched_stage_count"] == 0
-        assert sentinela.measures["unmatched_stage_count"] == 0
+        assert sentinela.measures["matched_stage_count"] == 2
+        assert sentinela.measures["unmatched_stage_count"] == 1
 
     def test_a_sentinela_nomeia_os_artefatos_de_cada_lado(self):
         before = [_analyzed("a.jsonl"), _analyzed("a2.jsonl"), _stage("scan", 0)]
@@ -362,6 +571,11 @@ class TestFormaDaSaida:
             _gc("scan", 0, 5),
             _task_count("scan", 0, 10),
             _spill_summary("app-1", 0, 0),
+            # Um stage que so existe no antes e um sem nome: os cinco kinds do
+            # namespace precisam passar pelo schema, nao so os tres do caminho
+            # feliz.
+            _stage("sumiu", 4),
+            _stage("", 5),
         ]
         after = [
             _analyzed("b.jsonl"),
