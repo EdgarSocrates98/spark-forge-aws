@@ -381,7 +381,7 @@ O núcleo da fase. Cada atributo aqui existe porque a §4.4 do spec mediu que o 
 **Files:**
 - Modify: `sparkforge/facts/data_quality.py`, `tests/test_facts_data_quality.py`
 
-- [ ] **Step 1: `attrs.position_vs_write` — três valores, nunca booleano**
+- [x] **Step 1: `attrs.position_vs_write` — três valores, nunca booleano**
 
 Teste primeiro:
 
@@ -444,7 +444,37 @@ Chame `_write_lines_by_target(tree)` uma vez no topo de `extract_data_quality` e
 
 Run: PASS.
 
-- [ ] **Step 2: `attrs.target_persisted` e `attrs.action_after_check`**
+**O esqueleto acima não sobreviveu à medição** (desvio D-5c-8). Rodado sobre três formas
+que o repositório contém, ele produz:
+
+| Fonte | `_write_lines_by_target` do plano |
+|---|---|
+| `carrega('vendas').write.parquet(p)` | `AttributeError: 'Name' object has no attribute 'value'` |
+| `spark.read.parquet(a).write.parquet(b)` | `{'spark': 1}` |
+| write em laço (linha 2) e write raso (linha 4) | `{'vendas': 4}` |
+
+São três defeitos, e cada um tem teste:
+
+1. **A descida da cadeia quebra.** `current.func.value if isinstance(current, ast.Call)` assume
+   que `func` é sempre um `ast.Attribute`; quando é um `ast.Name` — `f(x).write...` — não há
+   `.value`, e a extração inteira morre por causa de uma linha. O caminhamento correto já
+   existia: `_chain_root` trata as duas formas e devolve `None` para a raiz que não é nome.
+2. **A raiz da cadeia de leitura não é o alvo.** A mesma armadilha da Task 1 (D-5c-6), agora do
+   lado do write: `spark.read.parquet(a).write...` registraria a *sessão* como alvo escrito, e
+   um check enraizado em `spark` seria datado contra a publicação de um dado que nunca o tocou.
+   `_chain_target` reusa `_SOURCE_TERMINALS` e devolve `None` — a cadeia de leitura não entra
+   no registro.
+3. **`setdefault` não guarda a primeira linha do arquivo.** `ast.walk` percorre por nível, não
+   por linha: um write dentro de um laço é visitado *depois* de um write no corpo do módulo, e
+   "a primeira que eu vi" fica sendo a linha 4 quando a primeira do arquivo é a 2 — o check da
+   linha 3 sairia `before_write` tendo validado depois de publicar. O índice guarda o
+   **conjunto** de linhas por alvo e quem consome escolhe o extremo: `min` para o write.
+
+O helper único `_lines_by_target(tree, attrs, methods)` responde às três perguntas dos Steps 1
+e 2 (write, persist, action), e `_ModuleIndex` as carrega juntas — `_write_lines_by_target`
+como função separada não sobreviveu.
+
+- [x] **Step 2: `attrs.target_persisted` e `attrs.action_after_check`**
 
 Teste primeiro:
 
@@ -473,7 +503,7 @@ Implemente com a mesma forma do Step 1: uma varredura que colhe `cache`/`persist
 
 Run: PASS.
 
-- [ ] **Step 3: `measures.checks_on_target` e `attrs.shares_scan`**
+- [x] **Step 3: `measures.checks_on_target` e `attrs.shares_scan`**
 
 > **Corrigido pela Task 0** (desvio D-5c-1 do spec). O atributo chamava-se
 > `single_pass` e afirmava "N checks, uma passada" — falso: Deequ faz *scan
@@ -508,7 +538,7 @@ Implemente contando os checks por alvo **depois** de construí-los, num segundo 
 
 Run: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add sparkforge/facts/data_quality.py tests/test_facts_data_quality.py
