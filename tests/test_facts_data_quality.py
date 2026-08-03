@@ -234,6 +234,151 @@ def test_check_unico_nao_compartilha_varredura():
     assert check.attrs["shares_scan"] is False
 
 
+def test_nome_igual_em_funcoes_diferentes_nao_se_datam():
+    # `vendas` de `a` e `vendas` de `b` sao dois parametros distintos. Datar o
+    # check de `b` contra o write de `a` e o alvo adivinhado que a fase recusa,
+    # so que por colisao de nome em vez de por raiz de cadeia.
+    facts = _facts(
+        "def a(vendas):\n"
+        "    vendas.write.parquet(1)\n"
+        "def b(vendas):\n"
+        "    return vendas.filter(1).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["position_vs_write"] == "no_write_in_module"
+
+
+def test_dentro_da_mesma_funcao_a_correlacao_continua():
+    facts = _facts(
+        "def publica(vendas):\n"
+        "    vendas.write.parquet(1)\n"
+        "    return vendas.filter(1).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["position_vs_write"] == "after_write"
+
+
+def test_action_de_homonimo_em_outra_funcao_nao_conta():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    return vendas.filter(1).count()\n"
+        "def publica(vendas):\n"
+        "    vendas.write.parquet(1)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["action_after_check"] is False
+    assert check.attrs["position_vs_write"] == "no_write_in_module"
+
+
+def test_cache_de_homonimo_em_outra_funcao_nao_persiste_o_alvo():
+    facts = _facts(
+        "def prepara(vendas):\n"
+        "    vendas.cache()\n"
+        "def valida(vendas):\n"
+        "    return vendas.filter(1).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
+
+
+def test_checks_homonimos_em_funcoes_diferentes_nao_se_contam():
+    facts = _facts(
+        "def a(vendas):\n"
+        "    return vendas.filter(1).count()\n"
+        "def b(vendas):\n"
+        "    return vendas.filter(2).count()\n"
+    )
+    checks = [f for f in facts if f.kind == "dq.check"]
+    assert len(checks) == 2
+    assert {c.measures["checks_on_target"] for c in checks} == {1}
+
+
+def test_rebind_entre_write_e_check_omite_a_posicao():
+    # O alvo do check e um DataFrame recem-carregado que nunca foi escrito.
+    # Chave ausente e a forma de dizer "nao sei": `engine._where_matches`
+    # reprova caminho ausente e a regra simplesmente nao avalia este check.
+    facts = _facts(
+        "vendas.write.parquet('s3://b/p')\n"
+        "vendas = carrega('outra')\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "position_vs_write" not in check.attrs
+
+
+def test_rebind_entre_check_e_write_omite_a_posicao():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "vendas = carrega('outra')\n"
+        "vendas.write.parquet('s3://b/p')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "position_vs_write" not in check.attrs
+
+
+@pytest.mark.parametrize(
+    "rebind",
+    [
+        "vendas = carrega('outra')",
+        "vendas: DataFrame = carrega('outra')",
+        "vendas += extras",
+        "for vendas in lotes: pass",
+        "with abre('x') as vendas: pass",
+    ],
+)
+def test_qualquer_forma_de_religar_o_nome_omite_a_posicao(rebind):
+    facts = _facts(
+        "vendas.write.parquet('s3://b/p')\n"
+        f"{rebind}\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "position_vs_write" not in check.attrs
+
+
+def test_ligacao_fora_do_intervalo_nao_omite_a_posicao():
+    # O `vendas =` da linha 1 esta antes do check E antes do write: nao ha
+    # troca de objeto entre os dois, e a ordem continua apurada.
+    facts = _facts(
+        "vendas = carrega('vendas')\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "vendas.write.parquet('s3://b/p')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["position_vs_write"] == "before_write"
+
+
+def test_unpersist_antes_do_check_desfaz_a_persistencia():
+    facts = _facts(
+        "vendas.cache()\n"
+        "vendas.unpersist()\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
+
+
+def test_persist_depois_do_unpersist_volta_a_persistir():
+    facts = _facts(
+        "vendas.cache()\n"
+        "vendas.unpersist()\n"
+        "vendas.persist()\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+
+
+def test_unpersist_depois_do_check_nao_desfaz_a_persistencia():
+    facts = _facts(
+        "vendas.cache()\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "vendas.unpersist()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+
+
 def test_alvo_nao_resolvido_nao_ganha_atributo_de_correlacao():
     # Sem alvo nao ha posicao relativa a apurar: preencher qualquer um destes
     # seria adivinhar.
