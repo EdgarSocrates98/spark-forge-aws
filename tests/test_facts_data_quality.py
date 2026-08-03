@@ -379,6 +379,39 @@ def test_unpersist_depois_do_check_nao_desfaz_a_persistencia():
     assert check.attrs["target_persisted"] is True
 
 
+def test_religar_o_nome_entre_o_cache_e_o_check_desfaz_a_persistencia():
+    # O DataFrame que o check valida nao e o que foi cacheado. Aqui a chave NAO
+    # e omitida: `target_persisted: false` e a resposta honesta, e omitir daria
+    # ao rebind o poder de calar `SF-DQ-003`.
+    facts = _facts(
+        "vendas.cache()\n"
+        "vendas = carrega('outra')\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
+
+
+def test_religacao_antes_do_cache_nao_desfaz_a_persistencia():
+    facts = _facts(
+        "vendas = carrega('vendas')\n"
+        "vendas.cache()\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+
+
+def test_religacao_depois_do_check_nao_desfaz_a_persistencia():
+    facts = _facts(
+        "vendas.cache()\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "vendas = carrega('outra')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+
+
 def test_alvo_nao_resolvido_nao_ganha_atributo_de_correlacao():
     # Sem alvo nao ha posicao relativa a apurar: preencher qualquer um destes
     # seria adivinhar.
