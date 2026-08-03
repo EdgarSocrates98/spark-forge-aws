@@ -581,8 +581,12 @@ As correções, ambas no padrão que a fase já usa:
 notas soltas: *nome nu não identifica objeto*. Entre escopos, o índice é por escopo; dentro de um
 escopo, a religação invalida a evidência do outro lado. Um atributo que erra para menos cala a
 regra e custa subnotificação; um que erra para mais faz o motor **acusar código correto**.
-`action_after_check` é o único dos quatro do lado da acusação — `SF-DQ-003` dispara sobre
-`action_after_check: true` — e por isso é o que mais precisa da guarda.
+
+> **Corrigido pela revisão final da fase** (desvio D-5c-11). Este parágrafo dizia que
+> `action_after_check` era o **único** dos quatro do lado da acusação, e era falso: `SF-DQ-003`
+> dispara sobre `action_after_check: true` **e** sobre `target_persisted: false`, então emitir
+> `false` na ignorância empurra para o disparo exatamente como emitir `true` sobre reuso. **Dois**
+> atributos estão desse lado. Ver a nota do Step 2 abaixo.
 
 `checks_on_target` também passou a ser por escopo, e a decisão está registrada como **D-5c-10** na
 §10 do spec: dois homônimos em duas funções não são dois checks sobre o mesmo alvo, e contá-los
@@ -595,6 +599,43 @@ verdade, mas quem ler "o dado é reusado" se engana, porque o reuso é recomputo
 mesma linha via `;` caem em `before_write`; `lambda`/corpo de `class` não são escopos separados; e
 a separação por escopo introduz o quinto — função que lê um DataFrame global perde a correlação
 com o write do módulo e sai `no_write_in_module`.
+
+**O quinto limite não errava só para menos** (desvio **D-5c-11**, registrado na §10 do spec). A
+revisão final da fase mediu o preço de D-5c-10 virado do avesso:
+
+```python
+def valida(vendas):
+    ruins = vendas.filter(vendas.valor < 0).count()
+    vendas.write.parquet("s3://lake/curated/")
+
+def main(spark):
+    vendas = spark.read.parquet("s3://lake/raw/")
+    vendas.cache()          # a persistência é real, e vive em OUTRO escopo
+    valida(vendas)
+```
+
+→ `target_persisted: false`, `action_after_check: true` → **`SF-DQ-003` disparava** sobre um
+DataFrame persistido. É a forma canônica de biblioteca Glue, e não um caso de canto.
+
+Quando o alvo chega por **parâmetro** e não há evento de persistência no próprio escopo,
+`attrs.target_persisted` **não é emitido**: persistência de parâmetro mora no chamador, o índice
+não pode vê-la, e `false` afirmaria o que ele não sabe. A exceção é evidência **local** —
+`cache`/`persist`/`unpersist` sobre o parâmetro dentro da própria função —, e aí a chave sai
+normalmente, inclusive `false` quando o evento local é um `unpersist`. `action_after_check`
+**continua** válido para parâmetro, e a assimetria é real: a action posterior está dentro do
+escopo e é observada de fato; só a persistência vem de fora.
+
+O preço, aceito e declarado na `explanation` da regra e nas dívidas do `STATUS.md`: isto cala
+`SF-DQ-003` para **todo** helper de validação, inclusive os genuinamente não persistidos. A
+alternativa era acusar a forma canônica. É a mesma dívida que `SF-DQ-002` já declara do lado da
+consequência — as duas se fecham juntas, seguindo o argumento para dentro da chamada, ou não se
+fecham.
+
+Duas divergências de documento foram fechadas no mesmo commit, como **D-5c-12** e **D-5c-13** da
+§10 do spec: `dq.module_analyzed` **é** `requires_facts` de `SF-DQ-002` e a §4.1 proibia (o código
+está certo — o `absent:` exige sentinela, e `dq.check` no mesmo `requires_facts` afasta o modo de
+falha de `SF-GLUE-002`); e `framework` tem três valores e a §4.1 listava quatro (`assert` é forma
+de consequência, e vive em `attrs.form` de `dq.enforcement`).
 
 - [x] **Step 4: Commit**
 

@@ -270,6 +270,7 @@
       ],
       "rules": [
         "SF-CG-001",
+        "SF-DQ-003",
         "SF-PLAN-004"
       ],
       "sha256": "1a3820aae96e7d2edca0ef5bedd41cf7cff918465c3b72cfaa331157d230078a"

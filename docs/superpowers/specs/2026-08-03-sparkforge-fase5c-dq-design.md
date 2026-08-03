@@ -334,6 +334,67 @@ viraria um jeito de sumir com a regra.
 O preço, registrado: função que lê um DataFrame global perde a correlação com o
 write do módulo e sai `no_write_in_module`. Erra para menos, que é o lado certo.
 
+**D-5c-11 — o preço de D-5c-10 virado do avesso: parâmetro não afirma
+persistência.** A revisão final da fase mediu que o preço acima **não** é sempre
+"para menos". A forma canônica de biblioteca Glue — validar num helper, cachear
+no chamador — produzia `target_persisted: false` e `action_after_check: true`, e
+`SF-DQ-003` disparava sobre um DataFrame que está persistido:
+
+```python
+def valida(vendas):
+    ruins = vendas.filter(vendas.valor < 0).count()
+    vendas.write.parquet("s3://lake/curated/")
+
+def main(spark):
+    vendas = spark.read.parquet("s3://lake/raw/")
+    vendas.cache()          # a persistência é real, e vive em OUTRO escopo
+    valida(vendas)
+```
+
+Quando o alvo chega por **parâmetro** e não há nenhum evento de persistência no
+próprio escopo, `attrs.target_persisted` **não é emitido**. Persistência de um
+parâmetro é, por construção, evidência que vive fora do escopo: o índice não
+pode vê-la, e `false` afirmaria o que ele não sabe. A exceção é ter evidência
+local — `cache`/`persist`/`unpersist` sobre o parâmetro dentro da própria
+função —, e aí a chave sai normalmente, inclusive `false`.
+
+O preço, aceito e maior que o de D-5c-10: isto cala `SF-DQ-003` para **todo**
+helper de validação, inclusive os genuinamente não persistidos. A alternativa
+era acusar a forma canônica de biblioteca Glue.
+
+`attrs.action_after_check` **continua** válido para parâmetro, e a assimetria é
+real: a action posterior está dentro do escopo e é observada de fato. Só a
+persistência vem de fora.
+
+Correção de fato que este desvio arrasta: o cabeçalho de `data_quality.py`
+afirmava que `action_after_check` era o único dos quatro do lado da acusação, e
+que os outros três erravam "para menos". Medido, é falso — `SF-DQ-003` dispara
+sobre `target_persisted: **false**`, então emitir `false` na ignorância empurra
+para o disparo exatamente como emitir `true` sobre reuso. **Dois** atributos
+estão do lado da acusação. O corolário que o texto também errava: para
+`action_after_check`, ausência e `false` calam a regra **igualmente**, então o
+argumento "a ausência calaria a regra" vale só para `target_persisted`.
+
+**D-5c-12 — `dq.module_analyzed` É `requires_facts` de `SF-DQ-002`, e a §4.1
+deste documento diz que não deveria.** O código está certo e o texto está
+errado. A §4.1 proíbe em negrito, apontando para o defeito de `SF-GLUE-002` na
+Fase 5a: sentinela de "algum arquivo foi lido" não é sentinela de "há o que
+julgar aqui", então a regra passa a barreira, avalia, dá falso e some de
+findings **e** de skipped ao mesmo tempo. `data-quality.yaml:201` usa a
+sentinela mesmo assim, e o motivo é o `absent:` de `SF-DQ-002`: a disciplina do
+`rules/catalog/README.md` exige que regra de ausência declare um fact que prove
+que o extrator rodou, senão ela dispara sobre corpus vazio. O modo de falha de
+`SF-GLUE-002` **não existe aqui** porque `dq.check` também está em
+`requires_facts`, e ele já prova que há validação a julgar — a sentinela responde
+só por "o extrator rodou", que é a pergunta que o `absent:` precisa fazer.
+
+**D-5c-13 — `framework` tem três valores, não quatro.** A §4.1 lista `pydeequ`,
+`great_expectations`, `handmade` e `assert`. O extrator emite os três primeiros.
+`assert` nunca foi framework de validação: é **forma de consequência**, e virou
+`attrs.form` de `dq.enforcement`, junto de `raise` e `sys.exit`. O lugar está
+certo — o que `assert` responde é "o que acontece quando o check acusa", e não
+"quem fez o check".
+
 **D-5c-5 — `proposed_change` que recomende suíte precisa de guarda de versão.**
 PyDeequ não alcança Glue 3.0 nem nenhuma release EMR 6.x (piso Python 3.9), e o
 Spark 3.4 não está no mapa de `pydeequ/configs.py`. GX 1.x exige Python ≥ 3.10.
