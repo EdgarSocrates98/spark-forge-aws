@@ -98,7 +98,7 @@ git commit -m "docs: pesquisa de fontes das tres premissas nao verificadas da 5c
 **Files:**
 - Create: `sparkforge/facts/data_quality.py`, `tests/test_facts_data_quality.py`
 
-- [ ] **Step 1: Escreva o teste que falha**
+- [x] **Step 1: Escreva o teste que falha**
 
 ```python
 # tests/test_facts_data_quality.py
@@ -136,12 +136,12 @@ def test_kind_fora_do_namespace_declarado_e_erro():
     assert "dq.module_analyzed" in EMITTED_KINDS
 ```
 
-- [ ] **Step 2: Rode e veja falhar**
+- [x] **Step 2: Rode e veja falhar**
 
 Run: `python -m pytest tests/test_facts_data_quality.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'sparkforge.facts.data_quality'`
 
-- [ ] **Step 3: Implemente o mínimo**
+- [x] **Step 3: Implemente o mínimo**
 
 ```python
 # sparkforge/facts/data_quality.py
@@ -255,12 +255,12 @@ def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") ->
     return sort_facts(facts)
 ```
 
-- [ ] **Step 4: Rode e veja passar**
+- [x] **Step 4: Rode e veja passar**
 
 Run: `python -m pytest tests/test_facts_data_quality.py -v`
 Expected: PASS, 3 testes
 
-- [ ] **Step 5: Alvo não resolvível vira `dq.unresolved`, nunca um alvo adivinhado**
+- [x] **Step 5: Alvo não resolvível vira `dq.unresolved`, nunca um alvo adivinhado**
 
 Teste primeiro:
 
@@ -272,7 +272,15 @@ def test_alvo_que_nao_e_variavel_vira_unresolved():
     assert unresolved.attrs["reason"] == "unresolved_target"
 ```
 
-Rode (`FAIL` — hoje o check some sem deixar rastro). Acrescente o helper, que as Tasks 3 e 4 também usam:
+Rode. **O `FAIL` medido não é o previsto** (desvio D-5c-6): o check não some — ele sai
+com `attrs.target == "spark"`. `_chain_root` desce a cadeia inteira e a raiz de
+`spark.table("t")` é o `ast.Name` da *sessão*, não do dado. Nomear a sessão como alvo é
+exatamente o alvo adivinhado que esta fase recusa: `SF-DQ-001` passaria a comparar a linha
+deste check com o `write` de qualquer outro DataFrame que também saia de `spark`. Além do
+helper, portanto, a cadeia cujo **primeiro elo** constrói o DataFrame a partir da raiz
+(`table`, `sql`, `range`, `createDataFrame`, `parquet`, `csv`, `json`, `orc`, `text`,
+`jdbc`, `load` — o `_SOURCE_TERMINALS`, irmão de `_READ_TERMINALS` em `pyspark_ast.py`)
+também vira `dq.unresolved`. Acrescente o helper, que as Tasks 3 e 4 também usam:
 
 ```python
 def _unresolved(path: str, line: int, reason: str, provenance: dict[str, Any], **extra: Any) -> Fact:
@@ -287,7 +295,7 @@ def _unresolved(path: str, line: int, reason: str, provenance: dict[str, Any], *
 E troque o `return None` do alvo ausente em `_handmade_check` por:
 
 ```python
-    if target is None:
+    if target is None or (methods and methods[0] in _SOURCE_TERMINALS):
         return _unresolved(
             path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
         )
@@ -295,7 +303,7 @@ E troque o `return None` do alvo ausente em `_handmade_check` por:
 
 Rode de novo: PASS.
 
-- [ ] **Step 6: `extract_data_quality_path` e `_tree`**
+- [x] **Step 6: `extract_data_quality_path` e `_tree`**
 
 Mesma convenção de `athena_workgroup.py`: falha de leitura vira `dq.unresolved` com `reason: "read_error"`, `SyntaxError` vira `reason: "syntax_error"`, nunca exceção que derruba quem chamou.
 
@@ -340,7 +348,15 @@ def extract_data_quality_tree(root: Path, repo_root: Path | None = None) -> list
 
 Acrescente `import hashlib` e `from pathlib import Path` no topo. Teste com `tmp_path`: um `.py` válido, um com sintaxe quebrada, e confirme que o segundo devolve um único `dq.unresolved` com `reason: "syntax_error"`.
 
-- [ ] **Step 7: Commit**
+Uma correção medida sobre o `_tree` acima (desvio D-5c-7): a guarda de
+`extract_data_quality_path` é estreita demais para o que a travessia encontra. Um `.py` que
+não decodifica levanta `UnicodeDecodeError` — um `ValueError`, **não** um `OSError` — e
+escaparia, derrubando a árvore inteira por causa de um arquivo. `extract_data_quality_tree`
+envolve cada arquivo num `except Exception` que vira `dq.unresolved` com
+`reason: "read_error"`, exatamente como `athena_workgroup.extract_athena_workgroup_tree` já
+fazia, e o teste com bytes inválidos é o que prova.
+
+- [x] **Step 7: Commit**
 
 ```bash
 git add sparkforge/facts/data_quality.py tests/test_facts_data_quality.py
