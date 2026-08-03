@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-07-31
-**Commit de referência:** branch `feat/fase4-agentes`
+**Atualizado em:** 2026-08-03
+**Commit de referência:** `main`, após o merge da branch `feat/fase5b-emr`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -25,10 +25,10 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **2736** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **2852** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 58**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **14** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **92** | união de `EMITTED_KINDS` |
+| Fact kinds distintos emitidos | **93** | união de `EMITTED_KINDS` |
 | Regras de diagnóstico | **58** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **58 de 58** | `tests/test_fixtures_kind_coverage.py` |
@@ -367,8 +367,12 @@ produz 5 achados, 3 de infraestrutura EMR e 2 de código, e as 6 regras `SF-GLUE
 aparecem em `skipped` com `reason: runtime_scope`. Antes da fase, elas
 avaliavam, nunca disparavam, e não apareciam de lado nenhum.
 
-**Números.** 58 regras em 10 áreas, 9 delas `SF-EMR`. 14 extratores, 92 kinds,
-32 tools, 7 coordenadores, 87 fixtures. 2733 testes passando.
+**Números no fechamento da branch.** 58 regras em 10 áreas, 9 delas `SF-EMR`. 14
+extratores, 93 kinds, 32 tools, 7 coordenadores, 91 fixtures. 2852 testes
+passando. Os commits que vieram depois do commit de documentação da fase —
+`--emr` nos verbos, `PYSPARK_PYTHON`, reprodutibilidade de build, o nó por
+função definida do call graph, `SF-EMR-009` e a leitura de `athena` — são desta
+mesma fase e estão contados aqui.
 
 **O que ficou de fora, por decisão registrada no spec:** EMR Serverless e EMR on
 EKS. Esta fase é EMR on EC2.
