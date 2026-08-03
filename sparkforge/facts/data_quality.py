@@ -48,6 +48,26 @@ nao existe CALA a regra sobre validacao desprotegida -- subnotificacao --, e
 deixar de emitir um que existe faz a regra ACUSAR codigo correto. Na duvida
 entre reconhecer e nao reconhecer uma forma de consequencia, este kind
 reconhece; o que ele nao faz e inventar consequencia onde nao ha nenhuma.
+
+CONSEQUENCIA DISSO, e o unico ponto do modulo em que a politica acima e
+contrariada de proposito: `_rebound_between` MUDA DE LADO conforme o kind que o
+consome. Nos quatro atributos da Task 2 ele erra para o silencio -- omite uma
+chave, ou emite `false`, e a regra deixa de opinar. Em `dq.enforcement` ele erra
+para a ACUSACAO, porque descartar a leitura descarta o fact inteiro, e a
+ausencia do fact E o gatilho de `SF-DQ-002`. O caso medido:
+
+    try:
+        ruins = vendas.filter(vendas.valor < 0).count()
+    except Exception:
+        ruins = 0
+    if ruins > 0:
+        raise ValueError(...)
+
+O `ruins = 0` do `except` religa o nome entre o check e o `if`, a evidencia cai,
+e sai enforcement NENHUM sobre um codigo que protege. A decisao e mantida --
+sem seguir fluxo, o valor testado de fato pode nao ser o do check --, mas ela e
+o preco medido, e nao um efeito colateral: quem mexer em `_rebound_between`
+precisa saber que o mesmo predicado paga em moedas opostas nos dois lados.
 """
 from __future__ import annotations
 
@@ -204,23 +224,40 @@ class _ScopeIndex(NamedTuple):
     chained: frozenset[ast.AST]
 
 
-def _subject(path: str, line: int = 0) -> dict[str, Any]:
+def _subject(path: str, line: int = 0, col: int = 0) -> dict[str, Any]:
+    """Ancora de um fact deste modulo.
+
+    `col` e PREENCHIDO, e nao fixo em zero. `Fact.id` e sha de
+    `kind + subject + measures` com `attrs` de fora (`findings/models.py`), entao
+    dois checks na mesma linha -- `a = df.filter(...).count(); b = ...` -- saiam
+    com a MESMA identidade enquanto a coluna era zero, e o `fact_id` que um
+    Finding cita deixava de identificar evidencia.
+
+    Segue a forma de `pyspark_ast.py:135`, o extrator irmao sobre o mesmo
+    artefato, que ja usa `col_offset`. Os demais extratores fixam zero porque
+    ancoram em artefatos sem coluna util (JSON de event log, HCL, resposta de
+    API), nao por escolha de arquitetura.
+
+    Nao afeta `same_subject`: `engine._subject_group_key` monta a chave com
+    `file:line` quando nao ha `symbol`, e ignora `col`. Enforcement e check
+    continuam no mesmo grupo -- ha teste que prova.
+    """
     return {
         "type": "source_location",
         "file": path,
         "line": line,
-        "col": 0,
+        "col": col,
         "symbol": "",
         "snippet": "",
     }
 
 
 def _unresolved(
-    path: str, line: int, reason: str, provenance: dict[str, Any], **extra: Any
+    path: str, line: int, col: int, reason: str, provenance: dict[str, Any], **extra: Any
 ) -> Fact:
     return Fact(
         kind="dq.unresolved",
-        subject=_subject(path, line),
+        subject=_subject(path, line, col),
         attrs={"reason": reason, **extra},
         provenance=provenance,
     )
@@ -506,7 +543,7 @@ def _action_after_check(target: str, line: int, index: _ScopeIndex) -> bool:
 
 def _check(
     path: str,
-    line: int,
+    node: ast.Call,
     index: _ScopeIndex,
     provenance: dict[str, Any],
     *,
@@ -526,7 +563,11 @@ def _check(
     O que muda de framework para framework e o que o `.py` PERMITE afirmar, e
     isso entra por `extra`: `shares_scan` para os dois frameworks cuja passada o
     codigo revela, e chave nenhuma para o Great Expectations, que nao a revela.
+
+    Recebe o NO, e nao `line`: linha e coluna da ancora saem do mesmo lugar, e
+    nao ha como um chamador passar uma sem a outra.
     """
+    line = node.lineno
     attrs: dict[str, Any] = {
         "framework": framework,
         "check_type": check_type,
@@ -540,7 +581,7 @@ def _check(
         attrs["position_vs_write"] = position
     return Fact(
         kind="dq.check",
-        subject=_subject(path, line),
+        subject=_subject(path, line, node.col_offset),
         measures={"line": line},
         attrs=attrs,
         provenance=provenance,
@@ -557,11 +598,16 @@ def _handmade_check(
         return None
     if target is None or any(m in _SOURCE_TERMINALS for m in methods):
         return _unresolved(
-            path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
+            path,
+            node.lineno,
+            node.col_offset,
+            "unresolved_target",
+            provenance,
+            check_type="count_of_violations",
         )
     return _check(
         path,
-        node.lineno,
+        node,
         index,
         provenance,
         framework="handmade",
@@ -611,16 +657,26 @@ def _pydeequ_check(
         # esta fase nao faz -- entao a exclusao e CONTADA, no mesmo padrao de
         # `opaque_caller_function_count` da Fase 5b, e nao silenciosa.
         return _unresolved(
-            path, node.lineno, "suite_run_not_visible", provenance, check_type="verification_suite"
+            path,
+            node.lineno,
+            node.col_offset,
+            "suite_run_not_visible",
+            provenance,
+            check_type="verification_suite",
         )
     argument = _on_data_argument(node)
     if not isinstance(argument, ast.Name):
         return _unresolved(
-            path, node.lineno, "unresolved_target", provenance, check_type="verification_suite"
+            path,
+            node.lineno,
+            node.col_offset,
+            "unresolved_target",
+            provenance,
+            check_type="verification_suite",
         )
     return _check(
         path,
-        node.lineno,
+        node,
         index,
         provenance,
         framework="pydeequ",
@@ -713,13 +769,14 @@ def _great_expectations_check(
         return _unresolved(
             path,
             node.lineno,
+            node.col_offset,
             "unresolved_target",
             provenance,
             check_type="batch_parameters_dataframe",
         )
     return _check(
         path,
-        node.lineno,
+        node,
         index,
         provenance,
         framework="great_expectations",
@@ -767,10 +824,24 @@ def _abort_in(branches: list[ast.stmt]) -> tuple[str, int] | None:
     primeira. Ordenar por (linha, coluna) e o que torna a escolha independente
     da ordem de travessia, que nao e ordem de fonte.
 
-    LIMITE conhecido: um `raise` dentro de um `def` aninhado no ramo conta, e
-    nao deveria -- ele nao roda ali. A forma e rara o bastante para nao pagar
-    uma travessia com escopo proprio, e o erro cai do lado da subnotificacao de
-    `SF-DQ-002`, nunca da acusacao.
+    QUATRO LIMITES CONHECIDOS, todos do mesmo lado -- o fact afirma consequencia
+    onde ela pode nao acontecer, e o erro cai no SILENCIO de `SF-DQ-002`, nunca
+    na acusacao. Sao aceitos por isso, e estao escritos porque decisao sem razao
+    escrita vira acidente na proxima leitura:
+
+    1. `try: raise ... except: pass` em volta do aborto ainda conta. Provar que
+       a excecao escapa exige seguir handlers, e um `except` que engole o aborto
+       da propria validacao e codigo que ninguem escreve por engano.
+    2. `sys.exit(0)` conta como aborto. O fact afirma que o resultado leva a
+       saida do processo, e nao que a saida sinaliza falha; distinguir pelo
+       argumento exigiria julgar o valor, e julgar nao e trabalho de extrator.
+    3. Um `raise` ou `assert` NAO RELACIONADO dentro do ramo conta:
+       `if ruins > 0: assert conf is not None` seguido de `logger.warning(...)`
+       tem aborto no ramo, mas o aborto nao e a resposta ao check. Amarrar um ao
+       outro exigiria analise de dependencia dentro do ramo.
+    4. Um `raise` dentro de um `def` aninhado no ramo conta, e nao deveria --
+       ele nao roda ali. Raro o bastante para nao pagar uma travessia com escopo
+       proprio.
     """
     found: list[tuple[int, int, str]] = []
     for branch in branches:
@@ -800,6 +871,13 @@ def _bound_names(nodes: list[ast.AST], check: ast.AST) -> frozenset[str]:
 
     `NamedExpr` entra porque `if (ruins := ....count()) > 0` liga e le na mesma
     linha, e o walrus e a forma que o `if` inline usa quando o valor e reusado.
+
+    O alvo e caminhado, e nao testado por `isinstance(..., ast.Name)`:
+    `ruins, total = ....count(), 10` desempacota uma tupla, e filtrar por `Name`
+    descartava a ligacao inteira. Caminhar liga tambem `total`, que nao carrega
+    o resultado -- e o erro cai do lado do silencio, que e o lado que este kind
+    escolheu: reconhecer um nome a mais faz `SF-DQ-002` calar, reconhecer um a
+    menos faz ela acusar quem protegeu.
     """
     names: set[str] = set()
     for node in nodes:
@@ -811,18 +889,62 @@ def _bound_names(nodes: list[ast.AST], check: ast.AST) -> frozenset[str]:
             continue
         if not any(child is check for child in ast.walk(value)):
             continue
-        names.update(t.id for t in targets if isinstance(t, ast.Name))
+        names.update(
+            bound_name.id
+            for target in targets
+            for bound_name in ast.walk(target)
+            if isinstance(bound_name, ast.Name) and isinstance(bound_name.ctx, ast.Store)
+        )
     return frozenset(names)
 
 
-def _read_of(test: ast.expr, check: ast.AST, bound: frozenset[str]) -> _Read:
+def _reader(node: ast.AST) -> tuple[list[ast.expr], list[ast.stmt]] | None:
+    """(o que le, onde o aborto pode estar) de um no que consome um resultado.
+
+    Uma porta so para as cinco formas de leitura, porque a pergunta e sempre a
+    mesma -- alguma expressao alcanca o resultado do check, e algum ramo aborta
+    -- e so a sintaxe muda. Cada forma que faltava aqui era subreconhecimento, e
+    subreconhecer e o lado da ACUSACAO FALSA neste kind: `SF-DQ-002` dispara
+    sobre a ausencia de `dq.enforcement`.
+
+    `while` tem a forma exata do `if`. `match` le pelo `subject` e por cada
+    `guard`, e aborta dentro de qualquer `case` (o piso do projeto e Python
+    3.10, entao `ast.Match` sempre existe). O `assert` e ele proprio o aborto,
+    entao ele e o proprio ramo.
+
+    `ast.Expr` cobre o curto-circuito e o `IfExp` em posicao de statement --
+    `ruins > 0 and sys.exit(1)`, `sys.exit(1) if ruins > 0 else None` --, onde
+    leitura e aborto vivem na MESMA expressao: o statement e ao mesmo tempo o
+    que le e o ramo onde o aborto esta. Isso nao afrouxa a exigencia de aborto:
+    `print(ruins)` tambem e `ast.Expr`, e `_abort_in` nao acha nada nele.
+
+    LIMITE conhecido: a mesma expressao em posicao de VALOR
+    (`x = sys.exit(1) if ruins > 0 else 0`) nao e lida. Cobri-la exigiria tratar
+    todo statement como leitor em potencial, e abortar dentro do valor de uma
+    atribuicao nao e forma que se escreva. Erra para o silencio.
+    """
+    if isinstance(node, ast.If | ast.While):
+        return [node.test], node.body + node.orelse
+    if isinstance(node, ast.Assert):
+        return [node.test], [node]
+    if isinstance(node, ast.Match):
+        tests: list[ast.expr] = [node.subject]
+        tests.extend(case.guard for case in node.cases if case.guard is not None)
+        return tests, [statement for case in node.cases for statement in case.body]
+    if isinstance(node, ast.Expr):
+        return [node.value], [node]
+    return None
+
+
+def _read_of(tests: list[ast.expr], check: ast.AST, bound: frozenset[str]) -> _Read:
     inline = False
     names: set[str] = set()
-    for node in ast.walk(test):
-        if node is check:
-            inline = True
-        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id in bound:
-            names.add(node.id)
+    for test in tests:
+        for node in ast.walk(test):
+            if node is check:
+                inline = True
+            elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id in bound:
+                names.add(node.id)
     return _Read(inline, frozenset(names))
 
 
@@ -834,6 +956,14 @@ def _reads_this_check(read: _Read, check_line: int, read_line: int, index: _Scop
     antes da linha que o liga e ler outra coisa -- e o nome nao pode ter sido
     religado no meio, senao o valor testado nao e o do check. Cada nome responde
     por si: `a = b = check` com `a` religado ainda vale se o teste le `b`.
+
+    AQUI `_rebound_between` ERRA PARA A ACUSACAO, ao contrario dos quatro
+    atributos da Task 2, onde ele erra para o silencio. Descartar a leitura
+    descarta o fact, e a ausencia do fact e o gatilho de `SF-DQ-002`: o
+    `except Exception: ruins = 0` em volta do check religa o nome e faz a regra
+    acusar quem protegeu. Mantido -- sem seguir fluxo, o valor testado pode
+    mesmo nao ser o do check --, e registrado no cabecalho do modulo com o caso
+    medido. Nao e simetria esquecida; e assimetria conhecida.
     """
     if read.inline:
         return True
@@ -882,14 +1012,11 @@ def _enforcements(
     check_line = check.lineno
     seen: set[tuple[str, int]] = set()
     for node in nodes:
-        if isinstance(node, ast.If):
-            branches = node.body + node.orelse
-        elif isinstance(node, ast.Assert):
-            # O `assert` E o aborto: nao ha ramo a inspecionar.
-            branches = [node]
-        else:
+        reader = _reader(node)
+        if reader is None:
             continue
-        read = _read_of(node.test, check, bound)
+        tests, branches = reader
+        read = _read_of(tests, check, bound)
         if not (read.inline or read.names):
             continue
         if not _reads_this_check(read, check_line, node.lineno, index):
@@ -975,7 +1102,7 @@ def extract_data_quality_path(path: Path, repo_root: Path | None = None) -> list
     try:
         text = path.read_text(encoding="utf-8-sig")
     except OSError as exc:
-        return [_unresolved(anchor, 0, "read_error", empty, detail=str(exc))]
+        return [_unresolved(anchor, 0, 0, "read_error", empty, detail=str(exc))]
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
     provenance_sha = {"artifact": anchor, "artifact_sha256": sha, "extractor": EXTRACTOR_ID}
     try:
@@ -983,7 +1110,13 @@ def extract_data_quality_path(path: Path, repo_root: Path | None = None) -> list
     except SyntaxError as exc:
         return [
             _unresolved(
-                anchor, exc.lineno or 0, "syntax_error", provenance_sha, detail=str(exc.msg)
+                anchor,
+                exc.lineno or 0,
+                # Mesma leitura que `pyspark_ast.py:436` faz do mesmo erro.
+                exc.offset or 0,
+                "syntax_error",
+                provenance_sha,
+                detail=str(exc.msg),
             )
         ]
     return extract_data_quality(tree, anchor, artifact_sha256=sha)
@@ -1011,6 +1144,7 @@ def extract_data_quality_tree(root: Path, repo_root: Path | None = None) -> list
             facts.append(
                 _unresolved(
                     anchor,
+                    0,
                     0,
                     "read_error",
                     {"artifact": anchor, "artifact_sha256": "", "extractor": EXTRACTOR_ID},

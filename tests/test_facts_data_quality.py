@@ -1016,6 +1016,126 @@ def test_cada_check_recebe_a_consequencia_que_le_o_seu_resultado():
     assert [f.subject for f in enforcements] == [checks[2].subject]
 
 
+def test_dois_checks_na_mesma_linha_tem_ids_distintos():
+    # `Fact.id` e sha de kind+subject+measures, e `attrs` fica de fora
+    # (`models.py`): com `col` fixo em zero, dois checks na mesma linha viravam
+    # uma identidade so, e o `fact_id` que um Finding cita deixava de
+    # identificar evidencia.
+    facts = _facts(
+        "a = vendas.filter(vendas.valor < 0).count(); "
+        "b = clientes.filter(clientes.cpf.isNull()).count()\n"
+        "if a > 0 or b > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    checks = [f for f in facts if f.kind == "dq.check"]
+    assert len({c.id for c in checks}) == len(checks) == 2
+    # A coluna e a do inicio da cadeia do check, nao a do nome que a recebe.
+    assert sorted(c.subject["col"] for c in checks) == [4, 49]
+
+
+def test_dois_enforcements_na_mesma_linha_tem_ids_distintos():
+    facts = _facts(
+        "a = vendas.filter(vendas.valor < 0).count(); "
+        "b = clientes.filter(clientes.cpf.isNull()).count()\n"
+        "if a > 0 or b > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    enforcements = [f for f in facts if f.kind == "dq.enforcement"]
+    assert len({f.id for f in enforcements}) == len(enforcements) == 2
+
+
+def test_dois_unresolved_na_mesma_linha_tem_ids_distintos():
+    facts = _facts(
+        "a = spark.table('t').filter('x').count(); b = spark.table('u').filter('y').count()\n"
+    )
+    unresolved = [f for f in facts if f.kind == "dq.unresolved"]
+    assert len({f.id for f in unresolved}) == len(unresolved) == 2
+
+
+def test_a_coluna_nao_muda_o_grupo_de_same_subject():
+    # `_subject_group_key` usa `file:line` quando nao ha `symbol`, entao `col`
+    # distingue identidade de fact SEM mexer no agrupamento que o `absent` de
+    # SF-DQ-002 usa. Se isto quebrar, a regra passa a disparar sobre check
+    # protegido.
+    from sparkforge.rules.engine import _subject_group_key
+
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert _subject_group_key(enforcement) == _subject_group_key(check)
+
+
+def test_alvo_de_tupla_ainda_liga_o_nome():
+    facts = _facts(
+        "ruins, limite = vendas.filter(vendas.valor < 0).count(), 10\n"
+        "if ruins > limite:\n"
+        "    raise ValueError('x')\n"
+    )
+    assert [f.attrs["form"] for f in facts if f.kind == "dq.enforcement"] == ["raise"]
+
+
+def test_while_le_o_resultado_e_aborta():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "while ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.attrs["form"] == "raise"
+    assert enforcement.measures["line"] == 3
+
+
+def test_match_le_o_resultado_e_aborta():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "match ruins:\n"
+        "    case 0:\n"
+        "        print('ok')\n"
+        "    case _:\n"
+        "        raise ValueError('x')\n"
+    )
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.attrs["form"] == "raise"
+    assert enforcement.measures["line"] == 6
+
+
+def test_guarda_de_match_tambem_e_leitura():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "match estado:\n"
+        "    case 'pronto' if ruins > 0:\n"
+        "        raise ValueError('x')\n"
+    )
+    assert [f.attrs["form"] for f in facts if f.kind == "dq.enforcement"] == ["raise"]
+
+
+@pytest.mark.parametrize(
+    "expressao",
+    [
+        "ruins > 0 and sys.exit(1)",
+        "sys.exit(1) if ruins > 0 else None",
+    ],
+)
+def test_curto_circuito_e_ifexp_contam(expressao):
+    facts = _facts(f"ruins = vendas.filter(vendas.valor < 0).count()\n{expressao}\n")
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.attrs["form"] == "exit"
+    assert enforcement.measures["line"] == 2
+
+
+def test_expressao_que_le_sem_abortar_continua_sem_enforcement():
+    # A mesma porta que reconhece `ruins > 0 and sys.exit(1)` nao pode
+    # reconhecer `print(ruins)`: protecao pela metade continua nao emitindo.
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\nruins > 0 and logger.warning(1)\n"
+    )
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
 def test_arquivo_indecodificavel_vira_fact_e_nao_derruba_a_arvore(tmp_path):
     # `read_text` levanta UnicodeDecodeError -- um ValueError, NAO um OSError --
     # entao a travessia so continua se a guarda for larga.

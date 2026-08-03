@@ -883,6 +883,59 @@ Cada nome responde por si, e não o conjunto: `a = b = check` com `a` religado a
 
 **Limite conhecido, registrado e não corrigido:** consequência atrás de helper (`aborta_se(ruins)`) não é vista, e `SF-DQ-002` acusa um código que protege. Provar isso exige seguir o valor para dentro da função, o que esta fase não faz. O recorte vai declarado no achado — "sem consequência **neste corpus**" —, como a §8 do spec já previa e a 5b passou a fazer em `unreferenced_function_count`.
 
+**Quatro achados da revisão da Task 4, todos fechados.**
+
+**D-5c-19 — `col` fixo em zero colidia `Fact.id`, e o defeito é do repositório e não deste kind.** `Fact.id` é `sha1(canonical({kind, subject, measures}))[:6]` com `attrs` **fora** (`findings/models.py:41-54`), e `_subject` fixava `col: 0`. Medido:
+
+```python
+a = vendas.filter(vendas.valor < 0).count(); b = clientes.filter(clientes.cpf.isNull()).count()
+```
+
+Os dois `dq.check` saíam com o mesmo `id`, e os dois enforcements também — o `fact_id` que um `Finding` cita deixava de identificar evidência. Herdado da Task 1, barato agora porque `fixtures/dq/` só nasce na Task 6.
+
+**O que os outros extratores fazem com `col`, medido antes de decidir:** `pyspark_ast.py:138` usa `getattr(node, "col_offset", 0)` — coluna de verdade — e `:436` usa `exc.offset or 0` no `SyntaxError`. Os outros onze (`terraform`, `event_log`, `sql_literal`, `s3_listing`, `catalog_schema`, `athena_workgroup`, `emr_cluster`, `call_graph`, `iceberg_metadata`, `consumers`, `spark_plan`, `fusion`) fixam zero. **Não é decisão de arquitetura**: eles ancoram em artefatos sem coluna útil — JSON de event log, HCL, resposta de API, plano físico —, enquanto `pyspark_ast` ancora no mesmo `.py` que este módulo e é o único com `ast.AST` na mão. `data_quality` segue a forma do irmão, que é o precedente correto.
+
+`_check` passou a receber o **nó** em vez de `line`: linha e coluna saem do mesmo lugar, e nenhum chamador consegue passar uma sem a outra. `_unresolved` ganhou `col` pelo mesmo motivo — dois alvos não resolvidos na mesma linha também colidiam.
+
+**Efeito colateral verificado, não presumido:** `engine._subject_group_key` monta a chave com `file:line` quando não há `symbol`, e **ignora `col`**. O agrupamento de `same_subject` sobrevive, e há teste que chama `_subject_group_key` direto para provar que enforcement e check continuam no mesmo grupo.
+
+**D-5c-20 — `_rebound_between` muda de lado conforme o kind, e isso não estava escrito.** O único ponto onde a política do cabeçalho é contrariada de propósito:
+
+```python
+try:
+    ruins = vendas.filter(vendas.valor < 0).count()
+except Exception:
+    ruins = 0
+if ruins > 0:
+    raise ValueError('x')
+```
+
+→ **zero enforcement** (medido), e `SF-DQ-002` acusa código que protege. Nos quatro atributos da Task 2 o mesmo predicado erra para o **silêncio** — omite chave ou emite `false`, e a regra deixa de opinar. Aqui ele erra para a **acusação**, porque descartar a leitura descarta o fact inteiro e a ausência do fact *é* o gatilho.
+
+A decisão é mantida — sem seguir fluxo, o valor testado pode mesmo não ser o do check —, mas passou a estar escrita nos dois lugares: no cabeçalho do módulo, com o caso medido, e em `_reads_this_check`. Quem mexer no predicado precisa saber que ele paga em moedas opostas nos dois lados.
+
+**D-5c-21 — quatro formas de leitura faltavam, e todas eram subreconhecimento.** Subreconhecer é o lado da acusação falsa neste kind. As **quatro** foram implementadas, e nenhuma pediu estrutura nova — as cinco formas passam por **uma porta só**, `_reader`, que devolve `(o que lê, onde o aborto pode estar)`:
+
+| Forma | Como entrou |
+|---|---|
+| alvo de tupla (`ruins, total = ...count(), 10`) | `_bound_names` caminha o alvo atrás de `Name` em `Store` em vez de filtrar `isinstance(t, ast.Name)` |
+| `while` | forma idêntica ao `if` — uma cláusula do `_reader` |
+| `match` | lê pelo `subject` **e por cada `guard`**; aborta em qualquer `case`. `requires-python = ">=3.10"` confirmado no `pyproject.toml`, então `ast.Match` sempre existe |
+| curto-circuito e `IfExp` (`ruins > 0 and sys.exit(1)`) | `ast.Expr`, onde leitura e aborto vivem na **mesma** expressão: o statement é ao mesmo tempo o que lê e o ramo |
+
+O `ast.Expr` não afrouxa a exigência de aborto — `print(ruins)` também é `ast.Expr`, e `_abort_in` não acha nada nele. Há teste que fixa isso (`ruins > 0 and logger.warning(1)` → nenhum enforcement).
+
+**A que virou limite escrito:** a mesma expressão em posição de **valor** (`x = sys.exit(1) if ruins > 0 else 0`) não é lida. Cobri-la exigiria tratar todo statement como leitor em potencial, e abortar dentro do valor de uma atribuição não é forma que se escreva. Erra para o silêncio.
+
+**D-5c-22 — quatro limites de `_abort_in`, medidos um a um e escritos no ponto.** Todos do mesmo lado — o fact afirma consequência onde ela pode não acontecer, e o erro cai no silêncio de `SF-DQ-002`:
+
+1. `try: raise ... except: pass` em volta do aborto **ainda conta** (medido: enforcement na linha 4). Provar que a exceção escapa exige seguir handlers, e um `except` que engole o aborto da própria validação não se escreve por engano.
+2. `sys.exit(0)` **conta** como aborto. O fact afirma que o resultado leva a saída do processo, não que a saída sinaliza falha; distinguir pelo argumento seria julgar o valor, e julgar não é trabalho de extrator.
+3. `raise`/`assert` **não relacionado** dentro do ramo conta (`if ruins > 0: assert conf is not None` seguido de `logger.warning(...)` → enforcement `assert`). Amarrar um ao outro exigiria análise de dependência dentro do ramo.
+4. `raise` dentro de `def` aninhado no ramo conta, e não deveria — ele não roda ali. Raro o bastante para não pagar travessia com escopo próprio.
+
+Os quatro foram **rodados**, não presumidos, e o comportamento medido é o que o docstring afirma.
+
 - [x] **Step 3: `assert` conta como enforcement, com ressalva (desvio D-5c-4)**
 
 A Task 0 fechou o ramo: a referência da linguagem confirma que `-O` apaga o `assert`, mas **nenhuma** fonte da AWS mostra Glue ou EMR rodando o driver assim, e no Glue o caminho documentado (`--customer-driver-env-vars`) rejeita chaves sem o prefixo `CUSTOMER_`. Então `form: "assert"` **é** enforcement — não emita `dq.unresolved` por causa disso.
@@ -894,6 +947,8 @@ Feito: o comentário mora em `_EXIT_CALLS`, com o argumento inteiro (por que `-O
 - [x] **Step 4: Commit**
 
 Medido antes do commit: **113 passed** em `tests/test_facts_data_quality.py`, **2965 passed / 5 skipped** na suíte inteira (2938 antes desta task), `ruff check .` limpo e `git diff --stat main -- fixtures/pyspark/` vazio.
+
+Depois da revisão (D-5c-19 a D-5c-22): **124 passed** no arquivo e **2976 passed / 5 skipped** na suíte, com `ruff check .` limpo e `fixtures/pyspark/` intocado.
 
 ```bash
 git add sparkforge/facts/data_quality.py tests/test_facts_data_quality.py
