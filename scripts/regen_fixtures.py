@@ -26,6 +26,7 @@ from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_tree,
 )
 from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
+from sparkforge.facts.data_quality import extract_data_quality_tree  # noqa: E402
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
@@ -55,6 +56,7 @@ FIXTURES_CATALOG = ROOT / "fixtures" / "catalog"
 FIXTURES_PLAN = ROOT / "fixtures" / "plan"
 FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
 FIXTURES_EMR = ROOT / "fixtures" / "emr"
+FIXTURES_DQ = ROOT / "fixtures" / "dq"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
 FIXTURES_S3 = ROOT / "fixtures" / "s3"
@@ -274,6 +276,23 @@ def regen_emr(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_dq(directory: Path) -> None:
+    """Como `regen`, mas so os facts `dq.*`: `*.py` sob input/, extraidos com
+    `extract_data_quality_tree` em vez de `extract_tree`.
+
+    O golden guarda so os facts de validacao. Os de `pyspark_ast` sobre o mesmo
+    `.py` ja tem o corpus `fixtures/pyspark/` -- mesma decisao de
+    `regen_callgraph`, e pelo mesmo motivo: repetidos aqui, uma mudanca em
+    `pyspark_ast` quebraria dois goldens pelo mesmo motivo, escondendo qual dos
+    dois contratos regrediu.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_data_quality_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_plan(directory: Path) -> None:
     """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
     input/ (a saida colada de `explain("formatted")`), extraida com
@@ -329,6 +348,7 @@ def main() -> int:
                 (FIXTURES_PLAN / name, regen_plan),
                 (FIXTURES_ATHENA / name, regen_athena),
                 (FIXTURES_EMR / name, regen_emr),
+                (FIXTURES_DQ / name, regen_dq),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
                 (FIXTURES_S3 / name, regen_s3),

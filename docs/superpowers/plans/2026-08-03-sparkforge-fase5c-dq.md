@@ -964,14 +964,14 @@ Oito pontos. Esquecer um é o modo de falha desta fase, e dois deles são listas
 **Files:**
 - Modify: `tests/test_rules_catalog_reachability.py:26-63`, `tests/test_fixtures_kind_coverage.py:24-59`, `sparkforge/adapters/_core.py`, `sparkforge/adapters/cli.py`, `sparkforge/adapters/tools.py`, `parity.yaml`, `manifest.json`, `scripts/regen_fixtures.py`
 
-- [ ] **Step 1: As duas listas `EXTRACTORS`**
+- [x] **Step 1: As duas listas `EXTRACTORS`**
 
 Acrescente `data_quality` ao import e à coleção nos **dois** arquivos — tupla em `test_rules_catalog_reachability.py`, dict (`"data_quality": data_quality`) em `test_fixtures_kind_coverage.py`.
 
 Run: `python -m pytest tests/test_fixtures_kind_coverage.py -v`
 Expected: FAIL em `test_every_kind_of_every_extractor_appears_in_some_golden[data_quality]` — os quatro kinds ainda não têm golden. **É o resultado correto nesta etapa**; a Task 6 o fecha.
 
-- [ ] **Step 2: `_core.analyze_data_quality`**
+- [x] **Step 2: `_core.analyze_data_quality`**
 
 Copie a forma de `analyze_emr_cluster` (`sparkforge/adapters/_core.py:829`):
 
@@ -1000,15 +1000,15 @@ def analyze_data_quality(
     return _facts_page(facts, "dq.unresolved", kind, limit, cursor)
 ```
 
-- [ ] **Step 3: CLI**
+- [x] **Step 3: CLI**
 
 Subparser `data-quality` sob `analyze`, com `--path` (required), `--out`, `--kind` (append), `--limit`, `--cursor`; handler `_cmd_analyze_data_quality` na forma de `_cmd_analyze_emr_cluster` (`cli.py:740`); entrada `("analyze", "data-quality"): _cmd_analyze_data_quality` no dict de dispatch (`cli.py:1021`).
 
-- [ ] **Step 4: MCP**
+- [x] **Step 4: MCP**
 
 `sparkforge_analyze_data_quality` em `TOOLS`, com `inputSchema` de `path`/`kind`/`limit`/`cursor` e `outputSchema` `_may_fail(_ANALYZE_FACTS_SCHEMA, ...)`; handler `_h_analyze_data_quality`; entrada no dict de handlers. A `description` precisa dizer o que o fact carrega **e o que ele recusa afirmar** — que não julga o dado, só onde a validação está.
 
-- [ ] **Step 5: `parity.yaml` e `manifest.json`**
+- [x] **Step 5: `parity.yaml` e `manifest.json`**
 
 ```yaml
   - name: extract facts about data validation in PySpark code
@@ -1025,7 +1025,7 @@ Subparser `data-quality` sob `analyze`, com `--path` (required), `--out`, `--kin
 
 E `"sparkforge_analyze_data_quality"` na lista de tools do `manifest.json`.
 
-- [ ] **Step 6: `regen_dq` em `scripts/regen_fixtures.py`**
+- [x] **Step 6: `regen_dq` em `scripts/regen_fixtures.py`**
 
 ```python
 def regen_dq(directory: Path) -> None:
@@ -1040,12 +1040,38 @@ def regen_dq(directory: Path) -> None:
 
 Mais o import, a constante `FIXTURES_DQ = ROOT / "fixtures" / "dq"` e o par `(FIXTURES_DQ, regen_dq)` na lista de matches.
 
-- [ ] **Step 7: Rode o que já pode passar**
+- [x] **Step 7: Rode o que já pode passar**
 
 Run: `python -m pytest tests/test_adapters_cli.py tests/test_adapters_tools.py tests/test_capability_parity.py -q`
 Expected: PASS
 
-- [ ] **Step 8: Commit**
+Medido: **207 passed** com `tests/test_docs_coverage.py` junto (é ele que compara `manifest.json` com `TOOLS`). Suíte inteira: **2981 passed / 3 failed / 5 skipped** — os três vermelhos estão em D-5c-23 e D-5c-24, e nenhum deles é desta task para fechar.
+
+**Quatro desvios medidos nesta task.**
+
+**D-5c-23 — o registro deixa DOIS vermelhos, e o plano previu um.** "A Task 6 fecha o vermelho que ela deixa" (§Ordem e dependências) conta só o de fixture. Medido, são dois vermelhos de fixture e um de orientação:
+
+| Teste | Causa | Quem fecha |
+|---|---|---|
+| `test_fixtures_kind_coverage.py::test_every_kind_of_every_extractor_appears_in_some_golden[data_quality]` | os quatro `dq.*` sem golden | Task 6 |
+| `test_fixtures_kind_coverage.py::test_every_unresolved_kind_is_exercised` | `dq.unresolved` sem golden — mesma causa, recorte explícito sobre a máquina de ponto cego | Task 6 |
+| `test_agent_coverage.py::TestEveryToolIsReachable::test_no_tool_is_orphan` | `sparkforge_analyze_data_quality` não é citada em coordenador nenhum | **Task 9** |
+
+O terceiro não é da mesma família dos outros dois: ele é o invariante de que capacidade sem orientação não é capacidade — exatamente a medição de abertura da Fase 4. Registrar a tool ANTES de existir quem a despache é o que o acende, e a única forma de não o acender seria não registrar a tool. Fica vermelho da Task 5 até a Task 9, e a Task 9 não pode ser adiada para depois da 10 por causa dele.
+
+**D-5c-24 — os pontos de registro são onze, não oito.** Os oito do plano estão corretos e nenhum sobrava; o que falta na conta são três listas manuais em `tests/test_adapters_tools.py`, todas com a mesma natureza das duas `EXTRACTORS` — adição manual que nenhum invariante deriva:
+
+1. `TestToolSurface::test_the_full_tool_surface_is_declared` (o `set(TOOLS) == {...}` literal);
+2. `_real_output_for` — sem o branch, `AssertionError: sem construtor de argumentos reais`, e a tool nova não teria a saída real validada contra o próprio schema;
+3. `TestErrorShapesValidateToo.FAILABLE` — este é o único opcional (nenhum teste exige que toda tool `analyze` esteja lá), e entrou porque o EMR está.
+
+Somando, o registro de uma superfície nova custa **onze** edições manuais, das quais cinco são listas literais que ninguém deriva.
+
+**D-5c-25 — o laço de corpus completo de `regen_fixtures.py` NÃO entrou, e é dívida assumida da Task 6.** O `main()` sem argumento itera `FIXTURES_X.iterdir()` para cada corpus; `fixtures/dq/` só nasce na Task 6, e o laço adicionado hoje quebraria `python scripts/regen_fixtures.py` com `FileNotFoundError`. As alternativas — guarda `is_dir()` só nesse laço, ou criar o diretório vazio — custam mais do que resolvem: a guarda vira mentira assim que o corpus existir, e o diretório vazio acenderia `test_every_fixture_domain_has_a_golden_module`. O esquecimento é autodetectável: sem o laço, a Task 6 Step 3 (`python scripts/regen_fixtures.py`) não gera `fixtures/dq/*/expected/`, e o golden novo falha na hora. **Task 6: acrescente `for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()): regen_dq(directory)` junto com as fixtures.**
+
+**D-5c-26 — nenhum teste de paridade exige simetria `analyze`/`collect`, verificado antes de assumir.** `TestNoCliVerbIsAnUndeclaredMcpGap` cobra o caminho verbo → tool MCP, e `test_every_phase_zero_tool_appears_in_some_capability` cobra tool → capacidade. Nenhum dos dois olha para `collect`. O artefato de `SF-DQ` é o `.py` do repositório, não uma resposta de API, então não há coletor a construir e a área fica sem verbo `collect` sem acender nada — ao contrário de `SF-EMR`, onde o par existe porque o dump vem da AWS.
+
+- [x] **Step 8: Commit**
 
 ```bash
 git add tests/ sparkforge/adapters/ parity.yaml manifest.json scripts/regen_fixtures.py

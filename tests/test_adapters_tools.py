@@ -43,6 +43,7 @@ class TestToolSurface:
             "sparkforge_analyze_sql",
             "sparkforge_analyze_athena_workgroup",
             "sparkforge_analyze_emr_cluster",
+            "sparkforge_analyze_data_quality",
             "sparkforge_analyze_call_graph",
             "sparkforge_analyze_s3_listing",
             "sparkforge_analyze_consumers",
@@ -516,6 +517,15 @@ _CONSUMER_INVENTORY = """consumers:
     service: athena
 """
 
+# Validacao artesanal COM consequencia: rende `dq.check`, `dq.enforcement` e
+# `dq.module_analyzed` no mesmo arquivo, entao o branch exercita o extrator de
+# verdade e nao so o fact sentinela que sai de qualquer `.py`.
+_DQ_SOURCE = """def validar(vendas):
+    ruins = vendas.filter(vendas.valor < 0).count()
+    if ruins > 0:
+        raise ValueError("valor negativo")
+"""
+
 
 def _fake_collect_boto3(monkeypatch):
     """Injeta um client AWS falso para as ferramentas `collect_*` -- nunca toca
@@ -640,6 +650,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         emr_path = tmp_path / "cluster.json"
         emr_path.write_text(_EMR_CLUSTER_DUMP, encoding="utf-8")
         return call_tool("sparkforge_analyze_emr_cluster", {"path": str(emr_path)})
+
+    if name == "sparkforge_analyze_data_quality":
+        dq_path = tmp_path / "validacao.py"
+        dq_path.write_text(_DQ_SOURCE, encoding="utf-8")
+        return call_tool("sparkforge_analyze_data_quality", {"path": str(dq_path)})
 
     if name == "sparkforge_analyze_s3_listing":
         listing = tmp_path / "listing.json"
@@ -767,6 +782,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_sql", {"path": "<tmp>/inexistente.sql"}),
         ("sparkforge_analyze_athena_workgroup", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),

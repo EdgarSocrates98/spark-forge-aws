@@ -53,6 +53,7 @@
     "sparkforge_analyze_call_graph",
     "sparkforge_analyze_catalog_schema",
     "sparkforge_analyze_consumers",
+    "sparkforge_analyze_data_quality",
     "sparkforge_analyze_emr_cluster",
     "sparkforge_analyze_event_log",
     "sparkforge_analyze_iceberg",

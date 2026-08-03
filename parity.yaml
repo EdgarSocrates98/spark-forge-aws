@@ -139,6 +139,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract facts about data validation in PySpark code
+    tools: [sparkforge_analyze_data_quality]
+    cli: [analyze data-quality]
+    knowledge: [knowledge/dq/validation-frameworks.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts from an S3 object listing
     tools: [sparkforge_analyze_s3_listing]
     cli: [analyze s3-listing]
