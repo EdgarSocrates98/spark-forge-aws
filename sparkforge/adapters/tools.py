@@ -1412,6 +1412,47 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_data_quality": {
+        "description": (
+            "Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do "
+            "repositorio, nunca API da AWS): onde cada check roda, o que ele custa e "
+            "se ele tem consequencia. Reconhece tres formas pela FORMA do codigo, "
+            "nunca por lista de nomes -- o check artesanal (`df.filter(...).count()`), "
+            "a `VerificationSuite` do PyDeequ e a validacao do Great Expectations. "
+            "`dq.check` carrega framework, tipo, alvo, `position_vs_write` (a "
+            "validacao roda antes ou depois de o dado ser publicado), "
+            "`target_persisted`, `action_after_check` e quantos checks incidem sobre o "
+            "mesmo alvo; `dq.enforcement` so aparece quando a consequencia esta "
+            "PROVADA no mesmo escopo (`raise`, `sys.exit`, `assert`), e a AUSENCIA "
+            "dele e o sinal de validacao sem dente; `dq.module_analyzed` prova que o "
+            "modulo foi lido, para que 'nenhum check' nao se confunda com 'nao "
+            "analisei'. NAO JULGA O DADO: nao diz se a tabela esta correta, se um "
+            "check reprovaria, nem quantas linhas violam a regra -- isso e trabalho "
+            "da ferramenta de DQ em execucao. Diz apenas ONDE a validacao esta no "
+            "codigo, o que ela alcanca e o que ela deixa passar. Nao aplica limiar, "
+            "nao atribui severidade e nao adivinha alvo: alvo que a AST nao resolve "
+            "(validacao atras de helper, DataFrame anonimo) vira `dq.unresolved` com "
+            "`reason`, contado como ponto cego em vez de presumido resolvido."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo .py ou diretorio com codigo PySpark.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -2040,6 +2081,15 @@ def _h_analyze_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_data_quality(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_call_graph(
         args["facts_path"],
@@ -2127,6 +2177,7 @@ _HANDLERS = {
     "sparkforge_analyze_sql": _h_analyze_sql,
     "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
     "sparkforge_analyze_emr_cluster": _h_analyze_emr_cluster,
+    "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,

@@ -205,6 +205,20 @@ def build_parser() -> argparse.ArgumentParser:
     emr_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     emr_analyze_p.add_argument("--cursor")
 
+    dq_p = analyze_sub.add_parser(
+        "data-quality",
+        help="Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great "
+        "Expectations e validacao artesanal): onde o check roda, se tem consequencia, "
+        "e quantas passadas custa.",
+    )
+    dq_p.add_argument(
+        "--path", required=True, help="Arquivo .py ou diretorio com codigo PySpark."
+    )
+    dq_p.add_argument("--out", help="Escreve a lista completa de facts (JSON) neste arquivo.")
+    dq_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    dq_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    dq_p.add_argument("--cursor")
+
     s3_p = analyze_sub.add_parser(
         "s3-listing",
         help="Extrai facts de um dump de `aws s3api list-objects-v2` (small files, "
@@ -758,6 +772,27 @@ def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_data_quality(args: argparse.Namespace) -> int:
+    full = _core.analyze_data_quality(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
 def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
     full = _core.analyze_call_graph(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -1019,6 +1054,7 @@ _DISPATCH = {
     ("analyze", "sql"): _cmd_analyze_sql,
     ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
     ("analyze", "emr-cluster"): _cmd_analyze_emr_cluster,
+    ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,

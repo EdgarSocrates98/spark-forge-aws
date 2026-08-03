@@ -244,6 +244,29 @@ rules:
       Athena cobra por bytes escaneados. O caminho passa por consulta, schema do catálogo
       e a fusão dos dois — nenhuma das três responde sozinha.
 
+  # A POSIÇÃO NESTE ARQUIVO É PRECEDÊNCIA: `router._matching_rules` devolve na ordem
+  # do YAML e `next_step` projeta `agent_matches[0]`. Esta rota vem ANTES da AGENT-004
+  # de propósito, e é o único par da tabela em que isso precisa ser dito, porque é o
+  # único par que lê O MESMO artefato -- o `.py` do job. SF-DQ é estritamente mais
+  # estreita: um achado dela só existe se alguém rodou o extrator de validação, e a
+  # pergunta que ela responde some junto com as linhas de validação. Deixada depois da
+  # AGENT-004, a rota seria letra morta na prática, porque SF-PY dispara em quase todo
+  # job -- e rota que nunca casa é a mesma classe de defeito que os invariantes de
+  # cobertura desta fase existem para pegar. Nenhuma decisão anterior muda: facts `dq.*`
+  # não existiam antes da Fase 5c, então nenhum case já resolvido tinha como casar aqui.
+  - id: AGENT-008
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em validação de dados
+    when:
+      all:
+        - {findings_area: SF-DQ, count_gt: 0}
+    recommended_agent: data-quality-reviewer
+    reason: >
+      A pergunta é sobre a validação, e não sobre o dado: onde ela roda em relação ao
+      write, se o resultado leva a alguma consequência e quantas passadas ela cobra.
+      Revisão de código responde ao custo da chamada; ela não responde se a garantia
+      que a suíte aparenta dar existe.
+
   - id: AGENT-004
     phase_in: [diagnosis, hypothesis]
     title: Achado dominante em código PySpark

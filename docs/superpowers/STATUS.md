@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-08-03
-**Commit de referência:** `main`, após o merge da branch `feat/fase5b-emr`
+**Commit de referência:** fechamento da branch `feat/fase5c-dq`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -25,28 +25,29 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **2852** passando, 5 skipped | `python -m pytest -q` |
-| Regras com `runtime_scope` não-vazio | **8 de 58**, todas sobre Glue | `load_catalog()` |
-| Extratores de facts | **14** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **93** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **58** | `load_catalog()` |
+| Testes | **3104** passando, 5 skipped | `python -m pytest -q` |
+| Regras com `runtime_scope` não-vazio | **8 de 62**, todas sobre Glue | `load_catalog()` |
+| Extratores de facts | **15** | `sparkforge/facts/*.py` |
+| Fact kinds distintos emitidos | **97** | união de `EMITTED_KINDS` |
+| Regras de diagnóstico | **62** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **58 de 58** | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **23** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-007`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **32** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **32 de 32** | `tests/test_agent_coverage.py` |
-| Coordenadores | **7** | `agents/*.md` |
+| Regras com golden que dispara | **62 de 62** | `tests/test_fixtures_kind_coverage.py` |
+| Rotas determinísticas | **24** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-008`) | `rules/catalog/routing.yaml` |
+| Tools MCP | **33** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **33 de 33** | `tests/test_agent_coverage.py` |
+| Coordenadores | **8** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Fixtures golden | **91** em 16 domínios | `fixtures/` |
-| Fontes oficiais vigiadas | **35** (31 móveis, 4 fixas) | `knowledge/sources.lock.json` |
+| Fixtures golden | **100** em 17 domínios | `fixtures/` |
+| Fontes oficiais vigiadas | **37** | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-GLUE 6, SF-UI 6, SF-ATH 5, SF-ENV 5,
-SF-ICE 5, SF-PQ 5, SF-PLAN 4, SF-CG 1.
+SF-ICE 5, SF-PQ 5, SF-DQ 4, SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `pyspark` 17, `emr` 13, `iceberg` 8, `plan` 7, `runtime` 7,
-`terraform` 7, `fusion` 5, `s3` 5, `sql` 4, `athena` 3, `callgraph` 3,
-`catalog` 3, `consumers` 3, `eventlog` 2, `infra_code` 2, `tfdiff` 2.
+Fixtures por domínio: `pyspark` 17, `emr` 13, `iceberg` 8, `dq` 8, `plan` 7,
+`runtime` 7, `terraform` 7, `fusion` 5, `s3` 5, `sql` 4, `athena` 3,
+`callgraph` 3, `catalog` 3, `consumers` 3, `eventlog` 2, `infra_code` 2,
+`tfdiff` 2.
 
 ---
 
@@ -377,6 +378,125 @@ mesma fase e estão contados aqui.
 **O que ficou de fora, por decisão registrada no spec:** EMR Serverless e EMR on
 EKS. Esta fase é EMR on EC2.
 
+### Fase 5c — SF-DQ, validação de dados como coisa lida — **CONCLUÍDA** em 2026-08-03
+
+Branch `feat/fase5c-dq`. Spec:
+[`specs/2026-08-03-sparkforge-fase5c-dq-design.md`](specs/2026-08-03-sparkforge-fase5c-dq-design.md) ·
+Plano: [`plans/2026-08-03-sparkforge-fase5c-dq.md`](plans/2026-08-03-sparkforge-fase5c-dq.md) ·
+Pesquisa de fontes: [`knowledge/dq/validation-frameworks.md`](../../knowledge/dq/validation-frameworks.md).
+
+**O defeito de partida era folha em branco, e foi medido assim.**
+`grep -ril "deequ\|great.expectations\|dbt"` sobre o repositório inteiro devolvia
+**um único arquivo**: a linha deste `STATUS.md` que listava `SF-DQ` como
+capacidade futura. Um job PySpark que valida dado tinha três destinos dentro do
+motor, e nenhum era "foi analisado": a validação era vista como action genérica
+por `SF-PY`, que nunca diz que aquela action **é** uma validação; a suíte que
+roda e não tem consumidor não tinha fact que a registrasse; e a validação que
+recomputa o lineage era custo real e invisível ao catálogo.
+
+**O que entrou.** `sparkforge/facts/data_quality.py` — extrator próprio, não
+crescimento de `pyspark_ast` (D-2) — com quatro kinds (`dq.check`,
+`dq.enforcement`, `dq.unresolved`, `dq.module_analyzed`), reconhecendo três
+formas **pela forma do código** e nunca por lista de nomes: o check artesanal
+(`df.filter(...).count()` seguido de aborto), a `VerificationSuite` do PyDeequ e
+a validação do Great Expectations pela chave literal `"dataframe"` de
+`batch_parameters`. Quatro regras em `rules/catalog/data-quality.yaml`, todas com
+`runtime_scope: {}` e a justificativa no cabeçalho. Oito fixtures em
+`fixtures/dq/` com golden bidirecional. O verbo `analyze data-quality` na CLI, a
+tool `sparkforge_analyze_data_quality` no MCP, e o coordenador
+`data-quality-reviewer` com a skill `review-data-validation` e a rota `AGENT-008`.
+
+**As correlações vivem no extrator, e isso não é conveniência.** Medido em
+`sparkforge/rules/engine.py` antes de escrever o plano: `_condition_candidates`
+avalia um fact por vez e `_absent_satisfied` compara só `kind` — o motor **não**
+correlaciona dois facts. "Linha do check posterior à linha do write" não é
+expressável como condição. É o mesmo limite que `SF-EMR-008` encontrou na 5b, e a
+resposta é a mesma regra escrita no cabeçalho do catálogo de EMR: se a resposta
+depende de mais de uma propriedade, o extrator decide e emite. Daí saem
+`attrs.position_vs_write`, `attrs.target_persisted`, `attrs.action_after_check`,
+`attrs.shares_scan` e `measures.checks_on_target`, e a alternativa — alargar
+`_absent_satisfied` — foi recusada porque o motor é superfície de execução das 62
+regras, não desta área.
+
+**O que a pesquisa de fontes vetou.** A Task 0 rodou antes de qualquer código,
+como a 5b fez, e derrubou **quatro** premissas — três que o spec já marcava como
+suspeitas na §4.3, e uma que ninguém tinha marcado:
+
+- **`attrs.single_pass` afirmava o que a fonte não sustenta** — esta é a que
+  ninguém suspeitava, e estava escrita no spec como fato. O artigo original do
+  Deequ (Schelter et al., PVLDB 2018, §4.1 e §5.1) descreve *scan sharing por
+  agrupamento*: `isUnique`, `hasUniqueness` e entropia exigem re-particionamento e
+  **pagam passada própria**. Uma suíte com N checks custa uma passada por
+  agrupamento distinto, não uma — e o exemplo canônico do README do PyDeequ tem
+  `isUnique("a")`. O atributo virou **`attrs.shares_scan`**, que afirma só o que a
+  fonte autoriza. `SF-DQ-004` sobreviveu porque o contraste de que ela precisa
+  sobrevive: N passadas contra ≤ N, nunca "uma".
+- **`SparkDFDataset` está morto, e a detecção de GE mudou de forma** — o módulo
+  some na 1.0.0 (2024-08-22). Detectar por métodos `expect_*` ficou **vetado**: o
+  prefixo sobrevive via `Validator.__getattr__` e o AST não sabe se a variável é
+  um `Validator`, então casar por prefixo produziria falso positivo sobre qualquer
+  objeto. Sobrou o que é estreito e honesto: a chave literal de
+  `batch_parameters`. Consequência registrada — um `dq.check` de framework
+  `great_expectations` **não recebe** a chave `shares_scan`, porque quantas
+  expectativas rodam vive no store do contexto, fora do `.py`. Ausência de chave é
+  a forma de dizer "não sei" sem que ninguém confunda com `false`.
+- **`assert` conta como consequência, com ressalva escrita dentro do achado** —
+  `-O` apaga o `assert`, mas nenhuma fonte da AWS mostra Glue ou EMR rodando o
+  driver assim, e no Glue o caminho documentado (`--customer-driver-env-vars`)
+  rejeita chave sem o prefixo `CUSTOMER_`. O outro ramo previsto pelo plano —
+  virar `dq.unresolved` — não foi tomado.
+- **Recomendar suíte exige guarda de versão** — PyDeequ não alcança Glue 3.0 nem
+  nenhuma release EMR 6.x (piso de Python 3.9), e o Spark 3.4 não está no mapa de
+  `pydeequ/configs.py`; GX 1.x exige Python ≥ 3.10. "Use uma suíte" seria conselho
+  impossível de seguir em metade das releases que o repo cobre, então a
+  `proposed_change` aponta para o alcance medido em vez de recomendar às cegas.
+
+Uma medida **não entrou** pela mesma pesquisa: `measures.declared_checks` contaria
+chamadas `addCheck`, e a forma oficial encadeia seis restrições dentro de **um**
+`addCheck` — medida que não sustenta o próprio nome é a família de defeito que a
+5b corrigiu em `unreachable_function_count`.
+
+**Um quinto desvio veio da revisão, não da pesquisa.** Indexar write, persist e
+action por **nome nu** datava o check de uma função contra o write de outra: duas
+funções com um parâmetro `vendas` cada produziam `after_write` sobre um DataFrame
+que nunca foi escrito. O índice passou a ser por escopo — corpo do módulo e cada
+`FunctionDef` separados — e `measures.checks_on_target` foi junto, contrariando a
+letra da §4.4 do spec, que dizia "no módulo". O preço está registrado: função que
+lê um DataFrame global perde a correlação e sai `no_write_in_module`. Erra para
+menos, que é o lado certo.
+
+**`SF-DQ-004` passou o gate que podia tê-la eliminado.** O spec a declarava a mais
+frágil das quatro e mandava medi-la antes de escrevê-la. A taxa de alvo não
+resolvido no corpus de fixtures é **1 em 9 (~11%)**, e o número ficou como
+comentário acima da regra no catálogo — não só na mensagem de commit.
+
+**A prova do objetivo**, em `tests/test_dq_investigation_end_to_end.py`: uma
+investigação sem flag de runtime nenhuma sobre um job cuja linha de validação é
+lida pelos dois extratores produz `SF-PY-003` e `SF-DQ-001` **sobre a mesma linha,
+dizendo coisas diferentes** — o primeiro sobre o que a cadeia custa, o segundo
+sobre o dado ruim já estar publicado quando o alarme toca. É a verificação de D-3,
+e ela é feita pelas duas metades que podem desfazer a decisão: nenhuma regra de
+uma área lê o namespace de fact da outra, e o julgamento de cada área é **idêntico
+com e sem** os facts da vizinha. Supressão cruzada só se implementa olhando o fact
+alheio, então as duas medidas juntas reprovam tanto quem duplicar quanto quem
+calar. As seis `SF-GLUE` continuam aparecendo em `skipped` com
+`reason: runtime_scope`, como a prova da 5b fixou.
+
+**Critério 9 conferido:** `git diff --stat main -- fixtures/pyspark/` sai vazio.
+Os 17 goldens de `pyspark/` são byte a byte iguais, que é a prova operacional de
+que nada desta fase tocou `pyspark_ast`.
+
+**Números no fechamento da branch.** 62 regras em 11 áreas, 4 delas `SF-DQ`. 15
+extratores, 97 kinds, 33 tools, 8 coordenadores, 100 fixtures em 17 domínios, 24
+rotas. 3104 testes passando, 5 skipped.
+
+**O que ficou de fora, por decisão registrada no spec:** resultado de execução
+(`VerificationResult`, validation result do GE, `run_results.json` do dbt), GE
+declarativo, dbt e schema declarado. Ver as duas primeiras nas dívidas abertas.
+
+Faixa de commits: `032b44c` … `4dd6286`, mais o commit de documentação que fecha
+a fase.
+
 ### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
 
 Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
@@ -441,7 +561,7 @@ extrator novo → área de regra nova → fixtures com golden bidirecional.
 | Capacidade | Artefato | Área |
 |---|---|---|
 | EMR | release label, instance fleets, EMR Serverless, EMR on EKS | `SF-EMR` |
-| Testes de dados | saída de Deequ, Great Expectations, dbt tests; schema declarado | `SF-DQ` |
+| Testes de dados | ~~saída de Deequ, Great Expectations, dbt tests; schema declarado~~ — **o artefato previsto aqui não é o que entrou.** A Fase 5c leu o **`.py`** e vetou o resultado de execução: repetir o que a suíte já disse não acrescenta garantia. Ver a seção da 5c | `SF-DQ` — **entregue** |
 | Redshift | plano de query, `STL`/`SVL`, distkey e sortkey | `SF-RS` |
 | Streaming | config de Kinesis e MSK, checkpoint de Structured Streaming | `SF-STR` |
 | Orquestração | DAG de Airflow/MWAA, definição de Step Functions | `SF-ORC` |
@@ -492,9 +612,13 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 3. **Fase 5a.2** — cobrir as dívidas da 5a — **CONCLUÍDA** em 2026-08-01, mesma
    branch. Ver seção própria acima
 4. **Fase 5b** — EMR on EC2 — **CONCLUÍDA** em 2026-08-01, branch
-   `feat/fase5b-emr`. Ver seção própria abaixo
-5. **Fases seguintes** — testes de dados, custo, orquestração, Redshift, streaming
-6. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
+   `feat/fase5b-emr`. Ver seção própria acima
+5. **Fase 5c** — SF-DQ, validação de dados — **CONCLUÍDA** em 2026-08-03, branch
+   `feat/fase5c-dq`. Ver seção própria acima. É a linha "Testes de dados" da
+   Metade A, e ela entrou pelo recorte estático: cobertura e posicionamento da
+   validação dentro do `.py`, não resultado de execução
+6. **Fases seguintes** — custo, orquestração, Redshift, streaming
+7. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
 
 ## Dívidas abertas
 
@@ -514,6 +638,9 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 | ~~`sdist`/`wheel` não são reproduzíveis bit-a-bit entre duas construções da mesma árvore~~ — **medida e fechada** em 2026-08-01, ver `[tool.hatch.build]` em `pyproject.toml` e `compare_builds` em `scripts/verify_wheel.py` | Fase 3a, commit `2b6311c` | **A dívida não se confirmou como escrita.** Foi registrada por inspeção, nunca medida: duas chamadas de `python -m build` sobre a mesma árvore produzem artefatos com **sha256 idêntico**, inclusive depois de `touch` em 1012 arquivos. `reproducible = true` já era o *default* do hatchling e fecha os quatro eixos (timestamp via `SOURCE_DATE_EPOCH` com fallback na constante 1580601600; permissão normalizada para 644/755; uid/gid 0 no tar; caminhada do FS ordenada). O que era real e foi fechado: a garantia era um **default implícito, sem contrato e sem teste**. Agora está declarada no `pyproject.toml`, medida a cada execução do gate (segunda build + comparação por sha256, com o relatório nomeando o campo do zip que divergiu) e travada por invariantes baratos em `tests/test_artifact_contents.py`. `--outdir` em `release.yml` **fica** — por "o byte publicado é o byte testado", que é propriedade separada da reprodutibilidade |
 | Igualdade bit-a-bit não vale entre plataformas nem entre versões do backend | medido em 2026-08-01, ao fechar a dívida acima | Dois eixos sobrevivem à `reproducible = true`, e nenhum é do hatchling. (1) A versão do backend vaza para `WHEEL` como `Generator: hatchling X.Y.Z`, e `requires = ["hatchling>=1.25"]` não é pin — dois builds separados por um release do hatchling divergem. (2) O fluxo de deflate depende da implementação de zlib do interpretador: o CPython 3.14 do Windows usado na medição roda `zlib-ng` (`ZLIB_RUNTIME_VERSION = 1.3.1.zlib-ng`), o `ubuntu-latest`/3.11 do CI roda zlib padrão, e as duas comprimem os mesmos bytes de formas diferentes. Consequência: `verify_wheel.py` prova reprodutibilidade **dentro de uma plataforma**, que é o que o job `wheel` mede nos dois SOs separadamente — não entre elas. Fechar exigiria pinar `hatchling==` e nomear um interpretador de referência; nenhum dos dois foi feito, porque o artefato publicado já declara o `Generator:` que o produziu |
 | ~~`unreachable_function_count` não detecta código morto~~ — **fechada** na Fase 5b | Fase 1 | `pyspark_ast` passou a emitir `pyspark.function_def` (um fact por função **definida**, com ou sem aresta) e `call_graph` semeia os nós com ele. A medida antiga virou `unreachable_from_entrypoint_count` (mesma conta, nome honesto: componente cíclico sem entrada) e entrou `unreferenced_function_count` + `attrs.unreferenced_functions`, que afirma "sem referência **neste corpus**" e nada além. Método, decorada e exportada em `__all__` ficam fora da população e são contadas em `opaque_caller_function_count`. Continua **sem regra**, agora por decisão registrada e travada por teste, não por defeito: ver `rules/catalog/callgraph.yaml` e a fixture `fixtures/callgraph/library_surface` |
+| Great Expectations declarativo e dbt seguem sem cobertura | Fase 5c, por decisão registrada na §2 do spec | `great_expectations.yml` e as expectation suites em JSON são artefato declarativo **fora do código**, com parser próprio, e correlacionar suíte com a tabela que o job escreve exige casar por nome — heurística frágil, que produziria `SF-DQ-001` sobre um alvo adivinhado. dbt é mundo próprio e encosta no Spark só via `dbt-glue`/`dbt-spark`. As duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado. Fora de escopo pela mesma razão: **resultado de execução** (`VerificationResult`, validation result do GE, `run_results.json` do dbt) — a ferramenta já disse que o check falhou, e repetir isso não acrescenta garantia nenhuma |
+| `SF-DQ-003` não avalia check cujo alvo chega por parâmetro | revisão final da Fase 5c, medida em 2026-08-03 (desvio D-5c-11) | O índice de correlação é por escopo (D-5c-10), e persistência de um **parâmetro** vive no chamador: o extrator não pode vê-la. Emitir `target_persisted: false` ali acusava a forma canônica de biblioteca Glue — validar num helper, `cache()` no chamador — sobre um DataFrame que **está** persistido, e `SF-DQ-003` dispara justamente sobre `false`. A chave passou a ser **omitida** nesse recorte, e `engine._where_matches` reprova caminho ausente. **O preço é o inverso:** a regra fica cega para todo helper de validação, inclusive os genuinamente não persistidos — subnotificação, que é o lado aceito. Exceção: `cache`/`persist`/`unpersist` sobre o parâmetro **dentro** da própria função é evidência local e a chave volta. Fechar exige seguir o argumento para dentro da chamada (o mesmo trabalho que `SF-DQ-002` já declara não fazer para consequência atrás de helper), e as duas dívidas se fecham juntas ou não se fecham. **A guarda é golden bidirecional, não só unitária:** `fixtures/dq/helper_validates_cached_param` fixa `target_persisted` **ausente** e `action_after_check` **presente** no mesmo `dq.check`, com 0 findings — nenhuma das outras oito fixtures da área tem check sobre parâmetro, então sem ela remover a omissão passaria por `fixtures/dq/` inteiro sem quebrar nada |
+| `manifest.json` declara 18 skills e o disco tem 20 | nomeada pela Task 9 da Fase 5c, 2026-08-03 | A lista `"skills"` do manifesto não recebeu `review-emr-cluster` (desde a Fase 5b) nem `review-data-validation` (desta fase). A causa é a mesma nos dois casos: **nenhum invariante compara a lista com `skills/`** — `grep -rn "review-emr-cluster"` sobre `.py`, `.json` e `.yaml` não devolve nada, então o esquecimento não tem quem o acuse. A assimetria com `"tools"` é o que a torna visível: as 33 tools batem, porque `tests/test_capability_parity.py` deriva o conjunto esperado do código em vez de confiar na lista. Fechar é escrever esse mesmo teste para skills, e só então acrescentar as duas — acrescentá-las sem o teste deixa a próxima skill cair no mesmo buraco |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |
 
 ## Como manter este arquivo honesto

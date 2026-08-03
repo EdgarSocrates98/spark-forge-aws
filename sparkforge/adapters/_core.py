@@ -33,6 +33,10 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_tree,
 )
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
+from sparkforge.facts.data_quality import (
+    extract_data_quality_path,
+    extract_data_quality_tree,
+)
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.fusion import fuse as run_fuse
@@ -834,6 +838,36 @@ def analyze_emr_cluster(
 ) -> dict[str, Any]:
     facts = _extract_emr_cluster_facts(path)
     return _facts_page(facts, "emr.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze data-quality
+# --------------------------------------------------------------------------- #
+
+
+def _extract_data_quality_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio do codigo PySpark ou para um arquivo .py:\n"
+            f"    sparkforge analyze data-quality --path src/ "
+            f"--out .sparkforge/facts_dq.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_data_quality_tree(target, repo_root=target)
+    return extract_data_quality_path(target, repo_root=target.parent)
+
+
+def analyze_data_quality(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_data_quality_facts(path)
+    return _facts_page(facts, "dq.unresolved", kind, limit, cursor)
 
 
 # --------------------------------------------------------------------------- #
