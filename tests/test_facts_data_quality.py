@@ -1,5 +1,7 @@
 import ast
 
+import pytest
+
 from sparkforge.facts.data_quality import (
     EMITTED_KINDS,
     extract_data_quality,
@@ -37,6 +39,33 @@ def test_alvo_que_nao_e_variavel_vira_unresolved():
     assert [f.kind for f in facts if f.kind != "dq.module_analyzed"] == ["dq.unresolved"]
     unresolved = [f for f in facts if f.kind == "dq.unresolved"][0]
     assert unresolved.attrs["reason"] == "unresolved_target"
+
+
+def test_o_alvo_nao_resolvido_e_contado_na_sentinela():
+    facts = _facts("ruins = spark.table('t').filter('x is null').count()\n")
+    sentinela = [f for f in facts if f.kind == "dq.module_analyzed"][0]
+    assert sentinela.measures["unresolved_count"] == 1
+    assert sentinela.measures["check_count"] == 0
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        # Forma canonica de leitura Delta/Iceberg/JDBC: o terminal e `load`, e
+        # `format` esta na frente dele.
+        "r = spark.read.format('delta').load('s3://b/p').filter('x is null').count()",
+        # O terminal nem sempre e o primeiro elo: `option`/`schema` configuram o
+        # reader antes dele.
+        "r = spark.read.option('mergeSchema', 'true').parquet('s3://b/p').filter('x').count()",
+        "r = spark.read.schema(esquema).json('s3://b/p').filter('x').count()",
+        "r = spark.table('t').filter('x').count()",
+        "r = spark.sql('select * from t').filter('x').count()",
+    ],
+)
+def test_nenhuma_cadeia_de_leitura_nomeia_a_sessao_como_alvo(source):
+    facts = _facts(source + "\n")
+    assert [f.kind for f in facts if f.kind != "dq.module_analyzed"] == ["dq.unresolved"]
+    assert [f.attrs.get("target") for f in facts if f.kind == "dq.check"] == []
 
 
 def test_kind_fora_do_namespace_declarado_e_erro():
