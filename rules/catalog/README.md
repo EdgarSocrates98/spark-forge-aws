@@ -39,7 +39,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 
 | Campo | Obrigatório | Nota |
 |---|---|---|
-| `id` | sim | Único. Áreas: `PY` (PySpark), `CFG` (config Spark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão) |
+| `id` | sim | Único. Áreas: `PY` (PySpark), `CFG` (config Spark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `DQ` (validação de dados) |
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |
@@ -208,6 +208,10 @@ O vocabulário, e o que cada forma faz:
 | `iceberg.yaml` | `SF-ICE-*` | Fase 1 (metadata tables) |
 | `parquet.yaml` | `SF-PQ-*` | Fase 1 |
 | `athena.yaml` | `SF-ATH-*` | Fase 1 |
+| `spark-plan.yaml` | `SF-PLAN-*` | Fase 2 (plano físico) |
+| `callgraph.yaml` | `SF-CG-*` | Fase 1 (grafo derivado de AST) |
+| `emr-infra.yaml` | `SF-EMR-*` | Fase 5b (dump de cluster EMR on EC2) |
+| `data-quality.yaml` | `SF-DQ-*` | Fase 5c (validação de dados no AST PySpark) |
 | `routing.yaml` | `ROUTE-*` | Fase 0 — predicado sobre o case, não sobre facts |
 
 ### `routing.yaml` tem schema próprio

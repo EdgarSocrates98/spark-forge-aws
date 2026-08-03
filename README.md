@@ -28,14 +28,14 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 58 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 22 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 6 de coordenador, `AGENT-001`…`AGENT-006`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 60 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 22 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 6 de coordenador, `AGENT-001`…`AGENT-006`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
 ## Camada determinística (Fase 0)
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
-de 58 regras versionado em YAML, e um ciclo de vida de case
+de 60 regras versionado em YAML, e um ciclo de vida de case
 (`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
 
 ### Sequência mínima

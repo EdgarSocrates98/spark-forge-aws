@@ -3,7 +3,7 @@ proves: >
   A validacao roda DEPOIS do write: quando ela acusa, o dado ruim ja esta
   publicado em `s3://lake/curated/vendas/` e ja e visivel para o Athena.
   O `dq.check` sai com attrs.position_vs_write == after_write -- e o positivo
-  de SF-DQ-001, que nasce na Task 7.
+  de SF-DQ-001.
   Prova junto que a ordem e lida no MESMO escopo: leitura, transformacao,
   write e check vivem todos dentro de `main`, entao `vendas` e o mesmo objeto
   nos dois lados da comparacao. Se a validacao migrasse para outra funcao, o
@@ -20,4 +20,5 @@ expects_kinds:
   - dq.check
   - dq.enforcement
   - dq.module_analyzed
-expects_rules: []
+expects_rules:
+  - SF-DQ-001

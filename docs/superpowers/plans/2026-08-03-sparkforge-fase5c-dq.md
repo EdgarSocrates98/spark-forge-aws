@@ -1167,11 +1167,11 @@ git commit -m "test(dq): oito fixtures, e os quatro kinds provados por golden"
 - Create: `rules/catalog/data-quality.yaml`
 - Modify: `fixtures/dq/*/expected/findings.json` (regenerados), `fixtures/dq/*/meta.yaml`
 
-- [ ] **Step 1: Cabeçalho do catálogo, com os vetos da Task 0**
+- [x] **Step 1: Cabeçalho do catálogo, com os vetos da Task 0**
 
 O cabeçalho registra três coisas, na forma que `rules/catalog/emr-infra.yaml` e `callgraph.yaml` usam: por que `runtime_scope` é vazio nas quatro (gatilho é AST, critério da Fase 5a); por que a correlação vive no extrator (§4.4 do spec, `engine._condition_candidates`); e **os vetos que a Task 0 produziu**, um parágrafo por premissa morta, para ninguém reinventá-las.
 
-- [ ] **Step 2: `SF-DQ-001`**
+- [x] **Step 2: `SF-DQ-001`**
 
 ```yaml
 catalog_version: 1
@@ -1216,7 +1216,7 @@ rules:
       - {origin: field-heuristic, note: "A severidade P1 é decisão de campo: o custo depende de haver consumidor a jusante, e nenhum fact disponível mede isso."}
 ```
 
-- [ ] **Step 3: `SF-DQ-002`, com `same_subject`**
+- [x] **Step 3: `SF-DQ-002`, com `same_subject`**
 
 ```yaml
   - id: SF-DQ-002
@@ -1261,16 +1261,26 @@ rules:
       - {origin: field-heuristic, note: "P1 e não P0: o defeito é a garantia inexistente, não um dado comprovadamente inválido — o motor não sabe se o check reprovaria."}
 ```
 
-- [ ] **Step 4: Regenere e leia o diff**
+- [x] **Step 4: Regenere e leia o diff**
 
 Run: `python scripts/regen_fixtures.py && git diff fixtures/dq/*/expected/findings.json`
 
 Confirme, lendo: `validation_after_write` ganhou `SF-DQ-001`; `suite_without_enforcement` ganhou `SF-DQ-002`; **`validated_correctly` continua com `findings.json` vazio**. Acrescente os `expects_rules` correspondentes nos `meta.yaml`.
 
-- [ ] **Step 5: Rode**
+- [x] **Step 5: Rode**
 
 Run: `python -m pytest tests/test_fixtures_golden_dq.py tests/test_rules_catalog_reachability.py tests/test_fixtures_kind_coverage.py -q`
 Expected: PASS
+
+**Medido nesta task.** `regen_fixtures.py` sobre o corpus inteiro mudou **dois** arquivos, e só eles: `fixtures/dq/validation_after_write/expected/findings.json` (0 -> 1 achado, `SF-DQ-001`, ancorado em `job.py:38:16`) e `fixtures/dq/suite_without_enforcement/expected/findings.json` (0 -> 1 achado, `SF-DQ-002`, ancorado em `job.py:32:8`). As outras seis fixtures de `dq` continuam com `findings.json` vazio, `validated_correctly` inclusive — a metade negativa das quatro regras segue negativa. `git diff --stat main -- fixtures/pyspark/` vazio. Suíte inteira: **3063 passed / 2 failed / 5 skipped**; `ruff check .` limpo. Os dois vermelhos são de coordenador e fecham na Task 9: `test_no_tool_is_orphan` (herdado da Task 5) e `test_no_area_is_orphan`, que é exatamente o vermelho que o Step 1 da Task 9 manda provocar e colar como justificativa — a área `SF-DQ` existe no catálogo e ainda não tem coordenador que a declare em `rule_areas`.
+
+**Três desvios medidos nesta task.**
+
+**D-5c-31 — `SF-DQ-001` ganhou `same_subject: true`, que o plano não previa.** O YAML do plano trazia só `all: [{fact: dq.check, where: ...}]`. Medido em `engine._evaluate_when`: regra **sem** `same_subject` produz no máximo UM grupo de evidência, logo um Finding, com `evidence` juntando todos os checks que casaram e `subject` do primeiro. Num recorte com três validações tardias isso vira um achado ancorado numa delas — o operador corrige aquela, roda de novo e descobre a próxima, sem nunca saber quantas faltam. O `README.md` deste diretório trata subcontagem como enganosa do mesmo jeito que um falso negativo ("Um Finding por subject"), e as regras escritas depois dessa decisão (`SF-CG-001`, `SF-PLAN-001/002/004`) usam `same_subject` com uma condição só, exatamente por isso. Aqui a entidade é o check, e a chave de grupo é `<arquivo>:<linha>` (`_subject_group_key` ignora `col`). Sem efeito no golden — `validation_after_write` tem um check só —, e é justamente por isso que a decisão precisa estar escrita: nenhuma fixture a defenderia se ela fosse revertida.
+
+**D-5c-32 — dois campos do YAML do plano não sobreviviam ao carregador, e o golden mostrou.** `rollback: [Reverter o commit. Quando houve staging, apagar o prefixo...]` em fluxo inline: a vírgula da frase é separador de item em YAML, e o `rollback` chegou ao `Finding` picado em dois passos, o segundo começando em minúscula. E, em `risks` de `SF-DQ-002`, `- Passar a abortar o job muda o comportamento de produção: pipeline que hoje...` virou **mapa** — `texto: texto` num item de lista é um par chave-valor —, e o `Finding` saiu com um dicionário dentro de `risks`, que nenhum schema reprova (`validate_finding` aceita a lista). Os dois passaram por `load_catalog(validate_exprs=True)` e pelos 607 testes das suítes de catálogo: quem pegou foi **ler o diff do golden**, que é a etapa que o Step 4 existe para forçar. Corrigidos com aspas e lista em bloco, com o motivo escrito ao lado de cada um. Vale para toda regra futura: prosa com `: ` ou com vírgula em item de lista precisa de aspas.
+
+**D-5c-33 — `manifest.json` e `README.md` carregam a contagem de regras, e ela é testada.** `tests/test_docs_coverage.py::test_rule_count_equals_the_real_catalog` compara `manifest.json.knowledge_base.rule_count` com `len(load_catalog())`: duas regras novas quebram o teste até o manifesto acompanhar. 58 -> 60 no manifesto e nas duas menções do `README.md` (o próprio teste registra que esse número já apodreceu três vezes). Junto, `rules/catalog/README.md` ganhou as quatro áreas que faltavam na tabela "Arquivos" (`spark-plan`, `callgraph`, `emr-infra` e a nova `data-quality`) e as quatro siglas que faltavam na linha do campo `id` — a tabela tinha parado na Fase 1. `knowledge/sources.lock.json` NÃO muda: as duas regras citam `origin: field-heuristic` com `note` apontando para `knowledge/dq/validation-frameworks.md`, e o lock só vigia `sources` com `url`.
 
 - [ ] **Step 6: Commit**
 
