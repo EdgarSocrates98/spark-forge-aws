@@ -362,6 +362,16 @@ O preço, aceito e maior que o de D-5c-10: isto cala `SF-DQ-003` para **todo**
 helper de validação, inclusive os genuinamente não persistidos. A alternativa
 era acusar a forma canônica de biblioteca Glue.
 
+> **Superado em parte pela Fase 5c.2** (2026-08-03, branch `feat/fase5c2-helper`).
+> O parágrafo acima continua valendo como registro do que a 5c decidiu **com a
+> informação que o extrator tinha**; a 5c.2 ampliou a informação e não a política.
+> Hoje, quando o alvo é parâmetro sem evidência local e a função tem **exatamente
+> um** call site no mesmo módulo, a persistência do argumento naquele call site é
+> herdada, nos dois sentidos. O "todo helper de validação" desta linha virou
+> "helper cujo chamador está noutro arquivo, ou que tem mais de um chamador". Ver
+> a seção da Fase 5c.2 em [`STATUS.md`](../STATUS.md), que é a fonte da verdade
+> das fases.
+
 `attrs.action_after_check` **continua** válido para parâmetro, e a assimetria é
 real: a action posterior está dentro do escopo e é observada de fato. Só a
 persistência vem de fora.
