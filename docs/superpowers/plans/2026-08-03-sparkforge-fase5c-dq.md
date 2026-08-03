@@ -560,33 +560,41 @@ As correções, ambas no padrão que a fase já usa:
    do próprio escopo. `_ModuleIndex` virou `_ScopeIndex`. `checks_on_target` também passou a ser
    por escopo: dois checks homônimos em duas funções não são dois checks sobre o mesmo alvo, e
    contá-los juntos afirmaria varredura repetida sobre um dado que não é o mesmo.
-2. **Rebind omite a chave.** Se o nome do alvo é religado entre a linha do check e a do write
-   comparado, `position_vs_write` **não é emitido** — chave ausente, não um quarto valor.
-   `engine._where_matches` reprova caminho ausente, então `SF-DQ-001` não avalia o check, que é o
-   correto. É o mecanismo de D-5c-3. Todo `ast.Name` em contexto `Store` conta como religação, o
-   que cobre `Assign`, `AnnAssign`, `AugAssign`, alvo de `for` e `with ... as` de uma vez.
+2. **Religação do nome.** Dentro de um escopo, `vendas = carrega('outra')` troca o objeto sem
+   trocar o nome, então evidência de um lado da religação não vale do outro. Todo `ast.Name` em
+   contexto `Store` conta, o que cobre `Assign`, `AnnAssign`, `AugAssign`, alvo de `for` e
+   `with ... as` de uma vez. **Os quatro atributos tratam religação** — a diferença entre eles é
+   a *direção do erro*, não estilo:
+   - `position_vs_write` **omite a chave** (não inventa um quarto valor). `engine._where_matches`
+     reprova caminho ausente, então `SF-DQ-001` não avalia o check — é o mecanismo de D-5c-3.
+   - `target_persisted` e `action_after_check` emitem **`false`**. `SF-DQ-003` dispara sobre esses
+     dois valores, então tanto o valor errado quanto a ausência calariam a regra, e omitir faria
+     da religação um jeito de sumir com ela.
+   - Na `action_after_check` a religação invalida **a action que vem depois dela, não o intervalo
+     inteiro**: com check em 2, action em 3, religação em 5 e action em 7, a de 3 continua valendo
+     e o atributo é `true`. São N candidatas, e cada uma responde por si.
 3. **`target_persisted` afirma estado, não ocorrência.** `cache()` / `unpersist()` / check saía
    `True`. O último evento antes do check decide, e a posição é `(linha, coluna)` para que dois
-   eventos na mesma linha ainda se ordenem. O mesmo intervalo do item 2 vale aqui:
-   `vendas.cache()` / `vendas = carrega('outra')` / check é `false`, porque o DataFrame validado
-   não é o que foi persistido. Aqui a chave **não** é omitida, ao contrário de
-   `position_vs_write`: `SF-DQ-003` dispara sobre `target_persisted: false`, então o valor errado
-   *e* a ausência calariam a regra sobre um DataFrame que de fato não está persistido — falso
-   negativo silencioso, que é o pior modo de falha deste repositório, e omitir faria do rebind um
-   jeito de sumir com a regra.
+   eventos na mesma linha ainda se ordenem.
+
+**A propriedade que fecha o D-5c-9** — e que está escrita no cabeçalho do módulo, não como quatro
+notas soltas: *nome nu não identifica objeto*. Entre escopos, o índice é por escopo; dentro de um
+escopo, a religação invalida a evidência do outro lado. Um atributo que erra para menos cala a
+regra e custa subnotificação; um que erra para mais faz o motor **acusar código correto**.
+`action_after_check` é o único dos quatro do lado da acusação — `SF-DQ-003` dispara sobre
+`action_after_check: true` — e por isso é o que mais precisa da guarda.
 
 `checks_on_target` também passou a ser por escopo, e a decisão está registrada como **D-5c-10** na
 §10 do spec: dois homônimos em duas funções não são dois checks sobre o mesmo alvo, e contá-los
 juntos faria `SF-DQ-004` afirmar varredura repetida sobre dado que não é o mesmo. Vence a letra da
 §4.4, que dizia "no módulo".
 
-Cinco limites ficam **documentados no ponto do código e não corrigidos**: alias não é seguido
-(`df2 = vendas`); check irmão conta como `action_after_check` — é verdade, mas quem ler "o dado é
-reusado" se engana, porque o reuso é recomputo; write e check na mesma linha via `;` caem em
-`before_write`; `lambda`/corpo de `class` não são escopos separados; e a separação por escopo
-introduz o quinto — função que lê um DataFrame global perde a correlação com o write do módulo e
-sai `no_write_in_module`. Todos erram para menos, exceto `action_after_check`, que é o único dos
-quatro atributos que não leva o rebind em conta e portanto erra para mais.
+Cinco limites ficam **documentados no ponto do código e não corrigidos**, e todos erram para
+menos: alias não é seguido (`df2 = vendas`); check irmão conta como `action_after_check` — é
+verdade, mas quem ler "o dado é reusado" se engana, porque o reuso é recomputo; write e check na
+mesma linha via `;` caem em `before_write`; `lambda`/corpo de `class` não são escopos separados; e
+a separação por escopo introduz o quinto — função que lê um DataFrame global perde a correlação
+com o write do módulo e sai `no_write_in_module`.
 
 - [x] **Step 4: Commit**
 

@@ -13,6 +13,23 @@ decide e emite.
 
 Nunca aplica limiar, nunca atribui severidade, nunca adivinha alvo: alvo nao
 resolvido vira `dq.unresolved`, contado e nao presumido.
+
+PROPRIEDADE DO MODULO: nome nu nao identifica objeto, e os QUATRO atributos de
+correlacao tratam isso, cada um do jeito que o seu erro pede.
+
+- Entre escopos, nome igual nao e o mesmo objeto: o indice e por escopo
+  (`_ScopeIndex`), e nunca por modulo.
+- Dentro de um escopo, religar o nome (`vendas = carrega(...)`) troca o objeto
+  sem trocar o nome, entao evidencia de um lado da religacao nao vale do outro.
+  `position_vs_write` OMITE a chave -- a regra nao deve opinar sobre ordem que
+  nao existe --, enquanto `target_persisted` e `action_after_check` emitem
+  `false`, porque `SF-DQ-003` dispara sobre esses dois valores e a ausencia
+  CALARIA a regra: o rebind viraria um jeito de sumir com ela.
+
+A escolha entre omitir e emitir `false` nao e estilo; e a direcao do erro. Um
+atributo que erra para menos cala a regra e custa subnotificacao; um que erra
+para mais faz o motor ACUSAR codigo correto. `action_after_check` e o unico dos
+quatro do lado da acusacao, e por isso e o que mais precisa da guarda.
 """
 from __future__ import annotations
 
@@ -293,9 +310,7 @@ def _position_vs_write(target: str, line: int, index: _ScopeIndex) -> str | None
 
     LIMITE conhecido: write e check na MESMA linha (`;`) caem em `before_write`,
     porque a comparacao e estrita e `lineno` nao tem sub-linha. Raro e de baixo
-    impacto. LIMITE conhecido: `action_after_check` ainda nao leva o rebind em
-    conta -- e o unico dos quatro que nao leva, e erra para MAIS (afirma reuso de
-    um nome que ja aponta para outro objeto), nao para menos.
+    impacto.
     """
     lines = index.writes.get(target)
     if not lines:
@@ -333,6 +348,36 @@ def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool:
     return not any(last_line < rebind < line for rebind in index.rebinds.get(target, ()))
 
 
+def _action_after_check(target: str, line: int, index: _ScopeIndex) -> bool:
+    """Ha action sobre o alvo depois do check, e sobre o MESMO objeto.
+
+    Estritamente posterior: a linha do proprio check tem a action que o define
+    -- o `count()` -- e o check nao e action depois de si.
+
+    Religar o nome entre o check e uma action candidata invalida AQUELA action,
+    nao o intervalo inteiro: se ha action em 3, religacao em 5 e action em 7, com
+    o check em 2, a de 3 continua valendo e o atributo e `true`. Sao N candidatas,
+    e cada uma responde por si.
+
+    Este e o unico dos quatro atributos cujo erro cai do lado da ACUSACAO:
+    `SF-DQ-003` dispara sobre `action_after_check: true`, entao afirmar reuso de
+    um nome que ja aponta para outro objeto acusaria um check cujo DataFrame
+    nunca foi reusado. Os outros tres erram para menos e calam a regra; este
+    falaria de mais. Chave sempre presente, pelo mesmo argumento de
+    `_target_persisted`: `false` e a resposta honesta.
+
+    LIMITE conhecido: um check IRMAO sobre o mesmo alvo conta como action
+    posterior, e e verdade -- sem cache, os dois recomputam o lineage --, mas
+    quem ler o campo como "o dado e reusado" se engana: o reuso aqui e recomputo,
+    nao releitura de algo materializado.
+    """
+    rebinds = index.rebinds.get(target, ())
+    return any(
+        action > line and not any(line < rebind < action for rebind in rebinds)
+        for action in index.actions.get(target, ())
+    )
+
+
 def _handmade_check(
     node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
 ) -> Fact | None:
@@ -351,14 +396,7 @@ def _handmade_check(
         "check_type": "count_of_violations",
         "target": target,
         "target_persisted": _target_persisted(target, line, index),
-        # Estritamente posterior: a linha do proprio check tem a action que o
-        # define -- o `count()` -- e o check nao e action depois de si.
-        #
-        # LIMITE conhecido: um check IRMAO sobre o mesmo alvo conta como action
-        # posterior, e e verdade -- sem cache, os dois recomputam o lineage --,
-        # mas quem ler o campo como "o dado e reusado" se engana: o reuso aqui e
-        # recomputo, nao releitura de algo materializado.
-        "action_after_check": any(n > line for n in index.actions.get(target, ())),
+        "action_after_check": _action_after_check(target, line, index),
         # Todo check artesanal paga varredura propria: cada `count()` e uma
         # passada sobre o alvo, sem compartilhamento com os outros checks do
         # modulo. So a `VerificationSuite` do Deequ agrupa agregacoes
