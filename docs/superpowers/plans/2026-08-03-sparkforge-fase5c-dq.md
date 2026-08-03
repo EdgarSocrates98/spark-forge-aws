@@ -62,29 +62,29 @@ Primeiro, e antes de qualquer código. Na Fase 5b três dos quatro candidatos de
 **Files:**
 - Create: `knowledge/dq/validation-frameworks.md`
 
-- [ ] **Step 1: Great Expectations — qual é a superfície pública hoje**
+- [x] **Step 1: Great Expectations — qual é a superfície pública hoje**
 
 Busque a documentação oficial vigente (`docs.greatexpectations.io`) e responda, com URL e data:
 1. A 1.x ainda expõe `SparkDFDataset` e métodos `expect_*` chamáveis direto sobre um DataFrame?
 2. Qual é a forma canônica de validar um DataFrame Spark na versão corrente?
 3. O nome do pacote importado mudou (`great_expectations` continua)?
 
-- [ ] **Step 2: PyDeequ — alcance e superfície**
+- [x] **Step 2: PyDeequ — alcance e superfície**
 
 Mesma disciplina, sobre `github.com/awslabs/python-deequ` e a doc da AWS:
 1. `VerificationSuite(spark).onData(df).addCheck(...).run()` continua a entrada?
 2. Quais versões de Spark a release corrente acompanha? Compare com `GLUE_MATRIX` e `EMR_MATRIX` — se PyDeequ não alcançar as versões que o repo cobre, `proposed_change` não pode recomendá-lo.
 3. Uma `VerificationSuite` com N checks é uma passada só sobre o dado? Esta resposta é o fundamento de `attrs.single_pass`, e sem ela `SF-DQ-004` não pode existir.
 
-- [ ] **Step 3: `assert` sob `python -O`**
+- [x] **Step 3: `assert` sob `python -O`**
 
 Fonte: a referência da linguagem Python (`docs.python.org`, seção `assert`). Confirme que `assert` é removido quando `__debug__` é falso, e verifique se Glue e EMR rodam o driver com `-O` por padrão. Se rodarem, `assert` **não** é consequência; se não rodarem, é consequência com ressalva escrita dentro do achado.
 
-- [ ] **Step 4: Escreva `knowledge/dq/validation-frameworks.md`**
+- [x] **Step 4: Escreva `knowledge/dq/validation-frameworks.md`**
 
 Uma seção por pergunta, cada afirmação com URL e `retrieved:`. Onde a fonte contrariar o spec, escreva o veto — ele vai para o cabeçalho de `rules/catalog/data-quality.yaml` na Task 7, e é o que impede alguém de reinventar a premissa morta.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add knowledge/dq/validation-frameworks.md

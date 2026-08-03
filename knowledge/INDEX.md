@@ -46,6 +46,11 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`storage/iceberg-performance.md`](storage/iceberg-performance.md) | Data/delete files, manifests, snapshots, partition spec, sort order, manutenção |
 | [`iceberg-diagnostics.sql`](iceberg-diagnostics.sql) | Queries de metadata tables |
 
+### Validação de dados
+| Arquivo | Conteúdo |
+|---|---|
+| [`dq/validation-frameworks.md`](dq/validation-frameworks.md) | Superfície pública corrente de Great Expectations e PyDeequ, alcance de versões contra `GLUE_MATRIX`/`EMR_MATRIX`, o que a fonte primária garante sobre passadas sobre o dado, e `assert` sob `python -O`. Traz o bloco de **vetos** que o catálogo `SF-DQ` cita |
+
 ### Transversal
 | Arquivo | Conteúdo |
 |---|---|
@@ -62,6 +67,6 @@ Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever
 
 ## Fontes e frescor
 
-Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**.
+Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01** e `dq/` em **2026-08-03**.
 
 Conhecimento aqui **não substitui** a documentação do runtime real. Quando o job em análise contradiz esta base, o runtime ganha e a base é corrigida.
