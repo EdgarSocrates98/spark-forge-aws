@@ -43,8 +43,18 @@ Quatro kinds saem daqui:
 | `dq.module_analyzed` | `measures.check_count` e `measures.unresolved_count` por módulo |
 
 O `dq.check` traz `attrs.framework` (`handmade`, `pydeequ`, `great_expectations`),
-`attrs.target`, `attrs.position_vs_write`, `attrs.target_persisted`,
+`attrs.check_type`, `attrs.target`, `attrs.position_vs_write`, `attrs.target_persisted`,
 `attrs.action_after_check`, `attrs.shares_scan` e `measures.checks_on_target`.
+
+`attrs.check_type` nomeia **a evidência que foi lida**, não o objeto que o autor escreveu:
+`count_of_violations` é a cadeia `filter(...).count()`; `verification_suite` é a cadeia com
+`onData` que termina em `run`; `batch_parameters_dataframe` é o DataFrame achado sob chave
+literal em `batch_parameters` — e esse nome é deliberado, porque `Checkpoint.run` e
+`ValidationDefinition.run` aceitam o mesmo argumento e o extrator não distingue os dois.
+Nenhuma regra `SF-DQ` lê essa chave; ela é para você. Onde ela paga é no `dq.unresolved`,
+que a carrega junto: sem ela o ponto cego diz *quantas* validações não foram lidas, com ela
+diz **qual tipo** — e "não li uma `VerificationSuite`" pede uma investigação diferente de
+"não li um `count()` artesanal".
 
 **Duas ausências de chave são deliberadas, e as duas significam "não sei", nunca "não".**
 Quando o nome do alvo é religado entre o check e o `write`, `position_vs_write` é **omitido**
