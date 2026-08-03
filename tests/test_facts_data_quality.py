@@ -462,6 +462,198 @@ def test_alvo_nao_resolvido_nao_ganha_atributo_de_correlacao():
     assert "checks_on_target" not in unresolved.measures
 
 
+def test_verification_suite_compartilha_varredura():
+    facts = _facts(
+        "from pydeequ.verification import VerificationSuite\n"
+        "r = VerificationSuite(spark).onData(vendas).addCheck(c1).addCheck(c2).run()\n"
+    )
+    checks = [f for f in facts if f.kind == "dq.check"]
+    assert len(checks) == 1
+    assert checks[0].attrs["framework"] == "pydeequ"
+    assert checks[0].attrs["target"] == "vendas"
+    assert checks[0].attrs["shares_scan"] is True
+    assert "declared_checks" not in checks[0].measures
+
+
+@pytest.mark.parametrize(
+    "chain",
+    [
+        # A ordem e o numero de `addCheck` variam, e a API aceita encadeamento
+        # livre: o que identifica a suite e conter `onData` e terminar em `run`.
+        "VerificationSuite(spark).onData(vendas).run()",
+        "VerificationSuite(spark).onData(vendas).addCheck(c1).run()",
+        "VerificationSuite(spark).onData(vendas).addCheck(c1).addCheck(c2).addCheck(c3).run()",
+        "VerificationSuite(spark).onData(vendas).useRepository(repo).saveOrAppendResult(k).run()",
+    ],
+)
+def test_a_suite_e_reconhecida_pela_forma_e_nao_pela_sequencia(chain):
+    facts = _facts(f"r = {chain}\n")
+    checks = [f for f in facts if f.kind == "dq.check"]
+    assert [c.attrs["check_type"] for c in checks] == ["verification_suite"]
+    assert checks[0].attrs["target"] == "vendas"
+
+
+def test_run_sem_ondata_nao_e_suite():
+    facts = _facts("r = job.addCheck(c1).run()\n")
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
+def test_ondata_sobre_cadeia_de_leitura_vira_unresolved():
+    # O alvo do PyDeequ e o argumento de `onData`, e argumento que nao e um nome
+    # nao vira alvo adivinhado.
+    facts = _facts("r = VerificationSuite(spark).onData(spark.table('t')).run()\n")
+    assert [f.kind for f in facts if f.kind != "dq.module_analyzed"] == ["dq.unresolved"]
+    unresolved = [f for f in facts if f.kind == "dq.unresolved"][0]
+    assert unresolved.attrs["reason"] == "unresolved_target"
+    assert unresolved.attrs["check_type"] == "verification_suite"
+    assert [f for f in facts if f.kind == "dq.module_analyzed"][0].measures["unresolved_count"] == 1
+
+
+def test_ondata_sem_argumento_vira_unresolved():
+    facts = _facts("r = VerificationSuite(spark).onData().run()\n")
+    assert [f.attrs["reason"] for f in facts if f.kind == "dq.unresolved"] == ["unresolved_target"]
+
+
+def test_a_suite_depois_do_write_e_datada_como_o_check_artesanal():
+    facts = _facts(
+        "vendas.write.parquet('s3://b/p')\n"
+        "r = VerificationSuite(spark).onData(vendas).addCheck(c1).run()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["position_vs_write"] == "after_write"
+    assert check.attrs["target_persisted"] is False
+    assert check.attrs["action_after_check"] is False
+
+
+def test_a_suite_sobre_alvo_cacheado_com_action_depois():
+    facts = _facts(
+        "vendas.cache()\n"
+        "r = VerificationSuite(spark).onData(vendas).run()\n"
+        "vendas.write.parquet('s3://b/p')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+    assert check.attrs["action_after_check"] is True
+
+
+def test_rebind_entre_o_write_e_a_suite_omite_a_posicao():
+    facts = _facts(
+        "vendas.write.parquet('s3://b/p')\n"
+        "vendas = carrega('outra')\n"
+        "r = VerificationSuite(spark).onData(vendas).run()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "position_vs_write" not in check.attrs
+
+
+def test_suite_de_homonimo_em_outra_funcao_nao_e_datada_pelo_write():
+    facts = _facts(
+        "def a(vendas):\n"
+        "    vendas.write.parquet(1)\n"
+        "def b(vendas):\n"
+        "    return VerificationSuite(spark).onData(vendas).run()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["position_vs_write"] == "no_write_in_module"
+
+
+def test_suite_e_check_artesanal_no_mesmo_alvo_se_contam():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "r = VerificationSuite(spark).onData(vendas).run()\n"
+    )
+    checks = [f for f in facts if f.kind == "dq.check"]
+    assert len(checks) == 2
+    assert {c.measures["checks_on_target"] for c in checks} == {2}
+    assert {c.attrs["framework"] for c in checks} == {"handmade", "pydeequ"}
+
+
+def test_a_suite_nao_produz_dois_facts_para_a_mesma_chamada():
+    facts = _facts("r = VerificationSuite(spark).onData(vendas).addCheck(c1).run()\n")
+    assert [f.kind for f in facts if f.kind != "dq.module_analyzed"] == ["dq.check"]
+
+
+def test_great_expectations_pela_chave_literal_do_batch_parameters():
+    facts = _facts(
+        "import great_expectations as gx\n"
+        "res = validation_definition.run(batch_parameters={'dataframe': vendas})\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["framework"] == "great_expectations"
+    assert check.attrs["target"] == "vendas"
+    # Quantas expectativas rodam vive no store do contexto, FORA do .py.
+    # Chave ausente e a forma de dizer "nao sei" sem virar `false`.
+    assert "shares_scan" not in check.attrs
+
+
+def test_checkpoint_com_batch_parameters_tambem_e_reconhecido():
+    # O receptor varia -- Checkpoint e ValidationDefinition aceitam o mesmo
+    # `batch_parameters` --, e a evidencia lida e a mesma.
+    facts = _facts("res = checkpoint.run(batch_parameters={'dataframe': vendas})\n")
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["framework"] == "great_expectations"
+    assert check.attrs["check_type"] == "batch_parameters_dataframe"
+
+
+def test_batch_parameters_sem_a_chave_dataframe_nao_e_check():
+    facts = _facts("res = validation_definition.run(batch_parameters={'ano': 2026})\n")
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
+def test_batch_parameters_que_nao_e_dict_literal_nao_e_check():
+    facts = _facts("res = validation_definition.run(batch_parameters=params)\n")
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
+def test_dataframe_do_batch_parameters_que_nao_e_variavel_vira_unresolved():
+    facts = _facts(
+        "res = validation_definition.run(batch_parameters={'dataframe': spark.table('t')})\n"
+    )
+    assert [f.kind for f in facts if f.kind != "dq.module_analyzed"] == ["dq.unresolved"]
+    unresolved = [f for f in facts if f.kind == "dq.unresolved"][0]
+    assert unresolved.attrs["reason"] == "unresolved_target"
+    assert unresolved.attrs["check_type"] == "batch_parameters_dataframe"
+
+
+def test_o_check_de_ge_recebe_os_atributos_de_correlacao():
+    facts = _facts(
+        "vendas.cache()\n"
+        "res = validation_definition.run(batch_parameters={'dataframe': vendas})\n"
+        "vendas.write.parquet('s3://b/p')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["position_vs_write"] == "before_write"
+    assert check.attrs["target_persisted"] is True
+    assert check.attrs["action_after_check"] is True
+    assert check.measures["checks_on_target"] == 1
+
+
+def test_rebind_entre_a_validacao_de_ge_e_o_write_omite_a_posicao():
+    facts = _facts(
+        "res = validation_definition.run(batch_parameters={'dataframe': vendas})\n"
+        "vendas = carrega('outra')\n"
+        "vendas.write.parquet('s3://b/p')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "position_vs_write" not in check.attrs
+
+
+def test_nenhum_framework_declara_single_pass_nem_declared_checks():
+    # `single_pass` afirmaria "N checks, uma passada", que a fonte primaria nega
+    # (VLDB 2018, §4.1 e §5.1); `declared_checks` contaria objetos `Check` e nao
+    # restricoes. Os dois nomes estao vetados nesta area.
+    facts = _facts(
+        "a = vendas.filter(vendas.valor < 0).count()\n"
+        "r = VerificationSuite(spark).onData(vendas).addCheck(c1).addCheck(c2).run()\n"
+        "res = validation_definition.run(batch_parameters={'dataframe': vendas})\n"
+    )
+    checks = [f for f in facts if f.kind == "dq.check"]
+    assert len(checks) == 3
+    for check in checks:
+        assert "single_pass" not in check.attrs
+        assert "declared_checks" not in check.measures
+
+
 def test_arquivo_indecodificavel_vira_fact_e_nao_derruba_a_arvore(tmp_path):
     # `read_text` levanta UnicodeDecodeError -- um ValueError, NAO um OSError --
     # entao a travessia so continua se a guarda for larga.

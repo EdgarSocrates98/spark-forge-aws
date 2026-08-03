@@ -610,11 +610,11 @@ git commit -m "feat(facts): as correlacoes que o motor nao expressa viram atribu
 **Files:**
 - Modify: `sparkforge/facts/data_quality.py`, `tests/test_facts_data_quality.py`
 
-- [ ] **Step 1: Confira a Task 0 antes de escrever**
+- [x] **Step 1: Confira a Task 0 antes de escrever**
 
 Releia `knowledge/dq/validation-frameworks.md`. Se a pesquisa mostrou que a superfície do GE 1.x é outra, **o teste abaixo muda para a forma apurada**, e o veto à forma antiga vai para o cabeçalho do catálogo na Task 7. Não escreva detecção para uma API que a fonte diz não existir mais.
 
-- [ ] **Step 2: Teste do PyDeequ**
+- [x] **Step 2: Teste do PyDeequ**
 
 ```python
 def test_verification_suite_compartilha_varredura():
@@ -632,7 +632,7 @@ def test_verification_suite_compartilha_varredura():
 
 Run: FAIL (nenhum `dq.check`).
 
-- [ ] **Step 3: Reconheça pela forma, não por lista de nomes**
+- [x] **Step 3: Reconheça pela forma, não por lista de nomes**
 
 ```python
 def _pydeequ_check(
@@ -677,7 +677,33 @@ def _pydeequ_check(
 
 Run: PASS.
 
-- [ ] **Step 4: Great Expectations, na forma que a Task 0 apurou (desvio D-5c-3)**
+**A assinatura acima não sobreviveu à Task 2** (desvio D-5c-11). O esqueleto recebe
+`writes: dict[str, int]` e escreve `"position_vs_write": _position_vs_write(...)` **dentro do
+literal de `attrs`**, incondicionalmente — que é a forma anterior à correção do D-5c-9. Copiada
+como está, ela reintroduz no PyDeequ os dois falsos positivos que a Task 2 mediu: o write de um
+homônimo em outro escopo dataria a suíte, e a religação do nome entre o write e a suíte produziria
+`after_write` sobre um DataFrame que nunca foi escrito. Além disso a suíte não recebia
+`target_persisted` nem `action_after_check`, e `SF-DQ-003` avaliaria só o check artesanal.
+
+A correção é um construtor **único** para os três frameworks — `_check(path, line, index,
+provenance, *, framework, check_type, target, **extra)` —, que aplica os quatro atributos de
+correlação por escopo, omite `position_vs_write` sob religação e recebe por `extra` só o que cada
+framework permite afirmar (`shares_scan` nos dois primeiros, chave nenhuma no GE). É o mesmo
+argumento que reuniu `_rebound_between` num predicado só: um segundo caminho por framework
+divergiria, e divergência aqui é falso positivo ou falso negativo.
+
+Duas medições confirmadas antes de escrever, ambas contra o que o esqueleto sugere:
+
+| Forma | Medido |
+|---|---|
+| `_chain_root` sobre `VerificationSuite(spark).onData(vendas)...run()` | `(None, ['onData', 'addCheck', 'addCheck', 'run'])` — a raiz é um `ast.Call`, e **não** um `ast.Name` |
+| `lineno` da chamada externa numa cadeia quebrada em quatro linhas | `1` — a linha do início da expressão, e não a do `.run()` |
+
+Ou seja: a detecção usa só `methods` de `_chain_root`, e o alvo sai exclusivamente do argumento de
+`onData`. Se a raiz nomeasse alguém, seria `VerificationSuite` ou `spark` — o alvo adivinhado que
+`_SOURCE_TERMINALS` recusa do outro lado.
+
+- [x] **Step 4: Great Expectations, na forma que a Task 0 apurou (desvio D-5c-3)**
 
 A pesquisa fechou este step. `SparkDFDataset` não existe desde a 1.0.0, e a detecção por prefixo `expect_*` está **vetada**: o prefixo sobrevive em `Validator.__getattr__`, e o AST não sabe se a variável é um `Validator` — casar por prefixo produz falso positivo sobre qualquer objeto.
 
@@ -701,12 +727,28 @@ Reconheça o `ast.Call` que tem `keyword` chamado `batch_parameters` cujo valor 
 
 A chave `shares_scan` fica **fora** dos `attrs` deste framework, de propósito: `engine._where_matches` reprova caminho ausente, então `SF-DQ-004` não avalia check de GE — que é o correto, porque o extrator não sabe quantas expectativas a suíte tem.
 
-- [ ] **Step 5: Rode a suíte inteira do extrator**
+**Duas decisões que o step não fixava** (desvio D-5c-12), ambas medidas contra a §1.2 da pesquisa:
+
+1. **`check_type` nomeia a evidência, não o objeto.** O receptor de `batch_parameters` varia — a
+   documentação corrente mostra `validation_definition.run(...)`, e `Checkpoint.run(...)` aceita o
+   mesmo argumento —, então `check_type: "validation_definition"` afirmaria um objeto que o AST não
+   enxerga. O valor é `batch_parameters_dataframe`: exatamente o que foi lido.
+2. **Sem a chave literal não há `dq.unresolved`.** `batch_parameters=params` (não é dict literal) e
+   `batch_parameters={'ano': 2026}` (sem a chave) produzem fact **nenhum**. Sem `"dataframe"` nada
+   prova que a chamada é do Great Expectations, e contar como ponto cego qualquer função com um
+   argumento homônimo inflaria `unresolved_count` com ruído. `dq.unresolved` fica para o caso em que
+   a validação **está** reconhecida e o alvo é que não se lê — `{'dataframe': spark.table('t')}`.
+   Erra para menos, que é a direção aceita nesta área.
+
+- [x] **Step 5: Rode a suíte inteira do extrator**
 
 Run: `python -m pytest tests/test_facts_data_quality.py -v`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+Medido: **72 passed** no arquivo (50 antes desta task), e **2924 passed / 5 skipped** na suíte
+inteira. `ruff check .` limpo, e `git diff --stat main -- fixtures/pyspark/` vazio.
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add sparkforge/facts/data_quality.py tests/test_facts_data_quality.py knowledge/dq/validation-frameworks.md

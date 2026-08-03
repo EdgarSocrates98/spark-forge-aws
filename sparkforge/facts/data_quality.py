@@ -14,6 +14,15 @@ decide e emite.
 Nunca aplica limiar, nunca atribui severidade, nunca adivinha alvo: alvo nao
 resolvido vira `dq.unresolved`, contado e nao presumido.
 
+Tres formas sao reconhecidas, cada uma pela FORMA e nunca por lista de nomes: o
+check artesanal (`df.filter(...).count()`), a `VerificationSuite` do PyDeequ
+(cadeia que contem `onData` e termina em `run`) e a validacao do Great
+Expectations (DataFrame sob a chave literal `"dataframe"` de `batch_parameters`).
+Todas passam pelo MESMO construtor -- `_check` -- e pelo mesmo indice por escopo:
+o que muda entre elas nao e a correlacao, e o que o `.py` permite afirmar sobre a
+varredura. Dai a assimetria deliberada de `shares_scan`, presente nos dois
+primeiros e AUSENTE no terceiro.
+
 PROPRIEDADE DO MODULO: nome nu nao identifica objeto, e os QUATRO atributos de
 correlacao tratam isso, cada um do jeito que o seu erro pede.
 
@@ -109,6 +118,23 @@ _ACTION_METHODS = frozenset({"count", "collect", "show", "foreach", "save", "sav
 
 _PERSIST_METHODS = frozenset({"cache", "persist"})
 _UNPERSIST_METHODS = frozenset({"unpersist"})
+
+# A suite do PyDeequ e reconhecida pela FORMA -- cadeia que CONTEM `onData` e
+# TERMINA em `run` --, nunca por casar a sequencia exata: a ordem e o numero de
+# `addCheck` variam, e `useRepository`/`saveOrAppendResult` entram no meio
+# (knowledge/dq/validation-frameworks.md, §2.1).
+_SUITE_SOURCE = "onData"
+_SUITE_TERMINAL = "run"
+
+# Great Expectations 1.x nao expoe mais `SparkDFDataset`, e detectar por prefixo
+# `expect_*` esta vetado (V-GE-1 e V-GE-2 da mesma pagina, §1.1): o prefixo
+# sobrevive via `Validator.__getattr__` e o AST nao sabe se a variavel e um
+# `Validator`. O que resta legivel no `.py` e o DataFrame sob CHAVE LITERAL no
+# dict de `batch_parameters` -- e o receptor da chamada varia (`Checkpoint` e
+# `ValidationDefinition` aceitam o mesmo argumento), por isso o `check_type`
+# nomeia a EVIDENCIA lida e nao um objeto que o extrator nao enxerga.
+_BATCH_PARAMETERS = "batch_parameters"
+_DATAFRAME_KEY = "dataframe"
 
 
 class _ScopeIndex(NamedTuple):
@@ -390,30 +416,36 @@ def _action_after_check(target: str, line: int, index: _ScopeIndex) -> bool:
     )
 
 
-def _handmade_check(
-    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
-) -> Fact | None:
-    if not isinstance(node.func, ast.Attribute) or node.func.attr != "count":
-        return None
-    target, methods = _chain_root(node)
-    if not any(m in _HANDMADE_GATES for m in methods):
-        return None
-    if target is None or any(m in _SOURCE_TERMINALS for m in methods):
-        return _unresolved(
-            path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
-        )
-    line = node.lineno
+def _check(
+    path: str,
+    line: int,
+    index: _ScopeIndex,
+    provenance: dict[str, Any],
+    *,
+    framework: str,
+    check_type: str,
+    target: str,
+    **extra: Any,
+) -> Fact:
+    """Um `dq.check` de qualquer framework, com os atributos de correlacao.
+
+    Caminho UNICO de proposito. Os quatro atributos correlacionam por nome nu, e
+    nome nu nao identifica objeto: escopo e religacao ja estao tratados aqui
+    dentro, cada um do jeito que o seu erro pede. Um segundo caminho por
+    framework divergiria na proxima mudanca, e divergencia aqui e falso positivo
+    ou falso negativo -- e o mesmo argumento que reuniu `_rebound_between`.
+
+    O que muda de framework para framework e o que o `.py` PERMITE afirmar, e
+    isso entra por `extra`: `shares_scan` para os dois frameworks cuja passada o
+    codigo revela, e chave nenhuma para o Great Expectations, que nao a revela.
+    """
     attrs: dict[str, Any] = {
-        "framework": "handmade",
-        "check_type": "count_of_violations",
+        "framework": framework,
+        "check_type": check_type,
         "target": target,
         "target_persisted": _target_persisted(target, line, index),
         "action_after_check": _action_after_check(target, line, index),
-        # Todo check artesanal paga varredura propria: cada `count()` e uma
-        # passada sobre o alvo, sem compartilhamento com os outros checks do
-        # modulo. So a `VerificationSuite` do Deequ agrupa agregacoes
-        # (knowledge/dq/validation-frameworks.md, §2.3).
-        "shares_scan": False,
+        **extra,
     }
     position = _position_vs_write(target, line, index)
     if position is not None:
@@ -427,6 +459,139 @@ def _handmade_check(
     )
 
 
+def _handmade_check(
+    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
+) -> Fact | None:
+    if not isinstance(node.func, ast.Attribute) or node.func.attr != "count":
+        return None
+    target, methods = _chain_root(node)
+    if not any(m in _HANDMADE_GATES for m in methods):
+        return None
+    if target is None or any(m in _SOURCE_TERMINALS for m in methods):
+        return _unresolved(
+            path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
+        )
+    return _check(
+        path,
+        node.lineno,
+        index,
+        provenance,
+        framework="handmade",
+        check_type="count_of_violations",
+        target=target,
+        # Todo check artesanal paga varredura propria: cada `count()` e uma
+        # passada sobre o alvo, sem compartilhamento com os outros checks do
+        # modulo. So a `VerificationSuite` do Deequ agrupa agregacoes
+        # (knowledge/dq/validation-frameworks.md, §2.3).
+        shares_scan=False,
+    )
+
+
+def _on_data_argument(node: ast.Call) -> ast.expr | None:
+    """Primeiro argumento posicional do `onData` da cadeia, sem interpretar.
+
+    O alvo do PyDeequ NAO e a raiz da cadeia: `_chain_root` sobre
+    `VerificationSuite(spark).onData(df)...run()` devolve raiz `None`, porque a
+    raiz e um `ast.Call` -- e, se devolvesse nome, seria `VerificationSuite` ou
+    `spark`, o alvo adivinhado que `_SOURCE_TERMINALS` recusa do outro lado.
+    Quem nomeia o dado validado e o argumento de `onData`.
+    """
+    current: ast.AST = node
+    while isinstance(current, ast.Call) and isinstance(current.func, ast.Attribute):
+        if current.func.attr == _SUITE_SOURCE and current.args:
+            return current.args[0]
+        current = current.func.value
+    return None
+
+
+def _pydeequ_check(
+    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
+) -> Fact | None:
+    if not isinstance(node.func, ast.Attribute) or node.func.attr != _SUITE_TERMINAL:
+        return None
+    _, methods = _chain_root(node)
+    if _SUITE_SOURCE not in methods:
+        return None
+    argument = _on_data_argument(node)
+    if not isinstance(argument, ast.Name):
+        return _unresolved(
+            path, node.lineno, "unresolved_target", provenance, check_type="verification_suite"
+        )
+    return _check(
+        path,
+        node.lineno,
+        index,
+        provenance,
+        framework="pydeequ",
+        check_type="verification_suite",
+        target=argument.id,
+        # `shares_scan`, NUNCA `single_pass`: o runner do Deequ roda numa mesma
+        # passada as agregacoes que compartilham o mesmo agrupamento, e
+        # `isUnique`/entropia exigem re-particionamento e pagam passada propria
+        # (Schelter et al., PVLDB 2018, §4.1 e §5.1 --
+        # knowledge/dq/validation-frameworks.md §2.3). Uma suite com N checks
+        # custa uma passada POR AGRUPAMENTO, e nao uma. O contraste com N
+        # `count()` separados -- que sao N passadas por construcao -- e o que
+        # `SF-DQ-004` precisa, e ele sobrevive a correcao.
+        shares_scan=True,
+    )
+
+
+def _batch_dataframe(node: ast.Call) -> ast.expr | None:
+    """Valor sob a chave literal `"dataframe"` do dict de `batch_parameters`.
+
+    `None` quando nao ha o que ler -- sem o argumento, com valor que nao e dict
+    literal, ou sem a chave --, e ai nao ha validacao GE RECONHECIDA. Nao ha
+    `dq.unresolved` nesses tres casos de proposito: sem a chave literal nada
+    prova que a chamada e do Great Expectations, e contar um ponto cego que pode
+    ser qualquer funcao com um argumento homonimo inflaria `unresolved_count`.
+    Erra para menos, que e a direcao aceita nesta area.
+    """
+    for keyword in node.keywords:
+        if keyword.arg != _BATCH_PARAMETERS or not isinstance(keyword.value, ast.Dict):
+            continue
+        for key, value in zip(keyword.value.keys, keyword.value.values, strict=True):
+            if isinstance(key, ast.Constant) and key.value == _DATAFRAME_KEY:
+                return value
+    return None
+
+
+def _great_expectations_check(
+    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
+) -> Fact | None:
+    value = _batch_dataframe(node)
+    if value is None:
+        return None
+    if not isinstance(value, ast.Name):
+        return _unresolved(
+            path,
+            node.lineno,
+            "unresolved_target",
+            provenance,
+            check_type="batch_parameters_dataframe",
+        )
+    return _check(
+        path,
+        node.lineno,
+        index,
+        provenance,
+        framework="great_expectations",
+        check_type="batch_parameters_dataframe",
+        target=value.id,
+        # SEM `shares_scan`, de proposito: quais e quantas expectativas rodam
+        # vive no store do contexto (`great_expectations.yml` e as suites em
+        # JSON), fora do `.py`. `engine._where_matches` reprova caminho ausente,
+        # entao `SF-DQ-004` nao avalia este check -- que e o correto. Chave
+        # ausente e como este motor diz "nao sei"; `false` afirmaria que a
+        # validacao NAO compartilha varredura, e isso seria mentira.
+    )
+
+
+# Ordem da tentativa. Um mesmo `ast.Call` produz UM fact: a primeira forma que
+# reconhece a chamada responde por ela, e as seguintes nem sao consultadas.
+_DETECTORS = (_handmade_check, _pydeequ_check, _great_expectations_check)
+
+
 def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") -> list[Fact]:
     provenance = {"artifact": path, "artifact_sha256": artifact_sha256, "extractor": EXTRACTOR_ID}
     facts: list[Fact] = []
@@ -435,10 +600,13 @@ def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") ->
         index = _scope_index(nodes)
         found: list[Fact] = []
         for node in nodes:
-            if isinstance(node, ast.Call):
-                fact = _handmade_check(node, path, index, provenance)
+            if not isinstance(node, ast.Call):
+                continue
+            for detector in _DETECTORS:
+                fact = detector(node, path, index, provenance)
                 if fact is not None:
                     found.append(fact)
+                    break
 
         # Segundo passe: quantos checks ha sobre o mesmo alvo so e conhecido
         # depois de a travessia terminar. Por escopo, pelo mesmo motivo que o
