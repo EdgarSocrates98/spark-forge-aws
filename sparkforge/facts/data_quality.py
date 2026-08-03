@@ -29,17 +29,32 @@ correlacao tratam isso, cada um do jeito que o seu erro pede.
 
 - Entre escopos, nome igual nao e o mesmo objeto: o indice e por escopo
   (`_ScopeIndex`), e nunca por modulo.
+- O que ENTRA no escopo por parametro tem historia que o indice nao viu.
+  `target_persisted` OMITE a chave nesse caso, porque persistencia de um
+  parametro mora no chamador.
 - Dentro de um escopo, religar o nome (`vendas = carrega(...)`) troca o objeto
   sem trocar o nome, entao evidencia de um lado da religacao nao vale do outro.
   `position_vs_write` OMITE a chave -- a regra nao deve opinar sobre ordem que
   nao existe --, enquanto `target_persisted` e `action_after_check` emitem
-  `false`, porque `SF-DQ-003` dispara sobre esses dois valores e a ausencia
-  CALARIA a regra: o rebind viraria um jeito de sumir com ela.
+  `false`: o objeto religado esta NESTE escopo, o indice ve tudo que ha para ver
+  sobre ele, e omitir faria da religacao um jeito de sumir com a regra.
 
-A escolha entre omitir e emitir `false` nao e estilo; e a direcao do erro. Um
-atributo que erra para menos cala a regra e custa subnotificacao; um que erra
-para mais faz o motor ACUSAR codigo correto. `action_after_check` e o unico dos
-quatro do lado da acusacao, e por isso e o que mais precisa da guarda.
+A escolha entre omitir e emitir `false` nao e estilo; e a direcao do erro, e ela
+depende de sobre qual valor a regra dispara. `SF-DQ-003` dispara sobre
+`target_persisted: FALSE` e sobre `action_after_check: TRUE`: os DOIS estao do
+lado da acusacao, porque nos dois e o valor que a ignorancia produz que puxa o
+gatilho. Emitir `false` na ignorancia sobre persistencia acusa exatamente como
+emitir `true` na ignorancia sobre reuso.
+
+Dai a diferenca no remedio de cada um, que nao e simetrica:
+
+- `target_persisted` sob parametro: `false` e a ausencia NAO sao equivalentes --
+  `false` dispara, a ausencia cala --, entao omitir e o unico jeito de nao
+  acusar.
+- `action_after_check`: `false` e a ausencia calam a regra IGUALMENTE, entao nao
+  ha o que ganhar em omitir, e a chave fica sempre presente. O argumento "a
+  ausencia calaria a regra" vale so para `target_persisted` sob religacao, onde
+  calar seria errado.
 
 `dq.enforcement` inverte essa direcao, e por isso as decisoes de borda dele
 apontam para o outro lado. `SF-DQ-002` dispara sobre a AUSENCIA dele
@@ -222,6 +237,12 @@ class _ScopeIndex(NamedTuple):
     # responde por uma cadeia e o no mais externo; sem isso,
     # `VerificationSuite(s).onData(d).addCheck(c)` emitiria um fact por elo.
     chained: frozenset[ast.AST]
+    # Nomes que ENTRAM no escopo pela assinatura. Um parametro e, por
+    # construcao, um objeto cuja historia comecou fora daqui: o que aconteceu
+    # com ele antes da chamada e invisivel para este indice, e afirmar ausencia
+    # de evidencia como evidencia de ausencia seria acusar o chamador pelo que
+    # ele fez certo. Vazio no escopo do modulo.
+    params: frozenset[str]
 
 
 def _subject(path: str, line: int = 0, col: int = 0) -> dict[str, Any]:
@@ -292,18 +313,42 @@ def _chain_target(node: ast.AST) -> str | None:
     return root
 
 
-def _scopes(tree: ast.AST) -> list[list[ast.AST]]:
-    """Os nos de cada escopo de nome, cada escopo numa lista propria.
+def _parameter_names(root: ast.AST) -> frozenset[str]:
+    """Nomes ligados pela assinatura, quando a raiz do escopo e uma funcao.
+
+    Todas as formas contam -- posicionais, `*args`, keyword-only e `**kwargs` --
+    porque a pergunta nao e como o valor chega, e sim de ONDE ele vem: de fora
+    deste escopo, com uma historia que este indice nao viu.
+    """
+    if not isinstance(root, ast.FunctionDef | ast.AsyncFunctionDef):
+        return frozenset()
+    args = root.args
+    named = [*args.posonlyargs, *args.args, *args.kwonlyargs]
+    if args.vararg is not None:
+        named.append(args.vararg)
+    if args.kwarg is not None:
+        named.append(args.kwarg)
+    return frozenset(arg.arg for arg in named)
+
+
+def _scopes(tree: ast.AST) -> list[tuple[ast.AST, list[ast.AST]]]:
+    """A raiz e os nos de cada escopo de nome, cada escopo num par proprio.
 
     Corpo do modulo e cada `FunctionDef`/`AsyncFunctionDef` sao escopos
     separados: dentro de um escopo, o mesmo nome e o mesmo objeto (a menos de
     rebind, que `_rebind_lines` apura); entre escopos, nao e.
+
+    A RAIZ acompanha os nos porque a assinatura da funcao nao esta no corpo dela:
+    e o unico lugar onde se le quais nomes chegaram de fora, e sem isso o indice
+    nao consegue distinguir "nao ha persistencia" de "a persistencia esta num
+    escopo que eu nao vejo".
     """
-    scopes: list[list[ast.AST]] = []
+    scopes: list[tuple[ast.AST, list[ast.AST]]] = []
     pending: list[ast.AST] = [tree]
     while pending:
+        root = pending.pop()
         own: list[ast.AST] = []
-        stack = list(ast.iter_child_nodes(pending.pop()))
+        stack = list(ast.iter_child_nodes(root))
         while stack:
             node = stack.pop()
             if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
@@ -311,7 +356,7 @@ def _scopes(tree: ast.AST) -> list[list[ast.AST]]:
                 continue
             own.append(node)
             stack.extend(ast.iter_child_nodes(node))
-        scopes.append(own)
+        scopes.append((root, own))
     return scopes
 
 
@@ -433,7 +478,7 @@ def _chained_receivers(nodes: list[ast.AST]) -> frozenset[ast.AST]:
     )
 
 
-def _scope_index(nodes: list[ast.AST]) -> _ScopeIndex:
+def _scope_index(root: ast.AST, nodes: list[ast.AST]) -> _ScopeIndex:
     return _ScopeIndex(
         writes=_lines_by_target(nodes, _WRITE_ATTRS, frozenset()),
         persists=_persist_events(nodes),
@@ -442,6 +487,7 @@ def _scope_index(nodes: list[ast.AST]) -> _ScopeIndex:
         rebinds=_rebind_lines(nodes),
         dicts=_dict_bindings(nodes),
         chained=_chained_receivers(nodes),
+        params=_parameter_names(root),
     )
 
 
@@ -486,7 +532,7 @@ def _position_vs_write(target: str, line: int, index: _ScopeIndex) -> str | None
     return "after_write" if line > write_line else "before_write"
 
 
-def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool:
+def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool | None:
     """Estado no momento do check: o ULTIMO evento antes dele decide.
 
     `vendas.cache()` seguido de `vendas.unpersist()` deixa o alvo NAO persistido
@@ -495,17 +541,43 @@ def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool:
 
     Religar o nome entre o ultimo evento e o check tambem derruba a evidencia: em
     `vendas.cache()` / `vendas = carrega(...)` / check, o DataFrame validado nao e
-    o que foi persistido. Aqui a chave NAO e omitida, ao contrario de
-    `position_vs_write`: `SF-DQ-003` dispara sobre `target_persisted: false`, entao
-    tanto o valor errado quanto a ausencia CALARIAM a regra sobre um DataFrame que
-    de fato nao esta persistido -- e omitir faria do rebind um jeito de sumir com
-    ela. `false` e a resposta honesta a "este DataFrame esta persistido quando o
-    check roda", e um falso negativo silencioso e o pior modo de falha deste
-    repositorio.
+    o que foi persistido. Aqui `false`, e nao a omissao: o objeto que o check
+    valida esta neste escopo, foi religado aqui, e nao ha nada sobre ele que este
+    indice deixe de ver. Omitir faria da religacao um jeito de sumir com a regra.
+
+    `None` (chave OMITIDA) e o alvo que chega por PARAMETRO sem nenhum evento de
+    persistencia no proprio escopo. A forma canonica de biblioteca Glue e validar
+    num helper e cachear no chamador:
+
+        def valida(vendas):
+            ruins = vendas.filter(...).count()   # persistencia? nao da para saber
+        def main(spark):
+            vendas = spark.read.parquet(...)
+            vendas.cache()                       # ela esta AQUI, noutro escopo
+            valida(vendas)
+
+    Persistencia de um parametro e, por construcao, evidencia que vive fora do
+    escopo, e `false` afirmaria o que o indice nao sabe -- `SF-DQ-003` dispara
+    sobre `target_persisted: false` e acusaria um DataFrame persistido. A chave
+    ausente e reprovada por `engine._where_matches`, entao a regra nao avalia
+    esses checks.
+
+    O PRECO, aceito: isto cala `SF-DQ-003` para todo helper de validacao,
+    inclusive os genuinamente nao persistidos. Subnotificacao e o lado aceito;
+    a alternativa era acusar a forma canonica de biblioteca Glue.
+
+    A excecao e ter evidencia LOCAL: `cache`/`persist`/`unpersist` sobre o
+    parametro dentro da propria funcao prova o estado sem depender do chamador, e
+    ai a chave sai normalmente -- inclusive `false`, quando o evento local e um
+    `unpersist`.
+
+    LIMITE conhecido: religar um parametro antes do check (`vendas = carrega(...)`
+    na primeira linha do helper) deixa o nome apontando para um DataFrame local, e
+    ainda assim a chave e omitida. Erra para menos, que e o lado aceito.
     """
     events = [event for event in index.persists.get(target, ()) if event[0][0] < line]
     if not events:
-        return False
+        return None if target in index.params else False
     (last_line, _), persisted = events[-1]
     if not persisted:
         return False
@@ -523,12 +595,16 @@ def _action_after_check(target: str, line: int, index: _ScopeIndex) -> bool:
     o check em 2, a de 3 continua valendo e o atributo e `true`. Sao N candidatas,
     e cada uma responde por si.
 
-    Este e o unico dos quatro atributos cujo erro cai do lado da ACUSACAO:
-    `SF-DQ-003` dispara sobre `action_after_check: true`, entao afirmar reuso de
-    um nome que ja aponta para outro objeto acusaria um check cujo DataFrame
-    nunca foi reusado. Os outros tres erram para menos e calam a regra; este
-    falaria de mais. Chave sempre presente, pelo mesmo argumento de
-    `_target_persisted`: `false` e a resposta honesta.
+    O erro deste atributo cai do lado da ACUSACAO, e ele divide esse lado com
+    `target_persisted`: `SF-DQ-003` dispara sobre `action_after_check: true` E
+    sobre `target_persisted: false`, entao afirmar reuso de um nome que ja aponta
+    para outro objeto acusa um check cujo DataFrame nunca foi reusado, do mesmo
+    jeito que afirmar `false` sobre persistencia que o indice nao viu.
+
+    A chave fica sempre presente, e o motivo aqui NAO e o de `_target_persisted`:
+    para este atributo `false` e a ausencia calam a regra igualmente, entao nao ha
+    o que ganhar em omitir. Parametro tambem nao muda nada -- a action posterior
+    esta dentro do escopo e e observada de fato; so a persistencia vem de fora.
 
     LIMITE conhecido: um check IRMAO sobre o mesmo alvo conta como action
     posterior, e e verdade -- sem cache, os dois recomputam o lineage --, mas
@@ -572,10 +648,19 @@ def _check(
         "framework": framework,
         "check_type": check_type,
         "target": target,
-        "target_persisted": _target_persisted(target, line, index),
-        "action_after_check": _action_after_check(target, line, index),
-        **extra,
     }
+    # Inserida ANTES de `action_after_check` mesmo sendo condicional: a ordem das
+    # chaves e o que o golden compara byte a byte, e mover uma chave produziria
+    # diff em sete fixtures sem que um unico valor mudasse -- churn que esconde a
+    # proxima mudanca de verdade.
+    persisted = _target_persisted(target, line, index)
+    if persisted is not None:
+        attrs["target_persisted"] = persisted
+    # A assimetria e deliberada e medida: `action_after_check` continua valendo
+    # para parametro, porque a action posterior esta DENTRO do escopo e e
+    # observada de fato. So a persistencia vem de fora.
+    attrs["action_after_check"] = _action_after_check(target, line, index)
+    attrs.update(extra)
     position = _position_vs_write(target, line, index)
     if position is not None:
         attrs["position_vs_write"] = position
@@ -1040,8 +1125,8 @@ def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") ->
     provenance = {"artifact": path, "artifact_sha256": artifact_sha256, "extractor": EXTRACTOR_ID}
     facts: list[Fact] = []
 
-    for nodes in _scopes(tree):
-        index = _scope_index(nodes)
+    for root, nodes in _scopes(tree):
+        index = _scope_index(root, nodes)
         found: list[Fact] = []
         for node in nodes:
             if not isinstance(node, ast.Call):

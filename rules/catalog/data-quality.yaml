@@ -295,6 +295,16 @@ rules:
       disparar nada. O extrator só afirma `target_persisted: false` quando não viu
       `cache`/`persist` no escopo; quando o alvo não pôde ser resolvido, ele não inventa a
       chave, e `engine._where_matches` reprova caminho ausente.
+      O RECORTE É O ESCOPO, e o achado precisa ser lido assim: "não persistido NESTE
+      escopo". Quando o alvo do check chega por parâmetro e não há
+      `cache`/`persist`/`unpersist` sobre ele dentro da própria função, o extrator NÃO emite
+      `target_persisted`, e esta regra não avalia o check. A razão é que a forma canônica
+      de biblioteca Glue é validar num helper e persistir no chamador — a persistência é
+      real e vive num escopo que o extrator não vê, e afirmar `false` ali acusaria um
+      DataFrame que está em cache. O preço é declarado, não escondido: isto cala esta
+      regra para todo helper de validação, inclusive os genuinamente não persistidos.
+      Subnotificação é o lado aceito; acusar a forma canônica não é. É a mesma disciplina
+      de recorte que `SF-DQ-002` declara para consequência atrás de um helper.
     proposed_change:
       - Persistir o DataFrame antes do check, com o nível de storage adequado ao tamanho, e liberar com `unpersist` depois da última action.
       - "Alternativa sem cache: calcular a métrica de validação junto do resultado, numa única agregação, em vez de numa passada separada."

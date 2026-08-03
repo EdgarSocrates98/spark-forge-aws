@@ -270,7 +270,26 @@ def test_action_de_homonimo_em_outra_funcao_nao_conta():
     assert check.attrs["position_vs_write"] == "no_write_in_module"
 
 
-def test_cache_de_homonimo_em_outra_funcao_nao_persiste_o_alvo():
+def test_cache_de_homonimo_em_outra_funcao_nao_persiste_alvo_local():
+    # O alvo de `valida` e LOCAL -- veio de um read no proprio escopo --, entao
+    # o indice ve tudo que ha para ver sobre ele, e o cache do homonimo de
+    # `prepara` nao vaza para ca.
+    facts = _facts(
+        "def prepara(vendas):\n"
+        "    vendas.cache()\n"
+        "def valida(spark):\n"
+        "    vendas = spark.read.parquet('s3://b/p')\n"
+        "    return vendas.filter(1).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
+
+
+def test_cache_de_homonimo_em_outra_funcao_nao_afirma_nada_sobre_parametro():
+    # Ate a revisao final da Fase 5c este teste exigia `false`, e era ele que
+    # codificava o falso positivo: `vendas` e PARAMETRO de `valida`, e "nao vi
+    # cache" nao e "nao ha cache". A separacao por escopo continua valendo -- o
+    # cache de `prepara` nao entra aqui --, mas a resposta honesta e nenhuma.
     facts = _facts(
         "def prepara(vendas):\n"
         "    vendas.cache()\n"
@@ -278,7 +297,7 @@ def test_cache_de_homonimo_em_outra_funcao_nao_persiste_o_alvo():
         "    return vendas.filter(1).count()\n"
     )
     check = [f for f in facts if f.kind == "dq.check"][0]
-    assert check.attrs["target_persisted"] is False
+    assert "target_persisted" not in check.attrs
 
 
 def test_checks_homonimos_em_funcoes_diferentes_nao_se_contam():
@@ -445,6 +464,63 @@ def test_religacao_nao_mata_a_action_que_veio_antes_dela():
     )
     check = [f for f in facts if f.kind == "dq.check"][0]
     assert check.attrs["action_after_check"] is True
+
+
+def test_alvo_parametro_nao_afirma_persistencia_que_vive_fora_do_escopo():
+    # Forma canonica de biblioteca Glue: validar num helper, cachear no
+    # chamador. A persistencia e real e o indice por escopo nao a enxerga --
+    # `false` afirmaria o que ele nao sabe, e `SF-DQ-003` acusaria um DataFrame
+    # que esta persistido.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    if ruins > 0: raise ValueError('dado ruim')\n"
+        "    vendas.write.parquet('s3://lake/curated/')\n"
+        "def main(spark):\n"
+        "    vendas = spark.read.parquet('s3://lake/raw/')\n"
+        "    vendas.cache()\n"
+        "    valida(vendas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+    # A assimetria e real: a action posterior esta DENTRO do escopo e e
+    # observada de fato. So a persistencia vem de fora.
+    assert check.attrs["action_after_check"] is True
+
+
+def test_alvo_local_nao_persistido_continua_afirmando_falso():
+    facts = _facts(
+        "def main(spark):\n"
+        "    vendas = spark.read.parquet('s3://lake/raw/')\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    vendas.write.parquet('s3://lake/curated/')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
+    assert check.attrs["action_after_check"] is True
+
+
+def test_parametro_com_cache_na_propria_funcao_mantem_a_chave():
+    # A evidencia esta DENTRO do escopo: nao ha nada que o indice nao veja.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    vendas.cache()\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+
+
+def test_parametro_com_unpersist_na_propria_funcao_mantem_a_chave():
+    # A excecao e "ha evidencia local", e nao "ha cache local": o `unpersist`
+    # prova o estado do mesmo jeito, e a chave sai com `false`.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    vendas.unpersist()\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
 
 
 def test_alvo_nao_resolvido_nao_ganha_atributo_de_correlacao():
