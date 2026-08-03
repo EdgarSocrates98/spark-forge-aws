@@ -29,9 +29,13 @@ correlacao tratam isso, cada um do jeito que o seu erro pede.
 
 - Entre escopos, nome igual nao e o mesmo objeto: o indice e por escopo
   (`_ScopeIndex`), e nunca por modulo.
-- O que ENTRA no escopo por parametro tem historia que o indice nao viu.
-  `target_persisted` OMITE a chave nesse caso, porque persistencia de um
-  parametro mora no chamador.
+- O que ENTRA no escopo por parametro tem historia que o indice nao viu, e
+  `target_persisted` da UM passo para fora para le-la: quando a funcao tem
+  exatamente um call site NESTE modulo, a evidencia do argumento naquele call
+  site e herdada (`_persisted_in_caller`). Quando a heranca nao e inequivoca --
+  nenhum chamador visivel, mais de um, chamada por atributo, argumento que nao e
+  nome --, a chave e OMITIDA: persistencia de parametro mora no chamador, e
+  afirma-la sem ler o chamador acusaria quem escreveu certo.
 - Dentro de um escopo, religar o nome (`vendas = carrega(...)`) troca o objeto
   sem trocar o nome, entao evidencia de um lado da religacao nao vale do outro.
   `position_vs_write` OMITE a chave -- a regra nao deve opinar sobre ordem que
@@ -239,10 +243,38 @@ class _ScopeIndex(NamedTuple):
     chained: frozenset[ast.AST]
     # Nomes que ENTRAM no escopo pela assinatura. Um parametro e, por
     # construcao, um objeto cuja historia comecou fora daqui: o que aconteceu
-    # com ele antes da chamada e invisivel para este indice, e afirmar ausencia
+    # com ele antes da chamada e invisivel para ESTE indice, e afirmar ausencia
     # de evidencia como evidencia de ausencia seria acusar o chamador pelo que
-    # ele fez certo. Vazio no escopo do modulo.
+    # ele fez certo. Quem responde por esses nomes e `_persisted_in_caller`, no
+    # indice do chamador. Vazio no escopo do modulo.
     params: frozenset[str]
+
+
+class _Callers(NamedTuple):
+    """UM passo para fora do escopo: quem chama a funcao que este escopo e.
+
+    Existe por causa de UMA pergunta que o indice por escopo nao responde --
+    "este parametro chegou persistido?" --, e a resposta dela mora no chamador.
+    Nao e um indice de modulo: e o mesmo indice por escopo de sempre, mais a
+    aresta que liga uma definicao aos lugares onde ela e chamada POR NOME.
+
+    A FRONTEIRA: `extract_data_quality` le um modulo por vez, entao "um passo
+    para dentro da chamada" e dentro do MESMO arquivo. Chamador noutro modulo
+    continua invisivel, e continua sendo chave omitida -- travessia entre
+    arquivos e outra fase e outro custo.
+
+    `sites` e indexado pela DEFINICAO, e nao pelo nome, e so entram nomes que
+    identificam uma unica definicao no modulo: duas funcoes homonimas fazem o
+    call site deixar de dizer qual delas roda. Chamada por atributo
+    (`self.valida(...)`) nao entra: o nome nu nao prova que a funcao chamada e
+    a deste modulo, e e a mesma propriedade que governa o resto deste extrator.
+    """
+
+    # Raiz do escopo corrente -- modulo ou `FunctionDef`. E o que a heranca
+    # consulta para saber DE QUEM ela herda.
+    scope: ast.AST
+    sites: dict[ast.AST, list[tuple[ast.Call, ast.AST]]]
+    indexes: dict[ast.AST, _ScopeIndex]
 
 
 def _subject(path: str, line: int = 0, col: int = 0) -> dict[str, Any]:
@@ -532,7 +564,164 @@ def _position_vs_write(target: str, line: int, index: _ScopeIndex) -> str | None
     return "after_write" if line > write_line else "before_write"
 
 
-def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool | None:
+def _function_definitions(scopes: list[tuple[ast.AST, list[ast.AST]]]) -> dict[str, ast.AST]:
+    """Nome -> definicao, so para nomes que identificam UMA definicao no modulo.
+
+    Nome redefinido (`def valida` duas vezes, ou um metodo homonimo a uma funcao
+    de modulo) sai do mapa inteiro: o call site nao diz qual delas roda, e
+    escolher uma seria adivinhar o corpo que recebe o argumento.
+    """
+    named = [
+        (root.name, root)
+        for root, _ in scopes
+        if isinstance(root, ast.FunctionDef | ast.AsyncFunctionDef)
+    ]
+    seen = Counter(name for name, _ in named)
+    return {name: root for name, root in named if seen[name] == 1}
+
+
+def _call_sites(
+    scopes: list[tuple[ast.AST, list[ast.AST]]],
+) -> dict[ast.AST, list[tuple[ast.Call, ast.AST]]]:
+    """Por definicao, as chamadas a ela no modulo: (chamada, escopo do chamador).
+
+    O escopo do chamador acompanha a chamada porque a persistencia do argumento
+    se apura NO INDICE DELE, e nao no do modulo -- nome nu nao identifica objeto
+    entre escopos, e essa propriedade nao afrouxa por a pergunta vir de fora.
+    """
+    definitions = _function_definitions(scopes)
+    sites: dict[ast.AST, list[tuple[ast.Call, ast.AST]]] = {}
+    for root, nodes in scopes:
+        for node in nodes:
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)):
+                continue
+            definition = definitions.get(node.func.id)
+            if definition is not None:
+                sites.setdefault(definition, []).append((node, root))
+    return sites
+
+
+def _argument_for(function: ast.AST, call: ast.Call, param: str) -> ast.expr | None:
+    """O que chega ao parametro `param` NESTA chamada -- posicional ou keyword.
+
+    `valida(entregas)` e `valida(vendas=entregas)` sao o mesmo caso, e tratar so
+    o primeiro reconheceria metade da forma que o codigo real usa.
+
+    `*args`/`**kwargs` NO CALL SITE devolvem `None` para qualquer parametro: com
+    desempacotamento nao da para dizer qual valor cai em qual posicao sem
+    executar. Parametro que a chamada nao supre -- e portanto vem de um default
+    -- tambem devolve `None`: nao ha argumento de onde herdar.
+
+    Posicional-only nao aceita keyword, e keyword-only nao aceita posicao: as
+    duas listas sao separadas de proposito.
+    """
+    if not isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef):
+        return None
+    if any(isinstance(argument, ast.Starred) for argument in call.args):
+        return None
+    if any(keyword.arg is None for keyword in call.keywords):
+        return None
+    args = function.args
+    by_position = [argument.arg for argument in (*args.posonlyargs, *args.args)]
+    if param in by_position:
+        index = by_position.index(param)
+        if index < len(call.args):
+            return call.args[index]
+    by_keyword = {argument.arg for argument in (*args.args, *args.kwonlyargs)}
+    if param in by_keyword:
+        for keyword in call.keywords:
+            if keyword.arg == param:
+                return keyword.value
+    return None
+
+
+def _rebound_after_persist(target: str, line: int, index: _ScopeIndex) -> bool:
+    """A evidencia de persistencia do chamador foi religada antes da chamada.
+
+    Mesma pergunta que `_target_persisted` faz dentro do escopo do check, e o
+    mesmo `_rebound_between` a responde -- o que muda e o que se FAZ com a
+    resposta, e aqui ela vale uma chave OMITIDA e nao um `false`.
+
+    A assimetria e deliberada. Dentro do escopo do check, religar emite `false`
+    porque omitir daria ao rebind o poder de calar `SF-DQ-003` sobre um objeto
+    que o indice ve inteiro. Atravessando a chamada nao ha o que calar: antes
+    desta fase a chave ja era omitida, entao recusar a heranca nao perde
+    acusacao nenhuma -- so deixa de INVENTAR uma. `entregas.cache()` /
+    `entregas = carrega(...)` / `valida(entregas)` entrega ao parametro um
+    DataFrame cuja historia comeca dentro de `carrega`, fora deste indice.
+    """
+    events = [event for event in index.persists.get(target, ()) if event[0][0] < line]
+    if not events:
+        return False
+    (last_line, _), persisted = events[-1]
+    return persisted and _rebound_between(target, last_line, line, index)
+
+
+def _persisted_in_caller(
+    target: str, callers: _Callers, visited: frozenset[ast.AST]
+) -> bool | None:
+    """Persistencia herdada do UNICO call site da funcao, ou `None`.
+
+    Herda so quando tudo isto vale ao mesmo tempo: o escopo e uma funcao, ha
+    EXATAMENTE uma chamada a ela no modulo, a chamada e por nome, o argumento na
+    posicao do parametro e um `ast.Name`, e a evidencia do chamador nao foi
+    religada entre o `cache()` e a chamada. Qualquer outra coisa devolve `None`,
+    e a chave segue omitida.
+
+    DOIS CHAMADORES NAO RESOLVEM, e este e o limite que sustenta o resto: um
+    pode persistir e o outro nao, e herdar do primeiro que aparecer seria
+    inventar. "Nao sei" continua sendo a chave ausente.
+
+    `visited` corta o laco. Uma funcao que chama a si mesma tem call site unico
+    -- ela propria -- e a pergunta voltaria identica para sempre; recursao mutua
+    faz o mesmo com dois saltos. A cadeia legitima (helper que chama helper que
+    chama helper) e a mesma travessia e continua valendo: o que `visited` recusa
+    e reentrar num escopo que ja esta respondendo.
+    """
+    scope = callers.scope
+    if not isinstance(scope, ast.FunctionDef | ast.AsyncFunctionDef) or scope in visited:
+        return None
+    sites = callers.sites.get(scope, ())
+    if len(sites) != 1:
+        return None
+    call, caller_scope = sites[0]
+    caller_index = callers.indexes.get(caller_scope)
+    if caller_index is None:
+        return None
+    argument = _argument_for(scope, call, target)
+    if not isinstance(argument, ast.Name):
+        return None
+    # O chamador precisa CONHECER o nome que passa. Nome livre no escopo dele --
+    # um global lido de dentro da funcao -- nao foi ligado nem persistido ali, e
+    # o `false` que sairia viria de um indice que nunca viu o objeto: a evidencia
+    # pode estar no corpo do modulo, que e outro escopo, e `SF-DQ-003` acusaria
+    # um DataFrame cacheado um escopo acima. Dentro do proprio escopo do check
+    # esse `false` ja e o comportamento aceito da Fase 5c; PROPAGA-LO por heranca
+    # seria estender uma acusacao, e heranca aqui so estende evidencia.
+    if not (
+        argument.id in caller_index.rebinds
+        or argument.id in caller_index.persists
+        or argument.id in caller_index.params
+    ):
+        return None
+    if _rebound_after_persist(argument.id, call.lineno, caller_index):
+        return None
+    return _target_persisted(
+        argument.id,
+        call.lineno,
+        caller_index,
+        callers._replace(scope=caller_scope),
+        visited | {scope},
+    )
+
+
+def _target_persisted(
+    target: str,
+    line: int,
+    index: _ScopeIndex,
+    callers: _Callers,
+    visited: frozenset[ast.AST] = frozenset(),
+) -> bool | None:
     """Estado no momento do check: o ULTIMO evento antes dele decide.
 
     `vendas.cache()` seguido de `vendas.unpersist()` deixa o alvo NAO persistido
@@ -545,39 +734,56 @@ def _target_persisted(target: str, line: int, index: _ScopeIndex) -> bool | None
     valida esta neste escopo, foi religado aqui, e nao ha nada sobre ele que este
     indice deixe de ver. Omitir faria da religacao um jeito de sumir com a regra.
 
-    `None` (chave OMITIDA) e o alvo que chega por PARAMETRO sem nenhum evento de
-    persistencia no proprio escopo. A forma canonica de biblioteca Glue e validar
-    num helper e cachear no chamador:
+    O alvo que chega por PARAMETRO sem nenhum evento de persistencia no proprio
+    escopo NAO para aqui: a pergunta da um passo para fora, ao unico call site da
+    funcao no modulo (`_persisted_in_caller`). A forma canonica de biblioteca
+    Glue e validar num helper e cachear no chamador:
 
         def valida(vendas):
-            ruins = vendas.filter(...).count()   # persistencia? nao da para saber
+            ruins = vendas.filter(...).count()   # persistencia? no chamador
         def main(spark):
             vendas = spark.read.parquet(...)
-            vendas.cache()                       # ela esta AQUI, noutro escopo
+            vendas.cache()                       # ela esta AQUI, e e legivel
             valida(vendas)
 
-    Persistencia de um parametro e, por construcao, evidencia que vive fora do
-    escopo, e `false` afirmaria o que o indice nao sabe -- `SF-DQ-003` dispara
-    sobre `target_persisted: false` e acusaria um DataFrame persistido. A chave
+    A heranca resolve nos DOIS sentidos -- chamador com `cache()` da `true`,
+    chamador sem ele da `false`. Herdar so a favor da persistencia trocaria uma
+    cegueira por outra: `SF-DQ-003` deixaria de disparar sobre helper nenhum, e o
+    mecanismo pareceria funcionar.
+
+    `None` (chave OMITIDA) e o que sobra quando a heranca nao e INEQUIVOCA:
+    nenhum call site no modulo, mais de um, chamada por atributo, argumento que
+    nao e nome, religacao entre o `cache()` e a chamada. Ai vale o que a Fase 5c
+    fixou -- `false` afirmaria o que o indice nao sabe, e `SF-DQ-003` dispara
+    sobre `target_persisted: false`, acusando um DataFrame persistido. A chave
     ausente e reprovada por `engine._where_matches`, entao a regra nao avalia
     esses checks.
 
-    O PRECO, aceito: isto cala `SF-DQ-003` para todo helper de validacao,
-    inclusive os genuinamente nao persistidos. Subnotificacao e o lado aceito;
-    a alternativa era acusar a forma canonica de biblioteca Glue.
+    O PRECO, aceito e agora menor: isto cala `SF-DQ-003` para o helper cujo
+    chamador esta noutro arquivo, ou que tem mais de um chamador. Subnotificacao
+    e o lado aceito; a alternativa era acusar a forma canonica de biblioteca
+    Glue.
 
-    A excecao e ter evidencia LOCAL: `cache`/`persist`/`unpersist` sobre o
+    Evidencia LOCAL vem antes de tudo isso: `cache`/`persist`/`unpersist` sobre o
     parametro dentro da propria funcao prova o estado sem depender do chamador, e
-    ai a chave sai normalmente -- inclusive `false`, quando o evento local e um
-    `unpersist`.
+    ai a chave sai da mesma forma que sairia para uma variavel local -- inclusive
+    `false`, quando o evento local e um `unpersist`.
 
-    LIMITE conhecido: religar um parametro antes do check (`vendas = carrega(...)`
-    na primeira linha do helper) deixa o nome apontando para um DataFrame local, e
-    ainda assim a chave e omitida. Erra para menos, que e o lado aceito.
+    Religar o parametro antes do check (`vendas = carrega(...)` na primeira linha
+    do helper) deixa o nome apontando para um DataFrame local, e a heranca NAO se
+    aplica: o que chegou pela assinatura nao e o que o check valida. Continua
+    chave omitida, como antes desta fase -- herdar ali afirmaria sobre um objeto
+    que nem o chamador nem este escopo conhecem.
     """
     events = [event for event in index.persists.get(target, ()) if event[0][0] < line]
     if not events:
-        return None if target in index.params else False
+        if target not in index.params:
+            return False
+        # `0` e abaixo de qualquer `lineno` real: a pergunta e "ha religacao ANTES
+        # do check", e ela e o mesmo `_rebound_between` de sempre.
+        if _rebound_between(target, 0, line, index):
+            return None
+        return _persisted_in_caller(target, callers, visited)
     (last_line, _), persisted = events[-1]
     if not persisted:
         return False
@@ -621,6 +827,7 @@ def _check(
     path: str,
     node: ast.Call,
     index: _ScopeIndex,
+    callers: _Callers,
     provenance: dict[str, Any],
     *,
     framework: str,
@@ -653,7 +860,7 @@ def _check(
     # chaves e o que o golden compara byte a byte, e mover uma chave produziria
     # diff em sete fixtures sem que um unico valor mudasse -- churn que esconde a
     # proxima mudanca de verdade.
-    persisted = _target_persisted(target, line, index)
+    persisted = _target_persisted(target, line, index, callers)
     if persisted is not None:
         attrs["target_persisted"] = persisted
     # A assimetria e deliberada e medida: `action_after_check` continua valendo
@@ -674,7 +881,7 @@ def _check(
 
 
 def _handmade_check(
-    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
+    node: ast.Call, path: str, index: _ScopeIndex, callers: _Callers, provenance: dict[str, Any]
 ) -> Fact | None:
     if not isinstance(node.func, ast.Attribute) or node.func.attr != "count":
         return None
@@ -694,6 +901,7 @@ def _handmade_check(
         path,
         node,
         index,
+        callers,
         provenance,
         framework="handmade",
         check_type="count_of_violations",
@@ -724,7 +932,7 @@ def _on_data_argument(node: ast.Call) -> ast.expr | None:
 
 
 def _pydeequ_check(
-    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
+    node: ast.Call, path: str, index: _ScopeIndex, callers: _Callers, provenance: dict[str, Any]
 ) -> Fact | None:
     if not isinstance(node.func, ast.Attribute) or node in index.chained:
         return None
@@ -763,6 +971,7 @@ def _pydeequ_check(
         path,
         node,
         index,
+        callers,
         provenance,
         framework="pydeequ",
         check_type="verification_suite",
@@ -845,7 +1054,7 @@ def _batch_dataframe(node: ast.Call, index: _ScopeIndex) -> ast.expr | None:
 
 
 def _great_expectations_check(
-    node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
+    node: ast.Call, path: str, index: _ScopeIndex, callers: _Callers, provenance: dict[str, Any]
 ) -> Fact | None:
     value = _batch_dataframe(node, index)
     if value is None:
@@ -863,6 +1072,7 @@ def _great_expectations_check(
         path,
         node,
         index,
+        callers,
         provenance,
         framework="great_expectations",
         check_type="batch_parameters_dataframe",
@@ -1125,14 +1335,23 @@ def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") ->
     provenance = {"artifact": path, "artifact_sha256": artifact_sha256, "extractor": EXTRACTOR_ID}
     facts: list[Fact] = []
 
-    for root, nodes in _scopes(tree):
-        index = _scope_index(root, nodes)
+    # Os indices de TODOS os escopos vem antes da primeira deteccao: um check
+    # dentro de um helper pergunta a persistencia no escopo do chamador, e o
+    # chamador pode estar em qualquer ponto do arquivo -- inclusive depois. A
+    # ordem de `_scopes` tambem nao e a do fonte.
+    scopes = _scopes(tree)
+    indexes = {root: _scope_index(root, nodes) for root, nodes in scopes}
+    sites = _call_sites(scopes)
+
+    for root, nodes in scopes:
+        index = indexes[root]
+        callers = _Callers(scope=root, sites=sites, indexes=indexes)
         found: list[Fact] = []
         for node in nodes:
             if not isinstance(node, ast.Call):
                 continue
             for detector in _DETECTORS:
-                fact = detector(node, path, index, provenance)
+                fact = detector(node, path, index, callers, provenance)
                 if fact is not None:
                     found.append(fact)
                     if fact.kind == "dq.check":
