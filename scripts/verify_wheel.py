@@ -6,9 +6,15 @@ golden ja existentes SOB O PYTHON DO VENV. Se o pacote instalado produz os
 mesmos facts e findings que o repositorio, o canal pip esta em paridade.
 
 Por que reaproveitar os modulos de golden em vez de reimplementar a comparacao:
-as 74 fixtures ja sao o contrato, verificado no CI a cada commit. Um comparador
-proprio seria um segundo contrato para manter divergir do primeiro -- e o
-primeiro a divergir seria o novo, porque ninguem o le.
+o corpus de fixtures JA e o contrato, verificado no CI a cada commit. Um
+comparador proprio seria um segundo contrato para manter divergir do primeiro --
+e o primeiro a divergir seria o novo, porque ninguem o le.
+
+O numero de fixtures nao e citado aqui de proposito. Ele estava, dizia 74, e o
+corpus passou de 100 sem que nada acendesse -- este docstring foi a ORIGEM do
+mesmo numero errado no README, que sobreviveu a duas fases. Contagem em prosa
+nao tem invariante que a defenda; quem quiser o numero de hoje roda
+`ls -d fixtures/*/*/ | wc -l`.
 
 A guarda que sustenta tudo esta em `tests/test_installed_provenance.py`, ligada
 aqui por `SPARKFORGE_VERIFY_INSTALLED=1`. Sem ela, um `sys.path` errado faria o
@@ -25,7 +31,7 @@ Uso:
                                                     # PROVADOS para DIR, so
                                                     # depois do gate passar
 
-Por que `--outdir` existe: sem ele, o unico exemplar que passou pelos 539
+Por que `--outdir` existe: sem ele, o unico exemplar que passou pelos
 testes de golden e apagado no `finally` (o diretorio e temporario), e o passo
 de publicacao teria que rodar `python -m build` de novo para ter o que anexar.
 
@@ -329,8 +335,8 @@ def main(argv: list[str] | None = None) -> int:
     # `tests/test_fixtures_golden*.py` for renomeado ou apagado do disco,
     # `GOLDEN_MODULES` vira `[]` aqui, `pytest_command()` devolve so o modulo
     # de procedencia, ele passa (nada para comparar), e o gate imprimiria
-    # "OK: em paridade com os goldens" tendo verificado ZERO das 539
-    # assercoes de golden. Um gate que so prova a si mesmo -- sem numero
+    # "OK: em paridade com os goldens" tendo verificado ZERO assercao de
+    # golden. Um gate que so prova a si mesmo -- sem numero
     # minimo exigido DENTRO da propria execucao -- e o antipadrao que este
     # repositorio existe para evitar (a razao de reusar os goldens em vez de
     # reimplementar a comparacao, ver docstring do modulo).

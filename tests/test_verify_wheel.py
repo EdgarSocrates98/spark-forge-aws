@@ -325,7 +325,7 @@ class TestReproducibility:
 
 class TestOutdir:
     """`--outdir` e a correcao do buraco apontado na revisao da Task 8: sem
-    ele, o unico exemplar provado pelos 539 testes de golden e apagado no
+    ele, o unico exemplar provado pelos testes de golden e apagado no
     `finally` (o workdir e temporario), e o passo de publicacao teria que
     reconstruir para ter o que anexar.
 

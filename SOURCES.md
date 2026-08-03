@@ -7,8 +7,11 @@ A base deve ser atualizada periodicamente com documentação oficial:
 - AWS Glue Spark UI e History Server.
 - AWS Glue Observability e CloudWatch metrics.
 - AWS Glue Iceberg integration e table optimizers.
+- Amazon EMR release notes, matriz de versões e configuração de cluster on EC2.
 - Apache Spark SQL performance tuning e AQE.
 - Apache Iceberg Spark configuration, writes, maintenance e metadata tables.
+- Superfície pública de PyDeequ e Great Expectations, e o artigo do Deequ que define o
+  que uma suíte custa em passadas sobre o dado.
 - Claude Code Skills e subagents.
 - Devin Skills.
 - GitHub Copilot custom instructions, skills, agents e prompt files.
@@ -30,7 +33,7 @@ normalizado, a data da conferência e **quais `rule_id` dependem daquela fonte**
 relatório não diz "a doc mudou assim", diz "a doc mudou, e as regras X e Y dependem dela".
 
 Fonte com versão no path (`docs/3.5.6/`, `apache-iceberg-1.0.0`) não é buscada: o conteúdo
-é imutável e vigiá-la só produziria ruído. Hoje são 20 fontes, 16 móveis e 4 fixas.
+é imutável e vigiá-la só produziria ruído. Hoje são 37 fontes, 33 móveis e 4 fixas.
 
 O que ele guarda é hash e procedência, nunca o texto das docs — copiar documentação de
 terceiro para o repositório é decisão de licenciamento que ninguém tomou, e o diff de uma

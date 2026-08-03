@@ -25,7 +25,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **3104** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **3141** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 62**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **15** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **97** | união de `EMITTED_KINDS` |
@@ -37,14 +37,14 @@ arquivo ganha.
 | Tools alcançáveis a partir de algum coordenador | **33 de 33** | `tests/test_agent_coverage.py` |
 | Coordenadores | **8** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Fixtures golden | **100** em 17 domínios | `fixtures/` |
+| Fixtures golden | **101** em 17 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **37** | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-GLUE 6, SF-UI 6, SF-ATH 5, SF-ENV 5,
 SF-ICE 5, SF-PQ 5, SF-DQ 4, SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `pyspark` 17, `emr` 13, `iceberg` 8, `dq` 8, `plan` 7,
+Fixtures por domínio: `pyspark` 17, `emr` 13, `dq` 10, `iceberg` 8, `plan` 7,
 `runtime` 7, `terraform` 7, `fusion` 5, `s3` 5, `sql` 4, `athena` 3,
 `callgraph` 3, `catalog` 3, `consumers` 3, `eventlog` 2, `infra_code` 2,
 `tfdiff` 2.
@@ -497,6 +497,46 @@ declarativo, dbt e schema declarado. Ver as duas primeiras nas dívidas abertas.
 Faixa de commits: `032b44c` … `4dd6286`, mais o commit de documentação que fecha
 a fase.
 
+### Fase 5c.2 — um passo para dentro da chamada — **CONCLUÍDA** em 2026-08-03
+
+Branch `feat/fase5c2-helper`. Plano:
+[`plans/2026-08-03-sparkforge-fase5c2-helper.md`](plans/2026-08-03-sparkforge-fase5c2-helper.md).
+Sem spec próprio: a fase fecha **uma** dívida nomeada da 5c e não acrescenta área,
+kind nem regra.
+
+**O que mudou, e é uma coisa só.** Quando o alvo de um `dq.check` chega por
+parâmetro e não há `cache`/`persist`/`unpersist` sobre ele dentro da própria
+função, `_target_persisted` deixa de parar na omissão e dá **um passo para fora**:
+se a função tem **exatamente um** call site no mesmo módulo, a chamada é por nome
+e o argumento é uma variável, a evidência daquele call site é herdada. A herança
+resolve nos **dois sentidos** — `true` quando o chamador persistiu, `false` quando
+não. Herdar só a favor teria deixado `SF-DQ-003` morta para todo helper com os
+goldens verdes, e é por isso que a fixture negativa entrou junto com a positiva.
+
+**O preço, que continua existindo e mudou de tamanho.** A regra segue calada para
+o helper cujo chamador vive **noutro arquivo** — o extrator lê um módulo por vez,
+e essa fronteira não se moveu —, para o helper com **mais de um** chamador (um
+pode persistir e o outro não, e escolher seria inventar), para chamada por
+atributo, e para nome que o próprio chamador não liga nem persiste. Cada limite
+tem controle próprio em `tests/test_facts_data_quality.py`.
+
+**O princípio que a revisão da fase produziu, e que vale para a próxima:
+herança estende evidência, nunca acusação.** Ele saiu de um caso medido (D-5c2-3):
+um DataFrame cacheado no corpo do módulo e passado de dentro de uma função fazia
+o índice do chamador devolver `false` por nunca ter visto o objeto, e a herança
+transformaria isso numa acusação sobre código correto. Dentro do próprio escopo do
+check esse `false` é comportamento aceito desde a 5c; propagá-lo por herança seria
+estender a acusação junto com a evidência.
+
+**A dívida gêmea NÃO fechou, e a decisão foi medida antes de ser tomada.** Ver a
+linha própria na tabela de dívidas abertas.
+
+**Números medidos no fechamento.** 3141 testes passando, 5 skipped (eram 3104 ao
+fechar a 5c). 145 testes em `tests/test_facts_data_quality.py` (eram 135). 101
+fixtures em 17 domínios, 10 delas em `fixtures/dq/`. 62 regras, **nenhuma nova** —
+esta fase não acrescentou capacidade ao catálogo, ela tirou uma cegueira de uma
+regra que já existia. `git diff --stat main -- fixtures/pyspark/` sai vazio.
+
 ### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
 
 Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
@@ -617,8 +657,11 @@ O erro caro seria apresentar as três camadas com a mesma cara.
    `feat/fase5c-dq`. Ver seção própria acima. É a linha "Testes de dados" da
    Metade A, e ela entrou pelo recorte estático: cobertura e posicionamento da
    validação dentro do `.py`, não resultado de execução
-6. **Fases seguintes** — custo, orquestração, Redshift, streaming
-7. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
+6. **Fase 5c.2** — um passo para dentro da chamada — **CONCLUÍDA** em 2026-08-03,
+   branch `feat/fase5c2-helper`. Ver seção própria acima. Fecha uma das duas
+   dívidas de travessia da 5c e deixa a outra aberta com o motivo medido
+7. **Fases seguintes** — custo, orquestração, Redshift, streaming
+8. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
 
 ## Dívidas abertas
 
@@ -639,7 +682,8 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 | Igualdade bit-a-bit não vale entre plataformas nem entre versões do backend | medido em 2026-08-01, ao fechar a dívida acima | Dois eixos sobrevivem à `reproducible = true`, e nenhum é do hatchling. (1) A versão do backend vaza para `WHEEL` como `Generator: hatchling X.Y.Z`, e `requires = ["hatchling>=1.25"]` não é pin — dois builds separados por um release do hatchling divergem. (2) O fluxo de deflate depende da implementação de zlib do interpretador: o CPython 3.14 do Windows usado na medição roda `zlib-ng` (`ZLIB_RUNTIME_VERSION = 1.3.1.zlib-ng`), o `ubuntu-latest`/3.11 do CI roda zlib padrão, e as duas comprimem os mesmos bytes de formas diferentes. Consequência: `verify_wheel.py` prova reprodutibilidade **dentro de uma plataforma**, que é o que o job `wheel` mede nos dois SOs separadamente — não entre elas. Fechar exigiria pinar `hatchling==` e nomear um interpretador de referência; nenhum dos dois foi feito, porque o artefato publicado já declara o `Generator:` que o produziu |
 | ~~`unreachable_function_count` não detecta código morto~~ — **fechada** na Fase 5b | Fase 1 | `pyspark_ast` passou a emitir `pyspark.function_def` (um fact por função **definida**, com ou sem aresta) e `call_graph` semeia os nós com ele. A medida antiga virou `unreachable_from_entrypoint_count` (mesma conta, nome honesto: componente cíclico sem entrada) e entrou `unreferenced_function_count` + `attrs.unreferenced_functions`, que afirma "sem referência **neste corpus**" e nada além. Método, decorada e exportada em `__all__` ficam fora da população e são contadas em `opaque_caller_function_count`. Continua **sem regra**, agora por decisão registrada e travada por teste, não por defeito: ver `rules/catalog/callgraph.yaml` e a fixture `fixtures/callgraph/library_surface` |
 | Great Expectations declarativo e dbt seguem sem cobertura | Fase 5c, por decisão registrada na §2 do spec | `great_expectations.yml` e as expectation suites em JSON são artefato declarativo **fora do código**, com parser próprio, e correlacionar suíte com a tabela que o job escreve exige casar por nome — heurística frágil, que produziria `SF-DQ-001` sobre um alvo adivinhado. dbt é mundo próprio e encosta no Spark só via `dbt-glue`/`dbt-spark`. As duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado. Fora de escopo pela mesma razão: **resultado de execução** (`VerificationResult`, validation result do GE, `run_results.json` do dbt) — a ferramenta já disse que o check falhou, e repetir isso não acrescenta garantia nenhuma |
-| `SF-DQ-003` não avalia check cujo alvo chega por parâmetro | revisão final da Fase 5c, medida em 2026-08-03 (desvio D-5c-11) | O índice de correlação é por escopo (D-5c-10), e persistência de um **parâmetro** vive no chamador: o extrator não pode vê-la. Emitir `target_persisted: false` ali acusava a forma canônica de biblioteca Glue — validar num helper, `cache()` no chamador — sobre um DataFrame que **está** persistido, e `SF-DQ-003` dispara justamente sobre `false`. A chave passou a ser **omitida** nesse recorte, e `engine._where_matches` reprova caminho ausente. **O preço é o inverso:** a regra fica cega para todo helper de validação, inclusive os genuinamente não persistidos — subnotificação, que é o lado aceito. Exceção: `cache`/`persist`/`unpersist` sobre o parâmetro **dentro** da própria função é evidência local e a chave volta. Fechar exige seguir o argumento para dentro da chamada (o mesmo trabalho que `SF-DQ-002` já declara não fazer para consequência atrás de helper), e as duas dívidas se fecham juntas ou não se fecham. **A guarda é golden bidirecional, não só unitária:** `fixtures/dq/helper_validates_cached_param` fixa `target_persisted` **ausente** e `action_after_check` **presente** no mesmo `dq.check`, com 0 findings — nenhuma das outras oito fixtures da área tem check sobre parâmetro, então sem ela remover a omissão passaria por `fixtures/dq/` inteiro sem quebrar nada |
+| ~~`SF-DQ-003` não avalia check cujo alvo chega por parâmetro~~ — **fechada** na Fase 5c.2, commits `e046853` e `a7ebc1c` | revisão final da Fase 5c, medida em 2026-08-03 (desvio D-5c-11) | O índice de correlação é por escopo (D-5c-10), e persistência de um **parâmetro** vive no chamador. A 5c **omitia** a chave, porque `target_persisted: false` acusava a forma canônica de biblioteca Glue — validar num helper, `cache()` no chamador — sobre um DataFrame que **está** persistido. A omissão era a resposta certa **com a informação que o extrator tinha**; a 5c.2 ampliou a informação, não a política. **O mecanismo:** quando o alvo é parâmetro sem evidência local, `_target_persisted` consulta o **único** call site da função no mesmo módulo (`_persisted_in_caller`) e herda a evidência do argumento — `true` se o chamador persistiu antes de chamar, `false` se não. Herança que só resolvesse a favor teria deixado a regra morta com os goldens verdes, e é por isso que a fixture negativa `helper_validates_uncached_param` entrou junto: ela é a única do corpus em que `SF-DQ-003` dispara sobre parâmetro. **O preço, menor mas real:** a regra segue calada para chamador noutro arquivo (o extrator lê um módulo por vez, e essa fronteira não se moveu), para mais de um chamador, para chamada por atributo, para argumento que não é variável, para parâmetro religado dentro do helper, e para nome que o próprio chamador não liga nem persiste (D-5c2-3 — o `false` ali acusaria um DataFrame cacheado um escopo acima). **A previsão de que "as duas dívidas se fecham juntas ou não se fecham" não sobreviveu à medição** — ver a linha de `SF-DQ-002` logo abaixo |
+| `SF-DQ-002` acusa validação cuja consequência está atrás de um helper | Fase 5c (`_enforcements`), **medida de novo** na Task 3 da Fase 5c.2, 2026-08-03 | `aborta_se(ruins)` num helper que faz `if ruins > 0: raise` não produz `dq.enforcement`, e `SF-DQ-002` dispara sobre `absent: dq.enforcement` — a regra acusa exatamente quem protegeu o pipeline. **Medido, não presumido:** sobre a fonte de nove linhas do gate, o motor devolve `SF-DQ-002 (P1)` e `SF-DQ-003 (P2)`, e a instrumentação de `_enforcements` mostra onde está a lacuna — `_reader` **já aceita** `aborta_se(ruins)` como leitor, `_read_of` **já vê** o nome `ruins`, e `_reads_this_check` **já devolve** `True`. O único predicado que falha é `_abort_in`, que procura o aborto nos ramos **deste** escopo e o aborto está no corpo de outra função. **Por isso a máquina da 5c.2 não serve:** a parte que ela poderia emprestar (resolver a chamada e mapear argumento e parâmetro) é precisamente a parte que já funciona, e o que falta é ler o corpo do callee e decidir se ele aborta **condicionalmente ao valor recebido** — travessia nova, com limites próprios. Nenhum dos limites da 5c.2 transfere: "um só call site" não diz nada sobre o que a função faz, porque um helper chamado de dez lugares aborta ou não aborta independentemente disso. Implementar assim mesmo, para poder dizer que as duas fecharam, produziria uma máquina com garantia inventada num kind cujo erro cai do lado da acusação. **Fica aberta com o custo na mão**, e o que ela exige está nomeado: travessia de corpo de callee por parâmetro, com decisão própria sobre religação, alias e `def` aninhado |
 | ~~`manifest.json` declara 18 skills e o disco tem 20~~ — **fechada** em 2026-08-03, commit `a06bd44` | nomeada pela Task 9 da Fase 5c | A lista `"skills"` não recebeu `review-emr-cluster` (desde a Fase 5b) nem `review-data-validation` (da 5c), e a segunda omissão aconteceu com a primeira ainda aberta — assinatura de invariante ausente, não de descuido. Fechada na ordem que a própria dívida prescrevia: **o teste primeiro**, `TestManifest::test_skills_list_equals_the_skills_on_disk`, derivado de `skills/` como o irmão de `"tools"` sempre foi derivado de `TOOLS` — que é por isso que aquele nunca divergiu —, e só então as duas entradas. Acrescentá-las sem o teste deixaria a terceira omissão para a próxima fase |
 | ~~`attrs.check_type` é emitido e ninguém foi ensinado a lê-lo~~ — **fechada** em 2026-08-03, commit `10a4a32` | revisão final da Fase 5c | Nenhuma regra, agente ou skill citava a chave. Ela sai de graça do extrator (constante literal por detector), então não é mecanismo sem consumidor no sentido caro de `SF-EMR-009` — mas é chave emitida sem leitor, e a resposta foi ensinar o leitor em vez de declará-la descritiva. Onde ela paga é no `dq.unresolved`, que a carrega junto: sem ela o ponto cego diz **quantas** validações não foram lidas; com ela diz **qual tipo**, e "não li uma `VerificationSuite`" pede investigação diferente de "não li um `count()` artesanal" |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |

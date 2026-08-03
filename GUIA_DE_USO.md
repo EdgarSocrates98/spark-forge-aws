@@ -48,10 +48,20 @@ Ou selecione o agente **Glue Incremental Performance Architect**.
 ## 5. Coordenador e playbook: como entrar sem escolher à mão
 
 Qual coordenador usar não é escolha manual. `sparkforge next-step` (CLI) ou
-`sparkforge_next_step` (MCP) consulta as rotas `AGENT-001`…`AGENT-006` de
+`sparkforge_next_step` (MCP) consulta as rotas `AGENT-001`…`AGENT-008` de
 `rules/catalog/routing.yaml` e devolve `recommended_agent` a partir do estado do case —
-fase da investigação e área do achado dominante. Há seis coordenadores, cada um com
+fase da investigação e área do achado dominante. Há oito coordenadores, cada um com
 executores declarados: ver a tabela em `AGENTS.md`.
+
+Dois deles não são sobre performance de código, e é por isso que quem procura só
+"tuning" nunca os encontra sozinho. `emr-infra-reviewer` (áreas `SF-EMR` e `SF-ENV`)
+responde quando o Spark roda em Amazon EMR on EC2 e o risco está na definição do cluster
+— instance fleets contra instance groups, opção de compra por papel, managed scaling,
+`Configurations` em dois níveis, bootstrap actions, `LogUri`, cluster que terminou antes
+de processar qualquer coisa. `data-quality-reviewer` (área `SF-DQ`) responde quando o job
+valida dado e a pergunta é onde a validação está, se ela tem consequência e quanto ela
+custa em passadas sobre o dado — nunca se o dado está correto, que é pergunta sem
+artefato para extrair.
 
 Em Claude Code, o coordenador indicado despacha os cinco executores (`sf-inventory`,
 `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`) como subagentes, na ordem do
@@ -65,7 +75,7 @@ entrega, na ordem certa.
 Forneça nesta ordem:
 
 1. Estrutura do repositório.
-2. Terraform.
+2. Terraform — ou, se o Spark roda em EMR on EC2, o dump de `aws emr describe-cluster`.
 3. Entry point.
 4. Biblioteca.
 5. Plano `explain("formatted")`.
@@ -74,6 +84,18 @@ Forneça nesta ordem:
 8. CloudWatch.
 9. Metadata tables Iceberg.
 10. Baseline.
+
+O item 2 troca de artefato porque só ele é específico da plataforma. O resto da ordem não
+muda: `analyze emr-cluster --path cluster.json` produz os facts de infraestrutura que
+`analyze terraform` produziria no Glue, e a release do EMR sai do próprio dump, sem
+ninguém precisar declará-la.
+
+Se a biblioteca valida dado — `df.filter(...).count()` seguido de aborto,
+`VerificationSuite` do PyDeequ, ou Great Expectations —, rode também
+`analyze data-quality --path lib/` sobre os mesmos arquivos do item 4. É o mesmo `.py`
+lido por outra ótica, e nenhum dos dois extratores cala o outro: a mesma linha pode
+produzir um achado sobre o que a cadeia custa e outro sobre o dado ruim já estar publicado
+quando o alarme toca.
 
 ## 7. Quando faltarem dados
 
