@@ -171,7 +171,7 @@ class _ScopeIndex(NamedTuple):
     # `id()` dos nos que sao o RECEPTOR de outra chamada da mesma cadeia. Quem
     # responde por uma cadeia e o no mais externo; sem isso,
     # `VerificationSuite(s).onData(d).addCheck(c)` emitiria um fact por elo.
-    chained: frozenset[int]
+    chained: frozenset[ast.AST]
 
 
 def _subject(path: str, line: int = 0) -> dict[str, Any]:
@@ -345,8 +345,8 @@ def _dict_bindings(nodes: list[ast.AST]) -> dict[str, list[tuple[int, ast.Dict]]
     return found
 
 
-def _chained_receivers(nodes: list[ast.AST]) -> frozenset[int]:
-    """`id()` de todo no que e o receptor de uma chamada de metodo do escopo.
+def _chained_receivers(nodes: list[ast.AST]) -> frozenset[ast.AST]:
+    """Todo no que e o receptor de uma chamada de metodo do escopo.
 
     Um no que esta nesta colecao e um ELO INTERNO de uma cadeia -- alguem chama
     um metodo sobre ele --, e quem responde pela cadeia inteira e o no mais
@@ -354,11 +354,13 @@ def _chained_receivers(nodes: list[ast.AST]) -> frozenset[int]:
     `VerificationSuite(s).onData(d).addCheck(c)` produziria um fact por elo, ja
     que `onData` esta nos `methods` de cada um deles.
 
-    `id()` e valido porque `nodes` segura todos os nos do escopo durante a
-    extracao inteira: nenhum e coletado, entao nenhum endereco e reaproveitado.
+    O conjunto guarda os NOS, nao `id(no)`. No de AST e hashavel por identidade,
+    que e exatamente a comparacao desejada, e guardar o objeto elimina a
+    condicao que tornaria `id()` valido -- alguem manter o indice vivo depois de
+    a arvore morrer reaproveitaria enderecos e casaria nos errados em silencio.
     """
     return frozenset(
-        id(node.func.value)
+        node.func.value
         for node in nodes
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
     )
@@ -563,7 +565,7 @@ def _on_data_argument(node: ast.Call) -> ast.expr | None:
 def _pydeequ_check(
     node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
 ) -> Fact | None:
-    if not isinstance(node.func, ast.Attribute) or id(node) in index.chained:
+    if not isinstance(node.func, ast.Attribute) or node in index.chained:
         return None
     _, methods = _chain_root(node)
     if _SUITE_SOURCE not in methods:
