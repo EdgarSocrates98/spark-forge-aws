@@ -1534,7 +1534,7 @@ git commit -m "feat(agents): data-quality-reviewer, coordenador da area SF-DQ"
 - Create: `tests/test_dq_investigation_end_to_end.py`
 - Modify: `docs/superpowers/STATUS.md`
 
-- [ ] **Step 1: A prova de D-3 — sem duplicação semântica**
+- [x] **Step 1: A prova de D-3 — sem duplicação semântica**
 
 O critério 7 do spec. No molde de `tests/test_emr_investigation_end_to_end.py`: um job real, **sem flag de runtime nenhuma**, com uma validação artesanal depois do write sobre DataFrame não persistido.
 
@@ -1551,17 +1551,17 @@ def test_dq_e_py_falam_da_mesma_linha_sem_se_repetirem():
     assert dq_titles and not (dq_titles & py_titles)
 ```
 
-- [ ] **Step 2: O critério 9 — nenhum golden de `pyspark/` mudou**
+- [x] **Step 2: O critério 9 — nenhum golden de `pyspark/` mudou**
 
 Run: `git diff --stat main -- fixtures/pyspark/`
 Expected: saída vazia. Se qualquer `fixtures/pyspark/*/expected/facts.json` aparecer, algo desta fase tocou `pyspark_ast`, e o D-2 foi violado — pare e investigue antes de seguir.
 
-- [ ] **Step 3: Rode a suíte inteira**
+- [x] **Step 3: Rode a suíte inteira**
 
 Run: `python -m pytest -q`
 Expected: 0 failed. Anote o total: ele vai para o STATUS no Step 5.
 
-- [ ] **Step 4: Meça os números correntes**
+- [x] **Step 4: Meça os números correntes**
 
 ```bash
 python -c "
@@ -1586,18 +1586,59 @@ print('tools', len(TOOLS))
 ls -d fixtures/*/*/ | wc -l
 ```
 
-- [ ] **Step 5: STATUS**
+- [x] **Step 5: STATUS**
 
 Atualize a tabela **Números correntes** com os valores medidos no Step 4 e no Step 3 — nunca copiados deste plano. Acrescente a seção "Fase 5c — SF-DQ" no formato das anteriores: o defeito de partida (o ponto cego medido, `grep` devolvendo um arquivo só), o que entrou, **o que a Task 0 vetou e por quê**, e a faixa de commits. Se `SF-DQ-004` não entrou, o número medido no gate vai escrito ali.
 
 Nas **Dívidas abertas**, acrescente as duas que esta fase cria por decisão registrada: GE declarativo (`great_expectations.yml` e suites JSON) e dbt continuam sem cobertura, com a razão da §2 do spec.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add tests/test_dq_investigation_end_to_end.py docs/superpowers/STATUS.md
 git commit -m "docs: fecha a Fase 5c"
 ```
+
+### Medido no fechamento
+
+Números do Step 4, rodados nesta branch e copiados daqui para o `STATUS.md` —
+nunca o contrário:
+
+```
+regras 62
+{'SF-PY': 12, 'SF-EMR': 9, 'SF-GLUE': 6, 'SF-UI': 6, 'SF-ATH': 5, 'SF-ENV': 5,
+ 'SF-ICE': 5, 'SF-PQ': 5, 'SF-DQ': 4, 'SF-PLAN': 4, 'SF-CG': 1}
+runtime_scope nao-vazio 8
+extratores 15 kinds 97
+tools 33
+rotas 24
+fixtures 99  dominios 17  coordenadores 8
+3104 passed, 5 skipped
+```
+
+`git diff --stat main -- fixtures/pyspark/` saiu **vazio** (critério 9).
+
+### Três coisas que o Step 1 impôs, e o plano não previa
+
+1. **Nenhuma das oito fixtures de `fixtures/dq/` tem as duas leituras na mesma
+   linha.** Medido: em `validation_after_write` o `SF-PY-003` cai na linha 28 e o
+   `SF-DQ-001` na 38; em `check_recomputes_lineage`, 28 e 35. Elas provam regra a
+   regra, que é o trabalho delas. A prova de D-3 precisa do **encontro**, então o
+   corpus dela é um job escrito na própria suíte, com um defeito composto numa
+   linha só: `vendas.join(catalogo, "produto_id").filter(...).count()` depois do
+   `write`. As duas áreas caem em `job.py:15`, e citam facts disjuntos.
+2. **O esboço do Step 1 provava menos do que o critério 7 pede.** `dq_titles and
+   not (dq_titles & py_titles)` é verdade por construção do namespace de `rule_id`
+   e continuaria verdade se as duas áreas passassem a dizer a mesma coisa. O que
+   ficou no lugar são duas medidas que mordem: nenhuma regra de uma área lê o
+   namespace de fact da outra (varrendo `requires_facts` **e** a árvore de `when`
+   por `fact:`/`absent:`), e o julgamento de cada área é idêntico com e sem os
+   facts da vizinha.
+3. **A segunda medida foi verificada por mutação, não por leitura.** Com um
+   `absent: dq.check` enxertado em `SF-PY-003` numa cópia do catálogo apontada por
+   `SPARKFORGE_CATALOG`, o `SF-PY-003` some do julgamento completo e sobrevive no
+   julgamento só com `pyspark.*` — e quatro testes da suíte reprovam. Sem a
+   mutação, a suíte passa. Teste que nunca se viu falhar não é prova.
 
 ---
 

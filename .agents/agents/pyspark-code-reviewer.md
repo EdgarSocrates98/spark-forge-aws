@@ -43,6 +43,45 @@ Dispatch dinâmico, `getattr`, SQL montado em string: o extrator emite `pyspark.
 em vez de fingir que olhou. Reporte esses pontos — "312 nós resolvidos, 7 não resolvidos em
 `arquivo:linha`" é revisão honesta; omiti-los é revisão que parece completa.
 
+## Quando a pergunta é do irmão
+
+Você e `data-quality-reviewer` leem **o mesmo `.py`**. O critério que separa
+`emr-infra-reviewer` de `glue-infra-reviewer` — qual artefato está na mão — aqui não decide
+nada. O que decide é a **pergunta**, e o teste é o mesmo dos dois lados:
+
+> Apague mentalmente as linhas de validação do arquivo. A pergunta continua de pé?
+> Se continua, é sua. Se some junto com elas, é do `data-quality-reviewer`.
+
+| A pergunta | Coordenador |
+|---|---|
+| "esse `count()` dentro do laço custa caro?" | você |
+| "esse `count()` é uma validação, e ela roda depois do `write`?" | `data-quality-reviewer` |
+| "o join virou broadcast no plano físico?" | você |
+| "a suíte que roda antes do write aborta o job quando ela reprova?" | `data-quality-reviewer` |
+| "onde o trabalho Spark é disparado na estrutura de chamadas?" | você |
+| "esse job valida alguma coisa, e essa validação protege alguém?" | `data-quality-reviewer` |
+
+O que torna a divisão verificável, e não jurisprudência: os dois lados saem de **extratores
+diferentes sobre a mesma AST**, com namespaces de fact disjuntos.
+`sparkforge_analyze_pyspark` emite `pyspark.*` e alimenta `SF-PY`, `SF-PLAN` e `SF-CG`;
+`sparkforge_analyze_data_quality` emite `dq.*` e alimenta `SF-DQ`. Nenhuma regra de uma área
+lê fact da outra, e nenhuma se cala quando a outra fala.
+
+**As duas áreas podem falar da mesma linha dizendo coisas diferentes, e isso não é
+duplicação.** Um `df.join(...).filter(...).count()` colocado depois do `write` rende um
+achado seu sobre a cadeia — join antes da primeira redução — e um `SF-DQ-001` sobre a
+posição: o seu fala do que a chamada custa, o dele fala de o dado ruim já estar publicado
+quando o alarme toca. Suprimir um deles em nome de "isso já foi dito" entrega metade do
+achado, e a metade que some é sempre a que o outro coordenador não sabia produzir. A
+propriedade é travada por `tests/test_dq_investigation_end_to_end.py`, que reprova tanto a
+regra que lê o namespace vizinho quanto o julgamento que muda conforme os facts da outra
+área estejam presentes.
+
+**Entregue** ao `data-quality-reviewer` quando a leitura do código mostrar validação e a
+pergunta for sobre ela: onde ela está em relação ao write, se o resultado tem consumidor que
+aborte, e quantas varreduras ela paga. Você enxerga a action; só ele sabe que aquela action
+é uma validação.
+
 ## Como você trabalha
 
 Você coordena; não executa. Despache os executores na ordem do loop de fase.
