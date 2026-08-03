@@ -1,6 +1,8 @@
 # Agent Instructions — SparkForge AWS
 
-This repository contains reusable Agent Skills for AWS Glue PySpark performance engineering.
+This repository contains reusable Agent Skills for PySpark data engineering on AWS —
+performance on AWS Glue and on Amazon EMR on EC2, plus the placement and cost of data
+validation inside the job.
 
 ## Operating contract
 
@@ -38,7 +40,7 @@ For full/incremental AWS Glue workloads, start with `glue-incremental-performanc
 
 ## Coordinators and executors
 
-Six coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
+Eight coordinators live in `agents/*.md`, one per specialized angle of investigation. Each
 declares `rule_areas`, the `skills` it draws on, and the five `executors` it dispatches
 (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer` — one per
 function of the phase loop, in `agents/executors/*.md`, each with an explicit `## Não faz`
@@ -81,8 +83,9 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Thirteen extractors, all offline — they read artifacts already on disk and never
-call AWS. Each has a CLI verb and an MCP tool with the same name:
+Fifteen extractors, all offline — they read artifacts already on disk and never
+call AWS. Each has a CLI verb and an MCP tool with the same name, and together
+they emit 97 distinct fact kinds:
 
 | Artifact | CLI verb | Reads |
 |---|---|---|
@@ -94,12 +97,22 @@ call AWS. Each has a CLI verb and an MCP tool with the same name:
 | Terraform | `analyze terraform` | `aws_glue_job` HCL |
 | SQL | `analyze sql` | `*.sql` and `spark.sql(...)` literals |
 | Athena workgroup | `analyze athena-workgroup` | `get_work_group` dump |
+| EMR on EC2 cluster | `analyze emr-cluster` | `describe-cluster` dump and the five that complete it |
+| Data validation | `analyze data-quality` | the same `*.py`, read as checks rather than as work |
 | Call graph | `analyze call-graph` | derived from PySpark facts |
 | S3 object listing | `analyze s3-listing` | `s3api list-objects-v2` dump |
 | Table consumers | `analyze consumers` | declared inventory, versioned in the repo |
 | Terraform change | `analyze terraform-diff` | two states of the same module |
 | Runtime | `runtime detect` | every source above, cross-checked |
 | Correlation | `fuse` | facts from several extractors at once |
+
+`analyze pyspark` and `analyze data-quality` read the same file and never
+suppress each other: the same line can be `SF-PY-003` (what the chain costs)
+and `SF-DQ-001` (the bad data was already published when the alarm rang) at
+once. Neither area reads the other's fact namespace, and each judges
+identically with and without the neighbour's facts — cross-suppression can only
+be implemented by looking at the other's fact, so the invariant refuses both
+the duplicate and the silence.
 
 Collection of the raw artifacts (`collect *`) requires boto3 and credentials
 and is the only part that touches AWS. The core never imports boto3 or the MCP
@@ -122,7 +135,11 @@ runtime is out of range — so state the detected runtime before any finding.
 Divergence between sources is never resolved by picking one: it is `SF-ENV-001`
 at P0, because every threshold downstream is evaluated against the wrong
 runtime until it is settled. See `knowledge/glue/runtime-matrix.md` for the
-Glue 4.0 / 5.0 / 5.1 matrix and the Iceberg V3 versus Athena trap in Glue 5.1.
+Glue 4.0 / 5.0 / 5.1 matrix and the Iceberg V3 versus Athena trap in Glue 5.1, and
+`knowledge/emr/runtime-matrix.md` for the EMR 6.4.0 → 7.13.0 matrix and what the
+`-amzn-N` suffix means. Outside Glue the release comes from the cluster dump, not from a
+flag: `--emr` is a declaration, it loses to `describe-cluster` and to the event log, and
+disagreeing with either becomes a reported divergence — never a silent substitution.
 
 The `recommendation:` schema documented above remains valid: `Finding` is a
 compatible superset of it, with the same fields (`title`, `severity`,

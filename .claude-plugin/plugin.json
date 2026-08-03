@@ -1,19 +1,25 @@
 {
   "name": "sparkforge-aws",
   "version": "0.5.0",
-  "description": "Analise deterministica de jobs AWS Glue PySpark: extracao de facts via AST estatico, julgamento contra um catalogo de regras versionado, e um ciclo de vida de case que atravessa sessoes (Devin, Claude Code, CI) via .sparkforge/case.yaml.",
+  "description": "Analise deterministica de jobs PySpark no AWS Glue e no Amazon EMR on EC2, incluindo a validacao de dado dentro do job: extracao de facts via AST estatico e dumps ja coletados, julgamento contra um catalogo de regras versionado, e um ciclo de vida de case que atravessa sessoes (Devin, Claude Code, CI) via .sparkforge/case.yaml.",
   "author": {
     "name": "SparkForge AWS"
   },
   "license": "MIT",
   "keywords": [
     "aws-glue",
+    "amazon-emr",
+    "emr",
     "pyspark",
     "spark",
     "iceberg",
     "parquet",
     "athena",
     "performance",
+    "data-quality",
+    "data-validation",
+    "pydeequ",
+    "great-expectations",
     "mcp"
   ],
   "homepage": "https://github.com/EdgarSocrates98/spark-forge-aws"
