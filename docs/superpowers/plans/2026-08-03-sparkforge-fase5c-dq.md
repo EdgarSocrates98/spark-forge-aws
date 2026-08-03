@@ -448,7 +448,13 @@ Implemente com a mesma forma do Step 1: uma varredura que colhe `cache`/`persist
 
 Run: PASS.
 
-- [ ] **Step 3: `measures.checks_on_target` e `attrs.single_pass`**
+- [ ] **Step 3: `measures.checks_on_target` e `attrs.shares_scan`**
+
+> **Corrigido pela Task 0** (desvio D-5c-1 do spec). O atributo chamava-se
+> `single_pass` e afirmava "N checks, uma passada" — falso: Deequ faz *scan
+> sharing por agrupamento*, e `isUnique` paga passada própria. `shares_scan`
+> afirma só o que a fonte autoriza. `measures.declared_checks` **não entra**
+> (D-5c-2): contar `addCheck` não conta restrições.
 
 Teste primeiro:
 
@@ -461,17 +467,17 @@ def test_dois_checks_no_mesmo_alvo_contam_um_ao_outro():
     checks = [f for f in facts if f.kind == "dq.check"]
     assert len(checks) == 2
     assert {c.measures["checks_on_target"] for c in checks} == {2}
-    assert {c.attrs["single_pass"] for c in checks} == {False}
+    assert {c.attrs["shares_scan"] for c in checks} == {False}
 
 
-def test_check_unico_nao_e_multipassada():
+def test_check_unico_nao_compartilha_varredura():
     facts = _facts("a = vendas.filter(vendas.valor < 0).count()\n")
     check = [f for f in facts if f.kind == "dq.check"][0]
     assert check.measures["checks_on_target"] == 1
-    assert check.attrs["single_pass"] is False
+    assert check.attrs["shares_scan"] is False
 ```
 
-`single_pass` é `False` para todo check artesanal — cada `count()` é uma passada. Ele vira `True` só na Task 3, para a `VerificationSuite`, e a Task 0 Step 2.3 é a fonte que autoriza isso.
+`shares_scan` é `False` para todo check artesanal: cada `count()` é uma varredura própria, sem compartilhamento nenhum. Ele vira `True` só na Task 3, para a `VerificationSuite`, e a §2.3 de `knowledge/dq/validation-frameworks.md` é a fonte que autoriza — e que delimita: scan sharing por agrupamento, não passada única.
 
 Implemente contando os checks por alvo **depois** de construí-los, num segundo passe sobre a lista de facts (o valor não é conhecível durante a primeira travessia).
 
@@ -498,7 +504,7 @@ Releia `knowledge/dq/validation-frameworks.md`. Se a pesquisa mostrou que a supe
 - [ ] **Step 2: Teste do PyDeequ**
 
 ```python
-def test_verification_suite_e_um_check_de_passada_unica():
+def test_verification_suite_compartilha_varredura():
     facts = _facts(
         "from pydeequ.verification import VerificationSuite\n"
         "r = VerificationSuite(spark).onData(vendas).addCheck(c1).addCheck(c2).run()\n"
@@ -507,8 +513,8 @@ def test_verification_suite_e_um_check_de_passada_unica():
     assert len(checks) == 1
     assert checks[0].attrs["framework"] == "pydeequ"
     assert checks[0].attrs["target"] == "vendas"
-    assert checks[0].attrs["single_pass"] is True
-    assert checks[0].measures["declared_checks"] == 2
+    assert checks[0].attrs["shares_scan"] is True
+    assert "declared_checks" not in checks[0].measures
 ```
 
 Run: FAIL (nenhum `dq.check`).
@@ -536,12 +542,18 @@ def _pydeequ_check(
     return Fact(
         kind="dq.check",
         subject=_subject(path, node.lineno),
-        measures={"line": node.lineno, "declared_checks": methods.count("addCheck")},
+        measures={"line": node.lineno},
         attrs={
             "framework": "pydeequ",
             "check_type": "verification_suite",
             "target": target,
-            "single_pass": True,
+            # `shares_scan`, nao `single_pass`: o runner do Deequ agrupa as
+            # agregacoes que compartilham o mesmo agrupamento e as roda numa
+            # passada; `isUnique`/entropia exigem re-particionamento e pagam
+            # passada propria (Schelter et al., PVLDB 2018, §4.1 e §5.1 --
+            # knowledge/dq/validation-frameworks.md §2.3). Uma suite com N
+            # checks custa uma passada POR AGRUPAMENTO, nunca uma.
+            "shares_scan": True,
             "position_vs_write": _position_vs_write(target, node.lineno, writes),
         },
         provenance=provenance,
@@ -552,9 +564,29 @@ def _pydeequ_check(
 
 Run: PASS.
 
-- [ ] **Step 4: Teste e implementação do Great Expectations, na forma que a Task 0 apurou**
+- [ ] **Step 4: Great Expectations, na forma que a Task 0 apurou (desvio D-5c-3)**
 
-O fact resultante tem `framework: "great_expectations"` e os mesmos atributos de posição e alvo. Se a Task 0 concluiu que a detecção estática não é confiável na versão corrente, **não escreva a detecção**: emita `dq.unresolved` com `reason: "great_expectations_surface_not_static"` quando o módulo importar `great_expectations`, e registre o veto. Ausência contada vale mais que detecção que erra.
+A pesquisa fechou este step. `SparkDFDataset` não existe desde a 1.0.0, e a detecção por prefixo `expect_*` está **vetada**: o prefixo sobrevive em `Validator.__getattr__`, e o AST não sabe se a variável é um `Validator` — casar por prefixo produz falso positivo sobre qualquer objeto.
+
+O que resta é estreito e verdadeiro: o DataFrame aparece sob **chave literal** no dict de `batch_parameters`.
+
+```python
+def test_great_expectations_pela_chave_literal_do_batch_parameters():
+    facts = _facts(
+        "import great_expectations as gx\n"
+        "res = validation_definition.run(batch_parameters={'dataframe': vendas})\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["framework"] == "great_expectations"
+    assert check.attrs["target"] == "vendas"
+    # Quantas expectativas rodam vive no store do contexto, FORA do .py.
+    # Chave ausente e a forma de dizer "nao sei" sem virar `false`.
+    assert "shares_scan" not in check.attrs
+```
+
+Reconheça o `ast.Call` que tem `keyword` chamado `batch_parameters` cujo valor é um `ast.Dict` com a chave constante `"dataframe"`; o alvo é o `ast.Name` daquele valor, e um valor que não seja `Name` vira `dq.unresolved` com `reason: "unresolved_target"`.
+
+A chave `shares_scan` fica **fora** dos `attrs` deste framework, de propósito: `engine._where_matches` reprova caminho ausente, então `SF-DQ-004` não avalia check de GE — que é o correto, porque o extrator não sabe quantas expectativas a suíte tem.
 
 - [ ] **Step 5: Rode a suíte inteira do extrator**
 
@@ -624,9 +656,11 @@ def _enforcement(check_subject, form: str, line: int, provenance) -> Fact:
 
 Run: PASS.
 
-- [ ] **Step 3: `assert` obedece a Task 0**
+- [ ] **Step 3: `assert` conta como enforcement, com ressalva (desvio D-5c-4)**
 
-Se o Step 3 da Task 0 concluiu que `assert` some sob `-O` no ambiente alvo, `form: "assert"` **não** é emitido como enforcement — vira `dq.unresolved` com `reason: "assert_stripped_under_O"`. Escreva o teste na conclusão que a fonte deu, e o comentário no código citando a URL.
+A Task 0 fechou o ramo: a referência da linguagem confirma que `-O` apaga o `assert`, mas **nenhuma** fonte da AWS mostra Glue ou EMR rodando o driver assim, e no Glue o caminho documentado (`--customer-driver-env-vars`) rejeita chaves sem o prefixo `CUSTOMER_`. Então `form: "assert"` **é** enforcement — não emita `dq.unresolved` por causa disso.
+
+A ressalva vai escrita na `explanation` de `SF-DQ-002`, na Task 7, com a URL da referência da linguagem. Deixe um comentário no código apontando para `knowledge/dq/validation-frameworks.md` §3.4, para ninguém "corrigir" isso depois sem ler a fonte.
 
 - [ ] **Step 4: Commit**
 
@@ -877,6 +911,12 @@ rules:
       `dq.unresolved`, que não conta como ausência de proteção.
       O recorte é o corpus analisado: se a consequência está noutro módulo fora do
       recorte, o achado é um convite a verificar, não uma sentença.
+      Ressalva sobre `assert` (desvio D-5c-4): `assert` conta como consequência aqui,
+      porque nenhuma fonte da AWS mostra Glue ou EMR rodando o driver com `-O`, e no Glue
+      o caminho documentado para variáveis de ambiente do driver rejeita `PYTHONOPTIMIZE`.
+      Mas a linguagem é explícita — sob `-O` o interpretador não gera código nenhum para
+      `assert` — então validação cuja única consequência é um `assert` fica a uma variável
+      de ambiente de virar validação sem consequência nenhuma.
     proposed_change:
       - Ler o resultado do check e abortar o job quando ele reprovar.
       - Se o job deve seguir com dado parcial de propósito, registrar a decisão em métrica ou log estruturado e declarar o contrato — validação que só observa precisa dizer que só observa.
@@ -979,20 +1019,25 @@ Cole a saída no commit. **Se `unresolved` for maior que `checks`**, `SF-DQ-004`
     when:
       all:
         - fact: dq.check
-          where: {attrs.single_pass: false}
+          where: {attrs.shares_scan: false}
           expr: "measures.checks_on_target >= 2"
     status: structural
     severity_default: P2
     runtime_scope: {}
     explanation: >
-      Cada check é uma action, e cada action é uma varredura do dado. Dois ou mais checks
-      independentes sobre o mesmo DataFrame varrem o mesmo dado duas ou mais vezes para
-      responder perguntas que uma única agregação responderia junto.
-      `attrs.single_pass` separa quem já faz certo: uma `VerificationSuite` do Deequ com
-      cinco checks é uma passada por construção, e não dispara esta regra.
+      Cada check artesanal é uma action, e cada action é uma varredura do dado. Dois ou
+      mais checks independentes sobre o mesmo DataFrame varrem o mesmo dado duas ou mais
+      vezes para responder perguntas que uma única agregação responderia junto.
+      `attrs.shares_scan` separa quem já compartilha varredura: o runner do Deequ agrupa as
+      agregações que exigem o mesmo agrupamento e as roda numa passada só — o que **não**
+      quer dizer uma passada para a suíte inteira, porque `isUnique`, `hasUniqueness` e
+      entropia exigem re-particionamento e pagam passada própria. O contraste que esta
+      regra afirma é N contra ≤ N, nunca N contra um.
+      Check de Great Expectations não traz a chave `shares_scan` e portanto não é avaliado
+      aqui: quantas expectativas a suíte tem vive no store do contexto, fora do arquivo.
     proposed_change:
-      - Reunir os checks numa única agregação, com uma expressão por regra (`sum(when(cond, 1).otherwise(0))` por violação), e ler todas as contagens de uma linha só.
-      - Alternativa: usar uma suíte de passada única, se a versão de Spark do runtime for compatível com a biblioteca — conferir `knowledge/dq/validation-frameworks.md`.
+      - Reunir os checks numa única agregação, com uma expressão por regra (`sum(when(cond, 1).otherwise(0))` por violação), e ler todas as contagens de uma linha só. Esta é a mudança que não depende de biblioteca nenhuma.
+      - Alternativa, com guarda de versão obrigatória - uma suíte que compartilha varredura. PyDeequ não instala em Glue 3.0 nem em nenhuma release EMR 6.x, e o Spark 3.4 está fora do mapa de `pydeequ/configs.py`; Great Expectations 1.x exige Python 3.10 ou maior. Conferir o alcance medido em `knowledge/dq/validation-frameworks.md` §2.2 e §1.4 antes de recomendar a alguém.
     risks:
       - Agregação única muda a mensagem de erro: em vez de falhar no primeiro check, o job passa a reportar todas as violações juntas. É melhor para diagnóstico e diferente do que a equipe está acostumada a ler.
     tradeoffs:
@@ -1002,6 +1047,7 @@ Cole a saída no commit. **Se `unresolved` for maior que `checks`**, `SF-DQ-004`
       - Cada contagem de violação, idêntica à da versão anterior, sobre o mesmo lote.
     rollback: [Reverter o commit.]
     sources:
+      - {url: "https://www.vldb.org/pvldb/vol11/p1781-schelter.pdf", retrieved: 2026-08-03, note: "Schelter et al., PVLDB 2018, §4.1 e §5.1: scan sharing por agrupamento, e metricas que exigem re-particionamento pagam passada propria."}
       - {origin: field-heuristic, note: "P2: o custo é real e proporcional ao número de checks, mas nenhum dado disponível mede o tamanho do lineage varrido."}
 ```
 

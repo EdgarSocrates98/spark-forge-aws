@@ -193,6 +193,9 @@ calar por um motivo e o leitor entender outro.
 sai com `single_pass: true`. Cinco `df.filter(...).count()` separados saem com
 `false`. A regra separa as duas, que era o ponto.
 
+> **Corrigido pela pesquisa de fontes.** O parágrafo acima afirma o que a fonte
+> não sustenta, e o atributo mudou de nome. Ver §10, desvio D-5c-1.
+
 Subject de `dq.enforcement` é **o mesmo** subject do check que ela protege —
 `source_location` com o arquivo e a linha do check, sem `symbol`. É o que faz
 `_subject_group_key` cair na mesma chave e `same_subject` funcionar em
@@ -258,3 +261,58 @@ que é a verificação de D-3.
 | `SF-DQ-002` acusa job que valida em outro módulo | O achado declara o recorte: "sem consequência **neste corpus**", como `unreferenced_function_count` passou a fazer na 5b |
 | Resolução de alvo por nome de variável erra e `SF-DQ-001` compara a linha errada | Alvo não resolvido não gera check com alvo — gera `dq.unresolved`. Regra que precisa de alvo não dispara sem alvo |
 | A fase cresce para GE declarativo e dbt no meio da execução | Estão em não-objetivos com razão escrita. Entram em fase própria |
+
+## 10. Desvios apurados pela pesquisa de fontes
+
+A Task 0 do plano rodou antes de qualquer código, como a Fase 5b fez, e o
+resultado está em [`knowledge/dq/validation-frameworks.md`](../../../knowledge/dq/validation-frameworks.md)
+com URL e data por afirmação. Este documento **não é reescrito** — o registro do
+que se pretendia tem valor próprio. Os desvios ficam aqui.
+
+**D-5c-1 — `attrs.single_pass` afirmava o que a fonte não sustenta.** O artigo
+original do Deequ (Schelter et al., PVLDB 2018, §4.1 e §5.1) descreve *scan
+sharing por agrupamento*: métricas que não exigem re-particionamento cabem numa
+passada; `isUnique`, `hasUniqueness` e entropia **pagam passada própria**. Uma
+suíte com N checks custa uma passada **por agrupamento distinto**, não uma. O
+exemplo canônico do próprio README do PyDeequ tem `isUnique("a")`.
+
+O atributo passa a se chamar **`attrs.shares_scan`**, e afirma exatamente o que a
+fonte autoriza: os checks deste fact compartilham varredura entre si. `handmade`
+sai com `false` — cada `count()` é uma varredura própria, sem compartilhamento
+nenhum. `pydeequ` sai com `true`. `SF-DQ-004` continua viável porque o contraste
+que ela precisa sobrevive intacto: N passadas contra ≤ N, nunca "uma".
+
+**D-5c-2 — `measures.declared_checks` sai.** Contar chamadas `addCheck` não conta
+restrições: a forma oficial encadeia seis restrições dentro de **um** `addCheck`.
+Nenhuma regra o consumia, e medida que não sustenta o próprio nome é a família de
+defeito que a 5b corrigiu em `unreachable_function_count`. Não entra.
+
+**D-5c-3 — `SparkDFDataset` está morto, e a detecção de GE muda de forma.**
+`great_expectations/dataset/sparkdf_dataset.py` some na 1.0.0 (2024-08-22). A
+detecção por métodos `expect_*` fica **vetada**: o prefixo sobrevive via
+`Validator.__getattr__`, e o AST não sabe se a variável é um `Validator` — casar
+por prefixo produziria falso positivo sobre qualquer objeto. O que sobra é
+estreito e honesto: `batch_parameters={"dataframe": df}` expõe o DataFrame sob
+chave literal, e é dali que sai `attrs.target`.
+
+Consequência que precisa ser explícita: um `dq.check` de framework
+`great_expectations` **não recebe** a chave `shares_scan`. Quantas expectativas
+rodam vive no store do contexto, fora do `.py` — o extrator não sabe, e o motor
+reprova caminho ausente em `where` (`engine._where_matches`), então `SF-DQ-004`
+simplesmente não avalia esses checks. Ausência de chave é a forma de dizer "não
+sei" sem que ninguém confunda com `false`.
+
+**D-5c-4 — `assert` conta como consequência, com ressalva.** A referência da
+linguagem confirma que `-O` apaga o `assert`, mas nenhuma fonte da AWS mostra
+Glue ou EMR rodando o driver assim, e no Glue o caminho documentado
+(`--customer-driver-env-vars`) **rejeita** chaves sem o prefixo `CUSTOMER_`. Logo
+`form: "assert"` é enforcement legítimo, e a ressalva vai escrita dentro da
+`explanation` de `SF-DQ-002` — não vira `dq.unresolved`, como o plano previa no
+outro ramo.
+
+**D-5c-5 — `proposed_change` que recomende suíte precisa de guarda de versão.**
+PyDeequ não alcança Glue 3.0 nem nenhuma release EMR 6.x (piso Python 3.9), e o
+Spark 3.4 não está no mapa de `pydeequ/configs.py`. GX 1.x exige Python ≥ 3.10.
+Recomendação genérica de "use uma suíte" seria conselho impossível de seguir em
+metade das releases que o repo cobre; a `proposed_change` aponta para
+`knowledge/dq/validation-frameworks.md`, onde o alcance está medido.
