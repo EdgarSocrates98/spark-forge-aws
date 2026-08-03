@@ -17,7 +17,8 @@ resolvido vira `dq.unresolved`, contado e nao presumido.
 Tres formas sao reconhecidas, cada uma pela FORMA e nunca por lista de nomes: o
 check artesanal (`df.filter(...).count()`), a `VerificationSuite` do PyDeequ
 (cadeia que contem `onData` e termina em `run`) e a validacao do Great
-Expectations (DataFrame sob a chave literal `"dataframe"` de `batch_parameters`).
+Expectations (DataFrame sob a chave literal `"dataframe"` de `batch_parameters`,
+inline ou um passo atras, no nome ligado dentro do mesmo escopo).
 Todas passam pelo MESMO construtor -- `_check` -- e pelo mesmo indice por escopo:
 o que muda entre elas nao e a correlacao, e o que o `.py` permite afirmar sobre a
 varredura. Dai a assimetria deliberada de `shares_scan`, presente nos dois
@@ -138,7 +139,8 @@ _DATAFRAME_KEY = "dataframe"
 
 
 class _ScopeIndex(NamedTuple):
-    """Eventos que datam um check, por variavel-alvo, DENTRO DE UM ESCOPO.
+    """O que o extrator enxerga de UM ESCOPO: eventos que datam um check, por
+    variavel-alvo, mais os dois lookups que so fazem sentido dentro do escopo.
 
     O motor de regras nao correlaciona dois facts -- `engine._condition_candidates`
     avalia um fact por vez e `engine._absent_satisfied` compara so `kind` -- entao
@@ -162,6 +164,14 @@ class _ScopeIndex(NamedTuple):
     persists: dict[str, list[tuple[tuple[int, int], bool]]]
     actions: dict[str, set[int]]
     rebinds: dict[str, set[int]]
+    # Dicts literais ligados a um nome, para seguir `batch_parameters=params` UM
+    # passo. Fora do escopo, seguir o nome seria a mesma colisao de homonimos que
+    # o resto do indice recusa.
+    dicts: dict[str, list[tuple[int, ast.Dict]]]
+    # `id()` dos nos que sao o RECEPTOR de outra chamada da mesma cadeia. Quem
+    # responde por uma cadeia e o no mais externo; sem isso,
+    # `VerificationSuite(s).onData(d).addCheck(c)` emitiria um fact por elo.
+    chained: frozenset[int]
 
 
 def _subject(path: str, line: int = 0) -> dict[str, Any]:
@@ -310,6 +320,50 @@ def _rebind_lines(nodes: list[ast.AST]) -> dict[str, set[int]]:
     return lines
 
 
+def _dict_bindings(nodes: list[ast.AST]) -> dict[str, list[tuple[int, ast.Dict]]]:
+    """Dicts LITERAIS ligados a cada nome, ordenados por linha.
+
+    Existe para seguir `batch_parameters=params` um passo: a forma que a
+    documentacao do Great Expectations usa monta o dict numa linha e o passa por
+    nome na seguinte. Um passo so, sem analise de fluxo -- nome ligado a chamada
+    de funcao nao entra aqui, e quem consome trata a ausencia como "nao da para
+    ler", nunca como alvo adivinhado.
+    """
+    found: dict[str, list[tuple[int, ast.Dict]]] = {}
+    for node in nodes:
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Dict):
+            targets: list[ast.expr] = list(node.targets)
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.value, ast.Dict):
+            targets = [node.target]
+        else:
+            continue
+        for target in targets:
+            if isinstance(target, ast.Name):
+                found.setdefault(target.id, []).append((node.lineno, node.value))
+    for sequence in found.values():
+        sequence.sort(key=lambda binding: binding[0])
+    return found
+
+
+def _chained_receivers(nodes: list[ast.AST]) -> frozenset[int]:
+    """`id()` de todo no que e o receptor de uma chamada de metodo do escopo.
+
+    Um no que esta nesta colecao e um ELO INTERNO de uma cadeia -- alguem chama
+    um metodo sobre ele --, e quem responde pela cadeia inteira e o no mais
+    externo, que nao esta aqui. Sem esta pergunta,
+    `VerificationSuite(s).onData(d).addCheck(c)` produziria um fact por elo, ja
+    que `onData` esta nos `methods` de cada um deles.
+
+    `id()` e valido porque `nodes` segura todos os nos do escopo durante a
+    extracao inteira: nenhum e coletado, entao nenhum endereco e reaproveitado.
+    """
+    return frozenset(
+        id(node.func.value)
+        for node in nodes
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    )
+
+
 def _scope_index(nodes: list[ast.AST]) -> _ScopeIndex:
     return _ScopeIndex(
         writes=_lines_by_target(nodes, _WRITE_ATTRS, frozenset()),
@@ -317,6 +371,8 @@ def _scope_index(nodes: list[ast.AST]) -> _ScopeIndex:
         # `.write` tambem e action: e o que dispara o trabalho de publicar.
         actions=_lines_by_target(nodes, _WRITE_ATTRS, _ACTION_METHODS),
         rebinds=_rebind_lines(nodes),
+        dicts=_dict_bindings(nodes),
+        chained=_chained_receivers(nodes),
     )
 
 
@@ -507,11 +563,24 @@ def _on_data_argument(node: ast.Call) -> ast.expr | None:
 def _pydeequ_check(
     node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
 ) -> Fact | None:
-    if not isinstance(node.func, ast.Attribute) or node.func.attr != _SUITE_TERMINAL:
+    if not isinstance(node.func, ast.Attribute) or id(node) in index.chained:
         return None
     _, methods = _chain_root(node)
     if _SUITE_SOURCE not in methods:
         return None
+    if _SUITE_TERMINAL not in methods:
+        # PONTO CEGO, e nao achado -- a diferenca importa e quem vier depois vai
+        # querer transformar isto em regra. A cadeia pode ser guardada numa
+        # variavel e executada em outro lugar (`s = VerificationSuite(...)
+        # .onData(df)` / `s.run()`, ou passada a outra funcao), e o extrator nao
+        # segue o objeto: a afirmacao honesta e "ha uma suite aqui cuja execucao
+        # eu nao enxergo", nunca "esta suite nao roda". Suite declarada e nunca
+        # executada e um defeito real, mas provar isso exige seguir o valor, que
+        # esta fase nao faz -- entao a exclusao e CONTADA, no mesmo padrao de
+        # `opaque_caller_function_count` da Fase 5b, e nao silenciosa.
+        return _unresolved(
+            path, node.lineno, "suite_run_not_visible", provenance, check_type="verification_suite"
+        )
     argument = _on_data_argument(node)
     if not isinstance(argument, ast.Name):
         return _unresolved(
@@ -537,21 +606,67 @@ def _pydeequ_check(
     )
 
 
-def _batch_dataframe(node: ast.Call) -> ast.expr | None:
+def _dataframe_key(mapping: ast.Dict) -> ast.expr | None:
+    """Valor sob a chave literal `"dataframe"`, ou `None` se ela nao existir."""
+    for key, value in zip(mapping.keys, mapping.values, strict=True):
+        if isinstance(key, ast.Constant) and key.value == _DATAFRAME_KEY:
+            return value
+    return None
+
+
+def _dict_bound_to(name: str, line: int, index: _ScopeIndex) -> ast.Dict | None:
+    """O dict literal que este nome carrega na linha do uso -- UM passo atras.
+
+    Vale o ultimo dict ligado ANTES da linha do uso, e a religacao entre a
+    ligacao e o uso derruba a evidencia: em `params = {...}` / `params = f()` /
+    `run(batch_parameters=params)`, o dict lido nao e o que chega a chamada.
+    E a mesma pergunta que os quatro atributos de correlacao fazem, e a resposta
+    vem do mesmo `_rebound_between` -- manter um predicado proprio aqui
+    garantiria divergencia na proxima mudanca.
+
+    Um nome ligado a algo que nao e dict literal (`params = monta()`) nao produz
+    ligacao nenhuma: a ultima ligacao literal anterior fica separada do uso por
+    aquela religacao, e a guarda acima ja a derruba.
+    """
+    bindings = [binding for binding in index.dicts.get(name, ()) if binding[0] < line]
+    if not bindings:
+        return None
+    bound_line, mapping = bindings[-1]
+    if _rebound_between(name, bound_line, line, index):
+        return None
+    return mapping
+
+
+def _batch_dataframe(node: ast.Call, index: _ScopeIndex) -> ast.expr | None:
     """Valor sob a chave literal `"dataframe"` do dict de `batch_parameters`.
 
-    `None` quando nao ha o que ler -- sem o argumento, com valor que nao e dict
-    literal, ou sem a chave --, e ai nao ha validacao GE RECONHECIDA. Nao ha
-    `dq.unresolved` nesses tres casos de proposito: sem a chave literal nada
-    prova que a chamada e do Great Expectations, e contar um ponto cego que pode
-    ser qualquer funcao com um argumento homonimo inflaria `unresolved_count`.
-    Erra para menos, que e a direcao aceita nesta area.
+    O dict pode estar inline ou UM passo atras, num nome ligado no MESMO escopo
+    -- e a forma que a documentacao corrente usa (§1.2 de
+    knowledge/dq/validation-frameworks.md) e a segunda:
+
+        batch_parameters = {"dataframe": dataframe}
+        validation_definition.run(batch_parameters=batch_parameters)
+
+    Reconhecer so o dict inline seria reconhecer a forma que a documentacao NAO
+    usa. Um passo so, dentro do escopo, com religacao respeitada: seguir mais
+    exigiria analise de fluxo, e adivinhar seria pior do que nao ver.
+
+    `None` quando nao ha o que ler -- sem o argumento, sem ligacao legivel, ou
+    sem a chave --, e ai nao ha validacao GE RECONHECIDA. Nao ha `dq.unresolved`
+    nesses casos de proposito: sem a chave literal nada prova que a chamada e do
+    Great Expectations, e contar um ponto cego que pode ser qualquer funcao com
+    um argumento homonimo inflaria `unresolved_count`. Erra para menos, que e a
+    direcao aceita nesta area.
     """
     for keyword in node.keywords:
-        if keyword.arg != _BATCH_PARAMETERS or not isinstance(keyword.value, ast.Dict):
+        if keyword.arg != _BATCH_PARAMETERS:
             continue
-        for key, value in zip(keyword.value.keys, keyword.value.values, strict=True):
-            if isinstance(key, ast.Constant) and key.value == _DATAFRAME_KEY:
+        mapping: ast.expr | None = keyword.value
+        if isinstance(mapping, ast.Name):
+            mapping = _dict_bound_to(mapping.id, node.lineno, index)
+        if isinstance(mapping, ast.Dict):
+            value = _dataframe_key(mapping)
+            if value is not None:
                 return value
     return None
 
@@ -559,7 +674,7 @@ def _batch_dataframe(node: ast.Call) -> ast.expr | None:
 def _great_expectations_check(
     node: ast.Call, path: str, index: _ScopeIndex, provenance: dict[str, Any]
 ) -> Fact | None:
-    value = _batch_dataframe(node)
+    value = _batch_dataframe(node, index)
     if value is None:
         return None
     if not isinstance(value, ast.Name):

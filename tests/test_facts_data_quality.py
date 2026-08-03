@@ -638,6 +638,126 @@ def test_rebind_entre_a_validacao_de_ge_e_o_write_omite_a_posicao():
     assert "position_vs_write" not in check.attrs
 
 
+def test_batch_parameters_por_variavel_e_a_forma_da_documentacao():
+    # A forma oficial (§1.2 de knowledge/dq/validation-frameworks.md) monta o
+    # dict numa linha e o passa por nome na seguinte. So o dict inline seria
+    # reconhecer a forma que a documentacao NAO usa.
+    facts = _facts(
+        "batch_parameters = {'dataframe': vendas}\n"
+        "res = validation_definition.run(batch_parameters=batch_parameters)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["framework"] == "great_expectations"
+    assert check.attrs["target"] == "vendas"
+    assert "shares_scan" not in check.attrs
+
+
+def test_o_nome_seguido_nao_precisa_ser_batch_parameters():
+    facts = _facts(
+        "params = {'dataframe': vendas}\nres = checkpoint.run(batch_parameters=params)\n"
+    )
+    assert [f.attrs["target"] for f in facts if f.kind == "dq.check"] == ["vendas"]
+
+
+def test_dict_atribuido_em_outro_escopo_nao_e_seguido():
+    # Nome nu nao identifica objeto entre escopos -- a mesma propriedade que faz
+    # o indice ser por escopo.
+    facts = _facts(
+        "def prepara():\n"
+        "    params = {'dataframe': vendas}\n"
+        "res = validation_definition.run(batch_parameters=params)\n"
+    )
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
+def test_religacao_entre_a_atribuicao_do_dict_e_o_run_invalida_a_evidencia():
+    facts = _facts(
+        "params = {'dataframe': vendas}\n"
+        "params = outra_coisa()\n"
+        "res = validation_definition.run(batch_parameters=params)\n"
+    )
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
+def test_variavel_que_nao_vem_de_dict_literal_nao_e_seguida():
+    facts = _facts("params = monta()\nres = validation_definition.run(batch_parameters=params)\n")
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
+def test_dict_atribuido_depois_do_run_nao_data_o_check():
+    facts = _facts(
+        "res = validation_definition.run(batch_parameters=params)\n"
+        "params = {'dataframe': vendas}\n"
+    )
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
+def test_o_ultimo_dict_antes_do_run_e_o_que_vale():
+    facts = _facts(
+        "params = {'dataframe': vendas}\n"
+        "params = {'dataframe': clientes}\n"
+        "res = validation_definition.run(batch_parameters=params)\n"
+    )
+    assert [f.attrs["target"] for f in facts if f.kind == "dq.check"] == ["clientes"]
+
+
+def test_dataframe_nao_variavel_no_dict_seguido_tambem_vira_unresolved():
+    facts = _facts(
+        "params = {'dataframe': spark.table('t')}\n"
+        "res = validation_definition.run(batch_parameters=params)\n"
+    )
+    unresolved = [f for f in facts if f.kind == "dq.unresolved"][0]
+    assert unresolved.attrs["reason"] == "unresolved_target"
+    assert unresolved.attrs["check_type"] == "batch_parameters_dataframe"
+
+
+def test_o_check_seguido_por_variavel_recebe_a_correlacao():
+    facts = _facts(
+        "params = {'dataframe': vendas}\n"
+        "res = validation_definition.run(batch_parameters=params)\n"
+        "vendas.write.parquet('s3://b/p')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["position_vs_write"] == "before_write"
+    assert check.attrs["action_after_check"] is True
+
+
+def test_suite_sem_run_e_ponto_cego_contado():
+    # A cadeia pode ser guardada e executada depois, fora da vista do extrator.
+    # Exclusao contada, nunca silenciosa.
+    facts = _facts("s = VerificationSuite(spark).onData(vendas).addCheck(c).useRepository(rep)\n")
+    assert [f.kind for f in facts if f.kind != "dq.module_analyzed"] == ["dq.unresolved"]
+    unresolved = [f for f in facts if f.kind == "dq.unresolved"][0]
+    assert unresolved.attrs["reason"] == "suite_run_not_visible"
+    assert unresolved.attrs["check_type"] == "verification_suite"
+    assert [f for f in facts if f.kind == "dq.module_analyzed"][0].measures["unresolved_count"] == 1
+
+
+def test_suite_guardada_em_variavel_e_rodada_depois_conta_uma_vez_so():
+    facts = _facts("s = VerificationSuite(spark).onData(vendas)\ns.run()\n")
+    assert [f.attrs["reason"] for f in facts if f.kind == "dq.unresolved"] == [
+        "suite_run_not_visible"
+    ]
+    assert [f for f in facts if f.kind == "dq.check"] == []
+
+
+def test_suite_com_run_continua_check_e_nao_ponto_cego():
+    facts = _facts("r = VerificationSuite(spark).onData(vendas).addCheck(c).run()\n")
+    assert [f.kind for f in facts if f.kind != "dq.module_analyzed"] == ["dq.check"]
+
+
+def test_metodo_encadeado_depois_do_run_nao_esconde_a_execucao():
+    facts = _facts("VerificationSuite(spark).onData(vendas).run().printResults()\n")
+    checks = [f for f in facts if f.kind == "dq.check"]
+    assert [c.attrs["target"] for c in checks] == ["vendas"]
+    assert [f for f in facts if f.kind == "dq.unresolved"] == []
+
+
+def test_cadeia_sem_ondata_nao_vira_ponto_cego():
+    facts = _facts("s = job.addCheck(c).useRepository(rep)\n")
+    assert [f.kind for f in facts] == ["dq.module_analyzed"]
+
+
 def test_nenhum_framework_declara_single_pass_nem_declared_checks():
     # `single_pass` afirmaria "N checks, uma passada", que a fonte primaria nega
     # (VLDB 2018, §4.1 e §5.1); `declared_checks` contaria objetos `Check` e nao
