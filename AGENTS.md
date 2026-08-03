@@ -57,8 +57,9 @@ which executor ran and with what result — same mechanism as skill tracking
 | `pyspark-code-reviewer` | revisar código PySpark — PR, biblioteca ou job — correlacionando fonte, plano físico e call graph | SF-PY, SF-PLAN, SF-CG |
 | `iceberg-performance-engineer` | dívida de data files, delete files, manifests, snapshots e manutenção de tabela Iceberg | SF-ICE, SF-PQ |
 | `emr-infra-reviewer` | risco na definição de um cluster Amazon EMR on EC2 — fleets/groups, Spot por papel, managed scaling, Configurations em dois níveis, LogUri | SF-EMR, SF-ENV |
+| `data-quality-reviewer` | o job valida dado e a pergunta é se a validação está no lugar certo, se ela tem consequência e quanto custa — não se o dado está correto | SF-DQ |
 
-Which coordinator to use is data, not judgment: routes `AGENT-001`…`AGENT-007` in
+Which coordinator to use is data, not judgment: routes `AGENT-001`…`AGENT-008` in
 `rules/catalog/routing.yaml` map the case's phase and dominant finding area to a
 `recommended_agent`, and `sparkforge_next_step` / `sparkforge next-step` reads them —
 never pick a coordinator by inspection.
