@@ -902,6 +902,32 @@ def test_religacao_entre_o_check_e_a_leitura_derruba_a_evidencia():
     assert not [f for f in facts if f.kind == "dq.enforcement"]
 
 
+def test_o_fallback_do_except_religa_o_nome_e_derruba_a_evidencia():
+    """O caso do cabecalho do modulo, fixado: `_rebound_between` paga em moedas
+    opostas nos dois lados.
+
+    Nos quatro atributos de correlacao, religar o nome faz a evidencia cair e a
+    regra deixar de opinar -- erro para o silencio. Aqui a queda da evidencia
+    apaga o proprio `dq.enforcement`, e a AUSENCIA dele e o gatilho de
+    `SF-DQ-002`: este codigo protege o dado e seria acusado de nao proteger.
+
+    A decisao e mantida -- sem seguir fluxo, o valor testado pode mesmo nao ser
+    o do check --, e este teste existe para que o preco fique medido. Se alguem
+    ensinar o extrator a seguir o fallback, e este teste que muda, de propria
+    vontade e nao por acidente.
+    """
+    facts = _facts(
+        "try:\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "except Exception:\n"
+        "    ruins = 0\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    assert [f.kind for f in facts if f.kind == "dq.check"] == ["dq.check"]
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
 def test_religacao_depois_da_leitura_nao_derruba_a_evidencia():
     facts = _facts(
         "ruins = vendas.filter(vendas.valor < 0).count()\n"
