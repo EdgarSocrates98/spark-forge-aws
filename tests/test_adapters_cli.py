@@ -719,6 +719,38 @@ class TestAnalyzeEmrCluster:
         assert code == 2
 
 
+class TestAnalyzeDataQuality:
+    _SOURCE = (
+        "def validar(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    if ruins > 0:\n"
+        '        raise ValueError("valor negativo")\n'
+    )
+
+    def test_prints_summary(self, repo, capsys):
+        module = repo / "validacao.py"
+        module.write_text(self._SOURCE, encoding="utf-8")
+        _, output = run(["analyze", "data-quality", "--path", str(module)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"]["dq.check"] == 1
+        assert payload["by_kind"]["dq.enforcement"] == 1
+        assert payload["unresolved"] == 0
+
+    def test_module_without_validation_is_analyzed_not_silent(self, repo, capsys):
+        """Zero check num modulo LIDO nao pode ser o mesmo que modulo nao lido:
+        `dq.module_analyzed` e o que separa os dois, e pelo verbo tambem."""
+        module = repo / "sem_validacao.py"
+        module.write_text("def gravar(df, dest):\n    df.write.parquet(dest)\n", encoding="utf-8")
+        _, output = run(["analyze", "data-quality", "--path", str(module)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"].get("dq.check", 0) == 0
+        assert payload["by_kind"]["dq.module_analyzed"] == 1
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "data-quality", "--path", str(repo / "nope.py")], capsys)
+        assert code == 2
+
+
 class TestAnalyzeCallGraph:
     def test_derives_from_pyspark_facts(self, repo, capsys):
         facts_path = repo / "facts.json"
