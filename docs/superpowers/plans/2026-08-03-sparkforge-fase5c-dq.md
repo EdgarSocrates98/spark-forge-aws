@@ -1160,6 +1160,19 @@ Os oito, e o que cada um prova:
 
 `expects_kinds` de `validated_correctly` e de `unresolved_helper` juntos precisam cobrir os quatro kinds de `EMITTED_KINDS`, senão a Task 5 Step 1 continua vermelha.
 
+**Uma nona entrou depois, na correção de D-5c-11**, e não é escopo novo: é a prova do recorte
+que a revisão final exigiu.
+
+| Fixture | Prova |
+|---|---|
+| `helper_validates_cached_param` | alvo que chega por **parâmetro** sai **sem** `target_persisted` (não `false`) e **com** `action_after_check: true`; `SF-DQ-003` não dispara. 3 facts, 0 findings |
+
+O argumento que a justifica: guarda contra falso positivo que vive só em teste unitário é a
+primeira a sumir numa refatoração do extrator, e **nenhuma das outras oito tem check sobre
+parâmetro** — remover a omissão passaria por `fixtures/dq/` inteiro sem quebrar nada. Golden
+bidirecional é o mecanismo de prova deste repositório, e é o que faz a garantia sobreviver a quem
+não leu a revisão.
+
 - [x] **Step 2: `tests/test_fixtures_golden_dq.py`**
 
 Copie a estrutura de `tests/test_fixtures_golden_callgraph.py`: `REQUIRED_FIXTURES` com os oito nomes, `run_fixture` chamando `extract_data_quality_tree` + `judge`, e a classe `TestGolden` com os quatro testes (`facts_match_golden`, `findings_match_golden`, `declared_kinds_all_present`, `declared_rules_all_fire`).
