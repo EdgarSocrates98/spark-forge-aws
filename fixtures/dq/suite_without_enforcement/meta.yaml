@@ -11,6 +11,10 @@ proves: >
   Contraparte obrigatoria de `pydeequ_suite`, que e a MESMA forma de suite com
   consequencia: sem as duas, uma regra que nunca reconhecesse enforcement
   passaria aqui por acidente.
+  SF-DQ-003 dispara aqui TAMBEM, e nao por acidente: `clientes` nao esta em
+  `cache()` e e reusado pelo write depois da suite, entao o lineage roda duas
+  vezes. E o segundo defeito real deste job, e e o contraste com `pydeequ_suite`
+  -- mesma forma de suite, alvo persistido, SF-DQ-003 calada la.
 runtime:
   glue: "5.0"
   spark: "3.5.4"
@@ -21,3 +25,4 @@ expects_kinds:
   - dq.module_analyzed
 expects_rules:
   - SF-DQ-002
+  - SF-DQ-003
