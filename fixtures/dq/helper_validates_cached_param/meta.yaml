@@ -1,29 +1,36 @@
 name: helper_validates_cached_param
 proves: >
-  A guarda contra o falso positivo do desvio D-5c-11: alvo que chega por
-  PARAMETRO tem persistencia vivendo fora do escopo, e o extrator omite a chave
-  em vez de afirmar o que nao sabe.
-  `valida_e_publica` recebe `entregas` e valida; `main` cacheia antes de chamar.
-  As duas metades vivem em escopos diferentes, e o indice de correlacao e por
-  escopo (D-5c-10) -- de dentro do helper, o `cache()` do chamador e invisivel.
-  O `dq.check` sai SEM attrs.target_persisted, e nao com `false`. A diferenca e
-  a fixture inteira: `SF-DQ-003` dispara sobre `target_persisted: false`, entao
-  o valor errado acusaria um DataFrame que ESTA em cache -- a forma canonica de
-  biblioteca Glue, punida por ter sido escrita direito. Chave ausente e
-  reprovada por `engine._where_matches`, e a regra nao avalia o check.
-  attrs.action_after_check CONTINUA presente e `true`, e a assimetria e o outro
-  lado da prova: o write posterior esta DENTRO do helper e e observado de fato.
-  So a persistencia vem de fora. Um extrator que omitisse os dois estaria
-  cego onde nao precisa; um que afirmasse os dois acusaria.
+  A forma canonica de biblioteca Glue -- validar num helper, persistir no
+  chamador -- AVALIADA em vez de ignorada, e sem disparar nada.
+  `valida_e_publica` recebe `entregas` e valida; `main` cacheia antes de
+  chamar. As duas metades vivem em escopos diferentes, e o indice de
+  correlacao continua sendo por escopo (D-5c-10) -- o que mudou na Fase 5c.2 e
+  que, quando o alvo chega por parametro e nao ha evidencia local, o extrator
+  da UM passo para fora e le o unico call site do modulo.
+  O `dq.check` sai com attrs.target_persisted `true`, e o `true` e HERDADO: a
+  funcao tem exatamente um call site, a chamada e por nome, o argumento e um
+  `ast.Name`, e nao ha religacao entre o `cache()` e a chamada. As quatro
+  condicoes sao a fixture inteira -- afrouxe qualquer uma no extrator e este
+  golden acusa.
+  ESTA FIXTURE MUDOU DE MECANISMO SEM MUDAR DE VEREDITO, e e isso que ela
+  passou a provar. Na Fase 5c ela fixava a OMISSAO da chave: `SF-DQ-003` nao
+  avaliava o check, e o silencio vinha de a regra nao ter o que ler. Agora ela
+  fixa o contrario -- a regra avalia, le `target_persisted: true`, e nao
+  dispara porque o job esta correto. Zero findings nos dois casos, e a
+  diferenca entre "nao avaliei" e "avaliei e esta certo" e a fase inteira.
+  So ela nao basta, e o par com `helper_validates_uncached_param` e o que
+  fecha: sozinha, ela continuaria verde se a heranca nunca soubesse dizer
+  `false` -- regra morta, golden limpo. O espelho sem `cache()` e quem prova
+  que `SF-DQ-003` ainda dispara.
+  attrs.action_after_check CONTINUA presente e `true`, e a assimetria original
+  segue de pe: o write posterior esta DENTRO do helper e e observado de fato,
+  enquanto a persistencia veio de fora e precisou ser buscada.
   Nenhuma das quatro regras SF-DQ dispara aqui, e cada uma por um motivo
   proprio: SF-DQ-001 nao, porque a validacao vem antes do write
   (position_vs_write == before_write, medido dentro do helper); SF-DQ-002 nao,
   porque ha `dq.enforcement` (form: raise) sobre o mesmo subject; SF-DQ-003 nao,
-  porque a chave que ela le esta AUSENTE -- que e o que esta fixture existe para
+  porque a chave que ela le diz `true` -- que e o que esta fixture existe para
   travar; SF-DQ-004 nao, porque ha um unico check (checks_on_target == 1).
-  Sem ela, remover a omissao de `target_persisted` no extrator passaria por
-  `fixtures/dq/` inteiro sem quebrar nada: nenhuma das outras oito tem check
-  sobre parametro.
 runtime:
   glue: "5.0"
   spark: "3.5.4"
