@@ -167,7 +167,7 @@ Quatro controles a mais, fora da lista, cada um fixando um desvio: recursão **m
 
 A dívida gêmea é consequência atrás de helper (`aborta_se(ruins)`), e ela é o **espelho** desta: ali o argumento entra na função, aqui o parâmetro sai dela. A máquina da Task 1 pode servir, e pode não servir.
 
-- [ ] **Step 1: Meça, não presuma**
+- [x] **Step 1: Meça, não presuma**
 
 Escreva a fonte abaixo e rode o extrator:
 
@@ -185,7 +185,37 @@ def main(spark):
 
 Hoje: `SF-DQ-002` acusa, porque `dq.enforcement` não é emitido. Cole a saída.
 
-- [ ] **Step 2: Decida com o custo na mão**
+**Medido em 2026-08-03.** Facts (`extract_data_quality`):
+
+```
+dq.check           {"action_after_check": true, "check_type": "count_of_violations",
+                    "framework": "handmade", "position_vs_write": "before_write",
+                    "shares_scan": false, "target": "vendas",
+                    "target_persisted": false}   measures {"checks_on_target": 1, "line": 7}
+dq.module_analyzed                               measures {"check_count": 1, "unresolved_count": 0}
+```
+
+Nenhum `dq.enforcement`. Findings (`judge` com o catálogo inteiro):
+
+```
+SF-DQ-002 | P1 | Validação sem consequência
+SF-DQ-003 | P2 | Validação recomputa o lineage
+total findings: 2
+```
+
+`SF-DQ-002` acusa um código que **aborta**. (O `SF-DQ-003` junto é correto e não é desta dívida: `vendas` não está persistido de verdade.)
+
+**A instrumentação, que é o que decide a Task 3.** Rodando `_bound_names`, `_reader`, `_read_of`, `_reads_this_check` e `_abort_in` sobre o escopo de `main`:
+
+```
+nomes ligados ao resultado do check: {'ruins'}
+  leitor linha 8 Expr(value=Call(func=Name(id='aborta_se' | le: {'ruins'}
+     | _reads_this_check: True | _abort_in: None
+```
+
+Três dos quatro predicados já funcionam. `aborta_se(ruins)` **já é reconhecido como leitor** do resultado do check — `ast.Expr` cai em `_reader`, `_read_of` vê o nome, e a guarda de religação aprova. O único que falha é `_abort_in`, que procura o aborto nos ramos **deste** escopo, e o aborto está no corpo de outra função.
+
+- [x] **Step 2: Decida com o custo na mão**
 
 A herança da Task 1 responde "de onde vem este parâmetro". Aqui a pergunta é outra: "o que a função chamada **faz** com o argumento" — exige olhar o corpo do callee e decidir se ele aborta condicionalmente ao valor recebido. É travessia nova, não reuso.
 
@@ -193,7 +223,19 @@ A herança da Task 1 responde "de onde vem este parâmetro". Aqui a pergunta é 
 
 **Se for travessia nova**, **não implemente**: registre no `STATUS.md` que a dívida de `SF-DQ-002` não se fecha com a máquina desta fase, com o motivo medido, e feche a fase com a dívida de `SF-DQ-003` fechada e a outra aberta. Meia dívida fechada com honestidade vale mais que duas fechadas com máquina que ninguém entende.
 
-- [ ] **Step 3: Commit da decisão, qualquer que seja**
+**DECISÃO: travessia nova. NÃO implementada**, e registrada em `STATUS.md` como dívida aberta com o motivo medido.
+
+A medição acima é o argumento inteiro, e ela inverte a intuição de reuso: **a parte que a máquina da Task 1 poderia emprestar é exatamente a parte que já funciona.** Resolver a chamada e ligar argumento a parâmetro (`_function_definitions`, o espelho de `_argument_for`) responderia "este argumento é o resultado daquele check" — e `_reads_this_check` já responde isso, com `True`. O que falta é ler o **corpo do callee** e decidir se ele aborta condicionalmente ao valor recebido, e nada disso existe hoje.
+
+Três razões medidas, e não estimadas:
+
+1. **Nenhum limite da Task 1 transfere.** "Um só call site" é o que torna a herança inequívoca lá; aqui não diz nada — um helper chamado de dez lugares aborta ou não aborta independentemente de quantos o chamam. A garantia teria de ser inventada do zero, e garantia inventada num kind cujo erro cai do lado da **acusação** é o pior lugar para inventar.
+2. **A travessia precisa de estrutura que `_Callers` não carrega.** Ela guarda `indexes` por escopo, não as **listas de nós** — e ler o corpo do callee exige percorrer os nós dele com `_reader`/`_abort_in`. Não é um campo a mais: é decidir o que significa religação, alias (`def aborta_se(n): m = n; if m > 0: raise`) e `def` aninhado **dentro do callee**, que são perguntas novas com respostas próprias.
+3. **`_abort_in` já tem quatro limites conhecidos que erram para o silêncio**, e todos seriam amplificados ao serem aplicados a uma função **genérica** em vez do ramo imediato do check — o limite 3 (`raise` não relacionado dentro do ramo conta) passaria a valer para qualquer helper com um `raise` em qualquer lugar.
+
+Meia dívida fechada com honestidade vale mais que duas fechadas com máquina que ninguém entende.
+
+- [x] **Step 3: Commit da decisão, qualquer que seja**
 
 ---
 
@@ -203,27 +245,58 @@ A herança da Task 1 responde "de onde vem este parâmetro". Aqui a pergunta é 
 - Create: `fixtures/dq/helper_validates_uncached_param/`
 - Modify: `fixtures/dq/helper_validates_cached_param/`, `rules/catalog/data-quality.yaml`, `docs/superpowers/STATUS.md`
 
-- [ ] **Step 1: A fixture existente muda de veredito, e é isso que prova a fase**
+- [x] **Step 1: A fixture existente muda de veredito, e é isso que prova a fase**
 
 `fixtures/dq/helper_validates_cached_param` foi criada na 5c para fixar a **omissão**. Depois desta fase o mesmo job resolve para `target_persisted: true`, e continua com **0 findings** — mas por um motivo diferente: antes a regra não avaliava, agora ela avalia e não dispara.
 
 Regenere, leia o diff, e **reescreva o `proves:` do `meta.yaml`** para dizer o motivo novo. Fixture cujo texto descreve um mecanismo que deixou de existir é pior que fixture ausente.
 
-- [ ] **Step 2: A fixture nova — herança que resolve contra**
+- [x] **Step 2: A fixture nova — herança que resolve contra**
 
 `helper_validates_uncached_param`: mesmo formato, sem `cache()` no chamador. Prova que a herança resolve para `false` e que **`SF-DQ-003` dispara** — sem ela, a fase inteira pode ter trocado uma cegueira por outra, e nenhum golden acusaria.
 
 Acrescente as duas a `REQUIRED_FIXTURES` em `tests/test_fixtures_golden_dq.py`.
 
-- [ ] **Step 3: A `explanation` de `SF-DQ-003` mudou de verdade**
+- [x] **Step 3: A `explanation` de `SF-DQ-003` mudou de verdade**
 
 O texto atual declara o recorte "não persistido **neste escopo**". Depois desta fase o recorte é outro: a regra enxerga o chamador quando ele é único e está no mesmo arquivo. Reescreva, e declare o novo limite — mais de um chamador, chamador noutro módulo, chamada por atributo.
 
-- [ ] **Step 4: `STATUS.md`**
+- [x] **Step 4: `STATUS.md`**
 
 Números medidos (fixtures, testes). A dívida de `SF-DQ-003` marcada como fechada, com o mecanismo e o preço. A de `SF-DQ-002` conforme a Task 3 decidiu.
 
-- [ ] **Step 5: Suíte inteira, ruff, commit**
+- [x] **Step 5: Suíte inteira, ruff, commit**
 
 Run: `python -m pytest -q` e `ruff check .`
 `git diff --stat main -- fixtures/pyspark/` tem que sair vazio.
+
+**Desvios medidos nas Tasks 3 e 4**
+
+- **D-5c2-6 — "as duas dívidas se fecham juntas ou não se fecham" era falso, e a
+  medição da Task 3 desmentiu.** A frase estava no `STATUS.md` desde a 5c e supunha
+  que seguir o argumento para dentro da chamada fosse **um** trabalho servindo aos
+  dois lados. São dois: `SF-DQ-003` precisa saber **de onde vem** o parâmetro (uma
+  aresta, resolvida por call site único), e `SF-DQ-002` precisa saber **o que o
+  callee faz** com ele (uma travessia de corpo). Uma fechou, a outra não, e a
+  tabela de dívidas agora tem duas linhas onde tinha uma.
+
+- **D-5c2-7 — o Step 3 mexe em três goldens que o plano não nomeia.** A
+  `explanation` de `SF-DQ-003` é **copiada para dentro de cada Finding**, então
+  reescrevê-la mudou `expected/findings.json` de `check_recomputes_lineage`,
+  `great_expectations_suite` e `suite_without_enforcement` — só o campo
+  `explanation`, com o mesmo conjunto de regras disparando nos mesmos subjects,
+  conferido campo a campo. Vale como aviso: nesta arquitetura, texto de catálogo é
+  dado de golden, e mudar a redação de uma regra nunca é mudança só de documentação.
+
+- **D-5c2-8 — o inventário de fixtures do `STATUS.md` estava desatualizado em um, e
+  não por causa desta fase.** A linha "Fixtures por domínio" trazia `dq` 8 quando o
+  disco tinha 9 (a `helper_validates_cached_param` entrou na revisão final da 5c e a
+  lista não acompanhou), e a soma dos domínios dava 99 contra os 100 declarados no
+  total. Medido e corrigido junto: 101 em 17 domínios, `dq` 10.
+
+- **D-5c2-9 — duas asserções adversariais a mais, fora do plano.** O golden prova
+  que a saída não mudou, não que ela diz o que a fixture promete. `TestAdversarial`
+  ganhou o par: os dois jobs têm de diferir **só** em `target_persisted` (se
+  divergirem em outro atributo, o par deixa de isolar a herança), e o negativo tem
+  de disparar `SF-DQ-003` de verdade. Sem a segunda, uma herança que só soubesse
+  dizer `true` deixaria os dois goldens verdes.
