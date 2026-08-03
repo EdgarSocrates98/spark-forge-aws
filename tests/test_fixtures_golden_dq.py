@@ -46,6 +46,11 @@ REQUIRED_FIXTURES = {
     "great_expectations_suite",
     # A maquinaria de ponto cego, que e a que apodrece em silencio.
     "unresolved_helper",
+    # A guarda contra o falso positivo de D-5c-11: alvo que chega por parametro
+    # sai SEM `target_persisted`, e `SF-DQ-003` nao avalia o check. Nenhuma das
+    # oito acima tem check sobre parametro, entao sem esta fixture remover a
+    # omissao no extrator passaria por `fixtures/dq/` inteiro sem quebrar nada.
+    "helper_validates_cached_param",
 }
 
 
