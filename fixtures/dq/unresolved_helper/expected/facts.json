@@ -1,0 +1,48 @@
+[
+  {
+    "id": "f_373366",
+    "schema_version": 1,
+    "kind": "dq.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "check_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "f8204a25c72941ccc1131f5709b3134ed927db9cedaf3ab1efca7bb91e8b251b",
+      "extractor": "data_quality@0.1.0"
+    }
+  },
+  {
+    "id": "f_0b24ba",
+    "schema_version": 1,
+    "kind": "dq.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 19,
+      "col": 15,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "unresolved_target",
+      "check_type": "count_of_violations"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "f8204a25c72941ccc1131f5709b3134ed927db9cedaf3ab1efca7bb91e8b251b",
+      "extractor": "data_quality@0.1.0"
+    }
+  }
+]

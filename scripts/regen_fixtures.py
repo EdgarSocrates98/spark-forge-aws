@@ -387,6 +387,8 @@ def main() -> int:
         regen_athena(directory)
     for directory in sorted(p for p in FIXTURES_EMR.iterdir() if p.is_dir()):
         regen_emr(directory)
+    for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()):
+        regen_dq(directory)
     for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):
         regen_runtime(directory)
     for directory in sorted(p for p in FIXTURES_CALLGRAPH.iterdir() if p.is_dir()):
