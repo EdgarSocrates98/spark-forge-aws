@@ -468,18 +468,16 @@ def test_religacao_nao_mata_a_action_que_veio_antes_dela():
 
 def test_alvo_parametro_nao_afirma_persistencia_que_vive_fora_do_escopo():
     # Forma canonica de biblioteca Glue: validar num helper, cachear no
-    # chamador. A persistencia e real e o indice por escopo nao a enxerga --
-    # `false` afirmaria o que ele nao sabe, e `SF-DQ-003` acusaria um DataFrame
-    # que esta persistido.
+    # chamador. Aqui o chamador NAO esta neste modulo -- e o modulo e a
+    # fronteira do extrator --, entao a persistencia e real, invisivel, e
+    # `false` afirmaria o que o indice nao sabe: `SF-DQ-003` acusaria um
+    # DataFrame que esta persistido. Com o chamador no MESMO arquivo a resposta
+    # e outra, e e a Fase 5c.2 que a da.
     facts = _facts(
         "def valida(vendas):\n"
         "    ruins = vendas.filter(vendas.valor < 0).count()\n"
         "    if ruins > 0: raise ValueError('dado ruim')\n"
         "    vendas.write.parquet('s3://lake/curated/')\n"
-        "def main(spark):\n"
-        "    vendas = spark.read.parquet('s3://lake/raw/')\n"
-        "    vendas.cache()\n"
-        "    valida(vendas)\n"
     )
     check = [f for f in facts if f.kind == "dq.check"][0]
     assert "target_persisted" not in check.attrs
@@ -521,6 +519,73 @@ def test_parametro_com_unpersist_na_propria_funcao_mantem_a_chave():
     )
     check = [f for f in facts if f.kind == "dq.check"][0]
     assert check.attrs["target_persisted"] is False
+
+
+def test_persistencia_do_chamador_e_herdada_quando_ha_um_so_call_site():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    vendas.write.parquet('s3://b/p')\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+
+
+def test_dois_call_sites_nao_resolvem_e_a_chave_continua_omitida():
+    # Um chamador persiste e o outro nao. A resposta honesta e "nao sei", e
+    # herdar do primeiro que aparecer seria inventar.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    vendas.write.parquet('s3://b/p')\n"
+        "\n"
+        "def main(spark):\n"
+        "    a = spark.read.parquet('s3://b/a')\n"
+        "    a.cache()\n"
+        "    valida(a)\n"
+        "    b = spark.read.parquet('s3://b/b')\n"
+        "    valida(b)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_argumento_por_keyword_e_o_mesmo_caso_do_posicional():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    valida(vendas=entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
+
+
+def test_heranca_atravessa_dois_helpers_encadeados():
+    # O parametro do segundo helper vem do parametro do primeiro, que vem do
+    # nome cacheado em `main`. Cada elo tem um so call site.
+    facts = _facts(
+        "def conta(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def valida(dados):\n"
+        "    conta(dados)\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is True
 
 
 def test_alvo_nao_resolvido_nao_ganha_atributo_de_correlacao():
