@@ -855,9 +855,9 @@ Os oito, e o que cada um prova:
 | `suite_without_enforcement` | positivo de `SF-DQ-002` |
 | `check_recomputes_lineage` | positivo de `SF-DQ-003` |
 | `repeated_checks_same_target` | positivo de `SF-DQ-004` |
-| `validated_correctly` | negativo das quatro: valida antes do write, com `raise`, sobre DF com `cache()`, uma passada só |
-| `pydeequ_suite` | `single_pass: true` e `declared_checks` |
-| `great_expectations_suite` | o mesmo kind saindo do outro framework, ou o `dq.unresolved` que a Task 0 autorizou |
+| `validated_correctly` | negativo das quatro: valida antes do write, com `raise`, sobre DF com `cache()`, e um único check |
+| `pydeequ_suite` | `shares_scan: true` — **não** `single_pass`, e **sem** `declared_checks`, os dois nomes vetados pelos desvios D-5c-1 e D-5c-2 |
+| `great_expectations_suite` | o mesmo kind saindo do outro framework, pela chave literal de `batch_parameters`, e **sem** a chave `shares_scan` (D-5c-3) |
 | `unresolved_helper` | validação atrás de helper — `dq.unresolved`, sem alvo adivinhado |
 
 `expects_kinds` de `validated_correctly` e de `unresolved_helper` juntos precisam cobrir os quatro kinds de `EMITTED_KINDS`, senão a Task 5 Step 1 continua vermelha.
