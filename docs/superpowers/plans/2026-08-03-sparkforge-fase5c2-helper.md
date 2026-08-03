@@ -144,7 +144,7 @@ Expected: PASS, e **os 135 anteriores continuam passando** — em especial `test
 **Files:**
 - Modify: `tests/test_facts_data_quality.py`
 
-- [ ] **Step 1: Seis controles, cada um com a razão no nome**
+- [x] **Step 1: Seis controles, cada um com a razão no nome**
 
 Escreva os seis, rode, e **para cada um que já passar antes de qualquer mudança, diga isso** — controle que nasce verde prova que a implementação da Task 1 não foi longe demais.
 
@@ -155,7 +155,11 @@ Escreva os seis, rode, e **para cada um que já passar antes de qualquer mudanç
 5. argumento que não é `ast.Name` (`valida(spark.table('t'))`) → chave omitida
 6. função chamada dentro dela mesma (recursão) → não entra em laço, e a chave sai omitida
 
-- [ ] **Step 2: Commit**
+**Medido: quatro dos seis nasceram verdes**, escritos e rodados **antes** de qualquer linha da Task 1 (`142 passed, 5 failed` naquela rodada). Verdes de nascença: 3 (religação), 4 (chamada por atributo), 5 (argumento que não é nome) e 6 (recursão) — todos passavam porque a chave já era omitida para parâmetro, e continuam passando depois, o que é a prova de que a herança não os alcançou. Vermelhos, e portanto o que a Task 1 de fato mudou: 1 (chamador sem `cache()` → `false`) e 2 (`unpersist()` no chamador → `false`), os dois do lado da herança que resolve **contra** a persistência.
+
+Quatro controles a mais, fora da lista, cada um fixando um desvio: recursão **mútua** entre dois helpers (também nasceu verde), `*args` no call site (verde), duas funções homônimas (D-5c2-4, verde), global que o chamador não liga nem persiste (D-5c2-3, **nasceu vermelho depois da Task 1** — era uma acusação nova, medida e fechada) e parâmetro religado dentro do helper (D-5c2-2). Mais dois positivos: argumento por keyword e herança encadeada por dois helpers.
+
+- [x] **Step 2: Commit**
 
 ---
 

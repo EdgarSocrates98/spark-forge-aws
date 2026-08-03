@@ -588,6 +588,179 @@ def test_heranca_atravessa_dois_helpers_encadeados():
     assert check.attrs["target_persisted"] is True
 
 
+# --- Os seis controles: o que a heranca NAO pode afirmar -------------------
+
+
+def test_chamador_sem_cache_herda_a_ausencia_de_persistencia():
+    # Heranca que resolve CONTRA a persistencia tambem e heranca: sem isso a
+    # fase trocaria uma cegueira por outra, e `SF-DQ-003` nunca dispararia
+    # sobre helper nenhum.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    vendas.write.parquet('s3://b/p')\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
+
+
+def test_unpersist_no_chamador_antes_da_chamada_herda_falso():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    entregas.unpersist()\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert check.attrs["target_persisted"] is False
+
+
+def test_religacao_entre_o_cache_e_a_chamada_nao_resolve():
+    # O que entra na funcao nao e o DataFrame que foi cacheado, e a historia do
+    # que entra comeca dentro de `carrega`. Aqui a chave e OMITIDA, e nao
+    # `false` como na religacao dentro do proprio escopo do check: omitir nao
+    # cala nenhuma acusacao que existisse antes desta fase.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    entregas = carrega('outra')\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_chamada_por_atributo_nao_e_call_site_desta_funcao():
+    # `self.valida` pode ser qualquer coisa: o nome nu nao prova que a funcao
+    # chamada e a deste modulo.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main(self, spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    self.valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_argumento_que_nao_e_nome_nao_resolve():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main(spark):\n"
+        "    valida(spark.table('t'))\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_funcao_que_chama_a_si_mesma_nao_entra_em_laco():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    valida(vendas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_recursao_mutua_entre_dois_helpers_nao_entra_em_laco():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    revalida(vendas)\n"
+        "\n"
+        "def revalida(dados):\n"
+        "    valida(dados)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_star_args_no_call_site_nao_resolve():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main(spark, resto):\n"
+        "    valida(*resto)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_global_que_o_chamador_nao_liga_nem_persiste_nao_resolve():
+    # `entregas` e um nome livre dentro de `main`: a persistencia dele esta no
+    # corpo do modulo, que e outro escopo. Herdar o `false` do indice de `main`
+    # faria `SF-DQ-003` acusar um DataFrame cacheado um escopo acima -- heranca
+    # estende evidencia, nunca acusacao.
+    facts = _facts(
+        "entregas = spark.read.parquet('s3://b/in')\n"
+        "entregas.cache()\n"
+        "\n"
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main():\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_parametro_religado_antes_do_check_nao_herda_do_chamador():
+    # O que o check valida nao e o que entrou pela assinatura: o nome foi
+    # religado a um DataFrame local. Herdar aqui afirmaria sobre um objeto que
+    # nem o chamador nem este escopo conhecem.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    vendas = carrega('outra')\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
+def test_duas_funcoes_homonimas_nao_resolvem_o_call_site():
+    # Duas definicoes com o mesmo nome: o call site nao identifica qual delas
+    # roda, e herdar de qualquer uma seria adivinhar.
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "\n"
+        "def valida(vendas):\n"
+        "    vendas.write.parquet('s3://b/p')\n"
+        "\n"
+        "def main(spark):\n"
+        "    entregas = spark.read.parquet('s3://b/in')\n"
+        "    entregas.cache()\n"
+        "    valida(entregas)\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    assert "target_persisted" not in check.attrs
+
+
 def test_alvo_nao_resolvido_nao_ganha_atributo_de_correlacao():
     # Sem alvo nao ha posicao relativa a apurar: preencher qualquer um destes
     # seria adivinhar.
