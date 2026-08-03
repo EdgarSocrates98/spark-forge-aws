@@ -804,7 +804,7 @@ git commit -m "feat(facts): pydeequ e great expectations, reconhecidos pela form
 **Files:**
 - Modify: `sparkforge/facts/data_quality.py`, `tests/test_facts_data_quality.py`
 
-- [ ] **Step 1: Teste primeiro — e note o subject**
+- [x] **Step 1: Teste primeiro — e note o subject**
 
 ```python
 def test_check_com_raise_produz_enforcement_no_mesmo_subject():
@@ -836,7 +836,9 @@ O subject idêntico é o que faz `same_subject` de `SF-DQ-002` funcionar (spec �
 
 Run: FAIL.
 
-- [ ] **Step 2: Implemente**
+Medido: **18 failed / 95 passed** no arquivo. Os três testes acima viraram vinte e um, e os negativos (`resultado_lido_sem_aborto`, `resultado_nunca_lido`) já passavam antes da implementação — como tinham de passar, porque asseguram ausência.
+
+- [x] **Step 2: Implemente**
 
 Percurso: (1) achar o `ast.Assign` cujo valor é o `Call` do check e guardar o nome da variável; (2) procurar `ast.If` cujo `test` referencia esse nome e cujo `body` contém `ast.Raise`, `sys.exit` ou `os._exit`; (3) procurar `ast.Assert` cujo `test` referencia o nome. Cada acerto emite um `dq.enforcement` com o **subject do check** e `attrs.form` em `{"raise", "exit", "assert"}`, mais `measures.line` da própria consequência.
 
@@ -851,15 +853,47 @@ def _enforcement(check_subject, form: str, line: int, provenance) -> Fact:
     )
 ```
 
-Run: PASS.
+Run: PASS. **113 passed** no arquivo (86 antes desta task).
 
-- [ ] **Step 3: `assert` conta como enforcement, com ressalva (desvio D-5c-4)**
+O `Fact` acima sobreviveu intacto — é o único trecho de código do step que sobreviveu. **O percurso de três passos não sobreviveu à medição**, e os quatro desvios abaixo dizem onde.
+
+**D-5c-15 — a consequência pode não passar por variável nenhuma.** `if vendas.filter(vendas.valor < 0).count() > 0: raise ValueError(...)` tem o check dentro do próprio `test` do `if`, e `assert vendas.filter(...).count() == 0` idem: não existe `ast.Assign` a achar, e o percurso do plano produzia fact nenhum sobre a forma mais compacta de validar com consequência. Um extrator que só enxerga a forma com variável acusaria de `SF-DQ-002` justamente o código mais direto.
+
+A leitura passou a ser reconhecida de **dois jeitos dentro do mesmo percurso**, e não por dois percursos: `_read_of` caminha o `test` uma vez e devolve `(inline, names)` — `inline` é o nó do check encontrado por **identidade** dentro do teste, `names` são os nomes que carregam o resultado. Inline dispensa toda guarda de nome, porque não há nome a religar.
+
+**D-5c-16 — a ligação é por continência, não por igualdade, e `ast.Assign` não é a única.** `ha_ruins = vendas.filter(...).count() > 0` liga o nome a um `ast.Compare`, não ao `ast.Call`; `ast.AnnAssign` e `ast.NamedExpr` (o walrus, que é como o `if` inline liga quando o valor é reusado) ligam do mesmo jeito. `_bound_names` procura o nó do check **dentro** do valor (`any(child is check for child in ast.walk(value))`).
+
+É essa continência que faz os **três frameworks caírem no mesmo caminho**, como a Task 3 fez com `_check`: `ruins = ....count()`, `r = VerificationSuite(...).run()` e `res = validation_definition.run(...)` diferem na forma da cadeia, e o que se procura não é a cadeia — é o nó do check. Nenhum ramo por framework foi escrito.
+
+**D-5c-17 — religação, escopo e ordem valem aqui, e o step não os mencionava.** Os três são a mesma propriedade do módulo (*nome nu não identifica objeto*), aplicada ao par check/consequência:
+
+- **Escopo**: a busca por consequência acontece dentro da lista de nós do escopo do check. Check em `def valida(...)` e `if ruins > 0: raise` no corpo do módulo são dois `ruins` diferentes, e emitir ali calaria `SF-DQ-002` sobre uma função que valida e não protege.
+- **Religação**: `ruins = ....count()` / `ruins = 0` / `if ruins > 0: raise` testa o zero, não o check. `_rebound_between` — o mesmo predicado dos quatro atributos, sem cópia — derruba a evidência.
+- **Ordem**: a leitura tem de vir **depois** da linha do check. `if ruins > 0: raise` antes da atribuição lê outra coisa.
+
+Cada nome responde por si, e não o conjunto: `a = b = check` com `a` religado ainda vale se o teste lê `b`. É a mesma decisão de `_action_after_check`, onde N candidatas respondem uma a uma.
+
+**D-5c-18 — `body` não é o único ramo, e a linha é identidade do fact.** Duas correções no reconhecimento do aborto e uma no fact:
+
+1. **`orelse` conta.** `if ruins == 0: log(...) else: raise ...` é consequência, e o `if` que o plano descreve olharia só o `body`.
+2. **`assert` dentro do ramo conta**, e `exit` nu também (`from sys import exit`). Reconhecer o nome nu arrisca casar uma função homônima do usuário; não reconhecer arrisca acusar quem abortou de verdade — e neste kind a acusação falsa é o pior lado, então o nome nu entra.
+3. **`measures.line` é a única coisa que distingue dois enforcements do mesmo check.** `Fact.id` é sha de `kind + subject + measures`, e o subject é o do check por construção: dois consumidores do mesmo resultado (`if ruins > 0: raise` mais `assert ruins == 0`) colidiriam em um fact só se a linha não entrasse. O par `(forma, linha)` é deduplicado e ordenado antes de emitir, porque a ordem de travessia de `_scopes` não é ordem de fonte.
+
+**A assimetria deste kind, escrita no cabeçalho do módulo.** `SF-DQ-002` dispara sobre a **ausência** de `dq.enforcement`, então a direção do erro se inverte em relação aos quatro atributos da Task 2: emitir um enforcement que não existe **cala** a regra (subnotificação), e deixar de emitir um que existe faz a regra **acusar** código correto. As bordas acima estão decididas com essa assimetria na mão — na dúvida entre reconhecer e não reconhecer uma forma de consequência, este kind reconhece. O que ele não faz é inventar consequência onde não há: proteção pela metade (`if ruins > 0: logger.warning(...)`) não emite, e `raise` que não lê o resultado do check também não.
+
+**Limite conhecido, registrado e não corrigido:** consequência atrás de helper (`aborta_se(ruins)`) não é vista, e `SF-DQ-002` acusa um código que protege. Provar isso exige seguir o valor para dentro da função, o que esta fase não faz. O recorte vai declarado no achado — "sem consequência **neste corpus**" —, como a §8 do spec já previa e a 5b passou a fazer em `unreferenced_function_count`.
+
+- [x] **Step 3: `assert` conta como enforcement, com ressalva (desvio D-5c-4)**
 
 A Task 0 fechou o ramo: a referência da linguagem confirma que `-O` apaga o `assert`, mas **nenhuma** fonte da AWS mostra Glue ou EMR rodando o driver assim, e no Glue o caminho documentado (`--customer-driver-env-vars`) rejeita chaves sem o prefixo `CUSTOMER_`. Então `form: "assert"` **é** enforcement — não emita `dq.unresolved` por causa disso.
 
 A ressalva vai escrita na `explanation` de `SF-DQ-002`, na Task 7, com a URL da referência da linguagem. Deixe um comentário no código apontando para `knowledge/dq/validation-frameworks.md` §3.4, para ninguém "corrigir" isso depois sem ler a fonte.
 
-- [ ] **Step 4: Commit**
+Feito: o comentário mora em `_EXIT_CALLS`, com o argumento inteiro (por que `-O` não vale como padrão, por que `--customer-driver-env-vars` fecha a porta, e o que aconteceria com `SF-DQ-002` se `assert` não contasse), mais os vetos V-AS-1 e V-AS-2 nomeados. O teste `test_assert_sobre_o_resultado_conta_como_enforcement` prova as duas metades: o enforcement sai, e `dq.unresolved` **não** sai.
+
+- [x] **Step 4: Commit**
+
+Medido antes do commit: **113 passed** em `tests/test_facts_data_quality.py`, **2965 passed / 5 skipped** na suíte inteira (2938 antes desta task), `ruff check .` limpo e `git diff --stat main -- fixtures/pyspark/` vazio.
 
 ```bash
 git add sparkforge/facts/data_quality.py tests/test_facts_data_quality.py

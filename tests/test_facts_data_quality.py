@@ -774,6 +774,248 @@ def test_nenhum_framework_declara_single_pass_nem_declared_checks():
         assert "declared_checks" not in check.measures
 
 
+def test_check_com_raise_produz_enforcement_no_mesmo_subject():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('valor negativo')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    # Igualdade, e nao semelhanca: `_subject_group_key` canoniza o subject
+    # inteiro, e e essa igualdade que poe check e enforcement no mesmo grupo de
+    # `same_subject` para o `absent` de SF-DQ-002.
+    assert enforcement.subject == check.subject
+    assert enforcement.subject["line"] == 1
+    assert enforcement.subject["symbol"] == ""
+    assert enforcement.attrs["form"] == "raise"
+
+
+def test_o_enforcement_mede_a_linha_da_propria_consequencia():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('valor negativo')\n"
+    )
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.measures["line"] == 3
+
+
+def test_resultado_lido_sem_aborto_nao_e_enforcement():
+    # Protecao pela metade: o resultado e lido, e nada acontece com ele.
+    facts = _facts("ruins = vendas.filter(vendas.valor < 0).count()\nprint(ruins)\n")
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_if_sobre_o_resultado_sem_aborto_no_corpo_nao_e_enforcement():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    logger.warning('tem ruim')\n"
+    )
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_resultado_nunca_lido_nao_e_enforcement():
+    facts = _facts("vendas.filter(vendas.valor < 0).count()\n")
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_aborto_sem_ler_o_resultado_nao_e_enforcement():
+    # O `raise` existe, mas o teste do `if` nao toca no resultado do check: a
+    # consequencia nao e consequencia DESTE check.
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if len(argv) < 2:\n"
+        "    raise ValueError('faltou argumento')\n"
+    )
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+@pytest.mark.parametrize(
+    ("aborto", "forma"),
+    [
+        ("raise ValueError('x')", "raise"),
+        ("sys.exit(1)", "exit"),
+        ("os._exit(1)", "exit"),
+        ("exit(1)", "exit"),
+        ("assert False", "assert"),
+    ],
+)
+def test_as_formas_de_aborto_reconhecidas(aborto, forma):
+    facts = _facts(
+        f"ruins = vendas.filter(vendas.valor < 0).count()\nif ruins > 0:\n    {aborto}\n"
+    )
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.attrs["form"] == forma
+    assert enforcement.measures["line"] == 3
+
+
+def test_assert_sobre_o_resultado_conta_como_enforcement():
+    # Desvio D-5c-4: `-O` apaga o `assert`, mas nenhuma fonte da AWS mostra Glue
+    # ou EMR rodando o driver assim. `assert` conta, e NAO vira ponto cego --
+    # knowledge/dq/validation-frameworks.md §3.4, veto V-AS-1.
+    facts = _facts("ruins = vendas.filter(vendas.valor < 0).count()\nassert ruins == 0\n")
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.attrs["form"] == "assert"
+    assert enforcement.measures["line"] == 2
+    assert not [f for f in facts if f.kind == "dq.unresolved"]
+
+
+def test_o_check_dentro_do_proprio_if_dispensa_a_variavel():
+    facts = _facts("if vendas.filter(vendas.valor < 0).count() > 0:\n    raise ValueError('x')\n")
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.subject == check.subject
+    assert enforcement.measures["line"] == 2
+
+
+def test_o_check_dentro_do_proprio_assert_dispensa_a_variavel():
+    facts = _facts("assert vendas.filter(vendas.valor < 0).count() == 0\n")
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.subject == check.subject
+    assert enforcement.attrs["form"] == "assert"
+    assert enforcement.measures["line"] == 1
+
+
+def test_aborto_no_else_tambem_e_consequencia():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins == 0:\n"
+        "    print('ok')\n"
+        "else:\n"
+        "    raise ValueError('x')\n"
+    )
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.attrs["form"] == "raise"
+    assert enforcement.measures["line"] == 5
+
+
+def test_religacao_entre_o_check_e_a_leitura_derruba_a_evidencia():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "ruins = 0\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_religacao_depois_da_leitura_nao_derruba_a_evidencia():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+        "ruins = 0\n"
+    )
+    assert [f.attrs["form"] for f in facts if f.kind == "dq.enforcement"] == ["raise"]
+
+
+def test_leitura_anterior_ao_check_nao_e_consequencia():
+    facts = _facts(
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+    )
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_consequencia_em_outro_escopo_nao_conta():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    assert [f for f in facts if f.kind == "dq.check"]
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_consequencia_dentro_da_mesma_funcao_conta():
+    facts = _facts(
+        "def valida(vendas):\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    if ruins > 0:\n"
+        "        raise ValueError('x')\n"
+    )
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.subject == check.subject
+    assert enforcement.measures["line"] == 4
+
+
+@pytest.mark.parametrize(
+    ("check_source", "leitura"),
+    [
+        (
+            "r = VerificationSuite(spark).onData(vendas).addCheck(c).run()",
+            "if r.status != 'Success':",
+        ),
+        (
+            "r = validation_definition.run(batch_parameters={'dataframe': vendas})",
+            "if not r.success:",
+        ),
+        ("r = vendas.filter(vendas.valor < 0).count()", "if r > 0:"),
+    ],
+)
+def test_os_tres_frameworks_saem_pelo_mesmo_caminho(check_source, leitura):
+    facts = _facts(f"{check_source}\n{leitura}\n    raise ValueError('x')\n")
+    check = [f for f in facts if f.kind == "dq.check"][0]
+    enforcement = [f for f in facts if f.kind == "dq.enforcement"][0]
+    assert enforcement.subject == check.subject
+    assert enforcement.attrs["form"] == "raise"
+    assert enforcement.measures["line"] == 3
+
+
+def test_dois_consumidores_produzem_dois_enforcements():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+        "assert ruins == 0\n"
+    )
+    enforcements = [f for f in facts if f.kind == "dq.enforcement"]
+    assert sorted((f.attrs["form"], f.measures["line"]) for f in enforcements) == [
+        ("assert", 4),
+        ("raise", 3),
+    ]
+
+
+def test_alvo_nao_resolvido_nao_ganha_enforcement():
+    # Sem `dq.check` nao ha subject a proteger: o enforcement seria um fact sem
+    # o par que ele existe para acompanhar.
+    facts = _facts(
+        "ruins = spark.table('t').filter('x is null').count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    assert not [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_o_enforcement_nao_entra_nas_contagens_da_sentinela():
+    facts = _facts(
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    sentinela = [f for f in facts if f.kind == "dq.module_analyzed"][0]
+    assert sentinela.measures["check_count"] == 1
+    assert sentinela.measures["unresolved_count"] == 0
+
+
+def test_cada_check_recebe_a_consequencia_que_le_o_seu_resultado():
+    facts = _facts(
+        "a = vendas.filter(vendas.valor < 0).count()\n"
+        "b = clientes.filter(clientes.cpf.isNull()).count()\n"
+        "if b > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    checks = {f.subject["line"]: f for f in facts if f.kind == "dq.check"}
+    enforcements = [f for f in facts if f.kind == "dq.enforcement"]
+    assert [f.subject for f in enforcements] == [checks[2].subject]
+
+
 def test_arquivo_indecodificavel_vira_fact_e_nao_derruba_a_arvore(tmp_path):
     # `read_text` levanta UnicodeDecodeError -- um ValueError, NAO um OSError --
     # entao a travessia so continua se a guarda for larga.
