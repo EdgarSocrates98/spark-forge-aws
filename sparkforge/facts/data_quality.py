@@ -18,8 +18,10 @@ from __future__ import annotations
 
 import ast
 import hashlib
+from collections import Counter
+from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 from sparkforge.findings.models import Fact, sort_facts
 
@@ -77,6 +79,34 @@ _SOURCE_TERMINALS = frozenset(
 )
 
 
+# `df.write`, `df.writeTo(...)` e `df.writeStream` sao ATRIBUTOS, nao chamadas:
+# o metodo que termina a escrita (`parquet`, `save`, `append`, `start`) varia e
+# nao e o que identifica a publicacao.
+_WRITE_ATTRS = frozenset({"write", "writeTo", "writeStream"})
+
+# Chamadas que disparam trabalho sobre o alvo. `save`/`saveAsTable` aparecem
+# depois de `.write` -- estao aqui para o caso de a cadeia ser quebrada em duas
+# linhas (`w = df.write` / `w.save(p)`), onde o atributo e a chamada nao
+# compartilham linha.
+_ACTION_METHODS = frozenset({"count", "collect", "show", "foreach", "save", "saveAsTable"})
+
+_PERSIST_METHODS = frozenset({"cache", "persist"})
+
+
+class _ModuleIndex(NamedTuple):
+    """Linhas, por variavel-alvo, dos eventos que datam um check.
+
+    O motor de regras nao correlaciona dois facts -- `engine._condition_candidates`
+    avalia um fact por vez e `engine._absent_satisfied` compara so `kind` -- entao
+    quem enxerga o modulo inteiro e quem responde. Este indice e o que o extrator
+    enxerga e o catalogo nao enxergaria.
+    """
+
+    writes: dict[str, set[int]]
+    persists: dict[str, set[int]]
+    actions: dict[str, set[int]]
+
+
 def _subject(path: str, line: int = 0) -> dict[str, Any]:
     return {
         "type": "source_location",
@@ -114,7 +144,74 @@ def _chain_root(node: ast.AST) -> tuple[str | None, list[str]]:
     return None, methods
 
 
-def _handmade_check(node: ast.Call, path: str, provenance: dict[str, Any]) -> Fact | None:
+def _chain_target(node: ast.AST) -> str | None:
+    """Variavel-alvo da cadeia, ou None quando a raiz nao e o alvo.
+
+    Reusa `_SOURCE_TERMINALS` pelo mesmo motivo que `_handmade_check`: a cadeia
+    que passa por um reader tem raiz que e a sessao, e registrar a sessao como
+    alvo faria dois dados que nunca se tocaram compartilharem a mesma linha de
+    write -- um check seria datado contra a publicacao de outro dado.
+    """
+    root, methods = _chain_root(node)
+    if root is None or any(m in _SOURCE_TERMINALS for m in methods):
+        return None
+    return root
+
+
+def _lines_by_target(
+    tree: ast.AST, attrs: frozenset[str], methods: frozenset[str]
+) -> dict[str, set[int]]:
+    """Linhas em que cada variavel-alvo aparece na raiz de `df.<attr>` ou de
+    `df....<method>()`.
+
+    Guarda o CONJUNTO de linhas, nao a primeira encontrada: `ast.walk` percorre
+    por nivel, entao um write dentro de um laco e visitado depois de um write no
+    corpo do modulo, e "a primeira linha vista" nao e a primeira linha do
+    arquivo. Quem consome escolhe o extremo que lhe interessa.
+    """
+    found: dict[str, set[int]] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute) and node.attr in attrs:
+            chain: ast.AST = node.value
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr in methods
+        ):
+            chain = node
+        else:
+            continue
+        target = _chain_target(chain)
+        if target is not None:
+            found.setdefault(target, set()).add(node.lineno)
+    return found
+
+
+def _module_index(tree: ast.AST) -> _ModuleIndex:
+    return _ModuleIndex(
+        writes=_lines_by_target(tree, _WRITE_ATTRS, frozenset()),
+        persists=_lines_by_target(tree, frozenset(), _PERSIST_METHODS),
+        # `.write` tambem e action: e o que dispara o trabalho de publicar.
+        actions=_lines_by_target(tree, _WRITE_ATTRS, _ACTION_METHODS),
+    )
+
+
+def _position_vs_write(target: str, line: int, writes: dict[str, set[int]]) -> str:
+    """Tres valores, nunca um booleano.
+
+    `no_write_in_module` e o modulo que valida e nao escreve -- uma biblioteca de
+    validacao, um job de auditoria. Achatar isso em `before_write` afirmaria uma
+    ordem que o arquivo nao contem.
+    """
+    lines = writes.get(target)
+    if not lines:
+        return "no_write_in_module"
+    return "after_write" if line > min(lines) else "before_write"
+
+
+def _handmade_check(
+    node: ast.Call, path: str, index: _ModuleIndex, provenance: dict[str, Any]
+) -> Fact | None:
     if not isinstance(node.func, ast.Attribute) or node.func.attr != "count":
         return None
     target, methods = _chain_root(node)
@@ -124,24 +221,50 @@ def _handmade_check(node: ast.Call, path: str, provenance: dict[str, Any]) -> Fa
         return _unresolved(
             path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
         )
+    line = node.lineno
     return Fact(
         kind="dq.check",
-        subject=_subject(path, node.lineno),
-        measures={"line": node.lineno},
-        attrs={"framework": "handmade", "check_type": "count_of_violations", "target": target},
+        subject=_subject(path, line),
+        measures={"line": line},
+        attrs={
+            "framework": "handmade",
+            "check_type": "count_of_violations",
+            "target": target,
+            "position_vs_write": _position_vs_write(target, line, index.writes),
+            "target_persisted": any(n < line for n in index.persists.get(target, ())),
+            # Estritamente posterior: a linha do proprio check tem a action que
+            # o define -- o `count()` -- e o check nao e action depois de si.
+            "action_after_check": any(n > line for n in index.actions.get(target, ())),
+            # Todo check artesanal paga varredura propria: cada `count()` e uma
+            # passada sobre o alvo, sem compartilhamento com os outros checks do
+            # modulo. So a `VerificationSuite` do Deequ agrupa agregacoes
+            # (knowledge/dq/validation-frameworks.md, §2.3).
+            "shares_scan": False,
+        },
         provenance=provenance,
     )
 
 
 def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") -> list[Fact]:
     provenance = {"artifact": path, "artifact_sha256": artifact_sha256, "extractor": EXTRACTOR_ID}
+    index = _module_index(tree)
     facts: list[Fact] = []
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
-            fact = _handmade_check(node, path, provenance)
+            fact = _handmade_check(node, path, index, provenance)
             if fact is not None:
                 facts.append(fact)
+
+    # Segundo passe: quantos checks ha sobre o mesmo alvo so e conhecido depois
+    # de a travessia terminar.
+    per_target = Counter(f.attrs["target"] for f in facts if f.kind == "dq.check")
+    facts = [
+        replace(f, measures={**f.measures, "checks_on_target": per_target[f.attrs["target"]]})
+        if f.kind == "dq.check"
+        else f
+        for f in facts
+    ]
 
     check_count = sum(1 for f in facts if f.kind == "dq.check")
     unresolved_count = sum(1 for f in facts if f.kind == "dq.unresolved")
