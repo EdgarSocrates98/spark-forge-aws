@@ -38,14 +38,27 @@ EMITTED_KINDS = frozenset(
 # o que viola a regra e conta o que sobrou.
 _HANDMADE_GATES = frozenset({"filter", "where"})
 
-# Metodos que constroem um DataFrame A PARTIR da raiz da cadeia. Quando o
-# primeiro elo e um destes, a raiz e a sessao (ou o reader), NAO o dado
-# validado: em `spark.table("t").filter(...).count()` o alvo do check e um
-# DataFrame anonimo, e `spark` seria um alvo adivinhado -- `SF-DQ-001` passaria
-# a comparar a linha deste check com o write de qualquer outro dado que tambem
-# saia de `spark`. Por isso a cadeia que comeca aqui vira `dq.unresolved`,
-# contada, e nunca um `dq.check` com alvo errado. Mesma disciplina de nomeacao
-# por forma que `_READ_TERMINALS` usa em `pyspark_ast.py`.
+# Metodos que constroem um DataFrame A PARTIR da raiz da cadeia. Se um deles
+# aparece na cadeia, a raiz e a sessao (ou o reader), NAO o dado validado: em
+# `spark.table("t").filter(...).count()` o alvo do check e um DataFrame anonimo,
+# e `spark` seria um alvo adivinhado -- `SF-DQ-001` passaria a comparar a linha
+# deste check com o write de qualquer outro dado que tambem saia de `spark`, e
+# afirmaria "validou depois de publicar" sobre dados que nunca se tocaram. Por
+# isso a cadeia que passa por aqui vira `dq.unresolved`, contada, e nunca um
+# `dq.check` com alvo errado.
+#
+# A presenca e testada em QUALQUER posicao, nao so no primeiro elo: `option`,
+# `schema` e `format` configuram o reader antes do terminal, entao
+# `spark.read.option("mergeSchema", "true").parquet(p)` empurra o terminal para
+# fora da posicao 0. Testar so o primeiro elo deixava passar exatamente a forma
+# canonica de leitura Delta/Iceberg/JDBC em job Glue real.
+#
+# Superconjunto de `_READ_TERMINALS` (`pyspark_ast.py:55`): os oito nomes de la
+# estao todos aqui, `format` inclusive -- ele sozinho nao produz DataFrame, mas
+# a presenca dele ja prova que a raiz da cadeia e um reader. Os quatro a mais
+# (`range`, `createDataFrame`, `text`, `jdbc`) sao fabricas de DataFrame a
+# partir da sessao: `pyspark_ast` nao precisa delas para classificar leitura, e
+# aqui elas produziriam o mesmo alvo adivinhado que as outras.
 _SOURCE_TERMINALS = frozenset(
     {
         "table",
@@ -59,6 +72,7 @@ _SOURCE_TERMINALS = frozenset(
         "text",
         "jdbc",
         "load",
+        "format",
     }
 )
 
@@ -106,7 +120,7 @@ def _handmade_check(node: ast.Call, path: str, provenance: dict[str, Any]) -> Fa
     target, methods = _chain_root(node)
     if not any(m in _HANDMADE_GATES for m in methods):
         return None
-    if target is None or (methods and methods[0] in _SOURCE_TERMINALS):
+    if target is None or any(m in _SOURCE_TERMINALS for m in methods):
         return _unresolved(
             path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
         )
@@ -162,25 +176,15 @@ def extract_data_quality_path(path: Path, repo_root: Path | None = None) -> list
     try:
         text = path.read_text(encoding="utf-8-sig")
     except OSError as exc:
-        return [
-            Fact(
-                kind="dq.unresolved",
-                subject=_subject(anchor),
-                attrs={"reason": "read_error", "detail": str(exc)},
-                provenance=empty,
-            )
-        ]
+        return [_unresolved(anchor, 0, "read_error", empty, detail=str(exc))]
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
     provenance_sha = {"artifact": anchor, "artifact_sha256": sha, "extractor": EXTRACTOR_ID}
     try:
         tree = ast.parse(text)
     except SyntaxError as exc:
         return [
-            Fact(
-                kind="dq.unresolved",
-                subject=_subject(anchor, exc.lineno or 0),
-                attrs={"reason": "syntax_error", "detail": str(exc.msg)},
-                provenance=provenance_sha,
+            _unresolved(
+                anchor, exc.lineno or 0, "syntax_error", provenance_sha, detail=str(exc.msg)
             )
         ]
     return extract_data_quality(tree, anchor, artifact_sha256=sha)
@@ -206,15 +210,12 @@ def extract_data_quality_tree(root: Path, repo_root: Path | None = None) -> list
             # um arquivo ilegivel custa um fact contado, nunca a varredura
             # inteira.
             facts.append(
-                Fact(
-                    kind="dq.unresolved",
-                    subject=_subject(anchor),
-                    attrs={"reason": "read_error", "detail": str(exc)},
-                    provenance={
-                        "artifact": anchor,
-                        "artifact_sha256": "",
-                        "extractor": EXTRACTOR_ID,
-                    },
+                _unresolved(
+                    anchor,
+                    0,
+                    "read_error",
+                    {"artifact": anchor, "artifact_sha256": "", "extractor": EXTRACTOR_ID},
+                    detail=str(exc),
                 )
             )
     return sort_facts(facts)

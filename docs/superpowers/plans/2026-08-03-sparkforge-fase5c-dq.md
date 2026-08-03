@@ -277,10 +277,19 @@ com `attrs.target == "spark"`. `_chain_root` desce a cadeia inteira e a raiz de
 `spark.table("t")` é o `ast.Name` da *sessão*, não do dado. Nomear a sessão como alvo é
 exatamente o alvo adivinhado que esta fase recusa: `SF-DQ-001` passaria a comparar a linha
 deste check com o `write` de qualquer outro DataFrame que também saia de `spark`. Além do
-helper, portanto, a cadeia cujo **primeiro elo** constrói o DataFrame a partir da raiz
-(`table`, `sql`, `range`, `createDataFrame`, `parquet`, `csv`, `json`, `orc`, `text`,
-`jdbc`, `load` — o `_SOURCE_TERMINALS`, irmão de `_READ_TERMINALS` em `pyspark_ast.py`)
-também vira `dq.unresolved`. Acrescente o helper, que as Tasks 3 e 4 também usam:
+helper, portanto, a cadeia que passa por um método que **constrói** o DataFrame a partir da
+raiz (`_SOURCE_TERMINALS`: os oito de `_READ_TERMINALS` em `pyspark_ast.py:55` —
+`table`, `sql`, `parquet`, `csv`, `json`, `orc`, `load`, `format` — mais `range`,
+`createDataFrame`, `text` e `jdbc`) também vira `dq.unresolved`.
+
+A presença é testada em **qualquer posição da cadeia**, e a primeira versão desta correção
+errou aqui (achado da revisão da Task 1): testar só o primeiro elo deixava passar
+`spark.read.format("delta").load(p).filter(...).count()` e
+`spark.read.option("mergeSchema", "true").parquet(p).filter(...).count()` — `option`,
+`schema` e `format` configuram o reader antes do terminal e empurram o terminal para fora
+da posição 0. As duas formas voltavam a nomear a sessão como alvo, e são a leitura
+canônica de Delta/Iceberg/JDBC em job Glue real, não caso de canto. Acrescente o helper,
+que as Tasks 3 e 4 também usam:
 
 ```python
 def _unresolved(path: str, line: int, reason: str, provenance: dict[str, Any], **extra: Any) -> Fact:
@@ -295,7 +304,7 @@ def _unresolved(path: str, line: int, reason: str, provenance: dict[str, Any], *
 E troque o `return None` do alvo ausente em `_handmade_check` por:
 
 ```python
-    if target is None or (methods and methods[0] in _SOURCE_TERMINALS):
+    if target is None or any(m in _SOURCE_TERMINALS for m in methods):
         return _unresolved(
             path, node.lineno, "unresolved_target", provenance, check_type="count_of_violations"
         )
