@@ -808,7 +808,7 @@ Confira: `different_input_volume` acende `SF-BENCH-001` **e** o que mais for ver
 **Files:**
 - Modify: `sparkforge/findings/validate.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `tests/test_findings_validate.py`
 
-- [ ] **Step 1: A camada de forma, que sempre vale**
+- [x] **Step 1: A camada de forma, que sempre vale**
 
 ```python
 _BENCH_REF = re.compile(r"^f_[0-9a-f]{6}$")
@@ -838,7 +838,7 @@ def _reject_unbacked_gain(payload: dict[str, Any], fact_ids: set[str] | None = N
 
 Teste primeiro, com os quatro casos: sem `benchmark_ref` (rejeita, comportamento antigo), com texto livre (rejeita, **novo**), com `fact_id` de forma válida e sem conjunto de facts (aceita), com `fact_id` ausente do conjunto informado (rejeita).
 
-- [ ] **Step 2: `validate_finding` ganha o parâmetro opcional**
+- [x] **Step 2: `validate_finding` ganha o parâmetro opcional**
 
 ```python
 def validate_finding(payload: dict[str, Any], fact_ids: set[str] | None = None) -> None:
@@ -848,15 +848,29 @@ def validate_finding(payload: dict[str, Any], fact_ids: set[str] | None = None) 
 
 Parâmetro **opcional** porque `validate_finding` é chamado de dentro do golden e do motor, onde o conjunto de facts nem sempre está à mão. A camada de forma vale sempre; a de pertinência, quando alguém puder provar.
 
-- [ ] **Step 3: O verbo `validate` aceita `--facts`**
+- [x] **Step 3: O verbo `validate` aceita `--facts`**
 
 `_core.validate_output(finding, facts_path=None)` lê o arquivo quando informado e passa o conjunto de `fact_id`. A tool MCP espelha com `facts_path` opcional.
 
-- [ ] **Step 4: A quebra de contrato, declarada**
+- [x] **Step 4: A quebra de contrato, declarada**
 
 Rode a suíte inteira. **Se algum teste ou fixture existente tiver `benchmark_ref` em texto livre, ele passa a falhar — e isso é o objetivo, não um acidente.** Corrija cada caso citando um `fact_id` real, e liste no relatório quantos eram. Se forem muitos, pare e reporte antes de mexer: pode indicar que a quebra precisa de flag em vez de valer de imediato.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
+
+**Medido nesta task.** Suíte inteira: **3290 passed / 2 failed / 5 skipped** (+20 testes; eram 3270 passed). `ruff check .` limpo. Os dois vermelhos são os mesmos da Task 5 — `test_no_tool_is_orphan` e `test_no_area_is_orphan` — e fecham na Task 7.
+
+**Cinco desvios medidos nesta task.**
+
+> **D-4a-28 — a quebra de contrato atinge UM caso, não muitos, e o número foi medido antes de mexer.** O Step 4 mandava parar e reportar se fossem muitos. Contagem real de `benchmark_ref` fora de `build/` (artefato de build, ignorado): **83 ocorrências em 63 arquivos de `fixtures/`, todas `""`**; **zero** no catálogo (`rules/**/*.yaml` — `engine.py:204` lê `rule.get("benchmark_ref", "")` e nenhuma regra declara o campo); nos testes, **um** único valor em texto livre, `tests/test_findings_validate.py::test_quantified_effect_with_benchmark_is_accepted` com `"bench/2026-07-29-coalesce.json"`. Esse teste virou `TestBenchmarkRefCitesAFactId::test_free_text_benchmark_ref_is_rejected` — o mesmo valor, agora provando a rejeição em vez da aceitação, que é a forma honesta de registrar uma inversão de contrato. Um caso não justifica flag: a quebra vale de imediato.
+
+> **D-4a-29 — a forma só é cobrada onde o gate morde, e isso é fronteira, não esquecimento.** `_reject_unbacked_gain` retorna cedo quando `expected_effect` não quantifica, então um achado com efeito qualitativo e `benchmark_ref` em prosa **continua passando**. É consequência direta de onde o plano pôs a checagem (dentro da função de ganho), e está certo: o gate existe para ganho sem lastro, não para higiene de campo. O que não pode é a fronteira ficar implícita — `test_a_qualitative_effect_does_not_care_about_the_shape` a fixa por teste, para que mudá-la seja decisão e não deriva.
+
+> **D-4a-30 — `finding.schema.json` ganhou `description`, e deliberadamente NÃO ganhou `pattern`.** O schema dizia só `{"type": "string"}` sobre `benchmark_ref`. Um `"pattern": "^(f_[0-9a-f]{6})?$"` seria tentador e estaria errado por dois motivos medidos: (1) o schema é incondicional, então ele rejeitaria prosa também em achado sem ganho quantificado — quebra maior do que a fase pediu; (2) `_check` roda **antes** de `_reject_unbacked_gain`, então o erro de schema (`benchmark_ref: '...' does not match ...`) chegaria primeiro e a mensagem que explica *por que* o campo mudou ficaria inalcançável justamente para quem bate nela. A `description` documenta a forma e o motivo de ela não estar no schema. Contraste: `evidence` **tem** `pattern: ^f_[0-9a-f]{6}$` no schema desde a Fase 0 — lá a exigência é incondicional, aqui não.
+
+> **D-4a-31 — `fact_ids is not None`, e não `if fact_ids`.** Conjunto vazio é falsy; com o teste por veracidade, `validate_finding(payload, set())` desligaria a camada de pertinência **em silêncio** e todo `fact_id` bem formado passaria — o oposto exato do que "informei o conjunto e ele está vazio" significa. Mesma classe do `thresholds` do D-4a-22: nada levanta erro, a regra só para de valer. `test_an_empty_fact_set_is_not_the_same_as_no_fact_set` fixa a distinção.
+
+> **D-4a-32 — o padrão vive em `validate.py` sem importar `models.py`, e um teste liga os dois.** `validate` opera sobre payload (dict cru vindo de JSON), nunca sobre `Fact`; importar o modelo só para reaproveitar uma regex acoplaria as duas camadas na direção errada. O preço é duas fontes para a mesma forma, e ele é pago por `test_the_expected_shape_is_the_shape_fact_id_really_has`, que constrói um `Fact` real e casa o `id` dele contra `_BENCH_REF` — se `Fact.id` mudar de forma (outro digest, outro truncamento), o teste cai em vez de o gate passar a rejeitar todo mundo.
 
 ---
 

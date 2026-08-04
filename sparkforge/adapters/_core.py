@@ -1541,9 +1541,24 @@ def knowledge_path(file: str | None = None) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 
 
-def validate_output(finding: dict[str, Any]) -> dict[str, Any]:
+def validate_output(
+    finding: dict[str, Any], facts_path: str | None = None
+) -> dict[str, Any]:
+    """Valida um finding. Com `facts_path`, valida tambem a PERTINENCIA do
+    `benchmark_ref`.
+
+    Sem o arquivo, `validate_finding` so consegue cobrar a FORMA do
+    `benchmark_ref` (`f_` + 6 hex) -- ele nao ve fact nenhum. Informando o
+    arquivo de facts (tipicamente a saida de `sparkforge benchmark --out`), o
+    `fact_id` citado passa a precisar existir la dentro. Opcional porque quem
+    valida um achado avulso, sem os facts em mao, ainda merece a primeira
+    camada.
+    """
+    fact_ids: set[str] | None = None
+    if facts_path is not None:
+        fact_ids = {fact.id for fact in _load_facts_file(facts_path)}
     try:
-        validate_finding(finding)
+        validate_finding(finding, fact_ids)
         return {"valid": True, "errors": []}
     except ValidationFailed as exc:
         return {"valid": False, "errors": [str(exc)]}

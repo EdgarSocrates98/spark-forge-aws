@@ -478,6 +478,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Valida findings contra o JSON Schema e a regra de ganho sem benchmark_ref.",
     )
     validate_p.add_argument("--findings", required=True)
+    validate_p.add_argument(
+        "--facts",
+        help=(
+            "Opcional. Arquivo de facts (tipicamente `sparkforge benchmark --out`). "
+            "Sem ele, `benchmark_ref` so e cobrado na FORMA (`f_` + 6 hex); com ele, "
+            "o `fact_id` citado precisa existir no conjunto -- achado que cita "
+            "medicao ausente da evidencia passa a ser rejeitado."
+        ),
+    )
 
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
@@ -1024,7 +1033,9 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     errors: list[str] = []
     for index, finding in enumerate(findings):
         rule_id = finding.get("rule_id", "?") if isinstance(finding, dict) else "?"
-        result = _core.validate_output(finding if isinstance(finding, dict) else {})
+        result = _core.validate_output(
+            finding if isinstance(finding, dict) else {}, facts_path=args.facts
+        )
         for message in result["errors"]:
             errors.append(f"finding[{index}] ({rule_id}): {message}")
 
