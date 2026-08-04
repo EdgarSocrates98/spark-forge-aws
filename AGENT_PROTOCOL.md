@@ -29,6 +29,55 @@ next_step → coletar → extrair facts → julgar → hipótese → experimento
 
 Uma variável principal por experimento. Sem baseline, não há como provar impacto.
 
+## Gates de fase
+
+Os quatro gates do case — `baseline_captured`, `dominant_bottleneck_identified`,
+`functional_validation_defined`, `flows_mapped` — são **advisory por default**, e esse é o
+comportamento de sempre. Quando o case foi aberto com `sparkforge case open
+--strict-gates`, o rigor fica gravado no `case.yaml` e vale pela investigação inteira:
+quem retomar noutra sessão, noutra máquina ou noutra ferramenta herda o rigor de quem
+abriu. Sob ele, quatro coisas mudam para você:
+
+1. **O booleano manual não destrava.** `case update --gate flows_mapped --gate-value true`
+   continua gravando a flag e **não** libera a transição de fase — `set_phase` não consulta
+   `case["gates"]`. O que destrava é o fact produtor estar presente nos facts que você
+   passou em `case update --facts <facts.json>`, ou um override declarado. Gate que se
+   satisfaz digitando é a família de defeito que a Fase 4a mediu no `benchmark_ref` antigo.
+2. **Quem produz a evidência de cada gate é dado, não memória.** Está no bloco `gates` de
+   `rules/catalog/routing.yaml`, com o comando exato em `produced_by` — hoje
+   `baseline_captured` ← `bench.run_delta` (`sparkforge benchmark --before … --after …`) e
+   `flows_mapped` ← `callgraph.reachable_spark_work` (`sparkforge analyze call-graph`). Os
+   outros dois **não têm produtor** e seguem advisory mesmo sob rigor. Leia o bloco; não
+   decore esta lista.
+3. **Passar por cima é possível, custa uma frase e fica gravado.** `sparkforge case update
+   --override-gate <gate> --reason "<por que a evidência não existe>"`. Sem `--reason` o
+   override é recusado — override anônimo não se distingue de gate esquecido. Ele entra
+   numa lista (dois overrides do mesmo gate são dois fatos, e nenhum apaga o outro) e
+   aparece no `resume`. É para quando o dado genuinamente não existe — job descontinuado,
+   ambiente que sumiu, corpus sem trabalho Spark alcançável —, nunca para andar mais rápido.
+4. **O limite da checagem, que é decisão registrada e não descuido.** O gate confere a
+   **presença do kind**, nunca o conteúdo do fact: ele prova que a análise rodou e produziu
+   o artefato que destrava, e **não** prova que ela cobriu todo o `scope.entrypoints`, nem
+   que o benchmark é do job certo. Gate verde não é cobertura total, e declarar esse recorte
+   no relatório é a mesma obrigação da regra 7 — é o que este projeto faz com
+   `dq.unresolved`.
+
+## Assinatura do relatório
+
+`sparkforge report sign --report <relatorio.md> --findings <findings.json>` escreve um
+bloco no fim do relatório, e `sparkforge report verify` confere e diz **qual** das três
+partes divergiu — evidência, catálogo ou corpo — em vez de devolver só "inválido". O
+arquivo é o de **findings**, não o de facts: `rule_id`, `catalog_version` e
+`schema_version` só existem lá.
+
+Ela prova **correspondência** entre aquele texto, aquela evidência e aquele catálogo — e
+**nunca autoria**: não há chave nem segredo, e qualquer pessoa com os mesmos findings
+produz a mesma assinatura. Não escreva, e não deixe o leitor supor, que o bloco autentica
+quem redigiu. O corpo assinado é tudo que vem **antes** do delimitador do bloco: texto
+acrescentado depois dele é recusado, não ignorado. Editar a prosa depois de assinar
+invalida, e é para isso que serve — reassinar é barato, texto editado passando por
+verificado não é.
+
 ## Escada de degradação
 
 Se as tools MCP não estiverem disponíveis: use o CLI `sparkforge`. Se o Python não estiver

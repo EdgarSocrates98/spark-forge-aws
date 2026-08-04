@@ -685,7 +685,7 @@ dois testes parametrizados) e 2 de `TestRealOutputValidatesAgainstItsOwnSchema`
 **Files:**
 - Modify: `docs/superpowers/STATUS.md`, `README.md`, `AGENTS.md`, `AGENT_PROTOCOL.md`
 
-- [ ] **Step 1: Meça**
+- [x] **Step 1: Meça**
 
 ```bash
 python -m pytest -q 2>&1 | tail -2
@@ -693,12 +693,69 @@ python -c "from sparkforge.adapters.tools import TOOLS; print('tools', len(TOOLS
 ruff check .
 ```
 
-- [ ] **Step 2: `AGENT_PROTOCOL.md`**
+Medido: **3443 passed / 5 skipped**, `tools 36`, `ruff check .` limpo. E o que a
+documentação afirma além disso, medido no mesmo passo: 66 regras em 12 áreas
+(SF-PY 12, SF-EMR 9, SF-GLUE 6, SF-UI 6, SF-ATH 5, SF-ENV 5, SF-ICE 5, SF-PQ 5,
+SF-BENCH 4, SF-DQ 4, SF-PLAN 4, SF-CG 1), 16 extratores emitindo 102 kinds, 107
+fixtures em 18 domínios, 24 rotas, 8 coordenadores, 5 executores, 20 skills, 8
+regras com `runtime_scope` não-vazio, 37 fontes vigiadas. Nenhum desses mudou
+nesta fase — a 4b cobrou rigor sobre a capacidade que já existia.
+
+- [x] **Step 2: `AGENT_PROTOCOL.md`**
 
 A regra que fala de gates precisa dizer que sob `--strict-gates` o booleano manual não destrava, e que override exige motivo. É o documento que o executor lê antes de agir — a Fase 4a mediu que a quebra de contrato do `benchmark_ref` não tinha chegado nele.
 
-- [ ] **Step 3: `STATUS.md`, `README.md`, `AGENTS.md`**
+> **Desvio D-4b-18 — gates entram como seção, e não como décima regra.** O plano
+> diz "a regra que fala de gates", e não existe regra sobre gates no protocolo:
+> são nove, nenhuma sobre transição de fase. Acrescentar uma décima parecia o
+> caminho, e a medição o desaconselha: `grep -rl "nove regras"` acha **54**
+> arquivos — 18 fontes em `agents/` mais os três espelhos —, e cada um afirma o
+> número por extenso. Renumerar o contrato inteiro para acomodar uma regra
+> operacional custaria três espelhos regerados e 54 edições numa task cuja
+> fronteira é documentação. Entraram duas seções — `## Gates de fase` (os quatro
+> itens que o executor precisa: booleano não destrava, produtor é dado, override
+> custa uma frase, presença de kind não é cobertura) e `## Assinatura do
+> relatório` — depois do `## Loop de fase`, que é onde o leitor já está quando
+> precisa delas. As nove regras seguem nove.
+
+- [x] **Step 3: `STATUS.md`, `README.md`, `AGENTS.md`**
 
 Números medidos. Seção "Fase 4b" no formato das anteriores: o defeito de partida (a razão da Fase 0 deixando de valer para gate com produtor), o que entrou, e o que **não** entrou — a validação funcional, que é a 4c. Na §16, marcar dois dos três itens de rigor como fechados.
 
-- [ ] **Step 4: Suíte verde, ruff limpo, commit**
+> **Desvio D-4b-19 — a linha de dívida da §16 afirmava "não iniciadas" havia duas
+> fases.** A tabela da §16 foi atualizada como o plano manda, mas a linha
+> correspondente em **Dívidas abertas** dizia "Fases 3b, 3c, 3d e a Fase 4 do
+> roadmap (§16, rigor) não iniciadas" — e a Fase 4a já a tinha deixado
+> parcialmente fechada em 2026-08-03 sem voltar ali. É o mesmo modo de falha que
+> a linha de EMR registra sobre si mesma ("inventário de dívida só é confiável se
+> fechar dívida for parte de fechar fase"), reincidindo dentro do próprio arquivo
+> que o denuncia. Corrigida junto: três dos quatro itens de rigor fechados, resta
+> a Fase 4c.
+>
+> **Desvio D-4b-20 — a lista "Ordem" tinha dois itens `10.`, e o `case.yaml` mudou
+> de forma sem subir `schema_version`.** Duas correções que o plano não previa e
+> que a honestidade do arquivo exige. (a) Inserir a Fase 4c como item 9 expôs uma
+> numeração já duplicada na origem; renumerada até 12. (b) O cabeçalho do
+> `STATUS.md` justifica `schema_version: 1` com "nenhum contrato de dados mudou",
+> e a 4b acrescentou `strict_gates` e `gate_overrides` ao `case.yaml`. A
+> justificativa continua valendo, mas por um motivo que precisava ser escrito:
+> as duas chaves são aditivas e todo leitor tolera a ausência delas
+> (`overridden_gates` devolve conjunto vazio num case anterior à fase, sem
+> migração). Sem a frase, o próximo leitor mede a divergência e conclui que o
+> arquivo mente.
+
+- [x] **Step 4: Suíte verde, ruff limpo, commit**
+
+Medido ao fechar: **3443 passed / 5 skipped**, `ruff check .` limpo. Os dois
+exemplos de CLI que o README passou a mostrar foram **executados** antes de
+publicados, num case descartável: `case open --strict-gates` seguido de `case
+update --phase report` devolve a mensagem de bloqueio com os dois gates, o kind
+que falta e o `produced_by` por extenso; `case update --override-gate ... --reason
+... --now ...` grava e devolve o case. `--now` é obrigatório em `case open` e
+entrou nos dois exemplos — exemplo de README que não roda é o defeito que esta
+fase inteira é sobre não cometer.
+
+Quatro dívidas registradas na seção própria do `STATUS.md`, três delas
+antecipadas na abertura da task e conferidas uma a uma, mais uma medida aqui:
+nenhuma skill cita `report sign`, então a assinatura chegou ao protocolo e ao
+executor e **não** ao terceiro degrau da escada de portabilidade.

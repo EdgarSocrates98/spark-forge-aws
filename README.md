@@ -224,6 +224,68 @@ sparkforge validate --findings .sparkforge/findings.json \
                     --facts .sparkforge/bench.json
 ```
 
+### Rigor: gates que trancam e relatório que carrega prova
+
+Duas garantias que o motor não tinha, e as duas são **opcionais por construção**.
+
+**Gates fail-closed.** O `case.yaml` tem quatro gates. Abrir o case com
+`--strict-gates` grava a escolha de rigor **no case** — não na invocação —, e a
+partir daí `set_phase` recusa a transição enquanto faltar a evidência dos gates
+que guardam a fase pedida:
+
+```bash
+sparkforge case open --repo . --case-id perf-2026-08 \
+  --now 2026-08-04T09:00:00Z --strict-gates
+sparkforge case update --repo . --phase report --facts .sparkforge/bench.json
+```
+
+O que destrava é **evidência**, nunca a flag: `case update --gate X --gate-value
+true` continua gravando o booleano e não libera nada. Quem produz a chave de cada
+gate é dado, no bloco `gates` de `rules/catalog/routing.yaml`, com o comando exato
+em `produced_by`. Só gate **com** produtor endurece — hoje `baseline_captured`
+(`bench.run_delta`, da Fase 4a) e `flows_mapped`
+(`callgraph.reachable_spark_work`). Os outros dois continuam advisory, porque
+endurecer gate sem produtor é o impasse que a Fase 0 recusou conscientemente:
+gate rígido vira beco sem saída quando o dado simplesmente não existe.
+
+Quando o dado genuinamente não existe — job descontinuado, ambiente que sumiu —,
+passar por cima custa uma frase, e a frase fica gravada no case e aparece no
+`resume`:
+
+```bash
+sparkforge case update --repo . --override-gate baseline_captured \
+  --reason "job descontinuado; nao ha ambiente para rodar o depois" \
+  --now 2026-08-04T11:30:00Z
+```
+
+O gate confere a **presença do kind**, não o conteúdo do fact: ele prova que a
+análise rodou e produziu o artefato que destrava, e **não** que ela cobriu todo o
+`scope.entrypoints` nem que o benchmark é do job certo. O limite é decisão
+registrada, e vai escrito na própria mensagem de bloqueio.
+
+**Assinatura de correspondência.** `report sign` escreve um bloco no fim do
+relatório; `report verify` confere e diz **qual** das três partes divergiu —
+evidência, catálogo ou corpo — em vez de devolver só "inválido". Os dois existem
+na CLI e como tool MCP (`sparkforge_report_sign`, `sparkforge_report_verify`):
+
+```bash
+sparkforge report sign   --report relatorio.md --findings .sparkforge/findings.json
+sparkforge report verify --report relatorio.md --findings .sparkforge/findings.json
+```
+
+O arquivo é o de **findings**, e não o de facts: `rule_id`, `catalog_version` e
+`schema_version` só existem lá. O hash cobre os `fact_id` citados, os `rule_id`
+que dispararam, as duas versões e o **corpo** do relatório — sem o corpo, alguém
+reescreveria o texto inteiro mantendo a assinatura válida. Editar a prosa depois
+de assinar invalida, e é para isso que serve: reassinar é barato.
+
+Ela prova **correspondência**, nunca **autoria**: não há chave nem segredo, e
+qualquer pessoa com os mesmos findings produz exatamente a mesma assinatura.
+Assinatura de autoria (HMAC, GPG) foi recusada no desenho — exigiria distribuir e
+guardar um segredo, superfície que o projeto hoje não tem —, e o limite vai
+escrito dentro do bloco que o relatório carrega, porque bloco que sugira
+autoridade mente por omissão.
+
 ### Fluxo de handoff
 
 `sparkforge handoff --repo <raiz>` escreve `.sparkforge/handoff.md` a partir
