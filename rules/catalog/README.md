@@ -39,7 +39,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 
 | Campo | Obrigatório | Nota |
 |---|---|---|
-| `id` | sim | Único. Áreas: `PY` (PySpark), `CFG` (config Spark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança) |
+| `id` | sim | Único. **Treze** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança) |
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |
@@ -202,7 +202,6 @@ O vocabulário, e o que cada forma faz:
 |---|---|---|
 | `pyspark.yaml` | `SF-PY-*` | Fase 0 (AST PySpark) |
 | `env.yaml` | `SF-ENV-*` | Fase 0 |
-| `spark-config.yaml` | `SF-CFG-*` | Fase 0 parcial (`pyspark.conf_set`), Fase 1 (Terraform) |
 | `glue-infra.yaml` | `SF-GLUE-*` | Fase 1 (Terraform HCL) |
 | `spark-ui.yaml` | `SF-UI-*` | Fase 1 (event log) |
 | `iceberg.yaml` | `SF-ICE-*` | Fase 1 (metadata tables) |
