@@ -236,7 +236,16 @@ que guardam a fase pedida:
 ```bash
 sparkforge case open --repo . --case-id perf-2026-08 \
   --now 2026-08-04T09:00:00Z --strict-gates
-sparkforge case update --repo . --phase report --facts .sparkforge/bench.json
+
+# `report` é guardada pelos DOIS gates com produtor, então a transição precisa
+# das duas evidências: o benchmark destrava `baseline_captured` e o call graph
+# destrava `flows_mapped`. Passar só uma bloqueia — com a mensagem nomeando
+# qual fact falta e o comando que o produz.
+sparkforge analyze call-graph --facts .sparkforge/facts.json \
+                              --out .sparkforge/facts_callgraph.json
+sparkforge case update --repo . --phase report \
+  --facts .sparkforge/bench.json \
+  --facts .sparkforge/facts_callgraph.json
 ```
 
 O que destrava é **evidência**, nunca a flag: `case update --gate X --gate-value
