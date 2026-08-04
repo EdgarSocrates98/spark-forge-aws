@@ -411,6 +411,20 @@ class TestValidateChecksTheBenchmarkRef:
         ) == 0
         assert json.loads(capsys.readouterr().out)["valid"] is True
 
+    def test_a_missing_facts_file_names_the_verb_that_produces_the_fact_id(
+        self, tmp_path, capsys
+    ):
+        """O `fact_id` que este caminho procura e o de um `bench.run_delta`.
+        Mandar rodar `analyze pyspark` produziria um arquivo onde ele nunca vai
+        estar -- e era o que a mensagem fazia."""
+        path = self._findings_file(tmp_path, "f_a1b2c3")
+        assert main(
+            ["validate", "--findings", str(path), "--facts", str(tmp_path / "nope.json")]
+        ) == 2
+        err = capsys.readouterr().err
+        assert "sparkforge benchmark --before" in err
+        assert "analyze pyspark" not in err
+
 
 class _FakeS3Client:
     def __init__(self):
@@ -954,6 +968,44 @@ class TestBenchmark:
             ["benchmark", "--before", str(before), "--after", str(repo / "nope.json")], capsys
         )
         assert code == 2
+
+    def test_the_message_names_the_side_and_the_verb_that_produces_it(self, repo, capsys):
+        """`code == 2` sozinho passa com mensagem inacionavel, e passava: o
+        helper cravava `analyze pyspark` para todo chamador, e a entrada do
+        benchmark vem de `analyze event-log --out`. Falta o lado tambem: com dois
+        arquivos na linha de comando, "arquivo nao encontrado" nao diz qual
+        refazer. O precedente e `analyze terraform-diff`, que rotula o lado.
+        """
+        before = self._side(repo, capsys, "before", 200)
+        assert (
+            main(["benchmark", "--before", str(before), "--after", str(repo / "nope.json")])
+            == 2
+        )
+        err = capsys.readouterr().err
+        assert "--after" in err
+        assert "--before" not in err
+        assert "sparkforge analyze event-log" in err
+        assert "analyze pyspark" not in err
+
+    def test_the_message_names_the_before_side_when_it_is_the_one_missing(self, repo, capsys):
+        after = self._side(repo, capsys, "after", 100)
+        assert (
+            main(["benchmark", "--before", str(repo / "nope.json"), "--after", str(after)]) == 2
+        )
+        err = capsys.readouterr().err
+        assert "--before" in err
+        assert "--after" not in err
+
+    def test_the_other_callers_keep_naming_their_own_verb(self, repo, capsys):
+        """A mensagem passa a depender do chamador, entao os outros dois
+        caminhos precisam continuar corretos -- e nenhum deles fala de lado."""
+        assert main(["analyze", "call-graph", "--facts", str(repo / "nope.json")]) == 2
+        err = capsys.readouterr().err
+        assert "sparkforge analyze pyspark" in err
+        assert "--before" not in err and "--after" not in err
+
+        assert main(["judge", "--facts", str(repo / "nope.json"), "--glue", "5.0"]) == 2
+        assert "sparkforge analyze pyspark" in capsys.readouterr().err
 
 
 class TestCollectAthenaWorkgroup:

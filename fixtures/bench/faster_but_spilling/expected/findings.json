@@ -3,7 +3,7 @@
     "rule_id": "SF-BENCH-003",
     "schema_version": 1,
     "catalog_version": 1,
-    "title": "Ganho de tempo acompanhado de mais spill ou mais GC",
+    "title": "Ganho de tempo de task somado acompanhado de mais spill ou mais GC",
     "severity": "P1",
     "confidence": "high",
     "status": "confirmed",

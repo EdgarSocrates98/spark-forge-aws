@@ -238,7 +238,12 @@ rules:
 
   - id: SF-BENCH-003
     category: benchmark
-    title: Ganho de tempo acompanhado de mais spill ou mais GC
+    # O titulo qualifica a medida porque ele VIAJA SOZINHO: e a string que
+    # renderiza em todo achado, e "ganho de tempo" sem qualificacao seria lido
+    # como relogio. A `explanation` repara logo abaixo, mas quem le uma lista de
+    # achados nao chega la. Mesma razao pela qual a 002 diz "tempo de task
+    # somado" no titulo dela.
+    title: Ganho de tempo de task somado acompanhado de mais spill ou mais GC
     requires_facts: [bench.run_delta]
     when:
       same_subject: true

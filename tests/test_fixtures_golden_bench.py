@@ -9,10 +9,14 @@ faria uma mudanca no extrator quebrar dois goldens pelo mesmo motivo,
 escondendo qual dos dois contratos regrediu. Mesma decisao de
 `test_fixtures_golden_callgraph.py`.
 
-Nesta fase os `expects_rules` sao todos `[]` e todo `findings.json` sai vazio:
-as regras `SF-BENCH-*` nascem na Task 5 do plano da Fase 4a, que regenera este
-corpus. Golden vazio aqui nao e pendencia -- e a linha de base contra a qual o
-efeito das quatro regras vai ser lido.
+As quatro regras `SF-BENCH-*` nasceram na Task 5 do plano da Fase 4a, que
+regenerou este corpus, e o golden guarda hoje quatro diretorios com achado --
+`different_input_volume` (`SF-BENCH-001` e `SF-BENCH-002` juntas, que e o D-4 do
+spec vivo no golden), `regression_slower` (`SF-BENCH-002`), `faster_but_spilling`
+(`SF-BENCH-003`) e `most_stages_renamed` (`SF-BENCH-004`). Os dois `findings.json`
+que continuam vazios sao os negativos, e a ausencia ali e afirmacao: em
+`clean_improvement` nao ha o que uma regra honesta possa acusar, e em
+`one_side_missing` nao houve comparacao para nenhuma delas ler.
 
 `TestAdversarial` e a parte que impede a fixture de virar decoracao: cada
 diretorio afirma no nome o que prova, e ali as medidas do golden sao lidas
