@@ -730,12 +730,12 @@ silenciado — nem por fixture antecipada, nem por remoção de kind da lista.
 
 ---
 
-## Task 5: fixtures e golden
+## Task 5: fixtures e golden — **CONCLUÍDA**
 
 **Files:**
 - Create: `fixtures/funcval/*`, `tests/test_fixtures_golden_funcval.py`
 
-- [ ] **Step 1: Os casos**
+- [x] **Step 1: Os casos**
 
 | Fixture | Prova |
 |---|---|
@@ -747,25 +747,141 @@ silenciado — nem por fixture antecipada, nem por remoção de kind da lista.
 | `partial_coverage` | `SF-FVAL-005` |
 | `clean_equivalence` | **negativo das cinco** |
 
+**Nove diretórios, e as medidas de cada um.** Os sete acima, mais os dois do
+plano (`plan_sem_chave` e `plan_com_chave_declarada`, o segundo pela D-4c-19).
+Todo `findings.json` sai **vazio** e todo `expects_rules` é `[]` — as regras
+nascem na Task 6.
+
+| Fixture | A medida que decide |
+|---|---|
+| `count_diverged` | 1.000.000 → 1.000.002; `diverged_check_count: 1`, e o divergente é `count`. Schema e os dois agregados parados |
+| `schema_diverged` | `removed: ["dt"]`, `added: ["carga_ts"]`, `type_changed: ["valor"]`, e `before_column_count == after_column_count == 4` — um check de `column_count` não veria **nada** |
+| `duplicate_key_appeared` | `key:pedido_id` 0 → 3, exato, `diverged: true`; `count` **não** se move (D-4c-20) |
+| `aggregate_outside_tolerance` | `relative_delta: 0.0476` **e** `diverged_check_count: 0` com `relative_delta_check_count: 1` — a D-4c-10 no golden |
+| `aggregate_within_tolerance` | `relative_delta: 1e-12` com `value_before == value_after` e `abs_delta: 0.0`; os dois agregados separados por >9 ordens de grandeza e por mais nada |
+| `partial_coverage` | `planned 5 / reported 3`; `key:pedido_id` = 0 comparado, `agg:sum:valor` → `check_value_unavailable`, `schema` → `check_not_reported` |
+| `clean_equivalence` | `planned 5 / reported 5 / compared 5 / diverged 0 / unplanned 0`, `undeclared_axes: []`, zero `funcval.unresolved`, os quatro eixos presentes por `axis` |
+| `plan_sem_chave` | `db.eventos` → `undeclared_axes: ["keys"]` com a razão; `s3://bucket/curated/eventos/` → `["aggregates","keys","schema"]` + `catalog_schema_unmatched`. Dois planos, dois `Fact.id` |
+| `plan_com_chave_declarada` | `key:pedido_id+dt` com `origin: "declared"`/`derived_from: []` ao lado de quatro `origin: "derived"` com `fact_id`; `declared_check_count: 1`, `undeclared_axes: []` |
+
+**A dívida da D-4c-6 fechada, e onde ela está gravada.** O `input/` de toda
+fixture daqui traz `job.py` (o alvo, por `pyspark.write.attrs.target`) **e**
+`catalog/dump.json` (coluna e tipo, por `catalog.table_schema`) do **mesmo**
+alvo `db.eventos` — as duas fontes que nenhum verbo produz no mesmo arquivo. O
+plano derivado sai com `count`, `schema`, `agg:sum:cliente_id` (bigint, exato) e
+`agg:sum:valor` (double, relativo), e o `derived_from` de cada um cita um
+`Fact.id` que existe na extração — conferido em
+`test_the_corpus_closes_the_debt_that_no_other_fixture_could`. Os eixos de
+schema e de agregados passam a existir em golden.
+
+Os resultados do operador trazem `target`, `checks` e `side`, e **não** trazem
+`plan_ref` — ele é o `Fact.id` do plano, e escrevê-lo à mão faria o golden
+depender de um id que muda com o `input/`. Ver D-4c-22.
+
 A Task 1 decidiu (D-4c-2) que o eixo de chaves entra **declarado**:
 `duplicate_key_appeared` **fica**, e o golden dele tem que mostrar o check com
 `origin: "declared"` e `derived_from: []` — se o golden não distinguir declarado
 de derivado, a procedência mente e a fixture prova a coisa errada.
 
+**Medido e não sobreviveu:** `funcval.check_delta` não carrega `origin`, e o
+golden de uma fixture de comparação é só o que a comparação produziu — o plano é
+**entrada**. A procedência declarada é observável no `funcval.plan`, e por isso
+ela é provada em `plan_com_chave_declarada`, um golden de plano feito para pôr
+os dois `origin` lado a lado. Ver D-4c-19; `duplicate_key_appeared` continua
+guardada por `test_the_key_of_duplicate_key_appeared_is_declared_and_says_so`,
+que confere o plano derivado dela.
+
 `partial_coverage` carrega os **três** estados do contrato num caso só: um check
 que veio com zero, um que veio `null` com `unavailable_reason`, e um que o plano
 pediu e não apareceu. Só o terceiro é cobertura faltante; os dois primeiros são
-`funcval.unresolved`. É a fixture que cobre esse kind.
+`funcval.unresolved`. É a fixture que cobre esse kind. O papel de "veio com
+zero" é do check de **chave**, e a escolha é medida, não estética — D-4c-21.
 
 Uma fixture a mais, do plano e não da comparação: `plan_sem_chave` — plano
 derivado sem `--key`, com `undeclared_axes: ["keys"]` na saída. É o que prova que
-o eixo ausente fica escrito em vez de calado.
+o eixo ausente fica escrito em vez de calado. Ela carrega **dois** alvos: o
+segundo, em forma de caminho S3, não casa com símbolo nenhum do catálogo e sai
+com os três eixos por declarar mais um `catalog_schema_unmatched` — a D-4c-6 e a
+D-4c-4 no mesmo golden, e o único `funcval.unresolved` do lado do plano.
 
-- [ ] **Step 2: Golden do domínio, no molde de `test_fixtures_golden_bench.py`**
+- [x] **Step 2: Golden do domínio, no molde de `test_fixtures_golden_bench.py`**
 
-- [ ] **Step 3: Regenere, leia o diff, rode**
+`tests/test_fixtures_golden_funcval.py`: os seis testes de igualdade por
+diretório (`TestGolden`, 54 casos) mais `TestAdversarial` com 18 asserções de
+domínio — uma por afirmação de nome de fixture, mais a cobertura dos quatro
+kinds e o limite dos proxies declarado na saída de **toda** comparação.
 
-Nesta task `findings.json` sai vazio — as regras nascem na Task 6.
+`_derive` espelha `regen_funcval` passo a passo, inclusive a guarda de **um**
+plano por fixture de comparação: um resultado descreve **um** alvo, e escolher
+entre planos ali seria adivinhar.
+
+- [x] **Step 3: Regenere, leia o diff, rode**
+
+Nesta task `findings.json` sai vazio — as regras nascem na Task 6. **Os nove
+saíram vazios**, e não por construção: `judge` roda o catálogo inteiro sobre os
+facts derivados e nenhuma regra do repositório fala `funcval.*` hoje.
+
+Os dois vermelhos desta task fecharam:
+`test_every_kind_of_every_extractor_appears_in_some_golden[funcval]` e
+`test_every_unresolved_kind_is_exercised`. `TestEveryToolIsReachable::test_no_tool_is_orphan`
+segue vermelho, é da Task 7, e não foi tocado.
+
+### Desvios medidos na implementação — texto para a §11 do spec
+
+**D-4c-19 — `origin` não é observável no golden de comparação, e o eixo
+declarado prova-se num golden de plano.** A Task 5 pedia que
+`duplicate_key_appeared` mostrasse `origin: "declared"` e `derived_from: []` no
+próprio golden. Medido: `funcval.check_delta` carrega `target`, `check`, `axis`,
+`type`, `planned` e `comparison` — **não** carrega `origin`, porque procedência é
+do plano e não da comparação. E a D-4a-18/`regen_funcval` já decidiu que o golden
+de uma fixture de comparação guarda só o que a comparação produziu, pela mesma
+razão de `regen_bench` e `regen_callgraph`: se o plano entrasse ali, uma mudança
+em `build_plan` quebraria os **sete** goldens de comparação pelo mesmo motivo, e
+qual dos dois contratos regrediu ficaria escondido. As duas saídas consideradas —
+embutir o plano no golden de comparação, ou aceitar que a procedência não
+apareça — foram rejeitadas: a primeira desfaz a disciplina, a segunda deixa
+declarado e derivado com a mesma cara. Decisão: uma **nona** fixture,
+`plan_com_chave_declarada`, cujo golden põe os dois `origin` lado a lado — o
+declarado com `derived_from: []`, os quatro derivados com o `fact_id`. E
+`duplicate_key_appeared` não fica sem guarda: um teste adversarial lê o plano
+**derivado** dela e falha se a chave deixar de ser declarada.
+
+**D-4c-20 — duplicata de chave sem mudança de contagem exige colisão de valor,
+não linha nova.** A história óbvia para `duplicate_key_appeared` — um join que
+passou a duplicar — move a contagem junto, e a fixture dispararia `SF-FVAL-001` e
+`SF-FVAL-003` ao mesmo tempo; a prova da 003 nunca ficaria isolada, e o
+`expects_rules` da Task 6 teria que carregar as duas sem que ninguém soubesse
+qual das duas a fixture existe para provar. A fixture usa a outra história, que é
+igualmente real e isola o eixo: a mudança passou a **normalizar** `pedido_id`
+(trim e caixa alta), e três valores antes distintos colidiram. As mesmas linhas
+continuam lá — `count` parado, agregados parados, schema parado — e o que deixou
+de ser único foram os **valores** da chave. `pedido_id` é `string` no dump
+justamente para que a normalização não mexa em agregado nenhum.
+
+**D-4c-21 — o estado "veio com zero" só é honesto num check de chave.** A
+`partial_coverage` precisa dos três estados, e o primeiro deles é um check que
+**rodou e deu zero**. Medido contra a semântica de SQL: `sum` de coluna
+inteiramente nula devolve **NULL**, não `0`, então um `agg:sum:*` com valor zero
+seria um número que o operador não teria como medir; e `count` zero seria tabela
+vazia, que muda o caso todo. `key:<col>` é o único check do vocabulário cujo zero
+é o resultado normal — "rodei e não achei duplicata nenhuma" —, e é exatamente o
+exemplo que o contrato mínimo da Task 1 Step 3 usa. Consequência: a fixture
+declara `--key pedido_id`, e o eixo de chaves entra nela sem que ela deixe de ser
+a fixture de cobertura.
+
+**D-4c-22 — nenhum resultado do corpus carrega `plan_ref`, e o campo aparece
+vazio em todo golden.** `plan_ref` é o `Fact.id` do `funcval.plan`, e ele é sha1
+de (kind, subject, measures) — depende do corpus. Escrevê-lo à mão nos
+`before.json`/`after.json` faria o golden depender de um id que muda quando o
+`input/` muda, e a fixture passaria a quebrar por uma razão que não é a dela;
+mais grave, um `plan_ref` desatualizado é **exatamente** o defeito que
+`_reject_foreign_plan_ref` (D-4c-16) existe para pegar, e ele mora no adaptador,
+que este corpus não exercita. Então os resultados trazem `target` e `checks`, e
+`side` onde ele diz algo. Consequência a registrar para quem lê:
+`funcval.analyzed.attrs.plan_ref` sai `""` nos sete goldens de comparação, e isso
+não é campo morto — é campo que este corpus não alimenta. O caso de `plan_ref`
+conflitante entre os lados está coberto por teste unitário em
+`tests/test_facts_funcval.py`, não por fixture.
 
 ---
 
