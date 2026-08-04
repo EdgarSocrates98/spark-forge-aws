@@ -13,7 +13,7 @@ skills:
   - optimize-iceberg-table
   - benchmark-pyspark-job
   - review-pyspark-pr
-rule_areas: [SF-PY, SF-UI, SF-PLAN]
+rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -42,6 +42,19 @@ Coordene as Skills especializadas, reúna evidências e identifique o gargalo do
 invente ganhos: todo número na saída cita `fact_id` e passa por `sparkforge_validate_output`
 antes de ser apresentado. Preserve correção funcional. Exija benchmark, riscos e rollback. Ao
 alterar código, execute os testes disponíveis e apresente diff e plano de validação.
+
+## Ganho quantificado é medição, não estimativa
+
+`SF-BENCH` é a área que julga a **comparação**, não o job. Antes de escrever qualquer
+percentual de melhora, compare os dois runs com `sparkforge_benchmark` — ele lê os facts de
+event log de cada lado e emite `bench.run_delta` — e cite o `fact_id` desse fato no
+`benchmark_ref` do achado. `sparkforge_validate_output` rejeita `expected_effect` quantificado
+cujo `benchmark_ref` não tenha a forma de um `fact_id`.
+
+Leia `SF-BENCH-001` (volumes de entrada divergentes) e `SF-BENCH-004` (stages que não casaram)
+**antes** de acreditar nos totais: as duas afirmam que a medição não sustenta conclusão sobre a
+mudança, e nenhuma delas cala as outras. E `total_task_ms` é tempo de task somado — trabalho,
+não relógio. A skill `benchmark-pyspark-job` tem o procedimento completo.
 
 ## Como você trabalha
 
