@@ -13,7 +13,7 @@ A base deve ser atualizada periodicamente com documentação oficial:
 - Superfície pública de PyDeequ e Great Expectations, e o artigo do Deequ que define o
   que uma suíte custa em passadas sobre o dado.
 - Claude Code Skills e subagents.
-- Devin Skills.
+- Devin Skills, subagents, perfis customizados e MCP.
 - GitHub Copilot custom instructions, skills, agents e prompt files.
 
 As Skills não devem tratar esta lista como substituta da documentação do runtime real.
@@ -34,6 +34,19 @@ relatório não diz "a doc mudou assim", diz "a doc mudou, e as regras X e Y dep
 
 Fonte com versão no path (`docs/3.5.6/`, `apache-iceberg-1.0.0`) não é buscada: o conteúdo
 é imutável e vigiá-la só produziria ruído. Hoje são 37 fontes, 33 móveis e 4 fixas.
+
+**O que a watchlist não alcança, dito em voz alta.** Ela deriva das regras, então
+conhecimento **sem regra que o cite** nunca entra — e é o caso de
+[`knowledge/devin/agents-and-subagents.md`](knowledge/devin/agents-and-subagents.md), cujas
+**24 URLs** de `docs.devin.ai` (coletadas em 2026-08-04) envelhecem sem alarme. É a
+combinação mais cara possível, porque a própria fonte declara aquela superfície
+**experimental** — *"format, behavior, and configuration options may change"*. A saída
+barata seria escrever uma regra de catálogo só para as URLs entrarem, e ela é errada:
+fabricaria diagnóstico sobre Spark que não existe, num catálogo que é dado julgado. A
+saída certa é ampliar a watchlist para varrer também os rodapés `Fontes` de
+`knowledge/**.md`, e é código que ninguém escreveu — está registrada como **dívida**, com
+o custo medido, em [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md). Até lá, toda
+fase que tocar aquele mecanismo deve **reconferir a doc na data da entrega** (V-DV-6).
 
 O que ele guarda é hash e procedência, nunca o texto das docs — copiar documentação de
 terceiro para o repositório é decisão de licenciamento que ninguém tomou, e o diff de uma

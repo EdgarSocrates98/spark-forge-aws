@@ -104,6 +104,21 @@ DEVIN_DROPPED_KEYS = frozenset({"tools"})
 # Escrever `model:` seria fingir controle sobre o que o harness decide. Quem
 # vier depois vai querer "completar" o frontmatter: nao complete sem medir.
 
+# Nomes que o Devin ja usa para os seus dois perfis embutidos. A tabela de
+# frontmatter da fonte diz, sobre `name`: "Identifier for the profile (must not
+# conflict with built-in profiles)", e a tabela de perfis nomeia os dois --
+# knowledge/devin/agents-and-subagents.md, secao 1 (retrieved 2026-08-04).
+#
+# A fonte PROIBE a colisao e NAO diz o que acontece quando ela ocorre. Pular com
+# aviso, sobrescrever o built-in e recusar a sessao sao todos plausiveis, e
+# nenhum esta escrito. Por isso o gate recusa o nome em vez de supor qual vale:
+# supor comportamento nao documentado e a mesma familia de chute que o V-DV-8
+# recusou em `tools:`, agora num campo de IDENTIDADE -- e um perfil que o Devin
+# ignore em silencio e pior que um que ele recuse, porque o metodo some sem
+# alarme e o built-in `subagent_general` (acesso total, nenhum `## Nao faz`)
+# atende no lugar dele.
+DEVIN_BUILTIN_PROFILE_NAMES = frozenset({"subagent_explore", "subagent_general"})
+
 _FRONTMATTER_FENCE = "---"
 _TOP_LEVEL_KEY = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*)\s*:")
 
@@ -313,6 +328,56 @@ def _frontmatter_list(front: list[str], key: str) -> list[str]:
             else:
                 values.append(inline.strip("'\""))
     return values
+
+
+def _frontmatter_scalar(front: list[str], key: str) -> str | None:
+    """Le um escalar de topo do frontmatter, ou `None` se ele nao estiver la.
+
+    Irmao de `_frontmatter_list`, e pela mesma razao: nao ha round-trip de YAML
+    em caminho nenhum deste arquivo, entao a leitura tambem e por linha.
+    """
+    for line in front:
+        content = line.rstrip("\r\n")
+        if content[:1] in (" ", "\t"):
+            continue
+        match = _TOP_LEVEL_KEY.match(content)
+        if match and match.group(1) == key:
+            return content.split(":", 1)[1].strip().strip("'\"") or None
+    return None
+
+
+def profile_name_problem(path: Path) -> str | None:
+    """O identificador que `path` publica colide com um built-in do Devin?
+
+    Confere as **duas** fontes de identidade, porque elas podem discordar: o nome
+    do arquivo, que a fonte declara ser o default do campo, e o `name:` do
+    frontmatter, que vence quando existe. Um gate que so olhasse o caminho
+    deixaria passar `revisor.md` com `name: subagent_general`.
+    """
+    parsed = _split_frontmatter(path.read_bytes().decode("utf-8"))
+    declared = _frontmatter_scalar(parsed[1], "name") if parsed else None
+    for identifier in (path.stem, declared):
+        if identifier in DEVIN_BUILTIN_PROFILE_NAMES:
+            return (
+                f"NOME RESERVADO {path}: `{identifier}` e perfil embutido do Devin "
+                "(knowledge/devin/agents-and-subagents.md, secao 1). A fonte proibe "
+                "a colisao e nao diz o que acontece nela -- escolha outro nome"
+            )
+    return None
+
+
+def check_profile_names() -> list[str]:
+    """Confere as FONTES, nunca os espelhos.
+
+    O espelho e derivado: um nome reservado que chegasse ao `.agents/agents/`
+    teria vindo de `agents/`, e acusar nos dois lugares so multiplicaria a mesma
+    linha por tres.
+    """
+    return [
+        problem
+        for path in iter_agent_files() + iter_executor_files()
+        if (problem := profile_name_problem(path)) is not None
+    ]
 
 
 def coordinators_by_skill() -> dict[str, tuple[str, ...]]:
@@ -661,7 +726,9 @@ def check_executors() -> list[str]:
 
 
 def check() -> int:
-    problems = check_skills() + check_agents() + check_executors()
+    problems = (
+        check_skills() + check_agents() + check_executors() + check_profile_names()
+    )
 
     if problems:
         print(

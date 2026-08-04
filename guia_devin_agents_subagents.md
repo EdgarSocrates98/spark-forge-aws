@@ -1,3 +1,32 @@
+> ## ⚠️ ESTE DOCUMENTO É HIPÓTESE, NÃO FONTE — SEIS AFIRMAÇÕES DELE CAÍRAM
+>
+> Ele é a doc trazida pelo usuário que **motivou** a pesquisa de fontes do Devin, e
+> está preservado palavra por palavra pela convenção deste repositório: afirmação
+> registrada que a fonte derrubou fica como está, com o desvio ao lado. **Não o use
+> como referência.**
+>
+> A fonte é [`knowledge/devin/agents-and-subagents.md`](knowledge/devin/agents-and-subagents.md),
+> com URL e `retrieved: 2026-08-04` por afirmação e onze vetos `V-DV-*`. Cada
+> afirmação daqui foi conferida contra `docs.devin.ai`; **seis não se sustentaram**,
+> e nenhuma delas cairia por inspeção — todas são plausíveis lidas de longe. Os
+> pontos contraditos estão marcados **no corpo abaixo**, seção por seção, porque
+> quem chega aqui por `grep` não passa por este cabeçalho.
+>
+> | Onde | O que este arquivo diz | O que a fonte diz |
+> |---|---|---|
+> | §2, §4.1, §5.1, §6 | `swe-1.7`, `glm-5.2`, `kimi-k2.7` (ponto) | O identificador usa **hífen**; o ponto é label de exibição, e os literais vêm da tabela de **preços do Desktop** — V-DV-2, V-DV-3 |
+> | §4.1 | `subagent_default_model`, `alternative_models` | **Não existem** como chave de config. O equivalente é setting de **organização** — V-DV-4 |
+> | §4.1 | `subagents_enabled` dentro de `"agent"` | Chave **de topo** e *"(user only)"*: um repositório **não** controla se subagentes rodam — V-DV-5 |
+> | §4.1 | `permissions.rules` com `{action, pattern, allow}` | Formato documentado é `permissions` com listas `allow`/`deny`/`ask` de padrões como `Read(src/**)` |
+> | §5.1 | default "resolve para `swe-1.6` ou `swe-1.7-lightning` conforme o plano" | Resolve por **roteador no spawn**, para SWE-1.6; `swe-1-7-lightning` não aparece como default de subagente |
+> | §6 | "crie perfis na pasta `agents/`" | As abas de descoberta listam `.devin/agents/` e `.agents/agents/`. **Não presuma** que o `agents/` da raiz seja varrido — V-DV-7 |
+> | §8 | `!ultra`, `!fast`, `!swe` | Não existem. `!` é prefixo de **bash mode** no Devin CLI; `/fast` existe, com barra — V-DV-11 |
+>
+> O que **sobreviveu** e virou desenho está em
+> [`GUIA_DE_USO.md`](GUIA_DE_USO.md) §3 (uso) e em
+> [`docs/superpowers/specs/2026-08-04-sparkforge-devin-subagentes-design.md`](docs/superpowers/specs/2026-08-04-sparkforge-devin-subagentes-design.md)
+> (decisões).
+
 # Guia Mestre: Arquitetura, Configuração e Operação de Agents e Subagents no Devin
 
 Este documento fornece uma análise exaustiva sobre o funcionamento, a configuração e a utilização estratégica de **agentes** e **subagentes** no ecossistema Devin, abrangendo tanto a interface **Desktop (IDE)** quanto a **CLI (Interface de Linha de Comando)**.
@@ -16,6 +45,12 @@ No ecossistema Devin, a distinção entre um "Agente" e um "Subagente" é fundam
 ## 2. Modelos de Agentes Disponíveis
 
 O Devin oferece uma gama de modelos proprietários e de terceiros, cada um otimizado para diferentes cenários de custo, velocidade e inteligência.
+
+> **CONTRADITO (V-DV-2, V-DV-3).** As grafias com ponto abaixo — `SWE-1.7`, `GLM-5.2`,
+> `Kimi K2.7` — são **label de exibição**, e vêm da tabela de **preços do Devin Desktop**.
+> O identificador usa **hífen** (`swe-1-7`, `glm-5-2`, `kimi-k2-7`), e nenhuma página do
+> CLI os documenta como valor aceito de `--model` ou de frontmatter: os literais que a doc
+> do CLI garante são os *short names* `opus`, `sonnet`, `swe`, `codex`, `gemini`, `gpt`.
 
 ### 2.1. Modelos Proprietários (SWE Series)
 | Modelo | Status | Destaques e Capacidades |
@@ -48,6 +83,16 @@ Para alterar o modelo do agente ou subagente:
 A CLI permite definir modelos específicos via arquivos JSON (`~/.config/devin/config.json` ou `.devin/config.json`).
 
 ### 4.1. Exemplo de Configuração com SWE-1.7 e GLM-5.2
+
+> **CONTRADITO (V-DV-4, V-DV-5).** O bloco JSON abaixo é **inteiramente inventado**, salvo
+> `agent.model` e `subagents_enabled` — e este no aninhamento errado. `subagent_default_model`
+> e `alternative_models` **não existem** como chave de config (busca literal em cinco páginas:
+> zero ocorrências); o equivalente é a setting de **organização** *"Default subagent model"*,
+> inacessível a arquivo de repositório. `subagents_enabled` é chave **de topo** e marcada
+> *"(user only)"*: **um repositório não controla se subagentes rodam.** O objeto `agent`
+> documentado tem exatamente duas chaves, `model` e `show_history_on_continue`. E o formato
+> de `permissions` documentado usa listas `allow`/`deny`/`ask` de padrões como `Read(src/**)`,
+> não `rules` com `{action, pattern, allow}`.
 ```json
 {
   "agent": {
@@ -69,6 +114,12 @@ A CLI permite definir modelos específicos via arquivos JSON (`~/.config/devin/c
 ## 5. Subagentes: Operação e Controle
 
 ### 5.1. Qual modelo um subagente usa?
+
+> **CONTRADITO.** A fonte é mais estreita do que o texto abaixo: o modelo resolve por
+> **roteador no momento do spawn**, para SWE-1.6, e `swe-1-7-lightning` **não aparece**
+> como default de subagente em página nenhuma. "Depende do plano" não está escrito em
+> lugar nenhum. Um admin da organização sobrescreve o default, inclusive com a opção
+> *None*, que desliga o despacho por completo.
 O modelo de um subagente é resolvido por um roteador no momento da criação:
 *   **Default:** Geralmente resolve para uma variante do `swe-1.6` ou `swe-1.7-lightning` dependendo do plano.
 *   **Custom:** Você pode forçar um modelo específico no arquivo de definição do subagente (`agents/<name>.md`):
@@ -86,6 +137,14 @@ O modelo de um subagente é resolvido por um roteador no momento da criação:
 ---
 
 ## 6. Subagentes Customizados (Custom Subagents)
+
+> **CONTRADITO (V-DV-7), e o `max-nesting` do exemplo tem ressalva.** As abas de descoberta
+> listam `.devin/agents/` e `.agents/agents/` (mais os globais); que o `agents/` da **raiz**
+> do repositório seja varrido é frase ambígua do changelog, e **não** deve ser presumida.
+> `max-nesting` existe e é real — mas a fonte declara custom subagents **experimentais**
+> ("format, behavior, and configuration options may change"), e o campo só entrou em
+> 2026-05-26. Este repositório **não** o declara em perfil nenhum: ver o limite declarado
+> correspondente no `docs/superpowers/STATUS.md`.
 
 Crie perfis especializados na pasta `agents/`:
 *   **Exemplo (`agents/architect.md`):**
@@ -110,6 +169,11 @@ Crie perfis especializados na pasta `agents/`:
 ---
 
 ## 8. Atalhos de Controle (Desktop/CLI)
+
+> **CONTRADITO (V-DV-11).** `!ultra`, `!fast` e `!swe` **não existem**. No Devin CLI `!` é
+> o prefixo de **bash mode**: um `!fast` digitado com input vazio entra em bash mode e
+> tenta rodar `fast` como comando de shell. `/fast` existe, com **barra**. `Ctrl+B` para
+> mandar ao background está **confirmado**.
 | Ação | Comando/Atalho |
 | :--- | :--- |
 | **Alternar Agente** | Menu inferior ou `!ultra`, `!fast`, `!swe` |
