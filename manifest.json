@@ -48,7 +48,7 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 66,
+    "rule_count": 71,
     "retrieved": "2026-08-01"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",

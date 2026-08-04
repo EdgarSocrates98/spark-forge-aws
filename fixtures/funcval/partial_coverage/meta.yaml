@@ -28,4 +28,5 @@ expects_kinds:
   - funcval.analyzed
   - funcval.check_delta
   - funcval.unresolved
-expects_rules: []
+expects_rules:
+  - SF-FVAL-005

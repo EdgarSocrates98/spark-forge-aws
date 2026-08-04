@@ -30,16 +30,16 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 66 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 71 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
-As 66 regras se distribuem em 12 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+As 71 regras se distribuem em 13 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## Camada determinística (Fase 0)
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
-de 66 regras versionado em YAML, e um ciclo de vida de case
+de 71 regras versionado em YAML, e um ciclo de vida de case
 (`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
 
 ### Sequência mínima
@@ -247,25 +247,33 @@ que guardam a fase pedida:
 sparkforge case open --repo . --case-id perf-2026-08 \
   --now 2026-08-04T09:00:00Z --strict-gates
 
-# `report` é guardada pelos DOIS gates com produtor, então a transição precisa
-# das duas evidências: o benchmark destrava `baseline_captured` e o call graph
-# destrava `flows_mapped`. Passar só uma bloqueia — com a mensagem nomeando
-# qual fact falta e o comando que o produz.
+# `report` é guardada pelos TRÊS gates com produtor, então a transição precisa
+# das três evidências: o benchmark destrava `baseline_captured`, o call graph
+# destrava `flows_mapped` e o plano de validação destrava
+# `functional_validation_defined`. Faltando uma, bloqueia — com a mensagem
+# nomeando qual fact falta e o comando que o produz.
 sparkforge analyze call-graph --facts .sparkforge/facts.json \
                               --out .sparkforge/facts_callgraph.json
+sparkforge funcval plan --facts .sparkforge/facts.json \
+                        --facts .sparkforge/facts-catalog.json \
+                        --out .sparkforge/facts_funcval_plan.json
 sparkforge case update --repo . --phase report \
   --facts .sparkforge/bench.json \
-  --facts .sparkforge/facts_callgraph.json
+  --facts .sparkforge/facts_callgraph.json \
+  --facts .sparkforge/facts_funcval_plan.json
 ```
 
 O que destrava é **evidência**, nunca a flag: `case update --gate X --gate-value
 true` continua gravando o booleano e não libera nada. Quem produz a chave de cada
 gate é dado, no bloco `gates` de `rules/catalog/routing.yaml`, com o comando exato
 em `produced_by`. Só gate **com** produtor endurece — hoje `baseline_captured`
-(`bench.run_delta`, da Fase 4a) e `flows_mapped`
-(`callgraph.reachable_spark_work`). Os outros dois continuam advisory, porque
-endurecer gate sem produtor é o impasse que a Fase 0 recusou conscientemente:
-gate rígido vira beco sem saída quando o dado simplesmente não existe.
+(`bench.run_delta`, da Fase 4a), `flows_mapped`
+(`callgraph.reachable_spark_work`) e `functional_validation_defined`
+(`funcval.plan`, da Fase 4c). `dominant_bottleneck_identified` continua advisory,
+porque endurecer gate sem produtor é o impasse que a Fase 0 recusou
+conscientemente: gate rígido vira beco sem saída quando o dado simplesmente não
+existe — e dominância é ordenação entre candidatos, que nenhum fact do
+vocabulário afirma.
 
 Quando o dado genuinamente não existe — job descontinuado, ambiente que sumiu —,
 passar por cima custa uma frase, e a frase fica gravada no case e aparece no
