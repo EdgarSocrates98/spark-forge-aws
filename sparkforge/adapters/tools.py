@@ -1146,6 +1146,17 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "comportamento e o de sempre (gate advisory)."
                     ),
                 },
+                "reopen": {
+                    "type": "boolean",
+                    "description": (
+                        "Recomeca do zero por cima de um case que ja existe. "
+                        "Omitido, abrir sobre um case existente e RECUSADO: "
+                        "sobrescrever apagaria fase, rigor e overrides "
+                        "gravados. O `strict_gates` do case atual e herdado -- "
+                        "`strict_gates` sobe o rigor, e nada o baixa por "
+                        "omissao."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
@@ -2196,6 +2207,7 @@ def _h_case_open(args: dict[str, Any]) -> dict[str, Any]:
         athena=args.get("athena"),
         facts_path=args.get("facts_path"),
         strict_gates=bool(args.get("strict_gates", False)),
+        reopen=bool(args.get("reopen", False)),
     )
 
 

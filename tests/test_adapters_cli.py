@@ -449,6 +449,120 @@ class TestStrictGatesNaCLI:
         assert "corpus sem trabalho Spark alcancavel" in text
 
 
+class TestCaseOpenNaoApagaRigorEmSilencio:
+    """D-3: quem retoma herda o rigor de quem abriu -- inclusive quem retoma
+    digitando `case open` de novo.
+
+    Medido antes da correcao, sobre um case estrito com um override gravado:
+    `case open --repo . --case-id c1 --now ...` sem flag nenhuma sobrescrevia o
+    arquivo com `strict_gates: false`, `gate_overrides: []` e `phase: intake`, e
+    a transicao seguinte -- que estava bloqueada -- passava com rc=0. Uma
+    invocacao sem a flag apagava o rigor, que e exatamente a familia de defeito
+    que o D-3 recusou ao tirar a escolha da invocacao.
+
+    A correcao preserva o caminho de reabrir do zero, atras de `--reopen`: ele
+    existe, tem nome, e nao acontece por omissao.
+    """
+
+    NOW = "2026-08-04T09:00:00Z"
+
+    def _open(self, repo, capsys, *extra):
+        return run(
+            ["case", "open", "--repo", str(repo), "--case-id", "c1",
+             "--now", self.NOW, *extra],
+            capsys,
+        )
+
+    def _estrito_com_override(self, repo, capsys):
+        self._open(repo, capsys, "--strict-gates")
+        run(["case", "update", "--repo", str(repo),
+             "--override-gate", "baseline_captured",
+             "--reason", "job descontinuado", "--now", self.NOW], capsys)
+
+    def test_abrir_sobre_um_case_existente_e_recusado(self, repo, capsys):
+        self._estrito_com_override(repo, capsys)
+        assert main(["case", "open", "--repo", str(repo), "--case-id", "c1",
+                     "--now", self.NOW]) == 2
+
+    def test_a_recusa_nomeia_o_que_seria_perdido_e_a_saida(self, repo, capsys):
+        self._estrito_com_override(repo, capsys)
+        main(["case", "open", "--repo", str(repo), "--case-id", "c1",
+              "--now", self.NOW])
+        err = capsys.readouterr().err
+        assert "strict_gates" in err
+        assert "1 override" in err
+        assert "--reopen" in err
+
+    def test_a_recusa_nao_toca_no_arquivo(self, repo, capsys):
+        self._estrito_com_override(repo, capsys)
+        antes = (repo / ".sparkforge" / "case.yaml").read_text(encoding="utf-8")
+        main(["case", "open", "--repo", str(repo), "--case-id", "c1",
+              "--now", self.NOW])
+        assert (repo / ".sparkforge" / "case.yaml").read_text(encoding="utf-8") == antes
+
+    def test_reopen_recria_o_case_do_zero(self, repo, capsys):
+        """O caminho legitimo continua existindo -- com nome."""
+        self._estrito_com_override(repo, capsys)
+        run(["case", "update", "--repo", str(repo), "--phase", "diagnosis"], capsys)
+        code, output = self._open(repo, capsys, "--reopen")
+        assert code == 0
+        case = json.loads(output)
+        assert case["phase"] == "intake"
+        assert case["gate_overrides"] == []
+
+    def test_reopen_herda_o_rigor_de_quem_abriu(self, repo, capsys):
+        """Rigor sobe, nunca desce dentro do mesmo arquivo de case: `--reopen`
+        sem `--strict-gates` reabre a investigacao, nao a garantia."""
+        self._estrito_com_override(repo, capsys)
+        _, output = self._open(repo, capsys, "--reopen")
+        assert json.loads(output)["strict_gates"] is True
+        assert main(["case", "update", "--repo", str(repo), "--phase", "report"]) == 2
+
+    def test_reopen_pode_subir_o_rigor_de_um_case_frouxo(self, repo, capsys):
+        self._open(repo, capsys)
+        _, output = self._open(repo, capsys, "--reopen", "--strict-gates")
+        assert json.loads(output)["strict_gates"] is True
+
+    def test_reopen_de_case_frouxo_continua_frouxo(self, repo, capsys):
+        self._open(repo, capsys)
+        _, output = self._open(repo, capsys, "--reopen")
+        assert json.loads(output)["strict_gates"] is False
+
+    def test_o_primeiro_open_nao_precisa_de_reopen(self, repo, capsys):
+        code, output = self._open(repo, capsys, "--strict-gates")
+        assert code == 0
+        assert json.loads(output)["strict_gates"] is True
+
+    def test_case_ilegivel_tambem_exige_reopen(self, repo, capsys):
+        """Arquivo que `load_case` recusa ainda e um case ocupando o lugar:
+        sobrescreve-lo em silencio apagaria o estado que alguem precisa ver
+        antes de decidir."""
+        alvo = repo / ".sparkforge"
+        alvo.mkdir(parents=True, exist_ok=True)
+        (alvo / "case.yaml").write_text("schema_version: 99\n", encoding="utf-8")
+        assert main(["case", "open", "--repo", str(repo), "--case-id", "c1",
+                     "--now", self.NOW]) == 2
+        assert self._open(repo, capsys, "--reopen")[0] == 0
+
+    def test_a_tool_mcp_recusa_pelo_mesmo_caminho(self, repo, capsys):
+        """Os tres adaptadores chegam ao mesmo lugar -- senao a garantia seria
+        so da CLI, e o MCP viraria a porta dos fundos."""
+        from sparkforge.adapters.tools import call_tool
+
+        self._estrito_com_override(repo, capsys)
+        recusa = call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": self.NOW},
+        )
+        assert recusa["exit_code"] == 2
+        assert "reopen" in recusa["error"]
+        reaberto = call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": self.NOW, "reopen": True},
+        )
+        assert reaberto["strict_gates"] is True
+
+
 class TestErrorsAreActionable:
     def test_missing_case_names_the_command_that_fixes_it(self, repo, capsys):
         assert main(["case", "get", "--repo", str(repo)]) == 2
