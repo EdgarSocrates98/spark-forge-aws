@@ -454,7 +454,7 @@ correto, em vez de escrever num lugar que você não estava olhando.
 
 ### Manutenção das cópias (contribuidores)
 
-A fonte da verdade das skills é `skills/`, e a dos perfis é `agents/`. `.claude/skills/` e `.claude/agents/` são espelhos byte-a-byte; `.github/agents/` também. `.agents/` é **renderizado** por plataforma: as skills despacháveis ganham `subagent: true` (e `agent:` quando há coordenador único), e os perfis perdem `tools:`. Após editar uma skill em `skills/` ou um perfil em `agents/`, regenere os espelhos:
+A fonte da verdade das skills é `skills/`, e a dos perfis é `agents/`. `.claude/skills/` e `.claude/agents/` são espelhos byte-a-byte; `.github/agents/` também. `.agents/` é **renderizado** por plataforma: as skills despacháveis ganham `subagent: true` (e `agent:` quando há coordenador único **e** ele não é o perfil que orquestra — hoje duas das doze), e os perfis perdem `tools:`. Após editar uma skill em `skills/` ou um perfil em `agents/`, regenere os espelhos:
 
 ```bash
 python scripts/sync_skills.py          # regenera os espelhos
