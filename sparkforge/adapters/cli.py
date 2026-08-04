@@ -458,9 +458,11 @@ def build_parser() -> argparse.ArgumentParser:
     playbook_p = sub.add_parser(
         "playbook",
         help=(
-            "Decomposicao de um coordenador em passos sequenciais -- o espelho de "
-            "orquestracao para plataforma sem despacho de subagente (Devin, Codex, "
-            "Copilot). Le agents/, nunca repete a lista de executores."
+            "Decomposicao de um coordenador em passos sequenciais -- o PISO de "
+            "orquestracao das cinco plataformas: unico caminho em Codex e Copilot CI, "
+            "e o caminho em Claude Code, Devin CLI e Devin Local agent quando o "
+            "despacho de subagente esta desligado. Le agents/, nunca repete a lista "
+            "de executores."
         ),
     )
     playbook_p.add_argument("coordinator")
