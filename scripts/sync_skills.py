@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import re
 import shutil
 from pathlib import Path
 
@@ -40,6 +41,120 @@ EXECUTOR_MIRRORS = (
     ROOT / ".github" / "agents" / "executors",
 )
 STALE_AGENTS = (ROOT / ".github" / "agents" / "spark-performance-engineer.agent.md",)
+
+# --------------------------------------------------------------------------
+# Renderizacao por plataforma
+# --------------------------------------------------------------------------
+# Fundamento medido: knowledge/devin/agents-and-subagents.md (retrieved
+# 2026-08-04). Desenho: D-1, D-2 e D-3 de
+# docs/superpowers/specs/2026-08-04-sparkforge-devin-subagentes-design.md.
+
+# `claude` e `github` recebem o arquivo INALTERADO. Nao ha round-trip de YAML
+# em caminho nenhum: parsear e re-serializar reordenaria as chaves e produziria
+# diff onde nao houve mudanca, e o gate viraria ruido.
+PASSTHROUGH_PLATFORMS = frozenset({"claude", "github"})
+PLATFORMS = PASSTHROUGH_PLATFORMS | {"devin"}
+
+# Campos que o espelho do Devin NAO leva.
+#
+# `tools:` -- o Devin aceita o campo ("Claude Code agent files use `tools`
+# instead of `allowed-tools`[...] Both formats are supported automatically"),
+# mas o MAPEAMENTO DE VALORES nao esta documentado em lugar nenhum: `Bash` ->
+# `exec`? `Write` -> `write`? Os nomes de tool do Devin sao `read`, `edit`,
+# `grep`, `glob`, `exec` (cli/reference/permissions.md). Chute em campo de
+# PERMISSAO concede ou nega errado, e nos dois sentidos o erro e caro. Omitido,
+# o subagente herda o que o harness da -- que e o comportamento que a propria
+# documentacao descreve como default ("all tools"). Veto V-DV-8.
+DEVIN_DROPPED_KEYS = frozenset({"tools"})
+
+# NENHUM caminho aqui ACRESCENTA `model:`, e isso e deliberado (D-3):
+#   1. o default do subagente "is not a fixed model name -- it resolves through
+#      a router at spawn time";
+#   2. o admin da organizacao sobrescreve pela setting "Default subagent
+#      model", inclusive com a opcao *None*, que desliga o despacho por
+#      completo;
+#   3. o identificador literal e `swe-1-7`, com HIFEN -- a doc interna que
+#      motivou esta fase errava com ponto, e nenhuma pagina do CLI documenta
+#      esse literal como valor aceito de frontmatter (vetos V-DV-2 e V-DV-3).
+# Escrever `model:` seria fingir controle sobre o que o harness decide. Quem
+# vier depois vai querer "completar" o frontmatter: nao complete sem medir.
+
+_FRONTMATTER_FENCE = "---"
+_TOP_LEVEL_KEY = re.compile(r"^([A-Za-z_][A-Za-z0-9_.-]*)\s*:")
+
+
+def _split_frontmatter(text: str) -> tuple[list[str], list[str], list[str]] | None:
+    """Fatia o texto em (abertura, corpo do frontmatter, resto).
+
+    Trabalha em linhas com o fim de linha preservado (`keepends=True`): o gate
+    compara byte a byte, entao normalizar CRLF para LF produziria DIVERGENTE em
+    toda regeneracao numa arvore com `autocrlf`.
+
+    Devolve `None` quando nao ha frontmatter delimitado -- ai o arquivo sai
+    inalterado, em vez de o renderizador adivinhar onde o cabecalho termina.
+    """
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].rstrip("\r\n") != _FRONTMATTER_FENCE:
+        return None
+    for index, line in enumerate(lines[1:], start=1):
+        if line.rstrip("\r\n") == _FRONTMATTER_FENCE:
+            return lines[:1], lines[1:index], lines[index:]
+    return None
+
+
+def _drop_frontmatter_keys(front: list[str], keys: frozenset[str]) -> list[str]:
+    """Remove chaves de topo do frontmatter, com as continuacoes delas.
+
+    A continuacao importa porque o campo tem duas formas possiveis:
+
+        tools: Read, Grep, Glob        # inline -- e a forma dos treze perfis hoje
+        tools:                         # bloco
+          - Read
+          - Grep
+
+    Apagar so a linha `tools:` na forma de bloco deixaria `  - Read` orfao e
+    quebraria o YAML do espelho. A remocao para na proxima linha nao indentada,
+    para nao engolir a chave seguinte -- `skills:` vem logo depois e tambem e
+    lista indentada.
+    """
+    kept: list[str] = []
+    dropping = False
+    for line in front:
+        content = line.rstrip("\r\n")
+        if content[:1] in (" ", "\t"):
+            if not dropping:
+                kept.append(line)
+            continue
+        match = _TOP_LEVEL_KEY.match(content)
+        dropping = bool(match) and match.group(1) in keys
+        if not dropping:
+            kept.append(line)
+    return kept
+
+
+def render_agent(text: str, platform: str) -> str:
+    """Devolve o conteudo do perfil no formato que `platform` le.
+
+    `claude` e `github` recebem o texto identico -- o espelho deles nao mudou
+    nesta fase, e um renderizador que mexesse em todos os alvos quebraria o
+    Copilot sem ninguem pedir.
+    """
+    if platform not in PLATFORMS:
+        raise ValueError(
+            f"plataforma desconhecida: {platform!r}; conhecidas: {sorted(PLATFORMS)}"
+        )
+    if platform in PASSTHROUGH_PLATFORMS:
+        return text
+
+    parsed = _split_frontmatter(text)
+    if parsed is None:
+        return text
+    opening, front, rest = parsed
+
+    kept = _drop_frontmatter_keys(front, DEVIN_DROPPED_KEYS)
+    if kept == front:
+        return text
+    return "".join(opening + kept + rest)
 
 
 def iter_skill_files() -> list[Path]:

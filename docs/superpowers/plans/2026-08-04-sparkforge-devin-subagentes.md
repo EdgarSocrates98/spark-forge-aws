@@ -45,7 +45,7 @@ quebraria o Copilot sem ninguém pedir.
 - Modify: `scripts/sync_skills.py`
 - Create: `tests/test_sync_render.py`
 
-- [ ] **Step 1: Escreva o teste que falha**
+- [x] **Step 1: Escreva o teste que falha**
 
 ```python
 # tests/test_sync_render.py
@@ -96,12 +96,15 @@ def test_render_e_idempotente():
     assert render_agent(once, platform="devin") == once
 ```
 
-- [ ] **Step 2: Rode e veja falhar**
+- [x] **Step 2: Rode e veja falhar**
 
 Run: `python -m pytest tests/test_sync_render.py -v`
 Expected: FAIL — `ImportError: cannot import name 'render_agent'`
 
-- [ ] **Step 3: Implemente**
+Medido, literal: `ImportError: cannot import name 'render_agent' from
+'scripts.sync_skills'`, coleta interrompida.
+
+- [x] **Step 3: Implemente**
 
 `render_agent(text, platform)` separa o frontmatter do corpo, aplica a
 transformação da plataforma, e remonta preservando a ordem das chaves que
@@ -115,7 +118,44 @@ de lista), e **nunca** acrescenta `model:`.
 O comentário no código diz por quê, citando a pesquisa — quem vier depois vai
 querer "completar" o frontmatter.
 
-- [ ] **Step 4: Rode e commite**
+- [x] **Step 4: Rode e commite**
+
+`tests/test_sync_render.py` 20 passed. Suíte 3499 passed / 5 skipped (era 3479 /
+5). `ruff check .` limpo. `git diff .agents/ .claude/ .github/` **vazio** — a
+função foi criada e testada, não aplicada; aplicá-la é a Task 2.
+
+**Desvios medidos na Task 1**
+
+- **D-DV-1 — a linha "agents/*.md frontmatter hoje" dos fatos do ambiente vale
+  para oito dos treze.** Medido nos treze: os oito coordenadores têm
+  `name, description, tools, skills, rule_areas, executors`; os cinco
+  executores de `agents/executors/` têm `name, role, function, tools` — sem
+  `skills:`, sem `rule_areas:`, sem `executors:`. A única chave comum aos treze
+  é justamente `tools:`, e nos executores ela é a **última** do frontmatter,
+  colada na cerca `---` de fechamento. Isso é o caso de borda que uma remoção
+  com continuações pode estragar: ela tem que parar na primeira linha não
+  indentada, e a cerca não é indentada. Coberto por
+  `TestPerfisReais::test_devin_so_perde_a_linha_de_tools` sobre os treze reais.
+
+- **D-DV-2 — a forma de bloco de `tools:` não existe no corpus.** Medido: os
+  treze escrevem `tools: Read, Grep, ...` inline; nenhum usa
+  `tools:\n  - Read`. O tratamento de continuação foi implementado assim mesmo
+  e fixado por teste sobre fonte sintética — não porque hoje seja necessário,
+  mas porque um regex ingênuo deixaria `  - Read` órfão no dia em que alguém
+  escrevesse assim, e o frontmatter do espelho deixaria de ser YAML. O teste
+  irmão prova que a remoção **não** engole `skills:`, que vem logo depois e
+  também é lista indentada.
+
+- **D-DV-3 — o Step 1 traz cinco testes; o arquivo entregue tem vinte.** Os
+  cinco literais estão lá, inalterados. Os quinze restantes são o que a medição
+  pediu: os treze perfis reais (passthrough byte a byte, `tools:` some,
+  `model:` nunca aparece, corpo intacto, idempotência), a forma de bloco,
+  `skills:`/`rule_areas:`/`executors:` sobrevivendo, `tools:` no **corpo** não
+  sendo tocado, fim de linha CRLF preservado, e plataforma desconhecida
+  levantando `ValueError`. Este último não estava no plano e é deliberado:
+  passthrough silencioso para nome errado de plataforma publicaria um espelho
+  Devin **com** `tools:` sem ninguém saber — exatamente o modo de falha mudo
+  que a Task 2 depende de não ter.
 
 ---
 
