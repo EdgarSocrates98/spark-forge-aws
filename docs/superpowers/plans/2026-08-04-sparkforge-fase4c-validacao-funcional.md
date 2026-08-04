@@ -420,12 +420,12 @@ eixos de schema e agregados ficam declarados como ausentes.
 
 ---
 
-## Task 3: `funcval compare`
+## Task 3: `funcval compare` — **CONCLUÍDA**
 
 **Files:**
 - Modify: `sparkforge/facts/funcval.py`, `tests/test_facts_funcval.py`
 
-- [ ] **Step 1: O teste que falha**
+- [x] **Step 1: O teste que falha**
 
 ```python
 def _plano(**checks):
@@ -516,7 +516,7 @@ O formato de `plano`, `antes` e `depois` é o contrato que a Task 1 Step 3 fixou
 `target` divergente entre plano e resultado é `funcval.unresolved`, não
 comparação — e isso também merece teste.
 
-- [ ] **Step 2: Rode, implemente, rode**
+- [x] **Step 2: Rode, implemente, rode**
 
 Exata para inteiro, decimal, contagem e schema. Tolerância relativa **só** para
 ponto flutuante, com o limiar vindo do catálogo (não hardcoded no módulo, pelo
@@ -527,13 +527,79 @@ Reuse a disciplina de `benchmark.py`, que a revisão da 4a validou: presença po
 ignora `attrs` e os unresolved colidiriam; e `_round` onde float entrar em
 `measures`, porque ruído de bit entraria no `Fact.id` e o golden dependeria dele.
 
-- [ ] **Step 3: A saída declara o limite**
+- [x] **Step 3: A saída declara o limite**
 
 `funcval.analyzed` carrega, em `attrs`, a declaração de que os quatro são
 **proxies** — contagem, schema, chaves e agregados iguais não provam que o dado é
 o mesmo. §3 do spec, critério 8. Não é comentário no código: é campo na saída.
 
-- [ ] **Step 4: Commite**
+- [x] **Step 4: Commite**
+
+### Desvios medidos na implementação — texto para a §11 do spec
+
+**D-4c-10 — o veredito da comparação relativa não é do módulo; é do catálogo.** O
+Step 2 exige duas coisas que, escritas juntas, não fecham: o comparador decide
+`diverged` (§5 do spec: o `check_delta` diz "se divergiu") **e** o limiar não mora
+em Python. Para ponto flutuante elas se excluem — decidir exige o número, e o
+número é `field-heuristic` (a própria D-4 diz que não há fonte oficial de quantos
+ULP deixam de ser reassociação). Medido no repositório: **nenhum** módulo Python
+lê o catálogo (`grep load_catalog` fora de `rules/`: zero), e o único caminho de
+limiar é `rule["threshold"]` entrando no contexto de `expr` pelo motor. Some-se a
+isso o contrato do próprio dado: `Fact` é "observação determinística ancorada,
+**nunca contém juízo nem limiar**" (`findings/models.py:32`) — um `diverged` de
+float seria um limiar dentro de um Fact. Decisão: **comparação exata continua
+decidindo `diverged` no fact** (que dois valores não sejam idênticos é observação,
+não limiar), e **comparação relativa sai com `measures.relative_delta` e sem
+`diverged`**, com `attrs.diverged_omitted_reason` dizendo por quê — chave que some
+sem explicação é o defeito que este repositório persegue. `SF-FVAL-004` (Task 6)
+compara `measures.relative_delta` contra `threshold.relative_tolerance`,
+exatamente como `SF-BENCH-002` compara `total_task_ms_delta_pct` contra
+`threshold.regression_pct`. Consequência para a sentinela:
+`relative_delta_check_count` conta os deltas cujo veredito o módulo não deu — sem
+ele, `diverged_check_count == 0` seria lido como "nada divergiu" quando significa
+"ninguém aqui decidiu". O teste literal `test_float_dentro_da_tolerancia_nao_diverge`
+foi reescrito nesse contrato: prova que o módulo **não** chama aquilo de
+divergência, nem quando a diferença é gritante.
+
+**D-4c-11 — check que o resultado traz e o plano não pediu é comparado e
+marcado.** A pergunta que o plano não respondia. Ignorar em silêncio perde
+divergência observada; contar como divergência de cobertura acusaria quem mediu a
+mais. A §10 do spec já obrigava a **reportar** o não planejado, e a §5 já listava
+"check no resultado e ausente no plano" como `funcval.unresolved`. Decisão, nos
+dois: sai o `funcval.unresolved` com `reason: "check_not_planned"` (carregando
+lado, estado e se deu para comparar) **e** um `funcval.check_delta` com
+`planned: false` quando ele é comparável. O modo vem do `type` do **resultado** —
+único lugar onde ele é lido, e a regra 5 do contrato mínimo já o previa, porque
+ali não existe plano para ler. Sem `type` declarado, ou com `type` conflitante
+entre os dois lados, o módulo não adivinha: fica só o unresolved. E o não
+planejado **nunca** entra em `reported_check_count`, então não paga a cobertura que
+o plano pediu e não veio — `SF-FVAL-005` continua comparando maçã com maçã.
+
+**D-4c-12 — o delta relativo é simétrico, e o arredondamento dele não é o de
+`benchmark.py`.** `benchmark._delta_pct` é a variação com sinal e **omite** a chave
+com base zero. Aqui a pergunta é outra — "quão longe um do outro", não "para que
+lado andou" —, então o fact carrega `|depois − antes| / max(|antes|, |depois|)`:
+zero contra zero dá 0.0, zero contra qualquer coisa dá 1.0, e o furo da base zero
+não existe. Se existisse, o caso "antes 0, depois 5.0" sairia sem a chave que
+`SF-FVAL-004` lê, e a divergência mais grosseira do eixo seria a única a não
+disparar. O arredondamento também difere: `_round` a três casas decimais nos
+valores e no `abs_delta` (motivo de `benchmark._round` — float cru no `Fact.id`
+faz o golden depender de bit), mas o `relative_delta` vai a três dígitos
+**significativos**, porque a grandeza que interessa vive perto de 1e-12 e três
+casas decimais a zerariam — o fact entregaria 0.0 ao catálogo e toda divergência
+pequena passaria.
+
+**D-4c-13 — três coisas impedem a comparação inteira, e a sentinela sai mesmo
+assim.** Alvo do resultado diferente do alvo do plano (comparar números de tabelas
+diferentes é pior que não comparar), `side` do resultado contradizendo o lado em
+que ele foi passado (comparação invertida sai como melhora), e `plan_ref`
+diferente entre os dois lados (foram medidos contra planos diferentes). Nos três
+sai `funcval.unresolved` e **nenhum** `check_delta`. A sentinela sai sempre — §5
+do spec diz "sempre" — com `blocked_by` nomeando o que bloqueou e
+`reported_check_count: 0` contra o `planned_check_count` do plano: sem ela, "não
+comparei" e "comparei e estava tudo bem" ficariam indistinguíveis, que é o defeito
+que a sentinela existe para fechar. Como efeito colateral desejado, o corpus
+bloqueado dispara `SF-FVAL-005` — cobertura zero **é** cobertura faltante.
 
 ---
 
