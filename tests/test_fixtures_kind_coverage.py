@@ -23,6 +23,7 @@ import pytest
 
 from sparkforge.facts import (
     athena_workgroup,
+    benchmark,
     call_graph,
     catalog_schema,
     consumers,
@@ -44,6 +45,7 @@ FIXTURES = ROOT / "fixtures"
 
 EXTRACTORS = {
     "athena_workgroup": athena_workgroup,
+    "benchmark": benchmark,
     "call_graph": call_graph,
     "catalog_schema": catalog_schema,
     "consumers": consumers,

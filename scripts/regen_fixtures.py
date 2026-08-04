@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from sparkforge.facts.athena_workgroup import extract_athena_workgroup_path  # noqa: E402
+from sparkforge.facts.benchmark import build_benchmark  # noqa: E402
 from sparkforge.facts.call_graph import build_call_graph  # noqa: E402
 from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_path,
@@ -63,6 +64,7 @@ FIXTURES_S3 = ROOT / "fixtures" / "s3"
 FIXTURES_CONSUMERS = ROOT / "fixtures" / "consumers"
 FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
 FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
+FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -327,6 +329,26 @@ def regen_fusion(directory: Path) -> None:
     _write_expected(directory, fused, findings)
 
 
+def regen_bench(directory: Path) -> None:
+    """Fixture de benchmark tem DOIS event logs: `before.jsonl` e `after.jsonl`
+    sob input/, extraidos com `extract_event_log_path` e comparados por
+    `build_benchmark`.
+
+    O golden guarda so os derivados. Os facts de `event_log.py` que serviram de
+    entrada ja tem o corpus `fixtures/eventlog/`; repeti-los aqui faria uma
+    mudanca em `event_log.py` quebrar dois goldens pelo mesmo motivo, escondendo
+    qual dos dois contratos regrediu -- mesma decisao de `regen_callgraph` e
+    `regen_dq`.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    before = extract_event_log_path(input_dir / "before.jsonl", repo_root=input_dir)
+    after = extract_event_log_path(input_dir / "after.jsonl", repo_root=input_dir)
+    facts = build_benchmark(before, after, path_hint=directory.name)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def main() -> int:
     targets = sys.argv[1:]
 
@@ -355,6 +377,7 @@ def main() -> int:
                 (FIXTURES_CONSUMERS / name, regen_consumers),
                 (FIXTURES_TFDIFF / name, regen_tfdiff),
                 (FIXTURES_INFRA_CODE / name, regen_infra_code),
+                (FIXTURES_BENCH / name, regen_bench),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -401,6 +424,15 @@ def main() -> int:
         regen_tfdiff(directory)
     for directory in sorted(p for p in FIXTURES_INFRA_CODE.iterdir() if p.is_dir()):
         regen_infra_code(directory)
+    # D-4a-18: unico corpus com guarda de existencia. `fixtures/bench/` nasce na
+    # Task 4 desta fase, e o laco de corpus completo roda ENTRE a Task 3 e ela --
+    # `iterdir()` num diretorio ausente levanta FileNotFoundError e derrubaria a
+    # regeneracao de TODOS os outros corpus, que ja rodaram acima. A guarda sai
+    # quando o corpus existir? Nao: ela continua barata e correta, e o mesmo
+    # intervalo se repete no proximo dominio novo.
+    if FIXTURES_BENCH.is_dir():
+        for directory in sorted(p for p in FIXTURES_BENCH.iterdir() if p.is_dir()):
+            regen_bench(directory)
     return 0
 
 

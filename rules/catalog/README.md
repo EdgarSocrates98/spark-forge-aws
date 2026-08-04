@@ -39,7 +39,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 
 | Campo | Obrigatório | Nota |
 |---|---|---|
-| `id` | sim | Único. Áreas: `PY` (PySpark), `CFG` (config Spark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `DQ` (validação de dados) |
+| `id` | sim | Único. Áreas: `PY` (PySpark), `CFG` (config Spark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `DQ` (validação de dados), `BENCH` (comparação entre execuções) |
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |
@@ -212,6 +212,7 @@ O vocabulário, e o que cada forma faz:
 | `callgraph.yaml` | `SF-CG-*` | Fase 1 (grafo derivado de AST) |
 | `emr-infra.yaml` | `SF-EMR-*` | Fase 5b (dump de cluster EMR on EC2) |
 | `data-quality.yaml` | `SF-DQ-*` | Fase 5c (validação de dados no AST PySpark) |
+| `benchmark.yaml` | `SF-BENCH-*` | Fase 4a (comparador de duas execuções, derivado de facts de event log) |
 | `routing.yaml` | `ROUTE-*` | Fase 0 — predicado sobre o case, não sobre facts |
 
 ### `routing.yaml` tem schema próprio

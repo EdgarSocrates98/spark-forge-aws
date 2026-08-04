@@ -1,0 +1,136 @@
+[
+  {
+    "rule_id": "SF-BENCH-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Comparação entre execuções com volumes de entrada diferentes",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "different_input_volume"
+    },
+    "evidence": [
+      "f_78d412"
+    ],
+    "measured": {
+      "total_task_ms_before": 22000.0,
+      "total_task_ms_after": 37600.0,
+      "total_task_ms_delta_pct": 70.9,
+      "total_input_bytes_before": 140000000,
+      "total_input_bytes_after": 280000000,
+      "total_input_bytes_delta_pct": 100.0,
+      "total_spill_bytes_before": 0,
+      "total_spill_bytes_after": 0,
+      "total_gc_ms_before": 1100,
+      "total_gc_ms_after": 1500,
+      "total_gc_ms_delta_pct": 36.4,
+      "total_task_count_before": 10,
+      "total_task_count_after": 10,
+      "total_task_count_delta_pct": 0.0
+    },
+    "threshold": {
+      "input_divergence_pct": 10
+    },
+    "runtime_scope": {},
+    "explanation": "As duas execuções não leram a mesma quantidade de dado, então a diferença de tempo, de spill e de memória entre elas não é atribuível à mudança de código — é atribuível ao volume. É a forma mais comum de benchmark mentiroso, e ela não se corrige lendo o resultado com cuidado: se corrige refazendo a medição sobre o mesmo recorte. As causas típicas não parecem erro de método na hora em que acontecem — a partição do dia seguinte é maior, o bookmark avançou entre as duas coletas, o filtro de data ficou relativo a \"hoje\", o cache do lado depois já estava quente. Esta regra NÃO cala as outras três. Elas afirmam sobre o que foi medido; este achado diz que o que foi medido não sustenta conclusão sobre a mudança. Ler as duas coisas juntas é o que dá o quadro certo, e suprimir uma delas daria um quadro falso — ver o cabeçalho deste arquivo. Limite declarado do gatilho: quando o lado ANTES leu zero byte, o comparador omite `total_input_bytes_delta_pct` (dividir por zero não produz \"infinito por cento\", produz afirmação sem sentido) e esta regra se cala. Os dois totais continuam no fact, e a divergência ali é gritante o bastante para não precisar de percentual — mas quem a vê é o operador, não a regra.",
+    "proposed_change": [
+      "Refazer as duas execuções sobre o mesmo recorte de dado: mesma partição, mesmo intervalo, mesmo filtro, mesma origem.",
+      "Conferir se o lado depois não avançou de bookmark, de watermark ou de janela relativa a `now()` entre as duas coletas — é a causa mais comum, e ela não aparece no código que mudou.",
+      "Se o volume não puder ser fixado, comparar medidas normalizadas por byte lido em vez de totais, e dizer isso no relatório: comparação normalizada é uma afirmação mais fraca, e apresentá-la como se fosse a mesma coisa é o defeito que esta regra acusa."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Fixar o recorte pode esconder o efeito da mudança sobre volume variável, que às vezes é justamente o efeito procurado.",
+      "Repetir a execução sobre o recorte original custa tempo de cluster, e em ambiente compartilhado pode não ser reprodutível: outra carga concorrente muda o resultado sem mudar o volume."
+    ],
+    "tradeoffs": [
+      "Recorte fixo mede a mudança com precisão e não mede como ela se comporta com o dado crescendo. As duas perguntas existem; o que não existe é respondê-las com a mesma medição.",
+      "Normalizar por byte lido salva a comparação e enfraquece a conclusão: custo por byte não é linear em Spark, porque shuffle, spill e small files não escalam com o volume lido."
+    ],
+    "validation": [
+      "Comparar `total_input_bytes_before` e `total_input_bytes_after` do próprio fact citado: a diferença precisa cair abaixo do limiar depois de refazer a medição.",
+      "Contagem de linhas lidas de cada fonte nas duas execuções, e não só bytes — compressão diferente muda bytes sem mudar o dado.",
+      "Conferir na sentinela `bench.analyzed` que os artefatos dos dois lados são os dois event logs que se pretendia comparar, e não o mesmo log duas vezes ou os lados trocados."
+    ],
+    "rollback": [
+      "Nenhum — este achado é sobre a medição, não sobre o código. Nada foi mudado no sistema analisado para ser desfeito."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "10% é decisão de campo. Não há fonte oficial que diga a partir de quanto uma divergência de volume invalida a comparação; o número está aqui para ser ajustado com evidência, não para ser citado como autoridade. A ordem de grandeza vem de duas observações: variação de compressão entre execuções da mesma partição fica tipicamente abaixo disso, e uma partição a mais num intervalo diário fica bem acima. A severidade P0 não vem do tamanho da divergência — vem de o achado invalidar a leitura de todos os outros achados desta área."
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-BENCH-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tempo de task somado piorou entre as duas execuções",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "different_input_volume"
+    },
+    "evidence": [
+      "f_78d412"
+    ],
+    "measured": {
+      "total_task_ms_before": 22000.0,
+      "total_task_ms_after": 37600.0,
+      "total_task_ms_delta_pct": 70.9,
+      "total_input_bytes_before": 140000000,
+      "total_input_bytes_after": 280000000,
+      "total_input_bytes_delta_pct": 100.0,
+      "total_spill_bytes_before": 0,
+      "total_spill_bytes_after": 0,
+      "total_gc_ms_before": 1100,
+      "total_gc_ms_after": 1500,
+      "total_gc_ms_delta_pct": 36.4,
+      "total_task_count_before": 10,
+      "total_task_count_after": 10,
+      "total_task_count_delta_pct": 0.0
+    },
+    "threshold": {
+      "regression_pct": 10
+    },
+    "runtime_scope": {},
+    "explanation": "A execução depois somou mais tempo de task que a execução antes, acima do limiar. `total_task_ms` é TEMPO DE TASK SOMADO — a soma de `mean_ms * task_count` sobre os stages —, e não tempo de relógio: não existe fact de duração de relógio no event log lido. A consequência é o que este achado exige antes de qualquer ação. Um job pode terminar ANTES no relógio somando MAIS tempo de task, se a mudança passou a paralelizar melhor: mais tasks menores somam mais trabalho contabilizado e ocupam menos tempo de parede. O inverso também acontece — menos paralelismo, o mesmo trabalho, e o relógio piorando sem esta medida mexer. Então este achado afirma \"a mudança custa mais trabalho de CPU agregado\", que é uma afirmação verdadeira e útil sobre custo, e NÃO afirma \"o job ficou mais lento\". Confirmar no relógio — hora de início e fim das duas execuções, fora deste relatório — antes de reverter a mudança. Antes de acreditar no número, ler `SF-BENCH-001` no mesmo relatório: se os volumes de entrada divergem, esta piora pode ser inteiramente do dado. Ler também `total_task_count_delta_pct` no mesmo fact — mais tempo somado com muito mais tasks é mudança de paralelismo, e não de trabalho por task; e os `bench.stage_delta` por símbolo dizem QUAL stage carrega a piora, que é onde a investigação começa.",
+    "proposed_change": [
+      "Localizar o stage responsável nos `bench.stage_delta`: a piora quase nunca está distribuída, e o símbolo do stage aponta a linha de código.",
+      "Confirmar a duração de relógio das duas execuções antes de decidir qualquer coisa — esta medida não a contém, e reverter uma mudança que melhorou o relógio por causa dela seria o defeito que este texto existe para evitar.",
+      "Comparar `total_task_count` dos dois lados; se as tasks aumentaram na mesma ordem do tempo somado, o que mudou foi o particionamento e não o custo do trabalho.",
+      "Se a piora concentra num stage de shuffle, seguir o caminho de skew e de tamanho de partição (`SF-UI-001`, `SF-UI-002`) sobre o event log do lado depois, que é onde há detalhe por task."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reverter a mudança com base só nesta medida pode devolver um job que termina DEPOIS no relógio: as duas coisas não são a mesma, e a reversão precisa da confirmação de relógio.",
+      "A mudança pode ter custado tempo de task de propósito, em troca de correção, de resiliência ou de custo de memória — o benchmark mede uma dimensão e a decisão tem mais de uma."
+    ],
+    "tradeoffs": [
+      "Trabalho agregado e tempo de parede são objetivos diferentes e às vezes opostos: paralelizar mais compra relógio pagando em tempo de task somado, e num cluster com capacidade ociosa essa troca é boa.",
+      "Um limiar baixo pega regressão pequena e acusa ruído de execução; um limiar alto cala regressão real. 10% é o meio escolhido, e é editável — é dado, não código."
+    ],
+    "validation": [
+      "Repetir as duas execuções ao menos mais uma vez cada e conferir que o sinal e a ordem de grandeza da diferença se mantêm; execução única não distingue regressão de variação de ambiente.",
+      "Duração de relógio das duas execuções, medida fora deste relatório: é a grandeza que decide se houve regressão para o usuário do job.",
+      "Contagem total do resultado, contagem por chave e agregado de controle iguais nos dois lados — uma mudança que ficou mais barata processando menos dado não é uma mudança mais barata.",
+      "`total_input_bytes_delta_pct` no mesmo fact, para descartar que a piora seja de volume."
+    ],
+    "rollback": [
+      "Reverter o commit da mudança e repetir a medição sobre o mesmo recorte, confirmando que o tempo de task somado volta ao valor de antes."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "10% é decisão de campo. Não há fonte oficial que declare a partir de quanto uma variação de tempo de task somado deixa de ser ruído de execução, e ela depende do cluster, da contenção e do tamanho do job. O número está aqui para ser ajustado com evidência. A severidade P1 também é de campo: regressão de custo agregado é acionável e não é urgência de produção, e não há measure que distinga regressão de 11% de regressão de 300% — quando houver corpus que sustente o corte, converter para severity_by sobre `measures.total_task_ms_delta_pct`."
+      }
+    ]
+  }
+]

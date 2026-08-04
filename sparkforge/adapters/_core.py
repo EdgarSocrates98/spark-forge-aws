@@ -27,6 +27,7 @@ from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
     extract_athena_workgroup_tree,
 )
+from sparkforge.facts.benchmark import build_benchmark
 from sparkforge.facts.call_graph import build_call_graph
 from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_path,
@@ -982,6 +983,41 @@ def analyze_call_graph(
 
 
 # --------------------------------------------------------------------------- #
+# benchmark
+# --------------------------------------------------------------------------- #
+
+
+def benchmark_runs(
+    before_path: str,
+    after_path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    """Compara DOIS arquivos de facts de event log (`analyze event-log --out`)
+    e emite os fatos `bench.*`. Funcao pura sobre Facts: nao executa Spark, nao
+    le event log cru, nao mede relogio -- ver docstring de
+    `sparkforge.facts.benchmark`.
+
+    Verbo de TOPO, e nao `analyze benchmark`: os verbos sob `analyze` extraem
+    facts de um artefato, e este nao extrai nada -- ele compara dois conjuntos
+    ja extraidos. Mesma razao pela qual `fuse` e verbo proprio.
+
+    COM `unresolved` proprio, ao contrario de `analyze_call_graph`: este modulo
+    TEM ponto cego para reportar. `bench.unresolved` sai quando falta o
+    `spark.log_analyzed` de um lado, quando uma medida esta ausente ou
+    incompleta num lado, ou quando um simbolo casado perdeu a medida -- casos em
+    que a comparacao nao se sustenta e o silencio seria indistinguivel de
+    "nenhuma diferenca". O `path_hint` e `"<antes>..<depois>"` porque o fato
+    afirma sobre o PAR, nao sobre um dos dois arquivos.
+    """
+    before = _load_facts_file(before_path)
+    after = _load_facts_file(after_path)
+    facts = build_benchmark(before, after, path_hint=f"{before_path}..{after_path}")
+    return _facts_page(facts, "bench.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
 # fuse
 # --------------------------------------------------------------------------- #
 
@@ -1505,9 +1541,24 @@ def knowledge_path(file: str | None = None) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 
 
-def validate_output(finding: dict[str, Any]) -> dict[str, Any]:
+def validate_output(
+    finding: dict[str, Any], facts_path: str | None = None
+) -> dict[str, Any]:
+    """Valida um finding. Com `facts_path`, valida tambem a PERTINENCIA do
+    `benchmark_ref`.
+
+    Sem o arquivo, `validate_finding` so consegue cobrar a FORMA do
+    `benchmark_ref` (`f_` + 6 hex) -- ele nao ve fact nenhum. Informando o
+    arquivo de facts (tipicamente a saida de `sparkforge benchmark --out`), o
+    `fact_id` citado passa a precisar existir la dentro. Opcional porque quem
+    valida um achado avulso, sem os facts em mao, ainda merece a primeira
+    camada.
+    """
+    fact_ids: set[str] | None = None
+    if facts_path is not None:
+        fact_ids = {fact.id for fact in _load_facts_file(facts_path)}
     try:
-        validate_finding(finding)
+        validate_finding(finding, fact_ids)
         return {"valid": True, "errors": []}
     except ValidationFailed as exc:
         return {"valid": False, "errors": [str(exc)]}

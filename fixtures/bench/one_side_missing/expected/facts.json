@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f_69bdb2",
+    "schema_version": 1,
+    "kind": "bench.unresolved",
+    "subject": {
+      "type": "job_run",
+      "symbol": "one_side_missing#missing_log_analyzed"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_log_analyzed",
+      "sides": [
+        "after"
+      ],
+      "measure": ""
+    },
+    "provenance": {
+      "artifact": "one_side_missing",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  }
+]

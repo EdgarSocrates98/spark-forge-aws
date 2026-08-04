@@ -30,16 +30,16 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 62 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 66 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
-As 62 regras se distribuem em 11 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+As 66 regras se distribuem em 12 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## Camada determinística (Fase 0)
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
-de 62 regras versionado em YAML, e um ciclo de vida de case
+de 66 regras versionado em YAML, e um ciclo de vida de case
 (`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
 
 ### Sequência mínima
@@ -125,7 +125,7 @@ caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
 dentro de `site-packages` quando instalado por `pip`.
 
 Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
-**fora do repositório** e reproduz as 101 fixtures golden byte a byte a partir do
+**fora do repositório** e reproduz as 107 fixtures golden byte a byte a partir do
 pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
 usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
@@ -152,7 +152,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 15 extratores emitem 97 kinds distintos de fact, e todos são offline: leem
+Os 16 extratores emitem 102 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -172,6 +172,7 @@ tool MCP de mesmo nome.
 | Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
 | Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
+| **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
@@ -180,7 +181,7 @@ AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
 essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
 o que falta para uma regra disparar é sempre coleta, nunca código.
 
-Dois desses verbos mudam o alcance do projeto, e é por isso que aparecem
+Três desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
@@ -194,6 +195,17 @@ passadas sobre um alvo que ninguém persistiu. Uma suíte não custa "uma
 passada": ela compartilha scan por agrupamento, e restrição de unicidade paga
 a sua própria.
 
+`benchmark` é o terceiro, e não é um `analyze`: ele não lê artefato nenhum e
+não executa nada — compara **dois conjuntos de facts** que `analyze event-log`
+já produziu, um por execução, e emite `bench.run_delta`, `bench.stage_delta`,
+`bench.unmatched`, `bench.analyzed` e `bench.unresolved`. É o produtor que o
+gate de `benchmark_ref` nunca teve: `sparkforge validate --findings` rejeita
+`expected_effect` que quantifique ganho sem citar o `fact_id` de um
+`bench.run_delta`, e a área `SF-BENCH` julga a **validade da comparação** antes
+de qualquer conclusão sobre o job. `total_task_ms` é tempo de task somado —
+trabalho, não relógio: o event log não carrega duração wall-clock, e uma alta
+ali pede confirmação no relógio antes de reverter a mudança.
+
 ```bash
 # o cluster inteiro num dump, e o julgamento sem flag de versão nenhuma
 aws emr describe-cluster --cluster-id j-XXXX > cluster.json
@@ -201,6 +213,15 @@ sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
 
 # onde o job valida dado, e o que acontece quando o check falha
 sparkforge analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
+
+# o antes e o depois, comparados — e o fact_id que o benchmark_ref cita
+sparkforge analyze event-log --path before.jsonl --out .sparkforge/before.json
+sparkforge analyze event-log --path after.jsonl  --out .sparkforge/after.json
+sparkforge benchmark --before .sparkforge/before.json \
+                     --after .sparkforge/after.json \
+                     --out .sparkforge/bench.json
+sparkforge validate --findings .sparkforge/findings.json \
+                    --facts .sparkforge/bench.json
 ```
 
 ### Fluxo de handoff
@@ -273,8 +294,10 @@ pacote tem duas camadas de agente:
   `iceberg-performance-engineer`, `emr-infra-reviewer` e `data-quality-reviewer`). Não
   executa: lê o case, decide qual executor rodar em seguida e registra no case qual
   executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
-  `emr-infra-reviewer` lê `SF-EMR`/`SF-ENV` e `data-quality-reviewer` lê `SF-DQ` — e é
-  isso, não o nome, que faz o roteamento funcionar. Ver a tabela completa em `AGENTS.md`.
+  `emr-infra-reviewer` lê `SF-EMR`/`SF-ENV`, `data-quality-reviewer` lê `SF-DQ`, e
+  `spark-performance-architect` acumulou `SF-BENCH` porque *o job ficou mais rápido, e por
+  quê* é a mesma pergunta que ele já respondia — e é isso, não o nome, que faz o roteamento
+  funcionar. Ver a tabela completa em `AGENTS.md`.
 - **Executor** — 5 agentes em `agents/executors/*.md`, um por função do loop de fase
   (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`). Cada um
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
@@ -343,7 +366,7 @@ manifesto silencioso é pior que erro barulhento:
 | `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
 
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
-constrói o artefato, instala num venv limpo e reproduz as 101 fixtures golden byte a byte.
+constrói o artefato, instala num venv limpo e reproduz as 107 fixtures golden byte a byte.
 
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e paridade das três cópias.
 

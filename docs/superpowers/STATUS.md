@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-08-03
-**Commit de referência:** fechamento da branch `feat/fase5c-dq`
+**Commit de referência:** fechamento da branch `feat/fase4a-benchmark`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -26,26 +26,27 @@ arquivo ganha.
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
 | Testes | **3141** passando, 5 skipped | `python -m pytest -q` |
-| Regras com `runtime_scope` não-vazio | **8 de 62**, todas sobre Glue | `load_catalog()` |
-| Extratores de facts | **15** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **97** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **62** | `load_catalog()` |
+| Regras com `runtime_scope` não-vazio | **8 de 66**, todas sobre Glue | `load_catalog()` |
+| Extratores de facts | **16** | `sparkforge/facts/*.py` |
+| Fact kinds distintos emitidos | **102** | união de `EMITTED_KINDS` |
+| Regras de diagnóstico | **66** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **62 de 62** | `tests/test_fixtures_kind_coverage.py` |
+| Regras com golden que dispara | **66 de 66** | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **24** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-008`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **33** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **33 de 33** | `tests/test_agent_coverage.py` |
+| Tools MCP | **34** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **34 de 34** | `tests/test_agent_coverage.py` |
 | Coordenadores | **8** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Fixtures golden | **101** em 17 domínios | `fixtures/` |
+| Skills | **20** | `skills/*/SKILL.md` |
+| Fixtures golden | **107** em 18 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **37** | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-GLUE 6, SF-UI 6, SF-ATH 5, SF-ENV 5,
-SF-ICE 5, SF-PQ 5, SF-DQ 4, SF-PLAN 4, SF-CG 1.
+SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-PLAN 4, SF-CG 1.
 
 Fixtures por domínio: `pyspark` 17, `emr` 13, `dq` 10, `iceberg` 8, `plan` 7,
-`runtime` 7, `terraform` 7, `fusion` 5, `s3` 5, `sql` 4, `athena` 3,
+`runtime` 7, `terraform` 7, `bench` 6, `fusion` 5, `s3` 5, `sql` 4, `athena` 3,
 `callgraph` 3, `catalog` 3, `consumers` 3, `eventlog` 2, `infra_code` 2,
 `tfdiff` 2.
 
@@ -537,14 +538,103 @@ fixtures em 17 domínios, 10 delas em `fixtures/dq/`. 62 regras, **nenhuma nova*
 esta fase não acrescentou capacidade ao catálogo, ela tirou uma cegueira de uma
 regra que já existia. `git diff --stat main -- fixtures/pyspark/` sai vazio.
 
-### Fase 4 do roadmap (§16) — rigor — **NÃO INICIADA**
+### Fase 4a — benchmark antes/depois — **CONCLUÍDA** em 2026-08-03
+
+Branch `feat/fase4a-benchmark`. Spec:
+[`specs/2026-08-03-sparkforge-fase4a-benchmark-design.md`](specs/2026-08-03-sparkforge-fase4a-benchmark-design.md) ·
+Plano: [`plans/2026-08-03-sparkforge-fase4a-benchmark.md`](plans/2026-08-03-sparkforge-fase4a-benchmark.md).
+
+**O defeito de partida: um gate sem produtor.** Desde a Fase 0,
+`validate_finding` rejeita `expected_effect` que quantifique ganho (`"40% mais
+rápido"`, `"3x"`, `"2 vezes"`) sem `benchmark_ref`. O campo, porém, era **string
+livre** — nada no repositório produzia a medição que ele deveria citar, então
+satisfazer o gate era digitar qualquer coisa. Um gate que se contorna digitando
+não é gate; é cerimônia. Esta fase deu produtor a ele.
+
+**O que entrou.** `sparkforge/facts/benchmark.py` — função **pura** sobre `Fact`,
+no padrão de `call_graph.py`: nunca lê artefato bruto, nunca executa Spark, nunca
+chama AWS. Recebe os dois conjuntos de facts que `analyze event-log` já produziu,
+um por execução, e emite cinco kinds: `bench.run_delta` (os totais dos dois lados
+e o percentual entre eles), `bench.stage_delta` (o mesmo por stage casado),
+`bench.unmatched` (cada stage sem par, com o motivo), `bench.analyzed` (a
+sentinela com `matched_stage_count`/`unmatched_stage_count`) e
+`bench.unresolved` (o que ele **não** conseguiu comparar, nomeando a medida e o
+lado). O verbo de topo `benchmark` nas cinco superfícies, a tool MCP
+`sparkforge_benchmark`, seis fixtures em `fixtures/bench/` — cada uma com **dois**
+event logs —, e quatro regras em `rules/catalog/benchmark.yaml`.
+
+**A comparação não vive no `when`, e o motivo é o mesmo de sempre.**
+`rules/engine.py::_condition_candidates` avalia um fact por vez; não existe
+condição que leia o fact de um run e o do outro ao mesmo tempo. Quem enxerga os
+dois lados **decide e emite um fact que carrega a decisão**, e o catálogo lê
+atributo de um fact só — a mesma resposta que a Fase 1 deu com `facts/fusion.py`,
+a 5b com `emr.yarn.am_node_label` e a 5c com `attrs.position_vs_write`.
+
+**A medida se chama `total_task_ms` porque é o que ela é.** Não existe fact de
+duração de relógio no event log lido: `facts/event_log.py` emite duração por
+stage e nada de wall-clock. O total honesto é a soma de `mean_ms * task_count`
+sobre os stages — **trabalho**, não tempo decorrido. Um job pode terminar antes
+no relógio somando mais tempo de task, ao paralelizar melhor. Chamá-la de
+`duration_ms` teria sido o defeito que a 5b corrigiu em
+`unreachable_function_count` — nome que promete mais do que entrega —, e aqui o
+preço seria maior, porque é a regra que lê a medida que manda alguém desfazer
+trabalho. `SF-BENCH-002` acusa "mais trabalho", nunca "mais lento", e a
+`explanation` manda confirmar no relógio antes de reverter.
+
+**Chave `*_delta_pct` ausente significa "não sei", nunca zero.** É omitida quando
+o lado antes é zero, quando a medida falta ou está incompleta de um lado, e
+quando um símbolo casado a perdeu num lado só. Isso mudou a forma de
+`SF-BENCH-003`, que compara os **totais** e não o percentual: spill que nasce do
+zero é a forma mais severa do defeito e seria a única invisível.
+
+**A quebra de contrato do `benchmark_ref`, e ela atingiu um caso.** O campo
+deixou de ser texto livre: passa a citar o `fact_id` de um `bench.run_delta`,
+forma `^f_[0-9a-f]{6}$`. A validação tem **duas camadas**, porque
+`validate_finding(payload)` não vê fact nenhum na assinatura padrão — a **forma**
+vale sempre; a **pertinência** (o `fact_id` existe no conjunto) só quando quem
+chama passa `fact_ids`, e por isso `validate` ganhou `--facts` e a tool MCP
+ganhou `facts_path`. A quebra foi deliberada e o custo foi medido antes: das 83
+ocorrências de `benchmark_ref` em fixtures, **todas** eram `""`, o catálogo não
+declara o campo, e havia **um único** valor em texto livre — num teste, que agora
+prova a rejeição em vez de a contornar.
+
+**Sem coordenador novo (D-6 do spec).** `SF-BENCH` entrou em `rule_areas` de
+`spark-performance-architect`, que já declarava a skill `benchmark-pyspark-job`:
+a pergunta — *o job ficou mais rápido, e por quê* — é a que esse coordenador já
+respondia. Ao contrário da 5c, onde `SF-DQ` ganhou coordenador próprio porque a
+pergunta era outra. Nenhuma rota nova foi exigida: `AGENT-001` já aponta para
+esse coordenador, e `tests/test_router_agents.py` seguiu verde sem tocar em
+`routing.yaml`.
+
+**Números medidos no fechamento.** 3295 testes passando, 5 skipped (eram 3141 ao
+fechar a 5c.2). 66 regras em 12 áreas, 4 delas novas (`SF-BENCH`). 16 extratores
+emitindo 102 kinds (eram 15 e 97). 34 tools MCP, **34 de 34** alcançáveis a partir
+de algum coordenador. 107 fixtures em 18 domínios, 6 delas em `fixtures/bench/`.
+24 rotas, inalteradas.
+
+**O que esta fase NÃO fechou.** A Fase 4 do roadmap (§16) tem quatro itens; este
+era um. Ficam de fora: validação funcional automatizada (contagem, schema,
+chaves, agregados), gates fail-closed opcionais e assinatura de relatório. Ver a
+linha própria abaixo.
+
+Faixa de commits: `a78f3cd` … o commit de documentação que fecha a fase.
+
+### Fase 4 do roadmap (§16) — rigor — **PARCIALMENTE CONCLUÍDA**
 
 Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
 orquestração), que é a Fase 4 na nova numeração da seção "Direção" mais abaixo. Esta
-continua sendo a Fase 4 do roadmap original: escopo da §16 — gates fail-closed opcionais,
-benchmark automatizado antes/depois, validação funcional automatizada (contagem, schema,
-chaves, agregados), assinatura de relatório. `blocked_by` segue advisory, como a §5.5 da
-Fase 0 decidiu conscientemente.
+continua sendo a Fase 4 do roadmap original, e o escopo da §16 tem quatro itens:
+
+| Item da §16 | Estado |
+|---|---|
+| Benchmark automatizado antes/depois | **Fechado pela Fase 4a.** Verbo `benchmark`, cinco kinds `bench.*`, área `SF-BENCH`, e `benchmark_ref` citando `fact_id` |
+| Validação funcional automatizada (contagem, schema, chaves, agregados) | **Aberto.** A 5c leu *onde* a validação está e o que ela custa; nada ainda **executa** a validação nem compara os dois lados de uma mudança por resultado |
+| Gates fail-closed opcionais | **Aberto.** `blocked_by` segue advisory, como a §5.5 da Fase 0 decidiu conscientemente |
+| Assinatura de relatório | **Aberto.** Nada assina a saída hoje |
+
+A Fase 4b é o nome dos três itens abertos. Enquanto eles existirem, esta fase não
+é "CONCLUÍDA" — marcar assim faria o `STATUS.md` afirmar rigor que o repositório
+não tem, que é exatamente o que este arquivo existe para impedir.
 
 ---
 
@@ -660,8 +750,21 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 6. **Fase 5c.2** — um passo para dentro da chamada — **CONCLUÍDA** em 2026-08-03,
    branch `feat/fase5c2-helper`. Ver seção própria acima. Fecha uma das duas
    dívidas de travessia da 5c e deixa a outra aberta com o motivo medido
-7. **Fases seguintes** — custo, orquestração, Redshift, streaming
-8. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
+7. **Fase 4a** — benchmark antes/depois — **CONCLUÍDA** em 2026-08-03, branch
+   `feat/fase4a-benchmark`. Ver seção própria acima. Fecha o primeiro dos quatro
+   itens de rigor da §16 e dá produtor ao gate de `benchmark_ref`
+8. **Fase 4b** — o rigor que falta: validação funcional automatizada, gates
+   fail-closed opcionais e assinatura de relatório. **Decidida como a próxima**,
+   antes de qualquer cobertura nova — cobertura multiplica achados, rigor
+   multiplica confiança em todos eles de uma vez
+9. **Especialização por banco de dados** — uma fase por ferramenta, na ordem
+   `SF-GRAPH`, `SF-DDB`, `SF-NEP`, `SF-MONGO`, decomposta em
+   [`specs/2026-08-03-sparkforge-roadmap-bancos.md`](specs/2026-08-03-sparkforge-roadmap-bancos.md).
+   O roadmap decide a decomposição e **recusa** decidir o conteúdo: os candidatos
+   de regra são hipóteses, e cada fase abre com pesquisa de fontes — em quatro
+   fases seguidas ela matou premissa que parecia óbvia no papel
+10. **Fases seguintes** — custo, orquestração, Redshift, streaming
+11. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior. As frentes sem artefato da especialização em bancos — escolha de banco, modelagem de grafo, boas práticas genéricas — entram por aqui, e até lá viram restrição auditável em `knowledge/`
 
 ## Dívidas abertas
 

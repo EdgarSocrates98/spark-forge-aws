@@ -52,7 +52,7 @@ which executor ran and with what result — same mechanism as skill tracking
 
 | Coordinator | Use quando… | `rule_areas` |
 |---|---|---|
-| `spark-performance-architect` | diagnóstico geral de um job PySpark no Glue, gargalo dominante ainda não localizado | SF-PY, SF-UI, SF-PLAN |
+| `spark-performance-architect` | diagnóstico geral de um job PySpark no Glue, gargalo dominante ainda não localizado; e comprovar o ganho de uma mudança comparando dois runs | SF-PY, SF-UI, SF-PLAN, SF-BENCH |
 | `glue-incremental-performance-architect` | fluxo full + incremental, latest-per-key em Iceberg bilionário, batching, OOM após horas | orquestra as demais áreas antes de tuning localizado |
 | `glue-infra-reviewer` | gargalo ou risco na definição do job Glue, não no código — worker, auto scaling, bookmark, retries, Terraform | SF-GLUE, SF-ENV |
 | `athena-query-optimizer` | custo ou latência na consulta Athena, não no job — bytes escaneados, pruning de partição, engine, workgroup | SF-ATH, SF-PQ |
@@ -83,9 +83,9 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Fifteen extractors, all offline — they read artifacts already on disk and never
+Sixteen extractors, all offline — they read artifacts already on disk and never
 call AWS. Each has a CLI verb and an MCP tool with the same name, and together
-they emit 97 distinct fact kinds:
+they emit 102 distinct fact kinds:
 
 | Artifact | CLI verb | Reads |
 |---|---|---|
@@ -103,6 +103,7 @@ they emit 97 distinct fact kinds:
 | S3 object listing | `analyze s3-listing` | `s3api list-objects-v2` dump |
 | Table consumers | `analyze consumers` | declared inventory, versioned in the repo |
 | Terraform change | `analyze terraform-diff` | two states of the same module |
+| Two runs compared | `benchmark` | two sets of event-log facts, before and after |
 | Runtime | `runtime detect` | every source above, cross-checked |
 | Correlation | `fuse` | facts from several extractors at once |
 

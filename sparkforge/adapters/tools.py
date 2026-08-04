@@ -629,6 +629,12 @@ _ANALYZE_PYSPARK_SCHEMA: dict[str, Any] = {
 # de cada tool contra este schema compartilhado.
 _ANALYZE_FACTS_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
 
+# `benchmark_runs` tambem devolve o envelope com ponto cego, e por isso reusa o
+# mesmo schema: `bench.unresolved` e ponto cego de verdade -- lado sem
+# `spark.log_analyzed`, medida ausente ou parcial num lado, simbolo casado que
+# perdeu a medida. Diferente de `analyze_call_graph`, que nao tem nenhum.
+_BENCHMARK_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
+
 # `analyze_call_graph` deriva de Facts ja resolvidos (nunca reparseia fonte,
 # ver `sparkforge.facts.call_graph`): sem `unresolved`/`unresolved_at`
 # proprios -- as duas chaves ficam ausentes, nunca zeradas, porque a tool nao
@@ -1567,6 +1573,57 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_benchmark": {
+        "description": (
+            "Compara DUAS execucoes a partir dos facts de event log de cada uma "
+            "(`sparkforge_analyze_event_log` gravado em disco), e emite `bench.run_delta`, "
+            "`bench.stage_delta`, `bench.unmatched`, `bench.analyzed` e `bench.unresolved`. "
+            "Verbo de topo, nao um `analyze`: nao extrai nada de artefato, compara dois "
+            "conjuntos ja extraidos. "
+            "O QUE ELE RECUSA AFIRMAR, e isso importa mais que o que ele afirma: "
+            "(1) `total_task_ms` e TEMPO DE TASK SOMADO (`mean_ms * task_count` sobre os "
+            "stages) -- e trabalho, NAO tempo de relogio; o event log nao carrega duracao "
+            "wall-clock, e um job pode terminar antes no relogio somando MAIS tempo de task "
+            "ao paralelizar melhor, entao uma alta aqui pede confirmacao no relogio antes de "
+            "reverter qualquer coisa. (2) Esta ferramenta NAO EXECUTA NADA: nao roda Spark, "
+            "nao chama AWS, nao mede; ela le dois conjuntos de facts que alguem ja coletou. "
+            "(3) O casamento de stage e por `symbol` IDENTICO -- `stage_id` nao e estavel "
+            "entre execucoes --, e o que nao casa nao e silenciado: vira `bench.unmatched` e "
+            "entra em `unmatched_stage_count`. (4) Uma chave `*_delta_pct` AUSENTE significa "
+            "\"nao sei\", nunca \"zero\": ela e omitida quando o lado antes e zero, quando a "
+            "medida falta ou esta incompleta de um lado, ou quando a populacao de stages "
+            "mudou -- casos em que o percentual seria inventado. Os totais observados ficam; "
+            "o que cai e a razao entre eles."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["before_path", "after_path"],
+            "properties": {
+                "before_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts da execucao ANTES, gerado por "
+                        "`sparkforge_analyze_event_log`."
+                    ),
+                },
+                "after_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts da execucao DEPOIS, gerado por "
+                        "`sparkforge_analyze_event_log`."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _BENCHMARK_SCHEMA,
+            "Comparacao das duas execucoes, ou erro se um dos arquivos nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_fuse": {
         "description": (
             "Correlaciona facts de fontes diferentes (texto SQL de "
@@ -1698,12 +1755,24 @@ TOOLS: dict[str, dict[str, Any]] = {
             "benchmark_ref antes de aceita-lo. Este e o outro pilar da independencia de "
             "modelo: um LLM diferente pode redigir o finding de outra forma, mas so passa "
             "se for logicamente consistente com o catalogo -- a validacao decide o que e "
-            "aceitavel, nao o modelo que escreveu."
+            "aceitavel, nao o modelo que escreveu. `benchmark_ref` cita o `fact_id` de um "
+            "`bench.run_delta` (`sparkforge_benchmark`), nao texto livre; informando "
+            "`facts_path` o id citado passa a precisar existir naquele conjunto."
         ),
         "inputSchema": {
             "type": "object",
             "required": ["finding"],
-            "properties": {"finding": {"type": "object"}},
+            "properties": {
+                "finding": {"type": "object"},
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Opcional. Caminho de um arquivo de facts. Sem ele, "
+                        "`benchmark_ref` so e cobrado na FORMA (`f_` + 6 hex); com "
+                        "ele, o `fact_id` citado precisa estar no conjunto."
+                    ),
+                },
+            },
         },
         "outputSchema": _VALIDATE_OUTPUT_SCHEMA,
         "annotations": _READ_ONLY,
@@ -1977,7 +2046,7 @@ def _h_knowledge_path(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _h_validate_output(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.validate_output(args["finding"])
+    return _core.validate_output(args["finding"], facts_path=args.get("facts_path"))
 
 
 def _h_analyze_catalog_schema(args: dict[str, Any]) -> dict[str, Any]:
@@ -2099,6 +2168,16 @@ def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_benchmark(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.benchmark_runs(
+        args["before_path"],
+        args["after_path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
     return _core.fuse_facts(
         args.get("facts_paths"),
@@ -2182,6 +2261,7 @@ _HANDLERS = {
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
     "sparkforge_analyze_call_graph": _h_analyze_call_graph,
+    "sparkforge_benchmark": _h_benchmark,
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
     "sparkforge_rules_lookup": _h_rules_lookup,

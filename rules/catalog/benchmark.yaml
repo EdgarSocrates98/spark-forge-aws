@@ -1,0 +1,371 @@
+# Catálogo de regras — comparação entre duas execuções (benchmark antes/depois)
+#
+# Depende do comparador `sparkforge/facts/benchmark.py` (Fase 4a, Tasks 1 e 2),
+# que é função PURA sobre `Fact`: a entrada de cada lado é o que
+# `analyze event-log` já produziu, e a saída são os cinco kinds `bench.*`.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# POR QUE A COMPARAÇÃO NÃO VIVE NO `when`.
+#
+# `rules/engine.py::_condition_candidates` avalia UM fact por vez, e
+# `_fact_context` monta o contexto de um único fact. Não existe, e não deve
+# existir, uma condição que leia o fact de um run e o fact do outro ao mesmo
+# tempo: seria a mesma pressão que a Fase 1 resolveu com fusão (`facts/fusion.py`)
+# e a Fase 5b com `emr.yarn.am_node_label` — quem enxerga os dois lados DECIDE e
+# emite um fact que carrega a decisão, e o catálogo lê atributo de um fact só.
+# Portanto todo `when` desta área lê `bench.run_delta` ou `bench.analyzed`, onde
+# a subtração já aconteceu.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# ESCOPO. As quatro declaram `runtime_scope: {}`, e isso é decisão, não omissão.
+#
+# O critério fixado pela Fase 5a (`README.md` deste diretório, seção "O que
+# `runtime_scope` é, e o que ele não é") é: escopo não-vazio só quando o gatilho
+# genuinamente varia com a versão E essa versão vem do RUNTIME. Aqui o gatilho é
+# a RAZÃO ENTRE DUAS MEDIDAS DA MESMA FERRAMENTA: o mesmo extrator leu os dois
+# event logs, e um percentual de variação entre eles é o que é em Spark 3.0 e em
+# 3.5. Pior: `judge` recebe o runtime que a CLI montou, não o que o extrator viu
+# (é o absurdo já registrado no cabeçalho de `spark-ui.yaml`), então um escopo
+# não-vazio aqui só poderia subtrair cobertura — num `sparkforge judge` sem
+# flags, `spark` sai vazio, `in_scope` falha FECHADA, e a área inteira sumiria.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `total_task_ms` NÃO É TEMPO DE RELÓGIO, e a área inteira depende disso.
+#
+# A medida é a soma de `mean_ms * task_count` sobre os stages — TEMPO DE TASK,
+# que é trabalho. Não existe fact de duração de relógio no event log lido:
+# `facts/event_log.py` emite duração por stage e nada de wall-clock. Um job pode
+# terminar ANTES no relógio somando MAIS tempo de task, se passou a paralelizar
+# melhor, e o inverso também acontece. Por isso `SF-BENCH-002` acusa "mais
+# trabalho", nunca "mais lento", e a `explanation` dela manda confirmar no
+# relógio antes de reverter a mudança. Chamar a medida de `duration_ms` teria
+# sido o defeito que a Fase 5b corrigiu em `unreachable_function_count` — nome
+# que promete mais do que entrega — e aqui o preço seria maior, porque é a regra
+# que lê a medida que manda alguém desfazer trabalho.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `SF-BENCH-001` NÃO SUPRIME AS OUTRAS TRÊS (D-4 do spec da Fase 4a).
+#
+# A tentação é natural: se os volumes divergem, a comparação não vale, então
+# calar o resto. É errado, e por uma razão que vale para todo o catálogo. As
+# outras três afirmam sobre O QUE FOI MEDIDO; a 001 afirma que o que foi medido
+# não sustenta conclusão sobre a MUDANÇA. São dois fatos, os dois verdadeiros, e
+# o operador precisa dos dois: suprimir um deles produziria um relatório que diz
+# "a medição está viciada" sem dizer o que a medição viciada mostrou, ou o
+# contrário. E supressão entre regras não é mecanismo que este motor tenha —
+# introduzi-la para este caso seria acrescentar superfície ao avaliador para
+# esconder informação, que é o oposto do que ele existe para fazer.
+#
+# A fixture `fixtures/bench/different_input_volume` é a prova viva disso: ela
+# diverge 100% no volume lido E soma +70,9% de tempo de task, e acende
+# `SF-BENCH-001` e `SF-BENCH-002` juntas. Se um dia ela acender só a 001, a
+# supressão entrou por acidente.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `*_delta_pct` AUSENTE SIGNIFICA "NÃO SEI", E ISSO MUDOU A FORMA DA 003.
+#
+# `benchmark.py::_delta_pct` OMITE a chave quando o lado ANTES é zero, e o
+# comparador omite quando a medida é parcial, quando falta de um lado, ou quando
+# um símbolo casado a perdeu num lado só. Chave ausente é como este motor diz
+# "não sei": `engine._where_matches` reprova caminho ausente e `_expr_matches`
+# engole o `ExprError`, então a regra simplesmente não avalia.
+#
+# Medido nas fixtures: em `clean_improvement` e em `most_stages_renamed` a chave
+# `total_spill_bytes_delta_pct` NÃO EXISTE, porque o spill é zero nos dois lados.
+# Uma `SF-BENCH-003` escrita sobre `total_spill_bytes_delta_pct > 0` teria dois
+# defeitos, e o segundo é o grave:
+#
+#   1. Ela nunca dispararia sobre spill que NASCE — antes zero, depois 160 MB é
+#      a forma mais severa de "mais rápido mas derramando", e é exatamente a
+#      forma em que o percentual é omitido por divisão por zero.
+#   2. E, como `expr.py` avalia `BoolOp` de forma EAGER (`values = [_eval(v)...]`
+#      antes de qualquer curto-circuito), um `spill or gc` com a chave de spill
+#      ausente levanta `ExprError` e derruba a condição INTEIRA — inclusive o
+#      ramo de GC, que estava presente e verdadeiro.
+#
+# Por isso a 003 compara os TOTAIS (`_before` contra `_after`), que existem
+# sempre que a medida é utilizável nos dois lados, e não o percentual, que existe
+# só quando a base não é zero. O que permanece, declarado: se uma das duas
+# medidas de degradação for inutilizável num dos lados, a condição inteira cai e
+# a regra se cala. É a falha fechada de sempre — errar para o silêncio é o lado
+# certo aqui —, e o `bench.unresolved` correspondente nomeia a medida e o lado.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# TODOS OS QUATRO LIMIARES SÃO `field-heuristic`, E ISSO É DECLARADO.
+#
+# Não existe fonte oficial dizendo a partir de quantos por cento uma divergência
+# de volume invalida uma comparação, nem a partir de quanto uma variação de tempo
+# de task deixa de ser ruído de execução. Inventar citação para dar autoridade a
+# um número escolhido seria pior que assumir o julgamento: o item 1 de "Regras
+# para escrever regra nova" permite heurística de campo, exigindo que ela se
+# declare. Os quatro números estão aqui para serem ajustados com evidência, não
+# para serem citados como autoridade.
+
+catalog_version: 1
+schema_version: 1
+area: SF-BENCH
+retrieved: 2026-08-03
+
+rules:
+
+  # A guarda das outras três, e a única P0 da área: ela não acusa o job, acusa a
+  # MEDIÇÃO. Um achado P0 sobre a medição é o que impede alguém de reverter
+  # código bom com base numa comparação que nunca foi comparação.
+  - id: SF-BENCH-001
+    category: benchmark
+    title: Comparação entre execuções com volumes de entrada diferentes
+    requires_facts: [bench.run_delta]
+    when:
+      # `same_subject` com uma condição só, pelo motivo do D-5c-31: sem ele o
+      # motor produz no máximo UM grupo de evidência, e um corpus com mais de um
+      # par comparado sairia com um achado só, ancorado no primeiro. O subject de
+      # `bench.run_delta` é `{type: job_run, symbol: <path_hint>}`, então o grupo
+      # é o PAR comparado -- que é exatamente a entidade sobre a qual a regra
+      # afirma.
+      same_subject: true
+      all:
+        # Sem `abs()`: `rules/expr.py` proíbe `ast.Call`, e a whitelist é
+        # fronteira de segurança (o catálogo é dado editável). As duas
+        # comparações fazem o módulo à mão. `USub` sobre `threshold.` é
+        # permitido, então o limiar continua sendo UM número editável.
+        #
+        # Divergência para MENOS conta tanto quanto para mais: ler metade do dado
+        # depois da mudança fabrica melhora com a mesma facilidade com que ler o
+        # dobro fabrica regressão.
+        - fact: bench.run_delta
+          expr: >-
+            measures.total_input_bytes_delta_pct > threshold.input_divergence_pct
+            or measures.total_input_bytes_delta_pct < -threshold.input_divergence_pct
+    threshold:
+      input_divergence_pct: 10
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      As duas execuções não leram a mesma quantidade de dado, então a diferença de
+      tempo, de spill e de memória entre elas não é atribuível à mudança de código —
+      é atribuível ao volume. É a forma mais comum de benchmark mentiroso, e ela não
+      se corrige lendo o resultado com cuidado: se corrige refazendo a medição sobre
+      o mesmo recorte. As causas típicas não parecem erro de método na hora em que
+      acontecem — a partição do dia seguinte é maior, o bookmark avançou entre as
+      duas coletas, o filtro de data ficou relativo a "hoje", o cache do lado depois
+      já estava quente.
+      Esta regra NÃO cala as outras três. Elas afirmam sobre o que foi medido; este
+      achado diz que o que foi medido não sustenta conclusão sobre a mudança. Ler as
+      duas coisas juntas é o que dá o quadro certo, e suprimir uma delas daria um
+      quadro falso — ver o cabeçalho deste arquivo.
+      Limite declarado do gatilho: quando o lado ANTES leu zero byte, o comparador
+      omite `total_input_bytes_delta_pct` (dividir por zero não produz "infinito por
+      cento", produz afirmação sem sentido) e esta regra se cala. Os dois totais
+      continuam no fact, e a divergência ali é gritante o bastante para não precisar
+      de percentual — mas quem a vê é o operador, não a regra.
+    proposed_change:
+      - "Refazer as duas execuções sobre o mesmo recorte de dado: mesma partição, mesmo intervalo, mesmo filtro, mesma origem."
+      - "Conferir se o lado depois não avançou de bookmark, de watermark ou de janela relativa a `now()` entre as duas coletas — é a causa mais comum, e ela não aparece no código que mudou."
+      - "Se o volume não puder ser fixado, comparar medidas normalizadas por byte lido em vez de totais, e dizer isso no relatório: comparação normalizada é uma afirmação mais fraca, e apresentá-la como se fosse a mesma coisa é o defeito que esta regra acusa."
+    risks:
+      - Fixar o recorte pode esconder o efeito da mudança sobre volume variável, que às vezes é justamente o efeito procurado.
+      - "Repetir a execução sobre o recorte original custa tempo de cluster, e em ambiente compartilhado pode não ser reprodutível: outra carga concorrente muda o resultado sem mudar o volume."
+    tradeoffs:
+      - Recorte fixo mede a mudança com precisão e não mede como ela se comporta com o dado crescendo. As duas perguntas existem; o que não existe é respondê-las com a mesma medição.
+      - "Normalizar por byte lido salva a comparação e enfraquece a conclusão: custo por byte não é linear em Spark, porque shuffle, spill e small files não escalam com o volume lido."
+    validation:
+      - "Comparar `total_input_bytes_before` e `total_input_bytes_after` do próprio fact citado: a diferença precisa cair abaixo do limiar depois de refazer a medição."
+      - Contagem de linhas lidas de cada fonte nas duas execuções, e não só bytes — compressão diferente muda bytes sem mudar o dado.
+      - Conferir na sentinela `bench.analyzed` que os artefatos dos dois lados são os dois event logs que se pretendia comparar, e não o mesmo log duas vezes ou os lados trocados.
+    rollback:
+      - Nenhum — este achado é sobre a medição, não sobre o código. Nada foi mudado no sistema analisado para ser desfeito.
+    sources:
+      - {origin: field-heuristic, note: "10% é decisão de campo. Não há fonte oficial que diga a partir de quanto uma divergência de volume invalida a comparação; o número está aqui para ser ajustado com evidência, não para ser citado como autoridade. A ordem de grandeza vem de duas observações: variação de compressão entre execuções da mesma partição fica tipicamente abaixo disso, e uma partição a mais num intervalo diário fica bem acima. A severidade P0 não vem do tamanho da divergência — vem de o achado invalidar a leitura de todos os outros achados desta área."}
+
+  - id: SF-BENCH-002
+    category: benchmark
+    title: Tempo de task somado piorou entre as duas execuções
+    requires_facts: [bench.run_delta]
+    when:
+      same_subject: true
+      all:
+        # Só a direção de piora. Melhora é o resultado esperado de um benchmark e
+        # não é achado; quando ela vem acompanhada de degradação, quem fala é a
+        # SF-BENCH-003.
+        - fact: bench.run_delta
+          expr: "measures.total_task_ms_delta_pct > threshold.regression_pct"
+    threshold:
+      regression_pct: 10
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A execução depois somou mais tempo de task que a execução antes, acima do
+      limiar. `total_task_ms` é TEMPO DE TASK SOMADO — a soma de `mean_ms *
+      task_count` sobre os stages —, e não tempo de relógio: não existe fact de
+      duração de relógio no event log lido.
+      A consequência é o que este achado exige antes de qualquer ação. Um job pode
+      terminar ANTES no relógio somando MAIS tempo de task, se a mudança passou a
+      paralelizar melhor: mais tasks menores somam mais trabalho contabilizado e
+      ocupam menos tempo de parede. O inverso também acontece — menos paralelismo,
+      o mesmo trabalho, e o relógio piorando sem esta medida mexer. Então este
+      achado afirma "a mudança custa mais trabalho de CPU agregado", que é uma
+      afirmação verdadeira e útil sobre custo, e NÃO afirma "o job ficou mais
+      lento". Confirmar no relógio — hora de início e fim das duas execuções, fora
+      deste relatório — antes de reverter a mudança.
+      Antes de acreditar no número, ler `SF-BENCH-001` no mesmo relatório: se os
+      volumes de entrada divergem, esta piora pode ser inteiramente do dado. Ler
+      também `total_task_count_delta_pct` no mesmo fact — mais tempo somado com
+      muito mais tasks é mudança de paralelismo, e não de trabalho por task; e os
+      `bench.stage_delta` por símbolo dizem QUAL stage carrega a piora, que é onde
+      a investigação começa.
+    proposed_change:
+      - "Localizar o stage responsável nos `bench.stage_delta`: a piora quase nunca está distribuída, e o símbolo do stage aponta a linha de código."
+      - "Confirmar a duração de relógio das duas execuções antes de decidir qualquer coisa — esta medida não a contém, e reverter uma mudança que melhorou o relógio por causa dela seria o defeito que este texto existe para evitar."
+      - Comparar `total_task_count` dos dois lados; se as tasks aumentaram na mesma ordem do tempo somado, o que mudou foi o particionamento e não o custo do trabalho.
+      - "Se a piora concentra num stage de shuffle, seguir o caminho de skew e de tamanho de partição (`SF-UI-001`, `SF-UI-002`) sobre o event log do lado depois, que é onde há detalhe por task."
+    risks:
+      - "Reverter a mudança com base só nesta medida pode devolver um job que termina DEPOIS no relógio: as duas coisas não são a mesma, e a reversão precisa da confirmação de relógio."
+      - "A mudança pode ter custado tempo de task de propósito, em troca de correção, de resiliência ou de custo de memória — o benchmark mede uma dimensão e a decisão tem mais de uma."
+    tradeoffs:
+      - "Trabalho agregado e tempo de parede são objetivos diferentes e às vezes opostos: paralelizar mais compra relógio pagando em tempo de task somado, e num cluster com capacidade ociosa essa troca é boa."
+      - "Um limiar baixo pega regressão pequena e acusa ruído de execução; um limiar alto cala regressão real. 10% é o meio escolhido, e é editável — é dado, não código."
+    validation:
+      - Repetir as duas execuções ao menos mais uma vez cada e conferir que o sinal e a ordem de grandeza da diferença se mantêm; execução única não distingue regressão de variação de ambiente.
+      - "Duração de relógio das duas execuções, medida fora deste relatório: é a grandeza que decide se houve regressão para o usuário do job."
+      - Contagem total do resultado, contagem por chave e agregado de controle iguais nos dois lados — uma mudança que ficou mais barata processando menos dado não é uma mudança mais barata.
+      - "`total_input_bytes_delta_pct` no mesmo fact, para descartar que a piora seja de volume."
+    rollback:
+      - Reverter o commit da mudança e repetir a medição sobre o mesmo recorte, confirmando que o tempo de task somado volta ao valor de antes.
+    sources:
+      - {origin: field-heuristic, note: "10% é decisão de campo. Não há fonte oficial que declare a partir de quanto uma variação de tempo de task somado deixa de ser ruído de execução, e ela depende do cluster, da contenção e do tamanho do job. O número está aqui para ser ajustado com evidência. A severidade P1 também é de campo: regressão de custo agregado é acionável e não é urgência de produção, e não há measure que distinga regressão de 11% de regressão de 300% — quando houver corpus que sustente o corte, converter para severity_by sobre `measures.total_task_ms_delta_pct`."}
+
+  - id: SF-BENCH-003
+    category: benchmark
+    title: Ganho de tempo acompanhado de mais spill ou mais GC
+    requires_facts: [bench.run_delta]
+    when:
+      same_subject: true
+      all:
+        # Os TOTAIS, e não os `_delta_pct`, e o motivo está no cabeçalho: o
+        # percentual é OMITIDO quando o lado antes é zero, que é exatamente o
+        # caso de spill que NASCE -- a forma mais severa deste defeito. Comparar
+        # `after > before * fator` cobre a base zero sem guarda especial (com
+        # `before = 0`, qualquer byte derramado dispara) e continua exigindo
+        # crescimento relativo quando já havia spill.
+        - fact: bench.run_delta
+          expr: >-
+            measures.total_task_ms_delta_pct < -threshold.improvement_pct
+            and (measures.total_spill_bytes_after
+            > measures.total_spill_bytes_before * threshold.growth_factor
+            or measures.total_gc_ms_after
+            > measures.total_gc_ms_before * threshold.growth_factor)
+    threshold:
+      improvement_pct: 5
+      growth_factor: 1.1
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A mudança reduziu o tempo de task somado e, ao mesmo tempo, aumentou o spill
+      ou o tempo de GC. O ganho existe e é frágil: ele foi comprado com pressão de
+      memória, e pressão de memória é a grandeza que não escala junto com o dado.
+      O padrão típico é o de sempre — mais dado na memória do executor por partição
+      (menos partições, broadcast maior, cache novo, janela mais larga) acelera
+      enquanto couber e vira spill em disco, GC longo ou `OutOfMemoryError` quando
+      o volume crescer. O benchmark foi feito com um recorte; produção não é um
+      recorte.
+      Ler junto com `SF-BENCH-001`: se os volumes divergem, este quadro pode ser
+      inteiramente do dado. E ler os `bench.stage_delta`, que dizem em qual símbolo
+      o spill apareceu.
+      Duas ausências mudam o que esta regra vê, e as duas são deliberadas. O
+      comparador OMITE `total_spill_bytes_delta_pct` quando o lado antes é zero, e é
+      por isso que o gatilho compara os totais e não o percentual — spill que nasce
+      do zero é o caso mais grave e seria o único invisível. E, se uma das duas
+      medidas de degradação for inutilizável em algum dos lados (ausente, parcial,
+      ou perdida por um símbolo casado), o avaliador falha fechado e a regra se
+      cala inteira, inclusive sobre a medida que estava presente: o
+      `bench.unresolved` correspondente nomeia a medida e o lado, e é ele que o
+      operador lê para saber que houve silêncio, e não ausência de defeito.
+    proposed_change:
+      - "Repetir a medição com volume de produção, e não com o recorte de teste. É a única forma de saber se o ganho sobrevive, e o spill que apareceu já no recorte é o aviso de que ele não vai."
+      - "Identificar nos `bench.stage_delta` em qual símbolo o spill ou o GC subiu, e conferir o que mudou ali — número de partições, broadcast, cache, largura de janela."
+      - "Se o ganho veio de reduzir partições, medir a alternativa que preserva memória: manter o número de partições e atacar o custo por task, em vez de concentrar mais dado por task."
+      - "Confirmar no event log do lado depois se há executor perdido ou task com falha de memória (`SF-UI-003`, `SF-UI-004`): spill em disco é o degrau anterior ao OOM, não um custo estável."
+    risks:
+      - Manter a mudança porque o número de tempo melhorou é aceitar um job que funciona no volume de hoje e falha no de amanhã, sem aviso entre os dois estados.
+      - "Desfazer a mudança devolve o tempo anterior, que era pior: a decisão certa raramente é reverter, e sim obter o mesmo ganho sem a pressão de memória."
+      - "Aumentar memória do executor para acomodar o spill esconde o sintoma e move o teto: é remédio válido quando dimensionado com evidência, e é dívida quando aplicado para calar este achado."
+    tradeoffs:
+      - "Trocar spill por mais partições paga em shuffle e em small files na escrita: as duas contas existem, e a escolha depende de qual delas está mais perto do limite no cluster real."
+      - "Um `growth_factor` baixo acusa oscilação normal de GC entre execuções; um alto cala degradação real. 1,1 é o meio escolhido, e é dado editável."
+    validation:
+      - "`total_spill_bytes` e `total_gc_ms` dos dois lados sobre volume de produção, e não sobre o recorte de teste."
+      - Pico de memória de executor e contagem de executores perdidos nas duas execuções.
+      - Contagem total, contagem por chave e agregado de controle iguais nos dois lados — ganho obtido processando menos dado não é ganho.
+      - "Repetir a execução do lado depois ao menos duas vezes: GC varia entre execuções mais que tempo de task, e uma medição só não separa degradação de oscilação."
+    rollback:
+      - Reverter o commit da mudança e repetir a medição, confirmando que spill e GC voltam ao patamar anterior.
+      - Se a mudança for mantida por causa do ganho, registrar o spill observado como dívida e o volume em que ele foi medido, para que o próximo incidente de memória não comece do zero.
+    sources:
+      - {origin: field-heuristic, note: "Os dois números são decisão de campo. `improvement_pct: 5` existe só para separar ganho de ruído — abaixo disso a palavra ganho não se sustenta numa medição única. `growth_factor: 1.1` exige 10% de crescimento na degradação pelo mesmo motivo, e com base ZERO ele degenera para \"qualquer byte derramado\", que é o comportamento desejado: spill que nasce do nada não precisa de margem de ruído. Nenhuma fonte oficial declara esses cortes. A severidade P1 vem da natureza do achado: ele não diz que algo está quebrado hoje, diz que o ganho medido não é o ganho que vai valer em produção."}
+
+  - id: SF-BENCH-004
+    category: benchmark
+    title: Parte grande dos stages não casou entre as duas execuções
+    requires_facts: [bench.analyzed]
+    when:
+      same_subject: true
+      all:
+        # Sobre a SENTINELA, e não sobre os `bench.unmatched`: a pergunta é a
+        # PROPORÇÃO, e proporção é afirmação sobre o conjunto. Uma regra ancorada
+        # em cada `bench.unmatched` produziria um achado por stage renomeado, que
+        # é ruído com o volume da própria mudança.
+        #
+        # `matched + unmatched` fecha exatamente `before + after` (é a garantia
+        # que `benchmark.py` mantém ao contar STAGE, e não símbolo), então o
+        # denominador é a população inteira. Com os dois zerados o avaliador
+        # levanta `ExprError` de divisão por zero, `_expr_matches` o engole, e a
+        # regra se cala -- que é o certo: não há proporção de conjunto vazio.
+        - fact: bench.analyzed
+          expr: >-
+            measures.unmatched_stage_count / (measures.matched_stage_count
+            + measures.unmatched_stage_count) > threshold.unmatched_ratio
+    threshold:
+      unmatched_ratio: 0.3
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      A maior parte dos stages não tem par do outro lado, então o `bench.run_delta`
+      está somando populações diferentes. O casamento é ESTRITO por `symbol`
+      idêntico — não há casamento por posição, por `stage_id`, por prefixo nem por
+      similaridade de nome, porque `stage_id` não é estável entre execuções e
+      qualquer aproximação casaria stages diferentes em silêncio.
+      Isso não é defeito do comparador, e às vezes não é defeito nenhum: uma
+      refatoração que move código de arquivo ou renomeia funções muda o `symbol` de
+      todo stage envolvido sem mudar uma linha de lógica, e é o resultado esperado.
+      O que o achado afirma é mais modesto e mais útil: os totais deste benchmark
+      não estão comparando o mesmo trabalho, e ler `total_task_ms_delta_pct` como
+      "a mudança custou X%" seria ler errado. Quando a taxa é alta, o que sobra de
+      confiável são os `bench.stage_delta` dos poucos símbolos que casaram, e os
+      `bench.unmatched`, que nomeiam cada stage órfão e de qual lado ele estava.
+      `attrs.reason` distingue os dois motivos: `symbol_absent_on_other_side` é o
+      stage que mudou de nome ou deixou de existir, e `empty_symbol` é o stage que
+      o event log entregou sem nome nenhum — este segundo nunca casa com nada, por
+      construção, e uma taxa alta feita só dele é problema de coleta, não de código.
+    proposed_change:
+      - "Conferir em `bench.unmatched` quantos órfãos têm `reason: empty_symbol`: se forem a maioria, o problema é a coleta do event log, e a comparação deve ser refeita antes de qualquer conclusão."
+      - "Se os órfãos são renomeações conhecidas da própria mudança, dizer isso no relatório e usar os `bench.stage_delta` que casaram, em vez dos totais do run."
+      - "Para medir uma refatoração ampla, comparar antes de renomear e depois de renomear em passos separados: uma medição por mudança de nome, outra por mudança de comportamento."
+      - Confirmar que os dois lados são a mesma etapa do pipeline e não jobs diferentes — os artefatos de cada lado estão em `attrs.before_artifacts` e `attrs.after_artifacts` do mesmo fact.
+    risks:
+      - Tomar decisão sobre os totais deste benchmark quando a taxa é alta é decidir sobre a soma de trabalhos diferentes, e o erro daí não tem sinal previsível.
+      - Ignorar o achado por parecer burocrático é o modo de falha comum. Ele não acusa o código, acusa a validade da comparação — que é o insumo de todas as outras três.
+    tradeoffs:
+      - "Casamento estrito por `symbol` produz esta taxa em refatoração ampla; um casamento aproximado a reduziria e passaria a comparar stages diferentes em silêncio, trocando um achado visível por um erro invisível. A escolha está feita, e é o achado que fica."
+      - "Um limiar baixo acusa toda refatoração; um alto deixa passar comparação sem base. 0,3 é o meio escolhido, e é dado editável."
+    validation:
+      - "`matched_stage_count` e `unmatched_stage_count` na sentinela depois de refazer a comparação: a taxa precisa cair abaixo do limiar para que os totais do run voltem a sustentar conclusão."
+      - Conferir que `matched_stage_count + unmatched_stage_count` fecha com `before_stage_count + after_stage_count` — se não fechar, algum stage caiu fora da conta e o problema é do comparador, não da comparação.
+      - "Contagem de `bench.unmatched` por `reason`, separando renomeação de stage sem nome: são dois problemas diferentes com correções diferentes."
+    rollback:
+      - Nenhum — este achado é sobre a comparação, não sobre o código. O que se refaz é a medição.
+    sources:
+      - {origin: field-heuristic, note: "0,3 é decisão de campo, e a escolha é estrutural e não estatística: acima de um terço da população sem par, os totais do run passam a somar majoritariamente trabalho que só existe de um lado, e o percentual deixa de ter leitura simples. Não há fonte oficial sobre isso — não há fonte oficial sobre casamento de stage entre execuções, porque a prática documentada de benchmark de Spark compara jobs inteiros, não stages. A severidade P2 vem de o achado ser sobre método, e não sobre defeito no sistema analisado."}

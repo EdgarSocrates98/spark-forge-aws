@@ -271,6 +271,34 @@ def build_parser() -> argparse.ArgumentParser:
     call_graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     call_graph_p.add_argument("--cursor")
 
+    # benchmark ------------------------------------------------------------
+    # Verbo de TOPO, nao `analyze benchmark`: tudo sob `analyze` extrai facts de
+    # um artefato, e este nao extrai nada -- compara dois conjuntos de facts ja
+    # extraidos. Mesma razao de `fuse` ser verbo proprio.
+    benchmark_p = sub.add_parser(
+        "benchmark",
+        help=(
+            "Compara duas execucoes a partir dos facts de event log de cada uma. "
+            "Nao executa nada e nao mede relogio."
+        ),
+    )
+    benchmark_p.add_argument(
+        "--before",
+        required=True,
+        help="Arquivo de facts gerado por `analyze event-log --out` da execucao ANTES.",
+    )
+    benchmark_p.add_argument(
+        "--after",
+        required=True,
+        help="Arquivo de facts gerado por `analyze event-log --out` da execucao DEPOIS.",
+    )
+    benchmark_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    benchmark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    benchmark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    benchmark_p.add_argument("--cursor")
+
     # fuse ---------------------------------------------------------------
     fuse_p = sub.add_parser(
         "fuse",
@@ -450,6 +478,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Valida findings contra o JSON Schema e a regra de ganho sem benchmark_ref.",
     )
     validate_p.add_argument("--findings", required=True)
+    validate_p.add_argument(
+        "--facts",
+        help=(
+            "Opcional. Arquivo de facts (tipicamente `sparkforge benchmark --out`). "
+            "Sem ele, `benchmark_ref` so e cobrado na FORMA (`f_` + 6 hex); com ele, "
+            "o `fact_id` citado precisa existir no conjunto -- achado que cita "
+            "medicao ausente da evidencia passa a ser rejeitado."
+        ),
+    )
 
     # collect -----------------------------------------------------------
     collect_p = sub.add_parser(
@@ -812,6 +849,27 @@ def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_benchmark(args: argparse.Namespace) -> int:
+    full = _core.benchmark_runs(args.before, args.after, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
 def _cmd_fuse(args: argparse.Namespace) -> int:
     full = _core.fuse_facts(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -975,7 +1033,9 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     errors: list[str] = []
     for index, finding in enumerate(findings):
         rule_id = finding.get("rule_id", "?") if isinstance(finding, dict) else "?"
-        result = _core.validate_output(finding if isinstance(finding, dict) else {})
+        result = _core.validate_output(
+            finding if isinstance(finding, dict) else {}, facts_path=args.facts
+        )
         for message in result["errors"]:
             errors.append(f"finding[{index}] ({rule_id}): {message}")
 
@@ -1059,6 +1119,7 @@ _DISPATCH = {
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
+    ("benchmark", None): _cmd_benchmark,
     ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
     ("case", "open"): _cmd_case_open,
