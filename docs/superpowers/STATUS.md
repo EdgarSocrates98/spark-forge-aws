@@ -1067,11 +1067,16 @@ quatro invalidam texto que o spec afirmava:
 
 Uma quinta, da Task 6, muda a forma de uma regra: **`SF-FVAL-004` precisa de duas
 condições**, porque um `agg:sum:<coluna>` de coluna **inteira** ou **decimal** é
-comparado de forma exata e sai **com** `diverged`, e o `relative_delta` dele é
-minúsculo por construção — uma soma de `bigint` que mudou em uma unidade sobre
-quinhentos milhões dá ordem de `2e-9`, abaixo de qualquer tolerância utilizável.
-Uma 004 escrita só sobre `relative_delta` deixaria essa divergência aparecer na
-sentinela e em achado **nenhum**: silêncio com cara de aprovação.
+comparado de forma exata e sai **com** `diverged`. Uma 004 escrita só sobre
+`relative_delta` deixaria essa divergência aparecer na sentinela e em achado
+**nenhum**: silêncio com cara de aprovação. Medido pelo `judge`, o buraco tem duas
+naturezas: por **magnitude**, uma soma que muda em uma unidade só escapa do limiar
+`1.0e-9` a partir de **um bilhão** (corte em ~9,95e8 — sobre quinhentos milhões o
+`relative_delta` é `2e-9`, **acima** do limiar, e a via relativa ainda pegaria); e
+por **forma**, que não depende de magnitude, porque a condição relativa é filtrada
+por `attrs.comparison: relative` e um agregado exato nunca casa com ela — sem a
+condição exata a regra fica muda para `bigint` divergente em qualquer ordem de
+grandeza.
 
 **O limite da área inteira é declarado três vezes, de propósito.** Contagem,
 schema, chaves e agregados iguais **não** provam que o dado é o mesmo — duas

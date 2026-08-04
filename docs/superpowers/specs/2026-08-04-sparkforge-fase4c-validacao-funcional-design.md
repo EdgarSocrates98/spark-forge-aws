@@ -251,14 +251,20 @@ contra `threshold.relative_tolerance`. Consequência para a sentinela:
 lido como "nada divergiu" quando significa "ninguém aqui decidiu".
 
 **D-4c-23 — a `SF-FVAL-004` precisa de DUAS condições, e a §6 descreve uma.** Um
-`agg:sum:<coluna>` de coluna **inteira** ou **decimal** é comparado de forma exata,
-sai **com** `diverged`, e o `relative_delta` dele é minúsculo por construção — uma
-soma de `bigint` que mudou em uma unidade sobre quinhentos milhões dá ordem de
-`2e-9`, abaixo de qualquer tolerância utilizável. Uma 004 escrita só sobre
-`relative_delta` deixaria essa divergência aparecer em `diverged_check_count` e em
-achado **nenhum**: silêncio com cara de aprovação. A regra ficou com `when.any` de
-duas condições — a exata lendo `attrs.diverged`, a relativa lendo
-`measures.relative_delta` contra o limiar.
+`agg:sum:<coluna>` de coluna **inteira** ou **decimal** é comparado de forma exata
+e sai **com** `diverged`. Uma 004 escrita só sobre `relative_delta` deixaria essa
+divergência aparecer em `diverged_check_count` e em achado **nenhum**: silêncio
+com cara de aprovação. A regra ficou com `when.any` de duas condições — a exata
+lendo `attrs.diverged`, a relativa lendo `measures.relative_delta` contra o limiar.
+
+O buraco é de DUAS naturezas, e a segunda é a que decide. **Por magnitude:** uma
+soma que muda em uma unidade só escapa do limiar `1.0e-9` quando o total passa de
+**um bilhão** — medido pelo `judge`, o corte fica em ~9,95e8, e abaixo dele a via
+relativa ainda pegaria (sobre quinhentos milhões o `relative_delta` é `2e-9`, que
+é **acima** do limiar, não abaixo). **Por forma, e esta não tem magnitude:** a
+condição relativa é filtrada por `attrs.comparison: relative`, e um agregado exato
+nunca casa com ela — medido, a 004 sem a condição exata fica muda para um `bigint`
+divergente em **qualquer** ordem de grandeza, inclusive uma soma de mil.
 
 **D-4c-25 — o gate morde em `report`, e não em `validation`.** A §7 não fixava a
 fase. Guardar `validation` mataria a `ROUTE-015`, única rota com

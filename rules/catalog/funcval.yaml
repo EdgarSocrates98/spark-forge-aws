@@ -343,10 +343,15 @@ rules:
       # de aprovação é o defeito que esta fase inteira existe para acusar.
       any:
         # EXATA -- inteiro, decimal. Aqui não há tolerância a aplicar, e aplicar
-        # uma seria contrariar a D-4 do spec: uma soma de `bigint` que mudou em
-        # uma unidade sobre quinhentos milhões tem `relative_delta` da ordem de
-        # 1e-9 e seria engolida pelo limiar da condição de baixo. O veredito já
-        # está no fact, calculado sobre o valor CRU.
+        # uma seria contrariar a D-4 do spec. Esta condição não é redundante com a
+        # de baixo, e a razão principal NÃO é de magnitude: a condição relativa é
+        # filtrada por `attrs.comparison: relative`, e um agregado exato nunca casa
+        # com ela em ordem de grandeza NENHUMA. A magnitude só decide no
+        # contrafactual em que a condição de baixo lesse todo agregado: aí uma soma
+        # que muda em uma unidade só escaparia do limiar a partir de UM BILHÃO
+        # (corte medido em ~9,95e8; sobre quinhentos milhões o `relative_delta` é
+        # 2e-9, que está ACIMA de 1.0e-9). O veredito já está no fact, calculado
+        # sobre o valor CRU.
         - fact: funcval.check_delta
           where: {attrs.axis: aggregate, attrs.comparison: exact, attrs.diverged: true}
         # RELATIVA -- ponto flutuante. O fact NÃO traz `diverged` (a razão está em
