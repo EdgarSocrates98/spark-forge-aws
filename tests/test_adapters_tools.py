@@ -53,6 +53,8 @@ class TestToolSurface:
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
+            "sparkforge_report_sign",
+            "sparkforge_report_verify",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -103,9 +105,19 @@ class TestToolSurface:
             if spec["annotations"]["openWorldHint"] is True:
                 assert spec["annotations"]["readOnlyHint"] is True, name
 
-    def test_only_case_writers_are_not_read_only(self):
+    def test_only_case_and_report_writers_are_not_read_only(self):
+        """A quarta lista manual desta classe, e ela mudou junto com as outras
+        tres na Fase 4b: `sparkforge_report_sign` escreve o bloco de assinatura
+        DENTRO do relatorio, no lugar. Um `sign` que so devolvesse o bloco para
+        alguem colar seria a versao decorativa da capacidade -- e a colagem
+        manual e exatamente onde o corpo assinado deixaria de ser o corpo
+        escrito. `report_verify` fica de fora: so le."""
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
-        assert writers == {"sparkforge_case_open", "sparkforge_case_update"}
+        assert writers == {
+            "sparkforge_case_open",
+            "sparkforge_case_update",
+            "sparkforge_report_sign",
+        }
 
     def test_every_tool_has_a_description(self):
         for name, spec in TOOLS.items():
@@ -190,6 +202,94 @@ class TestCallTool:
             {"finding": self._gain_finding(fact.id), "facts_path": str(facts_path)},
         )
         assert present["valid"] is True
+
+    def test_strict_gates_reaches_mcp_too(self, repo):
+        """A assimetria que a Fase 5b corrigiu na flag `--emr` nao pode voltar:
+        o rigor e escolha do case, e um cliente MCP precisa poder faze-la."""
+        case = call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "glue": "5.0", "strict_gates": True},
+        )
+        assert case["strict_gates"] is True
+        blocked = call_tool(
+            "sparkforge_case_update", {"repo": str(repo), "phase": "validation"}
+        )
+        assert blocked["exit_code"] == 2
+        assert "sparkforge benchmark" in blocked["error"]
+
+    def test_case_open_without_strict_gates_stays_advisory(self, repo):
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z"},
+        )
+        result = call_tool(
+            "sparkforge_case_update", {"repo": str(repo), "phase": "validation"}
+        )
+        assert result["phase"] == "validation"
+
+    def test_override_gate_needs_a_reason_over_mcp(self, repo):
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        recusado = call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "override_gate": "baseline_captured"},
+        )
+        assert recusado["exit_code"] == 2
+        assert "reason" in recusado["error"]
+
+        aceito = call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "override_gate": "baseline_captured",
+             "reason": "job descontinuado", "now": "2026-08-04T00:00:00Z"},
+        )
+        assert aceito["gate_overrides"][0]["reason"] == "job descontinuado"
+
+    def test_facts_path_unlocks_the_phase_over_mcp(self, repo, tmp_path):
+        from sparkforge.findings.models import Fact
+
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        facts = tmp_path / "gate_facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    Fact(kind=k, subject={"type": "job_run"}, measures={"n": 1}).to_dict()
+                    for k in ("bench.run_delta", "callgraph.reachable_spark_work")
+                ]
+            ),
+            encoding="utf-8",
+        )
+        result = call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "phase": "validation", "facts_path": str(facts)},
+        )
+        assert result["phase"] == "validation"
+
+    def test_resume_carries_the_override_over_mcp(self, repo):
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "override_gate": "flows_mapped",
+             "reason": "corpus sem trabalho Spark alcancavel",
+             "now": "2026-08-04T00:00:00Z"},
+        )
+        payload = call_tool("sparkforge_resume", {"repo": str(repo)})
+        assert payload["strict_gates"] is True
+        assert payload["gate_overrides"][0]["reason"] == (
+            "corpus sem trabalho Spark alcancavel"
+        )
+        jsonschema.validate(payload, TOOLS["sparkforge_resume"]["outputSchema"])
 
     def test_case_open_then_next_step(self, repo):
         call_tool(
@@ -859,6 +959,28 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         }[name]
         return call_tool(name, args)
 
+    if name in ("sparkforge_report_sign", "sparkforge_report_verify"):
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_judge", {"facts": facts["items"], "glue": "5.0"})
+        # Sem finding, `report sign` recusa por desenho -- e o dict de erro
+        # validaria contra o ramo de erro do `oneOf`, fazendo o teste passar
+        # pelo motivo errado. A asercao trava o branch no caminho de sucesso.
+        assert judged["items"], "o job de amostra precisa render pelo menos um finding"
+        findings_path = tmp_path / "findings.json"
+        findings_path.write_text(json.dumps(judged["items"]), encoding="utf-8")
+        report = tmp_path / "relatorio.md"
+        report.write_text(
+            "# Relatorio de Performance\n\n## 1. Resumo executivo\n\n"
+            "- Gargalo dominante: escrita com coalesce(1)\n",
+            encoding="utf-8",
+        )
+        args = {"report_path": str(report), "findings_path": str(findings_path)}
+        signed = call_tool("sparkforge_report_sign", args)
+        if name == "sparkforge_report_sign":
+            return signed
+        return call_tool("sparkforge_report_verify", args)
+
     if name == "sparkforge_collect_verify":
         return call_tool("sparkforge_collect_verify", {"repo": str(tmp_path)})
 
@@ -911,6 +1033,14 @@ class TestErrorShapesValidateToo:
         ),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),
+        (
+            "sparkforge_report_sign",
+            {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
+        ),
+        (
+            "sparkforge_report_verify",
+            {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
+        ),
     )
 
     @staticmethod

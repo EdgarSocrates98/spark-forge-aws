@@ -25,6 +25,7 @@ HANDOFF_SECTIONS = (
     "Achados principais",
     "Hipoteses abertas",
     "Gates",
+    "Overrides de gate",
     "Artefatos ausentes",
     "Proximo passo",
     "Em voo na interrupcao",
@@ -117,6 +118,14 @@ def resume(
         "open_hypotheses": open_hypotheses,
         "gates": gates,
         "unsatisfied_gates": unsatisfied_gates,
+        # Quem retoma noutra máquina precisa saber que o case é estrito e que
+        # alguém passou por cima de um gate, sem abrir o YAML.
+        "strict_gates": bool(case.get("strict_gates")),
+        "gate_overrides": [
+            dict(entry)
+            for entry in (case.get("gate_overrides") or [])
+            if isinstance(entry, dict)
+        ],
         "missing_artifacts": missing_artifacts,
         "next_step": step,
         "in_flight": in_flight,
@@ -184,11 +193,32 @@ def _hypotheses_lines(payload: dict[str, Any]) -> list[str]:
 
 def _gates_lines(payload: dict[str, Any]) -> list[str]:
     gates = payload["gates"]
-    return [
+    lines = [
         f"- {gate}: {'OK' if gates.get(gate) else 'pendente'}"
         for gate in GATES
         if gate in gates
     ]
+    if payload.get("strict_gates"):
+        # Sob rigor o booleano acima é informativo, não operante: quem decide a
+        # transição é `set_phase`, pela presença do fact produtor. Dizer isso
+        # aqui evita que quem retoma leia "pendente" e vire a flag à mão.
+        lines.append(
+            "- rigor: `strict_gates` ligado — o booleano do gate nao destrava; "
+            "destrava o fact produtor presente ou um override registrado"
+        )
+    return lines
+
+
+def _gate_overrides_lines(payload: dict[str, Any]) -> list[str]:
+    """Gate, motivo e quando — a diferença entre 'não havia gate' e 'passaram'."""
+    lines = []
+    for entry in payload.get("gate_overrides") or []:
+        quando = entry.get("at") or "sem timestamp"
+        lines.append(
+            f"- {entry.get('gate')}: passaram por cima em {quando} — "
+            f"motivo: {entry.get('reason')}"
+        )
+    return lines
 
 
 def _artifacts_lines(payload: dict[str, Any]) -> list[str]:
@@ -211,7 +241,18 @@ def _next_step_lines(payload: dict[str, Any]) -> list[str]:
         lines.append(f"- coordenador recomendado: {step['recommended_agent']}")
         lines.append(f"- motivo do coordenador: {step.get('recommended_agent_reason')}")
     if step.get("blocked_by"):
-        lines.append(f"- bloqueado por (advisory): {', '.join(step['blocked_by'])}")
+        # `blocked_by` sai de `routing.yaml` lendo o booleano do case, que sob
+        # rigor nao destrava nada (D-4b-2). Chamar isso de "advisory" num case
+        # estrito seria falso nos dois sentidos: pode nao bloquear (o fact esta
+        # presente) e pode bloquear (o fact nao esta) independente do booleano.
+        if payload.get("strict_gates"):
+            rotulo = (
+                "strict_gates ligado: quem decide a transicao e a presenca do "
+                "fact produtor, nao este booleano"
+            )
+        else:
+            rotulo = "advisory"
+        lines.append(f"- bloqueado por ({rotulo}): {', '.join(step['blocked_by'])}")
     return lines
 
 
@@ -238,6 +279,7 @@ def render_handoff(payload: dict[str, Any]) -> str:
         _section("Achados principais", _findings_lines(payload)),
         _section("Hipoteses abertas", _hypotheses_lines(payload)),
         _section("Gates", _gates_lines(payload)),
+        _section("Overrides de gate", _gate_overrides_lines(payload)),
         _section("Artefatos ausentes", _artifacts_lines(payload)),
         _section("Proximo passo", _next_step_lines(payload)),
         _section("Em voo na interrupcao", _in_flight_lines(payload)),

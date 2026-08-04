@@ -30,6 +30,17 @@ ROUTING_OPERATORS = frozenset(
 _MISSING = object()
 
 
+def routing_path(directory: Path | None = None) -> Path:
+    """Onde o `routing.yaml` que o runtime carrega REALMENTE mora.
+
+    Existe porque `SPARKFORGE_CATALOG` move o catálogo: quem recusa um contrato
+    de gate incompleto precisa dizer em qual arquivo o bloco faltante deveria
+    estar, e "no `routing.yaml`" não localiza nada quando há uma cópia do
+    catálogo apontada por variável de ambiente.
+    """
+    return safe_catalog_file(directory or catalog_dir(), ROUTING_FILE)
+
+
 def load_routing(directory: Path | None = None) -> dict[str, Any]:
     """Lê `routing.yaml`. Levanta CatalogError se ausente ou malformado."""
     base = directory or catalog_dir()
@@ -47,7 +58,70 @@ def load_routing(directory: Path | None = None) -> dict[str, Any]:
     if not isinstance(document.get("fallback"), dict):
         raise CatalogError(f"{path}: campo `fallback` ausente ou não é mapa")
 
+    _validate_gates(path, document.get("gates"))
+
     return document
+
+
+def _validate_gates(path: Path, gates: Any) -> None:
+    """Valida a forma do bloco `gates`, sempre — não só quando alguém o consome.
+
+    Mesma razão de `loader._validate_conditions`: um typo em `satisfied_by`
+    faria o gate deixar de morder em silêncio, e falso negativo mudo é o pior
+    modo de falha deste sistema. Bloco malformado morre na carga do routing, que
+    é o caminho por onde todo mundo passa.
+    """
+    if gates is None:
+        return
+    if not isinstance(gates, dict):
+        raise CatalogError(f"{path}: campo `gates` precisa ser um mapa")
+
+    for name, contract in gates.items():
+        if not isinstance(contract, dict):
+            raise CatalogError(f"{path}: gate {name!r} precisa ser um mapa")
+
+        satisfied_by = contract.get("satisfied_by")
+        if satisfied_by is None:
+            reason = contract.get("advisory_reason")
+            if not isinstance(reason, str) or not reason.strip():
+                raise CatalogError(
+                    f"{path}: gate {name!r} sem `satisfied_by` precisa de "
+                    f"`advisory_reason` dizendo por que não há produtor"
+                )
+            continue
+
+        if not isinstance(satisfied_by, str) or not satisfied_by.strip():
+            raise CatalogError(f"{path}: gate {name!r}: `satisfied_by` vazio")
+
+        produced_by = contract.get("produced_by")
+        if not isinstance(produced_by, str) or not produced_by.strip():
+            raise CatalogError(
+                f"{path}: gate {name!r} declara `satisfied_by` mas não o comando "
+                f"`produced_by` que produz o fact — a mensagem de bloqueio "
+                f"ficaria inacionável"
+            )
+
+        phases = contract.get("guards_phases")
+        if not isinstance(phases, list) or not phases:
+            raise CatalogError(
+                f"{path}: gate {name!r}: `guards_phases` precisa ser uma lista "
+                f"não vazia de fases"
+            )
+        for phase in phases:
+            if not isinstance(phase, str):
+                raise CatalogError(
+                    f"{path}: gate {name!r}: fase inválida em `guards_phases`: {phase!r}"
+                )
+
+
+def load_gate_contract(directory: Path | None = None) -> dict[str, dict[str, Any]]:
+    """O bloco `gates` do `routing.yaml`: produtor e fases guardadas por gate.
+
+    Gate sem `satisfied_by` é advisory por declaração — quem consome não
+    bloqueia nele, e é assim que o critério da §1 do spec da Fase 4b fica no
+    dado em vez de numa lista paralela em Python.
+    """
+    return dict(load_routing(directory).get("gates") or {})
 
 
 def _resolve_case_path(case: dict[str, Any], path: str) -> Any:

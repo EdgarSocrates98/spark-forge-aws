@@ -12,6 +12,11 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
 ## Faz
 
 1. Monta o relatório a partir dos achados que **sobreviveram** ao `sf-verifier`.
+   Se o case tiver `gate_overrides`, a seção "Gates com override" de
+   `templates/performance-report.md` sai preenchida com gate, data e motivo,
+   copiados de `sparkforge_case_get` — omitir afirmaria um rigor que não foi
+   prestado, e a seção fica **dentro** do corpo assinado, então apagá-la depois
+   de assinar invalida a assinatura.
 2. `sparkforge_validate_output` em cada recomendação, antes de apresentar. Ganho
    quantificado sem `benchmark_ref` é rejeitado pelo schema — não contorne.
    **`benchmark_ref` não é texto livre desde a Fase 4a**: ele cita o `fact_id` de
@@ -24,9 +29,22 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    benchmark rodado, o efeito sai **qualitativo e rotulado como hipótese** — e
    isso passa. Inventar um `f_` bem formado para satisfazer o gate é a fraude que
    a forma existe para impedir.
-3. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
-4. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
-5. Registra no case com `sparkforge_case_update`.
+3. `sparkforge_report_sign` no relatório gravado, com o mesmo arquivo de findings
+   que você julgou (`judge --out`). O bloco escrito no fim prova
+   **correspondência** entre aquele texto, aquela evidência e aquele catálogo —
+   e **não** autoria: não há chave, e qualquer um com os mesmos findings produz a
+   mesma assinatura. Quem receber confere com `sparkforge_report_verify`, que
+   diz qual das quatro partes divergiu — versão da assinatura, evidência,
+   catálogo ou corpo — em vez de devolver só "inválido". `version_mismatch` é
+   **regra mudada, não adulteração**: nesse caso o corpo sai como não avaliável
+   em vez de acusado, e o que se faz é reassinar. Editar a prosa depois de
+   assinar invalida, e é para
+   isso que serve: reassinar é barato, texto editado passando por verificado não
+   é. O corpo assinado é tudo que vem antes do delimitador do bloco, então nada
+   pode ser acrescentado depois dele.
+4. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
+5. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
+6. Registra no case com `sparkforge_case_update`.
 
 ## Pressupõe
 
