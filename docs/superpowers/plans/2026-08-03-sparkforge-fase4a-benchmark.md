@@ -454,6 +454,74 @@ Medido: 37 passando (24 da Task 1 + 13 novos). `ruff check .` limpo.
 
 - [x] **Step 5: Commit**
 
+- [x] **Step 6 (revisão da Task 2): seis desvios medidos pelo revisor**
+
+> **D-4a-11 — o `#side` no subject fechava a colisão pela metade, e a correção
+> óbvia reprova no schema.** O `stage_id` só entrava no subject quando era `int`
+> não negativo; fora disso o subject de **todos** os stages sem nome daquele lado
+> virava `{"type":"stage","symbol":"#before"}`. Medido pelo revisor: 647 colisões
+> em 4000 com `stage_id` livre, zero quando restrito a inteiro — e
+> `_facts_from_dicts` (`_core.py:1049`) copia o subject verbatim, então o arquivo
+> de facts alcança o ramo defeituoso. **A correção sugerida —
+> `subject["stage_id"] = str(stage_id)` sempre — não passa:** `fact.schema.json`
+> exige `stage_id` inteiro ≥ 0, e `validate_fact` rejeita `'a' is not of type
+> 'integer'` (medido). A identidade do stage sem nome foi então inteira para o
+> `symbol` do subject — `{"type":"stage","symbol":"#<side>#<stage_id>"}` —, que
+> aceita qualquer valor, com `attrs["stage_ids"]` guardando o legível. O teste
+> novo usa `stage_id` **não numérico** e valida contra o schema, então o ramo é
+> exercitado nos dois eixos.
+>
+> **D-4a-12 — símbolo casado que perde a medida num lado fabrica melhora, e agora
+> tem nome.** `_side_totals` afere presença dentro dos facts que **existem**,
+> nunca por stage que deveria ter contribuído: com `gc(x)=10, gc(y)=10` antes e
+> `gc(x)=5` depois — `y` casado pelos facts de duração — o lado depois sai
+> `usable` e o run afirma −75% que ninguém observou. É o "piso contra total" que o
+> docstring promete impedir, e a justificativa anterior ("o furo já foi nomeado no
+> recorte do run") era **falsa** para essa forma. Sai `bench.unresolved` com
+> `reason: "measure_absent_for_matched_symbol"`, símbolo e medida. Detectável
+> **só** a partir desta task, que é a primeira vez que o módulo sabe quais
+> símbolos existem nos dois lados.
+>
+> **D-4a-13 — e o `_delta_pct` daquela medida sai do `bench.run_delta`. Medido
+> antes de decidir: ruído ZERO.** As duas fixtures de `fixtures/eventlog/` nas
+> quatro combinações produzem **0** furos e **0** `bench.unresolved` de qualquer
+> tipo; nenhum `_delta_pct` do run cai. Não é sorte: `event_log.py` co-emite os
+> kinds de stage para todo stage analisado — inclusive `spark.stage.spill` com
+> zero byte, conforme o comentário em `event_log.py:516` —, então dois lados
+> vindos do extrator têm sempre os mesmos kinds por símbolo. Com o número na mão a
+> decisão é **omitir**: custo zero na entrada bem formada, e o percentual só
+> desaparece onde ele seria inventado — a mesma escolha que a Task 1 fez para
+> chave parcial e para base zero, pelo mesmo motivo. Os totais **ficam**, porque
+> foram observados; o que não se sustenta é a razão entre eles.
+>
+> **Assimetria deliberada, com teste:** símbolo **não casado** não tira
+> percentual nenhum. Stage que sumiu entre os runs é mudança de *trabalho* — a
+> verdade que o benchmark existe para relatar —, enquanto símbolo casado sem a
+> medida num lado é mudança de *medição*. `bench.unmatched` já nomeia o primeiro.
+>
+> **D-4a-14 — spill por stage existe, e o D-4a-10 dizia que não.**
+> `spark.stage.spill` traz `memory_spill_bytes`/`disk_spill_bytes` por stage
+> (`event_log.py:236`), e o próprio `spark.job.spill_summary` é a soma dele
+> (`event_log.py:528-544`). O que é job-scoped é **o resumo**, não o spill. O
+> recorte de stage passou a ler o kind certo, com o **mesmo nome de chave**
+> (`total_spill_bytes`) nos dois recortes, para `SF-BENCH-003` não precisar saber
+> de qual fact veio. O teste antigo virou o que ele realmente provava: o resumo do
+> job **não vaza** para o recorte de stage.
+>
+> **D-4a-15 — `_delta_pct` do stage sai quando a população de stages muda.** Dois
+> `scan` antes contra um depois, custo idêntico em cada um, dava −50% — queda por
+> stage que ninguém observou. Em todo outro caso onde a comparação não se sustenta
+> este módulo omite o percentual; população diferente não é exceção. Os totais e
+> as duas contagens ficam, e `attrs["delta_pct_omitted"] = "stage_count_changed"`
+> diz por que a chave sumiu — chave ausente é "não sei", mas "não sei" sem motivo
+> escrito vira suspeita de bug.
+>
+> **D-4a-16 — `stage_delta_count` na sentinela.** `matched_stage_count = 3` com
+> **um** `bench.stage_delta` está correto e se lê errado. O nome já diz `stage`, e
+> o que faltava era o outro número ao lado. Contar os `bench.stage_delta` da saída
+> não substitui: o verbo `benchmark` pagina (`_facts_page`), e uma página não é o
+> total.
+
 ---
 
 ## Task 3: superfície e registro

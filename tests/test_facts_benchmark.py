@@ -46,6 +46,32 @@ def _task_count(symbol: str, stage_id: int, task_count: int, artifact: str = "a.
     )
 
 
+def _stage_spill(
+    symbol: str, stage_id: int, memory: int, disk: int, artifact: str = "a.jsonl"
+) -> Fact:
+    return Fact(
+        kind="spark.stage.spill",
+        subject={"type": "stage", "symbol": symbol, "stage_id": stage_id},
+        measures={
+            "memory_spill_bytes": memory,
+            "disk_spill_bytes": disk,
+            "input_bytes": 1000,
+        },
+        provenance=_prov(artifact),
+    )
+
+
+def _sem_nome(stage_id, artifact: str = "a.jsonl") -> Fact:
+    """Stage sem `symbol` e com `stage_id` de tipo livre -- o que um arquivo de
+    facts editado a mao entrega, e que `_facts_from_dicts` copia verbatim."""
+    return Fact(
+        kind="spark.stage.task_duration",
+        subject={"type": "stage", "symbol": "", "stage_id": stage_id},
+        measures={"mean_ms": 100, "task_count": 10},
+        provenance=_prov(artifact),
+    )
+
+
 def _spill_summary(app_id: str, memory: int, disk: int, artifact: str = "a.jsonl") -> Fact:
     return Fact(
         kind="spark.job.spill_summary",
@@ -217,10 +243,21 @@ class TestOQueOModuloRecusaAAfirmar:
         assert "total_gc_ms_after" not in delta.measures
         assert "total_gc_ms_delta_pct" not in delta.measures
         de_um_lado = [
-            f for f in by_kind(facts, "bench.unresolved") if f.attrs["measure"] == "total_gc_ms"
+            f
+            for f in by_kind(facts, "bench.unresolved")
+            if f.attrs["measure"] == "total_gc_ms"
+            and f.attrs["reason"] == "measure_absent_one_side"
         ]
-        assert [f.attrs["reason"] for f in de_um_lado] == ["measure_absent_one_side"]
+        assert len(de_um_lado) == 1
         assert de_um_lado[0].attrs["sides"] == ["after"]
+        # O simbolo `scan` casa nos dois lados e e ELE que perdeu o gc, entao o
+        # furo tambem sai nomeado por simbolo -- e o que impede o total do run de
+        # afirmar uma queda que ninguem observou.
+        assert [
+            f.attrs["symbol"]
+            for f in by_kind(facts, "bench.unresolved")
+            if f.attrs["reason"] == "measure_absent_for_matched_symbol"
+        ] == ["scan"]
 
     def test_kind_presente_sem_a_chave_da_medida_nao_vira_zero(self):
         """Presenca e por CHAVE, nao por kind. `spark.stage.task_duration` sem
@@ -242,9 +279,12 @@ class TestOQueOModuloRecusaAAfirmar:
         assert delta.measures["total_task_ms_after"] == 1000
         assert "total_task_ms_delta_pct" not in delta.measures
         furo = [
-            f for f in by_kind(facts, "bench.unresolved") if f.attrs["measure"] == "total_task_ms"
+            f
+            for f in by_kind(facts, "bench.unresolved")
+            if f.attrs["measure"] == "total_task_ms"
+            and f.attrs["reason"] == "measure_absent_one_side"
         ]
-        assert [f.attrs["reason"] for f in furo] == ["measure_absent_one_side"]
+        assert len(furo) == 1
         assert furo[0].attrs["sides"] == ["before"]
         assert furo[0].attrs["missing_key_fact_count"] == {"before": 1, "after": 0}
 
@@ -403,6 +443,35 @@ class TestCasamentoDeStage:
         assert len(unmatched) == 3
         assert len({f.id for f in unmatched}) == 3
 
+    def test_stage_sem_nome_com_id_nao_numerico_nao_colide_nem_quebra_o_schema(self):
+        """O `stage_id` de um arquivo de facts nao e necessariamente inteiro, e o
+        schema recusa `stage_id` que nao seja inteiro >= 0 -- entao a identidade
+        do stage sem nome vive no `symbol` do subject, nao numa chave que ora
+        entra ora nao."""
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), _sem_nome("a"), _sem_nome("b")],
+            [_analyzed("b.jsonl"), _sem_nome("a", artifact="b.jsonl")],
+        )
+
+        unmatched = by_kind(facts, "bench.unmatched")
+        assert len(unmatched) == 3
+        assert len({f.id for f in unmatched}) == 3
+        assert sorted(f.attrs["stage_ids"][0] for f in unmatched) == ["a", "a", "b"]
+        for fact in facts:
+            validate_fact(fact.to_dict())
+
+    def test_o_subject_do_unmatched_com_nome_nao_mutila_o_symbol(self):
+        """Simbolo nomeado aparece num lado so por construcao -- nao ha colisao
+        para resolver ali, e `"join#before"` no subject seria mutilacao sem
+        ganho."""
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), _stage("join", 1)], [_analyzed("b.jsonl"), _stage("scan", 2)]
+        )
+        assert sorted(f.subject["symbol"] for f in by_kind(facts, "bench.unmatched")) == [
+            "join",
+            "scan",
+        ]
+
     def test_dois_stages_com_o_mesmo_symbol_no_mesmo_lado_somam_juntos(self):
         """O mesmo `symbol` pode nascer varias vezes num run (linha dentro de
         laco, funcao chamada duas vezes). O recorte e o SIMBOLO: as medidas somam
@@ -513,9 +582,10 @@ class TestOStageHerdaAsRegrasDePresenca:
         assert delta.measures["total_task_ms_before"] == 0
         assert "total_task_ms_delta_pct" not in delta.measures
 
-    def test_o_stage_nao_carrega_a_medida_que_e_do_job(self):
-        """`total_spill_bytes` vem de `spark.job.spill_summary`, cujo subject e o
-        JOB: no recorte de stage ela nao esta ausente, ela nao existe."""
+    def test_o_resumo_de_spill_do_job_nao_vaza_para_o_recorte_de_stage(self):
+        """`spark.job.spill_summary` tem subject de JOB: rateá-lo entre os stages
+        inventaria atribuicao que o event log nao da. O spill por stage existe --
+        `spark.stage.spill` --, e e de la que o recorte de stage le."""
         before = [_analyzed("a.jsonl"), _stage("scan", 0), _spill_summary("app-1", 600, 400)]
         after = [
             _analyzed("b.jsonl"),
@@ -526,6 +596,141 @@ class TestOStageHerdaAsRegrasDePresenca:
         delta = by_kind(build_benchmark(before, after), "bench.stage_delta")[0]
 
         assert not [k for k in delta.measures if k.startswith("total_spill_bytes")]
+
+    def test_o_stage_carrega_o_spill_do_kind_de_stage(self):
+        """Sem isto, `SF-BENCH-003` -- "mais rapido mas derramando" -- fica sem
+        evidencia no unico recorte onde ela e acionavel."""
+        before = [_analyzed("a.jsonl"), _stage_spill("scan", 0, 900, 100)]
+        after = [_analyzed("b.jsonl"), _stage_spill("scan", 7, 5, 5, artifact="b.jsonl")]
+
+        delta = by_kind(build_benchmark(before, after), "bench.stage_delta")[0]
+
+        assert delta.measures["total_spill_bytes_before"] == 1000
+        assert delta.measures["total_spill_bytes_after"] == 10
+        assert delta.measures["total_spill_bytes_delta_pct"] == -99.0
+
+    def test_delta_pct_do_stage_some_quando_a_populacao_de_stages_muda(self):
+        """Dois stages antes contra um depois, custo identico em cada um: o -50%
+        seria queda de trabalho por stage que ninguem observou. Em todo outro
+        caso onde a comparacao nao se sustenta -- chave parcial, medida de um lado
+        so, base zero -- este modulo OMITE o `_delta_pct`; populacao diferente e o
+        mesmo caso, e a razao vai em `attrs` para nao virar chave que sumiu sem
+        explicacao."""
+        before = [
+            _analyzed("a.jsonl"),
+            _stage("scan", 0, mean_ms=100),
+            _stage("scan", 1, mean_ms=100),
+        ]
+        after = [_analyzed("b.jsonl"), _stage("scan", 5, mean_ms=100)]
+
+        delta = by_kind(build_benchmark(before, after), "bench.stage_delta")[0]
+
+        assert delta.measures["total_task_ms_before"] == 2000
+        assert delta.measures["total_task_ms_after"] == 1000
+        assert "total_task_ms_delta_pct" not in delta.measures
+        assert delta.attrs["delta_pct_omitted"] == "stage_count_changed"
+
+    def test_delta_pct_do_stage_fica_quando_a_populacao_e_a_mesma(self):
+        delta = by_kind(
+            build_benchmark(
+                [_analyzed("a.jsonl"), _stage("scan", 0, mean_ms=200)],
+                [_analyzed("b.jsonl"), _stage("scan", 9, mean_ms=100)],
+            ),
+            "bench.stage_delta",
+        )[0]
+        assert delta.measures["total_task_ms_delta_pct"] == -50.0
+        assert "delta_pct_omitted" not in delta.attrs
+
+    def test_medida_que_some_de_um_simbolo_casado_e_nomeada(self):
+        """O simbolo `y` casa nos dois lados e perdeu o fact de gc no depois:
+        `_side_totals` afere presenca DENTRO dos facts que existem, entao o depois
+        sai `usable` e o run afirma -75% que ninguem observou. So a partir do
+        casamento da Task 2 o modulo sabe quais simbolos existem nos dois lados --
+        e portanto so agora isso e detectavel."""
+        before = [_analyzed("a.jsonl"), _gc("x", 0, 10), _gc("y", 1, 10), _stage("y", 1)]
+        after = [
+            _analyzed("b.jsonl"),
+            _gc("x", 0, 5, artifact="b.jsonl"),
+            _stage("y", 1, artifact="b.jsonl"),
+        ]
+
+        facts = build_benchmark(before, after)
+
+        furo = [
+            f
+            for f in by_kind(facts, "bench.unresolved")
+            if f.attrs["reason"] == "measure_absent_for_matched_symbol"
+        ]
+        assert [(f.attrs["symbol"], f.attrs["measure"], f.attrs["sides"]) for f in furo] == [
+            ("y", "total_gc_ms", ["after"])
+        ]
+
+    def test_o_furo_de_simbolo_casado_tira_o_percentual_do_run(self):
+        """Os totais ficam -- foram observados --, mas a razao entre eles some:
+        o lado furado e piso, e piso contra total fabrica melhora. A medida sem
+        furo no mesmo par mantem o percentual."""
+        before = [_analyzed("a.jsonl"), _gc("x", 0, 10), _gc("y", 1, 10), _stage("y", 1)]
+        after = [
+            _analyzed("b.jsonl"),
+            _gc("x", 0, 5, artifact="b.jsonl"),
+            _stage("y", 1, artifact="b.jsonl"),
+        ]
+
+        delta = only_delta(build_benchmark(before, after))
+
+        assert delta.measures["total_gc_ms_before"] == 20
+        assert delta.measures["total_gc_ms_after"] == 5
+        assert "total_gc_ms_delta_pct" not in delta.measures
+        assert delta.measures["total_task_ms_delta_pct"] == 0.0
+
+    def test_simbolo_nao_casado_nao_tira_o_percentual_do_run(self):
+        """Assimetria deliberada: stage que sumiu entre os runs e mudanca de
+        TRABALHO, que e o que o benchmark existe para relatar. `bench.unmatched`
+        ja o nomeia."""
+        before = [_analyzed("a.jsonl"), _gc("x", 0, 10), _gc("sumiu", 1, 10)]
+        after = [_analyzed("b.jsonl"), _gc("x", 0, 5, artifact="b.jsonl")]
+
+        facts = build_benchmark(before, after)
+
+        assert only_delta(facts).measures["total_gc_ms_delta_pct"] == -75.0
+        assert [f.attrs["symbol"] for f in by_kind(facts, "bench.unmatched")] == ["sumiu"]
+
+    def test_o_furo_por_simbolo_casado_tem_id_proprio(self):
+        before = [_analyzed("a.jsonl"), _gc("x", 0, 10), _gc("y", 1, 10)]
+        after = [
+            _analyzed("b.jsonl"),
+            _stage("x", 0, artifact="b.jsonl"),
+            _stage("y", 1, artifact="b.jsonl"),
+        ]
+
+        furo = [
+            f
+            for f in by_kind(build_benchmark(before, after), "bench.unresolved")
+            if f.attrs["reason"] == "measure_absent_for_matched_symbol"
+        ]
+
+        # Dois simbolos, e em cada um a medida que so o antes tem (gc) e a que so
+        # o depois tem (duracao): quatro furos, e o subject precisa do simbolo E
+        # da medida para os quatro terem id proprio.
+        assert sorted((f.attrs["symbol"], f.attrs["measure"]) for f in furo) == [
+            ("x", "total_gc_ms"),
+            ("x", "total_task_ms"),
+            ("y", "total_gc_ms"),
+            ("y", "total_task_ms"),
+        ]
+        assert len({f.id for f in furo}) == 4
+
+    def test_medida_ausente_dos_dois_lados_do_simbolo_nao_vira_furo(self):
+        """Ausente nos dois lados nao fabrica nada: nao ha piso contra total."""
+        facts = build_benchmark(
+            [_analyzed("a.jsonl"), _stage("scan", 0)],
+            [_analyzed("b.jsonl"), _stage("scan", 0)],
+        )
+        assert not [
+            f
+            for f in by_kind(facts, "bench.unresolved")
+            if f.attrs["reason"] == "measure_absent_for_matched_symbol"
+        ]
 
     def test_o_recorte_de_stage_nao_multiplica_o_unresolved(self):
         """Um `bench.unresolved` por medida ausente, nao um por medida por stage:
@@ -551,6 +756,25 @@ class TestSentinela:
         assert sentinela.measures["after_stage_count"] == 1
         assert sentinela.measures["matched_stage_count"] == 2
         assert sentinela.measures["unmatched_stage_count"] == 1
+
+    def test_a_sentinela_separa_stage_casado_de_delta_emitido(self):
+        """`matched_stage_count` conta STAGE e `stage_delta_count` conta FACT: com
+        simbolo homonimo os dois divergem, e contar os `bench.stage_delta` da
+        pagina nao serve -- `_facts_page` pagina, entao a pagina nao e o total."""
+        before = [
+            _analyzed("a.jsonl"),
+            _stage("scan", 0),
+            _stage("scan", 1),
+            _stage("join", 2),
+        ]
+        after = [_analyzed("b.jsonl"), _stage("scan", 5), _stage("join", 6)]
+
+        facts = build_benchmark(before, after)
+
+        sentinela = by_kind(facts, "bench.analyzed")[0]
+        assert sentinela.measures["matched_stage_count"] == 5
+        assert sentinela.measures["stage_delta_count"] == 2
+        assert len(by_kind(facts, "bench.stage_delta")) == 2
 
     def test_a_sentinela_nomeia_os_artefatos_de_cada_lado(self):
         before = [_analyzed("a.jsonl"), _analyzed("a2.jsonl"), _stage("scan", 0)]

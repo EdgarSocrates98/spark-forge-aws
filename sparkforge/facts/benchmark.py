@@ -19,7 +19,7 @@ de `duration_ms` seria o defeito que a Fase 5b corrigiu em
 `unreachable_function_count` -- nome que promete mais do que entrega -- e aqui o
 preco seria maior, porque a regra que le a medida acusa regressao.
 
-Quatro formas de dizer "nao sei", nenhuma delas zero:
+Cinco formas de dizer "nao sei", nenhuma delas zero:
 
   * `_delta_pct` e OMITIDO quando o lado antes e zero. Dividir por zero nao
     produz "infinito por cento", produz afirmacao sem sentido; chave ausente e
@@ -36,6 +36,14 @@ Quatro formas de dizer "nao sei", nenhuma delas zero:
     so os facts completos produz um PISO, e piso de um lado contra total do
     outro fabrica melhora: `SF-BENCH-002` acusaria regressao inexistente, ou
     calaria uma real. Errar para o silencio e o lado certo aqui.
+  * medida que um simbolo CASADO tem num lado so tambem produz piso, e essa e a
+    forma que `_side_totals` sozinho nao enxerga: ele afere presenca dentro dos
+    facts que existem, nunca por stage que deveria ter contribuido. Sai o
+    `_delta_pct` daquela medida do `bench.run_delta` -- so o percentual, nunca os
+    totais, que foram observados -- mais um `bench.unresolved` nomeando simbolo e
+    medida. Simbolo NAO casado nao entra nessa conta: stage que sumiu entre os
+    runs e mudanca de trabalho, que e o que o benchmark existe para relatar, e
+    `bench.unmatched` ja o nomeia.
 
 CASAMENTO DE STAGE, ESTRITO POR `symbol` IDENTICO:
 
@@ -134,13 +142,26 @@ _RUN_MEASURES: _MeasureSpec = (
     ("total_task_count", "spark.stage.task_count", ("task_count",), _total),
 )
 
-# Kinds cujo subject e o JOB e nao o stage. No recorte de um stage a medida que
-# vem deles nao esta AUSENTE -- ela nao existe ali --, entao ela sai fora de
-# `bench.stage_delta` por construcao, e nao por falta de dado. Rateá-la entre os
-# stages inventaria atribuicao que o event log nao da.
+# Kinds cujo subject e o JOB e nao o stage: rateá-los entre os stages inventaria
+# atribuicao que o event log nao da. So `spark.job.spill_summary` esta nessa
+# situacao, e ele NAO e a unica fonte de spill -- `event_log.py:236` emite
+# `spark.stage.spill` por stage, e o proprio resumo do job e a soma dele
+# (`event_log.py:528-544`). Entao o recorte de stage tem spill: mesma medida,
+# mesma unidade, outra granularidade de fonte. O nome da chave e o mesmo nos dois
+# recortes de proposito -- `SF-BENCH-003` ("mais rapido mas derramando") le
+# `total_spill_bytes` sem precisar saber de qual fact veio.
 _JOB_SCOPED_KINDS = frozenset({"spark.job.spill_summary"})
 
-_STAGE_MEASURES = tuple(m for m in _RUN_MEASURES if m[1] not in _JOB_SCOPED_KINDS)
+_STAGE_MEASURES: _MeasureSpec = tuple(
+    m for m in _RUN_MEASURES if m[1] not in _JOB_SCOPED_KINDS
+) + (
+    (
+        "total_spill_bytes",
+        "spark.stage.spill",
+        ("memory_spill_bytes", "disk_spill_bytes"),
+        _total,
+    ),
+)
 
 # Estado de uma medida num lado. `partial` e `absent` sao os dois jeitos de nao
 # ter a medida; so `usable` entra em `bench.run_delta`.
@@ -253,8 +274,11 @@ def _compare(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """As measures do delta e os furos que impediram cada uma.
 
-    Um caminho so para o run e para o stage: as quatro formas de dizer "nao sei"
-    do topo deste modulo valem no recorte de um simbolo tanto quanto no do run.
+    Um caminho so para o run e para o stage: as formas de dizer "nao sei" do topo
+    deste modulo valem no recorte de um simbolo tanto quanto no do run. E o
+    recorte de simbolo devolve mais do que measures: os furos dele sao a UNICA
+    forma de ver a quinta -- medida que existe num lado so de um simbolo casado --,
+    que no recorte do run e invisivel por construcao.
     """
     measures: dict[str, Any] = {}
     unresolved: list[dict[str, Any]] = []
@@ -340,35 +364,45 @@ def _named_stage_groups(facts: Sequence[Fact]) -> dict[str, list[Fact]]:
     return groups
 
 
-def _nameless_stages(facts: Sequence[Fact]) -> list[dict[str, Any]]:
-    """Um subject por stage SEM nome, deduplicado por `stage_id`.
+def _nameless_stages(facts: Sequence[Fact]) -> list[str]:
+    """O `stage_id` de cada stage SEM nome, como texto e deduplicado.
 
     Cada um por si, e nao um grupo unico por lado: junta-los num fact so repetiria
     dentro do lado o erro que o casamento recusa entre os lados -- tratar como uma
     coisa stages que so tem em comum a falta de nome.
     """
-    seen: dict[str, dict[str, Any]] = {}
+    seen: set[str] = set()
     for fact in facts:
         subject = fact.subject if isinstance(fact.subject, dict) else {}
         if subject.get("type") != "stage" or str(subject.get("symbol", "")):
             continue
-        seen.setdefault(str(subject.get("stage_id", "")), subject)
-    return [seen[key] for key in sorted(seen)]
+        seen.add(str(subject.get("stage_id", "")))
+    return sorted(seen)
 
 
-def _unmatched_subject(symbol: str, side: str, stage_id: Any = None) -> dict[str, Any]:
-    """O lado entra no SUBJECT, nao so em `attrs`.
+def _nameless_subject(side: str, stage_id: str) -> dict[str, Any]:
+    """Subject do stage SEM nome: lado e `stage_id` dentro do `symbol`.
 
     `Fact.id` e sha1 de (kind, subject, measures) e ignora `attrs` (D-4a-2): sem
-    o lado ali, o mesmo stage sem nome presente nos dois runs sairia com um id
-    so, e um dos dois desapareceria da saida. `stage_id` entra so quando ele e a
-    unica identidade que resta -- stage sem nome --, e aqui ele nao instabiliza
-    nada, porque o fact afirma sobre UM lado, nao sobre o par.
+    lado e sem id ali, dois stages sem nome sairiam com o mesmo id e um deles
+    desapareceria da saida.
+
+    Por que nao a chave `stage_id` do subject: o schema exige inteiro >= 0
+    (`fact.schema.json`), e o `stage_id` de um ARQUIVO de facts nao e
+    necessariamente inteiro -- `_facts_from_dicts` copia o subject verbatim.
+    Guardar so quando fosse inteiro deixaria o caso nao numerico sem identidade
+    nenhuma, que e a colisao de volta; guardar sempre como texto reprovaria no
+    `validate_fact`. O `symbol` aceita os dois, e `attrs["stage_ids"]` mantem o
+    valor legivel.
+
+    Aqui o `stage_id` nao instabiliza nada -- ao contrario de
+    `bench.stage_delta`, este fact afirma sobre UM lado, nao sobre o par.
+
+    Simbolo NOMEADO nao passa por aqui: ele aparece num lado so por construcao,
+    entao nao ha colisao para resolver, e `"join#before"` no subject seria
+    mutilacao sem ganho.
     """
-    subject: dict[str, Any] = {"type": "stage", "symbol": f"{symbol}#{side}"}
-    if isinstance(stage_id, int) and not isinstance(stage_id, bool) and stage_id >= 0:
-        subject["stage_id"] = stage_id
-    return subject
+    return {"type": "stage", "symbol": f"#{side}#{stage_id}"}
 
 
 def build_benchmark(
@@ -422,42 +456,46 @@ def build_benchmark(
     before_artifacts = _artifacts_of(before)
     after_artifacts = _artifacts_of(after)
 
-    out.append(
-        Fact(
-            kind="bench.run_delta",
-            subject=_run_subject(path_hint),
-            measures=measures,
-            attrs={
-                "before_artifacts": before_artifacts,
-                "after_artifacts": after_artifacts,
-            },
-            provenance=provenance,
-        )
-    )
-
     before_groups = _named_stage_groups(before)
     after_groups = _named_stage_groups(after)
     matched_stages = 0
     unmatched_stages = 0
+    # Medidas cujo total de run soma populacoes diferentes dos dois lados -- ver
+    # o bloco de `measure_absent_for_matched_symbol` abaixo. O casamento roda
+    # ANTES de `bench.run_delta` ser emitido justamente para que ele possa tirar
+    # de la o percentual que essas medidas fabricariam.
+    fabricated: set[str] = set()
 
-    for symbol in sorted(set(before_groups) & set(after_groups)):
+    matched_symbols = sorted(set(before_groups) & set(after_groups))
+    for symbol in matched_symbols:
         before_stages = before_groups[symbol]
         after_stages = after_groups[symbol]
         before_ids = _stage_ids(before_stages)
         after_ids = _stage_ids(after_stages)
         matched_stages += len(before_ids) + len(after_ids)
 
-        # O furo de medida no recorte de um simbolo NAO vira `bench.unresolved`:
-        # o furo e da comparacao, e o `bench.unresolved` do run ja o nomeou uma
-        # vez. Repeti-lo por simbolo daria ruido proporcional ao numero de
-        # stages -- dezenas de facts dizendo a mesma coisa, afogando o resto da
-        # saida. A chave simplesmente falta no delta, que e como este motor diz
-        # "nao sei", e `engine._where_matches` reprova caminho ausente.
-        stage_measures, _ = _compare(
+        stage_measures, holes = _compare(
             _side_totals(before_stages, _STAGE_MEASURES),
             _side_totals(after_stages, _STAGE_MEASURES),
             _STAGE_MEASURES,
         )
+        stage_attrs: dict[str, Any] = {
+            "before_stage_ids": before_ids,
+            "after_stage_ids": after_ids,
+        }
+
+        # Populacao de stages diferente: dois `scan` antes contra um depois, com
+        # o mesmo custo em cada um, daria -50% -- queda de trabalho por stage que
+        # ninguem observou. Em todo outro caso onde a comparacao nao se sustenta
+        # (chave parcial, medida de um lado so, base zero) este modulo OMITE o
+        # `_delta_pct`; aqui nao seria diferente. Os totais ficam, porque foram
+        # observados; a razao da omissao vai em `attrs`, para a chave nao sumir
+        # sem explicacao.
+        if len(before_ids) != len(after_ids):
+            for key in [k for k in stage_measures if k.endswith("_delta_pct")]:
+                del stage_measures[key]
+            stage_attrs["delta_pct_omitted"] = "stage_count_changed"
+
         stage_measures["before_stage_count"] = len(before_ids)
         stage_measures["after_stage_count"] = len(after_ids)
 
@@ -469,10 +507,34 @@ def build_benchmark(
                 # `benchmark_ref` cita -- depender de um numero instavel.
                 subject={"type": "stage", "symbol": symbol},
                 measures=stage_measures,
-                attrs={"before_stage_ids": before_ids, "after_stage_ids": after_ids},
+                attrs=stage_attrs,
                 provenance=provenance,
             )
         )
+
+        # Medida que existe num lado do simbolo CASADO e some no outro.
+        #
+        # `_side_totals` afere presenca dentro dos facts que EXISTEM, nunca por
+        # stage que deveria ter contribuido: se um simbolo casado perde o fact de
+        # gc no depois, o lado depois continua `usable` e o total do run cai --
+        # regressao ao contrario, melhora fabricada, o mesmo defeito que a Task 1
+        # fechou para a chave parcial. O recorte de simbolo e o unico lugar onde
+        # isso e visivel, e ele so existe a partir do casamento desta task.
+        #
+        # Ausencia dos DOIS lados nao entra: ali nao ha piso contra total, nao ha
+        # o que fabricar. O furo por SIMBOLO NAO CASADO tambem nao, porque
+        # `bench.unmatched` ja o nomeia.
+        for hole in holes:
+            if len(hole["sides"]) != 1:
+                continue
+            fabricated.add(str(hole["measure"]))
+            unresolved.append(
+                {
+                    **hole,
+                    "reason": "measure_absent_for_matched_symbol",
+                    "symbol": symbol,
+                }
+            )
 
     for side, groups, other in (
         ("before", before_groups, after_groups),
@@ -484,7 +546,7 @@ def build_benchmark(
             out.append(
                 Fact(
                     kind="bench.unmatched",
-                    subject=_unmatched_subject(symbol, side),
+                    subject={"type": "stage", "symbol": symbol},
                     measures={"stage_count": len(stage_ids)},
                     attrs={
                         "reason": "symbol_absent_on_other_side",
@@ -497,18 +559,18 @@ def build_benchmark(
             )
 
     for side, source in (("before", before), ("after", after)):
-        for subject in _nameless_stages(source):
+        for stage_id in _nameless_stages(source):
             unmatched_stages += 1
             out.append(
                 Fact(
                     kind="bench.unmatched",
-                    subject=_unmatched_subject("", side, subject.get("stage_id")),
+                    subject=_nameless_subject(side, stage_id),
                     measures={"stage_count": 1},
                     attrs={
                         "reason": "empty_symbol",
                         "side": side,
                         "symbol": "",
-                        "stage_ids": [str(subject.get("stage_id", ""))],
+                        "stage_ids": [stage_id],
                     },
                     provenance=provenance,
                 )
@@ -522,11 +584,52 @@ def build_benchmark(
     # lados, que e a defesa contra antes e depois trocados -- inversao aparece
     # como regressao implausivel ao lado dos artefatos, nao como silencio.
     #
-    # Os quatro contadores sao de STAGE -- subject `(stage_id, symbol)` distinto
-    # --, e nao de simbolo nem de fact emitido: `matched + unmatched` fecha
-    # exatamente `before + after`, entao nenhum stage cai fora da conta. Quantos
-    # deltas sairam se conta pelos proprios `bench.stage_delta`; o que so a
-    # sentinela responde e QUANTO da comparacao esta coberto.
+    # `bench.run_delta`, ja sabendo quais medidas somam populacoes diferentes.
+    #
+    # O percentual SAI quando um simbolo casado tem a medida num lado so: ali o
+    # total do lado furado e PISO, e piso contra total fabrica melhora -- a mesma
+    # decisao que a Task 1 tomou para chave parcial e para base zero. Os totais
+    # ficam, porque foram observados; o que nao se sustenta e a razao entre eles,
+    # e `bench.unresolved` nomeia simbolo e medida.
+    #
+    # Simbolo NAO CASADO nao entra nesta conta, e a assimetria e deliberada:
+    # stage que sumiu entre os runs e mudanca de TRABALHO -- a verdade que o
+    # benchmark existe para relatar --, enquanto simbolo casado sem a medida num
+    # lado e mudanca de MEDICAO. O primeiro o operador quer ver como percentual;
+    # o segundo e um numero que ninguem observou.
+    #
+    # Ruido medido: ZERO. As duas fixtures de `fixtures/eventlog/` nas quatro
+    # combinacoes nao produzem um furo sequer, e nenhum `_delta_pct` do run cai.
+    # Nao e sorte: `event_log.py` co-emite os kinds de stage para todo stage
+    # analisado (inclusive `spark.stage.spill` com zero byte, `event_log.py:516`),
+    # entao dois lados vindos do extrator tem sempre os mesmos kinds por simbolo.
+    # O furo so e alcancavel pelo ARQUIVO de facts do verbo `benchmark` -- que e
+    # exatamente onde a fabricacao e real (mesmo argumento do D-4a-6).
+    for name in sorted(fabricated):
+        measures.pop(f"{name}_delta_pct", None)
+
+    out.append(
+        Fact(
+            kind="bench.run_delta",
+            subject=_run_subject(path_hint),
+            measures=measures,
+            attrs={
+                "before_artifacts": before_artifacts,
+                "after_artifacts": after_artifacts,
+            },
+            provenance=provenance,
+        )
+    )
+
+    # Os quatro `*_stage_count` sao de STAGE -- subject `(stage_id, symbol)`
+    # distinto --, e nao de simbolo: `matched + unmatched` fecha exatamente
+    # `before + after`, entao nenhum stage cai fora da conta.
+    #
+    # `stage_delta_count` conta FACT emitido, e existe porque os dois numeros
+    # divergem quando um simbolo tem varios stages -- tres stages casados podem
+    # sair em um delta so, e ler `matched_stage_count` como "quantos deltas" e o
+    # erro facil. Contar os `bench.stage_delta` da saida nao substitui: o verbo
+    # `benchmark` pagina (`_facts_page`), e uma pagina nao e o total.
     out.append(
         Fact(
             kind="bench.analyzed",
@@ -534,6 +637,7 @@ def build_benchmark(
             measures={
                 "matched_stage_count": matched_stages,
                 "unmatched_stage_count": unmatched_stages,
+                "stage_delta_count": len(matched_symbols),
                 "before_stage_count": len(_stage_keys(before)),
                 "after_stage_count": len(_stage_keys(after)),
             },
@@ -546,10 +650,16 @@ def build_benchmark(
     )
 
     for attrs in unresolved:
+        # O detalhe inclui o simbolo quando ha um: o furo de `total_gc_ms` do run
+        # e o furo de `total_gc_ms` do simbolo `y` sao dois fatos diferentes, e
+        # sem isso teriam o mesmo subject, as mesmas measures (nenhuma) e o mesmo
+        # `Fact.id`.
+        symbol = str(attrs.get("symbol", ""))
+        detail = f"{symbol}#{attrs['measure']}" if symbol else str(attrs["measure"])
         out.append(
             Fact(
                 kind="bench.unresolved",
-                subject=_unresolved_subject(path_hint, str(attrs["measure"])),
+                subject=_unresolved_subject(path_hint, detail),
                 attrs=attrs,
                 provenance=provenance,
             )
