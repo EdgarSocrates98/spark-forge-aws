@@ -455,3 +455,67 @@ class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
 
         assert "spark.runtime_version" in named, sorted(named)
         assert "athena.workgroup" in named, sorted(named)
+
+
+class TestNoPrecedenceSourceIsAnUndeclaredProducerGap:
+    """A terceira face da mesma assimetria: FONTE declarada e sem produtor.
+
+    `TestNoRuntimeAxisIsAnUndeclaredProducerGap` cobra produtor por EIXO de
+    `RuntimeContext` -- spark, python, iceberg, athena, glue, emr. Ela nao ve o
+    outro eixo da mesma tabela: a FONTE. `_PRECEDENCE` e um vocabulario fechado
+    de nomes de fonte, e um nome que ninguem emite nao ranqueia nada -- e
+    superficie que parece existir, no sentido exato do `pyspark.unresolved`.
+
+    `requirements` era esse nome, e sobreviveu quatro fases: `knowledge/glue/
+    runtime-matrix.md` secao 5 lista `requirements.txt`/`pyproject.toml` como a
+    fonte de MENOR confiabilidade ("indica intencao, nao runtime"), a
+    precedencia foi desenhada com ela no fim por isso, e nenhum modulo de
+    `sparkforge/facts/` le manifesto de dependencia. Saiu da tupla em vez de
+    ganhar extrator -- ver o comentario de `_PRECEDENCE`, que declara a decisao
+    e o que teria que ser verdade para ela voltar.
+
+    O MESMO ALARME DE FUMACA, e as mesmas duas fronteiras: mencao nao e prova de
+    emissao, e nome de fonte montado em tempo de execucao e invisivel. Os dois
+    unicos lugares do projeto que nomeiam fonte sao `_runtime_reading` (o que os
+    extratores observaram) e `build_runtime` (a fonte `cli`, que e a flag
+    digitada); varrer o modulo inteiro faria o `_PRECEDENCE` provar a si mesmo.
+    """
+
+    def _emitted_sources(self):
+        import ast
+        import inspect
+        import textwrap
+
+        from sparkforge.adapters import _core
+
+        named: set[str] = set()
+        for function in (_core._runtime_reading, _core.build_runtime):  # noqa: SLF001
+            tree = ast.parse(textwrap.dedent(inspect.getsource(function)))
+            node = tree.body[0]
+            body = node.body[1:] if ast.get_docstring(node) is not None else node.body
+            named |= {
+                child.value
+                for statement in body
+                for child in ast.walk(statement)
+                if isinstance(child, ast.Constant) and isinstance(child.value, str)
+            }
+        return named
+
+    def test_every_declared_source_has_someone_that_emits_it(self):
+        from sparkforge.facts.runtime_detect import _PRECEDENCE
+
+        named = self._emitted_sources()
+        gaps = sorted(source for source in _PRECEDENCE if source not in named)
+        assert not gaps, (
+            f"fonte declarada em _PRECEDENCE que ninguem emite: {gaps}. "
+            f"Nome de fonte sem produtor nao ranqueia nada -- ou escreva o "
+            f"extrator, ou tire o nome da tupla com a decisao declarada."
+        )
+
+    def test_the_derivation_is_not_vacuous(self):
+        """Se a leitura de AST parar de achar nomes, o teste acima vira 'nenhum
+        gap' sobre nada. Estas duas fontes tem produtor conhecido e nomeado."""
+        named = self._emitted_sources()
+
+        assert "event_log" in named, sorted(named)
+        assert "cli" in named, sorted(named)
