@@ -443,6 +443,116 @@ class TestQuemDespacha:
         assert d6 <= set(sync_skills.DISPATCHABLE_SKILLS)
 
 
+FRASE_INALCANCAVEL = "manutenção destrutiva só com confirmação explícita."
+
+
+def secao_protocolo(texto: str) -> str:
+    """O corpo da secao `## Protocolo` de uma skill, ou "" se ela nao existe.
+
+    As vinte skills terminam com essa secao, e e o unico lugar delas que fala de
+    fronteira. Ancorar nela e o mesmo criterio do teste de perfil: uma mencao de
+    passagem no corpo -- `optimize-iceberg-table` tem uma secao inteira sobre
+    `expire_snapshots` nao ter rollback -- e conhecimento de dominio, nao
+    declaracao de fronteira.
+    """
+    linhas = texto.splitlines()
+    for i, linha in enumerate(linhas):
+        if linha.strip() == "## Protocolo":
+            fim = i + 1
+            while fim < len(linhas) and not linhas[fim].startswith("## "):
+                fim += 1
+            return "\n".join(linhas[i + 1 : fim])
+    return ""
+
+
+def falta_fronteira_de_despacho(texto: str) -> str | None:
+    """O que falta para a skill declarar a fronteira, ou None se nao falta nada.
+
+    **Medido antes de escrever** (revisao final da fase): `## Nao faz` aparece em
+    **0 das 20** skills, nenhuma das **12** despachaveis dizia "nao executa" nem
+    para onde a confirmacao vai, e **12 de 12** terminavam em
+    *"manutencao destrutiva so com confirmacao explicita"* -- sem dizer com quem.
+
+    Essa frase e o defeito, nao a base: dentro de um subagente ela manda obter
+    algo **inalcancavel** (`ask_user_question` e sempre negado a subagente,
+    V-DV-10). Por isso o criterio tem quatro partes e a primeira e uma AUSENCIA:
+
+    1. A frase antiga nao pode ter sobrado. Acrescentar a correcao ao lado dela
+       deixaria as duas instrucoes no mesmo paragrafo, e a errada primeiro.
+    2. `destrutiv`, que nomeia o ato.
+    3. `não executa`, que e a metade que o subagente pode cumprir sozinho.
+    4. `sobe`, que nomeia para onde a decisao vai. As duas metades falham de
+       formas diferentes e as duas falham MUDAS: quem so recusa para sem dizer
+       por que; quem so aponta o destino segue sem confirmar.
+
+    A fronteira do D-4 vive no perfil, e o spec a chama de "segunda rede" do D-6.
+    Nas **nove** despachaveis sem `agent:` essa rede pode nao estar em escopo: o
+    Devin escolhe o perfil, e a escolha inclui o built-in `subagent_general`, que
+    tem acesso total e nenhum `## Nao faz`. Nessas nove a skill e a unica rede.
+    """
+    secao = secao_protocolo(texto)
+    if not secao:
+        return "sem secao `## Protocolo`"
+    if FRASE_INALCANCAVEL in secao:
+        return "`## Protocolo` ainda manda obter confirmação inalcançável"
+    faltando = [r for r in ("destrutiv", "não executa", "sobe") if r not in secao]
+    return f"`## Protocolo` sem {' nem '.join(faltando)}" if faltando else None
+
+
+class TestFronteiraNaSkillDespachavel:
+    """A fronteira do D-4 nao alcanca a unidade que o Devin despacha.
+
+    O que o Devin despacha por `subagent: true` e a **skill**, e o perfil so
+    entra quando `agent:` o nomeia -- em tres das doze. Nas outras nove o
+    roteamento e do harness, e ele pode cair num built-in sem fronteira nenhuma.
+    Logo a declaracao tem que estar na skill, que e a unidade despachada.
+    """
+
+    def test_o_recorte_nao_e_vazio(self):
+        """Guarda contra o teste que passa sem olhar nada: se
+        `DISPATCHABLE_SKILLS` esvaziasse, o parametrizado abaixo sumiria."""
+        assert len(sync_skills.DISPATCHABLE_SKILLS) == 12
+
+    @pytest.mark.parametrize("nome", sorted(sync_skills.DISPATCHABLE_SKILLS))
+    def test_despachavel_declara_a_fronteira(self, nome):
+        problema = falta_fronteira_de_despacho(
+            (SKILLS / nome / "SKILL.md").read_text(encoding="utf-8")
+        )
+        assert problema is None, f"skills/{nome}/SKILL.md: {problema}"
+
+    def test_a_frase_antiga_sozinha_nao_conta(self):
+        """O estado exato em que as doze estavam, e o motivo de a primeira parte
+        do criterio ser uma ausencia: a instrucao antiga precisava ser
+        CORRIGIDA, nao duplicada."""
+        texto = f"## Protocolo\n\nSiga `AGENT_PROTOCOL.md`. Resumo: {FRASE_INALCANCAVEL}\n"
+        assert (
+            falta_fronteira_de_despacho(texto)
+            == "`## Protocolo` ainda manda obter confirmação inalcançável"
+        )
+
+    def test_meia_fronteira_nao_conta(self):
+        """Recusar sem dizer para onde a decisao vai e a skill que para sem
+        explicar."""
+        texto = "## Protocolo\n\nManutenção destrutiva você não executa.\n"
+        assert falta_fronteira_de_despacho(texto) == "`## Protocolo` sem sobe"
+
+    def test_skill_sem_a_secao_e_pega(self):
+        assert (
+            falta_fronteira_de_despacho("---\nname: nova\n---\n\nCorpo.\n")
+            == "sem secao `## Protocolo`"
+        )
+
+    def test_mencao_fora_da_secao_nao_conta(self):
+        texto = (
+            "## Manutenção destrutiva\n\n"
+            "Você não executa `expire_snapshots`; a confirmação sobe ao pai.\n\n"
+            "## Protocolo\n\nSiga `AGENT_PROTOCOL.md`.\n"
+        )
+        assert falta_fronteira_de_despacho(texto) == (
+            "`## Protocolo` sem destrutiv nem não executa nem sobe"
+        )
+
+
 class TestSkillsReais:
     """As vinte skills que o espelho do Devin vai receber."""
 
