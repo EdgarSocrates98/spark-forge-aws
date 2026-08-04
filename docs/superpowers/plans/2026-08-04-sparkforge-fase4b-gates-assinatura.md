@@ -35,6 +35,12 @@ templates/performance-report.md  54 linhas, secoes numeradas, sem bloco de assin
 gate morde é na entrada de `experiment` e de `validation`, e a Task 1 mede qual,
 em vez de herdar o nome errado.
 
+> **Medido na Task 1, e diferente do que esta linha supunha:** `experiment` não
+> serve para `baseline_captured` — `bench.run_delta` exige o lado `--after`, que
+> só existe depois de `experiment`, então o gate seria insatisfazível no momento
+> em que morde. E há um terceiro ponto que esta linha não previa: `hypothesis`,
+> para `flows_mapped`. Ver a tabela do Step 3 da Task 1.
+
 **A consequência que decide a Task 2:** `case update --gate X --gate-value true`
 já permite virar qualquer gate. Sob rigor ele é **ignorado** (desvio D-4b-2 do
 spec) — senão virar a flag seria override sem motivo e sem registro.
@@ -49,30 +55,145 @@ nomes, e o spec só classificou dois.
 
 **Files:** nenhum ainda. Esta task produz **medição e decisão**, escritas no plano.
 
-- [ ] **Step 1: Para cada gate, responda com evidência**
+- [x] **Step 1: Para cada gate, responda com evidência**
 
-Para `baseline_captured`, `dominant_bottleneck_identified`,
-`functional_validation_defined` e `flows_mapped`:
+Vocabulário medido: **102 kinds** em 17 extratores de `sparkforge/facts/`
+(`EMITTED_KINDS` de cada módulo, lido por import, não por grep). A pergunta
+feita a cada gate foi *qual desses 102 kinds, se presente, prova o gate* — e
+duas vezes a resposta honesta foi **nenhum**.
 
-1. Que fact, se presente, prova que o gate está satisfeito? Procure em
-   `EMITTED_KINDS` de todos os extratores — não invente kind.
-2. Que comando produz esse fact? Precisa existir hoje na CLI.
-3. Se não houver fact que o prove, o gate **fica advisory**, e o motivo vai
-   escrito.
+| Gate | Kind que o prova | Evidência de que prova (ou de que não prova) |
+|---|---|---|
+| `baseline_captured` | `bench.run_delta` | `benchmark.py:80`. Medido: `build_benchmark([], [])` devolve **só** `bench.unresolved` — o kind exige medida presente **dos dois lados**, então ele não pode ser fabricado por um lado vazio. É o único kind do vocabulário que afirma comparação entre execuções |
+| `dominant_bottleneck_identified` | **nenhum** | Nenhum dos 102 kinds afirma dominância. Dominância é ordenação entre candidatos, e todo extrator emite medida de **um** sujeito por vez, por construção (`engine._condition_candidates` lê um fact por vez). O que se aproxima é um **Finding** — e Finding não é Fact: ele é o julgamento do catálogo, mora em `findings_index`, não em `facts_index`, e `set_phase` recebe kinds de fact. Além disso `findings_index.count > 0` diria "há achados", nunca "este domina" |
+| `functional_validation_defined` | **nenhum** | Ver o quase-produtor rejeitado abaixo. O gate é sobre a validação **da mudança** (contagem, schema, chaves, agregados comparados antes/depois), e o artefato disso — o resultado de consultas que alguém roda — não existe no motor. É a Fase 4c, como a §2 do spec registrou |
+| `flows_mapped` | `callgraph.reachable_spark_work` | `call_graph.py:45`. O kind é emitido **por entrypoint**, com `attrs.entrypoint`, `attrs.work_kind`, `attrs.via` e `min_depth` (`call_graph.py:356-390`) — que é literalmente "o DAG de cada fluxo, separado", a coisa que a ROUTE-003 exige antes de diagnosticar |
 
-Cole a tabela das quatro respostas.
+**Comandos, conferidos em `sparkforge --help` e nos subcomandos, não de memória:**
 
-- [ ] **Step 2: Meça em que transição o gate morde**
+| Gate | Comando que produz o kind |
+|---|---|
+| `baseline_captured` | `sparkforge benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json` (flags `--before/--after/--out` verificadas em `benchmark --help`) |
+| `flows_mapped` | `sparkforge analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json` (flag `--facts` verificada em `analyze call-graph --help`; a entrada é o `--out` de `analyze pyspark`) |
 
-`PHASES` não tem `remediation`. Rode `python -c "from sparkforge.case.store import PHASES; print(PHASES)"` e decida, para cada gate com produtor, **antes de qual fase** ele é exigido. Justifique pela pergunta que a fase responde, não por ordem alfabética.
+**Dois kinds foram medidos e REJEITADOS como produtor.** Registrados porque cada
+um passaria numa leitura rápida, e o gate que eles satisfariam seria um gate que
+mente:
 
-Se a resposta for "depende do gate", o mapeamento é dado e mora no `routing.yaml` junto do produtor — não em `if` no Python.
+- **`callgraph.summary` para `flows_mapped`.** Medido:
+  `build_call_graph([], path_hint="x.py")` devolve `['callgraph.summary']` — o
+  kind é emitido **incondicionalmente** (`call_graph.py:430`), inclusive sobre
+  entrada vazia. Um gate satisfeito por ele destravaria rodando `analyze
+  call-graph` num arquivo de facts vazio. `callgraph.reachable_spark_work` não
+  tem essa saída: ele só existe se algum entrypoint alcança trabalho Spark.
+- **`dq.check` para `functional_validation_defined`.** É o quase-produtor, e a
+  §1 do spec teria dito "nenhum" sem tê-lo olhado. Ele prova que **o job**
+  valida o dado dele em execução (PyDeequ, Great Expectations, check artesanal),
+  ancorado numa linha do `.py` (`data_quality.py:875`). Isso é verdade **antes e
+  depois** da mudança, e continua verdade se a otimização quebrou a semântica —
+  ele não compara nada entre duas execuções. Aceitá-lo trocaria a pergunta do
+  gate por uma pergunta vizinha e mais fácil, que é a forma de falha que este
+  projeto existe para não cometer. Fica advisory.
 
-- [ ] **Step 3: Escreva a decisão no plano**
+- [x] **Step 2: Meça em que transição o gate morde**
 
-Tabela final: gate → fact produtor → comando → fase que ele guarda → advisory ou fail-closed. É o contrato que as Tasks 2 e 3 implementam.
+```
+PHASES  intake inventory facts diagnosis hypothesis experiment validation report
+```
 
-- [ ] **Step 4: Commit**
+`remediation` não existe, confirmado. Três regras saíram da medição, e **nenhuma
+das três é ordem alfabética nem posição na tupla**:
+
+**R1 — o gate não pode morder numa fase onde a rota que o destrava ainda opera.**
+`routing.yaml` declara `phase_in` em toda rota, e isso é evidência da intenção
+original. ROUTE-012 (`blocked_by: [baseline_captured]`) opera em
+`[diagnosis, hypothesis]`; ROUTE-003 (`gates.flows_mapped, equals: false`) opera
+em `[inventory, diagnosis]`. Se o gate bloqueasse a entrada de uma fase onde a
+própria rota que manda destravá-lo ainda casa, a rota viraria letra morta — a
+mesma classe de defeito que o comentário da AGENT-008 (`routing.yaml:247-256`)
+diz, com todas as letras, que este catálogo não aceita. Logo o gate morde na
+entrada da fase **seguinte à última do `phase_in` da sua rota**.
+
+**R2 — a fase guardada precisa ser uma fase em que o fact produtor já pode
+existir.** Aqui a medição corrige a linha 34 deste plano, que supunha
+`experiment` como candidata para `baseline_captured`. `bench.run_delta` exige
+`--before` **e** `--after`, e o `--after` só existe depois de rodar o job
+mudado — ou seja, depois de `experiment`. Um gate satisfeito por
+`bench.run_delta` guardando a entrada de `experiment` seria **insatisfazível no
+momento em que morde**: o impasse da §5.5 da Fase 0 reencenado, só que com
+produtor. Por R2 ele desce para `validation`.
+
+**R3 — `guards_phases` é lista, porque `set_phase` não impõe ordem.**
+`store.py:121-128` valida apenas pertinência a `PHASES`; nada impede
+`experiment → report`. Um gate declarado numa fase só seria contornado pulando
+para a seguinte. A lista é o sufixo de `PHASES` a partir da primeira fase
+guardada, escrita por extenso no dado — não derivada em Python.
+
+Aplicando as três, pela pergunta que cada fase responde:
+
+| Gate | Primeira fase guardada | Por quê |
+|---|---|---|
+| `baseline_captured` | `validation` | R1 dá `experiment`; R2 empurra para `validation`. E a justificativa pela pergunta bate: `validation` responde *"a mudança entregou o que prometeu e preservou a semântica?"* — entrar nela sem delta computado é validar um ganho que ninguém mediu. R3 estende para `[validation, report]`, que é exatamente o `phase_in` da ROUTE-015: as duas fases do fechamento já são tratadas como par no catálogo |
+| `flows_mapped` | `hypothesis` | R1 dá `hypothesis` (ROUTE-003 ainda opera em `diagnosis`). A pergunta de `hypothesis` é *"o que eu proponho mudar, e o que prevejo?"* — com fluxo full e incremental não separados, a hipótese não tem sujeito: ela fala de "o job" quando existem dois caminhos com DAGs diferentes, e vira intestável. R3 estende para `[hypothesis, experiment, validation, report]` |
+
+Resposta ao "se depender do gate": **depende**, e por isso o mapeamento é
+**dado**, em `routing.yaml`, ao lado do produtor — nunca `if` em Python.
+
+- [x] **Step 3: Escreva a decisão no plano**
+
+### O contrato das Tasks 2 e 3
+
+| Gate | Fact produtor | Comando que destrava | Fases que guarda | Regime |
+|---|---|---|---|---|
+| `baseline_captured` | `bench.run_delta` | `sparkforge benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json` | `validation`, `report` | **fail-closed** |
+| `flows_mapped` | `callgraph.reachable_spark_work` | `sparkforge analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json` | `hypothesis`, `experiment`, `validation`, `report` | **fail-closed** |
+| `dominant_bottleneck_identified` | — | — | nenhuma | **advisory**: dominância é ordenação entre candidatos, e nenhum dos 102 kinds a afirma; o que se aproxima é Finding, que não é Fact |
+| `functional_validation_defined` | — | — | nenhuma | **advisory**: sem produtor até a Fase 4c. `dq.check` foi medido e rejeitado — prova validação **no job**, não validação **da mudança** |
+
+Bloco a escrever no `routing.yaml` (Task 2, Step 1). Os quatro aparecem: gate
+ausente do bloco é ambíguo entre "esqueceram" e "advisory de propósito".
+
+```yaml
+gates:
+  baseline_captured:
+    satisfied_by: bench.run_delta
+    produced_by: "sparkforge benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json"
+    guards_phases: [validation, report]
+  flows_mapped:
+    satisfied_by: callgraph.reachable_spark_work
+    produced_by: "sparkforge analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json"
+    guards_phases: [hypothesis, experiment, validation, report]
+  dominant_bottleneck_identified:
+    # SEM satisfied_by: dominancia e ordenacao entre candidatos, e nenhum dos
+    # 102 kinds do vocabulario a afirma. O que se aproxima e um Finding, que
+    # nao e Fact -- mora em findings_index e nao chega a `set_phase`.
+    advisory_reason: "nenhum fact prova dominancia; o julgamento e do catalogo, nao da evidencia"
+  functional_validation_defined:
+    # SEM satisfied_by: nenhum extrator emite fact que prove isto ate a Fase 4c.
+    # Endurece-lo agora e o impasse que a secao 5.5 da Fase 0 recusou.
+    # `dq.check` foi medido e REJEITADO: prova validacao dentro do job, que e
+    # verdade antes e depois da mudanca e nao compara duas execucoes.
+    advisory_reason: "sem produtor ate a Fase 4c"
+```
+
+**Três armadilhas para a Task 2, que saíram desta medição:**
+
+1. `PHASE_GUARDADA` = `"validation"` e `PHASE_DO_GATE_SEM_PRODUTOR` = `"report"`
+   **não servem como estão**: `report` também é guardada por `baseline_captured`.
+   O teste `test_gate_sem_produtor_declarado_nunca_bloqueia` precisa passar
+   `fact_kinds={"bench.run_delta"}` — senão ele passa pelo motivo errado, que é
+   `baseline_captured` bloqueando, e provaria o oposto do que afirma. Para
+   `flows_mapped`, a fase limpa é `"hypothesis"`: nenhum outro gate a guarda.
+2. A checagem é por **presença de kind**, não por conteúdo de fact: `set_phase`
+   recebe `fact_kinds`, um conjunto de strings. Isso prova que a análise rodou,
+   nunca que ela cobriu todo `scope.entrypoints` nem que o benchmark é do job
+   certo. Limitação aceita e registrada: a alternativa exigiria passar facts a
+   `set_phase`, o que puxaria o índice inteiro para dentro do store. É a mesma
+   fronteira que `bench.run_delta` já tem.
+3. Corpus sem trabalho Spark alcançável não produz `callgraph.reachable_spark_work`
+   — a saída é o override com motivo do D-4, e é para isso que ele existe.
+
+- [x] **Step 4: Commit**
 
 ---
 
