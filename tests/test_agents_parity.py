@@ -294,6 +294,89 @@ class TestGatePegaEspelhoEditadoAMao:
         assert f"AUSENTE {alvo}" in problemas, problemas
 
 
+class TestOrfaoDeDiretorioEDeExtensao:
+    """O buraco que a revisao final mediu, e ele fica no caminho do Devin.
+
+    O gate varria `mirror_dir.glob("*.md")` -- **raso, e so `.md`**. Duas coisas
+    passavam por ele com `--check` em exit 0:
+
+    1. `.agents/agents/<nome>/AGENT.md`, que **e layout de descoberta documentado
+       do Devin** (`knowledge/devin/agents-and-subagents.md`, secao 1.1: "Directory
+       -- `agents/<name>/AGENT.md`. The directory name becomes the profile's
+       identifier", com precedencia `AGENT.md > AGENTS.md > agent.md >
+       agents.md`). Ou seja: perfil publicado, com `tools:` arbitrario e sem
+       `## Nao faz`, invisivel ao gate **e** ao teste de fronteira -- que deriva
+       de `PERFIS`, isto e, das pastas-fonte.
+    2. Qualquer arquivo de outra extensao no espelho.
+
+    `executors/` fica **fora** desta varredura porque tem dono proprio
+    (`check_executors`); sem a exclusao, o subdiretorio inteiro viraria orfao.
+    """
+
+    ORFAOS = (
+        (Path("rogue") / "AGENT.md", "---\nname: rogue\ntools: Read, Bash\n---\n\nCorpo.\n"),
+        (Path("nota.txt"), "nota\n"),
+    )
+
+    @staticmethod
+    def _problemas() -> list[str]:
+        return sync_skills.check_agents() + sync_skills.check_executors()
+
+    @pytest.fixture()
+    def espelhos_em_dia(self):
+        sync_skills.sync_agents()
+        sync_skills.sync_executors()
+        assert not self._problemas()
+        yield
+        sync_skills.sync_agents()
+        sync_skills.sync_executors()
+        assert not self._problemas()
+
+    @pytest.mark.parametrize("rel,conteudo", ORFAOS, ids=lambda v: str(v)[:24])
+    def test_orfao_no_espelho_do_devin_e_acusado(self, rel, conteudo, espelhos_em_dia):
+        alvo = ROOT / ".agents" / "agents" / rel
+        try:
+            alvo.parent.mkdir(parents=True, exist_ok=True)
+            alvo.write_text(conteudo, encoding="utf-8")
+            problemas = self._problemas()
+        finally:
+            alvo.unlink(missing_ok=True)
+            if alvo.parent != ROOT / ".agents" / "agents":
+                alvo.parent.rmdir()
+        assert f"ORFAO {alvo}" in problemas, problemas
+
+    @pytest.mark.parametrize("rel,conteudo", ORFAOS, ids=lambda v: str(v)[:24])
+    def test_sync_apaga_o_orfao(self, rel, conteudo, espelhos_em_dia):
+        alvo = ROOT / ".agents" / "agents" / rel
+        alvo.parent.mkdir(parents=True, exist_ok=True)
+        alvo.write_text(conteudo, encoding="utf-8")
+        sync_skills.sync_agents()
+        assert not alvo.exists()
+        assert not self._problemas()
+
+    def test_executores_nao_viram_orfaos_dos_agentes(self, espelhos_em_dia):
+        """A regressao que a varredura recursiva poderia introduzir: os cinco
+        executores moram DENTRO do diretorio de agentes, e quem os confere e
+        `check_executors`. Sem a exclusao, o gate acusaria cinco orfaos por
+        espelho e o `sync` os apagaria."""
+        assert not self._problemas()
+        for mirror in (
+            ROOT / ".claude" / "agents" / "executors",
+            ROOT / ".agents" / "agents" / "executors",
+            ROOT / ".github" / "agents" / "executors",
+        ):
+            assert list(mirror.glob("*.md"))
+
+    def test_orfao_no_diretorio_de_executores_tambem_e_acusado(self, espelhos_em_dia):
+        alvo = ROOT / ".agents" / "agents" / "executors" / "nota.txt"
+        try:
+            alvo.write_text("nota\n", encoding="utf-8")
+            problemas = self._problemas()
+        finally:
+            alvo.unlink(missing_ok=True)
+        assert f"ORFAO {alvo}" in problemas, problemas
+
+
 class TestPlataformaSaiDoAlvo:
     """A plataforma nao e uma quarta lista mantida a mao ao lado das tres de
     espelho: ela e derivada do diretorio-raiz do alvo."""

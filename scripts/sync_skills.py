@@ -50,6 +50,12 @@ EXECUTOR_MIRRORS = (
 )
 STALE_AGENTS = (ROOT / ".github" / "agents" / "spark-performance-engineer.agent.md",)
 
+# Subdiretorios do espelho de agentes que tem DONO PROPRIO. `executors/` mora
+# dentro de `.claude/agents/`, `.agents/agents/` e `.github/agents/`, e quem o
+# confere e `check_executors`; sem esta exclusao a varredura recursiva acusaria
+# os cinco executores como orfaos dos agentes, e o `sync` os apagaria.
+AGENT_MIRROR_SUBTREES_WITH_OWNER = frozenset({"executors"})
+
 # A plataforma sai do PROPRIO ALVO, nao de uma quarta lista mantida a mao ao
 # lado de `AGENT_MIRRORS` e `EXECUTOR_MIRRORS`. Duas listas paralelas que
 # precisam concordar sao a familia de defeito que a Fase 5c achou nos dois
@@ -497,6 +503,49 @@ def iter_executor_files() -> list[Path]:
     return sorted(p for p in EXECUTORS_SRC.glob("*.md") if p.is_file())
 
 
+def iter_mirror_files(mirror_dir: Path, *, skip: frozenset[str] = frozenset()) -> list[Path]:
+    """Todo arquivo do espelho, em qualquer profundidade e qualquer extensao.
+
+    Era `mirror_dir.glob("*.md")` -- **raso, e so `.md`**. Duas coisas passavam:
+
+    1. `.agents/agents/<nome>/AGENT.md`. Isso nao e arquivo perdido: e **layout
+       de descoberta documentado do Devin** (secao 1.1 da pesquisa -- "Directory
+       -- `agents/<name>/AGENT.md`. The directory name becomes the profile's
+       identifier", com precedencia `AGENT.md > AGENTS.md > agent.md >
+       agents.md`). Um perfil publicado por ali tem `tools:` arbitrario, nao tem
+       `## Nao faz`, e nao aparece nem no gate nem no teste de fronteira -- que
+       deriva das pastas-fonte, nunca do espelho.
+    2. Arquivo de outra extensao, que o gate simplesmente nao via.
+
+    `skip` nomeia os subdiretorios com dono proprio; o resto da arvore e do
+    chamador. Devolve os caminhos absolutos, e o chamador relativiza -- a
+    comparacao com o esperado e por caminho relativo em POSIX, para que
+    `rogue/AGENT.md` e `rogue\\AGENT.md` sejam a mesma coisa nos dois SOs.
+    """
+    if not mirror_dir.exists():
+        return []
+    return sorted(
+        path
+        for path in mirror_dir.rglob("*")
+        if path.is_file() and path.relative_to(mirror_dir).parts[0] not in skip
+    )
+
+
+def _remove_orphan(path: Path, mirror_dir: Path) -> None:
+    """Apaga o orfao e os diretorios que ficaram vazios por causa dele.
+
+    Sem a segunda parte, apagar `rogue/AGENT.md` deixaria `rogue/` em disco --
+    diretorio vazio nao publica perfil, mas confunde quem olha, e o proximo
+    arquivo posto ali dentro voltaria a ser o mesmo caso. A subida para na raiz
+    do espelho e em qualquer diretorio que ainda tenha conteudo.
+    """
+    path.unlink()
+    parent = path.parent
+    while parent != mirror_dir and parent.is_dir() and not any(parent.iterdir()):
+        parent.rmdir()
+        parent = parent.parent
+
+
 def check_skills() -> list[str]:
     problems: list[str] = []
     canonical_rel = {p.relative_to(CANONICAL) for p in iter_skill_files()}
@@ -526,11 +575,12 @@ def check_agents() -> list[str]:
 
     for mirror_dir, name_pattern in AGENT_MIRRORS:
         expected_names = {name_pattern.format(stem=p.stem) for p in agent_files}
-        mirror_names = (
-            {p.name for p in mirror_dir.glob("*.md") if p.is_file()}
-            if mirror_dir.exists()
-            else set()
-        )
+        mirror_names = {
+            p.relative_to(mirror_dir).as_posix()
+            for p in iter_mirror_files(
+                mirror_dir, skip=AGENT_MIRROR_SUBTREES_WITH_OWNER
+            )
+        }
 
         for src in agent_files:
             dst = mirror_dir / name_pattern.format(stem=src.stem)
@@ -555,11 +605,9 @@ def check_executors() -> list[str]:
     expected_names = {p.name for p in executor_files}
 
     for mirror_dir in EXECUTOR_MIRRORS:
-        mirror_names = (
-            {p.name for p in mirror_dir.glob("*.md") if p.is_file()}
-            if mirror_dir.exists()
-            else set()
-        )
+        mirror_names = {
+            p.relative_to(mirror_dir).as_posix() for p in iter_mirror_files(mirror_dir)
+        }
 
         for src in executor_files:
             dst = mirror_dir / src.name
@@ -638,14 +686,14 @@ def sync_agents() -> int:
             print(f"REND {dst}")
             changed += 1
 
-        if mirror_dir.exists():
-            for path in sorted(
-                (p for p in mirror_dir.glob("*.md") if p.is_file()), reverse=True
-            ):
-                if path.name not in expected_names:
-                    path.unlink()
-                    print(f"DEL  {path}")
-                    changed += 1
+        for path in sorted(
+            iter_mirror_files(mirror_dir, skip=AGENT_MIRROR_SUBTREES_WITH_OWNER),
+            reverse=True,
+        ):
+            if path.relative_to(mirror_dir).as_posix() not in expected_names:
+                _remove_orphan(path, mirror_dir)
+                print(f"DEL  {path}")
+                changed += 1
 
     for stale in STALE_AGENTS:
         if stale.exists():
@@ -670,14 +718,11 @@ def sync_executors() -> int:
             print(f"REND {dst}")
             changed += 1
 
-        if mirror_dir.exists():
-            for path in sorted(
-                (p for p in mirror_dir.glob("*.md") if p.is_file()), reverse=True
-            ):
-                if path.name not in expected_names:
-                    path.unlink()
-                    print(f"DEL  {path}")
-                    changed += 1
+        for path in sorted(iter_mirror_files(mirror_dir), reverse=True):
+            if path.relative_to(mirror_dir).as_posix() not in expected_names:
+                _remove_orphan(path, mirror_dir)
+                print(f"DEL  {path}")
+                changed += 1
 
     return changed
 
