@@ -1137,6 +1137,73 @@ produtor declarado.
 de rigor; este era o quarto. Ver a linha própria, logo abaixo, agora marcada
 concluída.
 
+**Revisão de documentação de 2026-08-04, depois do "pronto com ressalvas".** A
+revisão final da 4c não achou defeito de código e achou **nove** incoerências de
+documentação. Todas fechadas; **nenhuma** tocou código de produção. O que vale
+registrar é o que a medição contrariou, porque em dois casos ela contrariou a
+própria ressalva:
+
+- **A justificativa da `D-4c-23` citava o número errado, em quatro arquivos.** O
+  texto dizia que uma soma de `bigint` mudada em uma unidade sobre quinhentos
+  milhões dá `relative_delta` de `2e-9`, *"abaixo de qualquer tolerância
+  utilizável"*. Medido pelo `judge` contra o catálogo real: `2e-9` está **acima**
+  do limiar `1.0e-9`, e nessa ordem de grandeza a via relativa pegaria o caso
+  sozinha. O corte medido fica em **~9,95e8** — o `_round_relative` de três
+  significativos empurra tudo entre 9,95e8 e 1e9 para `1e-9` exato, e a condição
+  é `>`, estrita. **A conclusão da D-4c-23 sobrevive, e por um motivo mais forte
+  do que o que estava escrito:** a condição relativa é filtrada por
+  `attrs.comparison: relative`, e um agregado exato **nunca** casa com ela — sem
+  a condição exata a regra fica muda para `bigint` divergente em ordem de
+  grandeza nenhuma, inclusive uma soma de mil. O argumento de magnitude só vale
+  num contrafactual que a regra não é. Os quatro textos foram corrigidos para
+  dizer as duas naturezas.
+- **A ressalva errou a ordem de grandeza, e a medição venceu.** Ela afirmava que
+  a via exata só fica sozinha a partir de ~5 bilhões (`2e-10`); o medido é **um
+  bilhão**. Registrado aqui porque número de revisão também envelhece.
+- **O quarto lugar da correção não era `explanation`, era comentário.** A ressalva
+  dizia que o texto do YAML é *"o que o motor publica ao usuário num achado"* e
+  pedia atenção a golden de achado. Medido: as duas linhas erradas em
+  `rules/catalog/funcval.yaml` são **comentário** dentro de `when.any`, e
+  `yaml.safe_load` os descarta. A `explanation` publicada nunca citou o número.
+  Nenhuma fixture podia mudar, e nenhuma mudou.
+- **A `spec:202` errava um número, não dois.** Dizia "26 desvios, `D-4c-1` a
+  `D-4c-26` … os outros **vinte**". Medido no plano: **27** desvios, sem lacuna
+  nem duplicata. Mas a §11 detalha **seis** na lista principal mais `D-4c-26` sob
+  heading próprio, então `6 + 21 = 27`: "vinte" virou "vinte e um", e "seis"
+  estava certo.
+- **O `GUIA_DE_USO.md` não tinha a forma que a ressalva mandava seguir.** Ela
+  pedia para documentar `funcval` *"seguindo a forma que o guia já usa para
+  `benchmark`"*. Medido: o guia **nunca** ensinou `benchmark` como comando —
+  a palavra aparecia duas vezes, as duas como prosa solta. Os dois verbos de
+  `funcval` foram documentados na §6, onde o guia ensina os outros comandos, e a
+  §8 passou a nomear o verbo produtor dos **dois** itens, `benchmark` inclusive:
+  cometer no próprio guia o defeito que `SF-FVAL` e `SF-BENCH` acusam no usuário
+  não passa.
+- **O guia não era coberto por `sync_skills.py --check`, e agora é coberto por
+  teste.** Três testes novos em `tests/test_docs_coverage.py::TestGuia`. O
+  principal deriva os verbos do parser **real** e exige que todo `sparkforge
+  <verbo>` citado no guia exista — não o contrário, porque exigir que o guia
+  documente os 16 verbos seria transformar decisão editorial em invariante. Os
+  outros dois travam a §8 nomeando os verbos e a §6 ensinando os dois de
+  `funcval`. Mesma disciplina de `test_agents_md_lists_every_coordinator`: lista
+  derivada, nunca copiada.
+
+Os outros quatro itens eram contagem desalinhada, e a medição confirmou a
+ressalva: `AGENT_PROTOCOL.md` dizia "os outros **dois** não têm produtor" quando
+são **três com produtor e um sem**; a linha de limite declarado dizia "Dois dos
+quatro gates seguem advisory" e listava `functional_validation_defined` entre os
+sem produtor, contradizendo a seção da própria fase; `AGENTS.md` dizia "Sixteen
+extractors" e "102 distinct fact kinds" (são **17** e **106**, e o `README.md` já
+dizia certo); "os quinze `analyze *`" são **catorze**, contados no parser; e "as
+duas skills carregam o contorno por escrito" é **uma** — `benchmark-pyspark-job`
+ensina `compare` e carrega a extração de `items`, enquanto `review-pyspark-pr`
+ensina só `plan`, que **tem** `--out`, e delega a comparação.
+
+**Uma dívida pré-existente foi medida no caminho e registrada como tal:** a área
+`SF-CFG`, declarada no `README.md` do catálogo desde o primeiro commit e nunca
+escrita. Não é entrega da 4c e não entra na conta dela — ver a linha própria em
+*Dívidas abertas*.
+
 ### Fase 4 do roadmap (§16) — rigor — **CONCLUÍDA** em 2026-08-04
 
 Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
