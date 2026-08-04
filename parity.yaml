@@ -1,7 +1,7 @@
 schema_version: 1
 
 platforms: [claude_code, devin_desktop, devin_cli, codex, copilot_ci]
-mechanisms: [mcp, cli, files, playbook]
+mechanisms: [mcp, cli, files, playbook, subagent]
 
 notes: >
   Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge.adapters.mcp
@@ -27,6 +27,35 @@ notes: >
   como subagente, e devolve a mesma decomposicao em passos sequenciais -- perde o
   paralelismo do despacho, mantem o metodo. E o que Devin Desktop, Devin CLI, Codex e
   Copilot CI conseguem consumir sem harness de subagente.
+
+  DESVIO REGISTRADO SOBRE O PARAGRAFO ACIMA (2026-08-04, fase de perfis de subagente do
+  Devin). O paragrafo fica como esta, e nao e reescrito: e a convencao deste repositorio
+  para decisao registrada que a fonte derrubou pela metade.
+  O QUE CAIU: a frase universal "nenhuma outra plataforma tem um equivalente que este
+  repositorio possa acionar". Ela cai por contraexemplo medido em
+  knowledge/devin/agents-and-subagents.md (retrieved 2026-08-04): o Devin CLI le
+  `.agents/agents/` nativamente e importa `.claude/agents/*.md` ("Each `.md` file becomes
+  a subagent profile"), e o Devin Local agent do Desktop despacha os mesmos perfis --
+  dois diretorios que este repositorio ja publicava antes desta fase, sem nenhuma mudanca.
+  Por isso `subagent` entra em `mechanisms`, e a capacidade de coordenacao o declara para
+  `claude_code`, `devin_cli` e `devin_desktop`.
+  O QUE SOBROU, e continua valendo palavra por palavra: o perfil e nosso, o despacho e
+  deles. Nenhum arquivo versionado liga subagente nem fixa modelo -- `subagents_enabled` e
+  chave de usuario, "Default subagent model" e setting de organizacao com opcao *None* que
+  desliga o despacho por completo, e a propria Cognition declara custom subagents
+  EXPERIMENTAIS. E por isso `playbook` continua declarado nas cinco plataformas, inclusive
+  nas tres que despacham: ele e o piso que roda quando o despacho esta desligado, nao um
+  degrau que `subagent` substitui.
+  A DISCIPLINA DO PARAGRAFO SEGUE SENDO EXERCIDA, e nao abandonada: `codex` e `copilot_ci`
+  NAO ganham `subagent`, porque a pesquisa nao os cobriu e nada nela diz que eles tenham
+  equivalente. Afirmar sem medir seria repetir o defeito do transporte HTTP da Fase 1 que
+  este mesmo paragrafo cita como razao de ser da regra.
+  RECORTE DO `devin_desktop`, medido e nao inferido: subagente e documentado como
+  capacidade do Devin Local agent, sob o toggle "Subagents (Preview)" em Devin Settings, e
+  a pagina do Desktop delega formato e descoberta a do CLI. As paginas do motor Cascade
+  (cascade.md, skills.md, workflows.md, agents-md.md, advanced.md, agent-command-center.md)
+  nao mencionam subagente -- argumento por ausencia, marcado como tal na pesquisa. Fora do
+  Devin Local agent com o toggle ligado, a coordenacao no Desktop e `playbook`.
 
 capabilities:
   - name: detect runtime and version divergence
@@ -309,9 +338,17 @@ capabilities:
     cli: [playbook]
     knowledge: [AGENT_PROTOCOL.md]
     platforms:
-      claude_code: [mcp, cli, files, playbook]
-      devin_desktop: [mcp, cli, files, playbook]
-      devin_cli: [mcp, cli, files, playbook]
+      # `subagent`: o tool `Agent` desta CLI despacha os perfis de `.claude/agents/`.
+      claude_code: [mcp, cli, files, playbook, subagent]
+      # `subagent` no Desktop SO no Devin Local agent, com o toggle "Subagents
+      # (Preview)" ligado; o motor Cascade nao o tem. Recorte inteiro em `notes` e em
+      # knowledge/devin/agents-and-subagents.md secao 2 (retrieved 2026-08-04).
+      devin_desktop: [mcp, cli, files, playbook, subagent]
+      # `subagent`: `run_subagent`/`read_subagent`, com descoberta em `.agents/agents/`
+      # e importacao de `.claude/agents/*.md`. Mesma pesquisa, secao 1.
+      devin_cli: [mcp, cli, files, playbook, subagent]
+      # Sem `subagent`, de proposito: a pesquisa nao cobriu estas duas plataformas, e
+      # declarar por simetria seria afirmar paridade que ninguem mediu. Ver `notes`.
       codex: [cli, files, playbook]
       copilot_ci: [cli, files, playbook]
 
