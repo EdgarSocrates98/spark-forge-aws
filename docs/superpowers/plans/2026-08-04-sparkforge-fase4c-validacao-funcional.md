@@ -274,12 +274,12 @@ da §9 depende disso valer também dentro do comparador, não só entre as área
 
 ---
 
-## Task 2: `funcval plan`
+## Task 2: `funcval plan` — **CONCLUÍDA**
 
 **Files:**
 - Create: `sparkforge/facts/funcval.py`, `tests/test_facts_funcval.py`
 
-- [ ] **Step 1: O teste que falha**
+- [x] **Step 1: O teste que falha**
 
 ```python
 from sparkforge.facts.funcval import EMITTED_KINDS, build_plan
@@ -316,12 +316,13 @@ def test_sem_write_nao_ha_alvo_e_o_plano_nao_e_inventado():
     assert [f.kind for f in facts if f.kind == "funcval.unresolved"] == ["funcval.unresolved"]
 ```
 
-- [ ] **Step 2: Rode e veja falhar**
+- [x] **Step 2: Rode e veja falhar**
 
 Run: `python -m pytest tests/test_facts_funcval.py -v`
-Expected: FAIL — `ModuleNotFoundError`
+Expected: FAIL — `ModuleNotFoundError`. Obtido: `ModuleNotFoundError: No module
+named 'sparkforge.facts.funcval'`, erro de coleta, zero teste rodado.
 
-- [ ] **Step 3: Implemente**
+- [x] **Step 3: Implemente**
 
 Módulo no padrão de `benchmark.py`: `EXTRACTOR_ID`, `EMITTED_KINDS` com os
 **quatro** kinds da §5 do spec (`funcval.plan`, `funcval.check_delta`,
@@ -348,7 +349,74 @@ Alvo sem write vira `funcval.unresolved`, nunca alvo adivinhado. Alvo de três
 partes contra símbolo de catálogo de duas também: `funcval.unresolved`, não
 casamento por prefixo.
 
-- [ ] **Step 4: Rode e commite**
+- [x] **Step 4: Rode e commite**
+
+`tests/test_facts_funcval.py`: 39 passed. Suíte: **3644 passed / 5 skipped**
+(era 3605/5 — as 39 são as novas). `ruff check .` limpo.
+
+### Desvios medidos na implementação — texto para a §11 do spec
+
+**D-4c-4 — um `funcval.plan` por alvo distinto, e a medição que obrigou a
+decidir.** A Task 1 não decidiu o caso de vários `pyspark.write` no mesmo corpus.
+Medido: as **sete** fixtures do repositório que emitem `pyspark.write` emitem
+**uma** cada, então nenhuma exercita o caso — mas `pyspark_ast.extract_path`
+sobre **um** arquivo com cinco writes emite **5 facts e 4 alvos distintos**
+(`db.vendas` duas vezes por `saveAsTable` e `insertInto`, `db.clientes`,
+`cat.db.tbl`, e um caminho `s3://`), e o corpus do verbo é um **arquivo de
+facts**, que é a união de tudo que o operador extraiu. O caso é alcançável.
+Decisão: **um plano por alvo**. As chaves de `checks` (`count`, `schema`,
+`agg:sum:<coluna>`) não têm namespace de alvo e colidiriam; o contrato do
+resultado fixa `target` como string **singular** e resultado com alvo diferente é
+`funcval.unresolved`, então um plano com N alvos obrigaria a comparação a
+**escolher**; e o subject por alvo (`{type: "table", symbol: <alvo>}`) já separa
+os `Fact.id`. O mesmo alvo escrito duas vezes continua sendo **um** plano, com os
+dois `fact_id` em `derived_from` — presença por chave, não por fact.
+
+**D-4c-5 — `attrs.target` do `pyspark.write` é melhor-esforço do AST e pode não
+nomear alvo nenhum.** Medido em `fixtures/pyspark/clean_job`:
+`df.write.mode("overwrite").partitionBy("data_pedido").parquet(saida)` emite
+`target: "data_pedido"` — o argumento do `partitionBy`, porque o do `.parquet()`
+é variável (`pyspark_ast.py:661` cai no primeiro literal da cadeia fora do
+`.mode()`). O plano **não** tenta corrigir: o alvo entra verbatim e o casamento
+estrito o transforma em `catalog_schema_unmatched`, que é o sinal visível de que
+o nome não descreve tabela nenhuma. Adivinhar aqui produziria plano de agregados
+sobre colunas de outra tabela. Corrigir na origem é outra fase.
+
+**D-4c-6 — `undeclared_axes` não é campo do eixo de chaves; é do plano.** A
+Task 1 o desenhou para as chaves. Medido na implementação que ele mente se for só
+delas: alvo que não casa com o catálogo não tem check de schema **nem** de
+agregado, e listar só `["keys"]` ali seria meia-verdade — o plano estaria calando
+dois eixos enquanto declara um. Então `undeclared_axes` é computado do que
+faltou, com `undeclared_axes_reason` por eixo. Nas sete fixtures reais com write,
+**todas** saem com `["aggregates", "keys", "schema"]`: nenhuma junta hoje um
+`pyspark.write` e um `catalog.table_schema` do **mesmo** alvo. A Task 5 tem que
+construir esse corpus, senão o eixo de schema e o de agregados nunca aparecem em
+golden.
+
+**D-4c-7 — tipo de coluna que o módulo não classifica vira `unresolved`, não
+silêncio.** As fixtures exercitam três tipos (`bigint`, `double`, `string`). O
+módulo classifica pelo vocabulário de Hive/Glue e pelo de
+`DataType.simpleString`, sobre a **cabeça** do tipo (`decimal(18,2)` →
+`decimal`), e guarda o declarado verbatim. O que não está em nenhuma das duas
+listas não vira agregado **e não some**: vira `column_type_unclassified`. Sem
+isso, um tipo desconhecido reduziria a cobertura do eixo de agregados com cara de
+cobertura completa — o defeito que a `SF-FVAL-005` existe para acusar.
+
+**D-4c-8 — o check de `schema` no plano não carrega o mapa coluna→tipo do
+catálogo.** Aplicação da D-4c-3 **dentro** do plano: se o plano levasse o mapa
+declarado junto, a Task 3 teria contra o que conferir o observado, e a asserção
+absoluta entraria pela porta dos fundos. O check carrega `origin`, `type` e
+`derived_from`, e nada mais; o valor vem sempre do resultado. Pelo mesmo motivo,
+chave declarada **não** é conferida contra o schema do catálogo — `--key
+coluna_que_nao_existe` entra no plano sem `unresolved`, porque a afirmação é do
+operador e julgá-la seria `SF-DQ`.
+
+**D-4c-9 — dois `catalog.table_schema` distintos para o mesmo símbolo não
+escolhem um.** Um arquivo de facts pode unir dois dumps de catálogo. Facts
+idênticos (mesmo `Fact.id`) são o mesmo dump lido duas vezes e não são
+ambiguidade; dois facts **distintos** para o mesmo símbolo são, e escolher entre
+eles seria chute com cara de derivação. Vira `catalog_schema_ambiguous`, e os
+eixos de schema e agregados ficam declarados como ausentes.
 
 ---
 
