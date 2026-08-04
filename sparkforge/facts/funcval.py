@@ -859,6 +859,46 @@ def _delta_measures_and_attrs(
     return (measures, {}, before_value != after_value)
 
 
+def _check_delta(
+    target: str,
+    check: str,
+    declared_type: str,
+    comparison: str,
+    planned: bool,
+    built: tuple[dict[str, Any], dict[str, Any], bool | None],
+    provenance: dict[str, Any],
+) -> Fact:
+    """O `funcval.check_delta` de um check comparado, planejado ou nao.
+
+    Um caminho so para os dois, de proposito: o check nao planejado difere no
+    `planned` e na procedencia do `type`, e em mais nada -- duas construcoes
+    separadas fariam a segunda divergir da primeira sem que nada acusasse.
+
+    O `symbol` do subject leva alvo E check: `Fact.id` e sha1 de (kind, subject,
+    measures), entao dois checks do mesmo alvo com as mesmas measures (dois
+    agregados que deram zero dos dois lados) colidiriam num id so e um sumiria.
+    """
+    measures, extra, verdict = built
+    attrs: dict[str, Any] = {
+        "target": target,
+        "check": check,
+        "axis": _axis_of(check),
+        "type": declared_type,
+        "planned": planned,
+        "comparison": comparison,
+        **extra,
+    }
+    if verdict is not None:
+        attrs["diverged"] = verdict
+    return Fact(
+        kind="funcval.check_delta",
+        subject={"type": "table", "symbol": f"{target}#{check}"},
+        measures=measures,
+        attrs=dict(sorted(attrs.items())),
+        provenance=provenance,
+    )
+
+
 def build_comparison(
     plan: dict[str, Any],
     before: dict[str, Any],
@@ -979,9 +1019,11 @@ def build_comparison(
             states = {side: _side_check(side_checks[side], check) for side in _SIDES}
             bad = [side for side in _SIDES if states[side][0] != _STATE_USABLE]
             if bad:
-                # "nao veio", "veio e nao deu" e "veio errado" sao problemas
-                # diferentes, e o motivo diz qual predomina: so o primeiro e
-                # cobertura faltante.
+                # "veio errado", "veio e nao deu" e "nao veio" sao problemas
+                # diferentes, e o motivo diz qual predomina -- contrato violado
+                # na frente, porque ler um `value: null` sem razao como ausencia
+                # perdoaria a violacao. So os dois ultimos motivos sao cobertura
+                # faltante; os dois primeiros o operador mediu e nao entregou.
                 kinds = {states[side][0] for side in bad}
                 if _STATE_MALFORMED in kinds:
                     reason = "check_entry_malformed"
@@ -1039,22 +1081,14 @@ def build_comparison(
                 )
                 continue
 
-            measures, extra, verdict = built
             compared += 1
-            if verdict is None:
+            if built[2] is None:
                 relative += 1
-            elif verdict:
+            elif built[2]:
                 diverged += 1
-            attrs = {**base_attrs, "comparison": comparison, **extra}
-            if verdict is not None:
-                attrs["diverged"] = verdict
             out.append(
-                Fact(
-                    kind="funcval.check_delta",
-                    subject={"type": "table", "symbol": f"{target}#{check}"},
-                    measures=measures,
-                    attrs=dict(sorted(attrs.items())),
-                    provenance=provenance,
+                _check_delta(
+                    target, check, declared_type, comparison, True, built, provenance
                 )
             )
 
@@ -1097,30 +1131,14 @@ def build_comparison(
             if built is None:
                 continue
 
-            measures, extra, verdict = built
             compared += 1
-            if verdict is None:
+            if built[2] is None:
                 relative += 1
-            elif verdict:
+            elif built[2]:
                 diverged += 1
-            attrs = {
-                "target": target,
-                "check": check,
-                "axis": _axis_of(check),
-                "type": declared_type,
-                "planned": False,
-                "comparison": mode[1],
-                **extra,
-            }
-            if verdict is not None:
-                attrs["diverged"] = verdict
             out.append(
-                Fact(
-                    kind="funcval.check_delta",
-                    subject={"type": "table", "symbol": f"{target}#{check}"},
-                    measures=measures,
-                    attrs=dict(sorted(attrs.items())),
-                    provenance=provenance,
+                _check_delta(
+                    target, check, declared_type, mode[1], False, built, provenance
                 )
             )
 
