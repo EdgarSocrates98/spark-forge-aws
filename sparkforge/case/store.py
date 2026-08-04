@@ -11,6 +11,7 @@ Isto mantém o módulo puro e reprodutível, e impede um LLM de inventar hora.
 from __future__ import annotations
 
 import copy
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -118,11 +119,105 @@ def load_case(root: Path | str) -> dict[str, Any]:
     return document
 
 
-def set_phase(case: dict[str, Any], phase: str) -> dict[str, Any]:
+def _gate_contract() -> dict[str, dict[str, Any]]:
+    """O bloco `gates` do `routing.yaml`, com os nomes conferidos contra `GATES`.
+
+    Import tardio de propósito: sem rigor ligado, `set_phase` não lê o catálogo,
+    e o comportamento é bit a bit o de antes desta fase.
+    """
+    from sparkforge.case.router import load_gate_contract
+
+    contract = load_gate_contract()
+    unknown = sorted(set(contract) - set(GATES))
+    if unknown:
+        raise CaseError(
+            f"routing.yaml declara gate desconhecido: {', '.join(unknown)} "
+            f"(esperado um de: {', '.join(GATES)}). Gate com nome errado seria "
+            f"gate inerte em silêncio."
+        )
+    return contract
+
+
+def _gates_blocking(
+    phase: str, fact_kinds: set[str]
+) -> list[tuple[str, str, str]]:
+    """Gates que guardam `phase` e cujo fact produtor não está presente.
+
+    Percorre `GATES` na ordem declarada, e não a do YAML: a mensagem de bloqueio
+    é a mesma para o mesmo estado, independente de como o catálogo foi editado.
+
+    Gate sem `satisfied_by` **nunca** entra na lista, nem sob rigor — é o
+    critério da §1 do spec da Fase 4b, e ele mora aqui em uma linha só.
+
+    `case["gates"][gate]` não é consultado de propósito (desvio D-4b-2):
+    `case update --gate X --gate-value true` viraria override sem motivo e sem
+    registro. O que destrava é evidência ou override declarado, nunca a flag.
+    """
+    contract = _gate_contract()
+    blocking: list[tuple[str, str, str]] = []
+    for gate in GATES:
+        spec = contract.get(gate) or {}
+        kind = spec.get("satisfied_by")
+        if not kind:
+            continue
+        if phase not in (spec.get("guards_phases") or []):
+            continue
+        if kind in fact_kinds:
+            continue
+        blocking.append((gate, kind, str(spec.get("produced_by", "")).strip()))
+    return blocking
+
+
+def _blocked_message(phase: str, blocking: list[tuple[str, str, str]]) -> str:
+    """Fase pedida, gate, fact que faltou e o comando exato — o D-5 do spec.
+
+    A Fase 4a mediu que mensagem inacionável passa no CI, então o comando vai
+    por extenso, copiável, vindo do `produced_by` do catálogo.
+    """
+    lines = [
+        f"transição para `{phase}` bloqueada: este case foi aberto com rigor de "
+        f"gates (`strict_gates`), e {len(blocking)} gate(s) sem a evidência que "
+        f"os satisfaz:"
+    ]
+    for gate, kind, command in blocking:
+        lines.append(f"  - {gate}: falta o fact `{kind}`")
+        lines.append(f"    produza com: {command}")
+    lines.append(
+        "O gate checa a PRESENÇA do kind, não o conteúdo do fact: ele prova que "
+        "a análise rodou e produziu o artefato que destrava, nunca que ela "
+        "cobriu todo `scope.entrypoints` nem que o benchmark é do job certo."
+    )
+    return "\n".join(lines)
+
+
+def set_phase(
+    case: dict[str, Any],
+    phase: str,
+    fact_kinds: Iterable[str] | None = None,
+) -> dict[str, Any]:
+    """Move o case de fase, e — só sob `strict_gates` — cobra os gates da fase.
+
+    `fact_kinds` é o conjunto de kinds de fact que o case já produziu. A
+    checagem é por **presença de kind**, não por conteúdo de fact: ela prova que
+    a análise rodou e emitiu o artefato que destrava o gate, e **não** prova que
+    ela cobriu todo `scope.entrypoints`, nem que o benchmark é do job certo.
+    Passar facts inteiros puxaria o índice de facts para dentro do store e faria
+    o gate precisar saber o que é "o job certo", que é julgamento. O limite fica
+    declarado aqui e na mensagem de bloqueio, como `dq.unresolved` declara o
+    recorte dele.
+
+    Parâmetro opcional: sem ele — e sem `strict_gates` no case — o comportamento
+    é o de antes da Fase 4b, inclusive sem ler o catálogo. Qual gate guarda qual
+    fase, e o que satisfaz cada um, é dado em `rules/catalog/routing.yaml`.
+    """
     if phase not in PHASES:
         raise CaseError(
             f"fase desconhecida: {phase!r} (esperado uma de: {', '.join(PHASES)})"
         )
+    if case.get("strict_gates"):
+        blocking = _gates_blocking(phase, set(fact_kinds or ()))
+        if blocking:
+            raise CaseError(_blocked_message(phase, blocking))
     new = copy.deepcopy(case)
     new["phase"] = phase
     return new

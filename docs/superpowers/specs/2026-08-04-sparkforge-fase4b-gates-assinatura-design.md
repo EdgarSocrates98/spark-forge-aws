@@ -222,3 +222,34 @@ advisory — o de hoje — nada muda, e nenhum case em andamento quebra.
 
 O critério 5 da §6 já cobria a metade compatível disso; a metade nova é: **com
 rigor ligado, `--gate-value true` não destrava**, e há teste.
+
+**D-4b-3 — nenhuma fase é guardada por um gate só, e isso muda dois testes, não
+um.** A Task 1 avisou que a fase do teste do gate *sem* produtor precisa levar o
+kind do gate que a guarda. Medido ao implementar: o mesmo vale para o teste que
+prova que **o fact produtor satisfaz** — `validation` e `report` são guardadas
+pelos **dois** gates com produtor (`baseline_captured` e `flows_mapped`), então
+`set_phase(case, "validation", fact_kinds={"bench.run_delta"})` continua
+bloqueando, por `flows_mapped`. O esboço do plano passaria só um kind e falharia
+por um motivo que não é o que ele afirma testar.
+
+Consequência escrita no teste: `TODOS_OS_KINDS` para as fases do fechamento, e
+`hypothesis` — a única fase guardada por exatamente um gate — para asserir a
+mensagem de bloqueio de `flows_mapped` isolada. Mais um teste novo,
+`test_satisfazer_so_um_dos_dois_gates_ainda_bloqueia`, que trava a sobreposição
+em vez de deixá-la implícita.
+
+**D-4b-4 — o contrato é lido e validado em `router.py`, não em `store.py`.** A
+lista de arquivos da Task 2 previa só `store.py`, `routing.yaml` e o teste. Mas
+`routing.yaml` já tem dono — `sparkforge/case/router.py`, que é quem sabe
+resolver o diretório do catálogo com contenção de path (`safe_catalog_file`).
+Duplicar essa leitura no store seria uma segunda porta para o mesmo arquivo.
+
+`load_gate_contract()` fica ao lado de `load_routing()`, e a validação de forma
+do bloco (`satisfied_by` sem `produced_by`, `guards_phases` vazio,
+`advisory_reason` ausente) roda **dentro de `load_routing`** — isto é, em todo
+uso do routing, e não só quando o gate é cobrado. Mesma razão de
+`loader._validate_conditions`: bloco malformado morre na carga, porque gate
+inerte em silêncio é falso negativo mudo. Ao store cabe só o que depende de
+`GATES`: recusar nome de gate que o case não conhece. O import de `router` é
+tardio, para que sem `strict_gates` o catálogo não seja lido — e há teste
+disso.
