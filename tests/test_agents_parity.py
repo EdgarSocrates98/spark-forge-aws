@@ -10,7 +10,11 @@ from scripts.sync_skills import render_agent
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
+EXECUTORS = AGENTS / "executors"
 NAMES = tuple(sorted(p.stem for p in AGENTS.glob("*.md")))
+COORDENADORES = tuple(sorted(AGENTS.glob("*.md")))
+EXECUTORES = tuple(sorted(EXECUTORS.glob("*.md")))
+PERFIS = COORDENADORES + EXECUTORES
 
 
 class TestSingleSource:
@@ -69,6 +73,106 @@ class TestProtocol:
         text = self._text()
         assert "expire_snapshots" in text
         assert "remove_orphan_files" in text
+
+
+def secao_nao_faz(texto: str) -> str:
+    """O corpo da secao `## Nao faz` de um perfil, ou "" quando ela nao existe.
+
+    Delimitada pela proxima linha de nivel `## ` ou pelo fim do arquivo, para
+    que o criterio olhe a secao e nao o arquivo inteiro.
+    """
+    linhas = texto.splitlines()
+    for i, linha in enumerate(linhas):
+        if linha.strip() == "## Não faz":
+            fim = i + 1
+            while fim < len(linhas) and not linhas[fim].startswith("## "):
+                fim += 1
+            return "\n".join(linhas[i + 1 : fim])
+    return ""
+
+
+def falta_fronteira(texto: str) -> str | None:
+    """O que falta para o perfil declarar a fronteira, ou None se nao falta nada.
+
+    O criterio tem tres partes, e cada uma existe por um motivo medido:
+
+    1. **A secao `## Nao faz` tem que existir.** E onde este repositorio ja
+       escreve fronteira desde a Fase 5b, e ancorar nela e o que impede que uma
+       mencao de passagem no corpo conte como declaracao. O
+       `iceberg-performance-engineer` tinha uma secao inteira sobre
+       `expire_snapshots` nao ter rollback -- conhecimento de dominio, nao
+       fronteira -- e um criterio sobre o arquivo inteiro o daria por resolvido.
+
+    2. **Dentro dela, o radical `destrutiv`.** Nomeia o ato. Radical, e nao
+       frase canonica, porque um perfil que jamais chega perto de apagar dado e
+       um coordenador de Iceberg que recomenda `expire_snapshots` chegam nesta
+       fronteira por caminhos diferentes, e a frase honesta de um nao e a do
+       outro. Casar frase literal obrigaria os treze a repetir o mesmo texto, que
+       e o defeito que este teste existe para nao criar.
+
+    3. **Dentro dela, o radical `confirma`.** Nomeia para onde vai a
+       confirmacao. As duas metades falham de formas diferentes, e o modo de
+       falha de subagente e mudo nas duas: quem declara so a primeira para sem
+       dizer por que; quem declara so a segunda segue sem confirmar. Exigir as
+       duas e o que faz o teste pegar meia fronteira.
+
+    O que este criterio nao faz -- e nao tem como fazer -- e verificar sentido.
+    Um perfil futuro pode enfileirar as duas palavras sem dizer nada. O que ele
+    garante e que ninguem publica perfil sem ter escrito sobre as duas metades no
+    unico lugar onde fronteira mora neste repositorio.
+    """
+    secao = secao_nao_faz(texto)
+    if not secao:
+        return "sem secao `## Não faz`"
+    faltando = [radical for radical in ("destrutiv", "confirma") if radical not in secao]
+    return f"`## Não faz` sem {' nem '.join(faltando)}" if faltando else None
+
+
+class TestFronteiraDeManutencaoDestrutiva:
+    """`ask_user_question` e SEMPRE negado a subagente -- e da plataforma, nao de
+    configuracao (`knowledge/devin/agents-and-subagents.md`, V-DV-10). Logo a
+    regra 10 do `CLAUDE.md` -- confirmacao explicita de escopo e retencao antes
+    de manutencao destrutiva -- e inalcancavel de dentro de um subagente.
+
+    Sem a fronteira escrita no proprio perfil, o modo de falha e mudo: o
+    subagente segue sem confirmar, ou para sem dizer por que. Nenhum dos dois
+    aparece em teste, em log ou em achado -- e e por isso que o invariante e
+    sobre o texto do perfil, que e o unico lugar onde a garantia pode viver
+    (V-DV-9: nao ha contrato de saida de subagente no Devin).
+    """
+
+    def test_o_recorte_cobre_as_duas_familias_de_perfil(self):
+        """Guarda contra o teste vazio. Se um rename esvaziasse `PERFIS`, o teste
+        seguinte passaria sem olhar nada -- cobertura aparente e o que esta fase
+        inteira existe para nao produzir."""
+        assert len(COORDENADORES) >= 8
+        assert len(EXECUTORES) >= 5
+
+    @pytest.mark.parametrize("perfil", PERFIS, ids=lambda p: p.stem)
+    def test_perfil_declara_a_fronteira_de_manutencao_destrutiva(self, perfil):
+        problema = falta_fronteira(perfil.read_text(encoding="utf-8"))
+        assert problema is None, f"{perfil.relative_to(ROOT)}: {problema}"
+
+    def test_mencao_fora_da_secao_nao_conta(self):
+        """O criterio e por secao, e este teste e o que prova. Um perfil pode
+        explicar manutencao destrutiva no corpo -- por que `expire_snapshots` nao
+        tem rollback, por exemplo -- sem nunca dizer que nao a executa."""
+        texto = (
+            "## Manutenção destrutiva\n\n"
+            "`expire_snapshots` destrutiva não tem rollback; peça confirmação.\n\n"
+            "## Não faz\n\nNão julga.\n"
+        )
+        assert falta_fronteira(texto) == "`## Não faz` sem destrutiv nem confirma"
+
+    def test_meia_fronteira_nao_conta(self):
+        """Declarar que nao executa, sem dizer com quem a confirmacao acontece,
+        e o perfil que para sem explicar."""
+        texto = "## Não faz\n\nNão executa manutenção destrutiva.\n"
+        assert falta_fronteira(texto) == "`## Não faz` sem confirma"
+
+    def test_perfil_sem_a_secao_e_pego(self):
+        """O caso do perfil novo: ninguem escreveu fronteira nenhuma."""
+        assert falta_fronteira("---\nname: novo\n---\n\nCorpo.\n") == "sem secao `## Não faz`"
 
 
 class TestMirrors:
