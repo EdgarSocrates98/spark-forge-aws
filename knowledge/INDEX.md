@@ -51,6 +51,11 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 |---|---|
 | [`dq/validation-frameworks.md`](dq/validation-frameworks.md) | Superfície pública corrente de Great Expectations e PyDeequ, alcance de versões contra `GLUE_MATRIX`/`EMR_MATRIX`, o que a fonte primária garante sobre passadas sobre o dado, e `assert` sob `python -O`. Traz o bloco de **vetos** que o catálogo `SF-DQ` cita |
 
+### Plataformas de agente
+| Arquivo | Conteúdo |
+|---|---|
+| [`devin/agents-and-subagents.md`](devin/agents-and-subagents.md) | Superfície oficial de **agents e subagents do Devin** (CLI e Devin Local): diretórios de descoberta, frontmatter literal, importação de `.claude/agents/*.md`, `.agents/skills/`, modelo default por router, `max-nesting`, `subagents_enabled`, MCP e atalhos. Traz o bloco de **vetos** `V-DV-*` e o que isso faz com a nota de `parity.yaml` |
+
 ### Transversal
 | Arquivo | Conteúdo |
 |---|---|
@@ -67,6 +72,6 @@ Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever
 
 ## Fontes e frescor
 
-Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01** e `dq/` em **2026-08-03**.
+Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03** e `devin/` em **2026-08-04**.
 
 Conhecimento aqui **não substitui** a documentação do runtime real. Quando o job em análise contradiz esta base, o runtime ganha e a base é corrigida.
