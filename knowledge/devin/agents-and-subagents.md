@@ -885,7 +885,7 @@ despacho é deles".
 
 **Documento interno tratado como hipótese, não como fonte**
 
-- `guia_devin_agents_subagents.md` (raiz do repositório). Contradito nas §§3.2, 3.3, 7.2, 7.3 e 10.2 desta página.
+- `guia_devin_agents_subagents.md` (raiz do repositório). Contradito nas §§3.2, 3.3, 7.2, 7.3 e 10.2 desta página. **Versionado a partir de 2026-08-04, sem uma vírgula alterada**: até então esta seção citava um arquivo que ninguém que clonasse o repositório teria, e uma refutação cuja premissa não se pode ler é asserção. Ele é o **objeto refutado**, não guia — o que vale de cada afirmação dele é o que esta página escreve ao lado, com URL e data.
 
 **Não encontrado, e registrado como tal**
 
