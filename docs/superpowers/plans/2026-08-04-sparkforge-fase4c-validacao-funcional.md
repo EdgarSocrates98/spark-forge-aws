@@ -1022,17 +1022,17 @@ report` de lá listava duas evidências.
 
 ---
 
-## Task 7: coordenador, skill e fechamento
+## Task 7: coordenador, skill e fechamento — **CONCLUÍDA**
 
 **Files:**
 - Modify: `agents/*.md`, `skills/*/SKILL.md`, `docs/superpowers/STATUS.md`, `README.md`, `AGENTS.md`
 
-- [ ] **Step 1: Prove a órfã**
+- [x] **Step 1: Prove a órfã**
 
 Run: `python -m pytest tests/test_agent_coverage.py -v`
 Expected: FAIL — `SF-FVAL` sem coordenador. Cole a saída.
 
-- [ ] **Step 2: Coordenador e skill**
+- [x] **Step 2: Coordenador e skill**
 
 Decida com argumento: coordenador novo, ou `SF-FVAL` num que já existe? A Fase 4a
 pendurou `SF-BENCH` no `spark-performance-architect` porque a pergunta era a
@@ -1043,10 +1043,48 @@ Se a skill nova despachar, ela precisa da fronteira de manutenção destrutiva e
 decisão em `DISPATCHABLE_SKILLS`/`NON_DISPATCHABLE_SKILLS` — a fase do Devin
 tornou isso invariante.
 
-- [ ] **Step 3: Meça e feche**
+- [x] **Step 3: Meça e feche**
 
 Números medidos, seção da fase no `STATUS.md`, §16 marcada **concluída** — é o
 último dos quatro itens de rigor. Dívidas registradas, com a natureza certa
 (dívida, fase ou limite declarado).
 
-- [ ] **Step 4: Suíte verde, ruff limpo, `sync_skills.py --check` OK, commit**
+- [x] **Step 4: Suíte verde, ruff limpo, `sync_skills.py --check` OK, commit**
+
+### Desvios medidos na implementação — texto para a §11 do spec
+
+**D-4c-26 — `funcval compare` não tem `--out`, e a assimetria com `plan` não
+estava escrita em lugar nenhum.** Medido em `sparkforge/adapters/cli.py:357-381` e
+no `inputSchema` de `sparkforge_funcval_compare`: o verbo aceita `--plan`,
+`--before`, `--after`, `--kind`, `--limit` e `--cursor`, e **nenhum** `--out`.
+`funcval plan` tem `--out` **obrigatório** (é a entrada do `compare` e a evidência
+do gate), e todos os outros produtores de fact do repositório gravam — os quinze
+`analyze *`, o `benchmark` e o `fuse`. Verificado ponta a ponta na CLI sobre
+`fixtures/funcval/count_diverged/`: `analyze pyspark` + `analyze catalog-schema` →
+`funcval plan --key pedido_id,dt --out` → `funcval compare > arquivo` → extrair
+`items` → `judge` devolve `['SF-FVAL-001', 'SF-FVAL-005']`. O caminho existe; o
+que não existe é o caminho de um passo. Duas consequências, e a segunda morde: o
+operador precisa de um `python -c`/`jq` entre dois verbos cujo passo seguinte é
+obrigatório, e `--limit` vale **50** por default — extrair `items` sem conferir
+`next_cursor` julga a primeira página e chama o resultado de comparação, que é
+exatamente o defeito que a `SF-FVAL-005` acusa no dado do operador. Registrado
+como **dívida** no `STATUS.md` (fechar é `--out`/`out_path` nos dois adaptadores,
+mais as quatro listas de paridade da Fase 4b), e o contorno ficou **escrito** nas
+duas skills que ensinam o verbo — skill que ensina o caminho feliz e cala o passo
+que falta transforma dívida do repositório em erro do usuário.
+
+**D-4c-27 — a decisão de coordenador e de skill saiu da rota e do critério de
+despacho, não da simetria com a 4a.** O Step 2 mandava dizer qual é o caso; os três
+argumentos estão na seção da fase no `STATUS.md`. O que vale registrar aqui é o que
+**restringiu** a escolha: (1) a fronteira com `SF-DQ` já estava medida e escrita no
+comentário do próprio gate em `routing.yaml` — `dq.check` foi rejeitado como
+`satisfied_by` por provar validação **dentro do job** —, então pendurar `SF-FVAL`
+no `data-quality-reviewer` reabriria a fronteira que o critério 10 do spec fecha;
+(2) a `ROUTE-015` já nomeia `recommended_skill: review-pyspark-pr`, e o catálogo
+estava **fora do escopo desta task**, então a skill segue a rota e não o contrário;
+(3) a divisão dos dois verbos entre `review-pyspark-pr` (o `plan`) e
+`benchmark-pyspark-job` (o `compare`) reproduz a linha que já estava em
+`NON_DISPATCHABLE_SKILLS` para o benchmark — *"exige um run novo e o id dele, que
+só aparece depois de alguém publicar a mudança"* —, que é literalmente a
+dependência do lado `--before`. Nenhuma skill nova, nenhuma entrada nova nas duas
+listas de despacho, e nenhuma linha de `routing.yaml` tocada.

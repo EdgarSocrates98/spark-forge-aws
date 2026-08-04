@@ -222,7 +222,7 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 36 tools fazem
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 38 tools fazem
 (seção 10), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
