@@ -603,12 +603,12 @@ bloqueado dispara `SF-FVAL-005` — cobertura zero **é** cobertura faltante.
 
 ---
 
-## Task 4: superfície
+## Task 4: superfície — **CONCLUÍDA**
 
 **Files:**
 - Modify: `sparkforge/adapters/{_core,cli,tools}.py`, as duas listas `EXTRACTORS`, as **quatro** de `tests/test_adapters_tools.py`, `parity.yaml`, `manifest.json`, `scripts/regen_fixtures.py`
 
-- [ ] **Step 1: Os dois verbos**
+- [x] **Step 1: Os dois verbos**
 
 `funcval plan --facts <arquivo> [--key <col>[,<col>]] --out <arquivo>` e
 `funcval compare --plan <arquivo> --before <arquivo> --after <arquivo>`.
@@ -623,19 +623,110 @@ artefato.
 Confira a assinatura real de `_load_facts_file` e de `_facts_page` antes de
 copiar: a Fase 4a mediu que o plano chutou `_facts_from_file`, nome que não existe.
 
-- [ ] **Step 2: As listas**
+**Conferidas e usadas como são:** `_load_facts_file(facts_path, producer=…,
+label=None)` e `_facts_page(facts, unresolved_kind, kind, limit, cursor)`.
+`funcval` passa `"funcval.unresolved"` como `unresolved_kind` nos dois verbos —
+ao contrário de `analyze_call_graph`, que passa `None` porque não tem ponto cego.
+
+- [x] **Step 2: As listas**
 
 Duas `EXTRACTORS` (tupla e dict, arquivos diferentes) e as **quatro** de
 `test_adapters_tools.py`: o `set(TOOLS)` literal, o branch de `_real_output_for`,
 `FAILABLE` e `_WRITE_IDEMPOTENT` — esta última porque `funcval plan --out`
 escreve.
 
-- [ ] **Step 3: `parity.yaml`, `manifest.json`, `regen_funcval`**
+**As seis tocadas.** As duas `EXTRACTORS` e as quatro de
+`test_adapters_tools.py`: `set(TOOLS)` (+2), `_real_output_for` (+2 branches, com
+os helpers `_write_funcval_facts_files`/`_write_funcval_plan_file`/
+`_write_funcval_result_files`), `FAILABLE` (+2) e
+`test_only_case_and_report_writers_are_not_read_only`, que passa a ter **quatro**
+escritores: `sparkforge_funcval_plan` entra ao lado de `case_open`,
+`case_update` e `report_sign`.
 
-- [ ] **Step 4: O vermelho esperado**
+- [x] **Step 3: `parity.yaml`, `manifest.json`, `regen_funcval`**
+
+Duas capacidades novas em `parity.yaml` (uma por verbo, porque `cli:` é por
+folha e `TestNoCliVerbIsAnUndeclaredMcpGap` enumera `funcval plan` e
+`funcval compare` separadamente), duas tools em `manifest.json`, e
+`regen_funcval` com a guarda de existência do corpus (D-4a-18).
+
+- [x] **Step 4: O vermelho esperado**
 
 `test_every_kind_of_every_extractor_appears_in_some_golden[funcval]` fica
 vermelho até a Task 5. **Não crie fixture para silenciá-lo.** Reporte.
+
+**Três vermelhos, e não dois** — o terceiro é consequência estrita do primeiro,
+está registrado em D-4c-18, e nenhum foi silenciado.
+
+### Desvios medidos na implementação — texto para a §11 do spec
+
+**D-4c-14 — `funcval plan --facts` é repetível, e a medição obriga.** O plano
+escreveu `--facts <arquivo>`, singular. Medido em `_core.py`: o alvo sai de
+`pyspark.write`, que só `analyze pyspark --out` produz, e o schema e os agregados
+saem de `catalog.table_schema`, que só `analyze catalog-schema --out` produz —
+dois verbos, dois arquivos, e **nenhum** deles emite os dois kinds. Com `--facts`
+singular, os eixos de schema e de agregado seriam inalcançáveis pela superfície:
+o operador teria que concatenar dois arrays JSON na mão, que é exatamente o passo
+manual que tornou `judge --facts` e `fuse --facts` repetíveis, e que quando
+ninguém faz apenas faz a capacidade nunca disparar. `_merge_facts_files` ganhou o
+parâmetro `producer` pelo mesmo motivo que `_load_facts_file` já o tinha: cravar
+`analyze pyspark` mandaria refazer a extração errada quando o arquivo que falta é
+o do catálogo. Um `--facts` só continua válido — o que muda é o teto, não o piso.
+
+**D-4c-15 — `--out` é obrigatório, a escrita mora no `_core`, e a tool MCP
+escreve.** Nos verbos de `analyze` o `--out` é opcional e a escrita mora na CLI,
+porque lá o arquivo é conveniência. Aqui ele é a **entrada do verbo seguinte**
+(`funcval compare --plan`) e a evidência que o gate `functional_validation_defined`
+vai cobrar na Task 6 — e foi ele que permitiu à Task 1 rejeitar
+`.sparkforge/keys.yaml` dizendo que "o registro existe mesmo assim". Plano que só
+passa pelo stdout não é artefato. Consequências: a escrita desce para
+`_core.funcval_plan` (senão CLI e MCP manteriam a mesma escrita em duas cópias),
+`sparkforge_funcval_plan` recebe `out_path` obrigatório e sai de `_READ_ONLY`
+para `_WRITE_IDEMPOTENT` — mesmo precedente de `report_sign`, e pela mesma razão:
+uma tool que só devolvesse `structuredContent` daria a capacidade a quem usa a
+CLI e não a quem usa o MCP, que é a assimetria que `parity.yaml` existe para
+pegar. `_write_facts_artifact` recusa diretório inexistente com erro de fronteira
+em vez de `FileNotFoundError` cru.
+
+**D-4c-16 — a conferência de `plan_ref` contra o `Fact.id` real é do `_core`, e
+ela recusa em vez de emitir fact.** A Task 3 deixou o limite explícito: o módulo
+recebe o `attrs` do plano, nunca o `Fact`, então só acusa quando os **dois lados
+discordam entre si** (`plan_ref_conflict`, D-4c-13). O caso que ele não enxerga é
+os dois lados citando o **mesmo** `plan_ref` de um plano **antigo**: a comparação
+sairia inteira, sob checks que ninguém pediu, com cara de comparação válida.
+Quem tem o `Fact.id` real é o chamador, então a verificação é dele —
+`_reject_foreign_plan_ref`. Ela **recusa** (`AdapterError`, exit 2) em vez de
+emitir um `funcval.unresolved`: nenhum adaptador deste repositório constrói
+`Fact`, e um construído aqui seria o adaptador afirmando sobre o domínio. O
+precedente é `validate --facts`, que só cobra a pertinência do `benchmark_ref`
+quando tem o arquivo em mãos e **reprova** quando o `fact_id` citado não está lá
+dentro. E ela **cala** quando os dois lados discordam entre si: ali o módulo já
+bloqueia, e roubar o caso apagaria a sentinela bloqueada que a `SF-FVAL-005`
+precisa ver. Dois testes, um por metade — `test_a_plan_ref_from_another_plan_is_refused`
+e `test_two_sides_disagreeing_on_plan_ref_stay_with_the_module` —, mais
+`test_the_real_plan_ref_passes`, sem o qual a recusa passaria por rejeitar tudo.
+
+**D-4c-17 — arquivo de plano com N planos escolhe por alvo, e a ambiguidade vira
+erro de fronteira.** Consequência da D-4c-4 na superfície: `funcval plan` emite
+um plano por alvo distinto, então `--plan` pode carregar N, e o resultado do
+operador descreve **um**. Comparar contra todos foi considerado e rejeitado com
+número: produziria N−1 sentinelas com `blocked_by: [target_mismatch]`, e
+`SF-FVAL-005` leria cada uma como cobertura faltante de um alvo que o operador
+nunca quis comparar — achado P1 inventado. `_pick_plan` casa por alvo exato; um
+plano só dispensa a escolha; nenhum casamento, ou mais de um, levanta erro
+nomeando os alvos disponíveis. Escolher por conta seria comparar números de
+tabelas diferentes, que a Task 1 já disse ser pior que não comparar.
+
+**D-4c-18 — o vermelho esperado é TRÊS, não dois, e o terceiro é do mesmo
+corpus.** Além de
+`test_every_kind_of_every_extractor_appears_in_some_golden[funcval]` e
+`TestEveryToolIsReachable::test_no_tool_is_orphan`, cai também
+`tests/test_fixtures_kind_coverage.py::test_every_unresolved_kind_is_exercised`:
+ele é o recorte explícito do primeiro sobre a maquinaria de ponto cego
+(`{k for k in EMITTABLE if k.endswith(".unresolved")} <= covered`), e
+`funcval.unresolved` entra em `EMITTABLE` no mesmo commit em que `funcval` entra
+nas duas `EXTRACTORS`. Mesma causa, mesma cura na Task 5, e nenhum dos três foi
+silenciado — nem por fixture antecipada, nem por remoção de kind da lista.
 
 ---
 

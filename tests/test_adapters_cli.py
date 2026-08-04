@@ -1262,6 +1262,353 @@ class TestBenchmark:
         assert "sparkforge analyze pyspark" in capsys.readouterr().err
 
 
+_FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
+
+
+class TestFuncvalPlan:
+    """Verbo de TOPO com subacao, como `report`: nao extrai de artefato --
+    deriva de facts que outro verbo ja produziu."""
+
+    def _facts(self, repo, capsys, source=_FUNCVAL_JOB):
+        job = repo / "job"
+        job.mkdir(exist_ok=True)
+        (job / "carga.py").write_text(source, encoding="utf-8")
+        catalog = repo / "catalogo"
+        catalog.mkdir(exist_ok=True)
+        (catalog / "dump.json").write_text(CATALOG_DUMP, encoding="utf-8")
+
+        pyspark_facts = repo / "pyspark_facts.json"
+        catalog_facts = repo / "catalog_facts.json"
+        run(["analyze", "pyspark", "--path", str(job), "--out", str(pyspark_facts)], capsys)
+        run(
+            [
+                "analyze", "catalog-schema",
+                "--path", str(catalog),
+                "--out", str(catalog_facts),
+            ],
+            capsys,
+        )
+        return pyspark_facts, catalog_facts
+
+    def test_derives_the_plan_from_two_facts_files(self, repo, capsys):
+        """`--facts` e repetivel porque tem que ser: o alvo vem do
+        `pyspark.write` e o schema/os agregados vem do `catalog.table_schema`,
+        e nenhum verbo produz os dois no mesmo arquivo."""
+        pyspark_facts, catalog_facts = self._facts(repo, capsys)
+        out = repo / "plano.json"
+        code, output = run(
+            [
+                "funcval", "plan",
+                "--facts", str(pyspark_facts),
+                "--facts", str(catalog_facts),
+                "--out", str(out),
+            ],
+            capsys,
+        )
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["by_kind"]["funcval.plan"] == 1
+        plano = next(f for f in payload["items"] if f["kind"] == "funcval.plan")
+        assert plano["attrs"]["target"] == "db.eventos"
+        assert set(plano["attrs"]["checks"]) == {"count", "schema", "agg:sum:cliente_id"}
+
+    def test_the_out_file_is_the_artifact_that_compare_rereads(self, repo, capsys):
+        pyspark_facts, catalog_facts = self._facts(repo, capsys)
+        out = repo / "plano.json"
+        run(
+            [
+                "funcval", "plan",
+                "--facts", str(pyspark_facts),
+                "--facts", str(catalog_facts),
+                "--out", str(out),
+            ],
+            capsys,
+        )
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        assert any(f["kind"] == "funcval.plan" for f in facts)
+
+    def test_the_declared_key_carries_its_origin(self, repo, capsys):
+        """Chave de negocio nao sai de fact nenhum (D-4c-1): ela entra por
+        `--key`, e o check tem que dizer que a afirmacao e do operador."""
+        pyspark_facts, catalog_facts = self._facts(repo, capsys)
+        _, output = run(
+            [
+                "funcval", "plan",
+                "--facts", str(pyspark_facts),
+                "--facts", str(catalog_facts),
+                "--key", "loja_id,pedido_id",
+                "--out", str(repo / "plano.json"),
+            ],
+            capsys,
+        )
+        plano = next(
+            f for f in json.loads(output)["items"] if f["kind"] == "funcval.plan"
+        )
+        chave = plano["attrs"]["checks"]["key:loja_id+pedido_id"]
+        assert chave["origin"] == "declared"
+        assert chave["derived_from"] == []
+        assert plano["attrs"]["checks"]["count"]["origin"] == "derived"
+
+    def test_without_key_the_missing_axis_is_written_not_silenced(self, repo, capsys):
+        pyspark_facts, catalog_facts = self._facts(repo, capsys)
+        _, output = run(
+            [
+                "funcval", "plan",
+                "--facts", str(pyspark_facts),
+                "--facts", str(catalog_facts),
+                "--out", str(repo / "plano.json"),
+            ],
+            capsys,
+        )
+        plano = next(
+            f for f in json.loads(output)["items"] if f["kind"] == "funcval.plan"
+        )
+        assert plano["attrs"]["undeclared_axes"] == ["keys"]
+        assert plano["attrs"]["undeclared_axes_reason"]["keys"]
+
+    def test_reports_its_own_blind_spot(self, repo, capsys):
+        """Alvo sem catalogo casado nao vira plano de agregados adivinhado:
+        vira `funcval.unresolved`, e ele tem que chegar ao relatorio."""
+        pyspark_facts, _ = self._facts(repo, capsys)
+        _, output = run(
+            [
+                "funcval", "plan",
+                "--facts", str(pyspark_facts),
+                "--out", str(repo / "plano.json"),
+            ],
+            capsys,
+        )
+        payload = json.loads(output)
+        assert payload["unresolved"] >= 1
+        assert "catalog_schema_unmatched" in {
+            entry["reason"] for entry in payload["unresolved_at"]
+        }
+
+    def test_missing_facts_file_names_both_producers(self, repo, capsys):
+        assert (
+            main(
+                [
+                    "funcval", "plan",
+                    "--facts", str(repo / "nope.json"),
+                    "--out", str(repo / "plano.json"),
+                ]
+            )
+            == 2
+        )
+        err = capsys.readouterr().err
+        assert "sparkforge analyze pyspark" in err
+        assert "sparkforge analyze catalog-schema" in err
+
+    def test_out_into_a_missing_directory_is_actionable(self, repo, capsys):
+        pyspark_facts, _ = self._facts(repo, capsys)
+        assert (
+            main(
+                [
+                    "funcval", "plan",
+                    "--facts", str(pyspark_facts),
+                    "--out", str(repo / "sem" / "plano.json"),
+                ]
+            )
+            == 2
+        )
+        assert "sparkforge funcval plan" in capsys.readouterr().err
+
+
+class TestFuncvalCompare:
+    def _plan(self, repo, capsys, keys=()):
+        helper = TestFuncvalPlan()
+        pyspark_facts, catalog_facts = helper._facts(repo, capsys)
+        out = repo / "plano.json"
+        args = [
+            "funcval", "plan",
+            "--facts", str(pyspark_facts),
+            "--facts", str(catalog_facts),
+            "--out", str(out),
+        ]
+        for key in keys:
+            args += ["--key", key]
+        run(args, capsys)
+        return out
+
+    def _result(self, repo, name, **payload):
+        path = repo / f"{name}.json"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    def _checks(self, count):
+        return {
+            "count": {"value": count},
+            "schema": {"value": {"cliente_id": "bigint", "dt": "string"}},
+            "agg:sum:cliente_id": {"value": 88123},
+        }
+
+    def test_compares_before_against_after(self, repo, capsys):
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1000))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(998))
+        code, output = run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+            ],
+            capsys,
+        )
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["by_kind"]["funcval.analyzed"] == 1
+        delta = next(
+            f
+            for f in payload["items"]
+            if f["kind"] == "funcval.check_delta" and f["attrs"]["check"] == "count"
+        )
+        assert delta["attrs"]["diverged"] is True
+
+    def test_the_sentinel_declares_the_proxy_limit(self, repo, capsys):
+        """O limite mora na SAIDA, e nao so no spec: quem le 'os quatro proxies
+        bateram' nao pode ter que ir ao spec descobrir o que isso nao prova."""
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1000))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(1000))
+        _, output = run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+            ],
+            capsys,
+        )
+        sentinela = next(
+            f for f in json.loads(output)["items"] if f["kind"] == "funcval.analyzed"
+        )
+        assert sentinela["attrs"]["proxies"] == ["count", "schema", "keys", "aggregates"]
+        assert "NAO provam" in sentinela["attrs"]["proxy_limit"]
+
+    def test_a_plan_ref_from_another_plan_is_refused(self, repo, capsys):
+        """O ponto cego que `build_comparison` nao ve: o modulo recebe o `attrs`
+        do plano, nunca o Fact, entao os dois lados citando o MESMO plan_ref de
+        um plano ANTIGO passariam batido e a comparacao sairia inteira, sob
+        checks que ninguem pediu. Quem tem o `Fact.id` real e o chamador."""
+        plan = self._plan(repo, capsys)
+        before = self._result(
+            repo, "antes", target="db.eventos", plan_ref="f_000000",
+            checks=self._checks(1000),
+        )
+        after = self._result(
+            repo, "depois", target="db.eventos", plan_ref="f_000000",
+            checks=self._checks(998),
+        )
+        assert (
+            main(
+                [
+                    "funcval", "compare",
+                    "--plan", str(plan),
+                    "--before", str(before),
+                    "--after", str(after),
+                ]
+            )
+            == 2
+        )
+        err = capsys.readouterr().err
+        assert "f_000000" in err
+        assert "sparkforge funcval plan" in err
+
+    def test_the_real_plan_ref_passes(self, repo, capsys):
+        """A outra metade: sem ela, a recusa acima passaria por rejeitar tudo."""
+        plan = self._plan(repo, capsys)
+        plan_id = next(
+            f["id"]
+            for f in json.loads(plan.read_text(encoding="utf-8"))
+            if f["kind"] == "funcval.plan"
+        )
+        before = self._result(
+            repo, "antes", target="db.eventos", plan_ref=plan_id, checks=self._checks(1000)
+        )
+        after = self._result(
+            repo, "depois", target="db.eventos", plan_ref=plan_id, checks=self._checks(998)
+        )
+        code, _ = run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+            ],
+            capsys,
+        )
+        assert code == 0
+
+    def test_two_sides_disagreeing_on_plan_ref_stay_with_the_module(self, repo, capsys):
+        """Lados que discordam ENTRE SI sao o caso que o modulo JA bloqueia com
+        `plan_ref_conflict`. Roubar esse caso apagaria a sentinela bloqueada que
+        a SF-FVAL-005 precisa ver."""
+        plan = self._plan(repo, capsys)
+        before = self._result(
+            repo, "antes", target="db.eventos", plan_ref="f_000000",
+            checks=self._checks(1000),
+        )
+        after = self._result(
+            repo, "depois", target="db.eventos", plan_ref="f_111111",
+            checks=self._checks(998),
+        )
+        code, output = run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+            ],
+            capsys,
+        )
+        assert code == 0
+        payload = json.loads(output)
+        sentinela = next(
+            f for f in payload["items"] if f["kind"] == "funcval.analyzed"
+        )
+        assert sentinela["attrs"]["blocked_by"] == ["plan_ref_conflict"]
+        assert "funcval.check_delta" not in payload["by_kind"]
+
+    def test_missing_plan_file_names_the_verb_that_produces_it(self, repo, capsys):
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(1))
+        assert (
+            main(
+                [
+                    "funcval", "compare",
+                    "--plan", str(repo / "nope.json"),
+                    "--before", str(before),
+                    "--after", str(after),
+                ]
+            )
+            == 2
+        )
+        err = capsys.readouterr().err
+        assert "--plan" in err
+        assert "sparkforge funcval plan" in err
+
+    def test_missing_result_file_says_who_measures(self, repo, capsys):
+        """O resultado e do operador, e a mensagem tem que dizer isso: mandar
+        rodar um verbo que produzisse o arquivo seria o motor afirmando medir."""
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1))
+        assert (
+            main(
+                [
+                    "funcval", "compare",
+                    "--plan", str(plan),
+                    "--before", str(before),
+                    "--after", str(repo / "nope.json"),
+                ]
+            )
+            == 2
+        )
+        err = capsys.readouterr().err
+        assert "--after" in err
+        assert "MEDIDO POR VOCE" in err
+
+
 class TestCollectAthenaWorkgroup:
     def test_writes_artifact_and_registers_manifest(self, repo, capsys, monkeypatch):
         class _FakeAthenaWorkgroupClient:

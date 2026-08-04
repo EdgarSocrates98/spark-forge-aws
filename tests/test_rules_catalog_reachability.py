@@ -32,6 +32,7 @@ from sparkforge.facts import (
     data_quality,
     emr_cluster,
     event_log,
+    funcval,
     fusion,
     iceberg_metadata,
     pyspark_ast,
@@ -58,6 +59,11 @@ EXTRACTORS = (
     # extrator que ja esta no repositorio desde a Task 3 da Fase 5b.
     emr_cluster,
     event_log,
+    # `funcval` entra nas DUAS listas no mesmo commit da Fase 4c: sem ele aqui,
+    # os quatro kinds `funcval.*` contam como orfaos e as cinco regras SF-FVAL
+    # da Task 6 seriam obrigadas a declarar `blocked_on` sobre um modulo que ja
+    # esta no repositorio.
+    funcval,
     fusion,
     iceberg_metadata,
     pyspark_ast,

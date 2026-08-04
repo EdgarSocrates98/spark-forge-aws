@@ -40,6 +40,7 @@ from sparkforge.facts.data_quality import (
 )
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
 from sparkforge.facts.event_log import extract_event_log_path
+from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
 from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
@@ -1020,6 +1021,236 @@ def benchmark_runs(
 
 
 # --------------------------------------------------------------------------- #
+# funcval
+# --------------------------------------------------------------------------- #
+
+
+def _write_facts_artifact(out_path: str, facts: list[Fact], label: str) -> None:
+    """Grava a lista COMPLETA de facts (nunca a pagina) no caminho pedido.
+
+    A escrita mora aqui, e nao na CLI como nos verbos de `analyze`, porque o
+    plano nao e so uma saida legivel: e o ARTEFATO que `funcval compare --plan`
+    rele e que o gate `functional_validation_defined` cobra. Um cliente MCP que
+    so recebesse `structuredContent` teria a capacidade pela CLI e nao pelo MCP
+    -- a assimetria que `parity.yaml` existe para pegar, e a mesma razao pela
+    qual `report sign` escreve em vez de devolver o bloco para alguem colar.
+    """
+    target = Path(out_path)
+    if not target.parent.exists():
+        raise AdapterError(
+            f"Diretorio nao encontrado para {label}: {target.parent}\n"
+            f"  Crie o diretorio antes, ou aponte para um caminho existente:\n"
+            f"    sparkforge funcval plan --facts <facts.json> --out .sparkforge/plan.json",
+            exit_code=2,
+        )
+    target.write_text(
+        json.dumps([f.to_dict() for f in facts], indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def funcval_plan(
+    facts_paths: list[str] | None,
+    out_path: str,
+    keys: list[str] | None = None,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    """Deriva o plano de validacao funcional dos facts ja extraidos e o grava.
+
+    Verbo de TOPO, como `benchmark` e `fuse`, e nao `analyze funcval`: tudo sob
+    `analyze` extrai facts de um artefato, e este nao extrai nada -- deriva de
+    facts que outro verbo ja produziu. Funcao pura sobre Facts: nunca executa
+    consulta, nunca le a tabela, nunca chama AWS. Ver a docstring de
+    `sparkforge.facts.funcval` para o que o plano pode e nao pode afirmar.
+
+    `facts_paths` e REPETIVEL, e isso e medido e nao estetico: o alvo sai de
+    `pyspark.write` (`analyze pyspark --out`) e o schema e os agregados saem de
+    `catalog.table_schema` (`analyze catalog-schema --out`). Nenhum verbo produz
+    os dois no mesmo arquivo, entao com `--facts` unico os eixos de schema e de
+    agregado seriam inalcancaveis -- a mesma razao que ja tornou `judge --facts`
+    e `fuse --facts` repetiveis, e o mesmo passo manual de concatenar dois
+    arrays JSON que, quando ninguem faz, so faz a capacidade nunca disparar.
+
+    `keys` sao as chaves de negocio DECLARADAS pelo operador (`--key`), cada
+    elemento uma chave (composta quando tem virgula). Elas entram declaradas
+    porque nenhum dos 102 kinds dos 16 extratores nomeia chave de negocio
+    (D-4c-1, D-4c-2); sem elas o plano nao inventa o eixo -- ele o escreve como
+    ausente em `undeclared_axes`.
+
+    `out_path` e OBRIGATORIO, ao contrario do `--out` opcional dos verbos de
+    `analyze`: la o arquivo e conveniencia, aqui ele e a entrada do proximo
+    verbo e a evidencia do gate. Plano que so passa pelo stdout nao e artefato,
+    e a Task 1 recusou `.sparkforge/keys.yaml` justamente porque este arquivo ja
+    da ao declarado um registro auditavel.
+    """
+    if not facts_paths:
+        raise AdapterError(
+            "informe ao menos um --facts (arquivo gerado por `analyze pyspark --out` "
+            "ou `analyze catalog-schema --out`). Repetivel de proposito: o alvo vem do "
+            "`pyspark.write` e o schema/os agregados vem do `catalog.table_schema`, e "
+            "nenhum verbo produz os dois no mesmo arquivo.",
+            exit_code=2,
+        )
+    facts = _merge_facts_files(list(facts_paths), _FACTS_FROM_PYSPARK_OR_CATALOG)
+    derived = build_plan(
+        facts, keys=tuple(keys or ()), path_hint="+".join(facts_paths)
+    )
+    _write_facts_artifact(out_path, derived, "--out")
+    return _facts_page(derived, "funcval.unresolved", kind, limit, cursor)
+
+
+def _load_result_file(result_path: str, label: str) -> dict[str, Any]:
+    """Um dos dois resultados que o OPERADOR mediu, no contrato minimo da fase.
+
+    Nao e um arquivo de facts: e o objeto `{"target", "checks"}` que quem rodou
+    a consulta escreveu. O motor nunca produz este arquivo -- se produzisse,
+    estaria medindo, e a fase inteira afirma que quem mede e o operador.
+    """
+    path = Path(result_path)
+    if not path.is_file():
+        raise AdapterError(
+            f"Arquivo de resultado nao encontrado para {label}: {result_path}\n"
+            f"  O resultado e MEDIDO POR VOCE em cada lado -- o sparkforge nunca executa\n"
+            f"  consulta. Derive o que medir e escreva um JSON por lado:\n"
+            f"    sparkforge funcval plan --facts <facts.json> --out <plano.json>\n"
+            f'    {{"target": "db.vendas", "checks": {{"count": {{"value": 1000}}}}}}',
+            exit_code=2,
+        )
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise AdapterError(f"{result_path}: JSON invalido: {exc}", exit_code=2) from exc
+    if not isinstance(payload, dict):
+        raise AdapterError(
+            f"{result_path}: o resultado de {label} precisa ser um OBJETO com `target` e "
+            f"`checks`, nao {type(payload).__name__}. Rode "
+            f"`sparkforge funcval plan --help` para o contrato.",
+            exit_code=2,
+        )
+    return payload
+
+
+def _pick_plan(
+    plans: list[Fact], before: dict[str, Any], after: dict[str, Any], plan_path: str
+) -> Fact:
+    """O plano contra o qual comparar, quando o arquivo carrega mais de um.
+
+    `funcval plan` emite UM plano por alvo distinto (D-4c-4), e o resultado do
+    operador descreve UM alvo. Com varios planos no arquivo, alguem tem que
+    escolher, e escolher errado e comparar numeros de tabelas diferentes -- pior
+    do que nao comparar. Entao a escolha e por casamento exato de alvo, e a
+    ambiguidade vira erro de fronteira em vez de palpite: comparar contra TODOS
+    produziria N-1 sentinelas bloqueadas, e `SF-FVAL-005` leria cada uma delas
+    como cobertura faltante de um alvo que o operador nunca quis comparar.
+    """
+    if len(plans) == 1:
+        return plans[0]
+    wanted = {str(result.get("target", "") or "") for result in (before, after)}
+    matches = [plan for plan in plans if str(plan.attrs.get("target", "")) in wanted]
+    if len(matches) == 1:
+        return matches[0]
+    targets = sorted(str(plan.attrs.get("target", "")) for plan in plans)
+    raise AdapterError(
+        f"{plan_path} tem {len(plans)} planos (um por alvo: {targets}), e o par de "
+        f"resultados nomeia {sorted(wanted)}.\n"
+        f"  Um resultado descreve UM alvo, e escolher por conta seria comparar numeros "
+        f"de tabelas diferentes.\n"
+        f"  Informe resultados do mesmo alvo, ou gere o plano do alvo que voce mediu:\n"
+        f"    sparkforge funcval plan --facts <facts.json> --out <plano.json>",
+        exit_code=2,
+    )
+
+
+def _reject_foreign_plan_ref(
+    plan_fact: Fact, before: dict[str, Any], after: dict[str, Any], plan_path: str
+) -> None:
+    """O ponto cego que `build_comparison` nao consegue enxergar sozinho.
+
+    O modulo recebe o `attrs` do plano, nunca o Fact, entao ele so acusa
+    `plan_ref` quando os DOIS lados discordam ENTRE SI (D-4c-13). Os dois lados
+    citando o MESMO `plan_ref` de um plano ANTIGO passam batido: a comparacao
+    sairia inteira, sob checks que ninguem pediu, com cara de comparacao valida.
+    Quem tem o `Fact.id` real e este chamador, entao a verificacao e dele.
+
+    Recusa em vez de emitir fact: um `funcval.unresolved` construido aqui seria
+    o adaptador afirmando sobre o dominio, e nenhum adaptador deste repositorio
+    constroi Fact. O precedente do lado da validacao e o mesmo -- `validate
+    --facts` so cobra a PERTINENCIA do `benchmark_ref` quando tem o arquivo em
+    maos, e reprova quando o `fact_id` citado nao esta la dentro.
+
+    Silencio quando os dois discordam entre si: ali o modulo JA bloqueia com
+    `plan_ref_conflict`, e roubar esse caso dele apagaria a sentinela bloqueada
+    que a `SF-FVAL-005` precisa ver.
+    """
+    refs = {str(result.get("plan_ref", "") or "") for result in (before, after)}
+    refs.discard("")
+    if len(refs) != 1:
+        return
+    ref = next(iter(refs))
+    if ref == plan_fact.id:
+        return
+    raise AdapterError(
+        f"Os resultados citam plan_ref {ref}, e o plano de "
+        f"'{plan_fact.attrs.get('target', '')}' em {plan_path} e {plan_fact.id}.\n"
+        f"  Os dois lados foram medidos contra OUTRO plano: compara-los contra este "
+        f"seria julga-los sob checks que ninguem pediu.\n"
+        f"  Informe o plano contra o qual eles foram medidos, ou refaca a medicao:\n"
+        f"    sparkforge funcval plan --facts <facts.json> --out <plano.json>",
+        exit_code=2,
+    )
+
+
+def funcval_compare(
+    plan_path: str,
+    before_path: str,
+    after_path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    """Compara os DOIS resultados do operador contra o plano, e emite `funcval.*`.
+
+    `plan_path` e o arquivo escrito por `funcval plan --out`; `before_path` e
+    `after_path` sao os resultados que o operador mediu de cada lado, no
+    contrato minimo (`target`, `checks` com presenca por chave, cada check um
+    objeto `{"value": ...}` e `value: null` exigindo `unavailable_reason`).
+
+    A comparacao e sempre ANTES contra DEPOIS, nunca observado contra catalogo
+    (D-4c-3): o schema declarado serve para saber QUAIS colunas existem, e nada
+    mais. E o veredito de ponto flutuante nao sai daqui nem do modulo -- ele sai
+    de `SF-FVAL-004` contra `threshold.relative_tolerance`, porque um `diverged`
+    de float seria um limiar dentro de um Fact.
+
+    COM `unresolved` proprio, como `benchmark`: check que veio de um lado so,
+    check que rodou e nao deu, check que o plano pediu e nao veio, e os tres
+    bloqueios de comparacao inteira sao pontos cegos de verdade, e silencio ali
+    seria indistinguivel de "nenhuma divergencia".
+    """
+    plan_facts = _load_facts_file(plan_path, _FACTS_FROM_FUNCVAL_PLAN, "--plan")
+    plans = [fact for fact in plan_facts if fact.kind == "funcval.plan"]
+    if not plans:
+        raise AdapterError(
+            f"{plan_path} nao tem nenhum fact `funcval.plan`.\n"
+            f"  Sem alvo derivado nao ha o que comparar -- o arquivo pode ser so os\n"
+            f"  `funcval.unresolved` de um corpus sem `pyspark.write`. Produza o plano:\n"
+            f"    sparkforge funcval plan --facts <facts.json> --out {plan_path}",
+            exit_code=2,
+        )
+    before = _load_result_file(before_path, "--before")
+    after = _load_result_file(after_path, "--after")
+
+    chosen = _pick_plan(plans, before, after, plan_path)
+    _reject_foreign_plan_ref(chosen, before, after, plan_path)
+
+    facts = build_comparison(
+        chosen.attrs, before, after, path_hint=f"{before_path}..{after_path}"
+    )
+    return _facts_page(facts, "funcval.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
 # fuse
 # --------------------------------------------------------------------------- #
 
@@ -1117,6 +1348,15 @@ _FACTS_FROM_PYSPARK = "sparkforge analyze pyspark --path <dir> --out {path}"
 _FACTS_FROM_EVENT_LOG = "sparkforge analyze event-log --path <event-log.jsonl> --out {path}"
 _FACTS_FROM_BENCHMARK = "sparkforge benchmark --before <antes> --after <depois> --out {path}"
 
+# `funcval plan` come de DOIS verbos, e o hint diz os dois: o alvo sai de
+# `pyspark.write` e o schema/os agregados saem de `catalog.table_schema`. Cravar
+# so o primeiro mandaria o operador refazer a extracao que ele ja tem.
+_FACTS_FROM_PYSPARK_OR_CATALOG = (
+    "sparkforge analyze pyspark --path <dir> --out {path}\n"
+    "    sparkforge analyze catalog-schema --path <dump.json> --out {path}"
+)
+_FACTS_FROM_FUNCVAL_PLAN = "sparkforge funcval plan --facts <facts.json> --out {path}"
+
 
 def _load_facts_file(
     facts_path: str,
@@ -1139,8 +1379,15 @@ def _load_facts_file(
     return _facts_from_dicts(raw)
 
 
-def _merge_facts_files(facts_paths: list[str]) -> list[Fact]:
+def _merge_facts_files(
+    facts_paths: list[str], producer: str = _FACTS_FROM_PYSPARK
+) -> list[Fact]:
     """Une varios arquivos de facts numa lista unica, sem duplicata e ordenada.
+
+    `producer` existe pelo mesmo motivo que em `_load_facts_file`: quem une os
+    arquivos decide qual verbo os produz, e `funcval plan` une a saida de
+    `analyze pyspark` com a de `analyze catalog-schema`. O default preserva o
+    comportamento de `judge`, o unico chamador anterior.
 
     `judge` correlaciona facts de extratores diferentes (`SF-GLUE-004` cruza
     `tf.attribute` com `pyspark.write`), e cada extrator escreve o seu proprio
@@ -1159,7 +1406,7 @@ def _merge_facts_files(facts_paths: list[str]) -> list[Fact]:
     seen: set[str] = set()
     merged: list[Fact] = []
     for facts_path in facts_paths:
-        for fact in _load_facts_file(facts_path):
+        for fact in _load_facts_file(facts_path, producer):
             key = json.dumps(
                 {
                     "kind": fact.kind,

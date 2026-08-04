@@ -240,6 +240,28 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: derive what to measure on both sides of a change
+    tools: [sparkforge_funcval_plan]
+    cli: [funcval plan]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: compare the before and after measurements against the plan
+    tools: [sparkforge_funcval_compare]
+    cli: [funcval compare]
+    knowledge: [rules/catalog/README.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: correlate facts from multiple extractors before judging
     tools: [sparkforge_fuse]
     cli: [fuse]
