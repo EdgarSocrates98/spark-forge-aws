@@ -74,8 +74,14 @@ thirteen profiles are subagent profiles there without any per-platform authoring
 `.agents/` mirror is **rendered**, not copied: it drops `tools:` (the value mapping from
 Claude Code's field to Devin's tool names is undocumented, and guessing in a permission
 field grants or denies wrongly) and never gains `model:` (the subagent model resolves
-through a router at spawn time and an org admin overrides it). Skills that are safe to
-dispatch declare `subagent: true` in `.agents/skills/`.
+through a router at spawn time and an org admin overrides it). **Dropping `tools:` is not
+a security boundary, and could not be one:** both discovery paths are on by default
+(`read_config_from` has `agents_standard` and `claude`, both `true`), the source is
+**silent** on which one wins when both exist, and `allowed-tools` defaults to *"all
+tools"* — omitting is the **most permissive** option, not the most restrictive. What
+carries the boundary is the `## Não faz` prose in the profile body, byte-identical in both
+mirrors. Skills that are safe to dispatch declare `subagent: true` in `.agents/skills/`,
+and each one states in its own text that it does not run destructive maintenance.
 
 **`playbook` is the floor on all five platforms, not a rung that dispatch replaces.**
 `sparkforge playbook <coordinator>` (CLI) or the `sparkforge_playbook` MCP tool returns the

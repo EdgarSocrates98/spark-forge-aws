@@ -399,8 +399,14 @@ Devin lê `.agents/agents/` e importa `.claude/agents/*.md`, dois diretórios qu
 repositório já publica. O espelho do Devin é **renderizado**, não copiado — ele sai sem
 `tools:`, porque o mapeamento de valores desse campo não está documentado, e nunca com
 `model:`, porque o modelo do subagente resolve por roteador no spawn e um admin da
-organização o sobrescreve. As doze skills despacháveis declaram `subagent: true` no
-espelho `.agents/skills/`.
+organização o sobrescreve. **A omissão de `tools:` não é fronteira de segurança, e não
+teria como ser:** os dois caminhos de descoberta estão ligados por default
+(`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa**
+sobre qual vence quando os dois existem, e o default de `allowed-tools` é *"all tools"* —
+omitir é a opção **mais permissiva**, não a mais restrita. O que carrega a fronteira é a
+prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As doze skills
+despacháveis declaram `subagent: true` no espelho `.agents/skills/`, e cada uma declara,
+no próprio texto, que não executa manutenção destrutiva.
 
 **O `playbook` é o piso das cinco plataformas, não um degrau que o despacho substitui.**
 **`sparkforge playbook <coordenador>`** (CLI) ou a tool MCP `sparkforge_playbook` devolve a

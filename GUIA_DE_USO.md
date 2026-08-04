@@ -56,7 +56,19 @@ roteador no momento do spawn, e um admin da organização o sobrescreve — escr
 literal seria fingir controle). O corpo do perfil, o `name` e o `description` são os
 mesmos nos dois: o Devin acha o mesmo perfil pelos dois caminhos, e a documentação dele
 não declara qual tem precedência quando os dois existem — o que muda entre eles é
-apenas a presença de `tools:`, e a fonte diz que os dois formatos são aceitos.
+apenas a presença de `tools:`.
+
+**Não conte com essa omissão como fronteira.** Os dois caminhos estão ligados por
+default (`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte não
+diz qual vence, e o default de `allowed-tools` é *"all tools"* — omitir é a opção **mais
+permissiva**, não a mais restrita, e o perfil pode chegar pelo `.claude/agents/`
+carregando o campo. O motivo da omissão é outro, e é de honestidade: o **mapeamento de
+valores** não está documentado (`Bash` → `exec`?), e chutar em campo de permissão erra
+nos dois sentidos. Uma coisa que a fonte **diz**, e que é sobre nome de campo e não sobre
+qual arquivo vence: `tools` (Claude Code) e `allowed-tools` (Devin) são ambos aceitos.
+Quem carrega a fronteira é o `## Não faz` do corpo do perfil, igual byte a byte nos dois
+espelhos — e, nas doze skills despacháveis, o parágrafo de despacho da seção
+`## Protocolo`.
 
 Não presuma que o `agents/` da **raiz** seja varrido: a documentação lista
 `.devin/agents/` e `.agents/agents/`, e a frase do changelog ("your project's `agents/`
