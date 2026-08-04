@@ -1,7 +1,9 @@
 # SparkForge AWS — Devin: perfis de subagente e paridade de despacho
 
 **Data:** 2026-08-04
-**Status:** desenhado, não implementado.
+**Status:** implementado e revisto (revisão final em 2026-08-04). O texto abaixo é
+o do desenho e **não foi reescrito**; o que a implementação mediu diferente está
+na **§8, Desvios**, e o que ficou aberto está no `STATUS.md`.
 **Pesquisa de fontes:** [`knowledge/devin/agents-and-subagents.md`](../../../knowledge/devin/agents-and-subagents.md),
 com URL e data por afirmação, e onze vetos `V-DV-*`.
 **Estado corrente:** [`../STATUS.md`](../STATUS.md)
@@ -176,3 +178,70 @@ que nenhum teste tocava, e o defeito só apareceu quando alguém subiu o servido
 | Custom subagents são declarados **experimentais** pela Cognition | O `playbook` continua existindo e funcionando: se o despacho sumir, o piso permanece |
 | Admin da org desliga subagentes (*None*) | Mesma mitigação: o piso não depende de despacho |
 | `subagent: true` numa skill que precisaria perguntar | D-6 e o critério 5; a fronteira do D-4 é a segunda rede |
+
+---
+
+## 8. Desvios — o que a implementação e a revisão final mediram diferente
+
+Este spec **não é reescrito**; é registro histórico, e a convenção do
+repositório (`STATUS.md`, "Como manter este arquivo honesto") manda registrar o
+desvio ao lado, nunca corrigir o texto original por cima. Os cinco abaixo foram
+medidos na revisão final de **2026-08-04**, depois da implementação.
+
+### D-DV-R1 — o critério 9 é falso como escrito, e o que existe é outro (mais estreito e verdadeiro)
+
+*"Nenhum identificador de modelo aparece em arquivo versionado"* é falso, e a
+medição é de um comando: **64 ocorrências em 5 arquivos versionados** —
+`knowledge/devin/agents-and-subagents.md` sozinha tem 52 (`model: sonnet` no
+exemplo oficial reproduzido, e a tabela de `model_uid` com `swe-1-7`, `glm-5-2`,
+`kimi-k2-7`), mais `STATUS.md` (7), o plano (2), este spec (2) e
+`scripts/sync_skills.py` (1, na justificativa de por que o campo não é escrito).
+
+Isso não é defeito: **pesquisa de fontes cita identificador por obrigação**, e a
+contradição com a doc interna (`glm-5.2` com ponto contra `glm-5-2` com hífen) só
+pode ser registrada escrevendo os dois. Um critério que proibisse a citação
+proibiria a evidência.
+
+O que existe, é testado e **vale 0** é o critério estreito: **nenhum `model:` no
+frontmatter de perfil ou skill**, canônico ou espelho — travado por
+`test_devin_nunca_ganha_model` e `test_devin_nao_ganha_model_em_nenhum`. Leia o
+critério 9 como esse.
+
+### D-DV-R2 — a §7 declarava uma mitigação que não existe
+
+A linha de risco "o Devin muda formato de perfil" promete que a pesquisa fica
+"na watchlist do `refresh_knowledge`". A primeira metade é verdadeira; a segunda
+é **falsa por construção**: `watchlist()` deriva a lista de `sources[].url` das
+regras do catálogo, e `knowledge/sources.lock.json` tem 37 fontes, **zero com
+`devin`**. As 24 URLs de `docs.devin.ai` envelhecem sem alarme, sobre uma
+superfície que a própria fonte declara experimental. Virou **dívida** no
+`STATUS.md`, com as duas saídas e o custo de cada uma.
+
+### D-DV-R3 — o `Status:` do cabeçalho ficou desatualizado
+
+"desenhado, não implementado" sobreviveu à implementação e à revisão final.
+**Estado real:** implementado e revisto; o que ficou aberto está no `STATUS.md`,
+nunca aqui.
+
+### D-DV-R4 — "os oito coordenadores" onde são treze perfis
+
+A §1 diz que `.agents/agents/` publica "os oito coordenadores". São **treze
+perfis**: os oito coordenadores mais os cinco executores, e os executores também
+são perfis de subagente válidos — o `playbook` decompõe o coordenador
+exatamente neles.
+
+### D-DV-R5 — a "segunda rede" do D-6 podia não estar em escopo
+
+A §7 chama a fronteira do D-4 de segunda rede do D-6. Medido: das doze
+despacháveis, **dez** saem sem `agent:` (nove ambíguas, mais `diagnose-oom`, ver
+o desvio abaixo), e nelas o perfil é escolhido pelo harness — que pode escolher o
+built-in `subagent_general`, com acesso total e nenhum `## Não faz`. Nessas dez a
+rede do D-4 **não está garantida**, e a fronteira passou a ser declarada também
+na **skill**, que é a unidade despachada. Correção, não duplicação: as doze
+terminavam mandando obter confirmação explícita, que dentro de um subagente é
+inalcançável.
+
+Junto vem a atribuição de `diagnose-oom`: ela era declarante único **por
+omissão** (`spark-performance-architect` não a lista no `skills:` dele), e o
+perfil que sobrava era o orquestrador. O `agent:` caiu, e o critério passou a ser
+derivado — ver o limite declarado correspondente no `STATUS.md`.
