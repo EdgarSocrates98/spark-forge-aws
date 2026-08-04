@@ -564,9 +564,10 @@ mais 20 de cobertura dos dois lados), suíte **3394 passed / 5 skipped**
 ## Task 5: `report sign` e `report verify`
 
 **Files:**
-- Modify: `sparkforge/adapters/{_core,cli,tools}.py`, `templates/performance-report.md`, `tests/`
+- Modify: `sparkforge/adapters/{_core,cli,tools}.py`, `templates/performance-report.md`, `parity.yaml`, `manifest.json`, `tests/`
+- Create: `tests/test_adapters_report_signature.py`
 
-- [ ] **Step 1: O bloco no relatório**
+- [x] **Step 1: O bloco no relatório**
 
 No fim, delimitado, e **fora** do que a própria assinatura cobre — ele não pode entrar no hash que ele mesmo carrega. O corpo assinado é tudo que vem antes do delimitador.
 
@@ -583,17 +584,99 @@ pessoa com os mesmos facts produz a mesma assinatura.
 <!-- /sparkforge:signature -->
 ```
 
-- [ ] **Step 2: `report verify` diz o que divergiu**
+> **O bloco escrito difere deste esboço em quatro pontos, todos medidos.** A
+> assinatura é `sig_` + **64 hex** (D-4b-10, e o módulo exporta `SIGNATURE_RE`
+> para que a forma não tenha segunda verdade); `--facts` virou `--findings`
+> (D-4b-12); as linhas de metadado usam **chave ASCII** (`catalog_version:`,
+> `schema_version:`, em vez de `catálogo:`) porque são as linhas que o `verify`
+> parseia e acento em regex de parsing é superfície de divergência de console; e
+> o bloco declara os **`fact_ids` e `rule_ids`** (D-4b-14), sem os quais o Step 2
+> não consegue isolar as três partes.
+
+- [x] **Step 2: `report verify` diz o que divergiu**
 
 Não "inválido". Recompute as três partes separadamente e diga qual não bate:
 evidência, catálogo ou corpo. É o critério 8 do spec, e o teste cobre os três
 casos, mais o de bloco ausente e o de bloco malformado.
 
-- [ ] **Step 3: Os dois verbos nos três adaptadores**
+> **Desvio D-4b-14 — "recompute as três partes separadamente" não fecha sozinho.**
+> Medido ao escrever: as três partes de **agora** saem do arquivo de findings e
+> do corpo atual, mas a assinatura gravada é um hash único das três partes
+> **de então** — não há como recomputá-las em separado a partir dela. Com só o
+> hash, evidência trocada e corpo editado produzem a mesma resposta ("não bate"),
+> que é exatamente o que o critério 8 recusa. A isolação vem de o bloco declarar
+> o que foi assinado: `evidence` compara os ids declarados com os do arquivo de
+> findings; `catalog` idem para as duas versões; `body` recomputa
+> `compute_signature` do corpo atual segurando evidência e catálogo nos valores
+> **declarados** — se fecha, o corpo está intacto ainda que os findings de hoje
+> sejam outros. O bloco mora fora do hash e portanto é editável: por isso o
+> veredito `valid` nunca sai dele, sai das três checagens juntas, e a atribuição
+> de `body` diz as duas leituras possíveis ("o corpo foi editado, ou o próprio
+> bloco foi") em vez de escolher uma que ela não pode provar.
+>
+> **Desvio D-4b-15 — texto DEPOIS do bloco é recusado, não ignorado.** O plano
+> definiu o corpo como "tudo que vem antes do delimitador" e não disse o que
+> fazer com o que vem depois do fechamento. Ignorar deixaria a porta que a
+> assinatura existe para fechar: um parágrafo apendado ao fim do arquivo que
+> nenhuma assinatura cobre e que o leitor lê como parte do relatório verificado.
+> `sign` recusa com `exit_code=2`; `verify` devolve `malformed_block`.
+
+- [x] **Step 3: Os dois verbos nos três adaptadores**
 
 `report sign --report <md> --facts <json>` e `report verify --report <md> --facts <json>`, na CLI, no `_core` e como tool MCP. Mais `parity.yaml` e `manifest.json`, e as **três** listas manuais de `tests/test_adapters_tools.py` que a Fase 5c mediu.
 
-- [ ] **Step 4: Rode e commite**
+> **Desvio D-4b-12 — a flag é `--findings`, e não `--facts`.** Medido antes de
+> escolher: o arquivo de **facts** carrega `id`, `kind`, `subject`, `measures` e
+> `provenance` — e **nenhum** `rule_id`, `catalog_version` ou `schema_version`.
+> Os quatro campos não-corpo da assinatura estão todos no arquivo de
+> **findings**: `evidence` é a lista de `fact_id` citados
+> (`models.Finding.evidence`), `rule_id` é a regra que disparou, e as duas
+> versões viajam em cada achado (`Finding.to_dict`, alimentadas por
+> `loader.py:212` a partir do cabeçalho do arquivo de catálogo — a resposta à
+> pergunta "está em cada regra ou no cabeçalho" é: no cabeçalho, propagada para
+> cada regra e daí para cada achado). Com `--facts` o verbo precisaria de **dois**
+> arquivos para responder três dos quatro campos; com `--findings` responde os
+> quatro com um só, e nenhum terceiro formato é inventado.
+>
+> **Desvio D-4b-13 — as listas manuais são QUATRO, não três.** As três previstas
+> mudaram (`set(TOOLS)`, o branch de `_real_output_for`, `FAILABLE`), e a quarta
+> apareceu porque `sign` **escreve**: `test_only_case_writers_are_not_read_only`
+> afirmava `writers == {case_open, case_update}`. Um `sign` que só devolvesse o
+> bloco para alguém colar seria a versão decorativa da capacidade — e a colagem
+> manual é exatamente onde o corpo assinado deixaria de ser o corpo escrito.
+> `sparkforge_report_sign` é `_WRITE_IDEMPOTENT` (assinar duas vezes devolve o
+> arquivo byte-idêntico, travado por teste); `report_verify` fica `_READ_ONLY`.
+>
+> **Desvio D-4b-16 — dois inputs impossíveis de assinar honestamente, recusados.**
+> Nenhum dos dois estava no plano, e o default silencioso de cada um seria uma
+> assinatura que afirma mais do que sabe. (a) `findings` **vazio**: a assinatura
+> cobriria só o corpo, e o leitor a leria como prova de que o texto vem dos
+> facts — recusa mandando rodar `judge`. (b) `catalog_version` (ou
+> `schema_version`) **divergente entre achados**: `compute_signature` recebe um
+> inteiro, e escolher um dos valores faria a assinatura afirmar um catálogo que
+> não foi o único usado. Recusa nomeando os valores.
+>
+> **Desvio D-4b-17 — a fronteira "docs é a Task 6" não cobre `agents/`.**
+> `tests/test_agent_coverage.py::test_no_tool_is_orphan` reprova tool que nenhum
+> coordenador alcança, e as duas tools novas caíram nele na mesma passada
+> (`2 de 36`). Não é documentação adiável: é o invariante que existe para impedir
+> capacidade inerte, e adiá-lo deixaria a suíte vermelha entre os dois commits.
+> Entrou o passo 3 de `agents/executors/sf-synthesizer.md` — o executor que
+> **escreve** o relatório —, espelhado por `scripts/sync_skills.py` para
+> `.claude/`, `.agents/` e `.github/`. `AGENT_PROTOCOL.md`, `STATUS.md`,
+> `README.md` e `AGENTS.md` continuam na Task 6.
+
+- [x] **Step 4: Rode e commite**
+
+Medido: **43 passed** em `tests/test_adapters_report_signature.py`, suíte
+**3443 passed / 5 skipped** (era 3394/5), `ruff check .` limpo,
+`len(TOOLS) == 36` (era 34: `report_sign` e `report_verify`).
+
+Os 49 testes a mais decompõem-se assim, e o número não é o do arquivo novo: 43
+de `test_adapters_report_signature.py`, mais 4 de `FAILABLE` (duas tools novas ×
+dois testes parametrizados) e 2 de `TestRealOutputValidatesAgainstItsOwnSchema`
+(parametrizado por `sorted(TOOLS)`). As três listas manuais rendem teste sozinhas
+— é para isso que elas existem.
 
 ---
 
