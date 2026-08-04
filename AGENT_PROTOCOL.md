@@ -58,17 +58,36 @@ abriu. Sob ele, quatro coisas mudam para você:
 4. **O limite da checagem, que é decisão registrada e não descuido.** O gate confere a
    **presença do kind**, nunca o conteúdo do fact: ele prova que a análise rodou e produziu
    o artefato que destrava, e **não** prova que ela cobriu todo o `scope.entrypoints`, nem
-   que o benchmark é do job certo. Gate verde não é cobertura total, e declarar esse recorte
-   no relatório é a mesma obrigação da regra 7 — é o que este projeto faz com
-   `dq.unresolved`.
+   que o benchmark é do job certo. **Medido, para você não superestimar o que o verde
+   significa:** duas linhas de JSON escritas à mão, com `provenance` vazia, levam um case
+   estrito de `intake` a `report` — nada valida proveniência. Gate verde não é cobertura
+   total, e declarar esse recorte no relatório é a mesma obrigação da regra 7 — é o que
+   este projeto faz com `dq.unresolved`.
+5. **Abrir um case por cima de outro é recusado.** `sparkforge case open` sobre um
+   `.sparkforge/case.yaml` que já existe sai com código 2 e nomeia o que apagaria: fase,
+   rigor e overrides. Recomeçar do zero continua possível, com nome — `--reopen` na CLI,
+   `reopen: true` na tool —, e ele **herda** o `strict_gates` do case atual: o rigor sobe
+   com `--strict-gates` e nunca desce por omissão de flag. Se você queria continuar a
+   investigação, o comando é `case get` seguido de `case update`, nunca `case open` de novo.
 
 ## Assinatura do relatório
 
 `sparkforge report sign --report <relatorio.md> --findings <findings.json>` escreve um
-bloco no fim do relatório, e `sparkforge report verify` confere e diz **qual** das três
-partes divergiu — evidência, catálogo ou corpo — em vez de devolver só "inválido". O
-arquivo é o de **findings**, não o de facts: `rule_id`, `catalog_version` e
-`schema_version` só existem lá.
+bloco no fim do relatório, e `sparkforge report verify` confere e diz **qual** das quatro
+partes divergiu — versão da assinatura, evidência, catálogo ou corpo — em vez de devolver
+só "inválido". O arquivo é o de **findings**, não o de facts: `rule_id`,
+`catalog_version` e `schema_version` só existem lá.
+
+`version_mismatch` é **regra mudada, não adulteração**: o bloco declara sob qual
+`signature_version` foi assinado, e quando ela não é a desta build o corpo sai como **não
+avaliável** em vez de acusado — a normalização de então não é a de agora, e recomputar
+responderia sobre a regra errada. O que se faz é reassinar.
+
+**Se o case tiver `gate_overrides`, a seção "Gates com override" do relatório sai
+preenchida** — gate, data e motivo, copiados de `case get`. Ela fica dentro do corpo
+assinado, então apagá-la depois de assinar invalida a assinatura. Omitir um override
+afirma um rigor que não foi prestado, e nenhum código pega isso por você: nada compara a
+tabela do relatório com o case.
 
 Ela prova **correspondência** entre aquele texto, aquela evidência e aquele catálogo — e
 **nunca autoria**: não há chave nem segredo, e qualquer pessoa com os mesmos findings
