@@ -1,6 +1,7 @@
 ---
 name: analyze-spark-plan
 description: Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (BroadcastHashJoin, SortMergeJoin, ShuffledHashJoin, BroadcastNestedLoopJoin, CartesianProduct), Sort, Window, HashAggregate, Generate/explode, UDF Python no plano (BatchEvalPython/ArrowEvalPython) e o antes/depois do AQE. Use também quando a pergunta for "por que não usa broadcast", "por que lê a tabela inteira", "o filtro não desceu pro scan" ou "quantos shuffles esse job tem", mesmo sem citar explain. Salve o `explain` num arquivo e rode `sparkforge analyze plan`: ele emite `plan.file_scan`, `plan.join`, `plan.python_udf`, `plan.aqe` e `plan.exchange`, julgados por `SF-PLAN-001..004`, `SF-PQ-002` e `SF-PQ-004`. Para concluir causa (skew, spill, OOM), junte `analyze pyspark` e o `analyze event-log` da execução: o plano diz o que foi declarado, não o que custou.
+subagent: true
 ---
 
 # Analyze Spark Plan

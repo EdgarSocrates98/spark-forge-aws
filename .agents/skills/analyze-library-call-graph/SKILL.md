@@ -1,6 +1,7 @@
 ---
 name: analyze-library-call-graph
 description: Use quando o job Glue chama uma biblioteca Python com múltiplos módulos, factories, decorators ou helpers, e você precisa saber onde estão leituras, actions, caches, loops, UDFs, mudanças de Spark config e writes que não aparecem ao olhar só o entrypoint — count() escondido em logger, persist sem unpersist, write dentro de helper três chamadas abaixo. Use também quando perguntarem "essa lib tem algum job escondido", "de onde vem essa action extra", "até onde essa função chega" ou "isso é seguro de chamar", mesmo sem mencionar grafo de chamadas. Se você está prestes a seguir import por import manualmente para responder isso, rode `sparkforge analyze pyspark` e depois `sparkforge analyze call-graph` em vez disso — ele devolve a profundidade mínima e o caminho até cada trabalho Spark alcançável, o que uma lista de arestas sozinha não responde.
+subagent: true
 ---
 
 # Analyze Library Call Graph

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts import sync_skills
 from sparkforge.adapters.cli import build_parser
 from sparkforge.findings.models import RuntimeContext
 from sparkforge.rules.engine import judge
@@ -70,14 +71,28 @@ def test_referencias_resolvem(skill_dir: Path) -> None:
 
 
 @pytest.mark.parametrize("skill_dir", SKILL_DIRS, ids=SKILL_IDS)
-def test_copias_identicas(skill_dir: Path) -> None:
-    canonical = (skill_dir / "SKILL.md").read_bytes()
+def test_copias_conferem_com_a_renderizacao(skill_dir: Path) -> None:
+    """Este teste afirmava byte-identidade com a fonte nos DOIS espelhos.
+
+    Isso deixou de ser o invariante: `.agents/skills/` recebe `subagent:` e
+    `agent:` nas skills despacháveis, então o espelho do Devin byte-idêntico à
+    fonte passou a ser justamente o defeito — é o que sai sem declarar despacho.
+    `.claude/` segue passthrough e continua comparado byte a byte com a fonte,
+    porque lá a identidade é o contrato.
+
+    A comparação é em bytes, e não em texto, pela mesma razão da Task 2:
+    `read_text()` aplica newline universal e um espelho gravado com CRLF
+    passaria a comparar igual a uma fonte LF.
+    """
+    src = skill_dir / "SKILL.md"
     for mirror in MIRRORS:
         dst = mirror / skill_dir.name / "SKILL.md"
         assert dst.exists(), f"espelho ausente: {dst}"
-        assert dst.read_bytes() == canonical, (
+        assert dst.read_bytes() == sync_skills.rendered_skill_bytes(src, dst), (
             f"{dst} divergente. Rode: python scripts/sync_skills.py"
         )
+    claude = MIRRORS[0] / skill_dir.name / "SKILL.md"
+    assert claude.read_bytes() == src.read_bytes(), f"{claude} deixou de ser cópia"
 
 
 # --------------------------------------------------------------------------- #

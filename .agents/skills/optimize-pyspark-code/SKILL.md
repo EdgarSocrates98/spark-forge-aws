@@ -1,6 +1,7 @@
 ---
 name: optimize-pyspark-code
 description: Use quando revisar, refatorar ou otimizar código PySpark/Spark SQL para AWS Glue — script, função, módulo, PR ou trecho de DataFrame — suspeito de UDF Python evitável, collect/toPandas, join sem redução prévia, cache indevido, coalesce(1), repartition arbitrário, explode sem controle, sequência longa de withColumn, dropDuplicates sem chave explícita ou spark.conf.set em runtime. Use também quando a pergunta for "por que esse código está lento", "isso vai escalar", "tem algo errado nesse DataFrame" ou "como eu melhoro isso", mesmo que ninguém cite UDF, shuffle ou cardinalidade pelo nome. Se você está prestes a ler o arquivo linha a linha procurando esses padrões, rode `sparkforge analyze pyspark` em vez disso — ele varre a árvore inteira, não uma amostra, e ancora cada achado em file:line:col.
+subagent: true
 ---
 
 # Optimize PySpark Code

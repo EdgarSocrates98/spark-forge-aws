@@ -1,6 +1,8 @@
 ---
 name: review-data-validation
 description: Use quando o job PySpark valida dado e a pergunta for onde a validação está, se ela tem consequência e quanto ela custa — check artesanal (`df.filter(...).count()`), `VerificationSuite` do PyDeequ ou Great Expectations por `batch_parameters`. Use também quando a pergunta for "esse job valida alguma coisa?", "por que o job termina verde com dado ruim?", "essa suíte protege alguém?" ou "por que validar dobrou o tempo do job?", mesmo que ninguém fale em regra. Se você está prestes a ler o `.py` no olho procurando `count()`, rode `sparkforge analyze data-quality` e `sparkforge judge` em vez disso — o extrator decide a posição relativa ao write, a persistência do alvo e quantos checks pesam sobre o mesmo DataFrame, e o catálogo aplica as regras SF-DQ sobre o que ele achou.
+subagent: true
+agent: data-quality-reviewer
 ---
 
 # Review Data Validation
