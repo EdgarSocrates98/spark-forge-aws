@@ -1,6 +1,7 @@
 ---
 name: optimize-parquet-layout
 description: Use quando datasets Parquet no S3 (fora do Iceberg) sofrem com small files, listing lento, milhares de objetos por prefixo, arquivo por chave na escrita, ou leitura que não faz partition/predicate pushdown. Use também quando a pergunta for "o S3 tá cheio de arquivinho", "a leitura desse dataset demora antes mesmo da primeira task rodar" ou "cada execução gera um arquivo por cliente", mesmo que ninguém fale em Parquet. Se você está prestes a contar arquivo com `aws s3 ls` no olho, salve `aws s3api list-objects-v2` num arquivo e rode `sparkforge analyze s3-listing` — ele emite `s3.prefix_summary` e o `judge` aplica `SF-PQ-001`, `SF-PQ-003` e `SF-PQ-005`. Para o lado da leitura, `sparkforge analyze plan` emite `plan.file_scan` e cobre `SF-PQ-002` e `SF-PQ-004`; `analyze pyspark` e `analyze catalog-schema` fecham escrita e cardinalidade.
+subagent: true
 ---
 
 # Optimize Parquet Layout
@@ -130,4 +131,12 @@ Não memorize os limiares — consulte com `sparkforge rules lookup --id <ID>`.
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.

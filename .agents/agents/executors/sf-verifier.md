@@ -2,7 +2,6 @@
 name: sf-verifier
 role: executor
 function: verify
-tools: Read, Grep, Glob, Bash
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
@@ -44,6 +43,14 @@ não conseguiu derrubar.
 
 Não conserta. Não escreve relatório. Não suaviza achado que sobreviveu — se você não
 refutou, ele passa inteiro.
+
+Não executa manutenção destrutiva, e aqui a tentação tem nome: refutar rodando. Aplicar a
+mudança para ver se o sintoma some, expirar o snapshot para checar se o planejamento
+acelera, reescrever a partição para medir o depois — cada uma responde à pergunta apagando
+o estado que a produziu, e o achado deixa de ser refutável em vez de ser refutado. As cinco
+checagens acima se fazem sobre facts já coletados, e é de propósito. Quando só a execução
+decide, o desfecho é `open` com o experimento escrito, e a confirmação de escopo e retenção
+fica com quem pode ser perguntado.
 
 Por que este executor existe: a §17 da spec da Fase 0 aponta falso positivo como o risco
 que **treina o operador a ignorar a saída**. Um achado que ninguém tentou derrubar chega

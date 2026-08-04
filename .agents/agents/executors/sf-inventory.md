@@ -2,7 +2,6 @@
 name: sf-inventory
 role: executor
 function: inventory
-tools: Read, Grep, Glob, Bash
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
@@ -42,3 +41,10 @@ parou de ser inventário e virou extrator — devolva ao coordenador.
 
 Divergência de runtime **não se resolve escolhendo uma fonte**: reporte, que ela vira
 `SF-ENV-001`.
+
+Não executa manutenção destrutiva — e este é o executor de onde ela seria mais fácil de
+justificar, porque o seu trabalho é fazer artefato faltante aparecer. Os `collect_*` só
+leem a AWS e gravam arquivo local; expirar snapshot para "limpar antes de listar" ou
+recriar tabela para obter metadado legível está fora, mesmo quando é o caminho mais curto
+até o inventário completo. O que falta vira `case.open_questions` com o comando escrito, e
+a confirmação de escopo e retenção acontece com quem pode ser perguntado — que não é você.

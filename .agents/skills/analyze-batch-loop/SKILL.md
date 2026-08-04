@@ -1,6 +1,7 @@
 ---
 name: analyze-batch-loop
 description: Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você suspeita de recomputação do DAG, lineage crescente, múltiplos commits Iceberg ou OOM acumulado por iteração. Use também quando perguntarem "por que esse batch demora mais a cada lote", "por que tem tantos commits/snapshots" ou "o job cresce com o número de lotes", mesmo sem mencionar loop explicitamente. Se você está prestes a contar iterações e estimar custo acumulado de cabeça, rode `sparkforge analyze pyspark` e filtre por `pyspark.loop` em vez disso — cada ocorrência já vem marcada com se contém action, write e a profundidade de aninhamento.
+subagent: true
 ---
 
 # Analyze Batch Loop
@@ -75,4 +76,12 @@ Para responder com evidência de execução (não só de código), correlacione 
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.

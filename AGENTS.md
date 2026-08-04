@@ -66,10 +66,67 @@ Which coordinator to use is data, not judgment: routes `AGENT-001`…`AGENT-008`
 `recommended_agent`, and `sparkforge_next_step` / `sparkforge next-step` reads them —
 never pick a coordinator by inspection.
 
-On a platform without subagent dispatch (Devin, Codex, Copilot CI), `sparkforge playbook
-<coordinator>` (CLI) or the `sparkforge_playbook` MCP tool returns the same decomposition
-as a sequence of steps, reading the same `agents/` files a Claude Code coordinator would
-dispatch as subagents: it loses the dispatch's parallelism, keeps the method.
+**Three platforms dispatch.** Claude Code (the `Agent` tool of this CLI), the **Devin CLI**,
+and the **Devin Local agent** of Devin Desktop (behind the *Subagents (Preview)* toggle).
+Devin reads custom subagent profiles from `.agents/agents/` natively and imports
+`.claude/agents/*.md` — both directories are generated mirrors of `agents/`, so the same
+thirteen profiles are subagent profiles there without any per-platform authoring. The
+`.agents/` mirror is **rendered**, not copied: it drops `tools:` (the value mapping from
+Claude Code's field to Devin's tool names is undocumented, and guessing in a permission
+field grants or denies wrongly) and never gains `model:` (the subagent model resolves
+through a router at spawn time and an org admin overrides it). **Dropping `tools:` is not
+a security boundary, and could not be one:** both discovery paths are on by default
+(`read_config_from` has `agents_standard` and `claude`, both `true`), the source is
+**silent** on which one wins when both exist, and `allowed-tools` defaults to *"all
+tools"* — omitting is the **most permissive** option, not the most restrictive. What
+carries the boundary is the `## Não faz` prose in the profile body, byte-identical in both
+mirrors. Skills that are safe to dispatch declare `subagent: true` in `.agents/skills/`,
+and each one states in its own text that it does not run destructive maintenance.
+
+**`playbook` is the floor on all five platforms, not a rung that dispatch replaces.**
+`sparkforge playbook <coordinator>` (CLI) or the `sparkforge_playbook` MCP tool returns the
+same decomposition as a sequence of steps, reading the same `agents/` files a dispatching
+coordinator would spawn as subagents: it loses the dispatch's parallelism, keeps the
+method. It is the **only** path on Codex and Copilot CI — no source research measured
+subagent support on either, and `parity.yaml` does not claim parity it has not measured.
+And it stays the path on the three that do dispatch whenever dispatch is off: a user can
+set `subagents_enabled: false`, and an org admin can pick *None* for "Default subagent
+model", which disables subagents entirely. No file in this repository can prevent either.
+Sources and verdicts: `knowledge/devin/agents-and-subagents.md`.
+
+### How to actually invoke it
+
+Everything above says **where** the profiles live and **what** the mirrors carry. This is
+how you run them. Full walkthrough per platform, including the Devin Desktop caveat:
+[`GUIA_DE_USO.md`](GUIA_DE_USO.md) (sections 2 and 3).
+
+Dispatch, in plain language — there is no slash command for a profile on any of the three;
+you name the profile and the task:
+
+```text
+Use the emr-infra-reviewer profile as a subagent to review this EMR cluster.
+```
+
+A dispatchable skill is invoked by name, and the harness decides whether it runs inline or
+as a subagent (`subagent: true` says it is safe to dispatch; only two of the twelve also
+name an `agent:`):
+
+```text
+Use the review-emr-cluster skill on this cluster dump.
+```
+
+The floor, which works on all five platforms and needs no dispatch at all:
+
+```bash
+sparkforge playbook emr-infra-reviewer --repo .   # or the sparkforge_playbook MCP tool
+```
+
+Start a Devin session by pointing it at the entry prompt, which is what
+`scripts/install_skills.py` copies into a Devin target:
+
+```text
+Read PROMPT_INICIAL_MESTRE.md and use the glue-incremental-performance-architect skill.
+```
 
 ## Deterministic evidence
 

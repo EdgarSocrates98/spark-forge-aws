@@ -7,7 +7,7 @@ O eixo de infraestrutura é o único que é específico da plataforma: a anális
 O pacote foi estruturado para funcionar em:
 
 - Claude Code: `.claude/skills` e `.claude/agents`
-- Devin: `.agents/skills`
+- Devin: `.agents/skills` e `.agents/agents` (o Devin também importa `.claude/agents`)
 - GitHub Copilot: `.github/copilot-instructions.md`, `.github/instructions`, `.github/prompts` e `.github/agents`
 - Qualquer agente compatível com o padrão Agent Skills: `skills/`
 
@@ -392,11 +392,32 @@ Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-00
 `rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
 coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
 
-Em Claude Code, o coordenador despacha os cinco executores como subagentes. Em qualquer
-outra plataforma sem despacho de subagente — Devin, Codex, Copilot CI —
+**Três plataformas despacham.** Em Claude Code, o coordenador despacha os cinco executores
+como subagentes. No **Devin CLI** e no **Devin Local agent** do Devin Desktop (com o toggle
+*Subagents (Preview)* ligado), os mesmos treze perfis são perfis de subagente nativos: o
+Devin lê `.agents/agents/` e importa `.claude/agents/*.md`, dois diretórios que este
+repositório já publica. O espelho do Devin é **renderizado**, não copiado — ele sai sem
+`tools:`, porque o mapeamento de valores desse campo não está documentado, e nunca com
+`model:`, porque o modelo do subagente resolve por roteador no spawn e um admin da
+organização o sobrescreve. **A omissão de `tools:` não é fronteira de segurança, e não
+teria como ser:** os dois caminhos de descoberta estão ligados por default
+(`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa**
+sobre qual vence quando os dois existem, e o default de `allowed-tools` é *"all tools"* —
+omitir é a opção **mais permissiva**, não a mais restrita. O que carrega a fronteira é a
+prosa de `## Não faz` no corpo do perfil, byte-idêntica nos dois espelhos. As doze skills
+despacháveis declaram `subagent: true` no espelho `.agents/skills/`, e cada uma declara,
+no próprio texto, que não executa manutenção destrutiva.
+
+**O `playbook` é o piso das cinco plataformas, não um degrau que o despacho substitui.**
 **`sparkforge playbook <coordenador>`** (CLI) ou a tool MCP `sparkforge_playbook` devolve a
 mesma decomposição em passos sequenciais, lendo os mesmos arquivos de `agents/`: perde o
-paralelismo do despacho, mantém o método.
+paralelismo do despacho, mantém o método. Ele é o **único** caminho em Codex e Copilot CI
+— nenhuma pesquisa de fontes mediu despacho de subagente nas duas, e afirmar sem medir é o
+defeito que `parity.yaml` existe para não repetir. E continua sendo o caminho nas três que
+despacham sempre que o despacho estiver desligado: `subagents_enabled: false` é escolha do
+usuário, a opção *None* de "Default subagent model" é de um admin da organização, e nenhum
+arquivo versionado deste repositório impede qualquer uma das duas. Ver
+[`knowledge/devin/agents-and-subagents.md`](knowledge/devin/agents-and-subagents.md).
 
 ## Instalação
 
@@ -431,9 +452,9 @@ exemplo. `--target` é opcional e serve como confirmação explícita do destino
 se for passado e não for o diretório atual, o script recusa e mostra o `cd`
 correto, em vez de escrever num lugar que você não estava olhando.
 
-### Manutenção das cópias (contribuidores)
+### Manutenção dos espelhos (contribuidores)
 
-A fonte da verdade das skills é `skills/`. As pastas `.claude/skills/` e `.agents/skills/` são espelhos byte-a-byte. Após editar uma skill em `skills/`, regenere os espelhos:
+A fonte da verdade das skills é `skills/`, e a dos perfis é `agents/`. `.claude/skills/` e `.claude/agents/` são espelhos byte-a-byte; `.github/agents/` também. `.agents/` é **renderizado** por plataforma: as skills despacháveis ganham `subagent: true` (e `agent:` quando há coordenador único **e** ele não é o perfil que orquestra — hoje duas das doze), e os perfis perdem `tools:`. Após editar uma skill em `skills/` ou um perfil em `agents/`, regenere os espelhos:
 
 ```bash
 python scripts/sync_skills.py          # regenera os espelhos
@@ -453,7 +474,13 @@ manifesto silencioso é pior que erro barulhento:
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
 constrói o artefato, instala num venv limpo e reproduz as 107 fixtures golden byte a byte.
 
-Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e paridade das três cópias.
+Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
+de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o
+espelho é exatamente o que o tradutor produz para aquela plataforma**. Igualdade nunca
+poderia pegar campo que a plataforma exige e a fonte não tem, nem campo que a fonte tem e a
+plataforma não deve receber; a derivação pega os dois, e o gate acusa também **órfão em
+qualquer profundidade e de qualquer extensão** — `.agents/agents/<nome>/AGENT.md` é layout
+de descoberta do Devin, e passar por ali publicaria perfil que ninguém revisou.
 
 ## Uso rápido
 
@@ -484,6 +511,16 @@ Peça explicitamente:
 
 ```text
 Use a skill sparkforge-diagnose para analisar este job Glue.
+```
+
+`sparkforge-diagnose` **não** despacha subagente de propósito: ela abre o case e roteia, e
+o ciclo de vida do case tem que ficar na sessão que continua. As doze skills despacháveis
+— as quatro `review-*`, as quatro `analyze-*`, `diagnose-oom`, `diagnose-data-skew`,
+`optimize-pyspark-code` e `optimize-parquet-layout` — declaram `subagent: true` e podem
+rodar como subagente. Detalhe em [`GUIA_DE_USO.md`](GUIA_DE_USO.md), seção 3.
+
+```text
+Use o perfil emr-infra-reviewer como subagente para revisar este cluster EMR.
 ```
 
 ## Dados mínimos recomendados

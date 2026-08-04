@@ -1,6 +1,7 @@
 ---
 name: diagnose-oom
 description: Use quando um job Glue falha com OutOfMemory, "Container killed by YARN", "GC overhead limit exceeded", ExecutorLostFailure, estouro de Python worker/pandas_udf, ou frases como "o job morreu depois de 3 horas" e "aumentei a memória e continuou". Use para classificar se é heap de driver, heap de executor, overhead de container, broadcast, metadata/plan explosion ou Python worker antes de mitigar. Se você está prestes a estimar heap e GC no olho, rode `sparkforge collect event-log`, `sparkforge analyze event-log` e `sparkforge judge` em vez disso — o fact `spark.executor.lost` já vem com `heap_oom_in_log`: executor removido sem OOM de heap no log é estouro de container fora do heap (a correção é `memoryOverhead`, não `memory`), e é o OOM mais mal diagnosticado que existe.
+subagent: true
 ---
 
 # Diagnose OOM
@@ -69,4 +70,12 @@ Limiares e severidade vêm de `sparkforge rules lookup --id <ID>`, nunca de mem�
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.

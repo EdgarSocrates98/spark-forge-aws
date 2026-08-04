@@ -1,6 +1,7 @@
 ---
 name: analyze-spark-plan
 description: Use quando tiver a saída de df.explain (formatted/extended/cost) ou EXPLAIN e precisar interpretar scans, PartitionFilters/PushedFilters, Exchange/shuffle, estratégia de join (BroadcastHashJoin, SortMergeJoin, ShuffledHashJoin, BroadcastNestedLoopJoin, CartesianProduct), Sort, Window, HashAggregate, Generate/explode, UDF Python no plano (BatchEvalPython/ArrowEvalPython) e o antes/depois do AQE. Use também quando a pergunta for "por que não usa broadcast", "por que lê a tabela inteira", "o filtro não desceu pro scan" ou "quantos shuffles esse job tem", mesmo sem citar explain. Salve o `explain` num arquivo e rode `sparkforge analyze plan`: ele emite `plan.file_scan`, `plan.join`, `plan.python_udf`, `plan.aqe` e `plan.exchange`, julgados por `SF-PLAN-001..004`, `SF-PQ-002` e `SF-PQ-004`. Para concluir causa (skew, spill, OOM), junte `analyze pyspark` e o `analyze event-log` da execução: o plano diz o que foi declarado, não o que custou.
+subagent: true
 ---
 
 # Analyze Spark Plan
@@ -79,4 +80,12 @@ Limiares e severidade de cada regra vêm de `sparkforge rules lookup --id <ID>`,
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.
