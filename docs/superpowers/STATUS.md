@@ -29,7 +29,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **3569** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **3594** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 66**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **16** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **102** | união de `EMITTED_KINDS` |
@@ -918,6 +918,23 @@ registram teste existente que **teve que mudar** — sempre porque a afirmação
 o defeito, e sempre apertando: cópia literal da fonte no espelho do Devin passou a ser
 `DIVERGENTE`, e "só `claude_code` declara `subagent`" virou "só quem a pesquisa confirma,
 com a razão citando seção e `retrieved:`".
+
+**Revisão final, 2026-08-04 — os números acima são os do fechamento e ficam como
+estavam; estes são os de depois.** A revisão aprovou 9 dos 10 critérios e mediu **onze**
+pendências; as onze fecharam. Testes: **3594** passando, 5 skipped (+25). As **12** skills
+despacháveis passaram de **0** para **12** declarando que não executam manutenção
+destrutiva e para onde a confirmação sobe — e a instrução antiga foi **corrigida**, não
+duplicada, porque dentro de um subagente ela mandava obter o inalcançável. As com `agent:`
+caíram de **3** para **2**: `diagnose-oom` era declarante único por **omissão** no
+`skills:` de `spark-performance-architect`, e o perfil que sobrava era o orquestrador. O
+gate passou a acusar órfão em qualquer profundidade e extensão — antes,
+`.agents/agents/rogue/AGENT.md`, que é **layout de descoberta do Devin**, passava com
+`--check` em exit 0. A regra 9 do `AGENT_PROTOCOL.md` ganhou o recorte de subagente. E
+quatro textos que afirmavam que omitir `tools:` protege alguma coisa foram corrigidos: com
+os dois caminhos de descoberta ligados por default e `allowed-tools` valendo *"all tools"*,
+omitir é a opção **mais permissiva**. As quatro linhas fechadas estão em *Dívidas abertas*;
+os cinco desvios do spec, na §8 dele. **O que a revisão diz sobre a suíte:** nenhuma das
+onze quebrava teste, e quatro eram afirmação de efeito que ninguém tinha medido.
 
 ### Fase 4 do roadmap (§16) — rigor — **PARCIALMENTE CONCLUÍDA**
 
