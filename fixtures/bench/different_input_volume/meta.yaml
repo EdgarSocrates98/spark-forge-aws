@@ -16,4 +16,10 @@ expects_kinds:
   - bench.analyzed
   - bench.run_delta
   - bench.stage_delta
-expects_rules: []
+expects_rules:
+  # As DUAS, e e isso que o D-4 do spec exige: a 001 diz que a medicao nao
+  # sustenta conclusao sobre a mudanca, a 002 diz o que a medicao viciada
+  # mostrou. Se um dia so a 001 sobrar aqui, supressao entre regras entrou por
+  # acidente.
+  - SF-BENCH-001
+  - SF-BENCH-002

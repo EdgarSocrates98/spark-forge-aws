@@ -16,4 +16,5 @@ expects_kinds:
   - bench.analyzed
   - bench.run_delta
   - bench.stage_delta
-expects_rules: []
+expects_rules:
+  - SF-BENCH-003

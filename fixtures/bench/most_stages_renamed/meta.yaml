@@ -23,4 +23,5 @@ expects_kinds:
   - bench.run_delta
   - bench.stage_delta
   - bench.unmatched
-expects_rules: []
+expects_rules:
+  - SF-BENCH-004

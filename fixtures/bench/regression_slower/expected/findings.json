@@ -1,1 +1,70 @@
-[]
+[
+  {
+    "rule_id": "SF-BENCH-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Tempo de task somado piorou entre as duas execuções",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "regression_slower"
+    },
+    "evidence": [
+      "f_f76eb0"
+    ],
+    "measured": {
+      "total_task_ms_before": 22000.0,
+      "total_task_ms_after": 34400.0,
+      "total_task_ms_delta_pct": 56.4,
+      "total_input_bytes_before": 140000000,
+      "total_input_bytes_after": 140000000,
+      "total_input_bytes_delta_pct": 0.0,
+      "total_spill_bytes_before": 0,
+      "total_spill_bytes_after": 0,
+      "total_gc_ms_before": 1100,
+      "total_gc_ms_after": 1440,
+      "total_gc_ms_delta_pct": 30.9,
+      "total_task_count_before": 10,
+      "total_task_count_after": 10,
+      "total_task_count_delta_pct": 0.0
+    },
+    "threshold": {
+      "regression_pct": 10
+    },
+    "runtime_scope": {},
+    "explanation": "A execução depois somou mais tempo de task que a execução antes, acima do limiar. `total_task_ms` é TEMPO DE TASK SOMADO — a soma de `mean_ms * task_count` sobre os stages —, e não tempo de relógio: não existe fact de duração de relógio no event log lido. A consequência é o que este achado exige antes de qualquer ação. Um job pode terminar ANTES no relógio somando MAIS tempo de task, se a mudança passou a paralelizar melhor: mais tasks menores somam mais trabalho contabilizado e ocupam menos tempo de parede. O inverso também acontece — menos paralelismo, o mesmo trabalho, e o relógio piorando sem esta medida mexer. Então este achado afirma \"a mudança custa mais trabalho de CPU agregado\", que é uma afirmação verdadeira e útil sobre custo, e NÃO afirma \"o job ficou mais lento\". Confirmar no relógio — hora de início e fim das duas execuções, fora deste relatório — antes de reverter a mudança. Antes de acreditar no número, ler `SF-BENCH-001` no mesmo relatório: se os volumes de entrada divergem, esta piora pode ser inteiramente do dado. Ler também `total_task_count_delta_pct` no mesmo fact — mais tempo somado com muito mais tasks é mudança de paralelismo, e não de trabalho por task; e os `bench.stage_delta` por símbolo dizem QUAL stage carrega a piora, que é onde a investigação começa.",
+    "proposed_change": [
+      "Localizar o stage responsável nos `bench.stage_delta`: a piora quase nunca está distribuída, e o símbolo do stage aponta a linha de código.",
+      "Confirmar a duração de relógio das duas execuções antes de decidir qualquer coisa — esta medida não a contém, e reverter uma mudança que melhorou o relógio por causa dela seria o defeito que este texto existe para evitar.",
+      "Comparar `total_task_count` dos dois lados; se as tasks aumentaram na mesma ordem do tempo somado, o que mudou foi o particionamento e não o custo do trabalho.",
+      "Se a piora concentra num stage de shuffle, seguir o caminho de skew e de tamanho de partição (`SF-UI-001`, `SF-UI-002`) sobre o event log do lado depois, que é onde há detalhe por task."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reverter a mudança com base só nesta medida pode devolver um job que termina DEPOIS no relógio: as duas coisas não são a mesma, e a reversão precisa da confirmação de relógio.",
+      "A mudança pode ter custado tempo de task de propósito, em troca de correção, de resiliência ou de custo de memória — o benchmark mede uma dimensão e a decisão tem mais de uma."
+    ],
+    "tradeoffs": [
+      "Trabalho agregado e tempo de parede são objetivos diferentes e às vezes opostos: paralelizar mais compra relógio pagando em tempo de task somado, e num cluster com capacidade ociosa essa troca é boa.",
+      "Um limiar baixo pega regressão pequena e acusa ruído de execução; um limiar alto cala regressão real. 10% é o meio escolhido, e é editável — é dado, não código."
+    ],
+    "validation": [
+      "Repetir as duas execuções ao menos mais uma vez cada e conferir que o sinal e a ordem de grandeza da diferença se mantêm; execução única não distingue regressão de variação de ambiente.",
+      "Duração de relógio das duas execuções, medida fora deste relatório: é a grandeza que decide se houve regressão para o usuário do job.",
+      "Contagem total do resultado, contagem por chave e agregado de controle iguais nos dois lados — uma mudança que ficou mais barata processando menos dado não é uma mudança mais barata.",
+      "`total_input_bytes_delta_pct` no mesmo fact, para descartar que a piora seja de volume."
+    ],
+    "rollback": [
+      "Reverter o commit da mudança e repetir a medição sobre o mesmo recorte, confirmando que o tempo de task somado volta ao valor de antes."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "10% é decisão de campo. Não há fonte oficial que declare a partir de quanto uma variação de tempo de task somado deixa de ser ruído de execução, e ela depende do cluster, da contenção e do tamanho do job. O número está aqui para ser ajustado com evidência. A severidade P1 também é de campo: regressão de custo agregado é acionável e não é urgência de produção, e não há measure que distinga regressão de 11% de regressão de 300% — quando houver corpus que sustente o corte, converter para severity_by sobre `measures.total_task_ms_delta_pct`."
+      }
+    ]
+  }
+]
