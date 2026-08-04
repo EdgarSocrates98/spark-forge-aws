@@ -94,6 +94,40 @@ set `subagents_enabled: false`, and an org admin can pick *None* for "Default su
 model", which disables subagents entirely. No file in this repository can prevent either.
 Sources and verdicts: `knowledge/devin/agents-and-subagents.md`.
 
+### How to actually invoke it
+
+Everything above says **where** the profiles live and **what** the mirrors carry. This is
+how you run them. Full walkthrough per platform, including the Devin Desktop caveat:
+[`GUIA_DE_USO.md`](GUIA_DE_USO.md) (sections 2 and 3).
+
+Dispatch, in plain language — there is no slash command for a profile on any of the three;
+you name the profile and the task:
+
+```text
+Use the emr-infra-reviewer profile as a subagent to review this EMR cluster.
+```
+
+A dispatchable skill is invoked by name, and the harness decides whether it runs inline or
+as a subagent (`subagent: true` says it is safe to dispatch; only two of the twelve also
+name an `agent:`):
+
+```text
+Use the review-emr-cluster skill on this cluster dump.
+```
+
+The floor, which works on all five platforms and needs no dispatch at all:
+
+```bash
+sparkforge playbook emr-infra-reviewer --repo .   # or the sparkforge_playbook MCP tool
+```
+
+Start a Devin session by pointing it at the entry prompt, which is what
+`scripts/install_skills.py` copies into a Devin target:
+
+```text
+Read PROMPT_INICIAL_MESTRE.md and use the glue-incremental-performance-architect skill.
+```
+
 ## Deterministic evidence
 
 Evidence for this project comes from deterministic extraction, not from an
