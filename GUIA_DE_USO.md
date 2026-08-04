@@ -42,13 +42,32 @@ perfis deste repositório sem nenhuma configuração adicional:
 
 | O que | Onde | Como o Devin lê |
 |---|---|---|
-| Os 8 coordenadores e os 5 executores | `.agents/agents/` e `.agents/agents/executors/` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*) |
-| Os mesmos 13 perfis | `.claude/agents/` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
+| Os 8 coordenadores | `.agents/agents/<nome>.md` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*), no layout *flat file* documentado |
+| Os mesmos 8 | `.claude/agents/<nome>.md` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
 | As 20 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
+| Os 5 executores | `.agents/agents/executors/<nome>.md` | **a fonte não documenta este layout.** Ver abaixo |
 
-Os dois primeiros são **espelhos gerados** de `agents/`, que é a fonte — nunca edite um
-espelho: `python scripts/sync_skills.py --check` recusa. Eles não são gerados do mesmo
-jeito. `.claude/agents/` é cópia byte a byte, com `tools:` e tudo. `.agents/agents/` é
+**Os cinco executores não estão num layout de descoberta documentado, e isto é medição,
+não suposição.** A fonte descreve **dois** layouts de perfil customizado — *flat file*
+`agents/<nome>.md` e *directory* `agents/<nome>/AGENT.md` (com `AGENTS.md`, `agent.md` e
+`agents.md` também aceitos, nessa precedência) — e a importação do Claude Code casa
+`.claude/agents/*.md`, que é raso. `executors/sf-judge.md` não é nenhum dos dois: pelo
+layout *directory*, `executors/` só publicaria um perfil chamado `executors` se tivesse
+dentro um `AGENT.md`, e não tem. Se a varredura é recursiva, a documentação não diz —
+é a mesma ambiguidade do `agents/` da raiz (V-DV-7), e vale a mesma regra: **não presuma**.
+
+**O que isso não muda.** Os executores continuam alcançáveis em toda plataforma pelo
+`playbook`, que lê `agents/executors/` do repositório e devolve a decomposição do
+coordenador nos cinco passos — o caminho que não depende de descoberta nenhuma:
+
+```bash
+sparkforge playbook emr-infra-reviewer --repo .
+```
+
+`.claude/agents/` e `.agents/agents/` — executores inclusive — são **espelhos gerados** de
+`agents/`, que é a fonte; `.agents/skills/` é espelho de `skills/`. Nunca edite um
+espelho: `python scripts/sync_skills.py --check` recusa. Os dois de perfil não são gerados
+do mesmo jeito. `.claude/agents/` é cópia byte a byte, com `tools:` e tudo. `.agents/agents/` é
 **renderizado**: sai **sem `tools:`** (o mapeamento dos valores do campo do Claude Code
 para os nomes de tool do Devin não está documentado, e chute em campo de permissão
 concede ou nega errado) e **nunca com `model:`** (o modelo do subagente resolve por
@@ -73,6 +92,27 @@ espelhos — e, nas doze skills despacháveis, o parágrafo de despacho da seç�
 Não presuma que o `agents/` da **raiz** seja varrido: a documentação lista
 `.devin/agents/` e `.agents/agents/`, e a frase do changelog ("your project's `agents/`
 directory") é ambígua.
+
+**Por que `.agents/` e não `.devin/`, já que a fonte lista `.devin/agents/` primeiro.**
+Escolha, não lacuna, e o critério é o número de espelhos. `.agents/` é o padrão
+multiferramenta que a própria Cognition declara suportar (*"We support the `.agents`
+skills standards, so third-party skill installation tools work with Devin CLI"*), está
+ligado por default (`read_config_from.agents_standard`), e **um só** diretório serve
+perfis **e** skills — `.devin/agents/` só serviria perfis, e as skills continuariam em
+`.agents/skills/` de qualquer forma. Publicar nos dois seria um quarto espelho a manter
+em sincronia, que só o Devin leria, para chegar ao mesmo lugar. Se um dia a fonte
+declarar precedência de `.devin/` sobre `.agents/`, a decisão se inverte com o mesmo
+argumento — e aí é acrescentar uma raiz em `AGENT_MIRRORS`, com `platform_for` já
+derivando a plataforma do próprio alvo.
+
+**Um coordenador despachado como subagente não despacha os cinco executores.** Por
+default *"subagents cannot spawn their own subagents — only the root agent can"*, e as
+tools `run_subagent`/`read_subagent` são **removidas** de dentro de um subagente; o
+`max-nesting` que reverteria isso este repositório **não declara** em perfil nenhum. Na
+prática: pedir o perfil como subagente entrega o **método** do coordenador (o corpo, o
+`## Não faz`, as áreas de regra), e a decomposição em executores tem de rodar **inline**
+— que é exatamente o que `sparkforge playbook <coordenador>` devolve, em ordem. Em Claude
+Code o coordenador despacha os executores; no Devin, não conte com isso.
 
 No Devin Desktop o recorte é mais estreito: subagente é capacidade do **Devin Local
 agent**, sob o toggle *Subagents (Preview)*. As páginas do motor Cascade não mencionam
@@ -120,6 +160,71 @@ chave de usuário (não de projeto), e um admin da organização pode escolher *
 "Default subagent model", que desliga o despacho por completo. A própria Cognition
 declara custom subagents **experimentais**. Nos três casos o caminho é o mesmo da
 seção 5: `sparkforge playbook <coordenador>`, que é o piso e não depende de despacho.
+
+### 3.4 Ligar o servidor MCP no Devin
+
+`parity.yaml` declara `mcp` para `devin_cli` e `devin_desktop`. Isto é **como** acioná-lo
+— sem esta seção, a declaração seria capacidade afirmada sem caminho, que é o defeito do
+transporte HTTP da Fase 1 que este repositório cita como razão de ser da regra.
+
+**Devin CLI — stdio.** O arquivo de MCP do Devin é dedicado, e a chave é a mesma do resto
+do ecossistema:
+
+| Escopo | Caminho |
+|---|---|
+| Projeto | `.devin/mcp_config.json` |
+| Projeto, fora do git | `.devin/mcp_config.local.json` |
+| Global | `~/.config/devin/mcp_config.json` (`%APPDATA%\devin\mcp_config.json` no Windows) |
+
+```jsonc
+// .devin/mcp_config.json
+{
+  "mcpServers": {
+    "sparkforge": {
+      "command": "python",
+      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
+    }
+  }
+}
+```
+
+Ou pela própria CLI, sem editar arquivo:
+
+```bash
+pip install "sparkforge-aws[mcp]"
+devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+devin mcp list
+```
+
+**Não conte com o `.mcp.json` da raiz para isto, e a razão é medida.** O Devin importa
+configuração de MCP do Claude Code (`read_config_from.claude`, default `true`, e a tabela
+de importação lista `.mcp.json`). Mas o `.mcp.json` deste repositório é o do **plugin do
+Claude Code**: ele parametriza `PYTHONPATH` e `SPARKFORGE_CATALOG` por
+`${CLAUDE_PLUGIN_ROOT}`, que é variável do carregador de plugin do Claude Code e que
+nenhuma página do Devin documenta expandir. Sem expansão, o servidor sobe e morre na
+primeira leitura do catálogo, com a mensagem certa e o motivo errado:
+
+```text
+CatalogError: SPARKFORGE_CATALOG aponta para .../${CLAUDE_PLUGIN_ROOT}/rules/catalog,
+que nao e um diretorio existente
+```
+
+Por isso a configuração acima **não** declara `env`: com o pacote instalado por `pip`, o
+`PYTHONPATH` é desnecessário e o catálogo resolve de dentro do próprio pacote. Só declare
+`SPARKFORGE_CATALOG` se quiser apontar para um catálogo fora dele — e aí com caminho de
+verdade, nunca com uma variável de outra ferramenta.
+
+**Devin Desktop — HTTP.** O Desktop configura MCP por `serverUrl`, e o servidor tem o
+transporte:
+
+```bash
+python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+# serverUrl: http://127.0.0.1:8765/mcp
+```
+
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 36 tools fazem
+(seção 10), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
+Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
 ## 4. GitHub Copilot
 

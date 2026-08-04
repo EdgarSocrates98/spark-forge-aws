@@ -587,9 +587,11 @@ _PLAYBOOK_SCHEMA: dict[str, Any] = {
     "type": "object",
     "description": (
         "Decomposicao sequencial de um coordenador -- os mesmos passos que ele "
-        "despacharia como subagentes onde ha despacho (Claude Code, Devin CLI, Devin "
-        "Local agent). E o piso das cinco plataformas: unico caminho em Codex e "
-        "Copilot CI, e o caminho nas tres quando o despacho esta desligado."
+        "despacha como subagentes em Claude Code. E o piso das cinco plataformas: "
+        "unico caminho em Codex e Copilot CI; o caminho nas tres quando o despacho "
+        "esta desligado; e, no Devin, o caminho tambem quando ele esta ligado, "
+        "porque um coordenador despachado como subagente nao gera subagente "
+        "proprio por default e este repositorio nao declara `max-nesting`."
     ),
     "required": [
         "coordinator",
@@ -1284,7 +1286,10 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Copilot CI, onde nenhuma pesquisa mediu despacho, e continua sendo o "
             "caminho nas tres quando o despacho esta desligado -- por escolha do "
             "usuario (subagents_enabled) ou do admin da organizacao (Default subagent "
-            "model: None). Le os arquivos de agents/ e agents/executors/ em vez de "
+            "model: None). No Devin ela e o caminho tambem com o despacho LIGADO: um "
+            "coordenador despachado como subagente nao gera subagente proprio por "
+            "default, e este repositorio nao declara max-nesting em perfil nenhum. "
+            "Le os arquivos de agents/ e agents/executors/ em vez de "
             "repetir a lista: uma copia divergiria do coordenador na primeira mudanca. "
             "`does_not` de cada passo vem da secao `## Não faz` do executor, nunca "
             "reescrito aqui. Case ausente nao e erro -- os passos saem com `phase: null`. "

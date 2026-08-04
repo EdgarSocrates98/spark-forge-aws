@@ -393,6 +393,117 @@ class TestPlataformaSaiDoAlvo:
             sync_skills.platform_for(ROOT / ".cursor" / "agents" / "x.md")
 
 
+class TestNomeDePerfilNaoColideComBuiltinDoDevin:
+    """A tabela de frontmatter da fonte diz, sobre `name`: *"Identifier for the
+    profile (**must not conflict with built-in profiles**)"*, e os dois built-ins
+    sao `subagent_explore` e `subagent_general`
+    (`knowledge/devin/agents-and-subagents.md`, secao 1, retrieved 2026-08-04).
+
+    **Medido antes de escrever o gate:** nenhum dos treze perfis colide hoje. O
+    teste existe para o perfil que ainda nao foi escrito -- e o custo de errar e
+    assimetrico. A fonte **proibe** a colisao e **nao diz o que acontece** quando
+    ela ocorre: pular com aviso, sobrescrever o built-in, ou recusar a sessao sao
+    todos comportamentos plausiveis e nenhum esta documentado. Supor qual deles
+    vale seria a mesma familia de chute que o V-DV-8 recusou em `tools:`. Por
+    isso o gate **recusa** o nome, em vez de confiar que a plataforma resolva.
+
+    Confere as duas fontes de identidade, porque elas podem discordar: o nome do
+    arquivo (que e o default do campo) e o `name:` escrito no frontmatter (que
+    vence quando existe).
+    """
+
+    BUILTINS = ("subagent_explore", "subagent_general")
+
+    def test_nenhum_dos_perfis_colide_hoje(self):
+        assert not sync_skills.check_profile_names()
+
+    @pytest.mark.parametrize("builtin", BUILTINS)
+    def test_nome_de_arquivo_igual_a_builtin_e_acusado(self, builtin, tmp_path):
+        alvo = tmp_path / f"{builtin}.md"
+        alvo.write_text("---\ndescription: x\n---\n\nCorpo.\n", encoding="utf-8")
+        assert sync_skills.profile_name_problem(alvo) is not None
+
+    @pytest.mark.parametrize("builtin", BUILTINS)
+    def test_frontmatter_igual_a_builtin_e_acusado(self, builtin, tmp_path):
+        """O nome do arquivo e so o **default** do campo. Um perfil chamado
+        `revisor.md` com `name: subagent_general` colide do mesmo jeito, e um
+        gate que so olhasse o caminho nao veria."""
+        alvo = tmp_path / "revisor.md"
+        alvo.write_text(f"---\nname: {builtin}\n---\n\nCorpo.\n", encoding="utf-8")
+        assert sync_skills.profile_name_problem(alvo) is not None
+
+    def test_perfil_normal_passa(self, tmp_path):
+        alvo = tmp_path / "revisor.md"
+        alvo.write_text("---\nname: revisor\n---\n\nCorpo.\n", encoding="utf-8")
+        assert sync_skills.profile_name_problem(alvo) is None
+
+    def test_a_checagem_esta_ligada_no_gate(self, monkeypatch, capsys):
+        """Funcao certa e gate que nao a chama e cobertura de mentira -- e
+        `--check` e o que roda no CI. Prova a ligacao sem escrever em `agents/`:
+        mexer na fonte de verdade deixaria os espelhos fora de sincronia se o
+        teste morresse no meio."""
+        monkeypatch.setattr(sync_skills, "check_profile_names", lambda: ["NOME RESERVADO x"])
+        assert sync_skills.check() == 1
+        assert "NOME RESERVADO x" in capsys.readouterr().out
+
+
+class TestInstalacaoPublicaOEspelhoRenderizado:
+    """O caminho que o usuario de verdade roda, e que nenhum teste tocava.
+
+    `scripts/sync_skills.py` renderiza `.agents/` sem `tools:`, e a suite inteira
+    prova isso **dentro do repositorio**. Quem instala nao roda o `sync`: roda
+    `install_skills.py --devin`, e o que ele copiar e o que vai existir no
+    ambiente do usuario. Se um dia ele passar a copiar `agents/` -- a fonte, que
+    tem `tools:` -- em vez de `.agents/`, a decisao da fase vira nula pelo unico
+    caminho que publica, e nada acusaria.
+
+    O invariante aqui e o mesmo de `mirror_is_current`, medido no destino: o
+    arquivo instalado e **exatamente o que o tradutor produz** para o Devin.
+    """
+
+    @pytest.fixture(scope="class")
+    def destino(self, tmp_path_factory):
+        alvo = tmp_path_factory.mktemp("devin-target")
+        subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "install_skills.py"), "--devin"],
+            check=True, capture_output=True, cwd=alvo,
+        )
+        return alvo
+
+    def test_cada_perfil_instalado_e_a_renderizacao_do_devin(self, destino):
+        for src in PERFIS:
+            rel = src.relative_to(AGENTS)
+            dst = destino / ".agents" / "agents" / rel
+            assert dst.is_file(), rel
+            esperado = render_agent(src.read_bytes().decode("utf-8"), "devin")
+            assert dst.read_bytes().decode("utf-8") == esperado, rel
+
+    def test_nenhum_perfil_instalado_carrega_tools(self, destino):
+        """A propriedade dita em voz alta, porque e ela que a fase decidiu e e
+        ela que um `install` que copiasse a fonte quebraria."""
+        for src in PERFIS:
+            rel = src.relative_to(AGENTS)
+            texto = (destino / ".agents" / "agents" / rel).read_text(encoding="utf-8")
+            assert "tools:" not in texto.split("\n---\n", 1)[0], rel
+
+    def test_a_fonte_crua_nao_e_instalada_em_lugar_nenhum(self, destino):
+        """O defeito pelo outro lado: `agents/` na raiz do destino publicaria os
+        perfis **com** `tools:` num diretorio cuja varredura pelo Devin a propria
+        pesquisa marca como ambigua (V-DV-7)."""
+        assert not (destino / "agents").exists()
+
+    def test_as_skills_instaladas_declaram_o_despacho(self, destino):
+        """O outro lado da renderizacao: `subagent:` entra no espelho do Devin, e
+        so nele. Derivado do proprio tradutor, nunca de uma contagem literal."""
+        esperadas = set(sync_skills.DISPATCHABLE_SKILLS)
+        instaladas = {
+            p.parent.name
+            for p in (destino / ".agents" / "skills").glob("*/SKILL.md")
+            if "\nsubagent: true" in p.read_text(encoding="utf-8")
+        }
+        assert instaladas == esperadas
+
+
 class TestNoPlatformKnowledge:
     """Conhecimento nao pode viver em diretorio de plataforma, senao o drift volta."""
 
