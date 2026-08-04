@@ -461,8 +461,9 @@ def build_parser() -> argparse.ArgumentParser:
             "Decomposicao de um coordenador em passos sequenciais -- o PISO de "
             "orquestracao das cinco plataformas: unico caminho em Codex e Copilot CI, "
             "e o caminho em Claude Code, Devin CLI e Devin Local agent quando o "
-            "despacho de subagente esta desligado. Le agents/, nunca repete a lista "
-            "de executores."
+            "despacho de subagente esta desligado -- e, no Devin, tambem quando ele "
+            "esta ligado, porque subagente nao gera subagente por default. Le "
+            "agents/, nunca repete a lista de executores."
         ),
     )
     playbook_p.add_argument("coordinator")

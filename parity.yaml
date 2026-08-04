@@ -6,7 +6,13 @@ mechanisms: [mcp, cli, files, playbook, subagent]
 notes: >
   Devin Desktop configura MCP por serverUrl (HTTP): `python -m sparkforge.adapters.mcp
   --transport http` e serverUrl `http://<host>:<port>/mcp`. Claude Code, Devin CLI e CI usam
-  stdio, que e o que `.mcp.json` ja configura.
+  stdio. `.mcp.json` configura o de Claude Code -- e SO o dele: ele parametriza
+  `PYTHONPATH` e `SPARKFORGE_CATALOG` por `${CLAUDE_PLUGIN_ROOT}`, variavel do carregador
+  de plugin do Claude Code que nenhuma pagina do Devin documenta expandir; importado como
+  esta, o servidor morre na primeira leitura do catalogo. O Devin CLI tem arquivo proprio
+  (`.devin/mcp_config.json`, chave `mcpServers`) e comando proprio (`devin mcp add`), e o
+  procedimento esta em GUIA_DE_USO.md secao 3.4 -- declarar `mcp` sem dizer como aciona-lo
+  seria o defeito do transporte HTTP da Fase 1 outra vez.
   Devin CLI nao le Knowledge nem Playbooks da conta Devin, por isso o procedimento e
   autoritativo em arquivo no repo, nunca em Playbook. Copilot CI nao mantem sessao MCP
   interativa: roda o CLI `sparkforge` como processo de linha de comando dentro do workflow,
