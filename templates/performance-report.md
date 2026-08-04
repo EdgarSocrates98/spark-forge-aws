@@ -59,11 +59,32 @@ Use o contrato de recomendação do projeto.
 
 ## 8. Validação funcional
 
-## 9. Riscos e rollback
+## 9. Gates com override
 
-## 10. Próximos experimentos
+Um gate passado por cima **aparece aqui**, com motivo e data. Não é formalidade:
+o gate existe porque a fase depende daquela evidência, e a diferença entre *não
+havia gate* e *o gate existe e alguém passou por cima* é a mesma que
+`dq.unresolved` faz entre "não há problema" e "ninguém olhou". Relatório que
+omite isso afirma um rigor que não foi prestado.
 
-## 11. Assinatura de correspondência
+Copie de `sparkforge case get --repo <raiz>` (campo `gate_overrides`) ou da seção
+"Overrides de gate" de `sparkforge resume`. Uma linha por override, na ordem em
+que foram gravados:
+
+| Gate | Quando | Motivo |
+|---|---|---|
+
+Sem nenhum override, escreva "nenhum" — a linha em branco não distingue *não
+houve* de *ninguém preencheu*.
+
+Esta seção fica **dentro** do corpo assinado: editá-la depois de `report sign`
+invalida a assinatura, e `report verify` acusa no corpo.
+
+## 10. Riscos e rollback
+
+## 11. Próximos experimentos
+
+## 12. Assinatura de correspondência
 
 O bloco abaixo é escrito por
 `sparkforge report sign --report <este arquivo> --findings <findings.json>`, e
