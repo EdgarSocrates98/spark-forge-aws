@@ -29,8 +29,11 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    **correspondência** entre aquele texto, aquela evidência e aquele catálogo —
    e **não** autoria: não há chave, e qualquer um com os mesmos findings produz a
    mesma assinatura. Quem receber confere com `sparkforge_report_verify`, que
-   diz qual das três partes divergiu — evidência, catálogo ou corpo — em vez de
-   devolver só "inválido". Editar a prosa depois de assinar invalida, e é para
+   diz qual das quatro partes divergiu — versão da assinatura, evidência,
+   catálogo ou corpo — em vez de devolver só "inválido". `version_mismatch` é
+   **regra mudada, não adulteração**: nesse caso o corpo sai como não avaliável
+   em vez de acusado, e o que se faz é reassinar. Editar a prosa depois de
+   assinar invalida, e é para
    isso que serve: reassinar é barato, texto editado passando por verificado não
    é. O corpo assinado é tudo que vem antes do delimitador do bloco, então nada
    pode ser acrescentado depois dele.
