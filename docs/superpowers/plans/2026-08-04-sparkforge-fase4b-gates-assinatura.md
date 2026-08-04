@@ -202,7 +202,7 @@ gates:
 **Files:**
 - Modify: `sparkforge/case/store.py`, `rules/catalog/routing.yaml`, `tests/test_case_store.py`
 
-- [ ] **Step 1: O produtor no `routing.yaml`**
+- [x] **Step 1: O produtor no `routing.yaml`**
 
 Bloco novo, no topo, ao lado das rotas — a decisão vira dado, como o roteamento de coordenador virou na Fase 4:
 
@@ -220,7 +220,11 @@ gates:
 
 Os quatro gates aparecem, inclusive os que ficam advisory — gate ausente do bloco é ambíguo entre "esqueceram" e "é advisory de propósito".
 
-- [ ] **Step 2: O teste que falha**
+> **Escrito: o bloco real é o do Step 3 da Task 1**, não este esboço — `guards_phases`
+> é **lista** (R3), e os **quatro** gates estão lá. `guards_phase` no singular acima
+> é anterior à medição.
+
+- [x] **Step 2: O teste que falha**
 
 ```python
 def test_gate_com_produtor_bloqueia_a_transicao_sob_rigor():
@@ -265,18 +269,18 @@ def test_o_booleano_manual_nao_destrava_sob_rigor():
 
 Substitua `PHASE_GUARDADA` e `PHASE_DO_GATE_SEM_PRODUTOR` pelo que a Task 1 mediu.
 
-- [ ] **Step 3: Rode e veja falhar**
+- [x] **Step 3: Rode e veja falhar**
 
 Run: `python -m pytest tests/test_case_store.py -k gate -v`
 Expected: FAIL — `set_phase() got an unexpected keyword argument 'fact_kinds'`
 
-- [ ] **Step 4: Implemente**
+- [x] **Step 4: Implemente**
 
 `set_phase(case, phase, fact_kinds=None)`. Parâmetro **opcional**: `set_phase` é chamado de dentro do `_core` e de testes, e a assinatura antiga precisa continuar valendo — sem `fact_kinds`, o comportamento é o de hoje.
 
 A checagem só acontece quando `case.get("strict_gates")` é verdadeiro **e** o gate tem `satisfied_by` no `routing.yaml`. A mensagem nomeia a fase pedida, o gate, o fact que faltou e o comando de `produced_by` — o D-5 do spec, e o teste assere **conteúdo**, porque a Fase 4a mediu que mensagem inacionável passa no CI.
 
-- [ ] **Step 5: Rode e commite**
+- [x] **Step 5: Rode e commite**
 
 ---
 
