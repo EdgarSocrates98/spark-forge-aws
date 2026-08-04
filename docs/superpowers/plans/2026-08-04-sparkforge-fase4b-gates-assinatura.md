@@ -398,9 +398,10 @@ Medido: **3369 passed / 5 skipped** (era 3329/5), `ruff check .` limpo,
 
 **Files:**
 - Create: `sparkforge/findings/signature.py`, `tests/test_findings_signature.py`
-- Modify: `sparkforge/adapters/{_core,cli,tools}.py`, `templates/performance-report.md`
+- ~~Modify: `sparkforge/adapters/{_core,cli,tools}.py`, `templates/performance-report.md`~~
+  — é a Task 5. A Task 4 é só o módulo de cálculo, e nada fora dele foi tocado.
 
-- [ ] **Step 1: O teste que falha**
+- [x] **Step 1: O teste que falha**
 
 ```python
 from sparkforge.findings.signature import compute_signature, normalize_body
@@ -444,12 +445,15 @@ def test_catalogo_diferente_muda_a_assinatura():
     assert a != b
 ```
 
-- [ ] **Step 2: Rode e veja falhar**
+- [x] **Step 2: Rode e veja falhar**
 
 Run: `python -m pytest tests/test_findings_signature.py -v`
 Expected: FAIL — `ModuleNotFoundError`
 
-- [ ] **Step 3: Implemente**
+Medido: `ImportError: cannot import name 'signature' from 'sparkforge.findings'`,
+1 error na coleta (com o módulo removido da árvore, para provar o estado vermelho).
+
+- [x] **Step 3: Implemente**
 
 ```python
 """Assinatura de CORRESPONDENCIA de um relatorio.
@@ -508,7 +512,52 @@ def compute_signature(
 
 `SIGNATURE_VERSION` entra no hash: mudar a normalização no futuro sem mudar a versão faria assinaturas antigas parecerem inválidas sem que nada tivesse sido adulterado.
 
-- [ ] **Step 4: Rode e commite**
+> **Desvio D-4b-9 — o esboço inventava uma segunda serialização canônica.** Medido:
+> `sparkforge/findings/models.py:21` já tem `_canonical` (`sort_keys=True`,
+> `separators=(",", ":")`, `ensure_ascii=True`), e ela é a base do `Fact.id`. O
+> esboço chamava `json.dumps(..., ensure_ascii=False)` — uma segunda definição de
+> "canônico", com política de escape diferente, no mesmo pacote. Duas formas de
+> canonizar são duas oportunidades de divergir, e o dia em que divergirem a
+> assinatura de um relatório com acento muda sem que nada tenha sido adulterado.
+> `signature.py` importa `_canonical` de `models` e comenta o porquê do import
+> privado. O local do módulo (`sparkforge/findings/`) foi confirmado, não copiado:
+> `findings/` já é onde mora o gate de saída (`validate.py`) e o vocabulário que a
+> assinatura cobre (`fact_id`, `rule_id`, `catalog_version`, `schema_version`);
+> não existe pacote `report/` no repositório, e `templates/performance-report.md`
+> é dado, não código.
+>
+> **Desvio D-4b-10 — 16 hex era escolha, e a medição diz 64.** O repositório já
+> separa os dois usos de digest: `Fact.id` trunca sha1 em 6 hex e a própria
+> docstring registra que "resistência a colisão é irrelevante para esse fim"
+> (content-addressing), enquanto `CollectEntry.sha256` guarda os 64 hex porque é
+> **integridade** (`^[0-9a-f]{64}$`, `collect/base.py:69`). Assinatura existe para
+> resistir a uma edição deliberada: é integridade, e fica do lado dos 64 hex.
+> Truncar em 16 (64 bits) reintroduziria em silêncio o "força criptográfica é
+> moot" no único valor desta fase em que ela é exatamente o que importa, e não
+> compra nada — o bloco tem uma linha e quem compara é o `verify`. O prefixo
+> `sig_` fica (é a convenção `f_` do repositório, e torna a assinatura
+> grepável e auto-descritiva); é decisão registrada, não medição. **A Task 5 deve
+> escrever no bloco `sig_` + 64 hex**, não os 16 do exemplo daquela task. O módulo
+> exporta `SIGNATURE_RE` para que a Task 5 não invente uma segunda verdade de forma.
+>
+> **Desvio D-4b-11 — a normalização do esboço absorvia indentação, e indentação
+> não é reformatação.** `_WS.sub(" ", line)` colapsa *todo* espaço horizontal
+> repetido, inclusive o recuo do início da linha. Em Markdown, quatro espaços de
+> recuo são bloco de código e um espaço é prosa, e o recuo também decide o nível
+> de um item de lista: com o esboço, trocar `    df.collect()` por
+> ` df.collect()` mudaria o que o leitor lê e a assinatura continuaria válida —
+> exatamente a "adulteração que passa" que o D-7 do spec manda evitar. A
+> normalização entregue preserva o recuo e colapsa só o espaço repetido **depois**
+> do primeiro caractere não-branco. Os cinco itens absorvidos estão listados na
+> docstring e cada um tem teste dos dois lados; `test_indentacao_invalida` e
+> `test_indentacao_de_item_de_lista_invalida` travam o lado que o esboço deixaria
+> passar.
+
+- [x] **Step 4: Rode e commite**
+
+Medido: **25 passed** em `tests/test_findings_signature.py` (os 5 literais do plano
+mais 20 de cobertura dos dois lados), suíte **3394 passed / 5 skipped**
+(era 3369/5), `ruff check .` limpo.
 
 ---
 
