@@ -452,7 +452,7 @@ exemplo. `--target` é opcional e serve como confirmação explícita do destino
 se for passado e não for o diretório atual, o script recusa e mostra o `cd`
 correto, em vez de escrever num lugar que você não estava olhando.
 
-### Manutenção das cópias (contribuidores)
+### Manutenção dos espelhos (contribuidores)
 
 A fonte da verdade das skills é `skills/`, e a dos perfis é `agents/`. `.claude/skills/` e `.claude/agents/` são espelhos byte-a-byte; `.github/agents/` também. `.agents/` é **renderizado** por plataforma: as skills despacháveis ganham `subagent: true` (e `agent:` quando há coordenador único **e** ele não é o perfil que orquestra — hoje duas das doze), e os perfis perdem `tools:`. Após editar uma skill em `skills/` ou um perfil em `agents/`, regenere os espelhos:
 
@@ -474,7 +474,13 @@ manifesto silencioso é pior que erro barulhento:
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
 constrói o artefato, instala num venv limpo e reproduz as 107 fixtures golden byte a byte.
 
-Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e paridade das três cópias.
+Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
+de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o
+espelho é exatamente o que o tradutor produz para aquela plataforma**. Igualdade nunca
+poderia pegar campo que a plataforma exige e a fonte não tem, nem campo que a fonte tem e a
+plataforma não deve receber; a derivação pega os dois, e o gate acusa também **órfão em
+qualquer profundidade e de qualquer extensão** — `.agents/agents/<nome>/AGENT.md` é layout
+de descoberta do Devin, e passar por ali publicaria perfil que ninguém revisou.
 
 ## Uso rápido
 
