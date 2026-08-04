@@ -9,6 +9,7 @@ from sparkforge.case.store import (
     add_hypothesis,
     load_case,
     new_case,
+    override_gate,
     record_skill_use,
     save_case,
     set_gate,
@@ -37,9 +38,19 @@ class TestNewCase:
         for key in (
             "schema_version", "case_id", "created_at", "runtime", "scope", "phase",
             "artifacts", "facts_index", "findings_index", "baseline", "hypotheses",
-            "gates", "skills_used", "open_questions",
+            "gates", "strict_gates", "gate_overrides", "skills_used", "open_questions",
         ):
             assert key in case
+
+    def test_rigor_e_desligado_por_omissao(self):
+        """A escolha e do case, e o padrao e o comportamento de sempre."""
+        case = new_case("c", "2026-08-04T00:00:00Z", RUNTIME)
+        assert case["strict_gates"] is False
+        assert case["gate_overrides"] == []
+
+    def test_rigor_pedido_na_abertura_fica_gravado(self):
+        case = new_case("c", "2026-08-04T00:00:00Z", RUNTIME, strict_gates=True)
+        assert case["strict_gates"] is True
 
     def test_starts_in_intake_phase(self):
         assert new_case("c", "2026-07-29T00:00:00Z", RUNTIME)["phase"] == "intake"
@@ -165,10 +176,7 @@ class TestGateContract:
 
 class TestStrictGates:
     def _case(self, strict=True):
-        case = new_case("c", "2026-08-04T00:00:00Z", RUNTIME)
-        if strict:
-            case["strict_gates"] = True
-        return case
+        return new_case("c", "2026-08-04T00:00:00Z", RUNTIME, strict_gates=strict)
 
     def test_gate_com_produtor_bloqueia_a_transicao_sob_rigor(self):
         with pytest.raises(CaseError) as exc:
@@ -274,6 +282,88 @@ class TestStrictGates:
             set_phase(self._case(), PHASE_GUARDADA, fact_kinds=set())
 
 
+class TestOverrideDeGate:
+    """D-4: o dado as vezes genuinamente nao existe, e gate sem escapatoria
+    reabre o impasse que a secao 5.5 da Fase 0 recusou. A escapatoria custa uma
+    frase escrita, e a frase fica no case."""
+
+    def _case(self):
+        return new_case("c", "2026-08-04T00:00:00Z", RUNTIME, strict_gates=True)
+
+    def test_override_sem_motivo_e_recusado(self):
+        with pytest.raises(CaseError) as exc:
+            override_gate(self._case(), "baseline_captured", reason="")
+        assert "motivo" in str(exc.value).lower()
+
+    def test_a_recusa_diz_o_que_falta(self):
+        with pytest.raises(CaseError) as exc:
+            override_gate(self._case(), "baseline_captured", reason="   ")
+        assert "--reason" in str(exc.value)
+
+    def test_override_de_gate_desconhecido_e_recusado(self):
+        with pytest.raises(CaseError, match="gate desconhecido"):
+            override_gate(self._case(), "vibes_ok", reason="porque sim")
+
+    def test_override_com_motivo_fica_gravado_e_destrava(self):
+        case = override_gate(
+            self._case(), "baseline_captured", reason="job descontinuado"
+        )
+        registro = case["gate_overrides"][0]
+        assert registro["gate"] == "baseline_captured"
+        assert registro["reason"] == "job descontinuado"
+        # `validation` e guardada pelos dois gates com produtor: o override
+        # cobre um, a evidencia cobre o outro.
+        novo = set_phase(case, PHASE_GUARDADA, fact_kinds={KIND_FLOWS})
+        assert novo["phase"] == PHASE_GUARDADA
+
+    def test_o_override_registra_quando(self):
+        case = override_gate(
+            self._case(), "flows_mapped", reason="corpus sem trabalho Spark",
+            at="2026-08-04T12:00:00Z",
+        )
+        assert case["gate_overrides"][0]["at"] == "2026-08-04T12:00:00Z"
+
+    def test_dois_overrides_do_mesmo_gate_ficam_os_dois(self):
+        """Lista, nunca dicionario: sobrescrever apagaria o primeiro motivo, e
+        dois overrides em momentos diferentes sao dois fatos."""
+        case = override_gate(
+            self._case(), "flows_mapped", reason="primeiro motivo",
+            at="2026-08-04T10:00:00Z",
+        )
+        case = override_gate(
+            case, "flows_mapped", reason="segundo motivo", at="2026-08-05T10:00:00Z"
+        )
+        assert [o["reason"] for o in case["gate_overrides"]] == [
+            "primeiro motivo",
+            "segundo motivo",
+        ]
+
+    def test_override_de_um_gate_nao_destrava_o_outro(self):
+        case = override_gate(self._case(), "baseline_captured", reason="sem ambiente")
+        with pytest.raises(CaseError, match="flows_mapped") as exc:
+            set_phase(case, PHASE_GUARDADA, fact_kinds=set())
+        assert "baseline_captured" not in str(exc.value)
+
+    def test_o_override_nao_altera_o_case_de_entrada(self):
+        original = self._case()
+        override_gate(original, "baseline_captured", reason="x")
+        assert original["gate_overrides"] == []
+
+    def test_case_antigo_sem_a_chave_aceita_override(self):
+        """Sem migracao: a lista nasce na primeira gravacao."""
+        case = self._case()
+        del case["gate_overrides"]
+        assert override_gate(case, "flows_mapped", reason="x")["gate_overrides"]
+
+    def test_a_mensagem_de_bloqueio_nomeia_a_escapatoria(self):
+        """Quem esta bloqueado por dado que nao existe precisa saber que ela
+        existe, sem ler o spec."""
+        with pytest.raises(CaseError) as exc:
+            set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds=set())
+        assert "--override-gate flows_mapped" in str(exc.value)
+        assert "--reason" in str(exc.value)
+
+
 class TestSemRigorNadaMuda:
     """Criterio 5 do spec: case sem `--strict-gates` se comporta como antes."""
 
@@ -290,8 +380,13 @@ class TestSemRigorNadaMuda:
         assert set_phase(self._case(), PHASE_GUARDADA)["phase"] == PHASE_GUARDADA
 
     def test_case_gravado_antes_desta_fase_nao_tem_a_chave(self):
+        """Compatibilidade sem migracao (criterio 5 do spec): um case gravado por
+        versao anterior nao tem `strict_gates` nem `gate_overrides`, e
+        `case.get(...)` responde `None`, que e falsy. Simulado removendo as duas
+        chaves, que e literalmente o que ha no YAML antigo."""
         case = self._case()
-        assert "strict_gates" not in case
+        del case["strict_gates"]
+        del case["gate_overrides"]
         assert set_phase(case, "report", fact_kinds=set())["phase"] == "report"
 
     def test_sem_rigor_o_catalogo_nem_e_lido(self, tmp_path, monkeypatch):
