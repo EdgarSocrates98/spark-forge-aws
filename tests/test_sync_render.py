@@ -7,13 +7,24 @@ Fundamento medido: `knowledge/devin/agents-and-subagents.md` (retrieved
 from pathlib import Path
 
 import pytest
+import yaml
 
+from scripts import sync_skills
 from scripts.sync_skills import render_agent
 
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
 EXECUTORS = AGENTS / "executors"
 PERFIS = tuple(sorted(AGENTS.glob("*.md")) + sorted(EXECUTORS.glob("*.md")))
+
+
+SKILL_SINTETICA = """---
+name: skill-sintetica
+description: Use quando.
+---
+
+Corpo da skill.
+"""
 
 
 SOURCE = """---
@@ -187,3 +198,460 @@ class TestBordas:
         assert "\r\n" in out
         assert "\n" not in out.replace("\r\n", "")
         assert "tools:" not in out
+
+
+# ---------------------------------------------------------------------------
+# Task 4: skills que despacham
+# ---------------------------------------------------------------------------
+# Fundamento medido: `knowledge/devin/agents-and-subagents.md` secao 8 --
+# `.agents/skills/<name>/SKILL.md` e caminho de descoberta NATIVO do Devin, e o
+# frontmatter de skill aceita `subagent` (bool, default `false`) e `agent`
+# (string, default nenhum). Spec: D-5 e D-6.
+
+SKILLS = ROOT / "skills"
+SKILL_DIRS = tuple(sorted(p for p in SKILLS.iterdir() if p.is_dir()))
+
+# A saida literal do Step 1, medida sobre `agents/*.md` antes de qualquer
+# decisao. Esta constante NAO e a fonte -- a fonte e o `skills:` de cada perfil,
+# e `coordinators_by_skill()` a le de la. Ela existe para que uma mudanca na
+# relacao apareca como diff aqui, em vez de mudar `agent:` no espelho em
+# silencio.
+RELACAO_MEDIDA = {
+    "analyze-batch-loop": (
+        "glue-incremental-performance-architect",
+        "pyspark-code-reviewer",
+    ),
+    "analyze-library-call-graph": (
+        "data-quality-reviewer",
+        "glue-incremental-performance-architect",
+        "pyspark-code-reviewer",
+    ),
+    "analyze-spark-plan": (
+        "glue-incremental-performance-architect",
+        "pyspark-code-reviewer",
+        "spark-performance-architect",
+    ),
+    "analyze-spark-ui": (
+        "emr-infra-reviewer",
+        "glue-incremental-performance-architect",
+        "spark-performance-architect",
+    ),
+    "benchmark-pyspark-job": (
+        "athena-query-optimizer",
+        "emr-infra-reviewer",
+        "glue-incremental-performance-architect",
+        "iceberg-performance-engineer",
+        "spark-performance-architect",
+    ),
+    "design-incremental-processing": ("glue-incremental-performance-architect",),
+    "diagnose-data-skew": (
+        "glue-incremental-performance-architect",
+        "spark-performance-architect",
+    ),
+    "diagnose-oom": ("glue-incremental-performance-architect",),
+    "glue-incremental-performance-architect": (
+        "glue-incremental-performance-architect",
+    ),
+    "optimize-iceberg-table": (
+        "athena-query-optimizer",
+        "glue-incremental-performance-architect",
+        "iceberg-performance-engineer",
+        "spark-performance-architect",
+    ),
+    "optimize-latest-per-key": ("glue-incremental-performance-architect",),
+    "optimize-parquet-layout": (
+        "athena-query-optimizer",
+        "glue-incremental-performance-architect",
+        "iceberg-performance-engineer",
+        "spark-performance-architect",
+    ),
+    "optimize-pyspark-code": (
+        "glue-incremental-performance-architect",
+        "pyspark-code-reviewer",
+        "spark-performance-architect",
+    ),
+    "optimize-variable-volume-job": (
+        "glue-incremental-performance-architect",
+        "glue-infra-reviewer",
+    ),
+    "review-data-validation": ("data-quality-reviewer",),
+    "review-emr-cluster": ("emr-infra-reviewer",),
+    "review-glue-terraform": (
+        "glue-incremental-performance-architect",
+        "glue-infra-reviewer",
+    ),
+    "review-pyspark-pr": (
+        "data-quality-reviewer",
+        "pyspark-code-reviewer",
+        "spark-performance-architect",
+    ),
+    "sparkforge-diagnose": (
+        "glue-incremental-performance-architect",
+        "spark-performance-architect",
+    ),
+    "tune-glue-job": (
+        "glue-incremental-performance-architect",
+        "glue-infra-reviewer",
+        "spark-performance-architect",
+    ),
+}
+
+
+def _bloco_do_frontmatter(text: str) -> str:
+    assert text.startswith("---"), "SKILL.md sem cerca de abertura"
+    return text[3 : text.index("\n---", 3)]
+
+
+def _frontmatter(text: str) -> dict:
+    """As chaves de topo do frontmatter, lidas linha a linha.
+
+    **Medido, e e por isso que este leitor nao usa `yaml.safe_load`:** o
+    frontmatter das skills reais nao e YAML estrito. Cinco das vinte
+    descricoes citam comando com dois-pontos dentro de escalar simples
+    (``rode `sparkforge analyze plan`: ele emite``), e `safe_load` levanta
+    `ScannerError` nelas. E o mesmo motivo pelo qual `test_skill_content` tem o
+    proprio `parse_frontmatter` de linha.
+
+    Onde o YAML *importa* -- provar que a insercao nao quebrou a cerca -- os
+    testes de borda usam `_yaml_estrito` sobre fonte sintetica, que e YAML
+    valido de proposito.
+    """
+    campos: dict[str, str] = {}
+    for linha in _bloco_do_frontmatter(text).splitlines():
+        if linha[:1] in (" ", "\t") or ":" not in linha:
+            continue
+        chave, _, valor = linha.partition(":")
+        campos[chave.strip()] = valor.strip()
+    return campos
+
+
+def _yaml_estrito(text: str) -> dict:
+    """O frontmatter como YAML de verdade.
+
+    O renderizador nao faz round-trip de YAML de proposito; o teste faz, e e por
+    isso que ele pega o modo de falha simetrico da insercao: campo posto na
+    posicao errada quebra a cerca, e ai `safe_load` levanta ou devolve outra
+    coisa em vez do dicionario esperado.
+    """
+    return yaml.safe_load(_bloco_do_frontmatter(text))
+
+
+def _lista_de_topo(text: str, chave: str) -> list[str]:
+    """Uma lista de bloco do frontmatter, sem passar pelo codigo sob teste.
+
+    O invariante bidirecional perde o sentido se os dois lados sairem da mesma
+    funcao: um bug em `_frontmatter_list` esconderia a quebra dos dois lados de
+    uma vez.
+    """
+    valores: list[str] = []
+    lendo = False
+    for linha in _bloco_do_frontmatter(text).splitlines():
+        if linha[:1] in (" ", "\t"):
+            if lendo and linha.strip().startswith("- "):
+                valores.append(linha.strip()[2:].strip())
+            continue
+        lendo = linha.strip() == f"{chave}:"
+    return valores
+
+
+class TestRelacaoDerivada:
+    """D-5: `agent:` sai do `skills:` que cada coordenador ja declara."""
+
+    def test_a_relacao_e_a_medida(self):
+        assert sync_skills.coordinators_by_skill() == RELACAO_MEDIDA
+
+    def test_toda_skill_do_disco_esta_na_relacao(self):
+        """Skill que nenhum coordenador declara nao teria de onde derivar
+        `agent:`."""
+        orfas = [p.name for p in SKILL_DIRS if p.name not in RELACAO_MEDIDA]
+        assert not orfas, orfas
+
+    def test_o_caso_ambiguo_existe_e_e_a_maioria(self):
+        """Medido, e o numero e o que decide o desenho: 14 das 20 skills sao
+        declaradas por MAIS DE UM coordenador. Nelas `agent:` nao tem resposta
+        unica, e nenhuma regra deterministica a inventa sem mentir."""
+        ambiguas = [s for s, c in RELACAO_MEDIDA.items() if len(c) > 1]
+        assert len(ambiguas) == 14
+        assert len(RELACAO_MEDIDA) == 20
+
+    def test_agent_for_skill_cala_no_caso_ambiguo(self):
+        for skill, coordenadores in RELACAO_MEDIDA.items():
+            if len(coordenadores) > 1:
+                assert sync_skills.agent_for_skill(skill) is None, skill
+
+    def test_agent_for_skill_nomeia_o_unico_quando_ha_um_so(self):
+        for skill, coordenadores in RELACAO_MEDIDA.items():
+            if len(coordenadores) == 1:
+                assert sync_skills.agent_for_skill(skill) == coordenadores[0], skill
+
+    def test_a_ordem_alfabetica_seria_o_perfil_errado(self):
+        """O contraexemplo que matou a alternativa "declara o primeiro em ordem
+        deterministica": ordem alfabetica nao e criterio de competencia."""
+        assert RELACAO_MEDIDA["review-pyspark-pr"][0] == "data-quality-reviewer"
+        assert "pyspark-code-reviewer" in RELACAO_MEDIDA["review-pyspark-pr"]
+        assert sync_skills.agent_for_skill("review-pyspark-pr") is None
+
+
+class TestQuemDespacha:
+    """D-6: despacha investigacao fechada; nao despacha quem dirige o loop ou
+    precisa perguntar."""
+
+    def test_a_particao_cobre_skills_exatamente(self):
+        """Skill nova cai em qual lado? Em nenhum -- e e assim que se descobre
+        que ninguem decidiu. O default silencioso publicaria a skill sem alguem
+        ter perguntado se ela consegue trabalhar sem poder perguntar."""
+        assert set(sync_skills.SKILL_DISPATCH_REASON) == {p.name for p in SKILL_DIRS}
+        assert not (
+            set(sync_skills.DISPATCHABLE_SKILLS)
+            & set(sync_skills.NON_DISPATCHABLE_SKILLS)
+        )
+
+    def test_toda_decisao_tem_razao_escrita(self):
+        vazias = [
+            n for n, r in sync_skills.SKILL_DISPATCH_REASON.items() if not r.strip()
+        ]
+        assert not vazias, vazias
+
+    def test_sparkforge_diagnose_nao_despacha(self):
+        """Ela abre o case e roteia. Despachar jogaria o ciclo de vida do case
+        para um contexto que NAO VOLTA -- o subagente nao herda o historico do
+        pai, e a saida dele e texto livre que o pai resume (pesquisa, secao 6). E
+        o case e justamente o que faz a investigacao atravessar sessoes."""
+        assert "sparkforge-diagnose" not in sync_skills.DISPATCHABLE_SKILLS
+        assert "case" in sync_skills.NON_DISPATCHABLE_SKILLS["sparkforge-diagnose"]
+        texto = (SKILLS / "sparkforge-diagnose" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        front = _frontmatter(
+            sync_skills.render_skill(texto, "devin", name="sparkforge-diagnose")
+        )
+        assert "subagent" not in front
+        assert "agent" not in front
+
+    def test_a_contagem_das_duas_metades(self):
+        assert len(sync_skills.DISPATCHABLE_SKILLS) == 12
+        assert len(sync_skills.NON_DISPATCHABLE_SKILLS) == 8
+
+    def test_as_do_d6_estao_todas_dentro(self):
+        """O recorte literal do spec: os quatro `review-*` e os `analyze-*`."""
+        d6 = {
+            "review-emr-cluster",
+            "review-data-validation",
+            "review-glue-terraform",
+            "review-pyspark-pr",
+        } | {p.name for p in SKILL_DIRS if p.name.startswith("analyze-")}
+        assert d6 <= set(sync_skills.DISPATCHABLE_SKILLS)
+
+
+class TestSkillsReais:
+    """As vinte skills que o espelho do Devin vai receber."""
+
+    def test_o_corpus_tem_vinte_skills(self):
+        assert len(SKILL_DIRS) == 20
+
+    def test_claude_e_github_recebem_byte_a_byte(self):
+        """`.claude/skills/` continua passthrough: o Claude Code nao le
+        `subagent:`, e publicar campo que ninguem consome e ruido no diff."""
+        for skill in SKILL_DIRS:
+            texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            for plataforma in ("claude", "github"):
+                assert (
+                    sync_skills.render_skill(texto, plataforma, name=skill.name)
+                    == texto
+                ), skill.name
+
+    def test_despachavel_ganha_subagent_true(self):
+        for skill in SKILL_DIRS:
+            if skill.name not in sync_skills.DISPATCHABLE_SKILLS:
+                continue
+            texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            front = _frontmatter(
+                sync_skills.render_skill(texto, "devin", name=skill.name)
+            )
+            assert front["subagent"] == "true", skill.name
+
+    def test_nao_despachavel_nao_ganha_campo_nenhum(self):
+        for skill in SKILL_DIRS:
+            if skill.name in sync_skills.DISPATCHABLE_SKILLS:
+                continue
+            texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            front = _frontmatter(
+                sync_skills.render_skill(texto, "devin", name=skill.name)
+            )
+            assert "subagent" not in front, skill.name
+            assert "agent" not in front, skill.name
+
+    def test_agent_so_aparece_onde_ha_um_coordenador_so(self):
+        com_agent = {}
+        for skill in SKILL_DIRS:
+            texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            front = _frontmatter(
+                sync_skills.render_skill(texto, "devin", name=skill.name)
+            )
+            if "agent" in front:
+                com_agent[skill.name] = front["agent"]
+        assert com_agent == {
+            "diagnose-oom": "glue-incremental-performance-architect",
+            "review-data-validation": "data-quality-reviewer",
+            "review-emr-cluster": "emr-infra-reviewer",
+        }
+
+    def test_o_frontmatter_sobrevive_a_insercao(self):
+        """O risco simetrico da Task 1: la a remocao podia deixar continuacao
+        orfa; aqui a insercao pode cair no lugar errado. As chaves que ja
+        existiam continuam existindo, com o mesmo valor, e as unicas novas sao
+        as que a renderizacao controla."""
+        for skill in SKILL_DIRS:
+            texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            antes = _frontmatter(texto)
+            depois = _frontmatter(
+                sync_skills.render_skill(texto, "devin", name=skill.name)
+            )
+            assert antes["name"] == skill.name
+            assert antes["description"]
+            assert all(depois[k] == v for k, v in antes.items()), skill.name
+            novas = set(depois) - set(antes)
+            assert novas <= {"subagent", "agent"}, (skill.name, novas)
+
+    def test_os_campos_entram_antes_da_cerca_de_fechamento(self):
+        for skill in sync_skills.DISPATCHABLE_SKILLS:
+            texto = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+            linhas = sync_skills.render_skill(texto, "devin", name=skill).splitlines()
+            assert linhas.index("subagent: true") < linhas.index("---", 1), skill
+
+    def test_o_corpo_sobrevive_inteiro(self):
+        for skill in SKILL_DIRS:
+            texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            corpo = texto.split("\n---\n", 1)[1]
+            assert corpo in sync_skills.render_skill(texto, "devin", name=skill.name)
+
+    def test_render_e_idempotente(self):
+        for skill in SKILL_DIRS:
+            texto = (skill / "SKILL.md").read_text(encoding="utf-8")
+            once = sync_skills.render_skill(texto, "devin", name=skill.name)
+            assert sync_skills.render_skill(once, "devin", name=skill.name) == once
+
+
+class TestBordasDeSkill:
+    def test_skill_desconhecida_falha_alto(self):
+        """Skill sem decisao registrada nao vira "nao despacha" em silencio."""
+        with pytest.raises(ValueError, match="sem decisao de despacho"):
+            sync_skills.render_skill(
+                SKILL_SINTETICA, "devin", name="skill-que-nao-existe"
+            )
+
+    def test_plataforma_desconhecida_falha_alto(self):
+        with pytest.raises(ValueError, match="plataforma desconhecida"):
+            sync_skills.render_skill(
+                SKILL_SINTETICA, "cursor", name="review-emr-cluster"
+            )
+
+    def test_campo_posto_a_mao_e_removido_de_quem_nao_despacha(self):
+        """A renderizacao REMOVE antes de inserir. Sem isso, `subagent: true`
+        escrito a mao no espelho de `sparkforge-diagnose` sobreviveria a toda
+        regeneracao, e o gate nunca acusaria."""
+        adulterada = SKILL_SINTETICA.replace(
+            "description: Use quando.\n",
+            "description: Use quando.\nsubagent: true\nagent: perfil-inventado\n",
+        )
+        out = sync_skills.render_skill(adulterada, "devin", name="sparkforge-diagnose")
+        assert "subagent" not in _yaml_estrito(out)
+        assert "agent" not in _yaml_estrito(out)
+        assert "Corpo da skill." in out
+
+    def test_campo_posto_a_mao_e_reescrito_em_quem_despacha(self):
+        adulterada = SKILL_SINTETICA.replace(
+            "description: Use quando.\n",
+            "description: Use quando.\nagent: perfil-inventado\n",
+        )
+        out = sync_skills.render_skill(adulterada, "devin", name="review-emr-cluster")
+        assert _yaml_estrito(out)["agent"] == "emr-infra-reviewer"
+        assert "perfil-inventado" not in out
+
+    def test_sem_frontmatter_sai_inalterado(self):
+        texto = "Sem cerca nenhuma.\nsubagent: true\n"
+        assert (
+            sync_skills.render_skill(texto, "devin", name="review-emr-cluster") == texto
+        )
+
+    def test_fim_de_linha_e_preservado(self):
+        """A linha INSERIDA usa o fim de linha do arquivo. Misturar LF e CRLF no
+        mesmo frontmatter faria o espelho divergir a cada regeneracao numa arvore
+        com autocrlf."""
+        crlf = SKILL_SINTETICA.replace("\n", "\r\n")
+        out = sync_skills.render_skill(crlf, "devin", name="review-emr-cluster")
+        assert "subagent: true\r\n" in out
+        assert "\n" not in out.replace("\r\n", "")
+
+    def test_lista_indentada_no_fim_do_frontmatter_nao_engole_o_campo(self):
+        """Borda que a insercao no fim tem que respeitar: se a ultima chave for
+        lista de bloco, o campo novo nao pode sair indentado nem depois da
+        cerca."""
+        com_lista = (
+            "---\nname: review-emr-cluster\ndescription: Use quando.\n"
+            "triggers:\n  - user\n  - model\n---\n\nCorpo da skill.\n"
+        )
+        out = sync_skills.render_skill(com_lista, "devin", name="review-emr-cluster")
+        front = _yaml_estrito(out)
+        assert front["triggers"] == ["user", "model"]
+        assert front["subagent"] is True
+        assert front["agent"] == "emr-infra-reviewer"
+
+
+def _quebras(agent_por_skill: dict, skills_por_perfil: dict) -> list[str]:
+    """As duas metades do invariante bidirecional, num lugar so.
+
+    Relacao que quebra de UM LADO SO e a familia de defeito que a Fase 5c achou
+    nas duas listas `EXTRACTORS` mantidas a mao: ou o perfil some e o `agent:`
+    fica apontando para nada, ou o perfil deixa de declarar a skill e o `agent:`
+    segue nomeando quem nao a coordena mais.
+    """
+    problemas = []
+    for skill, perfil in sorted(agent_por_skill.items()):
+        if perfil not in skills_por_perfil:
+            problemas.append(f"{skill}: agent nomeia perfil inexistente: {perfil}")
+        elif skill not in skills_por_perfil[perfil]:
+            problemas.append(f"{skill}: o perfil {perfil} nao declara esta skill")
+    return problemas
+
+
+class TestInvarianteBidirecional:
+    """Criterio 4 do spec, medido sobre o ESPELHO em disco -- nao sobre a funcao
+    que o gerou. Espelho editado a mao e perfil renomeado sao pegos aqui."""
+
+    def _agent_por_skill(self) -> dict:
+        espelho = ROOT / ".agents" / "skills"
+        fronts = {
+            p.parent.name: _frontmatter(p.read_text(encoding="utf-8"))
+            for p in sorted(espelho.glob("*/SKILL.md"))
+        }
+        return {
+            nome: front["agent"] for nome, front in fronts.items() if "agent" in front
+        }
+
+    def _skills_por_perfil(self) -> dict:
+        return {
+            perfil.stem: set(
+                _lista_de_topo(perfil.read_text(encoding="utf-8"), "skills")
+            )
+            for perfil in sorted(AGENTS.glob("*.md"))
+        }
+
+    def test_agent_de_skill_nomeia_perfil_que_a_declara(self):
+        quebras = _quebras(self._agent_por_skill(), self._skills_por_perfil())
+        assert not quebras, quebras
+
+    def test_o_invariante_nao_e_vazio(self):
+        """Recorte que esvaziasse o lado esquerdo passaria sem olhar nada."""
+        assert len(self._agent_por_skill()) == 3
+
+    def test_perfil_que_sumiu_e_pego(self):
+        assert _quebras(
+            {"review-emr-cluster": "perfil-apagado"}, self._skills_por_perfil()
+        )
+
+    def test_perfil_que_deixou_de_declarar_e_pego(self):
+        assert _quebras(
+            {"review-emr-cluster": "iceberg-performance-engineer"},
+            self._skills_por_perfil(),
+        )

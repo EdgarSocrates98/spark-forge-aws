@@ -345,7 +345,7 @@ linhas do `iceberg-performance-engineer` reescritas (D-DV-9).
 **Files:**
 - Modify: `scripts/sync_skills.py`, `skills/*/SKILL.md` (as despacháveis), `tests/test_sync_render.py`
 
-- [ ] **Step 1: Meça a relação skill → perfil**
+- [x] **Step 1: Meça a relação skill → perfil**
 
 ```bash
 python -c "
@@ -366,7 +366,23 @@ Se existir, `agent:` não tem resposta única, e a decisão vai no relatório: o
 skill não declara `agent:` (o Devin escolhe), ou declara o primeiro em ordem
 determinística com a razão escrita.
 
-- [ ] **Step 2: `render_skill`, com teste primeiro**
+Saída literal, oito coordenadores:
+
+```
+athena-query-optimizer -> ['optimize-parquet-layout', 'optimize-iceberg-table', 'benchmark-pyspark-job']
+data-quality-reviewer -> ['review-data-validation', 'review-pyspark-pr', 'analyze-library-call-graph']
+emr-infra-reviewer -> ['review-emr-cluster', 'analyze-spark-ui', 'benchmark-pyspark-job']
+glue-incremental-performance-architect -> ['glue-incremental-performance-architect', 'sparkforge-diagnose', 'analyze-library-call-graph', 'design-incremental-processing', 'optimize-latest-per-key', 'analyze-batch-loop', 'diagnose-oom', 'optimize-variable-volume-job', 'review-glue-terraform', 'optimize-pyspark-code', 'analyze-spark-plan', 'analyze-spark-ui', 'diagnose-data-skew', 'tune-glue-job', 'optimize-parquet-layout', 'optimize-iceberg-table', 'benchmark-pyspark-job']
+glue-infra-reviewer -> ['review-glue-terraform', 'tune-glue-job', 'optimize-variable-volume-job']
+iceberg-performance-engineer -> ['optimize-iceberg-table', 'optimize-parquet-layout', 'benchmark-pyspark-job']
+pyspark-code-reviewer -> ['review-pyspark-pr', 'optimize-pyspark-code', 'analyze-spark-plan', 'analyze-library-call-graph', 'analyze-batch-loop']
+spark-performance-architect -> ['sparkforge-diagnose', 'optimize-pyspark-code', 'analyze-spark-plan', 'analyze-spark-ui', 'diagnose-data-skew', 'tune-glue-job', 'optimize-parquet-layout', 'optimize-iceberg-table', 'benchmark-pyspark-job', 'review-pyspark-pr']
+```
+
+Invertida: as vinte skills aparecem, **14 delas declaradas por mais de um
+coordenador** — o caso ambíguo é a maioria, não a exceção (D-DV-11).
+
+- [x] **Step 2: `render_skill`, com teste primeiro**
 
 Despacháveis, por D-6 do spec: `review-emr-cluster`, `review-data-validation`,
 `review-glue-terraform`, `review-pyspark-pr` e os `analyze-*`.
@@ -378,7 +394,7 @@ teste fixa isso, e o motivo vai no código.
 O renderizador acrescenta `subagent: true` e `agent: <perfil>` ao frontmatter do
 espelho `.agents/skills/`, e não toca em `.claude/skills/`.
 
-- [ ] **Step 3: O invariante bidirecional**
+- [x] **Step 3: O invariante bidirecional**
 
 ```python
 def test_agent_de_skill_nomeia_perfil_que_a_declara():
@@ -389,7 +405,95 @@ def test_agent_de_skill_nomeia_perfil_que_a_declara():
 Para cada skill com `agent: X`, o perfil `X` existe **e** declara aquela skill
 em `skills:`.
 
-- [ ] **Step 4: Regenere, leia o diff, commite**
+Entregue em `TestInvarianteBidirecional`, sobre o **espelho em disco** e não
+sobre a função que o gerou — os dois lados lidos por parsers independentes, e
+duas quebras sintéticas (perfil apagado, perfil que deixou de declarar) provando
+que ele acusa.
+
+- [x] **Step 4: Regenere, leia o diff, commite**
+
+Medido: `12 files changed, 15 insertions(+), 0 deletions(-)`, todos em
+`.agents/skills/`. `git diff --numstat -- .claude .github` **vazio**. Segunda
+execução de `sync_skills.py` reporta `0 alteração(ões)`. Suíte 3558 passed /
+5 skipped (era 3527 / 5). `ruff check .` limpo. `--check` OK.
+
+**Desvios medidos na Task 4**
+
+- **D-DV-11 — o caso ambíguo é a maioria, e ele decide o desenho de `agent:`.**
+  Medido na relação derivada: **14 das 20** skills são declaradas por dois a
+  cinco coordenadores; só 6 têm um coordenador só. Entre as **12** despacháveis,
+  apenas **3** (`review-emr-cluster`, `review-data-validation`, `diagnose-oom`)
+  têm resposta única. As outras nove declaram `subagent: true` **sem** `agent:`,
+  e o Devin escolhe o perfil — forma documentada, porque `agent` tem default
+  *none* na tabela de frontmatter da fonte. A alternativa do Step 1 ("declara o
+  primeiro em ordem determinística") foi recusada **com o número na mão**, não
+  por gosto: em ordem alfabética, `review-pyspark-pr` cairia em
+  `data-quality-reviewer` e `analyze-spark-plan` em
+  `glue-incremental-performance-architect`, quando o especialista de ambas é
+  `pyspark-code-reviewer`. Ordem alfabética não é critério de competência, e
+  publicá-la como se fosse seria roteamento errado com cara de decisão. O
+  contraexemplo está fixado em `test_a_ordem_alfabetica_seria_o_perfil_errado`.
+
+- **D-DV-12 — despacham 12, e não os 8 de D-6.** Entraram além do recorte do
+  spec: `diagnose-oom` e `diagnose-data-skew` (coletam o próprio event log,
+  julgam, e devolvem uma classificação — o discriminador de cada uma,
+  `heap_oom_in_log` e o par SF-UI-001/SF-UI-002, está no artefato, não numa
+  pessoa), `optimize-pyspark-code` (mesma forma de `review-pyspark-pr`, que D-6
+  já despacha) e `optimize-parquet-layout` (cinco fontes, todas obtidas só
+  lendo). Ficaram de fora, além de `sparkforge-diagnose`: o
+  `glue-incremental-performance-architect` (orquestra as outras skills por
+  `next-step`, e subagente não gera subagente por default — despachar quem
+  orquestra é perder a orquestração), `optimize-iceberg-table` (a própria skill
+  exige que a retenção de `expire_snapshots` venha do dono dos dados, e
+  `ask_user_question` é sempre negado a subagente), `optimize-latest-per-key` e
+  `design-incremental-processing` (a seção "Perguntas que o extrator não faz por
+  você" e o contrato de saída de dezesseis campos são, literalmente, perguntas),
+  `benchmark-pyspark-job` (o passo 2 é *aplique a mudança* entre as duas
+  coletas), `tune-glue-job` e `optimize-variable-volume-job` (dependem de
+  evidência que o pai já acumulou, e subagente não herda o histórico dele).
+  **A assimetria que resolveu os duvidosos**, e que está escrita no código: uma
+  despachável a mais que precisasse perguntar falha **muda**; uma a menos custa
+  contexto do pai, e nada mais.
+
+- **D-DV-13 — o frontmatter das skills não é YAML estrito, e isso muda o teste,
+  não o renderizador.** Medido: `yaml.safe_load` levanta `ScannerError` em
+  **5 dos 20** `SKILL.md` — as descrições citam comando com dois-pontos dentro
+  de escalar simples (``rode `sparkforge analyze plan`: ele emite``). Por isso o
+  teste lê as chaves de topo linha a linha, como o `parse_frontmatter` que
+  `test_skill_content` já tinha. O renderizador é imune porque insere no **fim**
+  do frontmatter, imediatamente antes da cerca de fechamento: é a única posição
+  que não depende de onde as chaves existentes estão nem de conseguir parsear as
+  que existem. Onde o YAML importa — provar que a inserção não quebrou a cerca —
+  os testes de borda usam fonte sintética, que é YAML válido de propósito,
+  inclusive o caso da lista indentada como última chave.
+
+- **D-DV-14 — outro teste existente teve que mudar, pelo mesmo motivo do
+  D-DV-4.** `test_copias_identicas` afirmava byte-identidade da fonte com os
+  **dois** espelhos. Isso virou o defeito: o espelho do Devin byte-idêntico à
+  fonte é o que sai sem declarar despacho. Renomeado para
+  `test_copias_conferem_com_a_renderizacao`, compara contra
+  `rendered_skill_bytes` — e mantém, como asserção **extra e explícita**, que
+  `.claude/skills/` continua byte a byte igual à fonte, porque lá a identidade é
+  que é o contrato. A comparação é em bytes, herdando o D-DV-6.
+
+- **D-DV-15 — skill sem decisão registrada levanta, e a partição é testada.**
+  `DISPATCHABLE_SKILLS` e `NON_DISPATCHABLE_SKILLS` são dicionários nome → razão,
+  e um teste exige que a união seja **exatamente** `skills/` e a interseção
+  vazia. Skill nova cai em nenhum dos dois e o gate acusa; `render_skill`
+  levanta `ValueError` em vez de tratá-la como não-despachável. Default
+  silencioso publicaria uma skill sem ninguém ter perguntado se ela consegue
+  trabalhar sem poder perguntar — o mesmo raciocínio do `ValueError` de
+  plataforma desconhecida (D-DV-3). A razão por skill é **dado**, não comentário:
+  o teste do `sparkforge-diagnose` casa contra ela.
+
+- **D-DV-16 — a sincronia de skills deixou de usar `filecmp`/`copy2`.** A Task 2
+  registrou que skills seguiam com cópia byte a byte; isso caiu aqui, porque
+  `.agents/skills/` passou a transformar. `check_skills` e `sync_skills` agora
+  comparam e gravam **bytes renderizados**, pelo mesmo caminho que o `--check`
+  usa — copiar na escrita e comparar contra renderização na conferência faria o
+  script brigar consigo mesmo a cada regeneração. Arquivo que não é `SKILL.md`
+  sai como está, sem `decode`, para não quebrar no dia em que uma skill tiver
+  anexo binário.
 
 ---
 

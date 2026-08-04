@@ -1,6 +1,7 @@
 ---
 name: analyze-batch-loop
 description: Use quando o job processa dados em lotes com for/while, collect de chaves, isin(list) gigante ou filtros por batch id, ou dispara action/write/count/merge dentro de loop, e você suspeita de recomputação do DAG, lineage crescente, múltiplos commits Iceberg ou OOM acumulado por iteração. Use também quando perguntarem "por que esse batch demora mais a cada lote", "por que tem tantos commits/snapshots" ou "o job cresce com o número de lotes", mesmo sem mencionar loop explicitamente. Se você está prestes a contar iterações e estimar custo acumulado de cabeça, rode `sparkforge analyze pyspark` e filtre por `pyspark.loop` em vez disso — cada ocorrência já vem marcada com se contém action, write e a profundidade de aninhamento.
+subagent: true
 ---
 
 # Analyze Batch Loop

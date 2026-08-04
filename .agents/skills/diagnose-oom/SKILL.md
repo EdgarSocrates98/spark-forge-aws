@@ -1,6 +1,8 @@
 ---
 name: diagnose-oom
 description: Use quando um job Glue falha com OutOfMemory, "Container killed by YARN", "GC overhead limit exceeded", ExecutorLostFailure, estouro de Python worker/pandas_udf, ou frases como "o job morreu depois de 3 horas" e "aumentei a memória e continuou". Use para classificar se é heap de driver, heap de executor, overhead de container, broadcast, metadata/plan explosion ou Python worker antes de mitigar. Se você está prestes a estimar heap e GC no olho, rode `sparkforge collect event-log`, `sparkforge analyze event-log` e `sparkforge judge` em vez disso — o fact `spark.executor.lost` já vem com `heap_oom_in_log`: executor removido sem OOM de heap no log é estouro de container fora do heap (a correção é `memoryOverhead`, não `memory`), e é o OOM mais mal diagnosticado que existe.
+subagent: true
+agent: glue-incremental-performance-architect
 ---
 
 # Diagnose OOM

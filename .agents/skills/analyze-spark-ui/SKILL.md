@@ -1,6 +1,7 @@
 ---
 name: analyze-spark-ui
 description: Use quando houver um Spark event log, um job run id ou um Spark UI aberto de um job AWS Glue e for preciso achar stage dominante, skew de task, spill, GC, executor perdido ou subparalelismo. Use também quando a pergunta for "por que este stage demora", "por que uma task não termina", "o executor sumiu" ou "está com spill", mesmo que ninguém fale em event log. Se você está prestes a ler métrica de execução de Spark no olho, rode `sparkforge collect event-log` e `sparkforge analyze event-log` em vez disso — o extrator calcula p50/p95/max, spill e GC por stage, e o catálogo aplica os limiares versionados.
+subagent: true
 ---
 
 # Analyze Spark UI

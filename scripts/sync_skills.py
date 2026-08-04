@@ -14,17 +14,20 @@ Uso:
 
 O modo --check é usado pelos testes e pode ser plugado em CI para impedir drift.
 
-Os perfis de `agents/` não são copiados: são RENDERIZADOS por plataforma
-(`render_agent`), e o gate compara o espelho contra o que o renderizador
-produz — não contra a fonte. O invariante é "o espelho é exatamente o que o
-tradutor produz", que é estritamente mais forte que byte-identidade.
+Nada aqui é copiado: perfis e skills são RENDERIZADOS por plataforma
+(`render_agent`, `render_skill`), e o gate compara o espelho contra o que o
+renderizador produz — não contra a fonte. O invariante é "o espelho é
+exatamente o que o tradutor produz", que é estritamente mais forte que
+byte-identidade.
+
+Na prática, `.claude/` e `.github/` recebem passthrough byte a byte; só o
+espelho do Devin transforma — perfil perde `tools:`, e skill despachável ganha
+`subagent:`/`agent:`.
 """
 from __future__ import annotations
 
 import argparse
-import filecmp
 import re
-import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -173,6 +176,268 @@ def render_agent(text: str, platform: str) -> str:
     return "".join(opening + kept + rest)
 
 
+# --------------------------------------------------------------------------
+# Skills que despacham
+# --------------------------------------------------------------------------
+# `.agents/skills/<name>/SKILL.md` e caminho de descoberta NATIVO do Devin, nao
+# convencao deste repositorio, e o frontmatter de skill aceita `subagent`
+# (boolean, default `false`) e `agent` (string, default nenhum) -- tabela de
+# knowledge/devin/agents-and-subagents.md secao 8. Desenho: D-5 e D-6.
+#
+# So o espelho do Devin recebe os campos. `.claude/skills/` continua passthrough
+# byte a byte: o Claude Code nao le `subagent:`, e escrever la seria publicar
+# campo que ninguem consome.
+
+SKILL_FILENAME = "SKILL.md"
+
+# Campos que a renderizacao do Devin CONTROLA numa skill. Sao removidos antes de
+# reinseridos, e nao so acrescentados: assim uma skill que deixou de despachar
+# perde o campo no espelho, e um `subagent: true` posto a mao num espelho volta
+# a divergir do que o tradutor produz. Acrescentar sem remover deixaria os dois
+# casos passarem calados.
+DEVIN_SKILL_DISPATCH_KEYS = frozenset({"subagent", "agent"})
+
+# D-6: despacha quem e investigacao fechada -- o subagente le artefato, julga
+# contra o catalogo, e devolve texto que o pai resume. Nao despacha quem dirige
+# o loop, quem orquestra outras skills, ou quem precisa de uma decisao que so
+# uma pessoa tem.
+#
+# A assimetria que decide os casos duvidosos: uma skill despachavel a mais que
+# precisasse perguntar falha MUDA -- `ask_user_question` e sempre negado a
+# subagente (veto V-DV-10), entao ela inventa a resposta ou para sem dizer por
+# que. Uma skill despachavel a menos custa contexto do pai, e mais nada. Na
+# duvida, nao despacha.
+DISPATCHABLE_SKILLS = {
+    "analyze-batch-loop": "extrai o loop do codigo e julga; a saida e relatorio",
+    "analyze-library-call-graph": "varre a biblioteca e devolve o grafo; leitura fechada",
+    "analyze-spark-plan": "interpreta um plano fisico ja salvo; nao pede nada a ninguem",
+    "analyze-spark-ui": "coleta e julga o event log de um run identificado no pedido",
+    "diagnose-data-skew": "cruza SF-UI-001 com SF-UI-002 sobre o event log que ela mesma coleta",
+    "diagnose-oom": "classifica o OOM por `heap_oom_in_log`; discriminador esta no artefato",
+    "optimize-parquet-layout": "junta listagem, plano e catalogo, todos coletaveis so lendo",
+    "optimize-pyspark-code": "mesma forma de `review-pyspark-pr`: extrai, julga, propoe diff",
+    "review-data-validation": "revisa a validacao declarada no codigo e devolve achados",
+    "review-emr-cluster": "revisa a definicao do cluster que ja esta em disco",
+    "review-glue-terraform": "revisa o .tf que ja esta em disco",
+    "review-pyspark-pr": "revisa um diff fechado e classifica risco",
+}
+
+NON_DISPATCHABLE_SKILLS = {
+    # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,
+    # por default, nao gera subagente proprio (`max-nesting`): despachar quem
+    # orquestra e perder justamente a orquestracao.
+    "sparkforge-diagnose": (
+        "abre o case e roteia. Despachar joga o ciclo de vida do case para um "
+        "contexto que nao volta -- e o case e o que faz a investigacao atravessar "
+        "sessoes e ferramentas"
+    ),
+    "glue-incremental-performance-architect": (
+        "orquestra as skills especializadas por `next-step` e le "
+        "PROMPT_INICIAL_MESTRE.md; subagente nao gera subagente por default"
+    ),
+    # As que precisam de uma decisao que nao esta no repositorio.
+    "optimize-iceberg-table": (
+        "`expire_snapshots` e `remove_orphan_files` nao tem desfazer, e a propria "
+        "skill exige que a retencao venha do dono dos dados. Dentro de subagente "
+        "essa confirmacao e inalcancavel"
+    ),
+    "optimize-latest-per-key": (
+        "a secao `Perguntas que o extrator nao faz por voce` sao quatro perguntas "
+        "de semantica de negocio -- desempate, timezone, correcao retroativa"
+    ),
+    "design-incremental-processing": (
+        "o contrato de saida tem dezesseis campos de desenho que nenhum extrator "
+        "preenche; a propria skill os chama de perguntas"
+    ),
+    # As que dependem de evidencia que o pai ja acumulou, ou de uma execucao nova.
+    "benchmark-pyspark-job": (
+        "o passo 2 e `aplique a mudanca` entre as duas coletas: exige um run novo "
+        "e o id dele, que so aparece depois de alguem publicar a mudanca"
+    ),
+    "optimize-variable-volume-job": (
+        "classificar execucoes por perfil parte do volume observado no workload, "
+        "e compara N runs que o operador escolhe"
+    ),
+    "tune-glue-job": (
+        "o passo 1 exige baseline ja provado por `analyze-spark-ui`, `diagnose-oom` "
+        "e `diagnose-data-skew`; subagente nao herda o historico do pai e teria de "
+        "reconstruir a evidencia que motivou a chamada"
+    ),
+}
+
+SKILL_DISPATCH_REASON = {**DISPATCHABLE_SKILLS, **NON_DISPATCHABLE_SKILLS}
+
+_LIST_ITEM = re.compile(r"^\s*-\s+(.*)$")
+
+
+def _frontmatter_list(front: list[str], key: str) -> list[str]:
+    """Le uma lista do frontmatter, nas duas formas que o corpus usa.
+
+        skills:          |  rule_areas: [SF-EMR, SF-PY]
+          - review-x     |
+          - review-y     |
+
+    A forma inline existe hoje em `rule_areas:` e `executors:`; se alguem
+    escrever `skills:` assim, um leitor que so entendesse blocos devolveria
+    lista vazia -- e lista vazia aqui vira "nenhum coordenador declara esta
+    skill", que e silencio, nao erro.
+    """
+    values: list[str] = []
+    collecting = False
+    for line in front:
+        content = line.rstrip("\r\n")
+        if content[:1] in (" ", "\t"):
+            if collecting:
+                item = _LIST_ITEM.match(content)
+                if item:
+                    values.append(item.group(1).strip().strip("'\""))
+            continue
+        match = _TOP_LEVEL_KEY.match(content)
+        collecting = False
+        if match and match.group(1) == key:
+            inline = content.split(":", 1)[1].strip()
+            if not inline:
+                collecting = True
+            elif inline.startswith("[") and inline.endswith("]"):
+                values.extend(
+                    part.strip().strip("'\"")
+                    for part in inline[1:-1].split(",")
+                    if part.strip()
+                )
+            else:
+                values.append(inline.strip("'\""))
+    return values
+
+
+def coordinators_by_skill() -> dict[str, tuple[str, ...]]:
+    """A relacao skill -> coordenadores, DERIVADA do `skills:` de cada perfil.
+
+    D-5: nao existe segunda lista. Cada coordenador ja declara as skills que
+    coordena, e essa declaracao ja e testada por `test_agent_coverage`. Manter
+    uma tabela paralela `skill -> agente` seria a familia de defeito que a Fase
+    5c achou nos dois `EXTRACTORS` mantidos a mao: uma cresce, a outra nao, e o
+    desacordo e mudo.
+    """
+    relation: dict[str, list[str]] = {}
+    for path in iter_agent_files():
+        parsed = _split_frontmatter(path.read_bytes().decode("utf-8"))
+        if parsed is None:
+            continue
+        for skill in _frontmatter_list(parsed[1], "skills"):
+            relation.setdefault(skill, []).append(path.stem)
+    return {skill: tuple(sorted(names)) for skill, names in sorted(relation.items())}
+
+
+def agent_for_skill(name: str) -> str | None:
+    """O perfil que a skill `name` nomeia em `agent:`, ou `None`.
+
+    **Medido antes de decidir** (Step 1 da Task 4): das doze skills despachaveis,
+    so tres sao declaradas por UM coordenador. As outras nove aparecem no
+    `skills:` de dois a quatro perfis, e para elas `agent:` nao tem resposta
+    unica.
+
+    As saidas honestas eram duas, e a escolha esta registrada: a skill ambigua
+    **nao** declara `agent:`, e o Devin escolhe o perfil. A alternativa --
+    "declara o primeiro em ordem deterministica" -- foi recusada com o numero na
+    mao: em ordem alfabetica, `review-pyspark-pr` cairia em
+    `data-quality-reviewer` e `analyze-spark-plan` em
+    `glue-incremental-performance-architect`, quando o especialista de cada uma e
+    `pyspark-code-reviewer`. Ordem alfabetica nao e criterio de competencia, e
+    fingir que e publicaria um roteamento errado com cara de decisao.
+
+    `subagent: true` sozinho e forma documentada: `agent` tem default "none" na
+    tabela de frontmatter da fonte, e `subagent` sozinho roda a skill como
+    subagente no perfil que o harness escolher.
+    """
+    coordinators = coordinators_by_skill().get(name, ())
+    return coordinators[0] if len(coordinators) == 1 else None
+
+
+def _newline_of(lines: list[str]) -> str:
+    """O fim de linha que o arquivo usa, para a linha inserida usar o mesmo.
+
+    Misturar LF e CRLF dentro do mesmo frontmatter faria o espelho divergir a
+    cada regeneracao numa arvore com `autocrlf` -- o mesmo cuidado do
+    `_split_frontmatter`, agora do lado da insercao.
+    """
+    for line in reversed(lines):
+        if line.endswith("\r\n"):
+            return "\r\n"
+        if line.endswith("\n"):
+            return "\n"
+    return "\n"
+
+
+def render_skill(text: str, platform: str, *, name: str) -> str:
+    """Devolve a skill `name` no formato que `platform` le.
+
+    So o Devin recebe `subagent:`/`agent:`. Os campos entram no FIM do
+    frontmatter, imediatamente antes da cerca de fechamento: e a unica posicao
+    que nao depende de onde as chaves existentes estao, e a que nao pode cair
+    dentro de uma lista indentada. Nao ha round-trip de YAML aqui, pela mesma
+    razao do `render_agent` -- reserializar reordenaria as chaves e produziria
+    diff onde nao houve mudanca.
+    """
+    if platform not in PLATFORMS:
+        raise ValueError(
+            f"plataforma desconhecida: {platform!r}; conhecidas: {sorted(PLATFORMS)}"
+        )
+    if name not in SKILL_DISPATCH_REASON:
+        raise ValueError(
+            f"skill sem decisao de despacho registrada: {name!r}. Declare em "
+            "DISPATCHABLE_SKILLS ou em NON_DISPATCHABLE_SKILLS, com a razao ao "
+            "lado -- o default silencioso seria publicar a skill sem ninguem ter "
+            "decidido se ela pode rodar sem poder perguntar."
+        )
+    if platform in PASSTHROUGH_PLATFORMS:
+        return text
+
+    parsed = _split_frontmatter(text)
+    if parsed is None:
+        return text
+    opening, front, rest = parsed
+
+    kept = _drop_frontmatter_keys(front, DEVIN_SKILL_DISPATCH_KEYS)
+    added: list[str] = []
+    if name in DISPATCHABLE_SKILLS:
+        newline = _newline_of(kept or opening)
+        added.append(f"subagent: true{newline}")
+        agent = agent_for_skill(name)
+        if agent is not None:
+            added.append(f"agent: {agent}{newline}")
+
+    if kept == front and not added:
+        return text
+    return "".join(opening + kept + added + rest)
+
+
+def skill_name_for(src: Path) -> str:
+    """O identificador da skill e o NOME DO DIRETORIO, nao o `name:` do arquivo.
+
+    E o mesmo identificador que o Devin usa (`.agents/skills/<name>/SKILL.md`) e
+    o que os coordenadores escrevem em `skills:`. `test_skill_content` ja exige
+    que o `name:` do frontmatter case com a pasta; derivar do caminho evita
+    depender de um campo que o proprio renderizador poderia ter mexido.
+    """
+    return src.relative_to(CANONICAL).parts[0]
+
+
+def rendered_skill_bytes(src: Path, dst: Path) -> bytes:
+    """O que o espelho de skill `dst` DEVERIA conter.
+
+    Arquivo que nao e `SKILL.md` sai como esta, sem passar por `decode` -- um
+    anexo binario numa skill futura quebraria a leitura, e ele nao tem
+    frontmatter para renderizar de todo jeito.
+    """
+    data = src.read_bytes()
+    if src.name != SKILL_FILENAME:
+        return data
+    rendered = render_skill(
+        data.decode("utf-8"), platform_for(dst), name=skill_name_for(src)
+    )
+    return rendered.encode("utf-8")
+
+
 def platform_for(mirror_path: Path) -> str:
     """Deriva a plataforma do diretorio-raiz do espelho.
 
@@ -246,7 +511,7 @@ def check_skills() -> list[str]:
             dst = mirror / rel
             if not dst.exists():
                 problems.append(f"AUSENTE {dst}")
-            elif not filecmp.cmp(src, dst, shallow=False):
+            elif dst.read_bytes() != rendered_skill_bytes(src, dst):
                 problems.append(f"DIVERGENTE {dst}")
 
         for rel in sorted(mirror_rel - canonical_rel):
@@ -333,15 +598,16 @@ def sync_skills() -> int:
     changed = 0
 
     for mirror in MIRRORS:
-        # Copia/atualiza arquivos canônicos.
+        # Renderiza/atualiza arquivos canônicos.
         for rel in sorted(canonical_rel):
             src = CANONICAL / rel
             dst = mirror / rel
-            if dst.exists() and filecmp.cmp(src, dst, shallow=False):
+            data = rendered_skill_bytes(src, dst)
+            if dst.exists() and dst.read_bytes() == data:
                 continue
             dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
-            print(f"COPY {dst}")
+            dst.write_bytes(data)
+            print(f"{'REND' if data != src.read_bytes() else 'COPY'} {dst}")
             changed += 1
 
         # Remove órfãos que não existem mais no canônico.
