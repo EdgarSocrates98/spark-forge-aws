@@ -101,8 +101,9 @@ class TestAgentRoutePropagation:
 
     def test_playbook_carries_next_step_with_the_resolved_agent(self):
         """A spec exige o playbook preenchido com o `next_step` do case (secao
-        4.5) -- sem isso, quem so tem `playbook` (Devin, Codex, Copilot CI)
-        fica sem a mesma direcao que Claude Code tem ao despachar subagente."""
+        4.5) -- sem isso, quem esta no `playbook` (sempre em Codex e Copilot CI,
+        e nas outras tres quando o despacho esta desligado) fica sem a mesma
+        direcao que quem despacha tem ao escolher o perfil."""
         playbook = build_playbook(
             "glue-infra-reviewer", _case(), finding_ids=["SF-GLUE-002"]
         )

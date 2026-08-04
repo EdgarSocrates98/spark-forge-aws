@@ -136,13 +136,23 @@ mensagem explícita em vez de comparar o repositório consigo mesmo.
 ```bash
 pip install -e ".[mcp]"
 
-# stdio — Claude Code, Devin CLI, CI. É o que .mcp.json já configura.
+# stdio — Claude Code, Devin CLI, CI. É o que .mcp.json configura no Claude Code.
 python -m sparkforge.adapters.mcp --transport stdio
 
 # streamable HTTP — Devin Desktop, que configura MCP por serverUrl.
 python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
+
+**No Devin, `.mcp.json` não basta, e o motivo é medido.** O Devin CLI importa MCP do
+Claude Code (`read_config_from.claude`), mas o `.mcp.json` deste repositório é o do
+**plugin**: ele parametriza `PYTHONPATH` e `SPARKFORGE_CATALOG` por
+`${CLAUDE_PLUGIN_ROOT}`, variável do carregador de plugin do Claude Code que nenhuma
+página do Devin documenta expandir — sem expansão, o servidor sobe e morre na primeira
+leitura do catálogo com `CatalogError`. O Devin tem arquivo próprio
+(`.devin/mcp_config.json`, chave `mcpServers`) e comando próprio (`devin mcp add`): o
+procedimento dos dois, com o do Desktop por `serverUrl`, está em
+[`GUIA_DE_USO.md`](GUIA_DE_USO.md) seção 3.4.
 
 O extra `mcp` fixa `mcp>=1.0,<2`: o SDK 2.x removeu os decoradores que
 `build_server()` usa para registrar os tools, e sem o teto uma instalação
@@ -394,9 +404,17 @@ coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
 
 **Três plataformas despacham.** Em Claude Code, o coordenador despacha os cinco executores
 como subagentes. No **Devin CLI** e no **Devin Local agent** do Devin Desktop (com o toggle
-*Subagents (Preview)* ligado), os mesmos treze perfis são perfis de subagente nativos: o
+*Subagents (Preview)* ligado), os **oito coordenadores** são perfis de subagente nativos: o
 Devin lê `.agents/agents/` e importa `.claude/agents/*.md`, dois diretórios que este
-repositório já publica. O espelho do Devin é **renderizado**, não copiado — ele sai sem
+repositório já publica. **Os cinco executores não estão num layout de descoberta
+documentado** — a fonte descreve `agents/<nome>.md` e `agents/<nome>/AGENT.md`, e a
+importação casa `.claude/agents/*.md`, raso; `executors/sf-judge.md` não é nenhum dos
+dois, e se a varredura recorre a documentação não diz. Nada se perde: `sparkforge playbook
+<coordenador>` lê `agents/executors/` do próprio repositório e devolve os mesmos cinco
+passos em qualquer plataforma. **E um coordenador despachado como subagente não despacha
+os executores:** por default subagente não gera subagente, e este repositório não declara
+`max-nesting` em perfil nenhum — a decomposição roda inline, que é o que o `playbook`
+devolve. O espelho do Devin é **renderizado**, não copiado — ele sai sem
 `tools:`, porque o mapeamento de valores desse campo não está documentado, e nunca com
 `model:`, porque o modelo do subagente resolve por roteador no spawn e um admin da
 organização o sobrescreve. **A omissão de `tools:` não é fronteira de segurança, e não

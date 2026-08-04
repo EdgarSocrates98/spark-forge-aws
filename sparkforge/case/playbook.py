@@ -1,8 +1,19 @@
 """Decomposicao de um coordenador em passos sequenciais.
 
 Existe porque despacho de subagente e capacidade de HARNESS, nao conteudo deste
-repositorio: Devin, Codex e Copilot nao tem equivalente. O playbook emite a
-mesma decomposicao em ordem, para um agente so seguir.
+repositorio. O playbook emite a mesma decomposicao em ordem, para um agente so
+seguir.
+
+A razao antiga desta docstring -- "Devin, Codex e Copilot nao tem equivalente" --
+caiu por contraexemplo medido em `knowledge/devin/agents-and-subagents.md`
+(retrieved 2026-08-04): o Devin CLI e o Devin Local agent do Devin Desktop
+despacham subagente e leem os perfis deste repositorio. O que sobrou e mais
+estreito e continua sendo a razao de o verbo existir: `codex` e `copilot_ci` nao
+foram objeto de pesquisa nenhuma, e nas tres plataformas que despacham o
+despacho pode estar desligado por escolha do usuario (`subagents_enabled`) ou do
+admin da organizacao (opcao *None* de "Default subagent model") -- nenhuma das
+duas alcancavel por arquivo versionado. O playbook e o piso das cinco, nao o
+degrau de quem nao tem despacho.
 
 Le os arquivos de `agents/` em vez de repetir a lista de executores: uma copia
 aqui divergiria do coordenador na primeira mudanca, e o espelho viraria prosa
@@ -51,8 +62,9 @@ def build_playbook(
     errada.
 
     A spec (secao 4.5) exige o playbook "ja preenchido com o estado do case e o
-    `next_step`": sem isso, quem so tem `playbook` (Devin, Codex, Copilot CI)
-    fica sem a mesma direcao que Claude Code tem ao escolher subagente por
+    `next_step`": sem isso, quem esta no `playbook` -- sempre em `codex` e
+    `copilot_ci`, e nas outras tres quando o despacho esta desligado -- fica sem
+    a mesma direcao que quem despacha tem ao escolher o perfil por
     `recommended_agent`. `next_step` exige `finding_ids`, que o case nao carrega
     -- `findings_index` guarda so contagem e um `path` em disco, nunca a lista
     de `rule_id`. Em vez de o modulo ler esse arquivo (o que tornaria a funcao

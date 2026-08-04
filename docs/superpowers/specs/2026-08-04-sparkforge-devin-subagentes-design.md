@@ -245,3 +245,46 @@ Junto vem a atribuição de `diagnose-oom`: ela era declarante único **por
 omissão** (`spark-performance-architect` não a lista no `skills:` dele), e o
 perfil que sobrava era o orquestrador. O `agent:` caiu, e o critério passou a ser
 derivado — ver o limite declarado correspondente no `STATUS.md`.
+
+### D-DV-V1 — o D-DV-R4 corrigiu um número e criou uma afirmação sem fonte
+
+Medido na varredura de completude do Devin (2026-08-04, branch
+`fix/devin-varredura`), contra a §1.1 da própria pesquisa.
+
+O D-DV-R4 acima está certo na contagem — são treze perfis — e **errado na frase
+que veio junto**: *"os executores também são perfis de subagente válidos"*. A
+fonte descreve **dois** layouts de perfil customizado, *flat file*
+`agents/<nome>.md` e *directory* `agents/<nome>/AGENT.md` (com `AGENTS.md`,
+`agent.md` e `agents.md` também aceitos, nessa precedência), e a importação do
+Claude Code casa `.claude/agents/*.md`, que é **raso**.
+`.agents/agents/executors/sf-judge.md` não é nenhum dos dois: pelo layout
+*directory*, `executors/` só publicaria um perfil chamado `executors`, e só se
+tivesse dentro um `AGENT.md`. Se a varredura recorre, a documentação **não diz**
+— é a mesma ambiguidade do `agents/` da raiz (V-DV-7), e vale a mesma regra.
+
+A afirmação foi lida da **contagem de arquivos do espelho**, não de uma página, e
+é o mesmo defeito que a revisão final nomeou quatro vezes: propriedade mecânica
+com cara de decisão. O desvio fica como está, por convenção; os quatro textos que
+repetiam a frase (`README.md`, `AGENTS.md`, a tabela da §3.1 do `GUIA_DE_USO.md`
+e este parágrafo) foram corrigidos, e a linha própria está nos **limites
+declarados** do `STATUS.md`. Nada muda na prática: `sparkforge playbook
+<coordenador>` lê `agents/executors/` do repositório e devolve os mesmos cinco
+passos em qualquer plataforma.
+
+### D-DV-V2 — `max-nesting`: o modelo de execução da Fase 4 não se traduz
+
+Medido na mesma varredura, contra a §5.2 da pesquisa.
+
+A §3 do desenho decidiu não escrever `model:` e registrou o porquê. Nada foi
+escrito sobre `max-nesting`, e a consequência de omiti-lo é maior do que a de
+omitir `model:`: *"By default, subagents cannot spawn their own subagents — only
+the root agent can. Subagent tools (`run_subagent` and `read_subagent`) are
+disabled inside a subagent"*. Ou seja, um coordenador despachado como subagente
+no Devin **não** despacha os cinco executores — o modelo de execução da Fase 4
+não atravessa a fronteira, e o spec não dizia isso em lugar nenhum.
+
+A decisão de **não** declarar o campo se mantém, agora escrita: mecanismo
+experimental, custo que escala com o aninhamento, nenhum arquivo versionado
+garante que o despacho esteja ligado, e o `playbook` já entrega a decomposição —
+o que se ganharia é paralelismo, não método. Ver o limite declarado
+correspondente no `STATUS.md`.

@@ -69,8 +69,24 @@ never pick a coordinator by inspection.
 **Three platforms dispatch.** Claude Code (the `Agent` tool of this CLI), the **Devin CLI**,
 and the **Devin Local agent** of Devin Desktop (behind the *Subagents (Preview)* toggle).
 Devin reads custom subagent profiles from `.agents/agents/` natively and imports
-`.claude/agents/*.md` — both directories are generated mirrors of `agents/`, so the same
-thirteen profiles are subagent profiles there without any per-platform authoring. The
+`.claude/agents/*.md` — both directories are generated mirrors of `agents/`, so the **eight
+coordinators** are subagent profiles there without any per-platform authoring. **The five
+executors are not at a documented discovery layout**, and this is measurement, not
+assumption: the source describes two layouts, flat `agents/<name>.md` and directory
+`agents/<name>/AGENT.md`, and the Claude Code import pattern `.claude/agents/*.md` is
+flat. `executors/sf-judge.md` is neither — `executors/` would only publish a profile named
+`executors`, and only if it held an `AGENT.md`. Whether the scan recurses is undocumented,
+the same ambiguity as the repository-root `agents/` (V-DV-7), and the same rule applies:
+do not presume. Nothing is lost — `sparkforge playbook <coordinator>` reads
+`agents/executors/` from the repository itself and returns the same five steps on every
+platform, needing no discovery at all.
+
+**A coordinator dispatched as a subagent does not dispatch the five executors.** By
+default *"subagents cannot spawn their own subagents — only the root agent can"*, and
+`run_subagent`/`read_subagent` are removed inside one; the `max-nesting` field that would
+opt back in is declared in no profile here. Dispatching a coordinator on Devin buys its
+**method**, not its fan-out — the decomposition runs inline, which is what `playbook`
+returns. The
 `.agents/` mirror is **rendered**, not copied: it drops `tools:` (the value mapping from
 Claude Code's field to Devin's tool names is undocumented, and guessing in a permission
 field grants or denies wrongly) and never gains `model:` (the subagent model resolves
