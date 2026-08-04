@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-08-04
-**Commit de referência:** fechamento da branch `feat/devin-subagentes`
+**Commit de referência:** fechamento da branch `feat/fase4c-funcval`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -29,33 +29,33 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **3594** passando, 5 skipped | `python -m pytest -q` |
-| Regras com `runtime_scope` não-vazio | **8 de 66**, todas sobre Glue | `load_catalog()` |
-| Extratores de facts | **16** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **102** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **66** | `load_catalog()` |
+| Testes | **3831** passando, 5 skipped | `python -m pytest -q` |
+| Regras com `runtime_scope` não-vazio | **8 de 71**, todas sobre Glue | `load_catalog()` |
+| Extratores de facts | **17** | `sparkforge/facts/*.py` |
+| Fact kinds distintos emitidos | **106** | união de `EMITTED_KINDS` |
+| Regras de diagnóstico | **71** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **66 de 66** | `tests/test_fixtures_kind_coverage.py` |
+| Regras com golden que dispara | **71 de 71** | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **24** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-008`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **36** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **36 de 36** | `tests/test_agent_coverage.py` |
-| Gates do case | **4**, sendo **2** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
+| Tools MCP | **38** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **38 de 38** | `tests/test_agent_coverage.py` |
+| Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **8** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
 | Skills | **20** | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **3** com `agent:` | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **107** em 18 domínios | `fixtures/` |
+| Fixtures golden | **116** em 19 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **37** | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-GLUE 6, SF-UI 6, SF-ATH 5, SF-ENV 5,
-SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-PLAN 4, SF-CG 1.
+SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `pyspark` 17, `emr` 13, `dq` 10, `iceberg` 8, `plan` 7,
-`runtime` 7, `terraform` 7, `bench` 6, `fusion` 5, `s3` 5, `sql` 4, `athena` 3,
-`callgraph` 3, `catalog` 3, `consumers` 3, `eventlog` 2, `infra_code` 2,
-`tfdiff` 2.
+Fixtures por domínio: `pyspark` 17, `emr` 13, `dq` 10, `funcval` 9, `iceberg` 8,
+`plan` 7, `runtime` 7, `terraform` 7, `bench` 6, `fusion` 5, `s3` 5, `sql` 4,
+`athena` 3, `callgraph` 3, `catalog` 3, `consumers` 3, `eventlog` 2,
+`infra_code` 2, `tfdiff` 2.
 
 ---
 
@@ -984,7 +984,227 @@ mediu onze pendências e nenhuma delas era prosa fora do conjunto de arquivos qu
 tocou — o `.py`, o guia na raiz e o docstring de teste ficaram de fora porque ninguém
 buscou o texto derrubado onde ele não era esperado.
 
-### Fase 4 do roadmap (§16) — rigor — **PARCIALMENTE CONCLUÍDA**
+### Fase 4c — validação funcional, e o gate que enfim tem produtor — **CONCLUÍDA** em 2026-08-04
+
+Branch `feat/fase4c-funcval`. Spec:
+[`specs/2026-08-04-sparkforge-fase4c-validacao-funcional-design.md`](specs/2026-08-04-sparkforge-fase4c-validacao-funcional-design.md) ·
+Plano: [`plans/2026-08-04-sparkforge-fase4c-validacao-funcional.md`](plans/2026-08-04-sparkforge-fase4c-validacao-funcional.md).
+
+**O defeito de partida: um gate que sabia o nome do próprio produtor desde a 4b, e
+esperava por ele.** `functional_validation_defined` existia no `routing.yaml` com
+`advisory_reason: "sem produtor ate a Fase 4c"` — literalmente nomeando a fase que
+o fecharia. A 4b tinha fixado o critério de que gate só endurece **com** produtor
+declarado, e deixou este advisory por honestidade, não por omissão. A promessa
+implícita era testável: quando o produtor existisse, o gate endureceria
+**declarando `satisfied_by`**, sem tocar em uma linha de `store.py`. Foi
+exatamente o que aconteceu.
+
+E o nome do gate já dizia **qual** produtor: *defined*, não *executed*. O que o
+satisfaz é o **plano**. `dq.check` foi medido e rejeitado como candidato ainda na
+4b — ele prova validação **dentro** do job, que é verdade antes e depois da
+mudança e não compara duas execuções.
+
+**O que entrou.** `sparkforge/facts/funcval.py` — função **pura** sobre `Fact`, o
+quarto módulo derivado no padrão de `call_graph.py`, `fusion.py` e
+`benchmark.py`: nunca lê artefato bruto, nunca executa consulta, nunca chama AWS.
+Duas metades. `build_plan` deriva **um plano por alvo distinto** de
+`pyspark.write` cruzado com `catalog.table_schema`; `build_comparison` lê os dois
+resultados que o operador mediu e compara. Quatro kinds — `funcval.plan`,
+`funcval.check_delta`, `funcval.analyzed` e `funcval.unresolved` —, 91 testes.
+Dois verbos de topo (não `analyze`, pela mesma razão de `benchmark`): `funcval
+plan --facts` (repetível) `--key --out` e `funcval compare --plan --before
+--after`, nas cinco superfícies, com as tools `sparkforge_funcval_plan` e
+`sparkforge_funcval_compare`. Nove fixtures em `fixtures/funcval/` com golden, e
+cinco regras em `rules/catalog/funcval.yaml`.
+
+**O gate endureceu declarando dado.** `satisfied_by: funcval.plan`,
+`produced_by` com o comando exato, `guards_phases: [report]`. Nenhuma linha de
+Python mudou para isso — que era a propriedade que o critério da 4b prometia, e
+ela cobrou aqui. `report` passou a ser guardada por **três** gates.
+
+**As correções que a medição impôs ao desenho.** São o mais valioso da fase, e as
+quatro invalidam texto que o spec afirmava:
+
+- **`pyspark.join` não dá as chaves.** A D-1 do spec dizia que dava. O fact
+  carrega `measures.on_arity` — o **número** de colunas do `on` — e nunca os
+  nomes; e na forma com keyword (`df.join(dim, on=["a","b"])`) não emite medida
+  alguma, porque `pyspark_ast.py:723-730` lê `node.args[1]`. Contagem, schema e
+  agregados seguem deriváveis, e os agregados saem **melhores** do que a D-1
+  previa: `catalog.table_schema` dá coluna **e tipo**, que é o que decide o modo
+  de comparação.
+- **Nenhum dos 102 kinds de então nomeia chave de negócio, então o eixo entra
+  declarado.** A varredura dos 16 extratores foi exaustiva; os candidatos
+  (`pyspark.dedup`, `pyspark.window`, `plan.join`, `plan.exchange`,
+  `sql.predicate`, `sql.projection`) carregam booleano, contagem ou coluna de
+  outra natureza. Partição como proxy foi **medida e rejeitada**: em
+  `catalog/glue_table_schema`, `db.eventos` tem `distinct_values =
+  partition_count = 1200` sobre `dt` para a tabela inteira, e um check de
+  unicidade ali acusaria dado correto. A saída não foi calar: **todo** check
+  carrega `origin` — `declared` com `derived_from: []`, ou `derived` com o
+  `fact_id` —, e sem `--key` o plano escreve `undeclared_axes: ["keys"]` **com a
+  razão**. Ausência declarada, que é a mesma disciplina de `dq.unresolved`.
+- **`Fact` não carrega juízo nem limiar (`findings/models.py:32`), e a §5 pedia
+  as duas coisas ao mesmo tempo.** O spec queria que o `check_delta` dissesse "se
+  divergiu" **e** que o limiar não morasse em Python. Para ponto flutuante as duas
+  se excluem: decidir exige o número, e o número é `field-heuristic` sem fonte
+  oficial. Comparação **exata** continua decidindo `diverged` no fact — que dois
+  valores não sejam idênticos é observação, não limiar —, e comparação
+  **relativa** sai **sem** `diverged`, com `attrs.diverged_omitted_reason`
+  dizendo por quê, e quem decide é a `SF-FVAL-004` contra
+  `threshold.relative_tolerance`. Chave que some sem explicação é o defeito que
+  este repositório persegue, e é por isso que a sentinela ganhou
+  `relative_delta_check_count`: sem ele, `diverged_check_count == 0` seria lido
+  como "nada divergiu" quando significa "ninguém aqui decidiu".
+- **`1e-9` em YAML vira `str`, e `float > str` derruba o `judge`.** Medido com
+  `yaml.safe_load`: `1e-9`, `1e+9` e `1E9` voltam **todos** como `str`; `1.0e-9`
+  e `1.e-9` voltam como `float`, porque o resolver de float do PyYAML exige ponto
+  decimal na mantissa. É a família do `thresholds` plural da D-4a-22 — o defeito
+  não aparece na carga —, e é **pior**: o plural deixa a regra inerte, enquanto a
+  string faz a comparação levantar `TypeError`, que `_expr_matches` **não**
+  engole (ele só captura `ExprError`), e o `judge` inteiro cai. O limiar está
+  escrito `1.0e-9` por isso, com a razão no `sources` da regra e no cabeçalho do
+  arquivo.
+
+Uma quinta, da Task 6, muda a forma de uma regra: **`SF-FVAL-004` precisa de duas
+condições**, porque um `agg:sum:<coluna>` de coluna **inteira** ou **decimal** é
+comparado de forma exata e sai **com** `diverged`. Uma 004 escrita só sobre
+`relative_delta` deixaria essa divergência aparecer na sentinela e em achado
+**nenhum**: silêncio com cara de aprovação. Medido pelo `judge`, o buraco tem duas
+naturezas: por **magnitude**, uma soma que muda em uma unidade só escapa do limiar
+`1.0e-9` a partir de **um bilhão** (corte em ~9,95e8 — sobre quinhentos milhões o
+`relative_delta` é `2e-9`, **acima** do limiar, e a via relativa ainda pegaria); e
+por **forma**, que não depende de magnitude, porque a condição relativa é filtrada
+por `attrs.comparison: relative` e um agregado exato nunca casa com ela — sem a
+condição exata a regra fica muda para `bigint` divergente em qualquer ordem de
+grandeza.
+
+**O limite da área inteira é declarado três vezes, de propósito.** Contagem,
+schema, chaves e agregados iguais **não** provam que o dado é o mesmo — duas
+linhas podem trocar valores entre si e os quatro passam. O texto está no cabeçalho
+do catálogo, na `explanation` de cada uma das cinco regras, e na saída do
+comparador (`funcval.analyzed.attrs.proxy_limit`). Quem lê "os quatro proxies
+bateram" não pode ter que vir ao YAML descobrir o que isso não prova.
+
+**Sem coordenador novo, e o argumento não é simetria.** `SF-FVAL` entrou em
+`rule_areas` de `spark-performance-architect`, ao lado de `SF-BENCH`. Três
+medições sustentam a escolha, e nenhuma delas é "a 4a fez assim". (1) **A fronteira
+com `SF-DQ` já estava medida e escrita no próprio `routing.yaml`**, no comentário
+do gate: `dq.check` prova validação **dentro do job**, que é verdade antes e
+depois da mudança e não compara duas execuções — foi por isso que ele foi
+rejeitado como `satisfied_by`. A pergunta do `data-quality-reviewer` é outra, e
+pendurar `SF-FVAL` nele reabriria a fronteira que o critério 10 do spec fecha por
+construção. (2) **`SF-BENCH` e `SF-FVAL` lêem o mesmo par de execuções da mesma
+mudança** — um pelo tempo de task, o outro pelo resultado —, e separá-los em dois
+coordenadores daria a dois agentes metade de um experimento cada. (3) **A
+obrigação já estava escrita no coordenador sem produtor:** *"Preserve correção
+funcional"* e *"apresente diff e plano de validação"* estão no corpo dele desde a
+Fase 4, e o `reason` da `ROUTE-015` é literalmente a frase de performance —
+*"ganho de performance sem validação de contagem, schema, chaves e agregados não é
+resultado, é risco"*. Era o mesmo defeito do `benchmark_ref` antes da 4a: exigência
+sem quem a produzisse.
+
+**Sem skill nova, e quem decidiu foi a rota.** A `ROUTE-015` já nomeia
+`recommended_skill: review-pyspark-pr`, e rota é **dado** — a skill segue a rota,
+não o contrário. Os dois verbos entraram em skills que já existiam, e a divisão
+saiu dos critérios de despacho que a fase do Devin tornou invariante, não de
+gosto: **`funcval plan` foi para `review-pyspark-pr`** porque ele deriva de facts
+que já estão em disco e não pede nada a ninguém — a skill é **despachável**, e o
+plano continua produzível dentro de um subagente, porque sem `--key` ele **declara
+o eixo ausente em vez de perguntar**; **`funcval compare` foi para
+`benchmark-pyspark-job`**, que é **não-despachável** exatamente pela razão que o
+`compare` também tem, e está escrita em `NON_DISPATCHABLE_SKILLS` desde a fase do
+Devin: *"exige um run novo e o id dele, que só aparece depois de alguém publicar a
+mudança"*. O lado `--before` do `compare` tem a mesma dependência, e mais: ele só
+existe se alguém o mediu antes de a mudança tocar o alvo. Nenhuma entrada de
+`DISPATCHABLE_SKILLS`/`NON_DISPATCHABLE_SKILLS` mudou, e nenhuma skill nova
+precisou de decisão — que é o desfecho que o `ValueError` daquele gate existe para
+forçar quando o contrário acontece.
+
+A seção `## Validação de dados` de `benchmark-pyspark-job` e a red flag de
+`review-pyspark-pr` sobre "plano de teste de correção" eram, as duas, **prosa sem
+produtor** — mandavam conferir contagem, schema, chaves e agregados sem dizer com
+o quê. As duas passaram a nomear o verbo.
+
+**Números medidos no fechamento.** 3828 testes passando, 5 skipped (eram 3594 ao
+fechar a fase de perfis do Devin). 71 regras em 13 áreas, 5 delas novas
+(`SF-FVAL`). 17 extratores emitindo 106 kinds (eram 16 e 102). 38 tools MCP,
+**38 de 38** alcançáveis a partir de algum coordenador. 116 fixtures em 19
+domínios, 9 delas em `fixtures/funcval/`. 24 rotas, 8 coordenadores, 5
+executores, 20 skills — nenhum desses quatro mudou. 4 gates, agora **3** com
+produtor declarado.
+
+**O que esta fase fecha, e é o último.** A §16 do spec da Fase 0 tem quatro itens
+de rigor; este era o quarto. Ver a linha própria, logo abaixo, agora marcada
+concluída.
+
+**Revisão de documentação de 2026-08-04, depois do "pronto com ressalvas".** A
+revisão final da 4c não achou defeito de código e achou **nove** incoerências de
+documentação. Todas fechadas; **nenhuma** tocou código de produção. O que vale
+registrar é o que a medição contrariou, porque em dois casos ela contrariou a
+própria ressalva:
+
+- **A justificativa da `D-4c-23` citava o número errado, em quatro arquivos.** O
+  texto dizia que uma soma de `bigint` mudada em uma unidade sobre quinhentos
+  milhões dá `relative_delta` de `2e-9`, *"abaixo de qualquer tolerância
+  utilizável"*. Medido pelo `judge` contra o catálogo real: `2e-9` está **acima**
+  do limiar `1.0e-9`, e nessa ordem de grandeza a via relativa pegaria o caso
+  sozinha. O corte medido fica em **~9,95e8** — o `_round_relative` de três
+  significativos empurra tudo entre 9,95e8 e 1e9 para `1e-9` exato, e a condição
+  é `>`, estrita. **A conclusão da D-4c-23 sobrevive, e por um motivo mais forte
+  do que o que estava escrito:** a condição relativa é filtrada por
+  `attrs.comparison: relative`, e um agregado exato **nunca** casa com ela — sem
+  a condição exata a regra fica muda para `bigint` divergente em ordem de
+  grandeza nenhuma, inclusive uma soma de mil. O argumento de magnitude só vale
+  num contrafactual que a regra não é. Os quatro textos foram corrigidos para
+  dizer as duas naturezas.
+- **A ressalva errou a ordem de grandeza, e a medição venceu.** Ela afirmava que
+  a via exata só fica sozinha a partir de ~5 bilhões (`2e-10`); o medido é **um
+  bilhão**. Registrado aqui porque número de revisão também envelhece.
+- **O quarto lugar da correção não era `explanation`, era comentário.** A ressalva
+  dizia que o texto do YAML é *"o que o motor publica ao usuário num achado"* e
+  pedia atenção a golden de achado. Medido: as duas linhas erradas em
+  `rules/catalog/funcval.yaml` são **comentário** dentro de `when.any`, e
+  `yaml.safe_load` os descarta. A `explanation` publicada nunca citou o número.
+  Nenhuma fixture podia mudar, e nenhuma mudou.
+- **A `spec:202` errava um número, não dois.** Dizia "26 desvios, `D-4c-1` a
+  `D-4c-26` … os outros **vinte**". Medido no plano: **27** desvios, sem lacuna
+  nem duplicata. Mas a §11 detalha **seis** na lista principal mais `D-4c-26` sob
+  heading próprio, então `6 + 21 = 27`: "vinte" virou "vinte e um", e "seis"
+  estava certo.
+- **O `GUIA_DE_USO.md` não tinha a forma que a ressalva mandava seguir.** Ela
+  pedia para documentar `funcval` *"seguindo a forma que o guia já usa para
+  `benchmark`"*. Medido: o guia **nunca** ensinou `benchmark` como comando —
+  a palavra aparecia duas vezes, as duas como prosa solta. Os dois verbos de
+  `funcval` foram documentados na §6, onde o guia ensina os outros comandos, e a
+  §8 passou a nomear o verbo produtor dos **dois** itens, `benchmark` inclusive:
+  cometer no próprio guia o defeito que `SF-FVAL` e `SF-BENCH` acusam no usuário
+  não passa.
+- **O guia não era coberto por `sync_skills.py --check`, e agora é coberto por
+  teste.** Três testes novos em `tests/test_docs_coverage.py::TestGuia`. O
+  principal deriva os verbos do parser **real** e exige que todo `sparkforge
+  <verbo>` citado no guia exista — não o contrário, porque exigir que o guia
+  documente os 16 verbos seria transformar decisão editorial em invariante. Os
+  outros dois travam a §8 nomeando os verbos e a §6 ensinando os dois de
+  `funcval`. Mesma disciplina de `test_agents_md_lists_every_coordinator`: lista
+  derivada, nunca copiada.
+
+Os outros quatro itens eram contagem desalinhada, e a medição confirmou a
+ressalva: `AGENT_PROTOCOL.md` dizia "os outros **dois** não têm produtor" quando
+são **três com produtor e um sem**; a linha de limite declarado dizia "Dois dos
+quatro gates seguem advisory" e listava `functional_validation_defined` entre os
+sem produtor, contradizendo a seção da própria fase; `AGENTS.md` dizia "Sixteen
+extractors" e "102 distinct fact kinds" (são **17** e **106**, e o `README.md` já
+dizia certo); "os quinze `analyze *`" são **catorze**, contados no parser; e "as
+duas skills carregam o contorno por escrito" é **uma** — `benchmark-pyspark-job`
+ensina `compare` e carrega a extração de `items`, enquanto `review-pyspark-pr`
+ensina só `plan`, que **tem** `--out`, e delega a comparação.
+
+**Uma dívida pré-existente foi medida no caminho e registrada como tal:** a área
+`SF-CFG`, declarada no `README.md` do catálogo desde o primeiro commit e nunca
+escrita. Não é entrega da 4c e não entra na conta dela — ver a linha própria em
+*Dívidas abertas*.
+
+### Fase 4 do roadmap (§16) — rigor — **CONCLUÍDA** em 2026-08-04
 
 Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
 orquestração), que é a Fase 4 na nova numeração da seção "Direção" mais abaixo. Esta
@@ -993,13 +1213,36 @@ continua sendo a Fase 4 do roadmap original, e o escopo da §16 tem quatro itens
 | Item da §16 | Estado |
 |---|---|
 | Benchmark automatizado antes/depois | **Fechado pela Fase 4a.** Verbo `benchmark`, cinco kinds `bench.*`, área `SF-BENCH`, e `benchmark_ref` citando `fact_id` |
-| Validação funcional automatizada (contagem, schema, chaves, agregados) | **Aberto.** A 5c leu *onde* a validação está e o que ela custa; nada ainda **executa** a validação nem compara os dois lados de uma mudança por resultado. É a Fase 4c |
+| Validação funcional automatizada (contagem, schema, chaves, agregados) | **Fechado pela Fase 4c.** Verbos `funcval plan` e `funcval compare`, quatro kinds `funcval.*`, área `SF-FVAL`, e o gate `functional_validation_defined` endurecendo com `satisfied_by: funcval.plan`. Nunca **executa** a validação: deriva o que medir e compara o que o operador mediu — a fronteira é a mesma que a 4a recusou atravessar |
 | Gates fail-closed opcionais | **Fechado pela Fase 4b.** `case open --strict-gates`, `set_phase` cobrando os gates da fase, override com motivo gravado, e o contrato de produtor como dado no bloco `gates` do `routing.yaml`. Fail-closed só para gate **com** produtor: os outros dois seguem advisory, pelo argumento da §5.5 da Fase 0, que continua válido onde ele se aplica |
 | Assinatura de relatório | **Fechado pela Fase 4b.** `report sign` e `report verify` nos três adaptadores, sobre `findings/signature.py`. É assinatura de **correspondência** — texto, evidência e catálogo —, nunca de autoria |
 
-O item que resta é o nome da **Fase 4c**. Enquanto ele existir, esta fase não é
-"CONCLUÍDA" — marcar assim faria o `STATUS.md` afirmar rigor que o repositório não
-tem, que é exatamente o que este arquivo existe para impedir.
+**Os quatro fecharam, e vale registrar o que cada um entregou** — porque "rigor"
+é palavra que não se confere:
+
+1. **Benchmark (4a)** deu produtor ao `benchmark_ref`, que era string livre desde
+   a Fase 0: o campo passou a citar o `fact_id` de um `bench.run_delta`, e
+   `sparkforge validate` rejeita ganho quantificado sem ele. Satisfazer o gate
+   digitando qualquer coisa deixou de ser possível.
+2. **Gates fail-closed (4b)** puseram a escolha de rigor **no case** e não na
+   invocação (`case open --strict-gates`), fizeram `set_phase` cobrar a
+   **evidência** dos gates que guardam a fase pedida, e transformaram o contrato de
+   produtor em **dado** — o bloco `gates` do `routing.yaml`, com `satisfied_by` e o
+   comando de `produced_by`. Override existe e custa uma frase, que fica gravada e
+   aparece no `resume`.
+3. **Assinatura (4b)** deu ao relatório uma prova de **correspondência** — texto,
+   evidência e catálogo —, nunca de autoria, com `report sign` e `report verify`
+   nos três adaptadores sobre `findings/signature.py`.
+4. **Validação funcional (4c)** deu produtor ao último gate que não tinha:
+   `funcval plan` deriva o que medir e `funcval compare` compara os dois lados,
+   com o limite dos quatro proxies declarado em três lugares. `report` passou a
+   ser guardada por três gates, e os três têm produtor.
+
+O que **não** fechou, e é a outra metade de uma linha do inventário:
+`dominant_bottleneck_identified` segue advisory, e não por atraso — nenhum dos 106
+kinds afirma dominância, que é ordenação entre candidatos. Endurecê-lo exigiria
+reverter uma decisão da Fase 0. Fica como limite declarado, com o
+`advisory_reason` escrito no catálogo.
 
 ---
 
@@ -1201,8 +1444,22 @@ O precedente vale de novo, agora contra esta revisão: quatro das onze eram
 duas. Nenhuma quebrava teste. Fase que fecha verde não prova que está certa;
 prova que a suíte olha para onde alguém já olhou.
 
-**Contagem corrente, depois da varredura de completude do Devin (2026-08-04): 2 dívidas,
-4 fases, 12 limites declarados — 18 linhas abertas, e 24 fechadas.** Esta é a que vale.
+**Contagem corrente, depois da Fase 4c (2026-08-04): 5 dívidas, 3 fases,
+14 limites declarados — 22 linhas abertas, e 25 fechadas.** Esta é a que vale.
+
+**O que a Fase 4c moveu, e a direção importa mais que o saldo.** Uma linha
+**fechou** — a metade `functional_validation_defined` da linha de gates advisory,
+que a 4b tinha registrado como fase e que fechou exatamente como previsto,
+declarando dado e sem tocar em Python. Uma linha de fase **encolheu**: os quatro
+itens de rigor da §16 acabaram, e a linha de roadmap ficou só com 3b, 3c e 3d.
+Em troca, a fase abriu **três dívidas e duas linhas de limite declarado**, e
+nenhuma delas é surpresa — as cinco foram medidas durante a implementação e
+carregam o número na mão. Fase que fecha sem abrir linha nenhuma normalmente é
+fase que não olhou; o que vale conferir é se o que abriu tem custo escrito, e
+tem.
+
+**Contagem anterior, da varredura de completude do Devin (2026-08-04): 2 dívidas,
+4 fases, 12 limites declarados — 18 linhas abertas, e 24 fechadas.**
 **As dívidas não mudaram de número, e os limites subiram dois** — e é isso que a varredura
 diz sobre a revisão que veio antes dela: dos seis candidatos medidos, **um estava certo e
 sem guarda** (a instalação), **três fecharam no mesmo dia** (o gate de nome reservado, o
@@ -1213,41 +1470,55 @@ que a varredura livre achou não estavam em candidato nenhum, nenhuma quebrava t
 todas eram texto que a própria pesquisa já tinha derrubado — sobrevivendo num `.py`, num
 docstring de teste e num arquivo da raiz, três lugares onde ninguém foi procurar.
 
-### Dívidas (2)
+### Dívidas (6)
 
 Fechar exige escrever código. Nada aqui espera fase nem depende de reverter
-decisão.
+decisão. **Três entraram com a Fase 4c**, e as três têm a mesma assinatura: o
+custo foi medido durante a implementação, a decisão de adiar está escrita num
+desvio numerado do plano, e nenhuma delas exige desfazer nada. **A última é
+pré-existente a todas elas** e só foi medida na revisão de documentação de
+2026-08-04 — ela não é entrega de fase nenhuma, e contá-la como tal inflaria o
+que a 4c fechou.
 
 | Dívida | Origem | Impacto |
 |---|---|---|
 | `SF-DQ-002` acusa validação cuja consequência está atrás de um helper | Fase 5c (`_enforcements`), **medida de novo** na Task 3 da Fase 5c.2, 2026-08-03 | **Dívida, não fase — e é o outro caso ambíguo.** Três coisas a separam de uma fase. (1) **A especificação do conserto já está escrita dentro da própria linha** — travessia de corpo de callee por parâmetro, com decisão própria sobre religação, alias e `def` aninhado; fase é trabalho que ainda precisa de spec, e esta tem o dela. (2) O escopo é **um predicado** de um extrator que já existe: `_reader`, `_read_of` e `_reads_this_check` já funcionam, e só `_abort_in` não atravessa. (3) O defeito é de **regra já entregue** que erra para o lado da acusação — `SF-DQ-002` em P1 sobre quem protegeu o pipeline —, e isso é assinatura de dívida, não de escopo não construído. Adiada com o custo medido na mão, que é a definição de dívida deste inventário. `aborta_se(ruins)` num helper que faz `if ruins > 0: raise` não produz `dq.enforcement`, e `SF-DQ-002` dispara sobre `absent: dq.enforcement` — a regra acusa exatamente quem protegeu o pipeline. **Medido, não presumido:** sobre a fonte de nove linhas do gate, o motor devolve `SF-DQ-002 (P1)` e `SF-DQ-003 (P2)`, e a instrumentação de `_enforcements` mostra onde está a lacuna — `_reader` **já aceita** `aborta_se(ruins)` como leitor, `_read_of` **já vê** o nome `ruins`, e `_reads_this_check` **já devolve** `True`. O único predicado que falha é `_abort_in`, que procura o aborto nos ramos **deste** escopo e o aborto está no corpo de outra função. **Por isso a máquina da 5c.2 não serve:** a parte que ela poderia emprestar (resolver a chamada e mapear argumento e parâmetro) é precisamente a parte que já funciona, e o que falta é ler o corpo do callee e decidir se ele aborta **condicionalmente ao valor recebido** — travessia nova, com limites próprios. Nenhum dos limites da 5c.2 transfere: "um só call site" não diz nada sobre o que a função faz, porque um helper chamado de dez lugares aborta ou não aborta independentemente disso. Implementar assim mesmo, para poder dizer que as duas fecharam, produziria uma máquina com garantia inventada num kind cujo erro cai do lado da acusação. **Fica aberta com o custo na mão**, e o que ela exige está nomeado: travessia de corpo de callee por parâmetro, com decisão própria sobre religação, alias e `def` aninhado |
+| `funcval compare` não tem `--out`, e a saída dele não chega ao `judge` por arquivo | Fase 4c, desvio D-4c-26, medido ao fechar a fase | **Dívida, e das baratas — não há decisão a reverter, só código a escrever.** `funcval plan` grava o artefato (`--out` **obrigatório**, porque o plano é a entrada do `compare` e a evidência do gate `functional_validation_defined`); `compare` **imprime** o envelope paginado e não escreve arquivo nenhum. Todos os outros produtores de fact do repositório gravam: os **catorze** `analyze *`, o `benchmark`, o `fuse` e o próprio `funcval plan`. **Medido na CLI, ponta a ponta** sobre `fixtures/funcval/count_diverged/`: `funcval compare > arquivo.json` seguido de extrair `items` do envelope e passar a `judge --facts` devolve `SF-FVAL-001`, então o caminho existe — o que não existe é o caminho de um passo. Duas consequências, e a segunda é a que morde. (1) O operador precisa de um passo de `python -c` ou `jq` entre os dois verbos, num fluxo cujo passo seguinte (`judge`) é obrigatório para a área servir para alguma coisa. (2) `--limit` vale **50** por default e o envelope pagina: quem extrair `items` sem conferir `next_cursor` julga a primeira página e chama o resultado de comparação — que é literalmente o defeito que `SF-FVAL-005` acusa no dado do operador, cometido pelo fluxo do próprio motor. **Fechar são duas linhas de argumento e duas de handler**, `--out` na CLI e `out_path` na tool, mais a paridade que a Fase 4b tornou invariante (as quatro listas de `tests/test_adapters_tools.py`). Fica aberta com o contorno **escrito** na skill que ensina o verbo, e não só aqui: `benchmark-pyspark-job` é a única que ensina `compare`, e carrega a extração de `items` e a conferência de `next_cursor`; `review-pyspark-pr` ensina só `funcval plan` — que **tem** `--out` — e delega a comparação, então não há contorno a carregar lá. Skill que ensina o caminho feliz e cala o passo que falta é como a dívida vira erro do usuário |
+| O corpus não exercita o ramo **exato** da `SF-FVAL-004` | Fase 4c, desvio D-4c-23, medido ao escrever a regra | **Dívida de fixture, e a própria D-4c-23 já a nomeia assim.** A 004 tem `when.any` com **duas** condições, porque agregado de coluna inteira ou decimal é comparado de forma exata e sai **com** `diverged`, enquanto o de ponto flutuante sai sem. Nas **sete** fixtures de comparação, `agg:sum:cliente_id` (o `bigint`) é **idêntico** nos dois lados: o ramo que dispara é sempre o relativo. Consequência precisa, e é ela que dimensiona a linha: apagar a condição exata da regra **não** deixaria golden nenhum vermelho, e é justamente o ramo cuja ausência produziria o defeito que a fase existe para acusar — uma soma de `bigint` que mudou em uma unidade sobre quinhentos milhões dá `relative_delta` da ordem de `2e-9`, abaixo de qualquer tolerância utilizável, e sumiria de achado nenhum aparecendo só em `diverged_check_count`. **O que existe hoje** é a classificação de `bigint` como exato, medida em `tests/test_facts_funcval.py`, e a regra escrita sobre ela; **o que falta** é uma fixture com o agregado inteiro divergindo, que é a única prova que sobrevive a alguém reescrever a regra. Fechar é uma décima fixture com golden bidirecional, no molde de `aggregate_outside_tolerance` com o eixo trocado — nada a reverter, e o custo é o de sempre para fixture nova |
+| `plan_ref` sai `""` nos sete goldens de comparação | Fase 4c, desvio D-4c-22, medido na Task 5 | **Dívida, e o desvio registra por que ela não foi paga na hora.** `plan_ref` é o `Fact.id` do `funcval.plan`, sha1 de (kind, subject, measures) — depende do corpus. Escrevê-lo **à mão** nos `before.json`/`after.json` faria o golden depender de um id que muda quando o `input/` muda, e a fixture passaria a quebrar por uma razão que não é a dela; pior, um `plan_ref` desatualizado é exatamente o defeito que `_reject_foreign_plan_ref` (D-4c-16) existe para pegar, e ele mora no **adaptador**, que este corpus não exercita. Então os resultados trazem `target` e `checks`, e `funcval.analyzed.attrs.plan_ref` sai vazio nos sete. **Não é campo morto: é campo que este corpus não alimenta**, e a distinção importa porque quem ler o golden não tem como saber qual dos dois é. O caso de `plan_ref` conflitante entre os lados **está** coberto, por teste unitário em `tests/test_facts_funcval.py` — o que não está coberto é o caminho pelo adaptador. **Fechar não é escrever o id à mão**, que é o que a D-4c-22 recusou: é `regen_funcval` derivar o plano e injetar o `fact_id` dele nos dois resultados **na regeneração**, que é o mesmo mecanismo que faz os goldens sobreviverem a mudança de `input/`. Código que ninguém escreveu, e uma decisão de escopo do regenerador |
 | A pesquisa de fontes do Devin não é vigiada por `refresh_knowledge`, e o spec afirmava que era | fase de perfis de subagente do Devin, medido ao fechar a Task 6 em 2026-08-04 | **Dívida, não limite — e a linha existe porque uma mitigação declarada no spec não existe.** A §7 do spec lista, contra o risco "o Devin muda formato de perfil e o tradutor quebra em silêncio", que "a pesquisa fica em `knowledge/` com data, **na watchlist do `refresh_knowledge`**". A primeira metade é verdadeira; a segunda é **falsa por construção**, e a medição é de uma linha: `watchlist()` em `scripts/refresh_knowledge.py` deriva a lista de URLs de `sources[].url` **das regras do catálogo**, e `knowledge/sources.lock.json` tem **37 fontes, zero com `devin`**. Conhecimento sem regra que o cite nunca entra — a docstring da função diz isso em voz alta ("ela É o conjunto de `sources[].url` das regras"), e o desenho é bom: watchlist mantida à mão apodrece. O efeito aqui é que as **24 URLs distintas** de `docs.devin.ai` citadas na pesquisa e coletadas em 2026-08-04 envelhecem sem alarme, sobre uma superfície que a própria fonte declara **experimental** ("format, behavior, and configuration options may change"). É a combinação mais cara possível: a página que mais provavelmente muda é a única que ninguém vigia. **Duas saídas, e a barata é errada.** Escrever uma regra de catálogo que cite as URLs só para entrar na watchlist seria fabricar diagnóstico sobre Spark que não existe, e o catálogo é dado julgado por `runtime_scope` — poluí-lo para obter frescor inverte a relação. A saída certa é ampliar `watchlist()` para varrer também os blocos `Fontes` de `knowledge/**.md`, que **é código que ninguém escreveu**: exige um leitor do formato de rodapé (hoje prosa com URL e `retrieved:`, sem schema), decidir o que fazer quando a mesma URL é citada por regra e por knowledge com datas diferentes, e aceitar que páginas de doc de produto mudam de hash com frequência maior que a de fonte AWS — o risco de alarme permanente que a linha de `normalize()` já registra. Fica aberta com o custo na mão e o número medido: 37 fontes vigiadas, 24 não vigiadas |
+| A área `SF-CFG` foi **planejada e nunca escrita** | **Pré-existente**: declarada no primeiro commit de `rules/catalog/README.md` (`ffcf150`) e nunca implementada; medida na revisão de documentação de 2026-08-04 | **Dívida, e a mais antiga do inventário — nada a reverter, só decidir.** O `README.md` do catálogo declarava a área `CFG` (config Spark) e o arquivo `spark-config.yaml` desde o dia em que foi escrito. Medido: `git log --diff-filter=A -- rules/catalog/spark-config.yaml` não devolve **nada** — o arquivo nunca existiu em commit nenhum —, e `SF-CFG` não aparece em nenhum `.yaml`, `.py` ou teste do repositório. A tabela listava **15** arquivos para **14** reais e implicava **14** áreas contra **13** medidas; as duas linhas foram removidas, e a contagem de áreas passou a ser declarada por escrito (**treze**) para que a próxima divergência apareça. **O que fica em aberto é a decisão, não o texto:** configuração de Spark hoje é julgada de forma dispersa — `pyspark.conf_set` alimenta regras de `SF-PY`, e a configuração declarada em IaC alimenta `SF-GLUE` e `SF-EMR` (que carrega `Configurations` em dois níveis). Ou isso é reconhecido como a resposta definitiva e a `CFG` morre por escrito, ou existe uma pergunta de configuração que nenhuma das três áreas faz e aí ela vira fase. **Ninguém mediu qual dos dois é**, e é essa medição — não código — que fecha esta linha |
 
-### Fases (4)
+### Fases (3)
 
 Trabalho planejado. A coluna de impacto abre dizendo **onde a fase está
 prevista** — e uma delas registra que a sua ainda não tem posição na fila.
 
 | Trabalho | Origem | Onde está previsto, e o impacto |
 |---|---|---|
-| Fases 3b, 3c e 3d não iniciadas; a Fase 4 do roadmap (§16, rigor) está em **um quarto** item aberto | §16 do spec da Fase 0 | **Fase, não dívida.** Fechar as três (3b, 3c, 3d) e o item de rigor que resta é executar trabalho que já tem lugar na seção *Ordem* — a validação funcional automatizada é a **Fase 4c**, item 9. Contá-las aqui fazia o roadmap contar duas vezes. Ver as seções acima. Dos quatro itens de rigor, três fecharam — benchmark (4a), gates fail-closed e assinatura (4b) —, e resta a validação funcional automatizada, que é a **Fase 4c**. A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
-| Dois dos quatro gates seguem advisory mesmo sob `strict_gates` — metade `functional_validation_defined` | Fase 4b, por decisão registrada na §1 do spec | **Fase — metade de uma linha que se parte, porque as duas metades têm natureza oposta e o texto original já dizia isso.** Advisory hoje **é o critério da fase 4b**, sucesso declarado e não atraso; o endurecimento chega com a **Fase 4c**, item 9 da *Ordem*, sem tocar em Python. `dominant_bottleneck_identified` e `functional_validation_defined` não têm `satisfied_by`, e gate sem produtor **nunca** entra na lista de bloqueio — é o critério da fase, não uma omissão. As duas metades envelhecem de formas opostas, e isso é o que vale registrar. `functional_validation_defined` **fecha na Fase 4c**: quando ela entregar o produtor, basta declarar `satisfied_by` e `guards_phases` no bloco `gates` do `routing.yaml`, sem tocar em Python. |
+| Fases 3b, 3c e 3d não iniciadas | §16 do spec da Fase 0 | **Fase, não dívida.** Fechar as três é executar trabalho que já tem lugar na seção *Ordem*; contá-las aqui fazia o roadmap contar duas vezes. **A linha encolheu com a Fase 4c:** ela dizia também "a Fase 4 do roadmap (§16, rigor) está em **um quarto** item aberto", e esse item era a validação funcional automatizada — fechada, com os quatro de rigor completos (benchmark 4a, gates fail-closed e assinatura 4b, validação funcional 4c). A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
 | Great Expectations declarativo e dbt seguem sem cobertura | Fase 5c, por decisão registrada na §2 do spec | **Fase, e a própria linha já dizia:** "as duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado". A linha estava certa e no lugar errado. `great_expectations.yml` e as expectation suites em JSON são artefato declarativo **fora do código**, com parser próprio, e correlacionar suíte com a tabela que o job escreve exige casar por nome — heurística frágil, que produziria `SF-DQ-001` sobre um alvo adivinhado. dbt é mundo próprio e encosta no Spark só via `dbt-glue`/`dbt-spark`. As duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado. Fora de escopo pela mesma razão: **resultado de execução** (`VerificationResult`, validation result do GE, `run_results.json` do dbt) — a ferramenta já disse que o check falhou, e repetir isso não acrescenta garantia nenhuma |
 | EMR Serverless e EMR on EKS sem cobertura | Fase 5b, por decisão registrada no spec | **Fase, e a única cuja fase não tem posição na *Ordem*.** Cobrir uma plataforma nova é fase inteira — extrator, kinds, regras e coordenador, que foi o formato da 5b para EMR on EC2 —, e a decisão registrada no spec da 5b foi sobre **quando**, não sobre **se**. Enfileirá-la é decisão de roadmap, e a triagem não a toma por conta própria: registra que ela está fora da fila. O extrator lê `describe-cluster` de EMR on EC2. Serverless tem worker config e pre-init capacity; EKS tem virtual cluster e job run. Nenhum dos dois tem fact, regra ou coordenador |
 
-### Limites declarados (12)
+### Limites declarados (14)
 
 Decisão tomada com o custo registrado. "Fechar" cada uma destas significa
 **reverter** a decisão que a criou — e a coluna de impacto abre nomeando qual.
 Sete linhas que pareciam atraso e são, em todos os casos, escolha com motivo
-escrito. As **três últimas** entraram com a fase de perfis de subagente do Devin,
-e têm uma propriedade que as sete anteriores não têm: em duas delas o gatilho de
-reabertura **não é nosso** — é a Cognition documentar o que hoje não documenta, ou
-deixar de marcar como experimental o que hoje marca.
+escrito. Três entraram com a fase de perfis de subagente do Devin, e têm uma
+propriedade que as anteriores não têm: em duas delas o gatilho de reabertura
+**não é nosso** — é a Cognition documentar o que hoje não documenta, ou deixar de
+marcar como experimental o que hoje marca. As **duas últimas** entraram com a
+Fase 4c, e são de uma espécie que nenhuma das doze anteriores tinha: elas não
+limitam o que o motor **consegue** fazer, e sim o que a saída dele **pode
+afirmar**. As duas já estão declaradas dentro do produto, não só aqui — que é a
+diferença entre limite declarado e limite que alguém descobre no uso.
 
 | Limite | Origem | Qual decisão o fecha, e o impacto |
 |---|---|---|
-| Dois dos quatro gates seguem advisory mesmo sob `strict_gates` — metade `dominant_bottleneck_identified` | Fase 4b, por decisão registrada na §1 do spec | **Limite declarado — a outra metade da mesma linha.** Fechar exige **reverter uma decisão da Fase 0**: ou um kind que declare dominância, e aí a evidência passa a carregar julgamento contra o contrato, ou fazer `set_phase` ler findings, que é outra camada. `dominant_bottleneck_identified` e `functional_validation_defined` não têm `satisfied_by`, e gate sem produtor **nunca** entra na lista de bloqueio — é o critério da fase, não uma omissão. As duas metades envelhecem de formas opostas, e isso é o que vale registrar. `dominant_bottleneck_identified` **não tem caminho previsto**: dominância é ordenação entre candidatos, nenhum dos 102 kinds a afirma, e o que mais se aproxima é um Finding — que não é Fact, mora em `findings_index` e não chega a `set_phase`. Endurecê-lo exigiria ou um kind que declare dominância (e aí a evidência passaria a carregar julgamento, contra o contrato da Fase 0) ou fazer `set_phase` ler findings (outra camada). Fica advisory com `advisory_reason` escrito no catálogo, e é a linha honesta a manter |
+| Os quatro eixos de `SF-FVAL` são **proxies**, e não provam que o dado é o mesmo | Fase 4c, §3 do spec e critério 8 da §9 | **Limite declarado, e é o limite da área inteira.** Contagem, schema, chaves e agregados iguais **não** provam que o dado é o mesmo: duas linhas podem trocar valores entre si e os quatro passam. A área afirma "nenhum dos quatro proxies detectou divergência", **nunca** "o resultado é idêntico", e a distinção não é retórica — é a diferença entre uma aprovação e a ausência de uma reprovação. **Fechar é reverter a decisão de não comparar linha a linha**, que é a afirmação forte e é inviável sobre volume real: é justamente por isso que os quatro existem. O que foi feito em vez de fechar é declarar o limite **três vezes, de propósito** — no cabeçalho de `rules/catalog/funcval.yaml`, na `explanation` de cada uma das cinco regras, e na saída do comparador (`funcval.analyzed.attrs.proxy_limit`) —, para que quem lê "os quatro proxies bateram" nunca precise vir ao YAML descobrir o que isso não prova. É a mesma disciplina de `dq.unresolved` e `bench.unresolved`: o que o motor não sabe fica **dito**, e não vira silêncio que o leitor interpreta como aprovação |
+| Chave declarada errada produz **P0 sobre dado correto** | Fase 4c, consequência da D-4c-2, medida ao desenhar o eixo | **Limite declarado, e não é dívida — não há código que o conserte.** Nenhum dos 106 kinds nomeia chave de negócio (varredura dos 17 extratores), então o eixo de chaves só existe se alguém o **declarar** em `funcval plan --key`. Quem declara, responde: `--key cliente_id` numa tabela de itens de pedido faz `SF-FVAL-003` acusar duplicata sobre dado perfeitamente correto, em **P0**. O motor não tem como saber — e a alternativa que pareceria segura foi **medida e rejeitada**: usar partição como proxy de chave, que na fixture `catalog/glue_table_schema` daria `distinct_values = partition_count = 1200` sobre `dt` para `db.eventos`, ou seja, um check de unicidade acusando dado correto **sem** ninguém ter declarado nada. Trocar erro do operador por erro do motor não é melhoria. **Fechar exige dado que não existe**: uma declaração de chave primária de negócio por tabela, que nem o Glue Data Catalog nem o Iceberg carregam de forma confiável. O que foi feito é tornar a procedência **legível**: todo check sai com `origin` (`declared` com `derived_from: []`, ou `derived` com o `fact_id`), e sem `--key` o plano escreve `undeclared_axes: ["keys"]` **com a razão**, em vez de calar. Quem lê um `SF-FVAL-003` consegue saber, do próprio plano, se a chave que o produziu foi derivada ou afirmada |
+| **Um** dos quatro gates segue advisory mesmo sob `strict_gates` — `dominant_bottleneck_identified` | Fase 4b, por decisão registrada na §1 do spec; a outra metade **fechou** com a Fase 4c e está no registro de fechadas | **Limite declarado, e agora ele é de um gate só.** Medido no bloco `gates` de `rules/catalog/routing.yaml`: dos quatro gates, **três** têm `satisfied_by` — `baseline_captured` ← `bench.run_delta`, `flows_mapped` ← `callgraph.reachable_spark_work` e `functional_validation_defined` ← `funcval.plan`, este último desde a Fase 4c. Sobra **um** sem produtor, e gate sem produtor **nunca** entra na lista de bloqueio — é o critério da fase, não uma omissão. `dominant_bottleneck_identified` **não tem caminho previsto**: dominância é ordenação entre candidatos, nenhum dos 106 kinds a afirma, e o que mais se aproxima é um Finding — que não é Fact, mora em `findings_index` e não chega a `set_phase`. Endurecê-lo exigiria **reverter uma decisão da Fase 0**: ou um kind que declare dominância (e aí a evidência passaria a carregar julgamento, contra o contrato) ou fazer `set_phase` ler findings (outra camada). Fica advisory com `advisory_reason` escrito no catálogo, e é a linha honesta a manter |
 | O gate confere presença de kind, nunca conteúdo de fact — e **nenhum benchmark destrava** | Fase 4b, limite declarado em três lugares; **remedida** na revisão final e ampliada | **Limite declarado.** A alternativa que fecharia — passar facts inteiros ao gate — **segue recusada pelos dois motivos originais**, e o que foi feito no lugar foi declarar o recorte em três pontos do produto. Fechar é reverter essa recusa e construir duas capacidades que hoje não existem em verbo nenhum. `_gates_blocking` pergunta se o kind está no conjunto de kinds; ele **não** pergunta se o `bench.run_delta` é do job certo, se os dois lados do benchmark são o mesmo job, nem se o `callgraph.reachable_spark_work` cobre todo o `scope.entrypoints`. **A versão anterior desta linha dizia "um benchmark de outro job destrava", e subdimensionava o custo por uma ordem de grandeza.** Medido: **duas linhas de JSON escritas à mão** — `{"kind": "bench.run_delta", "subject": {}, "measures": {}, "attrs": {}, "provenance": {}}` e a irmã com `callgraph.reachable_spark_work` — levam um case com `strict_gates: true` de `intake` a `report` com rc=0. Não é preciso benchmark nenhum, nem job nenhum, nem execução nenhuma: `provenance` vazia passa, porque **nada a valida** — `_fact_kinds_for_gates` projeta `{fact.kind for fact in ...}` e descarta o resto. O custo de contornar o rigor saiu de uma flag (`--gate-value true`, que o D-4b-2 fechou) para um arquivo, e um arquivo é mais barato do que a redação sugeria. A alternativa — passar facts inteiros — segue recusada pelos dois motivos originais: puxaria o índice de facts para dentro do `store`, e faria o gate precisar saber o que é "o job certo", que é julgamento. **O que foi feito em vez de fechar:** declarar o recorte onde ele opera — bloco `gates` do `routing.yaml`, docstring de `set_phase`, mensagem de bloqueio. Fechar de verdade exige duas capacidades novas e independentes: validar `provenance` (que hoje nenhum verbo faz, em nenhum kind) e correlacionar `scope` com o conteúdo dos facts |
 | `report verify` não isola o corpo com autoridade | Fase 4b, desvio D-4b-14, medido ao implementar | **Limite declarado.** Fechar exige assinar o bloco junto (recursivo) ou mover a declaração para um arquivo lateral assinado — e o segundo é exatamente o modo de falha de handoff que o **D-4b-14 recusou**, três arquivos no lugar de um. A assinatura é um hash único das três partes **de então**; não há como recomputá-las em separado a partir dele. A isolação que o critério 8 do spec pede vem de o **bloco declarar** o que foi assinado — e o bloco mora fora do hash por construção, logo é editável por quem editar o relatório. Consequência: `checks.body` não distingue "o corpo foi editado" de "o próprio bloco foi", e a saída enuncia as duas leituras em vez de escolher a que não pode provar. O veredito `valid` é preservado porque **nunca** sai do bloco: sai das três checagens juntas, e um bloco adulterado para fechar com o corpo passa a divergir dos findings reais. Fechar exigiria assinar o bloco junto (recursivo) ou mover a declaração para um arquivo lateral assinado — nenhum dos dois foi feito, e o segundo trocaria um arquivo por dois, que é o modo de falha de handoff que este projeto evita. **Uma das três atribuições saiu desta ambiguidade na revisão final** (desvio D-4b-24): a versão da assinatura agora é declarada no bloco, e relatório de versão anterior sai como `version_mismatch` em vez de "corpo editado" |
 | `verify` não sabe verificar o corpo de um relatório assinado sob outra `SIGNATURE_VERSION` | Fase 4b, desvio D-4b-24, medido ao fechar a revisão final | **Limite declarado, e esta linha é a declaração que o D-4b-24 disse faltar.** O suporte é de **uma** normalização, por decisão: preservar `normalize_body_v1`, `v2`, … é código que só envelhece. Relatório de outra versão se **reassina**, nunca se reverifica. O desvio mediu que a alternativa barata era declarar isso por escrito e não a fez; está declarado aqui, e nada no código mudou. A build guarda **uma** normalização — a dela. Quando o `signature_version` declarado no bloco não é o corrente, `checks.body` sai como **não avaliável** e fica fora de `diverged`, porque recomputar responderia sobre a regra de agora e nunca sobre o corpo de então. É a resposta honesta, e é menos do que o leitor gostaria: um relatório antigo não pode ser reverificado, só reassinado — e reassinar prova correspondência com a evidência de **hoje**, não com a de quando ele foi emitido. Fechar exigiria preservar as normalizações antigas (`normalize_body_v1`, `v2`, …) e despachar por versão, que é código que só envelhece; a alternativa mais barata, e não feita, é declarar por escrito que o suporte é de uma versão só. Hoje há uma versão e nenhum relatório afetado: a dívida é do primeiro dia em que a normalização mudar |
@@ -1260,11 +1531,14 @@ deixar de marcar como experimental o que hoje marca.
 | Um coordenador despachado como subagente no Devin **não** despacha os cinco executores | varredura de completude do Devin, 2026-08-04, medida contra a §5.2 da pesquisa | **Limite declarado, e fechá-lo é reverter uma decisão que ninguém tomou por escrito até agora: declarar `max-nesting`.** A fonte é literal — *"By default, subagents cannot spawn their own subagents — only the root agent can. Subagent tools (`run_subagent` and `read_subagent`) are **disabled** inside a subagent"* —, e o campo que reverte isso (`max-nesting`, introduzido em 2026-05-26) **não** é declarado em perfil nenhum deste repositório. Consequência: o modelo de execução da Fase 4 — coordenador despacha os cinco executores — **não se traduz** quando o próprio coordenador é o subagente. O que se traduz é o **método**: o corpo do perfil, o `## Não faz`, as áreas de regra. A decomposição roda inline, e ela tem nome e verbo: `sparkforge playbook <coordenador>`, que é o piso das cinco plataformas justamente por não depender de despacho. **A decisão de não declarar `max-nesting` tem os mesmos três argumentos que a de não declarar `model:`**, e um quarto: (1) o campo é de um mecanismo que a própria Cognition declara **experimental**; (2) *"cost scales with the number of subagents [...] tasks that fan out into many subagents (or nest them) cost more"*, e aninhar é o caso caro; (3) nenhum arquivo versionado pode garantir que o despacho esteja sequer ligado; e (4) o `playbook` já entrega a decomposição, então o que se ganharia é paralelismo, não método. **Reabre no dia em que alguém medir que o paralelismo aninhado paga o custo** — e aí é uma linha por coordenador, no renderizador do Devin, com o número na mão |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | **Limite declarado, e de espécie diferente das cinco acima — é o caso ambíguo desta triagem.** Fechar não é reverter decisão nem escrever código: `normalize()` existe e funciona, e o que falta é **medição que ainda não aconteceu**. Chamar de dívida lançaria como atraso o que ninguém pode pagar hoje, que é o erro de contagem que esta triagem existe para corrigir. O que está **decidido e registrado** é a resposta ao dado quando ele chegar, e é isso que a torna limite e não incógnita: o primeiro PR ruidoso ajusta `normalize()`, nunca silencia a fonte. Esse PR é o gatilho que a converte em dívida com conserto conhecido. Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |
 
-### Fechadas — registro histórico (24)
+### Fechadas — registro histórico (25)
 
 Fechar não é apagar: a linha fechada é o que impede a dívida de voltar sem que
 alguém perceba, e o modo de falha da linha de EMR — sobreviveu fechada por três
 fases — é o motivo de o registro ficar aqui, e não sumir.
+
+A **primeira da tabela** é a mais recente, e é a única do inventário que estava
+classificada como **fase** e fechou como fase — sem virar dívida no caminho.
 
 As **nove últimas** entraram e fecharam no mesmo dia: quatro na revisão final da fase de
 perfis de subagente, e **cinco na varredura de completude** que veio depois dela.
@@ -1275,6 +1549,7 @@ exatamente o tipo que volta sem alarme se ninguém escrever onde estava.
 
 | Dívida | Origem | Impacto |
 |---|---|---|
+| ~~Dois dos quatro gates seguem advisory mesmo sob `strict_gates`~~ — a metade `functional_validation_defined` **fechou** com a Fase 4c, em 2026-08-04 | Fase 4b, por decisão registrada na §1 do spec; era a única linha do inventário classificada como **fase**, e fechou como fase | **Fechou exatamente como a linha previa, e isso é o que vale registrar.** O texto de 4b dizia: *"quando ela entregar o produtor, basta declarar `satisfied_by` e `guards_phases` no bloco `gates` do `routing.yaml`, **sem tocar em Python**"*. Foi o que aconteceu — `satisfied_by: funcval.plan`, `produced_by` com o comando exato, `guards_phases: [report]`, e zero linhas de `store.py` alteradas. Previsão que se confirma ao ser paga é a única forma de saber que a arquitetura do gate estava certa: se tivesse sido preciso mexer no motor, o "contrato de produtor como dado" da 4b teria sido só uma tabela bonita. **A outra metade da linha continua aberta e mudou de mesa**, como o texto original mandava: `dominant_bottleneck_identified` não tem produtor previsto — dominância é ordenação entre candidatos, nenhum kind a afirma — e está nos limites declarados, não aqui. A fase que a fechou escolheu `funcval.plan` e **não** `funcval.check_delta`: o gate diz *defined*, não *executed*, e o que satisfaz é o plano |
 | ~~Cobertura de EMR não existe~~ — **fechada** pela Fase 5b em 2026-08-01, merge `59c27e2` | identificada ao fechar a Fase 3a | `RuntimeContext.emr` existe e guarda a release numérica, `EMR_MATRIX` tem guard de drift assimétrico contra o knowledge, `emr_cluster.py` lê o dump de `describe-cluster` e os cinco que o completam, e a área `SF-EMR` tem 9 regras com coordenador próprio. **A linha sobreviveu fechada por três fases** — a 5b marcou a fase como concluída na seção própria e não voltou aqui, e as varreduras seguintes conferiram números, não vereditos. Fica como lembrete do modo de falha: inventário de dívida só é confiável se fechar dívida for parte de fechar fase. O que **continua aberto** do escopo original está na linha própria — EMR Serverless e EMR on EKS |
 | ~~O curinga `"*"` de `runtime_scope` não filtra nada~~ — **fechada** na Fase 5a, commit `fcb8402` | revisão adversarial do spec da Fase 5, 2026-08-01 | `version_scope.py` pula a checagem de presença da chave, então `{glue: "*"}` casa com qualquer runtime. 20 regras agnósticas ficaram etiquetadas como de Glue, e as 5 de infra Glue avaliam em silêncio fora do Glue. Fase 5a corrige |
 | ~~`SF-GLUE-002` some de findings e de skipped ao mesmo tempo~~ — **fechada** na Fase 5a, commit `8815f53` | revisão adversarial do spec da Fase 5, 2026-08-01 | `requires_facts: tf.module_analyzed` é sentinela de "algum `.tf` foi lido", não de "há job Glue aqui": sem `aws_glue_job`, ela passa a barreira, avalia, dá falso, e desaparece dos dois lados. Fase 5a corrige |

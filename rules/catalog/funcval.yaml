@@ -1,0 +1,499 @@
+# Catálogo de regras — validação funcional de uma mudança (antes contra depois)
+#
+# Depende de `sparkforge/facts/funcval.py` (Fase 4c, Tasks 2 e 3), que é função
+# PURA sobre `Fact`: `build_plan` deriva o que medir dos facts que o motor já
+# tem, e `build_comparison` lê os DOIS resultados que o operador produziu e emite
+# os quatro kinds `funcval.*`. O módulo nunca executa consulta, nunca lê artefato
+# bruto, nunca chama AWS.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O LIMITE DA ÁREA INTEIRA: OS QUATRO SÃO PROXIES.
+#
+# Contagem, schema, chaves e agregados iguais NÃO provam que o dado é o mesmo.
+# Duas linhas podem trocar valores entre si e os quatro passam. Esta área afirma
+# "nenhum dos quatro proxies detectou divergência", nunca "o resultado é
+# idêntico" — é a §3 do spec desta fase e o critério 8 da §9 dele.
+#
+# Comparação linha a linha seria a afirmação forte, e é inviável sobre volume
+# real; é justamente por isso que os quatro existem, e é por isso que o limite é
+# DECLARADO em vez de subentendido. Ele aparece três vezes, de propósito: aqui,
+# na `explanation` de cada uma das cinco regras, e na saída do comparador
+# (`funcval.analyzed.attrs.proxy_limit`) — quem lê "os quatro proxies bateram"
+# não pode ter que vir a este arquivo para descobrir o que isso não prova.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# POR QUE A COMPARAÇÃO NÃO VIVE NO `when`.
+#
+# Mesma razão de `benchmark.yaml`, e o quarto módulo a pagá-la:
+# `rules/engine.py::_condition_candidates` avalia UM fact por vez, e
+# `_fact_context` monta o contexto de um único fact. Não existe, e não deve
+# existir, condição que leia o resultado do lado antes e o do lado depois ao
+# mesmo tempo. Quem enxerga os dois lados DECIDE e emite um fact que carrega a
+# decisão; o catálogo lê atributo de um fact só. Portanto todo `when` desta área
+# lê `funcval.check_delta` ou `funcval.analyzed`, onde a comparação já aconteceu.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# A `SF-FVAL-004` É DIFERENTE DAS OUTRAS QUATRO, E A DIFERENÇA É DE NATUREZA.
+#
+# `Fact` é "observação determinística ancorada, nunca contém juízo nem limiar"
+# (`sparkforge/findings/models.py`). Isso divide as cinco em dois grupos:
+#
+#   * Comparação EXATA é observação. "Estes dois valores não são idênticos" não
+#     é juízo, não tem limiar, e não depende de nada que alguém precise escolher.
+#     Por isso `funcval.check_delta` carrega `attrs.diverged` nesses casos, e a
+#     regra o LÊ. `SF-FVAL-001` e `SF-FVAL-002` são assim.
+#
+#   * Comparação RELATIVA precisa de um número que separa reassociação de ponto
+#     flutuante de divergência real, e esse número é `field-heuristic` — não há
+#     fonte oficial dizendo a partir de quantos ULP uma diferença deixa de ser
+#     reassociação. Heurística de campo mora no YAML. Por isso o comparador OMITE
+#     `diverged` ali (a razão vai escrita em `attrs.diverged_omitted_reason`,
+#     porque chave que some sem explicação é o defeito que este repositório
+#     persegue) e emite `measures.relative_delta`. QUEM DECIDE É A `SF-FVAL-004`,
+#     comparando `relative_delta` contra `threshold.relative_tolerance` —
+#     exatamente como `SF-BENCH-002` compara `total_task_ms_delta_pct` contra
+#     `threshold.regression_pct`. É a D-4c-10.
+#
+# `SF-FVAL-003` e `SF-FVAL-005` não leem nem uma coisa nem outra, e isso está
+# dito em cada uma: a 003 lê os dois valores porque o gatilho da §6 do spec é
+# sobre a TRANSIÇÃO (zero para não-zero), não sobre a diferença; a 005 lê duas
+# contagens da sentinela, porque cobertura é afirmação sobre o CONJUNTO de
+# checks e não sobre nenhum deles.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# ESCOPO. As cinco declaram `runtime_scope: {}`, e isso é decisão, não omissão.
+#
+# O critério da Fase 5a (`README.md` deste diretório, "O que `runtime_scope` é, e
+# o que ele não é") é: escopo não-vazio só quando o gatilho genuinamente varia com
+# a versão E essa versão vem do RUNTIME. Aqui o gatilho é COMPARAÇÃO DE VALOR
+# entre dois resultados que o operador mediu — mil linhas contra mil e duas é o
+# que é em Glue 4.0 e em 5.0, em Spark 3.3 e em 3.5. Pior: `judge` recebe o
+# runtime que a CLI montou, não o que o resultado do operador viu, então escopo
+# não-vazio aqui só poderia subtrair cobertura — num `sparkforge judge` sem
+# flags a chave sai vazia, `in_scope` falha FECHADA, e a área inteira sumiria.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `same_subject: true` NAS CINCO, INCLUSIVE COM UMA CONDIÇÃO SÓ.
+#
+# A Fase 5c mediu (D-5c-31) que sem ele o motor produz no máximo UM grupo de
+# evidência, e N divergências viram um achado ancorado na primeira. Aqui a
+# subcontagem seria pior que o normal, porque `funcval.check_delta` tem subject
+# `{type: table, symbol: "<alvo>#<check>"}` — o CHECK, não a tabela. Então o
+# grupo de `same_subject` é exatamente um check comparado, e cada agregado
+# divergente vira um achado próprio, com o `fact_id` daquele agregado. Sem ele,
+# quatro colunas divergindo sairiam como um achado citando a primeira, o operador
+# corrigiria aquela, rodaria de novo e descobriria a próxima — sem nunca saber
+# quantas faltam.
+#
+# A `SF-FVAL-005` é ancorada em `funcval.analyzed`, cujo subject é o ALVO. O
+# grupo ali é o alvo, que é a entidade sobre a qual a cobertura afirma: um corpus
+# com dois alvos e dois planos parciais precisa sair com dois achados.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# DUAS ARMADILHAS DO MOTOR, JÁ PAGAS, QUE ESTE ARQUIVO EVITA POR ESCRITO.
+#
+#   * `threshold` é SINGULAR. A Fase 4a mediu (D-4a-22) que o plural não levanta
+#     erro nenhum: o motor monta contexto vazio, `_expr_matches` engole o
+#     `ExprError` e a regra fica INERTE PARA SEMPRE, sem uma linha de log.
+#   * `abs()` não existe. `ast.Call` não está na whitelist de `rules/expr.py`
+#     (D-4a-23), e a whitelist é fronteira de segurança — o catálogo é dado
+#     editável. Nenhuma expressão aqui precisa dela: `relative_delta` já é
+#     simétrico e não-negativo por construção (`|depois - antes| /
+#     max(|antes|, |depois|)`), que é outra razão para a 004 lê-lo em vez de
+#     reconstruir a distância a partir dos dois valores.
+#
+# E um terceiro, que só existe em YAML: notação científica SEM PONTO DECIMAL na
+# mantissa é lida como STRING pelo `yaml.safe_load`. Medido: `1e-9`, `1e+9` e
+# `1E9` voltam todos como `str`; `1.0e-9` e `1.e-9` voltam como `float`. O
+# resolver de float do PyYAML exige o ponto, e não o sinal do expoente. O limiar
+# da 004 está escrito `1.0e-9` por isso — ver a nota em `sources`.
+
+catalog_version: 1
+schema_version: 1
+area: SF-FVAL
+retrieved: 2026-08-04
+
+rules:
+
+  - id: SF-FVAL-001
+    category: functional-validation
+    title: Contagem de linhas divergiu entre antes e depois da mudança
+    requires_facts: [funcval.check_delta]
+    when:
+      # `same_subject` com uma condição só, pelo D-5c-31 — ver o cabeçalho. O
+      # subject de `funcval.check_delta` é `<alvo>#<check>`, então o grupo é o
+      # check: dois alvos com a contagem divergindo saem como dois achados.
+      same_subject: true
+      all:
+        # `attrs.diverged` e não uma expressão sobre os valores: contagem é
+        # comparada de forma EXATA (o plano fixa `bigint`), e o comparador já
+        # observou a desigualdade sobre o valor CRU, antes do arredondamento das
+        # measures. Reconstruir o veredito aqui abriria a porta para uma
+        # tolerância disfarçada de arredondamento, que é o que a D-4 do spec
+        # recusa fora do ponto flutuante.
+        - fact: funcval.check_delta
+          where: {attrs.axis: count, attrs.diverged: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O número de linhas escritas no alvo não é o mesmo antes e depois da mudança.
+      É o proxy mais barato e o mais difícil de explicar como aceitável: linha a
+      mais é duplicação, linha a menos é perda, e nenhuma das duas é efeito
+      colateral tolerável de uma mudança de performance. As causas típicas não
+      parecem erro de lógica na hora em que acontecem — o join virou `inner` sem
+      querer, o `dropDuplicates` passou a receber outro subconjunto de colunas, o
+      filtro de partição ficou relativo a `now()`, o broadcast trocou a ordem e um
+      `left` virou `right`, o bookmark avançou entre as duas coletas.
+      Antes de acusar o código, ler o resto do relatório: se a `SF-FVAL-005`
+      também acendeu, parte do plano não foi medida, e a foto está incompleta. E
+      se a mudança envolveu recorte de dado diferente entre as duas execuções, a
+      divergência é do recorte e não do código — isso não aparece aqui, porque
+      este fact compara dois números que o operador mediu, e não os insumos deles.
+      Limite declarado, que vale para as cinco regras desta área: contagem,
+      schema, chaves e agregados iguais NÃO provam que o dado é o mesmo. Duas
+      linhas podem trocar valores entre si e os quatro proxies passam. A ausência
+      deste achado significa "a contagem não divergiu", nunca "o resultado é
+      idêntico".
+    proposed_change:
+      - "Comparar as contagens por partição, e não só o total: uma partição a mais e outra a menos se cancelam no total e aparecem aqui como zero — este achado é sobre o total, e o total é o proxy mais grosseiro dos que existem."
+      - "Isolar a etapa: rodar a contagem imediatamente antes do write nos dois lados. Se a divergência já existe ali, ela é da transformação; se não, é da escrita (modo, partição sobrescrita, commit parcial)."
+      - Conferir o tipo de join e a lista de colunas de qualquer `dropDuplicates`/`distinct` que a mudança tocou — são as duas origens que movem contagem sem mover agregado nem schema.
+      - "Confirmar que as duas execuções leram o mesmo recorte: mesma partição, mesmo intervalo, mesmo filtro. Divergência de recorte fabrica este achado sem que o código tenha mudado nada."
+    risks:
+      - "Aceitar a divergência porque 'são poucas linhas' é a decisão que este achado existe para impedir: a proporção não diz nada sobre a natureza da diferença, e duas linhas órfãs de um join quebrado escalam com o dado."
+      - Reverter a mudança sem antes localizar a etapa devolve a contagem certa e apaga a evidência de qual transformação a movia — o mesmo defeito volta na próxima tentativa.
+    tradeoffs:
+      - "Contagem é o proxy mais barato e o mais fraco: ele pega duplicação e perda, e é cego para troca de valores entre linhas. Trocá-lo por comparação linha a linha daria a afirmação forte e é inviável sobre volume real — é a razão de a área inteira ser de proxies."
+      - "Medir contagem por partição custa uma passada a mais e responde uma pergunta mais precisa. Em tabela muito particionada esse custo não é desprezível, e a escolha depende de quanto a mudança mexeu no particionamento."
+    validation:
+      - "`count(*)` total nos dois lados sobre o mesmo recorte, refeito depois da correção."
+      - Contagem por chave de partição nos dois lados, para localizar em qual recorte a diferença está.
+      - "`count(distinct <chave de negócio>)` nos dois lados: contagem total igual com distinct diferente é duplicação compensada por perda, e o total sozinho não a vê."
+      - Contagem de nulos nas colunas do `on` de cada join que a mudança tocou — linha órfã de join é a causa mais comum e aparece ali antes de aparecer no total.
+    rollback:
+      - Reverter o commit da mudança e repetir a medição dos dois lados, confirmando que a contagem volta a fechar.
+      - "Se o alvo já foi escrito com a contagem divergente, tratar a restauração como manutenção de dado, com escopo e retenção confirmados antes — nunca sobrescrever o alvo para 'corrigir' sem saber o que havia nele."
+    sources:
+      - {origin: field-heuristic, note: "Não há limiar: o gatilho é a desigualdade exata de dois inteiros que o operador mediu, e o comparador já a observou sobre o valor cru. A decisão de campo aqui é a SEVERIDADE. P0 vem de a contagem ser a única dimensão desta área em que qualquer divergência é, por construção, perda ou duplicação de linha — não há reordenação, reassociação nem diferença de precisão que a mova. As outras dimensões admitem explicação benigna; esta não."}
+
+  - id: SF-FVAL-002
+    category: functional-validation
+    title: Schema do alvo divergiu — coluna ausente, coluna nova ou tipo mudado
+    requires_facts: [funcval.check_delta]
+    when:
+      same_subject: true
+      all:
+        # `diverged` cobre os TRÊS movimentos de uma vez (adicionada, removida,
+        # tipo mudado), e é assim de propósito: uma condição por movimento
+        # produziria três achados para uma renomeação de coluna, que é UM evento
+        # — a coluna some de um lado e nasce do outro. O fact carrega
+        # `added_columns`, `removed_columns` e `type_changed_columns` por nome,
+        # então o detalhe está na evidência sem virar três achados.
+        - fact: funcval.check_delta
+          where: {attrs.axis: schema, attrs.diverged: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      O mapa coluna→tipo do alvo não é o mesmo antes e depois. O achado cobre os
+      três movimentos, e o fact citado diz por NOME qual foi qual: coluna que
+      sumiu (`removed_columns`), coluna que nasceu (`added_columns`) e coluna que
+      mudou de tipo (`type_changed_columns`).
+      O motivo de comparar o mapa e não a contagem de colunas está medido: uma
+      coluna removida e outra adicionada deixam `before_column_count` e
+      `after_column_count` IDÊNTICOS, e um check de contagem de colunas não veria
+      absolutamente nada — é exatamente o caso da fixture `schema_diverged`. E
+      mudança de tipo não move contagem nenhuma por construção.
+      Schema é a divergência que sai deste job e entra no próximo. Coluna removida
+      quebra o consumidor na próxima leitura, não nesta escrita; tipo alargado
+      (`int` para `bigint`) passa despercebido até um consumidor com schema fixo
+      falhar; tipo estreitado trunca em silêncio. Ler junto com
+      `knowledge/cross-service-constraints.md` quando houver Athena ou catálogo
+      compartilhado no caminho.
+      A comparação é VERBATIM, e isso é limite declarado: `bigint` contra `BIGINT`
+      sai como mudança de tipo, porque este motor não sabe se os dois lados vieram
+      do mesmo dialeto, e normalizar caixa apagaria `decimal(18,2)` contra
+      `decimal(18,4)` pelo mesmo caminho. Divergência só de caixa é falso positivo
+      **desta** regra, e a correção é padronizar a coleta do resultado, não relaxar
+      a comparação.
+      Limite da área, que vale aqui também: os quatro são proxies. Schema igual
+      não prova que o dado é o mesmo — prova que as colunas e os tipos são os
+      mesmos.
+    proposed_change:
+      - "Ler `added_columns`, `removed_columns` e `type_changed_columns` no fact citado antes de qualquer coisa: uma coluna em `removed` e uma em `added` costuma ser renomeação, que é um evento e não dois, e a correção é diferente."
+      - "Se a mudança de schema é intencional, ela não é efeito colateral de tuning: separá-la em outra entrega, com aviso ao consumidor, em vez de embarcá-la numa mudança de performance."
+      - "Localizar a origem do tipo: `cast` explícito, inferência de schema na leitura, `mergeSchema`, evolução de schema Iceberg e mudança de versão de Glue trocam tipo sem que nenhuma linha de transformação mude."
+      - "Levantar quem consome o alvo antes de aceitar coluna removida — `sparkforge analyze consumers` responde isso com artefato, e ausência de consumidor conhecido não é ausência de consumidor."
+    risks:
+      - "Aceitar coluna nova como inofensiva ignora o custo de leitura e o efeito em consumidor com `SELECT *` e schema fixo; aceitar coluna removida quebra o consumidor na leitura seguinte, e não nesta escrita — o incidente chega depois, sem ligação óbvia com a mudança."
+      - Mudança de tipo que estreita a precisão (decimal com menos casas, `bigint` para `int`) trunca em silêncio, e o dado truncado não é recuperável a partir do alvo.
+      - "Padronizar a caixa dos tipos no resultado para calar um falso positivo desta regra apaga junto a capacidade de ver mudança real de tipo, se a padronização for feita normalizando o valor em vez da coleta."
+    tradeoffs:
+      - "Comparação verbatim acusa diferença de dialeto e nunca esconde mudança real; comparação normalizada faz o inverso. A escolha está feita, e o preço é este achado precisar de leitura humana quando os dois lados foram coletados de fontes diferentes."
+      - "Um único achado para os três movimentos mantém a renomeação como um evento e obriga a abrir o fact para saber o que mudou. Três achados dariam a leitura imediata e triplicariam o ruído da renomeação."
+    validation:
+      - "`DESCRIBE`/`information_schema` do alvo nos dois lados, coluna e tipo, coletados do MESMO jeito nos dois — divergência de método de coleta produz divergência de dialeto."
+      - "Para cada coluna em `type_changed_columns`, conferir o valor mínimo, o máximo e a contagem de nulos nos dois lados: truncamento aparece ali antes de aparecer em qualquer agregado."
+      - "Para cada coluna em `removed_columns`, listar consumidores conhecidos do alvo e conferir se algum a projeta."
+      - Contagem total e agregado de controle nos dois lados, para separar mudança só de schema de mudança de schema com mudança de dado.
+    rollback:
+      - Reverter o commit da mudança e repetir a coleta de schema dos dois lados, confirmando que os três conjuntos ficam vazios.
+      - "Se o alvo já foi escrito com o schema novo, restaurar exige decidir sobre o dado já gravado — tratar como manutenção, com escopo e retenção confirmados antes, nunca como sobrescrita automática."
+    sources:
+      - {origin: field-heuristic, note: "Não há limiar: o gatilho é a desigualdade de dois mapas coluna→tipo que o operador coletou, e o comparador já a observou. A decisão de campo é a SEVERIDADE, e o P0 vem do alcance, não do tamanho: divergência de schema atravessa a fronteira do job e chega ao consumidor, e o incidente aparece numa leitura futura sem ligação visível com a mudança que o causou. As três divergências (coluna nova, coluna removida, tipo mudado) compartilham a severidade porque nenhuma measure do fact as ordena por gravidade; quando houver corpus que sustente o corte, converter para `severity_by` sobre `measures.removed_column_count` e `measures.type_changed_column_count`."}
+
+  - id: SF-FVAL-003
+    category: functional-validation
+    title: Chave declarada passou a ter valor duplicado, e antes não tinha
+    requires_facts: [funcval.check_delta]
+    when:
+      same_subject: true
+      all:
+        # O gatilho ESTRITO da §6 do spec: antes ZERO, depois mais que zero.
+        # Duplicata que já existia e cresceu (`depois > antes > 0`) NÃO é este
+        # gatilho, e transformá-la em P0 aqui seria afirmar sobre o DADO -- que é
+        # a pergunta da SF-DQ -- em vez de afirmar sobre a MUDANÇA, que é a desta
+        # área. O `funcval.check_delta` carrega os dois valores de qualquer forma,
+        # então esse caso fica visível para quem lê o relatório sem virar achado
+        # inventado.
+        #
+        # Sobre os VALORES e não sobre `attrs.diverged`: `diverged` também é
+        # verdadeiro quando a duplicata DESAPARECEU (3 -> 0), que é a mudança
+        # consertando algo e não a quebrando.
+        #
+        # `BoolOp` é EAGER em `rules/expr.py` (as duas pontas são avaliadas antes
+        # de qualquer curto-circuito), e aqui isso é inofensivo: as duas measures
+        # nascem juntas no mesmo caminho de `_delta_measures_and_attrs`, então ou
+        # existem as duas ou não existe fact.
+        - fact: funcval.check_delta
+          where: {attrs.axis: key}
+          expr: "measures.value_before == 0 and measures.value_after > 0"
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A chave era única antes da mudança e deixou de ser depois. O número em
+      `value_after` é quantos VALORES de chave passaram a ocorrer mais de uma vez —
+      não quantas linhas sobraram —, e a transição de zero para não-zero é o que
+      esta regra afirma. Duplicata que já existia antes e cresceu não é este
+      gatilho: aquilo é uma afirmação sobre o dado, e o dado já estava assim antes
+      de a mudança acontecer. Os dois valores estão no fact citado, então esse caso
+      continua visível sem virar achado que ninguém pediu.
+      DE ONDE VEM A CHAVE, e por que isso muda como ler este achado: ela é
+      DECLARADA PELO OPERADOR (`funcval plan --key <coluna>[,<coluna>]`), não
+      derivada de fact nenhum. Foi medido na Task 1 desta fase que nenhum dos 102
+      kinds dos 16 extratores nomeia chave de negócio — `pyspark.join` carrega o
+      NÚMERO de colunas do `on` e nunca os nomes, e os outros seis candidatos
+      carregam booleano, contagem ou coluna de outra natureza. A alternativa
+      recusada era usar a coluna de partição como proxy, e ela foi rejeitada com
+      número: `distinct_values` de uma partição é a contagem de partições da
+      tabela inteira, e a regra acusaria dado correto.
+      A consequência é direta: CHAVE ERRADA PRODUZ P0 EM DADO CORRETO. Se a coluna
+      declarada não é a chave de negócio do alvo, este achado é falso e a correção
+      é a declaração, não o código. A diferença para o motor adivinhar é que aqui
+      fica gravado quem disse: o `funcval.plan` carrega `origin: "declared"` e
+      `derived_from: []` no check de chave, ao lado dos derivados que citam
+      `fact_id`. Conferir a declaração é o primeiro passo, e não o último.
+      A causa mais comum não move a contagem: normalização. Um `trim`, um `upper`,
+      um `cast` de string para número faz valores antes distintos colidirem, e a
+      contagem total, os agregados e o schema ficam todos parados. É a fixture
+      `duplicate_key_appeared` — três valores colidiram, mais nada se moveu.
+      Limite da área: os quatro são proxies. Chave única não prova que o dado é o
+      mesmo.
+    proposed_change:
+      - "Conferir a chave declarada antes do código: se a coluna não é a chave de negócio do alvo, este achado é falso e a correção é refazer o plano com a chave certa."
+      - "Procurar normalização introduzida pela mudança sobre as colunas da chave — `trim`, `lower`/`upper`, `cast`, `coalesce`, remoção de acento. É a causa que duplica chave sem mexer em contagem, agregado nem schema."
+      - "Se a contagem TAMBÉM divergiu (`SF-FVAL-001` no mesmo relatório), a história é outra: um join que passou a casar mais de uma linha do lado direito. Investigar a cardinalidade do lado direito antes da chave."
+      - "Extrair os valores duplicados no lado depois e comparar com os valores originais no lado antes: a colisão nomeia a transformação que a causou melhor do que qualquer leitura de código."
+    risks:
+      - "Tratar o achado como defeito de código sem conferir a declaração da chave corrige o que não estava quebrado — é o modo de falha próprio desta regra, e é por isso que a procedência declarada fica gravada no plano."
+      - "Resolver a duplicata com `dropDuplicates` esconde a colisão em vez de desfazê-la: as linhas colididas não são iguais, e escolher uma delas em silêncio é perda de dado com cara de correção."
+      - "Aceitar a duplicata porque o consumidor 'aguenta' transfere o problema: chave duplicada quebra `MERGE`, `latest-per-key` e qualquer junção a jusante, e o incidente chega longe da mudança que o causou."
+    tradeoffs:
+      - "Chave declarada é entrada humana e pode estar errada; chave derivada de proxy estaria errada de forma sistemática e invisível. O repositório já aceita entrada declarada como fact de primeira classe (`facts/consumers.py`), e o que ele não aceita é entrada declarada sem rótulo de procedência — que é o que `origin` paga."
+      - "O gatilho estrito (zero para não-zero) cala sobre duplicata que cresceu, e essa é a troca: ele erra para o silêncio num caso que o `check_delta` deixa visível, em vez de errar para o P0 num caso que é do dado e não da mudança."
+    validation:
+      - "`select <chave>, count(*) from <alvo> group by <chave> having count(*) > 1` nos dois lados, com a mesma chave — é literalmente a medida que este achado compara."
+      - "Amostrar as linhas de alguns valores duplicados do lado depois e conferir se elas são realmente a mesma entidade: colisão por normalização junta entidades DIFERENTES, e isso decide se a correção é desfazer a normalização ou ampliar a chave."
+      - "`count(distinct <chave>)` e `count(*)` nos dois lados: a diferença entre os dois é a medida agregada da duplicação."
+      - Contagem total, schema e agregados no mesmo relatório — chave duplicada com tudo o mais parado é colisão de valor; com a contagem subindo é linha nova.
+    rollback:
+      - Reverter o commit da mudança e repetir a medição, confirmando que a contagem de valores duplicados volta a zero nos dois lados.
+      - "Se o alvo já foi escrito com a chave duplicada, não aplicar deduplicação como rollback: as linhas colididas podem não ser equivalentes. Tratar como manutenção de dado, com escopo e retenção confirmados antes."
+    sources:
+      - {origin: field-heuristic, note: "Não há limiar numérico: o gatilho é a transição de zero para não-zero, fixada na §6 do spec desta fase, e ela é observação sobre dois inteiros que o operador mediu. As duas decisões de campo são a ESTRITEZA e a SEVERIDADE. A estriteza (não acusar `depois > antes > 0`) separa afirmação sobre a mudança de afirmação sobre o dado, que é a fronteira desta área com `SF-DQ`. O P0 vem de a unicidade de chave ser a premissa de que `MERGE`, `latest-per-key` e junções a jusante dependem — quebrá-la falha longe, depois, e sem ligação visível com a mudança. A severidade convive com o fato de a chave ser declarada: um P0 que pode vir de declaração errada é o preço de a pergunta ter caminho honesto em vez de nenhum, e a procedência fica gravada no `funcval.plan` para que o achado seja auditável."}
+
+  - id: SF-FVAL-004
+    category: functional-validation
+    title: Agregado de controle divergiu além da tolerância
+    requires_facts: [funcval.check_delta]
+    when:
+      same_subject: true
+      # `any`, e não `all`: as duas condições são as duas NATUREZAS de agregado, e
+      # nenhum fact é as duas ao mesmo tempo. Sob `same_subject` o grupo é um
+      # único `funcval.check_delta`, então no máximo uma delas casa por grupo, e
+      # a evidência do achado é sempre o agregado que disparou.
+      #
+      # As duas existem porque o comparador tem dois modos, e escrever só a
+      # segunda deixaria BURACO: um `agg:sum:` de coluna inteira ou decimal é
+      # comparado de forma EXATA, sai com `diverged` no fact, e se esta regra só
+      # lesse `relative_delta` uma soma de `bigint` que mudou apareceria em
+      # `diverged_check_count` da sentinela e em achado NENHUM. Silêncio com cara
+      # de aprovação é o defeito que esta fase inteira existe para acusar.
+      any:
+        # EXATA -- inteiro, decimal. Aqui não há tolerância a aplicar, e aplicar
+        # uma seria contrariar a D-4 do spec. Esta condição não é redundante com a
+        # de baixo, e a razão principal NÃO é de magnitude: a condição relativa é
+        # filtrada por `attrs.comparison: relative`, e um agregado exato nunca casa
+        # com ela em ordem de grandeza NENHUMA. A magnitude só decide no
+        # contrafactual em que a condição de baixo lesse todo agregado: aí uma soma
+        # que muda em uma unidade só escaparia do limiar a partir de UM BILHÃO
+        # (corte medido em ~9,95e8; sobre quinhentos milhões o `relative_delta` é
+        # 2e-9, que está ACIMA de 1.0e-9). O veredito já está no fact, calculado
+        # sobre o valor CRU.
+        - fact: funcval.check_delta
+          where: {attrs.axis: aggregate, attrs.comparison: exact, attrs.diverged: true}
+        # RELATIVA -- ponto flutuante. O fact NÃO traz `diverged` (a razão está em
+        # `attrs.diverged_omitted_reason`), porque o número que separa
+        # reassociação de divergência real é heurística de campo, e heurística de
+        # campo mora aqui. É a D-4c-10, e é o que faz esta regra ser a única da
+        # área com `threshold`.
+        - fact: funcval.check_delta
+          where: {attrs.axis: aggregate, attrs.comparison: relative}
+          expr: "measures.relative_delta > threshold.relative_tolerance"
+    threshold:
+      relative_tolerance: 1.0e-9
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Um agregado de controle — a soma de uma coluna numérica do alvo — divergiu
+      entre as duas execuções. Como a divergência foi julgada depende do tipo da
+      coluna, e a distinção não é burocrática:
+      Para coluna INTEIRA ou DECIMAL a comparação é EXATA e não há tolerância. A
+      aritmética dessas somas é associativa, então reordenar partições não muda o
+      resultado em nada, e qualquer diferença é diferença de dado.
+      Para coluna de PONTO FLUTUANTE (`float`, `real`, `double`) a comparação é
+      relativa, contra `threshold.relative_tolerance`. A razão é aritmética e não
+      é preferência: soma de ponto flutuante depende da ORDEM DE REDUÇÃO, e um
+      `repartition` legítimo muda a ordem e o total nos últimos bits. Comparação
+      exata ali daria falso positivo justamente nas mudanças que esta fase existe
+      para aprovar.
+      O QUE A TOLERÂNCIA SIGNIFICA, e é o ponto que este texto existe para fixar:
+      divergência DENTRO da tolerância NÃO É PROVA DE IGUALDADE. É ausência de
+      prova de diferença. A soma pode estar errada em um centavo por linha e cair
+      dentro do limiar num total grande o bastante; o que o silêncio desta regra
+      afirma é apenas que a diferença observada é compatível com reassociação de
+      ponto flutuante, e nada além disso.
+      O limiar é `field-heuristic` declarada: não há fonte oficial dizendo a partir
+      de quantos ULP uma diferença deixa de ser reassociação, e o número está em
+      `sources` com o raciocínio que o escolheu, para ser ajustado com evidência —
+      não para ser citado como autoridade.
+      Ler junto com `SF-FVAL-001` no mesmo relatório: agregado divergindo com a
+      contagem divergindo é quase sempre a mesma causa, e a contagem é o lugar
+      mais fácil de investigar. Agregado divergindo com a contagem parada é troca
+      de valor dentro das mesmas linhas — `cast`, arredondamento, mudança de regra
+      de negócio, tratamento diferente de nulo.
+      Limite da área: os quatro são proxies. Agregado igual não prova que o dado é
+      o mesmo — `sum` é cego para duas linhas que trocam valores entre si, e é
+      cego para erros que se cancelam.
+    proposed_change:
+      - "Separar as duas naturezas antes de investigar: se `attrs.comparison` é `exact`, não há margem a discutir e a diferença é de dado. Se é `relative`, confirmar a ordem de grandeza — reassociação de ponto flutuante vive muitas ordens abaixo de qualquer erro de lógica."
+      - "Conferir a contagem no mesmo relatório: agregado e contagem divergindo juntos é uma causa só, e a contagem é o eixo mais barato de investigar."
+      - "Com a contagem parada, procurar o que mudou o VALOR dentro das linhas: `cast`, mudança de precisão decimal, `round`, tratamento de nulo (`sum` ignora nulo, `+` propaga), e regra de negócio que a mudança tocou de passagem."
+      - "Refazer a medição do agregado com `sum` sobre a coluna convertida para decimal nos dois lados, quando a coluna for de ponto flutuante e a divergência estiver perto do limiar: decimal remove a reassociação da conta e responde se a diferença é de aritmética ou de dado."
+    risks:
+      - "Baixar a tolerância para calar a dúvida transforma toda mudança de particionamento num achado, e o custo é a área inteira perder credibilidade — o falso positivo aqui recai justamente sobre as mudanças que a fase deve aprovar."
+      - "Subir a tolerância para calar este achado é o inverso, e mais grave: ela é o único mecanismo que separa reassociação de erro de valor, e afrouxá-la sem evidência apaga essa separação em vez de resolvê-la."
+      - "Concluir 'o agregado bateu, o dado está igual' é o erro que a área inteira existe para impedir. `sum` não vê troca de valores entre linhas nem erros que se cancelam."
+    tradeoffs:
+      - "Tolerância só onde a aritmética a exige mantém inteiro e decimal exatos e paga com um limiar a mais para manter. O caminho alternativo — uma tolerância única para todo agregado — seria mais simples de ler e engoliria diferença real em coluna inteira, que é justamente onde não há desculpa aritmética."
+      - "Um limiar baixo acusa reassociação legítima; um alto cala divergência pequena e real. O número escolhido fica cerca de duas ordens de grandeza acima do erro de reassociação esperado numa soma de bilhão de linhas, e é dado editável — não código."
+    validation:
+      - "`sum` da coluna nos dois lados sobre o mesmo recorte, repetido ao menos uma vez: em coluna de ponto flutuante o próprio total varia entre execuções, e uma medição só não separa reassociação de mudança."
+      - "`sum` da mesma coluna convertida para `decimal` com precisão suficiente nos dois lados — remove a reassociação da conta e responde de forma definitiva se a diferença é aritmética ou de dado."
+      - "Contagem de nulos da coluna nos dois lados: `sum` ignora nulo, então uma coluna que passou a ter nulos muda o total sem que nenhuma linha suma."
+      - "Mínimo, máximo e contagem da coluna nos dois lados, além da soma: soma igual com mínimo e máximo diferentes é troca de valores entre linhas, que é a cegueira declarada deste proxy."
+      - "Contagem total no mesmo relatório, para separar 'mudaram os valores' de 'mudaram as linhas'."
+    rollback:
+      - Reverter o commit da mudança e repetir a medição do agregado nos dois lados, confirmando que a divergência volta para dentro da tolerância (ou para zero, em coluna exata).
+      - "Se o alvo já foi escrito com os valores divergentes, tratar a correção como manutenção de dado, com escopo e retenção confirmados antes — reescrever a partição inteira para 'consertar a soma' apaga o que havia lá."
+    sources:
+      - {origin: field-heuristic, note: "`relative_tolerance: 1.0e-9` é decisão de campo. Não há fonte oficial que diga a partir de quantos ULP uma diferença de soma deixa de ser reassociação, e o valor certo depende do número de partições, do tamanho da redução e da magnitude dos termos. A ordem de grandeza vem de uma conta: `double` tem epsilon de máquina da ordem de 2e-16, e o erro de uma redução em árvore sobre N termos cresce aproximadamente com epsilon vezes a raiz de N — para um bilhão de linhas isso dá algo em torno de 1e-11, e o limiar escolhido deixa cerca de duas ordens de grandeza de folga. Ele está aqui para ser ajustado com evidência, não para ser citado como autoridade. ARMADILHA DE FORMATO, medida: o valor está escrito `1.0e-9` e não `1e-9` porque o resolver de float do `yaml.safe_load` exige PONTO DECIMAL na mantissa — `1e-9`, `1e+9` e `1E9` voltam como STRING, `1.0e-9` volta como float. Um limiar em string não falha na carga; ele falha na avaliação, e pior que ficar inerte: `float > str` levanta `TypeError`, que `_expr_matches` não engole. A severidade P1 é de campo: divergência de agregado é acionável e admite explicação benigna que contagem e schema não admitem, e não há measure que distinga divergência marginal de divergência grosseira; quando houver corpus que sustente o corte, converter para `severity_by` sobre `measures.relative_delta`."}
+
+  - id: SF-FVAL-005
+    category: functional-validation
+    title: Validação parcial — o resultado trouxe menos checks do que o plano pediu
+    requires_facts: [funcval.analyzed]
+    when:
+      # Sobre a SENTINELA, e não sobre os `funcval.unresolved`: a pergunta é a
+      # COBERTURA, que é afirmação sobre o conjunto de checks do alvo. Uma regra
+      # ancorada em cada unresolved produziria um achado por check faltante, que
+      # é ruído com o volume do próprio plano, e diria a mesma coisa N vezes.
+      #
+      # `same_subject` porque o subject de `funcval.analyzed` é o ALVO: um corpus
+      # com dois alvos e dois planos parciais precisa sair com dois achados, e não
+      # com um ancorado no primeiro alvo.
+      same_subject: true
+      all:
+        # `reported_check_count` conta os checks que o PLANO pediu e que vieram
+        # USÁVEIS NOS DOIS LADOS. É a contagem certa para esta pergunta, e as
+        # outras não seriam: `compared_check_count` desconta também o que veio e
+        # não pôde ser comparado (tipo não classificado, valor de outra natureza),
+        # que é problema de contrato e não de cobertura; e check NÃO planejado
+        # nunca entra em `reported`, então medir a mais não paga cobertura que o
+        # plano pediu e não veio.
+        - fact: funcval.analyzed
+          expr: "measures.reported_check_count < measures.planned_check_count"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O plano pediu mais checks do que o resultado entregou nos dois lados. A
+      validação está incompleta, e o que ela afirma vale só sobre os eixos que
+      chegaram — ler o relatório como aprovação seria o encontro dos dois defeitos
+      que este projeto persegue: "nenhum problema" e "não coletei" ficando
+      indistinguíveis.
+      Sem esta regra, rodar metade do plano e passar seria o caminho de menor
+      resistência, e ele é atraente exatamente quando a pressa é maior.
+      O QUE FALTOU está nos `funcval.unresolved` do mesmo relatório, e o `reason`
+      de cada um separa três situações que exigem ações diferentes:
+      `check_not_reported` é o check que o plano pediu e que não apareceu em lado
+      nenhum — é cobertura faltante pura, e a correção é medir;
+      `check_absent_one_side` veio de um lado só, e um lado só não é comparação;
+      `check_value_unavailable` é o check que RODOU e não deu valor (`value: null`
+      com `unavailable_reason`), que é uma resposta honesta e continua não sendo
+      cobertura. `check_entry_malformed` é contrato violado — `value: null` sem
+      razão escrita — e vem na frente dos outros no relatório de propósito, porque
+      ler contrato violado como ausência perdoaria a violação.
+      O QUE ESTA REGRA NÃO COBRA: o que o PLANO não pediu. O plano é derivado dos
+      facts que o motor tinha na hora — `pyspark.write` para o alvo,
+      `catalog.table_schema` para colunas e tipos, e a chave só entra declarada
+      pelo operador. `funcval.plan.attrs.undeclared_axes` nomeia os eixos que
+      ficaram de fora e a razão de cada um, e a sentinela repete essa lista para
+      quem não tem o plano na mão. Eixo por declarar é limite da medição, e não
+      falha de quem mediu — por isso ele fica escrito em vez de virar este achado.
+      Limite da área: os quatro são proxies. Cobertura completa dos quatro não
+      prova que o dado é o mesmo; prova que os quatro foram medidos.
+    proposed_change:
+      - "Ler o `reason` de cada `funcval.unresolved` do relatório antes de refazer qualquer coisa: `check_not_reported` se corrige medindo, `check_value_unavailable` se corrige entendendo por que o ambiente não deu o número, e `check_entry_malformed` se corrige no formato do resultado."
+      - "Rodar os checks que faltaram nos DOIS lados — um lado só não vira comparação e continua contando como cobertura faltante."
+      - "Se um check não pode ser medido no ambiente de origem, dizer isso por escrito no resultado (`value: null` com `unavailable_reason`) em vez de omitir a chave: os dois estados são diferentes, e a omissão faz o motor não saber se houve tentativa."
+      - "Conferir `undeclared_axes` na sentinela: eixo que o plano nunca pediu não é contado aqui, e pode ser justamente o que faltava — chave de negócio só entra no plano se alguém a declarar com `funcval plan --key`."
+    risks:
+      - "Fechar o relatório com este achado aberto entrega uma validação parcial com aparência de completa, e é o modo de falha que esta regra existe para tornar visível."
+      - "Preencher os checks que faltam com zero ou com um valor plausível para calar o achado é pior que a lacuna: passa a existir um número que ninguém mediu, e ele não se distingue de um número medido."
+      - "Reduzir o plano para que o resultado o cubra faz este achado sumir sem que nada tenha sido medido — é o mesmo defeito, com outra roupa, e o `funcval.plan` versionado é o que permite perceber."
+    tradeoffs:
+      - "Cobrar cobertura como regra P1 gera achado em toda validação incompleta, inclusive quando a incompletude é conhecida e aceita. A alternativa — nota de rodapé — foi recusada na D-5 do spec: nota de rodapé não sobrevive à leitura apressada, e é a leitura apressada que este achado precisa alcançar."
+      - "Medir por PRESENÇA DE CHAVE, e não por valor, mantém 'não medi' distinto de 'medi e deu zero'. O preço é o contrato do resultado ser mais estrito do que um JSON qualquer, e um resultado malformado virar unresolved em vez de ser interpretado com boa vontade."
+    validation:
+      - "`planned_check_count` e `reported_check_count` na sentinela depois de refazer a coleta: os dois precisam fechar para que o relatório afirme sobre o plano inteiro."
+      - "Conferir, check a check, que a chave existe em `checks` nos dois arquivos de resultado — a presença da chave é o sinal de cobertura, e não o valor."
+      - "Conferir que o `target` dos dois resultados é o do plano: alvo diferente não é comparação parcial, é comparação de outra coisa, e sai como `funcval.unresolved` com a sentinela carregando `blocked_by`."
+      - "Reconferir `undeclared_axes`: se o eixo de chaves está lá, o plano não pediu chave nenhuma, e refazer o plano com `--key` amplia a cobertura de verdade em vez de só fechar a contagem."
+    rollback:
+      - Nenhum — este achado é sobre a medição, não sobre o código. Nada foi mudado no sistema analisado para ser desfeito; o que se refaz é a coleta dos checks que faltaram.
+    sources:
+      - {origin: field-heuristic, note: "Não há limiar: o gatilho é `reported_check_count < planned_check_count`, duas contagens que o próprio comparador produziu, e qualquer margem aqui seria um número dizendo quantos checks é aceitável não medir — que não é pergunta que tenha resposta de campo. A decisão de campo é a SEVERIDADE. P1, e não P0, porque o achado não afirma que algo está errado no sistema analisado: ele afirma que a validação não cobre o que se propôs a cobrir. Lido junto com um relatório sem nenhum outro achado desta área, porém, ele é o mais importante dos cinco — é o que distingue 'os proxies bateram' de 'os proxies que rodaram bateram'."}

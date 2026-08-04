@@ -1,0 +1,191 @@
+[
+  {
+    "id": "f_0ee97a",
+    "schema_version": 1,
+    "kind": "funcval.analyzed",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "planned_check_count": 5,
+      "reported_check_count": 3,
+      "compared_check_count": 3,
+      "diverged_check_count": 0,
+      "relative_delta_check_count": 0,
+      "unplanned_check_count": 0
+    },
+    "attrs": {
+      "blocked_by": [],
+      "plan_ref": "",
+      "proxies": [
+        "count",
+        "schema",
+        "keys",
+        "aggregates"
+      ],
+      "proxy_limit": "contagem, schema, chaves e agregados iguais NAO provam que o dado e o mesmo: duas linhas podem trocar valores entre si e os quatro passam. Esta comparacao afirma 'nenhum dos quatro proxies detectou divergencia', nunca 'o resultado e identico'. Comparacao linha a linha e inviavel sobre volume real, e e por isso que os quatro sao proxies -- fortes, baratos e incompletos.",
+      "target": "db.eventos",
+      "undeclared_axes": []
+    },
+    "provenance": {
+      "artifact": "partial_coverage",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_4e049b",
+    "schema_version": 1,
+    "kind": "funcval.check_delta",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#agg:sum:cliente_id"
+    },
+    "measures": {
+      "value_before": 500500123,
+      "value_after": 500500123,
+      "abs_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "attrs": {
+      "axis": "aggregate",
+      "check": "agg:sum:cliente_id",
+      "comparison": "exact",
+      "diverged": false,
+      "planned": true,
+      "target": "db.eventos",
+      "type": "bigint"
+    },
+    "provenance": {
+      "artifact": "partial_coverage",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_2c2318",
+    "schema_version": 1,
+    "kind": "funcval.check_delta",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#count"
+    },
+    "measures": {
+      "value_before": 1000000,
+      "value_after": 1000000,
+      "abs_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "attrs": {
+      "axis": "count",
+      "check": "count",
+      "comparison": "exact",
+      "diverged": false,
+      "planned": true,
+      "target": "db.eventos",
+      "type": "bigint"
+    },
+    "provenance": {
+      "artifact": "partial_coverage",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_ea0a6d",
+    "schema_version": 1,
+    "kind": "funcval.check_delta",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#key:pedido_id"
+    },
+    "measures": {
+      "value_before": 0,
+      "value_after": 0,
+      "abs_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "attrs": {
+      "axis": "key",
+      "check": "key:pedido_id",
+      "comparison": "exact",
+      "diverged": false,
+      "planned": true,
+      "target": "db.eventos",
+      "type": "bigint"
+    },
+    "provenance": {
+      "artifact": "partial_coverage",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_959579",
+    "schema_version": 1,
+    "kind": "funcval.unresolved",
+    "subject": {
+      "type": "table",
+      "symbol": "partial_coverage#db.eventos#agg:sum:valor#check_value_unavailable"
+    },
+    "measures": {},
+    "attrs": {
+      "axis": "aggregate",
+      "check": "agg:sum:valor",
+      "detail": {
+        "before": "coluna valor indisponivel no ambiente de origem",
+        "after": "coluna valor indisponivel no ambiente de origem"
+      },
+      "planned": true,
+      "reason": "check_value_unavailable",
+      "sides": [
+        "before",
+        "after"
+      ],
+      "state": {
+        "before": "unavailable",
+        "after": "unavailable"
+      },
+      "target": "db.eventos",
+      "type": "double"
+    },
+    "provenance": {
+      "artifact": "partial_coverage",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_9286d3",
+    "schema_version": 1,
+    "kind": "funcval.unresolved",
+    "subject": {
+      "type": "table",
+      "symbol": "partial_coverage#db.eventos#schema#check_not_reported"
+    },
+    "measures": {},
+    "attrs": {
+      "axis": "schema",
+      "check": "schema",
+      "detail": {},
+      "planned": true,
+      "reason": "check_not_reported",
+      "sides": [
+        "before",
+        "after"
+      ],
+      "state": {
+        "before": "absent",
+        "after": "absent"
+      },
+      "target": "db.eventos",
+      "type": "schema"
+    },
+    "provenance": {
+      "artifact": "partial_coverage",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  }
+]

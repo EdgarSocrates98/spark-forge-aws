@@ -30,16 +30,16 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 66 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 71 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
-As 66 regras se distribuem em 12 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+As 71 regras se distribuem em 13 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## Camada determinística (Fase 0)
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
-de 66 regras versionado em YAML, e um ciclo de vida de case
+de 71 regras versionado em YAML, e um ciclo de vida de case
 (`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
 
 ### Sequência mínima
@@ -125,7 +125,7 @@ caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
 dentro de `site-packages` quando instalado por `pip`.
 
 Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
-**fora do repositório** e reproduz as 107 fixtures golden byte a byte a partir do
+**fora do repositório** e reproduz as 116 fixtures golden byte a byte a partir do
 pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
 usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
@@ -162,7 +162,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 16 extratores emitem 102 kinds distintos de fact, e todos são offline: leem
+Os 17 extratores emitem 106 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -183,6 +183,8 @@ tool MCP de mesmo nome.
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
 | Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
+| **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
+| **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
@@ -191,7 +193,7 @@ AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
 essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
 o que falta para uma regra disparar é sempre coleta, nunca código.
 
-Três desses verbos mudam o alcance do projeto, e é por isso que aparecem
+Cinco desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
@@ -215,6 +217,26 @@ gate de `benchmark_ref` nunca teve: `sparkforge validate --findings` rejeita
 de qualquer conclusão sobre o job. `total_task_ms` é tempo de task somado —
 trabalho, não relógio: o event log não carrega duração wall-clock, e uma alta
 ali pede confirmação no relógio antes de reverter a mudança.
+
+`funcval` são os dois últimos, e formam a outra metade do mesmo experimento:
+`benchmark` julga o tempo, `funcval` julga o **resultado**. `funcval plan` deriva
+o que medir dos facts que já existem — o alvo vem do `pyspark.write`, o schema e
+os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível —, e
+`funcval compare` lê os dois resultados que **o operador** mediu e emite
+`funcval.check_delta`, `funcval.analyzed` e `funcval.unresolved`. Nenhum dos dois
+executa consulta, roda Spark ou chama AWS.
+
+Duas propriedades que o desenho não esconde. **A chave de negócio não é
+derivável:** nenhum dos 106 kinds a nomeia, então ou ela entra declarada em
+`funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
+eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
+dado correto, e a procedência de cada check existe para que ninguém confunda o que
+o repositório derivou com o que alguém afirmou. **Os quatro eixos são proxies:**
+contagem, schema, chaves e agregados iguais não provam que o dado é o mesmo —
+duas linhas podem trocar valores entre si e os quatro passam. A área afirma
+"nenhum dos quatro proxies detectou divergência", nunca "o resultado é idêntico",
+e o próprio comparador carrega esse limite em
+`funcval.analyzed.attrs.proxy_limit`.
 
 ```bash
 # o cluster inteiro num dump, e o julgamento sem flag de versão nenhuma
@@ -247,25 +269,33 @@ que guardam a fase pedida:
 sparkforge case open --repo . --case-id perf-2026-08 \
   --now 2026-08-04T09:00:00Z --strict-gates
 
-# `report` é guardada pelos DOIS gates com produtor, então a transição precisa
-# das duas evidências: o benchmark destrava `baseline_captured` e o call graph
-# destrava `flows_mapped`. Passar só uma bloqueia — com a mensagem nomeando
-# qual fact falta e o comando que o produz.
+# `report` é guardada pelos TRÊS gates com produtor, então a transição precisa
+# das três evidências: o benchmark destrava `baseline_captured`, o call graph
+# destrava `flows_mapped` e o plano de validação destrava
+# `functional_validation_defined`. Faltando uma, bloqueia — com a mensagem
+# nomeando qual fact falta e o comando que o produz.
 sparkforge analyze call-graph --facts .sparkforge/facts.json \
                               --out .sparkforge/facts_callgraph.json
+sparkforge funcval plan --facts .sparkforge/facts.json \
+                        --facts .sparkforge/facts-catalog.json \
+                        --out .sparkforge/facts_funcval_plan.json
 sparkforge case update --repo . --phase report \
   --facts .sparkforge/bench.json \
-  --facts .sparkforge/facts_callgraph.json
+  --facts .sparkforge/facts_callgraph.json \
+  --facts .sparkforge/facts_funcval_plan.json
 ```
 
 O que destrava é **evidência**, nunca a flag: `case update --gate X --gate-value
 true` continua gravando o booleano e não libera nada. Quem produz a chave de cada
 gate é dado, no bloco `gates` de `rules/catalog/routing.yaml`, com o comando exato
 em `produced_by`. Só gate **com** produtor endurece — hoje `baseline_captured`
-(`bench.run_delta`, da Fase 4a) e `flows_mapped`
-(`callgraph.reachable_spark_work`). Os outros dois continuam advisory, porque
-endurecer gate sem produtor é o impasse que a Fase 0 recusou conscientemente:
-gate rígido vira beco sem saída quando o dado simplesmente não existe.
+(`bench.run_delta`, da Fase 4a), `flows_mapped`
+(`callgraph.reachable_spark_work`) e `functional_validation_defined`
+(`funcval.plan`, da Fase 4c). `dominant_bottleneck_identified` continua advisory,
+porque endurecer gate sem produtor é o impasse que a Fase 0 recusou
+conscientemente: gate rígido vira beco sem saída quando o dado simplesmente não
+existe — e dominância é ordenação entre candidatos, que nenhum fact do
+vocabulário afirma.
 
 Quando o dado genuinamente não existe — job descontinuado, ambiente que sumiu —,
 passar por cima custa uma frase, e a frase fica gravada no case e aparece no
@@ -391,8 +421,9 @@ pacote tem duas camadas de agente:
   executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
   `emr-infra-reviewer` lê `SF-EMR`/`SF-ENV`, `data-quality-reviewer` lê `SF-DQ`, e
   `spark-performance-architect` acumulou `SF-BENCH` porque *o job ficou mais rápido, e por
-  quê* é a mesma pergunta que ele já respondia — e é isso, não o nome, que faz o roteamento
-  funcionar. Ver a tabela completa em `AGENTS.md`.
+  quê* é a mesma pergunta que ele já respondia — e acumulou `SF-FVAL` pela metade que falta
+  dela, *e o resultado continuou o mesmo*, que é o mesmo par antes/depois da mesma mudança.
+  É isso, não o nome, que faz o roteamento funcionar. Ver a tabela completa em `AGENTS.md`.
 - **Executor** — 5 agentes em `agents/executors/*.md`, um por função do loop de fase
   (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`). Cada um
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
@@ -490,7 +521,7 @@ manifesto silencioso é pior que erro barulhento:
 | `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
 
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
-constrói o artefato, instala num venv limpo e reproduz as 107 fixtures golden byte a byte.
+constrói o artefato, instala num venv limpo e reproduz as 116 fixtures golden byte a byte.
 
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
 de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o

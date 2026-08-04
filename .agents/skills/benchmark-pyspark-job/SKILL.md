@@ -83,9 +83,100 @@ E `bench.analyzed` carrega `matched_stage_count` / `unmatched_stage_count`, que 
 
 Se qualquer `SF-UI-*` disparar em um dos dois runs, use `sparkforge rules lookup --id <ID>` para saber se a diferença cruza um limiar versionado — não decida "melhorou" por opinião.
 
-## Validação de dados
+## Validação funcional: o outro lado da mesma comparação
 
-Duração menor com resultado diferente não é uma otimização, é um bug. Confira sempre: schema e nullability, contagem de linhas, chaves e duplicidade, agregados de controle, hashes lógicos por partição, regras de negócio, e — se houve escrita Iceberg — partições e snapshot resultantes.
+Duração menor com resultado diferente não é uma otimização, é um bug. Esta seção era prosa sem produtor até a Fase 4c — mandava "conferir contagem, schema, chaves e agregados" e não dizia com o quê, exatamente como o `benchmark_ref` era texto livre até a 4a. Agora tem produtor, e ele é o verbo `funcval`.
+
+O par antes/depois é o **mesmo** dos passos 1 a 3: uma execução de cada lado da mesma mudança. `SF-BENCH` julga o tempo de task; `SF-FVAL` julga o resultado. As duas áreas lêem o mesmo experimento e nenhuma cala a outra.
+
+### 1. Derive o plano — o que medir, e por que aquilo
+
+```bash
+sparkforge funcval plan \
+  --facts .sparkforge/facts.json \
+  --facts .sparkforge/facts_catalog.json \
+  --key pedido_id,dt \
+  --out .sparkforge/facts_funcval_plan.json
+```
+
+Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` (`analyze pyspark`) e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório**, ao contrário do `--out` dos verbos de `analyze`: o plano é a entrada do `compare` e a evidência do gate, não uma conveniência. Sai um `funcval.plan` por alvo distinto, mais `funcval.unresolved` para o que ele não conseguiu resolver — nunca alvo adivinhado por sufixo.
+
+`--key` é a **chave de negócio declarada**, e a vírgula faz chave **composta**: `--key loja_id,pedido_id` é uma chave de duas colunas, não duas chaves. Ela não é derivável — nenhum dos 106 kinds do vocabulário nomeia chave de negócio, e partição foi medida como proxy e **rejeitada** (em `catalog/glue_table_schema`, `db.eventos` tem `distinct_values = partition_count` sobre `dt`, e um check de unicidade ali acusaria dado correto). Sem `--key`, o plano não inventa: escreve o eixo em `undeclared_axes` com a razão, e todo check derivado carrega `origin: derived` com o `fact_id`, enquanto o declarado carrega `origin: declared` e `derived_from: []`.
+
+**Declarar a chave errada produz P0 sobre dado correto.** É limite declarado, não defeito: a procedência de cada check está no plano justamente para que ninguém confunda o que o repositório derivou com o que você afirmou.
+
+### 2. Meça os checks nos dois lados — isso é com você
+
+O motor **não executa consulta nenhuma**, nos dois verbos. Você mede os checks do plano em cada lado e grava um JSON por lado, com `target` e `checks`:
+
+```json
+{
+  "target": "db.eventos",
+  "side": "before",
+  "checks": {
+    "count": {"value": 1000000},
+    "schema": {"value": {"pedido_id": "string", "valor": "double"}},
+    "agg:sum:valor": {"value": 1000000.0}
+  }
+}
+```
+
+Check que você **não** mediu fica **ausente**, nunca zero. `value: null` exige `unavailable_reason` — o motor distingue "não sei" de "medi e deu zero", e apagar essa distinção é o defeito que a área inteira existe para impedir.
+
+O lado `before` só existe se você o mediu **antes** de a mudança tocar o alvo. Um `overwrite` no meio o apaga, e não há como reconstruí-lo depois.
+
+### 3. Compare contra o plano
+
+```bash
+sparkforge funcval compare \
+  --plan .sparkforge/facts_funcval_plan.json \
+  --before .sparkforge/funcval_before.json \
+  --after .sparkforge/funcval_after.json \
+  > .sparkforge/funcval_compare.json
+```
+
+Tool MCP: `sparkforge_funcval_compare`. Antes contra depois, **nunca** observado contra catálogo.
+
+`compare` **não tem `--out`**, ao contrário de `plan`, de `benchmark` e dos verbos de `analyze`, e a assimetria é deliberada: o `--out` do `plan` é obrigatório porque o plano é artefato consumido por outro verbo e é a evidência de um gate; a comparação é saída de leitura. A consequência prática é sua: para julgar, extraia `items` do envelope, que é o formato que `judge --facts` espera.
+
+```bash
+python -c "import json,sys; d=json.load(open('.sparkforge/funcval_compare.json',encoding='utf-8')); json.dump(d['items'], open('.sparkforge/facts_funcval.json','w',encoding='utf-8'), indent=2, ensure_ascii=False)"
+```
+
+Confira `next_cursor` antes de extrair: `--limit` vale 50 por default, e um plano grande pagina. `next_cursor` não nulo quer dizer que `items` está incompleto — passe `--limit` maior ou pagine com `--cursor`, porque julgar a primeira página e chamar de comparação é o mesmo defeito que `SF-FVAL-005` acusa no dado. Emite `funcval.check_delta` (um por check, com `attrs.axis` em `count`/`schema`/`keys`/`aggregate`), a sentinela `funcval.analyzed` e `funcval.unresolved`.
+
+`attrs.diverged` aparece só onde a comparação é **exata**. Na comparação **relativa** ele é omitido de propósito, com a razão escrita em `attrs.diverged_omitted_reason`: o número que separa reassociação de ponto flutuante de divergência real é heurística de campo, e heurística de campo mora no catálogo, nunca no comparador — um `Fact` não carrega juízo nem limiar. Quem decide é a `SF-FVAL-004`, comparando `measures.relative_delta` contra `threshold.relative_tolerance` (`1.0e-9`), exatamente como `SF-BENCH-002` compara `total_task_ms_delta_pct` contra `threshold.regression_pct`.
+
+### 4. Julgue
+
+```bash
+sparkforge judge --facts .sparkforge/facts_funcval.json --show-skipped
+```
+
+| Regra | Severidade | O que acusa |
+|---|---|---|
+| `SF-FVAL-001` | P0 | contagem de linhas divergiu — linha a mais é duplicação, a menos é perda |
+| `SF-FVAL-002` | P0 | schema divergiu: coluna ausente, coluna nova ou tipo mudado |
+| `SF-FVAL-003` | P0 | chave **declarada** passou a ter valor duplicado, e antes não tinha |
+| `SF-FVAL-004` | P1 | agregado de controle divergiu **além da tolerância** |
+| `SF-FVAL-005` | P1 | validação parcial — o resultado trouxe menos checks do que o plano pediu |
+
+Leia `SF-FVAL-005` **antes** de concluir das outras quatro: se ela acendeu, parte do plano não foi medida e a foto está incompleta, do mesmo jeito que `SF-BENCH-004` invalida a leitura dos totais.
+
+**O limite da área inteira, declarado:** contagem, schema, chaves e agregados iguais **não** provam que o dado é o mesmo. Duas linhas podem trocar valores entre si e os quatro proxies passam. Nenhum achado significa "nenhum dos quatro proxies detectou divergência", nunca "o resultado é idêntico" — o próprio comparador escreve isso em `funcval.analyzed.attrs.proxy_limit`, para que ninguém precise vir aqui descobrir.
+
+Fora do alcance dos quatro proxies, e portanto seu: hashes lógicos por partição, regras de negócio, e — se houve escrita Iceberg — partições e snapshot resultantes.
+
+### O plano é a evidência de um gate
+
+`functional_validation_defined` é satisfeito por `funcval.plan`, e guarda a fase `report` quando o case foi aberto com `--strict-gates`. *Defined*, não *executed*: o que destrava é o plano, porque definir o que validar tem de acontecer **depois** de medir e escolher a mudança, e **antes** de fechar o relatório. `ROUTE-015` é a rota que manda defini-lo, e ela opera em `[validation, report]`.
+
+```bash
+sparkforge case update --repo . --phase report \
+  --facts .sparkforge/bench_facts.json \
+  --facts .sparkforge/facts_callgraph.json \
+  --facts .sparkforge/facts_funcval_plan.json
+```
 
 ## Quando NÃO usar
 

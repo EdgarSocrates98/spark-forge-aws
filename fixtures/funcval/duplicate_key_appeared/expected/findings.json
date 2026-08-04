@@ -1,0 +1,60 @@
+[
+  {
+    "rule_id": "SF-FVAL-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Chave declarada passou a ter valor duplicado, e antes não tinha",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#key:pedido_id"
+    },
+    "evidence": [
+      "f_ef12a8"
+    ],
+    "measured": {
+      "value_before": 0,
+      "value_after": 3,
+      "abs_delta": 3.0,
+      "relative_delta": 1.0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A chave era única antes da mudança e deixou de ser depois. O número em `value_after` é quantos VALORES de chave passaram a ocorrer mais de uma vez — não quantas linhas sobraram —, e a transição de zero para não-zero é o que esta regra afirma. Duplicata que já existia antes e cresceu não é este gatilho: aquilo é uma afirmação sobre o dado, e o dado já estava assim antes de a mudança acontecer. Os dois valores estão no fact citado, então esse caso continua visível sem virar achado que ninguém pediu. DE ONDE VEM A CHAVE, e por que isso muda como ler este achado: ela é DECLARADA PELO OPERADOR (`funcval plan --key <coluna>[,<coluna>]`), não derivada de fact nenhum. Foi medido na Task 1 desta fase que nenhum dos 102 kinds dos 16 extratores nomeia chave de negócio — `pyspark.join` carrega o NÚMERO de colunas do `on` e nunca os nomes, e os outros seis candidatos carregam booleano, contagem ou coluna de outra natureza. A alternativa recusada era usar a coluna de partição como proxy, e ela foi rejeitada com número: `distinct_values` de uma partição é a contagem de partições da tabela inteira, e a regra acusaria dado correto. A consequência é direta: CHAVE ERRADA PRODUZ P0 EM DADO CORRETO. Se a coluna declarada não é a chave de negócio do alvo, este achado é falso e a correção é a declaração, não o código. A diferença para o motor adivinhar é que aqui fica gravado quem disse: o `funcval.plan` carrega `origin: \"declared\"` e `derived_from: []` no check de chave, ao lado dos derivados que citam `fact_id`. Conferir a declaração é o primeiro passo, e não o último. A causa mais comum não move a contagem: normalização. Um `trim`, um `upper`, um `cast` de string para número faz valores antes distintos colidirem, e a contagem total, os agregados e o schema ficam todos parados. É a fixture `duplicate_key_appeared` — três valores colidiram, mais nada se moveu. Limite da área: os quatro são proxies. Chave única não prova que o dado é o mesmo.",
+    "proposed_change": [
+      "Conferir a chave declarada antes do código: se a coluna não é a chave de negócio do alvo, este achado é falso e a correção é refazer o plano com a chave certa.",
+      "Procurar normalização introduzida pela mudança sobre as colunas da chave — `trim`, `lower`/`upper`, `cast`, `coalesce`, remoção de acento. É a causa que duplica chave sem mexer em contagem, agregado nem schema.",
+      "Se a contagem TAMBÉM divergiu (`SF-FVAL-001` no mesmo relatório), a história é outra: um join que passou a casar mais de uma linha do lado direito. Investigar a cardinalidade do lado direito antes da chave.",
+      "Extrair os valores duplicados no lado depois e comparar com os valores originais no lado antes: a colisão nomeia a transformação que a causou melhor do que qualquer leitura de código."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar o achado como defeito de código sem conferir a declaração da chave corrige o que não estava quebrado — é o modo de falha próprio desta regra, e é por isso que a procedência declarada fica gravada no plano.",
+      "Resolver a duplicata com `dropDuplicates` esconde a colisão em vez de desfazê-la: as linhas colididas não são iguais, e escolher uma delas em silêncio é perda de dado com cara de correção.",
+      "Aceitar a duplicata porque o consumidor 'aguenta' transfere o problema: chave duplicada quebra `MERGE`, `latest-per-key` e qualquer junção a jusante, e o incidente chega longe da mudança que o causou."
+    ],
+    "tradeoffs": [
+      "Chave declarada é entrada humana e pode estar errada; chave derivada de proxy estaria errada de forma sistemática e invisível. O repositório já aceita entrada declarada como fact de primeira classe (`facts/consumers.py`), e o que ele não aceita é entrada declarada sem rótulo de procedência — que é o que `origin` paga.",
+      "O gatilho estrito (zero para não-zero) cala sobre duplicata que cresceu, e essa é a troca: ele erra para o silêncio num caso que o `check_delta` deixa visível, em vez de errar para o P0 num caso que é do dado e não da mudança."
+    ],
+    "validation": [
+      "`select <chave>, count(*) from <alvo> group by <chave> having count(*) > 1` nos dois lados, com a mesma chave — é literalmente a medida que este achado compara.",
+      "Amostrar as linhas de alguns valores duplicados do lado depois e conferir se elas são realmente a mesma entidade: colisão por normalização junta entidades DIFERENTES, e isso decide se a correção é desfazer a normalização ou ampliar a chave.",
+      "`count(distinct <chave>)` e `count(*)` nos dois lados: a diferença entre os dois é a medida agregada da duplicação.",
+      "Contagem total, schema e agregados no mesmo relatório — chave duplicada com tudo o mais parado é colisão de valor; com a contagem subindo é linha nova."
+    ],
+    "rollback": [
+      "Reverter o commit da mudança e repetir a medição, confirmando que a contagem de valores duplicados volta a zero nos dois lados.",
+      "Se o alvo já foi escrito com a chave duplicada, não aplicar deduplicação como rollback: as linhas colididas podem não ser equivalentes. Tratar como manutenção de dado, com escopo e retenção confirmados antes."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Não há limiar numérico: o gatilho é a transição de zero para não-zero, fixada na §6 do spec desta fase, e ela é observação sobre dois inteiros que o operador mediu. As duas decisões de campo são a ESTRITEZA e a SEVERIDADE. A estriteza (não acusar `depois > antes > 0`) separa afirmação sobre a mudança de afirmação sobre o dado, que é a fronteira desta área com `SF-DQ`. O P0 vem de a unicidade de chave ser a premissa de que `MERGE`, `latest-per-key` e junções a jusante dependem — quebrá-la falha longe, depois, e sem ligação visível com a mudança. A severidade convive com o fato de a chave ser declarada: um P0 que pode vir de declaração errada é o preço de a pergunta ter caminho honesto em vez de nenhum, e a procedência fica gravada no `funcval.plan` para que o achado seja auditável."
+      }
+    ]
+  }
+]

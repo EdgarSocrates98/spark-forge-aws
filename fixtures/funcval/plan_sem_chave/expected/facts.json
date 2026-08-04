@@ -1,0 +1,129 @@
+[
+  {
+    "id": "f_4c6f40",
+    "schema_version": 1,
+    "kind": "funcval.plan",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "check_count": 4,
+      "derived_check_count": 4,
+      "declared_check_count": 0
+    },
+    "attrs": {
+      "target": "db.eventos",
+      "checks": {
+        "agg:sum:cliente_id": {
+          "origin": "derived",
+          "type": "bigint",
+          "derived_from": [
+            "f_dae24f"
+          ]
+        },
+        "agg:sum:valor": {
+          "origin": "derived",
+          "type": "double",
+          "derived_from": [
+            "f_dae24f"
+          ]
+        },
+        "count": {
+          "origin": "derived",
+          "type": "bigint",
+          "derived_from": [
+            "f_7efcbb"
+          ]
+        },
+        "schema": {
+          "origin": "derived",
+          "type": "schema",
+          "derived_from": [
+            "f_dae24f"
+          ]
+        }
+      },
+      "derived_from": [
+        "f_7efcbb",
+        "f_dae24f"
+      ],
+      "undeclared_axes": [
+        "keys"
+      ],
+      "undeclared_axes_reason": {
+        "keys": "nenhum dos 102 kinds dos 16 extratores nomeia chave de negocio: pyspark.join da on_arity (o numero de colunas do on), pyspark.dedup e pyspark.window dao booleanos, e particao como proxy foi medida e rejeitada. Declare com --key <col>[,<col>] para o eixo entrar (D-4c-1, D-4c-2)"
+      }
+    },
+    "provenance": {
+      "artifact": "plan_sem_chave",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_cc53dc",
+    "schema_version": 1,
+    "kind": "funcval.plan",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://bucket/curated/eventos/"
+    },
+    "measures": {
+      "check_count": 1,
+      "derived_check_count": 1,
+      "declared_check_count": 0
+    },
+    "attrs": {
+      "target": "s3://bucket/curated/eventos/",
+      "checks": {
+        "count": {
+          "origin": "derived",
+          "type": "bigint",
+          "derived_from": [
+            "f_d24eff"
+          ]
+        }
+      },
+      "derived_from": [
+        "f_d24eff"
+      ],
+      "undeclared_axes": [
+        "aggregates",
+        "keys",
+        "schema"
+      ],
+      "undeclared_axes_reason": {
+        "aggregates": "nenhum catalog.table_schema com symbol identico a 's3://bucket/curated/eventos/'; o casamento e por string, e casar por sufixo juntaria tabelas homonimas de catalogos diferentes",
+        "keys": "nenhum dos 102 kinds dos 16 extratores nomeia chave de negocio: pyspark.join da on_arity (o numero de colunas do on), pyspark.dedup e pyspark.window dao booleanos, e particao como proxy foi medida e rejeitada. Declare com --key <col>[,<col>] para o eixo entrar (D-4c-1, D-4c-2)",
+        "schema": "nenhum catalog.table_schema com symbol identico a 's3://bucket/curated/eventos/'; o casamento e por string, e casar por sufixo juntaria tabelas homonimas de catalogos diferentes"
+      }
+    },
+    "provenance": {
+      "artifact": "plan_sem_chave",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_705bed",
+    "schema_version": 1,
+    "kind": "funcval.unresolved",
+    "subject": {
+      "type": "table",
+      "symbol": "plan_sem_chave#s3://bucket/curated/eventos/#catalog_schema_unmatched"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "catalog_schema_unmatched",
+      "target": "s3://bucket/curated/eventos/",
+      "near_symbols": [],
+      "catalog_symbol_count": 1
+    },
+    "provenance": {
+      "artifact": "plan_sem_chave",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  }
+]

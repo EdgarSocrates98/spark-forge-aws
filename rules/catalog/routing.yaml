@@ -54,11 +54,43 @@ gates:
     advisory_reason: "nenhum fact prova dominancia; o julgamento e do catalogo, nao da evidencia"
 
   functional_validation_defined:
-    # SEM satisfied_by: nenhum extrator emite fact que prove isto ate a Fase 4c.
-    # Endurece-lo agora e o impasse que a secao 5.5 da Fase 0 recusou.
-    # `dq.check` foi medido e REJEITADO: prova validacao dentro do job, que e
-    # verdade antes e depois da mudanca e nao compara duas execucoes.
-    advisory_reason: "sem produtor ate a Fase 4c"
+    # A Fase 4c entregou o produtor, e o gate endurece DECLARANDO `satisfied_by`
+    # -- sem tocar em uma linha de `store.py`. Era a propriedade que o criterio da
+    # Fase 4b prometia, e ela cobra aqui.
+    #
+    # `funcval.plan`, e NAO `funcval.check_delta` nem `funcval.analyzed`: o nome
+    # do gate diz *defined*, nao *executed*. O que satisfaz e o PLANO, e a ordem
+    # importa -- definir o que validar DEPOIS de medir e escolher o check que
+    # passa. `dq.check` foi medido e REJEITADO na Fase 4b: prova validacao dentro
+    # do job, que e verdade antes e depois da mudanca e nao compara duas execucoes.
+    satisfied_by: funcval.plan
+    # `--facts` e REPETIVEL e precisa ser: o alvo vem do `pyspark.write` e o
+    # schema/os agregados vem do `catalog.table_schema`, e nenhum verbo de
+    # `analyze` produz os dois no mesmo arquivo. `--out` e obrigatorio -- o plano
+    # e a evidencia deste gate, nao uma conveniencia.
+    produced_by: "sparkforge funcval plan --facts .sparkforge/facts.json --facts .sparkforge/facts_catalog.json --out .sparkforge/facts_funcval_plan.json"
+    # SO `report`, e a medicao que decide e o `phase_in` da ROTA que destrava este
+    # gate. Pela R1 da Task 1 da Fase 4b -- o gate nao pode morder numa fase em que
+    # a rota que o destrava ainda opera, senao a rota vira letra morta --, e a rota
+    # aqui e a ROUTE-015 (`blocked_by: [functional_validation_defined]`), que opera
+    # em `[validation, report]`.
+    #
+    # Guardar `validation` mataria a ROUTE-015: ela so casa com o gate FALSO, e um
+    # case sob rigor nao entraria em `validation` com o gate falso -- a unica rota
+    # que manda definir a validacao nunca apareceria para ninguem. Guardando so
+    # `report`, o case entra em `validation`, a ROUTE-015 casa ali, o operador roda
+    # `funcval plan`, e o fechamento passa a exigir o plano. E e literalmente o que
+    # o `reason` da propria ROUTE-015 diz: "definir a validacao antes de fechar o
+    # relatorio".
+    #
+    # A R2 (a fase guardada precisa ser uma em que o fact produtor ja possa
+    # existir) nao empurra nada aqui, ao contrario do `baseline_captured`:
+    # `funcval.plan` e DERIVADO de `pyspark.write` e `catalog.table_schema`, entao
+    # ele e satisfazivel desde `facts` -- muito antes de morder.
+    #
+    # R3: a lista e o sufixo de `PHASES` a partir da primeira fase guardada, e
+    # `report` e a ultima, entao o sufixo tem um elemento so.
+    guards_phases: [report]
 
 rules:
 
