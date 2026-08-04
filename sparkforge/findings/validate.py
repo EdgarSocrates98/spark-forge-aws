@@ -42,7 +42,14 @@ _QUANTIFIED = re.compile(
 # Duplicar o padrao aqui, em vez de importar, mantem `validate` sem dependencia
 # do modulo de modelos -- ele valida PAYLOAD, dict cru vindo de JSON, nunca
 # objeto. O acoplamento que importa esta coberto por teste.
-_BENCH_REF = re.compile(r"^f_[0-9a-f]{6}$")
+#
+# `\Z` e nao `$`: `$` casa TAMBEM antes de um `\n` final, e `"f_abc123\n"`
+# passava por bem formado. Um `benchmark_ref` lido de arquivo, de stdin ou de
+# campo colado carrega o terminador de linha, e a camada de pertinencia compara
+# a string CRUA contra o conjunto de `fact_id` -- a forma que passava com `\n`
+# era a mesma que depois nao casava com fact nenhum, trocando uma rejeicao clara
+# por uma confusa. `\Z` so casa no fim absoluto da string.
+_BENCH_REF = re.compile(r"^f_[0-9a-f]{6}\Z")
 
 
 class ValidationFailed(ValueError):

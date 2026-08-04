@@ -128,6 +128,31 @@ class TestBenchmarkRefCitesAFactId:
         with pytest.raises(ValidationFailed, match="nao e um fact_id"):
             validate_finding(self._gain(benchmark_ref=ref))
 
+    @pytest.mark.parametrize(
+        "ref",
+        [
+            "f_abc123\n",
+            "f_abc123\r\n",
+            "f_abc123\r",
+            "f_abc123\n\n",
+            "f_abc123\nf_d4e5f6",
+        ],
+    )
+    def test_a_trailing_newline_does_not_buy_a_pass(self, ref):
+        """`$` casa ANTES do `\\n` final, e `f_abc123\\n` passava por bem formado.
+
+        A ancora certa e `\\Z`, que so casa no fim absoluto. O caso importa duas
+        vezes aqui: um `benchmark_ref` lido de arquivo, de stdin ou de campo de
+        formulario carrega o terminador de linha, e a camada de pertinencia
+        compara a string CRUA contra o conjunto de `fact_id` -- entao a forma que
+        passa com `\\n` e a mesma que depois nao casa com fact nenhum, trocando
+        uma rejeicao clara por uma confusa. `\\r\\n` e o mesmo defeito no sistema
+        em que este repositorio roda, e `\\nf_d4e5f6` mostra o que a ancora frouxa
+        deixa entrar junto: uma segunda linha inteira de texto nao lido.
+        """
+        with pytest.raises(ValidationFailed, match="nao e um fact_id"):
+            validate_finding(self._gain(benchmark_ref=ref))
+
     def test_well_formed_fact_id_without_a_fact_set_is_accepted(self):
         """Camada de pertinencia ausente nao vira rejeicao: quem chama sem os
         facts (golden, motor) ainda tem a camada de forma."""

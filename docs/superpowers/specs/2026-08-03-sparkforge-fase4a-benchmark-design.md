@@ -202,3 +202,46 @@ quando cita texto livre ou um `fact_id` ausente do conjunto.
 | Operador passa antes e depois trocados | `bench.analyzed` nomeia os dois artefatos de origem, e o delta relativo tem sinal — inversão aparece como regressão implausível, não como silêncio |
 | `benchmark_ref` estrito quebra achados que hoje passam | É o objetivo, e é mudança de contrato. Precisa aparecer no `STATUS.md` como quebra declarada, não como detalhe |
 | Event log de Glue e de EMR diferirem no que preenchem | O comparador lê `Fact`s já normalizados por `event_log.py`; medida ausente de um lado vira `bench.unresolved`, nunca zero |
+
+## 9. Desvios apurados na implementação
+
+Este documento **não é reescrito** — o registro do que se pretendia numa data tem
+valor próprio, e a convenção do repositório é a da seção "Como manter este
+arquivo honesto" do [`STATUS.md`](../STATUS.md): spec obsoleto ganha seção de
+desvios e aponta para lá, em vez de ser editado. O estado corrente é o
+[`STATUS.md`](../STATUS.md); os desvios que a implementação apurou ficam aqui.
+
+**D-4a-A — a medida do `bench.run_delta` não é duração, é tempo de task somado.**
+Três lugares deste documento a chamam de *duração* — a linha da tabela §4.1, e as
+linhas de `SF-BENCH-002` e `SF-BENCH-003` na tabela §4.2. É o único documento do
+repositório que faz isso; o catálogo, o `STATUS.md` e o plano dizem **tempo de
+task**. O nome da chave é `total_task_ms`, e ela é a soma de `mean_ms *
+task_count` sobre os stages — **trabalho**, não tempo de relógio. Não existe fact
+de duração de relógio no event log lido: `facts/event_log.py` emite duração por
+stage e nada de wall-clock.
+
+A diferença não é vocabular. Um job pode terminar **antes** no relógio somando
+**mais** tempo de task, se a mudança passou a paralelizar melhor, e o inverso
+também acontece. Por isso `SF-BENCH-002` acusa "mais trabalho" e nunca "mais
+lento", e a `explanation` dela manda confirmar no relógio antes de reverter a
+mudança — é a regra que lê a medida que manda alguém desfazer trabalho. Chamá-la
+de duração teria sido o defeito que a Fase 5b corrigiu em
+`unreachable_function_count`: nome que promete mais do que entrega. O cabeçalho
+de `rules/catalog/benchmark.yaml` registra a decisão por extenso.
+
+**D-4a-B — `bench.run_delta` não compara pico de memória.** A linha §4.1 lista
+"pico de memória" entre as medidas que o fato carrega, e `_RUN_MEASURES`
+(`sparkforge/facts/benchmark.py`) tem cinco medidas, nenhuma delas essa:
+`total_task_ms`, `total_input_bytes`, `total_spill_bytes`, `total_gc_ms` e
+`total_task_count`. A linha de `SF-BENCH-003` na §4.2 herda o erro ao dizer
+"spill **ou pico de memória** subiu"; o gatilho implementado é spill **ou GC**.
+
+O que existe é o fact `spark.executor.memory_usage`, emitido por
+`facts/event_log.py` a partir de `SparkListenerStageExecutorMetrics` — **um fact
+por executor**, e é aí que a comparação não fecha. As cinco medidas do run são
+somas sobre stages; pico de memória não soma, e o pico de um executor não casa
+com o de outro entre duas execuções, porque `Executor ID` não é estável. Comparar
+o máximo dos dois lados esconderia justamente o caso que aquele fact existe para
+mostrar: um executor no limite entre dez folgados. A medida continua disponível
+ao operador no fact de cada lado, e a `validation` da `SF-BENCH-003` a cita
+nominalmente — o que ela não é, é gatilho.

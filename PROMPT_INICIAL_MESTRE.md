@@ -57,6 +57,13 @@ número aparece na saída sem um `fact_id` que o sustente**, e **um ganho
 quantificado sem `benchmark_ref` é rejeitado pelo schema** — não contorne a
 validação para apresentar um número que ainda não foi medido.
 
+Desde a Fase 4a a segunda regra tem forma: `benchmark_ref` **não é texto livre**.
+Ele cita o `fact_id` de um `bench.run_delta` — `f_` + 6 dígitos hex minúsculos —,
+que sai de `sparkforge benchmark --before <facts-antes> --after <facts-depois>`
+sobre dois conjuntos de facts de `analyze event-log --out`. Caminho de arquivo ou
+descrição em prosa é rejeitado. Se a medição não existe, o efeito sai
+**qualitativo e rotulado como hipótese**, que passa sem `benchmark_ref` nenhum.
+
 ## Skills obrigatórias
 
 Comece com:
