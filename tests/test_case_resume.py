@@ -71,9 +71,83 @@ class TestResumePayload:
         assert resume(rich_case(), FINDINGS) == resume(rich_case(), list(reversed(FINDINGS)))
 
 
+class TestRigorEOverrideAparecemNaRetomada:
+    """Quem retoma noutra maquina precisa saber que o case e estrito e que
+    alguem passou por cima de um gate, sem abrir o YAML."""
+
+    def _strict_case(self):
+        case = rich_case()
+        case["strict_gates"] = True
+        case["gate_overrides"] = [
+            {
+                "gate": "baseline_captured",
+                "reason": "job descontinuado, sem ambiente para reexecutar",
+                "at": "2026-08-04T12:00:00Z",
+            }
+        ]
+        return case
+
+    def test_payload_carries_the_rigor_flag(self):
+        assert resume(self._strict_case(), FINDINGS)["strict_gates"] is True
+
+    def test_payload_carries_the_overrides(self):
+        override = resume(self._strict_case(), FINDINGS)["gate_overrides"][0]
+        assert override["gate"] == "baseline_captured"
+        assert override["at"] == "2026-08-04T12:00:00Z"
+
+    def test_a_case_without_the_keys_reports_false_and_empty(self):
+        """Case gravado antes da Fase 4b: ausencia vira `false`/`[]`, nunca
+        `KeyError` nem `None` -- o schema da tool declara os dois como
+        obrigatorios no payload de retomada."""
+        payload = resume(rich_case(), FINDINGS)
+        assert payload["strict_gates"] is False
+        assert payload["gate_overrides"] == []
+
+    def test_handoff_shows_the_override_with_reason_and_when(self):
+        text = render_handoff(resume(self._strict_case(), FINDINGS))
+        assert "## Overrides de gate" in text
+        assert "job descontinuado, sem ambiente para reexecutar" in text
+        assert "2026-08-04T12:00:00Z" in text
+
+    def test_handoff_says_nenhum_when_no_override(self):
+        text = render_handoff(resume(rich_case(), FINDINGS))
+        section = text.split("## Overrides de gate")[1]
+        assert section.strip().startswith("(nenhum)")
+
+    def test_handoff_declares_that_the_boolean_does_not_unlock_under_rigor(self):
+        text = render_handoff(resume(self._strict_case(), FINDINGS))
+        assert "`strict_gates` ligado" in text
+        assert "nao destrava" in text
+
+    @staticmethod
+    def _blocked_case(strict):
+        """Case medido, nao suposto: em `diagnosis` com o gargalo dominante
+        marcado e sem baseline, ROUTE-012 casa e traz `blocked_by`."""
+        case = new_case("sf-b", "2026-08-04T00:00:00Z", RUNTIME, strict_gates=strict)
+        case["phase"] = "diagnosis"
+        case["gates"]["dominant_bottleneck_identified"] = True
+        return case
+
+    def test_blocked_by_stays_advisory_without_rigor(self):
+        text = render_handoff(resume(self._blocked_case(strict=False), []))
+        assert "- bloqueado por (advisory): baseline_captured" in text
+
+    def test_blocked_by_is_not_called_advisory_in_a_strict_case(self):
+        """`resume.py:213` imprimia sempre "bloqueado por (advisory)". Num case
+        estrito a palavra e falsa nos dois sentidos: o booleano listado aqui nao
+        bloqueia (o fact pode estar presente) nem destrava (ele nao decide
+        nada) -- quem decide e `set_phase`, pela presenca do fact produtor."""
+        text = render_handoff(resume(self._blocked_case(strict=True), []))
+        assert "bloqueado por (advisory)" not in text
+        assert "strict_gates ligado" in text
+        assert "baseline_captured" in text
+
+
 class TestHandoffMarkdown:
-    def test_has_the_ten_declared_sections_in_order(self):
-        assert len(HANDOFF_SECTIONS) == 10
+    def test_has_the_eleven_declared_sections_in_order(self):
+        """Dez ate a Fase 4b; a decima primeira e `Overrides de gate`, que o
+        D-4 exige que a retomada mostre."""
+        assert len(HANDOFF_SECTIONS) == 11
         text = render_handoff(resume(rich_case(), FINDINGS))
         positions = [text.index("## " + s) for s in HANDOFF_SECTIONS]
         assert positions == sorted(positions)

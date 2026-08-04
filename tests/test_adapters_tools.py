@@ -191,6 +191,94 @@ class TestCallTool:
         )
         assert present["valid"] is True
 
+    def test_strict_gates_reaches_mcp_too(self, repo):
+        """A assimetria que a Fase 5b corrigiu na flag `--emr` nao pode voltar:
+        o rigor e escolha do case, e um cliente MCP precisa poder faze-la."""
+        case = call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "glue": "5.0", "strict_gates": True},
+        )
+        assert case["strict_gates"] is True
+        blocked = call_tool(
+            "sparkforge_case_update", {"repo": str(repo), "phase": "validation"}
+        )
+        assert blocked["exit_code"] == 2
+        assert "sparkforge benchmark" in blocked["error"]
+
+    def test_case_open_without_strict_gates_stays_advisory(self, repo):
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z"},
+        )
+        result = call_tool(
+            "sparkforge_case_update", {"repo": str(repo), "phase": "validation"}
+        )
+        assert result["phase"] == "validation"
+
+    def test_override_gate_needs_a_reason_over_mcp(self, repo):
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        recusado = call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "override_gate": "baseline_captured"},
+        )
+        assert recusado["exit_code"] == 2
+        assert "reason" in recusado["error"]
+
+        aceito = call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "override_gate": "baseline_captured",
+             "reason": "job descontinuado", "now": "2026-08-04T00:00:00Z"},
+        )
+        assert aceito["gate_overrides"][0]["reason"] == "job descontinuado"
+
+    def test_facts_path_unlocks_the_phase_over_mcp(self, repo, tmp_path):
+        from sparkforge.findings.models import Fact
+
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        facts = tmp_path / "gate_facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    Fact(kind=k, subject={"type": "job_run"}, measures={"n": 1}).to_dict()
+                    for k in ("bench.run_delta", "callgraph.reachable_spark_work")
+                ]
+            ),
+            encoding="utf-8",
+        )
+        result = call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "phase": "validation", "facts_path": str(facts)},
+        )
+        assert result["phase"] == "validation"
+
+    def test_resume_carries_the_override_over_mcp(self, repo):
+        call_tool(
+            "sparkforge_case_open",
+            {"repo": str(repo), "case_id": "c1", "now": "2026-08-04T00:00:00Z",
+             "strict_gates": True},
+        )
+        call_tool(
+            "sparkforge_case_update",
+            {"repo": str(repo), "override_gate": "flows_mapped",
+             "reason": "corpus sem trabalho Spark alcancavel",
+             "now": "2026-08-04T00:00:00Z"},
+        )
+        payload = call_tool("sparkforge_resume", {"repo": str(repo)})
+        assert payload["strict_gates"] is True
+        assert payload["gate_overrides"][0]["reason"] == (
+            "corpus sem trabalho Spark alcancavel"
+        )
+        jsonschema.validate(payload, TOOLS["sparkforge_resume"]["outputSchema"])
+
     def test_case_open_then_next_step(self, repo):
         call_tool(
             "sparkforge_case_open",

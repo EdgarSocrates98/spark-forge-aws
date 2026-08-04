@@ -309,6 +309,146 @@ class TestCaseLifecycle:
         assert (repo / ".sparkforge" / "handoff.md").is_file()
 
 
+class TestStrictGatesNaCLI:
+    """D-3 e D-4: o rigor entra na abertura e vale pela investigacao inteira;
+    o override existe, exige motivo, e fica gravado."""
+
+    NOW = "2026-08-04T00:00:00Z"
+
+    def _open(self, repo, capsys, strict):
+        args = ["case", "open", "--repo", str(repo), "--case-id", "c1",
+                "--now", self.NOW, "--glue", "5.0"]
+        if strict:
+            args.append("--strict-gates")
+        return run(args, capsys)
+
+    def _bench_facts(self, repo, kinds):
+        from sparkforge.findings.models import Fact
+
+        path = repo / "facts_gate.json"
+        path.write_text(
+            json.dumps(
+                [
+                    Fact(kind=k, subject={"type": "job_run"}, measures={"n": 1}).to_dict()
+                    for k in kinds
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return path
+
+    def test_open_sem_a_flag_grava_rigor_desligado(self, repo, capsys):
+        _, output = self._open(repo, capsys, strict=False)
+        assert json.loads(output)["strict_gates"] is False
+
+    def test_open_com_a_flag_grava_a_escolha_no_case(self, repo, capsys):
+        self._open(repo, capsys, strict=True)
+        _, output = run(["case", "get", "--repo", str(repo)], capsys)
+        assert json.loads(output)["strict_gates"] is True
+
+    def test_sem_rigor_a_transicao_passa_como_sempre(self, repo, capsys):
+        self._open(repo, capsys, strict=False)
+        code, output = run(
+            ["case", "update", "--repo", str(repo), "--phase", "validation"], capsys
+        )
+        assert code == 0
+        assert json.loads(output)["phase"] == "validation"
+
+    def test_com_rigor_a_transicao_e_bloqueada_com_o_comando_que_destrava(
+        self, repo, capsys
+    ):
+        self._open(repo, capsys, strict=True)
+        assert main(["case", "update", "--repo", str(repo), "--phase", "validation"]) == 2
+        err = capsys.readouterr().err
+        assert "baseline_captured" in err
+        assert "sparkforge benchmark" in err
+
+    def test_o_booleano_manual_nao_destrava_sob_rigor(self, repo, capsys):
+        """D-4b-2: `--gate-value true` seria override sem motivo e sem registro."""
+        self._open(repo, capsys, strict=True)
+        run(["case", "update", "--repo", str(repo),
+             "--gate", "baseline_captured", "--gate-value", "true"], capsys)
+        assert main(["case", "update", "--repo", str(repo), "--phase", "validation"]) == 2
+
+    def test_o_fact_produtor_informado_em_facts_destrava(self, repo, capsys):
+        self._open(repo, capsys, strict=True)
+        facts = self._bench_facts(
+            repo, ["bench.run_delta", "callgraph.reachable_spark_work"]
+        )
+        code, output = run(
+            ["case", "update", "--repo", str(repo), "--phase", "validation",
+             "--facts", str(facts)],
+            capsys,
+        )
+        assert code == 0
+        assert json.loads(output)["phase"] == "validation"
+
+    def test_override_sem_motivo_e_recusado(self, repo, capsys):
+        self._open(repo, capsys, strict=True)
+        assert main(["case", "update", "--repo", str(repo),
+                     "--override-gate", "baseline_captured"]) == 2
+        assert "--reason" in capsys.readouterr().err
+
+    def test_motivo_sem_override_e_recusado(self, repo, capsys):
+        """Motivo sem gate nao tem sujeito: ignora-lo em silencio e a familia de
+        defeito que esta fase existe para nao cometer."""
+        self._open(repo, capsys, strict=True)
+        assert main(["case", "update", "--repo", str(repo), "--reason", "porque sim"]) == 2
+        assert "--override-gate" in capsys.readouterr().err
+
+    def test_override_com_motivo_grava_e_deixa_transitar(self, repo, capsys):
+        self._open(repo, capsys, strict=True)
+        facts = self._bench_facts(repo, ["callgraph.reachable_spark_work"])
+        code, output = run(
+            ["case", "update", "--repo", str(repo), "--phase", "validation",
+             "--facts", str(facts),
+             "--override-gate", "baseline_captured",
+             "--reason", "job descontinuado, sem ambiente para reexecutar",
+             "--now", self.NOW],
+            capsys,
+        )
+        assert code == 0
+        case = json.loads(output)
+        assert case["phase"] == "validation"
+        assert case["gate_overrides"] == [
+            {
+                "gate": "baseline_captured",
+                "reason": "job descontinuado, sem ambiente para reexecutar",
+                "at": self.NOW,
+            }
+        ]
+
+    def test_dois_overrides_do_mesmo_gate_sobrevivem_no_arquivo(self, repo, capsys):
+        self._open(repo, capsys, strict=True)
+        for motivo in ("primeiro motivo", "segundo motivo"):
+            run(["case", "update", "--repo", str(repo),
+                 "--override-gate", "flows_mapped", "--reason", motivo,
+                 "--now", self.NOW], capsys)
+        _, output = run(["case", "get", "--repo", str(repo)], capsys)
+        assert [o["reason"] for o in json.loads(output)["gate_overrides"]] == [
+            "primeiro motivo",
+            "segundo motivo",
+        ]
+
+    def test_o_rigor_atravessa_a_sessao_pelo_arquivo(self, repo, capsys):
+        """A escolha e do case, nao da invocacao: quem retoma nao passa flag
+        nenhuma e mesmo assim herda o rigor de quem abriu."""
+        self._open(repo, capsys, strict=True)
+        assert main(["case", "update", "--repo", str(repo), "--phase", "hypothesis"]) == 2
+        assert "flows_mapped" in capsys.readouterr().err
+
+    def test_o_handoff_mostra_o_override(self, repo, capsys):
+        self._open(repo, capsys, strict=True)
+        run(["case", "update", "--repo", str(repo),
+             "--override-gate", "flows_mapped",
+             "--reason", "corpus sem trabalho Spark alcancavel",
+             "--now", self.NOW], capsys)
+        run(["handoff", "--repo", str(repo)], capsys)
+        text = (repo / ".sparkforge" / "handoff.md").read_text(encoding="utf-8")
+        assert "## Overrides de gate" in text
+        assert "corpus sem trabalho Spark alcancavel" in text
+
+
 class TestErrorsAreActionable:
     def test_missing_case_names_the_command_that_fixes_it(self, repo, capsys):
         assert main(["case", "get", "--repo", str(repo)]) == 2

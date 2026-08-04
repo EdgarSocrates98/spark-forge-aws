@@ -289,15 +289,32 @@ A checagem só acontece quando `case.get("strict_gates")` é verdadeiro **e** o 
 **Files:**
 - Modify: `sparkforge/case/store.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `sparkforge/case/resume.py`, `tests/`
 
-- [ ] **Step 1: `strict_gates` no case**
+- [x] **Step 1: `strict_gates` no case**
 
 `new_case` ganha o parâmetro, default `False`, e a chave entra no dicionário. Case gravado por versão anterior não tem a chave — `case.get("strict_gates")` responde `None`, que é falsy, e o comportamento antigo se preserva sem migração. **Confira se `SCHEMA_VERSION` precisa subir**: se houver teste que valide o conjunto exato de chaves do case, ele decide, e a resposta vai no relatório.
 
-- [ ] **Step 2: `case open --strict-gates`**
+> **Medido: `SCHEMA_VERSION` fica em 1.** Nenhum teste valida o conjunto **exato**
+> de chaves do case — `test_has_required_top_level_keys` afirma `key in case`,
+> que é subconjunto, e `load_case` só compara `schema_version`. Não há fixture
+> de `case.yaml` gravado em disco em `fixtures/`, `evals/` nem `examples/`. As
+> duas chaves novas (`strict_gates`, `gate_overrides`) são aditivas e a ausência
+> delas significa exatamente o comportamento antigo, então subir a versão só
+> recusaria case em andamento sem ganhar nada.
+
+- [x] **Step 2: `case open --strict-gates`**
 
 CLI, `_core.case_open` e a tool MCP, na mesma passada — deixar o MCP para trás recria a assimetria que a Fase 5b corrigiu na flag `--emr`.
 
-- [ ] **Step 3: O override, e o teste primeiro**
+> **As três listas manuais de `test_adapters_tools.py` não mudam nesta task**, e
+> isso foi medido, não suposto: elas enumeram *tools* (`set(TOOLS)`, os
+> `openWorldHint`, os não-`readOnly`), e a Task 3 acrescenta **parâmetro** a tool
+> existente, nunca tool nova. Quem paga a conta delas é a Task 5. No lugar
+> entrou `TestOsControlesDeGateChegamAosTresAdaptadores`
+> (`tests/test_capability_parity.py`), que casa flag da CLI, propriedade do
+> `inputSchema` e parâmetro de `_core` para os quatro controles novos — a
+> simetria vira teste mecânico em vez de disciplina.
+
+- [x] **Step 3: O override, e o teste primeiro**
 
 ```python
 def test_override_sem_motivo_e_recusado():
@@ -320,17 +337,60 @@ def test_override_com_motivo_fica_gravado_e_destrava():
 
 `gate_overrides` é lista, não dicionário: dois overrides do mesmo gate em momentos diferentes são dois fatos, e sobrescrever apagaria o primeiro motivo.
 
-- [ ] **Step 4: `case update --override-gate --reason`**
+> **Desvio D-4b-6 — o esboço acima passaria pelo motivo errado, de novo.** É o
+> D-4b-3 reencenado: `validation` é guardada pelos **dois** gates com produtor,
+> então overridar só `baseline_captured` e chamar `set_phase(..., fact_kinds=set())`
+> continua bloqueando, por `flows_mapped`. O teste escrito cobre um gate com
+> override e o outro com evidência (`fact_kinds={KIND_FLOWS}`), e mais um teste
+> novo — `test_override_de_um_gate_nao_destrava_o_outro` — trava que o override é
+> por gate, e não um interruptor geral.
+
+- [x] **Step 4: `case update --override-gate --reason`**
 
 Nos três adaptadores. `--override-gate` sem `--reason` sai com `exit_code=2` e mensagem que diz o que falta.
 
-- [ ] **Step 5: `resume` mostra o override**
+> **Desvio D-4b-5 — sem `--facts` em `case update`, rigor não teria chave.** O
+> plano descreveu o que **tranca** e o que **passa por cima**, e não descreveu
+> por onde entra a evidência que **destrava**. Medido: `set_phase` recebe
+> `fact_kinds`, e `_core.case_update` chamava `store.set_phase(case, phase)` sem
+> nada. A outra fonte imaginável, `case["facts_index"]["by_kind"]`, é **sempre
+> vazia**: `store.set_index` não tem chamador fora do próprio store — nenhum
+> verbo da CLI ou tool MCP a preenche. Ou seja, `--strict-gates` entregaria um
+> modo em que **nenhuma** transição guardada passa por evidência, e a única saída
+> seria o override — que viraria burocracia obrigatória em vez de escapatória, e
+> esvaziaria o `--reason` do D-4 exatamente como o `--gate-value true` esvaziaria.
+> Entrou `--facts` (repetível) em `case update`, `facts_path` na tool, e
+> `_fact_kinds_for_gates` no `_core`, na mesma forma que `judge --facts` e
+> `case open --facts` já têm.
+>
+> **Desvio D-4b-7 — `--reason` sem `--override-gate` é recusado.** O plano não
+> disse o que fazer, e o default silencioso seria ignorar o motivo. Ignorar em
+> silêncio é a família de defeito desta fase inteira: o operador acha que
+> registrou e não registrou. Sai `exit_code=2` nomeando o comando completo.
+
+- [x] **Step 5: `resume` mostra o override**
 
 `resume.py:213` hoje imprime `bloqueado por (advisory)`. Quando o case tem `strict_gates`, a palavra `advisory` está **errada** — e quando há override, a retomada precisa mostrar gate, motivo e quando. Quem retoma numa outra máquina tem que saber que alguém passou por cima, sem abrir o YAML.
 
-- [ ] **Step 6: Rode a suíte inteira e commite**
+> **Desvio D-4b-8 — trocar `advisory` por `estrito` seria trocar uma palavra
+> falsa por outra.** Medido: `blocked_by` sai de `router.next_step`, que calcula
+> `[g for g in blocked_by if not gates.get(g)]` — o **booleano** do case. Sob
+> rigor esse booleano não bloqueia (o fact pode estar presente e a transição
+> passar) nem destrava (D-4b-2). Chamar a lista de "estrito" afirmaria que ela
+> decide, e ela não decide. O rótulo escrito diz o que é verdade: *"strict_gates
+> ligado: quem decide a transição é a presença do fact produtor, não este
+> booleano"*. Sem rigor, `advisory` continua correto e continua lá.
+>
+> **`HANDOFF_SECTIONS` foi de 10 para 11**: a seção `Overrides de gate` entra
+> depois de `Gates`, e a seção `Gates` ganha uma linha de rigor quando o case é
+> estrito. O teste que contava dez agora conta onze — número medido, não copiado.
+
+- [x] **Step 6: Rode a suíte inteira e commite**
 
 Nenhum case existente pode quebrar: é o critério 5 do spec.
+
+Medido: **3369 passed / 5 skipped** (era 3329/5), `ruff check .` limpo,
+`len(TOOLS) == 34` (inalterado — a Task 3 não cria tool).
 
 ---
 

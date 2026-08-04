@@ -253,3 +253,44 @@ inerte em silêncio é falso negativo mudo. Ao store cabe só o que depende de
 `GATES`: recusar nome de gate que o case não conhece. O import de `router` é
 tardio, para que sem `strict_gates` o catálogo não seja lido — e há teste
 disso.
+
+**D-4b-5 — o rigor precisava de uma porta de entrada para a evidência, e o
+desenho não tinha nenhuma.** O D-3 e o D-4 descrevem o que **tranca** e o que
+**passa por cima**; nenhum dos dois diz por onde entra o fact que **destrava**.
+Medido ao implementar: `set_phase` recebe `fact_kinds`, e `case_update` chamava
+`set_phase(case, phase)` sem nada. A fonte que o case parecia oferecer,
+`facts_index.by_kind`, está **sempre vazia** — `store.set_index` não tem chamador
+fora do próprio store, nenhum verbo da CLI nem tool MCP a preenche.
+
+Consequência, se ficasse assim: `--strict-gates` entregaria um modo em que
+nenhuma transição guardada passa por evidência, e o override viraria a única
+saída — burocracia obrigatória em vez de escapatória. Isso esvaziaria o
+`--reason` do D-4 pelo lado oposto ao que o D-4b-2 previu: em vez de existir um
+caminho curto que não exige motivo, todo caminho exigiria.
+
+Decisão: `case update --facts <json>` (repetível), `facts_path` na tool MCP, na
+mesma forma que `judge --facts` e `case open --facts` já têm. O contrato de
+`set_phase` não muda — ele continua recebendo kinds, e continua sem saber se o
+benchmark é do job certo.
+
+**D-4b-6 — o D-4b-3 vale também para o teste do override.** O esboço do plano
+overrida `baseline_captured` e espera transitar para a fase guardada com
+`fact_kinds=set()`. `validation` é guardada pelos dois gates com produtor, então
+`flows_mapped` continua bloqueando. O teste escrito cobre um gate por override e
+o outro por evidência, e `test_override_de_um_gate_nao_destrava_o_outro` trava
+que override é por gate, nunca interruptor geral.
+
+**D-4b-7 — `--reason` sem `--override-gate` é recusado.** O desenho não previu a
+combinação, e o default silencioso seria ignorar o motivo: o operador acharia que
+registrou e não registrou. Sai `exit_code=2` nomeando o comando completo.
+
+**D-4b-8 — sob rigor, `blocked_by` não é "advisory" nem "estrito".** O plano
+mandava trocar a palavra `advisory` quando o case fosse estrito. Medido: a lista
+vem de `router.next_step`, que a calcula do **booleano** do case — e sob rigor
+esse booleano não bloqueia (o fact pode estar presente e a transição passar) nem
+destrava (D-4b-2). Chamá-la de "estrito" afirmaria que ela decide a transição.
+O rótulo escrito diz o que é verdade: quem decide é a presença do fact produtor,
+não aquele booleano. Sem rigor, `advisory` continua correto e continua lá.
+
+E o override ganha seção própria na retomada (`Overrides de gate`, com gate,
+motivo e quando): `HANDOFF_SECTIONS` vai de dez para onze.

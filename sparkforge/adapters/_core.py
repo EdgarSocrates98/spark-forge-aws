@@ -1599,6 +1599,7 @@ def case_open(
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
     emr: str | None = None,
+    strict_gates: bool = False,
 ) -> dict[str, Any]:
     # O case guarda o runtime da investigacao inteira. Aceitar facts aqui e o
     # que evita abrir um case com runtime vazio quando o repositorio ja diz a
@@ -1612,7 +1613,9 @@ def case_open(
         facts=_facts_for_runtime(facts_path),
         emr=emr,
     )
-    case = store.new_case(case_id, now, context.to_dict(), repo=repo)
+    case = store.new_case(
+        case_id, now, context.to_dict(), repo=repo, strict_gates=strict_gates
+    )
     store.save_case(case, root=repo)
     return case
 
@@ -1624,6 +1627,26 @@ def case_get(repo: str) -> dict[str, Any]:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
+def _fact_kinds_for_gates(facts_path: str | list[str] | None) -> set[str] | None:
+    """Kinds presentes nos facts informados — o que satisfaz gate sob rigor.
+
+    `None` quando nada e informado, que e o que preserva a chamada antiga: sem
+    rigor, `set_phase` ignora o parametro; com rigor e sem facts, o gate morde e
+    a mensagem diz o comando que produz o fact.
+
+    O case tem `facts_index.by_kind`, mas nenhum verbo o preenche hoje (desvio
+    D-4b-5), entao ler dali seria ler um indice sempre vazio -- rigor que nunca
+    destrava por evidencia. A fonte e o arquivo de facts, o mesmo que `judge` e
+    `case open` ja aceitam.
+    """
+    if facts_path is None:
+        return None
+    paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+    if not paths:
+        return None
+    return {fact.kind for fact in _merge_facts_files(paths)}
+
+
 def case_update(
     repo: str,
     phase: str | None = None,
@@ -1632,11 +1655,30 @@ def case_update(
     skill: str | None = None,
     now: str | None = None,
     outcome: str | None = None,
+    override_gate: str | None = None,
+    reason: str | None = None,
+    facts_path: str | list[str] | None = None,
 ) -> dict[str, Any]:
+    if reason is not None and override_gate is None:
+        raise AdapterError(
+            "`--reason` so faz sentido com `--override-gate`: sem o gate, o "
+            "motivo nao tem sujeito e nao seria gravado em lugar nenhum. Rode "
+            "`sparkforge case update --override-gate <gate> --reason \"<motivo>\"`.",
+            exit_code=2,
+        )
+    fact_kinds = _fact_kinds_for_gates(facts_path)
     try:
         case = store.load_case(repo)
+        # Override antes da fase, de proposito: quem passa os dois na mesma
+        # chamada quer transitar COM o override valendo. A ordem inversa faria
+        # `--override-gate X --phase Y` falhar sempre, e o operador teria que
+        # descobrir sozinho que precisava de duas chamadas.
+        if override_gate is not None:
+            case = store.override_gate(
+                case, override_gate, reason or "", at=now or ""
+            )
         if phase is not None:
-            case = store.set_phase(case, phase)
+            case = store.set_phase(case, phase, fact_kinds=fact_kinds)
         if gate is not None:
             case = store.set_gate(case, gate, bool(gate_value))
         if skill is not None:

@@ -343,6 +343,31 @@ _GATES_SCHEMA: dict[str, Any] = {
     "properties": {gate: {"type": "boolean"} for gate in _GATE_NAMES},
 }
 
+_GATE_OVERRIDE_LIST: dict[str, Any] = {
+    "type": "array",
+    "description": (
+        "Historico de gates cobertos por override, em ordem de registro. E "
+        "lista e nao mapa de proposito: dois overrides do mesmo gate em "
+        "momentos diferentes sao dois fatos, e um mapa apagaria o primeiro "
+        "motivo. Ausente em case aberto antes da Fase 4b."
+    ),
+    "items": {
+        "type": "object",
+        "required": ["gate", "reason", "at"],
+        "properties": {
+            "gate": {"type": "string", "enum": list(_GATE_NAMES)},
+            "reason": {
+                "type": "string",
+                "description": "Nunca vazio: override sem motivo e recusado.",
+            },
+            "at": {
+                "type": "string",
+                "description": "Timestamp injetado por quem chamou; pode ser vazio.",
+            },
+        },
+    },
+}
+
 _SKILL_USE_ITEM: dict[str, Any] = {
     "type": "object",
     "required": ["skill", "at", "outcome"],
@@ -450,6 +475,21 @@ _CASE_SCHEMA: dict[str, Any] = {
         },
         "hypotheses": {"type": "array", "items": _HYPOTHESIS_ITEM},
         "gates": _GATES_SCHEMA,
+        # Fora de `required` de proposito: case gravado antes da Fase 4b nao tem
+        # estas duas chaves, e `case_get` devolve o que esta no disco. Exigi-las
+        # faria a leitura de um case antigo falhar validacao por ausencia de um
+        # campo cuja ausencia significa exatamente "modo advisory, como sempre".
+        "strict_gates": {
+            "type": "boolean",
+            "description": (
+                "Rigor de gate escolhido na abertura do case. Ligado, gate com "
+                "produtor declarado bloqueia a transicao de fase; o booleano de "
+                "`gates` nao destrava, so o fact produtor ou um override "
+                "registrado. Ausente em case aberto antes da Fase 4b, e ausente "
+                "significa desligado."
+            ),
+        },
+        "gate_overrides": _GATE_OVERRIDE_LIST,
         "skills_used": {"type": "array", "items": _SKILL_USE_ITEM},
         "open_questions": {"type": "array", "items": {"type": "string"}},
     },
@@ -483,6 +523,8 @@ _RESUME_SCHEMA: dict[str, Any] = {
         "open_hypotheses",
         "gates",
         "unsatisfied_gates",
+        "strict_gates",
+        "gate_overrides",
         "missing_artifacts",
         "next_step",
         "in_flight",
@@ -512,6 +554,11 @@ _RESUME_SCHEMA: dict[str, Any] = {
         "open_hypotheses": {"type": "array", "items": _HYPOTHESIS_ITEM},
         "gates": _GATES_SCHEMA,
         "unsatisfied_gates": {"type": "array", "items": {"type": "string"}},
+        # Sempre presentes na retomada, mesmo em case antigo: `resume` normaliza
+        # a ausencia para `false`/`[]`. Quem retoma noutra maquina precisa saber
+        # que o case e estrito e que alguem passou por cima, sem abrir o YAML.
+        "strict_gates": {"type": "boolean"},
+        "gate_overrides": _GATE_OVERRIDE_LIST,
         "missing_artifacts": {"type": "array", "items": _ARTIFACT_ITEM},
         "next_step": _NEXT_STEP_SCHEMA,
         "in_flight": {"type": "string"},
@@ -995,6 +1042,16 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "extratores observaram, nao so das flags."
                     ),
                 },
+                "strict_gates": {
+                    "type": "boolean",
+                    "description": (
+                        "Grava no case que gate com produtor declarado bloqueia "
+                        "a transicao de fase. A escolha e do case, nao da "
+                        "chamada: vale pela investigacao inteira, e quem retoma "
+                        "noutra sessao herda o rigor de quem abriu. Omitido, o "
+                        "comportamento e o de sempre (gate advisory)."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
@@ -1018,7 +1075,9 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "Atualiza a fase, um gate booleano, ou registra o uso de uma skill no case "
             "atual. Cada mutacao e uma transicao de estado explicita e validada contra o "
-            "dominio conhecido (PHASES, GATES) -- nunca um valor livre."
+            "dominio conhecido (PHASES, GATES) -- nunca um valor livre. Num case aberto "
+            "com `strict_gates`, `gate_value` NAO destrava a transicao de fase: destrava "
+            "o fact produtor (informe `facts_path`) ou um `override_gate` com `reason`."
         ),
         "inputSchema": {
             "type": "object",
@@ -1031,6 +1090,32 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "skill": {"type": "string"},
                 "now": {"type": "string"},
                 "outcome": {"type": "string"},
+                "override_gate": {
+                    "type": "string",
+                    "enum": list(_GATE_NAMES),
+                    "description": (
+                        "Passa por cima deste gate num case estrito, quando o "
+                        "dado genuinamente nao existe (job descontinuado, "
+                        "ambiente que sumiu). Exige `reason`."
+                    ),
+                },
+                "reason": {
+                    "type": "string",
+                    "description": (
+                        "Motivo do `override_gate`. Sem ele o override e "
+                        "recusado -- override anonimo nao se distingue de gate "
+                        "esquecido."
+                    ),
+                },
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Facts que comprovam os gates da fase pedida. Num case "
+                        "estrito, e daqui que sai a evidencia que destrava "
+                        "`phase`."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
@@ -1956,6 +2041,7 @@ def _h_case_open(args: dict[str, Any]) -> dict[str, Any]:
         iceberg=args.get("iceberg"),
         athena=args.get("athena"),
         facts_path=args.get("facts_path"),
+        strict_gates=bool(args.get("strict_gates", False)),
     )
 
 
@@ -1972,6 +2058,9 @@ def _h_case_update(args: dict[str, Any]) -> dict[str, Any]:
         skill=args.get("skill"),
         now=args.get("now"),
         outcome=args.get("outcome"),
+        override_gate=args.get("override_gate"),
+        reason=args.get("reason"),
+        facts_path=args.get("facts_path"),
     )
 
 

@@ -374,6 +374,17 @@ def build_parser() -> argparse.ArgumentParser:
             "flags."
         ),
     )
+    open_p.add_argument(
+        "--strict-gates",
+        action="store_true",
+        help=(
+            "Grava no case que gate com produtor declarado passa a bloquear a "
+            "transicao de fase. A escolha e do case, nao da invocacao: vale "
+            "pela investigacao inteira, e quem retoma noutra maquina herda o "
+            "rigor de quem abriu. Sem a flag, o comportamento e o de sempre "
+            "(gate advisory)."
+        ),
+    )
 
     get_p = case_sub.add_parser("get", help="Le o case atual.")
     get_p.add_argument("--repo", required=True)
@@ -388,6 +399,28 @@ def build_parser() -> argparse.ArgumentParser:
     update_p.add_argument("--skill")
     update_p.add_argument("--now")
     update_p.add_argument("--outcome")
+    update_p.add_argument(
+        "--override-gate",
+        help=(
+            "Passa por cima de um gate num case estrito, quando o dado "
+            "genuinamente nao existe (job descontinuado, ambiente que sumiu). "
+            "Exige `--reason`. Fica gravado no case como lista: dois overrides "
+            "do mesmo gate sao dois fatos, e nenhum apaga o outro."
+        ),
+    )
+    update_p.add_argument(
+        "--reason",
+        help="Motivo do `--override-gate`. Sem ele o override e recusado.",
+    )
+    update_p.add_argument(
+        "--facts",
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) que comprova os gates da fase pedida. "
+            "Repetivel. Num case estrito, e daqui que sai a evidencia que "
+            "destrava `--phase`."
+        ),
+    )
 
     # next-step / resume / handoff ------------------------------------
     next_p = sub.add_parser(
@@ -939,6 +972,7 @@ def _cmd_case_open(args: argparse.Namespace) -> int:
         iceberg=args.iceberg,
         athena=args.athena,
         facts_path=args.facts,
+        strict_gates=args.strict_gates,
     )
     _print(case)
     return 0
@@ -958,6 +992,9 @@ def _cmd_case_update(args: argparse.Namespace) -> int:
         skill=args.skill,
         now=args.now,
         outcome=args.outcome,
+        override_gate=args.override_gate,
+        reason=args.reason,
+        facts_path=args.facts,
     )
     _print(case)
     return 0
