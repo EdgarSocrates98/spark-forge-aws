@@ -291,8 +291,7 @@ EMR_MATRIX: dict[str, dict[str, Any]] = {
 # Precedencia de resolucao quando ha mais de uma fonte para o mesmo
 # componente: event_log (Spark UI / event log do run) e o mais confiavel,
 # depois cli (a flag que o operador digitou), depois terraform (glue_version,
-# --datalake-formats), depois requirements (intencao do projeto, nao runtime
-# observado). Ver knowledge/glue/runtime-matrix.md secao 5.
+# --datalake-formats). Ver knowledge/glue/runtime-matrix.md secao 5.
 #
 # `cli` estava FORA desta tupla e caia por ultimo por acidente de
 # implementacao -- `_source_rank` empurra qualquer origem desconhecida para o
@@ -300,10 +299,10 @@ EMR_MATRIX: dict[str, dict[str, Any]] = {
 # o event log e a unica fonte que OBSERVOU o runtime do run sob analise, com
 # artefato, provenance e sha256; a flag e uma declaracao sem artefato. Quando o
 # run reporta 3.5.4 e alguem digitou 3.3.0, quem sabe de si e o run. Acima de
-# `terraform`/`requirements`, porem, porque esses tambem sao declaracao (a
-# intencao registrada no repositorio) e a flag e a declaracao mais especifica e
-# mais recente -- o operador pode saber de uma mudanca aplicada no console que
-# o IaC ainda nao reflete.
+# `terraform`, porem, porque ele tambem e declaracao (a intencao registrada no
+# repositorio) e a flag e a declaracao mais especifica e mais recente -- o
+# operador pode saber de uma mudanca aplicada no console que o IaC ainda nao
+# reflete.
 #
 # Isto NAO e resolucao silenciosa, e nao pode virar. Perder a precedencia nunca
 # apaga a observacao: todo valor lido continua entrando em `observations`, e
@@ -316,8 +315,8 @@ EMR_MATRIX: dict[str, dict[str, Any]] = {
 # espelhando exatamente a decisao ja tomada para `event_log` vs `terraform`:
 # `Cluster.Applications[].Version` e a AWS reportando o que INSTALOU no cluster
 # -- observacao com artefato, nao declaracao --, mas quem observou o RUN sob
-# analise continua sendo so o event log. Acima de `cli`/`terraform`/
-# `requirements` porque esses tres sao declaracao de intencao.
+# analise continua sendo so o event log. Acima de `cli`/`terraform` porque os
+# dois sao declaracao de intencao.
 #
 # O extrator que produz esse dump e a Task 3 desta fase. A fonte fica declarada
 # e funcionando desde ja, sem alimentador -- e esperado.
@@ -328,8 +327,8 @@ EMR_MATRIX: dict[str, dict[str, Any]] = {
 # `engine_version.effective_engine_version` e a engine EFETIVA do workgroup,
 # nao a pedida (`selected_engine_version`, que pode ser `AUTO`). Fica abaixo de
 # `event_log` pela mesma razao que `describe_cluster`: quem observou o RUN sob
-# analise e so o event log. Acima de `cli`/`terraform`/`requirements` porque
-# esses tres sao declaracao de intencao.
+# analise e so o event log. Acima de `cli`/`terraform` porque os dois sao
+# declaracao de intencao.
 #
 # A ordem RELATIVA entre `describe_cluster` e `get_work_group` nunca decide
 # nada: os dois nunca disputam o mesmo componente. `describe_cluster` produz
@@ -338,23 +337,61 @@ EMR_MATRIX: dict[str, dict[str, Any]] = {
 # adjacencia e agrupamento por natureza da evidencia, nao afirmacao de que um
 # vence o outro.
 #
-# `requirements` E A UNICA FONTE DESTA TUPLA SEM PRODUTOR, e e produtor
-# PREVISTO, nao vestigio: `knowledge/glue/runtime-matrix.md` secao 5 lista
-# `requirements.txt`/`pyproject.toml` como a fonte de menor confiabilidade
-# ("indica intencao, nao runtime"), e a precedencia foi desenhada com ela no
-# fim justamente por isso. Ninguem escreveu o extrator -- nenhum modulo de
-# `sparkforge/facts/` le manifesto de dependencia --, e ate escrever,
-# `RuntimeContext` nunca recebe nada por esta fonte. Fica declarada com esta
-# nota pela mesma razao que `describe_cluster` ficou antes da Task 3: fonte sem
-# produtor e superficie que parece existir, e o comentario e o que impede o
-# proximo leitor de procurar o alimentador que nao existe.
+# `requirements` ESTAVA AQUI, NO FIM, E SAIU -- decisao, nao esquecimento.
+#
+# Ela entrou na Fase 0 como produtor PREVISTO: `knowledge/glue/runtime-matrix.md`
+# secao 5 lista `requirements.txt`/`pyproject.toml` como a fonte de MENOR
+# confiabilidade ("indica intencao, nao runtime"), e a tupla foi desenhada com
+# ela no fim por isso. Sobreviveu quatro fases sem extrator -- nenhum modulo de
+# `sparkforge/facts/` le manifesto de dependencia --, e a triagem de dividas
+# mediu os dois caminhos antes de escolher.
+#
+# O QUE DECIDIU, e e medicao, nao gosto. Com
+# `{"terraform": {"glue_version": "4.0"}, "requirements": {"spark_version": "3.5.1"}}`
+# o motor devolve `RuntimeContext.spark == "3.5.1"` e uma divergencia. As duas
+# metades estao erradas, e nenhuma delas se conserta com um extrator:
+#
+# 1. A POSICAO NO FIM DA TUPLA NAO PROTEGE NADA. `_resolve` prefere observacao
+#    DIRETA a derivacao `:matrix`, e so DEPOIS desempata por `_source_rank`.
+#    Uma leitura de manifesto e direta por construcao, entao a fonte de menor
+#    confiabilidade do projeto vence a derivacao da matriz oficial a partir de
+#    um `glue_version` observado no Terraform -- e alimenta `runtime_scope` de
+#    toda regra versionada. E o oposto exato da disciplina que a Fase 5b
+#    declarou ("observacao direta vence a matriz"): aqui o que vence a matriz e
+#    declaracao sem artefato.
+# 2. `distinct_versions` sai 2, e isso e SF-ENV-001 em P0 sobre `pyspark==3.5.1`
+#    fixado para teste local num job que roda em Glue 4.0 -- configuracao
+#    NORMAL, nao contradicao. E o mesmo P0 falso que `_UNANIMOUS_SOURCES`
+#    recusou para multiplos workgroups do Athena, e falso P0 treina o operador
+#    a ignorar o canal de divergencia.
+#
+# E o que sobraria de honesto para ler e quase nada: `pyspark` no manifesto e a
+# versao de teste local (o runtime embarca a sua, e instala-la pelo
+# `--additional-python-modules` e defeito, nao declaracao de runtime),
+# `requires-python` e FAIXA e nao versao, e `pyiceberg` e outro artefato que nao
+# o jar de Iceberg do cluster.
+#
+# PARA VOLTAR sao tres capacidades independentes, e o extrator e a menor delas:
+# (a) o extrator; (b) uma classe de rank nova em `_resolve` -- "declaracao de
+# intencao nunca vence derivacao de observacao" --, que mexe na resolucao de
+# TODAS as fontes; (c) supressao de divergencia para essa classe, no molde de
+# `_UNANIMOUS_SOURCES`. A secao 5 do knowledge continua listando o manifesto, e
+# ali ele e o que sempre foi: orientacao para um HUMANO, que sabe pesar "indica
+# intencao". O motor nao tem classe de rank para intencao, e inventar uma para
+# uma fonte que quase nada pode dizer e custo sem consumidor.
+#
+# Sair da tupla NAO e recriar o acidente que a Fase 5a.2 fechou com `cli`
+# (origem desconhecida caindo por ultimo por implementacao, nao por decisao):
+# `_source_rank` de fato continua jogando nome desconhecido para o fim, mas a
+# decisao registrada aqui nao e "ela ranqueia por ultimo" -- e que ela nao
+# existe como fonte. `TestNoPrecedenceSourceIsAnUndeclaredProducerGap` trava:
+# nome nesta tupla exige alguem que o emita.
 _PRECEDENCE: tuple[str, ...] = (
     "event_log",
     "describe_cluster",
     "get_work_group",
     "cli",
     "terraform",
-    "requirements",
 )
 
 # Chaves que identificam a PLATAFORMA de execucao em cada fonte, e o valor que
