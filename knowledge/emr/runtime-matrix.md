@@ -80,7 +80,7 @@ A célula de `emr-6.4.0` é vazia na página oficial, e a matriz **omite a chave
 
 `Cluster.Applications[].Version` vem populado no dump de `describe-cluster`: ali a AWS **observou** o que instalou. A matriz é fallback (quando só o release label é conhecido) e guard de drift (quando os dois existem e discordam).
 
-Por isso `describe_cluster` entra em `_PRECEDENCE` **abaixo de `event_log`** — só o event log observou o *run* sob análise — e **acima de `cli`/`terraform`/`requirements`, que são declaração sem artefato. A derivação por matriz continua marcada com o sufixo `:matrix` na origem, e perde para qualquer leitura direta.
+Por isso `describe_cluster` entra em `_PRECEDENCE` **abaixo de `event_log`** — só o event log observou o *run* sob análise — e **acima de `cli`/`terraform`**, que são declaração sem artefato. A derivação por matriz continua marcada com o sufixo `:matrix` na origem, e perde para qualquer leitura direta.
 
 ### 4.4 Duas plataformas não produzem divergência de versão
 

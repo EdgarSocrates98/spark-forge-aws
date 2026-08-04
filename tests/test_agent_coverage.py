@@ -175,6 +175,51 @@ class TestHandoffContract:
             delivered |= set(re.findall(r"`case\.([a-z_.]+)`", _section(text, "Entrega")))
 
 
+class TestOTerceiroDegrauAlcancaAAssinatura:
+    """`TestEveryToolIsReachable` le o corpus do COORDENADOR -- ele mais as
+    skills e executores que ele declara --, entao uma tool citada so no executor
+    ja passa. Foi assim que `report sign` ficou alcancavel pelo agente e
+    inalcancavel pela skill: `agents/executors/sf-synthesizer.md` a invoca,
+    `AGENT_PROTOCOL.md` a descreve, e `grep -rl "report sign" skills/` saia
+    vazio.
+
+    A escada de degradacao tem tres degraus -- tools MCP, CLI, e o Markdown que
+    um agente sem Python le. Skill e o terceiro, e e o unico que sobrevive a
+    queda dos outros dois: quem segue uma skill de ponta a ponta chega ao
+    relatorio, e ate aqui nunca era mandado assina-lo. Assinatura nao e
+    obrigatoria (`strict_gates` guarda a transicao de fase, nao a emissao do
+    relatorio) -- ser ALCANCAVEL por este degrau e que e.
+
+    O teste cobra o DEGRAU, nao um arquivo: qualquer skill serve, porque a
+    pergunta e "um agente que so le skills chega la?".
+    """
+
+    CAPABILITIES = ("report sign", "report verify")
+
+    def _skills_corpus(self) -> str:
+        return "".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted((ROOT / "skills").glob("*/SKILL.md"))
+        )
+
+    def test_a_assinatura_e_alcancavel_so_pelas_skills(self):
+        corpus = self._skills_corpus()
+        missing = [name for name in self.CAPABILITIES if name not in corpus]
+        assert not missing, (
+            f"nenhuma skill cita {missing}. A capacidade existe e o terceiro "
+            f"degrau da escada nao chega nela: quem seguir so o Markdown escreve "
+            f"o relatorio e nunca e mandado assinar nem conferir."
+        )
+
+    def test_o_corpus_nao_e_vazio(self):
+        """Se o glob parar de achar SKILL.md, o teste acima vira verde sobre
+        nada -- a mesma armadilha do invariante derivado por AST."""
+        corpus = self._skills_corpus()
+
+        assert "sparkforge-diagnose" in corpus, len(corpus)
+        assert len(list((ROOT / "skills").glob("*/SKILL.md"))) >= 20
+
+
 def _section(text: str, title: str) -> str:
     """Corpo de uma secao `## <title>` ate a proxima `##` ou o fim."""
     match = re.search(rf"^## {re.escape(title)}\n(.*?)(?=^## |\Z)", text, re.M | re.S)
