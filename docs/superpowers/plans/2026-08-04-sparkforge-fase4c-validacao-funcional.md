@@ -969,12 +969,21 @@ a 004 como "quem decide, comparando `relative_delta` contra
 ponto flutuante, onde o fact sai sem `diverged` pela D-4c-10. Medido: um
 `agg:sum:<coluna>` de coluna INTEIRA ou DECIMAL é comparado de forma EXATA
 (`_mode_of` classifica `bigint`/`decimal(18,2)` como `_COMPARISON_EXACT`), sai
-COM `diverged` no fact, e o `relative_delta` dele é minúsculo por construção —
-uma soma de `bigint` que mudou em uma unidade sobre quinhentos milhões dá
-`relative_delta` da ordem de 2e-9, abaixo de qualquer tolerância utilizável. Uma
-004 escrita só sobre `relative_delta` deixaria essa divergência aparecer em
-`diverged_check_count` da sentinela e em achado NENHUM: silêncio com cara de
-aprovação, que é o defeito que a fase inteira existe para acusar. E aplicar a
+COM `diverged` no fact. Uma 004 escrita só sobre `relative_delta` deixaria essa
+divergência aparecer em `diverged_check_count` da sentinela e em achado NENHUM:
+silêncio com cara de aprovação, que é o defeito que a fase inteira existe para
+acusar.
+
+O buraco é de duas naturezas, MEDIDAS pelo `judge` contra o catálogo real. Por
+MAGNITUDE: uma soma que muda em uma unidade só escapa do limiar `1.0e-9` quando o
+total passa de UM BILHÃO — o corte medido fica em ~9,95e8 (o `_round_relative` de
+três significativos empurra tudo entre 9,95e8 e 1e9 para `1e-9` exato, e a
+condição é `>`, estrita). Sobre quinhentos milhões o `relative_delta` é `2e-9`,
+que está ACIMA do limiar e não abaixo: nessa ordem de grandeza a via relativa
+ainda pegaria sozinha. Por FORMA, e esta não depende de magnitude nenhuma: a
+condição relativa é filtrada por `attrs.comparison: relative`, e um agregado exato
+nunca casa com ela — medido, a 004 sem a condição exata fica muda para um `bigint`
+divergente em QUALQUER ordem de grandeza, inclusive uma soma de mil. E aplicar a
 tolerância ao agregado exato contrariaria a D-4 do spec, que reserva tolerância
 para onde a aritmética a exige. Decisão: `when.any` com duas condições — a exata
 lendo `attrs.diverged` (observação, como a 001 e a 002) e a relativa lendo
