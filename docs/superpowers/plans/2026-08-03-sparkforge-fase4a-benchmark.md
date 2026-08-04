@@ -879,22 +879,22 @@ Rode a suíte inteira. **Se algum teste ou fixture existente tiver `benchmark_re
 **Files:**
 - Modify: `agents/spark-performance-architect.md`, `skills/benchmark-pyspark-job/SKILL.md`, `docs/superpowers/STATUS.md`, `README.md`, `AGENTS.md`
 
-- [ ] **Step 1: Prove a órfã primeiro**
+- [x] **Step 1: Prove a órfã primeiro**
 
 Run: `python -m pytest tests/test_agent_coverage.py -v`
 Expected: FAIL em `test_no_area_is_orphan` — `SF-BENCH` sem coordenador. Cole a saída.
 
-- [ ] **Step 2: `SF-BENCH` em `rule_areas`**
+- [x] **Step 2: `SF-BENCH` em `rule_areas`**
 
 Em `agents/spark-performance-architect.md`. Sem coordenador novo (D-6 do spec): a pergunta — *o job ficou mais rápido, e por quê* — é a que esse coordenador já responde.
 
-- [ ] **Step 3: A skill ganha o fluxo**
+- [x] **Step 3: A skill ganha o fluxo**
 
 `skills/benchmark-pyspark-job/SKILL.md`: coletar event log antes, aplicar a mudança, coletar depois, `sparkforge benchmark --before ... --after ...`, `judge`, e citar o `fact_id` do `bench.run_delta` no `benchmark_ref` do achado. Toda invocação de `judge` passa runtime — invariante de `tests/test_skill_content.py`.
 
 Depois: `python scripts/sync_skills.py`.
 
-- [ ] **Step 4: Meça os números**
+- [x] **Step 4: Meça os números**
 
 ```bash
 python -c "
@@ -916,10 +916,51 @@ ls -d fixtures/*/*/ | wc -l ; ls -d fixtures/*/ | wc -l
 python -m pytest -q 2>&1 | tail -2
 ```
 
-- [ ] **Step 5: `STATUS.md`, `README.md`, `AGENTS.md`**
+- [x] **Step 5: `STATUS.md`, `README.md`, `AGENTS.md`**
 
 Tabela de números com os valores **medidos**. Seção "Fase 4a" no formato das anteriores: o defeito de partida (gate sem produtor), o que entrou, **a quebra de contrato do `benchmark_ref`**, e a faixa de commits. Na §16 do roadmap, marcar que a Fase 4 está **parcialmente** fechada — 4b tem validação funcional, gates fail-closed e assinatura.
 
 `README.md` e `AGENTS.md` na mesma passada: contagens, e o verbo `benchmark` na tabela de extratores/verbos. A varredura de docs desta sessão mediu que documento de topo não tem invariante que o defenda — então ele entra no fechamento da fase, não depois.
 
-- [ ] **Step 6: Suíte, ruff, commit**
+- [x] **Step 6: Suíte, ruff, commit**
+
+> **Quatro desvios medidos na Task 7.**
+>
+> **D-4a-33 — o vermelho eram DOIS, e o plano previa um.** O Step 1 esperava só
+> `test_no_area_is_orphan`. Falhou junto `TestEveryToolIsReachable::test_no_tool_is_orphan`:
+> `sparkforge_benchmark` era 1 de 34 tools inalcançável a partir de coordenador
+> nenhum. Os dois têm a mesma causa — capacidade que entrou sem orientação que
+> chegue a ela — e a mesma correção, mas o corpus que `_corpus_of` monta é
+> coordenador **mais** as skills e executores que ele declara, então `rule_areas`
+> sozinho não fecharia o segundo: quem fecha é a skill `benchmark-pyspark-job`
+> passar a nomear a tool.
+>
+> **D-4a-34 — a skill entrou no escopo de `test_skill_content` ao ganhar
+> `sparkforge judge`.** `JUDGE_SKILLS` é derivado: qualquer SKILL.md que
+> mencione a string entra nos três invariantes de runtime. Passou a ser exigido
+> `--show-skipped`, o `reason` que o motor emite ao pular por versão, e um campo
+> de proveniência — `divergences` e `detected_from` já estavam lá. Não é custo
+> acidental: é o invariante funcionando como projetado, e o texto que ele obrigou
+> a escrever foi **medido**, não suposto (ver D-4a-35).
+>
+> **D-4a-35 — o número de regras puladas por versão foi medido, não estimado.**
+> Sobre `fixtures/bench/different_input_volume/`: `judge` com os três arquivos
+> (bench + os dois event logs) devolve `runtime.spark = "3.5.4"` e
+> `detected_from: ["event_log"]`, acende `SF-BENCH-001`, `SF-BENCH-002` e
+> `SF-UI-006`, e deixa **8** regras em `skipped` com `reason: "runtime_scope"` —
+> as mesmas 8 que declaram escopo não-vazio no catálogo. Com o arquivo de
+> benchmark sozinho o contexto sai vazio. Esse é o par de execuções que a skill
+> descreve, e é por isso que ela manda passar os facts de event log junto.
+>
+> **D-4a-36 — `runtime_scope: {}` não pode ser escrito numa skill.**
+> `tests/test_agents_parity.py::TestNoPlatformKnowledge` proíbe os marcadores
+> `threshold:`, `runtime_scope:` e `retrieved:` em `.claude/`, `.agents/` e
+> `.github/` — conhecimento não pode viver em diretório de plataforma —, e
+> `sync_skills.py` espelha a skill para lá. A frase virou "não declaram versão
+> nenhuma em `runtime_scope`", que diz a mesma coisa sem carregar a sintaxe do
+> catálogo para dentro do espelho. Custo real do invariante: **um** teste
+> vermelho na suíte cheia, corrigido com uma reescrita de frase.
+
+**Nenhuma rota nova foi exigida.** `test_router_agents.py::test_there_is_at_least_one_route_per_coordinator`
+seguiu verde sem tocar em `routing.yaml`: `AGENT-001` já aponta para
+`spark-performance-architect`, e a exigência é por coordenador, não por área.
