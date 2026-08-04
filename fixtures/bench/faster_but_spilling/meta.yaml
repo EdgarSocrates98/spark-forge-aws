@@ -1,0 +1,19 @@
+name: faster_but_spilling
+proves: >
+  Ganho fragil: o depois soma 16,6 s de tempo de task contra 22,0 s do antes
+  (-24,5%) sobre o MESMO volume lido (140 MB, 0,0%), mas derrama 160 MB contra
+  5 MB do antes (+3100,0%) e gasta o dobro de GC (2,2 s contra 1,1 s). O
+  antes derrama pouco de proposito: com spill zero no antes o percentual seria
+  omitido (divisao por zero e "nao sei", nao "infinito por cento") e a fixture
+  provaria menos do que o nome diz. Tempo caiu comprando memoria -- e o ganho
+  desaparece quando o dado crescer.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - bench.analyzed
+  - bench.run_delta
+  - bench.stage_delta
+expects_rules: []
