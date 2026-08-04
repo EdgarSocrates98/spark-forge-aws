@@ -11,6 +11,55 @@ schema_version: 1
 area: ROUTE
 retrieved: 2026-07-29
 
+# Contrato dos gates do case — quem produz a evidência que destrava cada um.
+# `store.set_phase` lê este bloco quando o case tem `strict_gates`: gate com
+# `satisfied_by` é fail-closed nas fases de `guards_phases`; gate sem
+# `satisfied_by` permanece advisory, mesmo sob rigor. A decisão é DADO, não `if`
+# em Python — pela mesma razão que o roteamento de coordenador é dado.
+#
+# Os QUATRO gates de `store.GATES` aparecem aqui, inclusive os advisory: gate
+# ausente do bloco seria ambíguo entre "esqueceram" e "é advisory de propósito".
+#
+# `guards_phases` é LISTA porque `set_phase` valida só pertinência a `PHASES` —
+# nada impede `experiment -> report`, então uma fase só seria contornada pulando
+# fase. A lista é o sufixo de `PHASES` a partir da primeira fase guardada.
+#
+# LIMITE, declarado onde ele opera: a checagem é por PRESENÇA do kind, não por
+# conteúdo do fact. Ela prova que a análise rodou e produziu o artefato que
+# destrava — nunca que ela cobriu todo `scope.entrypoints`, nem que o benchmark
+# é do job certo.
+gates:
+
+  baseline_captured:
+    satisfied_by: bench.run_delta
+    produced_by: "sparkforge benchmark --before <facts_antes.json> --after <facts_depois.json> --out .sparkforge/facts_bench.json"
+    # `experiment` NÃO entra: `bench.run_delta` exige o lado `--after`, que só
+    # existe depois de rodar o job mudado. Guardar `experiment` seria gate
+    # insatisfazível no momento em que morde.
+    guards_phases: [validation, report]
+
+  flows_mapped:
+    satisfied_by: callgraph.reachable_spark_work
+    produced_by: "sparkforge analyze call-graph --facts .sparkforge/facts.json --out .sparkforge/facts_callgraph.json"
+    # NÃO `callgraph.summary`: aquele kind é emitido incondicionalmente, então
+    # destravaria rodando `analyze call-graph` sobre um facts vazio.
+    # `callgraph.reachable_spark_work` só existe se algum entrypoint alcança
+    # trabalho Spark.
+    guards_phases: [hypothesis, experiment, validation, report]
+
+  dominant_bottleneck_identified:
+    # SEM satisfied_by: dominância é ordenação entre candidatos, e nenhum dos
+    # 102 kinds do vocabulário a afirma. O que se aproxima é um Finding, que
+    # não é Fact -- mora em findings_index e não chega a `set_phase`.
+    advisory_reason: "nenhum fact prova dominancia; o julgamento e do catalogo, nao da evidencia"
+
+  functional_validation_defined:
+    # SEM satisfied_by: nenhum extrator emite fact que prove isto ate a Fase 4c.
+    # Endurece-lo agora e o impasse que a secao 5.5 da Fase 0 recusou.
+    # `dq.check` foi medido e REJEITADO: prova validacao dentro do job, que e
+    # verdade antes e depois da mudanca e nao compara duas execucoes.
+    advisory_reason: "sem produtor ate a Fase 4c"
+
 rules:
 
   - id: ROUTE-001

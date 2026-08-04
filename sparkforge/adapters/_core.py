@@ -55,7 +55,9 @@ from sparkforge.facts.terraform import (
     extract_terraform_path,
     extract_terraform_tree,
 )
+from sparkforge.findings import signature as _signature
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
+from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.rules.engine import judge as run_judge
@@ -1584,8 +1586,613 @@ def validate_output(
 
 
 # --------------------------------------------------------------------------- #
+# assinatura de correspondencia do relatorio
+# --------------------------------------------------------------------------- #
+
+# O bloco fica FORA do corpo que ele cobre: o corpo assinado e tudo que vem
+# antes do delimitador de abertura. Se ele entrasse no hash, o hash mudaria ao
+# ser escrito, e nenhuma assinatura fecharia consigo mesma.
+_SIGNATURE_OPEN = "<!-- sparkforge:signature -->"
+_SIGNATURE_CLOSE = "<!-- /sparkforge:signature -->"
+
+_FINDINGS_FROM_JUDGE = "sparkforge judge --facts <facts.json> --out {path}"
+_REPORT_SIGN_HINT = (
+    "sparkforge report sign --report {report} --findings <findings.json>"
+)
+
+# As linhas legiveis por maquina do bloco usam chave ASCII de proposito -- a
+# prosa em volta e acentuada, mas o que o `verify` faz parsing precisa casar
+# byte-a-byte em qualquer console.
+_BLOCK_SIGNATURE = re.compile(r"^- assinatura: (\S+)\s*$", re.MULTILINE)
+_BLOCK_SIGNATURE_VERSION = re.compile(r"^- signature_version: (\d+)\s*$", re.MULTILINE)
+_BLOCK_FACT_IDS = re.compile(r"^- fact_ids: (.*)$", re.MULTILINE)
+_BLOCK_RULE_IDS = re.compile(r"^- rule_ids: (.*)$", re.MULTILINE)
+_BLOCK_CATALOG_VERSION = re.compile(r"^- catalog_version: (\d+)\s*$", re.MULTILINE)
+_BLOCK_SCHEMA_VERSION = re.compile(r"^- schema_version: (\d+)\s*$", re.MULTILINE)
+
+# Ordem fixa, e nao a de um `set`: `diverged` e lida por humano, e a mesma
+# divergencia sairia em ordem diferente entre execucoes se viesse de conjunto.
+# `version` vem primeiro porque ela QUALIFICA as outras: quando a regra de
+# normalizacao mudou, "o corpo nao fecha" deixa de significar "o corpo mudou".
+_SIGNATURE_PARTS = ("version", "evidence", "catalog", "body")
+
+# Bloco sem a linha de versao so pode ter saido da unica versao que nunca a
+# escreveu -- a 1, a primeira. Nao e default silencioso, e nao serve para forjar
+# validade: a versao entra DENTRO do hash, entao declarar 1 num corpo assinado
+# sob 2 faz a assinatura nao fechar. O que ela evita e o oposto: um relatorio
+# assinado antes desta linha existir sendo lido como bloco malformado.
+_SIGNATURE_VERSION_IMPLICITA = 1
+
+
+def _load_findings_file(findings_path: str) -> list[dict[str, Any]]:
+    path = Path(findings_path)
+    if not path.is_file():
+        raise AdapterError(
+            f"Arquivo de findings nao encontrado: {findings_path}\n"
+            f"  Rode o verbo que produz este arquivo:\n"
+            f"    {_FINDINGS_FROM_JUDGE.format(path=findings_path)}",
+            exit_code=2,
+        )
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise AdapterError(f"{findings_path}: JSON invalido: {exc}", exit_code=2) from exc
+    if not isinstance(raw, list):
+        raise AdapterError(
+            f"{findings_path}: esperado uma lista de findings.\n"
+            f"  Rode: {_FINDINGS_FROM_JUDGE.format(path=findings_path)}",
+            exit_code=2,
+        )
+    return raw
+
+
+def _signature_parts(findings_path: str) -> dict[str, Any]:
+    """As quatro entradas nao-corpo da assinatura, todas do MESMO arquivo.
+
+    Medido antes de escolher a flag do verbo, em vez de herdar `--facts` do
+    plano: o arquivo de **facts** carrega `id`, `kind`, `subject`, `measures` e
+    `provenance` -- e nenhum `rule_id`, nenhum `catalog_version` e nenhum
+    `schema_version` de julgamento. O arquivo de **findings** carrega os
+    quatro: `evidence` e a lista de `fact_id` que o achado cita
+    (`models.Finding.evidence`), `rule_id` e a regra que disparou, e
+    `catalog_version`/`schema_version` viajam em cada achado
+    (`Finding.to_dict`, alimentados por `loader.py:212` a partir do cabecalho
+    do arquivo de catalogo). Um verbo com `--facts` precisaria dos dois
+    arquivos para responder tres dos quatro campos; com `--findings` ele
+    responde os quatro com um so, e nenhum terceiro formato e inventado.
+
+    `catalog_version` divergente entre achados e RECUSADO em vez de resolvido
+    por maioria ou por maximo: `compute_signature` recebe um inteiro, e
+    escolher um dos dois faria a assinatura afirmar que o relatorio foi julgado
+    por um catalogo que nao foi o unico usado -- mentira por omissao, no valor
+    cuja razao de existir e pegar exatamente isso.
+    """
+    findings = _load_findings_file(findings_path)
+    if not findings:
+        raise AdapterError(
+            f"{findings_path}: nenhum finding.\n"
+            "  Assinar aqui afirmaria correspondencia com evidencia nenhuma: a "
+            "assinatura cobriria so o corpo, e o leitor leria como prova de que "
+            "o texto vem dos facts.\n"
+            f"  Rode: {_FINDINGS_FROM_JUDGE.format(path=findings_path)}",
+            exit_code=2,
+        )
+
+    fact_ids: set[str] = set()
+    rule_ids: set[str] = set()
+    catalog_versions: set[int] = set()
+    schema_versions: set[int] = set()
+
+    for index, finding in enumerate(findings):
+        where = f"{findings_path}: finding[{index}]"
+        if not isinstance(finding, dict):
+            raise AdapterError(
+                f"{where}: esperado um objeto de finding.\n"
+                f"  Rode: {_FINDINGS_FROM_JUDGE.format(path=findings_path)}",
+                exit_code=2,
+            )
+        rule_id = finding.get("rule_id")
+        evidence = finding.get("evidence")
+        catalog_version = finding.get("catalog_version")
+        schema_version = finding.get("schema_version")
+        missing = [
+            name
+            for name, value in (
+                ("rule_id", rule_id),
+                ("evidence", evidence),
+                ("catalog_version", catalog_version),
+                ("schema_version", schema_version),
+            )
+            if value is None or value == [] or value == ""
+        ]
+        if missing:
+            raise AdapterError(
+                f"{where} ({rule_id or '?'}): campos ausentes para assinar: "
+                f"{', '.join(missing)}.\n"
+                f"  Rode: {_FINDINGS_FROM_JUDGE.format(path=findings_path)}",
+                exit_code=2,
+            )
+        rule_ids.add(str(rule_id))
+        fact_ids.update(str(fact_id) for fact_id in evidence or [])
+        catalog_versions.add(int(catalog_version))
+        schema_versions.add(int(schema_version))
+
+    for name, values in (
+        ("catalog_version", catalog_versions),
+        ("schema_version", schema_versions),
+    ):
+        if len(values) > 1:
+            listed = ", ".join(str(value) for value in sorted(values))
+            raise AdapterError(
+                f"{findings_path}: {name} divergente entre os findings ({listed}).\n"
+                "  A assinatura declara UM catalogo; escolher um dos valores "
+                "afirmaria que o relatorio foi julgado so por ele.\n"
+                "  Separe os findings por versao, ou rejulgue tudo com o mesmo "
+                f"catalogo: {_FINDINGS_FROM_JUDGE.format(path=findings_path)}",
+                exit_code=2,
+            )
+
+    return {
+        "fact_ids": sorted(fact_ids),
+        "rule_ids": sorted(rule_ids),
+        "catalog_version": catalog_versions.pop(),
+        "schema_version": schema_versions.pop(),
+    }
+
+
+def _read_report(report_path: str) -> str:
+    path = Path(report_path)
+    if not path.is_file():
+        raise AdapterError(
+            f"Arquivo de relatorio nao encontrado: {report_path}\n"
+            "  Escreva o relatorio a partir de `templates/performance-report.md` e "
+            "rode:\n"
+            f"    {_REPORT_SIGN_HINT.format(report=report_path)}",
+            exit_code=2,
+        )
+    return path.read_text(encoding="utf-8")
+
+
+def _split_report(text: str) -> tuple[str, str | None, str | None]:
+    """Separa (corpo assinado, bloco, problema).
+
+    O corpo e tudo que vem ANTES do delimitador de abertura -- e so isso. Texto
+    DEPOIS do delimitador de fechamento e recusado como problema em vez de
+    ignorado: ignorar abriria a porta exata que a assinatura fecha, um paragrafo
+    apendado ao fim do arquivo que nenhuma assinatura cobre e que o leitor le
+    como parte do relatorio verificado.
+    """
+    opens = text.count(_SIGNATURE_OPEN)
+    closes = text.count(_SIGNATURE_CLOSE)
+    if opens == 0 and closes == 0:
+        return text, None, None
+    if opens != 1 or closes != 1:
+        return text, None, (
+            f"bloco malformado: {opens} delimitador(es) de abertura e {closes} de "
+            "fechamento; o esperado e exatamente um de cada"
+        )
+    start = text.index(_SIGNATURE_OPEN)
+    end = text.index(_SIGNATURE_CLOSE)
+    if end < start:
+        return text, None, (
+            "bloco malformado: o delimitador de fechamento aparece antes do de abertura"
+        )
+    body = text[:start]
+    block = text[start : end + len(_SIGNATURE_CLOSE)]
+    tail = text[end + len(_SIGNATURE_CLOSE) :]
+    if tail.strip():
+        return body, block, (
+            "ha conteudo depois do bloco de assinatura; o corpo assinado e tudo que "
+            "vem ANTES do delimitador de abertura, entao esse trecho ficaria de fora "
+            "da assinatura sem que nada dissesse isso ao leitor"
+        )
+    return body, block, None
+
+
+def _plural(count: int, singular: str, plural: str) -> str:
+    return f"{count} {singular if count == 1 else plural}"
+
+
+def _render_signature_block(signature: str, parts: dict[str, Any]) -> str:
+    """O bloco, com o limite escrito dentro dele (D-6 do spec da Fase 4b).
+
+    As linhas de `fact_ids` e `rule_ids` nao sao enfeite: sao o que o `verify`
+    usa para isolar QUAL das tres partes divergiu. Sem elas, um arquivo de
+    findings diferente do assinado e um corpo editado produzem a mesma falha
+    unica -- "nao bate" --, que e a resposta que o criterio 8 do spec recusa.
+
+    `signature_version` esta aqui pela mesma razao, uma casa acima. Ela ja
+    entrava DENTRO do hash -- e era o que garantia que duas normalizacoes
+    diferentes produzissem assinaturas diferentes --, mas o bloco nao a
+    declarava, e sem a declaracao `verify` nao tinha como dizer POR QUE nao
+    fechou: um relatorio assinado sob a regra anterior saia identico a um corpo
+    adulterado. A versao no hash garante que as assinaturas DIFEREM; a versao no
+    bloco e o que permite atribuir a diferenca.
+    """
+    fact_ids = ", ".join(parts["fact_ids"])
+    rule_ids = ", ".join(parts["rule_ids"])
+    evidencia = (
+        f"{_plural(len(parts['fact_ids']), 'fact', 'facts')}, "
+        f"{_plural(len(parts['rule_ids']), 'regra', 'regras')}"
+    )
+    return "\n".join(
+        [
+            _SIGNATURE_OPEN,
+            f"- assinatura: {signature}",
+            f"- signature_version: {_signature.SIGNATURE_VERSION}",
+            f"- evidência: {evidencia}",
+            f"- fact_ids: {fact_ids}",
+            f"- rule_ids: {rule_ids}",
+            f"- catalog_version: {parts['catalog_version']}",
+            f"- schema_version: {parts['schema_version']}",
+            "- verifique com: `sparkforge report verify --report <este arquivo> "
+            "--findings <findings.json>`",
+            "",
+            "Esta assinatura prova **correspondência**, não autoria: que este texto foi",
+            "derivado desta evidência com este catálogo. Não há chave e não há segredo —",
+            "qualquer pessoa com os mesmos findings produz exatamente a mesma assinatura,",
+            "então ela não diz quem emitiu o relatório e não o autoriza. O corpo assinado",
+            "é tudo que vem antes do delimitador acima; este bloco fica de fora dele.",
+            _SIGNATURE_CLOSE,
+        ]
+    )
+
+
+def report_sign(report_path: str, findings_path: str) -> dict[str, Any]:
+    """Escreve o bloco de assinatura no fim do relatorio, e devolve o que assinou.
+
+    Idempotente por construcao: assinar de novo recorta o bloco anterior antes
+    de hashear, entao o corpo e o mesmo, a assinatura e a mesma e o arquivo sai
+    byte-identico. Sem isso, a segunda assinatura hashearia a primeira e o
+    relatorio nunca mais fecharia consigo mesmo.
+    """
+    text = _read_report(report_path)
+    body, _block, problem = _split_report(text)
+    if problem is not None:
+        raise AdapterError(
+            f"{report_path}: {problem}.\n"
+            f"  Corrija o arquivo e rode: {_REPORT_SIGN_HINT.format(report=report_path)}",
+            exit_code=2,
+        )
+
+    parts = _signature_parts(findings_path)
+    signature = compute_signature(
+        body,
+        parts["fact_ids"],
+        parts["rule_ids"],
+        parts["catalog_version"],
+        parts["schema_version"],
+    )
+    block = _render_signature_block(signature, parts)
+    Path(report_path).write_text(
+        body.rstrip("\n") + "\n\n" + block + "\n", encoding="utf-8", newline="\n"
+    )
+    return {
+        "report": report_path,
+        "findings": findings_path,
+        "signature": signature,
+        "fact_ids": parts["fact_ids"],
+        "rule_ids": parts["rule_ids"],
+        "catalog_version": parts["catalog_version"],
+        "schema_version": parts["schema_version"],
+        "proves": (
+            "correspondencia entre este corpo, esta evidencia e este catalogo -- "
+            "nunca autoria: nao ha chave, e quem tiver os mesmos findings produz "
+            "a mesma assinatura"
+        ),
+    }
+
+
+def _parse_signature_block(block: str) -> tuple[dict[str, Any] | None, str | None]:
+    """Le o que o bloco DECLARA ter assinado. `(declarado, problema)`."""
+    signature_match = _BLOCK_SIGNATURE.search(block)
+    if signature_match is None:
+        return None, "bloco sem a linha `- assinatura: sig_...`"
+    signature = signature_match.group(1)
+    if not SIGNATURE_RE.match(signature):
+        return None, (
+            f"assinatura `{signature}` fora da forma esperada (`sig_` + 64 hex)"
+        )
+
+    version_match = _BLOCK_SIGNATURE_VERSION.search(block)
+    fields: dict[str, Any] = {
+        "signature": signature,
+        "signature_version": (
+            int(version_match.group(1))
+            if version_match
+            else _SIGNATURE_VERSION_IMPLICITA
+        ),
+    }
+    for key, pattern in (
+        ("fact_ids", _BLOCK_FACT_IDS),
+        ("rule_ids", _BLOCK_RULE_IDS),
+    ):
+        match = pattern.search(block)
+        if match is None:
+            return None, f"bloco sem a linha `- {key}:`"
+        fields[key] = sorted(
+            {item.strip() for item in match.group(1).split(",") if item.strip()}
+        )
+    for key, pattern in (
+        ("catalog_version", _BLOCK_CATALOG_VERSION),
+        ("schema_version", _BLOCK_SCHEMA_VERSION),
+    ):
+        match = pattern.search(block)
+        if match is None:
+            return None, f"bloco sem a linha `- {key}:`"
+        fields[key] = int(match.group(1))
+    return fields, None
+
+
+def _blank_checks(detail: str) -> dict[str, dict[str, Any]]:
+    return {part: {"ok": False, "detail": detail} for part in _SIGNATURE_PARTS}
+
+
+def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
+    """Diz QUAL das partes divergiu -- versao, evidencia, catalogo ou corpo.
+
+    Criterio 8 do spec da Fase 4b. Elas sao recomputadas separadamente, e a
+    isolacao vem de segurar as outras no valor DECLARADO pelo bloco:
+
+    - `version`: o `signature_version` declarado contra o desta build. Ele vem
+      primeiro porque QUALIFICA os demais: `SIGNATURE_VERSION` entra dentro do
+      hash justamente para que duas normalizacoes diferentes nunca produzam a
+      mesma assinatura -- so que ate a linha existir no bloco, o efeito disso
+      era um relatorio de versao anterior saindo identico a um corpo adulterado
+      (`status: diverged`, `diverged: ["body"]`, "o corpo foi editado depois da
+      emissao"). A versao no hash garante que as assinaturas DIFEREM; a versao
+      no bloco e o que permite dizer por que;
+    - `evidence`: os `fact_ids`/`rule_ids` declarados contra os do arquivo de
+      findings informado agora;
+    - `catalog`: idem para `catalog_version`/`schema_version`;
+    - `body`: `compute_signature` do corpo atual com a evidencia e o catalogo
+      **declarados** -- se ela bate, o corpo esta intacto mesmo que os findings
+      de agora sejam outros; se nao bate, o corpo (ou o proprio bloco) mudou.
+
+    Com a versao divergente, `body` sai como **nao avaliavel** e fica fora de
+    `diverged`: esta build so sabe normalizar sob a versao dela, entao
+    recomputar responderia sobre a regra de agora e nunca sobre o corpo de
+    entao. `evidence` e `catalog` continuam sendo comparados, porque nenhum dos
+    dois passa pela normalizacao.
+
+    O bloco e dado auto-declarado e editavel -- ele mora fora do hash por
+    construcao. Por isso o veredito `valid` nunca sai dele: sai das tres
+    checagens juntas, que so passam quando o declarado casa com os findings
+    reais E a assinatura fecha com o corpo. A atribuicao das tres e diagnostico,
+    e a de `body` diz as duas leituras possiveis em vez de escolher uma.
+    """
+    text = _read_report(report_path)
+    body, block, problem = _split_report(text)
+
+    if block is None and problem is None:
+        return {
+            "report": report_path,
+            "findings": findings_path,
+            "valid": False,
+            "status": "missing_block",
+            "signature": None,
+            "expected_signature": None,
+            "diverged": [],
+            "checks": _blank_checks("bloco de assinatura ausente: nada a comparar"),
+            "reason": (
+                f"{report_path} nao tem bloco de assinatura (`{_SIGNATURE_OPEN}`). "
+                "Relatorio nao assinado nao e relatorio invalido -- e relatorio sem "
+                f"prova. Assine com: {_REPORT_SIGN_HINT.format(report=report_path)}"
+            ),
+        }
+
+    if problem is not None:
+        return {
+            "report": report_path,
+            "findings": findings_path,
+            "valid": False,
+            "status": "malformed_block",
+            "signature": None,
+            "expected_signature": None,
+            "diverged": [],
+            "checks": _blank_checks(problem),
+            "reason": (
+                f"{report_path}: {problem}. Reassine para normalizar: "
+                f"{_REPORT_SIGN_HINT.format(report=report_path)}"
+            ),
+        }
+
+    declared, block_problem = _parse_signature_block(block or "")
+    if declared is None:
+        return {
+            "report": report_path,
+            "findings": findings_path,
+            "valid": False,
+            "status": "malformed_block",
+            "signature": None,
+            "expected_signature": None,
+            "diverged": [],
+            "checks": _blank_checks(block_problem or "bloco malformado"),
+            "reason": (
+                f"{report_path}: {block_problem}. Reassine para normalizar: "
+                f"{_REPORT_SIGN_HINT.format(report=report_path)}"
+            ),
+        }
+
+    parts = _signature_parts(findings_path)
+
+    declared_version = declared["signature_version"]
+    corrente = _signature.SIGNATURE_VERSION
+    version_ok = declared_version == corrente
+
+    evidence_ok = (
+        declared["fact_ids"] == parts["fact_ids"]
+        and declared["rule_ids"] == parts["rule_ids"]
+    )
+    catalog_ok = (
+        declared["catalog_version"] == parts["catalog_version"]
+        and declared["schema_version"] == parts["schema_version"]
+    )
+    body_signature = compute_signature(
+        body,
+        declared["fact_ids"],
+        declared["rule_ids"],
+        declared["catalog_version"],
+        declared["schema_version"],
+    )
+    body_ok = body_signature == declared["signature"]
+
+    checks = {
+        "version": {
+            "ok": version_ok,
+            "detail": (
+                f"o bloco foi assinado sob signature_version {declared_version}, a "
+                f"mesma que esta build calcula"
+                if version_ok
+                else (
+                    f"o bloco foi assinado sob signature_version {declared_version} e "
+                    f"esta build assina sob {corrente}: a regra de normalizacao "
+                    "mudou entre as duas, e assinatura diferente aqui significa "
+                    "REGRA diferente, nao corpo adulterado"
+                )
+            ),
+        },
+        "evidence": {
+            "ok": evidence_ok,
+            "detail": (
+                "os fact_ids e rule_ids declarados no bloco sao os do arquivo de "
+                "findings informado"
+                if evidence_ok
+                else (
+                    "o bloco declara "
+                    f"{_plural(len(declared['fact_ids']), 'fact', 'facts')} e "
+                    f"{_plural(len(declared['rule_ids']), 'regra', 'regras')}; "
+                    f"{findings_path} tem "
+                    f"{_plural(len(parts['fact_ids']), 'fact', 'facts')} e "
+                    f"{_plural(len(parts['rule_ids']), 'regra', 'regras')}. "
+                    "So no bloco: "
+                    f"{sorted(set(declared['fact_ids']) - set(parts['fact_ids'])) or '[]'} "
+                    f"{sorted(set(declared['rule_ids']) - set(parts['rule_ids'])) or '[]'}; "
+                    "so nos findings: "
+                    f"{sorted(set(parts['fact_ids']) - set(declared['fact_ids'])) or '[]'} "
+                    f"{sorted(set(parts['rule_ids']) - set(declared['rule_ids'])) or '[]'}"
+                )
+            ),
+        },
+        "catalog": {
+            "ok": catalog_ok,
+            "detail": (
+                "catalog_version e schema_version declarados sao os dos findings"
+                if catalog_ok
+                else (
+                    f"o bloco declara catalog_version {declared['catalog_version']} e "
+                    f"schema_version {declared['schema_version']}; {findings_path} diz "
+                    f"catalog_version {parts['catalog_version']} e schema_version "
+                    f"{parts['schema_version']}"
+                )
+            ),
+        },
+        "body": {
+            "ok": body_ok,
+            "detail": (
+                "a assinatura fecha com o corpo atual sob a evidencia declarada"
+                if body_ok
+                else (
+                    "a assinatura nao fecha com o corpo atual sob a evidencia e o "
+                    "catalogo DECLARADOS no bloco: o corpo foi editado depois da "
+                    "emissao, ou o proprio bloco foi"
+                )
+                if version_ok
+                else (
+                    "nao avaliavel: esta build so sabe normalizar sob "
+                    f"signature_version {corrente}, e o bloco foi assinado sob "
+                    f"{declared_version}. Recomputar aqui responderia sobre a regra "
+                    "de agora, nunca sobre o corpo de entao"
+                )
+            ),
+        },
+    }
+
+    # Com a versao divergente, `body` fica FORA de `diverged` mesmo com `ok`
+    # falso: atribuir a divergencia ao corpo seria exatamente a afirmacao que
+    # esta build nao pode sustentar. `evidence` e `catalog` continuam entrando,
+    # porque nenhum dos dois depende da normalizacao -- eles comparam o que o
+    # bloco declara com o arquivo de findings, e essa comparacao segue valendo.
+    avaliaveis = _SIGNATURE_PARTS if version_ok else ("version", "evidence", "catalog")
+    diverged = [part for part in avaliaveis if not checks[part]["ok"]]
+    expected_signature = compute_signature(
+        body,
+        parts["fact_ids"],
+        parts["rule_ids"],
+        parts["catalog_version"],
+        parts["schema_version"],
+    )
+    if not diverged:
+        reason = (
+            "corresponde: este corpo foi derivado desta evidencia com este catalogo. "
+            "Correspondencia, nunca autoria -- nao ha chave, e quem tiver os mesmos "
+            "findings produz a mesma assinatura."
+        )
+    else:
+        nomes = {
+            "version": "versao da assinatura",
+            "evidence": "evidencia",
+            "catalog": "catalogo",
+            "body": "corpo",
+        }
+        # Cada parte divergente sai rotulada e terminada: as tres frases coladas
+        # sem separador viravam um paragrafo unico em que nao se via onde uma
+        # acabava e a outra comecava -- e a resposta que o criterio 8 pede e
+        # justamente "qual", nao "quanto texto".
+        reason = (
+            "divergiu em: "
+            + ", ".join(nomes[part] for part in diverged)
+            + ". "
+            + " ".join(f"{nomes[part]}: {checks[part]['detail']}." for part in diverged)
+            + f" Reassine com: {_REPORT_SIGN_HINT.format(report=report_path)}"
+        )
+
+    if not version_ok:
+        status = "version_mismatch"
+    elif diverged:
+        status = "diverged"
+    else:
+        status = "signed"
+
+    return {
+        "report": report_path,
+        "findings": findings_path,
+        "valid": not diverged,
+        "status": status,
+        "signature": declared["signature"],
+        "expected_signature": expected_signature,
+        "diverged": diverged,
+        "checks": checks,
+        "reason": reason,
+    }
+
+
+# --------------------------------------------------------------------------- #
 # case lifecycle
 # --------------------------------------------------------------------------- #
+
+
+def _case_open_recusa(path: Path, existing: dict[str, Any]) -> str:
+    """O que seria apagado, e as duas saidas -- continuar ou reabrir de fato."""
+    perdas = [f"fase `{existing.get('phase') or '?'}`"]
+    if existing.get("strict_gates"):
+        perdas.append("`strict_gates` ligado")
+    overrides = existing.get("gate_overrides") or []
+    if overrides:
+        gates = ", ".join(sorted({str(o.get("gate")) for o in overrides}))
+        perdas.append(f"{len(overrides)} override(s) de gate ({gates})")
+    return (
+        f"ja existe um case em {path}, e abrir por cima dele apagaria: "
+        + "; ".join(perdas)
+        + ".\n"
+        "  Para continuar a investigacao: `sparkforge case get --repo <raiz>` "
+        "e `sparkforge case update ...`.\n"
+        "  Para recomecar do zero mesmo assim: acrescente `--reopen` "
+        "(`reopen: true` na tool MCP).\n"
+        "  `--reopen` **herda** o `strict_gates` do case atual: o rigor e do "
+        "case e vale pela investigacao inteira (D-3), entao ele sobe com "
+        "`--strict-gates` e nunca desce por omissao de flag."
+    )
 
 
 def case_open(
@@ -1599,7 +2206,37 @@ def case_open(
     athena: str | None = None,
     facts_path: str | list[str] | None = None,
     emr: str | None = None,
+    strict_gates: bool = False,
+    reopen: bool = False,
 ) -> dict[str, Any]:
+    """Cria o case. Sobre um case que ja existe, recusa -- a menos de `reopen`.
+
+    Medido na revisao final da Fase 4b: sobre um case estrito com override
+    gravado, `case open` sem flag nenhuma reescrevia o arquivo com
+    `strict_gates: false`, `gate_overrides: []` e `phase: intake`, e a transicao
+    seguinte passava. O D-3 diz que *quem retoma herda o rigor de quem abriu*, e
+    uma invocacao sem a flag apagava exatamente isso -- a familia de defeito que
+    o D-3 evitou ao tirar a escolha de rigor da invocacao.
+
+    Reabrir do zero e caso legitimo (o mesmo repositorio, outra investigacao),
+    entao o caminho fica -- **com nome**, nunca por omissao. E `reopen` nao
+    baixa o rigor: ele herda o `strict_gates` do case atual, e `strict_gates`
+    explicito so pode subi-lo. Baixar exigiria apagar o arquivo a mao, que e
+    deliberado o bastante para nao acontecer por engano.
+    """
+    path = store.case_path(repo)
+    if path.is_file():
+        try:
+            existing = store.load_case(repo)
+        except store.CaseError:
+            # Case que `load_case` recusa (schema divergente, YAML quebrado)
+            # ainda e um case ocupando o lugar. Sobrescreve-lo em silencio
+            # apagaria o estado que alguem precisa ver antes de decidir.
+            existing = {}
+        if not reopen:
+            raise AdapterError(_case_open_recusa(path, existing), exit_code=2)
+        strict_gates = bool(strict_gates or existing.get("strict_gates"))
+
     # O case guarda o runtime da investigacao inteira. Aceitar facts aqui e o
     # que evita abrir um case com runtime vazio quando o repositorio ja diz a
     # versao -- toda skill que ler o case depois herda a deteccao.
@@ -1612,7 +2249,9 @@ def case_open(
         facts=_facts_for_runtime(facts_path),
         emr=emr,
     )
-    case = store.new_case(case_id, now, context.to_dict(), repo=repo)
+    case = store.new_case(
+        case_id, now, context.to_dict(), repo=repo, strict_gates=strict_gates
+    )
     store.save_case(case, root=repo)
     return case
 
@@ -1624,6 +2263,26 @@ def case_get(repo: str) -> dict[str, Any]:
         raise AdapterError(str(exc), exit_code=2) from exc
 
 
+def _fact_kinds_for_gates(facts_path: str | list[str] | None) -> set[str] | None:
+    """Kinds presentes nos facts informados — o que satisfaz gate sob rigor.
+
+    `None` quando nada e informado, que e o que preserva a chamada antiga: sem
+    rigor, `set_phase` ignora o parametro; com rigor e sem facts, o gate morde e
+    a mensagem diz o comando que produz o fact.
+
+    O case tem `facts_index.by_kind`, mas nenhum verbo o preenche hoje (desvio
+    D-4b-5), entao ler dali seria ler um indice sempre vazio -- rigor que nunca
+    destrava por evidencia. A fonte e o arquivo de facts, o mesmo que `judge` e
+    `case open` ja aceitam.
+    """
+    if facts_path is None:
+        return None
+    paths = [facts_path] if isinstance(facts_path, str) else list(facts_path)
+    if not paths:
+        return None
+    return {fact.kind for fact in _merge_facts_files(paths)}
+
+
 def case_update(
     repo: str,
     phase: str | None = None,
@@ -1632,11 +2291,30 @@ def case_update(
     skill: str | None = None,
     now: str | None = None,
     outcome: str | None = None,
+    override_gate: str | None = None,
+    reason: str | None = None,
+    facts_path: str | list[str] | None = None,
 ) -> dict[str, Any]:
+    if reason is not None and override_gate is None:
+        raise AdapterError(
+            "`--reason` so faz sentido com `--override-gate`: sem o gate, o "
+            "motivo nao tem sujeito e nao seria gravado em lugar nenhum. Rode "
+            "`sparkforge case update --override-gate <gate> --reason \"<motivo>\"`.",
+            exit_code=2,
+        )
+    fact_kinds = _fact_kinds_for_gates(facts_path)
     try:
         case = store.load_case(repo)
+        # Override antes da fase, de proposito: quem passa os dois na mesma
+        # chamada quer transitar COM o override valendo. A ordem inversa faria
+        # `--override-gate X --phase Y` falhar sempre, e o operador teria que
+        # descobrir sozinho que precisava de duas chamadas.
+        if override_gate is not None:
+            case = store.override_gate(
+                case, override_gate, reason or "", at=now or ""
+            )
         if phase is not None:
-            case = store.set_phase(case, phase)
+            case = store.set_phase(case, phase, fact_kinds=fact_kinds)
         if gate is not None:
             case = store.set_gate(case, gate, bool(gate_value))
         if skill is not None:

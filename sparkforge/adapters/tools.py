@@ -343,6 +343,31 @@ _GATES_SCHEMA: dict[str, Any] = {
     "properties": {gate: {"type": "boolean"} for gate in _GATE_NAMES},
 }
 
+_GATE_OVERRIDE_LIST: dict[str, Any] = {
+    "type": "array",
+    "description": (
+        "Historico de gates cobertos por override, em ordem de registro. E "
+        "lista e nao mapa de proposito: dois overrides do mesmo gate em "
+        "momentos diferentes sao dois fatos, e um mapa apagaria o primeiro "
+        "motivo. Ausente em case aberto antes da Fase 4b."
+    ),
+    "items": {
+        "type": "object",
+        "required": ["gate", "reason", "at"],
+        "properties": {
+            "gate": {"type": "string", "enum": list(_GATE_NAMES)},
+            "reason": {
+                "type": "string",
+                "description": "Nunca vazio: override sem motivo e recusado.",
+            },
+            "at": {
+                "type": "string",
+                "description": "Timestamp injetado por quem chamou; pode ser vazio.",
+            },
+        },
+    },
+}
+
 _SKILL_USE_ITEM: dict[str, Any] = {
     "type": "object",
     "required": ["skill", "at", "outcome"],
@@ -450,6 +475,21 @@ _CASE_SCHEMA: dict[str, Any] = {
         },
         "hypotheses": {"type": "array", "items": _HYPOTHESIS_ITEM},
         "gates": _GATES_SCHEMA,
+        # Fora de `required` de proposito: case gravado antes da Fase 4b nao tem
+        # estas duas chaves, e `case_get` devolve o que esta no disco. Exigi-las
+        # faria a leitura de um case antigo falhar validacao por ausencia de um
+        # campo cuja ausencia significa exatamente "modo advisory, como sempre".
+        "strict_gates": {
+            "type": "boolean",
+            "description": (
+                "Rigor de gate escolhido na abertura do case. Ligado, gate com "
+                "produtor declarado bloqueia a transicao de fase; o booleano de "
+                "`gates` nao destrava, so o fact produtor ou um override "
+                "registrado. Ausente em case aberto antes da Fase 4b, e ausente "
+                "significa desligado."
+            ),
+        },
+        "gate_overrides": _GATE_OVERRIDE_LIST,
         "skills_used": {"type": "array", "items": _SKILL_USE_ITEM},
         "open_questions": {"type": "array", "items": {"type": "string"}},
     },
@@ -483,6 +523,8 @@ _RESUME_SCHEMA: dict[str, Any] = {
         "open_hypotheses",
         "gates",
         "unsatisfied_gates",
+        "strict_gates",
+        "gate_overrides",
         "missing_artifacts",
         "next_step",
         "in_flight",
@@ -512,6 +554,11 @@ _RESUME_SCHEMA: dict[str, Any] = {
         "open_hypotheses": {"type": "array", "items": _HYPOTHESIS_ITEM},
         "gates": _GATES_SCHEMA,
         "unsatisfied_gates": {"type": "array", "items": {"type": "string"}},
+        # Sempre presentes na retomada, mesmo em case antigo: `resume` normaliza
+        # a ausencia para `false`/`[]`. Quem retoma noutra maquina precisa saber
+        # que o case e estrito e que alguem passou por cima, sem abrir o YAML.
+        "strict_gates": {"type": "boolean"},
+        "gate_overrides": _GATE_OVERRIDE_LIST,
         "missing_artifacts": {"type": "array", "items": _ARTIFACT_ITEM},
         "next_step": _NEXT_STEP_SCHEMA,
         "in_flight": {"type": "string"},
@@ -965,6 +1012,100 @@ _VALIDATE_OUTPUT_SCHEMA: dict[str, Any] = {
     },
 }
 
+_REPORT_SIGN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "report",
+        "findings",
+        "signature",
+        "fact_ids",
+        "rule_ids",
+        "catalog_version",
+        "schema_version",
+        "proves",
+    ],
+    "properties": {
+        "report": {"type": "string"},
+        "findings": {"type": "string"},
+        "signature": {"type": "string", "pattern": "^sig_[0-9a-f]{64}$"},
+        "fact_ids": {"type": "array", "items": {"type": "string"}},
+        "rule_ids": {"type": "array", "items": {"type": "string"}},
+        "catalog_version": {"type": "integer"},
+        "schema_version": {"type": "integer"},
+        "proves": {
+            "type": "string",
+            "description": (
+                "O limite da assinatura, no proprio payload e nao so na documentacao: "
+                "ela prova correspondencia, nunca autoria."
+            ),
+        },
+    },
+}
+
+_REPORT_CHECK_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["ok", "detail"],
+    "properties": {"ok": {"type": "boolean"}, "detail": {"type": "string"}},
+}
+
+_REPORT_VERIFY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "report",
+        "findings",
+        "valid",
+        "status",
+        "signature",
+        "expected_signature",
+        "diverged",
+        "checks",
+        "reason",
+    ],
+    "properties": {
+        "report": {"type": "string"},
+        "findings": {"type": "string"},
+        "valid": {"type": "boolean"},
+        "status": {
+            "type": "string",
+            "enum": [
+                "signed",
+                "diverged",
+                "version_mismatch",
+                "missing_block",
+                "malformed_block",
+            ],
+        },
+        "signature": {"type": ["string", "null"]},
+        "expected_signature": {"type": ["string", "null"]},
+        "diverged": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": ["version", "evidence", "catalog", "body"],
+            },
+            "description": (
+                "Quais das QUATRO partes nao bateram. Vazio com `valid` falso "
+                "significa que nao houve o que comparar -- bloco ausente ou "
+                "malformado. Com `version` na lista, `body` fica de fora mesmo com "
+                "`checks.body.ok` falso: a regra de normalizacao mudou entre a "
+                "assinatura e esta build, e atribuir a diferenca ao corpo seria "
+                "chamar de adulteracao o que e mudanca de regra."
+            ),
+        },
+        "checks": {
+            "type": "object",
+            "required": ["version", "evidence", "catalog", "body"],
+            "properties": {
+                "version": _REPORT_CHECK_ITEM,
+                "evidence": _REPORT_CHECK_ITEM,
+                "catalog": _REPORT_CHECK_ITEM,
+                "body": _REPORT_CHECK_ITEM,
+            },
+        },
+        "reason": {"type": "string"},
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -995,6 +1136,27 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "extratores observaram, nao so das flags."
                     ),
                 },
+                "strict_gates": {
+                    "type": "boolean",
+                    "description": (
+                        "Grava no case que gate com produtor declarado bloqueia "
+                        "a transicao de fase. A escolha e do case, nao da "
+                        "chamada: vale pela investigacao inteira, e quem retoma "
+                        "noutra sessao herda o rigor de quem abriu. Omitido, o "
+                        "comportamento e o de sempre (gate advisory)."
+                    ),
+                },
+                "reopen": {
+                    "type": "boolean",
+                    "description": (
+                        "Recomeca do zero por cima de um case que ja existe. "
+                        "Omitido, abrir sobre um case existente e RECUSADO: "
+                        "sobrescrever apagaria fase, rigor e overrides "
+                        "gravados. O `strict_gates` do case atual e herdado -- "
+                        "`strict_gates` sobe o rigor, e nada o baixa por "
+                        "omissao."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
@@ -1018,7 +1180,9 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "Atualiza a fase, um gate booleano, ou registra o uso de uma skill no case "
             "atual. Cada mutacao e uma transicao de estado explicita e validada contra o "
-            "dominio conhecido (PHASES, GATES) -- nunca um valor livre."
+            "dominio conhecido (PHASES, GATES) -- nunca um valor livre. Num case aberto "
+            "com `strict_gates`, `gate_value` NAO destrava a transicao de fase: destrava "
+            "o fact produtor (informe `facts_path`) ou um `override_gate` com `reason`."
         ),
         "inputSchema": {
             "type": "object",
@@ -1031,6 +1195,32 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "skill": {"type": "string"},
                 "now": {"type": "string"},
                 "outcome": {"type": "string"},
+                "override_gate": {
+                    "type": "string",
+                    "enum": list(_GATE_NAMES),
+                    "description": (
+                        "Passa por cima deste gate num case estrito, quando o "
+                        "dado genuinamente nao existe (job descontinuado, "
+                        "ambiente que sumiu). Exige `reason`."
+                    ),
+                },
+                "reason": {
+                    "type": "string",
+                    "description": (
+                        "Motivo do `override_gate`. Sem ele o override e "
+                        "recusado -- override anonimo nao se distingue de gate "
+                        "esquecido."
+                    ),
+                },
+                "facts_path": {
+                    "type": ["string", "array"],
+                    "items": {"type": "string"},
+                    "description": (
+                        "Facts que comprovam os gates da fase pedida. Num case "
+                        "estrito, e daqui que sai a evidencia que destrava "
+                        "`phase`."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(_CASE_SCHEMA, "Case carregado, ou erro se ausente."),
@@ -1777,6 +1967,66 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _VALIDATE_OUTPUT_SCHEMA,
         "annotations": _READ_ONLY,
     },
+    "sparkforge_report_sign": {
+        "description": (
+            "Escreve, no fim do relatorio, o bloco que prova CORRESPONDENCIA entre o "
+            "texto, a evidencia e o catalogo que o produziram -- nunca autoria: nao ha "
+            "chave e nao ha segredo, e qualquer um com os mesmos findings produz a mesma "
+            "assinatura. O limite vai escrito dentro do bloco, porque bloco que sugira "
+            "autoridade mente por omissao. O corpo assinado e tudo que vem ANTES do "
+            "delimitador de abertura, entao o bloco nunca entra no hash que carrega. Os "
+            "quatro campos nao-corpo saem do arquivo de FINDINGS, e nao do de facts: so "
+            "o finding carrega `evidence` (os fact_id citados), `rule_id`, "
+            "`catalog_version` e `schema_version`. Reassinar e barato e idempotente."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["report_path", "findings_path"],
+            "properties": {
+                "report_path": {
+                    "type": "string",
+                    "description": "Markdown do relatorio. E reescrito no lugar.",
+                },
+                "findings_path": {
+                    "type": "string",
+                    "description": "Findings (JSON) gerados por `sparkforge judge --out`.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _REPORT_SIGN_SCHEMA,
+            "O que foi assinado, ou erro se o relatorio/findings nao servem.",
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
+    "sparkforge_report_verify": {
+        "description": (
+            "Confere a assinatura de um relatorio e diz QUAL das tres partes divergiu -- "
+            "evidencia, catalogo ou corpo --, em vez de devolver apenas 'invalido'. "
+            "Cobre tambem bloco ausente e bloco malformado, que sao estados diferentes "
+            "de 'nao corresponde': relatorio sem bloco nao e relatorio adulterado, e "
+            "confundir os dois faria o leitor desconfiar do texto errado."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["report_path", "findings_path"],
+            "properties": {
+                "report_path": {"type": "string"},
+                "findings_path": {
+                    "type": "string",
+                    "description": (
+                        "O mesmo arquivo de findings contra o qual o relatorio foi "
+                        "assinado."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _REPORT_VERIFY_SCHEMA,
+            "O veredito por parte, ou erro se o relatorio/findings nao existem.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_collect_event_log": {
         "description": (
             "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` "
@@ -1956,6 +2206,8 @@ def _h_case_open(args: dict[str, Any]) -> dict[str, Any]:
         iceberg=args.get("iceberg"),
         athena=args.get("athena"),
         facts_path=args.get("facts_path"),
+        strict_gates=bool(args.get("strict_gates", False)),
+        reopen=bool(args.get("reopen", False)),
     )
 
 
@@ -1972,6 +2224,9 @@ def _h_case_update(args: dict[str, Any]) -> dict[str, Any]:
         skill=args.get("skill"),
         now=args.get("now"),
         outcome=args.get("outcome"),
+        override_gate=args.get("override_gate"),
+        reason=args.get("reason"),
+        facts_path=args.get("facts_path"),
     )
 
 
@@ -2187,6 +2442,14 @@ def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_report_sign(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.report_sign(args["report_path"], args["findings_path"])
+
+
+def _h_report_verify(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.report_verify(args["report_path"], args["findings_path"])
+
+
 def _h_collect_event_log(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_event_log(
         args["repo"],
@@ -2266,6 +2529,8 @@ _HANDLERS = {
     "sparkforge_judge": _h_judge,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
+    "sparkforge_report_sign": _h_report_sign,
+    "sparkforge_report_verify": _h_report_verify,
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,

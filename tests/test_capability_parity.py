@@ -263,6 +263,70 @@ class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
             assert flags == properties, (" ".join(path), tool)
 
 
+class TestOsControlesDeGateChegamAosTresAdaptadores:
+    """A mesma assimetria da Fase 5b (`--emr` so na saida), aplicada ao rigor de
+    gate: uma capacidade que exista na CLI e nao no MCP e uma decisao que um
+    cliente MCP nao consegue tomar, e ninguem percebe ate precisar.
+
+    O mapa e explicito porque os nomes divergem de proposito -- a CLI ja chamava
+    `--facts` o que a tool chama `facts_path` desde a Fase 0, e alinhar um dos
+    dois agora quebraria chamada existente.
+    """
+
+    OPEN = {"strict-gates": "strict_gates"}
+    UPDATE = {
+        "override-gate": "override_gate",
+        "reason": "reason",
+        "facts": "facts_path",
+    }
+
+    def _flags(self, path):
+        from sparkforge.adapters.cli import build_parser
+
+        parser = build_parser()
+        for name in path:
+            sub = next(
+                a for a in parser._actions if hasattr(a, "choices") and a.choices  # noqa: SLF001
+            )
+            parser = sub.choices[name]
+        return {
+            option.lstrip("-")
+            for action in parser._actions  # noqa: SLF001
+            for option in action.option_strings
+        }
+
+    def _properties(self, tool):
+        from sparkforge.adapters.tools import TOOLS
+
+        return set(TOOLS[tool]["inputSchema"]["properties"])
+
+    def test_case_open_declara_o_rigor_nos_dois(self):
+        flags = self._flags(("case", "open"))
+        properties = self._properties("sparkforge_case_open")
+        for flag, prop in self.OPEN.items():
+            assert flag in flags, flag
+            assert prop in properties, prop
+
+    def test_case_update_declara_override_motivo_e_evidencia_nos_dois(self):
+        flags = self._flags(("case", "update"))
+        properties = self._properties("sparkforge_case_update")
+        for flag, prop in self.UPDATE.items():
+            assert flag in flags, flag
+            assert prop in properties, prop
+
+    def test_o_core_e_a_terceira_ponta_e_expoe_os_mesmos_parametros(self):
+        """CLI e MCP so podem oferecer o que `_core` aceita: se o parametro
+        sumir de la, os dois quebram juntos, e este teste falha primeiro."""
+        import inspect
+
+        from sparkforge.adapters import _core
+
+        assert "strict_gates" in inspect.signature(_core.case_open).parameters
+        update = inspect.signature(_core.case_update).parameters
+        for name in ("override_gate", "reason", "facts_path"):
+            assert name in update, name
+
+
 class TestNoRuntimeAxisIsAnUndeclaredProducerGap:
     """A mesma assimetria, virada para o outro lado: eixo com FLAG e sem
     PRODUTOR.

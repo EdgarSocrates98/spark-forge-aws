@@ -374,6 +374,28 @@ def build_parser() -> argparse.ArgumentParser:
             "flags."
         ),
     )
+    open_p.add_argument(
+        "--strict-gates",
+        action="store_true",
+        help=(
+            "Grava no case que gate com produtor declarado passa a bloquear a "
+            "transicao de fase. A escolha e do case, nao da invocacao: vale "
+            "pela investigacao inteira, e quem retoma noutra maquina herda o "
+            "rigor de quem abriu. Sem a flag, o comportamento e o de sempre "
+            "(gate advisory)."
+        ),
+    )
+    open_p.add_argument(
+        "--reopen",
+        action="store_true",
+        help=(
+            "Recomeca do zero por cima de um case que ja existe. Sem esta flag, "
+            "abrir sobre um case existente e RECUSADO: sobrescrever apagaria a "
+            "fase, o rigor e os overrides gravados. O `strict_gates` do case "
+            "atual e herdado -- `--strict-gates` sobe o rigor, e nada o baixa "
+            "por omissao de flag."
+        ),
+    )
 
     get_p = case_sub.add_parser("get", help="Le o case atual.")
     get_p.add_argument("--repo", required=True)
@@ -388,6 +410,28 @@ def build_parser() -> argparse.ArgumentParser:
     update_p.add_argument("--skill")
     update_p.add_argument("--now")
     update_p.add_argument("--outcome")
+    update_p.add_argument(
+        "--override-gate",
+        help=(
+            "Passa por cima de um gate num case estrito, quando o dado "
+            "genuinamente nao existe (job descontinuado, ambiente que sumiu). "
+            "Exige `--reason`. Fica gravado no case como lista: dois overrides "
+            "do mesmo gate sao dois fatos, e nenhum apaga o outro."
+        ),
+    )
+    update_p.add_argument(
+        "--reason",
+        help="Motivo do `--override-gate`. Sem ele o override e recusado.",
+    )
+    update_p.add_argument(
+        "--facts",
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) que comprova os gates da fase pedida. "
+            "Repetivel. Num case estrito, e daqui que sai a evidencia que "
+            "destrava `--phase`."
+        ),
+    )
 
     # next-step / resume / handoff ------------------------------------
     next_p = sub.add_parser(
@@ -486,6 +530,52 @@ def build_parser() -> argparse.ArgumentParser:
             "o `fact_id` citado precisa existir no conjunto -- achado que cita "
             "medicao ausente da evidencia passa a ser rejeitado."
         ),
+    )
+
+    # report sign / verify ----------------------------------------------
+    report_p = sub.add_parser(
+        "report",
+        help=(
+            "Assinatura de CORRESPONDENCIA do relatorio: prova que o texto foi "
+            "derivado daquela evidencia com aquele catalogo. Nunca autoria."
+        ),
+    )
+    report_sub = report_p.add_subparsers(dest="report_action", required=True)
+
+    report_sign_p = report_sub.add_parser(
+        "sign",
+        help=(
+            "Escreve o bloco de assinatura no fim do relatorio. Reassinar e "
+            "barato e devolve o mesmo arquivo quando nada mudou."
+        ),
+    )
+    report_sign_p.add_argument(
+        "--report", required=True, help="Markdown do relatorio. E reescrito no lugar."
+    )
+    report_sign_p.add_argument(
+        "--findings",
+        required=True,
+        help=(
+            "Arquivo de findings (JSON) gerado por `judge --out`. E dele que saem "
+            "os quatro campos nao-corpo da assinatura: `evidence` (os fact_id "
+            "citados), `rule_id`, `catalog_version` e `schema_version`. O arquivo "
+            "de FACTS nao tem os tres ultimos -- por isso o verbo pede findings, "
+            "e nao facts."
+        ),
+    )
+
+    report_verify_p = report_sub.add_parser(
+        "verify",
+        help=(
+            "Confere a assinatura e diz QUAL parte divergiu: evidencia, catalogo "
+            "ou corpo. Sai com codigo 1 quando nao corresponde."
+        ),
+    )
+    report_verify_p.add_argument("--report", required=True)
+    report_verify_p.add_argument(
+        "--findings",
+        required=True,
+        help="O mesmo arquivo de findings contra o qual o relatorio foi assinado.",
     )
 
     # collect -----------------------------------------------------------
@@ -939,6 +1029,8 @@ def _cmd_case_open(args: argparse.Namespace) -> int:
         iceberg=args.iceberg,
         athena=args.athena,
         facts_path=args.facts,
+        strict_gates=args.strict_gates,
+        reopen=args.reopen,
     )
     _print(case)
     return 0
@@ -958,6 +1050,9 @@ def _cmd_case_update(args: argparse.Namespace) -> int:
         skill=args.skill,
         now=args.now,
         outcome=args.outcome,
+        override_gate=args.override_gate,
+        reason=args.reason,
+        facts_path=args.facts,
     )
     _print(case)
     return 0
@@ -1048,6 +1143,19 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_report_sign(args: argparse.Namespace) -> int:
+    _print(_core.report_sign(args.report, args.findings))
+    return 0
+
+
+def _cmd_report_verify(args: argparse.Namespace) -> int:
+    payload = _core.report_verify(args.report, args.findings)
+    _print(payload)
+    # Codigo 1, nunca 0: relatorio que nao corresponde precisa parar um pipeline,
+    # e `validate` ja estabeleceu esse contrato para o gate de saida.
+    return 0 if payload["valid"] else 1
+
+
 def _cmd_collect_event_log(args: argparse.Namespace) -> int:
     payload = _core.collect_event_log(
         args.repo, job_run_id=args.job_run, bucket=args.bucket, prefix=args.prefix, now=args.now
@@ -1133,6 +1241,8 @@ _DISPATCH = {
     ("knowledge", "path"): _cmd_knowledge_path,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,
+    ("report", "sign"): _cmd_report_sign,
+    ("report", "verify"): _cmd_report_verify,
     ("collect", "event-log"): _cmd_collect_event_log,
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
@@ -1150,6 +1260,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "runtime_action", None)
         or getattr(args, "knowledge_action", None)
         or getattr(args, "rules_action", None)
+        or getattr(args, "report_action", None)
         or getattr(args, "collect_action", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))
