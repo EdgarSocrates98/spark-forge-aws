@@ -587,8 +587,9 @@ _PLAYBOOK_SCHEMA: dict[str, Any] = {
     "type": "object",
     "description": (
         "Decomposicao sequencial de um coordenador -- os mesmos passos que ele "
-        "despacharia como subagentes em Claude Code, para quem nao tem essa capacidade "
-        "de harness (Devin, Codex, Copilot)."
+        "despacharia como subagentes onde ha despacho (Claude Code, Devin CLI, Devin "
+        "Local agent). E o piso das cinco plataformas: unico caminho em Codex e "
+        "Copilot CI, e o caminho nas tres quando o despacho esta desligado."
     ),
     "required": [
         "coordinator",
@@ -1277,8 +1278,13 @@ TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_playbook": {
         "description": (
             "Decomposicao de um coordenador (agents/*.md) em passos sequenciais -- o "
-            "espelho de orquestracao para plataforma sem despacho de subagente (Devin, "
-            "Codex, Copilot). Le os arquivos de agents/ e agents/executors/ em vez de "
+            "PISO de orquestracao das cinco plataformas. Tres despacham subagente "
+            "(Claude Code, Devin CLI e o Devin Local agent do Devin Desktop, sob o "
+            "toggle Subagents (Preview)); esta tool e o unico caminho em Codex e "
+            "Copilot CI, onde nenhuma pesquisa mediu despacho, e continua sendo o "
+            "caminho nas tres quando o despacho esta desligado -- por escolha do "
+            "usuario (subagents_enabled) ou do admin da organizacao (Default subagent "
+            "model: None). Le os arquivos de agents/ e agents/executors/ em vez de "
             "repetir a lista: uma copia divergiria do coordenador na primeira mudanca. "
             "`does_not` de cada passo vem da secao `## Não faz` do executor, nunca "
             "reescrito aqui. Case ausente nao e erro -- os passos saem com `phase: null`. "

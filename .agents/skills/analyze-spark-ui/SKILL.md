@@ -1,6 +1,7 @@
 ---
 name: analyze-spark-ui
 description: Use quando houver um Spark event log, um job run id ou um Spark UI aberto de um job AWS Glue e for preciso achar stage dominante, skew de task, spill, GC, executor perdido ou subparalelismo. Use também quando a pergunta for "por que este stage demora", "por que uma task não termina", "o executor sumiu" ou "está com spill", mesmo que ninguém fale em event log. Se você está prestes a ler métrica de execução de Spark no olho, rode `sparkforge collect event-log` e `sparkforge analyze event-log` em vez disso — o extrator calcula p50/p95/max, spill e GC por stage, e o catálogo aplica os limiares versionados.
+subagent: true
 ---
 
 # Analyze Spark UI
@@ -104,4 +105,12 @@ Regras desta área, e o fact que cada uma consome. Os limiares **não** estão a
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.

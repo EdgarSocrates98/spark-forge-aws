@@ -1,6 +1,7 @@
 ---
 name: analyze-library-call-graph
 description: Use quando o job Glue chama uma biblioteca Python com múltiplos módulos, factories, decorators ou helpers, e você precisa saber onde estão leituras, actions, caches, loops, UDFs, mudanças de Spark config e writes que não aparecem ao olhar só o entrypoint — count() escondido em logger, persist sem unpersist, write dentro de helper três chamadas abaixo. Use também quando perguntarem "essa lib tem algum job escondido", "de onde vem essa action extra", "até onde essa função chega" ou "isso é seguro de chamar", mesmo sem mencionar grafo de chamadas. Se você está prestes a seguir import por import manualmente para responder isso, rode `sparkforge analyze pyspark` e depois `sparkforge analyze call-graph` em vez disso — ele devolve a profundidade mínima e o caminho até cada trabalho Spark alcançável, o que uma lista de arestas sozinha não responde.
+subagent: true
 ---
 
 # Analyze Library Call Graph
@@ -102,4 +103,12 @@ Arestas só existem entre chamadas **estaticamente resolvidas dentro do mesmo ar
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.

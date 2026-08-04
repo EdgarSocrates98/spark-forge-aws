@@ -35,6 +35,92 @@ Leia PROMPT_INICIAL_MESTRE.md e use a skill glue-incremental-performance-archite
 Não faça tuning isolado antes de mapear a biblioteca, os dois fluxos e o OOM.
 ```
 
+### 3.1 Onde os perfis moram
+
+O Devin CLI e o Devin Local agent do Devin Desktop despacham subagente, e leem os
+perfis deste repositório sem nenhuma configuração adicional:
+
+| O que | Onde | Como o Devin lê |
+|---|---|---|
+| Os 8 coordenadores e os 5 executores | `.agents/agents/` e `.agents/agents/executors/` | caminho de descoberta nativo ("Also supported" na aba *Project-specific*) |
+| Os mesmos 13 perfis | `.claude/agents/` | importados do formato do Claude Code — *"Each `.md` file becomes a subagent profile"* |
+| As 20 skills | `.agents/skills/<nome>/SKILL.md` | caminho de descoberta nativo, não convenção deste repositório |
+
+Os dois primeiros são **espelhos gerados** de `agents/`, que é a fonte — nunca edite um
+espelho: `python scripts/sync_skills.py --check` recusa. Eles não são gerados do mesmo
+jeito. `.claude/agents/` é cópia byte a byte, com `tools:` e tudo. `.agents/agents/` é
+**renderizado**: sai **sem `tools:`** (o mapeamento dos valores do campo do Claude Code
+para os nomes de tool do Devin não está documentado, e chute em campo de permissão
+concede ou nega errado) e **nunca com `model:`** (o modelo do subagente resolve por
+roteador no momento do spawn, e um admin da organização o sobrescreve — escrever um
+literal seria fingir controle). O corpo do perfil, o `name` e o `description` são os
+mesmos nos dois: o Devin acha o mesmo perfil pelos dois caminhos, e a documentação dele
+não declara qual tem precedência quando os dois existem — o que muda entre eles é
+apenas a presença de `tools:`.
+
+**Não conte com essa omissão como fronteira.** Os dois caminhos estão ligados por
+default (`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte não
+diz qual vence, e o default de `allowed-tools` é *"all tools"* — omitir é a opção **mais
+permissiva**, não a mais restrita, e o perfil pode chegar pelo `.claude/agents/`
+carregando o campo. O motivo da omissão é outro, e é de honestidade: o **mapeamento de
+valores** não está documentado (`Bash` → `exec`?), e chutar em campo de permissão erra
+nos dois sentidos. Uma coisa que a fonte **diz**, e que é sobre nome de campo e não sobre
+qual arquivo vence: `tools` (Claude Code) e `allowed-tools` (Devin) são ambos aceitos.
+Quem carrega a fronteira é o `## Não faz` do corpo do perfil, igual byte a byte nos dois
+espelhos — e, nas doze skills despacháveis, o parágrafo de despacho da seção
+`## Protocolo`.
+
+Não presuma que o `agents/` da **raiz** seja varrido: a documentação lista
+`.devin/agents/` e `.agents/agents/`, e a frase do changelog ("your project's `agents/`
+directory") é ambígua.
+
+No Devin Desktop o recorte é mais estreito: subagente é capacidade do **Devin Local
+agent**, sob o toggle *Subagents (Preview)*. As páginas do motor Cascade não mencionam
+subagente. Fora do Devin Local agent com o toggle ligado, a coordenação no Desktop é
+`playbook`.
+
+### 3.2 Quais skills despacham, e a que não despacha de propósito
+
+**Doze das vinte** skills declaram `subagent: true` no espelho `.agents/skills/`: as
+quatro `review-*` (`review-emr-cluster`, `review-data-validation`,
+`review-glue-terraform`, `review-pyspark-pr`), as quatro `analyze-*`
+(`analyze-spark-plan`, `analyze-spark-ui`, `analyze-batch-loop`,
+`analyze-library-call-graph`), `diagnose-oom`, `diagnose-data-skew`,
+`optimize-pyspark-code` e `optimize-parquet-layout`. São as investigações fechadas: o
+subagente coleta, julga sobre artefato, e o pai lê e resume o resultado.
+
+**Duas** delas declaram também `agent:` — `review-emr-cluster` → `emr-infra-reviewer` e
+`review-data-validation` → `data-quality-reviewer`. Nas outras **dez**, `agent:` não tem
+resposta única e o Devin escolhe o perfil, que é a forma documentada (o campo tem default
+*none*).
+
+Nove são ambíguas por serem declaradas por dois a quatro coordenadores. A décima é
+`diagnose-oom`, e a razão dela é diferente: ela **era** declarante único, mas só porque
+`spark-performance-architect` não a lista no `skills:` dele — embora liste
+`diagnose-data-skew`, `analyze-spark-ui` e `tune-glue-job`, toda a vizinhança do mesmo
+diagnóstico. Omissão numa lista pré-existente não é juízo de competência, e o perfil que
+sobrava era o `glue-incremental-performance-architect`, cuja skill homônima este
+repositório declara **não-despachável** justamente por orquestrar as outras via
+`next-step`. Publicar aquele `agent:` seria roteamento mecânico com cara de decisão — o
+mesmo defeito que a ordem alfabética produziria.
+
+**`sparkforge-diagnose` não despacha, de propósito.** Ela abre o case e roteia, e o
+ciclo de vida do case é o que faz a investigação atravessar sessões e ferramentas.
+Despachá-la jogaria esse ciclo de vida para um contexto que **não volta**: um subagente
+Devin não herda o histórico do pai, devolve texto livre sem contrato de saída, e some
+quando termina. Pela mesma razão ficam de fora `glue-incremental-performance-architect`
+(orquestra as outras skills, e subagente não gera subagente por default) e as skills
+cujo método depende de perguntar — `optimize-iceberg-table`, `optimize-latest-per-key`,
+`design-incremental-processing`: `ask_user_question` é **sempre negado** a um subagente.
+
+### 3.3 Quando o despacho estiver desligado
+
+Nenhum arquivo deste repositório liga ou desliga subagentes. `subagents_enabled` é
+chave de usuário (não de projeto), e um admin da organização pode escolher *None* em
+"Default subagent model", que desliga o despacho por completo. A própria Cognition
+declara custom subagents **experimentais**. Nos três casos o caminho é o mesmo da
+seção 5: `sparkforge playbook <coordenador>`, que é o piso e não depende de despacho.
+
 ## 4. GitHub Copilot
 
 No Copilot Chat:
@@ -63,12 +149,23 @@ valida dado e a pergunta é onde a validação está, se ela tem consequência e
 custa em passadas sobre o dado — nunca se o dado está correto, que é pergunta sem
 artefato para extrair.
 
-Em Claude Code, o coordenador indicado despacha os cinco executores (`sf-inventory`,
-`sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`) como subagentes, na ordem do
-loop de fase. Em Devin, Codex ou Copilot CI — que não despacham subagente —
+Em Claude Code, no Devin CLI e no Devin Local agent do Desktop, o coordenador indicado
+despacha os cinco executores (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`,
+`sf-synthesizer`) como subagentes, na ordem do loop de fase — ver a seção 3 para onde os
+perfis moram no Devin.
+
 `sparkforge playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_playbook` devolve a
 mesma decomposição em passos sequenciais: o que cada executor faz, não faz, pressupõe e
-entrega, na ordem certa.
+entrega, na ordem certa. Ele é o **piso das cinco plataformas**, não um substituto de
+segunda classe: é o único caminho em Codex e Copilot CI, onde despacho de subagente não
+foi medido, e é o caminho nas três que despacham sempre que o despacho estiver desligado
+(seção 3.3). Perde o paralelismo; mantém o método.
+
+Uma coisa não atravessa a fronteira do subagente em plataforma nenhuma: a confirmação de
+escopo e retenção antes de manutenção destrutiva. Os treze perfis declaram em `## Não faz`
+que **não executam** expiração de snapshot, remoção de arquivo órfão, `DROP` ou
+sobrescrita de partição — eles recomendam, e a confirmação acontece com quem tem a
+pergunta disponível, que nunca é o subagente.
 
 ## 6. Ordem prática dos artefatos
 

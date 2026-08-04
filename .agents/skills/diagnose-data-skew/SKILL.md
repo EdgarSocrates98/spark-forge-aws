@@ -1,6 +1,7 @@
 ---
 name: diagnose-data-skew
 description: Use quando o judge já disparou SF-UI-001 (skew de duração de task) e for preciso decidir entre skew de dados e skew de computação, tratar hot key, null ou valor sentinela, ou desenhar o experimento de mitigação (broadcast, AQE skew join, salting). Use também quando a pergunta for "uma task não termina", "uma chave concentra tudo", "o job trava numa partição só" ou "uma partição ficou gigante", mesmo sem citar SF-UI-001. Se você está prestes a aplicar salting ou repartition por instinto, rode `sparkforge collect event-log`, `sparkforge analyze event-log` e `sparkforge judge --show-skipped` em vez disso — cruzar SF-UI-001 com SF-UI-002 diz se é skew de dados (tratável na chave) ou de computação (repartition não muda nada, e é o erro mais caro desta análise).
+subagent: true
 ---
 
 # Diagnose Data Skew
@@ -65,4 +66,12 @@ Limiares e severidade de cada regra vêm de `sparkforge rules lookup --id <ID>`,
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.

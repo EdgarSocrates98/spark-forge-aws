@@ -1,6 +1,8 @@
 ---
 name: review-emr-cluster
 description: Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for "por que esse cluster custa isso", "o cluster subiu e não desce", "esse cluster morreu no bootstrap" ou "cadê os logs do cluster que terminou", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-cluster` no olho, rode `sparkforge analyze emr-cluster` e `sparkforge judge` em vez disso — o extrator normaliza grupos e frotas num kind só e o catálogo aplica as regras SF-EMR sobre o que ele achou.
+subagent: true
+agent: emr-infra-reviewer
 ---
 
 # Review EMR Cluster
@@ -178,4 +180,12 @@ catálogo cresce, esta tabela é uma foto.
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
+retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
+operador na sessão.
+
+Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
+`ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
+confirmação aqui não é difícil: é impossível — por isso a regra 9 de
+`AGENT_PROTOCOL.md` manda não executar e devolver a decisão a quem pode ser
+perguntado.

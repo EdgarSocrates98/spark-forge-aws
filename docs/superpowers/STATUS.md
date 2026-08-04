@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-08-04
-**Commit de referência:** fechamento da branch `feat/fase4b-gates`
+**Commit de referência:** fechamento da branch `feat/devin-subagentes`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -29,7 +29,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **3479** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **3594** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 66**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **16** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **102** | união de `EMITTED_KINDS` |
@@ -43,6 +43,8 @@ arquivo ganha.
 | Coordenadores | **8** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
 | Skills | **20** | `skills/*/SKILL.md` |
+| Skills que declaram despacho | **12 de 20**, sendo **3** com `agent:` | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
+| Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
 | Fixtures golden | **107** em 18 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **37** | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -797,6 +799,143 @@ Faixa de commits: `0b500d6` … `20591bd`, mais o commit de documentação que f
 fase (`c18ac3c`). O fechamento das pendências da revisão final vai de `109af64`
 até o commit de documentação desta Task 7.
 
+### Perfis de subagente do Devin — **CONCLUÍDA** em 2026-08-04
+
+Branch `feat/devin-subagentes`. Spec:
+[`specs/2026-08-04-sparkforge-devin-subagentes-design.md`](specs/2026-08-04-sparkforge-devin-subagentes-design.md) ·
+Plano: [`plans/2026-08-04-sparkforge-devin-subagentes.md`](plans/2026-08-04-sparkforge-devin-subagentes.md) ·
+Pesquisa de fontes:
+[`../../knowledge/devin/agents-and-subagents.md`](../../knowledge/devin/agents-and-subagents.md).
+**Sem número de fase**, e de propósito: nem o spec nem o plano lhe deram um, e inventar
+`5d` aqui criaria numeração que nenhum outro arquivo cita (D-DV-21).
+
+**O defeito de partida: uma decisão registrada que a pesquisa de fontes derrubou pela
+metade.** `parity.yaml`, linhas 18-29, declarava a ausência de `subagent` entre os
+mecanismos como deliberada, com a justificativa de que "despacho de subagente é capacidade
+de HARNESS do Claude Code […] **nenhuma outra plataforma tem um equivalente** que este
+repositório possa acionar". A segunda metade é **falsa por contraexemplo medido**: o Devin
+CLI lê `.agents/agents/` nativamente, importa `.claude/agents/*.md` (*"Each `.md` file
+becomes a subagent profile"*) e descobre skills em `.agents/skills/<nome>/SKILL.md` —
+**três diretórios que este repositório já publicava antes da fase**, sem nenhuma mudança.
+O que sobrou da decisão é o recorte, e ele é mais estreito e mais defensável do que a frase
+que caiu: **o perfil é nosso, o despacho é deles**. Nenhum arquivo versionado liga
+subagente nem fixa modelo — `subagents_enabled` é chave de usuário, o modelo default
+resolve por roteador no spawn, e um admin da organização o sobrescreve, inclusive com a
+opção *None*, que desliga o despacho por completo.
+
+**O que entrou.** `scripts/sync_skills.py` deixou de **copiar** e passou a **renderizar**
+por plataforma: `.claude/` e `.github/` recebem o arquivo inalterado — passthrough byte a
+byte, sem round-trip de YAML que reordenaria chaves —, e `.agents/` perde `tools:` e nunca
+ganha `model:`. O gate deixou de ser `filecmp.cmp` e passou a comparar o espelho, **em
+bytes**, contra o que o renderizador produz; a plataforma é derivada do próprio alvo
+(`platform_for`), não de uma quarta lista paralela, e alvo fora das três raízes levanta
+`ValueError` em vez de publicar o arquivo cru numa plataforma nova. Os **treze** perfis
+(8 coordenadores + 5 executores) declaram em `## Não faz` que não executam manutenção
+destrutiva — `ask_user_question` é **sempre negado** a subagente, o que torna a regra 10 do
+`CLAUDE.md` inalcançável de dentro de um, e sem a fronteira escrita o modo de falha é
+**mudo**. **Doze** das vinte skills declaram `subagent: true` no espelho do Devin, e três
+declaram `agent:`. `parity.yaml` ganhou `subagent` em `mechanisms`, declarado para
+`claude_code`, `devin_cli` e `devin_desktop` (com o recorte "Devin Local agent, Subagents
+(Preview)" escrito em dois lugares do arquivo), e o parágrafo original foi **preservado
+palavra por palavra**, com o desvio registrado ao lado.
+
+**Os seis pontos da doc interna que não se sustentaram.** A doc trazida pelo usuário
+(`guia_devin_agents_subagents.md`) foi tratada como **hipótese**, não como fonte, e cada
+afirmação foi conferida contra `docs.devin.ai` com URL e `retrieved: 2026-08-04`. Seis
+caíram, e nenhuma delas cairia por inspeção — todas são plausíveis lidas de longe:
+
+1. **Identificadores de modelo com ponto** (§3.2). A doc escreve `model: glm-5.2`,
+   `swe-1.7`, `kimi-k2.7`. O identificador literal usa **hífen** — `glm-5-2`, `swe-1-7`,
+   `kimi-k2-7`; o ponto é o *label* de exibição, não o `model_uid`.
+2. **A procedência desses literais** (§3.2). Eles vêm da tabela de **preços do Devin
+   Desktop**, cujo escopo declarado é custo. Nenhuma página do CLI os documenta como valor
+   aceito de `--model` ou de frontmatter; o que a doc do CLI garante são os *short names*
+   `opus`, `sonnet`, `swe`, `codex`, `gemini`.
+3. **O default do subagente** (§3.3). A doc diz que ele "geralmente resolve para uma
+   variante do `swe-1.6` ou `swe-1.7-lightning` dependendo do plano". A fonte é mais
+   estreita: resolve por **roteador no momento do spawn**, para SWE-1.6, e
+   `swe-1-7-lightning` não aparece como default de subagente em lugar nenhum.
+4. **`subagents_enabled` no lugar errado** (§7.2). A doc a aninha dentro de `"agent"`. A
+   fonte a põe como chave **de topo** e a marca "(user only)" — ela não é aceita no
+   `.devin/config.json` de projeto, e o objeto `agent` documentado tem exatamente duas
+   chaves, `model` e `show_history_on_continue`. Consequência: **um repositório não
+   controla se subagentes rodam.**
+5. **`subagent_default_model` e `alternative_models` não existem** (§7.3). Busca literal
+   nas cinco páginas de configuração: **zero ocorrências**. O equivalente funcional é a
+   setting de **organização** "Default subagent model", inacessível a arquivo de
+   repositório. O bloco JSON de exemplo da doc é inteiramente inventado salvo `agent.model`
+   e `subagents_enabled` — e este no aninhamento errado; o formato de `permissions` também
+   não corresponde ao documentado.
+6. **`!ultra`, `!fast`, `!swe` não existem** (§10.2). `!` é o prefixo de **bash mode** no
+   Devin CLI. `/fast` existe, com barra. Um `!fast` digitado com input vazio entraria em
+   bash mode e tentaria rodar `fast` como comando de shell.
+
+Os onze vetos `V-DV-*` da pesquisa registram esses seis mais cinco achados que não são
+contradição e sim ambiguidade medida — entre eles o que decidiu o desenho do renderizador:
+**o mapeamento dos valores de `tools:` não está documentado** (`Bash` → `exec`? `Write` →
+`write`?). A fonte diz que o **campo** é aceito; que os **valores** sejam traduzidos é
+afirmação que a documentação não faz.
+
+**O que continua no `playbook`, e por quê.** O `playbook` deixou de ser "o que as outras
+plataformas usam" e passou a ser **o piso das cinco**, declarado inclusive nas três que
+despacham. Ele é o único caminho em `codex` e `copilot_ci`, que a pesquisa **não cobriu** —
+e afirmar mais seria repetir o defeito do transporte HTTP da Fase 1, que este mesmo arquivo
+de manifesto cita como razão de ser da regra. E ele é o caminho nas três que despacham
+sempre que o despacho estiver desligado, o que **não depende deste repositório** em nenhum
+dos três gatilhos: `subagents_enabled: false` é escolha do usuário, *None* em "Default
+subagent model" é de um admin da organização, e a própria Cognition declara custom
+subagents **experimentais**. Daí o invariante que o plano não pediu e a fase entregou:
+nenhuma capacidade declara `subagent` **sem** `playbook`. Uma capacidade que declarasse só
+o despacho ficaria sem caminho no dia em que o toggle virasse off, e o manifesto não
+perceberia.
+
+**Números medidos no fechamento.** 3569 testes passando, 5 skipped (eram 3479 / 5 ao abrir
+a branch; +90 em cinco tasks). 13 perfis, todos com a fronteira de manutenção destrutiva
+declarada. 20 skills, **12** com `subagent: true` e **3** com `agent:`. 5 mecanismos em
+`parity.yaml`, 3 plataformas com `subagent`. `git diff` dos espelhos, lido linha a linha:
+**13 arquivos, 13 remoções** em `.agents/agents/` (uma linha `tools:` por perfil) e **12
+arquivos, 15 inserções** em `.agents/skills/`; `.claude/` e `.github/` com diff **vazio**,
+que é o critério de a renderização não ter vazado para as outras duas plataformas. Nada
+mais mudou de tamanho: 66 regras, 16 extratores, 102 kinds, 107 fixtures, 24 rotas, 36
+tools MCP. Esta fase não acrescentou capacidade de análise — ela fez a que existe ser
+despachável onde alguém mediu que dá.
+
+**O que NÃO entrou, com razão registrada.** `model:` em perfil nenhum (o default resolve
+por roteador e o admin sobrescreve; e o identificador correto é dado que envelhece — a doc
+interna já errava a grafia dele). Tradução de `tools:` (mapeamento não documentado; chute
+em campo de permissão erra caro nos dois sentidos). `.devin/config.json` versionado (as
+chaves de projeto configuram o ambiente de quem roda, não a capacidade do repositório).
+`subagent` para `codex` e `copilot_ci`. E `agent:` nas nove skills despacháveis com mais de
+um coordenador: a alternativa do plano — "o primeiro em ordem determinística" — foi
+recusada **com o contraexemplo na mão**, porque em ordem alfabética `review-pyspark-pr`
+cairia em `data-quality-reviewer` e `analyze-spark-plan` em
+`glue-incremental-performance-architect`, quando o especialista de ambas é
+`pyspark-code-reviewer`.
+
+Faixa de commits: `e0e995e` … `0f609d7`, mais o commit de documentação que fecha a fase.
+Os vinte desvios `D-DV-1` a `D-DV-20` estão medidos um a um no plano, e três deles
+registram teste existente que **teve que mudar** — sempre porque a afirmação antiga virou
+o defeito, e sempre apertando: cópia literal da fonte no espelho do Devin passou a ser
+`DIVERGENTE`, e "só `claude_code` declara `subagent`" virou "só quem a pesquisa confirma,
+com a razão citando seção e `retrieved:`".
+
+**Revisão final, 2026-08-04 — os números acima são os do fechamento e ficam como
+estavam; estes são os de depois.** A revisão aprovou 9 dos 10 critérios e mediu **onze**
+pendências; as onze fecharam. Testes: **3594** passando, 5 skipped (+25). As **12** skills
+despacháveis passaram de **0** para **12** declarando que não executam manutenção
+destrutiva e para onde a confirmação sobe — e a instrução antiga foi **corrigida**, não
+duplicada, porque dentro de um subagente ela mandava obter o inalcançável. As com `agent:`
+caíram de **3** para **2**: `diagnose-oom` era declarante único por **omissão** no
+`skills:` de `spark-performance-architect`, e o perfil que sobrava era o orquestrador. O
+gate passou a acusar órfão em qualquer profundidade e extensão — antes,
+`.agents/agents/rogue/AGENT.md`, que é **layout de descoberta do Devin**, passava com
+`--check` em exit 0. A regra 9 do `AGENT_PROTOCOL.md` ganhou o recorte de subagente. E
+quatro textos que afirmavam que omitir `tools:` protege alguma coisa foram corrigidos: com
+os dois caminhos de descoberta ligados por default e `allowed-tools` valendo *"all tools"*,
+omitir é a opção **mais permissiva**. As quatro linhas fechadas estão em *Dívidas abertas*;
+os cinco desvios do spec, na §8 dele. **O que a revisão diz sobre a suíte:** nenhuma das
+onze quebrava teste, e quatro eram afirmação de efeito que ninguém tinha medido.
+
 ### Fase 4 do roadmap (§16) — rigor — **PARCIALMENTE CONCLUÍDA**
 
 Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
@@ -974,13 +1113,47 @@ do spec**, ou seja, sucesso declarado. Essa linha continua sendo a única que se
 **parte em duas** aqui, e pela mesma razão: o texto dela já dizia que "as duas
 metades envelhecem de formas opostas".
 
-**Contagem: 1 dívida, 4 fases, 7 limites declarados — 12 linhas.** Eram **13
+**Contagem de 2026-08-04, na triagem — superada duas vezes abaixo; fica pelo
+histórico, e é o que ela conta que importa (o efeito da triagem), não o total:
+1 dívida, 4 fases, 7 limites declarados — 12 linhas.** Eram **13
 abertas** de 26 quando esta branch abriu; duas fecharam aqui (`requirements` em
 `_PRECEDENCE` e a assinatura ausente das skills), e a linha dos gates virou duas
 ao se partir. De treze linhas que se liam como atraso, **uma** é dívida de
 verdade.
 
-### Dívidas (1)
+**Contagem ao fechar a fase de perfis de subagente do Devin (2026-08-04) —
+também superada, pela contagem da revisão final logo abaixo: 2 dívidas,
+4 fases, 10 limites declarados — 16 linhas.** A fase acrescentou quatro, e o
+critério de triagem foi aplicado a cada uma na hora de escrevê-la, não depois:
+três são **limite declarado** — escolha com custo medido, cujo fechamento é
+reverter a decisão ou depender de terceiro —, e uma é **dívida**, porque fechá-la
+é escrever código que ninguém escreveu. **O precedente que obriga a isso é a Fase
+4a:** ela fechou sem acrescentar uma linha sequer a este inventário — nenhuma das
+16 tem "Fase 4a" na coluna de origem —, e a revisão final dela, depois do merge,
+mediu **nove** pendências, três das quais mudavam comportamento ou contrato. Fase
+que fecha declarando nada a dever não prova que não deve; prova que ninguém
+procurou.
+
+**Contagem corrente, depois da revisão final da fase de perfis de subagente
+(2026-08-04): 2 dívidas, 4 fases, 10 limites declarados — 16 linhas abertas, e
+19 fechadas.** Esta é a que vale; as duas acima ficam como registro. **Abertas
+não mudaram de número, e isso é o que a revisão diz sobre a fase:** ela mediu
+onze pendências e nenhuma virou dívida nova — quatro fecharam no mesmo dia em
+que foram medidas e entraram em *Fechadas* (o órfão de diretório que passava
+pelo gate, a fronteira que não alcançava a skill despachada, a regra 9 do
+`AGENT_PROTOCOL.md` sem recorte de subagente, e três textos que vendiam a
+omissão de `tools:` como fronteira), e as demais eram texto errado em spec,
+`README`, `AGENTS.md` e nas quatro superfícies do `playbook`, corrigido no lugar.
+Duas linhas abertas **mudaram de tamanho**: a de `tools:` ganhou o argumento que
+lhe faltava, e a de `agent:` passou de nove para dez skills sem atribuição.
+
+O precedente vale de novo, agora contra esta revisão: quatro das onze eram
+**afirmação de efeito que ninguém mediu** — a mais cara delas dizia que omitir
+`tools:` protegia alguma coisa, quando omitir é a opção mais permissiva das
+duas. Nenhuma quebrava teste. Fase que fecha verde não prova que está certa;
+prova que a suíte olha para onde alguém já olhou.
+
+### Dívidas (2)
 
 Fechar exige escrever código. Nada aqui espera fase nem depende de reverter
 decisão.
@@ -988,6 +1161,7 @@ decisão.
 | Dívida | Origem | Impacto |
 |---|---|---|
 | `SF-DQ-002` acusa validação cuja consequência está atrás de um helper | Fase 5c (`_enforcements`), **medida de novo** na Task 3 da Fase 5c.2, 2026-08-03 | **Dívida, não fase — e é o outro caso ambíguo.** Três coisas a separam de uma fase. (1) **A especificação do conserto já está escrita dentro da própria linha** — travessia de corpo de callee por parâmetro, com decisão própria sobre religação, alias e `def` aninhado; fase é trabalho que ainda precisa de spec, e esta tem o dela. (2) O escopo é **um predicado** de um extrator que já existe: `_reader`, `_read_of` e `_reads_this_check` já funcionam, e só `_abort_in` não atravessa. (3) O defeito é de **regra já entregue** que erra para o lado da acusação — `SF-DQ-002` em P1 sobre quem protegeu o pipeline —, e isso é assinatura de dívida, não de escopo não construído. Adiada com o custo medido na mão, que é a definição de dívida deste inventário. `aborta_se(ruins)` num helper que faz `if ruins > 0: raise` não produz `dq.enforcement`, e `SF-DQ-002` dispara sobre `absent: dq.enforcement` — a regra acusa exatamente quem protegeu o pipeline. **Medido, não presumido:** sobre a fonte de nove linhas do gate, o motor devolve `SF-DQ-002 (P1)` e `SF-DQ-003 (P2)`, e a instrumentação de `_enforcements` mostra onde está a lacuna — `_reader` **já aceita** `aborta_se(ruins)` como leitor, `_read_of` **já vê** o nome `ruins`, e `_reads_this_check` **já devolve** `True`. O único predicado que falha é `_abort_in`, que procura o aborto nos ramos **deste** escopo e o aborto está no corpo de outra função. **Por isso a máquina da 5c.2 não serve:** a parte que ela poderia emprestar (resolver a chamada e mapear argumento e parâmetro) é precisamente a parte que já funciona, e o que falta é ler o corpo do callee e decidir se ele aborta **condicionalmente ao valor recebido** — travessia nova, com limites próprios. Nenhum dos limites da 5c.2 transfere: "um só call site" não diz nada sobre o que a função faz, porque um helper chamado de dez lugares aborta ou não aborta independentemente disso. Implementar assim mesmo, para poder dizer que as duas fecharam, produziria uma máquina com garantia inventada num kind cujo erro cai do lado da acusação. **Fica aberta com o custo na mão**, e o que ela exige está nomeado: travessia de corpo de callee por parâmetro, com decisão própria sobre religação, alias e `def` aninhado |
+| A pesquisa de fontes do Devin não é vigiada por `refresh_knowledge`, e o spec afirmava que era | fase de perfis de subagente do Devin, medido ao fechar a Task 6 em 2026-08-04 | **Dívida, não limite — e a linha existe porque uma mitigação declarada no spec não existe.** A §7 do spec lista, contra o risco "o Devin muda formato de perfil e o tradutor quebra em silêncio", que "a pesquisa fica em `knowledge/` com data, **na watchlist do `refresh_knowledge`**". A primeira metade é verdadeira; a segunda é **falsa por construção**, e a medição é de uma linha: `watchlist()` em `scripts/refresh_knowledge.py` deriva a lista de URLs de `sources[].url` **das regras do catálogo**, e `knowledge/sources.lock.json` tem **37 fontes, zero com `devin`**. Conhecimento sem regra que o cite nunca entra — a docstring da função diz isso em voz alta ("ela É o conjunto de `sources[].url` das regras"), e o desenho é bom: watchlist mantida à mão apodrece. O efeito aqui é que as **24 URLs distintas** de `docs.devin.ai` citadas na pesquisa e coletadas em 2026-08-04 envelhecem sem alarme, sobre uma superfície que a própria fonte declara **experimental** ("format, behavior, and configuration options may change"). É a combinação mais cara possível: a página que mais provavelmente muda é a única que ninguém vigia. **Duas saídas, e a barata é errada.** Escrever uma regra de catálogo que cite as URLs só para entrar na watchlist seria fabricar diagnóstico sobre Spark que não existe, e o catálogo é dado julgado por `runtime_scope` — poluí-lo para obter frescor inverte a relação. A saída certa é ampliar `watchlist()` para varrer também os blocos `Fontes` de `knowledge/**.md`, que **é código que ninguém escreveu**: exige um leitor do formato de rodapé (hoje prosa com URL e `retrieved:`, sem schema), decidir o que fazer quando a mesma URL é citada por regra e por knowledge com datas diferentes, e aceitar que páginas de doc de produto mudam de hash com frequência maior que a de fonte AWS — o risco de alarme permanente que a linha de `normalize()` já registra. Fica aberta com o custo na mão e o número medido: 37 fontes vigiadas, 24 não vigiadas |
 
 ### Fases (4)
 
@@ -1001,12 +1175,15 @@ prevista** — e uma delas registra que a sua ainda não tem posição na fila.
 | Great Expectations declarativo e dbt seguem sem cobertura | Fase 5c, por decisão registrada na §2 do spec | **Fase, e a própria linha já dizia:** "as duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado". A linha estava certa e no lugar errado. `great_expectations.yml` e as expectation suites em JSON são artefato declarativo **fora do código**, com parser próprio, e correlacionar suíte com a tabela que o job escreve exige casar por nome — heurística frágil, que produziria `SF-DQ-001` sobre um alvo adivinhado. dbt é mundo próprio e encosta no Spark só via `dbt-glue`/`dbt-spark`. As duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado. Fora de escopo pela mesma razão: **resultado de execução** (`VerificationResult`, validation result do GE, `run_results.json` do dbt) — a ferramenta já disse que o check falhou, e repetir isso não acrescenta garantia nenhuma |
 | EMR Serverless e EMR on EKS sem cobertura | Fase 5b, por decisão registrada no spec | **Fase, e a única cuja fase não tem posição na *Ordem*.** Cobrir uma plataforma nova é fase inteira — extrator, kinds, regras e coordenador, que foi o formato da 5b para EMR on EC2 —, e a decisão registrada no spec da 5b foi sobre **quando**, não sobre **se**. Enfileirá-la é decisão de roadmap, e a triagem não a toma por conta própria: registra que ela está fora da fila. O extrator lê `describe-cluster` de EMR on EC2. Serverless tem worker config e pre-init capacity; EKS tem virtual cluster e job run. Nenhum dos dois tem fact, regra ou coordenador |
 
-### Limites declarados (7)
+### Limites declarados (10)
 
 Decisão tomada com o custo registrado. "Fechar" cada uma destas significa
 **reverter** a decisão que a criou — e a coluna de impacto abre nomeando qual.
 Sete linhas que pareciam atraso e são, em todos os casos, escolha com motivo
-escrito.
+escrito. As **três últimas** entraram com a fase de perfis de subagente do Devin,
+e têm uma propriedade que as sete anteriores não têm: em duas delas o gatilho de
+reabertura **não é nosso** — é a Cognition documentar o que hoje não documenta, ou
+deixar de marcar como experimental o que hoje marca.
 
 | Limite | Origem | Qual decisão o fecha, e o impacto |
 |---|---|---|
@@ -1016,13 +1193,22 @@ escrito.
 | `verify` não sabe verificar o corpo de um relatório assinado sob outra `SIGNATURE_VERSION` | Fase 4b, desvio D-4b-24, medido ao fechar a revisão final | **Limite declarado, e esta linha é a declaração que o D-4b-24 disse faltar.** O suporte é de **uma** normalização, por decisão: preservar `normalize_body_v1`, `v2`, … é código que só envelhece. Relatório de outra versão se **reassina**, nunca se reverifica. O desvio mediu que a alternativa barata era declarar isso por escrito e não a fez; está declarado aqui, e nada no código mudou. A build guarda **uma** normalização — a dela. Quando o `signature_version` declarado no bloco não é o corrente, `checks.body` sai como **não avaliável** e fica fora de `diverged`, porque recomputar responderia sobre a regra de agora e nunca sobre o corpo de então. É a resposta honesta, e é menos do que o leitor gostaria: um relatório antigo não pode ser reverificado, só reassinado — e reassinar prova correspondência com a evidência de **hoje**, não com a de quando ele foi emitido. Fechar exigiria preservar as normalizações antigas (`normalize_body_v1`, `v2`, …) e despachar por versão, que é código que só envelhece; a alternativa mais barata, e não feita, é declarar por escrito que o suporte é de uma versão só. Hoje há uma versão e nenhum relatório afetado: a dívida é do primeiro dia em que a normalização mudar |
 | A tabela de overrides do relatório não é correlacionada com o case | Fase 4b, desvio D-4b-23, medido ao fechar a revisão final | **Limite declarado.** Fechar exige `report sign --repo` e `report verify --repo`, e o **D-4b-23 mediu as duas saídas**: opcional, a checagem some em silêncio; obrigatório, o pacote de handoff vira três arquivos — o mesmo que o D-4b-14 recusou. A seção 9 de `templates/performance-report.md` manda declarar gate, data e motivo de cada override, e por estar **dentro** do corpo assinado ela ganha uma garantia real: apagá-la depois de `report sign` invalida a assinatura, e `verify` acusa em `body` (com teste). O que **não** existe é qualquer código que compare a tabela com o `gate_overrides` do `case.yaml`: um relatório que omite um override, ou que declara um que nunca houve, assina e verifica normalmente. Fechar exigiria `report sign --repo` e `report verify --repo`, e o custo foi medido no D-4b-23 — com `--repo` opcional a checagem some em silêncio, e obrigatório o pacote de handoff vira três arquivos, que é o modo de falha que o D-4b-14 já recusou |
 | Igualdade bit-a-bit não vale entre plataformas nem entre versões do backend | medido em 2026-08-01, ao fechar a dívida acima | **Limite declarado.** Fechar não é escrever código que falta: é **reverter a decisão** de não pinar `hatchling==` e não nomear um interpretador de referência — as duas recusadas, com o motivo na própria linha (o artefato publicado já declara o `Generator:` que o produziu). Dois eixos sobrevivem à `reproducible = true`, e nenhum é do hatchling. (1) A versão do backend vaza para `WHEEL` como `Generator: hatchling X.Y.Z`, e `requires = ["hatchling>=1.25"]` não é pin — dois builds separados por um release do hatchling divergem. (2) O fluxo de deflate depende da implementação de zlib do interpretador: o CPython 3.14 do Windows usado na medição roda `zlib-ng` (`ZLIB_RUNTIME_VERSION = 1.3.1.zlib-ng`), o `ubuntu-latest`/3.11 do CI roda zlib padrão, e as duas comprimem os mesmos bytes de formas diferentes. Consequência: `verify_wheel.py` prova reprodutibilidade **dentro de uma plataforma**, que é o que o job `wheel` mede nos dois SOs separadamente — não entre elas. Fechar exigiria pinar `hatchling==` e nomear um interpretador de referência; nenhum dos dois foi feito, porque o artefato publicado já declara o `Generator:` que o produziu |
+| O espelho do Devin sai **sem `tools:`**, e o subagente herda o que o harness der | fase de perfis de subagente do Devin, decisão registrada na §2 do spec e travada por teste | **Limite declarado, e o gatilho de reabertura não é nosso: a Cognition documentar o mapeamento.** A fonte diz que o **campo** `tools` do Claude Code é aceito pelo Devin ("Both formats are supported automatically") e a página de permissões enumera os nomes de tool dele (`read`, `edit`, `grep`, `glob`, `exec`) — mas **nenhuma página documenta o mapeamento de valores**: `Bash` → `exec` e `Write` → `write` não estão escritos em lugar nenhum (V-DV-8). Fechar significa reverter a decisão de não chutar, e o custo do chute foi medido nos dois sentidos: traduzir errado para menos **nega** uma tool que o perfil precisa, e o subagente para sem dizer por quê; traduzir errado para mais **concede** o que ninguém revisou, num campo cuja função é justamente restringir. Omitido, o perfil herda o que o harness dá, que é o comportamento default documentado — menos preciso do que gostaríamos, e o único que não afirma o que a fonte não diz. `render_agent(..., "devin")` remove a linha e as continuações dela, para a remoção nunca engolir a chave seguinte, e `tools:` **no corpo** do perfil não é tocado. **Reabre no dia em que a doc do Devin publicar a tabela de correspondência**: aí a tradução vira derivação de dado publicado, e a decisão se inverte com o mesmo argumento que a criou. **O que esta linha não afirmava, e a revisão final de 2026-08-04 obrigou a escrever:** a omissão **não é fronteira**, e o argumento acima nunca disse que era — ele é só sobre mapeamento de valores, e nunca mencionava que **o outro caminho carrega o campo**. Os dois diretórios de descoberta estão ligados por default (`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa** sobre precedência entre eles, e `allowed-tools` tem default *"all tools"* — logo omitir é a opção **mais permissiva**, não a mais restrita, e o mesmo perfil pode chegar pelo `.claude/agents/` **com** `tools:`. A segurança não depende disso em grau nenhum: ela é a prosa de `## Não faz` no corpo, byte-idêntica nos dois espelhos, e a declaração de despacho das doze skills. Três textos afirmavam efeito onde não há (`README.md`, `AGENTS.md` e esta linha) e foram corrigidos na mesma varredura |
+| Custom subagents são **experimentais** pela própria Cognition | fase de perfis de subagente do Devin, risco registrado na §7 do spec | **Limite declarado — e é o único do inventário cujo fechamento não depende deste repositório em nenhum grau.** A fonte declara literalmente: *"Custom subagents are **experimental**. The format, behavior, and configuration options may change in future releases"* (V-DV-6), e o mesmo se aplica a `subagent:`/`agent:` em skills. Some junto o formato de descoberta: nada garante que `.agents/agents/` continue sendo varrido, nem que a importação de `.claude/agents/*.md` sobreviva. **A mitigação é estrutural e já está no manifesto:** nenhuma capacidade declara `subagent` sem `playbook`, travado por teste — se o despacho sumir, o piso permanece e a única perda é o paralelismo. **O que não existe é vigilância:** ver a dívida da watchlist, logo acima; hoje a página que declara a experimentalidade é a mesma que ninguém confere quando muda. O que **deve** acontecer em toda fase futura que toque neste mecanismo está escrito no V-DV-6 e vale repetir aqui: **re-verificar a doc na data da entrega**, nunca construir garantia dura sobre ele |
+| Dez das doze skills despacháveis saem **sem `agent:`**, e o Devin escolhe o perfil | fase de perfis de subagente do Devin, desvio D-DV-11, medido na Task 4; a décima entrou na revisão final de 2026-08-04 | **Limite declarado, e a alternativa foi recusada com o contraexemplo na mão — não por gosto.** Medido na relação derivada de `skills:` dos oito coordenadores: **14 das 20** skills são declaradas por dois a cinco coordenadores, e entre as **12** despacháveis apenas **3** têm resposta única (`review-emr-cluster` → `emr-infra-reviewer`, `review-data-validation` → `data-quality-reviewer`, `diagnose-oom` → `glue-incremental-performance-architect`). O caso ambíguo é a **maioria**, não a exceção. As outras nove declaram `subagent: true` sem `agent:`, que é forma documentada — o campo tem default *none* na tabela de frontmatter da fonte —, e o roteamento passa a ser do harness. Fechar significa reverter essa decisão e escolher um perfil por skill; a saída óbvia do plano ("o primeiro em ordem determinística") foi recusada porque a medição mostrou que ela **erra**: em ordem alfabética `review-pyspark-pr` cairia em `data-quality-reviewer` e `analyze-spark-plan` em `glue-incremental-performance-architect`, quando o especialista de ambas é `pyspark-code-reviewer`. Ordem alfabética não é critério de competência, e publicá-la como se fosse seria roteamento errado com cara de decisão. O contraexemplo está fixado em `test_a_ordem_alfabetica_seria_o_perfil_errado`. **O que fecharia de verdade é dado que não existe:** uma declaração de especialidade por skill, hoje inferível só do julgamento de quem escreveu os coordenadores. Enquanto ela não existir, o invariante bidirecional é a garantia que sobra — `agent:` presente sempre nomeia perfil que existe **e** que declara aquela skill. **A revisão final de 2026-08-04 mediu que "declarante único" não bastava, e a terceira atribuição caiu:** `diagnose-oom` → `glue-incremental-performance-architect` era única só porque `spark-performance-architect` **não lista** `diagnose-oom` no `skills:` dele — embora liste `diagnose-data-skew`, `analyze-spark-ui` e `tune-glue-job`, toda a vizinhança do mesmo diagnóstico. Isso é **omissão numa lista pré-existente**, não juízo de competência, e o perfil que sobrava era o orquestrador, cuja skill homônima este arquivo declara não-despachável por orquestrar via `next-step` — despachar investigação fechada para dentro dele publica o método que a mesma fase recusou. A regra nova é **derivada, não mantida à mão**: `orchestrator_profiles()` é o conjunto dos perfis cuja skill homônima está em `NON_DISPATCHABLE_SKILLS`, hoje com **um** elemento; se aquela skill virar despachável, a exclusão some sozinha. Sobram **duas** atribuições, e o limite ficou maior — dez de doze, não nove |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | **Limite declarado, e de espécie diferente das cinco acima — é o caso ambíguo desta triagem.** Fechar não é reverter decisão nem escrever código: `normalize()` existe e funciona, e o que falta é **medição que ainda não aconteceu**. Chamar de dívida lançaria como atraso o que ninguém pode pagar hoje, que é o erro de contagem que esta triagem existe para corrigir. O que está **decidido e registrado** é a resposta ao dado quando ele chegar, e é isso que a torna limite e não incógnita: o primeiro PR ruidoso ajusta `normalize()`, nunca silencia a fonte. Esse PR é o gatilho que a converte em dívida com conserto conhecido. Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |
 
-### Fechadas — registro histórico (15)
+### Fechadas — registro histórico (19)
 
 Fechar não é apagar: a linha fechada é o que impede a dívida de voltar sem que
 alguém perceba, e o modo de falha da linha de EMR — sobreviveu fechada por três
 fases — é o motivo de o registro ficar aqui, e não sumir.
+
+As **quatro últimas** entraram e fecharam no mesmo dia, na revisão final da fase
+de perfis de subagente. Registrar dívida que nasceu fechada não é formalidade:
+três delas eram **buraco de gate ou de fronteira** que a suíte inteira dava por
+coberto, e é exatamente o tipo que volta sem alarme se ninguém escrever onde
+estava.
 
 | Dívida | Origem | Impacto |
 |---|---|---|
@@ -1041,6 +1227,10 @@ fases — é o motivo de o registro ficar aqui, e não sumir.
 | ~~`manifest.json` declara 18 skills e o disco tem 20~~ — **fechada** em 2026-08-03, commit `a06bd44` | nomeada pela Task 9 da Fase 5c | A lista `"skills"` não recebeu `review-emr-cluster` (desde a Fase 5b) nem `review-data-validation` (da 5c), e a segunda omissão aconteceu com a primeira ainda aberta — assinatura de invariante ausente, não de descuido. Fechada na ordem que a própria dívida prescrevia: **o teste primeiro**, `TestManifest::test_skills_list_equals_the_skills_on_disk`, derivado de `skills/` como o irmão de `"tools"` sempre foi derivado de `TOOLS` — que é por isso que aquele nunca divergiu —, e só então as duas entradas. Acrescentá-las sem o teste deixaria a terceira omissão para a próxima fase |
 | ~~`attrs.check_type` é emitido e ninguém foi ensinado a lê-lo~~ — **fechada** em 2026-08-03, commit `10a4a32` | revisão final da Fase 5c | Nenhuma regra, agente ou skill citava a chave. Ela sai de graça do extrator (constante literal por detector), então não é mecanismo sem consumidor no sentido caro de `SF-EMR-009` — mas é chave emitida sem leitor, e a resposta foi ensinar o leitor em vez de declará-la descritiva. Onde ela paga é no `dq.unresolved`, que a carrega junto: sem ela o ponto cego diz **quantas** validações não foram lidas; com ela diz **qual tipo**, e "não li uma `VerificationSuite`" pede investigação diferente de "não li um `count()` artesanal" |
 | ~~Nenhuma skill cita `report sign`; a assinatura chegou ao protocolo e ao executor, não ao procedimento~~ — **fechada** em 2026-08-04 | Fase 4b, medido ao fechar a fase | `grep -rl "report sign\|report_sign" skills/` sai vazio: quem segue uma skill de ponta a ponta — `sparkforge-diagnose`, `benchmark-pyspark-job`, `review-pyspark-pr` — chega ao relatório sem nunca ser mandado assiná-lo. A capacidade **é** alcançável (o passo 3 de `agents/executors/sf-synthesizer.md` a invoca, e é o que `tests/test_agent_coverage.py::test_no_tool_is_orphan` cobra), e `AGENT_PROTOCOL.md` a descreve — mas o caminho por skill, que é o terceiro degrau da escada de portabilidade, não a menciona. Nada obriga assinar: `strict_gates` guarda a **transição de fase**, não a emissão do relatório. Fica aberta porque fechá-la é editar `skills/` e regerar os três espelhos, fora do conjunto de arquivos desta task **Fechada em `skills/sparkforge-diagnose/SKILL.md`**, a skill que fecha a investigação: passo 9, entre `validate` e `handoff`, com `report sign` e `report verify`, o arquivo de **findings** (nunca o de facts), o que a assinatura **não** prova (autoria) e as duas coisas que continuam com o agente — preencher a seção de overrides, que nenhum código confere contra o case, e saber que nada obriga a assinar. **Dois espelhos, não três:** `scripts/sync_skills.py` leva `skills/` para `.claude/skills/` e `.agents/skills/`; `.github/` espelha agents e não skills — a redação anterior superestimava o custo. Travada por `TestOTerceiroDegrauAlcancaAAssinatura`, que lê o corpus de `skills/` **sozinho**: `TestEveryToolIsReachable` não pegava a lacuna porque lê o coordenador mais os executores que ele declara, e `sf-synthesizer` já citava a tool. |
+| ~~O gate não vê órfão de diretório, e esse é o caminho do Devin~~ — **fechada** na revisão final da fase de perfis de subagente, 2026-08-04 | fase de perfis de subagente do Devin, medida ao revisar o gate da Task 2 | `check_agents`/`sync_agents` varriam `mirror_dir.glob("*.md")` — **raso, e só `.md`**. Reproduzido antes do conserto: `.agents/agents/rogue/AGENT.md` com `tools: Read, Bash` e `.agents/agents/nota.txt` passavam com `--check` em **exit 0**. O que fazia disso buraco e não sujeira é a seção 1.1 da pesquisa: `agents/<nome>/AGENT.md` é **layout de descoberta documentado do Devin**, com precedência `AGENT.md > AGENTS.md > agent.md > agents.md`. Dava para publicar perfil não revisado, com `tools:` arbitrário e **sem `## Não faz`**, invisível ao gate **e** ao teste de fronteira — que deriva de `PERFIS`, ou seja, das pastas-fonte, e nunca olha o espelho. A varredura passou a ser recursiva e de qualquer extensão, com `executors/` excluído por ter dono próprio (`check_executors`), e o `sync` apaga também o diretório que ficou vazio. Os dois casos viraram teste, mais a regressão que a recursão poderia introduzir: os cinco executores **não** viram órfãos dos agentes |
+| ~~A fronteira de manutenção destrutiva não alcança a unidade que o Devin despacha~~ — **fechada** na revisão final da fase, 2026-08-04 | fase de perfis de subagente do Devin, medida ao revisar o D-4 contra o D-6 | O D-4 pôs a fronteira no **perfil**, e o spec chamou isso de "segunda rede" do D-6. Medido: o que `subagent: true` despacha é a **skill**, e o perfil só entra quando `agent:` o nomeia — em **duas** das doze. Nas outras **dez** o Devin escolhe, e a escolha inclui o built-in `subagent_general`, que tem acesso total e nenhum `## Não faz`: nessas dez a segunda rede podia não estar em escopo. Medido também o estado das doze: `## Não faz` em skill, **0 de 20**; skills dizendo que não executam ou para onde a confirmação vai, **0 de 12**; terminando em *"manutenção destrutiva só com confirmação explícita"*, **12 de 12** — sem dizer com quem, e dentro de um subagente mandando obter o **inalcançável** (`ask_user_question` é sempre negado, V-DV-10). A instrução foi **corrigida** nas doze, não duplicada, e o teste ancora na seção `## Protocolo` começando por uma **ausência**: a frase antiga não pode ter sobrado ao lado da correção. **As oito não-despacháveis ficaram com o texto antigo, de propósito** — elas rodam inline, onde a confirmação é alcançável |
+| ~~A regra 9 do `AGENT_PROTOCOL.md` manda obter o inalcançável~~ — **fechada** na revisão final da fase, 2026-08-04 | fase de perfis de subagente do Devin, medida junto com a fronteira acima | *"Manutenção destrutiva exige confirmação explícita de escopo e retenção"* — sem sujeito, sem "não execute", sem dizer para onde a confirmação vai. Os **treze** perfis abrem declarando este documento contrato **superior** à prosa deles, então dentro de um subagente o contrato mandava buscar o que a plataforma nega. Agora a regra diz as duas metades: não executa, e a confirmação **sobe a quem pode ser perguntado** — com o recorte de subagente escrito, porque o modo de falha é mudo nos dois sentidos (segue sem confirmar, ou para sem dizer por quê) |
+| ~~Três textos afirmavam que a omissão de `tools:` é fronteira de segurança~~ — **fechada** na revisão final da fase, 2026-08-04 | fase de perfis de subagente do Devin, medida contra a própria pesquisa de fontes | Não é *load-bearing*, e não teria como ser: os dois caminhos de descoberta estão ligados por default (`read_config_from` tem `agents_standard` e `claude`, **ambos `true`**), a fonte é **silenciosa** sobre precedência entre eles, e `allowed-tools` tem default *"all tools"* — omitir é a opção **mais permissiva**, e o mesmo perfil pode chegar pelo `.claude/agents/` **com** o campo. `README.md`, `AGENTS.md` e o limite declarado deste arquivo diziam ou sugeriam efeito; o `GUIA_DE_USO.md` tinha o não-sequitur ao lado (*"os dois formatos são aceitos"* é sobre `tools` contra `allowed-tools` como **nome de campo**, não sobre qual arquivo vence). **A decisão de não traduzir continua de pé pelo motivo que sempre teve** — honestidade sobre o que a fonte não diz —, e o limite declarado correspondente ganhou o argumento que lhe faltava. Quem carrega a fronteira está nomeado nos quatro textos: o `## Não faz` do corpo, byte-idêntico nos dois espelhos, e a declaração de despacho das doze skills |
 
 ## Como manter este arquivo honesto
 

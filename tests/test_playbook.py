@@ -1,9 +1,18 @@
-"""O espelho de orquestracao para plataforma sem despacho de subagente.
+"""O PISO de orquestracao das cinco plataformas.
 
-Devin, Codex e Copilot nao despacham subagente -- isso e capacidade de harness,
-nao conteudo deste repositorio. O playbook emite a MESMA decomposicao em
-sequencia. Perde o paralelismo; mantem o metodo, as fronteiras negativas e a
-ordem.
+A versao anterior deste docstring dizia que "Devin, Codex e Copilot nao
+despacham subagente". A pesquisa de fontes
+(`knowledge/devin/agents-and-subagents.md`, retrieved 2026-08-04) derrubou a
+metade do Devin por contraexemplo: **tres despacham** -- Claude Code, o Devin
+CLI e o Devin Local agent do Devin Desktop, sob o toggle *Subagents (Preview)*.
+
+O que sobrevive, e e o motivo de o playbook nao ser um degrau que o despacho
+substitui: ele e o **unico** caminho em Codex e Copilot CI -- nenhuma pesquisa
+mediu despacho nas duas, e afirmar sem medir e o defeito que `parity.yaml`
+existe para nao repetir -- e continua sendo o caminho nas tres quando o despacho
+esta desligado, o que nenhum arquivo deste repositorio controla. O playbook
+emite a MESMA decomposicao em sequencia. Perde o paralelismo; mantem o metodo,
+as fronteiras negativas e a ordem.
 
 O teste que importa e o de FIDELIDADE: se o playbook divergir dos executores
 que o coordenador declara, ele vira prosa que envelhece -- exatamente o que a

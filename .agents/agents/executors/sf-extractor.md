@@ -2,7 +2,6 @@
 name: sf-extractor
 role: executor
 function: extract
-tools: Read, Grep, Glob, Bash
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
@@ -49,3 +48,10 @@ contar, devolvem zero sem levantar erro, e o relatório finge cobertura total.
 Não julga. Não aplica limiar. Não atribui severidade. O extrator não sabe que 41 s de
 task é ruim — é a fronteira negativa da §4.2 da Fase 0, e é ela que garante que trocar
 de modelo não muda a evidência.
+
+Não executa manutenção destrutiva. Todo `analyze_*` da tabela acima lê artefato já
+coletado e não escreve no que analisou; artefato incompleto não se conserta rodando
+manutenção sobre a tabela para "normalizar" o metadado — isso destrói evidência para
+produzir evidência, e o que sobra não é o estado que gerou o sintoma. Ilegível volta como
+`*.unresolved`, contado. Se a coleta só fechar com algo que apaga, é achado do
+coordenador, e a confirmação de escopo e retenção é de quem pode ser perguntado.
