@@ -529,14 +529,43 @@ Medido: 37 passando (24 da Task 1 + 13 novos). `ruff check .` limpo.
 **Files:**
 - Modify: `tests/test_rules_catalog_reachability.py`, `tests/test_fixtures_kind_coverage.py`, `sparkforge/adapters/{_core,cli,tools}.py`, `tests/test_adapters_tools.py`, `tests/test_adapters_cli.py`, `parity.yaml`, `manifest.json`, `scripts/regen_fixtures.py`
 
-- [ ] **Step 1: As duas listas `EXTRACTORS`**
+> **Tres desvios medidos contra o texto desta task.**
+>
+> **D-4a-17 — o helper que le facts de arquivo chama-se `_load_facts_file`, nao
+> `_facts_from_file`.** `analyze_call_graph` (`_core.py:968`) e `fuse_facts` usam
+> o nome real; `_facts_from_file` nao existe no repositorio. O plano ja mandava
+> conferir, e a conferencia deu outro nome.
+>
+> **D-4a-18 — o laco de corpus de `FIXTURES_BENCH` ganhou guarda de
+> existencia, e e o unico que tem.** `fixtures/bench/` nasce na Task 4, e o laco
+> completo de `scripts/regen_fixtures.py` roda no intervalo entre as duas:
+> `iterdir()` num diretorio ausente levanta `FileNotFoundError` e derrubaria a
+> regeneracao de TODOS os dezessete corpus anteriores, que ja rodaram acima. A
+> guarda fica depois da Task 4 tambem: o mesmo intervalo se repete no proximo
+> dominio novo, e o custo dela e uma chamada de `is_dir()`.
+>
+> **D-4a-19 — o vermelho esperado sao DOIS testes, nao um.** Alem de
+> `test_every_kind_of_every_extractor_appears_in_some_golden[benchmark]`, cai
+> `test_every_unresolved_kind_is_exercised` — recorte explicito sobre a
+> maquinaria de ponto cego, e `bench.unresolved` e um dos cinco kinds sem golden.
+> Mesma causa, mesma correcao na Task 4. `test_no_tool_is_orphan` tambem acende,
+> como o enunciado previa: `sparkforge_benchmark` so e citado por coordenador na
+> Task 7.
+>
+> **O outputSchema do tool reusa `_ANALYZE_PYSPARK_SCHEMA` por identidade**
+> (`_BENCHMARK_SCHEMA`), e nao o de `analyze_call_graph`: `benchmark_runs` passa
+> `"bench.unresolved"` a `_facts_page`, entao a saida TEM `unresolved` e
+> `unresolved_at`. `analyze_call_graph` nao tem ponto cego proprio; este modulo
+> tem, e o schema precisa dizer isso.
+
+- [x] **Step 1: As duas listas `EXTRACTORS`**
 
 `benchmark` no import e na coleção dos **dois** arquivos — tupla em `test_rules_catalog_reachability.py`, dict em `test_fixtures_kind_coverage.py`. Esquecer uma é o modo de falha desta task, e já aconteceu com `emr_cluster` na 5b.
 
 Run: `python -m pytest tests/test_fixtures_kind_coverage.py -q`
 Expected: FAIL em `test_every_kind_of_every_extractor_appears_in_some_golden[benchmark]` — os cinco kinds ainda não têm golden. **É o resultado correto**; a Task 4 o fecha.
 
-- [ ] **Step 2: `_core.benchmark_runs`**
+- [x] **Step 2: `_core.benchmark_runs`**
 
 Na forma de `analyze_call_graph` (`_core.py:967`), mas com **dois** arquivos de facts:
 
@@ -556,17 +585,17 @@ def benchmark_runs(
 
 Confira o nome real do helper que `analyze_call_graph` usa para ler facts de arquivo antes de copiar `_facts_from_file` — se for outro, use o de lá.
 
-- [ ] **Step 3: CLI**
+- [x] **Step 3: CLI**
 
 Subcomando de topo `benchmark` (não sob `analyze`: ele não extrai de artefato, compara dois conjuntos já extraídos — mesma razão de `fuse` ser verbo próprio). `--before` e `--after` obrigatórios, mais `--out`, `--kind`, `--limit`, `--cursor`. Handler `_cmd_benchmark`, entrada `("benchmark", None)` no dict de dispatch.
 
-- [ ] **Step 4: MCP**
+- [x] **Step 4: MCP**
 
 `sparkforge_benchmark` em `TOOLS`, com `inputSchema` de `before_path`/`after_path`/`kind`/`limit`/`cursor`. A `description` diz o que o fact carrega **e o que ele recusa**: `total_task_ms` é tempo de task somado, não tempo de relógio, e o comparador não executa nada.
 
 Depois: as **três** listas manuais de `tests/test_adapters_tools.py` que a Fase 5c descobriu — o `set(TOOLS) == {...}` literal, o branch de `_real_output_for` e `FAILABLE`. Sem a segunda, o teste falha com `AssertionError: sem construtor de argumentos reais`.
 
-- [ ] **Step 5: `parity.yaml` e `manifest.json`**
+- [x] **Step 5: `parity.yaml` e `manifest.json`**
 
 ```yaml
   - name: compare two Spark runs from their event log facts
@@ -583,7 +612,7 @@ Depois: as **três** listas manuais de `tests/test_adapters_tools.py` que a Fase
 
 E `"sparkforge_benchmark"` na lista de tools do `manifest.json`, em ordem alfabética.
 
-- [ ] **Step 6: `regen_bench` em `scripts/regen_fixtures.py`**
+- [x] **Step 6: `regen_bench` em `scripts/regen_fixtures.py`**
 
 ```python
 def regen_bench(directory: Path) -> None:
@@ -602,7 +631,7 @@ def regen_bench(directory: Path) -> None:
 
 Mais o import, `FIXTURES_BENCH` e o par na lista de matches. **E o laço de corpus completo** — a Fase 5c mediu que esquecê-lo faz o golden nascer vazio.
 
-- [ ] **Step 7: Rode e commite**
+- [x] **Step 7: Rode e commite**
 
 Run: `python -m pytest tests/test_adapters_cli.py tests/test_adapters_tools.py tests/test_capability_parity.py -q`
 Expected: PASS
