@@ -385,6 +385,17 @@ def build_parser() -> argparse.ArgumentParser:
             "(gate advisory)."
         ),
     )
+    open_p.add_argument(
+        "--reopen",
+        action="store_true",
+        help=(
+            "Recomeca do zero por cima de um case que ja existe. Sem esta flag, "
+            "abrir sobre um case existente e RECUSADO: sobrescrever apagaria a "
+            "fase, o rigor e os overrides gravados. O `strict_gates` do case "
+            "atual e herdado -- `--strict-gates` sobe o rigor, e nada o baixa "
+            "por omissao de flag."
+        ),
+    )
 
     get_p = case_sub.add_parser("get", help="Le o case atual.")
     get_p.add_argument("--repo", required=True)
@@ -1019,6 +1030,7 @@ def _cmd_case_open(args: argparse.Namespace) -> int:
         athena=args.athena,
         facts_path=args.facts,
         strict_gates=args.strict_gates,
+        reopen=args.reopen,
     )
     _print(case)
     return 0

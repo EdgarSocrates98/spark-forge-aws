@@ -258,6 +258,12 @@ sparkforge case update --repo . --override-gate baseline_captured \
   --now 2026-08-04T11:30:00Z
 ```
 
+Abrir um case por cima de outro é **recusado**: sobrescrever apagaria a fase, o
+rigor e os overrides gravados, e uma invocação sem `--strict-gates` desligaria em
+silêncio o rigor que alguém ligou. Recomeçar do zero continua possível, com nome:
+`sparkforge case open --reopen`. Ele herda o `strict_gates` do case atual — o
+rigor sobe com `--strict-gates` e nunca desce por omissão de flag.
+
 O gate confere a **presença do kind**, não o conteúdo do fact: ele prova que a
 análise rodou e produziu o artefato que destrava, e **não** que ela cobriu todo o
 `scope.entrypoints` nem que o benchmark é do job certo. O limite é decisão

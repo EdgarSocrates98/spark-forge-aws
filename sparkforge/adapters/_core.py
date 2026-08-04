@@ -2172,6 +2172,29 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 
 
+def _case_open_recusa(path: Path, existing: dict[str, Any]) -> str:
+    """O que seria apagado, e as duas saidas -- continuar ou reabrir de fato."""
+    perdas = [f"fase `{existing.get('phase') or '?'}`"]
+    if existing.get("strict_gates"):
+        perdas.append("`strict_gates` ligado")
+    overrides = existing.get("gate_overrides") or []
+    if overrides:
+        gates = ", ".join(sorted({str(o.get("gate")) for o in overrides}))
+        perdas.append(f"{len(overrides)} override(s) de gate ({gates})")
+    return (
+        f"ja existe um case em {path}, e abrir por cima dele apagaria: "
+        + "; ".join(perdas)
+        + ".\n"
+        "  Para continuar a investigacao: `sparkforge case get --repo <raiz>` "
+        "e `sparkforge case update ...`.\n"
+        "  Para recomecar do zero mesmo assim: acrescente `--reopen` "
+        "(`reopen: true` na tool MCP).\n"
+        "  `--reopen` **herda** o `strict_gates` do case atual: o rigor e do "
+        "case e vale pela investigacao inteira (D-3), entao ele sobe com "
+        "`--strict-gates` e nunca desce por omissao de flag."
+    )
+
+
 def case_open(
     repo: str,
     case_id: str,
@@ -2184,7 +2207,36 @@ def case_open(
     facts_path: str | list[str] | None = None,
     emr: str | None = None,
     strict_gates: bool = False,
+    reopen: bool = False,
 ) -> dict[str, Any]:
+    """Cria o case. Sobre um case que ja existe, recusa -- a menos de `reopen`.
+
+    Medido na revisao final da Fase 4b: sobre um case estrito com override
+    gravado, `case open` sem flag nenhuma reescrevia o arquivo com
+    `strict_gates: false`, `gate_overrides: []` e `phase: intake`, e a transicao
+    seguinte passava. O D-3 diz que *quem retoma herda o rigor de quem abriu*, e
+    uma invocacao sem a flag apagava exatamente isso -- a familia de defeito que
+    o D-3 evitou ao tirar a escolha de rigor da invocacao.
+
+    Reabrir do zero e caso legitimo (o mesmo repositorio, outra investigacao),
+    entao o caminho fica -- **com nome**, nunca por omissao. E `reopen` nao
+    baixa o rigor: ele herda o `strict_gates` do case atual, e `strict_gates`
+    explicito so pode subi-lo. Baixar exigiria apagar o arquivo a mao, que e
+    deliberado o bastante para nao acontecer por engano.
+    """
+    path = store.case_path(repo)
+    if path.is_file():
+        try:
+            existing = store.load_case(repo)
+        except store.CaseError:
+            # Case que `load_case` recusa (schema divergente, YAML quebrado)
+            # ainda e um case ocupando o lugar. Sobrescreve-lo em silencio
+            # apagaria o estado que alguem precisa ver antes de decidir.
+            existing = {}
+        if not reopen:
+            raise AdapterError(_case_open_recusa(path, existing), exit_code=2)
+        strict_gates = bool(strict_gates or existing.get("strict_gates"))
+
     # O case guarda o runtime da investigacao inteira. Aceitar facts aqui e o
     # que evita abrir um case com runtime vazio quando o repositorio ja diz a
     # versao -- toda skill que ler o case depois herda a deteccao.
