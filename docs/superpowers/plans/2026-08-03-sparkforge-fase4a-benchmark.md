@@ -643,7 +643,48 @@ Expected: PASS
 **Files:**
 - Create: `fixtures/bench/*` (seis), `tests/test_fixtures_golden_bench.py`
 
-- [ ] **Step 1: Os seis diretórios**
+> **Dois desvios medidos contra o texto desta task.**
+>
+> **D-4a-20 — `one_side_missing` nao tem `input/after.jsonl`, e a ausencia e o
+> artefato.** O enunciado pede dois event logs por fixture; esta e a unica que
+> tem um. A medicao que forcou o desvio: `extract_event_log` emite
+> `spark.log_analyzed` INCONDICIONALMENTE, no fim da funcao
+> (`event_log.py:600`), para todo arquivo que ele consegue abrir -- vazio, so
+> com linha em branco, so com JSON que nao e evento, tudo produz a sentinela
+> mais um punhado de `spark.unresolved`. Nao existe CONTEUDO de event log que
+> deixe um lado sem ela. O unico caminho real e a falha de abertura
+> (`extract_event_log_path`, ramo `except OSError`, `event_log.py:644`), que e
+> exatamente o que um `--after` apontando para log que nunca foi coletado
+> produz. As alternativas eram editar `event_log.py` (proibido: mudar o extrator
+> para a fixture caber inverte a direcao da prova) ou escrever os facts a mao
+> (o golden deixaria de ser derivado de artefato). O `str(exc)` do
+> `FileNotFoundError` carrega o path ABSOLUTO da maquina, mas ele nao vaza para
+> o golden: `regen_bench` guarda so a saida de `build_benchmark`, e o
+> `spark.unresolved` de entrada fica de fora -- o corpus continua reproduzivel
+> em qualquer maquina. O `proves` do meta.yaml daquela fixture registra tudo
+> isso no lugar onde quem for mexer nela vai olhar primeiro.
+>
+> **D-4a-21 — `TestGolden` tem SEIS testes, nao quatro.** O Step 2 pede quatro e
+> manda seguir a estrutura de `test_fixtures_golden_callgraph.py`, que tem sete.
+> Os quatro nomeados (facts, findings, kinds declarados, regras declaradas) sao
+> os de igualdade contra o golden; ficaram tambem
+> `test_everything_validates_against_schema` e
+> `test_derivation_is_deterministic`, que todos os outros modulos golden do repo
+> tem. Sem eles este dominio seria o unico cujo golden nao prova que os facts
+> passam no `fact.schema.json` -- e `bench.unmatched` de stage sem nome usa
+> `symbol` sintetico (`"#after#9"`) justamente para caber no schema, entao a
+> validacao aqui verifica uma decisao real do modulo, nao formalidade.
+>
+> **A guarda `is_dir()` de `FIXTURES_BENCH` FICA** (o Step 4 do enunciado mandava
+> decidir e dizer por que). `fixtures/bench/` agora existe, entao ela nao e mais
+> necessaria -- mas o D-4a-18 ja tinha respondido antes de o diretorio nascer, e
+> a medicao nao mudou: o custo e uma chamada de `is_dir()` por execucao, e o
+> intervalo que ela protege (corpus declarado no script antes de existir no
+> disco) se repete inteiro no proximo dominio novo. Tirar a guarda agora seria
+> desfazer a protecao no exato momento em que ela deixou de doer, para
+> reintroduzi-la na proxima fase.
+
+- [x] **Step 1: Os seis diretórios**
 
 Cada um com `input/before.jsonl`, `input/after.jsonl` e `meta.yaml`. Os event logs são JSONL no formato que `event_log.py` já lê — copie a forma de `fixtures/eventlog/*/input/` em vez de inventar, e confira rodando `analyze event-log` antes de aceitar.
 
@@ -660,16 +701,16 @@ Os `expects_kinds` do conjunto precisam cobrir os cinco kinds, senão o vermelho
 
 **Nesta task todo `findings.json` sai vazio e todo `expects_rules` é `[]`** — as regras nascem na Task 5, que regenera.
 
-- [ ] **Step 2: `tests/test_fixtures_golden_bench.py`**
+- [x] **Step 2: `tests/test_fixtures_golden_bench.py`**
 
 Estrutura de `tests/test_fixtures_golden_callgraph.py`: `REQUIRED_FIXTURES` com os seis nomes, `run_fixture` extraindo os dois lados e chamando `build_benchmark`, e a classe `TestGolden` com os quatro testes.
 
-- [ ] **Step 3: Gere e leia o diff**
+- [x] **Step 3: Gere e leia o diff**
 
 Run: `python scripts/regen_fixtures.py` e depois `git diff --stat fixtures/`
 Nenhuma fixture fora de `fixtures/bench/` pode mudar.
 
-- [ ] **Step 4: Rode e commite**
+- [x] **Step 4: Rode e commite**
 
 Run: `python -m pytest tests/test_fixtures_golden_bench.py tests/test_fixtures_kind_coverage.py -q`
 Expected: PASS, incluindo o `[benchmark]` que a Task 3 deixou vermelho

@@ -1,0 +1,284 @@
+[
+  {
+    "id": "f_b1dc47",
+    "schema_version": 1,
+    "kind": "bench.analyzed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "most_stages_renamed"
+    },
+    "measures": {
+      "matched_stage_count": 2,
+      "unmatched_stage_count": 7,
+      "stage_delta_count": 1,
+      "before_stage_count": 4,
+      "after_stage_count": 5
+    },
+    "attrs": {
+      "before_artifacts": [
+        "before.jsonl"
+      ],
+      "after_artifacts": [
+        "after.jsonl"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_4a3d46",
+    "schema_version": 1,
+    "kind": "bench.run_delta",
+    "subject": {
+      "type": "job_run",
+      "symbol": "most_stages_renamed"
+    },
+    "measures": {
+      "total_task_ms_before": 32000.0,
+      "total_task_ms_after": 31300.0,
+      "total_task_ms_delta_pct": -2.2,
+      "total_input_bytes_before": 180000000,
+      "total_input_bytes_after": 182000000,
+      "total_input_bytes_delta_pct": 1.1,
+      "total_spill_bytes_before": 0,
+      "total_spill_bytes_after": 0,
+      "total_gc_ms_before": 1580,
+      "total_gc_ms_after": 1510,
+      "total_gc_ms_delta_pct": -4.4,
+      "total_task_count_before": 14,
+      "total_task_count_after": 16,
+      "total_task_count_delta_pct": 14.3
+    },
+    "attrs": {
+      "before_artifacts": [
+        "before.jsonl"
+      ],
+      "after_artifacts": [
+        "after.jsonl"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_25814b",
+    "schema_version": 1,
+    "kind": "bench.stage_delta",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_scan_raw"
+    },
+    "measures": {
+      "total_task_ms_before": 8000.0,
+      "total_task_ms_after": 7600.0,
+      "total_task_ms_delta_pct": -5.0,
+      "total_input_bytes_before": 100000000,
+      "total_input_bytes_after": 100000000,
+      "total_input_bytes_delta_pct": 0.0,
+      "total_gc_ms_before": 400,
+      "total_gc_ms_after": 380,
+      "total_gc_ms_delta_pct": -5.0,
+      "total_task_count_before": 4,
+      "total_task_count_after": 4,
+      "total_task_count_delta_pct": 0.0,
+      "total_spill_bytes_before": 0,
+      "total_spill_bytes_after": 0,
+      "before_stage_count": 1,
+      "after_stage_count": 1
+    },
+    "attrs": {
+      "before_stage_ids": [
+        "0"
+      ],
+      "after_stage_ids": [
+        "0"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_aedce8",
+    "schema_version": 1,
+    "kind": "bench.unmatched",
+    "subject": {
+      "type": "stage",
+      "symbol": "#after#9"
+    },
+    "measures": {
+      "stage_count": 1
+    },
+    "attrs": {
+      "reason": "empty_symbol",
+      "side": "after",
+      "symbol": "",
+      "stage_ids": [
+        "9"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_4e2f34",
+    "schema_version": 1,
+    "kind": "bench.unmatched",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_agg_v1"
+    },
+    "measures": {
+      "stage_count": 1
+    },
+    "attrs": {
+      "reason": "symbol_absent_on_other_side",
+      "side": "before",
+      "symbol": "stage_agg_v1",
+      "stage_ids": [
+        "1"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_f3018d",
+    "schema_version": 1,
+    "kind": "bench.unmatched",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_agg_v2"
+    },
+    "measures": {
+      "stage_count": 1
+    },
+    "attrs": {
+      "reason": "symbol_absent_on_other_side",
+      "side": "after",
+      "symbol": "stage_agg_v2",
+      "stage_ids": [
+        "1"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_0431b4",
+    "schema_version": 1,
+    "kind": "bench.unmatched",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_join_v1"
+    },
+    "measures": {
+      "stage_count": 1
+    },
+    "attrs": {
+      "reason": "symbol_absent_on_other_side",
+      "side": "before",
+      "symbol": "stage_join_v1",
+      "stage_ids": [
+        "2"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_8939c3",
+    "schema_version": 1,
+    "kind": "bench.unmatched",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_join_v2"
+    },
+    "measures": {
+      "stage_count": 1
+    },
+    "attrs": {
+      "reason": "symbol_absent_on_other_side",
+      "side": "after",
+      "symbol": "stage_join_v2",
+      "stage_ids": [
+        "2"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_132b97",
+    "schema_version": 1,
+    "kind": "bench.unmatched",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_write_v1"
+    },
+    "measures": {
+      "stage_count": 1
+    },
+    "attrs": {
+      "reason": "symbol_absent_on_other_side",
+      "side": "before",
+      "symbol": "stage_write_v1",
+      "stage_ids": [
+        "3"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  },
+  {
+    "id": "f_e65e4b",
+    "schema_version": 1,
+    "kind": "bench.unmatched",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_write_v2"
+    },
+    "measures": {
+      "stage_count": 1
+    },
+    "attrs": {
+      "reason": "symbol_absent_on_other_side",
+      "side": "after",
+      "symbol": "stage_write_v2",
+      "stage_ids": [
+        "3"
+      ]
+    },
+    "provenance": {
+      "artifact": "most_stages_renamed",
+      "artifact_sha256": "",
+      "extractor": "benchmark@0.1.0"
+    }
+  }
+]
