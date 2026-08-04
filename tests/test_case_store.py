@@ -282,6 +282,145 @@ class TestStrictGates:
             set_phase(self._case(), PHASE_GUARDADA, fact_kinds=set())
 
 
+def _catalogo_com_gates(directory, gates):
+    """Escreve um `routing.yaml` minimo com o bloco `gates` pedido.
+
+    `gates=None` omite o bloco inteiro, que e o catalogo de antes desta fase --
+    e era exatamente ele que fazia o rigor falhar ABERTO.
+    """
+    documento = {"rules": [], "fallback": {"recommended_skill": "x", "reason": "y"}}
+    if gates is not None:
+        documento["gates"] = gates
+    (directory / "routing.yaml").write_text(
+        yaml.safe_dump(documento), encoding="utf-8"
+    )
+    return directory
+
+
+_CONTRATO_COMPLETO = {
+    "baseline_captured": {
+        "satisfied_by": KIND_BASELINE,
+        "produced_by": "sparkforge benchmark --before a --after b --out c",
+        "guards_phases": list(PHASES[PHASES.index("validation"):]),
+    },
+    "flows_mapped": {
+        "satisfied_by": KIND_FLOWS,
+        "produced_by": "sparkforge analyze call-graph --facts a --out b",
+        "guards_phases": list(PHASES[PHASES.index("hypothesis"):]),
+    },
+    "dominant_bottleneck_identified": {"advisory_reason": "sem produtor"},
+    "functional_validation_defined": {"advisory_reason": "sem produtor ate a 4c"},
+}
+
+
+class TestContratoIncompletoSobRigor:
+    """Contrato ausente ou incompleto e ERRO sob rigor, nunca permissao.
+
+    Medido antes da correcao, com `SPARKFORGE_CATALOG` apontando para uma copia
+    do catalogo: sem o bloco `gates`, `set_phase(case, "report", fact_kinds=set())`
+    **transitava** num case com `strict_gates: true`. Idem com `gates: {}`, e
+    idem removendo so `flows_mapped` e pedindo `hypothesis`. O unico guarda era
+    `test_os_quatro_gates_aparecem_no_contrato`, que roda sobre o catalogo do
+    REPOSITORIO -- nunca sobre o que o runtime carrega.
+
+    Contrato **vazio** e contrato **parcial** merecem a mesma resposta, e isso e
+    decisao registrada: os dois tem a mesma consequencia (um gate declarado em
+    `GATES` nao tem contrato, entao ninguem sabe se ele guarda a fase pedida), e
+    a ausencia total e so o caso em que os quatro faltam. Uma resposta mais
+    branda para o bloco inteiro ausente premiaria justamente o catalogo que
+    esqueceu mais.
+    """
+
+    def _case(self, strict=True):
+        return new_case("c", "2026-08-04T00:00:00Z", RUNTIME, strict_gates=strict)
+
+    def test_contrato_ausente_sob_rigor_e_erro(self, tmp_path, monkeypatch):
+        monkeypatch.setenv(
+            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, None))
+        )
+        with pytest.raises(CaseError) as exc:
+            set_phase(self._case(), "report", fact_kinds=set())
+        assert "flows_mapped" in str(exc.value)
+
+    def test_contrato_vazio_sob_rigor_e_erro(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, {})))
+        with pytest.raises(CaseError) as exc:
+            set_phase(self._case(), "report", fact_kinds=set())
+        assert "flows_mapped" in str(exc.value)
+
+    def test_contrato_parcial_sob_rigor_e_erro(self, tmp_path, monkeypatch):
+        """Sem `flows_mapped` no bloco, `hypothesis` deixava de ser guardada."""
+        parcial = {k: v for k, v in _CONTRATO_COMPLETO.items() if k != "flows_mapped"}
+        monkeypatch.setenv(
+            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, parcial))
+        )
+        with pytest.raises(CaseError, match="flows_mapped"):
+            set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds=set())
+
+    def test_vazio_e_parcial_dao_a_mesma_resposta(self, tmp_path, monkeypatch):
+        """Medido nos dois: a diferenca e so QUANTOS gates faltam."""
+        vazio, parcial = tmp_path / "vazio", tmp_path / "parcial"
+        vazio.mkdir()
+        parcial.mkdir()
+        _catalogo_com_gates(vazio, {})
+        _catalogo_com_gates(
+            parcial, {k: v for k, v in _CONTRATO_COMPLETO.items() if k != "flows_mapped"}
+        )
+        mensagens = {}
+        for nome, caminho in (("vazio", vazio), ("parcial", parcial)):
+            monkeypatch.setenv("SPARKFORGE_CATALOG", str(caminho))
+            with pytest.raises(CaseError) as exc:
+                set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds=set())
+            mensagens[nome] = str(exc.value)
+        # Mesma recusa e mesma prescricao nos dois: o que difere e so a
+        # CONTAGEM de gates sem contrato, porque vazio e o caso em que faltam
+        # todos. Nenhum dos dois vira permissao.
+        for mensagem in mensagens.values():
+            assert mensagem.startswith("contrato de gates incompleto:")
+            assert "advisory_reason" in mensagem
+            assert "falhando ABERTO" in mensagem
+        assert "4 gate(s)" in mensagens["vazio"]
+        assert "1 gate(s)" in mensagens["parcial"]
+        # O que muda e a lista: o vazio perdeu os quatro, o parcial perdeu um.
+        for gate in GATES:
+            assert f"- {gate}: ausente" in mensagens["vazio"]
+        assert "- baseline_captured: ausente" not in mensagens["parcial"]
+
+    def test_a_recusa_diz_qual_gate_falta_e_onde_ele_deveria_estar(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.setenv(
+            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, None))
+        )
+        with pytest.raises(CaseError) as exc:
+            set_phase(self._case(), "report", fact_kinds=set())
+        mensagem = str(exc.value)
+        for gate in GATES:
+            assert gate in mensagem
+        assert "gates" in mensagem
+        assert str(tmp_path / "routing.yaml") in mensagem
+
+    def test_contrato_completo_sob_rigor_continua_decidindo_por_gate(
+        self, tmp_path, monkeypatch
+    ):
+        """A recusa e por contrato FALTANTE, nao por catalogo de fora do repo."""
+        monkeypatch.setenv(
+            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, _CONTRATO_COMPLETO))
+        )
+        assert set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds={KIND_FLOWS})[
+            "phase"
+        ] == PHASE_SO_DE_FLOWS
+        with pytest.raises(CaseError, match="flows_mapped"):
+            set_phase(self._case(), PHASE_SO_DE_FLOWS, fact_kinds=set())
+
+    def test_sem_rigor_o_contrato_faltante_nao_muda_nada(self, tmp_path, monkeypatch):
+        """Criterio 5: sem a flag, `set_phase` sequer le o catalogo."""
+        monkeypatch.setenv(
+            "SPARKFORGE_CATALOG", str(_catalogo_com_gates(tmp_path, None))
+        )
+        assert set_phase(self._case(strict=False), "report")["phase"] == "report"
+
+
 class TestOverrideDeGate:
     """D-4: o dado as vezes genuinamente nao existe, e gate sem escapatoria
     reabre o impasse que a secao 5.5 da Fase 0 recusou. A escapatoria custa uma

@@ -30,6 +30,17 @@ ROUTING_OPERATORS = frozenset(
 _MISSING = object()
 
 
+def routing_path(directory: Path | None = None) -> Path:
+    """Onde o `routing.yaml` que o runtime carrega REALMENTE mora.
+
+    Existe porque `SPARKFORGE_CATALOG` move o catálogo: quem recusa um contrato
+    de gate incompleto precisa dizer em qual arquivo o bloco faltante deveria
+    estar, e "no `routing.yaml`" não localiza nada quando há uma cópia do
+    catálogo apontada por variável de ambiente.
+    """
+    return safe_catalog_file(directory or catalog_dir(), ROUTING_FILE)
+
+
 def load_routing(directory: Path | None = None) -> dict[str, Any]:
     """Lê `routing.yaml`. Levanta CatalogError se ausente ou malformado."""
     base = directory or catalog_dir()

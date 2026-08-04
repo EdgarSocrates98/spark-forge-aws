@@ -137,8 +137,25 @@ def _gate_contract() -> dict[str, dict[str, Any]]:
 
     Import tardio de propósito: sem rigor ligado, `set_phase` não lê o catálogo,
     e o comportamento é bit a bit o de antes desta fase.
+
+    Duas recusas, e as duas só acontecem **sob rigor** — quem não pediu rigor
+    nunca chega aqui, que é o critério 5 do spec da Fase 4b intacto:
+
+    - nome **desconhecido**: typo no catálogo viraria gate inerte em silêncio;
+    - nome **faltante**: era o buraco medido na revisão final da fase. Sem o
+      bloco `gates`, `load_gate_contract` devolvia `{}`, `_gates_blocking` não
+      achava contrato para gate nenhum e a lista de bloqueio saía vazia — um
+      case com `strict_gates: true` transitava de `intake` a `report` sem
+      evidência nenhuma. Rigor que falha **aberto** é pior que rigor ausente,
+      porque o case afirma uma garantia que ninguém está prestando.
+
+    Contrato **vazio** e contrato **parcial** recebem a mesma resposta, e isso é
+    decisão registrada: os dois deixam pelo menos um gate de `GATES` sem
+    contrato, e nesse estado ninguém sabe se aquele gate guarda a fase pedida.
+    Tratar o bloco inteiro ausente como "catálogo de outra época, siga em
+    frente" premiaria justamente o catálogo que esqueceu mais.
     """
-    from sparkforge.case.router import load_gate_contract
+    from sparkforge.case.router import load_gate_contract, routing_path
 
     contract = load_gate_contract()
     unknown = sorted(set(contract) - set(GATES))
@@ -148,7 +165,29 @@ def _gate_contract() -> dict[str, dict[str, Any]]:
             f"(esperado um de: {', '.join(GATES)}). Gate com nome errado seria "
             f"gate inerte em silêncio."
         )
+    missing = [gate for gate in GATES if gate not in contract]
+    if missing:
+        raise CaseError(_missing_contract_message(missing, routing_path()))
     return contract
+
+
+def _missing_contract_message(missing: list[str], path: Path) -> str:
+    """Qual gate falta, onde ele deveria estar, e o que declarar por gate."""
+    lines = [
+        f"contrato de gates incompleto: {len(missing)} gate(s) de `store.GATES` "
+        f"sem declaração no catálogo carregado.",
+        f"  onde: bloco `gates` de {path}",
+    ]
+    for gate in missing:
+        lines.append(f"  - {gate}: ausente do bloco `gates`")
+    lines.append(
+        "Declare cada um com `satisfied_by` + `produced_by` + `guards_phases` "
+        "(gate que bloqueia) ou com `advisory_reason` (gate sem produtor). Este "
+        "case foi aberto com `strict_gates`, e gate sem contrato não pode ser "
+        "lido como gate satisfeito: seria rigor falhando ABERTO, com o case "
+        "afirmando uma garantia que ninguém prestou."
+    )
+    return "\n".join(lines)
 
 
 def overridden_gates(case: dict[str, Any]) -> set[str]:
