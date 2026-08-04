@@ -750,8 +750,21 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 6. **Fase 5c.2** — um passo para dentro da chamada — **CONCLUÍDA** em 2026-08-03,
    branch `feat/fase5c2-helper`. Ver seção própria acima. Fecha uma das duas
    dívidas de travessia da 5c e deixa a outra aberta com o motivo medido
-7. **Fases seguintes** — custo, orquestração, Redshift, streaming
-8. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior
+7. **Fase 4a** — benchmark antes/depois — **CONCLUÍDA** em 2026-08-03, branch
+   `feat/fase4a-benchmark`. Ver seção própria acima. Fecha o primeiro dos quatro
+   itens de rigor da §16 e dá produtor ao gate de `benchmark_ref`
+8. **Fase 4b** — o rigor que falta: validação funcional automatizada, gates
+   fail-closed opcionais e assinatura de relatório. **Decidida como a próxima**,
+   antes de qualquer cobertura nova — cobertura multiplica achados, rigor
+   multiplica confiança em todos eles de uma vez
+9. **Especialização por banco de dados** — uma fase por ferramenta, na ordem
+   `SF-GRAPH`, `SF-DDB`, `SF-NEP`, `SF-MONGO`, decomposta em
+   [`specs/2026-08-03-sparkforge-roadmap-bancos.md`](specs/2026-08-03-sparkforge-roadmap-bancos.md).
+   O roadmap decide a decomposição e **recusa** decidir o conteúdo: os candidatos
+   de regra são hipóteses, e cada fase abre com pesquisa de fontes — em quatro
+   fases seguidas ela matou premissa que parecia óbvia no papel
+10. **Fases seguintes** — custo, orquestração, Redshift, streaming
+11. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior. As frentes sem artefato da especialização em bancos — escolha de banco, modelagem de grafo, boas práticas genéricas — entram por aqui, e até lá viram restrição auditável em `knowledge/`
 
 ## Dívidas abertas
 
