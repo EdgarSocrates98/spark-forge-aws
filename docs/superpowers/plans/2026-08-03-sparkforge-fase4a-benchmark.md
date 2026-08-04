@@ -723,11 +723,11 @@ Expected: PASS, incluindo o `[benchmark]` que a Task 3 deixou vermelho
 - Create: `rules/catalog/benchmark.yaml`
 - Modify: `fixtures/bench/*/meta.yaml`, `manifest.json`, `README.md`
 
-- [ ] **Step 1: Cabeçalho do catálogo**
+- [x] **Step 1: Cabeçalho do catálogo**
 
 Registra: por que `runtime_scope: {}` (gatilho é comparação de medida); por que a comparação vive no comparador e não no `when`; **por que `total_task_ms` não é tempo de relógio**; e por que `SF-BENCH-001` não suprime as outras (D-4 do spec).
 
-- [ ] **Step 2: `SF-BENCH-001` — volumes divergentes**
+- [x] **Step 2: `SF-BENCH-001` — volumes divergentes**
 
 ```yaml
   - id: SF-BENCH-001
@@ -767,7 +767,7 @@ Registra: por que `runtime_scope: {}` (gatilho é comparação de medida); por q
 
 Confira a forma real de `thresholds` e de `expr` em `rules/catalog/spark-ui.yaml` antes de copiar — se o motor não expuser `threshold.` no contexto de `expr`, use o valor literal e registre o desvio.
 
-- [ ] **Step 3: `SF-BENCH-002`, `003` e `004`**
+- [x] **Step 3: `SF-BENCH-002`, `003` e `004`**
 
 - **002** — `expr: "measures.total_task_ms_delta_pct > threshold.regression_pct"`, P1. A `explanation` diz que `total_task_ms` é tempo de task somado e que um job pode terminar antes no relógio somando mais tempo de task ao paralelizar melhor — então o achado pede confirmação no relógio antes de reverter.
 - **003** — `where` sobre delta de tempo negativo **e** delta de spill ou de GC positivo, P1. Ganho frágil.
@@ -775,15 +775,31 @@ Confira a forma real de `thresholds` e de `expr` em `rules/catalog/spark-ui.yaml
 
 As três seguem o bloco completo de `SF-BENCH-001` acima e precisam dos mesmos campos, sem exceção: `requires_facts`, `when` com `same_subject: true`, `status`, `severity_default`, `runtime_scope: {}`, `thresholds`, `explanation`, `proposed_change`, `risks`, `tradeoffs`, `validation`, `rollback` e `sources` com `origin: field-heuristic` nomeando o número como decisão de campo. Regra sem `risks` ou sem `validation` é reprovada pelo esquema do catálogo — confira em `rules/catalog/README.md` antes de escrever, não depois de falhar.
 
-- [ ] **Step 4: Regenere, leia o diff, confira o D-4**
+- [x] **Step 4: Regenere, leia o diff, confira o D-4**
 
 Run: `python scripts/regen_fixtures.py && git diff fixtures/bench/`
 
 Confira: `different_input_volume` acende `SF-BENCH-001` **e** o que mais for verdade sobre ele — se acender só a 001, a supressão que o D-4 proíbe entrou por acidente. `clean_improvement` continua vazia.
 
-- [ ] **Step 5: Contagem de regras**
+- [x] **Step 5: Contagem de regras**
 
 `test_docs_coverage.py::test_rule_count_equals_the_real_catalog` exige `manifest.json.rule_count == len(load_catalog())`: 62 → 66. O `README.md` cita o número duas vezes.
+
+**Medido nesta task.** `python scripts/regen_fixtures.py` sobre o corpus inteiro mudou **quatro** arquivos, e só eles — os `findings.json` de `different_input_volume` (0 -> 2: `SF-BENCH-001` **e** `SF-BENCH-002`), `regression_slower` (0 -> 1: `SF-BENCH-002`), `faster_but_spilling` (0 -> 1: `SF-BENCH-003`) e `most_stages_renamed` (0 -> 1: `SF-BENCH-004`). `clean_improvement` e `one_side_missing` continuam com `findings.json` vazio, e `git diff --stat` não toca uma fixture fora de `fixtures/bench/`. Catálogo: **62 -> 66 regras, 11 -> 12 áreas**. Suíte inteira: **3270 passed / 2 failed / 5 skipped**; `ruff check .` limpo. Os dois vermelhos fecham na Task 7: `test_no_tool_is_orphan` (herdado) e `test_no_area_is_orphan`, que é exatamente o vermelho que o Step 1 da Task 7 manda provocar — a área `SF-BENCH` existe e ainda não tem coordenador que a declare em `rule_areas`.
+
+**Seis desvios medidos nesta task.**
+
+> **D-4a-22 — o campo é `threshold`, singular, e o YAML do plano escrevia `thresholds`.** Medido em `rules/engine.py` (`rule.get("threshold")`, em `_severity_for`, em `_build_finding` e no `judge`) e nas 16 ocorrências do catálogo real (`spark-ui.yaml`, `iceberg.yaml`, `parquet.yaml`, `athena.yaml`, `pyspark.yaml`, `emr-infra.yaml`). Com `thresholds:` o motor não levanta erro nenhum: ele monta o contexto de `expr` com `threshold: {}`, o avaliador levanta "caminho ausente no contexto", `_expr_matches` engole o `ExprError` e a regra **nunca dispara, em silêncio** — o falso negativo mudo que o `_validate_conditions` do carregador existe para perseguir em outra forma. As quatro regras usam `threshold:`. `expr` **expõe** `threshold.` no contexto (`engine._fact_context`, `expr.ALLOWED_ROOTS`), então nenhum limiar virou literal.
+
+> **D-4a-23 — `abs()` não existe no avaliador, e a `SF-BENCH-001` do plano dependia dele.** `rules/expr.py` tem whitelist de nós AST e `ast.Call` **não** está nela — é fronteira de segurança declarada, porque o catálogo é dado editável. O `expr: "abs(measures.total_input_bytes_delta_pct) > threshold..."` do plano teria sido reprovado por `load_catalog(validate_exprs=True)` com "no nao permitido: Call". O módulo é feito à mão, com as duas comparações: `> threshold.input_divergence_pct or < -threshold.input_divergence_pct`. `ast.UnaryOp`/`USub` sobre `threshold.` é permitido, então o limiar continua sendo **um** número editável, e não dois que alguém pode dessincronizar. Divergência para menos conta tanto quanto para mais: ler metade do dado depois fabrica melhora com a mesma facilidade com que ler o dobro fabrica regressão.
+
+> **D-4a-24 — `status` é `confirmed`, e o plano escreveu `structural`.** O critério do `rules/catalog/README.md` é explícito: "`status: structural` para análise estática. Só use `confirmed` quando há `measures` de execução real." Toda medida destas quatro regras vem de dois event logs de execução real, atravessando `event_log.py` e `benchmark.py` sem passar por AST nenhum. `structural` aqui teria posto a área inteira do lado errado da única distinção que o campo faz, e num domínio onde ela é o argumento central — o benchmark existe justamente porque medir não é ler código.
+
+> **D-4a-25 — `SF-BENCH-003` compara os TOTAIS, não os `_delta_pct`, e as duas razões foram medidas.** O plano pedia "`where` sobre delta de tempo negativo e delta de spill ou de GC positivo". Medido: (1) `benchmark.py::_delta_pct` OMITE a chave quando o lado antes é zero, e é exatamente o caso de **spill que nasce** — antes 0, depois 160 MB, a forma mais severa de "mais rápido mas derramando" — que ficaria invisível; nas fixtures, `total_spill_bytes_delta_pct` não existe em `clean_improvement` nem em `most_stages_renamed`, porque o spill é zero dos dois lados. (2) `expr.py` avalia `BoolOp` de forma **eager** (`values = [_eval(v, ctx, depth + 1) for v in node.values]`, sem curto-circuito), então um `spill or gc` com a chave de spill ausente levanta `ExprError` e derruba a condição inteira, **inclusive o ramo de GC que estava presente e verdadeiro**. O gatilho final compara `after > before * threshold.growth_factor` para spill e para GC: os totais existem sempre que a medida é utilizável nos dois lados, e com base zero a comparação degenera para "qualquer byte derramado", que é o comportamento desejado. O que permanece — se uma das duas medidas for inutilizável em algum lado a condição inteira cai — está escrito na `explanation` e no cabeçalho do arquivo, com o `bench.unresolved` como o lugar onde o operador vê o silêncio.
+
+> **D-4a-26 — `same_subject: true` nas quatro, com uma condição só, e o motivo é o D-5c-31.** Sem ele, `engine._evaluate_when` produz no máximo **um** grupo de evidência, logo um Finding, mesmo com vários pares comparados no mesmo conjunto de facts. O subject de `bench.run_delta` e de `bench.analyzed` é `{type: job_run, symbol: <path_hint>}`, então o grupo é o PAR comparado — exatamente a entidade sobre a qual cada regra afirma. Sem efeito no golden de hoje (cada fixture compara um par só), e é por isso que a decisão precisa estar escrita: nenhuma fixture a defenderia se ela fosse revertida. A escolha de âncora da `SF-BENCH-004` segue o mesmo raciocínio pelo lado oposto: ela fala de **proporção**, que é afirmação sobre o conjunto, e por isso lê a sentinela `bench.analyzed` e não cada `bench.unmatched` — ancorá-la no órfão produziria um achado por stage renomeado, ruído com o volume da própria mudança.
+
+> **D-4a-27 — a área nova acende um segundo vermelho, e ele é o do Step 1 da Task 7.** `62 -> 66` em `manifest.json` e nas três menções do `README.md` (o Step 5 dizia duas; são três — a terceira está na seção "Camada determinística"), mais a distribuição por área da linha 35, que passou a 12 áreas com `SF-BENCH` 4. Junto, `rules/catalog/README.md` ganhou `BENCH` na lista de siglas do campo `id` e `benchmark.yaml` na tabela "Arquivos". `knowledge/sources.lock.json` **não** muda: as quatro regras citam só `origin: field-heuristic`, e o lock vigia `sources` com `url`. O que passou a falhar é `test_agent_coverage.py::test_no_area_is_orphan`, e isso não é regressão: é o vermelho que a Task 7 existe para fechar, provocado no momento em que a área nasceu.
 
 ---
 

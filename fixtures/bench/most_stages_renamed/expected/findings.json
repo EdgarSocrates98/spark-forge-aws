@@ -1,1 +1,60 @@
-[]
+[
+  {
+    "rule_id": "SF-BENCH-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Parte grande dos stages não casou entre as duas execuções",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "most_stages_renamed"
+    },
+    "evidence": [
+      "f_b1dc47"
+    ],
+    "measured": {
+      "matched_stage_count": 2,
+      "unmatched_stage_count": 7,
+      "stage_delta_count": 1,
+      "before_stage_count": 4,
+      "after_stage_count": 5
+    },
+    "threshold": {
+      "unmatched_ratio": 0.3
+    },
+    "runtime_scope": {},
+    "explanation": "A maior parte dos stages não tem par do outro lado, então o `bench.run_delta` está somando populações diferentes. O casamento é ESTRITO por `symbol` idêntico — não há casamento por posição, por `stage_id`, por prefixo nem por similaridade de nome, porque `stage_id` não é estável entre execuções e qualquer aproximação casaria stages diferentes em silêncio. Isso não é defeito do comparador, e às vezes não é defeito nenhum: uma refatoração que move código de arquivo ou renomeia funções muda o `symbol` de todo stage envolvido sem mudar uma linha de lógica, e é o resultado esperado. O que o achado afirma é mais modesto e mais útil: os totais deste benchmark não estão comparando o mesmo trabalho, e ler `total_task_ms_delta_pct` como \"a mudança custou X%\" seria ler errado. Quando a taxa é alta, o que sobra de confiável são os `bench.stage_delta` dos poucos símbolos que casaram, e os `bench.unmatched`, que nomeiam cada stage órfão e de qual lado ele estava. `attrs.reason` distingue os dois motivos: `symbol_absent_on_other_side` é o stage que mudou de nome ou deixou de existir, e `empty_symbol` é o stage que o event log entregou sem nome nenhum — este segundo nunca casa com nada, por construção, e uma taxa alta feita só dele é problema de coleta, não de código.",
+    "proposed_change": [
+      "Conferir em `bench.unmatched` quantos órfãos têm `reason: empty_symbol`: se forem a maioria, o problema é a coleta do event log, e a comparação deve ser refeita antes de qualquer conclusão.",
+      "Se os órfãos são renomeações conhecidas da própria mudança, dizer isso no relatório e usar os `bench.stage_delta` que casaram, em vez dos totais do run.",
+      "Para medir uma refatoração ampla, comparar antes de renomear e depois de renomear em passos separados: uma medição por mudança de nome, outra por mudança de comportamento.",
+      "Confirmar que os dois lados são a mesma etapa do pipeline e não jobs diferentes — os artefatos de cada lado estão em `attrs.before_artifacts` e `attrs.after_artifacts` do mesmo fact."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tomar decisão sobre os totais deste benchmark quando a taxa é alta é decidir sobre a soma de trabalhos diferentes, e o erro daí não tem sinal previsível.",
+      "Ignorar o achado por parecer burocrático é o modo de falha comum. Ele não acusa o código, acusa a validade da comparação — que é o insumo de todas as outras três."
+    ],
+    "tradeoffs": [
+      "Casamento estrito por `symbol` produz esta taxa em refatoração ampla; um casamento aproximado a reduziria e passaria a comparar stages diferentes em silêncio, trocando um achado visível por um erro invisível. A escolha está feita, e é o achado que fica.",
+      "Um limiar baixo acusa toda refatoração; um alto deixa passar comparação sem base. 0,3 é o meio escolhido, e é dado editável."
+    ],
+    "validation": [
+      "`matched_stage_count` e `unmatched_stage_count` na sentinela depois de refazer a comparação: a taxa precisa cair abaixo do limiar para que os totais do run voltem a sustentar conclusão.",
+      "Conferir que `matched_stage_count + unmatched_stage_count` fecha com `before_stage_count + after_stage_count` — se não fechar, algum stage caiu fora da conta e o problema é do comparador, não da comparação.",
+      "Contagem de `bench.unmatched` por `reason`, separando renomeação de stage sem nome: são dois problemas diferentes com correções diferentes."
+    ],
+    "rollback": [
+      "Nenhum — este achado é sobre a comparação, não sobre o código. O que se refaz é a medição."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "0,3 é decisão de campo, e a escolha é estrutural e não estatística: acima de um terço da população sem par, os totais do run passam a somar majoritariamente trabalho que só existe de um lado, e o percentual deixa de ter leitura simples. Não há fonte oficial sobre isso — não há fonte oficial sobre casamento de stage entre execuções, porque a prática documentada de benchmark de Spark compara jobs inteiros, não stages. A severidade P2 vem de o achado ser sobre método, e não sobre defeito no sistema analisado."
+      }
+    ]
+  }
+]
