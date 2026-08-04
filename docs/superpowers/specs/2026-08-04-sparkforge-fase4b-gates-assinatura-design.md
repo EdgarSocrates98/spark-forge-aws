@@ -185,6 +185,40 @@ a 0 que não toca `sparkforge/facts/`.
 | Risco | Mitigação |
 |---|---|
 | Rigor ligado trava investigação legítima onde o dado não existe | Override com motivo, gravado. E o critério do produtor garante que todo gate que bloqueia tem comando que destrava |
+| `case update --gate X --gate-value true` vira override silencioso | Ver §8, desvio D-4b-2: sob rigor o booleano manual não satisfaz |
 | Assinatura lida como autoridade | O limite vai dentro do bloco, não só na doc. Critério 9 |
 | Normalização absorve demais e adulteração passa | O que ela absorve está escrito e tem teste dos dois lados |
 | `--strict-gates` vira padrão de fato e quebra caso antigo | Critério 5: sem a flag, comportamento idêntico ao de hoje, com teste |
+
+## 8. Desvios medidos antes da implementação
+
+Duas medições feitas ao escrever o plano corrigem este documento. Ele **não é
+reescrito** — a convenção do repositório (`STATUS.md`, "Como manter este arquivo
+honesto") manda registrar o desvio e preservar o que se pretendia.
+
+**D-4b-1 — o vocabulário de gate tem quatro nomes, não dois.** A §1 lê o
+vocabulário a partir de `rules/catalog/routing.yaml`, que declara `blocked_by`
+em duas rotas. Mas `sparkforge/case/store.py:34` define `GATES` com **quatro**:
+`baseline_captured`, `dominant_bottleneck_identified`, `functional_validation_defined`
+e `flows_mapped`. O case rastreia os quatro desde a Fase 0; o roteamento usa
+dois.
+
+Isso **amplia** o critério do produtor em vez de contrariá-lo: cada um dos
+quatro precisa ser classificado, e só os que tiverem produtor declarado podem
+endurecer. `dominant_bottleneck_identified` e `flows_mapped` entram na mesma
+pergunta que a §1 fez para os outros dois, e a resposta é trabalho da Task 1 do
+plano — não deste spec.
+
+**D-4b-2 — o booleano manual já existe, e sob rigor ele não pode satisfazer.**
+`case update --gate <nome> --gate-value true` (`cli.py:386-387`,
+`_core.py:1641`) permite virar qualquer gate à mão. Se isso satisfizesse o gate
+no modo estrito, virar a flag seria um override **sem motivo e sem registro** —
+e o `--reason` do D-4 perderia sentido, porque existiria um caminho mais curto
+que não o exige.
+
+Decisão: no modo estrito o booleano manual é **ignorado**. O gate é satisfeito
+por evidência (o fact produtor presente) ou por override registrado. No modo
+advisory — o de hoje — nada muda, e nenhum case em andamento quebra.
+
+O critério 5 da §6 já cobria a metade compatível disso; a metade nova é: **com
+rigor ligado, `--gate-value true` não destrava**, e há teste.
