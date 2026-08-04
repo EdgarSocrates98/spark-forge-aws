@@ -142,6 +142,53 @@ Glue 4.0 / 5.0 / 5.1 matrix and the Iceberg V3 versus Athena trap in Glue 5.1, a
 flag: `--emr` is a declaration, it loses to `describe-cluster` and to the event log, and
 disagreeing with either becomes a reported divergence — never a silent substitution.
 
+### Gates that actually block, and a report that carries proof
+
+A case has four gates. They are **advisory by default** — the behaviour they have
+always had. A case opened with `sparkforge case open --strict-gates` records that
+choice **in the case file**, so it holds for the whole investigation: another
+session, another machine, another tool inherits the rigour of whoever opened it.
+Under it, `set_phase` refuses the transition while the evidence for the gates
+guarding that phase is missing.
+
+What unlocks a gate is evidence, never a flag: `case update --gate X --gate-value
+true` still writes the boolean and still unlocks nothing. Which fact satisfies
+which gate is **data** — the `gates` block of `rules/catalog/routing.yaml`, with
+the exact command in `produced_by`. Only a gate **with** a producer can be
+fail-closed: today `baseline_captured` (`bench.run_delta`) and `flows_mapped`
+(`callgraph.reachable_spark_work`). The other two stay advisory, because
+hardening a gate with no producer is the deadlock the Fase 0 design consciously
+refused — a rigid gate is a dead end when the data simply does not exist.
+
+When the data genuinely does not exist, overriding costs one sentence, and the
+sentence stays: `case update --override-gate <gate> --reason "<why>"`, refused
+without `--reason`, appended to a list (two overrides of the same gate are two
+facts) and shown in `resume`.
+
+The gate checks **presence of the kind**, never the content of the fact. It
+proves the analysis ran and produced the unlocking artifact — it does **not**
+prove that it covered every `scope.entrypoints`, nor that the benchmark is of the
+right job. That limit is a recorded decision and it is stated in the blocking
+message itself; state the same caveat in the report, the way `dq.unresolved`
+states its own.
+
+`sparkforge report sign --report <md> --findings <json>` appends a signature
+block to the report, and `sparkforge report verify` says **which** of the three
+parts diverged — evidence, catalog, or body — rather than just "invalid". Both
+exist as MCP tools too (`sparkforge_report_sign`, `sparkforge_report_verify`).
+The input is the **findings** file, not the facts file: `rule_id`,
+`catalog_version` and `schema_version` only exist there. The hash covers the
+cited `fact_id`s, the `rule_id`s that fired, both versions, and the report
+**body** — without the body, the whole text could be rewritten while the
+signature still verified.
+
+It proves **correspondence**, never **authorship**: there is no key and no
+secret, and anyone holding the same findings produces the same signature. Do not
+let a reader take the block for authentication — the limit is written inside the
+block the report carries. Text appended after the block is rejected, not ignored;
+editing the prose after signing invalidates, which is the point, and re-signing
+is cheap.
+
 The `recommendation:` schema documented above remains valid: `Finding` is a
 compatible superset of it, with the same fields (`title`, `severity`,
 `evidence`, `proposed_change`/`expected_effect`, `risks`, `tradeoffs`,

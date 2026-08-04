@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-03
-**Commit de referência:** fechamento da branch `feat/fase4a-benchmark`
+**Atualizado em:** 2026-08-04
+**Commit de referência:** fechamento da branch `feat/fase4b-gates`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -10,7 +10,11 @@ nenhum teste fixa o número, porque o que precisa ser garantido é que as quatro
 fontes não divirjam, não qual é o valor.
 
 `schema_version` e `catalog_version` continuam em `1`, de propósito: nenhum
-contrato de dados mudou e nenhum limiar existente mudou. Subir os três juntos
+contrato de dados mudou e nenhum limiar existente mudou. A Fase 4b acrescentou
+duas chaves ao `case.yaml` (`strict_gates` e `gate_overrides`) e **não** subiu o
+`schema_version` do case pela mesma razão: as duas são aditivas e todo leitor
+tolera a ausência delas — `overridden_gates` devolve conjunto vazio num case
+gravado antes da fase, sem migração. Subir os três juntos
 destruiria a reauditabilidade que a §12.2 da spec da Fase 0 quer — um Finding
 gravado com `catalog_version: 2` sugeriria que o limiar que o julgou é outro.
 
@@ -25,7 +29,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **3309** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **3443** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 66**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **16** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **102** | união de `EMITTED_KINDS` |
@@ -33,8 +37,9 @@ arquivo ganha.
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **66 de 66** | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **24** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-008`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **34** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **34 de 34** | `tests/test_agent_coverage.py` |
+| Tools MCP | **36** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **36 de 36** | `tests/test_agent_coverage.py` |
+| Gates do case | **4**, sendo **2** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **8** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
 | Skills | **20** | `skills/*/SKILL.md` |
@@ -645,6 +650,117 @@ O spec da fase ganhou seção de desvios (§9) em vez de ser reescrito: três li
 dele chamam a medida de *duração*, e uma lista *pico de memória* entre as medidas
 do `bench.run_delta`, que `_RUN_MEASURES` não tem.
 
+### Fase 4b — gates fail-closed e assinatura de correspondência — **CONCLUÍDA** em 2026-08-04
+
+Branch `feat/fase4b-gates`. Spec:
+[`specs/2026-08-04-sparkforge-fase4b-gates-assinatura-design.md`](specs/2026-08-04-sparkforge-fase4b-gates-assinatura-design.md) ·
+Plano: [`plans/2026-08-04-sparkforge-fase4b-gates-assinatura.md`](plans/2026-08-04-sparkforge-fase4b-gates-assinatura.md).
+
+**O defeito de partida: a razão da Fase 0 deixou de valer para metade dos gates.**
+A §5.5 do spec da Fase 0 decidiu conscientemente que gate é advisory, com um
+argumento que estava certo — *"gate rígido vira impasse quando o dado simplesmente
+não existe"*. O que mudou desde então é que passou a existir gate **com** produtor:
+a Fase 4a deu `bench.run_delta` a `baseline_captured`, e a Fase 2 do roadmap deu
+`callgraph.reachable_spark_work` a `flows_mapped`. Para esses dois, "o dado não
+existe" tem saída concreta — rodar um comando —, e manter o advisory era proteger
+contra um impasse que não é mais possível. Daí o critério da fase, que é
+verificável e não preferência: **um gate só pode ser fail-closed se tiver produtor
+declarado**. Os outros dois seguem advisory pelo argumento original, intacto.
+
+**O rigor é do case, não da invocação.** `sparkforge case open --strict-gates`
+grava a escolha no `case.yaml`, e ela vale pela investigação inteira — outra
+sessão, outra máquina, outra ferramenta. Uma flag por invocação desligaria o gate
+em silêncio na primeira vez que alguém esquecesse de passá-la, que é exatamente a
+família de defeito que a fase existe para não cometer. Sem a flag, o comportamento
+é bit a bit o de antes: `set_phase` sequer lê o catálogo.
+
+**O booleano manual não destrava, e isso é o desvio D-4b-2.** `set_phase` **não**
+consulta `case["gates"]`: se consultasse, `case update --gate X --gate-value true`
+seria um override sem motivo e sem registro, e o gate voltaria a se satisfazer
+digitando — o defeito que a 4a mediu no `benchmark_ref` de texto livre. O que
+destrava é o fact produtor estar presente nos facts passados em `case update
+--facts`, ou um override declarado. Por isso `case update` ganhou `--facts`: sem
+ele, rigor não teria chave (D-4b-5).
+
+**Quem produz a chave de cada gate é dado.** O bloco `gates` do `routing.yaml`
+declara `satisfied_by`, `guards_phases` e o comando exato de `produced_by`, e os
+**quatro** gates aparecem lá — inclusive os advisory, com `advisory_reason`, porque
+gate ausente do bloco seria ambíguo entre *esqueceram* e *é advisory de propósito*.
+Duas escolhas de `satisfied_by` foram medidas contra a alternativa óbvia:
+`callgraph.summary` foi recusado porque é emitido incondicionalmente e destravaria
+`flows_mapped` rodando `analyze call-graph` sobre um facts vazio; e
+`baseline_captured` não guarda a fase `experiment`, porque `bench.run_delta` exige
+o lado `--after`, que só existe depois de rodar o job mudado — guardar ali seria
+gate insatisfazível no momento em que morde.
+
+**Passar por cima custa uma frase, e a frase fica.** `case update --override-gate
+<gate> --reason "<motivo>"`. Sem `--reason` é recusado, porque override anônimo não
+se distingue de gate esquecido. Ele entra numa **lista**, nunca num mapa `gate →
+motivo`: dois overrides do mesmo gate em momentos diferentes são dois fatos, e um
+mapa apagaria o primeiro ao gravar o segundo. Aparece no `resume`. A mensagem de
+bloqueio nomeia a fase pedida, cada gate que faltou, o kind ausente, o comando de
+`produced_by` por extenso e a linha de override — a 4a mediu que mensagem
+inacionável passa no CI.
+
+**A assinatura prova correspondência, e o bloco diz isso em voz alta (D-6 do
+spec).** `sparkforge/findings/signature.py`, mais `report sign` e `report verify`
+nos três adaptadores. O hash cobre quatro coisas: os `fact_ids` citados, os
+`rule_ids` que dispararam, `catalog_version`/`schema_version`, e o **corpo**
+normalizado do relatório. Sem o corpo, alguém reescreveria o texto inteiro mantendo
+a assinatura válida (D-7). Ela **não** prova autoria: não há chave nem segredo, e
+qualquer um com os mesmos findings produz a mesma assinatura — HMAC ou GPG foi
+recusado no desenho porque exigiria distribuir e guardar segredo, superfície que
+o projeto hoje não tem.
+
+Quatro decisões da assinatura foram medidas contra o esboço do plano, e as quatro
+mudaram: a serialização é a canônica que já existe (`models._canonical`, base do
+`Fact.id`) em vez de uma segunda inventada aqui (D-4b-9); o digest são **64 hex**
+de sha256 e não 16, porque assinatura é integridade e o projeto já separa os dois
+usos de digest (D-4b-10); a normalização absorve reformatação mas **não** absorve
+indentação, que em Markdown muda o que o texto significa (D-4b-11); e a flag é
+`--findings`, não `--facts`, porque `rule_id`, `catalog_version` e `schema_version`
+não existem no arquivo de facts (D-4b-12). Dois inputs são recusados em vez de
+assinados com um default silencioso: findings vazio (a assinatura cobriria só o
+corpo e seria lida como prova de derivação) e `catalog_version` divergente entre
+achados (escolher um faria a assinatura afirmar um catálogo que não foi o único
+usado) — D-4b-16.
+
+**`verify` diz qual das três partes divergiu, e não pode fazer isso com autoridade
+total (D-4b-14).** Recomputar as três em separado a partir de um hash único é
+impossível; a isolação vem de o **bloco declarar** o que foi assinado, e o bloco
+mora fora do hash por construção — logo é editável. Por isso o veredito `valid`
+nunca sai do bloco, sai das três checagens juntas, e a atribuição de `body` enuncia
+as duas leituras possíveis ("o corpo foi editado, ou o próprio bloco foi") em vez
+de escolher uma que ela não pode provar. Texto acrescentado **depois** do bloco é
+recusado, não ignorado (D-4b-15): ignorá-lo deixaria aberta a porta que a
+assinatura existe para fechar.
+
+**O limite dos gates é decisão registrada, escrita em três lugares.** A checagem é
+por **presença de kind**, nunca por conteúdo de fact: ela prova que a análise rodou
+e produziu o artefato que destrava, e **não** que ela cobriu todo o
+`scope.entrypoints` nem que o benchmark é do job certo. Passar facts inteiros
+puxaria o índice de facts para dentro do `store` e faria o gate precisar saber o
+que é "o job certo", que é julgamento. O recorte vai declarado no bloco do
+`routing.yaml`, na docstring de `set_phase` e na própria mensagem de bloqueio — a
+mesma disciplina de `dq.unresolved`.
+
+**Números medidos no fechamento.** 3443 testes passando, 5 skipped (eram 3295 ao
+fechar a 4a). 36 tools MCP, **36 de 36** alcançáveis a partir de algum coordenador
+(eram 34). Nada mais mudou de tamanho: 66 regras em 12 áreas, 16 extratores, 102
+kinds, 107 fixtures em 18 domínios, 24 rotas, 8 coordenadores, 5 executores, 20
+skills. Esta fase não acrescentou capacidade de análise — ela cobrou rigor sobre a
+que já existia.
+
+**O que NÃO entrou, por decisão registrada na §2 do spec:** a validação funcional
+automatizada (contagem, schema, chaves, agregados), que é a **Fase 4c**. Ela é de
+natureza diferente das duas desta fase — precisa de um artefato que não existe, o
+resultado de consultas que alguém roda —, e é por não ter esse artefato que
+`functional_validation_defined` continua advisory. Também ficaram fora, com razão
+escrita: assinatura de autoria e gate sobre emissão de achado.
+
+Faixa de commits: `0b500d6` … `20591bd`, mais o commit de documentação que fecha a
+fase.
+
 ### Fase 4 do roadmap (§16) — rigor — **PARCIALMENTE CONCLUÍDA**
 
 Distinta da "Fase 4 (executada)" acima (coordenadores, executores e espelho de
@@ -654,13 +770,13 @@ continua sendo a Fase 4 do roadmap original, e o escopo da §16 tem quatro itens
 | Item da §16 | Estado |
 |---|---|
 | Benchmark automatizado antes/depois | **Fechado pela Fase 4a.** Verbo `benchmark`, cinco kinds `bench.*`, área `SF-BENCH`, e `benchmark_ref` citando `fact_id` |
-| Validação funcional automatizada (contagem, schema, chaves, agregados) | **Aberto.** A 5c leu *onde* a validação está e o que ela custa; nada ainda **executa** a validação nem compara os dois lados de uma mudança por resultado |
-| Gates fail-closed opcionais | **Aberto.** `blocked_by` segue advisory, como a §5.5 da Fase 0 decidiu conscientemente |
-| Assinatura de relatório | **Aberto.** Nada assina a saída hoje |
+| Validação funcional automatizada (contagem, schema, chaves, agregados) | **Aberto.** A 5c leu *onde* a validação está e o que ela custa; nada ainda **executa** a validação nem compara os dois lados de uma mudança por resultado. É a Fase 4c |
+| Gates fail-closed opcionais | **Fechado pela Fase 4b.** `case open --strict-gates`, `set_phase` cobrando os gates da fase, override com motivo gravado, e o contrato de produtor como dado no bloco `gates` do `routing.yaml`. Fail-closed só para gate **com** produtor: os outros dois seguem advisory, pelo argumento da §5.5 da Fase 0, que continua válido onde ele se aplica |
+| Assinatura de relatório | **Fechado pela Fase 4b.** `report sign` e `report verify` nos três adaptadores, sobre `findings/signature.py`. É assinatura de **correspondência** — texto, evidência e catálogo —, nunca de autoria |
 
-A Fase 4b é o nome dos três itens abertos. Enquanto eles existirem, esta fase não
-é "CONCLUÍDA" — marcar assim faria o `STATUS.md` afirmar rigor que o repositório
-não tem, que é exatamente o que este arquivo existe para impedir.
+O item que resta é o nome da **Fase 4c**. Enquanto ele existir, esta fase não é
+"CONCLUÍDA" — marcar assim faria o `STATUS.md` afirmar rigor que o repositório não
+tem, que é exatamente o que este arquivo existe para impedir.
 
 ---
 
@@ -779,24 +895,29 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 7. **Fase 4a** — benchmark antes/depois — **CONCLUÍDA** em 2026-08-03, branch
    `feat/fase4a-benchmark`. Ver seção própria acima. Fecha o primeiro dos quatro
    itens de rigor da §16 e dá produtor ao gate de `benchmark_ref`
-8. **Fase 4b** — o rigor que falta: validação funcional automatizada, gates
-   fail-closed opcionais e assinatura de relatório. **Decidida como a próxima**,
-   antes de qualquer cobertura nova — cobertura multiplica achados, rigor
-   multiplica confiança em todos eles de uma vez
-9. **Especialização por banco de dados** — uma fase por ferramenta, na ordem
-   `SF-GRAPH`, `SF-DDB`, `SF-NEP`, `SF-MONGO`, decomposta em
-   [`specs/2026-08-03-sparkforge-roadmap-bancos.md`](specs/2026-08-03-sparkforge-roadmap-bancos.md).
-   O roadmap decide a decomposição e **recusa** decidir o conteúdo: os candidatos
-   de regra são hipóteses, e cada fase abre com pesquisa de fontes — em quatro
-   fases seguidas ela matou premissa que parecia óbvia no papel
-10. **Fases seguintes** — custo, orquestração, Redshift, streaming
-11. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior. As frentes sem artefato da especialização em bancos — escolha de banco, modelagem de grafo, boas práticas genéricas — entram por aqui, e até lá viram restrição auditável em `knowledge/`
+8. **Fase 4b** — gates fail-closed e assinatura de correspondência —
+   **CONCLUÍDA** em 2026-08-04, branch `feat/fase4b-gates`. Ver seção própria
+   acima. Fecha dois dos três itens de rigor que restavam da §16, e o corte entre
+   eles não é de esforço: gate com produtor endurece, gate sem produtor continua
+   advisory
+9. **Fase 4c** — validação funcional automatizada (contagem, schema, chaves,
+   agregados): o terceiro item de rigor, e o único que exige artefato novo — o
+   resultado de consultas que alguém roda. É ela que dá produtor a
+   `functional_validation_defined` e o torna endurecível sem que nada da 4b mude
+10. **Especialização por banco de dados** — uma fase por ferramenta, na ordem
+    `SF-GRAPH`, `SF-DDB`, `SF-NEP`, `SF-MONGO`, decomposta em
+    [`specs/2026-08-03-sparkforge-roadmap-bancos.md`](specs/2026-08-03-sparkforge-roadmap-bancos.md).
+    O roadmap decide a decomposição e **recusa** decidir o conteúdo: os candidatos
+    de regra são hipóteses, e cada fase abre com pesquisa de fontes — em quatro
+    fases seguidas ela matou premissa que parecia óbvia no papel
+11. **Fases seguintes** — custo, orquestração, Redshift, streaming
+12. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior. As frentes sem artefato da especialização em bancos — escolha de banco, modelagem de grafo, boas práticas genéricas — entram por aqui, e até lá viram restrição auditável em `knowledge/`
 
 ## Dívidas abertas
 
 | Dívida | Origem | Impacto |
 |---|---|---|
-| Fases 3b, 3c, 3d e a Fase 4 do roadmap (§16, rigor) não iniciadas | §16 do spec da Fase 0 | Ver as seções acima. A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
+| Fases 3b, 3c e 3d não iniciadas; a Fase 4 do roadmap (§16, rigor) está em **um quarto** item aberto | §16 do spec da Fase 0 | Ver as seções acima. Dos quatro itens de rigor, três fecharam — benchmark (4a), gates fail-closed e assinatura (4b) —, e resta a validação funcional automatizada, que é a **Fase 4c**. A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
 | ~~Cobertura de EMR não existe~~ — **fechada** pela Fase 5b em 2026-08-01, merge `59c27e2` | identificada ao fechar a Fase 3a | `RuntimeContext.emr` existe e guarda a release numérica, `EMR_MATRIX` tem guard de drift assimétrico contra o knowledge, `emr_cluster.py` lê o dump de `describe-cluster` e os cinco que o completam, e a área `SF-EMR` tem 9 regras com coordenador próprio. **A linha sobreviveu fechada por três fases** — a 5b marcou a fase como concluída na seção própria e não voltou aqui, e as varreduras seguintes conferiram números, não vereditos. Fica como lembrete do modo de falha: inventário de dívida só é confiável se fechar dívida for parte de fechar fase. O que **continua aberto** do escopo original está na linha própria — EMR Serverless e EMR on EKS |
 | ~~O curinga `"*"` de `runtime_scope` não filtra nada~~ — **fechada** na Fase 5a, commit `fcb8402` | revisão adversarial do spec da Fase 5, 2026-08-01 | `version_scope.py` pula a checagem de presença da chave, então `{glue: "*"}` casa com qualquer runtime. 20 regras agnósticas ficaram etiquetadas como de Glue, e as 5 de infra Glue avaliam em silêncio fora do Glue. Fase 5a corrige |
 | ~~`SF-GLUE-002` some de findings e de skipped ao mesmo tempo~~ — **fechada** na Fase 5a, commit `8815f53` | revisão adversarial do spec da Fase 5, 2026-08-01 | `requires_facts: tf.module_analyzed` é sentinela de "algum `.tf` foi lido", não de "há job Glue aqui": sem `aws_glue_job`, ela passa a barreira, avalia, dá falso, e desaparece dos dois lados. Fase 5a corrige |
@@ -815,6 +936,10 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 | `SF-DQ-002` acusa validação cuja consequência está atrás de um helper | Fase 5c (`_enforcements`), **medida de novo** na Task 3 da Fase 5c.2, 2026-08-03 | `aborta_se(ruins)` num helper que faz `if ruins > 0: raise` não produz `dq.enforcement`, e `SF-DQ-002` dispara sobre `absent: dq.enforcement` — a regra acusa exatamente quem protegeu o pipeline. **Medido, não presumido:** sobre a fonte de nove linhas do gate, o motor devolve `SF-DQ-002 (P1)` e `SF-DQ-003 (P2)`, e a instrumentação de `_enforcements` mostra onde está a lacuna — `_reader` **já aceita** `aborta_se(ruins)` como leitor, `_read_of` **já vê** o nome `ruins`, e `_reads_this_check` **já devolve** `True`. O único predicado que falha é `_abort_in`, que procura o aborto nos ramos **deste** escopo e o aborto está no corpo de outra função. **Por isso a máquina da 5c.2 não serve:** a parte que ela poderia emprestar (resolver a chamada e mapear argumento e parâmetro) é precisamente a parte que já funciona, e o que falta é ler o corpo do callee e decidir se ele aborta **condicionalmente ao valor recebido** — travessia nova, com limites próprios. Nenhum dos limites da 5c.2 transfere: "um só call site" não diz nada sobre o que a função faz, porque um helper chamado de dez lugares aborta ou não aborta independentemente disso. Implementar assim mesmo, para poder dizer que as duas fecharam, produziria uma máquina com garantia inventada num kind cujo erro cai do lado da acusação. **Fica aberta com o custo na mão**, e o que ela exige está nomeado: travessia de corpo de callee por parâmetro, com decisão própria sobre religação, alias e `def` aninhado |
 | ~~`manifest.json` declara 18 skills e o disco tem 20~~ — **fechada** em 2026-08-03, commit `a06bd44` | nomeada pela Task 9 da Fase 5c | A lista `"skills"` não recebeu `review-emr-cluster` (desde a Fase 5b) nem `review-data-validation` (da 5c), e a segunda omissão aconteceu com a primeira ainda aberta — assinatura de invariante ausente, não de descuido. Fechada na ordem que a própria dívida prescrevia: **o teste primeiro**, `TestManifest::test_skills_list_equals_the_skills_on_disk`, derivado de `skills/` como o irmão de `"tools"` sempre foi derivado de `TOOLS` — que é por isso que aquele nunca divergiu —, e só então as duas entradas. Acrescentá-las sem o teste deixaria a terceira omissão para a próxima fase |
 | ~~`attrs.check_type` é emitido e ninguém foi ensinado a lê-lo~~ — **fechada** em 2026-08-03, commit `10a4a32` | revisão final da Fase 5c | Nenhuma regra, agente ou skill citava a chave. Ela sai de graça do extrator (constante literal por detector), então não é mecanismo sem consumidor no sentido caro de `SF-EMR-009` — mas é chave emitida sem leitor, e a resposta foi ensinar o leitor em vez de declará-la descritiva. Onde ela paga é no `dq.unresolved`, que a carrega junto: sem ela o ponto cego diz **quantas** validações não foram lidas; com ela diz **qual tipo**, e "não li uma `VerificationSuite`" pede investigação diferente de "não li um `count()` artesanal" |
+| Dois dos quatro gates seguem advisory mesmo sob `strict_gates` | Fase 4b, por decisão registrada na §1 do spec | `dominant_bottleneck_identified` e `functional_validation_defined` não têm `satisfied_by`, e gate sem produtor **nunca** entra na lista de bloqueio — é o critério da fase, não uma omissão. As duas metades envelhecem de formas opostas, e isso é o que vale registrar. `functional_validation_defined` **fecha na Fase 4c**: quando ela entregar o produtor, basta declarar `satisfied_by` e `guards_phases` no bloco `gates` do `routing.yaml`, sem tocar em Python. `dominant_bottleneck_identified` **não tem caminho previsto**: dominância é ordenação entre candidatos, nenhum dos 102 kinds a afirma, e o que mais se aproxima é um Finding — que não é Fact, mora em `findings_index` e não chega a `set_phase`. Endurecê-lo exigiria ou um kind que declare dominância (e aí a evidência passaria a carregar julgamento, contra o contrato da Fase 0) ou fazer `set_phase` ler findings (outra camada). Fica advisory com `advisory_reason` escrito no catálogo, e é a linha honesta a manter |
+| O gate confere presença de kind, nunca conteúdo de fact | Fase 4b, limite declarado em três lugares | `_gates_blocking` pergunta se o kind está no conjunto de kinds; ele **não** pergunta se o `bench.run_delta` é do job certo, se os dois lados do benchmark são o mesmo job, nem se o `callgraph.reachable_spark_work` cobre todo o `scope.entrypoints`. Um benchmark de outro job destrava `baseline_captured`. A alternativa — passar facts inteiros — foi recusada por dois motivos: puxaria o índice de facts para dentro do `store`, e faria o gate precisar saber o que é "o job certo", que é julgamento e não pertence a uma checagem de transição de fase. **O que foi feito em vez de fechar:** declarar o recorte onde ele opera — no bloco `gates` do `routing.yaml`, na docstring de `set_phase` e na mensagem de bloqueio que o operador lê —, exatamente como `dq.unresolved` declara o dele. Fechar de verdade exigiria correlacionar `scope` com o conteúdo dos facts, que é capacidade nova, não ajuste |
+| `report verify` não isola o corpo com autoridade | Fase 4b, desvio D-4b-14, medido ao implementar | A assinatura é um hash único das três partes **de então**; não há como recomputá-las em separado a partir dele. A isolação que o critério 8 do spec pede vem de o **bloco declarar** o que foi assinado — e o bloco mora fora do hash por construção, logo é editável por quem editar o relatório. Consequência: `checks.body` não distingue "o corpo foi editado" de "o próprio bloco foi", e a saída enuncia as duas leituras em vez de escolher a que não pode provar. O veredito `valid` é preservado porque **nunca** sai do bloco: sai das três checagens juntas, e um bloco adulterado para fechar com o corpo passa a divergir dos findings reais. Fechar exigiria assinar o bloco junto (recursivo) ou mover a declaração para um arquivo lateral assinado — nenhum dos dois foi feito, e o segundo trocaria um arquivo por dois, que é o modo de falha de handoff que este projeto evita |
+| Nenhuma skill cita `report sign`; a assinatura chegou ao protocolo e ao executor, não ao procedimento | Fase 4b, medido ao fechar a fase | `grep -rl "report sign\|report_sign" skills/` sai vazio: quem segue uma skill de ponta a ponta — `sparkforge-diagnose`, `benchmark-pyspark-job`, `review-pyspark-pr` — chega ao relatório sem nunca ser mandado assiná-lo. A capacidade **é** alcançável (o passo 3 de `agents/executors/sf-synthesizer.md` a invoca, e é o que `tests/test_agent_coverage.py::test_no_tool_is_orphan` cobra), e `AGENT_PROTOCOL.md` a descreve — mas o caminho por skill, que é o terceiro degrau da escada de portabilidade, não a menciona. Nada obriga assinar: `strict_gates` guarda a **transição de fase**, não a emissão do relatório. Fica aberta porque fechá-la é editar `skills/` e regerar os três espelhos, fora do conjunto de arquivos desta task |
 | Normalização de HTML do `refresh_knowledge` não foi calibrada contra meses de execução real | 2026-07-31 | Se alguma página oficial mudar hash a cada leitura, ela vira alarme permanente. O primeiro PR ruidoso deve ajustar `normalize()`, não silenciar a fonte |
 
 ## Como manter este arquivo honesto
