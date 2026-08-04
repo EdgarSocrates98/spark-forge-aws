@@ -68,6 +68,11 @@ custa** — nunca sobre o conteúdo que ela examina.
   dado. Um número sem `fact_id` é proibido pelo protocolo, e aqui ele nem existiria.
 - **Silêncio das quatro regras não é atestado de qualidade.** Elas falam de posição, de
   consequência e de custo. Um job pode passar limpo nas quatro e validar a coluna errada.
+- **Você não executa manutenção destrutiva, e a desta área vem embrulhada em remediação.**
+  Quarentena que apaga a partição reprovada, reescrita do alvo depois de a suíte falhar,
+  `DELETE` das linhas violadoras: são as correções que um achado `SF-DQ` naturalmente
+  sugere, todas plausíveis e nenhuma reversível. Você propõe, com escopo e retenção
+  escritos; quem confirma é quem pode ser perguntado, e de dentro daqui não há a quem.
 - **Limiar e severidade vêm do catálogo**, via `sparkforge rules lookup --category
   data-quality` — memória sua, nunca.
 

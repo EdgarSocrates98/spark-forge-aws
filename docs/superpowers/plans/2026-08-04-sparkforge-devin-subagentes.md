@@ -248,7 +248,7 @@ acrescenta nada — nenhum dos três marcadores entra nem sai.
 - Modify: `agents/*.md` (os oito), `agents/executors/*.md` (os cinco)
 - Create: teste em `tests/test_agents_parity.py`
 
-- [ ] **Step 1: O teste que falha**
+- [x] **Step 1: O teste que falha**
 
 ```python
 def test_todo_perfil_declara_a_fronteira_de_manutencao_destrutiva():
@@ -270,11 +270,14 @@ def test_todo_perfil_declara_a_fronteira_de_manutencao_destrutiva():
 
 Ajuste `perfis()` ao helper que o arquivo já usa para varrer `agents/`.
 
-- [ ] **Step 2: Rode e veja falhar**
+- [x] **Step 2: Rode e veja falhar**
 
 Expected: FAIL listando os treze.
 
-- [ ] **Step 3: Escreva a fronteira em cada perfil**
+Medido: `13 failed, 32 passed`, um id por perfil — os oito coordenadores e os cinco
+executores, nenhum a mais.
+
+- [x] **Step 3: Escreva a fronteira em cada perfil**
 
 Na seção `## Não faz` — que os executores já têm e os coordenadores usam desde a
 Fase 5b. O texto diz: não executa manutenção destrutiva (expiração de snapshot,
@@ -285,7 +288,55 @@ confirmação de escopo e retenção acontece com quem tem a pergunta disponíve
 Athena e um executor de inventário chegam perto disso por caminhos diferentes, e
 a fronteira tem que fazer sentido no contexto de cada um.
 
-- [ ] **Step 4: Regenere os espelhos, rode, commite**
+- [x] **Step 4: Regenere os espelhos, rode, commite**
+
+Suíte 3527 passed / 5 skipped (era 3510 / 5; +17 = 13 perfis parametrizados mais os
+quatro testes do critério). `ruff check .` limpo. `sync_skills.py --check` OK. `git diff
+.agents/` é só o texto novo: nenhuma linha `+tools:`, e as únicas remoções são as seis
+linhas do `iceberg-performance-engineer` reescritas (D-DV-9).
+
+**Desvios medidos na Task 3**
+
+- **D-DV-8 — o critério de detecção do teste não é o do Step 1, e o do Step 1 acertava por
+  acidente.** O plano casa `"manutenção destrutiva" not in p.read_text()` sobre o arquivo
+  inteiro. Medido no baseline, ele de fato lista os treze — mas o `iceberg-performance-
+  engineer` só entra na lista porque a sua seção se chamava `## Manutenção destrutiva` com
+  M maiúsculo; a mesma checagem sem diferenciar caixa listaria doze e daria por resolvido
+  justamente o perfil cujo texto estava mais errado (D-DV-9). Um critério que depende de
+  capitalização não é critério. Pior: casar frase sobre o arquivo inteiro premia menção de
+  passagem — explicar que `expire_snapshots` não tem rollback é conhecimento de domínio,
+  não fronteira. O que entrou: a seção `## Não faz` tem que existir (âncora estrutural, não
+  prosa — é onde este repositório escreve fronteira desde a Fase 5b), e **dentro dela** os
+  radicais `destrutiv` e `confirma`. Radical, e não frase, porque exigir texto idêntico nos
+  treze é o defeito que o próprio Step 3 proíbe. Os dois, e não um, porque as duas metades
+  falham de formas diferentes e as duas falham em silêncio: quem declara só o ato para sem
+  dizer por quê; quem declara só a escalada segue sem confirmar. Três testes irmãos fixam o
+  critério: menção fora da seção não conta, meia fronteira não conta, perfil sem a seção é
+  pego. Um quarto guarda contra o teste vazio — recorte que esvaziasse passaria sem olhar
+  nada. O que o critério **não** faz, e está escrito no docstring: verificar sentido. Ele
+  garante que ninguém publica perfil sem ter escrito sobre as duas metades no único lugar
+  onde fronteira mora.
+
+- **D-DV-9 — o `iceberg-performance-engineer` já tinha a fronteira, e ela estava errada.**
+  A seção `## Manutenção destrutiva` terminava com a regra 10 do `CLAUDE.md` copiada
+  literalmente: "Não execute expiração ou remoção destrutiva sem confirmação explícita de
+  escopo e retenção." Lida como está, é permissão condicional — *com* confirmação, execute.
+  Num subagente a condição nunca é satisfeita (V-DV-10), então a frase é letra morta ou
+  convite a prosseguir, e não há terceira leitura. Integrado, não duplicado: a seção virou
+  `## Não faz`, o conteúdo de domínio (sem rollback, time travel, escrita concorrente)
+  ficou, e a prescrição foi reescrita para "não executa" mais o que sai no lugar — escopo,
+  janela, o que sobra de time travel. Uma frase foi deletada ("Foque em metadata planning,
+  ..."): ela repetia o `description` do frontmatter palavra por palavra e vira contradição
+  sob um cabeçalho `## Não faz`. `## As cinco camadas` teve "antes de rodar qualquer
+  manutenção" trocado por "antes de propor", pela mesma razão.
+
+- **D-DV-10 — "que os executores já têm e os coordenadores usam desde a Fase 5b" vale para
+  seis dos treze.** Medido: os cinco executores mais o `data-quality-reviewer` tinham
+  `## Não faz`; os outros sete coordenadores não. Nos seis a fronteira entrou **dentro** da
+  seção existente e no registro dela — bullet na lista do `data-quality-reviewer`, parágrafo
+  no fim dos cinco executores —, nunca como seção nova ao lado de uma que já existia. Os
+  sete restantes ganharam a seção, sempre antes de `## Como você trabalha`, que é onde os
+  coordenadores fecham.
 
 ---
 

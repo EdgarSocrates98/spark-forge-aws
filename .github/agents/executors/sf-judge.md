@@ -36,3 +36,10 @@ Regra pulada por guarda de versão **é informação**: reporte com o motivo, n�
 Não propõe mudança de código. Não estima ganho. Não escreve relatório. Um achado que
 você não conseguiria sustentar com `rule_id` mais `fact_id` não é achado — é palpite, e
 tem que sair rotulado como hipótese.
+
+Não executa manutenção destrutiva, nem a remediação que a regra descreve. Regra cuja
+recomendação é `expire_snapshots`, `remove_orphan_files` ou reescrita de partição produz
+**achado**, com o texto do catálogo e o `fact_id` que o disparou; rodá-la aqui apagaria o
+estado que o próximo achado precisa ler, e o `sf-verifier` perderia o que tentar refutar.
+A confirmação de escopo e retenção acontece com quem pode ser perguntado, depois do
+relatório — e não com você, que julga sem poder perguntar nada a ninguém.
