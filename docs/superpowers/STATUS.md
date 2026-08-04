@@ -25,7 +25,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **3141** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **3309** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 66**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **16** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **102** | união de `EMITTED_KINDS` |
@@ -618,6 +618,32 @@ chaves, agregados), gates fail-closed opcionais e assinatura de relatório. Ver 
 linha própria abaixo.
 
 Faixa de commits: `a78f3cd` … o commit de documentação que fecha a fase.
+
+**Pontas fechadas depois do merge (`fix/pontas-4a`).** A revisão final da fase
+aprovou os nove critérios do spec e mediu nove pendências; todas foram fechadas,
+e três valem registro por mudarem comportamento ou contrato:
+
+- **Bug real na forma do `benchmark_ref`.** `^f_[0-9a-f]{6}$` aceitava
+  `"f_78d412\n"` — `$` casa **antes** do `\n` final. A âncora passou a `\Z`, e o
+  caso importa duas vezes: um ref lido de arquivo ou colado carrega o terminador
+  de linha, e a camada de pertinência compara a string **crua** contra o conjunto
+  de `fact_id` — a forma que passava com `\n` era a mesma que depois não casava
+  com fact nenhum, trocando rejeição clara por confusa.
+- **O título da `SF-BENCH-003` passou a qualificar a medida:** "Ganho de tempo
+  **de task somado** acompanhado de mais spill ou mais GC". O título é a string
+  que renderiza em todo achado e viaja sozinho; "ganho de tempo" sem qualificação
+  seria lido como relógio, que é o erro que o cabeçalho do catálogo e a
+  `explanation` da 002 existem para impedir.
+- **A justificativa da forma da 003 ganhou guarda em nível de `judge`.** Três
+  documentos afirmam que spill que nasce do zero é o caso que obriga a regra a
+  comparar totais em vez de `_delta_pct`; nenhuma fixture tinha essa forma e o
+  arquivo do comparador nunca chamava `judge`, então uma 003 reescrita sobre o
+  percentual passava verde no corpus inteiro. Fechada com facts construídos
+  (`TestSFBench003SobreOSpillQueNasce`), verificada por mutação.
+
+O spec da fase ganhou seção de desvios (§9) em vez de ser reescrito: três linhas
+dele chamam a medida de *duração*, e uma lista *pico de memória* entre as medidas
+do `bench.run_delta`, que `_RUN_MEASURES` não tem.
 
 ### Fase 4 do roadmap (§16) — rigor — **PARCIALMENTE CONCLUÍDA**
 
