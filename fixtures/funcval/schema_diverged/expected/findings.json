@@ -1,1 +1,61 @@
-[]
+[
+  {
+    "rule_id": "SF-FVAL-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Schema do alvo divergiu — coluna ausente, coluna nova ou tipo mudado",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#schema"
+    },
+    "evidence": [
+      "f_4e4657"
+    ],
+    "measured": {
+      "before_column_count": 4,
+      "after_column_count": 4,
+      "added_column_count": 1,
+      "removed_column_count": 1,
+      "type_changed_column_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O mapa coluna→tipo do alvo não é o mesmo antes e depois. O achado cobre os três movimentos, e o fact citado diz por NOME qual foi qual: coluna que sumiu (`removed_columns`), coluna que nasceu (`added_columns`) e coluna que mudou de tipo (`type_changed_columns`). O motivo de comparar o mapa e não a contagem de colunas está medido: uma coluna removida e outra adicionada deixam `before_column_count` e `after_column_count` IDÊNTICOS, e um check de contagem de colunas não veria absolutamente nada — é exatamente o caso da fixture `schema_diverged`. E mudança de tipo não move contagem nenhuma por construção. Schema é a divergência que sai deste job e entra no próximo. Coluna removida quebra o consumidor na próxima leitura, não nesta escrita; tipo alargado (`int` para `bigint`) passa despercebido até um consumidor com schema fixo falhar; tipo estreitado trunca em silêncio. Ler junto com `knowledge/cross-service-constraints.md` quando houver Athena ou catálogo compartilhado no caminho. A comparação é VERBATIM, e isso é limite declarado: `bigint` contra `BIGINT` sai como mudança de tipo, porque este motor não sabe se os dois lados vieram do mesmo dialeto, e normalizar caixa apagaria `decimal(18,2)` contra `decimal(18,4)` pelo mesmo caminho. Divergência só de caixa é falso positivo **desta** regra, e a correção é padronizar a coleta do resultado, não relaxar a comparação. Limite da área, que vale aqui também: os quatro são proxies. Schema igual não prova que o dado é o mesmo — prova que as colunas e os tipos são os mesmos.",
+    "proposed_change": [
+      "Ler `added_columns`, `removed_columns` e `type_changed_columns` no fact citado antes de qualquer coisa: uma coluna em `removed` e uma em `added` costuma ser renomeação, que é um evento e não dois, e a correção é diferente.",
+      "Se a mudança de schema é intencional, ela não é efeito colateral de tuning: separá-la em outra entrega, com aviso ao consumidor, em vez de embarcá-la numa mudança de performance.",
+      "Localizar a origem do tipo: `cast` explícito, inferência de schema na leitura, `mergeSchema`, evolução de schema Iceberg e mudança de versão de Glue trocam tipo sem que nenhuma linha de transformação mude.",
+      "Levantar quem consome o alvo antes de aceitar coluna removida — `sparkforge analyze consumers` responde isso com artefato, e ausência de consumidor conhecido não é ausência de consumidor."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aceitar coluna nova como inofensiva ignora o custo de leitura e o efeito em consumidor com `SELECT *` e schema fixo; aceitar coluna removida quebra o consumidor na leitura seguinte, e não nesta escrita — o incidente chega depois, sem ligação óbvia com a mudança.",
+      "Mudança de tipo que estreita a precisão (decimal com menos casas, `bigint` para `int`) trunca em silêncio, e o dado truncado não é recuperável a partir do alvo.",
+      "Padronizar a caixa dos tipos no resultado para calar um falso positivo desta regra apaga junto a capacidade de ver mudança real de tipo, se a padronização for feita normalizando o valor em vez da coleta."
+    ],
+    "tradeoffs": [
+      "Comparação verbatim acusa diferença de dialeto e nunca esconde mudança real; comparação normalizada faz o inverso. A escolha está feita, e o preço é este achado precisar de leitura humana quando os dois lados foram coletados de fontes diferentes.",
+      "Um único achado para os três movimentos mantém a renomeação como um evento e obriga a abrir o fact para saber o que mudou. Três achados dariam a leitura imediata e triplicariam o ruído da renomeação."
+    ],
+    "validation": [
+      "`DESCRIBE`/`information_schema` do alvo nos dois lados, coluna e tipo, coletados do MESMO jeito nos dois — divergência de método de coleta produz divergência de dialeto.",
+      "Para cada coluna em `type_changed_columns`, conferir o valor mínimo, o máximo e a contagem de nulos nos dois lados: truncamento aparece ali antes de aparecer em qualquer agregado.",
+      "Para cada coluna em `removed_columns`, listar consumidores conhecidos do alvo e conferir se algum a projeta.",
+      "Contagem total e agregado de controle nos dois lados, para separar mudança só de schema de mudança de schema com mudança de dado."
+    ],
+    "rollback": [
+      "Reverter o commit da mudança e repetir a coleta de schema dos dois lados, confirmando que os três conjuntos ficam vazios.",
+      "Se o alvo já foi escrito com o schema novo, restaurar exige decidir sobre o dado já gravado — tratar como manutenção, com escopo e retenção confirmados antes, nunca como sobrescrita automática."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Não há limiar: o gatilho é a desigualdade de dois mapas coluna→tipo que o operador coletou, e o comparador já a observou. A decisão de campo é a SEVERIDADE, e o P0 vem do alcance, não do tamanho: divergência de schema atravessa a fronteira do job e chega ao consumidor, e o incidente aparece numa leitura futura sem ligação visível com a mudança que o causou. As três divergências (coluna nova, coluna removida, tipo mudado) compartilham a severidade porque nenhuma measure do fact as ordena por gravidade; quando houver corpus que sustente o corte, converter para `severity_by` sobre `measures.removed_column_count` e `measures.type_changed_column_count`."
+      }
+    ]
+  }
+]

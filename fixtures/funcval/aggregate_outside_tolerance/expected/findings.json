@@ -1,1 +1,63 @@
-[]
+[
+  {
+    "rule_id": "SF-FVAL-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Agregado de controle divergiu além da tolerância",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#agg:sum:valor"
+    },
+    "evidence": [
+      "f_ff15fa"
+    ],
+    "measured": {
+      "value_before": 1000000.0,
+      "value_after": 1050000.0,
+      "abs_delta": 50000.0,
+      "relative_delta": 0.0476
+    },
+    "threshold": {
+      "relative_tolerance": 1e-09
+    },
+    "runtime_scope": {},
+    "explanation": "Um agregado de controle — a soma de uma coluna numérica do alvo — divergiu entre as duas execuções. Como a divergência foi julgada depende do tipo da coluna, e a distinção não é burocrática: Para coluna INTEIRA ou DECIMAL a comparação é EXATA e não há tolerância. A aritmética dessas somas é associativa, então reordenar partições não muda o resultado em nada, e qualquer diferença é diferença de dado. Para coluna de PONTO FLUTUANTE (`float`, `real`, `double`) a comparação é relativa, contra `threshold.relative_tolerance`. A razão é aritmética e não é preferência: soma de ponto flutuante depende da ORDEM DE REDUÇÃO, e um `repartition` legítimo muda a ordem e o total nos últimos bits. Comparação exata ali daria falso positivo justamente nas mudanças que esta fase existe para aprovar. O QUE A TOLERÂNCIA SIGNIFICA, e é o ponto que este texto existe para fixar: divergência DENTRO da tolerância NÃO É PROVA DE IGUALDADE. É ausência de prova de diferença. A soma pode estar errada em um centavo por linha e cair dentro do limiar num total grande o bastante; o que o silêncio desta regra afirma é apenas que a diferença observada é compatível com reassociação de ponto flutuante, e nada além disso. O limiar é `field-heuristic` declarada: não há fonte oficial dizendo a partir de quantos ULP uma diferença deixa de ser reassociação, e o número está em `sources` com o raciocínio que o escolheu, para ser ajustado com evidência — não para ser citado como autoridade. Ler junto com `SF-FVAL-001` no mesmo relatório: agregado divergindo com a contagem divergindo é quase sempre a mesma causa, e a contagem é o lugar mais fácil de investigar. Agregado divergindo com a contagem parada é troca de valor dentro das mesmas linhas — `cast`, arredondamento, mudança de regra de negócio, tratamento diferente de nulo. Limite da área: os quatro são proxies. Agregado igual não prova que o dado é o mesmo — `sum` é cego para duas linhas que trocam valores entre si, e é cego para erros que se cancelam.",
+    "proposed_change": [
+      "Separar as duas naturezas antes de investigar: se `attrs.comparison` é `exact`, não há margem a discutir e a diferença é de dado. Se é `relative`, confirmar a ordem de grandeza — reassociação de ponto flutuante vive muitas ordens abaixo de qualquer erro de lógica.",
+      "Conferir a contagem no mesmo relatório: agregado e contagem divergindo juntos é uma causa só, e a contagem é o eixo mais barato de investigar.",
+      "Com a contagem parada, procurar o que mudou o VALOR dentro das linhas: `cast`, mudança de precisão decimal, `round`, tratamento de nulo (`sum` ignora nulo, `+` propaga), e regra de negócio que a mudança tocou de passagem.",
+      "Refazer a medição do agregado com `sum` sobre a coluna convertida para decimal nos dois lados, quando a coluna for de ponto flutuante e a divergência estiver perto do limiar: decimal remove a reassociação da conta e responde se a diferença é de aritmética ou de dado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Baixar a tolerância para calar a dúvida transforma toda mudança de particionamento num achado, e o custo é a área inteira perder credibilidade — o falso positivo aqui recai justamente sobre as mudanças que a fase deve aprovar.",
+      "Subir a tolerância para calar este achado é o inverso, e mais grave: ela é o único mecanismo que separa reassociação de erro de valor, e afrouxá-la sem evidência apaga essa separação em vez de resolvê-la.",
+      "Concluir 'o agregado bateu, o dado está igual' é o erro que a área inteira existe para impedir. `sum` não vê troca de valores entre linhas nem erros que se cancelam."
+    ],
+    "tradeoffs": [
+      "Tolerância só onde a aritmética a exige mantém inteiro e decimal exatos e paga com um limiar a mais para manter. O caminho alternativo — uma tolerância única para todo agregado — seria mais simples de ler e engoliria diferença real em coluna inteira, que é justamente onde não há desculpa aritmética.",
+      "Um limiar baixo acusa reassociação legítima; um alto cala divergência pequena e real. O número escolhido fica cerca de duas ordens de grandeza acima do erro de reassociação esperado numa soma de bilhão de linhas, e é dado editável — não código."
+    ],
+    "validation": [
+      "`sum` da coluna nos dois lados sobre o mesmo recorte, repetido ao menos uma vez: em coluna de ponto flutuante o próprio total varia entre execuções, e uma medição só não separa reassociação de mudança.",
+      "`sum` da mesma coluna convertida para `decimal` com precisão suficiente nos dois lados — remove a reassociação da conta e responde de forma definitiva se a diferença é aritmética ou de dado.",
+      "Contagem de nulos da coluna nos dois lados: `sum` ignora nulo, então uma coluna que passou a ter nulos muda o total sem que nenhuma linha suma.",
+      "Mínimo, máximo e contagem da coluna nos dois lados, além da soma: soma igual com mínimo e máximo diferentes é troca de valores entre linhas, que é a cegueira declarada deste proxy.",
+      "Contagem total no mesmo relatório, para separar 'mudaram os valores' de 'mudaram as linhas'."
+    ],
+    "rollback": [
+      "Reverter o commit da mudança e repetir a medição do agregado nos dois lados, confirmando que a divergência volta para dentro da tolerância (ou para zero, em coluna exata).",
+      "Se o alvo já foi escrito com os valores divergentes, tratar a correção como manutenção de dado, com escopo e retenção confirmados antes — reescrever a partição inteira para 'consertar a soma' apaga o que havia lá."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "`relative_tolerance: 1.0e-9` é decisão de campo. Não há fonte oficial que diga a partir de quantos ULP uma diferença de soma deixa de ser reassociação, e o valor certo depende do número de partições, do tamanho da redução e da magnitude dos termos. A ordem de grandeza vem de uma conta: `double` tem epsilon de máquina da ordem de 2e-16, e o erro de uma redução em árvore sobre N termos cresce aproximadamente com epsilon vezes a raiz de N — para um bilhão de linhas isso dá algo em torno de 1e-11, e o limiar escolhido deixa cerca de duas ordens de grandeza de folga. Ele está aqui para ser ajustado com evidência, não para ser citado como autoridade. ARMADILHA DE FORMATO, medida: o valor está escrito `1.0e-9` e não `1e-9` porque o resolver de float do `yaml.safe_load` exige PONTO DECIMAL na mantissa — `1e-9`, `1e+9` e `1E9` voltam como STRING, `1.0e-9` volta como float. Um limiar em string não falha na carga; ele falha na avaliação, e pior que ficar inerte: `float > str` levanta `TypeError`, que `_expr_matches` não engole. A severidade P1 é de campo: divergência de agregado é acionável e admite explicação benigna que contagem e schema não admitem, e não há measure que distinga divergência marginal de divergência grosseira; quando houver corpus que sustente o corte, converter para `severity_by` sobre `measures.relative_delta`."
+      }
+    ]
+  }
+]

@@ -20,4 +20,5 @@ runtime:
 expects_kinds:
   - funcval.analyzed
   - funcval.check_delta
-expects_rules: []
+expects_rules:
+  - SF-FVAL-004

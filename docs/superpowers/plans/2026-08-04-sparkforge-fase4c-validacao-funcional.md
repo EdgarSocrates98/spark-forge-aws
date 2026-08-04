@@ -885,19 +885,19 @@ conflitante entre os lados está coberto por teste unitário em
 
 ---
 
-## Task 6: as cinco regras, e o gate que endurece
+## Task 6: as cinco regras, e o gate que endurece — **CONCLUÍDA**
 
 **Files:**
 - Create: `rules/catalog/funcval.yaml`
 - Modify: `rules/catalog/routing.yaml`, `fixtures/funcval/*`, `manifest.json`, `README.md`
 
-- [ ] **Step 1: O cabeçalho**
+- [x] **Step 1: O cabeçalho**
 
 Registra: `runtime_scope: {}` (gatilho é comparação de valor); por que a
 comparação vive no comparador e não no `when`; **o limite dos proxies**; e por que
 a tolerância existe só para ponto flutuante.
 
-- [ ] **Step 2: As cinco**
+- [x] **Step 2: As cinco**
 
 `SF-FVAL-001` (contagem, P0), `002` (schema, P0), `003` (chave duplicada, P0),
 `004` (agregado fora da tolerância, P1), `005` (cobertura parcial, P1).
@@ -922,7 +922,7 @@ O campo de limiar é **`threshold`, singular** — a Fase 4a mediu (D-4a-22) que
 plural não levanta erro: o motor monta contexto vazio, `_expr_matches` engole o
 `ExprError`, e a regra fica inerte para sempre.
 
-- [ ] **Step 3: O gate endurece**
+- [x] **Step 3: O gate endurece**
 
 `rules/catalog/routing.yaml`, `functional_validation_defined`: troque
 `advisory_reason` por `satisfied_by: funcval.plan`, `produced_by` com o comando
@@ -930,9 +930,95 @@ real, e `guards_phases` — que a Task 1 da Fase 4b mediu como decisão, não co
 ordem de tupla. Meça em qual fase ele morde, pelo mesmo critério de lá: o gate não
 pode morder numa fase em que a rota que o destrava ainda opera.
 
-- [ ] **Step 4: Regenere, leia o diff, confira `clean_equivalence` vazia**
+- [x] **Step 4: Regenere, leia o diff, confira `clean_equivalence` vazia**
 
-- [ ] **Step 5: Contagem de regras** — `manifest.json` e as três ocorrências no `README.md`
+- [x] **Step 5: Contagem de regras** — `manifest.json` e as três ocorrências no `README.md`
+
+66 → **71**; 12 → **13** áreas, com `SF-FVAL` 5. `manifest.json`
+(`knowledge_base.rule_count`, o único número que `test_rule_count_equals_the_real_catalog`
+mede contra `load_catalog()`) e as três ocorrências do `README.md` da raiz. Mais
+duas linhas do `rules/catalog/README.md`, que o plano não listava e que teriam
+apodrecido em silêncio: a lista de códigos de área da tabela de campos (`FVAL`
+entrou) e a tabela "Arquivos" (`funcval.yaml` entrou).
+
+**O diff dos findings, fixture por fixture** — nove diretórios, cinco acesos:
+
+| Fixture | Achado | Severidade | `subject.symbol` do achado |
+|---|---|---|---|
+| `count_diverged` | `SF-FVAL-001` | P0 | `db.eventos#count` |
+| `schema_diverged` | `SF-FVAL-002` | P0 | `db.eventos#schema` |
+| `duplicate_key_appeared` | `SF-FVAL-003` | P0 | `db.eventos#key:pedido_id` |
+| `aggregate_outside_tolerance` | `SF-FVAL-004` | P1 | `db.eventos#agg:sum:valor` |
+| `partial_coverage` | `SF-FVAL-005` | P1 | `db.eventos` |
+| `aggregate_within_tolerance` | — | — | `relative_delta: 1e-12` contra `threshold.relative_tolerance: 1.0e-9` |
+| `clean_equivalence` | — | — | os quatro proxies batendo, `planned 5 / reported 5` |
+| `plan_sem_chave`, `plan_com_chave_declarada` | — | — | fixtures de PLANO; nenhuma regra desta área lê `funcval.plan` |
+
+Cada fixture acende exatamente a regra do nome dela, e o `subject` do achado é o
+CHECK e não a tabela nas quatro primeiras — é o `same_subject` funcionando, e é o
+que garante que N divergências virem N achados. Nenhum `findings.json` fora de
+`fixtures/funcval/` mudou: as regras exigem `funcval.check_delta` ou
+`funcval.analyzed`, e nenhum outro corpus os emite.
+
+### Desvios medidos na implementação — texto para a §11 do spec
+
+**D-4c-23 — a `SF-FVAL-004` precisa de DUAS condições, porque o comparador tem
+dois modos de agregado, e uma delas só cobre o ponto flutuante.** O plano descreve
+a 004 como "quem decide, comparando `relative_delta` contra
+`threshold.relative_tolerance`", e isso é verdade para a comparação RELATIVA — o
+ponto flutuante, onde o fact sai sem `diverged` pela D-4c-10. Medido: um
+`agg:sum:<coluna>` de coluna INTEIRA ou DECIMAL é comparado de forma EXATA
+(`_mode_of` classifica `bigint`/`decimal(18,2)` como `_COMPARISON_EXACT`), sai
+COM `diverged` no fact, e o `relative_delta` dele é minúsculo por construção —
+uma soma de `bigint` que mudou em uma unidade sobre quinhentos milhões dá
+`relative_delta` da ordem de 2e-9, abaixo de qualquer tolerância utilizável. Uma
+004 escrita só sobre `relative_delta` deixaria essa divergência aparecer em
+`diverged_check_count` da sentinela e em achado NENHUM: silêncio com cara de
+aprovação, que é o defeito que a fase inteira existe para acusar. E aplicar a
+tolerância ao agregado exato contrariaria a D-4 do spec, que reserva tolerância
+para onde a aritmética a exige. Decisão: `when.any` com duas condições — a exata
+lendo `attrs.diverged` (observação, como a 001 e a 002) e a relativa lendo
+`measures.relative_delta` contra o limiar (juízo, que mora no YAML). Sob
+`same_subject` o grupo é um `funcval.check_delta` único, então no máximo uma das
+duas casa por grupo e a evidência do achado é sempre o agregado que disparou. O
+corpus não exercita o ramo exato — `agg:sum:cliente_id` é idêntico nos dois lados
+nas sete fixtures de comparação —, e isso fica registrado como dívida de fixture,
+não como ramo não medido: a classificação de `bigint` como exato está medida em
+`tests/test_facts_funcval.py`.
+
+**D-4c-24 — `1e-9` em YAML é STRING, e um limiar em string não falha na carga.**
+Medido com `yaml.safe_load`: `1e-9`, `1e+9` e `1E9` voltam todos como `str`;
+`1.0e-9` e `1.e-9` voltam como `float`. O resolver de float do PyYAML exige PONTO
+DECIMAL na mantissa — o sinal do expoente não muda nada —, e a notação curta que
+qualquer um escreveria cai fora dele. O efeito é da mesma família do `thresholds` plural da
+D-4a-22 — o defeito não aparece na carga —, mas é pior num ponto: o plural deixa
+a regra INERTE, enquanto a string faz a comparação `float > str` levantar
+`TypeError`, que `_expr_matches` **não** engole (ele só captura `ExprError`), e o
+`judge` inteiro cai. O limiar da 004 está escrito `1.0e-9` por isso, com a razão
+no `sources` da regra e no cabeçalho do arquivo — é o terceiro item da lista de
+armadilhas de lá, ao lado do `threshold` singular e do `abs()` proibido.
+
+**D-4c-25 — o gate morde em `report`, e não em `validation`, e quem decide é o
+`phase_in` da ROUTE-015.** A R1 da Task 1 da Fase 4b diz que o gate não pode
+morder numa fase em que a rota que o destrava ainda opera, senão a rota vira letra
+morta. A rota aqui é a **ROUTE-015**, única com
+`blocked_by: [functional_validation_defined]`, e o `phase_in` dela é
+`[validation, report]`. Guardar `validation` mataria a rota: o `when` dela é
+`gates.functional_validation_defined equals false`, e um case sob rigor não
+entraria em `validation` com o gate falso — a única rota que manda definir a
+validação nunca apareceria para ninguém, que é exatamente a classe de defeito que
+o comentário da AGENT-008 diz, com todas as letras, que este catálogo não aceita.
+Guardando só `report`, o case entra em `validation`, a ROUTE-015 casa ali, o
+operador roda `funcval plan`, e o fechamento passa a exigir o plano. E o `reason`
+da própria ROUTE-015 já dizia isso em português: *"definir a validação antes de
+fechar o relatório"*. A R2 (a fase guardada precisa ser uma em que o produtor já
+possa existir) não empurra nada, ao contrário do `baseline_captured`:
+`funcval.plan` é derivado de `pyspark.write` e `catalog.table_schema`, satisfazível
+desde `facts`. A R3 dá a lista como sufixo de `PHASES` a partir da primeira fase
+guardada — e `report` é a última, então o sufixo tem um elemento só.
+Consequência para o `README.md` da raiz, corrigida no mesmo commit: `report`
+passou a ser guardada por **três** gates, e o exemplo de `case update --phase
+report` de lá listava duas evidências.
 
 ---
 

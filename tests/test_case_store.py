@@ -30,10 +30,14 @@ PHASE_SO_DE_FLOWS = "hypothesis"
 PHASE_ANTES_DE_QUALQUER_GATE = "diagnosis"
 KIND_BASELINE = "bench.run_delta"
 KIND_FLOWS = "callgraph.reachable_spark_work"
-# `validation` e `report` sao guardadas pelos DOIS gates com produtor. Satisfazer
-# so um deixaria o outro bloquear, e o teste passaria (ou falharia) pelo motivo
-# errado -- a armadilha que a Task 1 deixou escrita.
-TODOS_OS_KINDS = {KIND_BASELINE, KIND_FLOWS}
+# Fase 4c: `functional_validation_defined` ganhou produtor (`funcval.plan`) e
+# guarda `report` -- so `report`, porque a ROUTE-015 que o destrava opera em
+# `[validation, report]` e guardar `validation` a mataria (R1 da Task 1 da 4b).
+KIND_FUNCVAL = "funcval.plan"
+# `validation` e guardada por DOIS gates com produtor; `report`, pelos TRES.
+# Satisfazer so parte deles deixaria o resto bloquear, e o teste passaria (ou
+# falharia) pelo motivo errado -- a armadilha que a Task 1 da 4b deixou escrita.
+TODOS_OS_KINDS = {KIND_BASELINE, KIND_FLOWS, KIND_FUNCVAL}
 
 
 class TestNewCase:
@@ -329,18 +333,37 @@ class TestStrictGates:
         assert "baseline_captured" not in str(exc.value)
 
     def test_gate_sem_produtor_declarado_nunca_bloqueia(self):
-        """O criterio da secao 1 do spec, travado: `functional_validation_defined`
-        e `dominant_bottleneck_identified` nao tem `satisfied_by`, entao nem sob
-        rigor eles impedem a transicao -- e continuam falsos no case.
+        """O criterio da secao 1 do spec, travado: `dominant_bottleneck_identified`
+        nao tem `satisfied_by`, entao nem sob rigor ele impede a transicao -- e
+        continua falso no case.
 
-        `report` e guardada pelos dois gates COM produtor, entao os kinds deles
+        Ate a Fase 4c este teste falava de DOIS gates sem produtor. A 4c entregou
+        `funcval.plan` e `functional_validation_defined` endureceu, entao sobrou
+        um -- e a dominancia continua sem produtor pela razao de sempre: ela e
+        ordenacao entre candidatos, e nenhum dos kinds do vocabulario a afirma.
+
+        `report` e guardada pelos TRES gates COM produtor, entao os kinds deles
         vao junto: sem isso o teste falharia por causa deles, e nao provaria nada
-        sobre os gates sem produtor."""
+        sobre o gate sem produtor."""
         case = self._case()
         novo = set_phase(case, "report", fact_kinds=TODOS_OS_KINDS)
         assert novo["phase"] == "report"
-        assert novo["gates"]["functional_validation_defined"] is False
         assert novo["gates"]["dominant_bottleneck_identified"] is False
+
+    def test_funcval_plan_e_exigido_em_report_e_nao_em_validation(self):
+        """R1 da Task 1 da 4b, medida na 4c: a ROUTE-015 (`blocked_by:
+        [functional_validation_defined]`) opera em `[validation, report]`.
+        Guardar `validation` mataria a unica rota que manda definir a validacao --
+        ela so casa com o gate FALSO, e o case nunca entraria ali com ele falso."""
+        sem_funcval = {KIND_BASELINE, KIND_FLOWS}
+        assert set_phase(self._case(), "validation", fact_kinds=sem_funcval)["phase"] == (
+            "validation"
+        )
+        with pytest.raises(CaseError) as exc:
+            set_phase(self._case(), "report", fact_kinds=sem_funcval)
+        assert "functional_validation_defined" in str(exc.value)
+        assert "funcval.plan" in str(exc.value)
+        assert "sparkforge funcval plan" in str(exc.value)
 
     def test_o_booleano_manual_nao_destrava_sob_rigor(self):
         """Desvio D-4b-2: `case update --gate X --gate-value true` seria override
