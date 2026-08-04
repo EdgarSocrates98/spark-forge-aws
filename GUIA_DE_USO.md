@@ -89,11 +89,20 @@ quatro `review-*` (`review-emr-cluster`, `review-data-validation`,
 `optimize-pyspark-code` e `optimize-parquet-layout`. São as investigações fechadas: o
 subagente coleta, julga sobre artefato, e o pai lê e resume o resultado.
 
-Três delas declaram também `agent:` — `review-emr-cluster` → `emr-infra-reviewer`,
-`review-data-validation` → `data-quality-reviewer`, `diagnose-oom` →
-`glue-incremental-performance-architect`. As outras nove são declaradas por mais de um
-coordenador; `agent:` não tem resposta única e o Devin escolhe o perfil, que é a forma
-documentada (o campo tem default *none*).
+**Duas** delas declaram também `agent:` — `review-emr-cluster` → `emr-infra-reviewer` e
+`review-data-validation` → `data-quality-reviewer`. Nas outras **dez**, `agent:` não tem
+resposta única e o Devin escolhe o perfil, que é a forma documentada (o campo tem default
+*none*).
+
+Nove são ambíguas por serem declaradas por dois a quatro coordenadores. A décima é
+`diagnose-oom`, e a razão dela é diferente: ela **era** declarante único, mas só porque
+`spark-performance-architect` não a lista no `skills:` dele — embora liste
+`diagnose-data-skew`, `analyze-spark-ui` e `tune-glue-job`, toda a vizinhança do mesmo
+diagnóstico. Omissão numa lista pré-existente não é juízo de competência, e o perfil que
+sobrava era o `glue-incremental-performance-architect`, cuja skill homônima este
+repositório declara **não-despachável** justamente por orquestrar as outras via
+`next-step`. Publicar aquele `agent:` seria roteamento mecânico com cara de decisão — o
+mesmo defeito que a ordem alfabética produziria.
 
 **`sparkforge-diagnose` não despacha, de propósito.** Ela abre o case e roteia, e o
 ciclo de vida do case é o que faz a investigação atravessar sessões e ferramentas.

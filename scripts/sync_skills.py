@@ -334,6 +334,30 @@ def coordinators_by_skill() -> dict[str, tuple[str, ...]]:
     return {skill: tuple(sorted(names)) for skill, names in sorted(relation.items())}
 
 
+def orchestrator_profiles() -> frozenset[str]:
+    """Perfis que NAO sao destino de despacho de investigacao fechada.
+
+    Derivado, nao mantido a mao: e o conjunto dos perfis de `agents/*.md` cuja
+    skill HOMONIMA este arquivo ja declara nao-despachavel. Hoje ele tem
+    exatamente um elemento -- `glue-incremental-performance-architect` --, e a
+    razao escrita ao lado dela e a mesma que vale para o perfil: ela "orquestra
+    as skills especializadas por `next-step`", e subagente nao gera subagente por
+    default.
+
+    O par skill/perfil homonimo e o unico ponto onde este repositorio ja julgou o
+    METODO de um coordenador, e o julgamento e transferivel: despachar uma
+    investigacao fechada para dentro do perfil que orquestra publica justamente o
+    metodo que a decisao de nao-despacho recusou. Se um dia a skill virar
+    despachavel, a exclusao some sozinha -- que e a propriedade que uma lista
+    mantida a mao nao teria.
+    """
+    return frozenset(
+        name
+        for name in NON_DISPATCHABLE_SKILLS
+        if (AGENTS_SRC / f"{name}.md").is_file()
+    )
+
+
 def agent_for_skill(name: str) -> str | None:
     """O perfil que a skill `name` nomeia em `agent:`, ou `None`.
 
@@ -354,9 +378,23 @@ def agent_for_skill(name: str) -> str | None:
     `subagent: true` sozinho e forma documentada: `agent` tem default "none" na
     tabela de frontmatter da fonte, e `subagent` sozinho roda a skill como
     subagente no perfil que o harness escolher.
+
+    **Declarante unico nao basta, e a revisao final mediu por que** (`diagnose-oom`,
+    2026-08-04). Ela era "declarante unico" so porque
+    `spark-performance-architect` **nao lista** `diagnose-oom` no `skills:` dele --
+    embora liste `diagnose-data-skew`, `analyze-spark-ui` e `tune-glue-job`, toda a
+    vizinhanca do mesmo diagnostico. Isso e **omissao numa lista pre-existente**,
+    nao juizo de competencia; e o perfil que sobrava era justamente o orquestrador.
+    Publicar aquilo seria o mesmo defeito que
+    `test_a_ordem_alfabetica_seria_o_perfil_errado` existe para provar: propriedade
+    mecanica com cara de decisao. Por isso `orchestrator_profiles()` entra aqui --
+    a assimetria de novo: um `agent:` a menos custa o roteamento do harness, que e
+    forma documentada; um `agent:` errado publica competencia que ninguem declarou.
     """
     coordinators = coordinators_by_skill().get(name, ())
-    return coordinators[0] if len(coordinators) == 1 else None
+    if len(coordinators) != 1:
+        return None
+    return None if coordinators[0] in orchestrator_profiles() else coordinators[0]
 
 
 def _newline_of(lines: list[str]) -> str:

@@ -379,10 +379,40 @@ class TestRelacaoDerivada:
             if len(coordenadores) > 1:
                 assert sync_skills.agent_for_skill(skill) is None, skill
 
-    def test_agent_for_skill_nomeia_o_unico_quando_ha_um_so(self):
+    def test_agent_for_skill_nomeia_o_unico_quando_ele_nao_orquestra(self):
+        orquestradores = sync_skills.orchestrator_profiles()
         for skill, coordenadores in RELACAO_MEDIDA.items():
-            if len(coordenadores) == 1:
+            if len(coordenadores) == 1 and coordenadores[0] not in orquestradores:
                 assert sync_skills.agent_for_skill(skill) == coordenadores[0], skill
+
+    def test_declarante_unico_que_orquestra_nao_vira_agent(self):
+        """`diagnose-oom`, medida na revisao final de 2026-08-04.
+
+        Ela era declarante unico **por omissao**: `spark-performance-architect`
+        nao lista `diagnose-oom` no `skills:` dele, embora liste
+        `diagnose-data-skew`, `analyze-spark-ui` e `tune-glue-job` -- toda a
+        vizinhanca do mesmo diagnostico. E o perfil que sobrava era o
+        orquestrador, cuja skill homonima este repositorio declara
+        nao-despachavel exatamente por orquestrar via `next-step`.
+        """
+        assert RELACAO_MEDIDA["diagnose-oom"] == (
+            "glue-incremental-performance-architect",
+        )
+        assert "diagnose-oom" not in _lista_de_topo(
+            (AGENTS / "spark-performance-architect.md").read_text(encoding="utf-8"),
+            "skills",
+        )
+        assert sync_skills.agent_for_skill("diagnose-oom") is None
+
+    def test_o_conjunto_de_orquestradores_e_derivado_e_tem_um_elemento(self):
+        """Derivado de `NON_DISPATCHABLE_SKILLS` cruzado com os perfis em disco --
+        nao e lista mantida a mao. `sparkforge-diagnose` tambem nao despacha e
+        NAO entra: nao existe perfil homonimo a ela."""
+        assert sync_skills.orchestrator_profiles() == {
+            "glue-incremental-performance-architect"
+        }
+        assert "sparkforge-diagnose" in sync_skills.NON_DISPATCHABLE_SKILLS
+        assert not (AGENTS / "sparkforge-diagnose.md").exists()
 
     def test_a_ordem_alfabetica_seria_o_perfil_errado(self):
         """O contraexemplo que matou a alternativa "declara o primeiro em ordem
@@ -601,7 +631,6 @@ class TestSkillsReais:
             if "agent" in front:
                 com_agent[skill.name] = front["agent"]
         assert com_agent == {
-            "diagnose-oom": "glue-incremental-performance-architect",
             "review-data-validation": "data-quality-reviewer",
             "review-emr-cluster": "emr-infra-reviewer",
         }
@@ -752,8 +781,12 @@ class TestInvarianteBidirecional:
         assert not quebras, quebras
 
     def test_o_invariante_nao_e_vazio(self):
-        """Recorte que esvaziasse o lado esquerdo passaria sem olhar nada."""
-        assert len(self._agent_por_skill()) == 3
+        """Recorte que esvaziasse o lado esquerdo passaria sem olhar nada.
+
+        Eram tres ate a revisao final de 2026-08-04; `diagnose-oom` saiu porque
+        o declarante unico dela era o orquestrador, e a unicidade vinha de uma
+        omissao no `skills:` de `spark-performance-architect`."""
+        assert len(self._agent_por_skill()) == 2
 
     def test_perfil_que_sumiu_e_pego(self):
         assert _quebras(
