@@ -12,6 +12,11 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
 ## Faz
 
 1. Monta o relatório a partir dos achados que **sobreviveram** ao `sf-verifier`.
+   Se o case tiver `gate_overrides`, a seção "Gates com override" de
+   `templates/performance-report.md` sai preenchida com gate, data e motivo,
+   copiados de `sparkforge_case_get` — omitir afirmaria um rigor que não foi
+   prestado, e a seção fica **dentro** do corpo assinado, então apagá-la depois
+   de assinar invalida a assinatura.
 2. `sparkforge_validate_output` em cada recomendação, antes de apresentar. Ganho
    quantificado sem `benchmark_ref` é rejeitado pelo schema — não contorne.
    **`benchmark_ref` não é texto livre desde a Fase 4a**: ele cita o `fact_id` de

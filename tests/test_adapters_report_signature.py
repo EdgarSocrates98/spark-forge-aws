@@ -603,6 +603,64 @@ class TestVersaoDaAssinaturaSeparaRegraDeAdulteracao:
         assert _core.report_verify(report, _findings(tmp_path))["valid"] is True
 
 
+def _template():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    return (root / "templates" / "performance-report.md").read_text(encoding="utf-8")
+
+
+class TestOOverrideAparecaNoRelatorio:
+    """A quarta clausula do criterio 6 do spec, que nao existia.
+
+    *"Override exige motivo, fica no case, aparece em `resume` e no relatorio"* --
+    as tres primeiras estavam feitas; a quarta nao: `grep -rn override
+    templates/ skills/ agents/` saia vazio e `report_sign` nunca leu o case.
+
+    A clausula fecha pelo CORPO, nao pelo bloco de assinatura, e a razao esta
+    medida no STATUS: o bloco mora fora do hash por construcao, entao uma linha
+    de override ali seria auto-declarada e so verificavel contra o case -- o que
+    exigiria `--repo` tambem no `verify`, e `--repo` opcional significaria pular
+    a checagem em silencio. No corpo a garantia e real e ja existe: o corpo
+    ESTA no hash, entao editar a divulgacao depois de assinar invalida.
+    """
+
+    def test_o_template_tem_a_secao_de_override(self):
+        assert "Gates com override" in _template()
+
+    def test_a_secao_diz_de_onde_vem_o_conteudo(self):
+        """Sem o comando, a secao vira um cabecalho que ninguem sabe preencher."""
+        texto = _template()
+        assert "sparkforge case get" in texto or "sparkforge resume" in texto
+        assert "gate_overrides" in texto
+
+    def test_a_secao_fica_dentro_do_corpo_assinado(self):
+        """O corpo assinado e tudo que vem ANTES do delimitador de abertura."""
+        texto = _template()
+        assert texto.index("Gates com override") < texto.index(
+            "<!-- sparkforge:signature -->"
+        )
+
+    def test_editar_a_divulgacao_depois_de_assinar_invalida(self, tmp_path):
+        """O que a secao no corpo garante e o que uma linha no bloco nao
+        garantiria: apagar o override de um relatorio assinado quebra a
+        assinatura, e `verify` acusa no corpo."""
+        report = _report(tmp_path, body=_template())
+        findings = _findings(tmp_path)
+        _core.report_sign(report, findings)
+        assert _core.report_verify(report, findings)["valid"] is True
+        path = tmp_path / "relatorio.md"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "## 9. Gates com override", "## 9. Nada a declarar"
+            ),
+            encoding="utf-8",
+        )
+        resultado = _core.report_verify(report, findings)
+        assert resultado["valid"] is False
+        assert resultado["diverged"] == ["body"]
+
+
 class TestOTemplateCarregaOBloco:
     def test_o_template_declara_onde_o_bloco_mora(self):
         from pathlib import Path
