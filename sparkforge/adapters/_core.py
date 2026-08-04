@@ -1011,8 +1011,8 @@ def benchmark_runs(
     "nenhuma diferenca". O `path_hint` e `"<antes>..<depois>"` porque o fato
     afirma sobre o PAR, nao sobre um dos dois arquivos.
     """
-    before = _load_facts_file(before_path)
-    after = _load_facts_file(after_path)
+    before = _load_facts_file(before_path, _FACTS_FROM_EVENT_LOG, "--before")
+    after = _load_facts_file(after_path, _FACTS_FROM_EVENT_LOG, "--after")
     facts = build_benchmark(before, after, path_hint=f"{before_path}..{after_path}")
     return _facts_page(facts, "bench.unresolved", kind, limit, cursor)
 
@@ -1106,12 +1106,28 @@ def _facts_from_dicts(payload: Any) -> list[Fact]:
     return facts
 
 
-def _load_facts_file(facts_path: str) -> list[Fact]:
+# O verbo que produz o arquivo de facts DEPENDE do chamador, e cravar um so
+# produzia mensagem inacionavel: `benchmark` le a saida de `analyze event-log`,
+# nunca a de `analyze pyspark`. `label` existe pela mesma razao que em
+# `analyze_terraform_diff` -- com dois arquivos na linha de comando, "arquivo nao
+# encontrado" nao diz qual dos dois refazer.
+_FACTS_FROM_PYSPARK = "sparkforge analyze pyspark --path <dir> --out {path}"
+_FACTS_FROM_EVENT_LOG = "sparkforge analyze event-log --path <event-log.jsonl> --out {path}"
+_FACTS_FROM_BENCHMARK = "sparkforge benchmark --before <antes> --after <depois> --out {path}"
+
+
+def _load_facts_file(
+    facts_path: str,
+    producer: str = _FACTS_FROM_PYSPARK,
+    label: str | None = None,
+) -> list[Fact]:
     path = Path(facts_path)
     if not path.is_file():
+        side = f" para {label}" if label else ""
         raise AdapterError(
-            f"Arquivo de facts nao encontrado: {facts_path}. Rode "
-            f"`sparkforge analyze pyspark --path <dir> --out {facts_path}` para gera-lo.",
+            f"Arquivo de facts nao encontrado{side}: {facts_path}\n"
+            f"  Rode o verbo que produz este lado:\n"
+            f"    {producer.format(path=facts_path)}",
             exit_code=2,
         )
     try:
@@ -1556,7 +1572,10 @@ def validate_output(
     """
     fact_ids: set[str] | None = None
     if facts_path is not None:
-        fact_ids = {fact.id for fact in _load_facts_file(facts_path)}
+        # O mesmo defeito do lado do benchmark: o `fact_id` que este caminho
+        # procura e o de um `bench.run_delta`, e mandar rodar `analyze pyspark`
+        # produziria um arquivo onde ele nunca vai estar.
+        fact_ids = {fact.id for fact in _load_facts_file(facts_path, _FACTS_FROM_BENCHMARK)}
     try:
         validate_finding(finding, fact_ids)
         return {"valid": True, "errors": []}
