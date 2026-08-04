@@ -1,0 +1,24 @@
+name: aggregate_within_tolerance
+proves: >
+  A metade NEGATIVA da SF-FVAL-004, e a que decide se a regra e usavel: o
+  `repartition` legitimo. A soma de `valor` sai de 1.000.000,0 e chega a
+  1.000.000,000001 -- `relative_delta` 1e-12, ordem de grandeza da
+  reassociacao de uma soma de um milhao de doubles em outra ordem de
+  particao. Se a comparacao de float fosse exata, esta fixture acusaria
+  justamente a mudanca que a fase existe para APROVAR. Duas coisas o
+  golden tem de mostrar juntas: `value_before` e `value_after` saem
+  IGUAIS, porque `_round` corta em tres casas para estabilizar o
+  `Fact.id`; e `relative_delta` sobrevive em tres digitos SIGNIFICATIVOS,
+  1e-12, porque tres casas decimais o zerariam e entregariam 0,0 ao
+  catalogo -- toda divergencia pequena passaria (D-4c-12). O par
+  `aggregate_outside_tolerance`/`aggregate_within_tolerance` separa-se por
+  esse numero e por mais nada.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+expects_rules: []

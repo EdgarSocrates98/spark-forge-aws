@@ -1,0 +1,26 @@
+name: duplicate_key_appeared
+proves: >
+  A chave. Antes nenhum valor de `pedido_id` ocorria mais de uma vez;
+  depois, TRES ocorrem -- a mudanca passou a normalizar o identificador
+  (trim e caixa alta) e tres valores que eram distintos colidiram. Por
+  isso a contagem NAO se move: as mesmas linhas continuam la, e sao os
+  valores da chave que deixaram de ser unicos. Agregados e schema tambem
+  ficam parados, entao o unico check divergente e `key:pedido_id`, e o
+  gatilho estrito da SF-FVAL-003 (antes zero, depois maior que zero) fica
+  isolado. A chave e DECLARADA pelo operador, nao derivada: nenhum dos 102
+  kinds nomeia chave de negocio (D-4c-1). O `origin: "declared"` e o
+  `derived_from: []` que provam essa procedencia estao no golden de
+  `plan_com_chave_declarada` -- o golden de comparacao guarda o que a
+  comparacao produziu, e ali o plano e ENTRADA.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+funcval:
+  keys:
+    - pedido_id
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+expects_rules: []

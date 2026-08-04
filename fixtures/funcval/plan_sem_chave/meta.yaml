@@ -1,0 +1,27 @@
+name: plan_sem_chave
+proves: >
+  A fixture do PLANO, sem `--key`. Dois alvos no mesmo corpus, e a
+  ausencia escrita nas duas formas que ela tem.
+  Em `db.eventos`, que casa com o dump do catalogo, o plano pede quatro
+  checks e `undeclared_axes` traz exatamente `["keys"]`, com a razao por
+  escrito: nenhum dos 102 kinds dos 16 extratores nomeia chave de
+  negocio. O eixo que falta fica DITO, e nao calado -- mesma disciplina de
+  `dq.unresolved` e `bench.unresolved`.
+  Em `s3://bucket/curated/eventos/`, que nao casa com simbolo nenhum, o
+  plano pede so a contagem e `undeclared_axes` traz os TRES eixos
+  (`aggregates`, `keys`, `schema`), com um `funcval.unresolved` de
+  `catalog_schema_unmatched` ao lado. E a D-4c-6 no golden: se
+  `undeclared_axes` fosse campo do eixo de chaves, este plano estaria
+  calando dois eixos enquanto declara um.
+  Os dois planos juntos tambem provam a D-4c-4 -- um `funcval.plan` por
+  alvo distinto, porque as chaves de `checks` nao tem namespace de alvo e
+  um plano com dois alvos colidiria nelas.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - funcval.plan
+  - funcval.unresolved
+expects_rules: []
