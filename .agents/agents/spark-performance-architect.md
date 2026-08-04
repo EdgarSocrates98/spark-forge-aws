@@ -1,7 +1,6 @@
 ---
 name: spark-performance-architect
 description: Use quando precisar coordenar o diagnóstico e a otimização de um job PySpark no AWS Glue — correlacionar código, plano físico, Spark UI, Parquet e Iceberg e identificar o gargalo dominante antes de recomendar mudanças.
-tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - sparkforge-diagnose
   - optimize-pyspark-code

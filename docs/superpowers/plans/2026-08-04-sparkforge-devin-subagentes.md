@@ -164,7 +164,7 @@ função foi criada e testada, não aplicada; aplicá-la é a Task 2.
 **Files:**
 - Modify: `scripts/sync_skills.py`, `tests/test_agents_parity.py`
 
-- [ ] **Step 1: Teste primeiro**
+- [x] **Step 1: Teste primeiro**
 
 O gate hoje é `filecmp.cmp(src, dst, shallow=False)`. Ele passa a comparar
 `dst.read_text()` com `render_agent(src.read_text(), platform)`, e a plataforma
@@ -174,7 +174,12 @@ sai do próprio alvo — `.agents/` é `devin`, `.claude/` é `claude`,
 Escreva o teste que prova que **espelho editado à mão é pego**: renderize,
 grave, altere um byte do espelho, e confirme que o gate acusa `DIVERGENTE`.
 
-- [ ] **Step 2: Rode, regenere, leia o diff**
+Entregue em `tests/test_agents_parity.py::TestGatePegaEspelhoEditadoAMao`: seis
+alvos parametrizados (as três plataformas × coordenador e executor), mais o
+espelho apagado virando `AUSENTE`, mais o teste que o gate **antigo não poderia
+passar** — cópia literal da fonte no espelho do Devin é `DIVERGENTE`.
+
+- [x] **Step 2: Rode, regenere, leia o diff**
 
 Run: `python scripts/sync_skills.py` e depois `git diff .agents/`
 
@@ -183,13 +188,57 @@ coordenadores + cinco executores). Se aparecer reordenação de chave ou mudanç
 de corpo, o renderizador está fazendo round-trip de YAML — corrija antes de
 seguir.
 
-- [ ] **Step 3: `TestNoPlatformKnowledge` continua valendo?**
+Medido: `13 files changed, 13 deletions(-)`, uma linha por arquivo, todas
+`tools: ...`. `git diff --numstat -- .claude .github` **vazio**. Diff lido
+inteiro, linha a linha.
+
+- [x] **Step 3: `TestNoPlatformKnowledge` continua valendo?**
 
 `tests/test_agents_parity.py` proíbe marcadores (`threshold:`, `runtime_scope:`,
 `retrieved:`) nos espelhos de plataforma — a Fase 4a bateu nele. Confirme que a
 renderização não introduz nem remove marcador, e que o teste segue verde.
 
-- [ ] **Step 4: Commite**
+Verde. A renderização só **remove** `tools:`, que não é marcador proibido, e não
+acrescenta nada — nenhum dos três marcadores entra nem sai.
+
+- [x] **Step 4: Commite**
+
+**Desvios medidos na Task 2**
+
+- **D-DV-4 — um teste existente teve que mudar, e a mudança é a própria tese
+  da task.** `TestMirrors::test_devin_agents_mirror_matches_source` afirmava
+  `filecmp.cmp(agents/X.md, .agents/agents/X.md)` — byte-identidade com a
+  fonte. Isso deixou de ser o invariante e virou o **defeito**: o espelho do
+  Devin byte-idêntico à fonte é justamente o que sai com `tools:`. Renomeado
+  para `test_devin_agents_mirror_matches_the_render`, compara contra
+  `render_agent(..., "devin")`. O teste irmão de `.claude/` ficou intocado, com
+  `filecmp` e tudo — lá o espelho é passthrough e byte-identidade continua
+  sendo o contrato. O gate antigo não poderia passar o teste novo
+  `test_copia_literal_da_fonte_no_espelho_do_devin_vira_divergente`, que é o
+  que prova que a troca de mecanismo **apertou** em vez de afrouxar.
+
+- **D-DV-5 — a plataforma é derivada do alvo, não é uma quarta lista.** O Step 1
+  diz "a plataforma sai do próprio alvo". A tentação era acrescentar um terceiro
+  campo às tuplas de `AGENT_MIRRORS` e um segundo às de `EXECUTOR_MIRRORS` —
+  duas listas paralelas obrigadas a concordar, que é a família de defeito da
+  Fase 5c nos dois `EXTRACTORS`. Entrou `platform_for(path)` sobre
+  `PLATFORM_BY_MIRROR_ROOT`, e alvo fora das três raízes levanta `ValueError`
+  em vez de cair em default que publicaria o arquivo cru numa plataforma nova.
+
+- **D-DV-6 — a comparação é em bytes, não em texto.** O Step 1 escreve
+  `dst.read_text()`. Literal, isso afrouxaria o gate: `read_text()` aplica
+  newline universal, e um espelho gravado com CRLF passaria a comparar igual a
+  uma fonte LF. `rendered_bytes` lê com `read_bytes().decode("utf-8")`,
+  renderiza, e reencoda; a comparação é `dst.read_bytes() == ...`. É o mesmo
+  cuidado que `test_fim_de_linha_e_preservado` fixou na Task 1, agora do lado
+  do gate.
+
+- **D-DV-7 — `tests/test_ci_workflow.py` não precisou mudar.** O contrato do
+  script é o mesmo: mesma flag `--check`, mesmos códigos de saída, mesma
+  família de mensagens. O que mudou foi o critério interno de divergência, e o
+  workflow não o conhece — `test_runs_sync_skills_check` segue válido sem
+  edição. A escrita passa a imprimir `REND` no lugar de `COPY` para os perfis,
+  e nenhum teste depende dessa string.
 
 ---
 

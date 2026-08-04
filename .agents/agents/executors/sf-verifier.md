@@ -2,7 +2,6 @@
 name: sf-verifier
 role: executor
 function: verify
-tools: Read, Grep, Glob, Bash
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.

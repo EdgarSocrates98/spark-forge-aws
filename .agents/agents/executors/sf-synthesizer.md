@@ -2,7 +2,6 @@
 name: sf-synthesizer
 role: executor
 function: synthesize
-tools: Read, Bash, Write
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.

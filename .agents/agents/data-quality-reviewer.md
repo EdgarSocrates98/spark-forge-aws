@@ -1,7 +1,6 @@
 ---
 name: data-quality-reviewer
 description: Use quando o job PySpark valida dado — PyDeequ, Great Expectations ou validação artesanal — e a pergunta é se a validação está no lugar certo, se ela tem consequência, e quanto ela custa em passadas sobre o dado.
-tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-data-validation
   - review-pyspark-pr
