@@ -1012,6 +1012,86 @@ _VALIDATE_OUTPUT_SCHEMA: dict[str, Any] = {
     },
 }
 
+_REPORT_SIGN_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "report",
+        "findings",
+        "signature",
+        "fact_ids",
+        "rule_ids",
+        "catalog_version",
+        "schema_version",
+        "proves",
+    ],
+    "properties": {
+        "report": {"type": "string"},
+        "findings": {"type": "string"},
+        "signature": {"type": "string", "pattern": "^sig_[0-9a-f]{64}$"},
+        "fact_ids": {"type": "array", "items": {"type": "string"}},
+        "rule_ids": {"type": "array", "items": {"type": "string"}},
+        "catalog_version": {"type": "integer"},
+        "schema_version": {"type": "integer"},
+        "proves": {
+            "type": "string",
+            "description": (
+                "O limite da assinatura, no proprio payload e nao so na documentacao: "
+                "ela prova correspondencia, nunca autoria."
+            ),
+        },
+    },
+}
+
+_REPORT_CHECK_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["ok", "detail"],
+    "properties": {"ok": {"type": "boolean"}, "detail": {"type": "string"}},
+}
+
+_REPORT_VERIFY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "report",
+        "findings",
+        "valid",
+        "status",
+        "signature",
+        "expected_signature",
+        "diverged",
+        "checks",
+        "reason",
+    ],
+    "properties": {
+        "report": {"type": "string"},
+        "findings": {"type": "string"},
+        "valid": {"type": "boolean"},
+        "status": {
+            "type": "string",
+            "enum": ["signed", "diverged", "missing_block", "malformed_block"],
+        },
+        "signature": {"type": ["string", "null"]},
+        "expected_signature": {"type": ["string", "null"]},
+        "diverged": {
+            "type": "array",
+            "items": {"type": "string", "enum": ["evidence", "catalog", "body"]},
+            "description": (
+                "Quais das TRES partes nao bateram. Vazio com `valid` falso significa "
+                "que nao houve o que comparar -- bloco ausente ou malformado."
+            ),
+        },
+        "checks": {
+            "type": "object",
+            "required": ["evidence", "catalog", "body"],
+            "properties": {
+                "evidence": _REPORT_CHECK_ITEM,
+                "catalog": _REPORT_CHECK_ITEM,
+                "body": _REPORT_CHECK_ITEM,
+            },
+        },
+        "reason": {"type": "string"},
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -1862,6 +1942,66 @@ TOOLS: dict[str, dict[str, Any]] = {
         "outputSchema": _VALIDATE_OUTPUT_SCHEMA,
         "annotations": _READ_ONLY,
     },
+    "sparkforge_report_sign": {
+        "description": (
+            "Escreve, no fim do relatorio, o bloco que prova CORRESPONDENCIA entre o "
+            "texto, a evidencia e o catalogo que o produziram -- nunca autoria: nao ha "
+            "chave e nao ha segredo, e qualquer um com os mesmos findings produz a mesma "
+            "assinatura. O limite vai escrito dentro do bloco, porque bloco que sugira "
+            "autoridade mente por omissao. O corpo assinado e tudo que vem ANTES do "
+            "delimitador de abertura, entao o bloco nunca entra no hash que carrega. Os "
+            "quatro campos nao-corpo saem do arquivo de FINDINGS, e nao do de facts: so "
+            "o finding carrega `evidence` (os fact_id citados), `rule_id`, "
+            "`catalog_version` e `schema_version`. Reassinar e barato e idempotente."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["report_path", "findings_path"],
+            "properties": {
+                "report_path": {
+                    "type": "string",
+                    "description": "Markdown do relatorio. E reescrito no lugar.",
+                },
+                "findings_path": {
+                    "type": "string",
+                    "description": "Findings (JSON) gerados por `sparkforge judge --out`.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _REPORT_SIGN_SCHEMA,
+            "O que foi assinado, ou erro se o relatorio/findings nao servem.",
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
+    "sparkforge_report_verify": {
+        "description": (
+            "Confere a assinatura de um relatorio e diz QUAL das tres partes divergiu -- "
+            "evidencia, catalogo ou corpo --, em vez de devolver apenas 'invalido'. "
+            "Cobre tambem bloco ausente e bloco malformado, que sao estados diferentes "
+            "de 'nao corresponde': relatorio sem bloco nao e relatorio adulterado, e "
+            "confundir os dois faria o leitor desconfiar do texto errado."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["report_path", "findings_path"],
+            "properties": {
+                "report_path": {"type": "string"},
+                "findings_path": {
+                    "type": "string",
+                    "description": (
+                        "O mesmo arquivo de findings contra o qual o relatorio foi "
+                        "assinado."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _REPORT_VERIFY_SCHEMA,
+            "O veredito por parte, ou erro se o relatorio/findings nao existem.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_collect_event_log": {
         "description": (
             "Baixa o Spark event log de um job run via `s3.list_objects_v2`/`get_object` "
@@ -2276,6 +2416,14 @@ def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_report_sign(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.report_sign(args["report_path"], args["findings_path"])
+
+
+def _h_report_verify(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.report_verify(args["report_path"], args["findings_path"])
+
+
 def _h_collect_event_log(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_event_log(
         args["repo"],
@@ -2355,6 +2503,8 @@ _HANDLERS = {
     "sparkforge_judge": _h_judge,
     "sparkforge_rules_lookup": _h_rules_lookup,
     "sparkforge_validate_output": _h_validate_output,
+    "sparkforge_report_sign": _h_report_sign,
+    "sparkforge_report_verify": _h_report_verify,
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,

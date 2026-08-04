@@ -83,6 +83,8 @@
     "sparkforge_knowledge_path",
     "sparkforge_next_step",
     "sparkforge_playbook",
+    "sparkforge_report_sign",
+    "sparkforge_report_verify",
     "sparkforge_resume",
     "sparkforge_rules_lookup",
     "sparkforge_runtime_detect",

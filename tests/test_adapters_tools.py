@@ -53,6 +53,8 @@ class TestToolSurface:
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
+            "sparkforge_report_sign",
+            "sparkforge_report_verify",
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
@@ -103,9 +105,19 @@ class TestToolSurface:
             if spec["annotations"]["openWorldHint"] is True:
                 assert spec["annotations"]["readOnlyHint"] is True, name
 
-    def test_only_case_writers_are_not_read_only(self):
+    def test_only_case_and_report_writers_are_not_read_only(self):
+        """A quarta lista manual desta classe, e ela mudou junto com as outras
+        tres na Fase 4b: `sparkforge_report_sign` escreve o bloco de assinatura
+        DENTRO do relatorio, no lugar. Um `sign` que so devolvesse o bloco para
+        alguem colar seria a versao decorativa da capacidade -- e a colagem
+        manual e exatamente onde o corpo assinado deixaria de ser o corpo
+        escrito. `report_verify` fica de fora: so le."""
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
-        assert writers == {"sparkforge_case_open", "sparkforge_case_update"}
+        assert writers == {
+            "sparkforge_case_open",
+            "sparkforge_case_update",
+            "sparkforge_report_sign",
+        }
 
     def test_every_tool_has_a_description(self):
         for name, spec in TOOLS.items():
@@ -947,6 +959,28 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         }[name]
         return call_tool(name, args)
 
+    if name in ("sparkforge_report_sign", "sparkforge_report_verify"):
+        lib = _write_job(tmp_path)
+        facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
+        judged = call_tool("sparkforge_judge", {"facts": facts["items"], "glue": "5.0"})
+        # Sem finding, `report sign` recusa por desenho -- e o dict de erro
+        # validaria contra o ramo de erro do `oneOf`, fazendo o teste passar
+        # pelo motivo errado. A asercao trava o branch no caminho de sucesso.
+        assert judged["items"], "o job de amostra precisa render pelo menos um finding"
+        findings_path = tmp_path / "findings.json"
+        findings_path.write_text(json.dumps(judged["items"]), encoding="utf-8")
+        report = tmp_path / "relatorio.md"
+        report.write_text(
+            "# Relatorio de Performance\n\n## 1. Resumo executivo\n\n"
+            "- Gargalo dominante: escrita com coalesce(1)\n",
+            encoding="utf-8",
+        )
+        args = {"report_path": str(report), "findings_path": str(findings_path)}
+        signed = call_tool("sparkforge_report_sign", args)
+        if name == "sparkforge_report_sign":
+            return signed
+        return call_tool("sparkforge_report_verify", args)
+
     if name == "sparkforge_collect_verify":
         return call_tool("sparkforge_collect_verify", {"repo": str(tmp_path)})
 
@@ -999,6 +1033,14 @@ class TestErrorShapesValidateToo:
         ),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),
+        (
+            "sparkforge_report_sign",
+            {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
+        ),
+        (
+            "sparkforge_report_verify",
+            {"report_path": "<tmp>/nao-existe.md", "findings_path": "<tmp>/nada.json"},
+        ),
     )
 
     @staticmethod

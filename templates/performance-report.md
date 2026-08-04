@@ -62,3 +62,16 @@ Use o contrato de recomendação do projeto.
 ## 9. Riscos e rollback
 
 ## 10. Próximos experimentos
+
+## 11. Assinatura de correspondência
+
+O bloco abaixo é escrito por
+`sparkforge report sign --report <este arquivo> --findings <findings.json>`, e
+conferido por `sparkforge report verify` com os mesmos dois arquivos. Não o
+edite à mão: ele é recomputado inteiro a cada assinatura, e o corpo assinado é
+tudo que vem **antes** do delimitador de abertura — inclusive esta seção. Nada
+pode vir depois do delimitador de fechamento; texto ali ficaria fora da
+assinatura sem que o leitor tivesse como saber.
+
+<!-- sparkforge:signature -->
+<!-- /sparkforge:signature -->

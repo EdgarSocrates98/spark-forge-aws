@@ -24,9 +24,19 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
    benchmark rodado, o efeito sai **qualitativo e rotulado como hipótese** — e
    isso passa. Inventar um `f_` bem formado para satisfazer o gate é a fraude que
    a forma existe para impedir.
-3. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
-4. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
-5. Registra no case com `sparkforge_case_update`.
+3. `sparkforge_report_sign` no relatório gravado, com o mesmo arquivo de findings
+   que você julgou (`judge --out`). O bloco escrito no fim prova
+   **correspondência** entre aquele texto, aquela evidência e aquele catálogo —
+   e **não** autoria: não há chave, e qualquer um com os mesmos findings produz a
+   mesma assinatura. Quem receber confere com `sparkforge_report_verify`, que
+   diz qual das três partes divergiu — evidência, catálogo ou corpo — em vez de
+   devolver só "inválido". Editar a prosa depois de assinar invalida, e é para
+   isso que serve: reassinar é barato, texto editado passando por verificado não
+   é. O corpo assinado é tudo que vem antes do delimitador do bloco, então nada
+   pode ser acrescentado depois dele.
+4. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
+5. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
+6. Registra no case com `sparkforge_case_update`.
 
 ## Pressupõe
 
