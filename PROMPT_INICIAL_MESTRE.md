@@ -46,11 +46,20 @@ Nesta ordem, sempre:
    julgamento próprio — a árvore de decisão vive em `rules/catalog/routing.yaml`,
    incluindo as rotas `AGENT-001`…`AGENT-008` que indicam qual dos oito
    coordenadores (`agents/*.md`) usar a partir da fase do case e do achado
-   dominante. Em Claude Code, o coordenador despacha os cinco executores
+   dominante. **Três plataformas despacham:** Claude Code, o **Devin CLI** e o
+   **Devin Local agent** do Devin Desktop (com o toggle *Subagents (Preview)*
+   ligado). Nas três, o coordenador despacha os cinco executores
    (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`)
-   como subagentes. Em Devin, Codex ou Copilot CI, sem despacho de subagente,
-   `sparkforge playbook <coordenador>` (CLI) ou a tool MCP `sparkforge_playbook`
-   dá a mesma decomposição em passos.
+   como subagentes — no Devin, pelos perfis que este repositório publica em
+   `.agents/agents/` e `.claude/agents/`. **`sparkforge playbook <coordenador>`
+   (CLI) ou a tool MCP `sparkforge_playbook` é o piso das cinco**: é o único
+   caminho em Codex e Copilot CI, onde nenhuma pesquisa de fontes mediu
+   despacho, e é o caminho nas três quando o despacho está desligado
+   (`subagents_enabled: false` é escolha do usuário, e a opção *None* de
+   "Default subagent model" é de um admin da organização — nenhum arquivo deste
+   repositório impede as duas). Ele dá a mesma decomposição em passos; perde o
+   paralelismo, mantém o método. Fontes:
+   `knowledge/devin/agents-and-subagents.md`.
 
 Duas regras não negociáveis, válidas para toda a investigação: **nenhum
 número aparece na saída sem um `fact_id` que o sustente**, e **um ganho
