@@ -1,3 +1,7 @@
+import ast
+import re
+from pathlib import Path
+
 import pytest
 import yaml
 
@@ -140,6 +144,112 @@ class TestMutators:
         original = self._case()
         set_phase(original, "diagnosis")
         assert original["phase"] == "intake"
+
+
+_PACOTE = Path(__file__).resolve().parents[1] / "sparkforge"
+
+# O grep literal do criterio 1: `<algo>["phase"] =`, e nao `==`. Ele varre TEXTO,
+# de proposito -- e a mesma busca que um revisor humano faria, e ela pega a linha
+# mesmo em arquivo que o parser recusasse.
+_GREP_ATRIBUI_PHASE = re.compile(r"""\[\s*["']phase["']\s*\]\s*=(?!=)""")
+
+
+def _fontes_do_pacote(pacote=None):
+    for arquivo in sorted((pacote or _PACOTE).rglob("*.py")):
+        yield arquivo, arquivo.read_text(encoding="utf-8")
+
+
+def _funcao_por_linha(arvore):
+    """Linha -> nome da funcao que a contem, a mais interna.
+
+    `ast.walk` visita em largura, entao a funcao externa e registrada antes da
+    aninhada e a aninhada sobrescreve o intervalo dela -- que e o que se quer:
+    um `case["phase"] = x` dentro de um closure precisa ser atribuido ao
+    closure, nunca a funcao que o hospeda.
+    """
+    escopo = {}
+    for no in ast.walk(arvore):
+        if isinstance(no, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            for linha in range(no.lineno, (no.end_lineno or no.lineno) + 1):
+                escopo[linha] = no.name
+    return escopo
+
+
+def _atribuicoes_de_phase(pacote=None):
+    """(arquivo, linha, funcao) de toda atribuicao a uma chave `"phase"`."""
+    raiz = pacote or _PACOTE
+    achados = []
+    for arquivo, texto in _fontes_do_pacote(raiz):
+        arvore = ast.parse(texto, filename=str(arquivo))
+        escopo = _funcao_por_linha(arvore)
+        for no in ast.walk(arvore):
+            if isinstance(no, ast.Assign):
+                alvos = list(no.targets)
+            elif isinstance(no, (ast.AugAssign, ast.AnnAssign)):
+                alvos = [no.target]
+            else:
+                continue
+            for alvo in alvos:
+                if (
+                    isinstance(alvo, ast.Subscript)
+                    and isinstance(alvo.slice, ast.Constant)
+                    and alvo.slice.value == "phase"
+                ):
+                    achados.append(
+                        (
+                            arquivo.relative_to(raiz).as_posix(),
+                            alvo.lineno,
+                            escopo.get(alvo.lineno, "<modulo>"),
+                        )
+                    )
+    return sorted(achados)
+
+
+class TestSetPhaseEOUnicoPontoDeTransicao:
+    """Criterio 1 do spec da Fase 4b, que pedia um teste que nao existia.
+
+    O D-1 afirma que `set_phase` e o unico ponto de passagem entre fases, *"e o
+    teste que prova isso e grep: nenhuma outra funcao escreve `case["phase"]`"*.
+    O invariante era verdadeiro e **nada varria o fonte** -- o proximo caminho
+    lateral entraria com a suite inteira verde, e o gate da fase seria
+    contornavel por uma atribuicao direta em qualquer adaptador.
+
+    O que o teste NAO cobre, dito onde ele opera: criacao (`new_case` monta o
+    dicionario com `"phase": "intake"`, que e literal e nao transicao) e escrita
+    por caminho dinamico (`case[chave] = ...`, `case.update({...})`). A primeira
+    e correta por construcao; a segunda ofuscaria a transicao para um leitor
+    humano tambem, e e a familia que a revisao de codigo pega.
+    """
+
+    def test_so_set_phase_atribui_a_chave_phase(self):
+        achados = _atribuicoes_de_phase()
+        assert [(a, f) for a, _linha, f in achados] == [("case/store.py", "set_phase")]
+
+    def test_o_grep_do_criterio_acha_um_unico_ponto(self):
+        """A varredura literal, do jeito que o criterio a escreveu."""
+        hits = [
+            f"{arquivo.relative_to(_PACOTE).as_posix()}:{numero}"
+            for arquivo, texto in _fontes_do_pacote()
+            for numero, linha in enumerate(texto.splitlines(), start=1)
+            if _GREP_ATRIBUI_PHASE.search(linha)
+        ]
+        assert len(hits) == 1, hits
+        assert hits[0].startswith("case/store.py:")
+
+    def test_a_varredura_acusaria_um_caminho_lateral(self, tmp_path):
+        """Prova que o teste acima morde: um modulo que transita por fora e
+        detectado, inclusive dentro de funcao aninhada. Sem esta contraparte,
+        uma varredura quebrada passaria calada -- o modo de falha que a Fase 4a
+        mediu em `benchmark_ref`."""
+        (tmp_path / "atalho.py").write_text(
+            "def promove(case):\n"
+            "    def interna():\n"
+            "        case['phase'] = 'report'\n"
+            "    interna()\n"
+            "    return case\n",
+            encoding="utf-8",
+        )
+        assert _atribuicoes_de_phase(tmp_path) == [("atalho.py", 3, "interna")]
 
 
 class TestGateContract:
