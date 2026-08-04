@@ -1067,22 +1067,36 @@ _REPORT_VERIFY_SCHEMA: dict[str, Any] = {
         "valid": {"type": "boolean"},
         "status": {
             "type": "string",
-            "enum": ["signed", "diverged", "missing_block", "malformed_block"],
+            "enum": [
+                "signed",
+                "diverged",
+                "version_mismatch",
+                "missing_block",
+                "malformed_block",
+            ],
         },
         "signature": {"type": ["string", "null"]},
         "expected_signature": {"type": ["string", "null"]},
         "diverged": {
             "type": "array",
-            "items": {"type": "string", "enum": ["evidence", "catalog", "body"]},
+            "items": {
+                "type": "string",
+                "enum": ["version", "evidence", "catalog", "body"],
+            },
             "description": (
-                "Quais das TRES partes nao bateram. Vazio com `valid` falso significa "
-                "que nao houve o que comparar -- bloco ausente ou malformado."
+                "Quais das QUATRO partes nao bateram. Vazio com `valid` falso "
+                "significa que nao houve o que comparar -- bloco ausente ou "
+                "malformado. Com `version` na lista, `body` fica de fora mesmo com "
+                "`checks.body.ok` falso: a regra de normalizacao mudou entre a "
+                "assinatura e esta build, e atribuir a diferenca ao corpo seria "
+                "chamar de adulteracao o que e mudanca de regra."
             ),
         },
         "checks": {
             "type": "object",
-            "required": ["evidence", "catalog", "body"],
+            "required": ["version", "evidence", "catalog", "body"],
             "properties": {
+                "version": _REPORT_CHECK_ITEM,
                 "evidence": _REPORT_CHECK_ITEM,
                 "catalog": _REPORT_CHECK_ITEM,
                 "body": _REPORT_CHECK_ITEM,

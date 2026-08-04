@@ -55,6 +55,7 @@ from sparkforge.facts.terraform import (
     extract_terraform_path,
     extract_terraform_tree,
 )
+from sparkforge.findings import signature as _signature
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
@@ -1603,6 +1604,7 @@ _REPORT_SIGN_HINT = (
 # prosa em volta e acentuada, mas o que o `verify` faz parsing precisa casar
 # byte-a-byte em qualquer console.
 _BLOCK_SIGNATURE = re.compile(r"^- assinatura: (\S+)\s*$", re.MULTILINE)
+_BLOCK_SIGNATURE_VERSION = re.compile(r"^- signature_version: (\d+)\s*$", re.MULTILINE)
 _BLOCK_FACT_IDS = re.compile(r"^- fact_ids: (.*)$", re.MULTILINE)
 _BLOCK_RULE_IDS = re.compile(r"^- rule_ids: (.*)$", re.MULTILINE)
 _BLOCK_CATALOG_VERSION = re.compile(r"^- catalog_version: (\d+)\s*$", re.MULTILINE)
@@ -1610,7 +1612,16 @@ _BLOCK_SCHEMA_VERSION = re.compile(r"^- schema_version: (\d+)\s*$", re.MULTILINE
 
 # Ordem fixa, e nao a de um `set`: `diverged` e lida por humano, e a mesma
 # divergencia sairia em ordem diferente entre execucoes se viesse de conjunto.
-_SIGNATURE_PARTS = ("evidence", "catalog", "body")
+# `version` vem primeiro porque ela QUALIFICA as outras: quando a regra de
+# normalizacao mudou, "o corpo nao fecha" deixa de significar "o corpo mudou".
+_SIGNATURE_PARTS = ("version", "evidence", "catalog", "body")
+
+# Bloco sem a linha de versao so pode ter saido da unica versao que nunca a
+# escreveu -- a 1, a primeira. Nao e default silencioso, e nao serve para forjar
+# validade: a versao entra DENTRO do hash, entao declarar 1 num corpo assinado
+# sob 2 faz a assinatura nao fechar. O que ela evita e o oposto: um relatorio
+# assinado antes desta linha existir sendo lido como bloco malformado.
+_SIGNATURE_VERSION_IMPLICITA = 1
 
 
 def _load_findings_file(findings_path: str) -> list[dict[str, Any]]:
@@ -1789,6 +1800,14 @@ def _render_signature_block(signature: str, parts: dict[str, Any]) -> str:
     usa para isolar QUAL das tres partes divergiu. Sem elas, um arquivo de
     findings diferente do assinado e um corpo editado produzem a mesma falha
     unica -- "nao bate" --, que e a resposta que o criterio 8 do spec recusa.
+
+    `signature_version` esta aqui pela mesma razao, uma casa acima. Ela ja
+    entrava DENTRO do hash -- e era o que garantia que duas normalizacoes
+    diferentes produzissem assinaturas diferentes --, mas o bloco nao a
+    declarava, e sem a declaracao `verify` nao tinha como dizer POR QUE nao
+    fechou: um relatorio assinado sob a regra anterior saia identico a um corpo
+    adulterado. A versao no hash garante que as assinaturas DIFEREM; a versao no
+    bloco e o que permite atribuir a diferenca.
     """
     fact_ids = ", ".join(parts["fact_ids"])
     rule_ids = ", ".join(parts["rule_ids"])
@@ -1800,6 +1819,7 @@ def _render_signature_block(signature: str, parts: dict[str, Any]) -> str:
         [
             _SIGNATURE_OPEN,
             f"- assinatura: {signature}",
+            f"- signature_version: {_signature.SIGNATURE_VERSION}",
             f"- evidência: {evidencia}",
             f"- fact_ids: {fact_ids}",
             f"- rule_ids: {rule_ids}",
@@ -1874,7 +1894,15 @@ def _parse_signature_block(block: str) -> tuple[dict[str, Any] | None, str | Non
             f"assinatura `{signature}` fora da forma esperada (`sig_` + 64 hex)"
         )
 
-    fields: dict[str, Any] = {"signature": signature}
+    version_match = _BLOCK_SIGNATURE_VERSION.search(block)
+    fields: dict[str, Any] = {
+        "signature": signature,
+        "signature_version": (
+            int(version_match.group(1))
+            if version_match
+            else _SIGNATURE_VERSION_IMPLICITA
+        ),
+    }
     for key, pattern in (
         ("fact_ids", _BLOCK_FACT_IDS),
         ("rule_ids", _BLOCK_RULE_IDS),
@@ -1901,17 +1929,31 @@ def _blank_checks(detail: str) -> dict[str, dict[str, Any]]:
 
 
 def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
-    """Diz QUAL das tres partes divergiu -- evidencia, catalogo ou corpo.
+    """Diz QUAL das partes divergiu -- versao, evidencia, catalogo ou corpo.
 
-    Criterio 8 do spec da Fase 4b. As tres sao recomputadas separadamente, e a
-    isolacao vem de segurar as outras duas no valor DECLARADO pelo bloco:
+    Criterio 8 do spec da Fase 4b. Elas sao recomputadas separadamente, e a
+    isolacao vem de segurar as outras no valor DECLARADO pelo bloco:
 
+    - `version`: o `signature_version` declarado contra o desta build. Ele vem
+      primeiro porque QUALIFICA os demais: `SIGNATURE_VERSION` entra dentro do
+      hash justamente para que duas normalizacoes diferentes nunca produzam a
+      mesma assinatura -- so que ate a linha existir no bloco, o efeito disso
+      era um relatorio de versao anterior saindo identico a um corpo adulterado
+      (`status: diverged`, `diverged: ["body"]`, "o corpo foi editado depois da
+      emissao"). A versao no hash garante que as assinaturas DIFEREM; a versao
+      no bloco e o que permite dizer por que;
     - `evidence`: os `fact_ids`/`rule_ids` declarados contra os do arquivo de
       findings informado agora;
     - `catalog`: idem para `catalog_version`/`schema_version`;
     - `body`: `compute_signature` do corpo atual com a evidencia e o catalogo
       **declarados** -- se ela bate, o corpo esta intacto mesmo que os findings
       de agora sejam outros; se nao bate, o corpo (ou o proprio bloco) mudou.
+
+    Com a versao divergente, `body` sai como **nao avaliavel** e fica fora de
+    `diverged`: esta build so sabe normalizar sob a versao dela, entao
+    recomputar responderia sobre a regra de agora e nunca sobre o corpo de
+    entao. `evidence` e `catalog` continuam sendo comparados, porque nenhum dos
+    dois passa pela normalizacao.
 
     O bloco e dado auto-declarado e editavel -- ele mora fora do hash por
     construcao. Por isso o veredito `valid` nunca sai dele: sai das tres
@@ -1974,6 +2016,10 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
 
     parts = _signature_parts(findings_path)
 
+    declared_version = declared["signature_version"]
+    corrente = _signature.SIGNATURE_VERSION
+    version_ok = declared_version == corrente
+
     evidence_ok = (
         declared["fact_ids"] == parts["fact_ids"]
         and declared["rule_ids"] == parts["rule_ids"]
@@ -1992,6 +2038,20 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
     body_ok = body_signature == declared["signature"]
 
     checks = {
+        "version": {
+            "ok": version_ok,
+            "detail": (
+                f"o bloco foi assinado sob signature_version {declared_version}, a "
+                f"mesma que esta build calcula"
+                if version_ok
+                else (
+                    f"o bloco foi assinado sob signature_version {declared_version} e "
+                    f"esta build assina sob {corrente}: a regra de normalizacao "
+                    "mudou entre as duas, e assinatura diferente aqui significa "
+                    "REGRA diferente, nao corpo adulterado"
+                )
+            ),
+        },
         "evidence": {
             "ok": evidence_ok,
             "detail": (
@@ -2037,11 +2097,24 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
                     "catalogo DECLARADOS no bloco: o corpo foi editado depois da "
                     "emissao, ou o proprio bloco foi"
                 )
+                if version_ok
+                else (
+                    "nao avaliavel: esta build so sabe normalizar sob "
+                    f"signature_version {corrente}, e o bloco foi assinado sob "
+                    f"{declared_version}. Recomputar aqui responderia sobre a regra "
+                    "de agora, nunca sobre o corpo de entao"
+                )
             ),
         },
     }
 
-    diverged = [part for part in _SIGNATURE_PARTS if not checks[part]["ok"]]
+    # Com a versao divergente, `body` fica FORA de `diverged` mesmo com `ok`
+    # falso: atribuir a divergencia ao corpo seria exatamente a afirmacao que
+    # esta build nao pode sustentar. `evidence` e `catalog` continuam entrando,
+    # porque nenhum dos dois depende da normalizacao -- eles comparam o que o
+    # bloco declara com o arquivo de findings, e essa comparacao segue valendo.
+    avaliaveis = _SIGNATURE_PARTS if version_ok else ("version", "evidence", "catalog")
+    diverged = [part for part in avaliaveis if not checks[part]["ok"]]
     expected_signature = compute_signature(
         body,
         parts["fact_ids"],
@@ -2056,7 +2129,12 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
             "findings produz a mesma assinatura."
         )
     else:
-        nomes = {"evidence": "evidencia", "catalog": "catalogo", "body": "corpo"}
+        nomes = {
+            "version": "versao da assinatura",
+            "evidence": "evidencia",
+            "catalog": "catalogo",
+            "body": "corpo",
+        }
         # Cada parte divergente sai rotulada e terminada: as tres frases coladas
         # sem separador viravam um paragrafo unico em que nao se via onde uma
         # acabava e a outra comecava -- e a resposta que o criterio 8 pede e
@@ -2069,11 +2147,18 @@ def report_verify(report_path: str, findings_path: str) -> dict[str, Any]:
             + f" Reassine com: {_REPORT_SIGN_HINT.format(report=report_path)}"
         )
 
+    if not version_ok:
+        status = "version_mismatch"
+    elif diverged:
+        status = "diverged"
+    else:
+        status = "signed"
+
     return {
         "report": report_path,
         "findings": findings_path,
         "valid": not diverged,
-        "status": "signed" if not diverged else "diverged",
+        "status": status,
         "signature": declared["signature"],
         "expected_signature": expected_signature,
         "diverged": diverged,

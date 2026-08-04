@@ -264,9 +264,10 @@ análise rodou e produziu o artefato que destrava, e **não** que ela cobriu tod
 registrada, e vai escrito na própria mensagem de bloqueio.
 
 **Assinatura de correspondência.** `report sign` escreve um bloco no fim do
-relatório; `report verify` confere e diz **qual** das três partes divergiu —
-evidência, catálogo ou corpo — em vez de devolver só "inválido". Os dois existem
-na CLI e como tool MCP (`sparkforge_report_sign`, `sparkforge_report_verify`):
+relatório; `report verify` confere e diz **qual** das quatro partes divergiu —
+versão da assinatura, evidência, catálogo ou corpo — em vez de devolver só
+"inválido". Os dois existem na CLI e como tool MCP (`sparkforge_report_sign`,
+`sparkforge_report_verify`):
 
 ```bash
 sparkforge report sign   --report relatorio.md --findings .sparkforge/findings.json
@@ -278,6 +279,13 @@ O arquivo é o de **findings**, e não o de facts: `rule_id`, `catalog_version` 
 que dispararam, as duas versões e o **corpo** do relatório — sem o corpo, alguém
 reescreveria o texto inteiro mantendo a assinatura válida. Editar a prosa depois
 de assinar invalida, e é para isso que serve: reassinar é barato.
+
+O bloco declara também o `signature_version` sob o qual foi assinado. Ele já
+entrava dentro do hash — é o que garante que duas regras de normalização nunca
+produzam a mesma assinatura —, mas sem a declaração o `verify` não tinha como
+dizer **por que** não fechou: um relatório assinado sob a regra anterior saía
+igual a um corpo adulterado. Com ela, versão diferente vira `version_mismatch`,
+e o corpo sai como **não avaliável** em vez de acusado.
 
 Ela prova **correspondência**, nunca **autoria**: não há chave nem segredo, e
 qualquer pessoa com os mesmos findings produz exatamente a mesma assinatura.
