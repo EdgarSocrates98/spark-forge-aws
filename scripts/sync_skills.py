@@ -13,6 +13,11 @@ Uso:
     python scripts/sync_skills.py --check   # falha (exit 1) se algum espelho divergir
 
 O modo --check é usado pelos testes e pode ser plugado em CI para impedir drift.
+
+Os perfis de `agents/` não são copiados: são RENDERIZADOS por plataforma
+(`render_agent`), e o gate compara o espelho contra o que o renderizador
+produz — não contra a fonte. O invariante é "o espelho é exatamente o que o
+tradutor produz", que é estritamente mais forte que byte-identidade.
 """
 from __future__ import annotations
 
@@ -41,6 +46,17 @@ EXECUTOR_MIRRORS = (
     ROOT / ".github" / "agents" / "executors",
 )
 STALE_AGENTS = (ROOT / ".github" / "agents" / "spark-performance-engineer.agent.md",)
+
+# A plataforma sai do PROPRIO ALVO, nao de uma quarta lista mantida a mao ao
+# lado de `AGENT_MIRRORS` e `EXECUTOR_MIRRORS`. Duas listas paralelas que
+# precisam concordar sao a familia de defeito que a Fase 5c achou nos dois
+# `EXTRACTORS`: uma cresce, a outra nao, e o desacordo e mudo. Aqui o desacordo
+# nem chega a ser possivel -- o diretorio-raiz do espelho E o dado.
+PLATFORM_BY_MIRROR_ROOT = {
+    ".claude": "claude",
+    ".agents": "devin",
+    ".github": "github",
+}
 
 # --------------------------------------------------------------------------
 # Renderizacao por plataforma
@@ -157,6 +173,53 @@ def render_agent(text: str, platform: str) -> str:
     return "".join(opening + kept + rest)
 
 
+def platform_for(mirror_path: Path) -> str:
+    """Deriva a plataforma do diretorio-raiz do espelho.
+
+    `.agents/` e `devin`, `.claude/` e `claude`, `.github/` e `github`. Alvo
+    fora dos tres levanta -- caminho novo tem que declarar como se traduz para
+    ele, em vez de cair num default que publicaria o arquivo cru.
+    """
+    parts = mirror_path.resolve().relative_to(ROOT).parts
+    if not parts or parts[0] not in PLATFORM_BY_MIRROR_ROOT:
+        raise ValueError(f"espelho sem plataforma conhecida: {mirror_path}")
+    return PLATFORM_BY_MIRROR_ROOT[parts[0]]
+
+
+def rendered_bytes(src: Path, dst: Path) -> bytes:
+    """O que o espelho `dst` DEVERIA conter, a partir da fonte `src`.
+
+    Le e escreve em bytes de proposito. `Path.read_text()` aplica newline
+    universal e devolveria CRLF como LF: um espelho gravado com CRLF passaria
+    a comparar igual a uma fonte LF, e o gate deixaria de ser byte a byte sem
+    ninguem notar.
+    """
+    text = src.read_bytes().decode("utf-8")
+    return render_agent(text, platform_for(dst)).encode("utf-8")
+
+
+def mirror_is_current(src: Path, dst: Path) -> bool:
+    """O invariante da Task 2.
+
+    Nao e mais "os arquivos sao identicos" -- e "o espelho e exatamente o que o
+    tradutor produz". A forma antiga (`filecmp.cmp`) nunca poderia pegar um
+    campo que a plataforma exige e a fonte nao tem, nem um campo que a fonte
+    tem e a plataforma nao deve receber; a nova pega os dois.
+    """
+    return dst.read_bytes() == rendered_bytes(src, dst)
+
+
+def write_mirror(src: Path, dst: Path) -> None:
+    """Grava o espelho JA RENDERIZADO.
+
+    A escrita passa pelo mesmo tradutor que o `--check` usa. Copiar aqui e
+    comparar contra renderizacao la faria o gate acusar na execucao seguinte a
+    cada regeneracao -- o script brigaria consigo mesmo.
+    """
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_bytes(rendered_bytes(src, dst))
+
+
 def iter_skill_files() -> list[Path]:
     return sorted(p for p in CANONICAL.rglob("*") if p.is_file())
 
@@ -208,7 +271,7 @@ def check_agents() -> list[str]:
             dst = mirror_dir / name_pattern.format(stem=src.stem)
             if not dst.exists():
                 problems.append(f"AUSENTE {dst}")
-            elif not filecmp.cmp(src, dst, shallow=False):
+            elif not mirror_is_current(src, dst):
                 problems.append(f"DIVERGENTE {dst}")
 
         for orphan_name in sorted(mirror_names - expected_names):
@@ -237,7 +300,7 @@ def check_executors() -> list[str]:
             dst = mirror_dir / src.name
             if not dst.exists():
                 problems.append(f"AUSENTE {dst}")
-            elif not filecmp.cmp(src, dst, shallow=False):
+            elif not mirror_is_current(src, dst):
                 problems.append(f"DIVERGENTE {dst}")
 
         for orphan_name in sorted(mirror_names - expected_names):
@@ -258,7 +321,10 @@ def check() -> int:
             print(f"  {line}")
         return 1
 
-    print("OK: .claude, .agents e .github idênticos a skills/ e agents/.")
+    print(
+        "OK: .claude, .agents e .github em dia com skills/ e agents/ "
+        "(perfis conferidos contra a renderização de cada plataforma)."
+    )
     return 0
 
 
@@ -300,11 +366,10 @@ def sync_agents() -> int:
 
         for src in agent_files:
             dst = mirror_dir / name_pattern.format(stem=src.stem)
-            if dst.exists() and filecmp.cmp(src, dst, shallow=False):
+            if dst.exists() and mirror_is_current(src, dst):
                 continue
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
-            print(f"COPY {dst}")
+            write_mirror(src, dst)
+            print(f"REND {dst}")
             changed += 1
 
         if mirror_dir.exists():
@@ -333,11 +398,10 @@ def sync_executors() -> int:
     for mirror_dir in EXECUTOR_MIRRORS:
         for src in executor_files:
             dst = mirror_dir / src.name
-            if dst.exists() and filecmp.cmp(src, dst, shallow=False):
+            if dst.exists() and mirror_is_current(src, dst):
                 continue
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
-            print(f"COPY {dst}")
+            write_mirror(src, dst)
+            print(f"REND {dst}")
             changed += 1
 
         if mirror_dir.exists():

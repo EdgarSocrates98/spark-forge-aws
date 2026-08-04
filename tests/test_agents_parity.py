@@ -3,6 +3,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+from scripts import sync_skills
+from scripts.sync_skills import render_agent
+
 ROOT = Path(__file__).resolve().parents[1]
 AGENTS = ROOT / "agents"
 NAMES = tuple(sorted(p.stem for p in AGENTS.glob("*.md")))
@@ -88,10 +93,117 @@ class TestMirrors:
         for name in NAMES:
             assert (ROOT / ".github" / "agents" / f"{name}.agent.md").is_file()
 
-    def test_devin_agents_mirror_matches_source(self):
+    def test_devin_agents_mirror_matches_the_render(self):
+        """Era `filecmp.cmp` contra a fonte. Deixou de ser na Task 2: o espelho
+        do Devin nao leva `tools:`, entao byte-identidade com a fonte virou o
+        DEFEITO que o gate tem que acusar, nao o invariante que ele exige."""
         for name in NAMES:
+            src = AGENTS / f"{name}.md"
             dst = ROOT / ".agents" / "agents" / f"{name}.md"
-            assert filecmp.cmp(AGENTS / f"{name}.md", dst, shallow=False), name
+            esperado = render_agent(src.read_bytes().decode("utf-8"), "devin")
+            assert dst.read_bytes().decode("utf-8") == esperado, name
+
+    def test_devin_agents_mirror_carries_no_tools_field(self):
+        """O que a renderizacao existe para fazer, medido no espelho gravado --
+        e nao so na funcao. `tools:` no corpo seria prosa; a checagem olha o
+        frontmatter, que termina na segunda cerca."""
+        for name in NAMES:
+            texto = (ROOT / ".agents" / "agents" / f"{name}.md").read_text(encoding="utf-8")
+            frontmatter = texto.split("\n---\n", 1)[0]
+            assert "tools:" not in frontmatter, name
+
+
+class TestGatePegaEspelhoEditadoAMao:
+    """A Task 2 trocou o mecanismo do gate: de `filecmp.cmp(src, dst)` para
+    comparacao contra `render_agent(src, plataforma_do_alvo)`. Troca de
+    mecanismo pode afrouxar o gate sem ninguem perceber -- e gate afrouxado e
+    pior que gate nenhum, porque parece cobertura. Estes testes provam que ele
+    continua acusando, nas duas familias (agentes e executores) e nas tres
+    plataformas.
+    """
+
+    ALVOS = (
+        ROOT / ".claude" / "agents" / "spark-performance-architect.md",
+        ROOT / ".agents" / "agents" / "spark-performance-architect.md",
+        ROOT / ".github" / "agents" / "spark-performance-architect.agent.md",
+        ROOT / ".claude" / "agents" / "executors" / "sf-inventory.md",
+        ROOT / ".agents" / "agents" / "executors" / "sf-inventory.md",
+        ROOT / ".github" / "agents" / "executors" / "sf-inventory.md",
+    )
+
+    @staticmethod
+    def _problemas() -> list[str]:
+        return sync_skills.check_agents() + sync_skills.check_executors()
+
+    @pytest.fixture()
+    def espelhos_em_dia(self):
+        """Baseline: regenera antes e restaura depois, para que um teste que
+        mexe no espelho nao contamine `TestNoPlatformKnowledge` nem o proximo
+        arquivo da suite."""
+        sync_skills.sync_agents()
+        sync_skills.sync_executors()
+        assert not self._problemas()
+        yield
+        sync_skills.sync_agents()
+        sync_skills.sync_executors()
+        assert not self._problemas()
+
+    @pytest.mark.parametrize("alvo", ALVOS, ids=lambda p: str(p.relative_to(ROOT)))
+    def test_um_byte_a_mais_no_espelho_vira_divergente(self, alvo, espelhos_em_dia):
+        original = alvo.read_bytes()
+        try:
+            alvo.write_bytes(original + b"x")
+            problemas = self._problemas()
+        finally:
+            alvo.write_bytes(original)
+        assert f"DIVERGENTE {alvo}" in problemas, problemas
+
+    def test_copia_literal_da_fonte_no_espelho_do_devin_vira_divergente(
+        self, espelhos_em_dia
+    ):
+        """O teste que o gate ANTIGO nao poderia passar. `filecmp.cmp` exigia
+        exatamente isto -- o espelho byte a byte igual a fonte -- e e justamente
+        o estado errado hoje: o espelho do Devin sairia com `tools:`.
+
+        E a direcao que o enunciado da Task 2 aponta: igualdade nao pega campo
+        que a plataforma exige e a fonte nao tem, nem o contrario.
+        """
+        src = AGENTS / "spark-performance-architect.md"
+        alvo = ROOT / ".agents" / "agents" / "spark-performance-architect.md"
+        original = alvo.read_bytes()
+        try:
+            alvo.write_bytes(src.read_bytes())
+            assert filecmp.cmp(src, alvo, shallow=False), "pre-condicao do teste"
+            problemas = self._problemas()
+        finally:
+            alvo.write_bytes(original)
+        assert f"DIVERGENTE {alvo}" in problemas, problemas
+
+    def test_espelho_apagado_vira_ausente(self, espelhos_em_dia):
+        alvo = ROOT / ".agents" / "agents" / "executors" / "sf-judge.md"
+        original = alvo.read_bytes()
+        try:
+            alvo.unlink()
+            problemas = self._problemas()
+        finally:
+            alvo.write_bytes(original)
+        assert f"AUSENTE {alvo}" in problemas, problemas
+
+
+class TestPlataformaSaiDoAlvo:
+    """A plataforma nao e uma quarta lista mantida a mao ao lado das tres de
+    espelho: ela e derivada do diretorio-raiz do alvo."""
+
+    def test_cada_raiz_de_espelho_mapeia_para_a_sua_plataforma(self):
+        assert sync_skills.platform_for(ROOT / ".agents" / "agents" / "x.md") == "devin"
+        assert sync_skills.platform_for(ROOT / ".claude" / "agents" / "x.md") == "claude"
+        assert sync_skills.platform_for(ROOT / ".github" / "agents" / "x.agent.md") == "github"
+
+    def test_alvo_fora_das_tres_raizes_falha_alto(self):
+        """Espelho novo tem que declarar como se traduz para ele. Default
+        silencioso publicaria o arquivo cru na plataforma nova."""
+        with pytest.raises(ValueError):
+            sync_skills.platform_for(ROOT / ".cursor" / "agents" / "x.md")
 
 
 class TestNoPlatformKnowledge:

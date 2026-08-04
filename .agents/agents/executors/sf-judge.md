@@ -2,7 +2,6 @@
 name: sf-judge
 role: executor
 function: judge
-tools: Read, Bash
 ---
 
 **Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.

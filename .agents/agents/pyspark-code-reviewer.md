@@ -1,7 +1,6 @@
 ---
 name: pyspark-code-reviewer
 description: Use para revisar código PySpark — PR, biblioteca ou job — correlacionando o que está escrito no fonte, o que sobreviveu ao Catalyst no plano físico, e onde o trabalho Spark é disparado na estrutura de chamadas.
-tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-pyspark-pr
   - optimize-pyspark-code

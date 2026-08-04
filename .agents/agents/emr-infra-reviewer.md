@@ -1,7 +1,6 @@
 ---
 name: emr-infra-reviewer
 description: Use quando o Spark roda em Amazon EMR on EC2 e o risco estiver na definição do cluster, não no código — instance fleets contra instance groups, purchasing option por papel, managed scaling, Configurations em dois níveis, bootstrap actions, LogUri, e cluster que terminou antes de processar qualquer coisa.
-tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-emr-cluster
   - analyze-spark-ui
