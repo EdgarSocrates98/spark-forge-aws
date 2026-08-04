@@ -1,0 +1,32 @@
+name: partial_coverage
+proves: >
+  Os TRES estados do contrato num caso so, que e o unico jeito de provar
+  que eles continuam distintos. O plano pede cinco checks; o resultado do
+  operador traz:
+  (1) `key:pedido_id` com valor ZERO dos dois lados -- rodou e nao achou
+  duplicata nenhuma, e isso e cobertura CUMPRIDA, nao cobertura faltando;
+  (2) `agg:sum:valor` com `value: null` e `unavailable_reason` -- rodou e
+  nao conseguiu, que nao e zero nem ausencia: vira `funcval.unresolved`
+  com `check_value_unavailable` e NAO conta como reportado;
+  (3) `schema` simplesmente AUSENTE das duas chaves -- ninguem reportou,
+  e so este terceiro estado e a cobertura faltante que a SF-FVAL-005 le.
+  A conta do golden e `planned_check_count: 5` contra
+  `reported_check_count: 3`. Se os tres estados colapsassem em dois, essa
+  conta continuaria fechando com o numero errado e ninguem veria.
+  Tambem e a fixture que exercita `funcval.unresolved` do lado da
+  comparacao -- a maquinaria de ponto cego que, quando para de contar,
+  devolve zero, e zero e o que uma comparacao limpa devolve.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+funcval:
+  keys:
+    - pedido_id
+expects_kinds:
+  - funcval.analyzed
+  - funcval.check_delta
+  - funcval.unresolved
+expects_rules:
+  - SF-FVAL-005

@@ -1,0 +1,59 @@
+[
+  {
+    "rule_id": "SF-FVAL-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Contagem de linhas divergiu entre antes e depois da mudança",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#count"
+    },
+    "evidence": [
+      "f_fbad08"
+    ],
+    "measured": {
+      "value_before": 1000000,
+      "value_after": 1000002,
+      "abs_delta": 2.0,
+      "relative_delta": 2e-06
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O número de linhas escritas no alvo não é o mesmo antes e depois da mudança. É o proxy mais barato e o mais difícil de explicar como aceitável: linha a mais é duplicação, linha a menos é perda, e nenhuma das duas é efeito colateral tolerável de uma mudança de performance. As causas típicas não parecem erro de lógica na hora em que acontecem — o join virou `inner` sem querer, o `dropDuplicates` passou a receber outro subconjunto de colunas, o filtro de partição ficou relativo a `now()`, o broadcast trocou a ordem e um `left` virou `right`, o bookmark avançou entre as duas coletas. Antes de acusar o código, ler o resto do relatório: se a `SF-FVAL-005` também acendeu, parte do plano não foi medida, e a foto está incompleta. E se a mudança envolveu recorte de dado diferente entre as duas execuções, a divergência é do recorte e não do código — isso não aparece aqui, porque este fact compara dois números que o operador mediu, e não os insumos deles. Limite declarado, que vale para as cinco regras desta área: contagem, schema, chaves e agregados iguais NÃO provam que o dado é o mesmo. Duas linhas podem trocar valores entre si e os quatro proxies passam. A ausência deste achado significa \"a contagem não divergiu\", nunca \"o resultado é idêntico\".",
+    "proposed_change": [
+      "Comparar as contagens por partição, e não só o total: uma partição a mais e outra a menos se cancelam no total e aparecem aqui como zero — este achado é sobre o total, e o total é o proxy mais grosseiro dos que existem.",
+      "Isolar a etapa: rodar a contagem imediatamente antes do write nos dois lados. Se a divergência já existe ali, ela é da transformação; se não, é da escrita (modo, partição sobrescrita, commit parcial).",
+      "Conferir o tipo de join e a lista de colunas de qualquer `dropDuplicates`/`distinct` que a mudança tocou — são as duas origens que movem contagem sem mover agregado nem schema.",
+      "Confirmar que as duas execuções leram o mesmo recorte: mesma partição, mesmo intervalo, mesmo filtro. Divergência de recorte fabrica este achado sem que o código tenha mudado nada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aceitar a divergência porque 'são poucas linhas' é a decisão que este achado existe para impedir: a proporção não diz nada sobre a natureza da diferença, e duas linhas órfãs de um join quebrado escalam com o dado.",
+      "Reverter a mudança sem antes localizar a etapa devolve a contagem certa e apaga a evidência de qual transformação a movia — o mesmo defeito volta na próxima tentativa."
+    ],
+    "tradeoffs": [
+      "Contagem é o proxy mais barato e o mais fraco: ele pega duplicação e perda, e é cego para troca de valores entre linhas. Trocá-lo por comparação linha a linha daria a afirmação forte e é inviável sobre volume real — é a razão de a área inteira ser de proxies.",
+      "Medir contagem por partição custa uma passada a mais e responde uma pergunta mais precisa. Em tabela muito particionada esse custo não é desprezível, e a escolha depende de quanto a mudança mexeu no particionamento."
+    ],
+    "validation": [
+      "`count(*)` total nos dois lados sobre o mesmo recorte, refeito depois da correção.",
+      "Contagem por chave de partição nos dois lados, para localizar em qual recorte a diferença está.",
+      "`count(distinct <chave de negócio>)` nos dois lados: contagem total igual com distinct diferente é duplicação compensada por perda, e o total sozinho não a vê.",
+      "Contagem de nulos nas colunas do `on` de cada join que a mudança tocou — linha órfã de join é a causa mais comum e aparece ali antes de aparecer no total."
+    ],
+    "rollback": [
+      "Reverter o commit da mudança e repetir a medição dos dois lados, confirmando que a contagem volta a fechar.",
+      "Se o alvo já foi escrito com a contagem divergente, tratar a restauração como manutenção de dado, com escopo e retenção confirmados antes — nunca sobrescrever o alvo para 'corrigir' sem saber o que havia nele."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Não há limiar: o gatilho é a desigualdade exata de dois inteiros que o operador mediu, e o comparador já a observou sobre o valor cru. A decisão de campo aqui é a SEVERIDADE. P0 vem de a contagem ser a única dimensão desta área em que qualquer divergência é, por construção, perda ou duplicação de linha — não há reordenação, reassociação nem diferença de precisão que a mova. As outras dimensões admitem explicação benigna; esta não."
+      }
+    ]
+  }
+]

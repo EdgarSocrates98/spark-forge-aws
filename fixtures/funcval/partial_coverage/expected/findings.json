@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-FVAL-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Validação parcial — o resultado trouxe menos checks do que o plano pediu",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos"
+    },
+    "evidence": [
+      "f_0ee97a"
+    ],
+    "measured": {
+      "planned_check_count": 5,
+      "reported_check_count": 3,
+      "compared_check_count": 3,
+      "diverged_check_count": 0,
+      "relative_delta_check_count": 0,
+      "unplanned_check_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O plano pediu mais checks do que o resultado entregou nos dois lados. A validação está incompleta, e o que ela afirma vale só sobre os eixos que chegaram — ler o relatório como aprovação seria o encontro dos dois defeitos que este projeto persegue: \"nenhum problema\" e \"não coletei\" ficando indistinguíveis. Sem esta regra, rodar metade do plano e passar seria o caminho de menor resistência, e ele é atraente exatamente quando a pressa é maior. O QUE FALTOU está nos `funcval.unresolved` do mesmo relatório, e o `reason` de cada um separa três situações que exigem ações diferentes: `check_not_reported` é o check que o plano pediu e que não apareceu em lado nenhum — é cobertura faltante pura, e a correção é medir; `check_absent_one_side` veio de um lado só, e um lado só não é comparação; `check_value_unavailable` é o check que RODOU e não deu valor (`value: null` com `unavailable_reason`), que é uma resposta honesta e continua não sendo cobertura. `check_entry_malformed` é contrato violado — `value: null` sem razão escrita — e vem na frente dos outros no relatório de propósito, porque ler contrato violado como ausência perdoaria a violação. O QUE ESTA REGRA NÃO COBRA: o que o PLANO não pediu. O plano é derivado dos facts que o motor tinha na hora — `pyspark.write` para o alvo, `catalog.table_schema` para colunas e tipos, e a chave só entra declarada pelo operador. `funcval.plan.attrs.undeclared_axes` nomeia os eixos que ficaram de fora e a razão de cada um, e a sentinela repete essa lista para quem não tem o plano na mão. Eixo por declarar é limite da medição, e não falha de quem mediu — por isso ele fica escrito em vez de virar este achado. Limite da área: os quatro são proxies. Cobertura completa dos quatro não prova que o dado é o mesmo; prova que os quatro foram medidos.",
+    "proposed_change": [
+      "Ler o `reason` de cada `funcval.unresolved` do relatório antes de refazer qualquer coisa: `check_not_reported` se corrige medindo, `check_value_unavailable` se corrige entendendo por que o ambiente não deu o número, e `check_entry_malformed` se corrige no formato do resultado.",
+      "Rodar os checks que faltaram nos DOIS lados — um lado só não vira comparação e continua contando como cobertura faltante.",
+      "Se um check não pode ser medido no ambiente de origem, dizer isso por escrito no resultado (`value: null` com `unavailable_reason`) em vez de omitir a chave: os dois estados são diferentes, e a omissão faz o motor não saber se houve tentativa.",
+      "Conferir `undeclared_axes` na sentinela: eixo que o plano nunca pediu não é contado aqui, e pode ser justamente o que faltava — chave de negócio só entra no plano se alguém a declarar com `funcval plan --key`."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Fechar o relatório com este achado aberto entrega uma validação parcial com aparência de completa, e é o modo de falha que esta regra existe para tornar visível.",
+      "Preencher os checks que faltam com zero ou com um valor plausível para calar o achado é pior que a lacuna: passa a existir um número que ninguém mediu, e ele não se distingue de um número medido.",
+      "Reduzir o plano para que o resultado o cubra faz este achado sumir sem que nada tenha sido medido — é o mesmo defeito, com outra roupa, e o `funcval.plan` versionado é o que permite perceber."
+    ],
+    "tradeoffs": [
+      "Cobrar cobertura como regra P1 gera achado em toda validação incompleta, inclusive quando a incompletude é conhecida e aceita. A alternativa — nota de rodapé — foi recusada na D-5 do spec: nota de rodapé não sobrevive à leitura apressada, e é a leitura apressada que este achado precisa alcançar.",
+      "Medir por PRESENÇA DE CHAVE, e não por valor, mantém 'não medi' distinto de 'medi e deu zero'. O preço é o contrato do resultado ser mais estrito do que um JSON qualquer, e um resultado malformado virar unresolved em vez de ser interpretado com boa vontade."
+    ],
+    "validation": [
+      "`planned_check_count` e `reported_check_count` na sentinela depois de refazer a coleta: os dois precisam fechar para que o relatório afirme sobre o plano inteiro.",
+      "Conferir, check a check, que a chave existe em `checks` nos dois arquivos de resultado — a presença da chave é o sinal de cobertura, e não o valor.",
+      "Conferir que o `target` dos dois resultados é o do plano: alvo diferente não é comparação parcial, é comparação de outra coisa, e sai como `funcval.unresolved` com a sentinela carregando `blocked_by`.",
+      "Reconferir `undeclared_axes`: se o eixo de chaves está lá, o plano não pediu chave nenhuma, e refazer o plano com `--key` amplia a cobertura de verdade em vez de só fechar a contagem."
+    ],
+    "rollback": [
+      "Nenhum — este achado é sobre a medição, não sobre o código. Nada foi mudado no sistema analisado para ser desfeito; o que se refaz é a coleta dos checks que faltaram."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Não há limiar: o gatilho é `reported_check_count < planned_check_count`, duas contagens que o próprio comparador produziu, e qualquer margem aqui seria um número dizendo quantos checks é aceitável não medir — que não é pergunta que tenha resposta de campo. A decisão de campo é a SEVERIDADE. P1, e não P0, porque o achado não afirma que algo está errado no sistema analisado: ele afirma que a validação não cobre o que se propôs a cobrir. Lido junto com um relatório sem nenhum outro achado desta área, porém, ele é o mais importante dos cinco — é o que distingue 'os proxies bateram' de 'os proxies que rodaram bateram'."
+      }
+    ]
+  }
+]

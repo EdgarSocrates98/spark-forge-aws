@@ -52,7 +52,7 @@ which executor ran and with what result — same mechanism as skill tracking
 
 | Coordinator | Use quando… | `rule_areas` |
 |---|---|---|
-| `spark-performance-architect` | diagnóstico geral de um job PySpark no Glue, gargalo dominante ainda não localizado; e comprovar o ganho de uma mudança comparando dois runs | SF-PY, SF-UI, SF-PLAN, SF-BENCH |
+| `spark-performance-architect` | diagnóstico geral de um job PySpark no Glue, gargalo dominante ainda não localizado; e comprovar o ganho de uma mudança comparando dois runs — pelo tempo **e** pelo resultado | SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL |
 | `glue-incremental-performance-architect` | fluxo full + incremental, latest-per-key em Iceberg bilionário, batching, OOM após horas | orquestra as demais áreas antes de tuning localizado |
 | `glue-infra-reviewer` | gargalo ou risco na definição do job Glue, não no código — worker, auto scaling, bookmark, retries, Terraform | SF-GLUE, SF-ENV |
 | `athena-query-optimizer` | custo ou latência na consulta Athena, não no job — bytes escaneados, pruning de partição, engine, workgroup | SF-ATH, SF-PQ |
@@ -156,9 +156,9 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Sixteen extractors, all offline — they read artifacts already on disk and never
+Seventeen extractors, all offline — they read artifacts already on disk and never
 call AWS. Each has a CLI verb and an MCP tool with the same name, and together
-they emit 102 distinct fact kinds:
+they emit 106 distinct fact kinds:
 
 | Artifact | CLI verb | Reads |
 |---|---|---|
@@ -177,6 +177,8 @@ they emit 102 distinct fact kinds:
 | Table consumers | `analyze consumers` | declared inventory, versioned in the repo |
 | Terraform change | `analyze terraform-diff` | two states of the same module |
 | Two runs compared | `benchmark` | two sets of event-log facts, before and after |
+| Functional validation plan | `funcval plan` | PySpark and catalog-schema facts, plus the business key **you** declare |
+| Before against after, by result | `funcval compare` | the plan and the two results **you** measured |
 | Runtime | `runtime detect` | every source above, cross-checked |
 | Correlation | `fuse` | facts from several extractors at once |
 
@@ -187,6 +189,21 @@ once. Neither area reads the other's fact namespace, and each judges
 identically with and without the neighbour's facts — cross-suppression can only
 be implemented by looking at the other's fact, so the invariant refuses both
 the duplicate and the silence.
+
+`SF-DQ` and `SF-FVAL` are the neighbouring pair with the sharpest boundary, and
+it holds by construction: `SF-DQ` judges validation **inside the job** — where the
+check runs, whether it has a consequence, what it costs — which is true before and
+after a change; `SF-FVAL` judges **equivalence between two executions** of the same
+change, and never compares an observed value against the declared catalogue. Its
+four axes — count, schema, keys, aggregates — are **proxies**: equal on both sides
+they do not prove the data is the same, because two rows can swap values and all
+four pass. Report the absence of an `SF-FVAL` finding as "no proxy detected a
+divergence", never as "the result is identical" — the comparator carries that
+sentence in `funcval.analyzed.attrs.proxy_limit` so you never have to reach for
+the YAML. And the business key is not derivable from any fact kind: it enters
+declared, via `funcval plan --key`, with `origin: "declared"` on the check —
+declaring the wrong key produces a P0 over correct data, and that is the
+declarer's call, not the engine's.
 
 Collection of the raw artifacts (`collect *`) requires boto3 and credentials
 and is the only part that touches AWS. The core never imports boto3 or the MCP
@@ -228,10 +245,15 @@ What unlocks a gate is evidence, never a flag: `case update --gate X --gate-valu
 true` still writes the boolean and still unlocks nothing. Which fact satisfies
 which gate is **data** — the `gates` block of `rules/catalog/routing.yaml`, with
 the exact command in `produced_by`. Only a gate **with** a producer can be
-fail-closed: today `baseline_captured` (`bench.run_delta`) and `flows_mapped`
-(`callgraph.reachable_spark_work`). The other two stay advisory, because
+fail-closed: today `baseline_captured` (`bench.run_delta`), `flows_mapped`
+(`callgraph.reachable_spark_work`) and `functional_validation_defined`
+(`funcval.plan`, since Fase 4c) — which makes `report` guarded by all three. The
+gate says *defined*, not *executed*: what unlocks it is the **plan**, because
+choosing what to validate has to happen before you know which check passes. The
+remaining one, `dominant_bottleneck_identified`, stays advisory, because
 hardening a gate with no producer is the deadlock the Fase 0 design consciously
-refused — a rigid gate is a dead end when the data simply does not exist.
+refused — a rigid gate is a dead end when the data simply does not exist, and
+dominance is an ordering between candidates that no fact kind asserts.
 
 When the data genuinely does not exist, overriding costs one sentence, and the
 sentence stays: `case update --override-gate <gate> --reason "<why>"`, refused

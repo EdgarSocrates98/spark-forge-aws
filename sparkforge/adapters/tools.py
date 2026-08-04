@@ -17,9 +17,13 @@ real de `call_tool`. Um `{"type": "object"}` generico passaria em qualquer
 teste superficial e nao entregaria nada: o cliente voltaria a adivinhar a
 forma, que e exatamente o problema que esta camada existe para evitar.
 
-Nenhuma ferramenta da Fase 0 e destrutiva nem open-world: o nucleo e
-offline, e coletores AWS ficam para a Fase 1. So `case_open` e `case_update`
-escrevem em disco (`.sparkforge/case.yaml`); todas as outras sao read-only.
+Nenhuma ferramenta e destrutiva. Os coletores AWS (`collect_*`, exceto
+`collect_verify`) sao os unicos open-world -- leem de fora do sandbox local e
+nunca escrevem do lado AWS. Escrevem em disco: `case_open` e `case_update`
+(`.sparkforge/case.yaml`), `report_sign` (o bloco de assinatura, no lugar) e
+`funcval_plan` (o plano, que `funcval_compare` rele como artefato); todas as
+outras sao read-only. A lista literal correspondente vive em
+`tests/test_adapters_tools.py::test_only_case_and_report_writers_are_not_read_only`.
 """
 from __future__ import annotations
 
@@ -684,6 +688,13 @@ _ANALYZE_FACTS_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
 # `spark.log_analyzed`, medida ausente ou parcial num lado, simbolo casado que
 # perdeu a medida. Diferente de `analyze_call_graph`, que nao tem nenhum.
 _BENCHMARK_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
+
+# Os dois verbos de `funcval` devolvem o mesmo envelope com ponto cego, pelo
+# mesmo motivo: `funcval.unresolved` e ponto cego de verdade nos DOIS lados --
+# alvo sem catalogo casado e tipo nao classificado no `plan`; check que veio de
+# um lado so, check que rodou e nao deu, e os tres bloqueios de comparacao
+# inteira no `compare`. Silencio ali seria indistinguivel de "nada divergiu".
+_FUNCVAL_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
 
 # `analyze_call_graph` deriva de Facts ja resolvidos (nunca reparseia fonte,
 # ver `sparkforge.facts.call_graph`): sem `unresolved`/`unresolved_at`
@@ -1825,6 +1836,139 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_funcval_plan": {
+        "description": (
+            "Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA "
+            "extraidos (`sparkforge_analyze_pyspark` e `sparkforge_analyze_catalog_schema` "
+            "gravados em disco), e GRAVA o plano em `out_path` -- o artefato que "
+            "`sparkforge_funcval_compare` rele. Emite `funcval.plan` (um por alvo "
+            "distinto) e `funcval.unresolved`. Verbo de topo, nao um `analyze`: nao "
+            "extrai nada de artefato. "
+            "O QUE ELE RECUSA AFIRMAR, e isso importa mais que o que ele afirma: "
+            "(1) Os quatro eixos sao PROXIES. Contagem, schema, chaves e agregados "
+            "iguais NAO provam que o dado e o mesmo -- duas linhas podem trocar valores "
+            "entre si e os quatro passam; a fase afirma 'nenhum dos quatro proxies "
+            "detectou divergencia', nunca 'o resultado e identico'. (2) Ele NAO MEDE "
+            "NADA: nao executa consulta, nao le a tabela, nao chama AWS. Os valores vem "
+            "do resultado que VOCE produz em cada lado. (3) CHAVE DE NEGOCIO NAO E "
+            "DERIVAVEL: nenhum dos 102 kinds dos 16 extratores a nomeia (`pyspark.join` "
+            "da o NUMERO de colunas do `on`, `pyspark.dedup` e `pyspark.window` dao "
+            "booleanos, particao como proxy foi medida e rejeitada). Ela so entra por "
+            "`keys`, com `origin: declared` e `derived_from: []` -- e chave declarada "
+            "errada produz P0 em dado correto, com a diferenca de que fica gravado quem "
+            "afirmou. Sem `keys`, o eixo sai ESCRITO como ausente em `undeclared_axes`, "
+            "nunca calado. (4) O catalogo diz QUAIS colunas e tipos existem, e nada "
+            "mais: o check de `schema` NAO carrega o mapa coluna->tipo, porque a "
+            "comparacao e sempre antes contra depois -- observado contra declarado e "
+            "asserção absoluta sobre o dado, que e pergunta de SF-DQ. (5) Alvo que nao "
+            "casa por string identica com um simbolo do catalogo vira "
+            "`funcval.unresolved`, nunca alvo adivinhado por sufixo."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_paths", "out_path"],
+            "properties": {
+                "facts_paths": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1,
+                    "description": (
+                        "Arquivos de facts (JSON) de `sparkforge_analyze_pyspark` e "
+                        "`sparkforge_analyze_catalog_schema`. Repetivel, e precisa ser: "
+                        "o alvo vem do `pyspark.write` e o schema/os agregados vem do "
+                        "`catalog.table_schema`, que nenhum verbo produz no mesmo arquivo."
+                    ),
+                },
+                "out_path": {
+                    "type": "string",
+                    "description": (
+                        "Onde gravar o plano. Obrigatorio: o plano e a entrada de "
+                        "`sparkforge_funcval_compare` e a evidencia do gate, nao uma "
+                        "conveniencia de saida."
+                    ),
+                },
+                "keys": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Chaves de negocio DECLARADAS por voce. Cada elemento e uma "
+                        "chave; virgula dentro dele faz chave COMPOSTA "
+                        "(`\"loja_id,pedido_id\"` e uma chave de duas colunas). Omitir "
+                        "nao e erro: o eixo sai escrito como ausente."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _FUNCVAL_SCHEMA,
+            "O plano derivado (e gravado em out_path), ou erro se um arquivo nao existe.",
+        ),
+        "annotations": _WRITE_IDEMPOTENT,
+    },
+    "sparkforge_funcval_compare": {
+        "description": (
+            "Compara os DOIS resultados que VOCE mediu contra o plano de "
+            "`sparkforge_funcval_plan`, e emite `funcval.check_delta`, a sentinela "
+            "`funcval.analyzed` e `funcval.unresolved`. Funcao pura sobre valores ja "
+            "medidos: nao executa consulta e nao mede nada. "
+            "O QUE ELE RECUSA AFIRMAR: "
+            "(1) Os quatro eixos sao PROXIES -- contagem, schema, chaves e agregados "
+            "iguais NAO provam que o dado e o mesmo. A sentinela carrega esse limite em "
+            "`attrs`, e nao so nesta descricao. (2) A comparacao e SEMPRE antes contra "
+            "depois, NUNCA resultado contra catalogo: o schema declarado serviu para "
+            "saber quais colunas existem, e conferir o observado contra ele seria "
+            "asserção absoluta sobre o dado -- pergunta de SF-DQ, nao desta fase. "
+            "(3) COMPARACAO RELATIVA NAO DECIDE `diverged`. Para ponto flutuante o fact "
+            "sai com `measures.relative_delta` e SEM `diverged`, com "
+            "`diverged_omitted_reason` dizendo por que: o numero que separa reassociacao "
+            "de divergencia real e heuristica de campo, e heuristica de campo mora no "
+            "catalogo (SF-FVAL-004, `threshold.relative_tolerance`), nunca em Python -- "
+            "um Fact nunca contem limiar. Quem julga e a regra. A comparacao exata "
+            "mantem o `diverged` no fact, porque 'os dois valores nao sao identicos' e "
+            "observacao e nao limiar. (4) O MODO DE COMPARACAO VEM DO PLANO, nunca do "
+            "resultado: senao o operador escolheria se o proprio numero dele e julgado "
+            "exato ou com tolerancia. O `type` do resultado so e lido para check que o "
+            "plano NAO pediu. (5) Tres estados de cobertura continuam DISTINTOS: check "
+            "com valor entra na comparacao; `value: null` com `unavailable_reason` vira "
+            "`unresolved` e NAO conta como reportado; chave ausente de `checks` e "
+            "cobertura faltante. 'Nao medi' nunca vira zero. (6) Divergencia dentro da "
+            "tolerancia nao e prova de igualdade: e ausencia de prova de diferenca."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["plan_path", "before_path", "after_path"],
+            "properties": {
+                "plan_path": {
+                    "type": "string",
+                    "description": "Arquivo gravado por `sparkforge_funcval_plan`.",
+                },
+                "before_path": {
+                    "type": "string",
+                    "description": (
+                        "Resultado medido ANTES: JSON `{\"target\", \"checks\"}`, cada "
+                        "check um objeto `{\"value\": <numero|mapa|null>}`. "
+                        "`value: null` exige `unavailable_reason`; check nao medido fica "
+                        "AUSENTE de `checks`, nunca zero."
+                    ),
+                },
+                "after_path": {
+                    "type": "string",
+                    "description": "Resultado medido DEPOIS, no mesmo contrato.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _FUNCVAL_SCHEMA,
+            "A comparacao antes/depois, ou erro se o plano/os resultados nao servem.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_fuse": {
         "description": (
             "Correlaciona facts de fontes diferentes (texto SQL de "
@@ -2444,6 +2588,28 @@ def _h_benchmark(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.funcval_plan(
+        args.get("facts_paths"),
+        args["out_path"],
+        keys=args.get("keys"),
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
+def _h_funcval_compare(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.funcval_compare(
+        args["plan_path"],
+        args["before_path"],
+        args["after_path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
     return _core.fuse_facts(
         args.get("facts_paths"),
@@ -2536,6 +2702,8 @@ _HANDLERS = {
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
     "sparkforge_analyze_call_graph": _h_analyze_call_graph,
     "sparkforge_benchmark": _h_benchmark,
+    "sparkforge_funcval_plan": _h_funcval_plan,
+    "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,
     "sparkforge_judge": _h_judge,
     "sparkforge_rules_lookup": _h_rules_lookup,

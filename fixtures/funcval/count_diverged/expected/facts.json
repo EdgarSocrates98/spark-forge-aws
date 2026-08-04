@@ -1,0 +1,159 @@
+[
+  {
+    "id": "f_fa952d",
+    "schema_version": 1,
+    "kind": "funcval.analyzed",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos"
+    },
+    "measures": {
+      "planned_check_count": 4,
+      "reported_check_count": 4,
+      "compared_check_count": 4,
+      "diverged_check_count": 1,
+      "relative_delta_check_count": 1,
+      "unplanned_check_count": 0
+    },
+    "attrs": {
+      "blocked_by": [],
+      "plan_ref": "",
+      "proxies": [
+        "count",
+        "schema",
+        "keys",
+        "aggregates"
+      ],
+      "proxy_limit": "contagem, schema, chaves e agregados iguais NAO provam que o dado e o mesmo: duas linhas podem trocar valores entre si e os quatro passam. Esta comparacao afirma 'nenhum dos quatro proxies detectou divergencia', nunca 'o resultado e identico'. Comparacao linha a linha e inviavel sobre volume real, e e por isso que os quatro sao proxies -- fortes, baratos e incompletos.",
+      "target": "db.eventos",
+      "undeclared_axes": [
+        "keys"
+      ]
+    },
+    "provenance": {
+      "artifact": "count_diverged",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_4e049b",
+    "schema_version": 1,
+    "kind": "funcval.check_delta",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#agg:sum:cliente_id"
+    },
+    "measures": {
+      "value_before": 500500123,
+      "value_after": 500500123,
+      "abs_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "attrs": {
+      "axis": "aggregate",
+      "check": "agg:sum:cliente_id",
+      "comparison": "exact",
+      "diverged": false,
+      "planned": true,
+      "target": "db.eventos",
+      "type": "bigint"
+    },
+    "provenance": {
+      "artifact": "count_diverged",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_7e9c99",
+    "schema_version": 1,
+    "kind": "funcval.check_delta",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#agg:sum:valor"
+    },
+    "measures": {
+      "value_before": 1000000.0,
+      "value_after": 1000000.0,
+      "abs_delta": 0.0,
+      "relative_delta": 0.0
+    },
+    "attrs": {
+      "axis": "aggregate",
+      "check": "agg:sum:valor",
+      "comparison": "relative",
+      "diverged_omitted_reason": "comparacao relativa: o numero que separa reassociacao de ponto flutuante de divergencia real e heuristica de campo, e heuristica de campo mora no catalogo (SF-FVAL-004, threshold.relative_tolerance), nunca em Python -- um Fact nunca contem limiar. O fact carrega relative_delta; quem julga e a regra",
+      "planned": true,
+      "target": "db.eventos",
+      "type": "double"
+    },
+    "provenance": {
+      "artifact": "count_diverged",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_fbad08",
+    "schema_version": 1,
+    "kind": "funcval.check_delta",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#count"
+    },
+    "measures": {
+      "value_before": 1000000,
+      "value_after": 1000002,
+      "abs_delta": 2.0,
+      "relative_delta": 2e-06
+    },
+    "attrs": {
+      "axis": "count",
+      "check": "count",
+      "comparison": "exact",
+      "diverged": true,
+      "planned": true,
+      "target": "db.eventos",
+      "type": "bigint"
+    },
+    "provenance": {
+      "artifact": "count_diverged",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  },
+  {
+    "id": "f_4469d5",
+    "schema_version": 1,
+    "kind": "funcval.check_delta",
+    "subject": {
+      "type": "table",
+      "symbol": "db.eventos#schema"
+    },
+    "measures": {
+      "before_column_count": 4,
+      "after_column_count": 4,
+      "added_column_count": 0,
+      "removed_column_count": 0,
+      "type_changed_column_count": 0
+    },
+    "attrs": {
+      "added_columns": [],
+      "axis": "schema",
+      "check": "schema",
+      "comparison": "exact",
+      "diverged": false,
+      "planned": true,
+      "removed_columns": [],
+      "target": "db.eventos",
+      "type": "schema",
+      "type_changed_columns": []
+    },
+    "provenance": {
+      "artifact": "count_diverged",
+      "artifact_sha256": "",
+      "extractor": "funcval@0.1.0"
+    }
+  }
+]

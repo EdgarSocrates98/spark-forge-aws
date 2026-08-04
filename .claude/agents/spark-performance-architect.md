@@ -13,7 +13,7 @@ skills:
   - optimize-iceberg-table
   - benchmark-pyspark-job
   - review-pyspark-pr
-rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH]
+rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -56,6 +56,33 @@ Leia `SF-BENCH-001` (volumes de entrada divergentes) e `SF-BENCH-004` (stages qu
 mudança, e nenhuma delas cala as outras. E `total_task_ms` é tempo de task somado — trabalho,
 não relógio. A skill `benchmark-pyspark-job` tem o procedimento completo.
 
+## "Preserve correção funcional" deixou de ser frase e virou artefato
+
+`SF-FVAL` é a outra metade do mesmo experimento que `SF-BENCH` julga: os dois lêem o par
+antes/depois da **mesma** mudança, um pelo tempo de task, o outro pelo resultado. Duração
+menor com resultado diferente não é otimização, é bug — e até a Fase 4c essa exigência
+estava escrita aqui e em duas skills sem produtor nenhum, exatamente como o `benchmark_ref`
+antes da 4a.
+
+Antes de fechar o relatório, derive o plano com `sparkforge_funcval_plan` — ele lê os facts
+que você já extraiu (`pyspark.write` dá o alvo, `catalog.table_schema` dá schema e agregados),
+por isso `--facts` é repetível — e compare os dois resultados medidos com
+`sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark ou chama AWS: quem
+mede os checks nos dois lados é o operador.
+
+O plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob
+`--strict-gates`; `ROUTE-015` é a rota que manda defini-lo. *Defined*, não *executed* — o que
+destrava é o `funcval.plan`.
+
+Três coisas que você não pode ler errado. **Chave de negócio não é derivável:** nenhum dos 106
+kinds a nomeia, então ou você a declara com `--key` (e o check sai com `origin: declared`) ou o
+plano escreve o eixo em `undeclared_axes` com a razão — declarar chave errada produz P0 sobre
+dado correto, e a responsabilidade pela declaração é de quem a declara. **Os quatro eixos são
+proxies:** contagem, schema, chaves e agregados iguais não provam que o dado é o mesmo — duas
+linhas podem trocar valores entre si e os quatro passam; a ausência de achado significa
+"nenhum proxy detectou divergência". **`SF-FVAL-005` acesa invalida a leitura das outras
+quatro:** parte do plano não foi medida, e a foto está incompleta.
+
 ## Não faz
 
 **O seu caminho até a manutenção destrutiva passa pelo benchmark.** Medir antes e depois
@@ -70,6 +97,12 @@ volume de entrada de cada lado, o rollback. Executar contra dado de produção �
 ser perguntado, e a confirmação de escopo e retenção acontece lá. Aqui dentro a pergunta não
 está disponível, e medir sem ela troca uma medição por um incidente — com o agravante de que
 o incidente destrói justamente a base de comparação.
+
+O plano de validação funcional torna essa fronteira mais estreita, não mais larga: o lado
+`--before` do `funcval compare` só existe se alguém o mediu **antes** de a mudança tocar o
+alvo, e um `overwrite` executado no meio o apaga sem deixar rastro de que existia. Por isso o
+plano se define na fase `validation`, antes do `report` — e por isso a ordem, aqui, é parte da
+recomendação e não detalhe de execução.
 
 ## Como você trabalha
 

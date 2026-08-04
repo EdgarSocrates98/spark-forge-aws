@@ -45,10 +45,12 @@ abriu. Sob ele, quatro coisas mudam para você:
    satisfaz digitando é a família de defeito que a Fase 4a mediu no `benchmark_ref` antigo.
 2. **Quem produz a evidência de cada gate é dado, não memória.** Está no bloco `gates` de
    `rules/catalog/routing.yaml`, com o comando exato em `produced_by` — hoje
-   `baseline_captured` ← `bench.run_delta` (`sparkforge benchmark --before … --after …`) e
-   `flows_mapped` ← `callgraph.reachable_spark_work` (`sparkforge analyze call-graph`). Os
-   outros dois **não têm produtor** e seguem advisory mesmo sob rigor. Leia o bloco; não
-   decore esta lista.
+   `baseline_captured` ← `bench.run_delta` (`sparkforge benchmark --before … --after …`),
+   `flows_mapped` ← `callgraph.reachable_spark_work` (`sparkforge analyze call-graph`) e
+   `functional_validation_defined` ← `funcval.plan` (`sparkforge funcval plan`). O
+   **quarto**, `dominant_bottleneck_identified`, não tem produtor e segue advisory mesmo
+   sob rigor: nenhum fact prova dominância, e o julgamento é do catálogo. Leia o bloco;
+   não decore esta lista.
 3. **Passar por cima é possível, custa uma frase e fica gravado.** `sparkforge case update
    --override-gate <gate> --reason "<por que a evidência não existe>"`. Sem `--reason` o
    override é recusado — override anônimo não se distingue de gate esquecido. Ele entra

@@ -1,4 +1,6 @@
+import argparse
 import json
+import re
 from pathlib import Path
 
 from sparkforge.adapters.tools import TOOLS
@@ -8,6 +10,44 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _read(name: str) -> str:
     return (ROOT / name).read_text(encoding="utf-8")
+
+
+def _cli_verbs() -> set[str]:
+    """Os verbos de topo, lidos do parser REAL e nunca de uma lista à mão.
+
+    Mesma disciplina de `test_agents_md_lists_every_coordinator`, que deriva os
+    coordenadores do diretório: lista copiada envelhece sem que nada acuse.
+    """
+    from sparkforge.adapters.cli import build_parser
+
+    verbs: set[str] = set()
+    for action in build_parser()._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            verbs |= set(action.choices)
+    return verbs
+
+
+def _commands_cited(text: str) -> set[str]:
+    """Os verbos que um documento cita como comando.
+
+    Duas formas, e só elas: linha de bloco de código que começa com
+    `sparkforge `, e trecho inline entre crases. A prosa "a CLI `sparkforge`
+    faz tudo" fica de fora de propósito — ali não há verbo citado.
+    """
+    cited: set[str] = set()
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("sparkforge "):
+            cited.add(stripped.split()[1])
+    cited |= set(re.findall(r"`sparkforge\s+([a-z][a-z0-9-]*)", text))
+    return cited
+
+
+def _section(text: str, heading: str) -> str:
+    start = text.index(heading)
+    rest = text[start + len(heading) :]
+    end = rest.find("\n## ")
+    return rest if end == -1 else rest[:end]
 
 
 class TestReadme:
@@ -77,6 +117,45 @@ class TestGuia:
 
     def test_documents_the_no_mcp_no_python_fallback(self):
         assert "rules/catalog" in self.GUIA
+
+    def test_every_command_the_guide_teaches_is_a_real_verb(self):
+        """O guia não é coberto por `scripts/sync_skills.py --check`, então o que
+        o impede de envelhecer é este teste.
+
+        Ele não exige que o guia documente TODOS os verbos — documentar
+        `collect` ou `rules` é decisão editorial, não invariante. Ele exige o
+        contrário, que é o que de fato quebra o leitor: verbo citado no guia que
+        a CLI não tem. Renomear ou remover um verbo passa a acusar aqui.
+        """
+        cited = _commands_cited(self.GUIA)
+        assert cited, "o guia deixou de citar qualquer comando `sparkforge`"
+        unknown = cited - _cli_verbs()
+        assert not unknown, f"o guia ensina verbo que a CLI não tem: {sorted(unknown)}"
+
+    def test_the_conclusion_criteria_name_a_producing_verb(self):
+        """Item de conclusão sem verbo produtor é a prosa que `SF-FVAL` e
+        `SF-BENCH` existem para acusar no job do usuário.
+
+        A §8 listava "benchmark" e "validação funcional" como texto solto, sem
+        dizer o que os produz — o motor cobrando do usuário o que o próprio guia
+        não fazia. Os dois itens agora nomeiam o verbo, e este teste é o que
+        impede a regressão.
+        """
+        criterio = _section(self.GUIA, "## 8. Critério de conclusão")
+        assert "sparkforge benchmark" in criterio
+        assert "sparkforge funcval plan" in criterio
+        assert "sparkforge funcval compare" in criterio
+
+    def test_documents_the_two_funcval_verbs_where_it_teaches_commands(self):
+        """`funcval` é a entrega da Fase 4c, e o guia é o único documento de uso
+        que um operador lê antes de abrir o repositório. Os dois verbos precisam
+        aparecer com os argumentos que os tornam utilizáveis."""
+        assert "funcval plan" in self.GUIA
+        assert "funcval compare" in self.GUIA
+        # `--out` obrigatório no `plan` e ausente no `compare` é a assimetria que
+        # mais confunde; o guia tem de declarar as duas metades.
+        assert "--out .sparkforge/facts_funcval_plan.json" in self.GUIA
+        assert "next_cursor" in self.GUIA
 
 
 class TestPromptMestre:

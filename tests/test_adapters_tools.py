@@ -49,6 +49,8 @@ class TestToolSurface:
             "sparkforge_analyze_consumers",
             "sparkforge_analyze_terraform_diff",
             "sparkforge_benchmark",
+            "sparkforge_funcval_plan",
+            "sparkforge_funcval_compare",
             "sparkforge_fuse",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
@@ -111,11 +113,19 @@ class TestToolSurface:
         DENTRO do relatorio, no lugar. Um `sign` que so devolvesse o bloco para
         alguem colar seria a versao decorativa da capacidade -- e a colagem
         manual e exatamente onde o corpo assinado deixaria de ser o corpo
-        escrito. `report_verify` fica de fora: so le."""
+        escrito. `report_verify` fica de fora: so le.
+
+        A Fase 4c acrescentou `sparkforge_funcval_plan` pela MESMA razao, um
+        dominio adiante: o plano nao e saida legivel, e o artefato que
+        `sparkforge_funcval_compare` rele e que o gate cobra. Um `plan` que so
+        devolvesse `structuredContent` daria a capacidade a quem usa a CLI
+        (`--out`) e nao a quem usa o MCP -- a assimetria que `parity.yaml`
+        existe para pegar. `funcval_compare` fica de fora: so le."""
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
         assert writers == {
             "sparkforge_case_open",
             "sparkforge_case_update",
+            "sparkforge_funcval_plan",
             "sparkforge_report_sign",
         }
 
@@ -506,6 +516,78 @@ def _write_facts_file(tmp_path):
     path = tmp_path / "facts.json"
     path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
     return path
+
+
+_FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
+
+
+def _write_funcval_facts_files(tmp_path):
+    """Os DOIS arquivos que `sparkforge_funcval_plan` une.
+
+    O alvo sai do `pyspark.write` (`analyze pyspark`) e o schema/os agregados
+    saem do `catalog.table_schema` (`analyze catalog-schema`). Nenhum verbo
+    produz os dois no mesmo arquivo -- e e exatamente por isso que
+    `facts_paths` e lista: com um arquivo so, os eixos de schema e de agregado
+    nunca seriam derivaveis.
+    """
+    lib = tmp_path / "job"
+    lib.mkdir()
+    (lib / "carga.py").write_text(_FUNCVAL_JOB, encoding="utf-8")
+    catalog_dir = tmp_path / "catalog_dump"
+    catalog_dir.mkdir()
+    (catalog_dir / "dump.json").write_text(CATALOG_DUMP, encoding="utf-8")
+
+    produced = (
+        ("pyspark", call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})),
+        (
+            "catalog",
+            call_tool("sparkforge_analyze_catalog_schema", {"path": str(catalog_dir)}),
+        ),
+    )
+    paths = []
+    for name, payload in produced:
+        path = tmp_path / f"{name}_facts.json"
+        path.write_text(json.dumps(payload["items"], ensure_ascii=False), encoding="utf-8")
+        paths.append(str(path))
+    return paths
+
+
+def _write_funcval_plan_file(tmp_path):
+    """O artefato que `sparkforge_funcval_compare` rele. `db.eventos` casa com
+    o dump, entao o plano sai com os quatro eixos: `count` e `schema` derivados,
+    `agg:sum:cliente_id` derivado do tipo declarado, e `key:cliente_id`
+    DECLARADO -- que e o unico jeito de o eixo de chaves existir."""
+    plan_path = tmp_path / "plano.json"
+    call_tool(
+        "sparkforge_funcval_plan",
+        {
+            "facts_paths": _write_funcval_facts_files(tmp_path),
+            "out_path": str(plan_path),
+            "keys": ["cliente_id"],
+        },
+    )
+    return plan_path
+
+
+def _write_funcval_result_files(tmp_path):
+    """Os dois resultados que o OPERADOR mediu -- o motor nunca os produz."""
+    paths = []
+    for name, count in (("antes", 1000), ("depois", 998)):
+        path = tmp_path / f"{name}.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "target": "db.eventos",
+                    "checks": {
+                        "count": {"value": count},
+                        "key:cliente_id": {"value": 0},
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        paths.append(path)
+    return paths[0], paths[1]
 
 
 def _event_log_lines(run_ms):
@@ -904,6 +986,28 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_benchmark", {"before_path": str(before), "after_path": str(after)}
         )
 
+    if name == "sparkforge_funcval_plan":
+        return call_tool(
+            "sparkforge_funcval_plan",
+            {
+                "facts_paths": _write_funcval_facts_files(tmp_path),
+                "out_path": str(tmp_path / "plano.json"),
+                "keys": ["cliente_id"],
+            },
+        )
+
+    if name == "sparkforge_funcval_compare":
+        plan_path = _write_funcval_plan_file(tmp_path)
+        before, after = _write_funcval_result_files(tmp_path)
+        return call_tool(
+            "sparkforge_funcval_compare",
+            {
+                "plan_path": str(plan_path),
+                "before_path": str(before),
+                "after_path": str(after),
+            },
+        )
+
     if name == "sparkforge_fuse":
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_fuse", {"facts_paths": [str(facts_path)]})
@@ -1030,6 +1134,18 @@ class TestErrorShapesValidateToo:
         (
             "sparkforge_benchmark",
             {"before_path": "<tmp>/nao-existe.json", "after_path": "<tmp>/nao-existe.json"},
+        ),
+        (
+            "sparkforge_funcval_plan",
+            {"facts_paths": ["<tmp>/nao-existe.json"], "out_path": "<tmp>/plano.json"},
+        ),
+        (
+            "sparkforge_funcval_compare",
+            {
+                "plan_path": "<tmp>/nao-existe.json",
+                "before_path": "<tmp>/antes.json",
+                "after_path": "<tmp>/depois.json",
+            },
         ),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),

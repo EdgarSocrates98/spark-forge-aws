@@ -299,6 +299,87 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     benchmark_p.add_argument("--cursor")
 
+    # funcval ---------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
+    # `plan` deriva de facts ja extraidos, `compare` le o resultado que o
+    # operador mediu. O motor nunca executa consulta em nenhum dos dois.
+    funcval_p = sub.add_parser(
+        "funcval",
+        help=(
+            "Validacao funcional: deriva o que medir nos dois lados de uma mudanca "
+            "e compara antes contra depois. Nao executa nada."
+        ),
+    )
+    funcval_sub = funcval_p.add_subparsers(dest="funcval_action", required=True)
+
+    funcval_plan_p = funcval_sub.add_parser(
+        "plan",
+        help=(
+            "Deriva o plano de validacao (contagem, schema, agregados) dos facts "
+            "ja extraidos, e grava o artefato que `funcval compare` rele."
+        ),
+    )
+    funcval_plan_p.add_argument(
+        "--facts",
+        required=True,
+        action="append",
+        help=(
+            "Arquivo de facts (JSON) gerado por `analyze pyspark --out` ou "
+            "`analyze catalog-schema --out`. Repetivel, e precisa ser: o alvo vem do "
+            "`pyspark.write` e o schema/os agregados vem do `catalog.table_schema`, "
+            "que nenhum verbo produz no mesmo arquivo."
+        ),
+    )
+    funcval_plan_p.add_argument(
+        "--key",
+        action="append",
+        help=(
+            "Chave de negocio DECLARADA, repetivel. Virgula faz chave COMPOSTA "
+            "(`--key loja_id,pedido_id` e uma chave de duas colunas, nao duas chaves). "
+            "Nenhum fact do repositorio nomeia chave de negocio, entao o eixo so "
+            "existe se voce o declarar -- e o check sai com `origin: declared`. Sem "
+            "`--key`, o plano escreve o eixo como ausente em `undeclared_axes`."
+        ),
+    )
+    funcval_plan_p.add_argument(
+        "--out",
+        required=True,
+        help=(
+            "Escreve o plano (JSON de facts) neste arquivo. OBRIGATORIO, ao contrario "
+            "do `--out` dos verbos de `analyze`: o plano e a entrada de "
+            "`funcval compare --plan` e a evidencia do gate, nao uma conveniencia."
+        ),
+    )
+    funcval_plan_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    funcval_plan_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    funcval_plan_p.add_argument("--cursor")
+
+    funcval_compare_p = funcval_sub.add_parser(
+        "compare",
+        help=(
+            "Compara os dois resultados que VOCE mediu contra o plano. Antes contra "
+            "depois, nunca observado contra catalogo."
+        ),
+    )
+    funcval_compare_p.add_argument(
+        "--plan", required=True, help="Arquivo gerado por `funcval plan --out`."
+    )
+    funcval_compare_p.add_argument(
+        "--before",
+        required=True,
+        help=(
+            "Resultado medido ANTES da mudanca: JSON com `target` e `checks`, um "
+            "objeto por check. `value: null` exige `unavailable_reason`; check que "
+            "voce nao mediu fica AUSENTE, nunca zero."
+        ),
+    )
+    funcval_compare_p.add_argument(
+        "--after", required=True, help="Resultado medido DEPOIS, no mesmo contrato."
+    )
+    funcval_compare_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    funcval_compare_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    funcval_compare_p.add_argument("--cursor")
+
     # fuse ---------------------------------------------------------------
     fuse_p = sub.add_parser(
         "fuse",
@@ -963,6 +1044,49 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_funcval_plan(args: argparse.Namespace) -> int:
+    """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
+
+    Os verbos de `analyze` escrevem na CLI porque o `--out` deles e opcional e
+    so a CLI o conhece. Aqui o arquivo e o artefato que o proximo verbo consome,
+    e ele tem que sair identico pela CLI e pelo MCP -- gravar nos dois lugares
+    seria a mesma escrita mantida a mao em duas copias.
+    """
+    full = _core.funcval_plan(args.facts, args.out, keys=args.key, kind=args.kind, limit=None)
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_funcval_compare(args: argparse.Namespace) -> int:
+    full = _core.funcval_compare(
+        args.plan, args.before, args.after, kind=args.kind, limit=None
+    )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
 def _cmd_fuse(args: argparse.Namespace) -> int:
     full = _core.fuse_facts(args.facts, kind=args.kind, limit=None)
     if args.out:
@@ -1231,6 +1355,8 @@ _DISPATCH = {
     ("analyze", "consumers"): _cmd_analyze_consumers,
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
     ("benchmark", None): _cmd_benchmark,
+    ("funcval", "plan"): _cmd_funcval_plan,
+    ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,
     ("judge", None): _cmd_judge,
     ("case", "open"): _cmd_case_open,
@@ -1260,6 +1386,7 @@ def _dispatch(args: argparse.Namespace) -> int:
     sub_action = (
         getattr(args, "analyze_target", None)
         or getattr(args, "case_action", None)
+        or getattr(args, "funcval_action", None)
         or getattr(args, "runtime_action", None)
         or getattr(args, "knowledge_action", None)
         or getattr(args, "rules_action", None)
