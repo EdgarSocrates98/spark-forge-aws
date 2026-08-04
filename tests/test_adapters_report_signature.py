@@ -17,7 +17,8 @@ import pytest
 from sparkforge.adapters import _core
 from sparkforge.adapters.cli import main
 from sparkforge.adapters.tools import call_tool
-from sparkforge.findings.signature import SIGNATURE_RE
+from sparkforge.findings import signature as sig
+from sparkforge.findings.signature import SIGNATURE_RE, SIGNATURE_VERSION
 
 BODY = """# Relatorio de Performance
 
@@ -489,6 +490,117 @@ class TestOsDoisVerbosNosTresAdaptadores:
             },
         )["signature"]
         assert pelo_core == pela_tool
+
+
+class TestVersaoDaAssinaturaSeparaRegraDeAdulteracao:
+    """A versao entra no hash, mas quem le precisa saber POR QUE nao fechou.
+
+    `signature.py` afirma que a versao dentro do hash *"separa os dois casos"* e
+    evita que "invalido" signifique "mudamos a regra". Medido antes da correcao:
+    o bloco nao carregava linha de versao, entao um relatorio de versao anterior
+    produzia exatamente a mesma saida (`status: diverged`, `diverged: ["body"]`,
+    e o detalhe dizendo "o corpo foi editado depois da emissao") que um corpo
+    adulterado. O que a versao no hash garante e que as assinaturas **diferem**
+    -- nao que alguem diga por que.
+
+    E latente hoje (versao 1, normalizacao estavel) e dispara na primeira
+    mudanca de normalizacao, que e justamente quando ninguem vai lembrar disto.
+    """
+
+    def test_o_bloco_declara_a_versao_da_assinatura(self, tmp_path):
+        _core.report_sign(_report(tmp_path), _findings(tmp_path))
+        texto = (tmp_path / "relatorio.md").read_text(encoding="utf-8")
+        assert f"- signature_version: {SIGNATURE_VERSION}" in texto
+
+    def test_versao_diferente_nao_e_lida_como_corpo_adulterado(
+        self, tmp_path, monkeypatch
+    ):
+        """O caso que o modulo prometia separar e nao separava."""
+        report = _report(tmp_path)
+        _core.report_sign(report, _findings(tmp_path))
+        monkeypatch.setattr(sig, "SIGNATURE_VERSION", SIGNATURE_VERSION + 1)
+        resultado = _core.report_verify(report, _findings(tmp_path))
+        assert resultado["valid"] is False
+        assert resultado["status"] == "version_mismatch"
+        assert resultado["diverged"] == ["version"]
+        assert "body" not in resultado["diverged"]
+
+    def test_a_saida_diz_qual_versao_assinou_e_qual_esta_valendo(
+        self, tmp_path, monkeypatch
+    ):
+        report = _report(tmp_path)
+        _core.report_sign(report, _findings(tmp_path))
+        monkeypatch.setattr(sig, "SIGNATURE_VERSION", 7)
+        resultado = _core.report_verify(report, _findings(tmp_path))
+        detalhe = resultado["checks"]["version"]["detail"]
+        assert str(SIGNATURE_VERSION) in detalhe
+        assert "7" in detalhe
+        assert "reassine" in resultado["reason"].lower()
+
+    def test_sob_versao_diferente_o_corpo_e_declarado_nao_avaliavel(
+        self, tmp_path, monkeypatch
+    ):
+        """Dizer "o corpo divergiu" aqui seria a mentira que esta task fecha:
+        esta build nao sabe normalizar como a versao que assinou."""
+        report = _report(tmp_path)
+        _core.report_sign(report, _findings(tmp_path))
+        monkeypatch.setattr(sig, "SIGNATURE_VERSION", SIGNATURE_VERSION + 1)
+        corpo = _core.report_verify(report, _findings(tmp_path))["checks"]["body"]
+        assert corpo["ok"] is False
+        assert "avali" in corpo["detail"].lower()
+        assert "editado" not in corpo["detail"]
+
+    def test_adulteracao_do_corpo_continua_saindo_como_corpo(self, tmp_path):
+        """A contraparte: sem mudanca de versao, a atribuicao e a de sempre."""
+        report = _report(tmp_path)
+        _core.report_sign(report, _findings(tmp_path))
+        path = tmp_path / "relatorio.md"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace("40%", "90%"), encoding="utf-8"
+        )
+        resultado = _core.report_verify(report, _findings(tmp_path))
+        assert resultado["status"] == "diverged"
+        assert resultado["diverged"] == ["body"]
+
+    def test_evidencia_divergente_aparece_junto_da_versao(self, tmp_path, monkeypatch):
+        """Versao errada nao apaga o que ainda da para conferir: `evidence` e
+        `catalog` nao dependem da normalizacao, entao seguem sendo comparados."""
+        report = _report(tmp_path)
+        _core.report_sign(report, _findings(tmp_path))
+        monkeypatch.setattr(sig, "SIGNATURE_VERSION", SIGNATURE_VERSION + 1)
+        resultado = _core.report_verify(
+            report, _findings(tmp_path, evidence=["f_ccc333"])
+        )
+        assert resultado["diverged"] == ["version", "evidence"]
+
+    def test_bloco_sem_a_linha_de_versao_e_lido_como_versao_1(self, tmp_path):
+        """Compatibilidade sem migracao: bloco sem a linha so pode ter saido da
+        unica versao que nunca a escreveu. Nao e default silencioso -- ele nao
+        serve para forjar validade, porque a versao entra no hash: declarar 1
+        quando o corpo foi assinado sob 2 faz a assinatura nao fechar."""
+        report = _report(tmp_path)
+        _core.report_sign(report, _findings(tmp_path))
+        path = tmp_path / "relatorio.md"
+        path.write_text(
+            "\n".join(
+                linha
+                for linha in path.read_text(encoding="utf-8").splitlines()
+                if not linha.startswith("- signature_version:")
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        resultado = _core.report_verify(report, _findings(tmp_path))
+        assert resultado["valid"] is True
+        assert resultado["checks"]["version"]["ok"] is True
+
+    def test_a_versao_declarada_nao_altera_o_veredito_por_si(self, tmp_path):
+        """Apagar a linha e reescrever `- signature_version: 1` a mao num bloco
+        de versao 1 nao muda nada -- e a prova de que o veredito nao sai do
+        bloco, que e o mesmo argumento do D-4b-14."""
+        report = _report(tmp_path)
+        _core.report_sign(report, _findings(tmp_path))
+        assert _core.report_verify(report, _findings(tmp_path))["valid"] is True
 
 
 class TestOTemplateCarregaOBloco:
