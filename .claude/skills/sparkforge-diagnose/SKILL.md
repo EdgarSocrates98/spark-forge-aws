@@ -100,7 +100,25 @@ sparkforge validate --findings .sparkforge/findings.json
 
 Ganho quantificado sem `benchmark_ref` é rejeitado pelo schema.
 
-### 9. Pare em qualquer ponto, retome em qualquer ferramenta
+### 9. Assine o relatório que você entregar
+
+```bash
+sparkforge report sign --report <relatorio.md> --findings .sparkforge/findings.json
+sparkforge report verify --report <relatorio.md> --findings .sparkforge/findings.json
+```
+
+Escreve um bloco no fim do relatório e prova **correspondência** entre aquele texto, aquela evidência e aquele catálogo. **Nunca autoria**: não há chave nem segredo, qualquer pessoa com os mesmos findings produz a mesma assinatura — não escreva, e não deixe o leitor supor, que o bloco autentica quem redigiu.
+
+O arquivo é o de **findings** (`judge --out`), não o de facts: `rule_id`, `catalog_version` e `schema_version` só existem lá. O corpo assinado é tudo que vem **antes** do delimitador do bloco — texto acrescentado depois dele é recusado, não ignorado. Editar a prosa depois de assinar invalida, e é para isso que serve: reassinar é barato, texto editado passando por verificado não é.
+
+`report verify` diz **qual** das quatro partes divergiu — versão da assinatura, evidência, catálogo ou corpo — em vez de devolver só "inválido". `version_mismatch` é **regra mudada, não adulteração**: o corpo sai como não avaliável, e o que se faz é reassinar.
+
+Duas coisas que a assinatura **não** faz, e que são suas:
+
+- Se o case tiver `gate_overrides`, preencha a seção "Gates com override" do relatório com gate, data e motivo, copiados de `sparkforge case get`. Ela fica dentro do corpo assinado — apagá-la depois de assinar invalida —, mas **nada compara essa tabela com o case**: omitir um override afirma um rigor que não foi prestado, e nenhum código pega isso por você.
+- Nada obriga a assinar: `strict_gates` guarda a **transição de fase**, não a emissão do relatório. Entregar sem assinar é entregar um texto que ninguém consegue conferir contra a evidência.
+
+### 10. Pare em qualquer ponto, retome em qualquer ferramenta
 
 ```bash
 sparkforge handoff --repo <repo> --findings .sparkforge/findings.json --unresolved <n> --in-flight "<o que estava em andamento>"
