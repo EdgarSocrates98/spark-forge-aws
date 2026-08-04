@@ -1067,8 +1067,8 @@ estava escrita em lugar nenhum.** Medido em `sparkforge/adapters/cli.py:357-381`
 no `inputSchema` de `sparkforge_funcval_compare`: o verbo aceita `--plan`,
 `--before`, `--after`, `--kind`, `--limit` e `--cursor`, e **nenhum** `--out`.
 `funcval plan` tem `--out` **obrigatório** (é a entrada do `compare` e a evidência
-do gate), e todos os outros produtores de fact do repositório gravam — os quinze
-`analyze *`, o `benchmark` e o `fuse`. Verificado ponta a ponta na CLI sobre
+do gate), e todos os outros produtores de fact do repositório gravam — os
+**catorze** `analyze *`, o `benchmark` e o `fuse`. Verificado ponta a ponta na CLI sobre
 `fixtures/funcval/count_diverged/`: `analyze pyspark` + `analyze catalog-schema` →
 `funcval plan --key pedido_id,dt --out` → `funcval compare > arquivo` → extrair
 `items` → `judge` devolve `['SF-FVAL-001', 'SF-FVAL-005']`. O caminho existe; o
@@ -1078,8 +1078,10 @@ obrigatório, e `--limit` vale **50** por default — extrair `items` sem confer
 `next_cursor` julga a primeira página e chama o resultado de comparação, que é
 exatamente o defeito que a `SF-FVAL-005` acusa no dado do operador. Registrado
 como **dívida** no `STATUS.md` (fechar é `--out`/`out_path` nos dois adaptadores,
-mais as quatro listas de paridade da Fase 4b), e o contorno ficou **escrito** nas
-duas skills que ensinam o verbo — skill que ensina o caminho feliz e cala o passo
+mais as quatro listas de paridade da Fase 4b), e o contorno ficou **escrito** na
+skill que ensina o verbo — `benchmark-pyspark-job`, a única das duas que ensina
+`compare`; `review-pyspark-pr` ensina só `plan`, que tem `--out`, e delega a
+comparação. Skill que ensina o caminho feliz e cala o passo
 que falta transforma dívida do repositório em erro do usuário.
 
 **D-4c-27 — a decisão de coordenador e de skill saiu da rota e do critério de

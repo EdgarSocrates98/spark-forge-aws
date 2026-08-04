@@ -199,12 +199,12 @@ valor próprio, e a convenção é a da seção "Como manter este arquivo honest
 [`STATUS.md`](../STATUS.md): spec obsoleto ganha seção de desvios e aponta para
 lá, em vez de ser editado. O estado corrente é o [`STATUS.md`](../STATUS.md).
 
-A implementação apurou **26** desvios numerados, `D-4c-1` a `D-4c-26`, cada um
+A implementação apurou **27** desvios numerados, `D-4c-1` a `D-4c-27`, cada um
 com o texto medido na task que o encontrou —
 [o plano](../plans/2026-08-04-sparkforge-fase4c-validacao-funcional.md) os carrega
 por extenso, na seção *Desvios medidos* de cada task. Os seis abaixo são os que
-tornam **este documento** errado onde ele afirma; os outros vinte são medições
-que o plano registrou e que não contradizem nada escrito aqui.
+tornam **este documento** errado onde ele afirma; os outros vinte e um são
+medições que o plano registrou e que não contradizem nada escrito aqui.
 
 **D-4c-1 — `pyspark.join` não dá as chaves, e dá menos do que a §4 supunha.** A
 D-1 afirma que "`pyspark.join` dá as chaves". Não dá: o fact carrega
@@ -284,5 +284,8 @@ escreve arquivo nenhum. Consequência prática, medida na CLI: para julgar os
 formato que `judge --facts` espera —, e conferir `next_cursor`, porque `--limit`
 vale 50 por default e um plano grande pagina. Está registrado como **dívida** no
 `STATUS.md`, não como limite: fechá-la é escrever `--out`/`out_path` nos dois
-adaptadores, sem reverter decisão nenhuma. As duas skills que ensinam o verbo
-carregam o contorno por escrito enquanto ela estiver aberta.
+adaptadores, sem reverter decisão nenhuma. O contorno está escrito onde o verbo
+é ensinado, que é **uma** skill e não duas: `benchmark-pyspark-job` ensina
+`funcval compare` e carrega a extração de `items` e a conferência de
+`next_cursor`; `review-pyspark-pr` ensina só `funcval plan` — que **tem**
+`--out` — e delega a comparação à outra skill, então não há contorno a carregar.

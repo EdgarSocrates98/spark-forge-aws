@@ -156,9 +156,9 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Sixteen extractors, all offline — they read artifacts already on disk and never
+Seventeen extractors, all offline — they read artifacts already on disk and never
 call AWS. Each has a CLI verb and an MCP tool with the same name, and together
-they emit 102 distinct fact kinds:
+they emit 106 distinct fact kinds:
 
 | Artifact | CLI verb | Reads |
 |---|---|---|
