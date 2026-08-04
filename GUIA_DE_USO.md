@@ -299,6 +299,44 @@ lido por outra ótica, e nenhum dos dois extratores cala o outro: a mesma linha 
 produzir um achado sobre o que a cadeia custa e outro sobre o dado ruim já estar publicado
 quando o alarme toca.
 
+Se a investigação vai **mudar** o job, `funcval plan` deriva, **antes** da mudança, o que
+precisa ser medido nos dois lados — contagem, schema, chaves e agregados do alvo:
+
+```bash
+sparkforge funcval plan \
+  --facts .sparkforge/facts.json \
+  --facts .sparkforge/facts_catalog.json \
+  --key pedido_id,dt \
+  --out .sparkforge/facts_funcval_plan.json
+```
+
+`--facts` é repetível e **precisa** ser: o alvo vem do `pyspark.write` de
+`analyze pyspark`, e o schema e os agregados vêm do `catalog.table_schema` de
+`analyze catalog-schema` — nenhum verbo produz os dois no mesmo arquivo. `--out` é
+**obrigatório** aqui, ao contrário do `--out` dos verbos de `analyze`: o plano é a entrada
+do `compare` e é a evidência do gate `functional_validation_defined`. Sem `--key` o plano
+não inventa chave — nenhum fact do repositório nomeia chave de negócio —, e escreve o eixo
+como ausente em `undeclared_axes` em vez de calar. Derivar o plano **antes** é o ponto:
+definir depois de medir é escolher o check que passa.
+
+Medidos os dois lados — quem mede é você, o motor não executa consulta nenhuma —,
+`funcval compare` julga antes contra depois, **nunca** observado contra catálogo:
+
+```bash
+sparkforge funcval compare \
+  --plan .sparkforge/facts_funcval_plan.json \
+  --before .sparkforge/funcval_before.json \
+  --after .sparkforge/funcval_after.json
+```
+
+`compare` **não tem `--out`** — ele imprime o envelope paginado. Para julgar, extraia
+`items` (é o formato que `judge --facts` espera) e confira `next_cursor` antes: `--limit`
+vale 50 por default, e julgar a primeira página chamando-a de comparação é o mesmo defeito
+que `SF-FVAL-005` acusa. Os quatro eixos são **proxies**: iguais nos dois lados eles não
+provam que o dado é o mesmo, porque duas linhas podem trocar valores entre si e os quatro
+passam. Relate a ausência de achado `SF-FVAL` como "nenhum proxy detectou divergência",
+nunca como "o resultado é idêntico".
+
 ## 7. Quando faltarem dados
 
 Peça ao agente para gerar:
@@ -317,11 +355,16 @@ A investigação só está concluída quando houver:
 - gargalo dominante comprovado;
 - arquitetura-alvo;
 - mudança implementada;
-- benchmark;
-- validação funcional;
+- benchmark — `sparkforge benchmark --before … --after …`;
+- validação funcional — `sparkforge funcval plan` **antes** da mudança e
+  `sparkforge funcval compare` depois, com os dois lados medidos por você;
 - custo;
 - risco;
 - rollback.
+
+Os dois itens com verbo são os que produzem **artefato verificável**, e é por isso que
+eles nomeiam o comando: item de conclusão sem verbo produtor é exatamente a prosa que
+`SF-FVAL` e `SF-BENCH` existem para acusar no job do usuário — não cabe cometê-la aqui.
 
 ## 9. Retomando entre Devin e Claude Code
 
