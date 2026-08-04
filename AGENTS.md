@@ -163,18 +163,30 @@ refused — a rigid gate is a dead end when the data simply does not exist.
 When the data genuinely does not exist, overriding costs one sentence, and the
 sentence stays: `case update --override-gate <gate> --reason "<why>"`, refused
 without `--reason`, appended to a list (two overrides of the same gate are two
-facts) and shown in `resume`.
+facts) and shown in `resume`. If the case has overrides, the report's "Gates com
+override" section carries them — gate, date and reason — and it sits inside the
+signed body, so deleting it after signing invalidates the signature.
+
+Opening a case on top of an existing one is **refused**: overwriting would erase
+the phase, the rigour and the recorded overrides. Starting over is still
+possible, by name — `sparkforge case open --reopen` — and it **inherits** the
+current `strict_gates`: rigour goes up with `--strict-gates` and never down by
+forgetting a flag.
 
 The gate checks **presence of the kind**, never the content of the fact. It
 proves the analysis ran and produced the unlocking artifact — it does **not**
 prove that it covered every `scope.entrypoints`, nor that the benchmark is of the
-right job. That limit is a recorded decision and it is stated in the blocking
+right job. Measured, so you do not overread a green gate: two hand-written lines
+of JSON with empty `provenance` take a strict case from `intake` to `report`.
+That limit is a recorded decision and it is stated in the blocking
 message itself; state the same caveat in the report, the way `dq.unresolved`
 states its own.
 
 `sparkforge report sign --report <md> --findings <json>` appends a signature
-block to the report, and `sparkforge report verify` says **which** of the three
-parts diverged — evidence, catalog, or body — rather than just "invalid". Both
+block to the report, and `sparkforge report verify` says **which** of the four
+parts diverged — signature version, evidence, catalog, or body — rather than just
+"invalid". `version_mismatch` means the rule changed, not that the body was
+tampered with: the body comes back as **not assessable** instead of accused. Both
 exist as MCP tools too (`sparkforge_report_sign`, `sparkforge_report_verify`).
 The input is the **findings** file, not the facts file: `rule_id`,
 `catalog_version` and `schema_version` only exist there. The hash covers the

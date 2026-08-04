@@ -759,3 +759,151 @@ Quatro dívidas registradas na seção própria do `STATUS.md`, três delas
 antecipadas na abertura da task e conferidas uma a uma, mais uma medida aqui:
 nenhuma skill cita `report sign`, então a assinatura chegou ao protocolo e ao
 executor e **não** ao terceiro degrau da escada de portabilidade.
+
+## Task 7: fechar as sete pendências da revisão final
+
+A revisão final aprovou 8 dos 10 critérios e mediu sete pendências. Esta task as
+fecha; nada aqui amplia o escopo da fase.
+
+- [x] **Step 1: contrato de gate ausente ou incompleto vira recusa**
+
+> **Desvio D-4b-21 — o rigor falhava ABERTO quando o catálogo carregado não
+> declarava os gates.** `router._validate_gates` retorna cedo em `if gates is
+> None: return`, `load_gate_contract` devolve `{}` e `store._gate_contract` só
+> rejeitava nome **desconhecido**. Medido com `SPARKFORGE_CATALOG` apontando para
+> uma cópia do catálogo: sem o bloco `gates`, um case com `strict_gates: true`
+> ia de `intake` a `report` com `fact_kinds=set()`; idem com `gates: {}`; idem
+> removendo só `flows_mapped` e pedindo `hypothesis`. O único guarda era
+> `test_os_quatro_gates_aparecem_no_contrato`, que roda sobre o catálogo do
+> **repositório** e nunca sobre o que o runtime carrega.
+>
+> A recusa mora em `store._gate_contract`, e não em `router._validate_gates`, e
+> isso preserva o critério 5: quem não pediu rigor continua sem ler o catálogo, e
+> o `next_step` de um catálogo antigo continua funcionando. A mensagem nomeia
+> cada gate faltante, o arquivo **resolvido** (`router.routing_path`, porque
+> `SPARKFORGE_CATALOG` move o catálogo e "no `routing.yaml`" não localiza nada) e
+> o que declarar por gate.
+>
+> **Contrato vazio e contrato parcial recebem a mesma resposta**, e os dois foram
+> medidos: a única diferença é a contagem — vazio é o caso em que faltam os
+> quatro. Uma resposta mais branda para o bloco inteiro ausente premiaria
+> justamente o catálogo que esqueceu mais.
+
+- [x] **Step 2: o grep do critério 1, que não existia**
+
+> **Desvio D-4b-22 — o critério 1 pedia um teste que nenhuma suíte tinha.** O
+> invariante era verdadeiro (a busca por atribuição a `case["phase"]` achava só
+> `store.py`) e nada varria o fonte: o próximo caminho lateral entraria com a
+> suíte verde. Entraram duas redes sobre `sparkforge/` — varredura por AST, que
+> atribui cada atribuição a uma chave `"phase"` à função mais interna que a
+> contém, e a busca textual literal que o critério descreve — mais uma
+> contraparte que prova que a varredura morde, com um módulo de mentira que
+> transita por fora dentro de um closure. O limite fica escrito: criação
+> (`new_case`, que monta o dicionário com `"phase": "intake"`) e escrita por
+> chave dinâmica ficam de fora.
+
+- [x] **Step 3: o override chega ao relatório — pelo corpo, não pelo bloco**
+
+> **Desvio D-4b-23 — a quarta cláusula do critério 6 fecha no corpo assinado, e a
+> alternativa foi medida antes de escolher.** *"Override exige motivo, fica no
+> case, aparece em `resume` e no relatório"*: as três primeiras estavam feitas, a
+> quarta não existia — `grep -rn override templates/ skills/ agents/` saía vazio
+> e `report_sign` nunca leu o case.
+>
+> **O custo da alternativa, medido:** escrever os overrides no **bloco de
+> assinatura** exigiria `--repo` em `report sign` **e** em `report verify` nos
+> três adaptadores (`_core`, `cli`, `tools`), mais uma entrada no schema de saída,
+> `parity.yaml` e `manifest.json`. E o defeito de fundo não é o custo: o bloco
+> mora **fora do hash por construção** (D-4b-14), então a linha seria
+> auto-declarada e só verificável contra o case. Com `--repo` opcional no
+> `verify`, a checagem seria pulada em silêncio — a família de default mudo que a
+> fase inteira recusa; obrigatório, o pacote de handoff viraria três arquivos, que
+> é o modo de falha que o D-4b-14 já recusou ao rejeitar o arquivo lateral
+> assinado. Pôr os overrides **dentro** do hash exigiria `SIGNATURE_VERSION` 2 e
+> um case obrigatório para assinar qualquer relatório.
+>
+> **O que foi feito:** a seção 9 de `templates/performance-report.md` (as
+> seguintes renumeradas), com a origem do conteúdo (`case get`, campo
+> `gate_overrides`) e "nenhum" escrito por extenso — linha em branco não distingue
+> *não houve* de *ninguém preencheu*. Ela fica **dentro** do corpo assinado, então
+> apagar a divulgação depois de `report sign` invalida a assinatura e `verify`
+> acusa em `body`; isso é teste, não promessa. O executor `sf-synthesizer` manda
+> preenchê-la. **O que continua sem garantia:** nada correlaciona a tabela do
+> relatório com o `gate_overrides` do case — registrado no `STATUS.md`.
+
+- [x] **Step 4: a versão da assinatura entra no bloco**
+
+> **Desvio D-4b-24 — a versão no hash garante que as assinaturas diferem, não que
+> alguém diga por quê.** `signature.py` afirmava que `SIGNATURE_VERSION` dentro do
+> hash *"separa os dois casos"* e evita que "inválido" signifique "mudamos a
+> regra". Medido: o bloco não carregava linha de versão, então um relatório
+> assinado sob a normalização anterior produzia exatamente a mesma saída que um
+> corpo adulterado — `status: diverged`, `diverged: ["body"]`, e o detalhe dizendo
+> "o corpo foi editado depois da emissão".
+>
+> `sign` passa a escrever `- signature_version:`, e `verify` ganha a checagem
+> `version`, o status `version_mismatch` e a regra de que **`body` fica fora de
+> `diverged`** quando a versão divergiu: esta build só sabe normalizar sob a
+> versão dela, e recomputar responderia sobre a regra de agora e nunca sobre o
+> corpo de então. `evidence` e `catalog` continuam sendo comparados, porque
+> nenhum dos dois passa pela normalização. Bloco **sem** a linha é lido como
+> versão 1 — a única que nunca a escreveu —, e isso não serve para forjar
+> validade, porque a versão está dentro do hash.
+>
+> É latente hoje (versão 1, normalização estável) e dispara na primeira mudança
+> de normalização, que é justamente quando ninguém lembraria disto.
+
+- [x] **Step 5: `case open` para de apagar rigor e overrides**
+
+> **Desvio D-4b-25 — uma invocação sem a flag apagava o rigor que o D-3 pôs no
+> case.** Medido sobre um case estrito com override gravado: `case open --repo .
+> --case-id c1 --now ...` reescrevia o arquivo com `strict_gates: false`,
+> `gate_overrides: []` e `phase: intake`, e a transição seguinte — que estava
+> bloqueada — passava com rc=0.
+>
+> Abrir sobre um case existente vira recusa `exit_code=2`, nomeando o que seria
+> perdido (fase, rigor, quantos overrides e de quais gates) e as duas saídas.
+> Reabrir do zero é caso legítimo, então o caminho fica — **com nome**: `--reopen`
+> na CLI, `reopen: true` na tool MCP. E ele **herda** o `strict_gates` do case
+> atual: o rigor sobe com `--strict-gates` e nunca desce por omissão de flag, que
+> é a leitura mais forte do D-3 (*"quem retoma herda o rigor de quem abriu"*).
+> Baixar exige apagar o arquivo à mão, que é deliberado o bastante. Case que
+> `load_case` recusa também exige `--reopen`: arquivo ilegível ainda é um case
+> ocupando o lugar.
+
+- [x] **Step 6: a dívida de "presença de kind" estava subdimensionada**
+
+> **Desvio D-4b-26 — o custo de contornar o gate era um arquivo, não um
+> benchmark.** O `STATUS.md` dizia *"um benchmark de outro job destrava
+> `baseline_captured`"*. Medido: **duas linhas de JSON escritas à mão**, com
+> `subject` e `measures` vazios e `provenance` vazia, levam um case estrito de
+> `intake` a `report`. A afirmação verdadeira é **"nenhum benchmark destrava"** —
+> nada valida `provenance`, e o gate nunca vê o conteúdo do fact. A linha foi
+> reescrita com o que se mediu. Nenhuma validação de proveniência foi construída
+> nesta rodada: é dívida ampliada e declarada, não fechada.
+
+- [x] **Step 7: o exemplo principal do README dava rc=2**
+
+> **Desvio D-4b-27 — o D-4b-3 reencenado na documentação.** `case update --repo .
+> --phase report --facts .sparkforge/bench.json`, exatamente como o README o
+> escrevia, sai com **rc=2**: `report` é guardada pelos **dois** gates com
+> produtor, e o benchmark só destrava `baseline_captured`. O Step 4 da Task 6
+> executou o exemplo e leu a mensagem de bloqueio como demonstração do gate — ela
+> é —, mas o texto em volta apresentava a linha como a transição que funciona.
+>
+> O exemplo passa a produzir também `callgraph.reachable_spark_work` e a informar
+> os dois arquivos. **Rodado literalmente antes de publicar**, sobre
+> `fixtures/bench/clean_improvement` e `fixtures/callgraph/linear_pipeline`: rc=0,
+> `phase: report` no case.
+
+- [x] **Step 8: suíte, ruff e o que sobrou**
+
+Medido ao fechar: **3475 passed / 5 skipped** (eram 3443), `ruff check .` limpo,
+`git diff --stat main -- fixtures/` vazio. Nenhum `Fact` novo, nenhum kind novo,
+`sparkforge/facts/` intocado — o critério 10 continua valendo.
+
+As sete pendências fecharam. Duas dívidas **novas** entraram no `STATUS.md`, e
+nenhuma delas era conhecida antes desta task: a tabela de overrides do relatório
+não é correlacionada com o case, e o `verify` de um relatório de versão anterior
+só sabe dizer que a regra mudou — não sabe verificar o corpo daquela versão,
+porque a normalização antiga não é preservada.
