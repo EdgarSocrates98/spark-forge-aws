@@ -1,7 +1,10 @@
 # SparkForge AWS — Fase 4c: validação funcional automatizada
 
 **Data:** 2026-08-04
-**Status:** desenhado, não implementado.
+**Status:** **implementado e fechado em 2026-08-04**, na branch `feat/fase4c-funcval`.
+Este documento **não foi reescrito**: ele é registro do que se pretendia na data
+acima. Onde a implementação divergiu, a §11 registra a divergência e **este
+documento perde** para [`../STATUS.md`](../STATUS.md).
 **Fecha:** o **último** dos quatro itens de rigor da §16 do
 [spec da Fase 0](2026-07-29-sparkforge-fase0-design.md).
 **Base:** [Fase 4a](2026-08-03-sparkforge-fase4a-benchmark-design.md) fixou o
@@ -188,3 +191,92 @@ fase guardada sem `funcval.plan`, e entra com ele.
 | A tolerância esconde divergência real | Só para ponto flutuante; exata no resto. E a `explanation` diz que dentro da tolerância não é prova de igualdade |
 | O plano derivado cobre menos do que o operador precisaria | `SF-FVAL-005` cobra o que o plano pediu; o que o plano **não** pediu é limite declarado, e o operador pode acrescentar checks ao resultado — o comparador os reporta como não planejados em vez de ignorá-los |
 | Fronteira com `SF-DQ` | Critério 10: `SF-DQ` julga validação **dentro do job**; `SF-FVAL` julga equivalência **entre duas execuções**. Nenhuma regra de uma lê fact da outra |
+
+## 11. Desvios medidos na implementação
+
+Este documento **não é reescrito** — o registro do que se pretendia numa data tem
+valor próprio, e a convenção é a da seção "Como manter este arquivo honesto" do
+[`STATUS.md`](../STATUS.md): spec obsoleto ganha seção de desvios e aponta para
+lá, em vez de ser editado. O estado corrente é o [`STATUS.md`](../STATUS.md).
+
+A implementação apurou **26** desvios numerados, `D-4c-1` a `D-4c-26`, cada um
+com o texto medido na task que o encontrou —
+[o plano](../plans/2026-08-04-sparkforge-fase4c-validacao-funcional.md) os carrega
+por extenso, na seção *Desvios medidos* de cada task. Os seis abaixo são os que
+tornam **este documento** errado onde ele afirma; os outros vinte são medições
+que o plano registrou e que não contradizem nada escrito aqui.
+
+**D-4c-1 — `pyspark.join` não dá as chaves, e dá menos do que a §4 supunha.** A
+D-1 afirma que "`pyspark.join` dá as chaves". Não dá: o fact carrega
+`measures.on_arity` — o **número** de colunas do `on` — e nunca os nomes. E há
+menos que isso: `pyspark_ast.py:723-730` lê `node.args[1]`, então a forma com
+keyword (`df.join(dim, on=["a","b"])`) não emite medida alguma. A varredura dos
+102 kinds dos 16 extratores de então confirmou que **nenhum** fact nomeia chave de
+negócio; os candidatos (`pyspark.dedup`, `pyspark.window`, `plan.join`,
+`plan.exchange`, `sql.predicate`, `sql.projection`) carregam booleano, contagem
+ou coluna de outra natureza. Contagem, schema e agregados seguem deriváveis, e os
+agregados saem melhor do que a D-1 previa: `catalog.table_schema` dá coluna **e
+tipo**, que é o que a D-4 precisa para escolher o modo de comparação.
+
+**D-4c-2 — o eixo de chaves entra por declaração marcada, não por derivação.**
+Consequência do D-4c-1. Sem `--key`, o plano não pede check de chave e **declara
+o vazio**: `funcval.plan` carrega `undeclared_axes: ["keys"]` com a razão. Com
+`funcval plan --key <col>[,<col>]`, o check entra com `origin: "declared"` e
+`derived_from: []`; todo check derivado carrega `origin: "derived"` e o
+`fact_id`. A D-1 continua valendo para os três eixos deriváveis; para o quarto, a
+procedência passa a dizer **que é declarada** em vez de calar. Partição como
+proxy foi medida e rejeitada: na fixture `catalog/glue_table_schema`, `db.eventos`
+tem `distinct_values = partition_count = 1200` sobre `dt` para a tabela inteira —
+um check de unicidade ali acusaria dado correto.
+
+**D-4c-3 — o comparador nunca compara o resultado contra o catálogo.** O schema
+declarado deriva **quais** colunas e tipos existem, e nada mais. A comparação é
+sempre antes contra depois. Comparar o observado com o declarado é a asserção
+absoluta que a §2 já pôs fora de escopo, e é pergunta de `SF-DQ` — o critério 10
+da §9 depende disso valer também **dentro** do comparador, não só entre as áreas.
+
+**D-4c-10 — o veredito da comparação relativa não é do módulo; é do catálogo, e a
+§5 pedia as duas coisas ao mesmo tempo.** A §5 diz que o `check_delta` "diz se
+divergiu", e a D-4 diz que o número que separa reassociação de divergência real é
+`field-heuristic` sem fonte oficial. Para ponto flutuante as duas se excluem:
+decidir exige o número, e o número mora no YAML. Some-se o contrato do próprio
+dado — `Fact` é "observação determinística ancorada, **nunca contém juízo nem
+limiar**" (`findings/models.py:32`) —, e um `diverged` de float seria um limiar
+dentro de um Fact. Decisão: comparação **exata** continua decidindo `diverged` no
+fact (que dois valores não sejam idênticos é observação, não limiar), e comparação
+**relativa** sai com `measures.relative_delta` e **sem** `diverged`, com
+`attrs.diverged_omitted_reason` dizendo por quê. Quem julga é a `SF-FVAL-004`,
+contra `threshold.relative_tolerance`. Consequência para a sentinela:
+`relative_delta_check_count` existe para que `diverged_check_count == 0` não seja
+lido como "nada divergiu" quando significa "ninguém aqui decidiu".
+
+**D-4c-23 — a `SF-FVAL-004` precisa de DUAS condições, e a §6 descreve uma.** Um
+`agg:sum:<coluna>` de coluna **inteira** ou **decimal** é comparado de forma exata,
+sai **com** `diverged`, e o `relative_delta` dele é minúsculo por construção — uma
+soma de `bigint` que mudou em uma unidade sobre quinhentos milhões dá ordem de
+`2e-9`, abaixo de qualquer tolerância utilizável. Uma 004 escrita só sobre
+`relative_delta` deixaria essa divergência aparecer em `diverged_check_count` e em
+achado **nenhum**: silêncio com cara de aprovação. A regra ficou com `when.any` de
+duas condições — a exata lendo `attrs.diverged`, a relativa lendo
+`measures.relative_delta` contra o limiar.
+
+**D-4c-25 — o gate morde em `report`, e não em `validation`.** A §7 não fixava a
+fase. Guardar `validation` mataria a `ROUTE-015`, única rota com
+`blocked_by: [functional_validation_defined]`: o `when` dela é o gate **falso**, e
+um case sob rigor não entraria em `validation` com o gate falso — a única rota que
+manda definir a validação nunca apareceria. Guardando só `report`, o case entra em
+`validation`, a rota casa ali, o operador roda `funcval plan`, e o fechamento
+passa a exigir o plano.
+
+### Um desvio a mais, medido ao fechar a fase
+
+**D-4c-26 — `funcval compare` não tem `--out`, e a §7 não previu a assimetria.**
+`funcval plan` grava o artefato (`--out` obrigatório, porque ele é a entrada do
+`compare` e a evidência do gate); `compare` **imprime** o envelope paginado e não
+escreve arquivo nenhum. Consequência prática, medida na CLI: para julgar os
+`funcval.check_delta` é preciso redirecionar a saída e extrair `items` — que é o
+formato que `judge --facts` espera —, e conferir `next_cursor`, porque `--limit`
+vale 50 por default e um plano grande pagina. Está registrado como **dívida** no
+`STATUS.md`, não como limite: fechá-la é escrever `--out`/`out_path` nos dois
+adaptadores, sem reverter decisão nenhuma. As duas skills que ensinam o verbo
+carregam o contorno por escrito enquanto ela estiver aberta.

@@ -125,7 +125,7 @@ caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
 dentro de `site-packages` quando instalado por `pip`.
 
 Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
-**fora do repositório** e reproduz as 107 fixtures golden byte a byte a partir do
+**fora do repositório** e reproduz as 116 fixtures golden byte a byte a partir do
 pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
 usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
@@ -162,7 +162,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 16 extratores emitem 102 kinds distintos de fact, e todos são offline: leem
+Os 17 extratores emitem 106 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -183,6 +183,8 @@ tool MCP de mesmo nome.
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
 | Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
+| **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
+| **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
@@ -191,7 +193,7 @@ AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
 essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
 o que falta para uma regra disparar é sempre coleta, nunca código.
 
-Três desses verbos mudam o alcance do projeto, e é por isso que aparecem
+Cinco desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
@@ -215,6 +217,26 @@ gate de `benchmark_ref` nunca teve: `sparkforge validate --findings` rejeita
 de qualquer conclusão sobre o job. `total_task_ms` é tempo de task somado —
 trabalho, não relógio: o event log não carrega duração wall-clock, e uma alta
 ali pede confirmação no relógio antes de reverter a mudança.
+
+`funcval` são os dois últimos, e formam a outra metade do mesmo experimento:
+`benchmark` julga o tempo, `funcval` julga o **resultado**. `funcval plan` deriva
+o que medir dos facts que já existem — o alvo vem do `pyspark.write`, o schema e
+os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível —, e
+`funcval compare` lê os dois resultados que **o operador** mediu e emite
+`funcval.check_delta`, `funcval.analyzed` e `funcval.unresolved`. Nenhum dos dois
+executa consulta, roda Spark ou chama AWS.
+
+Duas propriedades que o desenho não esconde. **A chave de negócio não é
+derivável:** nenhum dos 106 kinds a nomeia, então ou ela entra declarada em
+`funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
+eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
+dado correto, e a procedência de cada check existe para que ninguém confunda o que
+o repositório derivou com o que alguém afirmou. **Os quatro eixos são proxies:**
+contagem, schema, chaves e agregados iguais não provam que o dado é o mesmo —
+duas linhas podem trocar valores entre si e os quatro passam. A área afirma
+"nenhum dos quatro proxies detectou divergência", nunca "o resultado é idêntico",
+e o próprio comparador carrega esse limite em
+`funcval.analyzed.attrs.proxy_limit`.
 
 ```bash
 # o cluster inteiro num dump, e o julgamento sem flag de versão nenhuma
@@ -399,8 +421,9 @@ pacote tem duas camadas de agente:
   executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
   `emr-infra-reviewer` lê `SF-EMR`/`SF-ENV`, `data-quality-reviewer` lê `SF-DQ`, e
   `spark-performance-architect` acumulou `SF-BENCH` porque *o job ficou mais rápido, e por
-  quê* é a mesma pergunta que ele já respondia — e é isso, não o nome, que faz o roteamento
-  funcionar. Ver a tabela completa em `AGENTS.md`.
+  quê* é a mesma pergunta que ele já respondia — e acumulou `SF-FVAL` pela metade que falta
+  dela, *e o resultado continuou o mesmo*, que é o mesmo par antes/depois da mesma mudança.
+  É isso, não o nome, que faz o roteamento funcionar. Ver a tabela completa em `AGENTS.md`.
 - **Executor** — 5 agentes em `agents/executors/*.md`, um por função do loop de fase
   (`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`, `sf-synthesizer`). Cada um
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
@@ -498,7 +521,7 @@ manifesto silencioso é pior que erro barulhento:
 | `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
 
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
-constrói o artefato, instala num venv limpo e reproduz as 107 fixtures golden byte a byte.
+constrói o artefato, instala num venv limpo e reproduz as 116 fixtures golden byte a byte.
 
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
 de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o

@@ -60,6 +60,26 @@ sparkforge validate --findings .sparkforge/review_findings.json
 
 Isso pega exatamente o erro mais comum de review sob pressão: afirmar "isso deve reduzir o runtime em ~30%" para soar convincente, sem ter medido nada. O schema rejeita qualquer `expected_effect` com número (`%`, `x`, "vezes") que não venha acompanhado de `benchmark_ref`. Se `validate` falhar, ou você mede antes (`benchmark-pyspark-job`) ou reformula a frase como hipótese, sem número.
 
+### 6. Defina a validação funcional antes de aprovar
+
+A red flag "aprovar mudança de write mode ou operação Iceberg sem plano de teste de correção" era prosa sem produtor até a Fase 4c. Agora tem um, e ele deriva o plano dos facts que você já extraiu no passo 1:
+
+```bash
+sparkforge funcval plan \
+  --facts .sparkforge/facts_head_1.json \
+  --facts .sparkforge/facts_catalog.json \
+  --key pedido_id,dt \
+  --out .sparkforge/facts_funcval_plan.json
+```
+
+Tool MCP: `sparkforge_funcval_plan`. `--facts` é **repetível e precisa ser**: o alvo vem do `pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` (`analyze catalog-schema`), e nenhum verbo produz os dois no mesmo arquivo. `--out` é **obrigatório** — o plano é a evidência do gate `functional_validation_defined`, que guarda a fase `report` sob `--strict-gates`, e é a entrada de `sparkforge funcval compare` / `sparkforge_funcval_compare`, que compara os dois resultados **depois** que alguém os mediu. O motor não executa consulta em nenhum dos dois verbos.
+
+Num review, o que cabe aqui é o **plano**, não a comparação: `compare` precisa do lado `--before` medido antes de a mudança tocar o alvo, e num PR ainda não mergeado esse lado não existe. Anexar o plano ao review é o que transforma "teste a correção" em pedido verificável — `benchmark-pyspark-job` tem o procedimento completo dos dois verbos, para quando houver as duas execuções.
+
+Sem `--key`, o plano **não inventa** chave: nenhum dos 106 kinds do vocabulário nomeia chave de negócio, então o eixo sai escrito em `undeclared_axes` com a razão, e cada check carrega a procedência (`origin: derived` com `fact_id`, ou `origin: declared`). Declarar a chave errada produz P0 sobre dado correto — a declaração é sua, e a procedência está no plano para que ninguém confunda o que foi derivado com o que foi afirmado.
+
+Os quatro eixos — contagem, schema, chaves e agregados — são **proxies**: iguais nos dois lados, eles não provam que o dado é o mesmo, porque duas linhas podem trocar valores entre si e os quatro passam. Peça o plano sabendo o que ele não cobre.
+
 ## Verificações fora do alcance do extrator
 
 O extrator de AST não substitui julgamento sobre: estratégia de merge/delete Iceberg (snapshots, commits — precisa de `analyze iceberg` ou plano), mudança de particionamento físico, testes de correção ausentes, e logging que dispara job (`count()`/`show()` em `logger` aparece como `pyspark.action`, mas decidir se é aceitável é seu).
@@ -85,7 +105,7 @@ A severidade default de cada regra vem do catálogo (`sparkforge rules lookup --
 
 ## Red flags
 
-- Aprovar mudança de write mode ou operação Iceberg (merge/delete) sem plano de teste de correção (contagem, schema, chaves).
+- Aprovar mudança de write mode ou operação Iceberg (merge/delete) sem plano de teste de correção (contagem, schema, chaves) — o plano tem produtor desde a Fase 4c, e pedi-lo de boca é o que o passo 6 substitui.
 - Comentário genérico ("otimize isso") sem correção concreta e sem como validar.
 - Repetir como "achado do PR" um finding que já existia na versão base — sempre compare HEAD contra base antes de comentar.
 - Postar `expected_effect` quantificado sem rodar `sparkforge validate` primeiro.
