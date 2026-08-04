@@ -66,10 +66,27 @@ Which coordinator to use is data, not judgment: routes `AGENT-001`…`AGENT-008`
 `recommended_agent`, and `sparkforge_next_step` / `sparkforge next-step` reads them —
 never pick a coordinator by inspection.
 
-On a platform without subagent dispatch (Devin, Codex, Copilot CI), `sparkforge playbook
-<coordinator>` (CLI) or the `sparkforge_playbook` MCP tool returns the same decomposition
-as a sequence of steps, reading the same `agents/` files a Claude Code coordinator would
-dispatch as subagents: it loses the dispatch's parallelism, keeps the method.
+**Three platforms dispatch.** Claude Code (the `Agent` tool of this CLI), the **Devin CLI**,
+and the **Devin Local agent** of Devin Desktop (behind the *Subagents (Preview)* toggle).
+Devin reads custom subagent profiles from `.agents/agents/` natively and imports
+`.claude/agents/*.md` — both directories are generated mirrors of `agents/`, so the same
+thirteen profiles are subagent profiles there without any per-platform authoring. The
+`.agents/` mirror is **rendered**, not copied: it drops `tools:` (the value mapping from
+Claude Code's field to Devin's tool names is undocumented, and guessing in a permission
+field grants or denies wrongly) and never gains `model:` (the subagent model resolves
+through a router at spawn time and an org admin overrides it). Skills that are safe to
+dispatch declare `subagent: true` in `.agents/skills/`.
+
+**`playbook` is the floor on all five platforms, not a rung that dispatch replaces.**
+`sparkforge playbook <coordinator>` (CLI) or the `sparkforge_playbook` MCP tool returns the
+same decomposition as a sequence of steps, reading the same `agents/` files a dispatching
+coordinator would spawn as subagents: it loses the dispatch's parallelism, keeps the
+method. It is the **only** path on Codex and Copilot CI — no source research measured
+subagent support on either, and `parity.yaml` does not claim parity it has not measured.
+And it stays the path on the three that do dispatch whenever dispatch is off: a user can
+set `subagents_enabled: false`, and an org admin can pick *None* for "Default subagent
+model", which disables subagents entirely. No file in this repository can prevent either.
+Sources and verdicts: `knowledge/devin/agents-and-subagents.md`.
 
 ## Deterministic evidence
 
