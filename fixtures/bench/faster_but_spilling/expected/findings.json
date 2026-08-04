@@ -1,0 +1,74 @@
+[
+  {
+    "rule_id": "SF-BENCH-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Ganho de tempo acompanhado de mais spill ou mais GC",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "faster_but_spilling"
+    },
+    "evidence": [
+      "f_b8065e"
+    ],
+    "measured": {
+      "total_task_ms_before": 22000.0,
+      "total_task_ms_after": 16600.0,
+      "total_task_ms_delta_pct": -24.5,
+      "total_input_bytes_before": 140000000,
+      "total_input_bytes_after": 140000000,
+      "total_input_bytes_delta_pct": 0.0,
+      "total_spill_bytes_before": 5000000,
+      "total_spill_bytes_after": 160000000,
+      "total_spill_bytes_delta_pct": 3100.0,
+      "total_gc_ms_before": 1100,
+      "total_gc_ms_after": 2200,
+      "total_gc_ms_delta_pct": 100.0,
+      "total_task_count_before": 10,
+      "total_task_count_after": 10,
+      "total_task_count_delta_pct": 0.0
+    },
+    "threshold": {
+      "improvement_pct": 5,
+      "growth_factor": 1.1
+    },
+    "runtime_scope": {},
+    "explanation": "A mudança reduziu o tempo de task somado e, ao mesmo tempo, aumentou o spill ou o tempo de GC. O ganho existe e é frágil: ele foi comprado com pressão de memória, e pressão de memória é a grandeza que não escala junto com o dado. O padrão típico é o de sempre — mais dado na memória do executor por partição (menos partições, broadcast maior, cache novo, janela mais larga) acelera enquanto couber e vira spill em disco, GC longo ou `OutOfMemoryError` quando o volume crescer. O benchmark foi feito com um recorte; produção não é um recorte. Ler junto com `SF-BENCH-001`: se os volumes divergem, este quadro pode ser inteiramente do dado. E ler os `bench.stage_delta`, que dizem em qual símbolo o spill apareceu. Duas ausências mudam o que esta regra vê, e as duas são deliberadas. O comparador OMITE `total_spill_bytes_delta_pct` quando o lado antes é zero, e é por isso que o gatilho compara os totais e não o percentual — spill que nasce do zero é o caso mais grave e seria o único invisível. E, se uma das duas medidas de degradação for inutilizável em algum dos lados (ausente, parcial, ou perdida por um símbolo casado), o avaliador falha fechado e a regra se cala inteira, inclusive sobre a medida que estava presente: o `bench.unresolved` correspondente nomeia a medida e o lado, e é ele que o operador lê para saber que houve silêncio, e não ausência de defeito.",
+    "proposed_change": [
+      "Repetir a medição com volume de produção, e não com o recorte de teste. É a única forma de saber se o ganho sobrevive, e o spill que apareceu já no recorte é o aviso de que ele não vai.",
+      "Identificar nos `bench.stage_delta` em qual símbolo o spill ou o GC subiu, e conferir o que mudou ali — número de partições, broadcast, cache, largura de janela.",
+      "Se o ganho veio de reduzir partições, medir a alternativa que preserva memória: manter o número de partições e atacar o custo por task, em vez de concentrar mais dado por task.",
+      "Confirmar no event log do lado depois se há executor perdido ou task com falha de memória (`SF-UI-003`, `SF-UI-004`): spill em disco é o degrau anterior ao OOM, não um custo estável."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Manter a mudança porque o número de tempo melhorou é aceitar um job que funciona no volume de hoje e falha no de amanhã, sem aviso entre os dois estados.",
+      "Desfazer a mudança devolve o tempo anterior, que era pior: a decisão certa raramente é reverter, e sim obter o mesmo ganho sem a pressão de memória.",
+      "Aumentar memória do executor para acomodar o spill esconde o sintoma e move o teto: é remédio válido quando dimensionado com evidência, e é dívida quando aplicado para calar este achado."
+    ],
+    "tradeoffs": [
+      "Trocar spill por mais partições paga em shuffle e em small files na escrita: as duas contas existem, e a escolha depende de qual delas está mais perto do limite no cluster real.",
+      "Um `growth_factor` baixo acusa oscilação normal de GC entre execuções; um alto cala degradação real. 1,1 é o meio escolhido, e é dado editável."
+    ],
+    "validation": [
+      "`total_spill_bytes` e `total_gc_ms` dos dois lados sobre volume de produção, e não sobre o recorte de teste.",
+      "Pico de memória de executor e contagem de executores perdidos nas duas execuções.",
+      "Contagem total, contagem por chave e agregado de controle iguais nos dois lados — ganho obtido processando menos dado não é ganho.",
+      "Repetir a execução do lado depois ao menos duas vezes: GC varia entre execuções mais que tempo de task, e uma medição só não separa degradação de oscilação."
+    ],
+    "rollback": [
+      "Reverter o commit da mudança e repetir a medição, confirmando que spill e GC voltam ao patamar anterior.",
+      "Se a mudança for mantida por causa do ganho, registrar o spill observado como dívida e o volume em que ele foi medido, para que o próximo incidente de memória não comece do zero."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Os dois números são decisão de campo. `improvement_pct: 5` existe só para separar ganho de ruído — abaixo disso a palavra ganho não se sustenta numa medição única. `growth_factor: 1.1` exige 10% de crescimento na degradação pelo mesmo motivo, e com base ZERO ele degenera para \"qualquer byte derramado\", que é o comportamento desejado: spill que nasce do nada não precisa de margem de ruído. Nenhuma fonte oficial declara esses cortes. A severidade P1 vem da natureza do achado: ele não diz que algo está quebrado hoje, diz que o ganho medido não é o ganho que vai valer em produção."
+      }
+    ]
+  }
+]

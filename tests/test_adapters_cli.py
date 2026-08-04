@@ -350,6 +350,68 @@ class TestRuntimeAndRules:
         assert "benchmark_ref" in capsys.readouterr().err
 
 
+class TestValidateChecksTheBenchmarkRef:
+    """`--facts` e a camada de pertinencia do `benchmark_ref` na CLI.
+
+    Sem a flag o verbo so cobra a FORMA do campo (`f_` + 6 hex), porque
+    `validate_finding` nao ve fact nenhum. Com ela, o `fact_id` citado precisa
+    estar no arquivo -- e um achado que cita medicao ausente da evidencia cai.
+    """
+
+    def _finding(self, benchmark_ref):
+        return {
+            "rule_id": "SF-BENCH-001", "schema_version": 1, "title": "t", "severity": "P2",
+            "confidence": "high", "status": "confirmed",
+            "subject": {"type": "job_run"}, "evidence": ["f_abc123"],
+            "expected_effect": "reduz 40% do runtime", "benchmark_ref": benchmark_ref,
+        }
+
+    def _facts_file(self, tmp_path, *ids_source):
+        """Facts REAIS, para que os ids saiam de `Fact.id` e nao de literais."""
+        from sparkforge.findings.models import Fact
+
+        facts = [
+            Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": n})
+            for n in ids_source
+        ]
+        path = tmp_path / "facts.json"
+        path.write_text(
+            json.dumps([f.to_dict() for f in facts]), encoding="utf-8"
+        )
+        return path, [f.id for f in facts]
+
+    def _findings_file(self, tmp_path, benchmark_ref):
+        path = tmp_path / "findings.json"
+        path.write_text(json.dumps([self._finding(benchmark_ref)]), encoding="utf-8")
+        return path
+
+    def test_free_text_ref_is_rejected_without_any_facts_file(self, tmp_path, capsys):
+        path = self._findings_file(tmp_path, "bench/2026-07-29.json")
+        assert main(["validate", "--findings", str(path)]) == 1
+        assert "nao e um fact_id" in capsys.readouterr().err
+
+    def test_well_formed_ref_passes_without_a_facts_file(self, tmp_path, capsys):
+        path = self._findings_file(tmp_path, "f_a1b2c3")
+        assert main(["validate", "--findings", str(path)]) == 0
+        assert json.loads(capsys.readouterr().out)["valid"] is True
+
+    def test_facts_file_makes_an_absent_ref_fail(self, tmp_path, capsys):
+        facts_path, _ = self._facts_file(tmp_path, 1, 2)
+        path = self._findings_file(tmp_path, "f_a1b2c3")
+        assert main(
+            ["validate", "--findings", str(path), "--facts", str(facts_path)]
+        ) == 1
+        assert "nao esta no conjunto" in capsys.readouterr().err
+
+    def test_facts_file_accepts_a_ref_that_is_really_there(self, tmp_path, capsys):
+        facts_path, ids = self._facts_file(tmp_path, 1, 2)
+        path = self._findings_file(tmp_path, ids[0])
+        assert main(
+            ["validate", "--findings", str(path), "--facts", str(facts_path)]
+        ) == 0
+        assert json.loads(capsys.readouterr().out)["valid"] is True
+
+
 class _FakeS3Client:
     def __init__(self):
         self.calls = []
@@ -764,6 +826,133 @@ class TestAnalyzeCallGraph:
 
     def test_missing_facts_file_is_actionable(self, repo, capsys):
         code, _ = run(["analyze", "call-graph", "--facts", str(repo / "nope.json")], capsys)
+        assert code == 2
+
+
+def _event_log_lines(run_ms: int) -> str:
+    """Event log minimo com UM stage nomeado `scan` e duas tasks.
+
+    `run_ms` e o `Executor Run Time` de cada task, que e o unico eixo que os
+    dois lados do benchmark precisam variar: `total_task_ms` sai de
+    `mean_ms * task_count` sobre `spark.stage.task_duration`.
+    """
+    def task(task_id: int) -> dict:
+        return {
+            "Event": "SparkListenerTaskEnd",
+            "Stage ID": 0,
+            "Stage Attempt ID": 0,
+            "Task Type": "ResultTask",
+            "Task End Reason": {"Reason": "Success"},
+            "Task Info": {
+                "Task ID": task_id,
+                "Index": task_id,
+                "Attempt": 0,
+                "Launch Time": 1000,
+                "Finish Time": 1000 + run_ms,
+                "Executor ID": "1",
+                "Host": "10.0.0.11",
+                "Failed": False,
+                "Killed": False,
+            },
+            "Task Metrics": {
+                "Executor Run Time": run_ms,
+                "JVM GC Time": 10,
+                "Memory Bytes Spilled": 0,
+                "Disk Bytes Spilled": 0,
+                "Input Metrics": {"Bytes Read": 1000, "Records Read": 10},
+            },
+        }
+
+    events = [
+        {"Event": "SparkListenerApplicationStart", "App Name": "j", "App ID": "a", "Timestamp": 1},
+        {
+            "Event": "SparkListenerStageSubmitted",
+            "Stage Info": {
+                "Stage ID": 0,
+                "Stage Attempt ID": 0,
+                "Stage Name": "scan",
+                "Number of Tasks": 2,
+                "Parent IDs": [],
+                "Details": "",
+                "Submission Time": 100,
+            },
+        },
+        task(0),
+        task(1),
+        {
+            "Event": "SparkListenerStageCompleted",
+            "Stage Info": {
+                "Stage ID": 0,
+                "Stage Attempt ID": 0,
+                "Stage Name": "scan",
+                "Number of Tasks": 2,
+                "Parent IDs": [],
+                "Details": "",
+            },
+        },
+    ]
+    return "".join(json.dumps(e) + "\n" for e in events)
+
+
+class TestBenchmark:
+    """Verbo de TOPO, nao `analyze benchmark`: ele nao extrai de artefato,
+    compara dois conjuntos de facts ja extraidos -- mesma razao de `fuse`."""
+
+    def _side(self, repo, capsys, name, run_ms):
+        log = repo / f"{name}.jsonl"
+        log.write_text(_event_log_lines(run_ms), encoding="utf-8")
+        out = repo / f"{name}_facts.json"
+        run(["analyze", "event-log", "--path", str(log), "--out", str(out)], capsys)
+        return out
+
+    def test_compares_two_facts_files(self, repo, capsys):
+        before = self._side(repo, capsys, "before", 200)
+        after = self._side(repo, capsys, "after", 100)
+        code, output = run(
+            ["benchmark", "--before", str(before), "--after", str(after)], capsys
+        )
+        assert code == 0
+        payload = json.loads(output)
+        assert payload["by_kind"]["bench.run_delta"] == 1
+        assert payload["by_kind"]["bench.analyzed"] == 1
+        delta = next(f for f in payload["items"] if f["kind"] == "bench.run_delta")
+        assert delta["measures"]["total_task_ms_delta_pct"] == -50.0
+
+    def test_writes_facts_json(self, repo, capsys):
+        before = self._side(repo, capsys, "before", 200)
+        after = self._side(repo, capsys, "after", 100)
+        out = repo / "bench.json"
+        code, _ = run(
+            [
+                "benchmark",
+                "--before", str(before),
+                "--after", str(after),
+                "--out", str(out),
+            ],
+            capsys,
+        )
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        assert any(f["kind"] == "bench.stage_delta" for f in facts)
+
+    def test_reports_its_own_blind_spot(self, repo, capsys):
+        """`bench.unresolved` tem que chegar ao relatorio como `unresolved`:
+        um lado sem `spark.log_analyzed` nao pode sair como "nenhuma
+        diferenca" -- ver docstring de `_core.benchmark_runs`."""
+        before = self._side(repo, capsys, "before", 200)
+        empty = repo / "empty_facts.json"
+        empty.write_text("[]", encoding="utf-8")
+        _, output = run(["benchmark", "--before", str(before), "--after", str(empty)], capsys)
+        payload = json.loads(output)
+        assert payload["unresolved"] == 1
+        assert payload["unresolved_at"][0]["reason"] == "missing_log_analyzed"
+        assert "bench.run_delta" not in payload["by_kind"]
+
+    def test_missing_facts_file_is_actionable(self, repo, capsys):
+        before = self._side(repo, capsys, "before", 200)
+        code, _ = run(
+            ["benchmark", "--before", str(before), "--after", str(repo / "nope.json")], capsys
+        )
         assert code == 2
 
 

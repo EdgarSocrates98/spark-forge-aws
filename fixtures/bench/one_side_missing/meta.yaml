@@ -1,0 +1,28 @@
+name: one_side_missing
+proves: >
+  Um lado sem `spark.log_analyzed`: a saida inteira e um unico
+  `bench.unresolved` com reason `missing_log_analyzed` e `sides: [after]` --
+  e NAO um delta com o lado depois zerado, que afirmaria que aquela execucao
+  nao fez trabalho nenhum. Sem `bench.run_delta` e sem `bench.analyzed`, entao
+  nenhuma regra SF-BENCH pode disparar sobre uma comparacao que nunca
+  aconteceu.
+  ATENCAO -- `input/after.jsonl` NAO EXISTE, e a ausencia e o artefato (ver
+  D-4a-20 no plano da Fase 4a). `extract_event_log` emite
+  `spark.log_analyzed` incondicionalmente para todo arquivo que ele consegue
+  ABRIR (`event_log.py:600`), inclusive vazio, inclusive so com lixo: nao ha
+  conteudo de event log que produza um lado sem a sentinela. O unico caminho
+  real e a falha de abertura (`extract_event_log_path`, ramo `except OSError`),
+  que e exatamente o que um `--after` apontando para log que nao foi coletado
+  produz. Fabricar isso de outro jeito exigiria editar o extrator ou escrever
+  os facts a mao -- os dois invertem a direcao da prova. O caminho do arquivo
+  ausente nao vaza para o golden: `regen_bench` guarda so os fatos `bench.*`
+  derivados, e o `spark.unresolved` com o path absoluto da maquina fica de
+  fora.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - bench.unresolved
+expects_rules: []

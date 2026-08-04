@@ -1,0 +1,27 @@
+name: most_stages_renamed
+proves: >
+  A maioria dos stages nao tem par: 7 de 9 ficam sem casar (77,8%), so
+  `stage_scan_raw` sobrevive nos dois lados. As DUAS razoes de nao casar
+  aparecem: seis stages por `symbol_absent_on_other_side` (os sufixos _v1 do
+  antes contra os _v2 do depois) e um por `empty_symbol` -- o stage 9 do
+  depois so aparece via TaskEnd, sem StageCompleted, que e o que um log
+  truncado produz, e stage sem nome nao casa com nada.
+  `bench.analyzed` fecha a conta dos dois lados: 2 casados + 7 nao casados =
+  4 stages do antes + 5 do depois, e `stage_delta_count: 1` diz que um unico
+  `bench.stage_delta` saiu -- ler `matched_stage_count` como "quantos deltas"
+  e o erro que esse segundo numero existe para impedir.
+  O volume lido varia so 1,1% e o tempo so -2,2% de proposito: a fixture
+  precisa provar o descasamento sozinho, sem nenhuma das outras tres regras
+  da Task 5 pegando carona.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - bench.analyzed
+  - bench.run_delta
+  - bench.stage_delta
+  - bench.unmatched
+expects_rules:
+  - SF-BENCH-004

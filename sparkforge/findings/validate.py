@@ -3,6 +3,20 @@
 Gate de saida, rigido. Nao trava investigacao; trava alucinacao. A regra que
 mais importa nao e expressavel em JSON Schema puro: efeito quantificado sem
 benchmark_ref e rejeitado por _reject_unbacked_gain.
+
+Desde a Fase 4a `benchmark_ref` nao e mais texto livre: ele cita o `fact_id` de
+um `bench.run_delta` -- o fato que `sparkforge benchmark --before X --after Y`
+emite ao comparar dois conjuntos de facts de event log. Ate a Fase 4a o gate
+nao tinha produtor, e um campo preenchivel com qualquer string e um gate que se
+contorna digitando qualquer coisa. A validacao acontece em DUAS camadas:
+
+- **forma, sempre**: `^f_[0-9a-f]{6}$`, a forma de `Fact.id`. Vale em qualquer
+  chamada, porque nao depende de nada alem do proprio achado.
+- **pertinencia, quando der**: `validate_finding(payload, fact_ids)` recebe so
+  o achado na assinatura padrao -- nao tem o conjunto de facts, entao "o
+  `fact_id` existe" nao e verificavel ali. Quem tiver o conjunto passa
+  `fact_ids` e ganha a segunda camada; quem nao tiver (golden, motor) mantem a
+  primeira.
 """
 from __future__ import annotations
 
@@ -23,6 +37,12 @@ SCHEMA_DIR = Path(__file__).resolve().parent / "schemas"
 _QUANTIFIED = re.compile(
     r"(?<![a-zA-Z0-9_])\d+(?:[.,]\d+)?\s*(?:%|x\b|vezes\b)", re.IGNORECASE
 )
+
+# A forma de `Fact.id` (`sparkforge/findings/models.py`): "f_" + sha1[:6].
+# Duplicar o padrao aqui, em vez de importar, mantem `validate` sem dependencia
+# do modulo de modelos -- ele valida PAYLOAD, dict cru vindo de JSON, nunca
+# objeto. O acoplamento que importa esta coberto por teste.
+_BENCH_REF = re.compile(r"^f_[0-9a-f]{6}$")
 
 
 class ValidationFailed(ValueError):
@@ -49,20 +69,41 @@ def validate_fact(payload: dict[str, Any]) -> None:
     _check(payload, "fact.schema.json")
 
 
-def _reject_unbacked_gain(payload: dict[str, Any]) -> None:
+def _reject_unbacked_gain(
+    payload: dict[str, Any], fact_ids: set[str] | None = None
+) -> None:
     effect = payload.get("expected_effect") or ""
-    if not effect:
+    if not effect or not _QUANTIFIED.search(effect):
         return
-    if not _QUANTIFIED.search(effect):
-        return
-    if payload.get("benchmark_ref"):
-        return
-    raise ValidationFailed(
-        f"expected_effect quantifica ganho ({effect!r}) sem benchmark_ref. "
-        "Ganho previsto sem benchmark e invencao."
-    )
+
+    ref = payload.get("benchmark_ref")
+    if not ref:
+        raise ValidationFailed(
+            f"expected_effect quantifica ganho ({effect!r}) sem benchmark_ref. "
+            "Ganho previsto sem benchmark e invencao."
+        )
+    if not _BENCH_REF.match(str(ref)):
+        raise ValidationFailed(
+            f"benchmark_ref {ref!r} nao e um fact_id. Desde a Fase 4a o campo cita o "
+            "`fact_id` de um fact `bench.run_delta` -- forma `f_` + 6 digitos hex, "
+            "produzido por `sparkforge benchmark --before <facts> --after <facts>`. "
+            "Texto livre nao prova medicao nenhuma: era o que permitia satisfazer "
+            "este gate digitando qualquer coisa no campo."
+        )
+    if fact_ids is not None and str(ref) not in fact_ids:
+        raise ValidationFailed(
+            f"benchmark_ref {ref!r} nao esta no conjunto de facts informado. "
+            "O achado cita uma medicao que nao acompanha a evidencia."
+        )
 
 
-def validate_finding(payload: dict[str, Any]) -> None:
+def validate_finding(payload: dict[str, Any], fact_ids: set[str] | None = None) -> None:
+    """Valida o achado contra o schema e contra a regra de ganho sem benchmark.
+
+    `fact_ids` e OPCIONAL de proposito: golden e motor chamam esta funcao sem
+    ter o conjunto de facts a mao. Sem ele valem o schema e a forma do
+    `benchmark_ref`; com ele vale tambem a pertinencia -- o `fact_id` citado
+    precisa estar no conjunto.
+    """
     _check(payload, "finding.schema.json")
-    _reject_unbacked_gain(payload)
+    _reject_unbacked_gain(payload, fact_ids)

@@ -194,6 +194,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: compare two Spark runs from their event log facts
+    tools: [sparkforge_benchmark]
+    cli: [benchmark]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: correlate facts from multiple extractors before judging
     tools: [sparkforge_fuse]
     cli: [fuse]
