@@ -1,6 +1,8 @@
 from sparkforge.facts.benchmark import EMITTED_KINDS, EXTRACTOR_ID, build_benchmark
 from sparkforge.findings.models import Fact, sort_facts
 from sparkforge.findings.validate import validate_fact
+from sparkforge.rules.engine import judge
+from sparkforge.rules.loader import load_catalog
 
 
 def _prov(artifact: str) -> dict:
@@ -826,3 +828,84 @@ class TestFormaDaSaida:
     def test_a_procedencia_aponta_para_o_deriver(self):
         for fact in self._facts():
             assert fact.provenance["extractor"] == EXTRACTOR_ID
+
+
+class TestSFBench003SobreOSpillQueNasce:
+    """O caminho que JUSTIFICA a forma da `SF-BENCH-003`, guardado em nivel de
+    `judge`.
+
+    O cabecalho de `rules/catalog/benchmark.yaml`, o `STATUS.md` e o desvio
+    `D-4a-25` afirmam os tres a mesma coisa: spill que NASCE do zero e a forma
+    mais severa de "mais rapido mas derramando", e e por isso que a regra compara
+    os TOTAIS (`_after` contra `_before * fator`) em vez do `_delta_pct` --
+    `_delta_pct` e OMITIDO quando o lado antes e zero, entao uma regra escrita
+    sobre ele seria cega justamente no pior caso.
+
+    Nenhuma fixture do corpus tem essa forma: em `faster_but_spilling` o lado
+    antes derrama 5 MB, e nas demais o spill e zero dos DOIS lados. A afirmacao
+    de tres documentos estava, portanto, desguardada -- reescrever a 003 sobre
+    `_delta_pct` passaria verde no corpus inteiro.
+
+    Facts CONSTRUIDOS e nao fixture nova, e a razao e de escopo: uma fixture e um
+    par de event logs sinteticos mais um golden de facts e de findings, e o que
+    falta provar aqui nao e extracao nenhuma -- os dois lados passam por
+    `build_benchmark`, que e o produtor real da chave omitida. O que a fixture
+    acrescentaria seria um golden a manter, e o corpus ja tem o positivo da 003
+    (`faster_but_spilling`, com base nao-zero). O que faltava era o outro ramo do
+    mesmo gatilho, e ele cabe em memoria.
+    """
+
+    def _delta(self, spill_before, spill_after):
+        """Ganho de tempo folgado (-50%), mesmo volume, GC igual: o UNICO eixo
+        que varia entre os casos e o spill. Sem isso, um caso poderia disparar
+        pelo ramo de GC e a asserção nao provaria nada sobre spill."""
+        before = [
+            _analyzed("a.jsonl"),
+            _stage("scan", 0, mean_ms=200, task_count=10),
+            _task_input("scan", 0, 1000),
+            _gc("scan", 0, 100),
+            _task_count("scan", 0, 10),
+            _spill_summary("app-1", spill_before, 0),
+        ]
+        after = [
+            _analyzed("b.jsonl"),
+            _stage("scan", 0, mean_ms=100, task_count=10, artifact="b.jsonl"),
+            _task_input("scan", 0, 1000, artifact="b.jsonl"),
+            _gc("scan", 0, 100, artifact="b.jsonl"),
+            _task_count("scan", 0, 10, artifact="b.jsonl"),
+            _spill_summary("app-2", spill_after, 0, artifact="b.jsonl"),
+        ]
+        return build_benchmark(before, after, path_hint="a.jsonl..b.jsonl")
+
+    def _rules(self, facts):
+        return {f.rule_id for f in judge(facts, load_catalog(), {"spark": "3.5.4"})}
+
+    def test_o_comparador_omite_o_percentual_quando_o_antes_e_zero(self):
+        """A premissa da regra, medida e nao assumida. Se um dia o comparador
+        passar a emitir `total_spill_bytes_delta_pct` com base zero, este teste
+        acende e o cabecalho do catalogo precisa ser reescrito junto."""
+        delta = only_delta(self._delta(spill_before=0, spill_after=160_000_000))
+        assert delta.measures["total_spill_bytes_before"] == 0
+        assert delta.measures["total_spill_bytes_after"] == 160_000_000
+        assert "total_spill_bytes_delta_pct" not in delta.measures
+
+    def test_spill_que_nasce_do_zero_dispara_a_003(self):
+        """O caso que a regra existe para pegar, e o que uma 003 escrita sobre
+        `_delta_pct` deixaria passar em silencio: a chave nao existe, o avaliador
+        engole o `ExprError`, e a regra nao avalia."""
+        assert "SF-BENCH-003" in self._rules(self._delta(0, 160_000_000))
+
+    def test_um_unico_byte_derramado_do_zero_ja_dispara(self):
+        """Com base zero o `growth_factor` degenera para "qualquer byte", e isso
+        e o comportamento declarado nas `sources` da regra -- spill que nasce do
+        nada nao precisa de margem de ruido."""
+        assert "SF-BENCH-003" in self._rules(self._delta(0, 1))
+
+    def test_spill_zero_nos_dois_lados_nao_dispara(self):
+        """A metade negativa do mesmo eixo: ganho de tempo sem degradacao
+        nenhuma nao e achado. Sem ela, a asserção acima passaria com uma regra
+        que dispara sempre que o tempo melhora."""
+        assert "SF-BENCH-003" not in self._rules(self._delta(0, 0))
+
+    def test_spill_que_encolhe_a_partir_de_uma_base_nao_zero_nao_dispara(self):
+        assert "SF-BENCH-003" not in self._rules(self._delta(160_000_000, 1))
