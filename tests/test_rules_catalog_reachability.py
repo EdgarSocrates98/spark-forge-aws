@@ -25,6 +25,7 @@ import pytest
 
 from sparkforge.facts import (
     athena_workgroup,
+    benchmark,
     call_graph,
     catalog_schema,
     consumers,
@@ -44,6 +45,7 @@ from sparkforge.rules.loader import catalog_dir, load_catalog
 
 EXTRACTORS = (
     athena_workgroup,
+    benchmark,
     call_graph,
     catalog_schema,
     consumers,

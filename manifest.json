@@ -67,6 +67,7 @@
     "sparkforge_analyze_sql",
     "sparkforge_analyze_terraform",
     "sparkforge_analyze_terraform_diff",
+    "sparkforge_benchmark",
     "sparkforge_case_get",
     "sparkforge_case_open",
     "sparkforge_case_update",

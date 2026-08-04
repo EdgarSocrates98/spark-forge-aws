@@ -48,6 +48,7 @@ class TestToolSurface:
             "sparkforge_analyze_s3_listing",
             "sparkforge_analyze_consumers",
             "sparkforge_analyze_terraform_diff",
+            "sparkforge_benchmark",
             "sparkforge_fuse",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
@@ -361,6 +362,76 @@ def _write_facts_file(tmp_path):
     path = tmp_path / "facts.json"
     path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
     return path
+
+
+def _event_log_lines(run_ms):
+    """Event log minimo com UM stage nomeado `scan` e duas tasks.
+
+    `run_ms` e o unico eixo que os dois lados do benchmark precisam variar:
+    `total_task_ms` sai de `mean_ms * task_count` sobre `spark.stage.task_duration`.
+    `_EVENT_LOG_LINE` nao serve aqui -- ele so tem `ApplicationStart`, entao nao
+    produz stage nenhum e o comparador nao teria o que comparar.
+    """
+    def task(task_id):
+        return {
+            "Event": "SparkListenerTaskEnd",
+            "Stage ID": 0,
+            "Stage Attempt ID": 0,
+            "Task Type": "ResultTask",
+            "Task End Reason": {"Reason": "Success"},
+            "Task Info": {
+                "Task ID": task_id,
+                "Index": task_id,
+                "Attempt": 0,
+                "Launch Time": 1000,
+                "Finish Time": 1000 + run_ms,
+                "Executor ID": "1",
+                "Host": "10.0.0.11",
+                "Failed": False,
+                "Killed": False,
+            },
+            "Task Metrics": {
+                "Executor Run Time": run_ms,
+                "JVM GC Time": 10,
+                "Memory Bytes Spilled": 0,
+                "Disk Bytes Spilled": 0,
+                "Input Metrics": {"Bytes Read": 1000, "Records Read": 10},
+            },
+        }
+
+    stage_info = {
+        "Stage ID": 0,
+        "Stage Attempt ID": 0,
+        "Stage Name": "scan",
+        "Number of Tasks": 2,
+        "Parent IDs": [],
+        "Details": "",
+    }
+    events = [
+        {"Event": "SparkListenerApplicationStart", "App Name": "j", "App ID": "a", "Timestamp": 1},
+        {
+            "Event": "SparkListenerStageSubmitted",
+            "Stage Info": {**stage_info, "Submission Time": 100},
+        },
+        task(0),
+        task(1),
+        {"Event": "SparkListenerStageCompleted", "Stage Info": stage_info},
+    ]
+    return "".join(json.dumps(e) + "\n" for e in events)
+
+
+def _write_event_log_facts_files(tmp_path):
+    """Os DOIS arquivos de facts que `sparkforge_benchmark` compara, cada um
+    produzido pelo caminho real (`sparkforge_analyze_event_log`)."""
+    paths = []
+    for name, run_ms in (("before", 200), ("after", 100)):
+        log = tmp_path / f"{name}.jsonl"
+        log.write_text(_event_log_lines(run_ms), encoding="utf-8")
+        facts = call_tool("sparkforge_analyze_event_log", {"path": str(log)})
+        path = tmp_path / f"{name}_facts.json"
+        path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
+        paths.append(path)
+    return paths[0], paths[1]
 
 
 class _FakeS3Client:
@@ -683,6 +754,12 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_analyze_call_graph", {"facts_path": str(facts_path)})
 
+    if name == "sparkforge_benchmark":
+        before, after = _write_event_log_facts_files(tmp_path)
+        return call_tool(
+            "sparkforge_benchmark", {"before_path": str(before), "after_path": str(after)}
+        )
+
     if name == "sparkforge_fuse":
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_fuse", {"facts_paths": [str(facts_path)]})
@@ -784,6 +861,10 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
+        (
+            "sparkforge_benchmark",
+            {"before_path": "<tmp>/nao-existe.json", "after_path": "<tmp>/nao-existe.json"},
+        ),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),
     )
