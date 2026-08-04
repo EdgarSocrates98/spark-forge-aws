@@ -502,7 +502,7 @@ execução de `sync_skills.py` reporta `0 alteração(ões)`. Suíte 3558 passed
 **Files:**
 - Modify: `parity.yaml`, `tests/test_capability_parity.py`
 
-- [ ] **Step 1: O mecanismo e o recorte**
+- [x] **Step 1: O mecanismo e o recorte**
 
 `subagent` entra em `mechanisms`. As capacidades de coordenação declaram
 `subagent` para `devin_cli`, e para `devin_desktop` **com o recorte medido**: só
@@ -512,21 +512,101 @@ no Devin Local agent, com o toggle "Subagents (Preview)".
 seria repetir o defeito do transporte HTTP da Fase 1, que este mesmo arquivo cita
 como razão de ser da regra.
 
-- [ ] **Step 2: O parágrafo original fica**
+Entregue: `mechanisms: [mcp, cli, files, playbook, subagent]`, e a única
+capacidade de coordenação com `subagent` para `claude_code`, `devin_desktop` e
+`devin_cli` (D-DV-17). O recorte do Desktop está **no arquivo** em dois lugares:
+comentário YAML na linha de `devin_desktop` e parágrafo próprio em `notes`.
+
+- [x] **Step 2: O parágrafo original fica**
 
 Ele ganha desvio registrado ao lado: a frase universal caiu por contraexemplo, e
 o que sobrou é *o perfil é nosso, o despacho é deles*. Preservar o texto é a
 convenção do repositório, e aqui vale duplamente — ele documenta a disciplina que
 esta fase mantém ao não estender a `codex` e `copilot_ci`.
 
-- [ ] **Step 3: O invariante que herda a lição da Fase 1**
+Preservado palavra por palavra; o desvio entrou **depois** dele, com quatro
+partes nomeadas — o que caiu, o que sobrou, por que a disciplina segue sendo
+exercida, e o recorte do Desktop. Quatro testes em
+`TestOParagrafoOriginalFicaComDesvioAoLado` fixam as duas metades, inclusive a
+ordem (desvio ao lado, não no lugar).
+
+- [x] **Step 3: O invariante que herda a lição da Fase 1**
 
 Capacidade que declara `subagent` só pode listar plataforma cujo suporte a
 pesquisa confirma. Derive do `knowledge/devin/agents-and-subagents.md` se der;
 se não der sem parser frágil, use lista literal **com o ponteiro para a fonte no
 comentário**, e diga no relatório por que não deu para derivar.
 
-- [ ] **Step 4: Rode e commite**
+Medido, não deu: **lista literal com ponteiro por plataforma** em
+`SUBAGENT_CONFIRMED_BY` (D-DV-18). Oito testes em
+`TestSubagentSoOndeAPesquisaConfirma`, incluindo o guarda de não-vacuidade e o
+que exige que a razão de cada entrada aponte a fonte.
+
+- [x] **Step 4: Rode e commite**
+
+Suíte 3569 passed / 5 skipped (era 3558 / 5; +12 novos, −1 substituído).
+`ruff check .` limpo. `sync_skills.py --check` OK. `git diff` só em
+`parity.yaml`, `tests/test_capability_parity.py` e neste plano.
+
+**Desvios medidos na Task 5**
+
+- **D-DV-17 — `claude_code` também ganha `subagent`, e o plano não o nomeia.** O
+  Step 1 nomeia `devin_cli` e `devin_desktop`, e proíbe `codex` e `copilot_ci`;
+  sobre `claude_code` ele é mudo. Declarar só o Devin publicaria o inverso exato
+  do defeito que esta fase combate: o manifesto afirmaria que o Devin tem um
+  mecanismo de coordenação que o Claude Code **não** tem, quando o despacho de
+  subagente do Claude Code é a única afirmação do parágrafo original que a
+  pesquisa não derrubou — ele está escrito nas linhas 18-29 ("capacidade de
+  HARNESS do Claude Code, o `Agent` tool desta CLI"), e é o harness em que este
+  repositório roda. Negar capacidade que existe e afirmar capacidade que não
+  existe são a mesma falha em espelho, e o teste substituído
+  (`test_only_claude_code_claims_subagent_dispatch`) já presumia `claude_code`
+  como o dono legítimo do mecanismo. A entrada dele em `SUBAGENT_CONFIRMED_BY`
+  carrega ponteiro próprio, e **não** aponta a pesquisa do Devin — apontar seria
+  citar fonte que não fala dele.
+
+- **D-DV-18 — derivar do arquivo de pesquisa não sobrevive à medição, e a
+  medição é o próprio contraexemplo.** O Step 3 manda derivar se der. Medido por
+  `grep` de identificador de plataforma sobre
+  `knowledge/devin/agents-and-subagents.md`: `codex` aparece **7 vezes** e
+  `copilot_ci` **1 vez** — e nenhuma delas é suporte a subagente. `codex` é o
+  *short name* de modelo do Devin CLI (`/model codex`, "Short names like `opus`,
+  `sonnet`, `swe`, `codex`"), e `copilot_ci` aparece exatamente na frase da §13
+  que declara que ele **não foi objeto da pesquisa**. Uma derivação por
+  ocorrência listaria as duas plataformas que o critério 7 existe para excluir.
+  Pior: a única frase que nomeia as duas plataformas certas as nomeia dentro de
+  uma **negação** — "Isso e FALSO para devin_cli e para devin_desktop", no bloco
+  `V-DV-1` —, e a tabela de veredictos da §0 é keyed por pergunta em prosa, com
+  quatro formas distintas de veredicto ("Confirmada", "Confirmada, com recorte",
+  "Parcialmente contradita", "Campo confirmado; nomes CONTRADITOS"). Não existe
+  bloco legível por máquina keyed por identificador de plataforma. Parser frágil
+  sobre prosa falha para o lado errado **em silêncio**, que é o modo de falha que
+  este invariante existe para fechar. Entrou lista literal com uma razão por
+  plataforma, cada uma citando seção e `retrieved:`, e
+  `test_a_razao_nomeia_a_fonte` impede que ela degenere em lista de nomes.
+
+- **D-DV-19 — um teste existente teve que ser substituído, pelo mesmo motivo do
+  D-DV-4 e do D-DV-14.** `TestOrchestrationParity::test_only_claude_code_claims_
+  subagent_dispatch` afirmava que nenhuma plataforma além de `claude_code` podia
+  declarar `subagent`. Isso deixou de ser invariante e virou a afirmação que a
+  pesquisa derrubou. A troca **aperta** em vez de afrouxar: o teste antigo
+  cobrava um nome de plataforma, e passaria verde para qualquer manifesto que
+  simplesmente não usasse o mecanismo; o novo cobra **evidência por plataforma**,
+  e `codex`/`copilot_ci` continuam pegos por dois caminhos independentes — a
+  regra geral e um teste nominal. `test_declares_the_four_mechanisms` virou
+  `..._the_five_mechanisms`, e a tupla `MECHANISMS` do teste continua sendo a
+  segunda ponta que obriga o manifesto a concordar.
+
+- **D-DV-20 — entrou um invariante que o plano não pediu: `subagent` nunca sem
+  `playbook`.** A pesquisa diz duas coisas que, juntas, tornam o despacho
+  removível sem aviso: custom subagents são **experimentais** pela própria
+  Cognition, e um admin de organização desliga o despacho por completo (opção
+  *None* de "Default subagent model"), sem que nenhum arquivo versionado possa
+  impedi-lo. Uma capacidade que declarasse só `subagent` ficaria sem caminho no
+  dia em que o toggle virasse off, e o manifesto não perceberia. `test_nenhuma_
+  capacidade_declara_subagent_sem_o_piso` fixa o piso; é a versão declarável do
+  "o `playbook` continua sendo o caminho quando o despacho estiver desligado" que
+  a Task 6 vai escrever em prosa.
 
 ---
 

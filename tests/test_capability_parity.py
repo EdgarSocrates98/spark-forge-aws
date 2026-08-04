@@ -4,11 +4,43 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORMS = ("claude_code", "devin_desktop", "devin_cli", "codex", "copilot_ci")
-MECHANISMS = ("mcp", "cli", "files", "playbook")
+MECHANISMS = ("mcp", "cli", "files", "playbook", "subagent")
+
+PESQUISA = "knowledge/devin/agents-and-subagents.md"
+
+# Plataforma -> onde o suporte a despacho de subagente foi CONFIRMADO, e por
+# quem. Lista literal COM PONTEIRO PARA A FONTE, e nao derivacao do arquivo de
+# pesquisa: a medicao que recusou derivar esta no docstring de
+# `TestSubagentSoOndeAPesquisaConfirma`.
+#
+# Entrar aqui e afirmar que alguem leu a fonte e ela confirma. Plataforma que a
+# pesquisa nao cobriu NAO entra -- e por isso que `codex` e `copilot_ci` estao
+# ausentes, e a ausencia deles e o proprio criterio 7.
+SUBAGENT_CONFIRMED_BY = {
+    "claude_code": (
+        "o harness desta CLI (o tool `Agent`), que despacha os perfis de "
+        "`.claude/agents/`. E a premissa do proprio paragrafo de parity.yaml "
+        "linhas 18-29 -- a unica afirmacao dele que a pesquisa nao derrubou."
+    ),
+    "devin_cli": (
+        f"{PESQUISA} secao 1 (retrieved 2026-08-04): tools `run_subagent` e "
+        "`read_subagent`, descoberta nativa em `.agents/agents/` e importacao "
+        "de `.claude/agents/*.md` -- dois diretorios que este repo ja publica."
+    ),
+    "devin_desktop": (
+        f"{PESQUISA} secao 2 (retrieved 2026-08-04): confirmada COM RECORTE -- "
+        'so no Devin Local agent, sob o toggle "Subagents (Preview)". Nenhuma '
+        "pagina do motor Cascade menciona subagente."
+    ),
+}
 
 
 def manifest():
     return yaml.safe_load((ROOT / "parity.yaml").read_text(encoding="utf-8"))
+
+
+def manifest_text():
+    return (ROOT / "parity.yaml").read_text(encoding="utf-8")
 
 
 class TestManifestShape:
@@ -18,7 +50,7 @@ class TestManifestShape:
     def test_declares_the_five_platforms(self):
         assert tuple(manifest()["platforms"]) == PLATFORMS
 
-    def test_declares_the_four_mechanisms(self):
+    def test_declares_the_five_mechanisms(self):
         assert tuple(manifest()["mechanisms"]) == MECHANISMS
 
 
@@ -176,17 +208,177 @@ class TestOrchestrationParity:
         for platform in manifest()["platforms"]:
             assert capability["platforms"].get(platform), platform
 
-    def test_only_claude_code_claims_subagent_dispatch(self):
-        """Despacho de subagente e capacidade de HARNESS. Declarar para outra
-        plataforma seria afirmar paridade que nao existe -- o defeito exato do
-        transporte HTTP na Fase 1, que `parity.yaml` afirmava e nenhum teste
-        tocava."""
+
+class TestSubagentSoOndeAPesquisaConfirma:
+    """O invariante que herda a licao da Fase 1, um mecanismo depois.
+
+    ESTA CLASSE SUBSTITUI `test_only_claude_code_claims_subagent_dispatch`, que
+    vivia em `TestOrchestrationParity` e afirmava que nenhuma plataforma alem de
+    `claude_code` podia declarar `subagent`. Essa afirmacao caiu por
+    contraexemplo medido em `knowledge/devin/agents-and-subagents.md`: o Devin
+    CLI le `.agents/agents/` nativamente e importa `.claude/agents/*.md`, e o
+    Devin Local agent do Desktop despacha os mesmos perfis. Trocar o teste NAO
+    afrouxa o gate -- o antigo cobrava um nome de plataforma, este cobra
+    EVIDENCIA por plataforma, e `codex`/`copilot_ci` continuam pegos.
+
+    POR QUE LISTA LITERAL E NAO DERIVACAO DO ARQUIVO DE PESQUISA. O plano
+    mandava derivar se desse. Medido, nao da, e a medicao e o contraexemplo:
+
+    - `grep` por identificador de plataforma no arquivo de pesquisa devolve
+      `codex` SETE vezes e `copilot_ci` UMA. Nenhuma delas e suporte a
+      subagente: `codex` e o short name de modelo do Devin CLI (`/model codex`)
+      e `copilot_ci` aparece justamente na frase que diz que ele NAO foi objeto
+      da pesquisa. Uma derivacao por ocorrencia listaria as duas plataformas que
+      o criterio 7 existe para excluir.
+    - A unica frase do arquivo que nomeia as duas plataformas certas as nomeia
+      dentro de uma NEGACAO: "Isso e FALSO para devin_cli e para devin_desktop"
+      (bloco `V-DV-1`). Parser que acertasse isso teria de entender a polaridade
+      de uma frase em portugues.
+    - A tabela de veredictos da secao 0 e keyed por pergunta em prosa ("Devin
+      CLI despacha subagente?"), com quatro formas distintas de veredicto
+      ("Confirmada", "Confirmada, com recorte", "Parcialmente contradita",
+      "Campo confirmado; nomes CONTRADITOS"). Nao ha bloco legivel por maquina
+      keyed por identificador de plataforma.
+
+    Parser fragil sobre prosa e pior que lista honesta com ponteiro: ele falha
+    para o lado errado em silencio, que e exatamente o modo de falha que este
+    invariante existe para fechar. O ponteiro fica no proprio dicionario, uma
+    razao por plataforma, e `test_a_razao_nomeia_a_fonte` impede que ele vire
+    lista de nomes sem evidencia.
+    """
+
+    def _capabilities_with_subagent(self):
+        return [
+            (capability["name"], platform)
+            for capability in manifest()["capabilities"]
+            for platform, mechanisms in capability["platforms"].items()
+            if "subagent" in mechanisms
+        ]
+
+    def test_subagent_e_mecanismo_declarado(self):
+        assert "subagent" in manifest()["mechanisms"]
+
+    def test_toda_plataforma_com_subagent_tem_confirmacao(self):
+        """O invariante. Declarar `subagent` para plataforma que a pesquisa nao
+        cobriu e afirmar paridade que ninguem mediu -- o defeito do transporte
+        HTTP da Fase 1, que `parity.yaml` afirmava e nenhum teste tocava."""
+        gaps = [
+            f"{name}: {platform}"
+            for name, platform in self._capabilities_with_subagent()
+            if platform not in SUBAGENT_CONFIRMED_BY
+        ]
+        assert not gaps, gaps
+
+    def test_codex_e_copilot_ci_nunca_declaram_subagent(self):
+        """Criterio 7, cobrado por nome e nao so pela regra geral. Os dois sao
+        as plataformas que a pesquisa NAO cobriu, e sao o unico lugar onde a
+        disciplina do paragrafo original ainda e exercida na pratica."""
+        for platform in ("codex", "copilot_ci"):
+            assert platform not in SUBAGENT_CONFIRMED_BY, platform
+        ofensores = [
+            f"{name}: {platform}"
+            for name, platform in self._capabilities_with_subagent()
+            if platform in ("codex", "copilot_ci")
+        ]
+        assert not ofensores, ofensores
+
+    def test_a_coordenacao_declara_subagent_nas_tres_confirmadas(self):
         capability = next(
             c for c in manifest()["capabilities"] if "coorden" in c["name"].lower()
         )
-        for platform, mechanisms in capability["platforms"].items():
-            if platform != "claude_code":
-                assert "subagent" not in mechanisms, platform
+        com_subagent = {
+            platform
+            for platform, mechanisms in capability["platforms"].items()
+            if "subagent" in mechanisms
+        }
+        assert com_subagent == set(SUBAGENT_CONFIRMED_BY), sorted(com_subagent)
+
+    def test_nenhuma_capacidade_declara_subagent_sem_o_piso(self):
+        """`playbook` sobrevive ao lado de `subagent`, e nao e substituido por
+        ele. A propria Cognition declara custom subagents EXPERIMENTAIS, e um
+        admin de organizacao desliga o despacho por completo (opcao *None* de
+        "Default subagent model"). Capacidade que so tivesse `subagent` ficaria
+        sem caminho no dia em que o toggle virasse off, e ninguem perceberia
+        aqui."""
+        orfaos = [
+            f"{capability['name']}: {platform}"
+            for capability in manifest()["capabilities"]
+            for platform, mechanisms in capability["platforms"].items()
+            if "subagent" in mechanisms and "playbook" not in mechanisms
+        ]
+        assert not orfaos, orfaos
+
+    def test_o_recorte_do_desktop_esta_no_arquivo(self):
+        """Recorte que nao aparece no manifesto e recorte que ninguem respeita:
+        `devin_desktop: [..., subagent]` lido sozinho afirma o Desktop inteiro,
+        quando a fonte confirma so o Devin Local agent."""
+        texto = " ".join(manifest_text().split())
+
+        assert "Devin Local agent" in texto
+        assert "Subagents (Preview)" in texto
+        assert "Cascade" in texto
+
+    def test_a_razao_nomeia_a_fonte(self):
+        """Guarda contra o dicionario virar lista de nomes. Uma entrada sem
+        ponteiro e uma afirmacao sem evidencia, que e o que ele existe para
+        proibir -- e as duas entradas do Devin tem de apontar a pesquisa."""
+        for platform, razao in SUBAGENT_CONFIRMED_BY.items():
+            assert razao.strip(), platform
+        for platform in ("devin_cli", "devin_desktop"):
+            assert PESQUISA in SUBAGENT_CONFIRMED_BY[platform], platform
+        assert (ROOT / PESQUISA).is_file(), PESQUISA
+
+    def test_o_invariante_nao_e_vazio(self):
+        """Se a coordenacao parasse de declarar `subagent`, todo teste acima
+        viraria verde sobre conjunto vazio."""
+        assert self._capabilities_with_subagent()
+
+
+class TestOParagrafoOriginalFicaComDesvioAoLado:
+    """Criterio 8. A convencao deste repositorio para decisao registrada que a
+    fonte derrubou pela metade e desvio AO LADO, nunca reescrita -- e aqui ela
+    vale duplamente: o paragrafo documenta por que o projeto recusou afirmar
+    paridade inexistente, que e a disciplina exercida ao nao estender `subagent`
+    a `codex` e `copilot_ci`.
+
+    Sem este teste, a limpeza obvia para quem vier depois e apagar o paragrafo
+    "que ficou errado" -- e junto vai o unico registro de por que a regra
+    existe.
+    """
+
+    def test_o_paragrafo_original_esta_preservado(self):
+        """Comparado sobre o texto com espaco em branco normalizado: o que esta
+        protegido sao as palavras, nao a coluna onde a linha quebrou."""
+        texto = " ".join(manifest_text().split())
+        for trecho in (
+            "`subagent` NAO e mecanismo declarado neste manifesto, de proposito.",
+            "Despacho de subagente e capacidade de HARNESS do Claude Code",
+            "nenhuma outra plataforma tem um equivalente que este repositorio possa"
+            " acionar",
+            "o defeito exato do transporte HTTP na Fase 1",
+            "perde o paralelismo do despacho, mantem o metodo",
+        ):
+            assert trecho in texto, trecho
+
+    def test_o_desvio_esta_registrado_ao_lado(self):
+        texto = " ".join(manifest_text().split())
+        for trecho in (
+            "DESVIO",
+            "cai por contraexemplo",
+            "o perfil e nosso, o despacho e deles",
+            "knowledge/devin/agents-and-subagents.md",
+        ):
+            assert trecho in texto, trecho
+
+    def test_o_desvio_diz_por_que_codex_e_copilot_ci_ficam_de_fora(self):
+        texto = " ".join(manifest_text().split())
+
+        assert "`codex` e `copilot_ci` NAO ganham `subagent`" in texto
+
+    def test_o_desvio_vem_depois_do_paragrafo_e_nao_no_lugar_dele(self):
+        texto = manifest_text()
+
+        assert texto.index("DESVIO") > texto.index("capacidade de HARNESS do Claude Code")
 
 
 class TestNoRuntimeAxisIsAnUndeclaredFlagGap:
