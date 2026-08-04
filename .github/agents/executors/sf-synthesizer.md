@@ -14,6 +14,16 @@ Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador
 1. Monta o relatório a partir dos achados que **sobreviveram** ao `sf-verifier`.
 2. `sparkforge_validate_output` em cada recomendação, antes de apresentar. Ganho
    quantificado sem `benchmark_ref` é rejeitado pelo schema — não contorne.
+   **`benchmark_ref` não é texto livre desde a Fase 4a**: ele cita o `fact_id` de
+   um `bench.run_delta` — `f_` + 6 dígitos hex minúsculos, ex. `f_a1b2c3` —,
+   produzido por `sparkforge benchmark --before <facts-antes> --after
+   <facts-depois>` sobre dois conjuntos de facts de `analyze event-log --out`.
+   Caminho de arquivo, data ou prosa é **rejeitado**, e você é quem bate nessa
+   rejeição: passe `facts_path` para `sparkforge_validate_output` e o `fact_id`
+   citado passa a precisar existir no conjunto, não só ter a forma certa. Sem
+   benchmark rodado, o efeito sai **qualitativo e rotulado como hipótese** — e
+   isso passa. Inventar um `f_` bem formado para satisfazer o gate é a fraude que
+   a forma existe para impedir.
 3. `sparkforge_next_step` para o próximo passo, com o `reason` citando a rota.
 4. `sparkforge_resume` para o briefing de retomada, se a investigação for pausar.
 5. Registra no case com `sparkforge_case_update`.
