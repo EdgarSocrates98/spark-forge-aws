@@ -30,6 +30,7 @@ from sparkforge.facts import (
     data_quality,
     emr_cluster,
     event_log,
+    funcval,
     fusion,
     iceberg_metadata,
     pyspark_ast,
@@ -52,6 +53,9 @@ EXTRACTORS = {
     "data_quality": data_quality,
     "emr_cluster": emr_cluster,
     "event_log": event_log,
+    # Lista manual, duplicada em `tests/test_rules_catalog_reachability.py`:
+    # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
+    "funcval": funcval,
     "fusion": fusion,
     "iceberg_metadata": iceberg_metadata,
     "pyspark_ast": pyspark_ast,

@@ -78,6 +78,8 @@
     "sparkforge_collect_glue_job",
     "sparkforge_collect_iceberg_metadata",
     "sparkforge_collect_verify",
+    "sparkforge_funcval_compare",
+    "sparkforge_funcval_plan",
     "sparkforge_fuse",
     "sparkforge_judge",
     "sparkforge_knowledge_path",

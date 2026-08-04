@@ -30,6 +30,7 @@ from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
 from sparkforge.facts.data_quality import extract_data_quality_tree  # noqa: E402
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
+from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
 from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
@@ -65,6 +66,7 @@ FIXTURES_CONSUMERS = ROOT / "fixtures" / "consumers"
 FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
 FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
 FIXTURES_BENCH = ROOT / "fixtures" / "bench"
+FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -349,6 +351,68 @@ def regen_bench(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_funcval(directory: Path) -> None:
+    """Corpus de validacao funcional -- o unico que cobre DOIS verbos.
+
+    O `input/` traz o codigo PySpark (`*.py`, que da o alvo via `pyspark.write`)
+    e o dump do Glue Data Catalog (`input/catalog/*.json`, que da coluna e
+    tipo). As duas fontes na mesma fixture porque nenhum verbo produz as duas no
+    mesmo arquivo, e sem as duas os eixos de schema e de agregado nao existem --
+    e a medicao da D-4c-6, que constatou que NENHUMA das sete fixtures reais com
+    `pyspark.write` junta um `catalog.table_schema` do mesmo alvo.
+
+    `meta.yaml` pode declarar `funcval.keys`: a chave de negocio nao e derivavel
+    de fact nenhum (D-4c-1), entao a fixture que quer o eixo de chaves declara a
+    chave do mesmo jeito que o operador declararia no `--key`.
+
+    Duas formas de fixture, e o que separa as duas e a presenca dos resultados:
+
+      * so `input/` -> a fixture e do PLANO. O golden guarda os `funcval.plan` e
+        os `funcval.unresolved` da derivacao.
+      * mais `input/before.json` e `input/after.json` -> a fixture e da
+        COMPARACAO, e o golden guarda o que ela produziu. O plano vira ENTRADA e
+        fica fora do golden, pela mesma disciplina de `regen_callgraph`,
+        `regen_dq` e `regen_bench`: repetir a entrada faria uma mudanca no
+        derivador quebrar dois goldens pelo mesmo motivo, escondendo qual dos
+        dois contratos regrediu.
+
+    Os `*.json` de resultado sao os valores que o OPERADOR mediu. O motor nunca
+    os produz -- se produzisse, estaria medindo, e a fase inteira existe para
+    dizer que quem mede e o operador.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+
+    facts = list(extract_tree(input_dir, repo_root=input_dir))
+    catalog_dir_path = input_dir / "catalog"
+    if catalog_dir_path.is_dir():
+        facts.extend(extract_catalog_schema_tree(catalog_dir_path, repo_root=input_dir))
+
+    keys = tuple((meta.get("funcval") or {}).get("keys") or ())
+    derived = build_plan(facts, keys=keys, path_hint=directory.name)
+
+    before_file = input_dir / "before.json"
+    after_file = input_dir / "after.json"
+    if before_file.is_file() and after_file.is_file():
+        plans = [f for f in derived if f.kind == "funcval.plan"]
+        if len(plans) != 1:
+            targets = sorted(str(p.attrs.get("target", "")) for p in plans)
+            raise SystemExit(
+                f"{directory.name}: fixture de comparacao precisa de UM plano, "
+                f"e o corpus derivou {len(plans)} ({targets}). Um resultado descreve "
+                f"UM alvo, e escolher entre planos aqui seria adivinhar."
+            )
+        derived = build_comparison(
+            plans[0].attrs,
+            json.loads(before_file.read_text(encoding="utf-8")),
+            json.loads(after_file.read_text(encoding="utf-8")),
+            path_hint=directory.name,
+        )
+
+    findings = judge(derived, load_catalog(), meta["runtime"])
+    _write_expected(directory, derived, findings)
+
+
 def main() -> int:
     targets = sys.argv[1:]
 
@@ -378,6 +442,7 @@ def main() -> int:
                 (FIXTURES_TFDIFF / name, regen_tfdiff),
                 (FIXTURES_INFRA_CODE / name, regen_infra_code),
                 (FIXTURES_BENCH / name, regen_bench),
+                (FIXTURES_FUNCVAL / name, regen_funcval),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -433,6 +498,13 @@ def main() -> int:
     if FIXTURES_BENCH.is_dir():
         for directory in sorted(p for p in FIXTURES_BENCH.iterdir() if p.is_dir()):
             regen_bench(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/funcval/` nasce
+    # na Task 5 desta fase, e a regeneracao completa roda ENTRE a Task 4 e ela.
+    # `iterdir()` num diretorio ausente levanta FileNotFoundError e derrubaria
+    # todos os corpus que ja rodaram acima.
+    if FIXTURES_FUNCVAL.is_dir():
+        for directory in sorted(p for p in FIXTURES_FUNCVAL.iterdir() if p.is_dir()):
+            regen_funcval(directory)
     return 0
 
 
