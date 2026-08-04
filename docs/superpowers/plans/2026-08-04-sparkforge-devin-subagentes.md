@@ -615,7 +615,7 @@ Suíte 3569 passed / 5 skipped (era 3558 / 5; +12 novos, −1 substituído).
 **Files:**
 - Modify: `README.md`, `AGENTS.md`, `GUIA_DE_USO.md`, `docs/superpowers/STATUS.md`
 
-- [ ] **Step 1: Meça**
+- [x] **Step 1: Meça**
 
 ```bash
 python -m pytest -q 2>&1 | tail -2
@@ -624,18 +624,45 @@ ruff check .
 ls agents/*.md | wc -l ; ls agents/executors/*.md | wc -l ; ls -d skills/*/ | wc -l
 ```
 
-- [ ] **Step 2: `GUIA_DE_USO.md` — a seção do Devin muda de fato**
+Saída literal:
+
+```
+3569 passed, 5 skipped
+OK: .claude, .agents e .github em dia com skills/ e agents/ (perfis conferidos
+    contra a renderização de cada plataforma).
+All checks passed!
+8
+5
+20
+```
+
+E as duas medições que o plano não pediu e o relatório exige:
+
+```
+python -c "from sparkforge.adapters.tools import TOOLS; print('tools', len(TOOLS))"
+tools 36
+grep -c "subagent: true" .agents/skills/*/SKILL.md | grep -c ":1"
+12
+```
+
+- [x] **Step 2: `GUIA_DE_USO.md` — a seção do Devin muda de fato**
 
 Hoje ela manda usar o agente e o `playbook`. Passa a dizer que o Devin CLI
 despacha subagente, onde os perfis moram, e que o `playbook` continua sendo o
 caminho quando o despacho estiver desligado (admin da org, ou opção *None*).
 
-- [ ] **Step 3: `README.md` e `AGENTS.md`**
+Entregue como três subseções (`3.1` onde os perfis moram, com tabela dos três
+caminhos de descoberta; `3.2` quais skills despacham e por que
+`sparkforge-diagnose` **não** despacha; `3.3` quando o despacho estiver
+desligado), mais a reescrita da seção 5, onde o `playbook` deixa de ser "o que
+Devin/Codex/Copilot usam" e vira o piso das cinco.
+
+- [x] **Step 3: `README.md` e `AGENTS.md`**
 
 A seção de coordenadores diz hoje que o despacho é do Claude Code e que as outras
 plataformas usam `playbook`. Corrija com o recorte, sem apagar o `playbook`.
 
-- [ ] **Step 4: `STATUS.md`**
+- [x] **Step 4: `STATUS.md`**
 
 Números medidos. Seção da fase: o defeito de partida (decisão registrada que a
 fonte derrubou pela metade), o que entrou, **os seis pontos da doc interna que
@@ -644,4 +671,67 @@ não se sustentaram**, e o que continua no `playbook` e por quê.
 Dívidas: `tools:` omitido por mapeamento não documentado — reabre se a Cognition
 documentar; custom subagents são **experimentais** pela própria Cognition.
 
-- [ ] **Step 5: Suíte verde, ruff limpo, `sync_skills.py --check` OK, commit**
+- [x] **Step 5: Suíte verde, ruff limpo, `sync_skills.py --check` OK, commit**
+
+3569 passed / 5 skipped, `ruff check .` limpo, `--check` OK — os mesmos números do
+Step 1, porque esta task não tocou em código. `git diff --numstat` só em
+`README.md`, `AGENTS.md`, `GUIA_DE_USO.md`, `docs/superpowers/STATUS.md` e neste
+plano.
+
+**Desvios medidos na Task 6**
+
+- **D-DV-21 — a fase não tem número, e o `STATUS.md` a registra sem inventar um.**
+  Todas as seções de `## Fases` começam com "Fase X"; esta começa com o nome.
+  Medido: nem o spec, nem o plano, nem o desvio de `parity.yaml` numeram a fase, e
+  `grep "Fase 5d"` no repositório inteiro sai vazio. Numerá-la aqui criaria a
+  única referência a um número que nenhum outro arquivo cita — e o `STATUS.md` é
+  a fonte da verdade das fases justamente porque não inventa o que os outros
+  arquivos não dizem. A ausência do número está escrita na própria seção, para
+  que a próxima varredura não a leia como esquecimento.
+
+- **D-DV-22 — o plano nomeia uma frase em três documentos, e o `README.md` tinha
+  uma segunda que esta fase tornou falsa.** Além de "o despacho é do Claude Code",
+  a seção de manutenção dizia: *"As pastas `.claude/skills/` e `.agents/skills/`
+  são espelhos byte-a-byte."* Isso era verdade quando foi escrito e deixou de ser
+  na Task 4 — `.agents/skills/` passou a receber `subagent:` e `agent:`, e o
+  D-DV-16 registrou que a sincronia de skills abandonou `filecmp`/`copy2`. Deixar
+  a frase mandaria o contribuidor conferir byte-identidade e concluir que o
+  gerador está quebrado. Corrigida no mesmo lugar, separando os dois regimes:
+  `.claude/` e `.github/` byte a byte, `.agents/` renderizado. A linha 10 ("Devin:
+  `.agents/skills`") também estava incompleta desde antes da fase e ganhou
+  `.agents/agents` mais a importação de `.claude/agents`.
+
+- **D-DV-23 — uma mitigação de risco declarada no spec não existe, e a medição é
+  de uma linha.** A §7 do spec responde ao risco "o Devin muda formato de perfil e
+  o tradutor quebra em silêncio" com "a pesquisa fica em `knowledge/` com data,
+  **na watchlist do `refresh_knowledge`**". A primeira metade é verdadeira; a
+  segunda é falsa **por construção**: `watchlist()` deriva as URLs de
+  `sources[].url` das **regras do catálogo**, e `knowledge/sources.lock.json` tem
+  37 fontes e **zero** com `devin`. As 24 URLs de `docs.devin.ai` da pesquisa
+  envelhecem sem alarme — sobre a superfície que a própria fonte declara
+  experimental. Registrado como **dívida** no `STATUS.md`, com as duas saídas
+  medidas: escrever regra de catálogo só para entrar na watchlist é fabricar
+  diagnóstico que não existe, e ampliar `watchlist()` para varrer `knowledge/**` é
+  código que ninguém escreveu. Nenhuma das duas cabia nesta task, que é de
+  documentação; a linha fica com o custo na mão.
+
+- **D-DV-24 — o Step 4 pede duas dívidas e entraram quatro, com a natureza de
+  cada uma nomeada.** As duas do plano (`tools:` omitido, custom subagents
+  experimentais) mais a que a Task 4 mediu (nove das doze despacháveis sem
+  `agent:`) mais o D-DV-23. Três são **limite declarado** e uma é **dívida**, pelo
+  critério da triagem de 2026-08-04 que o próprio `STATUS.md` fixa — e a distinção
+  não é cosmética: fechar as três primeiras é reverter decisão ou depender da
+  Cognition, e fechar a quarta é escrever código. Duas delas têm gatilho de
+  reabertura **fora** deste repositório, o que nenhuma das sete linhas anteriores
+  tinha; está dito na abertura da seção.
+
+- **D-DV-25 — `knowledge/INDEX.md` foi conferido e não mudou.** A linha da tabela
+  "Plataformas de agente" enumera diretórios de descoberta, frontmatter literal,
+  importação de `.claude/agents/*.md`, `.agents/skills/`, modelo default por
+  router, `max-nesting`, `subagents_enabled`, MCP, atalhos, o bloco `V-DV-*` e "o
+  que isso faz com a nota de `parity.yaml`" — as onze afirmações foram conferidas
+  uma a uma contra o arquivo, e as onze continuam verdadeiras depois das cinco
+  tasks. A linha de frescor já declara `devin/` em 2026-08-04. Editar para
+  registrar que a nota de `parity.yaml` mudou seria errado: o `INDEX.md` descreve
+  o que a pesquisa **contém**, e a §13 dela continua se chamando "o que isto faz
+  com a decisão de `parity.yaml`". Conferir e não mexer é resultado, não omissão.
