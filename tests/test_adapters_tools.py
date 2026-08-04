@@ -147,6 +147,50 @@ class TestCallTool:
         }
         assert call_tool("sparkforge_validate_output", {"finding": payload})["valid"] is True
 
+    def _gain_finding(self, benchmark_ref):
+        return {
+            "rule_id": "SF-BENCH-001", "schema_version": 1, "title": "t", "severity": "P2",
+            "confidence": "high", "status": "confirmed",
+            "subject": {"type": "job_run"}, "evidence": ["f_abc123"],
+            "expected_effect": "reduz 40%", "benchmark_ref": benchmark_ref,
+        }
+
+    def test_validate_output_rejects_a_free_text_benchmark_ref(self):
+        result = call_tool(
+            "sparkforge_validate_output",
+            {"finding": self._gain_finding("bench/2026-07-29.json")},
+        )
+        assert result["valid"] is False
+        assert "nao e um fact_id" in result["errors"][0]
+
+    def test_validate_output_accepts_a_well_formed_ref_without_facts_path(self):
+        result = call_tool(
+            "sparkforge_validate_output", {"finding": self._gain_finding("f_a1b2c3")}
+        )
+        assert result["valid"] is True
+
+    def test_facts_path_turns_on_the_relevance_layer(self, tmp_path):
+        import json as _json
+
+        from sparkforge.findings.models import Fact
+
+        fact = Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": 1})
+        facts_path = tmp_path / "facts.json"
+        facts_path.write_text(_json.dumps([fact.to_dict()]), encoding="utf-8")
+
+        absent = call_tool(
+            "sparkforge_validate_output",
+            {"finding": self._gain_finding("f_a1b2c3"), "facts_path": str(facts_path)},
+        )
+        assert absent["valid"] is False
+        assert "nao esta no conjunto" in absent["errors"][0]
+
+        present = call_tool(
+            "sparkforge_validate_output",
+            {"finding": self._gain_finding(fact.id), "facts_path": str(facts_path)},
+        )
+        assert present["valid"] is True
+
     def test_case_open_then_next_step(self, repo):
         call_tool(
             "sparkforge_case_open",

@@ -1755,12 +1755,24 @@ TOOLS: dict[str, dict[str, Any]] = {
             "benchmark_ref antes de aceita-lo. Este e o outro pilar da independencia de "
             "modelo: um LLM diferente pode redigir o finding de outra forma, mas so passa "
             "se for logicamente consistente com o catalogo -- a validacao decide o que e "
-            "aceitavel, nao o modelo que escreveu."
+            "aceitavel, nao o modelo que escreveu. `benchmark_ref` cita o `fact_id` de um "
+            "`bench.run_delta` (`sparkforge_benchmark`), nao texto livre; informando "
+            "`facts_path` o id citado passa a precisar existir naquele conjunto."
         ),
         "inputSchema": {
             "type": "object",
             "required": ["finding"],
-            "properties": {"finding": {"type": "object"}},
+            "properties": {
+                "finding": {"type": "object"},
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Opcional. Caminho de um arquivo de facts. Sem ele, "
+                        "`benchmark_ref` so e cobrado na FORMA (`f_` + 6 hex); com "
+                        "ele, o `fact_id` citado precisa estar no conjunto."
+                    ),
+                },
+            },
         },
         "outputSchema": _VALIDATE_OUTPUT_SCHEMA,
         "annotations": _READ_ONLY,
@@ -2034,7 +2046,7 @@ def _h_knowledge_path(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _h_validate_output(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.validate_output(args["finding"])
+    return _core.validate_output(args["finding"], facts_path=args.get("facts_path"))
 
 
 def _h_analyze_catalog_schema(args: dict[str, Any]) -> dict[str, Any]:

@@ -92,7 +92,8 @@
       "type": "string"
     },
     "benchmark_ref": {
-      "type": "string"
+      "type": "string",
+      "description": "Vazio, ou o fact_id de um bench.run_delta (f_ + 6 hex). Sem pattern aqui de proposito: a forma so e exigida quando expected_effect quantifica ganho, e isso e condicional -- quem cobra e _reject_unbacked_gain em validate.py, com a mensagem que explica a mudanca."
     },
     "risks": {
       "type": "array",

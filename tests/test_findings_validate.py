@@ -88,17 +88,81 @@ class TestNoInventedGains:
         with pytest.raises(ValidationFailed, match="benchmark_ref"):
             validate_finding(good_finding(expected_effect=effect))
 
-    def test_quantified_effect_with_benchmark_is_accepted(self):
-        validate_finding(
-            good_finding(
-                expected_effect="reduz o runtime em 40%",
-                benchmark_ref="bench/2026-07-29-coalesce.json",
-            )
-        )
-
     def test_qualitative_effect_without_benchmark_is_accepted(self):
         validate_finding(
             good_finding(expected_effect="hipotese: reduz o tempo do stage dominante")
+        )
+
+
+class TestBenchmarkRefCitesAFactId:
+    """Desde a Fase 4a o gate tem produtor, e o campo deixou de aceitar prosa.
+
+    Ate aqui `benchmark_ref` era texto livre: nada no projeto produzia um, entao
+    qualquer string satisfazia a regra e o gate se contornava digitando. Com
+    `bench.run_delta` existindo, o campo cita o `fact_id` daquele fato. Duas
+    camadas, porque `validate_finding(payload)` nao ve fact nenhum: a FORMA vale
+    sempre; a PERTINENCIA so quando alguem passa o conjunto.
+    """
+
+    def _gain(self, **over):
+        return good_finding(expected_effect="reduz o runtime em 40%", **over)
+
+    def test_free_text_benchmark_ref_is_rejected(self):
+        """O caso que ANTES passava. A quebra e o objetivo da fase."""
+        with pytest.raises(ValidationFailed, match="nao e um fact_id"):
+            validate_finding(self._gain(benchmark_ref="bench/2026-07-29-coalesce.json"))
+
+    @pytest.mark.parametrize(
+        "ref",
+        [
+            "f_ABC123",  # hex maiusculo: Fact.id sai de hexdigest(), minusculo
+            "f_abc12",  # curto demais
+            "f_abc1234",  # longo demais
+            "abc123",  # sem prefixo
+            "f_abcxyz",  # nao e hex
+            " f_abc123",  # espaco a esquerda -- ancorado dos dois lados
+            "f_abc123 extra",
+        ],
+    )
+    def test_near_miss_shapes_are_rejected(self, ref):
+        with pytest.raises(ValidationFailed, match="nao e um fact_id"):
+            validate_finding(self._gain(benchmark_ref=ref))
+
+    def test_well_formed_fact_id_without_a_fact_set_is_accepted(self):
+        """Camada de pertinencia ausente nao vira rejeicao: quem chama sem os
+        facts (golden, motor) ainda tem a camada de forma."""
+        validate_finding(self._gain(benchmark_ref="f_a1b2c3"))
+
+    def test_fact_id_absent_from_the_informed_set_is_rejected(self):
+        with pytest.raises(ValidationFailed, match="nao esta no conjunto"):
+            validate_finding(self._gain(benchmark_ref="f_a1b2c3"), {"f_d4e5f6"})
+
+    def test_fact_id_present_in_the_informed_set_is_accepted(self):
+        validate_finding(self._gain(benchmark_ref="f_a1b2c3"), {"f_a1b2c3", "f_d4e5f6"})
+
+    def test_an_empty_fact_set_is_not_the_same_as_no_fact_set(self):
+        """`set()` e falsy e `None` nao: confundir os dois faria o conjunto vazio
+        desligar a camada de pertinencia em silencio -- o oposto do pedido."""
+        with pytest.raises(ValidationFailed, match="nao esta no conjunto"):
+            validate_finding(self._gain(benchmark_ref="f_a1b2c3"), set())
+
+    def test_the_expected_shape_is_the_shape_fact_id_really_has(self):
+        """O padrao vive em `validate.py` e nao importa `models.py`. Este teste e
+        o que impede as duas formas de divergirem sem ninguem notar."""
+        from sparkforge.findings.models import Fact
+        from sparkforge.findings.validate import _BENCH_REF
+
+        fact = Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": 1})
+        assert _BENCH_REF.match(fact.id), fact.id
+
+    def test_a_qualitative_effect_does_not_care_about_the_shape(self):
+        """A forma so e cobrada onde o gate morde: efeito quantificado. Achado
+        sem numero nao passa a ser rejeitado por causa desta fase."""
+        validate_finding(
+            good_finding(
+                expected_effect="hipotese: reduz o tempo do stage dominante",
+                benchmark_ref="bench/2026-07-29-coalesce.json",
+            )
         )
 
 

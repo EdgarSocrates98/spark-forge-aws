@@ -350,6 +350,68 @@ class TestRuntimeAndRules:
         assert "benchmark_ref" in capsys.readouterr().err
 
 
+class TestValidateChecksTheBenchmarkRef:
+    """`--facts` e a camada de pertinencia do `benchmark_ref` na CLI.
+
+    Sem a flag o verbo so cobra a FORMA do campo (`f_` + 6 hex), porque
+    `validate_finding` nao ve fact nenhum. Com ela, o `fact_id` citado precisa
+    estar no arquivo -- e um achado que cita medicao ausente da evidencia cai.
+    """
+
+    def _finding(self, benchmark_ref):
+        return {
+            "rule_id": "SF-BENCH-001", "schema_version": 1, "title": "t", "severity": "P2",
+            "confidence": "high", "status": "confirmed",
+            "subject": {"type": "job_run"}, "evidence": ["f_abc123"],
+            "expected_effect": "reduz 40% do runtime", "benchmark_ref": benchmark_ref,
+        }
+
+    def _facts_file(self, tmp_path, *ids_source):
+        """Facts REAIS, para que os ids saiam de `Fact.id` e nao de literais."""
+        from sparkforge.findings.models import Fact
+
+        facts = [
+            Fact(kind="bench.run_delta", subject={"type": "job_run"}, measures={"n": n})
+            for n in ids_source
+        ]
+        path = tmp_path / "facts.json"
+        path.write_text(
+            json.dumps([f.to_dict() for f in facts]), encoding="utf-8"
+        )
+        return path, [f.id for f in facts]
+
+    def _findings_file(self, tmp_path, benchmark_ref):
+        path = tmp_path / "findings.json"
+        path.write_text(json.dumps([self._finding(benchmark_ref)]), encoding="utf-8")
+        return path
+
+    def test_free_text_ref_is_rejected_without_any_facts_file(self, tmp_path, capsys):
+        path = self._findings_file(tmp_path, "bench/2026-07-29.json")
+        assert main(["validate", "--findings", str(path)]) == 1
+        assert "nao e um fact_id" in capsys.readouterr().err
+
+    def test_well_formed_ref_passes_without_a_facts_file(self, tmp_path, capsys):
+        path = self._findings_file(tmp_path, "f_a1b2c3")
+        assert main(["validate", "--findings", str(path)]) == 0
+        assert json.loads(capsys.readouterr().out)["valid"] is True
+
+    def test_facts_file_makes_an_absent_ref_fail(self, tmp_path, capsys):
+        facts_path, _ = self._facts_file(tmp_path, 1, 2)
+        path = self._findings_file(tmp_path, "f_a1b2c3")
+        assert main(
+            ["validate", "--findings", str(path), "--facts", str(facts_path)]
+        ) == 1
+        assert "nao esta no conjunto" in capsys.readouterr().err
+
+    def test_facts_file_accepts_a_ref_that_is_really_there(self, tmp_path, capsys):
+        facts_path, ids = self._facts_file(tmp_path, 1, 2)
+        path = self._findings_file(tmp_path, ids[0])
+        assert main(
+            ["validate", "--findings", str(path), "--facts", str(facts_path)]
+        ) == 0
+        assert json.loads(capsys.readouterr().out)["valid"] is True
+
+
 class _FakeS3Client:
     def __init__(self):
         self.calls = []
