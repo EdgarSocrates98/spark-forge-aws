@@ -427,7 +427,11 @@ class TestSegredo:
         return _one(facts, "emrs.configuration")
 
     def test_chave_de_acesso_e_redigida_antes_de_virar_fact(self):
-        conf = self._conf("spark.hadoop.fs.s3a.access.key", "AKIAIOSFODNN7EXAMPLE")
+        # `_AKIA_RE` casa `AKIA` seguido de 16 alfanumericos maiusculos. O teste
+        # precisa do FORMATO, nao de um valor real: montado assim, e
+        # inequivocamente sintetico para leitor humano e para scanner.
+        chave = "AKIA" + "X" * 16
+        conf = self._conf("spark.hadoop.fs.s3a.access.key", chave)
         assert conf.attrs["value"] == "<redigido>"
         assert conf.attrs["secret_pattern_match"] is True
         assert conf.attrs["redacted"] is True
