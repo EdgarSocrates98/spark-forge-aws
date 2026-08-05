@@ -24,6 +24,13 @@ FIXTURES = ROOT / "fixtures" / "s3"
 
 REQUIRED_FIXTURES = {
     "small_files_prefix",
+    # Os dois ramos superiores de `severity_by` de SF-PQ-001. `small_files_prefix`
+    # tem 1500 arquivos e cai no ramo P2; sem estes dois, P1 e P0 -- a unica P0 da
+    # area -- nao apareciam em golden nenhum, e podiam virar qualquer severidade
+    # com a suite inteira verde. Cada um tem a contagem no limiar EXATO do proprio
+    # ramo, entao eles travam tambem os dois `>=`.
+    "small_files_prefix_at_p1_boundary",
+    "small_files_prefix_at_p0_boundary",
     "gzip_text_not_splittable",
     "healthy_prefix",
     "truncated_listing",
@@ -111,6 +118,52 @@ class TestAdversarial:
         assert sentinel.measures["object_count"] == 1501
         assert sentinel.measures["control_object_count"] == 1
         assert summary.measures["min_file_bytes"] > 0
+
+    def test_every_severity_branch_of_the_small_files_rule_has_a_fixture(self):
+        """Os TRES ramos de SF-PQ-001, cada um no limiar do proprio ramo.
+
+        1500 arquivos caem no ultimo ramo, 10000 no do meio, 100000 no primeiro.
+        As tres medias estao muito abaixo dos 32 MB do `threshold`, entao o que
+        decide a severidade e so a contagem -- e as duas contagens novas sao os
+        limiares EXATOS dos dois ramos superiores, onde `>=` e `>` discordam.
+
+        Antes dos dois fixtures novos so o ramo P2 tinha golden: os outros dois,
+        incluindo a unica P0 da area de Parquet, podiam virar qualquer
+        severidade com a suite inteira verde. Nada no repositorio compara
+        severidade de regra contra fixture fora do golden de `findings`.
+
+        As contagens e as severidades vem do CATALOGO, nunca repetidas aqui.
+        """
+        regra = next(r for r in load_catalog() if r["id"] == "SF-PQ-001")
+        ramos = regra["severity_by"]
+        limiares = [int(b["when"].rsplit(">=", 1)[1]) for b in ramos]
+
+        fixtures_por_ramo = [
+            "small_files_prefix_at_p0_boundary",
+            "small_files_prefix_at_p1_boundary",
+            "small_files_prefix",
+        ]
+        assert len(fixtures_por_ramo) == len(ramos)
+
+        vistos = []
+        for nome, ramo, limiar in zip(fixtures_por_ramo, ramos, limiares, strict=True):
+            _, facts, findings, _ = run_fixture(FIXTURES / nome)
+            sumario = next(f for f in facts if f.kind == "s3.prefix_summary")
+            achado = next(f for f in findings if f.rule_id == "SF-PQ-001")
+            # A media nao pode ser o que decide: se ela subisse acima do limiar
+            # o `when` deixaria de casar, e o fixture pararia de provar o ramo.
+            assert sumario.measures["avg_file_bytes"] < regra["threshold"]["min_avg_bytes"]
+            assert achado.severity == ramo["severity"]
+            vistos.append((nome, sumario.measures["file_count"], achado.severity))
+
+        # Os dois ramos superiores estao no limiar EXATO; o de baixo e o corpus
+        # que ja existia, e fica onde estava.
+        assert vistos[0][1] == limiares[0]
+        assert vistos[1][1] == limiares[1]
+        assert vistos[2][1] > limiares[2]
+        # Tres severidades distintas: um ramo que colidisse com o vizinho nao
+        # seria ramo nenhum.
+        assert len({s for _, _, s in vistos}) == len(ramos)
 
     def test_gzip_text_is_kept_apart_from_parquet(self):
         """SF-PQ-003 exige `format: text` e `compression: gzip`. Um sumario
