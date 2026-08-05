@@ -1443,6 +1443,210 @@ def test_match_le_o_resultado_e_aborta():
     assert enforcement.measures["line"] == 6
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# UM SALTO PARA DENTRO DA CHAMADA.
+#
+# A divida que a Fase 5c registrou: `aborta_se(ruins)` num helper que faz
+# `if ruins > 0: raise` nao produzia `dq.enforcement`, e `SF-DQ-002` -- que
+# dispara sobre a AUSENCIA dele -- acusava em P1 exatamente quem protegeu o
+# pipeline. Os testes abaixo travam os dois lados: o que passou a ser visto, e o
+# que continua nao sendo, que e a metade que impede a travessia de virar "toda
+# chamada resolvida e consequencia".
+_HELPER_ABORTA = (
+    "def aborta_se(quantidade, mensagem):\n"
+    "    if quantidade > 0:\n"
+    "        raise ValueError(mensagem)\n"
+)
+
+
+def _enforcements(facts):
+    return [f for f in facts if f.kind == "dq.enforcement"]
+
+
+def test_consequencia_atras_de_helper_e_vista():
+    facts = _facts(
+        _HELPER_ABORTA + "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "aborta_se(ruins, 'x')\n"
+    )
+    enforcement = _enforcements(facts)[0]
+    assert enforcement.attrs["form"] == "raise"
+    assert enforcement.attrs["via"] == "aborta_se"
+    # `measures.line` e a linha da CHAMADA, no escopo do check; `via_line` e a do
+    # `raise`, noutro corpo. Confundir as duas faria o fact apontar para uma
+    # linha que nao existe no escopo do subject.
+    assert enforcement.measures["line"] == 5
+    assert enforcement.attrs["via_line"] == 3
+
+
+def test_o_helper_pode_receber_o_check_inline():
+    facts = _facts(
+        _HELPER_ABORTA + "aborta_se(vendas.filter(vendas.valor < 0).count(), 'x')\n"
+    )
+    assert [f.attrs["via"] for f in _enforcements(facts)] == ["aborta_se"]
+
+
+def test_o_argumento_por_keyword_liga_o_mesmo_parametro():
+    facts = _facts(
+        _HELPER_ABORTA + "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "aborta_se(mensagem='x', quantidade=ruins)\n"
+    )
+    assert [f.attrs["via"] for f in _enforcements(facts)] == ["aborta_se"]
+
+
+def test_condicao_no_chamador_com_aborto_incondicional_no_helper():
+    # A outra metade da forma: o `if` fica aqui e o helper so aborta. A
+    # atribuicao ao check ja vem de `_reads_this_check`, entao nao ha parametro a
+    # rastrear.
+    facts = _facts(
+        "def falha(mensagem):\n"
+        "    raise ValueError(mensagem)\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    falha('x')\n"
+    )
+    enforcement = _enforcements(facts)[0]
+    assert enforcement.attrs["via"] == "falha"
+    assert enforcement.measures["line"] == 5
+
+
+def test_helper_que_so_registra_nao_e_consequencia():
+    # Protecao pela metade continua nao sendo consequencia, e esta e a assercao
+    # que impede a travessia de desligar SF-DQ-002.
+    facts = _facts(
+        "def registra(quantidade, mensagem):\n"
+        "    if quantidade > 0:\n"
+        "        LOGGER.warning(mensagem)\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "registra(ruins, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+
+
+def test_raise_do_helper_sob_condicao_alheia_nao_conta():
+    # `_unconditional_abort` le STATEMENT DIRETO do corpo, e nao `ast.walk`: um
+    # `raise` enterrado num `if` sobre outra coisa nao roda por causa do check.
+    facts = _facts(
+        "def registra(quantidade, conf):\n"
+        "    if conf is None:\n"
+        "        raise ValueError('sem conf')\n"
+        "    print(quantidade)\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "registra(ruins, conf)\n"
+    )
+    assert _enforcements(facts) == []
+
+
+def test_helper_que_recebe_outro_valor_nao_protege_este_check():
+    facts = _facts(
+        _HELPER_ABORTA + "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "aborta_se(limite, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+
+
+def test_parametro_religado_no_helper_derruba_a_evidencia():
+    facts = _facts(
+        "def aborta_se(quantidade, mensagem):\n"
+        "    quantidade = 0\n"
+        "    if quantidade > 0:\n"
+        "        raise ValueError(mensagem)\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "aborta_se(ruins, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+
+
+def test_nome_do_helper_religado_no_escopo_que_chama_nao_resolve():
+    # Nome nu nao identifica objeto, e a propriedade nao afrouxa por a chamada
+    # parecer com uma definicao do modulo.
+    facts = _facts(
+        _HELPER_ABORTA + "def main(outro):\n"
+        "    aborta_se = outro\n"
+        "    ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "    aborta_se(ruins, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+
+
+def test_duas_definicoes_homonimas_nao_resolvem():
+    facts = _facts(
+        _HELPER_ABORTA + "def aborta_se(quantidade, mensagem):\n"
+        "    print(quantidade)\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "aborta_se(ruins, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+
+
+def test_chamada_por_atributo_nao_resolve():
+    facts = _facts(
+        _HELPER_ABORTA + "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "self.aborta_se(ruins, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+
+
+def test_dois_saltos_passam_do_limite_e_viram_unresolved():
+    facts = _facts(
+        "def aborta_se(quantidade, mensagem):\n"
+        "    exige_zero(quantidade, mensagem)\n"
+        "def exige_zero(quantidade, mensagem):\n"
+        "    if quantidade > 0:\n"
+        "        raise ValueError(mensagem)\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "aborta_se(ruins, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+    unresolved = [f for f in facts if f.kind == "dq.unresolved"]
+    assert len(unresolved) == 1
+    assert unresolved[0].attrs["reason"] == "enforcement_beyond_one_hop"
+    assert unresolved[0].attrs["via"] == "aborta_se"
+    assert unresolved[0].attrs["deeper"] == "exige_zero"
+    # O ponto cego entra na conta da sentinela, senao ele e indistinguivel de
+    # nao existir.
+    sentinela = [f for f in facts if f.kind == "dq.module_analyzed"][0]
+    assert sentinela.measures["unresolved_count"] == 1
+
+
+def test_helper_que_nao_repassa_o_valor_nao_vira_unresolved():
+    # O kind de ponto cego so conta o que ELE deixou de seguir. Helper que chama
+    # outro helper sem passar o valor nao diz nada sobre este check, e conta-lo
+    # encheria a medida de ruido.
+    facts = _facts(
+        "def registra(quantidade, mensagem):\n"
+        "    formata(mensagem)\n"
+        "def formata(mensagem):\n"
+        "    return mensagem.upper()\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "registra(ruins, 'x')\n"
+    )
+    assert [f for f in facts if f.kind == "dq.unresolved"] == []
+
+
+def test_helper_recursivo_nao_entra_em_laco():
+    facts = _facts(
+        "def aborta_se(quantidade, mensagem):\n"
+        "    aborta_se(quantidade, mensagem)\n"
+        "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "aborta_se(ruins, 'x')\n"
+    )
+    assert _enforcements(facts) == []
+    assert [f for f in facts if f.kind == "dq.unresolved"] == []
+
+
+def test_aborto_no_proprio_escopo_ganha_do_salto():
+    # Consequencia local nao vira `via`: o salto so e tentado quando o ramo nao
+    # aborta aqui.
+    facts = _facts(
+        _HELPER_ABORTA + "ruins = vendas.filter(vendas.valor < 0).count()\n"
+        "if ruins > 0:\n"
+        "    raise ValueError('x')\n"
+    )
+    enforcement = _enforcements(facts)[0]
+    assert "via" not in enforcement.attrs
+    assert enforcement.measures["line"] == 6
+
+
 def test_guarda_de_match_tambem_e_leitura():
     facts = _facts(
         "ruins = vendas.filter(vendas.valor < 0).count()\n"

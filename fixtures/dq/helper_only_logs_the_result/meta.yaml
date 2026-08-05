@@ -1,0 +1,28 @@
+name: helper_only_logs_the_result
+proves: >
+  Seguir o helper um salto NAO virou "toda chamada e consequencia". O corpo do
+  helper e lido, e o que ele contem decide: aqui `registra_qualidade` recebe a
+  contagem no mesmo formato de `enforcement_behind_helper` -- mesmo parametro,
+  mesmo `if` lendo esse parametro -- e faz `logger.warning`. Nenhum
+  `dq.enforcement` sai, e `SF-DQ-002` dispara em P1.
+  Sozinha, a fixture positiva nao prova nada: uma travessia que emitisse
+  enforcement para qualquer chamada de funcao local a deixaria verde, e a regra
+  estaria desligada com o golden limpo. E ESTA fixture que fecha o par -- ela e
+  quem quebra se alguem trocar "o helper aborta" por "o helper foi chamado".
+  Protecao pela metade continua nao sendo consequencia, e a decisao e a mesma da
+  Fase 5c: chamar log de consequencia calaria a regra sobre o defeito que ela
+  existe para achar.
+  So SF-DQ-002 dispara: `vendas` esta cacheado (SF-DQ-003 nao), o check vem antes
+  do write (SF-DQ-001 nao) e ha um unico check sobre o alvo (SF-DQ-004 nao). O
+  achado sai limpo de ruido, que e o que permite ler a fixture como prova de um
+  gatilho so.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - dq.check
+  - dq.module_analyzed
+expects_rules:
+  - SF-DQ-002

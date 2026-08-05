@@ -55,6 +55,16 @@ REQUIRED_FIXTURES = {
     # existiu para evitar). Nenhuma das oito acima tem check sobre parametro.
     "helper_validates_cached_param",
     "helper_validates_uncached_param",
+    # O TRIO do salto para dentro da chamada (divida `SF-DQ-002` atras de
+    # helper). Nenhum dos tres prova nada sozinho. O positivo mostra que a
+    # consequencia atras de `aborta_se` passou a ser vista; o negativo tem a
+    # MESMA forma de chamada com um helper que so registra, e e ele que quebra se
+    # a travessia virar "toda chamada e consequencia"; o terceiro fixa o numero
+    # do limite -- dois corpos entre o check e o `raise` nao viram enforcement, e
+    # o que passa do salto sai contado em `dq.unresolved`.
+    "enforcement_behind_helper",
+    "helper_only_logs_the_result",
+    "enforcement_two_helpers_deep",
 }
 
 
@@ -255,6 +265,71 @@ class TestAdversarial:
         """
         _, _, findings, _ = run_fixture(FIXTURES / "helper_validates_uncached_param")
         assert [f.rule_id for f in findings] == ["SF-DQ-003"]
+
+    def test_consequence_behind_a_helper_is_seen_and_names_where_it_lives(self):
+        """A divida que a Fase 5c registrou: `SF-DQ-002` acusava quem protegeu.
+
+        O `raise` esta no corpo de `aborta_se`, um salto adiante do escopo do
+        check, e ate esta mudanca o job saia com P1 -- "validacao sem
+        consequencia" sobre um job que para antes de publicar dado ruim.
+
+        As duas chaves novas sao a metade que impede o fact de mentir:
+        `measures.line` e a linha da CHAMADA, no escopo do check, e `via_line` e
+        a linha do `raise`, noutro corpo. Sem elas o fact afirmaria que o aborto
+        esta onde ele nao esta.
+        """
+        _, facts, findings, _ = run_fixture(FIXTURES / "enforcement_behind_helper")
+        enforcement = _by_kind(facts, "dq.enforcement")
+        assert len(enforcement) == 1
+        assert enforcement[0].attrs["form"] == "raise"
+        assert enforcement[0].attrs["via"] == "aborta_se"
+        # A linha do fact e a da chamada; a do `raise` e outra, e menor -- o
+        # helper e definido antes de `main`.
+        assert enforcement[0].attrs["via_line"] < enforcement[0].measures["line"]
+        assert findings == []
+
+    def test_a_helper_that_only_logs_is_still_accused(self):
+        """O par negativo, e e ele que prova que a regra nao foi desligada.
+
+        Mesma forma de chamada da fixture acima -- resultado do check passado
+        por parametro, lido num `if` do helper --, e o corpo faz `warning`.
+        Protecao pela metade nao e consequencia. Uma travessia que emitisse
+        enforcement por chamada resolvida deixaria esta fixture verde, e
+        `SF-DQ-002` estaria morta com o golden limpo.
+        """
+        _, facts, findings, _ = run_fixture(FIXTURES / "helper_only_logs_the_result")
+        assert _by_kind(facts, "dq.check")
+        assert _by_kind(facts, "dq.enforcement") == []
+        assert [f.rule_id for f in findings] == ["SF-DQ-002"]
+
+    def test_the_two_helper_fixtures_differ_only_in_the_helper_body(self):
+        """O par isola o corpo do helper, e nada mais.
+
+        Mesma leitura do par de heranca logo acima: se algum outro atributo do
+        `dq.check` divergir, a diferenca entre as duas fixtures deixou de ser "o
+        helper aborta" e o par para de isolar o que promete.
+        """
+        aborta = _only_check("enforcement_behind_helper")
+        registra = _only_check("helper_only_logs_the_result")
+        assert aborta.attrs == registra.attrs
+
+    def test_beyond_one_hop_is_counted_and_never_silent(self):
+        """O limite de um salto e declarado, e o que passa dele sai contado.
+
+        `SF-DQ-002` dispara sobre um job que protege -- e o preco medido do
+        limite. O que a fixture trava e que a acusacao nunca vem sozinha: o
+        `dq.unresolved` nomeia os dois helpers e `unresolved_count` sobe, entao
+        quem le o achado sabe onde o motor parou. Mova o limite para dois saltos
+        e este teste acusa.
+        """
+        _, facts, findings, _ = run_fixture(FIXTURES / "enforcement_two_helpers_deep")
+        assert _by_kind(facts, "dq.enforcement") == []
+        unresolved = _by_kind(facts, "dq.unresolved")
+        assert len(unresolved) == 1
+        assert unresolved[0].attrs["reason"] == "enforcement_beyond_one_hop"
+        assert unresolved[0].attrs["via"] == "aborta_se"
+        assert unresolved[0].attrs["deeper"] == "exige_zero"
+        assert [f.rule_id for f in findings] == ["SF-DQ-002"]
 
     def test_the_corpus_covers_every_kind_the_extractor_emits(self):
         """Recorte local do invariante global de `test_fixtures_kind_coverage`.

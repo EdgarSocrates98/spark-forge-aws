@@ -1,0 +1,52 @@
+[
+  {
+    "rule_id": "SF-UI-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "GC dominando o tempo de executor",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_gc_at_threshold",
+      "stage_id": 0
+    },
+    "evidence": [
+      "f_5d6135"
+    ],
+    "measured": {
+      "gc_ms": 1200,
+      "executor_run_ms": 8000
+    },
+    "threshold": {
+      "ratio": 0.15
+    },
+    "runtime_scope": {},
+    "explanation": "GC alto com heap não cheio indica muitos objetos de vida curta, típico de UDF Python e de conversão linha a linha. GC alto com heap cheio indica dado demais por executor. As duas causas têm correções opostas, então é obrigatório cruzar com glue.ALL.memory.heap.used.percentage antes de decidir.",
+    "proposed_change": [
+      "Cruzar com a série temporal de heap dos executores para classificar a causa.",
+      "Se heap não está cheio, eliminar UDF Python e conversões por linha.",
+      "Se heap está cheio, reduzir dado por executor ou usar worker com mais memória."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar memória quando a causa é alocação de objetos não resolve e encarece."
+    ],
+    "tradeoffs": [],
+    "validation": [
+      "Razão gc/run após a mudança.",
+      "Runtime e DPU-hours antes e depois."
+    ],
+    "rollback": [
+      "Reverter a mudança de código ou de capacidade."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Limiares 15% e 20% são heurística de campo amplamente usada; não há valor normativo da AWS ou do Apache."
+      }
+    ]
+  }
+]

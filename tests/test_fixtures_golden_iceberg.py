@@ -20,6 +20,11 @@ FIXTURES = ROOT / "fixtures" / "iceberg"
 
 REQUIRED_FIXTURES = {
     "small_files",
+    # O par de `small_files` nos ramos de `severity_by` de SF-ICE-001: media no
+    # limiar EXATO de 8 MiB, onde o `<` do primeiro ramo decide. Sem ele o ramo
+    # P2 nao aparecia em golden nenhum, e trocar aquele `<` por `<=` nao
+    # quebrava nada.
+    "small_files_at_p1_boundary",
     "delete_debt",
     "snapshot_churn",
     "healthy_table",
@@ -135,6 +140,44 @@ class TestAdversarial:
         assert [u.attrs["reason"] for u in unresolved] == ["sort_order_id_missing"]
         analyzed = next(f for f in facts if f.kind == "iceberg.table_analyzed")
         assert analyzed.measures["unresolved_count"] == 1
+
+    def test_both_severity_branches_of_the_small_files_rule_have_a_fixture(self):
+        """Os dois ramos de SF-ICE-001, e o limiar que os separa.
+
+        `small_files` tem 4 MB de media e cai no primeiro ramo;
+        `small_files_at_p1_boundary` tem a media no limiar EXATO daquele ramo e
+        cai no segundo. O `when` da regra casa nos dois -- as duas medias estao
+        abaixo dos 32 MB do `threshold` --, entao o que separa as severidades e
+        so a comparacao do ramo, e ela e `<`.
+
+        Antes do segundo fixture o ramo P2 nao aparecia em golden nenhum: a
+        severidade dele podia virar qualquer valor com a suite inteira verde, e
+        trocar aquele `<` por `<=` nao quebrava nada, porque 4 MB esta longe
+        demais do limiar para as duas comparacoes discordarem.
+
+        Os numeros vem do CATALOGO, nunca repetidos aqui: um limiar escrito em
+        dois lugares vira dois limiares no dia em que alguem ajustar so um.
+        """
+        regra = next(r for r in load_catalog() if r["id"] == "SF-ICE-001")
+        agudo, moderado = regra["severity_by"]
+        limiar_do_ramo = int(agudo["when"].rsplit("<", 1)[1])
+
+        _, abaixo, findings_abaixo, _ = run_fixture(FIXTURES / "small_files")
+        _, no_limiar, findings_no_limiar, _ = run_fixture(
+            FIXTURES / "small_files_at_p1_boundary"
+        )
+
+        sumario_abaixo = next(f for f in abaixo if f.kind == "iceberg.files_summary")
+        sumario_no_limiar = next(f for f in no_limiar if f.kind == "iceberg.files_summary")
+        assert sumario_abaixo.measures["avg_file_bytes"] < limiar_do_ramo
+        assert sumario_no_limiar.measures["avg_file_bytes"] == limiar_do_ramo
+        # As duas continuam casando o `when`, senao o par nao provaria o ramo.
+        assert sumario_no_limiar.measures["avg_file_bytes"] < regra["threshold"]["min_avg_bytes"]
+
+        achado_abaixo = next(f for f in findings_abaixo if f.rule_id == "SF-ICE-001")
+        achado_no_limiar = next(f for f in findings_no_limiar if f.rule_id == "SF-ICE-001")
+        assert achado_abaixo.severity == agudo["severity"]
+        assert achado_no_limiar.severity == moderado["severity"]
 
     def test_delete_debt_ratio_lives_on_one_fact(self):
         """SF-ICE-002 divide delete_file_count / data_file_count dentro de uma

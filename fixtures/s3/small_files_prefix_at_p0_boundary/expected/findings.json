@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-PQ-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Small files na entrada",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "symbol": "s3://lake/analytics/cliques/ [parquet/snappy]"
+    },
+    "evidence": [
+      "f_a971d7"
+    ],
+    "measured": {
+      "file_count": 100000,
+      "total_bytes": 214715150000,
+      "avg_file_bytes": 2147151.5,
+      "min_file_bytes": 2097152,
+      "p50_file_bytes": 2147152,
+      "p95_file_bytes": 2192152,
+      "max_file_bytes": 2197151
+    },
+    "threshold": {
+      "min_avg_bytes": 33554432,
+      "min_count": 1000
+    },
+    "runtime_scope": {},
+    "explanation": "O custo de small files tem quatro componentes distintos: listing no driver, abertura de arquivo no executor, overhead de agendamento de task, e metadados no heap do driver. O parâmetro spark.sql.files.openCostInBytes vale 4MB por default, então um arquivo de 10KB é contabilizado como 4MB no empacotamento de partições: com 100 mil arquivos minúsculos o planejador raciocina sobre cerca de 400GB virtuais. Aumentar workers não corrige nada disso, porque o gargalo é contagem de objetos e round-trips a S3, não CPU. Ver knowledge/storage/parquet-layout.md secao 3.",
+    "proposed_change": [
+      "Compactar o passivo num job de manutenção separado.",
+      "Corrigir a origem: reduzir a cardinalidade do particionamento, escrever numa única action em vez de por lote, ou usar o hint REBALANCE antes da escrita. O hint exige Spark 3.2 ou superior com spark.sql.adaptive.enabled=true; em 3.0 e 3.1 ele não existe, e a ação equivalente é um repartition(n) dimensionado pelo volume antes da escrita.",
+      "Nunca usar coalesce(1) para isso."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Compactação altera o layout físico consumido downstream; validar com os consumidores."
+    ],
+    "tradeoffs": [
+      "Arquivos maiores facilitam a leitura em paralelo e dificultam a escrita incremental frequente."
+    ],
+    "validation": [
+      "Contagem de arquivos e tamanho médio, p50 e p95 antes e depois.",
+      "Tempo do driver antes da primeira task, que é o proxy de listing.",
+      "Contagem total de linhas idêntica.",
+      "Runtime e DPU-hours antes e depois."
+    ],
+    "rollback": [
+      "Manter os arquivos originais até a validação concluir; então remover."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

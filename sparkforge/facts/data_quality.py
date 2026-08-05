@@ -87,6 +87,29 @@ e sai enforcement NENHUM sobre um codigo que protege. A decisao e mantida --
 sem seguir fluxo, o valor testado de fato pode nao ser o do check --, mas ela e
 o preco medido, e nao um efeito colateral: quem mexer em `_rebound_between`
 precisa saber que o mesmo predicado paga em moedas opostas nos dois lados.
+
+DOIS SALTOS DE ESCOPO, e eles sao simetricos. O modulo atravessa a fronteira da
+chamada em duas direcoes, cada uma por uma pergunta que o indice por escopo nao
+responde, e nenhuma delas vira um indice de modulo:
+
+- PARA FORA (`_Callers`, Fase 5c.2): "este parametro chegou persistido?". A
+  resposta mora no chamador, e a heranca so vale quando ela e INEQUIVOCA -- um
+  unico call site, chamada por nome, argumento que e nome, sem religacao no
+  meio. Ambiguidade vira chave omitida.
+- PARA DENTRO (`_Callees`): "esta leitura leva a aborto?". A resposta mora no
+  corpo do callee, e as guardas sao as mesmas mais uma: nome do helper religado
+  no escopo que chama nao resolve, porque a chamada pode nao ser aquela
+  definicao.
+
+UM SALTO, e o numero e a decisao. A atribuicao que `dq.enforcement` afirma e "o
+aborto responde ao valor que o check produziu". No primeiro salto `_argument_for`
+prova a ligacao argumento -> parametro; no segundo, o valor ja atravessou um
+corpo que pode te-lo transformado (`taxa = quantidade / total`), e a mesma
+travessia veria um nome dentro de uma expressao sem saber disso. Recursao sem
+limite e o que este projeto acusa de complexidade nos jobs que analisa. O que
+passa do salto nao e calado: vira `dq.unresolved` com reason
+`enforcement_beyond_one_hop`, nomeando os dois helpers -- ponto cego contado, do
+mesmo jeito que `unresolved_target`.
 """
 from __future__ import annotations
 
@@ -248,6 +271,31 @@ class _ScopeIndex(NamedTuple):
     # ele fez certo. Quem responde por esses nomes e `_persisted_in_caller`, no
     # indice do chamador. Vazio no escopo do modulo.
     params: frozenset[str]
+
+
+class _Callees(NamedTuple):
+    """UM passo para DENTRO da chamada: o corpo do helper que consome o resultado.
+
+    Espelho de `_Callers`, e existe pela pergunta simetrica -- la "este parametro
+    chegou persistido?", cuja resposta mora no chamador; aqui "esta leitura leva
+    a aborto?", cuja resposta mora no CALLEE. Nos dois casos o indice por escopo
+    continua sendo o de sempre: o que se acrescenta e a aresta, nunca um indice
+    de modulo.
+
+    `definitions` e o mesmo `_function_definitions` que `_call_sites` usa, e pelo
+    mesmo motivo: nome que identifica DUAS definicoes no modulo sai do mapa
+    inteiro, porque o call site nao diz qual delas roda. Chamada por atributo
+    (`self.aborta(...)`) nunca entra -- o nome nu nao prova que a funcao chamada
+    e a deste modulo.
+
+    A FRONTEIRA: um modulo por vez, como em `_Callers`. Helper importado de outro
+    arquivo continua invisivel, e continua sendo `SF-DQ-002` acusando quem
+    protegeu -- o recorte que a `explanation` da regra declara.
+    """
+
+    definitions: dict[str, ast.AST]
+    nodes: dict[ast.AST, list[ast.AST]]
+    indexes: dict[ast.AST, _ScopeIndex]
 
 
 class _Callers(NamedTuple):
@@ -1153,6 +1201,197 @@ def _abort_in(branches: list[ast.stmt]) -> tuple[str, int] | None:
     return form, line
 
 
+def _unconditional_abort(function: ast.AST) -> tuple[str, int] | None:
+    """(forma, linha) do aborto que roda A CADA chamada da funcao.
+
+    STATEMENT DIRETO do corpo, e nao `ast.walk`: `def falha(msg): raise ...`
+    aborta sempre, enquanto um `raise` enterrado dentro de um `if` do helper so
+    aborta se aquele `if` for verdadeiro -- e o que decide aquele `if` pode nao
+    ter relacao nenhuma com o valor que o check produziu. Caminhar o corpo
+    inteiro faria de QUALQUER funcao que contenha um `raise` uma consequencia, e
+    ai `SF-DQ-002` calaria sobre validacao decorativa que chama um helper
+    qualquer -- silencio exatamente sobre o defeito que a regra existe para
+    achar. Aborto condicionado ao valor recebido e outra pergunta, e quem a
+    responde e `_abort_on_param`.
+
+    `def` aninhado no corpo e um statement que NAO e aborto, entao ele nao entra
+    -- fecha aqui o limite 4 de `_abort_in`, que aceita `raise` dentro de `def`
+    aninhado por nao pagar uma travessia com escopo proprio.
+    """
+    if not isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef):
+        return None
+    found: list[tuple[int, int, str]] = []
+    for statement in function.body:
+        if isinstance(statement, ast.Raise):
+            found.append((statement.lineno, statement.col_offset, "raise"))
+        elif isinstance(statement, ast.Assert):
+            found.append((statement.lineno, statement.col_offset, "assert"))
+        elif isinstance(statement, ast.Expr) and _is_exit_call(statement.value):
+            found.append((statement.lineno, statement.col_offset, "exit"))
+    if not found:
+        return None
+    line, _, form = min(found)
+    return form, line
+
+
+def _abort_on_param(
+    function: ast.AST, params: list[str], callees: _Callees
+) -> tuple[str, int] | None:
+    """(forma, linha) do aborto do callee CONDICIONADO ao valor que chegou.
+
+    A mesma maquina de sempre, um escopo adiante: `_reader` acha as cinco formas
+    de leitura, `_abort_in` acha o aborto no ramo. O que muda e a pergunta de
+    identidade -- la o teste precisa ler o RESULTADO DO CHECK, aqui precisa ler o
+    PARAMETRO que recebeu esse resultado.
+
+    A guarda de religacao e a de sempre, no indice do CALLEE: `quantidade = 0`
+    antes do `if quantidade > 0` deixa o teste lendo outra coisa, e a evidencia
+    cai. `_rebound_between(param, 0, linha, index)` e a forma que
+    `_target_persisted` ja usa para "ha religacao ANTES desta linha".
+
+    Nome nu continua nao identificando objeto: o parametro so responde dentro do
+    escopo do proprio callee, cujo indice e proprio -- nunca o do chamador.
+    """
+    nodes = callees.nodes.get(function)
+    index = callees.indexes.get(function)
+    if nodes is None or index is None:
+        return None
+    found: list[tuple[int, str]] = []
+    for node in nodes:
+        reader = _reader(node)
+        if reader is None:
+            continue
+        tests, branches = reader
+        read = frozenset(
+            name.id
+            for test in tests
+            for name in ast.walk(test)
+            if isinstance(name, ast.Name) and isinstance(name.ctx, ast.Load) and name.id in params
+        )
+        if not read:
+            continue
+        if all(_rebound_between(name, 0, node.lineno, index) for name in read):
+            continue
+        consequence = _abort_in(branches)
+        if consequence is not None:
+            found.append((consequence[1], consequence[0]))
+    if not found:
+        return None
+    line, form = min(found)
+    return form, line
+
+
+def _abort_in_callee(
+    function: ast.AST, params: list[str], callees: _Callees
+) -> tuple[str, int] | None:
+    """O aborto do callee que responde por esta chamada, se houver.
+
+    O incondicional vem primeiro porque ele nao depende de argumento nenhum:
+    `if ruins > 0: falha("...")` poe a condicao no CHAMADOR e deixa o helper
+    abortando sempre, e ai nao ha parametro a rastrear -- a atribuicao ao check
+    ja foi provada por `_reads_this_check` uma linha acima.
+    """
+    direct = _unconditional_abort(function)
+    if direct is not None:
+        return direct
+    if not params:
+        return None
+    return _abort_on_param(function, params, callees)
+
+
+def _local_calls(
+    branches: list[ast.stmt], index: _ScopeIndex, callees: _Callees
+) -> list[tuple[ast.Call, ast.AST]]:
+    """Chamadas, dentro dos ramos, a uma definicao UNICA deste modulo.
+
+    Duas guardas, e as duas sao a mesma propriedade do modulo -- nome nu nao
+    identifica objeto. A primeira e o proprio `definitions`, que ja descarta nome
+    com duas definicoes. A segunda e nova e vale so aqui: se o nome da funcao foi
+    RELIGADO no escopo que chama (`aborta_se = outra_coisa`), a chamada pode nao
+    ser aquela definicao, e seguir o corpo dela seria ler um objeto que nao roda.
+    Alias tambem nao e seguido -- `f = aborta_se` deixa `f` fora de
+    `definitions`, e nao ha o que resolver.
+    """
+    found: list[tuple[ast.Call, ast.AST]] = []
+    for branch in branches:
+        for node in ast.walk(branch):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)):
+                continue
+            definition = callees.definitions.get(node.func.id)
+            if definition is None or node.func.id in index.rebinds:
+                continue
+            found.append((node, definition))
+    return found
+
+
+def _params_carrying(call: ast.Call, function: ast.AST, read: _Read, check: ast.AST) -> list[str]:
+    """Parametros do callee que recebem o resultado DESTE check nesta chamada.
+
+    `_argument_for` ja faz o mapeamento argumento -> parametro com todas as
+    guardas que a Fase 5c.2 mediu (posicional, keyword, `*args`/`**kwargs` no
+    call site, parametro suprido por default). O que se acrescenta e a pergunta
+    de conteudo: aquele argumento ALCANCA o resultado do check?
+
+    Duas formas contam, e sao as mesmas duas de `_Read`. Pelo NO
+    (`aborta_se(df.filter(...).count())`), onde nao ha nome a religar. E por
+    NOME, e ai vale exatamente o conjunto que `_read_of` ja apurou e
+    `_reads_this_check` ja aprovou -- nenhum nome novo entra aqui, senao "seguir
+    um helper" viraria "seguir qualquer nome parecido".
+    """
+    carried: list[str] = []
+    for param in sorted(_parameter_names(function)):
+        argument = _argument_for(function, call, param)
+        if argument is None:
+            continue
+        if any(
+            node is check
+            or (
+                isinstance(node, ast.Name)
+                and isinstance(node.ctx, ast.Load)
+                and node.id in read.names
+            )
+            for node in ast.walk(argument)
+        ):
+            carried.append(param)
+    return carried
+
+
+def _passes_deeper(function: ast.AST, param: str, callees: _Callees) -> str | None:
+    """Nome do helper para onde o callee REPASSA `param`, ou None.
+
+    E a unica coisa que o limite de um salto precisa saber para nao virar
+    silencio: quando o valor sai deste corpo rumo a um segundo corpo, a cadeia
+    passou do que se segue, e isso vira `dq.unresolved` contado.
+
+    So o repasse POR PARAMETRO conta. Helper que chama outro helper sem passar o
+    valor nao diz nada sobre este check, e conta-lo faria o kind de ponto cego
+    encher de ruido -- que e o que torna ponto cego contado indistinguivel de
+    ponto cego nenhum.
+    """
+    nodes = callees.nodes.get(function) or []
+    index = callees.indexes.get(function)
+    for node in nodes:
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)):
+            continue
+        deeper = callees.definitions.get(node.func.id)
+        if deeper is None or deeper is function:
+            continue
+        if index is not None and node.func.id in index.rebinds:
+            continue
+        for name in sorted(_parameter_names(deeper)):
+            argument = _argument_for(deeper, node, name)
+            if argument is None:
+                continue
+            if any(
+                isinstance(inner, ast.Name)
+                and isinstance(inner.ctx, ast.Load)
+                and inner.id == param
+                for inner in ast.walk(argument)
+            ):
+                return node.func.id
+    return None
+
+
 def _bound_names(nodes: list[ast.AST], check: ast.AST) -> frozenset[str]:
     """Nomes que carregam o resultado do check no escopo.
 
@@ -1273,6 +1512,7 @@ def _enforcements(
     subject: dict[str, Any],
     nodes: list[ast.AST],
     index: _ScopeIndex,
+    callees: _Callees,
     provenance: dict[str, Any],
 ) -> list[Fact]:
     """`dq.enforcement` para um check: consequencia PRESENTE e COERENTE.
@@ -1297,15 +1537,39 @@ def _enforcements(
     do mesmo resultado sao dois facts, e o par (forma, linha) e a identidade
     deles. Sem isso, `Fact.id` -- sha de kind+subject+measures -- colidiria.
 
-    LIMITE conhecido: consequencia atras de helper (`aborta_se(ruins)`) nao e
-    vista, e `SF-DQ-002` acusa um codigo que protege. Provar isso exige seguir o
-    valor para dentro da funcao, o que esta fase nao faz; o achado declara o
-    recorte -- "sem consequencia NESTE corpus" --, como a 5b passou a fazer em
-    `unreferenced_function_count`.
+    UM SALTO PARA DENTRO DA CHAMADA, e o limite e o numero. Quando o ramo nao
+    aborta aqui mas chama um helper deste modulo, o corpo do helper e lido --
+    `aborta_se(ruins)` com `if quantidade > 0: raise` produz consequencia, e ate
+    esta mudanca produzia `SF-DQ-002` em P1 sobre quem protegeu o pipeline. O
+    salto reusa a maquina inteira: `_local_calls` resolve a chamada com as
+    guardas de `_function_definitions` mais a de religacao do nome no escopo que
+    chama, `_params_carrying` liga argumento a parametro por `_argument_for`, e
+    `_abort_in_callee` responde com o mesmo `_reader`/`_abort_in` de sempre.
+
+    POR QUE UM, e nao dois nem sem limite. A atribuicao que este fact afirma e
+    "o aborto responde ao valor que o check produziu", e cada salto a enfraquece:
+    no primeiro, o argumento E o resultado do check e `_argument_for` prova a
+    ligacao; no segundo, o valor ja passou por um corpo que pode te-lo
+    transformado (`taxa = quantidade / total`), e a mesma travessia veria um nome
+    dentro de uma expressao sem saber que o valor mudou. Medido sobre os `.py` de
+    `fixtures/`, dois saltos compram ZERO enforcement a mais -- nenhuma fixture
+    do repositorio encadeia dois helpers entre o check e o aborto -- e custariam
+    uma travessia recursiva com guarda de ciclo propria. Recursao sem limite e o
+    que este projeto acusa de complexidade nos jobs que analisa.
+
+    O QUE PASSA DO SALTO E CONTADO, nunca calado: helper que repassa o valor a um
+    segundo helper vira `dq.unresolved` com reason `enforcement_beyond_one_hop`,
+    nomeando os dois. `SF-DQ-002` continua disparando nesse caso -- o fact de
+    ponto cego nao a cala --, e e assim que se le: acusacao com o motivo do
+    limite escrito ao lado, em vez de acusacao sem explicacao.
+
+    LIMITE que fica: helper noutro modulo continua invisivel, e a `explanation`
+    da regra declara o recorte -- "sem consequencia NESTE corpus".
     """
     bound = _bound_names(nodes, check)
     check_line = check.lineno
-    seen: set[tuple[str, int]] = set()
+    seen: dict[tuple[str, int], dict[str, Any]] = {}
+    beyond: dict[tuple[int, int], tuple[str, str]] = {}
     for node in nodes:
         reader = _reader(node)
         if reader is None:
@@ -1318,17 +1582,47 @@ def _enforcements(
             continue
         consequence = _abort_in(branches)
         if consequence is not None:
-            seen.add(consequence)
-    return [
+            form, line = consequence
+            seen.setdefault((form, line), {"form": form})
+            continue
+        for call, definition in _local_calls(branches, index, callees):
+            carried = _params_carrying(call, definition, read, check)
+            consequence = _abort_in_callee(definition, carried, callees)
+            if consequence is not None:
+                form, abort_line = consequence
+                seen.setdefault(
+                    (form, call.lineno),
+                    {"form": form, "via": definition.name, "via_line": abort_line},
+                )
+                continue
+            for param in carried:
+                onward = _passes_deeper(definition, param, callees)
+                if onward is not None:
+                    beyond[(call.lineno, call.col_offset)] = (definition.name, onward)
+                    break
+    facts = [
         Fact(
             kind="dq.enforcement",
             subject=dict(subject),
             measures={"line": line},
-            attrs={"form": form},
+            attrs=attrs,
             provenance=provenance,
         )
-        for line, form in sorted((line, form) for form, line in seen)
+        for (_, line), attrs in sorted(seen.items(), key=lambda item: (item[0][1], item[0][0]))
     ]
+    facts.extend(
+        _unresolved(
+            subject["file"],
+            line,
+            col,
+            "enforcement_beyond_one_hop",
+            provenance,
+            via=via,
+            deeper=onward,
+        )
+        for (line, col), (via, onward) in sorted(beyond.items())
+    )
+    return facts
 
 
 def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") -> list[Fact]:
@@ -1342,6 +1636,15 @@ def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") ->
     scopes = _scopes(tree)
     indexes = {root: _scope_index(root, nodes) for root, nodes in scopes}
     sites = _call_sites(scopes)
+    # A aresta simetrica de `sites`: `_enforcements` da um salto para DENTRO da
+    # chamada e precisa do corpo do callee, que e outro escopo -- e o corpo pode
+    # estar definido depois do chamador no arquivo, entao ele tambem vem antes da
+    # primeira deteccao.
+    callees = _Callees(
+        definitions=_function_definitions(scopes),
+        nodes={root: nodes for root, nodes in scopes},
+        indexes=indexes,
+    )
 
     for root, nodes in scopes:
         index = indexes[root]
@@ -1358,7 +1661,9 @@ def extract_data_quality(tree: ast.AST, path: str, artifact_sha256: str = "") ->
                         # Sem check nao ha subject a proteger: um enforcement
                         # sobre alvo nao resolvido seria um fact solto, e o
                         # `same_subject` de SF-DQ-002 nao teria par para ele.
-                        found.extend(_enforcements(node, fact.subject, nodes, index, provenance))
+                        found.extend(
+                            _enforcements(node, fact.subject, nodes, index, callees, provenance)
+                        )
                     break
 
         # Segundo passe: quantos checks ha sobre o mesmo alvo so e conhecido

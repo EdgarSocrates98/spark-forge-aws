@@ -80,6 +80,14 @@ Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever
 
 Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, e `devin/` e `emr-serverless/` em **2026-08-04**.
 
-As URLs de `emr-serverless/` **já estão** em `sources.lock.json`: elas entraram junto com as regras `SF-EMRS`, porque o lock é derivado do catálogo (`scripts/refresh_knowledge.py::watchlist`) e `tests/test_refresh_knowledge.py::test_the_committed_lock_matches_the_catalog` exige igualdade exata entre os dois conjuntos — URL que nenhuma regra cita não é vigiada. O lock foi de **37 para 51** fontes: 13 URLs de `emr-serverless/` mais `https://aws.amazon.com/emr/pricing/`, que `SF-EMRS-001` e `SF-EMRS-005` citam pelo modelo de cobrança de worker. Uma URL que aparece na seção `## Fontes` de um dos dois arquivos e em nenhuma regra continua fora do lock, e isso é o desenho: o lock vigia o que o catálogo usa, não o que a pesquisa leu.
+**A seção `Fontes` de cada arquivo daqui é vigiada.** `scripts/refresh_knowledge.py::watchlist` deriva a lista de URLs de **duas** origens, e nenhuma das duas é mantida à mão: `sources[].url` das regras do catálogo (campo `rules` no lock) e as URLs que aparecem nos blocos `Fontes` destas páginas (campo `docs`). `tests/test_refresh_knowledge.py::test_the_committed_lock_matches_the_watchlist` exige igualdade exata entre o lock e a união das duas.
+
+Até 2026-08-05 a origem era **só o catálogo**, e o efeito ninguém tinha medido: conhecimento que nenhuma regra cita nunca entrava. O caso que fechou a dívida foi `devin/agents-and-subagents.md` — ela não sustenta regra nenhuma, sustenta **perfil de agente**, e as 24 URLs de `docs.devin.ai` envelheciam sem alarme sobre uma superfície que a própria fonte declara experimental. O lock foi de **51 para 109** fontes: 58 entraram por `knowledge/` e nenhuma delas tem hash ainda, porque hash só se escreve depois de ler a página. A próxima conferência com rede as relata como **NOVA**, que é a verdade.
+
+O **vínculo de volta** é o que impede a segunda origem de virar ruído: toda entrada do lock nomeia pelo menos um consumidor — regra, página, ou as duas —, e o relatório imprime os dois. URL citada pelas duas com `retrieved` diferentes carrega **as duas datas**, para que a divergência apareça em vez de ser resolvida por chute.
+
+Duas convenções do rodapé, e as duas têm razão medida: o bloco é o heading cujo texto é exatamente `Fontes` (o `## Fontes e frescor` desta página fala *sobre* o mecanismo e não é origem), e URL dentro de crase é **padrão, não citação** — a §2 de `emr-serverless/runtime-matrix.md` escreve `release-version-<N>.html` para descrever 24 páginas, e vigiar esse texto daria 404 permanente.
+
+Sem rede: `python scripts/refresh_knowledge.py --update --offline` alinha o conjunto do lock (entra fonte nova sem hash, sai fonte que ninguém cita mais) sem carimbar conferência nenhuma.
 
 Conhecimento aqui **não substitui** a documentação do runtime real. Quando o job em análise contradiz esta base, o runtime ganha e a base é corrigida.
