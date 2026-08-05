@@ -1,0 +1,18 @@
+name: nomes_comuns_com_import
+proves: >
+  A outra metade do par, e ela so prova junto: o MESMO arquivo mais a linha
+  `import graphframes`, e os tres nomes passam a valer. Sem este lado, um portao
+  que nunca abrisse deixaria os dois goldens verdes e os tres nomes seriam letra
+  morta na API; sem o outro lado, um portao que nunca fechasse seria acusacao
+  falsa sobre todo modulo que manipula string.
+  Cobre tambem a forma `plain` do import (`import graphframes`, sem `from`).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.algorithm
+  - graph.module_analyzed
+expects_rules: []

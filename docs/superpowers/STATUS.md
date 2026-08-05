@@ -45,7 +45,7 @@ arquivo ganha.
 | Skills | **20** | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **145** em 20 domínios | `fixtures/` |
+| Fixtures golden | **164** em 21 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **85 de 85** (15 deles nas 7 regras com `severity_by`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **109** (103 móveis, 6 fixas) | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |

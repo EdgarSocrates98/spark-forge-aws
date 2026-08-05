@@ -33,6 +33,7 @@ from sparkforge.facts.emr_serverless import extract_emr_serverless_tree  # noqa:
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
+from sparkforge.facts.graph import extract_graph_tree  # noqa: E402
 from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
@@ -69,6 +70,7 @@ FIXTURES_TFDIFF = ROOT / "fixtures" / "tfdiff"
 FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
 FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
+FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -320,6 +322,40 @@ def regen_dq(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_graph(directory: Path) -> None:
+    """Corpus de processamento de grafo: `*.py` sob input/, extraidos com
+    `extract_graph_tree`, mais o `*.tf` do mesmo job quando ele existe.
+
+    USA A FUNCAO `_tree`, E NAO UM LACO POR ARQUIVO, e a escolha nao e estilo.
+    `adapters/_core.py:943` chama `extract_graph_tree` quando o `--path` e
+    diretorio, e ela ordena GLOBALMENTE por (kind, subject, id) --
+    `sort_facts` no fim -- enquanto um laco por arquivo concatenaria blocos
+    ja ordenados por arquivo. Com dois `.py` as duas ordens divergem
+    (`fonte_que_nao_compila` e a fixture que torna isso observavel), e o
+    golden passaria a descrever uma ordenacao que nenhuma superficie do
+    produto emite. Mesma medicao de `regen_emr_serverless` (D-5d-24).
+
+    O TERRAFORM ENTRA QUANDO EXISTE, no molde de `regen_infra_code` e
+    `regen_s3`: a regra de disponibilidade do GraphFrames cruza `graph.import`
+    com o `default_arguments` do job, e nenhuma das duas fontes responde
+    sozinha se alguem declarou o jar. Sem a metade do IaC, a regra acusaria
+    tambem quem resolveu o problema.
+
+    O golden guarda so os facts `graph.*` (mais os `tf.*` quando ha IaC). Os de
+    `pyspark_ast` sobre os mesmos `.py` ja tem o corpus `fixtures/pyspark/` --
+    mesma decisao de `regen_dq` e `regen_callgraph`, e pelo mesmo motivo:
+    repetidos aqui, uma mudanca em `pyspark_ast` quebraria dois goldens pelo
+    mesmo motivo, escondendo qual dos dois contratos regrediu.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_graph_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_plan(directory: Path) -> None:
     """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
     input/ (a saida colada de `explain("formatted")`), extraida com
@@ -496,6 +532,7 @@ def main() -> int:
                 (FIXTURES_INFRA_CODE / name, regen_infra_code),
                 (FIXTURES_BENCH / name, regen_bench),
                 (FIXTURES_FUNCVAL / name, regen_funcval),
+                (FIXTURES_GRAPH / name, regen_graph),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -560,6 +597,11 @@ def main() -> int:
     if FIXTURES_FUNCVAL.is_dir():
         for directory in sorted(p for p in FIXTURES_FUNCVAL.iterdir() if p.is_dir()):
             regen_funcval(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/graph/` nasce na
+    # Task 4 da Fase 6a, e a regeneracao completa roda ENTRE a Task 3 e ela.
+    if FIXTURES_GRAPH.is_dir():
+        for directory in sorted(p for p in FIXTURES_GRAPH.iterdir() if p.is_dir()):
+            regen_graph(directory)
     return 0
 
 

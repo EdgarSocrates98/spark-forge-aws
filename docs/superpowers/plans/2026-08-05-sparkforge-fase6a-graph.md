@@ -681,3 +681,104 @@ Um diretório inteiro multiplica pelo número de módulos **que usam grafo**, e 
 `graph.module_analyzed` por `.py` é o único termo que cresce com a árvore. A
 skill da Task 7 não precisa de aviso de paginação para arquivo único; precisa
 dele para `--path src/`.
+
+**D-6a-22 — as duas fixtures que o plano lista para a regra de `maxIter` saíram, e uma virou asserção.**
+A tabela do Step 2 pede `algoritmo_sem_limite` e `page_rank_com_tol`. Com a regra
+vetada por `D-6a-4`, a primeira **não tem nada para exercitar**: uma fixture cujo
+único propósito é uma regra vetada é a regra vetada entrando pela porta dos
+fundos, e ela seria o corpus que alguém citaria para reabrir a discussão. Saiu.
+A segunda foi **dobrada dentro de `grafo_correto`** — `pageRank(tol=0.01)` no
+mesmo job correto —, porque o que ela prova não é uma regra e sim a **forma do
+fact**: `iteration_arg` nomeia o parâmetro que veio, e sem ele uma regra sobre
+"limite de iteração" não distinguiria `maxIter` de `tol`. O veto ganhou teste
+próprio no lugar da fixture:
+`test_no_fact_claims_a_missing_iteration_limit` varre o corpus inteiro e reprova
+se qualquer fact passar a carregar `has_max_iter`, `max_iter_missing`,
+`iteration_limited`, `unbounded` ou `has_iteration_limit` — bastaria um deles
+para alguém escrever `where: {attrs.has_max_iter: false}`.
+
+**D-6a-23 — o corpus tem 19 fixtures, e as 4 saídas do checkpoint viraram 5.**
+A tabela do plano lista 9. Medido: `D-6a-12` diz que a conf de checkpoint tem
+**duas grafias** (`spark.checkpoint.dir` e
+`spark.graphframes.useLocalCheckpoints`), e elas são caminhos diferentes em
+`_checkpoint_facts` — a primeira só lê o literal, a segunda passa por `_truthy` e
+pode virar `unreadable`. Uma fixture por caminho:
+`saida_graphx`, `saida_intervalo_nao_positivo`, `saida_local_checkpoints`,
+`conf_checkpoint_dir_no_job`, `conf_local_checkpoints_no_job`. Mais
+`conf_local_checkpoints_ilegivel`, que é o **sexto** estado e o único em que a
+decisão some do fact: `checkpoint_required` **ausente**, ponto cego contado.
+Sete das dezenove existem só para provar que o motor cala.
+
+**D-6a-24 — `regen_graph` usa a função `_tree`, e a fixture que torna isso mediável precisou ser construída de propósito.**
+O Step 1 manda medir qual forma o adaptador usa. Medido:
+`adapters/_core.py:943` chama `extract_graph_tree`, que termina em `sort_facts`
+— ordem **global** por (kind, subject, id) — enquanto um laço por arquivo
+concatena blocos já ordenados por arquivo. Mas a diferença **não aparece
+sozinha**: na primeira redação de `fonte_que_nao_compila` o arquivo quebrado se
+chamava `quebrado.py`, e como o único fact dele é um `graph.unresolved` — que
+ordena por último no alfabeto de kinds de qualquer jeito — as duas ordens
+**coincidiram** e o teste passou vazio. Renomeado para `carga_quebrada.py`
+(`c` < `j`), o laço põe o `unresolved` na frente e a divergência fica real.
+`test_the_tree_order_is_the_one_the_product_emits` afirma as três coisas:
+as ordens divergem, a diferença é **só** de ordem, e o golden é a da `_tree`.
+Sem a renomeação, D-5d-24 continuaria sendo convenção repetida em vez de
+medição.
+
+**D-6a-25 — o corpus de grafo carrega Terraform, e é a única forma de a regra de disponibilidade ter metade negativa.**
+Nem o plano nem `regen_dq` preveem fonte mista neste domínio. Medido: a regra do
+IaC (`availability.md` §5) afirma "a plataforma não instala, então alguém
+precisou declarar o jar", e sem os `tf.attribute` do mesmo job ela acusaria
+**todo** job de grafo em Spark 3.3 — inclusive quem resolveu o problema.
+`regen_graph` estende `regen_infra_code`/`regen_s3`: extrai Terraform quando há
+`*.tf` sob `input/`. O par `import_sem_jar_no_iac` × `import_com_jar_declarado`
+compartilha o `.py` **byte a byte** e difere só no `--extra-jars`, e os dois
+declaram `runtime` Glue 4.0 / Spark 3.3.0 — o resto do corpus é 5.0 / 3.5.4.
+Efeito colateral medido e corrigido: com o `.tf` escrito no molde de
+`fixtures/infra_code/`, **SF-GLUE-002 disparava** (P1, observabilidade ausente),
+e um golden de findings não vazio nesta posição esconderia a primeira regra
+`SF-GRAPH` que aparecer. Os dois `.tf` ganharam `--enable-spark-ui` e
+`--spark-event-logs-path`; `--enable-observability-metrics` ficou **de fora de
+propósito**, porque `pyspark.glue_context_init` não é emitido neste corpus e o
+`absent:` de SF-ENV-003 seria vacuamente verdadeiro.
+
+**D-6a-26 — o golden de `syntax_error` é contrato com o interpretador, e foi medido nas três versões.**
+`fonte_que_nao_compila` é a primeira fixture do repositório a exercitar
+`syntax_error`, e `detail=str(exc.msg)` põe a **mensagem do CPython** dentro do
+golden — em corpus que o CI roda em 3.10 **e** 3.11
+(`.github/workflows/ci.yml:21`). Medido antes de commitar, com o mesmo arquivo:
+CPython 3.10.20, 3.11.15 e 3.14.6 devolvem `'(' was never closed`, linha 5,
+coluna 16 — idênticos. O corpus `graph` inteiro foi reproduzido byte a byte nas
+três. A asserção da mensagem está no teste adversarial, com o porquê escrito ao
+lado: se um interpretador futuro reescrever a frase, o teste falha **com nome**
+em vez de virar diff mudo no golden. Nenhuma fixture cobre `read_error`, e a
+razão é declarada: ele exige arquivo ilegível pelo sistema de arquivos, que não
+se versiona de forma portável entre Windows e Linux.
+
+**D-6a-27 — o extrator NÃO emite sentinela para arquivo que não compila, e o corpus fixa isso.**
+O cabeçalho de `graph.py` diz "sentinela sempre emitida"; medido, `extract_graph`
+retorna **antes** dela quando o `ast.parse` levanta (`graph.py:1103-1120`), e o
+arquivo sai com um `graph.unresolved` e nada mais. Não é defeito — o
+`unresolved` já responde "não consegui ler", que é a pergunta que a sentinela
+existe para separar de "não há grafo" —, mas **muda o invariante**: a versão do
+`dq` (`sum(module.measures[...]) == len(facts)`) esconderia o arquivo que ficou
+de fora da contagem. Aqui a conferência é **por arquivo**, e
+`test_a_file_that_does_not_compile_has_no_sentinel_and_stops_nothing` fixa que
+os `graph.module_analyzed` do diretório são `{job.py}` e não `{job.py,
+carga_quebrada.py}`.
+
+**D-6a-28 — os três contrafactuais do registro de domínio, medidos um a um.**
+O Step 3 manda registrar e medir. Registrado em `test_fixtures_kind_coverage.py`
+(dicionário `EXTRACTORS`) e em `test_rules_catalog_reachability.py` (tupla
+`EXTRACTORS`). Medido tirando cada peça:
+(1) sem `"graph": graph` no dicionário,
+`test_no_golden_carries_a_kind_that_no_extractor_declares` reprova **nomeando os
+seis** `graph.*` — e é essa direção que pega o esquecimento, não a que o Step 3
+cita;
+(2) com um sétimo kind declarado que nenhum golden produz,
+`test_every_kind_of_every_extractor_appears_in_some_golden[graph]` reprova
+nomeando o kind;
+(3) sem `tests/test_fixtures_golden_graph.py`,
+`test_every_fixture_domain_has_a_golden_module` reprova com
+`dominios de fixture sem modulo golden: ['graph']`.
+A terceira lista é a que o plano não menciona e é a mais fácil de perder: o gate
+de `verify_wheel.py` roda **módulos**, não diretórios.

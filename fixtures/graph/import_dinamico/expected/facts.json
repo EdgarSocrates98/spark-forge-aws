@@ -1,0 +1,77 @@
+[
+  {
+    "id": "f_646e34",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 0,
+      "construction_count": 0,
+      "algorithm_count": 0,
+      "unresolved_count": 2
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "2340f6253768509d4b33f4b84d45c3605b8f04ec960341cd5bd1336958bd0752",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_5f5354",
+    "schema_version": 1,
+    "kind": "graph.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 14,
+      "col": 12,
+      "end_line": 14,
+      "symbol": "carregar",
+      "snippet": "outro = __import__(nome)"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "dynamic_import",
+      "detail": ""
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "2340f6253768509d4b33f4b84d45c3605b8f04ec960341cd5bd1336958bd0752",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_54c413",
+    "schema_version": 1,
+    "kind": "graph.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 13,
+      "col": 9,
+      "end_line": 13,
+      "symbol": "carregar",
+      "snippet": "gf = importlib.import_module(\"graphframes\")"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "dynamic_import",
+      "detail": "graphframes"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "2340f6253768509d4b33f4b84d45c3605b8f04ec960341cd5bd1336958bd0752",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]
