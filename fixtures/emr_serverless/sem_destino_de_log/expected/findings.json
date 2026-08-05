@@ -1,1 +1,71 @@
-[]
+[
+  {
+    "rule_id": "SF-EMRS-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Nenhum destino de log na definição da application — diagnóstico impossível",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsemlog00000000001/monitoring"
+    },
+    "evidence": [
+      "f_766255"
+    ],
+    "measured": {
+      "log_destination_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Não é problema de performance; é de capacidade de diagnóstico, e é o análogo de SF-EMR-006 e SF-GLUE-002 no EMR Serverless — com uma diferença que muda a leitura do achado: aqui o estado não pode ter acontecido por omissão. O armazenamento gerenciado tem default LIGADO (\"enables managed logging and defaults to true\"), e \"by default, EMR Serverless stores application logs securely in Amazon EMR managed storage for a maximum of 30 days\". Zero destinos exige managedPersistence desligado por escrito, nenhum s3MonitoringConfiguration.logUri e CloudWatch não habilitado ao mesmo tempo — três atos, e a AWS declara o preço do primeiro sozinho: \"if you turn off the default option, Amazon EMR can't troubleshoot your jobs on your behalf. Example: You cannot access Spark-UI from the EMR Serverless Console.\" Sem event log e sem log de container, este motor não diagnostica nada: as áreas SF-UI, SF-PLAN e metade de SF-PY dependem de artefato de execução que ninguém está gravando. O limite de StartJobRun corta nas DUAS direções aqui, e é preciso dizer as duas: um job run pode ter passado o seu próprio s3MonitoringConfiguration e estar gravando log apesar desta definição — então o achado não prova que nenhum log existe —, e um job run pode também REMOVER o destino que a application declara, passando s3MonitoringConfiguration vazio. O que o achado prova é que a definição da application não oferece destino nenhum, e portanto que todo job que não trouxer o seu próprio não deixa rastro. Ver knowledge/emr-serverless/application-configuration.md seção 6.",
+    "proposed_change": [
+      "Religar o armazenamento gerenciado: é a opção que a AWS recomenda manter, é a única que sustenta as UIs embutidas, e não exige bucket nem política.",
+      "Se a retenção de 30 dias do armazenamento gerenciado não basta, acrescentar s3MonitoringConfiguration com um prefixo S3 e política de ciclo de vida — e manter o gerenciado ligado junto, porque S3 sozinho não sustenta a UI de aplicação.",
+      "Avaliar cloudWatchLoggingConfiguration quando a operação já vive no CloudWatch; ele nasce desligado e é o único dos três que precisa ser pedido explicitamente.",
+      "Antes de mudar, perguntar por que os três foram desligados: dado de aplicação no log é a razão legítima mais comum, e a resposta para ela é política de acesso no prefixo, não ausência de log."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Log de container pode conter dado de aplicação; o destino precisa da mesma política de acesso do dado que o job processa.",
+      "Logs consomem armazenamento continuamente; sem política de ciclo de vida no prefixo S3 o custo cresce sem teto. O armazenamento gerenciado não tem esse risco, e também não tem como estender os 30 dias.",
+      "A mudança não é retroativa: o que já foi executado sem destino não deixou rastro, e nenhuma configuração futura o recupera."
+    ],
+    "tradeoffs": [
+      "Custo marginal de armazenamento contra a possibilidade de diagnosticar qualquer coisa depois do fato. Desligar tudo é uma economia real, e a contrapartida declarada pela AWS é a impossibilidade de a própria AWS ajudar no troubleshooting.",
+      "Manter os três destinos ligados duplica o log de container. Quando a retenção longa importa, o par gerenciado + S3 é o que a tabela da AWS marca como suportado para a UI de aplicação; CloudWatch entra por operação, não por diagnóstico de Spark."
+    ],
+    "validation": [
+      "GetApplication depois da mudança mostrando pelo menos um destino habilitado.",
+      "Um job novo executado e o event log localizado no destino escolhido — a configuração declarada e o objeto gravado são duas afirmações diferentes.",
+      "Acesso à UI de aplicação pelo console do EMR Serverless para um job recente, que é o que o armazenamento gerenciado compra."
+    ],
+    "rollback": [
+      "Desfazer é update-application com a configuração de monitoramento anterior. O que não volta é o log dos jobs executados no intervalo."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_ManagedPersistenceMonitoringConfiguration.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_CloudWatchLoggingConfiguration.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MonitoringConfiguration.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html",
+        "retrieved": "2026-08-04"
+      }
+    ]
+  }
+]

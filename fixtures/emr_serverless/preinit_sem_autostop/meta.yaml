@@ -31,4 +31,5 @@ expects_kinds:
   - emrs.application
   - emrs.initial_capacity
   - emrs.monitoring
-expects_rules: []
+expects_rules:
+  - SF-EMRS-001
