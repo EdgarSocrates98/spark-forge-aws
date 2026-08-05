@@ -166,6 +166,70 @@ def test_no_golden_fires_a_rule_that_left_the_catalog():
     assert not unknown, unknown
 
 
+def _severidades_por_regra_nos_goldens() -> dict[str, set[str]]:
+    vistas: dict[str, set[str]] = {}
+    for path in FIXTURES.glob("*/*/expected/findings.json"):
+        for finding in json.loads(path.read_text(encoding="utf-8")):
+            vistas.setdefault(finding["rule_id"], set()).add(finding["severity"])
+    return vistas
+
+
+def _ramos_de_severidade(rule) -> list[str]:
+    """As severidades que a regra pode produzir, na ordem em que o motor tenta.
+
+    `severity_default` so entra quando ele e ALCANCAVEL: numa regra cujo ultimo
+    ramo repete a condicao do `when` (SF-ICE-001, SF-PQ-001, SF-UI-001,
+    SF-UI-004), nenhum fact que dispare a regra pode escapar de todos os ramos,
+    e exigir golden para o default seria exigir fixture de um estado que nao
+    existe. A heuristica e conservadora de proposito: so trata como inalcancavel
+    o caso em que `severity_default` esta AUSENTE do YAML -- ali o
+    `rule.get("severity_default", "P3")` do motor e uma rede que ninguem
+    escreveu, nao um ramo declarado.
+    """
+    ramos = [b["severity"] for b in rule.get("severity_by") or []]
+    if "severity_default" in rule:
+        ramos.append(rule["severity_default"])
+    return ramos
+
+
+def test_every_severity_branch_has_a_golden_that_produces_it():
+    """Ramo de `severity_by` sem golden pode virar qualquer severidade.
+
+    Nada neste repositorio compara severidade de regra contra fixture fora do
+    golden de `findings`: onde nao ha golden nao ha comparacao, e a severidade
+    do ramo descoberto pode ser trocada com a suite inteira verde. Severidade e
+    o que decide se um achado interrompe alguem as duas da manha -- e o mesmo
+    defeito que este motor acusa no codigo do usuario.
+
+    A revisao final da Fase 5d mediu **15** ramos em 7 regras e **9** cobertos.
+    As 6 lacunas foram fechadas com uma fixture cada; este teste e o que impede
+    a proxima de nascer em silencio. Ele nao substitui os testes adversariais
+    por area (aqueles provam O QUE separa os ramos); ele so garante que nenhum
+    ramo fique sem nenhum golden.
+    """
+    vistas = _severidades_por_regra_nos_goldens()
+    faltando: dict[str, list[str]] = {}
+    total = 0
+    for rule in _rules():
+        ramos = _ramos_de_severidade(rule)
+        if not ramos:
+            continue
+        total += len(ramos)
+        ausentes = [s for s in dict.fromkeys(ramos) if s not in vistas.get(rule["id"], set())]
+        if ausentes:
+            faltando[rule["id"]] = ausentes
+
+    assert total >= 15, (
+        f"so {total} ramos de severidade encontrados no catalogo; a varredura "
+        "provavelmente parou de enxergar `severity_by` e passou a nao testar nada"
+    )
+    assert not faltando, (
+        f"ramos de severidade sem nenhum golden que os produza: {faltando}. "
+        "Escreva a fixture que cai no ramo -- enquanto ela nao existir, a "
+        "severidade dele pode virar qualquer valor com a suite inteira verde."
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Todo dominio de fixture precisa de um modulo golden que o exercite
 # --------------------------------------------------------------------------- #
