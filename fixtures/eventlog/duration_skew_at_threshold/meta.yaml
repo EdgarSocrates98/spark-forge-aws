@@ -1,0 +1,40 @@
+name: duration_skew_at_threshold
+proves: >
+  O ramo P2 de SF-UI-001, que até aqui não tinha golden nenhum, e o limiar da
+  regra — no mesmo log.
+  `stage_shuffle_skew_at_threshold` tem `max_ms / p50_ms` igual a 3.0 EXATOS, o
+  `threshold.ratio` da regra. A comparação do `when` é `>=`, então o limiar
+  dispara; e como 3.0 está abaixo do 10 do primeiro ramo de `severity_by`, a
+  severidade é P2. Existe em par com `skewed_stage`, cujo stage torto tem razão
+  15 e sai P0: sem este golden, a severidade do ramo P2 podia virar qualquer
+  valor com a suíte inteira verde, porque o corpus só tinha razão muito acima do
+  10 — onde os dois ramos não se distinguem por nenhum caso de fronteira.
+  `stage_shuffle_below_threshold` é o mesmo stage com uma única diferença — a
+  task lenta termina em 2900 ms em vez de 3000 —, e não é acusado. É o par
+  bidirecional que a Fase 2 exige: se o limiar mudar de lugar, de sinal, ou se o
+  `>=` virar `>`, um dos dois goldens quebra.
+  E prova o que separa SF-UI-001 de SF-UI-002: o input é IDÊNTICO nas oito tasks
+  dos dois stages (10 MB cada). A task lenta é lenta por ler 3x mais bytes de
+  shuffle remoto, não por ler mais input — skew de duração sem skew de input é o
+  caso em que uma regra só sobre bytes de entrada fica calada.
+  Nenhuma outra regra da área dispara, e o log é magro para isso: sem spill não
+  há SF-UI-003; GC fica em 4% do tempo de executor, longe dos 15% de SF-UI-004;
+  nenhum executor é removido, então não há SF-UI-005; e 8 tasks contra 8 cores
+  ficam acima do fator 0.5 de SF-UI-006.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.stage.spill
+  - spark.stage.gc
+  - spark.stage.task_count
+  - spark.cluster.cores
+  - spark.job.spill_summary
+  - spark.runtime_version
+  - spark.log_analyzed
+expects_rules:
+  - SF-UI-001

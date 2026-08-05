@@ -1,0 +1,66 @@
+[
+  {
+    "rule_id": "SF-UI-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Skew de duração de task no stage",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_skew_at_threshold",
+      "stage_id": 0
+    },
+    "evidence": [
+      "f_a6cfac"
+    ],
+    "measured": {
+      "min_ms": 1000,
+      "p50_ms": 1000,
+      "p95_ms": 3000,
+      "max_ms": 3000,
+      "mean_ms": 1250.0,
+      "task_count": 8
+    },
+    "threshold": {
+      "ratio": 3.0
+    },
+    "runtime_scope": {},
+    "explanation": "O stage termina quando a última task termina. Uma task muito mais longa que a mediana significa que a maior parte do cluster está ociosa esperando por ela. Este achado sozinho não distingue skew de dados de skew de computação: cruzar com SF-UI-002 para separá-los, porque o tratamento é diferente. Ver knowledge/spark/shuffle-join-skew.md secao 3.",
+    "proposed_change": [
+      "Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.",
+      "Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.",
+      "Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar skew mexendo na chave de join pode alterar o resultado, por duplicação ou por descarte de nulls."
+    ],
+    "tradeoffs": [
+      "Salting adiciona complexidade permanente ao código e deve ser a última tentativa, não a primeira."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem de linhas com chave nula.",
+      "Contagem distinta da chave primária do resultado, para detectar duplicação.",
+      "Agregados de controle por dimensão de negócio.",
+      "Nova razão max/p50 do stage após a mudança."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita",
+      "usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "Limiares 3 e 10 são heurística de campo. O fator default do Glue para skewness é 5, o que é consistente com a faixa."
+      }
+    ]
+  }
+]

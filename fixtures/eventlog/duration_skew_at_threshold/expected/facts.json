@@ -1,0 +1,301 @@
+[
+  {
+    "id": "f_872429",
+    "schema_version": 1,
+    "kind": "spark.cluster.cores",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0011"
+    },
+    "measures": {
+      "available_cores": 8,
+      "executor_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_1ac2ac",
+    "schema_version": 1,
+    "kind": "spark.job.spill_summary",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0011"
+    },
+    "measures": {
+      "stages_with_spill": 0,
+      "total_memory_spill_bytes": 0,
+      "total_disk_spill_bytes": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_b5d81c",
+    "schema_version": 1,
+    "kind": "spark.log_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "line_count": 46,
+      "event_count": 46,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_ae8469",
+    "schema_version": 1,
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0011"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.5.4",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_bfee63",
+    "schema_version": 1,
+    "kind": "spark.stage.gc",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_skew_at_threshold",
+      "stage_id": 0
+    },
+    "measures": {
+      "gc_ms": 400,
+      "executor_run_ms": 9550
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_90789a",
+    "schema_version": 1,
+    "kind": "spark.stage.gc",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_below_threshold",
+      "stage_id": 1
+    },
+    "measures": {
+      "gc_ms": 390,
+      "executor_run_ms": 9450
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_d8fa05",
+    "schema_version": 1,
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_skew_at_threshold",
+      "stage_id": 0
+    },
+    "measures": {
+      "memory_spill_bytes": 0,
+      "disk_spill_bytes": 0,
+      "input_bytes": 80000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_368e13",
+    "schema_version": 1,
+    "kind": "spark.stage.spill",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_below_threshold",
+      "stage_id": 1
+    },
+    "measures": {
+      "memory_spill_bytes": 0,
+      "disk_spill_bytes": 0,
+      "input_bytes": 80000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_eceea2",
+    "schema_version": 1,
+    "kind": "spark.stage.task_count",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_skew_at_threshold",
+      "stage_id": 0
+    },
+    "measures": {
+      "task_count": 8,
+      "available_cores": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f7a055",
+    "schema_version": 1,
+    "kind": "spark.stage.task_count",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_below_threshold",
+      "stage_id": 1
+    },
+    "measures": {
+      "task_count": 8,
+      "available_cores": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_a6cfac",
+    "schema_version": 1,
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_skew_at_threshold",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_ms": 1000,
+      "p50_ms": 1000,
+      "p95_ms": 3000,
+      "max_ms": 3000,
+      "mean_ms": 1250.0,
+      "task_count": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_3ae49c",
+    "schema_version": 1,
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_below_threshold",
+      "stage_id": 1
+    },
+    "measures": {
+      "min_ms": 1000,
+      "p50_ms": 1000,
+      "p95_ms": 2900,
+      "max_ms": 2900,
+      "mean_ms": 1237.5,
+      "task_count": 8
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_a714c2",
+    "schema_version": 1,
+    "kind": "spark.stage.task_input",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_skew_at_threshold",
+      "stage_id": 0
+    },
+    "measures": {
+      "min_bytes": 10000000,
+      "p50_bytes": 10000000,
+      "p95_bytes": 10000000,
+      "max_bytes": 10000000,
+      "total_bytes": 80000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_11476b",
+    "schema_version": 1,
+    "kind": "spark.stage.task_input",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_shuffle_below_threshold",
+      "stage_id": 1
+    },
+    "measures": {
+      "min_bytes": 10000000,
+      "p50_bytes": 10000000,
+      "p95_bytes": 10000000,
+      "max_bytes": 10000000,
+      "total_bytes": 80000000
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  }
+]
