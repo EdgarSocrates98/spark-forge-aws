@@ -43,7 +43,8 @@
     "OOM",
     "Terraform",
     "Latest Per Key",
-    "Data Validation"
+    "Data Validation",
+    "Graph Processing"
   ],
   "knowledge_base": {
     "index": "knowledge/INDEX.md",

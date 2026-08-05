@@ -348,6 +348,13 @@ rules:
       Revisão de código responde ao custo da chamada; ela não responde se a garantia
       que a suíte aparenta dar existe.
 
+  # SF-GRAPH entra AQUI, e não numa rota própria antes desta, e o número que decidiu está
+  # medido em `tests/test_rules_graph_boundary.py` e escrito em `agents/pyspark-code-reviewer.md`:
+  # nas 19 fixtures de `fixtures/graph/`, SF-PY dispara 16 vezes em 14 e SF-GRAPH 5 vezes em
+  # 5, e as cinco são SUBCONJUNTO das catorze. O inverso do que a Fase 5c mediu para SF-DQ,
+  # que por isso ganhou a AGENT-008 com precedência declarada. Como o destino é o MESMO
+  # agente, a pergunta de precedência não existe nesta rota. Antes desta linha, um case com
+  # achados só de grafo voltava de `next_step` com `recommended_agent: None`.
   - id: AGENT-004
     phase_in: [diagnosis, hypothesis]
     title: Achado dominante em código PySpark
@@ -356,10 +363,13 @@ rules:
         - {findings_area: SF-PY, count_gt: 0}
         - {findings_area: SF-PLAN, count_gt: 0}
         - {findings_area: SF-CG, count_gt: 0}
+        - {findings_area: SF-GRAPH, count_gt: 0}
     recommended_agent: pyspark-code-reviewer
     reason: >
       Fonte, plano físico e grafo de chamadas são três leituras do mesmo código, e o
-      achado só é forte quando elas concordam.
+      achado só é forte quando elas concordam. Job de grafo com GraphFrames é uma quarta
+      leitura do mesmo `.py`, e no corpus da própria área o achado de PySpark é o
+      dominante — apagar as linhas de GraphFrames não deixa job nenhum de pé.
 
   - id: AGENT-005
     phase_in: [diagnosis, hypothesis]

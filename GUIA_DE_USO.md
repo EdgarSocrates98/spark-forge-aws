@@ -222,7 +222,7 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 40 tools fazem
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 41 tools fazem
 (seção 10), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
@@ -245,7 +245,7 @@ fase da investigação e área do achado dominante. Há oito coordenadores, cada
 executores declarados: ver a tabela em `AGENTS.md`.
 
 Dois deles não são sobre performance de código, e é por isso que quem procura só
-"tuning" nunca os encontra sozinho. `emr-infra-reviewer` (áreas `SF-EMR` e `SF-ENV`)
+"tuning" nunca os encontra sozinho. `emr-infra-reviewer` (áreas `SF-EMR`, `SF-EMRS` e `SF-ENV`)
 responde quando o Spark roda em Amazon EMR on EC2 e o risco está na definição do cluster
 — instance fleets contra instance groups, opção de compra por papel, managed scaling,
 `Configurations` em dois níveis, bootstrap actions, `LogUri`, cluster que terminou antes
@@ -315,6 +315,19 @@ Se a biblioteca valida dado — `df.filter(...).count()` seguido de aborto,
 lido por outra ótica, e nenhum dos dois extratores cala o outro: a mesma linha pode
 produzir um achado sobre o que a cadeia custa e outro sobre o dado ruim já estar publicado
 quando o alarme toca.
+
+Se a biblioteca importa `graphframes` ou `io.graphframes`, rode também
+`analyze graph --path lib/` sobre os mesmos arquivos do item 4 — é a **terceira** leitura
+do mesmo `.py`, e sem ela a área `SF-GRAPH` some do relatório em silêncio. Ao contrário
+do `analyze emr-serverless` acima, aqui a saída de tela **não** estoura: medido num
+arquivo de grafo realista de 71 linhas, `total_count` 11 contra o teto de 50 e
+`next_cursor: null`, porque este extrator emite um fact por **evento de grafo** e não um
+por propriedade de configuração. Use `--out` quando o alvo for um diretório, que é o que
+multiplica. Duas ressalvas que mudam a leitura do resultado: o vocabulário de GraphFrames
+só é lido em módulo que **importa** a biblioteca (`find`, `degrees` e `validate` são nomes
+que qualquer objeto de usuário pode ter), e `SF-GRAPH-002` é guardada por **faixa de
+Spark** — sobre `.py` solto, sem fonte de versão, ela sai em `skipped` com
+`reason: runtime_scope`, e é a resposta certa.
 
 Se a investigação vai **mudar** o job, `funcval plan` deriva, **antes** da mudança, o que
 precisa ser medido nos dois lados — contagem, schema, chaves e agregados do alvo:

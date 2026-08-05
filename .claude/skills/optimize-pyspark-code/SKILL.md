@@ -1,6 +1,6 @@
 ---
 name: optimize-pyspark-code
-description: Use quando revisar, refatorar ou otimizar código PySpark/Spark SQL para AWS Glue — script, função, módulo, PR ou trecho de DataFrame — suspeito de UDF Python evitável, collect/toPandas, join sem redução prévia, cache indevido, coalesce(1), repartition arbitrário, explode sem controle, sequência longa de withColumn, dropDuplicates sem chave explícita ou spark.conf.set em runtime. Use também quando a pergunta for "por que esse código está lento", "isso vai escalar", "tem algo errado nesse DataFrame" ou "como eu melhoro isso", mesmo que ninguém cite UDF, shuffle ou cardinalidade pelo nome. Se você está prestes a ler o arquivo linha a linha procurando esses padrões, rode `sparkforge analyze pyspark` em vez disso — ele varre a árvore inteira, não uma amostra, e ancora cada achado em file:line:col.
+description: Use quando revisar, refatorar ou otimizar código PySpark/Spark SQL para AWS Glue — script, função, módulo, PR ou trecho de DataFrame — suspeito de UDF Python evitável, collect/toPandas, join sem redução prévia, cache indevido, coalesce(1), repartition arbitrário, explode sem controle, sequência longa de withColumn, dropDuplicates sem chave explícita ou spark.conf.set em runtime. Use também quando a pergunta for "por que esse código está lento", "isso vai escalar", "tem algo errado nesse DataFrame" ou "como eu melhoro isso", mesmo que ninguém cite UDF, shuffle ou cardinalidade pelo nome. Use também quando o job constrói `GraphFrame` e chama `connectedComponents`, `pageRank`, `aggregateMessages` ou `pregel` — é o mesmo `.py`, lido por `sparkforge analyze graph`. Se você está prestes a ler o arquivo linha a linha procurando esses padrões, rode `sparkforge analyze pyspark` em vez disso — ele varre a árvore inteira, não uma amostra, e ancora cada achado em file:line:col.
 ---
 
 # Optimize PySpark Code
@@ -44,6 +44,36 @@ Cada finding vem com `explanation`, `proposed_change`, `risks`, `tradeoffs` e `v
 ## Preferências de reescrita
 
 Ordem de preferência, do `knowledge/spark/execution-model.md` seção 4: função Spark SQL nativa → higher-order function (`transform`, `filter`, `aggregate`) → `pandas_udf` medido → `udf` Python só com justificativa registrada. Nunca mover dado não amostrado para o driver. Detalhes de anti-pattern por categoria (driver, transformações, joins, cache, escrita) estão em `knowledge/anti-patterns.md`.
+
+## Quando o job constrói um grafo
+
+Se o módulo importa `graphframes` ou `io.graphframes`, o mesmo `.py` tem uma quarta leitura,
+e ela não é opcional — pular apaga a área `SF-GRAPH` do relatório em silêncio:
+
+```bash
+sparkforge analyze graph --path <arquivo-ou-diretório> --out .sparkforge/facts_graph.json
+```
+
+Quatro regras: `SF-GRAPH-001` (`connectedComponents` sem diretório de checkpoint — **P0**,
+porque o algoritmo levanta `java.io.IOException` na primeira iteração em vez de degradar),
+`SF-GRAPH-002` (GraphFrames importado num Spark sem artefato publicado), `SF-GRAPH-003`
+(arestas não persistidas) e `SF-GRAPH-004` (algoritmo de grafo dentro de laço Python).
+
+**Duas coisas que este verbo faz diferente do `analyze pyspark`, e as duas mordem.**
+
+A afirmação acima — "nenhuma das doze `SF-PY-*` declara `runtime_scope`, então `runtime`
+vazio não pula nenhuma" — **não vale para `SF-GRAPH-002`**. Ela é a única regra deste
+coordenador com guarda de versão, e a guarda é por **faixa de Spark** (`>=3.3` e `<3.4`),
+não por Glue: sobre um `.py` solto ela sai em `skipped` com `reason: runtime_scope`, e isso
+é a resposta certa — "não há artefato publicado para ESTE Spark" é impossível de afirmar sem
+saber o Spark. Para trazê-la de volta, dê a fonte de versão (o `.tf`, o dump de
+`describe-cluster`), nunca um `--glue` chutado.
+
+E `SF-PY-008` dispara sobre job de grafo, com razão. Medido nas 19 fixtures de
+`fixtures/graph/`: `SF-PY-008` em catorze delas, `SF-PY-012` em duas, e nenhum dos dezesseis
+cita fact `graph.*`. `cache`/`persist`/`unpersist` ficaram **fora** do vocabulário de
+`graph.algorithm` justamente porque `pyspark.cache` já os emite — as duas áreas falam da
+mesma linha dizendo coisas diferentes, e suprimir uma entrega metade do achado.
 
 ## Limiares
 

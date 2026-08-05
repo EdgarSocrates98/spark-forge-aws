@@ -393,13 +393,13 @@ git commit -m "test(graph): a fronteira com SF-DQ e SF-PY deixa de ser afirmacao
 **Files:**
 - Modify: agentes e espelhos, skills, `STATUS.md`, `README.md`, `AGENTS.md`, `AGENT_PROTOCOL.md`, `GUIA_DE_USO.md`, o spec
 
-- [ ] **Step 1: Veja o que o repositório cobra**
+- [x] **Step 1: Veja o que o repositório cobra**
 
 ```bash
 python -m pytest tests/test_agent_coverage.py -q
 ```
 
-- [ ] **Step 2: A decisão do coordenador**
+- [x] **Step 2: A decisão do coordenador**
 
 A §9 do spec deixou em aberto: `pyspark-code-reviewer` estendido ou próprio.
 
@@ -409,7 +409,7 @@ Meça o equivalente aqui: **existe dado que diga, antes de ler o arquivo, que es
 
 Qualquer que seja a decisão, a `description` precisa dizer a verdade sobre o que o agente cobre. A 5d mediu que `description` é o **gatilho de seleção**, não decoração.
 
-- [ ] **Step 3: Skill**
+- [x] **Step 3: Skill**
 
 Se a fase ganhar skill própria ou entrar numa existente, ensine o verbo onde a skill ensina os outros. **Edite fonte, nunca espelho** — `scripts/sync_skills.py` é tradutor.
 
@@ -417,7 +417,7 @@ A 5d mediu (`D-5d-42`) que `description` de skill tem teto de 1024 e o orçament
 
 Se a Task 3 mediu que arquivo de grafo realista estoura a página default, **isso vai para a skill**, no ponto onde ela ensina o verbo.
 
-- [ ] **Step 4: Meça os números**
+- [x] **Step 4: Meça os números**
 
 ```bash
 python -c "import json;print(len(json.load(open('manifest.json'))['tools']))"
@@ -426,17 +426,17 @@ python -m pytest -q --no-header 2>&1 | tail -2
 
 Regras, áreas, extratores, kinds, fixtures, domínios, tools, fontes vigiadas, testes. `README.md` e `STATUS.md` costumam estar certos, mas a revisão da 5d mediu **dois erros de contagem no próprio STATUS** — reconte tudo. `AGENTS.md` é o espelho em inglês que envelhece.
 
-- [ ] **Step 5: A seção de desvios do spec**
+- [x] **Step 5: A seção de desvios do spec**
 
 O spec **não é reescrito**: ganha `## 11. Desvios` com os `D-6a-*` que **tornam o documento errado** — não todos, só os que contradizem o texto. O `Status:` deixa de dizer "não implementado".
 
-- [ ] **Step 6: `STATUS.md`**
+- [x] **Step 6: `STATUS.md`**
 
 A linha `SF-GRAPH` do roadmap de bancos passa a apontar para esta fase como concluída. Registre as dívidas e limites que a fase abriu, **com a natureza de cada um** pelo critério de triagem: dívida é código que ninguém escreveu; fase é trabalho planejado; limite declarado é decisão registrada cujo custo já foi medido.
 
 Recontagem por linha das três tabelas — **não some de cabeça**.
 
-- [ ] **Step 7: Fechamento**
+- [x] **Step 7: Fechamento**
 
 ```bash
 python -m pytest -q --no-header && ruff check . && python scripts/sync_skills.py --check
@@ -1009,3 +1009,61 @@ reprovou, porque ele caminha o catálogo inteiro. Depender do arquivo do vizinho
 para não ficar vácuo é exatamente como este apodreceria em silêncio:
 acrescentei `test_toda_regra_das_tres_areas_esta_no_documento_da_propria_area`,
 que fecha o buraco localmente e nomeia `(id, documento, área declarada)`.
+
+**D-6a-45 — `rule_areas` dá dono à área e não a torna despachável; a rota é outra superfície, e ela estava vazia.**
+O Step 2 trata a decisão do coordenador como decisão sobre `description` e
+`rule_areas`. Medido: com `SF-GRAPH` já em `rule_areas` de
+`agents/pyspark-code-reviewer.md` desde `090417a` e a suíte verde,
+`next_step(case, ["SF-GRAPH-001"])` devolvia **`recommended_agent: None`** —
+`AGENT-004` casa por `findings_area` e listava só `SF-PY`, `SF-PLAN` e `SF-CG`.
+`test_agent_coverage.py::test_no_area_is_orphan` deriva as áreas de
+`load_catalog()` e confere `rule_areas`; **nenhum teste do repositório confere que
+toda área alcança uma rota `AGENT-*`** — `tests/test_router_agents.py` cobra o
+inverso (todo coordenador tem pelo menos uma rota) e passaria para sempre. A área
+tinha dono para efeito de cobertura e **zero** despacho em dado, que é exatamente
+a distinção que a 5d fixou. `AGENT-004` ganhou `findings_area: SF-GRAPH`; como o
+destino é o mesmo agente, a precedência que a `AGENT-008` teve de resolver não
+aparece, e o total de rotas segue 24. Isto é registro de superfície faltante, não
+de defeito consertado: um teste que derive "toda área de regra alcança uma rota"
+continua não existindo.
+
+**D-6a-46 — `description` de coordenador é escalar YAML sem aspas, e `: ` nela derruba sete testes de uma vez.**
+Medição durante esta task, e o modo de falha é desproporcional à causa. A
+primeira redação da `description` nova escrevia "uma quarta ótica: checkpoint
+que...". `tests/test_agent_coverage.py::_frontmatter` chama `yaml.safe_load` no
+bloco entre os `---`, e um `: ` dentro de um escalar não citado levanta
+`ScannerError: mapping values are not allowed here` — **7 testes vermelhos em 4
+classes**, nenhum deles com mensagem que aponte para a descrição. Trocado por
+travessão. As oito `description` de coordenador existentes não têm `: ` nenhuma,
+o que explica por que isto nunca apareceu; e nenhum teste do repositório afirma
+o limite. Fica escrito porque a `description` é o gatilho de seleção e vai ser
+editada de novo.
+
+**D-6a-47 — o `STATUS.md` não estava errado onde o plano esperava, e estava errado em oito lugares que ele não menciona.**
+O Step 4 avisa que a revisão da 5d achou dois erros de contagem no próprio
+`STATUS.md` e manda desconfiar dele. Medido linha a linha: a única linha que a
+Fase 6a já havia mexido — `Fixtures golden`, atualizada pela Task 4 em `4ef1229`
+para **164 em 21 domínios** — estava **certa**, conferida contra
+`git ls-tree main` (145 em 20) mais as 19 do corpus novo. O que estava desatualizado
+era tudo o que **nenhuma task tocou**: testes, `runtime_scope` (`8 de 77`, e o
+"todas sobre Glue" que a nona regra desmente), extratores, kinds, regras, regras
+com golden, tools, tools alcançáveis, ramos de severidade e fontes vigiadas — mais
+as duas listas por enumeração, que perdem a linha nova em silêncio porque ninguém
+as soma. Fora do `STATUS.md`, os números vencidos estavam em `SOURCES.md`
+(109 → 131 fontes, e as três parcelas), `README.md` (18 extratores, 112 kinds em
+dois lugares), `AGENTS.md` (idem, em inglês) e `GUIA_DE_USO.md` (40 tools, e
+`emr-infra-reviewer` declarando duas áreas quando tem três desde a 5d). Nenhum
+deles quebra teste. A regra do repositório — número se mede, nunca se copia —
+não tem guarda automática em nenhuma dessas superfícies.
+
+**D-6a-48 — a numeração em prosa do `README.md` conta TÓPICOS e não verbos, e renumerar por verbo teria mentido.**
+Medido ao inserir `analyze graph` na tabela de verbos. O parágrafo diz "Seis
+desses verbos mudam o alcance do projeto" e depois chama `benchmark` de "o
+terceiro" — que é falso se a contagem for por verbo (`emr-cluster`,
+`emr-serverless`, `data-quality`, `benchmark` = quarto) e verdadeiro se for por
+**tópico**, porque `analyze emr-cluster` e `analyze emr-serverless` são
+explicados juntos, num parágrafo só. Com grafo entrando como tópico novo depois
+de `data-quality`, ele é **o terceiro** e `benchmark` passa a **o quarto**; a
+contagem de verbos em negrito vai de seis para **sete**. Duas séries de números
+convivendo no mesmo parágrafo, nenhuma delas declarada, e nenhum teste sobre
+qualquer uma.
