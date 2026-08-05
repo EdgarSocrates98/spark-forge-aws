@@ -392,6 +392,15 @@ def build_parser() -> argparse.ArgumentParser:
     funcval_compare_p.add_argument(
         "--after", required=True, help="Resultado medido DEPOIS, no mesmo contrato."
     )
+    funcval_compare_p.add_argument(
+        "--out",
+        help=(
+            "Escreve a comparacao (JSON de facts) neste arquivo, que e o que "
+            "`judge --facts` le. Opcional, ao contrario do `--out` do `plan`: o plano e "
+            "a entrada do proximo verbo, esta e uma saida terminal. Grava a lista "
+            "COMPLETA, nunca a pagina -- `--limit` corta o stdout e nao o arquivo."
+        ),
+    )
     funcval_compare_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     funcval_compare_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     funcval_compare_p.add_argument("--cursor")
@@ -1121,8 +1130,14 @@ def _cmd_funcval_plan(args: argparse.Namespace) -> int:
 
 
 def _cmd_funcval_compare(args: argparse.Namespace) -> int:
+    """Sem escrita aqui, pela mesma razao de `_cmd_funcval_plan`: `_core` grava.
+
+    Os verbos de `analyze` e o `fuse` escrevem na CLI porque o `--out` deles so
+    existe na CLI. Este existe nas DUAS superficies (D-4c-26), e escrever nos
+    dois lugares seria a mesma escrita mantida a mao em duas copias.
+    """
     full = _core.funcval_compare(
-        args.plan, args.before, args.after, kind=args.kind, limit=None
+        args.plan, args.before, args.after, out_path=args.out, kind=args.kind, limit=None
     )
     page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
     payload = {

@@ -125,11 +125,20 @@ class TestToolSurface:
         `sparkforge_funcval_compare` rele e que o gate cobra. Um `plan` que so
         devolvesse `structuredContent` daria a capacidade a quem usa a CLI
         (`--out`) e nao a quem usa o MCP -- a assimetria que `parity.yaml`
-        existe para pegar. `funcval_compare` fica de fora: so le."""
+        existe para pegar.
+
+        `sparkforge_funcval_compare` ENTROU na lista ao fechar a D-4c-26, e a
+        razao e a mesma vista do outro lado: `sparkforge_judge` le facts, e sem
+        `out_path` a saida da comparacao so chegava la extraida do envelope a
+        mao -- de um envelope que PAGINA. A diferenca para o plano esta no
+        schema, nao aqui: `out_path` do plano e `required`, o da comparacao e
+        opcional, porque um plano sem arquivo nao serve para nada e uma
+        comparacao sem arquivo ainda e legivel."""
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
         assert writers == {
             "sparkforge_case_open",
             "sparkforge_case_update",
+            "sparkforge_funcval_compare",
             "sparkforge_funcval_plan",
             "sparkforge_report_sign",
         }
@@ -357,6 +366,76 @@ class TestCallTool:
             {"facts_path": [str(tf_facts), str(py_facts)], "glue": "5.0", "limit": 1000},
         )
         assert "SF-GLUE-004" in {f["rule_id"] for f in result["items"]}
+
+
+class TestFuncvalCompareWritesLikeTheCLI:
+    """D-4c-26 pelo lado do MCP.
+
+    A divida pedia os DOIS: `--out` na CLI e `out_path` na tool. Fechar so um
+    lado trocaria uma assimetria (verbo que grava contra verbo que nao grava)
+    por outra (superficie que grava contra superficie que nao grava), e a
+    segunda e a que `parity.yaml` existe para pegar -- um cliente MCP nao tem
+    shell onde rodar o `jq` que faltava.
+    """
+
+    def _compare(self, tmp_path, **extra):
+        plan_path = _write_funcval_plan_file(tmp_path)
+        before, after = _write_funcval_result_files(tmp_path)
+        return call_tool(
+            "sparkforge_funcval_compare",
+            {
+                "plan_path": str(plan_path),
+                "before_path": str(before),
+                "after_path": str(after),
+                **extra,
+            },
+        )
+
+    def test_out_path_writes_the_list_that_judge_reads(self, tmp_path):
+        out = tmp_path / "funcval.json"
+        payload = self._compare(tmp_path, out_path=str(out))
+        gravado = json.loads(out.read_text(encoding="utf-8"))
+        assert isinstance(gravado, list)
+        assert gravado == payload["items"]
+        judged = call_tool(
+            "sparkforge_judge", {"facts_path": [str(out)], "glue": "5.0", "limit": 1000}
+        )
+        assert "SF-FVAL-001" in {f["rule_id"] for f in judged["items"]}
+
+    def test_the_file_is_the_whole_comparison_and_not_the_page(self, tmp_path):
+        """`limit` corta o `structuredContent`, nunca o arquivo. O contrario
+        seria o motor entregando a primeira pagina com nome de comparacao."""
+        out = tmp_path / "funcval.json"
+        payload = self._compare(tmp_path, out_path=str(out), limit=1)
+        assert len(payload["items"]) == 1
+        assert payload["next_cursor"]
+        gravado = json.loads(out.read_text(encoding="utf-8"))
+        assert len(gravado) == payload["total_count"] > 1
+
+    def test_without_out_path_nothing_is_written(self, tmp_path):
+        plan_path = _write_funcval_plan_file(tmp_path)
+        before, after = _write_funcval_result_files(tmp_path)
+        antes = set(tmp_path.iterdir())
+        call_tool(
+            "sparkforge_funcval_compare",
+            {
+                "plan_path": str(plan_path),
+                "before_path": str(before),
+                "after_path": str(after),
+            },
+        )
+        assert set(tmp_path.iterdir()) == antes
+
+    def test_the_two_surfaces_declare_the_same_optionality(self, tmp_path):
+        """A simetria dita no schema, e nao so no comportamento: `out_path` do
+        plano e `required`, o da comparacao nao -- e a CLI diz o mesmo, com
+        `--out` obrigatorio no `plan` e opcional no `compare`."""
+        plano = TOOLS["sparkforge_funcval_plan"]["inputSchema"]
+        compare = TOOLS["sparkforge_funcval_compare"]["inputSchema"]
+        assert "out_path" in plano["required"]
+        assert "out_path" in plano["properties"]
+        assert "out_path" in compare["properties"]
+        assert "out_path" not in compare["required"]
 
 
 class TestUnresolvedIsAlwaysReported:
