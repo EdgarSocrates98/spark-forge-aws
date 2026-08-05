@@ -1,0 +1,37 @@
+name: gc_pressure_at_threshold
+proves: >
+  O ramo P2 de SF-UI-004, que até aqui não tinha golden nenhum, e o limiar da
+  regra — no mesmo log.
+  `stage_gc_at_threshold` tem `gc_ms / executor_run_ms` igual a 0.15 EXATOS, o
+  `threshold.ratio` da regra: 1200 ms de GC sobre 8000 ms de tempo de executor.
+  A comparação do `when` é `>=`, então o limiar dispara; e como 0.15 está abaixo
+  do 0.20 do primeiro ramo de `severity_by`, a severidade é P2. Existe em par com
+  `skewed_stage`, cujo stage torto tem razão 0.316 e sai P1: sem este golden, a
+  severidade do ramo P2 podia virar qualquer valor com a suíte inteira verde,
+  porque o corpus só tinha razão muito acima do 0.20.
+  `stage_gc_below_threshold` é o mesmo stage com uma única diferença — 140 ms de
+  GC por task em vez de 150 —, e não é acusado. É o par bidirecional que a Fase 2
+  exige: se o limiar mudar de lugar, de sinal, ou se o `>=` virar `>`, um dos
+  dois goldens quebra.
+  Nenhuma outra regra da área dispara, e o log é magro para isso: as oito tasks
+  de cada stage duram o mesmo, então `max_ms / p50_ms` é 1.0 e SF-UI-001 não vê
+  skew; o input é idêntico entre elas, o que fecha SF-UI-002; não há spill, o que
+  fecha SF-UI-003; nenhum executor é removido, o que fecha SF-UI-005; e 8 tasks
+  contra 8 cores ficam acima do fator 0.5 de SF-UI-006.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.stage.spill
+  - spark.stage.gc
+  - spark.stage.task_count
+  - spark.cluster.cores
+  - spark.job.spill_summary
+  - spark.runtime_version
+  - spark.log_analyzed
+expects_rules:
+  - SF-UI-004
