@@ -12,14 +12,17 @@ razao escrita em `scripts/regen_fixtures.py:regen_emr_serverless`: e a funcao qu
 corpus tem mais de um payload. Golden e teste precisam extrair pela MESMA porta
 por onde o produto extrai.
 
-**Todo `expects_rules` nasce vazio, e isso e projeto, nao lacuna.** A area
+**Todo `expects_rules` nasceu vazio, e isso era projeto, nao lacuna.** A area
 `SF-EMRS` e a Task 5 da Fase 5d; este corpus e a Task 4. Extrator e corpus antes
 de regra e a ordem que o repositorio ja usou na Fase 5b para EMR on EC2 e na 4c
 para `SF-FVAL`: regra sem fixture e regra que nunca foi provada, e escrever as
-duas coisas juntas apaga a chance de a fixture contradizer a regra. Quando a
-Task 5 entrar, `python scripts/regen_fixtures.py` reescreve os `findings.json` e
-os `expects_rules` deixam de ser uniformemente vazios -- os `[]` que sobrarem
-viram goldens NEGATIVOS reais.
+duas coisas juntas apaga a chance de a fixture contradizer a regra.
+
+Com a Task 5 as regras existem, `python scripts/regen_fixtures.py` reescreveu os
+`findings.json`, e `expects_rules` deixou de ser uniformemente vazio: **6 das 16
+fixtures disparam regra, uma para cada uma das seis `SF-EMRS`**. Os `[]` que
+sobraram sao goldens NEGATIVOS reais -- se alguma regra disparar sobre um payload
+que nao a justifica, o diff aparece aqui.
 
 `TestAdversarial` abaixo e o que sobrevive a essa transicao: ele nao pergunta
 "que regra disparou", pergunta se o FACT diz o que o payload autoriza. Cinco
