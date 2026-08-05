@@ -101,6 +101,9 @@ REQUIRED_FIXTURES = {
     # SF-EMRS-001 em P0 antes da correcao.
     "preinit_com_zero_workers",
     "preinit_sem_worker_count",
+    # D-5d-44 -- o ramo P2 de SF-EMRS-005 nao tinha golden nenhum, e o limiar de
+    # 1440 nao tinha par. Dois payloads, 1440 e 1439.
+    "autostop_janela_no_limiar",
 }
 
 
@@ -322,6 +325,24 @@ class TestAdversarial:
         assert _one(longo, "emrs.application").measures["idle_timeout_minutes"] == 10080
         assert _one(curto, "emrs.application").measures["idle_timeout_minutes"] == 15
         assert _one(longo, "emrs.application").attrs["auto_stop_enabled"] is True
+
+    def test_both_severity_branches_of_the_window_rule_have_a_golden(self):
+        """D-5d-44 -- `SF-EMRS-005` e a segunda regra do catalogo inteiro a fixar
+        os DOIS ramos de `severity_by`; ate esta rodada so `SF-EMR-009` fixava.
+
+        Sem o golden de P2, o `severity_default` podia virar qualquer coisa com a
+        suite inteira verde: `autostop_longo` cai no ramo `>= 10080`, que e P1.
+
+        O par 1440/1439 trava tambem o limiar, que e `field-heuristic` -- a AWS
+        nao declara ponto nenhum entre 1 e 10080. Com goldens so em 10080 e 15,
+        um limiar de 720 ou de 4320 passaria sem nenhum vermelho.
+        """
+        _, _, no_limiar, _ = run_fixture(FIXTURES / "autostop_janela_no_limiar")
+        _, _, no_teto, _ = run_fixture(FIXTURES / "autostop_longo")
+
+        # Um achado so na fixture do limiar: o payload de 1439 e o lado negativo.
+        assert [(f.rule_id, f.severity) for f in no_limiar] == [("SF-EMRS-005", "P2")]
+        assert [(f.rule_id, f.severity) for f in no_teto] == [("SF-EMRS-005", "P1")]
 
     def test_the_capacity_verdict_is_per_axis_and_constructed_not_observed(self):
         """A fixture positiva de `initial_exceeds_maximum` e CONSTRUIDA: a fonte
