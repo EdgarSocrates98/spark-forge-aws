@@ -391,6 +391,14 @@ class TestAdversarial:
         """
         directory = FIXTURES / "segredo_em_runtime_config"
         entrada = (directory / "input" / "application.json").read_text(encoding="utf-8")
+        # A exclusao de `EMR.secret@` NAO e cosmetica, e vale dizer o que ela
+        # concede: `_is_secret_reference` e `startswith` puro, entao a anotacao e
+        # bypass INCONDICIONAL da heuristica -- `EMR.secret@AKIA...` sai com o
+        # valor inteiro em `attrs.value`, sem redacao, e num golden commitado.
+        # Sem esta linha o teste reprovaria sobre exatamente esse caso. O limite
+        # esta declarado na docstring de `facts/emr_serverless.py` (secao "LIMITE
+        # DECLARADO") e em `STATUS.md`; o que este teste garante e o que a
+        # HEURISTICA decide, nao o que a anotacao deixa passar.
         sensiveis = sorted(
             valor
             for valor in _valores_de_chaves_sensiveis(json.loads(entrada))
@@ -425,6 +433,13 @@ class TestAdversarial:
         cosmetica: o nome do segredo casa `_AKIA_RE`, e como o padrao usa
         `search` e nao `fullmatch`, a heuristica acusaria o valor anotado se
         rodasse primeiro.
+
+        E o outro lado da mesma moeda, dito onde da para ver: a precedencia e
+        bypass INCONDICIONAL, entao o valor anotado vai INTEIRO para
+        `attrs.value`, sem redacao. Aqui isso e o certo -- o valor e um ID de
+        segredo. Num payload em que alguem anotasse uma credencial de verdade,
+        seria o analisador guardando a credencial. Limite declarado, com a razao
+        de nao endurecer, na docstring de `facts/emr_serverless.py`.
         """
         _, facts, _, _ = run_fixture(FIXTURES / "segredo_anotado_nao_e_achado")
         configs = _by_kind(facts, "emrs.configuration")
@@ -432,6 +447,11 @@ class TestAdversarial:
         for config in configs:
             assert config.attrs["secret_reference"] is True
             assert "secret_pattern_match" not in config.attrs
+            # O valor sai cru, e e isso que a linha anterior do docstring
+            # descreve. Se um dia a redacao passar a valer tambem para o valor
+            # anotado, esta assercao e a que muda -- e o golden com ela.
+            assert config.attrs["value"].startswith("EMR.secret@")
+            assert "redacted" not in config.attrs
             assert "redacted" not in config.attrs
             assert config.attrs["value"].startswith("EMR.secret@")
 
