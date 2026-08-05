@@ -1,0 +1,49 @@
+[
+  {
+    "id": "f_4dc672",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 0,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_application"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

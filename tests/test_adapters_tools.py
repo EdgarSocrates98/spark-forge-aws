@@ -21,7 +21,9 @@ class TestToolSurface:
         """Fase 1: a superficie MCP cresceu para cobrir todo verbo da CLI --
         os 10 tools da Fase 0, mais catalog-schema/fuse/call-graph e os
         extratores sem verbo proprio (event-log, terraform, iceberg, sql,
-        athena-workgroup), mais os seis coletores AWS. Um tool que sai desta
+        athena-workgroup), mais os coletores AWS -- SETE que tocam a rede desde
+        que a Fase 5d acrescentou `collect_emr_serverless`, mais `collect_verify`,
+        que so le disco. Um tool que sai desta
         lista sem querer e um capability reachable-por-CLI-mas-nao-por-MCP
         que `parity.yaml`/`test_capability_parity.py` deveriam pegar -- este
         teste falha primeiro, com um diff legivel."""
@@ -43,6 +45,7 @@ class TestToolSurface:
             "sparkforge_analyze_sql",
             "sparkforge_analyze_athena_workgroup",
             "sparkforge_analyze_emr_cluster",
+            "sparkforge_analyze_emr_serverless",
             "sparkforge_analyze_data_quality",
             "sparkforge_analyze_call_graph",
             "sparkforge_analyze_s3_listing",
@@ -63,6 +66,7 @@ class TestToolSurface:
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
+            "sparkforge_collect_emr_serverless",
             "sparkforge_collect_verify",
         }
 
@@ -97,6 +101,7 @@ class TestToolSurface:
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
+            "sparkforge_collect_emr_serverless",
         }
 
     def test_every_open_world_tool_is_still_read_only(self):
@@ -756,6 +761,41 @@ class _FakeEmrClient:
         return {"AutoTerminationPolicy": {"IdleTimeout": 3600}}
 
 
+class _FakeEmrServerlessClient:
+    """Uma chamada so: `GetApplication` ja devolve capacidade, auto-stop,
+    `runtimeConfiguration` e monitoramento no mesmo objeto -- nao ha o par de
+    secoes opcionais que o cluster on EC2 tem."""
+
+    def get_application(self, **kwargs):
+        return {
+            "application": {
+                "applicationId": kwargs.get("applicationId", "00fEXAMPLE"),
+                "arn": "arn:aws:emr-serverless:us-east-1:123456789012:/applications/00fEXAMPLE",
+                "name": "etl",
+                "releaseLabel": "emr-7.5.0",
+                "type": "Spark",
+                "state": "STARTED",
+                "architecture": "X86_64",
+                "autoStopConfiguration": {"enabled": True, "idleTimeoutMinutes": 15},
+                "initialCapacity": {
+                    "DRIVER": {
+                        "workerCount": 1,
+                        "workerConfiguration": {"cpu": "4vCPU", "memory": "16GB"},
+                    }
+                },
+                "runtimeConfiguration": [
+                    {
+                        "classification": "spark-defaults",
+                        "properties": {"spark.executor.cores": "4"},
+                    }
+                ],
+                "monitoringConfiguration": {
+                    "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrs-logs/"}
+                },
+            }
+        }
+
+
 class _FakeBoto3ForCollect:
     def __init__(self):
         self._clients = {
@@ -764,6 +804,7 @@ class _FakeBoto3ForCollect:
             "cloudwatch": _FakeCloudWatchClient(),
             "athena": _FakeAthenaClient(),
             "emr": _FakeEmrClient(),
+            "emr-serverless": _FakeEmrServerlessClient(),
         }
 
     def client(self, name, **kwargs):
@@ -806,6 +847,40 @@ _EMR_CLUSTER_DUMP = json.dumps(
                 "RequestedInstanceCount": 1,
             }
         ],
+    }
+)
+
+_EMR_SERVERLESS_DUMP = json.dumps(
+    {
+        "application": {
+            "applicationId": "00fEXAMPLE",
+            "name": "etl",
+            "releaseLabel": "emr-7.5.0",
+            "type": "Spark",
+            "state": "STARTED",
+            "architecture": "X86_64",
+            "autoStopConfiguration": {"enabled": False},
+            "initialCapacity": {
+                "DRIVER": {
+                    "workerCount": 1,
+                    "workerConfiguration": {"cpu": "4vCPU", "memory": "16GB"},
+                },
+                "EXECUTOR": {
+                    "workerCount": 10,
+                    "workerConfiguration": {"cpu": "4vCPU", "memory": "16GB"},
+                },
+            },
+            "maximumCapacity": {"cpu": "400vCPU", "memory": "3000GB", "disk": "20000GB"},
+            "runtimeConfiguration": [
+                {
+                    "classification": "spark-defaults",
+                    "properties": {"spark.dynamicAllocation.enabled": "true"},
+                }
+            ],
+            "monitoringConfiguration": {
+                "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrs-logs/"}
+            },
+        }
     }
 )
 
@@ -948,6 +1023,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         emr_path.write_text(_EMR_CLUSTER_DUMP, encoding="utf-8")
         return call_tool("sparkforge_analyze_emr_cluster", {"path": str(emr_path)})
 
+    if name == "sparkforge_analyze_emr_serverless":
+        emrs_path = tmp_path / "application.json"
+        emrs_path.write_text(_EMR_SERVERLESS_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_analyze_emr_serverless", {"path": str(emrs_path)})
+
     if name == "sparkforge_analyze_data_quality":
         dq_path = tmp_path / "validacao.py"
         dq_path.write_text(_DQ_SOURCE, encoding="utf-8")
@@ -1019,6 +1099,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
         "sparkforge_collect_emr_cluster",
+        "sparkforge_collect_emr_serverless",
     ):
         assert monkeypatch is not None, f"{name} precisa de monkeypatch para o client AWS falso"
         _fake_collect_boto3(monkeypatch)
@@ -1058,6 +1139,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_collect_emr_cluster": {
                 "repo": str(tmp_path),
                 "cluster_id": "j-1EXAMPLE",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_emr_serverless": {
+                "repo": str(tmp_path),
+                "application_id": "00fEXAMPLE",
                 "now": "2026-07-30T00:00:00Z",
             },
         }[name]
@@ -1129,6 +1215,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_sql", {"path": "<tmp>/inexistente.sql"}),
         ("sparkforge_analyze_athena_workgroup", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_emr_serverless", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
         (

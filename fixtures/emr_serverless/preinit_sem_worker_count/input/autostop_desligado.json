@@ -1,0 +1,35 @@
+{
+  "application": {
+    "applicationId": "00fsemcount00000001",
+    "name": "preinit-sem-contagem",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "architecture": "X86_64",
+    "autoStartConfiguration": {
+      "enabled": true
+    },
+    "autoStopConfiguration": {
+      "enabled": false
+    },
+    "initialCapacity": {
+      "DRIVER": {
+        "workerConfiguration": {
+          "cpu": "4vCPU",
+          "memory": "16GB",
+          "disk": "20GB"
+        }
+      }
+    },
+    "maximumCapacity": {
+      "cpu": "400vCPU",
+      "memory": "3000GB",
+      "disk": "20000GB"
+    },
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}

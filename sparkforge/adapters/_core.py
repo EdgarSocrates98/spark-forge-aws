@@ -39,6 +39,10 @@ from sparkforge.facts.data_quality import (
     extract_data_quality_tree,
 )
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
+from sparkforge.facts.emr_serverless import (
+    extract_emr_serverless_path,
+    extract_emr_serverless_tree,
+)
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
@@ -842,6 +846,51 @@ def analyze_emr_cluster(
 ) -> dict[str, Any]:
     facts = _extract_emr_cluster_facts(path)
     return _facts_page(facts, "emr.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze emr-serverless
+# --------------------------------------------------------------------------- #
+#
+# NAO ha produtor de `RuntimeContext` para `emrs.application.release_label`, e a
+# ausencia e decidida, nao esquecida. `emr.cluster` vira produtor logo acima
+# porque a AWS publica, por release do EMR on EC2, as versoes de Spark, Hadoop,
+# Python e Iceberg -- as quatro colunas que `EMR_MATRIX` compara. A pesquisa da
+# Fase 5d mediu que a documentacao do EMR Serverless publica **so** Spark, Hive e
+# Tez por release, e ainda sem o sufixo `-amzn-N`: tres das quatro colunas nao
+# tem fonte do lado do Serverless, e ha `releaseLabel` em uso (`emr-spark-8.0.0`)
+# que nao tem sequer chave na matriz. Derivar runtime dai falharia calada
+# justamente na release mais nova. Ver `knowledge/emr-serverless/runtime-matrix.md`
+# secao 6 e o desvio D-5d-5 do plano da fase: a razao registrada e "sem fonte",
+# nao "as matrizes divergem".
+
+
+def _extract_emr_serverless_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com dumps de application EMR Serverless ou para "
+            f"um arquivo .json:\n"
+            f"    sparkforge collect emr-serverless --repo . --application-id 00fXXXX "
+            f"--now <iso>\n"
+            f"    sparkforge analyze emr-serverless --path <dir-ou-arquivo> "
+            f"--out .sparkforge/facts_emr_serverless.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_emr_serverless_tree(target, repo_root=target)
+    return extract_emr_serverless_path(target, repo_root=target.parent)
+
+
+def analyze_emr_serverless(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_emr_serverless_facts(path)
+    return _facts_page(facts, "emrs.unresolved", kind, limit, cursor)
 
 
 # --------------------------------------------------------------------------- #
@@ -2744,6 +2793,15 @@ def collect_emr_cluster(repo: str, *, cluster_id: str, now: str) -> dict[str, An
     rel_path = collect_aws.emr_cluster_path(cluster_id)
     try:
         entry = collect_aws.collect_emr_cluster(cluster_id, Path(repo), now=now)
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_emr_serverless(repo: str, *, application_id: str, now: str) -> dict[str, Any]:
+    rel_path = collect_aws.emr_serverless_path(application_id)
+    try:
+        entry = collect_aws.collect_emr_serverless(application_id, Path(repo), now=now)
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
