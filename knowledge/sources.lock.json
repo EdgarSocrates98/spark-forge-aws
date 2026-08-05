@@ -1,6 +1,17 @@
 {
   "schema_version": 1,
   "sources": {
+    "https://api.github.com/repos/graphframes/graphframes/releases": {
+      "docs": [
+        "knowledge/graph/availability.md",
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
     "https://api.github.com/repos/great-expectations/great_expectations/contents/great_expectations?ref=1.19.1": {
       "docs": [
         "knowledge/dq/validation-frameworks.md"
@@ -533,11 +544,13 @@
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html": {
       "docs": [
-        "knowledge/emr/runtime-matrix.md"
+        "knowledge/emr/runtime-matrix.md",
+        "knowledge/graph/availability.md"
       ],
       "pinned": false,
       "retrieved": [
-        "2026-08-01"
+        "2026-08-01",
+        "2026-08-05"
       ],
       "rules": []
     },
@@ -667,6 +680,16 @@
       "pinned": false,
       "retrieved": [
         "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
       ],
       "rules": []
     },
@@ -1119,6 +1142,57 @@
       ],
       "sha256": "68e7ef8d4659c195276280ac4e7393d91b72bcfc4687f05fb2d3cbfecbacd625"
     },
+    "https://graphframes.io/": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://graphframes.io/02-quick-start/01-installation.html": {
+      "docs": [
+        "knowledge/graph/availability.md",
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://graphframes.io/04-user-guide/03-centralities.html": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://graphframes.io/04-user-guide/05-traversals.html": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://graphframes.io/04-user-guide/06-graph-clustering.html": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -1143,6 +1217,26 @@
       "pinned": false,
       "retrieved": [
         "2026-07-30"
+      ],
+      "rules": []
+    },
+    "https://pypi.org/pypi/graphframes-py/json": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://pypi.org/pypi/graphframes/json": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
       ],
       "rules": []
     },
@@ -1176,6 +1270,76 @@
       ],
       "rules": []
     },
+    "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/apache/spark/sql/graphframes/GraphFramesConf.scala": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/graphframes/lib/TwoPhase.scala": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/__init__.py": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/graphframe.py": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/lib/pregel.py": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/python/graphframes/graphframe.py": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/src/main/scala/org/graphframes/lib/ConnectedComponents.scala": {
+      "docs": [
+        "knowledge/graph/graphframes-api.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
     "https://raw.githubusercontent.com/great-expectations/great_expectations/1.19.1/great_expectations/validator/validator.py": {
       "docs": [
         "knowledge/dq/validation-frameworks.md"
@@ -1186,6 +1350,56 @@
       ],
       "rules": []
     },
+    "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.12.1/graphframes-spark3_2.12-0.12.1.pom": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.9.2/graphframes-spark3_2.12-0.9.2.pom": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/maven-metadata.xml": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.13/maven-metadata.xml": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
+    "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark4_2.13/maven-metadata.xml": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
+      ],
+      "rules": []
+    },
     "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1": {
       "docs": [
         "knowledge/glue/runtime-matrix.md"
@@ -1193,6 +1407,16 @@
       "pinned": false,
       "retrieved": [
         "2026-07-29"
+      ],
+      "rules": []
+    },
+    "https://spark-packages.org/package/graphframes/graphframes": {
+      "docs": [
+        "knowledge/graph/availability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-05"
       ],
       "rules": []
     },

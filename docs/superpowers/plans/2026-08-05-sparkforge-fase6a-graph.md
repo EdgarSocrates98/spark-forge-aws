@@ -450,3 +450,70 @@ git add -A && git commit -m "docs(fase6a): SF-GRAPH ganha coordenador, e o roadm
 ## Desvios (`D-6a-*`)
 
 Registre aqui cada ponto em que a medição contrariou este plano. Formato: `**D-6a-N** — o que o plano dizia; o que a medição mostrou, com `arquivo:linha`; o que você fez.`
+
+**D-6a-1 — "não toque em `sources.lock.json`" e "suíte verde" são incompatíveis nesta task.**
+O plano (Step 1) manda não tocar no lock e deixar a decisão para a Task 5; o Step 6
+exige `pytest -q` verde. Medido: `tests/test_refresh_knowledge.py:271` exige
+`set(lock["sources"]) == set(watchlist())`, igualdade **exata**, e
+`scripts/refresh_knowledge.py:195` deriva URLs de **todo** bloco `## Fontes` de
+`knowledge/**.md`. Escrever qualquer página de knowledge com fonte datada —
+que é o padrão do repositório e o objetivo desta task — quebra esse teste por
+construção. Baseline: watchlist 109 = lock 109. Depois das duas páginas:
+watchlist **131**, lock 109, **22 novas, 0 sumidas**. Resolvi pelo mecanismo que
+o próprio repositório declara para este caso: `python scripts/refresh_knowledge.py
+--update --offline`. `sync_metadata` (`refresh_knowledge.py:370-384`) existe
+literalmente porque *"uma regra nova ou uma pagina de knowledge nova mudam o lock
+sem que nada tenha sido conferido"*, e **nunca inventa `sha256` nem `checked_at`**
+— as 22 entradas ficaram sem hash, com `rules: []` e o back-link `docs` derivado.
+A Task 5 re-roda quando as regras citarem as URLs, e aí o `rules` se preenche
+sozinho. O que a Task 5 **não** herda pronto é decisão nenhuma: o conjunto é
+derivado, não escolhido.
+
+**D-6a-2 — uma URL do bloco `Fontes` teria virado alarme permanente.**
+A primeira redação citava `https://repos.spark-packages.org/graphframes/graphframes/`
+como base das medições por artefato. Essa URL responde `NoSuchKey`/404 (o bucket
+não serve listagem), e entraria na watchlist como fonte móvel ilegível para
+sempre. Pus a base em crase, que é exatamente a convenção que
+`refresh_knowledge.py:210-214` documenta para padrão-de-caminho, e a contagem
+caiu de 23 para 22 novas. Sem isso a fase entregaria um `unreachable` eterno.
+
+**D-6a-3 — o vocabulário do spec está incompleto, e um item dele não é chamada.**
+O spec (§5 e §6) chuta oito nomes. Os oito existem, mas `pregel` é `@property` nas
+duas linhagens, assim como `triplets`, `degrees`, `inDegrees` e `outDegrees` — um
+`frozenset` casado só contra `ast.Call` **não emite fact para o Pregel**, que é o
+único algoritmo cujo limite de iteração o usuário controla de fato. Faltam ainda
+`stronglyConnectedComponents`, `parallelPersonalizedPageRank`, `svdPlusPlus` e
+`find` já na 0.8.3, mais treze nomes acrescentados de 0.9.0 a 0.12.0 — em
+`snake_case`, convivendo com o `camelCase` antigo no mesmo objeto. Detalhe em
+`knowledge/graph/graphframes-api.md` §3.
+
+**D-6a-4 — a regra "algoritmo iterativo sem `maxIter`" não entra, e não é por falta de fonte.**
+O plano (Step 3) previa que a fonte pudesse não fechar. Fechou, e no sentido
+oposto: em nenhum dos dezesseis algoritmos com noção de iteração "ausente" é
+defeito. Em seis é `TypeError`/`AssertionError` — código que não roda; em três é
+default documentado (2, 10, 3); em `pageRank` é o modo `tol`, oficial e
+recomendado; e em `connectedComponents` a doc diz textualmente *"Default is
+`Integer.MAX_VALUE` (unlimited). It is generally not recommended to change this
+value."* A fixture `algoritmo_sem_limite` da Task 4 **não tem regra para
+exercitar** e precisa ser repensada ou removida. Ver `graphframes-api.md` §5.
+
+**D-6a-5 — a exigência de checkpoint tem três saídas no `.py` e uma quarta fora dele.**
+O plano (Step 2) pergunta se é exigência ou recomendação. É exigência e o
+algoritmo **falha** (`throw new IOException`), o que autoriza P0 — mas
+`algorithm="graphx"`, `checkpointInterval<=0` e `use_local_checkpoints=True`
+tornam a exigência inaplicável, e a conf `spark.checkpoint.dir` (0.9.3+) a
+satisfaz **de fora do artefato**. A regra da Task 5 precisa das três negações e
+da ressalva escrita dentro do achado, no padrão de `V-AS-2`. E os valores de
+`algorithm` que o plano supõe (`graphx`/`graphframes`) estão desatualizados:
+hoje são `graphx`, `two_phase`, `randomized_contraction`, com `graphframes` como
+**alias depreciado**.
+
+**D-6a-6 — a hipótese da matriz de disponibilidade se confirma, e por um motivo mais forte.**
+O plano diz que Glue 4.0 e EMR 6.8.0–6.11.1 não têm jar. Medido: **9 das 34
+células**, exatamente essas. Mas a razão não é "a versão é antiga": é que
+**nenhum artefato foi publicado para Spark 3.3 em linhagem nenhuma** — `0.8.2`
+para em 3.2, `0.8.3` começa em 3.4, e `io.graphframes` compila contra 3.5. A
+release note da `0.8.3` afirma *"Support Spark 3.3 / Scala 2.12"* e o jar
+`0.8.3-spark3.3-s_2.12` responde **404**. Consequência de desenho: o
+`runtime_scope` da Task 5 deve ser escrito por **Spark 3.3.x**, não por lista de
+release — cobre as nove de uma vez e não envelhece a cada release nova de EMR.
