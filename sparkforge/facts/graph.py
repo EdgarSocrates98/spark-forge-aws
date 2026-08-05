@@ -70,9 +70,17 @@ TRES COISAS QUE O PROXIMO LEITOR VAI PERGUNTAR, respondidas antes.
    - A QUARTA SAIDA DA EXIGENCIA DE CHECKPOINT. As confs `spark.checkpoint.dir`
      e `spark.graphframes.useLocalCheckpoints` podem vir do IaC ou do `--conf`, e
      ai o `.py` nao as contem. Quando elas aparecem DENTRO do arquivo -- via
-     `spark.conf.set(...)` -- este modulo as le, justamente para nao produzir uma
+     `spark.conf.set(...)` ou via `SparkSession.builder.config(...)`, as duas
+     formas correntes -- este modulo as le, justamente para nao produzir uma
      acusacao P0 falsa; quando vem de fora, a ressalva e da regra
      (`knowledge/graph/graphframes-api.md` §8, no padrao de `V-AS-2`).
+     A CHAVE QUE NAO DA PARA LER e um limite, e nao uma negativa. Chave por
+     constante (`K = "spark.checkpoint.dir"`), por laco (`for k, v in
+     CONF.items()`), por `**kwargs` ou por objeto inteiro (`config(conf=...)`)
+     OMITE a decisao e conta `graph.unresolved`. Constant folding nao e feito de
+     proposito: seguir o valor de um nome ate a atribuicao e inferencia entre
+     escopos, que e o que este modulo recusa em toda parte -- e recusar aqui
+     custa uma omissao contada, enquanto adivinhar custaria um P0.
    - ARGUMENTO POSICIONAL de `connectedComponents`. A ordem dos parametros mudou
      entre linhagens e nao foi medida; um posicional pode estar declarando
      `algorithm="graphx"`. Entao posicional ali OMITE a decisao de checkpoint e
@@ -97,8 +105,17 @@ OMITIR CHAVE X EMITIR `false`, a regra de governo herdada de
 dispara. `checkpoint_required` e `vertices_persisted`/`edges_persisted` disparam
 regra do lado em que a ignorancia cairia, entao ignorancia OMITE a chave -- e a
 omissao vem sempre acompanhada de `graph.unresolved`, para que o ponto cego
-seja contado e nao silencio. `inside_loop` e `checkpoint_configured_in_module`
-sao decididos por construcao dentro do arquivo e ficam sempre presentes.
+seja contado e nao silencio.
+
+A SIMETRIA DAS DUAS METADES DA CONF e o que faz a frase acima ser verdadeira, e
+ela foi conquistada na revisao da Fase 6a. Ate ali, o VALOR ilegivel omitia a
+decisao e contava o ponto cego, mas a CHAVE ilegivel nao era nem lida: quatro
+formas correntes saiam com `checkpoint_configured_in_module: false` sobre codigo
+que configurava o checkpoint direitinho, e cada uma disparava P0. Hoje as duas
+metades caem do mesmo lado. `inside_loop` fica sempre presente; ja
+`checkpoint_configured_in_module` acompanha `checkpoint_required` e some junto
+com ele, porque afirmar "o arquivo nao configurou" quando o arquivo tem conf que
+ninguem conseguiu ler seria a mesma mentira por outro caminho.
 
 O QUE ESTE MODULO NAO EMITE, e a razao. A pesquisa da Task 1 vetou a regra
 "algoritmo iterativo sem limite de iteracao" (V-GF-2, V-GF-3): em nenhum dos
@@ -132,12 +149,28 @@ EMITTED_KINDS = frozenset(
     }
 )
 
+# "Este arquivo fala de grafo": import, construcao ou algoritmo. A sentinela
+# fica de fora de proposito -- ela sai em TODO arquivo que compilou -- e
+# `graph.checkpoint_dir` tambem, porque conf de checkpoint e de Spark e nao de
+# GraphFrames.
+_GRAPH_SIGNAL_KINDS = frozenset({"graph.import", "graph.construction", "graph.algorithm"})
+
 # Vocabulario FECHADO de razoes de ponto cego, no padrao de `dq.unresolved`:
 # ilegivel e contado, nunca omitido em silencio.
 UNRESOLVED_REASONS = frozenset(
     {
         "dynamic_import",
         "non_literal_argument",
+        # Literal que EXISTE e nao e booleano do Spark: `useLocalCheckpoints` com
+        # `1`. Rotular isso de `non_literal_argument` mentia sobre um argumento
+        # que e literal, e mandava quem le o ponto cego procurar a variavel
+        # errada. O valor foi lido; o que falta e a conversao para booleano, que
+        # `java.lang.Boolean.parseBoolean` so faz com "true"/"false".
+        "non_boolean_value",
+        # A CHAVE da conf nao pode ser lida do `.py`: veio por constante, por
+        # laco, por `**kwargs` ou por objeto de conf. Simetrico ao ponto cego do
+        # VALOR -- ver a nota de OMITIR CHAVE X EMITIR `false` no cabecalho.
+        "unreadable_conf_key",
         "positional_argument",
         "receiver_without_name",
         "syntax_error",
@@ -225,6 +258,33 @@ _PREGEL_MAX_ITER = "setMaxIter"
 _SET_CHECKPOINT_DIR = "setCheckpointDir"
 _CONF_CHECKPOINT_DIR = "spark.checkpoint.dir"
 _CONF_LOCAL_CHECKPOINTS = "spark.graphframes.useLocalCheckpoints"
+
+# Os DOIS metodos que declaram conf de Spark dentro de um `.py`.
+#
+# `set` e `pyspark.sql.conf.RuntimeConfig.set` (e tambem `SparkConf.set`), e
+# `config` e `SparkSession.Builder.config` -- a forma canonica de declarar conf
+# na CONSTRUCAO da sessao, que e onde um job Glue ou EMR configura o cluster.
+# `.config` entrou no vocabulario na revisao da Fase 6a, e a razao e assimetria
+# de custo, nao frequencia: a chave e um literal DISTINTIVO
+# (`"spark.checkpoint.dir"`), entao um falso positivo exige que alguem escreva
+# essa string exata noutro contexto, enquanto o falso NEGATIVO -- nao ler a
+# forma e afirmar `checkpoint_configured_in_module: false` -- e um P0 sobre
+# codigo correto, o pior modo de falha desta area. Ler a chave por igualdade
+# nao depende de receptor nenhum, e por isso o caminho do literal nao filtra
+# receptor: quem escreve `spark.checkpoint.dir` esta falando de checkpoint.
+_CONF_SET_METHOD = "set"
+_CONF_BUILDER_METHOD = "config"
+_CONF_METHODS = frozenset({_CONF_SET_METHOD, _CONF_BUILDER_METHOD})
+
+# Receptores que autorizam CONTAR ponto cego quando a chave e ilegivel. Aqui,
+# ao contrario do caminho do literal, nao ha string distintiva para desempatar:
+# `d.set(k, v)` num dicionario e `w.config(k, v)` num widget sao codigo comum, e
+# conta-los produziria ponto cego de grafo em arquivo que nunca falou de conf.
+# O criterio e o NOME do receptor -- `spark.conf`, `conf`, `SparkConf()`,
+# `sc._conf` de um lado; `SparkSession.builder`, `builder` e o encadeamento
+# `.config(...).config(...)` do outro.
+_CONF_RECEIVER_HINT = "conf"
+_BUILDER_RECEIVER_HINTS = ("builder", "sparksession", "config")
 
 _PERSIST_METHODS = frozenset({"cache", "persist"})
 _UNPERSIST_METHODS = frozenset({"unpersist"})
@@ -709,9 +769,84 @@ def _dynamic_import_facts(
     return facts
 
 
+def _receiver_name(node: ast.AST) -> str:
+    """Ultimo segmento de nome do receptor, em minusculas. `""` quando nao ha."""
+    if isinstance(node, ast.Attribute):
+        return node.attr.lower()
+    if isinstance(node, ast.Name):
+        return node.id.lower()
+    if isinstance(node, ast.Call):
+        return _receiver_name(node.func)
+    return ""
+
+
+def _conf_receiver(node: ast.Call, method: str) -> bool:
+    """O receptor autoriza CONTAR ponto cego de conf ilegivel neste no?
+
+    Sem string distintiva para desempatar, o nome do receptor e a unica
+    evidencia disponivel -- e ele e exigido so aqui, no caminho da chave que
+    NAO deu para ler. O caminho do literal continua sem filtro de receptor.
+    """
+    name = _receiver_name(node.func.value) if isinstance(node.func, ast.Attribute) else ""
+    if not name:
+        return False
+    if method == _CONF_BUILDER_METHOD:
+        return any(hint in name for hint in _BUILDER_RECEIVER_HINTS)
+    return _CONF_RECEIVER_HINT in name
+
+
+def _conf_pairs(node: ast.Call, method: str) -> tuple[list[tuple[str, ast.AST | None]], bool]:
+    """Pares (chave da conf, no do valor) que ESTA chamada declara.
+
+    Devolve tambem se algo ficou ilegivel. Quatro formas correntes sao lidas, e
+    a quinta e a que produz o ponto cego:
+
+    - posicional -- `spark.conf.set("spark.checkpoint.dir", d)`;
+    - keyword -- `spark.conf.set(key=..., value=...)`, e o mesmo em `config`;
+    - `builder.config("spark.checkpoint.dir", d)`, na construcao da sessao;
+    - `builder.config(map={...})` com dicionario de chaves literais;
+    - qualquer chave que nao seja string literal -- constante, variavel de laco,
+      `**kwargs`, ou um objeto inteiro em `config(conf=...)`. Ai a resposta e
+      "nao sei", nunca "nao esta configurado".
+    """
+    keywords = {kw.arg: kw.value for kw in node.keywords if kw.arg is not None}
+    starred = any(kw.arg is None for kw in node.keywords)
+
+    if method == _CONF_BUILDER_METHOD and ("map" in keywords or "conf" in keywords):
+        mapping = keywords.get("map")
+        if "conf" in keywords or not isinstance(mapping, ast.Dict):
+            # Um `SparkConf` inteiro, ou um mapa que nao e literal na fonte: as
+            # chaves podem estar la e este modulo nao as ve.
+            return [], True
+        pairs: list[tuple[str, ast.AST | None]] = []
+        for key_node, value_node in zip(mapping.keys, mapping.values, strict=True):
+            literal = _literal(key_node) if key_node is not None else None
+            if not isinstance(literal, str):
+                return pairs, True
+            pairs.append((literal, value_node))
+        return pairs, starred
+
+    if node.args:
+        key_node = node.args[0]
+        value_node = node.args[1] if len(node.args) > 1 else keywords.get("value")
+    elif "key" in keywords:
+        key_node = keywords["key"]
+        value_node = keywords.get("value")
+    elif starred:
+        return [], True
+    else:
+        # Chamada sem argumento nenhum: nao declara conf, e nao e ponto cego.
+        return [], False
+
+    key = _literal(key_node)
+    if not isinstance(key, str):
+        return [], True
+    return [(key, value_node)], False
+
+
 def _checkpoint_facts(
     tree: ast.AST, path: str, ctx: _Context, lines: list[str], provenance: dict[str, Any]
-) -> tuple[list[Fact], str]:
+) -> tuple[list[Fact], str, list[Fact]]:
     """`graph.checkpoint_dir` e o estado de checkpoint DO ARQUIVO INTEIRO.
 
     ALCANCE MEDIDO, e o argumento e o objeto: `setCheckpointDir` e chamado no
@@ -729,12 +864,24 @@ def _checkpoint_facts(
     Quando vem do IaC ou do `--conf`, nao estao aqui, e essa e a ressalva
     declarada da regra.
 
-    Devolve tambem o estado: `configured`, `absent` ou `unreadable`. `unreadable`
-    e a conf de local checkpoints com valor que nao da para ler -- ai a decisao
-    de checkpoint e OMITIDA do algoritmo, em vez de arriscar um P0 sobre codigo
-    que talvez esteja correto.
+    Devolve tambem o estado -- `configured`, `absent` ou `unreadable` -- e os
+    pontos cegos PENDENTES. `unreadable` cobre as duas metades da mesma conf, e
+    a simetria e o conserto da revisao da Fase 6a: o VALOR ilegivel de local
+    checkpoints ja omitia a decisao, e a CHAVE ilegivel afirmava `false` sobre
+    dado que ninguem leu -- P0 sobre codigo correto em quatro formas correntes
+    (`.config()` do builder, chave por constante, chave por laco, chave por
+    keyword). Hoje qualquer das duas metades OMITE a decisao e conta o ponto
+    cego.
+
+    Os pontos cegos de CHAVE saem pendentes, e nao no retorno principal, porque
+    quem decide se eles existem e o arquivo inteiro: emiti-los num `.py` sem
+    grafo nenhum daria ponto cego de grafo a quem nunca falou de grafo, que e
+    exatamente a razao pela qual o item 3 do cabecalho recusa emitir `unresolved`
+    por `getattr`. `extract_graph` os descarta quando o arquivo nao tem sinal de
+    grafo -- e ai o estado nao muda nada, porque nao ha algoritmo que consulte.
     """
     facts: list[Fact] = []
+    pending: list[Fact] = []
     configured = False
     unreadable = False
 
@@ -761,53 +908,72 @@ def _checkpoint_facts(
                 )
             )
             continue
-        if method != "set" or not node.args:
+        if method not in _CONF_METHODS:
             continue
-        key = _literal(node.args[0])
-        if key == _CONF_CHECKPOINT_DIR:
-            configured = True
-            attrs = {"form": "conf_checkpoint_dir"}
-            value = _literal(node.args[1]) if len(node.args) > 1 else None
-            if isinstance(value, str):
-                attrs["literal"] = value
-            facts.append(
-                Fact(
-                    kind="graph.checkpoint_dir",
-                    subject=_subject(node, path, ctx, lines),
-                    measures={"line": node.lineno},
-                    attrs=attrs,
-                    provenance=provenance,
+
+        pairs, illegible = _conf_pairs(node, method)
+        if illegible and _conf_receiver(node, method):
+            unreadable = True
+            pending.append(
+                _unresolved(
+                    _subject(node, path, ctx, lines),
+                    "unreadable_conf_key",
+                    provenance,
+                    method=method,
                 )
             )
-        elif key == _CONF_LOCAL_CHECKPOINTS:
-            value = _literal(node.args[1]) if len(node.args) > 1 else None
-            enabled = _truthy(value)
-            if enabled is None:
-                unreadable = True
+        for key, value_node in pairs:
+            if key == _CONF_CHECKPOINT_DIR:
+                configured = True
+                attrs = {"form": "conf_checkpoint_dir", "method": method}
+                value = _literal(value_node) if value_node is not None else None
+                if isinstance(value, str):
+                    attrs["literal"] = value
                 facts.append(
-                    _unresolved(
-                        _subject(node, path, ctx, lines),
-                        "non_literal_argument",
-                        provenance,
-                        param=_CONF_LOCAL_CHECKPOINTS,
+                    Fact(
+                        kind="graph.checkpoint_dir",
+                        subject=_subject(node, path, ctx, lines),
+                        measures={"line": node.lineno},
+                        attrs=attrs,
+                        provenance=provenance,
                     )
                 )
-                continue
-            if enabled:
-                configured = True
-            facts.append(
-                Fact(
-                    kind="graph.checkpoint_dir",
-                    subject=_subject(node, path, ctx, lines),
-                    measures={"line": node.lineno},
-                    attrs={"form": "conf_local_checkpoints", "enabled": enabled},
-                    provenance=provenance,
+            elif key == _CONF_LOCAL_CHECKPOINTS:
+                value = _literal(value_node) if value_node is not None else None
+                enabled = _truthy(value)
+                if enabled is None:
+                    unreadable = True
+                    facts.append(
+                        _unresolved(
+                            _subject(node, path, ctx, lines),
+                            # O rotulo diz QUAL metade falhou: sem valor literal
+                            # nenhum e uma coisa, e um literal que nao converte
+                            # para booleano (`1`) e outra.
+                            "non_literal_argument" if value is None else "non_boolean_value",
+                            provenance,
+                            param=_CONF_LOCAL_CHECKPOINTS,
+                        )
+                    )
+                    continue
+                if enabled:
+                    configured = True
+                facts.append(
+                    Fact(
+                        kind="graph.checkpoint_dir",
+                        subject=_subject(node, path, ctx, lines),
+                        measures={"line": node.lineno},
+                        attrs={
+                            "form": "conf_local_checkpoints",
+                            "method": method,
+                            "enabled": enabled,
+                        },
+                        provenance=provenance,
+                    )
                 )
-            )
 
     if configured:
-        return facts, "configured"
-    return facts, "unreadable" if unreadable else "absent"
+        return facts, "configured", pending
+    return facts, ("unreadable" if unreadable else "absent"), pending
 
 
 def _truthy(value: Any) -> bool | None:
@@ -960,8 +1126,11 @@ def _algorithm_arguments(
         elif param in _LOCAL_CHECKPOINT_ARGS:
             enabled = _truthy(value)
             if enabled is None:
+                # `use_local_checkpoints=1` E literal, e chama-lo de
+                # `non_literal_argument` mandava quem le procurar uma variavel
+                # que nao existe. O que falta e a conversao para booleano.
                 unreadable = True
-                blind.append(("non_literal_argument", {"param": param}))
+                blind.append(("non_boolean_value", {"param": param}))
             else:
                 attrs["use_local_checkpoints"] = enabled
         elif param in _ITERATION_ARGS:
@@ -1092,9 +1261,16 @@ def extract_graph(source: str, path: str) -> list[Fact]:
     """Extrai Facts de `source`. `path` e ancora e procedencia.
 
     Mesma assinatura de `pyspark_ast.extract_source`, o extrator irmao sobre o
-    mesmo artefato: fonte em texto, e nao arvore, porque a sentinela precisa
-    sair mesmo quando o arquivo nao compila e so quem tem o texto pode tentar
-    o parse.
+    mesmo artefato: fonte em texto, e nao arvore, porque so quem tem o texto
+    pode TENTAR o parse -- e o que a tentativa frustrada precisa produzir e o
+    `graph.unresolved` com reason `syntax_error`, o ponto cego contado de um
+    arquivo que ninguem conseguiu ler.
+
+    A SENTINELA NAO SAI nesse caminho, e e deliberado: `graph.module_analyzed`
+    carrega `parsed: True` e as quatro contagens do arquivo, e emiti-la sobre
+    uma arvore que nao existe afirmaria "varri este arquivo" quando o que houve
+    foi o contrario. A fixture `fonte_que_nao_compila` fixa esse retorno de UM
+    fact so.
     """
     sha = hashlib.sha256(source.encode("utf-8")).hexdigest()
     provenance = {"artifact": path, "artifact_sha256": sha, "extractor": EXTRACTOR_ID}
@@ -1122,7 +1298,9 @@ def extract_graph(source: str, path: str) -> list[Fact]:
     ctx = _Context(tree)
     facts, imports = _import_facts(tree, path, ctx, lines, provenance)
     facts.extend(_dynamic_import_facts(tree, path, ctx, lines, provenance))
-    checkpoint_facts, checkpoint_state = _checkpoint_facts(tree, path, ctx, lines, provenance)
+    checkpoint_facts, checkpoint_state, pending_blind = _checkpoint_facts(
+        tree, path, ctx, lines, provenance
+    )
     facts.extend(checkpoint_facts)
 
     calls = _ALGORITHM_CALLS | (_GATED_CALLS if imports.present else frozenset())
@@ -1173,6 +1351,15 @@ def extract_graph(source: str, path: str) -> list[Fact]:
                         provenance,
                     )
                 )
+
+    # Ponto cego de CHAVE de conf so conta em arquivo que fala de grafo. Sem
+    # esta guarda, todo `.py` que configura Spark por laco ou por constante --
+    # e nenhum deles menciona GraphFrames -- ganharia um ponto cego de GRAFO,
+    # que e a objecao do item 3 do cabecalho ao `unresolved` por `getattr`.
+    # Descartar aqui nao muda decisao nenhuma: sem sinal de grafo nao ha
+    # `graph.algorithm`, e `checkpoint_state` so e consultado por ele.
+    if any(f.kind in _GRAPH_SIGNAL_KINDS for f in facts):
+        facts.extend(pending_blind)
 
     # Sentinela: prova de que a extracao de grafo rodou sobre este arquivo. Sem
     # ela, "nao ha grafo aqui" e "nao consegui ler" sao a mesma saida -- que e

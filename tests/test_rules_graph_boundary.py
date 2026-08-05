@@ -115,15 +115,23 @@ CORPUS = {
 # valor a acompanha.
 FIXTURE_NA_FAIXA = CORPUS[GRAFO] / "import_sem_jar_no_iac"
 
-# Os dezesseis achados de SF-PY sobre o corpus de grafo, nomeados. Nao e
+# Os vinte e dois achados de SF-PY sobre o corpus de grafo, nomeados. Nao e
 # supressao: `TestOQuePYDizSobreOCorpusDeGrafo` mede, para cada um, que a
 # evidencia e `pyspark.*` e que o `subject` aponta para uma linha real do
 # arquivo. Um achado a mais aqui nao e bug automatico -- e uma pergunta que
 # alguem precisa responder por escrito antes de acrescentar a linha.
 ESPERADO_PY_SOBRE_GRAFO = {
-    # `.cache()` sem `unpersist`: verdadeiro em todas as catorze, e o eixo destas
+    # `.cache()` sem `unpersist`: verdadeiro em todas as vinte, e o eixo destas
     # fixtures e grafo, nao ciclo de vida de cache.
     "arestas_nao_persistidas": ("SF-PY-008",),
+    # As seis fixtures da revisao da Fase 6a. Todas persistem vertices e arestas
+    # com `.cache()` e nenhuma libera -- pelo mesmo motivo das doze acima: o eixo
+    # em teste e a conf de checkpoint, ou a contagem de sujeitos, e escrever
+    # `unpersist` nelas so trocaria o ruido de lugar.
+    "checkpoint_por_builder_config": ("SF-PY-008",),
+    "conf_chave_por_constante": ("SF-PY-008",),
+    "conf_chave_por_keyword": ("SF-PY-008",),
+    "conf_chave_por_laco": ("SF-PY-008",),
     "conf_local_checkpoints_ilegivel": ("SF-PY-008",),
     "connected_components_sem_checkpoint": ("SF-PY-008",),
     "exigencia_indecidivel": ("SF-PY-008",),
@@ -142,6 +150,11 @@ ESPERADO_PY_SOBRE_GRAFO = {
     # grafo.
     "conf_checkpoint_dir_no_job": ("SF-PY-008", "SF-PY-012"),
     "conf_local_checkpoints_no_job": ("SF-PY-008", "SF-PY-012"),
+    # A sexta da revisao cai no mesmo par: ela tambem chama `spark.conf.set`, com
+    # um valor que SF-GRAPH nao consegue converter para booleano e que SF-PY nao
+    # precisa converter para nada -- a afirmacao dele e sobre a conf sobrescrever
+    # o default argument, e independe do valor.
+    "conf_local_checkpoints_nao_booleano": ("SF-PY-008", "SF-PY-012"),
 }
 
 # As cinco de grafo em que SF-PY nao tem o que dizer, e a razao e a mesma da

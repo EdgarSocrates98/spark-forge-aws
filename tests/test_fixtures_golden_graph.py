@@ -50,18 +50,32 @@ REQUIRED_FIXTURES = {
     "grafo_correto",
     # O positivo da exigencia de checkpoint, isolado num eixo so.
     "connected_components_sem_checkpoint",
-    # AS QUATRO FORMAS DE ESCREVER CERTO, uma fixture cada. Acusar qualquer uma
-    # delas e acusar quem acertou, e uma so nao cobre as outras: sao caminhos
-    # diferentes no extrator (argumento, argumento, argumento, conf de modulo).
+    # AS FORMAS DE ESCREVER CERTO, uma fixture cada. Acusar qualquer uma delas e
+    # acusar quem acertou, e uma so nao cobre as outras: sao caminhos diferentes
+    # no extrator (argumento, argumento, argumento, conf de modulo).
     "saida_graphx",
     "saida_intervalo_nao_positivo",
     "saida_local_checkpoints",
     "conf_checkpoint_dir_no_job",
     "conf_local_checkpoints_no_job",
+    # AS DUAS FORMAS DE DECLARAR A CONF que a revisao da Fase 6a mediu faltando.
+    # As duas produziam `checkpoint_configured_in_module: false` sobre codigo que
+    # configurou o checkpoint, e cada uma disparava a P0 da area.
+    "checkpoint_por_builder_config",
+    "conf_chave_por_keyword",
     # O que nao da para ler cala a decisao, e sai contado -- pelo lado do
     # modulo e pelo lado da chamada.
     "conf_local_checkpoints_ilegivel",
     "exigencia_indecidivel",
+    # AS DUAS METADES DA CONF ILEGIVEL, que ate a revisao caiam em lados
+    # opostos: valor ilegivel omitia a decisao, chave ilegivel afirmava `false`.
+    # Constante e laco tem fixture propria porque um constant folding hipotetico
+    # resolveria a primeira e nunca resolveria a segunda.
+    "conf_chave_por_constante",
+    "conf_chave_por_laco",
+    # Literal que EXISTE e nao converte para booleano: o rotulo do ponto cego
+    # mandava procurar uma variavel que nao ha.
+    "conf_local_checkpoints_nao_booleano",
     # O PAR do vocabulario de dois niveis, e ele so prova junto.
     "nomes_comuns_sem_import",
     "nomes_comuns_com_import",
@@ -630,6 +644,8 @@ class TestAdversarial:
         assert razoes == {
             "dynamic_import",
             "non_literal_argument",
+            "non_boolean_value",
+            "unreadable_conf_key",
             "positional_argument",
             "receiver_without_name",
             "syntax_error",

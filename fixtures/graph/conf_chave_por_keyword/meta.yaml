@@ -1,0 +1,21 @@
+name: conf_chave_por_keyword
+proves: >
+  Chave e valor por KEYWORD, que e a assinatura publica de
+  `pyspark.sql.conf.RuntimeConfig.set`. O par estava literal e legivel, e o
+  extrator o ignorava por olhar so `node.args`: nada de "ponto cego" nesta
+  forma, era leitura que faltava.
+  Fecha o P0 falso pelo lado oposto ao de `conf_chave_por_constante`: aqui a
+  decisao NAO e omitida, e sim resolvida --
+  `checkpoint_configured_in_module: true`, sem `graph.unresolved` nenhum.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules: []

@@ -1,0 +1,23 @@
+name: conf_chave_por_constante
+proves: >
+  A metade da conf que faltava: a CHAVE ilegivel. O valor ilegivel ja omitia a
+  decisao desde a Task 2 (`conf_local_checkpoints_ilegivel`); a chave por
+  constante nao era nem lida, e o arquivo saia com
+  `checkpoint_configured_in_module: false` -- P0 sobre codigo correto.
+  Hoje as duas metades caem do mesmo lado: `checkpoint_required` OMITIDO no
+  `graph.algorithm` e `graph.unresolved` com reason `unreadable_conf_key`.
+  Constant folding continua fora de proposito -- seguir o valor de um nome ate a
+  atribuicao e inferencia entre escopos --, e o preco disso e esta omissao
+  contada, nunca uma acusacao.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.unresolved
+  - graph.module_analyzed
+expects_rules: []
