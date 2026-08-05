@@ -1,0 +1,31 @@
+name: sem_destino_de_log
+proves: >
+  Os tres destinos de log fechados, e os tres DECLARADOS -- que e o unico jeito
+  de o estado existir. A pesquisa derrubou a forma que o spec propos (D-5d-4):
+  `monitoringConfiguration` ausente significa managed storage LIGADA, com 30 dias
+  de retencao, entao uma regra por AUSENCIA acusaria toda application no default
+  seguro. A forma correta e conjuncao com termo explicito, e e esta fixture:
+  `managedPersistenceMonitoringConfiguration.enabled: false` escrito, nenhum
+  `s3MonitoringConfiguration.logUri`, e CloudWatch nao habilitado.
+  `measures.log_destination_count` fecha os tres numa resposta so, e os tres
+  `*_declared` deixam o achado distinguir o que foi LIDO do que foi PRESUMIDO --
+  aqui os tres sao `true`, entao nada foi presumido.
+  A gravidade tem fonte: "If you turn off the default option, Amazon EMR can't
+  troubleshoot your jobs on your behalf. Example: You cannot access Spark-UI from
+  the EMR Serverless Console." Sem event log este motor nao diagnostica nada.
+  O par negativo direto e `app_saudavel` (dois destinos); o par intermediario e
+  `s3_sem_managed_storage`, com um destino so.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.monitoring
+expects_rules: []

@@ -1,0 +1,31 @@
+name: segredo_anotado_nao_e_achado
+proves: >
+  A CORRECAO escrita como payload, e o corpus existe para provar que o motor nao
+  a acusa. `EMR.secret@{{Nome}}` e a anotacao propria do EMR Serverless: o valor
+  e um ID de segredo do Secrets Manager, resolvido na hora da execucao, nao um
+  segredo. Acusa-lo seria acusar exatamente o conserto que o achado de
+  `segredo_em_runtime_config` recomenda -- e o operador que fez a coisa certa
+  receberia o mesmo P1 de quem deixou a senha em texto claro.
+  A segunda propriedade e o teste de PRECEDENCIA, e ela nao e cosmetica: o nome
+  do segredo e a chave sintetica `AKIA` + dezesseis `X`, que casa `_AKIA_RE`.
+  Como `_AKIA_RE` usa `search` e nao `fullmatch`, a heuristica acusaria o valor
+  anotado se rodasse primeiro. A anotacao e testada ANTES e vence:
+  `secret_reference: true`, sem `redacted` e sem `secret_pattern_match`.
+  Se a Task 5 escrever a regra de segredo e esta fixture ficar vermelha, o motor
+  esta acusando a propria correcao. Este e o unico golden que prova isso, e nao
+  existe equivalente no vocabulario de `emr_cluster.py`: e acrescimo desta area.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.configuration
+  - emrs.monitoring
+expects_rules: []

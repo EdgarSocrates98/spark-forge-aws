@@ -1,0 +1,29 @@
+name: s3_sem_managed_storage
+proves: >
+  O estado intermediario que a mesma fonte sustenta e que o spec nao previu
+  (D-5d-4, bonus): ha destino de log -- S3 --, entao a regra de "nenhum destino"
+  NAO pode disparar, mas o managed storage foi desligado de proposito e a tabela
+  oficial declara "Amazon S3 bucket -> Application UI: Not supported". Perde-se a
+  UI de aplicacao, e com ela o Spark UI do console.
+  Se isso vira um segundo achado de severidade menor e decisao da Task 5; a
+  fixture existe para que a decisao tenha corpus dos dois lados. Enquanto nao
+  virar, ela e o golden negativo que impede a regra de "nenhum destino de log" de
+  ser escrita larga demais: um `where` sobre
+  `managed_persistence_enabled == false` sozinho acusaria esta application, que
+  grava log.
+  `log_destination_count` e 1, contra 0 em `sem_destino_de_log` e 2 em
+  `app_saudavel` -- os tres pontos da escala num corpus so.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.monitoring
+expects_rules: []

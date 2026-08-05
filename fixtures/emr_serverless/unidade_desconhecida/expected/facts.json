@@ -1,0 +1,177 @@
+[
+  {
+    "id": "f_689497",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 2,
+      "configuration_count": 0,
+      "unresolved_count": 2
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "562bdb874d27066ba526ae793fb6b774b4f5a547cf9cf4c071e50d8fc94432ad",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_2d926f",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00funidade0000000001"
+    },
+    "measures": {
+      "initial_capacity_worker_type_count": 2,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00funidade0000000001",
+      "name": "unidade-fora-do-conjunto",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "auto_start_declared": false,
+      "auto_stop_declared": true,
+      "auto_stop_enabled": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "562bdb874d27066ba526ae793fb6b774b4f5a547cf9cf4c071e50d8fc94432ad",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_08f3a0",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00funidade0000000001/initial_capacity/DRIVER"
+    },
+    "measures": {
+      "worker_count": 1,
+      "cpu": 4,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "DRIVER"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "562bdb874d27066ba526ae793fb6b774b4f5a547cf9cf4c071e50d8fc94432ad",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_eef1c2",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00funidade0000000001/initial_capacity/EXECUTOR"
+    },
+    "measures": {
+      "worker_count": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "562bdb874d27066ba526ae793fb6b774b4f5a547cf9cf4c071e50d8fc94432ad",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0234bb",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00funidade0000000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "562bdb874d27066ba526ae793fb6b774b4f5a547cf9cf4c071e50d8fc94432ad",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "unknown_capacity_unit",
+      "field": "memory",
+      "value": "16384MB",
+      "worker_type": "DRIVER"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "562bdb874d27066ba526ae793fb6b774b4f5a547cf9cf4c071e50d8fc94432ad",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "unknown_capacity_unit",
+      "field": "cpu",
+      "value": "4",
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "562bdb874d27066ba526ae793fb6b774b4f5a547cf9cf4c071e50d8fc94432ad",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

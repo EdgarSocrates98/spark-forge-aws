@@ -1,0 +1,34 @@
+name: preinit_sem_autostop
+proves: >
+  A combinacao que a AWS nomeia como defeito e cuja consequencia ela tambem
+  nomeia: capacidade pre-inicializada com auto-stop DESLIGADO. A fonte diz
+  "You will be paying for provisioned pre-initialized workers even when the
+  application is idle" e recomenda manter o auto-stop ligado "to avoid unexpected
+  charges" (`knowledge/emr-serverless/application-configuration.md` secao 3).
+  Os dois lados da conjuncao moram no MESMO fact de proposito:
+  `emrs.application.auto_stop_enabled` e
+  `measures.initial_capacity_worker_type_count`. Duas condicoes em kinds
+  diferentes casariam a application A com a capacidade da application B num
+  diretorio com varios payloads (D-5d-17), e o achado acusaria duas
+  configuracoes corretas.
+  `auto_stop_enabled: false` e AFIRMACAO, nao ausencia: o par negativo e
+  `autostop_ausente_default_seguro`, onde o bloco simplesmente nao veio e o
+  default da AWS protege. Confundir os dois faria a regra acusar toda application
+  que nunca tocou em auto-stop.
+  Destino de log em S3 e capacidade dentro do teto isolam a fixture: nenhuma
+  outra regra da area tem ingrediente aqui.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+expects_rules: []

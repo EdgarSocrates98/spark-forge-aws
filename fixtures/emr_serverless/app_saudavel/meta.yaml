@@ -1,0 +1,29 @@
+name: app_saudavel
+proves: >
+  O golden NEGATIVO de referencia da area, e o unico que exercita todos os
+  caminhos felizes de uma vez: auto-stop ligado na janela default de 15 minutos,
+  capacidade pre-inicializada DENTRO do teto nos tres eixos, dois destinos de log
+  (S3 mais managed storage) e `runtimeConfiguration` sem nada sensivel.
+  Nenhuma regra pode disparar aqui. Uma application assim e o que a documentacao
+  da AWS descreve como o arranjo recomendado -- pre-init com auto-stop ligado --,
+  e acusa-la mandaria o operador desfazer uma configuracao correta, que
+  `rules/catalog/README.md` trata como o pior defeito de regra.
+  Serve tambem de par negativo para a janela ociosa: 15 minutos e o default
+  documentado, entao qualquer limiar de "janela longa" que a Task 5 escolha
+  precisa deixar esta fixture calada.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.configuration
+  - emrs.initial_capacity
+  - emrs.monitoring
+expects_rules: []

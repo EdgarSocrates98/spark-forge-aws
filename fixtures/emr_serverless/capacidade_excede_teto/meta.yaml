@@ -1,0 +1,33 @@
+name: capacidade_excede_teto
+proves: >
+  A fixture positiva de `initial_exceeds_maximum`, e ela e CONSTRUIDA, NAO
+  OBSERVADA -- isto precisa ficar escrito no golden porque decide como a Task 5
+  pode redigir o achado. A pesquisa (D-5d-7 e `application-configuration.md`
+  secao 5) mediu que a documentacao **nao declara** se a API aceita ou rejeita
+  esse estado: a aritmetica esta sustentada, a atingibilidade nao. Regra que o
+  cite entra como `field-heuristic` com a reachability marcada como nao
+  documentada.
+  A soma estoura UM eixo so, de proposito: memoria pede 1x30 + 10x30 = 330 GB
+  contra um teto de 200 GB, enquanto cpu (44 contra 100) e disco (220 contra
+  1000) cabem. Se a comparacao fosse feita num agregado unico em vez de eixo a
+  eixo, `capacity_axes_exceeded` traria os tres ou nenhum, e a assercao quebra.
+  "No new resources will be created once any one of the defined limits is hit" e
+  o que autoriza tratar os eixos independentemente.
+  Os tres eixos estao preenchidos nos DOIS lados de proposito: e a unica forma
+  de a decisao existir. O caso comum -- em que ela nao existe -- e
+  `capacidade_indecidivel`.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+expects_rules: []
