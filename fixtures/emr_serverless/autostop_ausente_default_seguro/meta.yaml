@@ -1,0 +1,30 @@
+name: autostop_ausente_default_seguro
+proves: >
+  O par negativo de `preinit_sem_autostop`, e a distincao que a Task 5 vai
+  depender de encontrar separada: `autoStopConfiguration` AUSENTE do payload
+  significa o default da AWS -- ligado, 15 minutos --, que e o estado SEGURO.
+  Ha capacidade pre-inicializada, exatamente como na fixture positiva; a unica
+  diferenca e que ninguem declarou nada sobre auto-stop.
+  O extrator NAO materializa o default (secao dedicada em
+  `sparkforge/facts/emr_serverless.py`): `auto_stop_enabled` e
+  `idle_timeout_minutes` sao chaves OMITIDAS, e `auto_stop_declared: false`
+  responde sobre o payload sem afirmar sobre a configuracao efetiva. Uma regra
+  escrita com `absent:` ou com `auto_stop_declared == false` acusaria esta
+  application, que e a maioria das reais.
+  Se algum dia esta fixture ficar vermelha, o motor passou a acusar o default da
+  AWS -- e nao ha conserto do lado do operador.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+expects_rules: []

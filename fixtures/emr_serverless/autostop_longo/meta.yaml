@@ -1,0 +1,29 @@
+name: autostop_longo
+proves: >
+  O teto da API escrito como payload: `idleTimeoutMinutes: 10080` e o
+  "Maximum value of 10080" declarado na referencia, sete dias -- o mesmo teto do
+  `IdleTimeout` da auto-terminacao do EMR on EC2, o que da numero de FONTE ao
+  ramo mais permissivo (`application-configuration.md` secao 4).
+  Auto-stop esta LIGADO: esta application nao e a de `preinit_sem_autostop`, e a
+  pergunta e outra. O que se paga aqui e a janela, e ela so custa porque ha
+  capacidade pre-inicializada -- sem pre-init nao ha worker de que cobrar, e a
+  Task 5 decide se a condicao de janela longa exige pre-init.
+  Nenhum ponto intermediario e declarado pela AWS: qualquer limiar entre 1 e
+  10080 e escolha de campo e precisa de `origin: field-heuristic` com nota, como
+  o limiar de 86400 s do SF-EMR-009. O par negativo e `app_saudavel`, com os 15
+  minutos do default.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+expects_rules: []

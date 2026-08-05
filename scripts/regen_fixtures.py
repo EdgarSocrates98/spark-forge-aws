@@ -29,6 +29,7 @@ from sparkforge.facts.catalog_schema import (  # noqa: E402
 from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
 from sparkforge.facts.data_quality import extract_data_quality_tree  # noqa: E402
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
+from sparkforge.facts.emr_serverless import extract_emr_serverless_tree  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
 from sparkforge.facts.fusion import fuse  # noqa: E402
@@ -58,6 +59,7 @@ FIXTURES_CATALOG = ROOT / "fixtures" / "catalog"
 FIXTURES_PLAN = ROOT / "fixtures" / "plan"
 FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
 FIXTURES_EMR = ROOT / "fixtures" / "emr"
+FIXTURES_EMR_SERVERLESS = ROOT / "fixtures" / "emr_serverless"
 FIXTURES_DQ = ROOT / "fixtures" / "dq"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
@@ -280,6 +282,27 @@ def regen_emr(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_emr_serverless(directory: Path) -> None:
+    """Dumps de `get-application` de EMR Serverless: `*.json` sob input/.
+
+    Unico corpus de dump AWS que usa a variante `_tree` em vez de um laco sobre
+    `*.json`, e a escolha nao e estilo. `adapters/_core.py` chama
+    `extract_emr_serverless_tree` quando o `--path` e diretorio, e este corpus
+    tem fixtures com DOIS e TRES payloads (`capacidade_indecidivel`,
+    `release_sem_serie`, `identidade_ausente`). Um laco por arquivo concatena
+    blocos ja ordenados e produz uma ordem GLOBAL diferente da que a `_tree`
+    devolve; o golden passaria a descrever uma ordenacao que nenhuma superficie
+    do produto emite. `regen_emr` e `regen_athena` podem usar o laco porque
+    todas as fixtures deles tem um arquivo so, e com um arquivo as duas ordens
+    coincidem.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_emr_serverless_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_dq(directory: Path) -> None:
     """Como `regen`, mas so os facts `dq.*`: `*.py` sob input/, extraidos com
     `extract_data_quality_tree` em vez de `extract_tree`.
@@ -434,6 +457,7 @@ def main() -> int:
                 (FIXTURES_PLAN / name, regen_plan),
                 (FIXTURES_ATHENA / name, regen_athena),
                 (FIXTURES_EMR / name, regen_emr),
+                (FIXTURES_EMR_SERVERLESS / name, regen_emr_serverless),
                 (FIXTURES_DQ / name, regen_dq),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
@@ -475,6 +499,8 @@ def main() -> int:
         regen_athena(directory)
     for directory in sorted(p for p in FIXTURES_EMR.iterdir() if p.is_dir()):
         regen_emr(directory)
+    for directory in sorted(p for p in FIXTURES_EMR_SERVERLESS.iterdir() if p.is_dir()):
+        regen_emr_serverless(directory)
     for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()):
         regen_dq(directory)
     for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):

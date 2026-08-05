@@ -1,0 +1,309 @@
+[
+  {
+    "id": "f_c4a327",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 1,
+      "configuration_count": 0,
+      "unresolved_count": 9
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_399214",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fmalformada0000001"
+    },
+    "measures": {
+      "initial_capacity_worker_type_count": 1,
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "attrs": {
+      "application_id": "00fmalformada0000001",
+      "name": "payload-torto",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "auto_start_declared": false,
+      "auto_stop_declared": false
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_84ba73",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fmalformada0000001/initial_capacity/EXECUTOR"
+    },
+    "measures": {
+      "cpu": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_6afc83",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fmalformada0000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 1
+    },
+    "attrs": {
+      "monitoring_declared": false,
+      "s3_log_uri_present": false,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "initialCapacity[]",
+      "worker_type": "DRIVER"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_worker_count",
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "maximumCapacity"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "runtimeConfiguration[]"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_classification"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "spark-defaults.properties"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "runtimeConfiguration"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_property_key",
+      "classification": "spark-hive-site"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_0af128",
+    "schema_version": 1,
+    "kind": "emrs.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "malformed_json",
+      "section": "monitoringConfiguration"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "ba4992e5294328e9ea7bf1301d5529a8891982a059d1a977e4170a3145ef0507",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

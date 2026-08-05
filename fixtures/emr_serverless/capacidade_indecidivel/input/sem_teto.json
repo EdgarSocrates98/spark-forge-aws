@@ -1,0 +1,28 @@
+{
+  "application": {
+    "applicationId": "00fsemteto0000000001",
+    "name": "sem-teto",
+    "releaseLabel": "emr-7.5.0",
+    "type": "Spark",
+    "state": "STARTED",
+    "autoStopConfiguration": {
+      "enabled": true,
+      "idleTimeoutMinutes": 15
+    },
+    "initialCapacity": {
+      "DRIVER": {
+        "workerCount": 1,
+        "workerConfiguration": {
+          "cpu": "4vCPU",
+          "memory": "16GB",
+          "disk": "20GB"
+        }
+      }
+    },
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://exemplo-logs/emr-serverless/"
+      }
+    }
+  }
+}
