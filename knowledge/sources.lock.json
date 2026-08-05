@@ -1,8 +1,31 @@
 {
   "schema_version": 1,
   "sources": {
+    "https://api.github.com/repos/great-expectations/great_expectations/contents/great_expectations?ref=1.19.1": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://api.github.com/repos/great-expectations/great_expectations/releases/tags/1.0.0": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
     "https://aws.amazon.com/about-aws/whats-new/2025/07/aws-glue-supports-new-workers-larger-memory-intensive-workloads": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/glue/workers-and-capacity.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -12,8 +35,21 @@
       ],
       "sha256": "75a0f76d58e06dd7008d35ac7885f1161e6011ee1f6e041d6b4490e30088f541"
     },
+    "https://aws.amazon.com/about-aws/whats-new/2025/11/aws-glue-5-1": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/storage/iceberg-performance.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -24,8 +60,24 @@
       ],
       "sha256": "831655bd5cb1533b6e6b35015bf85429fd4a6011c11c151a2cc8970b6fb35048"
     },
+    "https://aws.amazon.com/blogs/big-data/enhance-monitoring-and-debugging-for-aws-glue-jobs-using-new-job-observability-metrics/": {
+      "docs": [
+        "knowledge/glue/observability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/athena/performance.md",
+        "knowledge/cross-service-constraints.md",
+        "knowledge/glue/runtime-matrix.md",
+        "knowledge/storage/iceberg-performance.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -37,8 +89,22 @@
       ],
       "sha256": "6ec33d8b72b6ee91d2f4d892dc22aabcae93ad55f0dbc871d558ef2c18783b7b"
     },
+    "https://aws.amazon.com/blogs/big-data/introducing-aws-glue-flex-jobs-cost-savings-on-etl-workloads/": {
+      "docs": [
+        "knowledge/glue/job-arguments.md",
+        "knowledge/glue/workers-and-capacity.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://aws.amazon.com/blogs/big-data/run-queries-3x-faster-with-up-to-70-cost-savings-on-the-latest-amazon-athena-engine": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/athena/performance.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -48,8 +114,42 @@
       ],
       "sha256": "fb6c38d1cb01b79533e1acd8499b67776ccb3064056d3eb8c96ee45e02445b56"
     },
+    "https://aws.amazon.com/blogs/big-data/scale-your-aws-glue-for-apache-spark-jobs-with-new-larger-worker-types-g-4x-and-g-8x": {
+      "docs": [
+        "knowledge/glue/workers-and-capacity.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
+    "https://aws.amazon.com/blogs/big-data/test-data-quality-at-scale-with-deequ/": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://aws.amazon.com/blogs/big-data/testing-data-quality-at-scale-with-pydeequ/": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
     "https://aws.amazon.com/blogs/big-data/top-10-performance-tuning-tips-for-amazon-athena": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/athena/performance.md",
+        "knowledge/storage/parquet-layout.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -61,6 +161,9 @@
       "sha256": "f46960f80928d464b5e92bf1a6ceb8bf355a3e6cb17c0bf2eefbb30ac17a5b35"
     },
     "https://aws.amazon.com/emr/pricing/": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -72,6 +175,10 @@
     },
     "https://docs.aws.amazon.com/athena/latest/ug/partitions.html": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/athena/performance.md",
+        "knowledge/cross-service-constraints.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -83,7 +190,30 @@
       ],
       "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
     },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Application.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStartConfig.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStopConfig.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -94,6 +224,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_CloudWatchLoggingConfiguration.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -103,6 +236,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Configuration.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -112,6 +248,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_GetApplication.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -121,6 +260,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_ManagedPersistenceMonitoringConfiguration.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -131,6 +273,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MaximumAllowedResources.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -140,6 +285,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MonitoringConfiguration.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -149,6 +297,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_WorkerResourceConfig.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -158,6 +309,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/applications.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -167,6 +321,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -181,6 +338,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -191,6 +351,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -201,7 +364,40 @@
         "SF-EMRS-006"
       ]
     },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-version-emr-spark-8.0-preview.html": {
+      "docs": [
+        "knowledge/emr-serverless/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-version-emr-spark-8.0.0.html": {
+      "docs": [
+        "knowledge/emr-serverless/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/release-versions.html": {
+      "docs": [
+        "knowledge/emr-serverless/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/secrets-manager.html": {
+      "docs": [
+        "knowledge/emr-serverless/application-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-04"
@@ -210,7 +406,40 @@
         "SF-EMRS-002"
       ]
     },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/using-iceberg.html": {
+      "docs": [
+        "knowledge/emr-serverless/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/using-python-libraries.html": {
+      "docs": [
+        "knowledge/emr-serverless/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/using-python.html": {
+      "docs": [
+        "knowledge/emr-serverless/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -220,6 +449,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -230,6 +462,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-master-core-task-nodes.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -239,6 +474,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-bootstrap.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -248,6 +486,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-debugging.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -257,6 +498,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-instances-guidelines.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -266,6 +510,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-longrunning-transient.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -274,7 +521,30 @@
         "SF-EMR-009"
       ]
     },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/Iceberg-release-history.html": {
+      "docs": [
+        "knowledge/emr-serverless/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html": {
+      "docs": [
+        "knowledge/emr/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-01"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -285,6 +555,9 @@
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html": {
       "checked_at": "2026-08-01",
+      "docs": [
+        "knowledge/emr/runtime-matrix.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -296,6 +569,9 @@
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-7.x.html": {
       "checked_at": "2026-08-01",
+      "docs": [
+        "knowledge/emr/runtime-matrix.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -306,6 +582,9 @@
       "sha256": "17d7c767deae8fae9a6bdeed6180831777395e610827998e546919796974c515"
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-commit-protocol-reqs.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -315,6 +594,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-committer-reqs.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -324,9 +606,14 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-configure.html": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md",
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
-        "2026-08-01"
+        "2026-08-01",
+        "2026-08-03"
       ],
       "rules": [
         "SF-EMR-001",
@@ -334,6 +621,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-spark-s3-optimized-commit-protocol.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -343,6 +633,9 @@
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/storing-sensitive-data.html": {
+      "docs": [
+        "knowledge/emr/cluster-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-01"
@@ -353,6 +646,11 @@
     },
     "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/cross-service-constraints.md",
+        "knowledge/glue/job-arguments.md",
+        "knowledge/glue/workers-and-capacity.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -362,8 +660,31 @@
       ],
       "sha256": "710eb1d3d6a14435bb7a85e24b1f525378f0678622f0fec510b5e17db696470e"
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-release-notes.rss": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -375,6 +696,13 @@
     },
     "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/cross-service-constraints.md",
+        "knowledge/glue/job-arguments.md",
+        "knowledge/glue/observability.md",
+        "knowledge/spark/memory-and-oom.md",
+        "knowledge/spark/shuffle-join-skew.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -388,8 +716,22 @@
       ],
       "sha256": "db732c3ad0ea1f566cc26dbe6e96226e6dc024c66be1e3755d94c6e8ab367dc3"
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/performance.html": {
+      "docs": [
+        "knowledge/glue/job-arguments.md",
+        "knowledge/glue/workers-and-capacity.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/glue/workers-and-capacity.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -399,8 +741,19 @@
       ],
       "sha256": "a587377ca988f6727e8031eeb861bcebd9322f7988b6793952f0ef7fd2a95cdb"
     },
+    "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction": {
+      "docs": [
+        "knowledge/spark/execution-model.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html": {
       "checked_at": "2026-07-31",
+      "docs": [],
       "pinned": false,
       "retrieved": [
         "2026-07-31",
@@ -415,6 +768,7 @@
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-user-defined-functions.html": {
       "checked_at": "2026-07-31",
+      "docs": [],
       "pinned": false,
       "retrieved": [
         "2026-07-31"
@@ -425,7 +779,300 @@
       ],
       "sha256": "e426dc396a6cb32e557e8600437593c20ff8ee5cb024dbee0de7a99385816777"
     },
+    "https://docs.devin.ai/cli/changelog/stable.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/extensibility/mcp/configuration.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/extensibility/mcp/overview.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/extensibility/skills/creating-skills.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/extensibility/skills/overview.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/models.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/reference/commands.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/reference/configuration/config-file.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/reference/configuration/global-vs-local.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/reference/configuration/read-config-from.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/reference/keyboard-shortcuts.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/reference/permissions.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/cli/subagents.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/advanced.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/agent-command-center.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/cascade/agents-md.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/cascade/cascade.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/cascade/skills.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/cascade/workflows.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/devin-local.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/devin.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/desktop/models.md": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.devin.ai/llms.txt": {
+      "docs": [
+        "knowledge/devin/agents-and-subagents.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": []
+    },
+    "https://docs.greatexpectations.io/docs/0.18/reference/learn/migration_guide/": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://docs.greatexpectations.io/docs/core/connect_to_data/dataframes/": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://docs.greatexpectations.io/docs/core/define_expectations/create_an_expectation": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://docs.greatexpectations.io/docs/core/define_expectations/test_an_expectation": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://docs.python.org/3/using/cmdline.html": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
     "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md": {
+      "docs": [
+        "knowledge/storage/iceberg-performance.md"
+      ],
       "pinned": true,
       "retrieved": [
         "2026-07-30"
@@ -435,6 +1082,9 @@
       ]
     },
     "https://github.com/apache/iceberg/blob/apache-iceberg-1.10.0/core/src/main/java/org/apache/iceberg/DataFiles.java": {
+      "docs": [
+        "knowledge/storage/iceberg-performance.md"
+      ],
       "pinned": true,
       "retrieved": [
         "2026-07-30"
@@ -444,6 +1094,9 @@
       ]
     },
     "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/spark/v3.5/spark/src/main/java/org/apache/iceberg/spark/source/SparkWrite.java": {
+      "docs": [
+        "knowledge/storage/iceberg-performance.md"
+      ],
       "pinned": true,
       "retrieved": [
         "2026-07-30"
@@ -454,6 +1107,9 @@
     },
     "https://github.com/awslabs/python-deequ": {
       "checked_at": "2026-08-03",
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-03"
@@ -465,6 +1121,9 @@
     },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {
       "checked_at": "2026-07-31",
+      "docs": [
+        "knowledge/storage/iceberg-performance.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-07-29"
@@ -477,7 +1136,76 @@
       ],
       "sha256": "b5ecdfa5f41670d9876019651bacdfb4bb275ff2fa4d1b8075f9480b6aca84d0"
     },
+    "https://iceberg.apache.org/docs/latest/spark-queries/#inspecting-tables": {
+      "docs": [
+        "knowledge/storage/iceberg-performance.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-30"
+      ],
+      "rules": []
+    },
+    "https://pypi.org/pypi/great-expectations/json": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://pypi.org/pypi/pydeequ/json": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/awslabs/python-deequ/v1.6.0/pydeequ/configs.py": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/great-expectations/great_expectations/1.19.1/great_expectations/validator/validator.py": {
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html": {
+      "docs": [
+        "knowledge/cross-service-constraints.md",
+        "knowledge/spark/config-reference.md",
+        "knowledge/spark/execution-model.md",
+        "knowledge/spark/memory-and-oom.md",
+        "knowledge/spark/plan-reading.md",
+        "knowledge/spark/shuffle-join-skew.md",
+        "knowledge/storage/parquet-layout.md"
+      ],
       "pinned": true,
       "retrieved": [
         "2026-07-29"
@@ -497,6 +1225,7 @@
     },
     "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html": {
       "checked_at": "2026-07-31",
+      "docs": [],
       "pinned": false,
       "retrieved": [
         "2026-07-31"
@@ -508,6 +1237,7 @@
     },
     "https://spark.apache.org/docs/latest/sql-performance-tuning.html": {
       "checked_at": "2026-07-31",
+      "docs": [],
       "pinned": false,
       "retrieved": [
         "2026-07-31"
@@ -519,6 +1249,7 @@
     },
     "https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-hints.html": {
       "checked_at": "2026-07-31",
+      "docs": [],
       "pinned": false,
       "retrieved": [
         "2026-07-31"
@@ -528,8 +1259,21 @@
       ],
       "sha256": "0c641ce521fee80c2e09865345b29250149442d0f14d5023bfc1ade7615692a1"
     },
+    "https://www.dremio.com/blog/compaction-in-apache-iceberg-fine-tuning-your-iceberg-tables-data-files/": {
+      "docs": [
+        "knowledge/storage/iceberg-performance.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-07-29"
+      ],
+      "rules": []
+    },
     "https://www.vldb.org/pvldb/vol11/p1781-schelter.pdf": {
       "checked_at": "2026-08-03",
+      "docs": [
+        "knowledge/dq/validation-frameworks.md"
+      ],
       "pinned": false,
       "retrieved": [
         "2026-08-03"

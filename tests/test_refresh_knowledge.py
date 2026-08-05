@@ -20,16 +20,23 @@ from scripts.refresh_knowledge import (  # noqa: E402
     compare,
     digest,
     is_pinned,
+    knowledge_sources,
     normalize,
     render_report,
+    sync_metadata,
     watchlist,
 )
 
 TODAY = "2026-07-31"
 
 
-def entry(pinned=False, rules=("SF-X-001",), retrieved=("2026-07-29",)):
-    return {"pinned": pinned, "rules": list(rules), "retrieved": list(retrieved)}
+def entry(pinned=False, rules=("SF-X-001",), retrieved=("2026-07-29",), docs=()):
+    return {
+        "pinned": pinned,
+        "rules": list(rules),
+        "docs": list(docs),
+        "retrieved": list(retrieved),
+    }
 
 
 class TestPinnedClassification:
@@ -172,9 +179,16 @@ class TestReport:
         assert "SF-P-001" in text
 
 
-class TestWatchlistComesFromTheCatalog:
-    """A watchlist nao e mantida a mao: regra nova com fonte nova entra
-    sozinha. Lista paralela e o passo que alguem esquece."""
+class TestWatchlistIsDerivedFromBothOrigins:
+    """A watchlist nao e mantida a mao: regra nova com fonte nova, e pagina de
+    `knowledge/` nova com fonte nova, entram sozinhas. Lista paralela e o passo
+    que alguem esquece.
+
+    A SEGUNDA ORIGEM existe porque a primeira sozinha mentia: conhecimento que
+    nenhuma regra cita nunca entrava, e a pesquisa do Devin -- que sustenta
+    perfil de agente, e nao regra -- envelhecia sem alarme sobre uma superficie
+    que a propria fonte declara experimental.
+    """
 
     def test_every_url_in_the_catalog_is_watched(self):
         from sparkforge.rules.loader import load_catalog
@@ -185,20 +199,107 @@ class TestWatchlistComesFromTheCatalog:
             for source in (rule.get("sources") or [])
             if source.get("url")
         }
-        assert set(watchlist()) == expected
+        assert expected <= set(watchlist())
 
-    def test_each_entry_names_the_rules_that_cite_it(self):
+    def test_every_url_in_a_knowledge_fontes_block_is_watched(self):
+        assert set(knowledge_sources()) <= set(watchlist())
+
+    def test_the_devin_research_is_watched(self):
+        """A divida que esta origem fechou, nomeada.
+
+        A §7 do spec dos perfis de subagente declarava, contra o risco "o Devin
+        muda formato de perfil e o tradutor quebra em silencio", que a pesquisa
+        ficava "na watchlist do `refresh_knowledge`". Era falso por construcao:
+        a watchlist vinha so do catalogo, e nenhuma regra cita `docs.devin.ai`.
+        """
+        watched = watchlist()
+        devin = [url for url in watched if "docs.devin.ai" in url]
+        assert len(devin) >= 20
+        for url in devin:
+            assert watched[url]["rules"] == [], "nenhuma regra cita o Devin, e nao deve citar"
+            assert watched[url]["docs"] == ["knowledge/devin/agents-and-subagents.md"]
+
+    def test_a_url_pattern_inside_backticks_is_not_a_source(self):
+        """URL dentro de crase e PADRAO, nao citacao.
+
+        `emr-serverless/runtime-matrix.md` descreve 24 paginas com
+        `release-version-<N>.html`; o prefixo antes do `<` e uma URL valida que
+        devolveria 404 para sempre, e alarme permanente e o modo de falha que faz
+        o operador parar de ler o relatorio.
+        """
+        assert not [url for url in watchlist() if url.endswith("release-version-")]
+
+    def test_each_entry_names_who_cites_it(self):
+        """Fonte vigiada sem vinculo de volta e alarme sem endereco.
+
+        A regra nao e mais "toda entrada tem regra" -- ela e mais forte no que
+        importa: toda entrada nomeia PELO MENOS UM consumidor, seja regra, seja
+        pagina de `knowledge/`. Afrouxar isto traz de volta o ruido que a segunda
+        origem poderia ter criado.
+        """
         for url, meta in watchlist().items():
-            assert meta["rules"], url
+            assert meta["rules"] or meta["docs"], url
             assert meta["rules"] == sorted(set(meta["rules"])), url
+            assert meta["docs"] == sorted(set(meta["docs"])), url
 
-    def test_the_committed_lock_matches_the_catalog(self):
-        """O lock commitado nao pode citar fonte que o catalogo nao cita mais,
-        nem faltar fonte que ele passou a citar. Sem isto, o lock envelhece em
+    def test_a_source_cited_by_both_origins_keeps_both_links_and_both_dates(self):
+        """Divergencia de data fica VISIVEL, e nao resolvida por chute.
+
+        Uma URL citada por regra e por pagina com `retrieved` diferentes carrega
+        as duas datas: quem le o alarme sabe qual das duas citacoes esta velha.
+        """
+        both = {
+            url: meta for url, meta in watchlist().items() if meta["rules"] and meta["docs"]
+        }
+        assert both, "o corpus tem URLs citadas pelas duas origens"
+        for url, meta in both.items():
+            assert meta["retrieved"], url
+
+    def test_the_committed_lock_matches_the_watchlist(self):
+        """O lock commitado nao pode citar fonte que ninguem cita mais, nem
+        faltar fonte que passou a ser citada. Sem isto, o lock envelhece em
         silencio e o primeiro `--check` depois de meses relata "novas" que na
-        verdade nunca foram vigiadas."""
+        verdade nunca foram vigiadas.
+
+        A igualdade e EXATA, e continua sendo depois da segunda origem: o que
+        mudou foi de onde a watchlist vem, e nao o que o lock promete. Alinhar o
+        lock sem rede e `--update --offline`."""
         lock_path = ROOT / "knowledge" / "sources.lock.json"
         if not lock_path.is_file():
             pytest.skip("lock ainda nao gerado")
         lock = json.loads(lock_path.read_text(encoding="utf-8"))
         assert set(lock["sources"]) == set(watchlist())
+
+    def test_the_committed_lock_carries_the_back_link(self):
+        """O lock e o que fica commitado, e e nele que alguem procura o que
+        reler quando um alarme chega."""
+        lock_path = ROOT / "knowledge" / "sources.lock.json"
+        if not lock_path.is_file():
+            pytest.skip("lock ainda nao gerado")
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        for url, stored in lock["sources"].items():
+            assert stored.get("rules") or stored.get("docs"), url
+
+
+class TestOfflineSync:
+    """`--update --offline` alinha o conjunto sem afirmar conferencia nenhuma."""
+
+    def test_a_new_source_enters_without_a_hash(self):
+        lock = sync_metadata({"https://x.dev/latest/nova": entry(docs=("knowledge/a.md",))}, {})
+        stored = lock["sources"]["https://x.dev/latest/nova"]
+        assert "sha256" not in stored
+        assert "checked_at" not in stored
+        assert stored["docs"] == ["knowledge/a.md"]
+
+    def test_an_existing_hash_survives_and_is_never_restamped(self):
+        url = "https://x.dev/latest/a"
+        stored = {"sha256": "abc", "checked_at": "2026-01-01", "pinned": False}
+        previous = {"sources": {url: stored}}
+        stored = sync_metadata({url: entry(rules=("SF-A-001",))}, previous)["sources"][url]
+        assert stored["sha256"] == "abc"
+        assert stored["checked_at"] == "2026-01-01"
+        assert stored["rules"] == ["SF-A-001"]
+
+    def test_a_source_nobody_cites_anymore_is_dropped(self):
+        lock = {"sources": {"https://x.dev/latest/velha": {"sha256": "abc", "pinned": False}}}
+        assert sync_metadata({}, lock)["sources"] == {}
