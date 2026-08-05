@@ -56,7 +56,7 @@ which executor ran and with what result — same mechanism as skill tracking
 | `glue-incremental-performance-architect` | fluxo full + incremental, latest-per-key em Iceberg bilionário, batching, OOM após horas | orquestra as demais áreas antes de tuning localizado |
 | `glue-infra-reviewer` | gargalo ou risco na definição do job Glue, não no código — worker, auto scaling, bookmark, retries, Terraform | SF-GLUE, SF-ENV |
 | `athena-query-optimizer` | custo ou latência na consulta Athena, não no job — bytes escaneados, pruning de partição, engine, workgroup | SF-ATH, SF-PQ |
-| `pyspark-code-reviewer` | revisar código PySpark — PR, biblioteca ou job — correlacionando fonte, plano físico e call graph | SF-PY, SF-PLAN, SF-CG |
+| `pyspark-code-reviewer` | revisar código PySpark — PR, biblioteca ou job — correlacionando fonte, plano físico e call graph; **e** job de grafo com GraphFrames, que é o mesmo `.py` lido por uma quarta ótica | SF-PY, SF-PLAN, SF-CG, SF-GRAPH |
 | `iceberg-performance-engineer` | dívida de data files, delete files, manifests, snapshots e manutenção de tabela Iceberg | SF-ICE, SF-PQ |
 | `emr-infra-reviewer` | risco na definição de um cluster Amazon EMR on EC2 — fleets/groups, Spot por papel, managed scaling, Configurations em dois níveis, LogUri — **ou** de uma application EMR Serverless: pré-init faturada com a application ociosa, auto-stop, destino de log, segredo em `runtimeConfiguration` | SF-EMR, SF-EMRS, SF-ENV |
 | `data-quality-reviewer` | o job valida dado e a pergunta é se a validação está no lugar certo, se ela tem consequência e quanto custa — não se o dado está correto | SF-DQ |
@@ -156,9 +156,9 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Eighteen extractors, all offline — they read artifacts already on disk and never
+Nineteen extractors, all offline — they read artifacts already on disk and never
 call AWS. Each has a CLI verb and an MCP tool with the same name, and together
-they emit 112 distinct fact kinds:
+they emit 118 distinct fact kinds:
 
 | Artifact | CLI verb | Reads |
 |---|---|---|
@@ -173,6 +173,7 @@ they emit 112 distinct fact kinds:
 | EMR on EC2 cluster | `analyze emr-cluster` | `describe-cluster` dump and the five that complete it |
 | EMR Serverless application | `analyze emr-serverless` | `get-application` dump |
 | Data validation | `analyze data-quality` | the same `*.py`, read as checks rather than as work |
+| Graph processing | `analyze graph` | the same `*.py`, read through the GraphFrames vocabulary |
 | Call graph | `analyze call-graph` | derived from PySpark facts |
 | S3 object listing | `analyze s3-listing` | `s3api list-objects-v2` dump |
 | Table consumers | `analyze consumers` | declared inventory, versioned in the repo |
@@ -190,6 +191,22 @@ once. Neither area reads the other's fact namespace, and each judges
 identically with and without the neighbour's facts — cross-suppression can only
 be implemented by looking at the other's fact, so the invariant refuses both
 the duplicate and the silence.
+
+`analyze graph` is the **third** reading of that same `.py`, so the boundary
+between `SF-PY`, `SF-DQ` and `SF-GRAPH` is three-way and no artifact split
+separates any of them: `tests/test_rules_graph_boundary.py` runs all three
+extractors over all three corpora, which is the only door where "does the
+neighbouring area invade?" has an answer at all. Measured there — `SF-PY` fires **16 times over 14 of the
+19 graph fixtures** and that is legitimate work, not invasion: every one of the
+sixteen cites `pyspark.cache` or `pyspark.conf_set` and never a `graph.*` fact.
+`cache`/`persist`/`unpersist` were deliberately kept out of the graph algorithm
+vocabulary because `pyspark.cache` already emits them. The same measurement is
+what decided that `SF-GRAPH` stays with `pyspark-code-reviewer` instead of
+getting a coordinator of its own: `SF-GRAPH` fires on 5 of those 19 fixtures,
+and those 5 are a **subset** of the 14 — there is no measured job where the
+graph question arrives alone. The `SF-DQ` precedent measures the inverse
+(`SF-DQ` on 8 of 13 dq fixtures against `SF-PY` on 2), which is why that one did
+split.
 
 `SF-DQ` and `SF-FVAL` are the neighbouring pair with the sharpest boundary, and
 it holds by construction: `SF-DQ` judges validation **inside the job** — where the

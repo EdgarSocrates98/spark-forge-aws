@@ -1,7 +1,10 @@
 # SparkForge AWS — Fase 6a: grafo com Spark (`SF-GRAPH`)
 
 **Data:** 2026-08-05
-**Status:** não implementado nesta data.
+**Status:** **implementado** em 2026-08-05, em sete tasks. Este documento **não foi
+reescrito**: ele registra o que se pretendia na data. A §11 lista os pontos em que a
+medição da implementação o tornou **errado** — leia-a antes de citar qualquer tabela
+daqui.
 **Abre:** o roadmap de bancos, `docs/superpowers/specs/2026-08-03-sparkforge-roadmap-bancos.md`
 §3.1 — a primeira das quatro, e a única que não é um banco.
 **Base:** [Fase 5c](2026-08-03-sparkforge-fase5c-dq-design.md) fixou o padrão de
@@ -255,3 +258,164 @@ Perguntas que decidem regra:
 9. As seis superfícies concordam, e `sync_skills.py --check` está limpo.
 10. `STATUS.md` mede os números novos em vez de copiá-los, e a linha `SF-GRAPH` do
     roadmap de bancos passa a apontar para esta fase como concluída.
+
+---
+
+## 11. Desvios — onde a medição tornou este documento errado
+
+Registrados na implementação como `D-6a-1`…`D-6a-48`, em
+[`../plans/2026-08-05-sparkforge-fase6a-graph.md`](../plans/2026-08-05-sparkforge-fase6a-graph.md).
+Aqui ficam só os que **contradizem o texto acima** — não a lista inteira. A ordem é a das
+seções que eles invalidam.
+
+### §4 — a tabela de facts está errada em três lugares
+
+**`graph.source_persisted` não existe** (`D-6a-7`). Um kind separado teria de ser reunido
+ao `graph.construction` **por nome de variável**, e a Fase 5d já mediu (`D-5d-17`) que essa
+correlação casa objeto errado quando há dois sujeitos no mesmo arquivo — dois
+`GraphFrame(...)` no mesmo `.py` são o caso literal. `vertices_persisted` e
+`edges_persisted` viraram atributos do próprio `graph.construction`. São **6 kinds**, não
+7. A §9 autorizava a decisão; a §4 é que ficou errada.
+
+**`has_max_iter` e `max_iter_literal` não existem, e o nome é proibido** (`D-6a-22`). Com a
+regra de limite de iteração vetada (abaixo), um atributo chamado `has_max_iter` seria a
+regra vetada entrando pela porta dos fundos — bastaria alguém escrever
+`where: {attrs.has_max_iter: false}`. O fact carrega `iteration_arg`, que **nomeia o
+parâmetro que veio**, porque sem isso nada distingue `maxIter` de `tol`. Há teste que varre
+o corpus e reprova se qualquer fact passar a carregar `has_max_iter`, `max_iter_missing`,
+`iteration_limited`, `unbounded` ou `has_iteration_limit`.
+
+**A decisão de checkpoint vem pronta do extrator, e a §4 não previa isso** (`D-6a-9`,
+`D-6a-12`). `engine._where_matches` compara por igualdade e **reprova caminho ausente**, e
+`_expr_matches` engole o `ExprError` devolvendo `False` — logo nenhuma regra deste catálogo
+consegue exprimir "o código não declarou saída nenhuma", que é o caso comum. Quem enxerga
+as saídas de uma vez é o extrator: `graph.algorithm` carrega `checkpoint_required` **já
+decidido** e `checkpoint_configured_in_module` no mesmo fact. E as saídas são **cinco** no
+`.py`, não três: além de `algorithm="graphx"`, `checkpointInterval<=0` e
+`use_local_checkpoints=True`, o job pode configurar `spark.checkpoint.dir` ou
+`spark.graphframes.useLocalCheckpoints` por `spark.conf.set` dentro do próprio arquivo —
+ignorá-las faria a regra P0 disparar sobre código que resolveu o problema na linha de cima.
+Há um sexto estado, em que a conf é ilegível e `checkpoint_required` sai **ausente**: ponto
+cego contado, não acusação.
+
+### §4 e §5 — `pregel` não é método, e o extrator precisou de mecanismo novo
+
+`pregel` é `@property` nas duas linhagens, assim como `triplets`, `degrees`, `inDegrees` e
+`outDegrees` (`D-6a-3`). Um `frozenset` casado contra `ast.Call` **não emitiria fact para o
+Pregel**, que é justamente o único algoritmo cujo limite de iteração o usuário controla de
+fato. A solução casa `ast.Attribute` em contexto `Load` que não é o `func` de uma `Call` e
+percorre a cadeia **para fora** por um mapa de pais, recuperando `setMaxIter(10)` de
+`g.pregel.setMaxIter(10)...run()` (`D-6a-10`). Todos os outros extratores do repositório
+caminham só para dentro; este é o primeiro que precisou de mapa de pais.
+
+O vocabulário também tem **dois níveis**, e a §5 supõe um só (`D-6a-11`): `find`, `validate`
+e `degrees` são nomes que qualquer objeto de usuário pode ter — `"abc".find("b")` viraria
+`graph.algorithm` —, então só são lidos quando o módulo **importa** GraphFrames.
+`cache`/`persist`/`unpersist`, que o `GraphFrame` de fato expõe, ficaram **fora** do
+vocabulário de algoritmo: `pyspark.cache` já os emite sobre o mesmo artefato, e reemiti-los
+duplicaria o sujeito de `SF-PY-008` (`V-GR-4`).
+
+### §5 — duas das quatro regras candidatas não existem
+
+**"Algoritmo iterativo sem limite de iteração" foi VETADA, e não por falta de fonte**
+(`D-6a-4`, vetos `V-GF-1` e `V-GF-2` no cabeçalho de `rules/catalog/graph.yaml`). A fonte
+fechou no sentido **oposto**: em nenhum dos dezesseis algoritmos com noção de iteração a
+ausência é defeito. Em seis é `TypeError`/`AssertionError` — código que não roda; em três é
+default documentado; em `pageRank` o modo `tol` é oficial e recomendado; e em
+`connectedComponents` a doc diz textualmente *"Default is `Integer.MAX_VALUE` (unlimited).
+It is generally not recommended to change this value."*
+
+**A regra do IaC não entrou** (`D-6a-30`, veto `V-GR-1`), por **dois** motivos
+independentes — basta um. (a) `engine._absent_satisfied` compara **só `kind`**, e o kind é
+`tf.attribute` dos dois lados: o que muda é `attrs.key`, e não existe `absent` filtrado por
+atributo nem `where` negado. O que fecharia é um kind derivado no extrator de Terraform, no
+molde de `tf.observability.spark_ui` — capacidade que esta fase não construiu. (b) Para
+Spark 3.3 **não há artefato publicado em linhagem nenhuma**, então qualquer `--extra-jars`
+de GraphFrames ali aponta necessariamente para outro minor, e a pesquisa recusa afirmar que
+isso roda. `SF-GRAPH-002` dispara nos **dois** lados do par de fixtures, e o `--extra-jars`
+aparece no texto do achado como tentativa de contorno.
+
+Restaram **quatro** regras: `SF-GRAPH-001` (checkpoint, P0), `SF-GRAPH-002`
+(disponibilidade, P1), `SF-GRAPH-003` (arestas não persistidas, P2) e `SF-GRAPH-004`
+(algoritmo em laço, P2). Nenhuma declara `severity_by` (`V-GR-3`) nem `threshold`, e a
+razão é o corpus, não esquecimento: os discriminadores plausíveis não têm caso dos dois
+lados dentro da mesma regra, e ramo sem golden é severidade que ninguém mediu. O único
+limiar numérico com fonte primária desta área — `checkpointInterval > 2` — ficou como
+`V-GR-2`, à espera de fixture (`D-6a-31`).
+
+### D-4 — o escopo é por faixa de Spark, e o mecanismo teve de ganhar capacidade nova
+
+A D-4 acerta o **princípio** e erra a **unidade**. A razão de não haver jar não é "a versão
+é antiga": é que **nenhum artefato foi publicado para Spark 3.3 em linhagem nenhuma** —
+`0.8.2` para em 3.2, `0.8.3` começa em 3.4, `io.graphframes` compila contra 3.5 (`D-6a-6`).
+São 9 das 34 células da matriz, e o discriminador é o **minor de Spark**, não a célula de
+release: escrito por release, o escopo envelheceria a cada release nova da nuvem, que é o
+que `V-AV-1` proíbe.
+
+Escrever isso exigiu mecanismo que não existia (`D-6a-29`). `version_scope.in_scope` lia
+**um** spec por chave, e as alternativas com o que havia falham as duas: `"==3.3"` casa
+`3.3.0` e **reprova** `3.3.1` e `3.3.2` — os Sparks de EMR 6.10.x e 6.11.x, quatro das nove
+células, que sumiriam em silêncio; `">=3.3"` sozinho estenderia a acusação a 3.4 e 3.5,
+onde ela é falsa. `version_scope._specs` passou a aceitar **uma lista** de specs numa
+chave, conjugando como as chaves entre si, e `{spark: [">=3.3", "<3.4"]}` é o primeiro uso.
+Lista vazia levanta `ValueError` de propósito. Mudança aditiva: nenhum `runtime_scope`
+existente foi afetado.
+
+Efeito colateral que a D-4 não previa (`D-6a-33`): dois testes de escopo presumiam que
+**todo** guarda de versão é de Glue, e uma nona regra guardada por `spark` quebrava os dois.
+`SPARK_VERSIONED` virou grupo próprio — a razão dele é "a afirmação só é verdadeira nesta
+faixa", não "esta infraestrutura não existe aqui".
+
+### D-5 e §10.6 — a metade "nem o contrário" do critério é falsa, e por construção
+
+O critério 6 da §10 exige que nenhuma regra `SF-GRAPH` dispare sobre fixture de `SF-DQ` ou
+`SF-PY`, "nem o contrário". A primeira metade está provada. **A segunda é falsa, e é a
+construção funcionando** (`D-6a-41`): `SF-PY` dispara **16 vezes sobre `fixtures/graph/`**
+— `SF-PY-008` em catorze fixtures e `SF-PY-012` em duas. Nenhum é invasão, e o critério é a
+evidência e não a intenção: os dezesseis citam apenas `pyspark.cache` e `pyspark.conf_set`,
+o `subject.snippet` de cada um bate com a linha do arquivo, e nenhuma das dezenove fixtures
+chama `unpersist`. É `V-GR-4` funcionando — `cache`/`persist`/`unpersist` ficaram fora do
+vocabulário de grafo porque `pyspark.cache` já os emite. Os dezesseis estão nomeados um a um
+em `ESPERADO_PY_SOBRE_GRAFO`, com o argumento ao lado; silenciar a lista era a única saída
+errada.
+
+A porta que a D-5 supunha também não serve (`D-6a-40`): o golden de cada corpus isola o
+contrato do **seu** extrator, então sobre ele a fronteira é vácua por construção — `SF-PY`
+não pode disparar sobre um conjunto de facts sem nenhum `pyspark.*`.
+`tests/test_rules_graph_boundary.py` roda os **três** extratores sobre os três corpora, que
+é o que um agente faz numa investigação real.
+
+### §7 — a sexta superfície não tinha entrada a fazer
+
+`ARTIFACT_KINDS` é o vocabulário de artefato **coletado**, e `analyze graph` lê um `.py` do
+repositório, cujo kind `source` já estava declarado (`D-6a-18`). Medido por falha: com o
+verbo inteiro implementado e nenhuma superfície declarativa atualizada, a suíte reprovou 6
+testes em 4 arquivos e **nenhum** deles em `tests/test_collect_base.py`. A sexta superfície
+continua real; ela só não é atravessada por esta fase, e volta a valer se a Fase 6a ganhar
+coletor. Do mesmo modo, "as quatro listas de `tests/test_adapters_tools.py`" era número
+para tool de **coleta**: para uma tool de análise a lista literal é **uma**, mais uma cadeia
+`if name == ...` que não é lista (`D-6a-19`).
+
+### §8 — o corpus tem 19 fixtures, e sete existem para provar que o motor cala
+
+A tabela do plano previa 9 (`D-6a-23`). As cinco formas legítimas de escrever certo para
+`SF-GRAPH-001` ganharam uma fixture cada, mais o sexto estado em que a conf é ilegível.
+Cinco fixtures disparam regra e catorze ficam com golden vazio (`D-6a-36`). O corpus carrega
+Terraform, o que nenhum corpus de código fazia (`D-6a-25`), e `fonte_que_nao_compila` é a
+primeira fixture do repositório a exercitar `syntax_error` — a mensagem do CPython entra no
+golden, e foi medida idêntica em 3.10, 3.11 e 3.14 antes de commitar (`D-6a-26`).
+
+### §9 — as três perguntas em aberto, respondidas
+
+| Questão | Resposta medida |
+|---|---|
+| Coordenador próprio ou `pyspark-code-reviewer` estendido | **Estendido.** Há discriminador em dado — `SF-GRAPH` dispara 5 vezes em `fixtures/graph/` e **zero** nas 13 de `dq/` e nas 17 de `pyspark/` —, então o bloqueio da 5d não se aplica e a decisão foi tomada no outro eixo: nas 19 fixtures de grafo, `SF-PY` dispara 16 vezes em **14** e `SF-GRAPH` 5 vezes em **5**, e as cinco são **subconjunto** das catorze. O precedente da 5c mede o inverso (`SF-DQ` em 8 de 13 contra `SF-PY` em 2), e por isso *aquele* partiu. `AGENT-004` ganhou `findings_area: SF-GRAPH`; antes disso um case só com achados de grafo voltava de `next_step` com `recommended_agent: None` (`D-6a-45`) |
+| Até onde o extrator segue `import` | Import de módulo e `from ... import`, com `guarded` quando sob `try:`; forma dinâmica vira `graph.unresolved`. O import é a **evidência independente** que libera o segundo nível do vocabulário (`D-6a-11`) |
+| Se `graph.source_persisted` é kind próprio ou atributo | **Atributo**, pela razão de `D-6a-7` acima |
+
+### §10.9 e §10.10 — os números que o fechamento mediu
+
+Regras 77 → **81**; áreas 14 → **15**; extratores 18 → **19**; kinds 112 → **118**; tools
+MCP 40 → **41**; fixtures 145 → **164** em 20 → **21** domínios; fontes vigiadas 109 →
+**131**; ramos de severidade 85 → **89**. Rotas seguem **24**, porque `SF-GRAPH` entrou numa
+rota existente em vez de abrir uma. Coordenadores seguem **8** e skills seguem **20**.

@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-08-05
-**Commit de referência:** fechamento da branch `fix/dividas-abertas`
+**Commit de referência:** fechamento da branch `feat/fase6a-graph`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -29,16 +29,16 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **4266** passando, 5 skipped | `python -m pytest -q` |
-| Regras com `runtime_scope` não-vazio | **8 de 77**, todas sobre Glue | `load_catalog()` |
-| Extratores de facts | **18** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **112** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **77** | `load_catalog()` |
+| Testes | **4634** passando, 5 skipped | `python -m pytest -q` |
+| Regras com `runtime_scope` não-vazio | **9 de 81** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
+| Extratores de facts | **19** | `sparkforge/facts/*.py` |
+| Fact kinds distintos emitidos | **118** | união de `EMITTED_KINDS` |
+| Regras de diagnóstico | **81** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **77 de 77** | `tests/test_fixtures_kind_coverage.py` |
+| Regras com golden que dispara | **81 de 81** | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **24** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-008`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **40** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **40 de 40** | `tests/test_agent_coverage.py` |
+| Tools MCP | **41** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **41 de 41** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **8** | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
@@ -46,14 +46,15 @@ arquivo ganha.
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
 | Fixtures golden | **164** em 21 domínios | `fixtures/` |
-| Ramos de severidade com golden que os produz | **85 de 85** (15 deles nas 7 regras com `severity_by`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **109** (103 móveis, 6 fixas) | `knowledge/sources.lock.json` |
+| Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
+| Fontes oficiais vigiadas | **131** (123 móveis, 8 fixas) — 61 citadas por regra, 126 por `knowledge/`, 56 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-EMRS 6, SF-GLUE 6, SF-UI 6, SF-ATH 5,
-SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-PLAN 4, SF-CG 1.
+SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-GRAPH 4,
+SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `emr_serverless` 19, `pyspark` 17, `emr` 14, `dq` 13,
+Fixtures por domínio: `emr_serverless` 19, `graph` 19, `pyspark` 17, `emr` 14, `dq` 13,
 `funcval` 10, `iceberg` 9, `plan` 7, `runtime` 7, `s3` 7, `terraform` 7,
 `bench` 6, `fusion` 5, `eventlog` 4, `sql` 4, `athena` 3, `callgraph` 3,
 `catalog` 3, `consumers` 3, `infra_code` 2, `tfdiff` 2.
@@ -1494,6 +1495,122 @@ nada. A árvore de hoje está certa; o registro fica porque é exatamente a fam�
 de defeito que este arquivo acusa desde a revisão da fase de perfis: **afirmação
 de efeito que ninguém mediu, e que não quebra teste nenhum**.
 
+### Fase 6a — grafo com Spark (`SF-GRAPH`) — **CONCLUÍDA** em 2026-08-05
+
+Branch `feat/fase6a-graph`, sete tasks. **Abre o roadmap de bancos** — é a primeira
+das quatro especializações e a única que não é um banco. Spec e plano em
+[`specs/2026-08-05-sparkforge-fase6a-graph-design.md`](specs/2026-08-05-sparkforge-fase6a-graph-design.md)
+e [`plans/2026-08-05-sparkforge-fase6a-graph.md`](plans/2026-08-05-sparkforge-fase6a-graph.md);
+o spec ganhou §11 com os desvios que o tornaram errado, e **não foi reescrito**. Os
+desvios medidos durante a implementação estão no plano, `D-6a-1` a `D-6a-48`.
+
+**Números medidos no fechamento** (à esquerda, os da rodada de dívidas abertas): regras
+77 → **81**, áreas 14 → **15**, extratores 18 → **19**, kinds 112 → **118**, fixtures
+145 em 20 domínios → **164 em 21**, tools MCP 40 → **41** (e **41 de 41** alcançáveis a
+partir de algum coordenador), fontes vigiadas 109 → **131**, ramos de severidade 85 →
+**89**, testes 4266 → **4634**, 5 skipped. Rotas **24**, coordenadores **8**,
+executores **5**, skills **20** e gates **4** — nenhum dos cinco mudou, e o de rotas é
+decisão medida, não coincidência (ver *O coordenador*, abaixo).
+
+**O que entrou.** `knowledge/graph/` com dois arquivos de fonte datada
+(`graphframes-api.md` e `availability.md`); `sparkforge/facts/graph.py` com **seis**
+kinds `graph.*`; `analyze graph` nas superfícies declarativas; **19** fixtures com golden
+bidirecional; a área `SF-GRAPH` com **4** regras e **seis** vetos escritos no cabeçalho
+(`V-GF-1`, `V-GF-2`, `V-GR-1`…`V-GR-4`, mais os cinco `V-AV-*` na página de
+disponibilidade); e `tests/test_rules_graph_boundary.py`, que mede a fronteira nas
+**três** direções entre `SF-GRAPH`, `SF-DQ` e `SF-PY` — a primeira fronteira do
+repositório em que as áreas vizinhas leem o **mesmo artefato**, um `.py`, e nenhum
+recorte de artefato as separa.
+
+**A pesquisa matou uma das quatro regras candidatas, e no sentido oposto ao previsto.**
+A §5 do spec previa "algoritmo iterativo sem limite de iteração". A fonte fechou — e
+disse que **em nenhum dos dezesseis algoritmos com noção de iteração a ausência é
+defeito**: em seis é `TypeError`/`AssertionError` (código que não roda), em três é
+default documentado, em `pageRank` o modo `tol` é oficial, e em `connectedComponents` a
+doc diz textualmente *"Default is `Integer.MAX_VALUE` (unlimited). It is generally not
+recommended to change this value."* A fixture que existiria só para exercitá-la **saiu do
+corpus**, e no lugar entrou um teste que varre as 19 fixtures e reprova se qualquer fact
+passar a carregar `has_max_iter`, `max_iter_missing`, `iteration_limited`, `unbounded` ou
+`has_iteration_limit` — porque bastaria um deles para alguém escrever
+`where: {attrs.has_max_iter: false}` e reintroduzir a regra vetada pela porta dos fundos.
+É a quinta fase seguida em que a pesquisa mata premissa que parecia óbvia no papel.
+
+**O escopo por faixa de Spark, e a capacidade que o motor não tinha.** Nove das 34
+células da matriz Glue×EMR não têm artefato de GraphFrames, e o discriminador não é "a
+versão é antiga": é que **nenhum artefato foi publicado para Spark 3.3 em linhagem
+nenhuma** — `0.8.2` para em 3.2, `0.8.3` começa em 3.4, `io.graphframes` compila contra
+3.5. Escrever isso exigiu `version_scope._specs`: uma chave de `runtime_scope` passou a
+aceitar **uma lista** de specs, conjugando como as chaves entre si, e
+`{spark: [">=3.3", "<3.4"]}` é o primeiro uso. As alternativas com o que existia falham
+as duas, e o número está medido: `"==3.3"` reprova `3.3.1` e `3.3.2` — os Sparks de EMR
+6.10.x e 6.11.x, **quatro das nove células, que sumiriam em silêncio** —, e `">=3.3"`
+sozinho estenderia a acusação a 3.4 e 3.5, onde ela é falsa. Mudança aditiva: lista vazia
+levanta `ValueError` de propósito, pelo mesmo modo de falha do curinga que a Fase 5a
+levou 20 regras para descobrir. `SF-GRAPH-002` é a **primeira regra do catálogo guardada
+por `spark` em vez de `glue`**, e isso quebrou dois testes de escopo que presumiam o
+contrário — `SPARK_VERSIONED` virou grupo próprio, porque a razão dele é "a afirmação só
+é verdadeira nesta faixa" e não "esta infraestrutura não existe aqui".
+
+**A fronteira com `SF-PY` foi medida e o resultado é 16, não zero.** O critério 6 da §10
+do spec exigia que nenhuma regra de `SF-GRAPH` disparasse sobre fixture vizinha "nem o
+contrário". A primeira metade está provada; **a segunda é falsa, e é a construção
+funcionando**: `SF-PY` dispara **16 vezes sobre `fixtures/graph/`** — `SF-PY-008` em
+catorze fixtures e `SF-PY-012` em duas. Cada um cita `pyspark.cache` ou `pyspark.conf_set`
+e **nenhum** cita um fact `graph.*`; o `subject.snippet` de cada um bate com a linha real
+do arquivo; e nenhuma das dezenove fixtures chama `unpersist`. `cache`/`persist`/
+`unpersist` ficaram **fora** do vocabulário de `graph.algorithm` justamente porque
+`pyspark.cache` já os emite sobre o mesmo artefato (`V-GR-4`). Os dezesseis estão nomeados
+um a um em `ESPERADO_PY_SOBRE_GRAFO`, com o argumento ao lado — silenciar a lista era a
+única saída errada, e um décimo sétimo obriga alguém a escrever o argumento antes de
+acrescentar a linha.
+
+**O coordenador ficou onde estava, e a proporção é que decidiu.** A §9 do spec deixava em
+aberto: coordenador próprio ou `pyspark-code-reviewer` estendido. O critério da Fase 4c
+exige fronteira de **despacho** medida, e a 5d refinou que sem discriminador **em dado**
+partir cria par roteado por prosa. Medido com os três extratores sobre os três corpora:
+**há** discriminador em dado — `SF-GRAPH` dispara 5 vezes em `fixtures/graph/` e **zero**
+nas 13 fixtures de `dq/` e nas 17 de `pyspark/` —, então o bloqueio da 5d não se aplicava
+e a decisão teve de sair do outro eixo. **Nas 19 fixtures de grafo, `SF-PY` dispara 16
+vezes em 14 delas e `SF-GRAPH` 5 vezes em 5, e as cinco são subconjunto das catorze**: não
+há, no corpus, um job em que a pergunta de grafo chegue sozinha. O precedente da 5c mede o
+inverso — nas 13 fixtures de `dq/`, `SF-DQ` dispara 10 vezes em 8 contra `SF-PY` em 2 —, e
+foi por isso que *aquele* partiu. Um coordenador de grafo seria selecionado em 5 de 19
+jobs de grafo e entregaria os outros 14 a `pyspark-code-reviewer`, que precisaria declarar
+`SF-GRAPH` de qualquer forma. E o teste que fundou a fronteira com o irmão responde para o
+outro lado aqui: apague as linhas de validação e o job continua de pé; apague as linhas de
+GraphFrames e não sobra job nenhum.
+
+Consequência em dado, e ela fechou um buraco que a Task 5 tinha deixado provisório
+(`D-6a-32`, `D-6a-45`): `AGENT-004` ganhou `findings_area: SF-GRAPH` junto com `SF-PY`,
+`SF-PLAN` e `SF-CG`. **Antes disso, um case cujos achados fossem só de grafo voltava de
+`next_step` com `recommended_agent: None`** — a área tinha dono no frontmatter e nenhuma
+rota em dado, que é a diferença entre cobertura e despacho. Como o destino é o mesmo
+agente, a pergunta de precedência que a `AGENT-008` teve de responder não existe aqui, e o
+total de rotas segue **24**. A `description` do coordenador — que é o gatilho de seleção,
+não decoração — passou a nomear grafo; até este commit ela não o nomeava de propósito,
+para não afirmar cobertura que a decisão ainda não tinha tomado.
+
+**Sete das dezenove fixtures existem para provar que o motor cala.** A exigência de
+checkpoint de `connectedComponents` tem **cinco** saídas escritas no `.py`, não três como
+o plano supunha: `algorithm="graphx"`, `checkpointInterval<=0`, `use_local_checkpoints=True`,
+e mais duas por `spark.conf.set` dentro do próprio job (`spark.checkpoint.dir` e
+`spark.graphframes.useLocalCheckpoints`) — ignorá-las faria a regra P0 disparar sobre
+código que resolveu o problema na linha de cima. Há um **sexto** estado, em que a conf é
+ilegível e `checkpoint_required` sai **ausente**: ponto cego contado, não acusação. A
+decisão vem pronta do extrator porque `engine._where_matches` reprova caminho ausente e
+`_expr_matches` engole o `ExprError` — nenhuma regra deste catálogo consegue exprimir "o
+código não declarou saída nenhuma", que é o caso comum. É o padrão que `SF-EMR-008` fixou:
+o extrator transcreve o modo de falha documentado, e severidade, limiar e recomendação
+continuam no catálogo.
+
+**O que a fase abriu.** Duas dívidas e três limites declarados, todos medidos durante a
+implementação e com o número na mão — nenhum é surpresa de revisão. As duas dívidas
+fecham escrevendo código nosso (um kind derivado no extrator de Terraform, e uma fixture);
+os três limites fecham revertendo decisão cujo custo já está registrado, e em um deles o
+gatilho de reabertura **não é nosso** — é a comunidade publicar artefato para Spark 3.3,
+o que a release note da `0.8.3` afirma existir e o repositório de artefatos responde com
+404.
+
 ## Dívidas — fechadas em 2026-07-31
 
 As cinco dívidas listadas na versão anterior deste arquivo foram tratadas. Duas
@@ -1641,8 +1758,15 @@ O erro caro seria apresentar as três camadas com a mesma cara.
     `SF-GRAPH`, `SF-DDB`, `SF-NEP`, `SF-MONGO`, decomposta em
     [`specs/2026-08-03-sparkforge-roadmap-bancos.md`](specs/2026-08-03-sparkforge-roadmap-bancos.md).
     O roadmap decide a decomposição e **recusa** decidir o conteúdo: os candidatos
-    de regra são hipóteses, e cada fase abre com pesquisa de fontes — em quatro
-    fases seguidas ela matou premissa que parecia óbvia no papel
+    de regra são hipóteses, e cada fase abre com pesquisa de fontes — em **cinco**
+    fases seguidas ela matou premissa que parecia óbvia no papel.
+    **`SF-GRAPH` está CONCLUÍDA** desde 2026-08-05, branch `feat/fase6a-graph` —
+    Fase 6a, seção própria acima. Era a primeira das quatro e a única que não é um
+    banco, e ela derrubou a premissa mais central do próprio spec: das quatro
+    regras candidatas da §5, uma foi **vetada pela fonte** (limite de iteração
+    ausente não é defeito em nenhum dos dezesseis algoritmos) e outra **não entrou**
+    por falta de capacidade no motor. Restam `SF-DDB`, `SF-NEP` e `SF-MONGO`, nesta
+    ordem, e as três leem artefato que este repositório ainda não coleta
 12. **Fases seguintes** — custo, orquestração, Redshift, streaming; o eixo de
     **job runs** do EMR Serverless (`get-job-run`, `billedResourceUtilization`),
     aberto pela 5d e sem posição aqui; e **configuração de Spark como coisa lida**
@@ -1735,7 +1859,18 @@ declarados — 30 linhas abertas, e 25 fechadas.** As três parcelas foram obtid
 **contando as linhas das três tabelas**, não somando o que a rodada anterior
 escreveu — que é o defeito registrado no parágrafo acima.
 
-**Contagem corrente, depois da rodada de dívidas abertas (2026-08-05): 1 dívida,
+**Contagem corrente, depois da Fase 6a (2026-08-05): 3 dívidas, 6 fases, 21
+limites declarados — 30 linhas abertas, e 31 fechadas.** Contadas **linha a
+linha** nas três tabelas, e não somando o que a rodada anterior escreveu — que é
+o defeito registrado dois parágrafos acima. A Fase 6a **não fechou nenhuma
+linha** e abriu cinco: duas dívidas (o kind derivado que faltaria ao extrator de
+Terraform, e a fixture do limiar de `checkpointInterval`) e três limites
+declarados (jar de outro minor, conf de checkpoint fora do artefato, e o eixo
+Python de GraphFrames). As cinco foram medidas **durante** a implementação e
+carregam o número na mão; nenhuma é surpresa de revisão. Fase que fecha sem abrir
+linha nenhuma normalmente é fase que não olhou.
+
+**Contagem anterior, depois da rodada de dívidas abertas (2026-08-05): 1 dívida,
 6 fases, 18 limites declarados — 25 linhas abertas, e 31 fechadas.** Contadas
 linha a linha nas três tabelas, pela mesma disciplina. É a maior queda que este
 inventário já registrou, e **o que ela conta não é o saldo:** de 8 dívidas, **6
@@ -1797,7 +1932,7 @@ que a varredura livre achou não estavam em candidato nenhum, nenhuma quebrava t
 todas eram texto que a própria pesquisa já tinha derrubado — sobrevivendo num `.py`, num
 docstring de teste e num arquivo da raiz, três lugares onde ninguém foi procurar.
 
-### Dívidas (1)
+### Dívidas (3)
 
 Fechar exige escrever código. Nada aqui espera fase nem depende de reverter
 decisão. **A tabela tinha oito linhas até 2026-08-05 e tem uma.** Seis fecharam
@@ -1818,6 +1953,8 @@ teste para trás, não prosa.
 | Dívida | Origem | Impacto |
 |---|---|---|
 | `judge --emr` sobre facts de EMR Serverless grava versão de EC2 num artefato que não a declara | rodada de dívidas abertas, 2026-08-05, medida ao conferir o que o caminho alternativo do Serverless realmente enche | **Dívida, e a única aberta — fechar é escrever código, e ninguém escreveu.** Medido, reproduzível numa linha: `sparkforge judge --facts fixtures/emr_serverless/app_saudavel/expected/facts.json --emr 7.5.0` grava no contexto `{"emr": "7.5.0", "spark": "3.5.2-amzn-1", "python": "3.9", "iceberg": "1.6.1-amzn-1", "detected_from": ["cli"]}`, tudo derivado da `EMR_MATRIX` — **que é de EMR on EC2**. O conjunto de facts não tem um único fact de EC2: são cinco kinds `emrs.*`, todos de `get-application`. **Onde está o número certo:** `knowledge/emr-serverless/runtime-matrix.md:47` mede que `emr-7.5.0` no Serverless publica **`3.5.2`, sem o sufixo do fork**, e a §1 da mesma página (`knowledge/emr-serverless/runtime-matrix.md:30-31`) mede que o sufixo `-amzn-N` **não existe na fonte do Serverless** e que **três das quatro colunas da `EMR_MATRIX` não têm fonte nenhuma do lado do Serverless**. Ou seja: `spark` sai com um sufixo que a fonte não publica, e `python` e `iceberg` saem **inteiros do nada** — não é um campo com ruído, são três campos inventados sobre um artefato que não declara nenhum deles. **Nada no motor impede**, e o custo é do pior tipo: versão errada no contexto invalida toda recomendação versionada que vier depois, e o operador não tem como distinguir um eixo derivado de um eixo lido. É **dívida e não limite** porque o conserto é código nosso e há mais de uma forma de escrevê-lo: recusar `--emr` quando o conjunto tem fact `emrs.*`, avisar e marcar os eixos como derivados de matriz alheia, ou derivar da tabela do Serverless para o componente que ela publica e deixar vazio o que ela não publica. **Escolher entre as três é a decisão; nenhuma delas depende de terceiro.** Nenhum teste cobre a combinação hoje — `--emr` é exercitado com facts de EC2, e o Serverless é exercitado sem `--emr`. |
+| Nenhuma regra consegue dizer "o IaC não declarou o jar de GraphFrames" — falta `absent` filtrado por atributo, e o kind derivado que o substituiria | Fase 6a, veto `V-GR-1` no cabeçalho de `rules/catalog/graph.yaml`, medido ao escrever a regra que a §5 do spec previa | **Dívida — fechar é escrever código, e ninguém escreveu.** Medido: `engine._absent_satisfied` (`rules/engine.py:68-70`) compara **só `kind`**, e o kind é `tf.attribute` dos dois lados do par de fixtures — o que muda é `attrs.key`. Não existe `absent` filtrado por atributo nem `where` negado, então `absent: tf.attribute` seria falso para todo Terraform lido, e a regra acusaria **todo** job de grafo, inclusive quem declarou o jar. **O que fecharia** é um kind derivado no extrator de Terraform, no molde exato de `tf.observability.spark_ui`: o extrator decide uma vez e emite o kind já decidido, e a regra fica com `absent:` sobre ele. É código nosso, tem precedente no próprio repositório e não depende de terceiro. **O que NÃO fecha com ele** está na linha de *Limites declarados* sobre jar de outro minor: a metade **exculpatória** — tratar um `--extra-jars` como resolução — continua vetada na faixa 3.3 mesmo com o kind escrito, e as duas metades envelhecem de formas opostas. O par de fixtures `import_sem_jar_no_iac` × `import_com_jar_declarado` já existe, compartilha o `.py` byte a byte e difere só no `--extra-jars`: o corpus para a regra está pronto, o mecanismo é que não. |
+| `checkpointInterval > 2` tem fonte primária e limiar apurados, e nenhuma fixture o exercita | Fase 6a, veto `V-GR-2` no cabeçalho de `rules/catalog/graph.yaml`, medido contra as 19 fixtures | **Dívida — fechar é escrever corpus, e ninguém escreveu.** É o **único limiar numérico com fonte primária** desta área: `graphframes-api.md` §6 traz o aviso citável (o código adverte em `value <= 0 || value > 2`), e a §4.3.2 autoriza explicitamente "outra regra, com severidade menor". O que falta é golden positivo: o caso `> 2` **não tem fixture nenhuma**, e regra sem ele reprova `test_every_rule_has_a_fixture_that_fires_it`. O caso `<= 0` tem fixture, mas é `saida_intervalo_nao_positivo`, que o próprio `meta.yaml` declara "segunda forma de escrever certo" e que é uma das **cinco** saídas legítimas de `V-GF-1` — acusar o artefato que o corpus declara correto faria o relatório dizer as duas coisas ao mesmo tempo. **Fechar é uma fixture com `checkpointInterval` acima de 2 e um `<= 0` que não seja também saída legítima**, mais a regra. Nada a reverter, nada a esperar de terceiro. |
 
 ### Fases (6)
 
@@ -1842,7 +1979,7 @@ também a que carrega o buraco medido de extrator, escrito na própria linha.
 | Pré-init subdimensionada não é acusável | Fase 5d, veto registrado no cabeçalho de `rules/catalog/emr-serverless.yaml` (`D-5d-33`) | **Fase, e é a primeira consumidora concreta da linha acima — não fecha sozinha.** É o veto mais doloroso da 5d justamente porque a fonte descreve o defeito com precisão: *"the initial capacity memory configuration should be greater than the memory that the job and the overhead request"*. O que falta não é regra nem extrator: é **o outro lado da comparação**, que mora no `StartJobRun` e que esta fase não lê. Uma regra que só acusasse quando o job declara a memória na própria application produziria silêncio exatamente onde a prática comum está — pior que não ter regra, porque o silêncio se lê como aprovação. Fechar exige o eixo de job runs; escrever a regra antes dele é impossível com a informação que o artefato de definição carrega. |
 | A área `SF-CFG` foi **planejada e nunca escrita** | **Pré-existente**: declarada no primeiro commit de `rules/catalog/README.md` (`ffcf150`) e nunca implementada; medida na revisão de documentação de 2026-08-04 | **Reclassificada em 2026-08-05, de dívida para fase: a medição que a própria linha exigia foi feita, e ela achou pergunta que nenhuma área faz.** A linha dizia "ninguém mediu qual dos dois é"; medido agora, é o segundo. (1) `knowledge/spark/config-reference.md` documenta **28** propriedades `spark.*` com default exato, em quatro tabelas — **35** contando as outras páginas de `knowledge/` —, e **nenhuma delas é lida por regra nenhuma**. (2) Das 77 regras, **12** tocam superfície de configuração, e o recorte delas é o argumento: **três** leem uma chave nomeada de um bloco `Configurations` do EMR (`SF-EMR-001` lê `maximizeResourceAllocation`, `SF-EMR-003` lê `spark.dynamicAllocation.enabled`, `SF-EMR-005` lê `spark.sql.sources.partitionOverwriteMode`) — e só **duas** dessas nomeiam uma propriedade `spark.*`; **três** leem qualquer chave, e só para caçar segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`); **cinco** nomeiam argumento de job Glue ou atributo de recurso Terraform (`SF-ENV-003`, `SF-GLUE-001`, `SF-GLUE-003`, `SF-GLUE-004`, `SF-GLUE-005`); e **uma** ignora a chave por completo (`SF-PY-012`, cujo `when` é `{fact: pyspark.conf_set}` e mais nada). **Zero regras fora da área EMR leem uma propriedade `spark.*` nomeada.** (3) O sintoma, e ele é literal: **cinco** regras recomendam `spark.sql.adaptive.enabled` no `proposed_change` — `SF-PQ-001`, `SF-PY-005`, `SF-PY-009`, `SF-PY-010` e `SF-UI-006` — e **nenhuma regra do catálogo lê se ela está ligada**. (4) O dado já está no repositório, com procedência: os goldens de `fixtures/emr/` carregam **36** facts `emr.configuration`, os 36 com `provenance` e `artifact_sha256`, cobrindo **cinco** propriedades `spark.*` distintas — e **três delas** (`spark.sql.shuffle.partitions`, `spark.executor.memory`, `spark.executor.instances`) **têm zero consumidores**. Fact extraído, hasheado, versionado em golden, e que nenhuma regra pergunta. (5) Dois buracos de extrator, e os dois medidos. `--conf` não é desmontado: em `fixtures/terraform/unresolvable_values/input/job.tf:21` ele chega num heredoc do Terraform, vira um `tf.unresolved` com `reason: heredoc`, e as duas propriedades de dentro somem — uma delas é `spark.sql.adaptive.enabled=true`, exatamente a que cinco regras recomendam ligar. E o event log **não** emite `SparkListenerEnvironmentUpdate` (`sparkforge/facts/event_log.py:485-486` o lista entre os eventos ignorados de propósito): **a configuração efetivamente aplicada num run não é lida por superfície nenhuma**. **Portanto ela não morre por escrito.** Existe pergunta de configuração que nenhuma das três áreas faz, e responder a ela é trabalho de fase: decidir se o eixo vira área própria ou extensão das existentes, fechar os dois buracos de extrator, e resolver o problema que o próprio `config-reference.md` declara no cabeçalho — default documentado não é valor efetivo, e o Glue sobrescreve parte deles. **Ela não tem posição na *Ordem***, do mesmo jeito que a linha do EMR Serverless não teve até esta semana, e enfileirá-la é decisão de roadmap que esta rodada não toma. **A leitura anterior, da triagem de 2026-08-04, fica abaixo inteira — reclassificar não é reescrever:** **Dívida, e a mais antiga do inventário — nada a reverter, só decidir.** O `README.md` do catálogo declarava a área `CFG` (config Spark) e o arquivo `spark-config.yaml` desde o dia em que foi escrito. Medido: `git log --diff-filter=A -- rules/catalog/spark-config.yaml` não devolve **nada** — o arquivo nunca existiu em commit nenhum —, e `SF-CFG` não aparece em nenhum `.yaml`, `.py` ou teste do repositório. A tabela listava **15** arquivos para **14** reais e implicava **14** áreas contra **13** medidas; as duas linhas foram removidas, e a contagem de áreas passou a ser declarada por escrito (**treze**) para que a próxima divergência apareça. **O que fica em aberto é a decisão, não o texto:** configuração de Spark hoje é julgada de forma dispersa — `pyspark.conf_set` alimenta regras de `SF-PY`, e a configuração declarada em IaC alimenta `SF-GLUE` e `SF-EMR` (que carrega `Configurations` em dois níveis). Ou isso é reconhecido como a resposta definitiva e a `CFG` morre por escrito, ou existe uma pergunta de configuração que nenhuma das três áreas faz e aí ela vira fase. **Ninguém mediu qual dos dois é**, e é essa medição — não código — que fecha esta linha |
 
-### Limites declarados (18)
+### Limites declarados (21)
 
 Decisão tomada com o custo registrado. "Fechar" cada uma destas significa
 **reverter** a decisão que a criou — e a coluna de impacto abre nomeando qual.
@@ -1893,6 +2030,9 @@ contada.
 | A anotação `EMR.secret@` é **bypass incondicional** da heurística de segredo | Fase 5d, revisão final de 2026-08-05, medido ao reproduzir os dois valores | **Limite declarado, e é o único do inventário em que o limite era negado por escrito pelo próprio produto.** `_is_secret_reference` é `startswith` puro e roda **antes** da heurística. Logo `"EMR.secret@AKIAIOSFODNN7EXAMPL"` e `"EMR.secret@jdbc://user:senha@host"` saem com `secret_reference: True` e o valor **inteiro em `attrs.value`, sem redação** — e, num golden, commitado. A docstring do módulo afirmava sem qualificação que *"quando casa, o valor NUNCA é escrito em attrs"*; isso vale para a heurística e **não** vale quando a anotação vence antes. Corrigida a prosa em três lugares (docstring do módulo, `_is_secret_reference`, e o filtro `startswith("EMR.secret@")` de `test_no_secret_value_survives_into_a_committed_golden`, que é onde a concessão mora no teste). **O comportamento fica, e não é omissão:** a fonte declara **só o prefixo** — *"add the `EMR.secret@` annotation to the configuration value"* —, e o `{{SecretName}}` aparece no exemplo, não como gramática exigida. Validar a forma `EMR.secret@{{nome}}` inventaria gramática que a fonte não declara, e toda anotação legítima fora dela seria redigida **e** marcada `secret_pattern_match`, fazendo `SF-EMRS-002` acusar exatamente a correção que recomenda. **Fechar sem custo de falso positivo é possível e tem preço:** manter `secret_reference: True` (achado nenhum) e ainda assim redigir `attrs.value` quando o valor anotado casa a heurística — a evidência deixa de dizer QUAL segredo é referenciado, que é a parte útil dela. Não foi feito; está escrito aqui para ser decidido, não descoberto no uso |
 | `architecture` é emitido como `Fact` e nunca julgado | Fase 5d, não-objetivo registrado na §2 do spec | **Limite declarado, e fechar é reverter uma decisão cujo custo já está medido.** Recomendar migração para `ARM64` depende de compatibilidade de dependência **nativa** do job — wheel compilada, JNI, binário empacotado —, e o `get-application` não descreve nada disso. Uma regra sobre `architecture` acusaria `X86_64` sem saber se o job sequer roda em ARM, que é achado confiante e possivelmente falso — a família de defeito que este projeto trata como a pior. O valor **sai** no fact, para quem tem a informação de fora poder decidir; o que não sai é julgamento. Fechar exigiria um artefato que declare as dependências nativas do job, que não existe em verbo nenhum deste repositório. |
 | `RuntimeContext.emr` não é alimentado por artefato de EMR Serverless | Fase 5d, medida na Task 1 e registrada no `D-5d-5` | **Reclassificada em 2026-08-05, de dívida para limite declarado: o caminho alternativo que a linha propunha existe, foi exercitado, e não fecha o título dela.** A linha dizia que era dívida "porque existe caminho, e ele é ler a versão de outra superfície" — e esse caminho **já existia** desde a Fase 5a.2 (commit `8a7d506`, 2026-08-01), quatro dias antes de a linha ser escrita; o que faltava era exercitá-lo. Medido: `_PRECEDENCE` é `("event_log", "describe_cluster", "get_work_group", "cli", "terraform")` (`sparkforge/facts/runtime_detect.py:389`), e **`event_log` alimenta só `spark_version`** — `SparkListenerLogStart` carrega `Spark Version` e nada que se pareça com release label. Fora `describe_cluster`, que lê `emr.cluster` e não existe no Serverless, e a flag `cli`, que é declaração do operador, **nenhuma superfície preenche o eixo `emr`**. A prova é de uma linha: sobre os facts `emrs.*` de `fixtures/emr_serverless/app_saudavel/` o contexto sai com **todos** os eixos vazios e `detected_from: []`; acrescentando um `spark.runtime_version` sintético de event log, ele sai `{'emr': '', 'spark': '3.5.2', 'detected_from': ['event_log']}`. **O caminho alternativo enche `spark` e deixa `emr` vazio**, que é literalmente o que o título desta linha afirma. Fechar de verdade depende de terceiro — a AWS publicar a matriz de release do Serverless com os quatro componentes —, e gatilho de reabertura que não é nosso é a assinatura de limite declarado, a mesma das duas linhas de Cognition nesta tabela. **Contexto que reduz o peso da linha, e vale escrito porque ninguém tinha medido:** **zero** das 77 regras têm `emr` em `runtime_scope` — os únicos eixos usados no catálogo inteiro são `glue` e `iceberg` —, e as **9** regras `SF-EMR-*` e as **6** `SF-EMRS-*` declaram `runtime_scope: {}`. Hoje `RuntimeContext.emr` **não porteia regra nenhuma**, no EC2 nem no Serverless. **A leitura anterior, da triagem de 2026-08-04, fica abaixo inteira — reclassificar não é reescrever:** **Dívida, e a redação importa: a AWS não publica a matriz — não que as matrizes divirjam.** A D-5 do spec previa dois desfechos, idênticas ou divergentes; a medição achou um terceiro. As 24 páginas de release do EMR Serverless trazem **só** Spark, Hive e Tez, sem o sufixo `-amzn-N`; Hadoop, Iceberg e Python não aparecem em nenhuma — **três das quatro colunas de `EMR_MATRIX` não têm fonte do lado do Serverless** —, e há `releaseLabel` em uso (`emr-spark-8.0.0`) que não tem sequer chave na matriz, ou seja, derivar por ela falharia calada justamente na release mais nova. Nas 24 releases comparáveis a versão de comunidade do Spark **coincide, uma a uma**, e é por isso que isto é dívida e não limite: existe caminho, e ele é ler a versão de outra superfície (um event log de job run, ou uma declaração do operador) em vez de derivar do label. Consequência hoje: `emrs.application` não é produtor, um `get-application` não emite `env.platform` nenhum (`_PLATFORM_KEYS` só conhece `emr` e `glue`), e as seis regras `SF-EMRS` foram escritas com `runtime_scope` vazio para que a área não dependesse disso. **Afirmar divergência para fechar a linha seria afirmar o que ninguém mediu**, que é o defeito que este projeto existe para não cometer. |
+| Jar de GraphFrames de **outro minor** de Spark não é tratado como resolução, e por isso `SF-GRAPH-002` acusa os dois lados do par de fixtures | Fase 6a, veto `V-GR-1` (motivo b) e §7 de `knowledge/graph/availability.md` | **Limite declarado — fechar é reverter a recusa de afirmar o que a fonte nega.** Para Spark 3.3 **não há artefato publicado em linhagem nenhuma** (`0.8.2` para em 3.2, `0.8.3` começa em 3.4, `io.graphframes` compila contra 3.5), então qualquer `--extra-jars` de GraphFrames naquela faixa aponta necessariamente para **outro** minor. Tratar isso como "resolvido" inventaria a garantia que a fonte recusa dar. Consequência medida e aceita: `import_com_jar_declarado` — escrita como metade **negativa** do par — dispara `SF-GRAPH-002` igual à positiva, e o `--extra-jars` aparece **no texto do achado** como tentativa de contorno em vez de sumir. O `proves` da fixture foi reescrito para o que ela de fato prova: que a acusação é sobre o **artefato**, não sobre o IaC. **O gatilho de reabertura não é nosso:** é a comunidade publicar `-spark3.3` — a release note da `0.8.3` afirma o suporte e o artefato responde **404** (`V-AV-5`), e para a pergunta "há o que instalar?" o repositório vence a nota. |
+| A conf de checkpoint que vem **de fora do `.py`** não é lida, e a ressalva vai escrita dentro do achado P0 | Fase 6a, veto `V-GF-1` e desvio `D-6a-12` | **Limite declarado — fechar é reverter o recorte de artefato da fase.** `spark.checkpoint.dir` (0.9.3+) satisfaz a exigência de `connectedComponents` **sem aparecer no código**, quando vem do `--conf` do IaC ou do `spark-submit`. A fase leu o que **está** no arquivo — as duas grafias por `spark.conf.set` dentro do próprio job entraram como `graph.checkpoint_dir` com `form`, porque ignorá-las faria a P0 disparar sobre código que resolveu o problema na linha de cima —, e o que sobra fora do alcance vai declarado **dentro do achado**, no padrão de `V-AS-2`. Não é omissão silenciosa: é a diferença entre "o motor não viu" e "não há". **Fechar depende de superfície que outra linha já registra:** o `--conf` do Terraform vira `tf.unresolved` com `reason: heredoc` e o event log não emite `SparkListenerEnvironmentUpdate` — as duas medições estão na linha de `SF-CFG`, em *Fases*, e é lá que a configuração efetivamente aplicada passa a ser lida por alguma superfície. |
+| O eixo **Python** de GraphFrames não vira regra, embora a matriz esteja medida | Fase 6a, veto `V-AV-3` no cabeçalho de `knowledge/graph/availability.md` | **Limite declarado — fechar é reverter a recusa de acusar sem saber a linhagem.** Medido abrindo os dois jars: `graphframes-0.8.2-spark3.2-s_2.12.jar` carrega **13** arquivos `.py` dentro dele e `graphframes-spark3_2.12-0.12.1.jar` carrega **0** — a fratura da `0.9.0` mudou de onde vem o wrapper. O pacote PyPI `graphframes-py` (`0.12.1`, 2026-06-17) exige `requires_python >=3.10`, e cruzando com as matrizes isso corta **toda a série EMR 6.x e Glue 3.0**; o homônimo `graphframes` no PyPI parou em `0.6`, em 2018, e é pacote abandonado com o nome certo. **Por que não é regra:** o `.py` não diz qual linhagem o job usa, e carregar o Python de dentro do jar legado por `--py-files` é caminho válido — acusar seria afirmar sobre uma escolha que o artefato não registra. Fica como **contexto do achado** de disponibilidade, não como condição. Fechar exige uma superfície que diga qual jar está no classpath, que esta fase não lê. |
 
 ### Fechadas — registro histórico (31)
 

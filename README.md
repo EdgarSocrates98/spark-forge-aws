@@ -162,7 +162,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 18 extratores emitem 112 kinds distintos de fact, e todos são offline: leem
+Os 19 extratores emitem 118 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -179,6 +179,7 @@ tool MCP de mesmo nome.
 | **Cluster EMR on EC2** | `analyze emr-cluster` | dump de `describe-cluster` e os cinco que o completam |
 | **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
+| **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
 | Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
 | Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
@@ -194,7 +195,7 @@ AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
 essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
 o que falta para uma regra disparar é sempre coleta, nunca código.
 
-Seis desses verbos mudam o alcance do projeto, e é por isso que aparecem
+Sete desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
@@ -215,7 +216,24 @@ passadas sobre um alvo que ninguém persistiu. Uma suíte não custa "uma
 passada": ela compartilha scan por agrupamento, e restrição de unicidade paga
 a sua própria.
 
-`benchmark` é o terceiro, e não é um `analyze`: ele não lê artefato nenhum e
+`analyze graph` é o terceiro, e lê o **mesmo `.py` pela terceira vez** — depois de
+`analyze pyspark` e `analyze data-quality` —, com um vocabulário fechado de
+GraphFrames que só é lido em módulo que **importa** a biblioteca: `find`,
+`degrees` e `validate` são nomes que qualquer objeto de usuário pode ter, e
+casá-los sem essa evidência produziria acusação falsa. A área `SF-GRAPH` tem
+quatro regras, e a primeira é a única P0 do repositório cujo modo de falha é o
+algoritmo **levantar exceção** em vez de degradar: `connectedComponents` exige
+diretório de checkpoint e lança `java.io.IOException` na primeira iteração — com
+três saídas legítimas escritas no `.py` (`algorithm="graphx"`,
+`checkpointInterval<=0`, `use_local_checkpoints=True`), mais duas por
+`spark.conf.set` dentro do próprio job, e uma sexta forma em que a conf é
+ilegível e o motor declara o ponto cego em vez de acusar. A segunda regra é a
+única do catálogo guardada por uma **faixa de um minor de Spark**: não há
+artefato de GraphFrames publicado para Spark 3.3 em linhagem nenhuma — nove das
+34 células da matriz Glue×EMR —, e a capacidade de escrever `{spark: [">=3.3",
+"<3.4"]}` num `runtime_scope` nasceu aí.
+
+`benchmark` é o quarto, e não é um `analyze`: ele não lê artefato nenhum e
 não executa nada — compara **dois conjuntos de facts** que `analyze event-log`
 já produziu, um por execução, e emite `bench.run_delta`, `bench.stage_delta`,
 `bench.unmatched`, `bench.analyzed` e `bench.unresolved`. É o produtor que o
@@ -235,7 +253,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 112 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 118 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
@@ -253,6 +271,9 @@ sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
 
 # onde o job valida dado, e o que acontece quando o check falha
 sparkforge analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
+
+# o mesmo lib/, pela ótica do GraphFrames — sem import da biblioteca, só sentinela
+sparkforge analyze graph --path lib/ --out .sparkforge/facts-graph.json
 
 # o antes e o depois, comparados — e o fact_id que o benchmark_ref cita
 sparkforge analyze event-log --path before.jsonl --out .sparkforge/before.json
