@@ -7,7 +7,7 @@ proves: >
   charges" (`knowledge/emr-serverless/application-configuration.md` secao 3).
   Os dois lados da conjuncao moram no MESMO fact de proposito:
   `emrs.application.auto_stop_enabled` e
-  `measures.initial_capacity_worker_type_count`. Duas condicoes em kinds
+  `measures.initial_capacity_worker_count`. Duas condicoes em kinds
   diferentes casariam a application A com a capacidade da application B num
   diretorio com varios payloads (D-5d-17), e o achado acusaria duas
   configuracoes corretas.

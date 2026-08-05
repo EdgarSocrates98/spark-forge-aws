@@ -1,0 +1,35 @@
+name: preinit_sem_worker_count
+proves: >
+  O caso irmao de `preinit_com_zero_workers`, e o pior dos dois: a entrada de
+  `initialCapacity` traz `workerConfiguration` e NAO traz `workerCount`. O
+  extrator declara o ponto cego -- `emrs.unresolved{missing_worker_count}` -- e,
+  antes da correcao, `SF-EMRS-001` disparava em P0 no MESMO julgamento.
+  Uma P0 erguida sobre um ponto cego que o proprio extrator acabou de declarar e
+  exatamente o achado confiante e falso que este pacote existe para evitar. O
+  measure conta worker LIDO, entao entrada sem contagem nao soma nada, e o
+  buraco continua contado uma vez so, no `unresolved`.
+  Dois payloads, um por regra, como em `preinit_com_zero_workers`:
+    * `autostop_desligado.json` -- `enabled: false`, entrada `DRIVER` sem
+      `workerCount`. `SF-EMRS-001` nao dispara e o `unresolved` aparece.
+    * `janela_longa.json` -- auto-stop ligado com `idleTimeoutMinutes: 10080`,
+      entrada `EXECUTOR` sem `workerCount`. O mesmo por `SF-EMRS-005`.
+  `maximumCapacity` esta presente e completa nos dois de proposito: com o ponto
+  cego ja contado, `_capacity_decision` OMITE o veredito e nao emite um segundo
+  `unresolved` pelo mesmo buraco. Se essa deduplicacao quebrar, o golden de
+  facts fica vermelho aqui.
+  O contraste com `preinit_com_zero_workers` e o que os dois travam juntos:
+  "leu zero" e "nao conseguiu ler" produzem o mesmo silencio de regra por razoes
+  diferentes, e so um deles produz `unresolved`.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+  - emrs.unresolved
+expects_rules: []

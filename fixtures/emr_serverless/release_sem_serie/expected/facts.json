@@ -50,7 +50,7 @@
     }
   },
   {
-    "id": "f_4319a3",
+    "id": "f_e9207a",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
@@ -58,7 +58,7 @@
       "symbol": "00fspark8ga000000001"
     },
     "measures": {
-      "initial_capacity_worker_type_count": 0,
+      "initial_capacity_worker_count": 0,
       "idle_timeout_minutes": 15
     },
     "attrs": {
@@ -78,7 +78,7 @@
     }
   },
   {
-    "id": "f_e01dfc",
+    "id": "f_9e79d2",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
@@ -86,7 +86,7 @@
       "symbol": "00fspark8prev0000001"
     },
     "measures": {
-      "initial_capacity_worker_type_count": 0,
+      "initial_capacity_worker_count": 0,
       "idle_timeout_minutes": 15
     },
     "attrs": {

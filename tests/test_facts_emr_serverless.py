@@ -272,17 +272,53 @@ class TestPreInitNoMesmoFactDoAutoStop:
     defeito. Duas condicoes em kinds diferentes casariam a application A com a
     capacidade da application B; a resposta precisa caber num fact so."""
 
-    def test_conta_as_entradas_lidas_do_map(self):
+    def test_soma_os_workers_lidos_do_map(self):
+        """WORKER, nao entrada do map: duas entradas, seis workers."""
         payload = _app(initialCapacity={
             "DRIVER": {"workerCount": 1, "workerConfiguration": {"cpu": "4", "memory": "16"}},
             "EXECUTOR": {"workerCount": 5, "workerConfiguration": {"cpu": "4", "memory": "16"}},
         })
         app = _one(_extract(payload), "emrs.application")
-        assert app.measures["initial_capacity_worker_type_count"] == 2
+        assert app.measures["initial_capacity_worker_count"] == 6
 
     def test_sai_zerado_quando_o_payload_nao_traz_capacidade(self):
         app = _one(_extract(_app()), "emrs.application")
-        assert app.measures["initial_capacity_worker_type_count"] == 0
+        assert app.measures["initial_capacity_worker_count"] == 0
+
+    def test_entrada_com_zero_workers_nao_e_worker_existente(self):
+        """A P0 que a revisao final da Fase 5d mediu (D-5d-43): entrada existe,
+        worker nenhum existe. A `explanation` de SF-EMRS-001 funda o achado em
+        "o que se cobra e worker existente" -- contar a ENTRADA fazia a regra
+        acusar uma application que nao paga worker nenhum.
+
+        A contagem de entradas nao se perdeu: ela e
+        `emrs.analyzed.initial_capacity_count`, e continua 1 aqui.
+        """
+        payload = _app(
+            autoStopConfiguration={"enabled": False},
+            initialCapacity={"DRIVER": {"workerCount": 0, "workerConfiguration": {
+                "cpu": "4vCPU", "memory": "16GB", "disk": "20GB"}}},
+            maximumCapacity={"cpu": "400vCPU", "memory": "3000GB", "disk": "20000GB"},
+        )
+        facts = _extract(payload)
+        app = _one(facts, "emrs.application")
+        assert app.measures["initial_capacity_worker_count"] == 0
+        assert _one(facts, "emrs.analyzed").measures["initial_capacity_count"] == 1
+        # Zero LIDO nao e ponto cego: nada aqui e `unresolved`.
+        assert _reasons(facts) == []
+
+    def test_entrada_sem_worker_count_nao_soma_valor_presumido(self):
+        """O caso irmao, e o pior: o ponto cego JA foi declarado
+        (`missing_worker_count`), e somar um valor presumido o apagaria --
+        erguendo uma P0 sobre o que o extrator acabou de dizer que nao sabe."""
+        payload = _app(
+            autoStopConfiguration={"enabled": False},
+            initialCapacity={"DRIVER": {"workerConfiguration": {
+                "cpu": "4vCPU", "memory": "16GB"}}},
+        )
+        facts = _extract(payload)
+        assert _one(facts, "emrs.application").measures["initial_capacity_worker_count"] == 0
+        assert _reasons(facts) == ["missing_worker_count"]
 
     def test_a_pergunta_p0_cabe_num_fact_so(self):
         payload = _app(
@@ -292,7 +328,7 @@ class TestPreInitNoMesmoFactDoAutoStop:
         )
         app = _one(_extract(payload), "emrs.application")
         assert app.attrs["auto_stop_enabled"] is False
-        assert app.measures["initial_capacity_worker_type_count"] > 0
+        assert app.measures["initial_capacity_worker_count"] > 0
 
 
 class TestCorrelacaoDeCapacidade:

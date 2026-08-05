@@ -25,7 +25,7 @@
     }
   },
   {
-    "id": "f_3bdc8e",
+    "id": "f_f666cb",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
@@ -33,7 +33,7 @@
       "symbol": "00flongo00000000001"
     },
     "measures": {
-      "initial_capacity_worker_type_count": 1,
+      "initial_capacity_worker_count": 6,
       "release_major": 7,
       "release_minor": 5,
       "idle_timeout_minutes": 10080

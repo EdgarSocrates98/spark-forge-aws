@@ -12,10 +12,10 @@
       "symbol": "00fexcede00000000001"
     },
     "evidence": [
-      "f_fee1f5"
+      "f_ae5f87"
     ],
     "measured": {
-      "initial_capacity_worker_type_count": 2,
+      "initial_capacity_worker_count": 11,
       "release_major": 7,
       "release_minor": 5,
       "idle_timeout_minutes": 15

@@ -93,6 +93,12 @@
 #    termos. Isso é a diferença estrutural com o `SF-EMR-009`: num cluster EC2
 #    ocioso a fatura corre SEMPRE, porque as instâncias estão de pé.
 #
+#    O termo de pré-init conta WORKER declarado
+#    (`measures.initial_capacity_worker_count`), não entrada do map
+#    `initialCapacity` (D-5d-43): a mesma frase de fonte que sustenta o corte —
+#    cobra-se worker existente — não sustenta acusar `workerCount: 0`, nem
+#    entrada cujo `workerCount` o payload não trouxe.
+#
 #    **Limite declarado deste corte:** que uma application `STARTED` sem pré-init
 #    custe ZERO é DEDUÇÃO do modelo de cobrança, não frase da AWS. A coleta não
 #    encontrou página afirmando ausência de cobrança de outra natureza, e não
@@ -216,8 +222,18 @@ rules:
   # agrupa por subject e as duas condições já teriam o mesmo subject dentro do
   # grupo, mas o custo seria uma partição inútil sobre um problema que a
   # condição única já fecha. Por isso o extrator carrega
-  # `measures.initial_capacity_worker_type_count` DENTRO de `emrs.application`
+  # `measures.initial_capacity_worker_count` DENTRO de `emrs.application`
   # (D-5d-17), em vez de a regra correlacionar com `emrs.initial_capacity`.
+  #
+  # O measure conta WORKER, não entrada do map `initialCapacity` (D-5d-43).
+  # `{"DRIVER": {"workerCount": 0, ...}}` com auto-stop desligado tem uma
+  # entrada e nenhum worker, e a `explanation` desta regra funda o achado em "o
+  # que se cobra é worker existente" — zero workers não é worker existente.
+  # Entrada SEM `workerCount` é o caso irmão e pior: ela já produziu
+  # `emrs.unresolved{missing_worker_count}`, e disparar P0 no mesmo julgamento
+  # seria erguer o achado sobre um ponto cego que o extrator acabou de declarar.
+  # As fixtures `preinit_com_zero_workers` e `preinit_sem_worker_count` são os
+  # goldens negativos dos dois, uma por payload para cada uma das duas regras.
   #
   # `where: {attrs.auto_stop_enabled: false}` e não `absent:` nem
   # `auto_stop_declared: false`: a chave só existe quando a application
@@ -232,7 +248,7 @@ rules:
       all:
         - fact: emrs.application
           where: {attrs.auto_stop_enabled: false}
-          expr: "measures.initial_capacity_worker_type_count >= 1"
+          expr: "measures.initial_capacity_worker_count >= 1"
     status: confirmed
     severity_default: P0
     runtime_scope: {}
@@ -256,6 +272,11 @@ rules:
       tempo: auto-stop desligado sem pré-init não tem worker de que cobrar,
       porque "the state of an application with no pre-initialized capacity can
       immediately change from CREATED to STARTED", isto é, sem provisionar nada.
+      O segundo termo conta WORKER declarado, não entrada do map initialCapacity:
+      uma entrada com workerCount zero tem worker nenhum de que cobrar, e uma
+      entrada sem workerCount não tem worker PROVADO — nesse caso o extrator já
+      registrou o ponto cego em emrs.unresolved, e erguer uma P0 sobre ele seria
+      o achado confiante e falso que este catálogo recusa.
       O que este achado NÃO prova é o quanto se está pagando: ele lê a definição
       da application, não o uso. E é sobre a definição no momento da coleta —
       initialCapacity e autoStopConfiguration não são parâmetros de StartJobRun,
@@ -511,7 +532,7 @@ rules:
         - fact: emrs.application
           expr: >-
             measures.idle_timeout_minutes >= threshold.idle_timeout_minutes
-            and measures.initial_capacity_worker_type_count >= 1
+            and measures.initial_capacity_worker_count >= 1
     threshold:
       idle_timeout_minutes: 1440
     status: confirmed
@@ -542,7 +563,9 @@ rules:
       não encontrou página afirmando que uma application STARTED sem pré-init
       custe zero, e não encontrar não é o mesmo que não existir — o que o corte
       compra é não acusar uma configuração cujo custo não se conseguiu
-      demonstrar. Nada disso aparece em métrica de Spark: não há job, não há
+      demonstrar. Como em SF-EMRS-001, esse termo conta WORKER declarado e não
+      entrada do map: workerCount zero, ou ausente do payload, não prova worker
+      existente e não dispara. Nada disso aparece em métrica de Spark: não há job, não há
       stage, não há falha, só a fatura. O que este achado NÃO prova é que a
       application esteja de fato ociosa; ele lê a definição, e a definição no
       momento da coleta — autoStopConfiguration não é parâmetro de StartJobRun,

@@ -90,12 +90,17 @@ REQUIRED_FIXTURES = {
     "secoes_malformadas",
     "identidade_ausente",
     # A decima sexta, acrescentada pela Task 5 e medida pela verificacao de
-    # apagabilidade, nao prevista por tabela nenhuma: `initial_capacity_worker_type_count
+    # apagabilidade, nao prevista por tabela nenhuma: `initial_capacity_worker_count
     # >= 1` e termo de SF-EMRS-001 e de SF-EMRS-005, e sem uma application SEM
     # pre-init os dois termos podiam ser apagados do catalogo sem nenhum golden
     # reclamar. Dois payloads, um por regra, porque as duas condicoes de
     # auto-stop sao mutuamente exclusivas.
     "sem_preinit_nada_a_cobrar",
+    # D-5d-43 -- as duas que a revisao final exigiu, e que provam que o measure
+    # conta WORKER e nao entrada do map `initialCapacity`. As duas disparavam
+    # SF-EMRS-001 em P0 antes da correcao.
+    "preinit_com_zero_workers",
+    "preinit_sem_worker_count",
 }
 
 
@@ -265,7 +270,47 @@ class TestAdversarial:
         # mora no MESMO fact (D-5d-17) para que a regra nao case a application
         # A com a capacidade da application B.
         for app in (app_desligado, app_ausente):
-            assert app.measures["initial_capacity_worker_type_count"] >= 1
+            assert app.measures["initial_capacity_worker_count"] >= 1
+
+    def test_pre_init_that_has_no_worker_is_never_a_p0(self):
+        """D-5d-43 -- a P0 que a revisao final da Fase 5d mediu, travada nos dois
+        payloads de cada uma das duas fixtures.
+
+        `initialCapacity` com UMA entrada e ZERO workers, e `initialCapacity`
+        com uma entrada cujo `workerCount` o payload nao trouxe: os dois
+        disparavam `SF-EMRS-001` em P0 enquanto o measure contava entradas do
+        map. A `explanation` da regra funda o achado em "o que se cobra e worker
+        existente"; nenhum dos dois payloads prova worker existente.
+
+        O segundo e o pior: a P0 saia no MESMO julgamento em que o extrator
+        emitia `missing_worker_count` -- achado confiante erguido sobre ponto
+        cego declarado.
+
+        Se o measure voltar a contar entradas do map, os quatro `findings`
+        abaixo deixam de ser vazios e este teste fica vermelho, em cima de
+        `test_findings_match_golden`, que fica vermelho junto.
+        """
+        _, zerados, achados_zerados, _ = run_fixture(FIXTURES / "preinit_com_zero_workers")
+        _, sem_conta, achados_sem_conta, _ = run_fixture(FIXTURES / "preinit_sem_worker_count")
+
+        assert achados_zerados == []
+        assert achados_sem_conta == []
+
+        # Os dois payloads de cada fixture existem para cobrir uma regra cada:
+        # `enabled: false` (SF-EMRS-001) e janela de 10080 (SF-EMRS-005).
+        for facts in (zerados, sem_conta):
+            apps = _by_kind(facts, "emrs.application")
+            assert len(apps) == 2
+            assert [a.measures["initial_capacity_worker_count"] for a in apps] == [0, 0]
+            sentinelas = _by_kind(facts, "emrs.analyzed")
+            assert [s.measures["initial_capacity_count"] for s in sentinelas] == [1, 1]
+            assert {a.attrs.get("auto_stop_enabled") for a in apps} == {False, True}
+            assert {a.measures.get("idle_timeout_minutes") for a in apps} == {None, 10080}
+
+        # Zero LIDO nao e ponto cego; contagem ausente e, e sai contada uma vez
+        # so por entrada -- `_capacity_decision` nao a conta de novo.
+        assert _reasons(zerados) == []
+        assert _reasons(sem_conta) == ["missing_worker_count", "missing_worker_count"]
 
     def test_the_long_window_is_the_api_ceiling_and_the_short_one_is_the_default(self):
         """Os dois extremos declarados pela fonte, um em cada fixture: 10080
@@ -497,15 +542,15 @@ class TestAdversarial:
         COM auto-stop ligado e o arranjo que a documentacao recomenda; acusa-lo
         mandaria o operador desfazer uma configuracao correta.
 
-        Enquanto `SF-EMRS` nao existe isto e trivialmente verdadeiro. Vale
-        escrito assim mesmo: no dia em que a Task 5 entrar, este e o teste que
-        falha primeiro se uma regra nascer larga demais.
+        Com `SF-EMRS` no catalogo isto deixou de ser trivialmente verdadeiro: e
+        o teste que falha primeiro se uma regra da area nascer larga demais.
         """
         _, facts, findings, _ = run_fixture(FIXTURES / "app_saudavel")
         app = _one(facts, "emrs.application")
         assert app.attrs["auto_stop_enabled"] is True
         assert app.attrs["initial_exceeds_maximum"] is False
-        assert app.measures["initial_capacity_worker_type_count"] == 2
+        # 1 DRIVER + 4 EXECUTOR: o measure soma WORKER, nao entrada do map.
+        assert app.measures["initial_capacity_worker_count"] == 5
         assert _by_kind(facts, "emrs.unresolved") == []
         assert findings == []
 

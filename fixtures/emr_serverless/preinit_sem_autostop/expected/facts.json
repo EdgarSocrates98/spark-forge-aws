@@ -25,7 +25,7 @@
     }
   },
   {
-    "id": "f_042d4f",
+    "id": "f_afba8f",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
@@ -33,7 +33,7 @@
       "symbol": "00fpreinit000000001"
     },
     "measures": {
-      "initial_capacity_worker_type_count": 2,
+      "initial_capacity_worker_count": 11,
       "release_major": 7,
       "release_minor": 5
     },
