@@ -1,10 +1,20 @@
 name: import_com_jar_declarado
 proves: >
-  A metade negativa da regra de disponibilidade: o MESMO `.py` e o MESMO runtime
-  sem jar, com `--extra-jars` declarado no `default_arguments` do Glue job.
-  Sem esta fixture, a regra acusaria todo job de grafo em Spark 3.3 -- inclusive
-  quem resolveu o problema --, e o golden do lado positivo sozinho nao
-  perceberia.
+  O MESMO `.py` e o MESMO runtime sem jar de `import_sem_jar_no_iac`, com
+  `--extra-jars` declarado no `default_arguments` do Glue job.
+  A Task 4 escreveu esta fixture como a metade NEGATIVA da regra de
+  disponibilidade. A Task 5 mediu que ela nao e negativa, e o golden registra
+  isso: SF-GRAPH-002 dispara nos dois lados do par. Duas razoes independentes,
+  ambas em `rules/catalog/graph.yaml` (veto V-GR-1) -- o motor nao sabe dizer
+  "esta chave nao esta la" (`engine._absent_satisfied` compara so `kind`, e
+  `tf.attribute` existe nos dois), e `availability.md` §7 recusa afirmar que um
+  jar de outro minor de Spark roda aqui. Como para 3.3 nao existe artefato
+  publicado, QUALQUER `--extra-jars` de GraphFrames neste job aponta para um jar
+  de outro minor.
+  O que ela prova, entao, e o contrario do que o nome sugere e continua sendo
+  necessario: que a acusacao e sobre o ARTEFATO e nao sobre o IaC, e que
+  declarar um jar nao a fecha. Sem esta fixture, alguem escreveria a condicao
+  sobre `tf.attribute` achando que fecha, e nenhum golden reclamaria.
 runtime:
   glue: "4.0"
   spark: "3.3.0"
@@ -20,4 +30,5 @@ expects_kinds:
   - tf.module_analyzed
   - tf.observability.spark_ui
   - tf.resource
-expects_rules: []
+expects_rules:
+  - SF-GRAPH-002

@@ -6,12 +6,17 @@ Os de `pyspark_ast` sobre os mesmos `.py` ja tem o corpus `fixtures/pyspark/` --
 repetidos aqui, uma mudanca em `pyspark_ast` quebraria dois goldens pelo mesmo
 motivo, escondendo qual dos dois contratos regrediu.
 
-TODO `expects_rules` NASCE VAZIO nesta task, e isso e o correto e nao uma
+TODO `expects_rules` NASCEU VAZIO na Task 4, e isso era o correto e nao uma
 pendencia: a area `SF-GRAPH` so existe a partir da Task 5. Ate la os dezenove
-goldens de findings sao NEGATIVOS -- se alguma regra ja existente disparar sobre
-um fact deste corpus, o diff aparece aqui. Depois da Task 5, tres ou quatro
-deles ganham regra e o resto continua vazio DE PROPOSITO: sete das dezenove
-fixtures existem justamente para provar que o motor CALA sobre codigo correto.
+goldens de findings eram NEGATIVOS -- se alguma regra ja existente disparasse
+sobre um fact deste corpus, o diff apareceria aqui.
+
+Com a Task 5, CINCO das dezenove ganharam regra -- a Task 4 previa "tres ou
+quatro", e a quinta e o segundo lado do par de disponibilidade: SF-GRAPH-002
+dispara nas DUAS fixtures de Spark 3.3, com e sem `--extra-jars`, porque a fonte
+recusa tratar jar de outro minor como garantia (`rules/catalog/graph.yaml`,
+veto V-GR-1). As outras catorze continuam vazias DE PROPOSITO: sete existem
+justamente para provar que o motor CALA sobre codigo correto.
 
 O corpus e desenhado por eixo: cada fixture tem no maximo um defeito, e o resto
 dela e a forma certa. Sem isso, uma regra que dispare sobre qualquer
@@ -630,15 +635,37 @@ class TestAdversarial:
             "syntax_error",
         }
 
-    def test_no_rule_fires_over_this_corpus_yet(self):
-        """`expects_rules` vazio e ORDEM do repositorio nesta posicao (D-5d-28).
+    def test_only_sf_graph_rules_fire_over_this_corpus(self):
+        """Ate a Task 5 este teste exigia golden VAZIO em todas as dezenove.
 
-        A area `SF-GRAPH` e a Task 5. Ate la todo golden de findings e NEGATIVO,
-        e o valor dele e esse: se uma regra de OUTRA area comecar a disparar
-        sobre facts de grafo, o diff aparece aqui antes de a fronteira da Task 6
-        existir.
+        Com a area `SF-GRAPH` escrita, a metade que continua valendo e a que
+        importava: nenhuma regra de OUTRA area pode disparar sobre facts de
+        grafo. O diff aparece aqui antes de a fronteira da Task 6 existir, e
+        continua aparecendo depois -- ela mede as tres direcoes entre corpora,
+        esta mede o corpus proprio.
         """
         for directory in fixture_dirs():
-            meta, _, findings, _ = run_fixture(directory)
-            assert meta["expects_rules"] == []
-            assert findings == [], f"{directory.name}: {[f.rule_id for f in findings]}"
+            _, _, findings, _ = run_fixture(directory)
+            intrusos = sorted(
+                {f.rule_id for f in findings if not f.rule_id.startswith("SF-GRAPH-")}
+            )
+            assert not intrusos, f"{directory.name}: {intrusos}"
+
+    def test_the_five_correct_forms_stay_silent(self):
+        """As cinco saidas legitimas da exigencia de checkpoint, nomeadas.
+
+        Elas sao o corpus que separa uma regra que le o ARGUMENTO de uma que so
+        percebe a ausencia do diretorio. Vermelho aqui significa que a area
+        passou a acusar quem escreveu certo -- e o nome da fixture diz qual das
+        cinco formas foi acusada, em vez de um diff mudo em cinco goldens.
+        """
+        for nome in (
+            "saida_graphx",
+            "saida_intervalo_nao_positivo",
+            "saida_local_checkpoints",
+            "conf_checkpoint_dir_no_job",
+            "conf_local_checkpoints_no_job",
+        ):
+            meta, _, findings, _ = run_fixture(FIXTURES / nome)
+            assert meta["expects_rules"] == [], nome
+            assert findings == [], f"{nome}: {[f.rule_id for f in findings]}"

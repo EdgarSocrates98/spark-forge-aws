@@ -1,1 +1,70 @@
-[]
+[
+  {
+    "rule_id": "SF-GRAPH-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "connectedComponents sem diretório de checkpoint",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 19,
+      "col": 11,
+      "end_line": 19,
+      "symbol": "componentes",
+      "snippet": "return g.connectedComponents()"
+    },
+    "evidence": [
+      "f_1d68d3"
+    ],
+    "measured": {
+      "line": 19
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O algoritmo default de `connectedComponents` exige diretório de checkpoint e FALHA sem ele — não degrada. A documentação usa o verbo \"requires\", e o código diz o que acontece: `throw new IOException(\"Checkpoint directory is not set. Please set it first using sc.setCheckpointDir().\")`, na montagem do primeiro passo, antes de qualquer trabalho útil. É o único ponto desta área em que a fonte autoriza P0 sem heurística de campo. OS DOIS ATRIBUTOS SÃO NECESSÁRIOS, e cada um sozinho acusaria código correto. `checkpoint_required: true` já é a decisão do extrator depois de olhar as três saídas documentadas — `algorithm=\"graphx\"` (a implementação GraphX não faz checkpoint), `checkpointInterval <= 0` (`shouldCheckpoint = checkpointInterval > 0`, e o bloco inteiro é pulado) e `use_local_checkpoints=True` (0.9.3+, sem diretório persistente). `checkpoint_configured_in_module: false` diz que o arquivo não contém `sc.setCheckpointDir(...)`, nem `spark.conf.set(\"spark.checkpoint.dir\", ...)`, nem `spark.conf.set(\"spark.graphframes.useLocalCheckpoints\", \"true\")`. Sem o primeiro atributo a regra acusaria as três saídas; sem o segundo acusaria todo job que configurou o checkpoint corretamente. O ALCANCE É O ARQUIVO, e é assim que o achado deve ser lido. `setCheckpointDir` é chamado no `SparkContext`, que é singleton do processo: o diretório vale para a aplicação inteira, e a forma canônica de job Glue/EMR configura a sessão num `build_spark()` e roda o algoritmo noutra função. Correlacionar por escopo léxico produziria P0 exatamente sobre essa forma correta. A RESSALVA É PARTE DO ACHADO, e sem ela a regra afirma mais do que a evidência sustenta: existe uma QUARTA saída que não está no `.py`. As confs `spark.checkpoint.dir` (0.9.3+) e `spark.graphframes.useLocalCheckpoints` podem vir do IaC, do `--conf` da submissão ou do `spark-defaults` do cluster, e nesses casos o arquivo analisado não contém sinal nenhum e este achado é falso positivo. Confira o argumento da submissão antes de mexer no código. Quando a conf está DENTRO do job, o extrator a lê e a regra já não dispara.",
+    "proposed_change": [
+      "Chamar `spark.sparkContext.setCheckpointDir(\"s3://.../checkpoints/\")` uma vez, na construção da sessão, antes de qualquer chamada de algoritmo.",
+      "Se o diretório já vem da submissão ou do IaC (`spark.checkpoint.dir`), registrar isso no código ou no README do job — o achado é sobre o que o arquivo declara.",
+      "Se o grafo é pequeno e o custo de I/O do checkpoint não se justifica, declarar a saída explicitamente: `connectedComponents(algorithm=\"graphx\")` ou `use_local_checkpoints=True` na linhagem `io.graphframes`."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Diretório de checkpoint em S3 acumula dados entre execuções e não é limpo pelo Spark; sem política de expiração o custo de armazenamento cresce em silêncio.",
+      "`localCheckpoints` dispensa o diretório mas grava no disco do executor: a documentação declara que são mais rápidos e MENOS confiáveis, e a perda de um executor força recomputação.",
+      "`algorithm=\"graphx\"` muda a implementação, não só a configuração: o desempenho e o consumo de memória são outros, e a doc da biblioteca recomenda o default para grafos grandes."
+    ],
+    "tradeoffs": [
+      "Checkpoint troca I/O por truncamento de lineage; sem ele o plano lógico cresce a cada iteração e o driver passa a gastar mais tempo otimizando do que o cluster gasta executando."
+    ],
+    "validation": [
+      "Executar o job com o volume de produção e confirmar que ele passa da primeira iteração — sem o diretório, a exceção é imediata.",
+      "Contagem de vértices do resultado igual à contagem de vértices de entrada, e contagem distinta de componentes estável entre execuções.",
+      "Conferir na Spark UI que os jobs de checkpoint aparecem no intervalo esperado."
+    ],
+    "rollback": [
+      "Remover a chamada de `setCheckpointDir` restaura o comportamento anterior — que é a falha, e por isso o rollback aqui é reverter para a saída explícita (`graphx` ou `localCheckpoints`), não para a ausência."
+    ],
+    "sources": [
+      {
+        "url": "https://graphframes.io/04-user-guide/05-traversals.html",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/src/main/scala/org/graphframes/lib/ConnectedComponents.scala",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/graphframes/lib/TwoPhase.scala",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/apache/spark/sql/graphframes/GraphFramesConf.scala",
+        "retrieved": "2026-08-05"
+      }
+    ]
+  }
+]

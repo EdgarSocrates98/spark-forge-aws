@@ -782,3 +782,157 @@ nomeando o kind;
 `dominios de fixture sem modulo golden: ['graph']`.
 A terceira lista é a que o plano não menciona e é a mais fácil de perder: o gate
 de `verify_wheel.py` roda **módulos**, não diretórios.
+
+**D-6a-29 — `runtime_scope` não sabia exprimir a faixa de um minor, e a Task 5 precisou dela.**
+O Step 2 manda escrever "o escopo que cobre as células sem jar", e `D-6a-6` fixou
+que ele é por **Spark 3.3.x**. Medido: `version_scope.in_scope` (`50-51`) lia UM
+spec por chave, e `runtime_scope` é um mapa — não havia como escrever `>=3.3` e
+`<3.4` na mesma chave. As alternativas com o que existia falham as duas:
+`"==3.3"` casa `3.3.0` e **reprova** `3.3.1` e `3.3.2` (o `_compare` faz padding
+de segmento), e esses são os Sparks de EMR 6.10.0/6.10.1/6.11.0/6.11.1 —
+**quatro das nove células sumiriam em silêncio**; `">=3.3"` sozinho estenderia a
+acusação a Spark 3.4 e 3.5, onde há artefato e ela é falsa. Enumerar release por
+release é o que `V-AV-1` proíbe. Acrescentei `version_scope._specs`: uma chave
+aceita um spec **ou uma lista**, e a lista conjuga como as chaves entre si.
+`{spark: [">=3.3", "<3.4"]}` é o primeiro uso, e a tabela de formas do
+`rules/catalog/README.md` ganhou a linha. Mudança aditiva: nenhum
+`runtime_scope` existente é afetado, e uma lista era `ValueError` antes. Lista
+**vazia** levanta `ValueError` de propósito: uma chave que não restringe nada
+passaria vacuamente e o achado ainda mostraria um `runtime_scope` no payload —
+é o mesmo modo de falha do curinga que a Fase 5a levou 20 regras para descobrir.
+A cobertura está em `tests/test_rules_version_scope.py::TestListOfSpecsOnOneKey`,
+sete casos, incluindo a medição que justifica a lista em vez de opinar sobre ela.
+
+**D-6a-30 — a regra do IaC não entra, e a fixture que a Task 4 escreveu como metade negativa não é negativa.**
+O plano (Task 4) e `D-6a-25` desenham `import_sem_jar_no_iac` ×
+`import_com_jar_declarado` como par positivo/negativo da regra que cruza
+`graph.import` com `tf.attribute`. Medido, ela não entra, e por **dois** motivos
+independentes — basta um. (a) `engine._absent_satisfied` (`rules/engine.py:68-70`)
+compara **só `kind`**, e o kind é `tf.attribute` nos dois lados: o que muda é
+`attrs.key`, e não existe `absent` filtrado por atributo nem `where` negado.
+`absent: tf.attribute` seria falso para todo Terraform lido. A saída seria um
+kind derivado no extrator de Terraform, no molde de `tf.observability.spark_ui`
+— capacidade que esta fase não construiu. (b) `availability.md` §7 recusa
+afirmar que jar de outro minor roda no Spark corrente, e como para 3.3 **não há
+artefato publicado**, qualquer `--extra-jars` de GraphFrames ali aponta
+necessariamente para outro minor: tratar isso como "resolvido" inventaria a
+garantia que a fonte nega. Então SF-GRAPH-002 dispara nos **dois** lados do par,
+`--extra-jars` aparece no texto do achado como tentativa de contorno, e o
+`proves` de `import_com_jar_declarado` foi reescrito para o que a fixture de
+fato prova: que a acusação é sobre o **artefato**, não sobre o IaC. O veto está
+no cabeçalho do catálogo como `V-GR-1`.
+
+**D-6a-31 — o único limiar numérico com fonte primária desta área não virou regra, e o corpus é a razão.**
+`graphframes-api.md` §6 traz o limiar citável (`checkpointInterval` "at 2 or
+below", e o código avisa em `value <= 0 || value > 2`), e §4.3.2 autoriza
+explicitamente "outra regra, com severidade menor" para o não positivo. Medido
+contra as 19 fixtures: o caso `> 2` **não tem fixture nenhuma**, e regra sem
+golden positivo reprova `test_every_rule_has_a_fixture_that_fires_it`; o caso
+`<= 0` tem fixture, mas é `saida_intervalo_nao_positivo`, que o próprio
+`meta.yaml` declara "segunda forma de escrever certo" e que é uma das três
+saídas legítimas de `V-GF-1`. Acusar o artefato que o corpus declara correto
+faria o relatório dizer as duas coisas ao mesmo tempo. Fica como `V-GR-2` no
+cabeçalho, com a fonte e o limiar já apurados, e volta quando o corpus tiver o
+caso `> 2` e um `<= 0` que não seja também a saída legítima.
+
+**D-6a-32 — criar a área forçou a decisão de coordenador, que o plano reservava para a Task 7.**
+`D-6a-20` deixou a tool de grafo alcançável só pelo executor genérico,
+**provisório de propósito**, para não afirmar cobertura antes da Task 7 decidir.
+Medido: `tests/test_agent_coverage.py::TestEveryRuleAreaHasACoordinator::test_no_area_is_orphan`
+deriva as áreas de `load_catalog()`, então **o commit que cria `SF-GRAPH` é o
+que quebra o teste** — não há como entregar a área com a suíte verde sem um
+coordenador. `SF-GRAPH` entrou em `agents/pyspark-code-reviewer.md`
+(`rule_areas`), com uma seção que diz o que a área cobre e declara o estado como
+provisório. A `description` — que a 5d mediu ser o **gatilho de seleção** —
+ficou **intocada**, que é a diferença entre "tem dono para efeito de cobertura"
+e "é o coordenador de grafo". A Task 7 continua com a decisão inteira, e agora
+com um teste que já não a adia.
+
+**D-6a-33 — dois testes de escopo presumiam que todo guarda de versão é de Glue.**
+`tests/test_rule_scope_by_nature.py` classificava o catálogo em `GLUE_DEPENDENT`
+× agnósticas, e `TestAgnosticRulesSurviveWithoutGlue` exige que toda regra fora
+daquele conjunto esteja `in_scope` no runtime **vazio** — onde `spark` é `""` e
+`in_scope` falha fechada. `tests/test_runtime_inferred_from_facts.py:26-40`
+nomeia "as 8 regras que ainda declaram `runtime_scope` não-vazio, **todas
+guardadas por `glue`**", e trava a igualdade exata contra o catálogo. Uma nona,
+guardada por `spark`, quebra os dois. Acrescentei `SPARK_VERSIONED` como grupo
+próprio — a razão dele é outra, "a afirmação só é verdadeira nesta faixa" e não
+"esta infraestrutura não existe aqui" — e a cobertura correspondente:
+`TestSparkVersionedRulesFireOnlyInsideTheirBand` caminha a `GLUE_MATRIX` inteira
+e cobra `in_scope` exatamente onde o Spark é 3.3.x, mais a perturbação das duas
+pontas da faixa. Em `test_runtime_inferred_from_facts.py`, `SF-GRAPH-002` ficou
+**fora** do `parametrize` de Glue de propósito (com `glue_version=5.1` ela é
+corretamente pulada) e entrou só na igualdade, agora `VERSION_GUARDED_RULES`.
+
+**D-6a-34 — apagabilidade de `runtime_scope` medida só pelo golden fica vermelha por serialização, não por comportamento.**
+O Step 4 manda apagar cada unidade e confirmar vermelho. Medido: `runtime_scope`
+viaja para dentro do Finding (`engine._build_finding`, `dict(rule.get(...))`) e
+está **escrito no golden**, então qualquer edição do escopo — inclusive uma
+equivalente — deixa o golden vermelho sem provar nada sobre o gatilho. A
+primeira medição desta task caiu nessa armadilha ao comparar só `rule_id`: sem
+`">=3.3"`, o corpus inteiro seguiu idêntico, porque **nenhuma fixture roda em
+Spark abaixo de 3.3**. A prova comportamental é outra e está em
+`tests/test_rule_scope_by_nature.py`: sem `">=3.3"` são **2 testes vermelhos**
+(Glue 3.0 é Spark 3.1.1), sem `"<3.4"` são **5**, com a lista trocada por
+`"==3.3"` é **1** (`3.3.2-amzn-0.1`), e sem `runtime_scope` nenhum são **8**.
+Toda unidade de escopo é sustentada pelas duas medições, e a que importa é a
+segunda.
+
+**D-6a-35 — nenhuma regra desta área declara `severity_by`, e a razão é o corpus.**
+O Step 4 pede a perturbação de "cada ramo de `severity_by`". Não há nenhum, e
+não por esquecimento: os discriminadores plausíveis — `attrs.guarded` do import
+(dependência opcional sob `try:` degrada em vez de falhar), `inside_loop` do
+algoritmo já acusado — não têm, nas 19 fixtures, um caso de cada lado **dentro
+da mesma regra**. A única fixture com `guarded: true` roda em Glue 5.0, fora do
+`runtime_scope` de SF-GRAPH-002. Ramo sem golden é severidade que ninguém mediu,
+e `test_every_severity_branch_has_a_golden_that_produces_it` reprovaria. Fica
+como `V-GR-3` no cabeçalho. Pelo mesmo motivo nenhuma regra desta área declara
+`threshold`: as quatro são de estrutura, e o único limiar numérico com fonte é o
+de `D-6a-31`.
+
+**D-6a-36 — cinco fixtures ganharam regra, e a Task 4 previa três ou quatro.**
+O docstring de `tests/test_fixtures_golden_graph.py:12` escrevia "três ou quatro
+deles ganham regra". Medido: **cinco** — `connected_components_sem_checkpoint`
+(SF-GRAPH-001, P0), `arestas_nao_persistidas` (SF-GRAPH-003),
+`graphframe_em_laco` (SF-GRAPH-004) e **as duas** de Spark 3.3 (SF-GRAPH-002),
+pela razão de `D-6a-30`. As catorze restantes continuam vazias, e as cinco
+formas de escrever certo — `saida_graphx`, `saida_intervalo_nao_positivo`,
+`saida_local_checkpoints`, `conf_checkpoint_dir_no_job`,
+`conf_local_checkpoints_no_job` — seguem com golden vazio depois de todas as
+quatro regras existirem. O docstring foi corrigido junto.
+
+**D-6a-37 — o `sources.lock.json` não ganhou URL nenhuma nesta task, só dono.**
+O Step 3 diz que "as URLs da Task 1 entram aqui, com os IDs das regras que as
+citam", e sugere um conjunto crescendo. Medido antes de escrever: watchlist 131
+= lock 131, **zero novas e zero sumidas** — porque as 10 URLs que as regras
+citam já haviam entrado pelas duas páginas de `knowledge/graph/` na Task 1
+(`D-6a-1`), e escolhi citar apenas URLs já vigiadas. O que mudou foi o campo
+`rules` de 10 entradas, preenchido por `refresh_knowledge.py --update
+--offline`: 6 passaram a citar SF-GRAPH-002 e 4 a citar SF-GRAPH-001. `sha256` e
+`checked_at` continuam como estavam — `sync_metadata` nunca os inventa. A
+watchlist reagiu como a Task 1 previu: o `rules` se preencheu sozinho, sem
+decisão nova.
+
+**D-6a-38 — o teste que exigia corpus inteiro negativo era da Task 4, e a Task 5 teve de aposentá-lo pela metade certa.**
+`tests/test_fixtures_golden_graph.py::TestAdversarial::test_no_rule_fires_over_this_corpus_yet`
+afirmava `meta["expects_rules"] == []` **e** `findings == []` para as dezenove,
+e o próprio docstring dizia "a área `SF-GRAPH` é a Task 5". Ele reprovou no
+commit que criou as regras, como devia. A metade que caduca é "nenhuma regra
+dispara"; a que continua valendo é **"nenhuma regra de outra área dispara"**, e
+ela vira `test_only_sf_graph_rules_fire_over_this_corpus` — mede o corpus
+próprio, enquanto a Task 6 vai medir as três direções entre corpora. No lugar da
+outra metade entrou `test_the_five_correct_forms_stay_silent`, que nomeia as
+cinco saídas legítimas uma a uma: com ele, acusar quem escreveu certo falha
+dizendo **qual** das cinco formas foi acusada, em vez de virar diff mudo em
+cinco goldens.
+
+**D-6a-39 — um terceiro teste de escopo listava, à mão, quem é pulada em cada Glue corrente.**
+Além dos dois de `D-6a-33`, `tests/test_runtime_glue_versions.py:50-54` mantém
+`EXPECTED_OUT_OF_SCOPE` por versão corrente, com a razão escrita de cada entrada
+— "uma regra que apareça aqui sem justificativa é uma regra apagada do
+relatório". `SF-GRAPH-002` entra em **5.0** e **5.1** (Spark 3.5.4 e 3.5.6: há
+`0.8.3-spark3.5` e a série `io.graphframes` inteira) e **não** entra em 4.0,
+que é Spark 3.3.0 e é a única das três correntes sem jar. Esta é a única
+medição do repositório em que a lista cobra a direção **positiva** da faixa: se
+`SF-GRAPH-002` passar a aparecer em 4.0, as nove células sem jar ficam sem
+cobertura e o teste diz isso pelo nome.

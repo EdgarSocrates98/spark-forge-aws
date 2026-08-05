@@ -7,7 +7,7 @@ skills:
   - analyze-spark-plan
   - analyze-library-call-graph
   - analyze-batch-loop
-rule_areas: [SF-PY, SF-PLAN, SF-CG]
+rule_areas: [SF-PY, SF-PLAN, SF-CG, SF-GRAPH]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -41,6 +41,21 @@ sozinho.
 Dispatch dinâmico, `getattr`, SQL montado em string: o extrator emite `pyspark.unresolved`
 em vez de fingir que olhou. Reporte esses pontos — "312 nós resolvidos, 7 não resolvidos em
 `arquivo:linha`" é revisão honesta; omiti-los é revisão que parece completa.
+
+## `SF-GRAPH`, e por que ela está aqui provisoriamente
+
+`sparkforge_analyze_graph` lê o mesmo `.py` e emite `graph.*`, que alimenta `SF-GRAPH`.
+São quatro regras: `connectedComponents` sem diretório de checkpoint (P0 — o algoritmo
+levanta `IOException` na primeira iteração, não degrada), GraphFrames importado num Spark
+sem artefato publicado, arestas não persistidas e algoritmo de grafo dentro de laço
+Python.
+
+**A área está declarada aqui e a `description` acima não a menciona, e isso é estado
+provisório, não descuido.** A `description` é o gatilho de seleção do coordenador, e
+quem decide se `SF-GRAPH` fica com você ou ganha coordenador próprio é a Task 7 da Fase
+6a — a mesma decisão que a Fase 5c tomou para `SF-DQ`, que acabou com coordenador
+separado. Até lá: a área tem dono para efeito de cobertura, e quem chega aqui por um job
+de grafo chegou pela pergunta de PySpark, não pela de grafo.
 
 ## Quando a pergunta é do irmão
 

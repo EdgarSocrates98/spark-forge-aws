@@ -552,7 +552,9 @@
         "2026-08-01",
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-002"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html": {
       "docs": [
@@ -691,7 +693,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-002"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-release-notes.rss": {
       "docs": [
@@ -1161,7 +1165,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-002"
+      ]
     },
     "https://graphframes.io/04-user-guide/03-centralities.html": {
       "docs": [
@@ -1181,7 +1187,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-001"
+      ]
     },
     "https://graphframes.io/04-user-guide/06-graph-clustering.html": {
       "docs": [
@@ -1278,7 +1286,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-001"
+      ]
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/graphframes/lib/TwoPhase.scala": {
       "docs": [
@@ -1288,7 +1298,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-001"
+      ]
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/__init__.py": {
       "docs": [
@@ -1338,7 +1350,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-001"
+      ]
     },
     "https://raw.githubusercontent.com/great-expectations/great_expectations/1.19.1/great_expectations/validator/validator.py": {
       "docs": [
@@ -1358,7 +1372,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-002"
+      ]
     },
     "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.9.2/graphframes-spark3_2.12-0.9.2.pom": {
       "docs": [
@@ -1378,7 +1394,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-002"
+      ]
     },
     "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.13/maven-metadata.xml": {
       "docs": [
@@ -1418,7 +1436,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-002"
+      ]
     },
     "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html": {
       "docs": [

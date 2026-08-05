@@ -23,4 +23,5 @@ expects_kinds:
   - tf.module_analyzed
   - tf.observability.spark_ui
   - tf.resource
-expects_rules: []
+expects_rules:
+  - SF-GRAPH-002
