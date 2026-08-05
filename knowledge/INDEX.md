@@ -34,6 +34,12 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`emr/runtime-matrix.md`](emr/runtime-matrix.md) | Matriz EMR × Spark × Hadoop × Iceberg × Python, 6.4.0 a 7.13.0, com o significado do sufixo `-amzn-N` |
 | [`emr/cluster-configuration.md`](emr/cluster-configuration.md) | Instance groups × fleets, níveis de `Configurations`, `maximizeResourceAllocation`, Spot por papel, managed scaling × alocação dinâmica, committer × commit protocol em S3, `LogUri`, node labels e o ApplicationMaster, bootstrap actions |
 
+### Amazon EMR Serverless
+| Arquivo | Conteúdo |
+|---|---|
+| [`emr-serverless/runtime-matrix.md`](emr-serverless/runtime-matrix.md) | O que a fonte do Serverless publica por release — **só Spark, Hive e Tez** — e por que isso resolve a D-5 da Fase 5d como "`EMR_MATRIX` não se reaproveita". Comparação release a release contra o EC2, as seis releases que só o EC2 tem, e os dois release labels fora da forma `emr-X.Y.Z` |
+| [`emr-serverless/application-configuration.md`](emr-serverless/application-configuration.md) | A definição de uma application (`get-application`): tipos reais dos campos, o conjunto **fechado** de unidades de `cpu`/`memory`/`disk`, o faturamento de capacidade pré-inicializada com a application `STARTED`, auto-stop, os três destinos de log e o default que muda a forma da regra, e `EMR.secret@` no `runtimeConfiguration`. Traz o placar das cinco regras candidatas |
+
 ### Amazon Athena
 | Arquivo | Conteúdo |
 |---|---|
@@ -72,6 +78,8 @@ Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever
 
 ## Fontes e frescor
 
-Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03** e `devin/` em **2026-08-04**.
+Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, e `devin/` e `emr-serverless/` em **2026-08-04**.
+
+Os arquivos de `emr-serverless/` ainda **não** aparecem em `sources.lock.json`: o lock é derivado do catálogo (`scripts/refresh_knowledge.py::watchlist`) e `tests/test_refresh_knowledge.py::test_the_committed_lock_matches_the_catalog` exige igualdade exata entre os dois conjuntos. As URLs entram no lock na task que escreve as regras `SF-EMRS` e as faz citá-las — não antes. A lista completa de URLs a registrar está na seção `## Fontes` de cada um dos dois arquivos.
 
 Conhecimento aqui **não substitui** a documentação do runtime real. Quando o job em análise contradiz esta base, o runtime ganha e a base é corrigida.
