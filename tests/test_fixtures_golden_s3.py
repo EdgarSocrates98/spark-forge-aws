@@ -146,7 +146,7 @@ class TestAdversarial:
         assert len(fixtures_por_ramo) == len(ramos)
 
         vistos = []
-        for nome, ramo, limiar in zip(fixtures_por_ramo, ramos, limiares, strict=True):
+        for nome, ramo in zip(fixtures_por_ramo, ramos, strict=True):
             _, facts, findings, _ = run_fixture(FIXTURES / nome)
             sumario = next(f for f in facts if f.kind == "s3.prefix_summary")
             achado = next(f for f in findings if f.rule_id == "SF-PQ-001")
