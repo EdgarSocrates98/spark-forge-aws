@@ -95,6 +95,23 @@ GLUE_INFRA = {"SF-GLUE-002", "SF-GLUE-003", "SF-GLUE-004", "SF-GLUE-005", "SF-GL
 
 GLUE_DEPENDENT = GLUE_VERSIONED | GLUE_INFRA
 
+# Guardadas por versao de SPARK, e nao por Glue. Grupo proprio porque a razao e
+# outra: nao e "esta infraestrutura nao existe neste runtime", e sim "a
+# afirmacao desta regra so e verdadeira nesta FAIXA de versao".
+#
+# SF-GRAPH-002 diz "nao ha artefato de GraphFrames publicado para este Spark", e
+# isso e verdade para Spark 3.3.x e falso para 3.2 e para 3.4 -- os dois tem jar
+# publicado. Sem `spark` detectado a afirmacao e impossivel de fazer, entao
+# regra PULADA com `reason: runtime_scope` e a resposta certa, e nao perda de
+# cobertura: a §D-4 do spec da Fase 6a registra a decisao, e ela e o inverso
+# exato da de `emr-infra.yaml:8-19`, onde a release vinha do proprio fact.
+#
+# A area SF-GRAPH NAO some com isso: SF-GRAPH-001, -003 e -004 declaram
+# `runtime_scope: {}`, e sao elas que sustentam o invariante de area la embaixo.
+SPARK_VERSIONED = {"SF-GRAPH-002"}
+
+VERSION_DEPENDENT = GLUE_DEPENDENT | SPARK_VERSIONED
+
 
 def _rules() -> list[dict]:
     return load_catalog()
@@ -108,7 +125,7 @@ class TestAgnosticRulesSurviveWithoutGlue:
     # lista vazia -- o que acontece se `load_catalog()` falhar -- o pytest 8.x
     # chama o callable sobre um sentinela interno e estoura DENTRO do coletor,
     # abortando a suite inteira em vez de pular. Mordeu na Fase 4.
-    _AGNOSTICAS = [r for r in _rules() if r["id"] not in GLUE_DEPENDENT]
+    _AGNOSTICAS = [r for r in _rules() if r["id"] not in VERSION_DEPENDENT]
 
     @pytest.mark.parametrize("nome,runtime", NON_GLUE_RUNTIMES, ids=NON_GLUE_IDS)
     @pytest.mark.parametrize("rule", _AGNOSTICAS, ids=[r["id"] for r in _AGNOSTICAS])
@@ -132,6 +149,57 @@ class TestGlueInfraRulesAreSkippedWithoutGlue:
             f"Ela le `aws_glue_job` do Terraform: vai avaliar e nunca disparar, e o "
             f"operador nao fica sabendo que esse eixo nao foi coberto."
         )
+
+
+class TestSparkVersionedRulesFireOnlyInsideTheirBand:
+    """A outra ponta de `SPARK_VERSIONED`, e ela mede as DUAS direcoes.
+
+    Um `runtime_scope` de faixa erra em dois sentidos, e so um deles doi rapido:
+    faixa larga demais faz a regra acusar runtime onde a afirmacao e falsa;
+    faixa estreita demais a apaga em silencio onde ela e verdadeira. As nove
+    celulas sem jar sao Glue 4.0 e EMR 6.8.0-6.11.1, e o discriminador e o minor
+    de Spark -- por isso o teste caminha a matriz de Glue inteira em vez de
+    conferir uma versao so.
+    """
+
+    _BAND = {"3.3.0", "3.3.1", "3.3.2"}
+
+    @pytest.mark.parametrize("rule_id", sorted(SPARK_VERSIONED))
+    @pytest.mark.parametrize("glue_version", sorted(GLUE_MATRIX))
+    def test_the_band_matches_exactly_the_glue_versions_without_a_jar(
+        self, rule_id, glue_version
+    ):
+        rule = next(r for r in _rules() if r["id"] == rule_id)
+        runtime = _detected(terraform={"glue_version": glue_version})
+        esperado = GLUE_MATRIX[glue_version]["spark"] in self._BAND
+        assert in_scope(rule.get("runtime_scope") or {}, runtime) is esperado, (
+            f"{rule_id} em Glue {glue_version} (Spark "
+            f"{GLUE_MATRIX[glue_version]['spark']}): esperado in_scope={esperado}. "
+            f"Spark 3.3.x e a UNICA faixa sem artefato de GraphFrames publicado; "
+            f"3.1/3.2 tem `0.8.2` e 3.4/3.5 tem `0.8.3`+."
+        )
+
+    @pytest.mark.parametrize("nome,runtime", NON_GLUE_RUNTIMES, ids=NON_GLUE_IDS)
+    @pytest.mark.parametrize("rule_id", sorted(SPARK_VERSIONED))
+    def test_it_is_skipped_when_spark_is_unknown_or_outside_the_band(
+        self, rule_id, nome, runtime
+    ):
+        rule = next(r for r in _rules() if r["id"] == rule_id)
+        assert not in_scope(rule.get("runtime_scope") or {}, runtime), (
+            f"{rule_id} e avaliada no runtime `{nome}` ({runtime}). Ela afirma que "
+            f"nao ha artefato publicado para ESTE Spark: sem Spark detectado a "
+            f"afirmacao e impossivel, e com Spark fora de 3.3.x ela e falsa."
+        )
+
+    @pytest.mark.parametrize("rule_id", sorted(SPARK_VERSIONED))
+    def test_both_ends_of_the_band_are_load_bearing(self, rule_id):
+        """Perturbacao de limite, porque `in_scope` conjuga a lista de specs e
+        um spec sozinho passaria despercebido no catalogo: sem o `<3.4` a regra
+        acusaria Glue 5.0/5.1; sem o `>=3.3` acusaria Glue 3.0."""
+        scope = next(r for r in _rules() if r["id"] == rule_id)["runtime_scope"]
+        assert in_scope(scope, {"spark": "3.3.2-amzn-0.1"}) is True
+        assert in_scope(scope, {"spark": "3.2.1-amzn-0"}) is False
+        assert in_scope(scope, {"spark": "3.4.0-amzn-0"}) is False
 
 
 # Quem pode usar curinga, por chave de `runtime_scope`. Uma entrada `{X: "*"}`

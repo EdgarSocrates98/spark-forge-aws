@@ -39,7 +39,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 
 | Campo | Obrigatório | Nota |
 |---|---|---|
-| `id` | sim | Único. **Catorze** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `EMRS` (application EMR Serverless), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança). **`EMR` é prefixo de `EMRS`**: quem comparar área por `startswith` sobre o `id` conta toda regra `SF-EMRS-*` como `SF-EMR`, e a fronteira entre as duas passa a ser medida ao contrário — compare pelo `area:` declarado no cabeçalho do arquivo |
+| `id` | sim | Único. **Quinze** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `EMRS` (application EMR Serverless), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança), `GRAPH` (processamento de grafo com GraphFrames). **`EMR` é prefixo de `EMRS`**: quem comparar área por `startswith` sobre o `id` conta toda regra `SF-EMRS-*` como `SF-EMR`, e a fronteira entre as duas passa a ser medida ao contrário — compare pelo `area:` declarado no cabeçalho do arquivo |
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |
@@ -185,6 +185,14 @@ O vocabulário, e o que cada forma faz:
 | `{}` | a regra não depende de versão | sempre |
 | `{glue: "*"}` | qualquer **versão** de Glue | a chave `glue` está presente **e não vazia** |
 | `{glue: ">=4.0"}` | Glue 4.0 ou superior | a chave está presente e a versão satisfaz o range |
+| `{spark: [">=3.3", "<3.4"]}` | Spark 3.3.x, e só ele | a chave está presente e satisfaz **todos** os specs da lista |
+
+**A lista conjuga**, como as chaves entre si. Ela existe porque uma faixa de um minor não é
+expressável com um spec só: `_compare` faz padding de segmento, então `"==3.3"` casa `3.3.0`
+e reprova `3.3.1` e `3.3.2`. Enumerar release por release seria a outra saída, e ela
+envelhece a cada release nova da nuvem — que é justamente o que o guarda por **versão**
+existe para evitar. `SF-GRAPH-002` é o primeiro consumidor: nenhuma linhagem de GraphFrames
+publicou artefato para Spark 3.3, e 3.2 e 3.4 publicaram.
 
 **`"*"` exige presença.** Até a Fase 5a, o ramo do curinga em `sparkforge/rules/version_scope.py` pulava a checagem de presença, então `{glue: "*"}` casava com qualquer runtime — inclusive um sem Glue nenhum. Ele nunca filtrou nada. Um `Finding` antigo com `"runtime_scope": {"glue": "*"}` no payload foi produzido sob essa semântica antiga: a regra pode ter avaliado fora do Glue.
 
@@ -214,6 +222,7 @@ O vocabulário, e o que cada forma faz:
 | `data-quality.yaml` | `SF-DQ-*` | Fase 5c (validação de dados no AST PySpark) |
 | `benchmark.yaml` | `SF-BENCH-*` | Fase 4a (comparador de duas execuções, derivado de facts de event log) |
 | `funcval.yaml` | `SF-FVAL-*` | Fase 4c (plano derivado de `pyspark.write` + `catalog.table_schema`, e comparação dos dois resultados que o operador mediu) |
+| `graph.yaml` | `SF-GRAPH-*` | Fase 6a (GraphFrames no AST PySpark, mais `tf.attribute` do mesmo job) |
 | `routing.yaml` | `ROUTE-*` | Fase 0 — predicado sobre o case, não sobre facts |
 
 ### `routing.yaml` tem schema próprio

@@ -18,4 +18,5 @@ expects_kinds:
   - graph.algorithm
   - graph.checkpoint_dir
   - graph.module_analyzed
-expects_rules: []
+expects_rules:
+  - SF-GRAPH-003

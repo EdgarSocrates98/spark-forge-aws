@@ -17,4 +17,5 @@ expects_kinds:
   - graph.construction
   - graph.algorithm
   - graph.module_analyzed
-expects_rules: []
+expects_rules:
+  - SF-GRAPH-001

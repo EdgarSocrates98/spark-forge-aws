@@ -1,1 +1,82 @@
-[]
+[
+  {
+    "rule_id": "SF-GRAPH-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "GraphFrames importado num Spark sem artefato publicado",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 12,
+      "col": 0,
+      "end_line": 12,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "evidence": [
+      "f_32bc0d"
+    ],
+    "measured": {
+      "line": 12
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "spark": [
+        ">=3.3",
+        "<3.4"
+      ]
+    },
+    "explanation": "Este job importa GraphFrames, e para o Spark deste runtime nenhuma linhagem da biblioteca publicou artefato. Medido por requisição direta ao repositório em 2026-08-05: `graphframes-0.8.3-spark3.3-s_2.12.jar` responde 404, `graphframes-0.8.4-spark3.3-s_2.12.jar` responde 404, e a linhagem corrente `io.graphframes` compila contra Spark 3.5 em todas as suas releases. A série legada para em `0.8.2-spark3.2` de um lado e recomeça em `0.8.3-spark3.4` do outro: Spark 3.3 é um buraco entre as duas. São nove células de runtime — Glue 4.0 e as oito releases de EMR de 6.8.0 a 6.11.1. A RELEASE NOTE DIZ O CONTRÁRIO, E ELA PERDE. A nota da `0.8.3` afirma \"Support Spark 3.3 / Scala 2.12\", e a listagem do spark-packages para essa versão traz apenas `-spark3.4` e `-spark3.5`. O suporte foi construído; o artefato não foi publicado. A pergunta desta regra não é \"o projeto suporta?\", é \"há o que instalar?\", e para essa o repositório de artefatos é a autoridade. A PLATAFORMA NÃO PREENCHE A LACUNA, e isso foi medido por ausência, não inferido: a página de release do EMR 7.13.0 lista as 24 aplicações, a tabela de versões, ~80 componentes instalados e ~140 classificações de configuração, e GraphFrames não aparece em nenhuma das quatro; a página de bibliotecas Python do Glue lista os módulos providos de fábrica para 2.0, 3.0, 4.0, 5.0 e 5.1, e GraphFrames não está em nenhuma das cinco. A biblioteca é sempre dependência do cliente, sob responsabilidade compartilhada — sem SLA e sem correção de compatibilidade vinda da AWS. UM `--extra-jars` NO IaC NÃO FECHA ESTE ACHADO, e é por isso que ele dispara mesmo quando existe. Como não há artefato para este Spark, qualquer jar de GraphFrames declarado aqui foi construído para OUTRO minor, e compatibilidade binária entre minors de Spark não é declarada por fonte nenhuma — nem pelo projeto nem pela AWS. Pode funcionar; a evidência não diz. O achado afirma o que foi medido — \"não há artefato publicado para este Spark\" —, nunca \"não funciona\". O QUE ESTE ACHADO NÃO AFIRMA: qual versão da biblioteca este job usa. `from graphframes import GraphFrame` é idêntico em `0.8.2` e em `0.12.1`, e o `__init__.py` das duas exporta um único nome. Nenhum fact desta área declara versão de GraphFrames.",
+    "proposed_change": [
+      "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, ou EMR 6.12.0+ / 7.x — onde há artefato publicado e mantido.",
+      "Se o runtime não pode mudar, tratar a dependência como build próprio: compilar GraphFrames contra o Spark do runtime, publicar o jar num repositório interno e declará-lo no IaC, assumindo a manutenção.",
+      "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Trocar de runtime muda a versão de Spark, de Python e de Iceberg de uma vez, e cada uma delas pode quebrar outra parte do job.",
+      "Jar construído localmente contra um minor diferente pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança.",
+      "Reescrever o algoritmo em SQL nativo troca uma dependência por código próprio, com o custo de manutenção e o risco de divergência semântica que isso implica."
+    ],
+    "tradeoffs": [
+      "Migrar de runtime é o caminho suportado e o mais caro; manter um build próprio é barato hoje e é dívida permanente."
+    ],
+    "validation": [
+      "Executar o job no runtime alvo e conferir contagem de vértices, contagem de arestas e número de componentes contra a execução de referência.",
+      "Conferir que a biblioteca realmente carrega, com um `import graphframes` no início do job — a falha de artefato aparece no driver, antes de qualquer stage."
+    ],
+    "rollback": [
+      "Manter a definição anterior do job versionada; voltar é apontar a submissão para o runtime antigo."
+    ],
+    "sources": [
+      {
+        "url": "https://spark-packages.org/package/graphframes/graphframes",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/maven-metadata.xml",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.12.1/graphframes-spark3_2.12-0.12.1.pom",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://graphframes.io/02-quick-start/01-installation.html",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html",
+        "retrieved": "2026-08-05"
+      }
+    ]
+  }
+]
