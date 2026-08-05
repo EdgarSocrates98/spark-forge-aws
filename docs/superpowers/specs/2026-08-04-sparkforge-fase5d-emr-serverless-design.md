@@ -1,7 +1,10 @@
 # SparkForge AWS — Fase 5d: EMR Serverless
 
 **Data:** 2026-08-04
-**Status:** não implementado nesta data.
+**Status:** **implementada** e fechada em 2026-08-05, branch
+`feat/fase5d-emr-serverless`. Este documento é registro do que se pretendia em
+2026-08-04; o que o repositório **é** está em [`../STATUS.md`](../STATUS.md), e a
+§11 abaixo lista os pontos em que a medição tornou o texto acima errado.
 **Fecha:** a primeira metade da linha "EMR Serverless e EMR on EKS" da seção
 *Trabalho previsto* do [`../STATUS.md`](../STATUS.md) — a única linha do roadmap
 que não tinha posição na *Ordem*.
@@ -252,3 +255,111 @@ O padrão do repositório, sem exceção nesta fase:
    que virou falso.
 10. `STATUS.md` mede os números novos em vez de copiá-los, e a linha "EMR
     Serverless e EMR on EKS" da seção *Trabalho previsto* passa a nomear só EKS.
+
+## 11. Desvios
+
+O spec **não é reescrito** — é registro do que se pretendia em 2026-08-04. Esta
+seção lista só os desvios que tornam o texto acima **errado**, com o número do
+plano ([`../plans/2026-08-04-sparkforge-fase5d-emr-serverless.md`](../plans/2026-08-04-sparkforge-fase5d-emr-serverless.md),
+seção *Desvios*), onde os 42 estão registrados por inteiro. Os demais são
+detalhe de execução que o spec nunca afirmou.
+
+**§3, D-2 — a colisão de namespace que o spec citou não existe** (`D-5d-1`). A
+guarda de `emr_cluster.py:1214` é **local ao módulo**: compara os kinds emitidos
+contra o `EMITTED_KINDS` daquele arquivo, e um segundo extrator emitindo
+`emr.serverless.*` passaria por ela sem tocá-la. A escolha `emrs.` sobrevive por
+outro argumento — o precedente de fronteira do repositório mede invasão com
+`startswith` sobre o namespace vizinho, e com `emr.serverless.` **todo** kind do
+Serverless começaria com `emr.`, tornando a fronteira mensurável só com exceção
+escrita à mão.
+
+**§3, D-5 e §9 — a pergunta da matriz tinha um terceiro desfecho** (`D-5d-5`). O
+spec previu dois: idênticas (o produtor entra) ou divergentes (não entra). A
+medição achou o terceiro: **a AWS não publica a matriz do EMR Serverless.** As 24
+páginas por release trazem só Spark, Hive e Tez, sem o sufixo `-amzn-N`; Hadoop,
+Iceberg e Python não aparecem em nenhuma. O produtor não entra, e a razão escrita
+é **"sem fonte"**, nunca "as matrizes divergem" — afirmar divergência seria
+afirmar o que ninguém mediu. A linha correspondente da §9 é **dívida**.
+
+**§4 — a tabela de facts está desatualizada em quatro pontos**
+(`D-5d-14`, `D-5d-15`, `D-5d-16`, `D-5d-17`). `emrs.configuration` não carrega
+`level` **nem** `scope` (Serverless não tem grupo de instância, e `scope` só
+poderia ser string vazia). `emrs.monitoring` não são três booleanos crus: é o
+**único** fact do módulo que aplica default documentado, porque os defaults são
+assimétricos — managed persistence nasce `true` e CloudWatch nasce `false` —, e
+ganhou `monitoring_declared`, `managed_persistence_declared`,
+`cloudwatch_declared` e `measures.log_destination_count`. `emrs.application`
+ganhou `auto_stop_declared`/`auto_start_declared`, que o spec não previu e sem os
+quais nenhuma regra distingue "desligado de propósito" de "nunca declarado". E
+ganhou `measures.initial_capacity_worker_type_count`, porque a correlação que a
+D-4 previu (`initialCapacity` × `maximumCapacity`) não era a única necessária.
+
+**§4 — `release_major`/`release_minor` nem sempre saem** (`D-5d-6`). A lista
+oficial de releases traz `emr-spark-8.0.0` e `emr-spark-8.0-preview`, que não
+casam `emr-<major>.<minor>.<patch>`. Forma não reconhecida **omite** os dois em
+vez de forçar número.
+
+**§5 — cinco candidatas viraram seis regras, e três vetos que a §5 não previu**
+(`D-5d-29`, `D-5d-33`). Nenhuma candidata foi vetada por falta de fonte; duas
+mudaram de forma; e entrou uma sexta (`SF-EMRS-004`, armazenamento gerenciado
+desligado com S3 presente). Os três vetos escritos no cabeçalho do catálogo são
+`autoStartConfiguration` (sem custo e sem risco), **pré-init subdimensionada** (a
+fonte descreve o defeito com precisão, e o outro lado da comparação mora no
+`StartJobRun`, que esta fase não lê) e `schedulerConfiguration` (nenhuma página
+declara o default de `queueTimeoutMinutes` nem o efeito da expiração).
+
+**§5 — três das cinco candidatas mudaram de forma ou de severidade**
+(`D-5d-4`, `D-5d-7` com `D-5d-32`, `D-5d-8`, `D-5d-9`). "Nenhum destino de log"
+**não** dispara por ausência: `managedPersistenceMonitoringConfiguration.enabled`
+*defaults to true*, então `monitoringConfiguration` ausente significa
+**protegido**, e uma regra por ausência acusaria toda application no default
+seguro. `initialCapacity` acima de `maximumCapacity` entrou como **P1
+`field-heuristic`**, não a P0 que o spec pediu: a aritmética se sustenta, mas
+nenhuma fonte declara se a API aceita ou rejeita o estado. O auto-stop **não** é
+"a mesma pergunta do `SF-EMR-009` com outra unidade": ausência do bloco significa
+protegido (o inverso do EC2) e o custo da janela **depende de haver pré-init**,
+porque a cobrança é por worker existente — a regra exige pré-init na condição, e
+a linha "sem pré-init não há worker de que cobrar" fica declarada como **dedução
+do modelo de cobrança**, não como frase da AWS. E o segredo em
+`runtimeConfiguration` **não** é transposição direta do `SF-EMR-002`: o bloco
+*Warning* que sustenta aquela regra não existe na documentação do Serverless, e a
+área tem mecanismo próprio que o EC2 não tem — a anotação `EMR.secret@{{Nome}}`,
+que é **id de segredo, não segredo**, e acusá-la seria acusar a correção que o
+achado recomenda.
+
+**§6 — as superfícies são seis, não cinco** (`D-5d-20`). A sexta é
+`ARTIFACT_KINDS` em `sparkforge/collect/base.py:29`, tupla fechada validada em
+`ArtifactEntry.__post_init__`: coletor com `kind` fora dela levanta `ValueError`
+na escrita do manifesto. As cinco do spec são declarativas; esta é executável e
+falha tarde.
+
+**§6 — `collect emr-serverless` não é simétrico a `collect emr-cluster`**
+(`D-5d-22`). São **uma** chamada e um artefato, contra seis. E ele aceita só
+`--application-id`: `name` é `Required: No` na API e a documentação não declara
+unicidade, então resolver por nome escolheria uma entre N homônimas em silêncio.
+
+**§6 — `sources.lock.json` não podia ser atualizado com a pesquisa** (`D-5d-2`).
+`test_the_committed_lock_matches_the_catalog` afirma
+`set(lock["sources"]) == set(watchlist())`, e a watchlist é derivada
+**exclusivamente** dos `sources[].url` das regras do catálogo: URL sem regra que a
+cite quebra a suíte. As URLs entraram junto com as regras.
+
+**§3, D-1 — a decisão sobrevive, e o argumento que a sustenta é outro**
+(`D-5d-21`, `D-5d-34`, e a decisão da Task 7). A D-1 dizia *"pelo critério que a
+Fase 4c fixou, coordenador novo exige fronteira medida; aqui não há"* — e agora
+**há**: `tests/test_rules_emrs_boundary.py` mede a fronteira nas duas direções,
+com zero invasões. Ela não muda a decisão porque é fronteira de **catálogo**, e
+vale depois que alguém já escolheu o verbo. A fronteira de **despacho** foi
+medida e não existe: `_PLATFORM_KEYS` (`sparkforge/facts/runtime_detect.py:403`)
+conhece duas identidades de plataforma, `emr` e `glue`, e nenhum fact `emrs.*`
+alimenta qualquer uma — um `describe-cluster` emite `env.platform` com
+`resolved: emr`, um `get-application` **não emite `env.platform` nenhum**. Partir
+o coordenador seria roteá-lo por prosa. `emr-infra-reviewer` fica com
+`SF-EMR`, `SF-EMRS` e `SF-ENV`, e a `description` nomeia as duas plataformas.
+
+**§9 — a tabela de dívidas ganha uma quarta linha que o spec não previu**
+(`D-5d-11`). `get-application` descreve **o padrão da application**, e
+`StartJobRun` o sobrepõe — com merge por classificação, e inclusive **removendo**
+classificação e destino de log. Nenhum achado desta área prova o que um job run
+executou. É **limite declarado**, escrito na `explanation` de todas as seis
+regras, no corpo do coordenador e na skill.
