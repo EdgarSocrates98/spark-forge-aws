@@ -361,10 +361,22 @@ rules:
     category: graph
     title: Arestas do grafo não persistidas
     requires_facts: [graph.construction]
-    # `same_subject`: cada `GraphFrame(...)` e uma entidade, e o remedio e um
-    # `cache()` POR construcao. Dois grafos defeituosos no mesmo arquivo sao dois
-    # achados e duas correcoes -- subcontar engana como falso negativo
-    # (README deste diretorio, "Um Finding por subject").
+    # `same_subject`: o remedio e um `cache()` POR construcao, entao dois grafos
+    # defeituosos no mesmo arquivo sao dois achados e duas correcoes -- subcontar
+    # engana como falso negativo (README deste diretorio, "Um Finding por
+    # subject"). A fixture `dois_grafos_no_mesmo_arquivo` fixa isso: sem
+    # `same_subject` ela cai de dois achados para um, e ate ela existir os dois
+    # `same_subject` desta area eram apagaveis com a suite inteira verde.
+    #
+    # A ENTIDADE, MEDIDA, E A FUNCAO -- e nao a construcao.
+    # `engine._subject_group_key` usa `subject.symbol` quando ele existe, e o
+    # `symbol` de todo fact de `facts/graph.py` e a funcao que contem o no
+    # (`_subject`). Duas construcoes com arestas nao persistidas DENTRO DA MESMA
+    # FUNCAO caem no mesmo grupo e viram um achado so, com a evidencia das duas.
+    # E subnotificacao declarada, e nao acusacao falsa: quem le o achado ve os
+    # dois facts. Fechar de verdade exigiria mudar a chave de agrupamento do
+    # motor, que vale para as quinze areas de uma vez -- decisao que nao cabe
+    # numa regra desta area.
     when:
       same_subject: true
       all:
@@ -426,8 +438,11 @@ rules:
     category: graph
     title: Algoritmo de grafo dentro de laço Python
     requires_facts: [graph.algorithm]
-    # `same_subject`: o sujeito e o ponto do codigo onde o algoritmo roda, e dois
-    # lacos diferentes no mesmo modulo sao dois problemas com dois remedios.
+    # `same_subject`: dois lacos diferentes no mesmo modulo sao dois problemas
+    # com dois remedios, e a fixture `dois_grafos_no_mesmo_arquivo` fixa os dois
+    # achados -- sem `same_subject` ela cai para um. A entidade e a FUNCAO, pela
+    # mesma medicao registrada em `SF-GRAPH-003`: dois lacos dentro da mesma
+    # funcao viram um achado com a evidencia dos dois.
     when:
       same_subject: true
       all:

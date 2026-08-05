@@ -15,8 +15,14 @@ Com a Task 5, CINCO das dezenove ganharam regra -- a Task 4 previa "tres ou
 quatro", e a quinta e o segundo lado do par de disponibilidade: SF-GRAPH-002
 dispara nas DUAS fixtures de Spark 3.3, com e sem `--extra-jars`, porque a fonte
 recusa tratar jar de outro minor como garantia (`rules/catalog/graph.yaml`,
-veto V-GR-1). As outras catorze continuam vazias DE PROPOSITO: sete existem
-justamente para provar que o motor CALA sobre codigo correto.
+veto V-GR-1).
+
+A REVISAO DA FASE 6a levou o corpus a VINTE E CINCO. Cinco fixtures novas sao a
+conf de checkpoint que o extrator nao lia -- cada uma disparava P0 sobre codigo
+correto --, e a sexta e a primeira com DOIS sujeitos defeituosos, sem a qual os
+dois `same_subject` da area eram apagaveis com a suite inteira verde. Hoje SEIS
+das vinte e cinco tem regra e as outras DEZENOVE continuam vazias DE PROPOSITO:
+nove existem justamente para provar que o motor CALA sobre codigo correto.
 
 O corpus e desenhado por eixo: cada fixture tem no maximo um defeito, e o resto
 dela e a forma certa. Sem isso, uma regra que dispare sobre qualquer
@@ -76,6 +82,9 @@ REQUIRED_FIXTURES = {
     # Literal que EXISTE e nao converte para booleano: o rotulo do ponto cego
     # mandava procurar uma variavel que nao ha.
     "conf_local_checkpoints_nao_booleano",
+    # DOIS sujeitos defeituosos no mesmo arquivo, que e o unico corpus capaz de
+    # reprovar a remocao do `same_subject` de SF-GRAPH-003 e de SF-GRAPH-004.
+    "dois_grafos_no_mesmo_arquivo",
     # O PAR do vocabulario de dois niveis, e ele so prova junto.
     "nomes_comuns_sem_import",
     "nomes_comuns_com_import",
@@ -652,7 +661,7 @@ class TestAdversarial:
         }
 
     def test_only_sf_graph_rules_fire_over_this_corpus(self):
-        """Ate a Task 5 este teste exigia golden VAZIO em todas as dezenove.
+        """Ate a Task 5 este teste exigia golden VAZIO em todas as fixtures.
 
         Com a area `SF-GRAPH` escrita, a metade que continua valendo e a que
         importava: nenhuma regra de OUTRA area pode disparar sobre facts de
@@ -667,13 +676,17 @@ class TestAdversarial:
             )
             assert not intrusos, f"{directory.name}: {intrusos}"
 
-    def test_the_five_correct_forms_stay_silent(self):
-        """As cinco saidas legitimas da exigencia de checkpoint, nomeadas.
+    def test_the_seven_correct_forms_stay_silent(self):
+        """As sete saidas legitimas da exigencia de checkpoint, nomeadas.
 
         Elas sao o corpus que separa uma regra que le o ARGUMENTO de uma que so
         percebe a ausencia do diretorio. Vermelho aqui significa que a area
         passou a acusar quem escreveu certo -- e o nome da fixture diz qual das
-        cinco formas foi acusada, em vez de um diff mudo em cinco goldens.
+        sete formas foi acusada, em vez de um diff mudo em sete goldens.
+
+        Eram cinco ate a revisao da Fase 6a. As duas ultimas -- a conf declarada
+        no builder e a conf declarada por keyword -- ja eram formas correntes de
+        escrever certo naquela altura, e o extrator as acusava com P0.
         """
         for nome in (
             "saida_graphx",
@@ -681,6 +694,8 @@ class TestAdversarial:
             "saida_local_checkpoints",
             "conf_checkpoint_dir_no_job",
             "conf_local_checkpoints_no_job",
+            "checkpoint_por_builder_config",
+            "conf_chave_por_keyword",
         ):
             meta, _, findings, _ = run_fixture(FIXTURES / nome)
             assert meta["expects_rules"] == [], nome
