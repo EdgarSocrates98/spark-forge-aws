@@ -66,6 +66,12 @@ REQUIRED_FIXTURES = {
     "auto_termination_idle_week",
     "auto_termination_idle_day",
     "auto_termination_near_threshold",
+    # O par de `instance_fleets_maximize` no ramo de `severity_by` de
+    # SF-EMR-006: mesmo `log_uri_present: false`, e a unica diferenca e
+    # `auto_terminate`. Sem ele o `severity_default` P2 da regra nunca foi
+    # comparado contra golden nenhum -- podia virar qualquer valor com a suite
+    # inteira verde.
+    "log_uri_absent_long_lived",
 }
 
 
@@ -561,6 +567,42 @@ class TestAdversarial:
         assert achado.measured["idle_timeout_seconds"] == 604800
         assert "SF-EMR-009" not in {s["rule_id"] for s in skipped}
         assert any("JupyterHub" in t for t in achado.tradeoffs)
+
+    def test_both_severity_branches_of_the_log_uri_rule_have_a_fixture(self):
+        """Os dois ramos de SF-EMR-006, e o que os separa.
+
+        `instance_fleets_maximize` e `log_uri_absent_long_lived` tem os dois
+        `log_uri_present: false` -- o `when` da regra casa nos dois. O unico
+        campo que decide a severidade e `attrs.auto_terminate`: True vira P1
+        pelo ramo de `severity_by`, False cai no `severity_default` P2.
+
+        Antes do segundo fixture o ramo default nao aparecia em golden nenhum,
+        e severidade sem golden pode virar qualquer valor com a suite inteira
+        verde -- nada no repositorio compara severidade de regra contra fixture
+        fora do golden de `findings`. As severidades vem do CATALOGO, nunca de
+        literais repetidos aqui: escritas em dois lugares, viram duas verdades
+        no dia em que alguem ajustar so uma.
+        """
+        regra = next(r for r in load_catalog() if r["id"] == "SF-EMR-006")
+        ramo = next(b for b in regra["severity_by"] if "auto_terminate" in b["when"])
+
+        _, efemero, findings_efemero, _ = run_fixture(FIXTURES / "instance_fleets_maximize")
+        _, duradouro, findings_duradouro, _ = run_fixture(
+            FIXTURES / "log_uri_absent_long_lived"
+        )
+
+        cluster_efemero = next(f for f in efemero if f.kind == "emr.cluster")
+        cluster_duradouro = next(f for f in duradouro if f.kind == "emr.cluster")
+        assert cluster_efemero.attrs["log_uri_present"] is False
+        assert cluster_duradouro.attrs["log_uri_present"] is False
+        assert cluster_efemero.attrs["auto_terminate"] is True
+        assert cluster_duradouro.attrs["auto_terminate"] is False
+
+        achado_efemero = next(f for f in findings_efemero if f.rule_id == "SF-EMR-006")
+        achado_duradouro = next(f for f in findings_duradouro if f.rule_id == "SF-EMR-006")
+        assert achado_efemero.severity == ramo["severity"]
+        assert achado_duradouro.severity == regra["severity_default"]
+        assert achado_efemero.severity != achado_duradouro.severity
 
     def test_empty_dump_still_proves_the_extractor_ran(self):
         _, facts, _, _ = run_fixture(FIXTURES / "empty_dump")

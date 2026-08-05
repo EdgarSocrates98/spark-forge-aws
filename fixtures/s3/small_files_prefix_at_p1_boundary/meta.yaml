@@ -1,0 +1,26 @@
+name: small_files_prefix_at_p1_boundary
+proves: >
+  O ramo P1 de SF-PQ-001, que até aqui não tinha golden nenhum, e o limiar que o
+  separa do ramo P2.
+  São 10000 arquivos Parquet de ~2 MB sob o prefixo — a contagem EXATA do
+  segundo ramo de `severity_by`. A comparação daquele ramo é `>=`, então a
+  contagem no limiar já é P1, e não o P2 de `small_files_prefix`, que tem 1500.
+  Os dois juntos são o que trava o ramo: sem este golden a severidade de P1
+  podia virar qualquer valor com a suíte inteira verde, e trocar aquele `>=` por
+  `>` não quebrava nada — 1500 está longe demais dos 10000 para as duas
+  comparações discordarem.
+  A média fica em ~2,1 MB, muito abaixo dos 32 MB do `threshold.min_avg_bytes`,
+  então quem decide a severidade é a CONTAGEM, não o tamanho. É o cenário real
+  de ingestão em micro-batch: cem partições de dia, cem arquivos em cada.
+  O `_SUCCESS` de 0 byte está aqui pelo mesmo motivo de `small_files_prefix` —
+  contá-lo como arquivo de dados inflaria `file_count` e derrubaria a média.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - s3.analyzed
+  - s3.prefix_summary
+expects_rules:
+  - SF-PQ-001

@@ -343,13 +343,16 @@ Medidos os dois lados — quem mede é você, o motor não executa consulta nenh
 sparkforge funcval compare \
   --plan .sparkforge/facts_funcval_plan.json \
   --before .sparkforge/funcval_before.json \
-  --after .sparkforge/funcval_after.json
+  --after .sparkforge/funcval_after.json \
+  --out .sparkforge/facts_funcval.json
 ```
 
-`compare` **não tem `--out`** — ele imprime o envelope paginado. Para julgar, extraia
-`items` (é o formato que `judge --facts` espera) e confira `next_cursor` antes: `--limit`
-vale 50 por default, e julgar a primeira página chamando-a de comparação é o mesmo defeito
-que `SF-FVAL-005` acusa. Os quatro eixos são **proxies**: iguais nos dois lados eles não
+`--out` grava a lista **completa** de facts, no formato que `judge --facts` lê — o stdout
+continua sendo o envelope paginado, e `--limit` corta ele e não o arquivo. É opcional, ao
+contrário do `--out` do `plan`: aquele é a entrada do próximo verbo, este é saída
+terminal. Sem ele, julgar exige extrair `items` do envelope à mão e conferir `next_cursor`
+antes — `--limit` vale 50 por default, e julgar a primeira página chamando-a de comparação
+é o mesmo defeito que `SF-FVAL-005` acusa. Os quatro eixos são **proxies**: iguais nos dois lados eles não
 provam que o dado é o mesmo, porque duas linhas podem trocar valores entre si e os quatro
 passam. Relate a ausência de achado `SF-FVAL` como "nenhum proxy detectou divergência",
 nunca como "o resultado é idêntico".

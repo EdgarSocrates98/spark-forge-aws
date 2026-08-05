@@ -132,18 +132,14 @@ sparkforge funcval compare \
   --plan .sparkforge/facts_funcval_plan.json \
   --before .sparkforge/funcval_before.json \
   --after .sparkforge/funcval_after.json \
-  > .sparkforge/funcval_compare.json
+  --out .sparkforge/facts_funcval.json
 ```
 
-Tool MCP: `sparkforge_funcval_compare`. Antes contra depois, **nunca** observado contra catálogo.
+Tool MCP: `sparkforge_funcval_compare`, com `out_path`. Antes contra depois, **nunca** observado contra catálogo.
 
-`compare` **não tem `--out`**, ao contrário de `plan`, de `benchmark` e dos verbos de `analyze`, e a assimetria é deliberada: o `--out` do `plan` é obrigatório porque o plano é artefato consumido por outro verbo e é a evidência de um gate; a comparação é saída de leitura. A consequência prática é sua: para julgar, extraia `items` do envelope, que é o formato que `judge --facts` espera.
+`--out` grava a lista **completa** de facts, no formato que `judge --facts` lê — não o envelope, e nunca a página. `--limit` corta o stdout e não toca o arquivo, então não há `next_cursor` a conferir entre um passo e outro. É opcional, ao contrário do `--out` do `plan`: aquele é obrigatório porque o plano é artefato consumido por outro verbo e é a evidência de um gate; este é conveniência, do mesmo tipo que `benchmark` e os verbos de `analyze` oferecem. Sem ele a comparação sai só no stdout, e aí julgar exige extrair `items` do envelope à mão — com a conferência de `next_cursor` por sua conta, porque julgar a primeira página e chamar de comparação é o mesmo defeito que `SF-FVAL-005` acusa no dado.
 
-```bash
-python -c "import json,sys; d=json.load(open('.sparkforge/funcval_compare.json',encoding='utf-8')); json.dump(d['items'], open('.sparkforge/facts_funcval.json','w',encoding='utf-8'), indent=2, ensure_ascii=False)"
-```
-
-Confira `next_cursor` antes de extrair: `--limit` vale 50 por default, e um plano grande pagina. `next_cursor` não nulo quer dizer que `items` está incompleto — passe `--limit` maior ou pagine com `--cursor`, porque julgar a primeira página e chamar de comparação é o mesmo defeito que `SF-FVAL-005` acusa no dado. Emite `funcval.check_delta` (um por check, com `attrs.axis` em `count`/`schema`/`keys`/`aggregate`), a sentinela `funcval.analyzed` e `funcval.unresolved`.
+Emite `funcval.check_delta` (um por check, com `attrs.axis` em `count`/`schema`/`keys`/`aggregate`), a sentinela `funcval.analyzed` e `funcval.unresolved`.
 
 `attrs.diverged` aparece só onde a comparação é **exata**. Na comparação **relativa** ele é omitido de propósito, com a razão escrita em `attrs.diverged_omitted_reason`: o número que separa reassociação de ponto flutuante de divergência real é heurística de campo, e heurística de campo mora no catálogo, nunca no comparador — um `Fact` não carrega juízo nem limiar. Quem decide é a `SF-FVAL-004`, comparando `measures.relative_delta` contra `threshold.relative_tolerance` (`1.0e-9`), exatamente como `SF-BENCH-002` compara `total_task_ms_delta_pct` contra `threshold.regression_pct`.
 

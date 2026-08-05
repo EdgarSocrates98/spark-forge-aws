@@ -26,7 +26,18 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "eventlog"
 
-REQUIRED_FIXTURES = {"skewed_stage", "rolling_parts_version_conflict"}
+# Os dois ultimos sao os pares de `skewed_stage` nos ramos de `severity_by`:
+# `skewed_stage` so tem razoes muito acima do primeiro ramo (15 contra 10 em
+# SF-UI-001, 0.316 contra 0.20 em SF-UI-004), entao os ramos P2 das duas regras
+# nao apareciam em golden nenhum -- podiam virar qualquer severidade com a
+# suite inteira verde. Cada um traz o valor no limiar EXATO da regra e o vizinho
+# logo abaixo, que nao dispara.
+REQUIRED_FIXTURES = {
+    "skewed_stage",
+    "rolling_parts_version_conflict",
+    "duration_skew_at_threshold",
+    "gc_pressure_at_threshold",
+}
 
 
 def fixture_dirs():
@@ -111,6 +122,110 @@ class TestAdversarial:
         )
         ratio = healthy.measures["max_ms"] / healthy.measures["p50_ms"]
         assert ratio < 3.0
+
+    def _stage(self, facts, kind, symbol):
+        return next(
+            f for f in facts if f.kind == kind and f.subject["symbol"] == symbol
+        )
+
+    def test_both_severity_branches_of_the_duration_skew_rule_have_a_fixture(self):
+        """Os dois ramos de SF-UI-001, e o limiar que decide entre eles.
+
+        `skewed_stage` tem razao 15 e cai no primeiro ramo;
+        `duration_skew_at_threshold` tem razao 3.0 -- o proprio
+        `threshold.ratio` da regra -- e cai no segundo. Antes do segundo fixture
+        o ramo P2 nao aparecia em golden nenhum: a severidade dele podia virar
+        qualquer valor com a suite inteira verde, porque 15 esta longe demais do
+        10 do primeiro ramo para os dois se distinguirem.
+
+        O stage vizinho, com 2900 ms em vez de 3000, NAO e acusado: e o lado
+        negativo do limiar, sem o qual a regra poderia estar disparando pela
+        mera presenca do fact.
+
+        Os numeros vem do CATALOGO, nunca repetidos aqui: um limiar escrito em
+        dois lugares vira dois limiares no dia em que alguem ajustar so um.
+        """
+        regra = next(r for r in load_catalog() if r["id"] == "SF-UI-001")
+        agudo, moderado = regra["severity_by"]
+        limiar_do_ramo = float(agudo["when"].rsplit(">=", 1)[1])
+
+        _, agudo_facts, findings_agudo, _ = run_fixture(FIXTURES / "skewed_stage")
+        _, limiar_facts, findings_limiar, _ = run_fixture(
+            FIXTURES / "duration_skew_at_threshold"
+        )
+
+        torto = self._stage(agudo_facts, "spark.stage.task_duration", "stage_skewed_join")
+        no_limiar = self._stage(
+            limiar_facts, "spark.stage.task_duration", "stage_shuffle_skew_at_threshold"
+        )
+        abaixo = self._stage(
+            limiar_facts, "spark.stage.task_duration", "stage_shuffle_below_threshold"
+        )
+
+        assert torto.measures["max_ms"] / torto.measures["p50_ms"] >= limiar_do_ramo
+        razao_no_limiar = no_limiar.measures["max_ms"] / no_limiar.measures["p50_ms"]
+        razao_abaixo = abaixo.measures["max_ms"] / abaixo.measures["p50_ms"]
+        assert razao_no_limiar == regra["threshold"]["ratio"]
+        assert razao_no_limiar < limiar_do_ramo
+        assert razao_abaixo < regra["threshold"]["ratio"]
+
+        achado_agudo = next(f for f in findings_agudo if f.rule_id == "SF-UI-001")
+        achados_limiar = [f for f in findings_limiar if f.rule_id == "SF-UI-001"]
+        assert achado_agudo.severity == agudo["severity"]
+        # Um achado so: o stage vizinho fica de fora, e e ele que prova o limiar.
+        assert [f.subject["symbol"] for f in achados_limiar] == [
+            "stage_shuffle_skew_at_threshold"
+        ]
+        assert achados_limiar[0].severity == moderado["severity"]
+
+    def test_duration_skew_at_threshold_has_no_input_skew(self):
+        """O que separa SF-UI-001 de SF-UI-002, no mesmo stage.
+
+        As oito tasks leem o MESMO numero de bytes de input; a lenta e lenta por
+        ler 3x mais bytes de shuffle remoto. Se o corpus so tivesse stage onde a
+        task lenta tambem le mais input, uma regra que confundisse os dois eixos
+        passaria despercebida.
+        """
+        _, facts, findings, _ = run_fixture(FIXTURES / "duration_skew_at_threshold")
+        entrada = self._stage(
+            facts, "spark.stage.task_input", "stage_shuffle_skew_at_threshold"
+        )
+        assert entrada.measures["max_bytes"] == entrada.measures["p50_bytes"]
+        assert "SF-UI-002" not in {f.rule_id for f in findings}
+
+    def test_both_severity_branches_of_the_gc_rule_have_a_fixture(self):
+        """Os dois ramos de SF-UI-004, e o limiar que decide entre eles.
+
+        Mesma estrutura do teste de SF-UI-001: `skewed_stage` tem 0.316 e cai no
+        primeiro ramo, `gc_pressure_at_threshold` tem 0.15 -- o proprio
+        `threshold.ratio` -- e cai no segundo, e o stage vizinho com 0.14 nao e
+        acusado.
+        """
+        regra = next(r for r in load_catalog() if r["id"] == "SF-UI-004")
+        agudo, moderado = regra["severity_by"]
+        limiar_do_ramo = float(agudo["when"].rsplit(">=", 1)[1])
+
+        _, agudo_facts, findings_agudo, _ = run_fixture(FIXTURES / "skewed_stage")
+        _, limiar_facts, findings_limiar, _ = run_fixture(
+            FIXTURES / "gc_pressure_at_threshold"
+        )
+
+        pesado = self._stage(agudo_facts, "spark.stage.gc", "stage_skewed_join")
+        no_limiar = self._stage(limiar_facts, "spark.stage.gc", "stage_gc_at_threshold")
+        abaixo = self._stage(limiar_facts, "spark.stage.gc", "stage_gc_below_threshold")
+
+        assert pesado.measures["gc_ms"] / pesado.measures["executor_run_ms"] >= limiar_do_ramo
+        razao_no_limiar = no_limiar.measures["gc_ms"] / no_limiar.measures["executor_run_ms"]
+        razao_abaixo = abaixo.measures["gc_ms"] / abaixo.measures["executor_run_ms"]
+        assert razao_no_limiar == regra["threshold"]["ratio"]
+        assert razao_no_limiar < limiar_do_ramo
+        assert razao_abaixo < regra["threshold"]["ratio"]
+
+        achado_agudo = next(f for f in findings_agudo if f.rule_id == "SF-UI-004")
+        achados_limiar = [f for f in findings_limiar if f.rule_id == "SF-UI-004"]
+        assert achado_agudo.severity == agudo["severity"]
+        assert [f.subject["symbol"] for f in achados_limiar] == ["stage_gc_at_threshold"]
+        assert achados_limiar[0].severity == moderado["severity"]
 
     def test_skipped_stage_has_zero_task_count(self):
         _, facts, _, _ = run_fixture(FIXTURES / "skewed_stage")

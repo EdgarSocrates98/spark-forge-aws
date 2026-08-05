@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-EMR-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Cluster sem LogUri — nenhum log sobrevive ao cluster",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "j-3LONGLIVEDNOLOG"
+    },
+    "evidence": [
+      "f_74bd81"
+    ],
+    "measured": {
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Não é um problema de performance; é de capacidade de diagnóstico, e é a análoga de SF-GLUE-002 no EMR. Sem LogUri não existe destino em S3 para os step logs, os logs de container (stderr, stdout, launch_container.sh), os logs do ResourceManager, os do HDFS e os de provisionamento do nó — a documentação lista cada um desses caminhos sob o bucket de log, e sem o bucket nenhum deles é escrito. Em release 6.8.0 ou anterior o efeito é total: \"If you use Amazon EMR release 6.8.0 or earlier, log files are not saved to Amazon S3 during cluster termination, so you can't access the log files once the nodes terminate\". E a correção não é retroativa: LogUri é propriedade de criação do cluster, então quando a investigação for necessária já será tarde. Qualquer diagnóstico futuro começa sem evidência de execução e depende de reproduzir o problema. Ver knowledge/emr/cluster-configuration.md seção 6.",
+    "proposed_change": [
+      "Provisionar o cluster com --log-uri apontando para um prefixo S3 com política de retenção definida.",
+      "Avaliar a criptografia dos logs com chave gerenciada pelo cliente (EMR 5.30.0 ou superior, exceto 6.0.0), concedendo kms:GenerateDataKey ao perfil de instância EC2 e kms:DescribeKey ao papel de serviço do EMR.",
+      "Para releases 6.9.0 ou superiores, confirmar que o arquivamento durante scale-down está chegando ao prefixo, e não só o arquivamento de término.",
+      "Se o cluster já está em execução e é crítico, coletar os logs de /mnt/var/log/ nos nós por SSH ANTES de terminá-lo; essa é a única cópia que existe."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Logs consomem armazenamento S3 continuamente; sem política de ciclo de vida o custo cresce sem teto.",
+      "Log de container pode conter dado de aplicação; o prefixo precisa da mesma política de acesso do dado que o cluster processa."
+    ],
+    "tradeoffs": [
+      "Custo marginal de armazenamento e um pouco de I/O contra a possibilidade de diagnosticar qualquer coisa depois do fato. A própria documentação apresenta reduzir debugging em produção como economia legítima, e a contrapartida declarada é \"if something goes wrong, you'll have fewer tools available to investigate the issue\"."
+    ],
+    "validation": [
+      "Objetos presentes sob s3://<bucket>/<cluster-id>/steps/ e /containers/ depois de um run.",
+      "Log do ResourceManager presente sob /node/<instância-líder>/applications/hadoop-yarn/.",
+      "Um teste de terminação do cluster seguido de leitura dos logs em S3, provando que eles sobreviveram."
+    ],
+    "rollback": [
+      "Provisionar sem --log-uri. Nenhum efeito sobre o resultado do job; o único efeito é voltar a não ter evidência."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-debugging.html",
+        "retrieved": "2026-08-01"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A fonte sustenta que os logs morrem com os nós em release <= 6.8.0, que o arquivamento precisa ser habilitado no lançamento nessas releases, e que a configuração de logging S3 introduzida na 7.13.0 'can only be set at cluster creation time and cannot be modified for running clusters'. Que o próprio `LogUri` não tenha conserto retroativo em NENHUMA release é inferência da ausência de qualquer operação de modificação na API de cluster, não citação."
+      }
+    ]
+  }
+]

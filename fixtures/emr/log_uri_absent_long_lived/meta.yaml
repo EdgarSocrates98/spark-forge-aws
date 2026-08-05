@@ -1,0 +1,28 @@
+name: log_uri_absent_long_lived
+proves: >
+  O ramo `severity_default` de SF-EMR-006, que até aqui não tinha golden nenhum.
+  `LogUri` ausente com `AutoTerminate: false` é o cluster de vida longa sem
+  destino de log: a severidade cai no default P2, e não no P1 de
+  `instance_fleets_maximize`, porque enquanto o cluster estiver de pé ainda
+  existe a janela de SSH para ler `/mnt/var/log/` — o que se perde é o histórico
+  depois que ele terminar, não o incidente de agora.
+  Existe em par com `instance_fleets_maximize`, e o par é o que trava o ramo:
+  os dois dumps têm `log_uri_present: false`, e a ÚNICA coisa que os separa no
+  que esta regra lê é `attrs.auto_terminate`. Sem este golden, a severidade do
+  ramo default podia virar qualquer valor com a suíte inteira verde — a
+  condição de `severity_by` era comparada contra um único lado.
+  Nenhuma outra regra da área dispara, e o dump é deliberadamente magro para
+  isso: sem `Configurations` não há SF-EMR-001, SF-EMR-002, SF-EMR-003 nem
+  SF-EMR-005; MASTER e CORE On-Demand fecham SF-EMR-004 e SF-EMR-008; não há
+  `AutoTerminationPolicy`, então SF-EMR-009 falha fechada por measure ausente; e
+  `ALL_STEPS_COMPLETED` não é `BOOTSTRAP_FAILURE`.
+runtime:
+  emr: "7.5.0"
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emr.analyzed
+  - emr.application
+  - emr.cluster
+  - emr.instance_capacity
+expects_rules:
+  - SF-EMR-006

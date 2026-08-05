@@ -38,7 +38,7 @@ Quatro kinds saem daqui:
 | Kind | O que ele afirma |
 |---|---|
 | `dq.check` | um ponto de validação, com as quatro correlações já decididas em `attrs` |
-| `dq.enforcement` | há consequência (`attrs.form` em `raise`, `assert` ou `exit`), ancorada no subject do check |
+| `dq.enforcement` | há consequência (`attrs.form` em `raise`, `assert` ou `exit`), ancorada no subject do check; `attrs.via` nomeia o helper quando o aborto está a um salto |
 | `dq.unresolved` | alvo ilegível, arquivo que não abriu, fonte que não compilou — contado, nunca presumido |
 | `dq.module_analyzed` | `measures.check_count` e `measures.unresolved_count` por módulo |
 
@@ -188,9 +188,11 @@ catálogo cresce, esta tabela é uma foto.
 ## Red flags
 
 - Ler `SF-DQ-002` como "este job não protege nada" quando o recorte foi um arquivo só. O
-  achado diz **sem consequência neste corpus**; consequência atrás de um helper
-  (`aborta_se(ruins)`) ou noutro módulo não é vista, porque isso exigiria seguir o valor para
-  dentro da função.
+  achado diz **sem consequência neste corpus**. Consequência atrás de um helper do mesmo
+  módulo **é** vista (um salto, `attrs.via` no `dq.enforcement`); o que fica fora é helper
+  de outro módulo, e cadeia mais longa que um salto — esta última sai como `dq.unresolved`
+  com `reason: enforcement_beyond_one_hop`, e aí a regra dispara sobre quem protegeu.
+  Procure esse fact no lote antes de escrever o achado.
 - Tratar `dq.unresolved` como job sem validação. É alvo ilegível, e `unresolved_count` diz
   quanto ficou de fora — acusar ali é acusar quem escreveu o código de um defeito que ele não
   tem.

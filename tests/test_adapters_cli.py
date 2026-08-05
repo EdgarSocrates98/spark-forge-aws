@@ -1587,6 +1587,124 @@ class TestFuncvalCompare:
         assert sentinela["attrs"]["proxies"] == ["count", "schema", "keys", "aggregates"]
         assert "NAO provam" in sentinela["attrs"]["proxy_limit"]
 
+    def test_the_out_file_is_what_judge_reads(self, repo, capsys):
+        """D-4c-26. Sem `--out`, a saida do `compare` so chegava ao `judge`
+        extraida do envelope com `jq` ou `python -c` -- num fluxo cujo passo
+        seguinte e obrigatorio para a area servir para alguma coisa."""
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1000))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(998))
+        out = repo / "funcval.json"
+        code, output = run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+                "--out", str(out),
+            ],
+            capsys,
+        )
+        assert code == 0
+        gravado = json.loads(out.read_text(encoding="utf-8"))
+        # O arquivo e uma LISTA de facts, no formato que `judge --facts` le --
+        # nao o envelope. E ele traz o mesmo que o stdout, sem paginacao no meio.
+        assert isinstance(gravado, list)
+        assert gravado == json.loads(output)["items"]
+        assert {f["kind"] for f in gravado} == {"funcval.analyzed", "funcval.check_delta"}
+
+    def test_the_out_file_carries_everything_and_not_the_page(self, repo, capsys):
+        """A metade da divida que MORDE. `--limit` vale 50 por default e o
+        envelope pagina; quem extrai `items` sem conferir `next_cursor` julga a
+        primeira pagina e chama aquilo de comparacao -- o defeito que a
+        SF-FVAL-005 acusa no dado do operador, cometido pelo fluxo do motor.
+
+        Aqui `--limit 1` corta o stdout em UM item e o arquivo continua com
+        todos. Se a escrita acontecesse depois da paginacao, este teste seria a
+        unica coisa entre o motor e aquele defeito."""
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1000))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(998))
+        out = repo / "funcval.json"
+        _, output = run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+                "--out", str(out),
+                "--limit", "1",
+            ],
+            capsys,
+        )
+        payload = json.loads(output)
+        assert len(payload["items"]) == 1
+        assert payload["next_cursor"]
+        gravado = json.loads(out.read_text(encoding="utf-8"))
+        assert len(gravado) == payload["total_count"] > 1
+
+    def test_the_chain_reaches_judge_without_a_step_in_between(self, repo, capsys):
+        """A cadeia inteira, que e o que a divida cobrava: o arquivo do `--out`
+        entra direto em `judge --facts`, sem `jq` no meio."""
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1000))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(998))
+        out = repo / "funcval.json"
+        run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+                "--out", str(out),
+            ],
+            capsys,
+        )
+        _, output = run(["judge", "--facts", str(out), "--glue", "5.0"], capsys)
+        assert "SF-FVAL-001" in {f["rule_id"] for f in json.loads(output)["items"]}
+
+    def test_without_out_nothing_is_written(self, repo, capsys):
+        """`--out` e OPCIONAL, ao contrario do `--out` do `plan`: o plano e a
+        entrada do proximo verbo, esta e saida terminal. Sem o argumento o verbo
+        nao inventa caminho nenhum."""
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1000))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(998))
+        antes = set(repo.iterdir())
+        code, _ = run(
+            [
+                "funcval", "compare",
+                "--plan", str(plan),
+                "--before", str(before),
+                "--after", str(after),
+            ],
+            capsys,
+        )
+        assert code == 0
+        assert set(repo.iterdir()) == antes
+
+    def test_out_into_a_missing_directory_names_this_verb(self, repo, capsys):
+        """A mensagem sugere o comando do verbo que FALHOU. Mandar quem errou o
+        diretorio no `compare` rodar um `plan` seria o motor sugerindo o passo
+        errado no unico momento em que a pessoa esta seguindo a sugestao."""
+        plan = self._plan(repo, capsys)
+        before = self._result(repo, "antes", target="db.eventos", checks=self._checks(1000))
+        after = self._result(repo, "depois", target="db.eventos", checks=self._checks(998))
+        assert (
+            main(
+                [
+                    "funcval", "compare",
+                    "--plan", str(plan),
+                    "--before", str(before),
+                    "--after", str(after),
+                    "--out", str(repo / "nao-existe" / "funcval.json"),
+                ]
+            )
+            == 2
+        )
+        err = capsys.readouterr().err
+        assert "sparkforge funcval compare" in err
+
     def test_a_plan_ref_from_another_plan_is_refused(self, repo, capsys):
         """O ponto cego que `build_comparison` nao ve: o modulo recebe o `attrs`
         do plano, nunca o Fact, entao os dois lados citando o MESMO plan_ref de

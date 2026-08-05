@@ -1,0 +1,69 @@
+[
+  {
+    "rule_id": "SF-ICE-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Data files pequenos — tamanho médio muito abaixo do alvo",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "table",
+      "file": "dump.json",
+      "symbol": "analytics.pedidos_compactados"
+    },
+    "evidence": [
+      "f_88ece1"
+    ],
+    "measured": {
+      "data_file_count": 24,
+      "total_bytes": 201326592,
+      "avg_file_bytes": 8388608.0,
+      "p50_file_bytes": 8388608,
+      "p95_file_bytes": 8388608,
+      "min_file_bytes": 8388608,
+      "max_file_bytes": 8388608,
+      "total_records": 2880000
+    },
+    "threshold": {
+      "min_avg_bytes": 33554432
+    },
+    "runtime_scope": {},
+    "explanation": "Arquivos pequenos custam listing, abertura e overhead de task. Em Iceberg o custo adicional é de metadados: mais data files significam manifests maiores e planejamento mais lento, inclusive para consumidores como Athena. O limiar de 32MB é conservador contra um alvo usual de 128 a 512MB. Ver knowledge/storage/iceberg-performance.md secao 1 e knowledge/storage/parquet-layout.md secao 3.",
+    "proposed_change": [
+      "Corrigir na origem primeiro, com write.distribution-mode hash ou range, que reduz o número de arquivos por partição na própria escrita.",
+      "Ajustar write.target-file-size-bytes ao alvo desejado.",
+      "Compactar o passivo com rewrite_data_files, estratégia binpack se o problema é contagem.",
+      "Se o pruning também é ruim, usar estratégia sort com a coluna de filtro dominante em vez de binpack."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Compactação reescreve dados e cria um novo snapshot, consumindo DPU e armazenamento temporário.",
+      "Alterar write.distribution-mode adiciona shuffle na escrita, aumentando o custo de cada run."
+    ],
+    "tradeoffs": [
+      "Corrigir na origem encarece cada escrita e evita compactação recorrente. Compactar depois mantém a escrita barata e adiciona um job de manutenção."
+    ],
+    "validation": [
+      "Tamanho médio, p50 e p95 de arquivo antes e depois, via metadata table files.",
+      "Contagem total de linhas idêntica antes e depois da compactação.",
+      "Tempo de planejamento de uma query de referência antes e depois."
+    ],
+    "rollback": [
+      "Time travel para o snapshot anterior à compactação",
+      "se ainda não expirado."
+    ],
+    "sources": [
+      {
+        "url": "https://iceberg.apache.org/docs/latest/spark-procedures/",
+        "retrieved": "2026-07-29",
+        "note": "doc latest; confirmar parâmetros contra a versão embarcada"
+      },
+      {
+        "url": "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

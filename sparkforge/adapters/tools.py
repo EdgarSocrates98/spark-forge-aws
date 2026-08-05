@@ -1682,7 +1682,9 @@ TOOLS: dict[str, dict[str, Any]] = {
             "validacao roda antes ou depois de o dado ser publicado), "
             "`target_persisted`, `action_after_check` e quantos checks incidem sobre o "
             "mesmo alvo; `dq.enforcement` so aparece quando a consequencia esta "
-            "PROVADA no mesmo escopo (`raise`, `sys.exit`, `assert`), e a AUSENCIA "
+            "PROVADA (`raise`, `sys.exit`, `assert`) -- no escopo do check, ou UM "
+            "salto adiante no corpo de um helper do mesmo modulo, e ai `attrs.via` "
+            "nomeia o helper --, e a AUSENCIA "
             "dele e o sinal de validacao sem dente; `dq.module_analyzed` prova que o "
             "modulo foi lido, para que 'nenhum check' nao se confunda com 'nao "
             "analisei'. NAO JULGA O DADO: nao diz se a tabela esta correta, se um "
@@ -1690,8 +1692,10 @@ TOOLS: dict[str, dict[str, Any]] = {
             "da ferramenta de DQ em execucao. Diz apenas ONDE a validacao esta no "
             "codigo, o que ela alcanca e o que ela deixa passar. Nao aplica limiar, "
             "nao atribui severidade e nao adivinha alvo: alvo que a AST nao resolve "
-            "(validacao atras de helper, DataFrame anonimo) vira `dq.unresolved` com "
-            "`reason`, contado como ponto cego em vez de presumido resolvido."
+            "(DataFrame anonimo, helper que monta a cadeia a partir do nome da "
+            "tabela) e cadeia de consequencia mais longa que um salto viram "
+            "`dq.unresolved` com `reason`, contados como ponto cego em vez de "
+            "presumidos resolvidos."
         ),
         "inputSchema": {
             "type": "object",
@@ -1954,7 +1958,9 @@ TOOLS: dict[str, dict[str, Any]] = {
             "Compara os DOIS resultados que VOCE mediu contra o plano de "
             "`sparkforge_funcval_plan`, e emite `funcval.check_delta`, a sentinela "
             "`funcval.analyzed` e `funcval.unresolved`. Funcao pura sobre valores ja "
-            "medidos: nao executa consulta e nao mede nada. "
+            "medidos: nao executa consulta e nao mede nada. Com `out_path`, GRAVA a "
+            "comparacao COMPLETA no arquivo que `sparkforge_judge` le -- sem ele o passo "
+            "seguinte exige extrair `items` do envelope a mao, e o envelope PAGINA. "
             "O QUE ELE RECUSA AFIRMAR: "
             "(1) Os quatro eixos sao PROXIES -- contagem, schema, chaves e agregados "
             "iguais NAO provam que o dado e o mesmo. A sentinela carrega esse limite em "
@@ -1999,6 +2005,18 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": "Resultado medido DEPOIS, no mesmo contrato.",
                 },
+                "out_path": {
+                    "type": "string",
+                    "description": (
+                        "Onde gravar a comparacao (JSON de facts), que e o que "
+                        "`sparkforge_judge` le como `facts`. OPCIONAL, ao contrario do "
+                        "`out_path` do plano: o plano e a entrada do proximo verbo, esta "
+                        "e uma saida terminal. O arquivo traz a lista COMPLETA e nunca a "
+                        "pagina -- `limit` corta o `structuredContent`, nao o arquivo, e "
+                        "julgar a primeira pagina como se fosse a comparacao e o defeito "
+                        "que a SF-FVAL-005 acusa no dado do operador."
+                    ),
+                },
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
@@ -2006,9 +2024,10 @@ TOOLS: dict[str, dict[str, Any]] = {
         },
         "outputSchema": _may_fail(
             _FUNCVAL_SCHEMA,
-            "A comparacao antes/depois, ou erro se o plano/os resultados nao servem.",
+            "A comparacao antes/depois (e gravada em out_path, quando pedido), ou erro "
+            "se o plano/os resultados nao servem.",
         ),
-        "annotations": _READ_ONLY,
+        "annotations": _WRITE_IDEMPOTENT,
     },
     "sparkforge_fuse": {
         "description": (
@@ -2682,6 +2701,7 @@ def _h_funcval_compare(args: dict[str, Any]) -> dict[str, Any]:
         args["plan_path"],
         args["before_path"],
         args["after_path"],
+        out_path=args.get("out_path"),
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),

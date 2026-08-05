@@ -56,6 +56,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from scripts.regen_fixtures import with_plan_ref
 from sparkforge.facts.catalog_schema import extract_catalog_schema_tree
 from sparkforge.facts.funcval import EMITTED_KINDS, build_comparison, build_plan
 from sparkforge.facts.pyspark_ast import extract_tree
@@ -67,6 +68,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "funcval"
 
 REQUIRED_FIXTURES = {
+    "aggregate_exact_diverged",
     "aggregate_outside_tolerance",
     "aggregate_within_tolerance",
     "clean_equivalence",
@@ -110,6 +112,13 @@ def _derive(directory: Path):
 
     Espelha `regen_funcval` passo a passo, inclusive a guarda de UM plano: um
     resultado descreve UM alvo, e escolher entre planos aqui seria adivinhar.
+
+    Um passo NAO e espelhado, e sim IMPORTADO: `with_plan_ref`. O `plan_ref` e o
+    `Fact.id` do plano derivado deste mesmo corpus (D-4c-22), e reimplementa-lo
+    aqui daria duas fontes para um id que so tem uma -- exatamente o que
+    escreve-lo a mao no `input/` faria. Todo o resto continua reimplementado de
+    proposito, porque ali a divergencia entre teste e regenerador e o que se quer
+    ver.
     """
     derived = _plan_facts(directory)
     input_dir = directory / "input"
@@ -125,8 +134,8 @@ def _derive(directory: Path):
     )
     return build_comparison(
         plans[0].attrs,
-        json.loads(before_file.read_text(encoding="utf-8")),
-        json.loads(after_file.read_text(encoding="utf-8")),
+        with_plan_ref(json.loads(before_file.read_text(encoding="utf-8")), plans[0]),
+        with_plan_ref(json.loads(after_file.read_text(encoding="utf-8")), plans[0]),
         path_hint=directory.name,
     )
 
@@ -321,6 +330,46 @@ class TestAdversarial:
         assert analyzed.measures["diverged_check_count"] == 0
         assert analyzed.measures["relative_delta_check_count"] == 1
 
+    def test_aggregate_exact_diverged_is_the_branch_no_fixture_exercised(self):
+        """A D-4c-23 em forma de teste. O `when.any` da SF-FVAL-004 tem duas
+        condicoes, e ate esta fixture existir apagar a EXATA nao deixava golden
+        nenhum vermelho -- nas sete comparacoes `agg:sum:cliente_id` era
+        identico dos dois lados, e o ramo que disparava era sempre o relativo.
+
+        Tres afirmacoes, e as tres precisam valer juntas para a fixture provar o
+        que o nome dela diz. (1) O agregado que se move e o EXATO, com o veredito
+        no proprio fact. (2) O de ponto flutuante fica identico, entao a condicao
+        relativa nao tem o que ler -- se ele se mexesse, o achado poderia estar
+        vindo do outro ramo e a fixture nao provaria nada. (3) A magnitude fecha
+        o contrafactual mais generoso: `relative_delta` fica ABAIXO da tolerancia
+        da regra, entao nem mesmo uma condicao relativa que lesse todo agregado
+        acharia isto aqui.
+        """
+        _, facts, findings, _ = run_fixture(FIXTURES / "aggregate_exact_diverged")
+        exato = _delta(facts, "agg:sum:cliente_id")
+        assert exato.attrs["comparison"] == "exact"
+        assert exato.attrs["diverged"] is True
+        assert exato.measures["value_after"] - exato.measures["value_before"] == 1
+
+        flutuante = _delta(facts, "agg:sum:valor")
+        assert flutuante.attrs["comparison"] == "relative"
+        assert flutuante.measures["value_before"] == flutuante.measures["value_after"]
+
+        tolerancia = next(
+            rule["threshold"]["relative_tolerance"]
+            for rule in load_catalog()
+            if rule["id"] == "SF-FVAL-004"
+        )
+        assert 0 < exato.measures["relative_delta"] < tolerancia
+        assert flutuante.measures["relative_delta"] == 0.0
+
+        # E os outros dois eixos parados, para que o achado nao possa vir deles.
+        for check in ("count", "schema"):
+            assert _delta(facts, check).attrs["diverged"] is False
+        assert [(f.rule_id, f.evidence) for f in findings] == [
+            ("SF-FVAL-004", [exato.id])
+        ]
+
     def test_aggregate_within_tolerance_is_the_legitimate_repartition(self):
         """A metade negativa da SF-FVAL-004. `_round` corta os valores em tres
         casas e os dois lados saem IDENTICOS em `measures`; `relative_delta` vai
@@ -414,6 +463,29 @@ class TestAdversarial:
             "key",
             "aggregate",
         }
+
+    def test_every_comparison_carries_the_plan_ref_of_its_own_plan(self):
+        """A D-4c-22 em forma de teste, e o que ela custou a distinguir: campo
+        VAZIO e campo que este corpus nao alimenta sao indistinguiveis para quem
+        le o golden, e o `plan_ref: ""` das sete comparacoes era o segundo se
+        passando pelo primeiro.
+
+        A afirmacao e dupla, e as duas metades sao necessarias. Nao-vazio prova
+        que o campo e alimentado; igual ao `Fact.id` do plano DERIVADO deste
+        `input/` prova que ele nao foi escrito a mao -- um id constante sobrevive
+        a nao-vazio e morre aqui, que e o defeito que a divida recusou cometer.
+        """
+        checados = 0
+        for directory in fixture_dirs():
+            input_dir = directory / "input"
+            if not (input_dir / "before.json").is_file():
+                continue
+            plano = _one(_plan_facts(directory), "funcval.plan")
+            analyzed = _one(_derive(directory), "funcval.analyzed")
+            assert analyzed.attrs["plan_ref"] == plano.id, directory.name
+            assert analyzed.attrs["plan_ref"], directory.name
+            checados += 1
+        assert checados == 8
 
     def test_every_comparison_declares_the_proxy_limit_in_the_output(self):
         """Criterio 8 da §9: o limite mora na SAIDA, nao no spec. Quem le

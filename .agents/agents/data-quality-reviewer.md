@@ -93,7 +93,9 @@ varreduras para responder a uma pergunta.
   expressável no YAML de regra.
 - **`dq.enforcement`** — a consequência (`attrs.form` em `raise`, `assert` ou `exit`),
   ancorada no **subject do check**, que é o que permite `SF-DQ-002` perguntar pela ausência
-  dela por check, e não pelo corpus inteiro.
+  dela por check, e não pelo corpus inteiro. Quando a consequência está atrás de um helper
+  do mesmo módulo, `attrs.via` nomeia o helper e `attrs.via_line` dá a linha do aborto
+  dentro dele — `measures.line` continua sendo a linha da **chamada**, no escopo do check.
 - **`dq.unresolved`** — alvo que a AST não resolveu, arquivo que não abriu, fonte que não
   compilou. Contado, nunca presumido.
 - **`dq.module_analyzed`** — `measures.check_count` e `measures.unresolved_count` por
@@ -131,10 +133,14 @@ resto do relatório.
 ## Ausência de evidência
 
 O recorte é o corpus que foi passado na linha de comando, e o achado precisa ser lido assim.
-`SF-DQ-002` afirma "sem consequência **neste corpus**": consequência atrás de um helper
-(`aborta_se(ruins)`) ou noutro módulo fora do recorte não é vista, porque provar isso exige
-seguir o valor para dentro da função. Nesse caso o achado é um convite a verificar, e não
-uma sentença — e é assim que ele deve ser escrito no relatório.
+`SF-DQ-002` afirma "sem consequência **neste corpus**". O extrator dá **um salto** para
+dentro da chamada: `aborta_se(ruins)` cujo corpo faz `if quantidade > 0: raise` produz
+`dq.enforcement` e a regra não dispara. Fica fora o helper de **outro módulo** — um módulo
+por vez é a fronteira — e a cadeia mais longa que um salto, que sai como `dq.unresolved`
+com `reason: enforcement_beyond_one_hop` nomeando os dois helpers. Nesse segundo caso a
+regra **dispara sobre quem protegeu**, e o fact ao lado diz onde a leitura parou: procure-o
+no mesmo lote antes de escrever o achado, e escreva-o como convite a verificar, nunca como
+sentença.
 
 `dq.unresolved` com `reason: unresolved_target` é **alvo ilegível**, e não job sem
 validação. Reportar os dois como a mesma coisa acusa quem escreveu o código de um defeito
