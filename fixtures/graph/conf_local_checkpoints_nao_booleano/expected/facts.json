@@ -1,76 +1,47 @@
 [
   {
-    "id": "f_816573",
+    "id": "f_1d68d3",
     "schema_version": 1,
     "kind": "graph.algorithm",
     "subject": {
       "type": "source_location",
       "file": "job.py",
-      "line": 17,
+      "line": 19,
       "col": 11,
-      "end_line": 17,
+      "end_line": 19,
       "symbol": "componentes",
       "snippet": "return g.connectedComponents()"
     },
     "measures": {
-      "line": 17
+      "line": 19
     },
     "attrs": {
       "name": "connectedComponents",
       "form": "call",
       "inside_loop": false,
-      "receiver": "g",
-      "checkpoint_required": true,
-      "checkpoint_configured_in_module": true
+      "receiver": "g"
     },
     "provenance": {
       "artifact": "job.py",
-      "artifact_sha256": "edbabeeec69d6b6ce64f635803c3add28ed0a9dc88219f26944a29e18b778bda",
+      "artifact_sha256": "1b9b8e7e6bc2b819f7247068768efd422dd7f84bec25cbb499f87ebf92ddb8a9",
       "extractor": "graph@0.1.0"
     }
   },
   {
-    "id": "f_8151c7",
-    "schema_version": 1,
-    "kind": "graph.checkpoint_dir",
-    "subject": {
-      "type": "source_location",
-      "file": "job.py",
-      "line": 13,
-      "col": 4,
-      "end_line": 13,
-      "symbol": "componentes",
-      "snippet": "spark.conf.set(\"spark.graphframes.useLocalCheckpoints\", \"true\")"
-    },
-    "measures": {
-      "line": 13
-    },
-    "attrs": {
-      "form": "conf_local_checkpoints",
-      "method": "set",
-      "enabled": true
-    },
-    "provenance": {
-      "artifact": "job.py",
-      "artifact_sha256": "edbabeeec69d6b6ce64f635803c3add28ed0a9dc88219f26944a29e18b778bda",
-      "extractor": "graph@0.1.0"
-    }
-  },
-  {
-    "id": "f_6506fd",
+    "id": "f_248cec",
     "schema_version": 1,
     "kind": "graph.construction",
     "subject": {
       "type": "source_location",
       "file": "job.py",
-      "line": 16,
+      "line": 18,
       "col": 8,
-      "end_line": 16,
+      "end_line": 18,
       "symbol": "componentes",
       "snippet": "g = GraphFrame(v, e)"
     },
     "measures": {
-      "line": 16
+      "line": 18
     },
     "attrs": {
       "constructor": "GraphFrame",
@@ -82,25 +53,25 @@
     },
     "provenance": {
       "artifact": "job.py",
-      "artifact_sha256": "edbabeeec69d6b6ce64f635803c3add28ed0a9dc88219f26944a29e18b778bda",
+      "artifact_sha256": "1b9b8e7e6bc2b819f7247068768efd422dd7f84bec25cbb499f87ebf92ddb8a9",
       "extractor": "graph@0.1.0"
     }
   },
   {
-    "id": "f_20cda4",
+    "id": "f_f3ad2c",
     "schema_version": 1,
     "kind": "graph.import",
     "subject": {
       "type": "source_location",
       "file": "job.py",
-      "line": 7,
+      "line": 9,
       "col": 0,
-      "end_line": 7,
+      "end_line": 9,
       "symbol": "",
       "snippet": "from graphframes import GraphFrame"
     },
     "measures": {
-      "line": 7
+      "line": 9
     },
     "attrs": {
       "form": "from",
@@ -111,12 +82,12 @@
     },
     "provenance": {
       "artifact": "job.py",
-      "artifact_sha256": "edbabeeec69d6b6ce64f635803c3add28ed0a9dc88219f26944a29e18b778bda",
+      "artifact_sha256": "1b9b8e7e6bc2b819f7247068768efd422dd7f84bec25cbb499f87ebf92ddb8a9",
       "extractor": "graph@0.1.0"
     }
   },
   {
-    "id": "f_eee1e1",
+    "id": "f_9e70b1",
     "schema_version": 1,
     "kind": "graph.module_analyzed",
     "subject": {
@@ -131,14 +102,38 @@
       "import_count": 1,
       "construction_count": 1,
       "algorithm_count": 1,
-      "unresolved_count": 0
+      "unresolved_count": 1
     },
     "attrs": {
       "parsed": true
     },
     "provenance": {
       "artifact": "job.py",
-      "artifact_sha256": "edbabeeec69d6b6ce64f635803c3add28ed0a9dc88219f26944a29e18b778bda",
+      "artifact_sha256": "1b9b8e7e6bc2b819f7247068768efd422dd7f84bec25cbb499f87ebf92ddb8a9",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_b798fa",
+    "schema_version": 1,
+    "kind": "graph.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 15,
+      "col": 4,
+      "end_line": 15,
+      "symbol": "componentes",
+      "snippet": "spark.conf.set(\"spark.graphframes.useLocalCheckpoints\", 1)"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "non_boolean_value",
+      "param": "spark.graphframes.useLocalCheckpoints"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1b9b8e7e6bc2b819f7247068768efd422dd7f84bec25cbb499f87ebf92ddb8a9",
       "extractor": "graph@0.1.0"
     }
   }

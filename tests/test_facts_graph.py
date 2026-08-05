@@ -421,7 +421,7 @@ def test_conf_de_local_checkpoints_ligada_conta():
     )
     facts = extract_graph(src, "j.py")
     fact = _one(facts, "graph.checkpoint_dir")
-    assert fact.attrs == {"form": "conf_local_checkpoints", "enabled": True}
+    assert fact.attrs == {"form": "conf_local_checkpoints", "method": "set", "enabled": True}
     assert _one(facts, "graph.algorithm").attrs["checkpoint_configured_in_module"] is True
 
 

@@ -47,6 +47,7 @@
     },
     "attrs": {
       "form": "conf_checkpoint_dir",
+      "method": "set",
       "literal": "s3://checkpoints/grafo/"
     },
     "provenance": {
