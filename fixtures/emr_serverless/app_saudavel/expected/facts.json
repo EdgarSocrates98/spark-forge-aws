@@ -25,7 +25,7 @@
     }
   },
   {
-    "id": "f_7688be",
+    "id": "f_29296c",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
@@ -33,7 +33,7 @@
       "symbol": "00fsaudavel00000001"
     },
     "measures": {
-      "initial_capacity_worker_type_count": 2,
+      "initial_capacity_worker_count": 5,
       "release_major": 7,
       "release_minor": 5,
       "idle_timeout_minutes": 15

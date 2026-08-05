@@ -157,11 +157,36 @@ rejeite esse estado. A reachability e nao documentada, e quem julgar precisa
 dize-lo.
 
 Pela mesma razao, `emrs.application` carrega
-`measures.initial_capacity_worker_type_count`: a cobranca de worker so corre com
+`measures.initial_capacity_worker_count`: a cobranca de worker so corre com
 capacidade pre-inicializada, entao "auto-stop desligado" e "auto-stop desligado
 COM pre-init" nao sao o mesmo defeito, e as duas perguntas precisam caber num
 fact so. Duas condicoes em kinds diferentes casariam a application A com a
 capacidade da application B num diretorio com varios payloads.
+
+## O measure de pre-init conta WORKER, nao entrada do map
+
+`initial_capacity_worker_count` e a SOMA dos `workerCount` LIDOS nas entradas de
+`initialCapacity`. Ele ja foi a contagem de entradas do map, e a troca fecha um
+falso positivo P0 medido: `{"DRIVER": {"workerCount": 0, ...}}` com auto-stop
+desligado tem uma entrada e nenhum worker, e a `explanation` de `SF-EMRS-001`
+fundamenta o achado em *"o que se cobra e worker existente"*. Zero workers nao e
+worker existente. `SF-EMRS-005` tinha o mesmo termo e o mesmo defeito.
+
+O caso irmao e pior: entrada **sem** `workerCount` produzia `unresolved`
+`missing_worker_count` e, no MESMO julgamento, uma P0. Uma P0 erguida sobre um
+ponto cego que o proprio extrator acabou de declarar e o achado confiante e falso
+que este pacote existe para evitar. Entrada com contagem ilegivel nao soma nada,
+e o buraco continua contado uma vez so, no `unresolved`.
+
+Nada torna esses payloads inalcancaveis:
+`knowledge/emr-serverless/application-configuration.md` registra `workerCount`
+apenas como "(numero)" -- sem `Required`, sem minimo --, e vale aqui a mesma
+doutrina que sustentou `unknown_capacity_unit`: nada na documentacao garante que
+`get-application` so devolva valores que satisfacam os patterns de ENTRADA.
+
+A contagem de ENTRADAS do map nao se perdeu: ela e
+`emrs.analyzed.measures.initial_capacity_count`. Mante-la tambem em
+`emrs.application` seria measure duplicado sem consumidor.
 
 ## `EMR.secret@` e o estado CORRETO, nao o defeito
 
@@ -745,7 +770,7 @@ def _application_fact(
     application: dict[str, Any],
     application_id: str,
     capacity: dict[str, Any],
-    worker_type_count: int,
+    worker_count: int | float,
     provenance: dict[str, Any],
 ) -> Fact:
     label = _as_str(application.get("releaseLabel"))
@@ -770,22 +795,30 @@ def _application_fact(
     _put(attrs, "auto_stop_enabled", _as_bool(_as_dict(auto_stop).get("enabled")))
     attrs.update(capacity)
 
-    # Quantas entradas do map `initialCapacity` foram LIDAS. Sai sempre, zero
+    # Quantos workers pre-inicializados o payload DECLARA: a soma dos
+    # `workerCount` lidos nas entradas de `initialCapacity`. Sai sempre, zero
     # incluso, pela mesma razao que os contadores da sentinela saem: e contagem
     # do que a extracao produziu, nao afirmacao sobre a AWS.
     #
-    # Existe porque duas regras da area precisam de "ha capacidade
-    # pre-inicializada?" e "auto-stop desligado?" NO MESMO fact: a cobranca de
-    # worker so corre com pre-init, entao auto-stop desligado sem pre-init nao e
-    # o mesmo defeito. Como `engine._condition_candidates` avalia um fact por
-    # vez, duas condicoes em kinds diferentes casariam a application A com a
-    # capacidade da application B num diretorio com varios payloads -- acusando
-    # duas configuracoes corretas. Correlacionar aqui e o padrao da D-4.
+    # Existe porque duas regras da area precisam de "ha worker pre-inicializado?"
+    # e "auto-stop desligado?" NO MESMO fact: a cobranca de worker so corre com
+    # pre-init, entao auto-stop desligado sem pre-init nao e o mesmo defeito.
+    # Como `engine._condition_candidates` avalia um fact por vez, duas condicoes
+    # em kinds diferentes casariam a application A com a capacidade da
+    # application B num diretorio com varios payloads -- acusando duas
+    # configuracoes corretas. Correlacionar aqui e o padrao da D-4.
     #
-    # Zero significa que o payload nao trouxe entrada nenhuma. Uma regra que leia
-    # zero como "nao ha pre-init" esta afirmando a partir do silencio do payload,
-    # e a `explanation` precisa dize-lo.
-    measures: dict[str, Any] = {"initial_capacity_worker_type_count": worker_type_count}
+    # WORKER, nao entrada do map: `{"DRIVER": {"workerCount": 0}}` tem uma
+    # entrada e nenhum worker, e uma entrada sem `workerCount` nao tem worker
+    # PROVADO -- ela ja saiu como `missing_worker_count`. Ver a secao dedicada na
+    # docstring do modulo. A contagem de entradas continua existindo, em
+    # `emrs.analyzed.measures.initial_capacity_count`.
+    #
+    # Zero significa que o payload nao provou worker nenhum -- por nao trazer
+    # `initialCapacity`, por trazer contagem zero, ou por trazer contagem
+    # ilegivel. Uma regra que leia zero como "nao ha pre-init" esta afirmando a
+    # partir do silencio do payload, e a `explanation` precisa dize-lo.
+    measures: dict[str, Any] = {"initial_capacity_worker_count": worker_count}
     if major is not None:
         measures["release_major"] = major
     if minor is not None:
@@ -856,7 +889,10 @@ def extract_emr_serverless(
             raw,
             application_id,
             decision,
-            sum(1 for f in capacity_facts if f.kind == "emrs.initial_capacity"),
+            # Entrada com `workerCount` ilegivel nao esta em `totals` com a
+            # chave, e por isso nao soma nada: o ponto cego ja saiu como
+            # `missing_worker_count` e somar um valor presumido o apagaria.
+            sum(entry.get("worker_count", 0) for entry in totals),
             provenance,
         )
     )

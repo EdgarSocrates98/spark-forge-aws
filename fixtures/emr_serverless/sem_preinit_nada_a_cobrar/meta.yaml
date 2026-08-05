@@ -8,7 +8,7 @@ proves: >
   janela larga:
     * `autostop_desligado.json` -- `autoStopConfiguration.enabled: false`, sem
       `initialCapacity`. E a fixture que apaga o termo
-      `initial_capacity_worker_type_count >= 1` de SF-EMRS-001: sem ela, remover
+      `initial_capacity_worker_count >= 1` de SF-EMRS-001: sem ela, remover
       esse termo do catalogo nao deixaria nenhum golden vermelho, e a metade
       mais cara da conjuncao ficaria sem prova.
     * `janela_longa.json` -- auto-stop ligado com `idleTimeoutMinutes: 10080`, o

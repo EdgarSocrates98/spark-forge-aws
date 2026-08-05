@@ -12,10 +12,10 @@
       "symbol": "00flongo00000000001"
     },
     "evidence": [
-      "f_3bdc8e"
+      "f_f666cb"
     ],
     "measured": {
-      "initial_capacity_worker_type_count": 1,
+      "initial_capacity_worker_count": 6,
       "release_major": 7,
       "release_minor": 5,
       "idle_timeout_minutes": 10080
@@ -24,7 +24,7 @@
       "idle_timeout_minutes": 1440
     },
     "runtime_scope": {},
-    "explanation": "O auto-stop está LIGADO — esta não é a application de SF-EMRS-001, e a pergunta é outra. O defeito aqui não é a ausência do controle, é a janela: um idleTimeoutMinutes maior que o intervalo ocioso típico da application nunca é alcançado. A application fica parada a noite inteira, o relógio de ociosidade reinicia no primeiro job da manhã, e o auto-stop nunca para nada. O controle existe no papel e não age nenhuma vez, enquanto os workers de initialCapacity continuam existindo — e é worker existente que se cobra, \"from the time workers are ready to run your workload until the time they stop\". O segundo termo da condição não é zelo: sem pré-init a application ociosa não tem worker de que cobrar, porque \"the state of an application with no pre-initialized capacity can immediately change from CREATED to STARTED\", e uma janela larga ali não custa fatura de worker. Essa linha é DEDUÇÃO do modelo de cobrança, não frase da AWS: esta coleta não encontrou página afirmando que uma application STARTED sem pré-init custe zero, e não encontrar não é o mesmo que não existir — o que o corte compra é não acusar uma configuração cujo custo não se conseguiu demonstrar. Nada disso aparece em métrica de Spark: não há job, não há stage, não há falha, só a fatura. O que este achado NÃO prova é que a application esteja de fato ociosa; ele lê a definição, e a definição no momento da coleta — autoStopConfiguration não é parâmetro de StartJobRun, mas update-application a altera a qualquer momento. Ver knowledge/emr-serverless/application-configuration.md seções 3 e 4.",
+    "explanation": "O auto-stop está LIGADO — esta não é a application de SF-EMRS-001, e a pergunta é outra. O defeito aqui não é a ausência do controle, é a janela: um idleTimeoutMinutes maior que o intervalo ocioso típico da application nunca é alcançado. A application fica parada a noite inteira, o relógio de ociosidade reinicia no primeiro job da manhã, e o auto-stop nunca para nada. O controle existe no papel e não age nenhuma vez, enquanto os workers de initialCapacity continuam existindo — e é worker existente que se cobra, \"from the time workers are ready to run your workload until the time they stop\". O segundo termo da condição não é zelo: sem pré-init a application ociosa não tem worker de que cobrar, porque \"the state of an application with no pre-initialized capacity can immediately change from CREATED to STARTED\", e uma janela larga ali não custa fatura de worker. Essa linha é DEDUÇÃO do modelo de cobrança, não frase da AWS: esta coleta não encontrou página afirmando que uma application STARTED sem pré-init custe zero, e não encontrar não é o mesmo que não existir — o que o corte compra é não acusar uma configuração cujo custo não se conseguiu demonstrar. Como em SF-EMRS-001, esse termo conta WORKER declarado e não entrada do map: workerCount zero, ou ausente do payload, não prova worker existente e não dispara. Nada disso aparece em métrica de Spark: não há job, não há stage, não há falha, só a fatura. O que este achado NÃO prova é que a application esteja de fato ociosa; ele lê a definição, e a definição no momento da coleta — autoStopConfiguration não é parâmetro de StartJobRun, mas update-application a altera a qualquer momento. Ver knowledge/emr-serverless/application-configuration.md seções 3 e 4.",
     "proposed_change": [
       "Dimensionar a janela pelo maior intervalo ocioso que ainda vale a pena manter a pré-init quente, medido no histórico de submissão de job runs e não estimado.",
       "Se a janela larga existe para evitar o tempo de provisionamento da pré-init entre execuções, tornar isso explícito: nomear quantas vezes por dia esse ganho é usado, e comparar com o custo do worker parado no resto do tempo.",

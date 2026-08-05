@@ -1,11 +1,11 @@
 [
   {
-    "id": "f_dddf7f",
+    "id": "f_7ecb9f",
     "schema_version": 1,
     "kind": "emrs.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "eixo_ausente.json",
+      "file": "autostop_desligado.json",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -19,18 +19,18 @@
     },
     "attrs": {},
     "provenance": {
-      "artifact": "eixo_ausente.json",
-      "artifact_sha256": "ddfe1a23f2a1e6a0ad543cc321282fdd40766573192a4f3814d287aa278c9c46",
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "e645d393afdba0e1775be897c6efe8ff43c0bbe6be198f7c272dcb08b1af0527",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_57b54f",
+    "id": "f_26434f",
     "schema_version": 1,
     "kind": "emrs.analyzed",
     "subject": {
       "type": "source_location",
-      "file": "sem_teto.json",
+      "file": "janela_longa.json",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -44,103 +44,83 @@
     },
     "attrs": {},
     "provenance": {
-      "artifact": "sem_teto.json",
-      "artifact_sha256": "327a71e32036bf51996f3a85ee39498cc9a21645f40c800ff18622ecd3aabc57",
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "59fef7ff7cf09465ea7f8fd3383549159ed91658c809e1805d747468c1dc7154",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_e98785",
+    "id": "f_5b453c",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
       "type": "job_run",
-      "symbol": "00feixoausente000001"
+      "symbol": "00fsemcount00000001"
     },
     "measures": {
-      "initial_capacity_worker_count": 1,
+      "initial_capacity_worker_count": 0,
       "release_major": 7,
-      "release_minor": 5,
-      "idle_timeout_minutes": 15
+      "release_minor": 5
     },
     "attrs": {
-      "application_id": "00feixoausente000001",
-      "name": "sem-disco-no-worker",
+      "application_id": "00fsemcount00000001",
+      "name": "preinit-sem-contagem",
       "release_label": "emr-7.5.0",
       "type": "Spark",
       "state": "STARTED",
-      "auto_start_declared": false,
+      "architecture": "X86_64",
+      "auto_start_declared": true,
       "auto_stop_declared": true,
-      "auto_stop_enabled": true
+      "auto_start_enabled": true,
+      "auto_stop_enabled": false
     },
     "provenance": {
-      "artifact": "eixo_ausente.json",
-      "artifact_sha256": "ddfe1a23f2a1e6a0ad543cc321282fdd40766573192a4f3814d287aa278c9c46",
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "e645d393afdba0e1775be897c6efe8ff43c0bbe6be198f7c272dcb08b1af0527",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_2fcc06",
+    "id": "f_5660d5",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
       "type": "job_run",
-      "symbol": "00fsemteto0000000001"
+      "symbol": "00fsemcount00000002"
     },
     "measures": {
-      "initial_capacity_worker_count": 1,
+      "initial_capacity_worker_count": 0,
       "release_major": 7,
       "release_minor": 5,
-      "idle_timeout_minutes": 15
+      "idle_timeout_minutes": 10080
     },
     "attrs": {
-      "application_id": "00fsemteto0000000001",
-      "name": "sem-teto",
+      "application_id": "00fsemcount00000002",
+      "name": "preinit-sem-contagem-janela-larga",
       "release_label": "emr-7.5.0",
       "type": "Spark",
       "state": "STARTED",
-      "auto_start_declared": false,
+      "architecture": "X86_64",
+      "auto_start_declared": true,
       "auto_stop_declared": true,
+      "auto_start_enabled": true,
       "auto_stop_enabled": true
     },
     "provenance": {
-      "artifact": "sem_teto.json",
-      "artifact_sha256": "327a71e32036bf51996f3a85ee39498cc9a21645f40c800ff18622ecd3aabc57",
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "59fef7ff7cf09465ea7f8fd3383549159ed91658c809e1805d747468c1dc7154",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_38b4ad",
+    "id": "f_dfe130",
     "schema_version": 1,
     "kind": "emrs.initial_capacity",
     "subject": {
       "type": "job_run",
-      "symbol": "00feixoausente000001/initial_capacity/DRIVER"
+      "symbol": "00fsemcount00000001/initial_capacity/DRIVER"
     },
     "measures": {
-      "worker_count": 1,
-      "cpu": 4,
-      "memory_gb": 16
-    },
-    "attrs": {
-      "worker_type": "DRIVER"
-    },
-    "provenance": {
-      "artifact": "eixo_ausente.json",
-      "artifact_sha256": "ddfe1a23f2a1e6a0ad543cc321282fdd40766573192a4f3814d287aa278c9c46",
-      "extractor": "emr_serverless@0.1.0"
-    }
-  },
-  {
-    "id": "f_3512d7",
-    "schema_version": 1,
-    "kind": "emrs.initial_capacity",
-    "subject": {
-      "type": "job_run",
-      "symbol": "00fsemteto0000000001/initial_capacity/DRIVER"
-    },
-    "measures": {
-      "worker_count": 1,
       "cpu": 4,
       "memory_gb": 16,
       "disk_gb": 20
@@ -149,18 +129,40 @@
       "worker_type": "DRIVER"
     },
     "provenance": {
-      "artifact": "sem_teto.json",
-      "artifact_sha256": "327a71e32036bf51996f3a85ee39498cc9a21645f40c800ff18622ecd3aabc57",
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "e645d393afdba0e1775be897c6efe8ff43c0bbe6be198f7c272dcb08b1af0527",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_e95d75",
+    "id": "f_a0d546",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsemcount00000002/initial_capacity/EXECUTOR"
+    },
+    "measures": {
+      "cpu": 4,
+      "memory_gb": 16,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "59fef7ff7cf09465ea7f8fd3383549159ed91658c809e1805d747468c1dc7154",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_63d594",
     "schema_version": 1,
     "kind": "emrs.monitoring",
     "subject": {
       "type": "job_run",
-      "symbol": "00feixoausente000001/monitoring"
+      "symbol": "00fsemcount00000001/monitoring"
     },
     "measures": {
       "log_destination_count": 2
@@ -175,18 +177,18 @@
       "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
     },
     "provenance": {
-      "artifact": "eixo_ausente.json",
-      "artifact_sha256": "ddfe1a23f2a1e6a0ad543cc321282fdd40766573192a4f3814d287aa278c9c46",
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "e645d393afdba0e1775be897c6efe8ff43c0bbe6be198f7c272dcb08b1af0527",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_432eb5",
+    "id": "f_06e074",
     "schema_version": 1,
     "kind": "emrs.monitoring",
     "subject": {
       "type": "job_run",
-      "symbol": "00fsemteto0000000001/monitoring"
+      "symbol": "00fsemcount00000002/monitoring"
     },
     "measures": {
       "log_destination_count": 2
@@ -201,18 +203,18 @@
       "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
     },
     "provenance": {
-      "artifact": "sem_teto.json",
-      "artifact_sha256": "327a71e32036bf51996f3a85ee39498cc9a21645f40c800ff18622ecd3aabc57",
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "59fef7ff7cf09465ea7f8fd3383549159ed91658c809e1805d747468c1dc7154",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_f7019a",
+    "id": "f_9c1f07",
     "schema_version": 1,
     "kind": "emrs.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "eixo_ausente.json",
+      "file": "autostop_desligado.json",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -220,25 +222,22 @@
     },
     "measures": {},
     "attrs": {
-      "reason": "capacity_comparison_undecidable",
-      "detail": "missing_capacity_axis",
-      "axes": [
-        "disk_gb"
-      ]
+      "reason": "missing_worker_count",
+      "worker_type": "DRIVER"
     },
     "provenance": {
-      "artifact": "eixo_ausente.json",
-      "artifact_sha256": "ddfe1a23f2a1e6a0ad543cc321282fdd40766573192a4f3814d287aa278c9c46",
+      "artifact": "autostop_desligado.json",
+      "artifact_sha256": "e645d393afdba0e1775be897c6efe8ff43c0bbe6be198f7c272dcb08b1af0527",
       "extractor": "emr_serverless@0.1.0"
     }
   },
   {
-    "id": "f_fc247e",
+    "id": "f_a053d2",
     "schema_version": 1,
     "kind": "emrs.unresolved",
     "subject": {
       "type": "source_location",
-      "file": "sem_teto.json",
+      "file": "janela_longa.json",
       "line": 0,
       "col": 0,
       "symbol": "",
@@ -246,12 +245,12 @@
     },
     "measures": {},
     "attrs": {
-      "reason": "capacity_comparison_undecidable",
-      "detail": "missing_maximum_capacity"
+      "reason": "missing_worker_count",
+      "worker_type": "EXECUTOR"
     },
     "provenance": {
-      "artifact": "sem_teto.json",
-      "artifact_sha256": "327a71e32036bf51996f3a85ee39498cc9a21645f40c800ff18622ecd3aabc57",
+      "artifact": "janela_longa.json",
+      "artifact_sha256": "59fef7ff7cf09465ea7f8fd3383549159ed91658c809e1805d747468c1dc7154",
       "extractor": "emr_serverless@0.1.0"
     }
   }

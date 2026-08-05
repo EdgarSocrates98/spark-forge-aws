@@ -25,7 +25,7 @@
     }
   },
   {
-    "id": "f_399214",
+    "id": "f_f1c330",
     "schema_version": 1,
     "kind": "emrs.application",
     "subject": {
@@ -33,7 +33,7 @@
       "symbol": "00fmalformada0000001"
     },
     "measures": {
-      "initial_capacity_worker_type_count": 1,
+      "initial_capacity_worker_count": 0,
       "release_major": 7,
       "release_minor": 5
     },
