@@ -228,11 +228,17 @@ rules:
       sobre o defeito que ela existe para achar. O que não pôde ser lido virou
       `dq.unresolved`, contado, e não conta como ausência de proteção.
       O RECORTE É O CORPUS ANALISADO, e o achado precisa ser lido assim: "sem consequência
-      neste corpus". Consequência atrás de um helper (`aborta_se(ruins)`) não é vista —
-      provar isso exige seguir o valor para dentro da função, o que esta análise não faz.
-      Se a consequência está noutro módulo fora do recorte, o achado é um convite a
-      verificar, não uma sentença. É a mesma disciplina que `unreferenced_function_count`
-      passou a adotar na Fase 5b: declarar o recorte junto com o número.
+      neste corpus". Consequência atrás de um helper DO MESMO MÓDULO é vista, e um salto:
+      `aborta_se(ruins)` cujo corpo faz `if quantidade > 0: raise` produz `dq.enforcement`
+      com `attrs.via` nomeando o helper, e esta regra não dispara. O que fica fora são duas
+      coisas, e as duas aparecem no lote de facts em vez de sumirem. Helper noutro módulo
+      continua invisível — um módulo por vez é a fronteira do extrator. E cadeia mais longa
+      que um salto (helper que repassa o valor a outro helper) sai como `dq.unresolved` com
+      reason `enforcement_beyond_one_hop`, nomeando os dois: nesse caso ESTA REGRA DISPARA
+      sobre quem protegeu, e o fact ao lado diz onde a leitura parou. Em qualquer um dos
+      dois, o achado é um convite a verificar, não uma sentença. É a mesma disciplina que
+      `unreferenced_function_count` passou a adotar na Fase 5b: declarar o recorte junto
+      com o número.
       RESSALVA SOBRE `assert` (desvio D-5c-4). `assert` conta como consequência aqui,
       porque nenhuma fonte oficial da AWS mostra Glue ou EMR rodando o driver com `-O`, e
       no Glue o único mecanismo documentado de variável de ambiente do driver
@@ -247,7 +253,7 @@ rules:
     proposed_change:
       - Ler o resultado do check e abortar o job quando ele reprovar, com exceção explícita — `raise`, e não `assert`, quando a proteção precisa sobreviver a um interpretador otimizado.
       - Se o job deve seguir com dado parcial de propósito, registrar a decisão em métrica ou log estruturado e declarar o contrato — validação que só observa precisa dizer que só observa, no código e para quem consome.
-      - Se a consequência já existe atrás de um helper ou noutro módulo, confirmar que ela roda neste caminho antes de mudar qualquer coisa — este achado lê apenas o corpus passado na linha de comando.
+      - Se a consequência já existe noutro módulo, ou atrás de uma cadeia de helpers mais longa que um salto (procurar `dq.unresolved` com reason `enforcement_beyond_one_hop` no mesmo lote), confirmar que ela roda neste caminho antes de mudar qualquer coisa — este achado lê apenas o corpus passado na linha de comando.
     risks:
       # Aspas obrigatorias: `texto: texto` num item de lista vira MAPA em YAML, e
       # o `risks` chegaria ao operador como um dicionario de uma chave so.
