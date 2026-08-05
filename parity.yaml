@@ -174,6 +174,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: extract facts from an EMR Serverless application dump
+    tools: [sparkforge_analyze_emr_serverless]
+    cli: [analyze emr-serverless]
+    knowledge: [knowledge/emr-serverless/application-configuration.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts about data validation in PySpark code
     tools: [sparkforge_analyze_data_quality]
     cli: [analyze data-quality]
@@ -388,6 +399,7 @@ capabilities:
       - sparkforge_collect_iceberg_metadata
       - sparkforge_collect_athena_workgroup
       - sparkforge_collect_emr_cluster
+      - sparkforge_collect_emr_serverless
       - sparkforge_collect_verify
     cli:
       - collect event-log
@@ -396,6 +408,7 @@ capabilities:
       - collect iceberg-metadata
       - collect athena-workgroup
       - collect emr-cluster
+      - collect emr-serverless
       - collect verify
     knowledge: [knowledge/glue/observability.md]
     platforms:
