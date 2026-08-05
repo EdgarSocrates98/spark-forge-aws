@@ -57,6 +57,12 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 |---|---|
 | [`dq/validation-frameworks.md`](dq/validation-frameworks.md) | Superfície pública corrente de Great Expectations e PyDeequ, alcance de versões contra `GLUE_MATRIX`/`EMR_MATRIX`, o que a fonte primária garante sobre passadas sobre o dado, e `assert` sob `python -O`. Traz o bloco de **vetos** que o catálogo `SF-DQ` cita |
 
+### Grafo com Spark
+| Arquivo | Conteúdo |
+|---|---|
+| [`graph/graphframes-api.md`](graph/graphframes-api.md) | Superfície pública do GraphFrames nas **duas linhagens** (`graphframes` até 0.8.4, `io.graphframes` de 0.9.0 em diante): construção, colunas obrigatórias `id`/`src`/`dst`, vocabulário real de algoritmos, e as duas perguntas que decidem regra — checkpoint em `connectedComponents` é **exigência** e o algoritmo **falha** com `java.io.IOException`; `maxIter` **não** tem default único e em nenhum algoritmo a ausência é defeito. Traz o bloco de **vetos** `V-GF-*` |
+| [`graph/availability.md`](graph/availability.md) | Matriz GraphFrames × Spark × Glue/EMR: as **nove células sem jar nenhum** (Glue 4.0 e EMR 6.8.0–6.11.1, todas Spark 3.3), o piso de Python 3.10 de `graphframes-py`, e as listas da AWS onde GraphFrames **não** aparece. Traz o bloco de **vetos** `V-AV-*` |
+
 ### Plataformas de agente
 | Arquivo | Conteúdo |
 |---|---|
@@ -78,7 +84,7 @@ Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever
 
 ## Fontes e frescor
 
-Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, e `devin/` e `emr-serverless/` em **2026-08-04**.
+Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, `devin/` e `emr-serverless/` em **2026-08-04**, e `graph/` em **2026-08-05**.
 
 **A seção `Fontes` de cada arquivo daqui é vigiada.** `scripts/refresh_knowledge.py::watchlist` deriva a lista de URLs de **duas** origens, e nenhuma das duas é mantida à mão: `sources[].url` das regras do catálogo (campo `rules` no lock) e as URLs que aparecem nos blocos `Fontes` destas páginas (campo `docs`). `tests/test_refresh_knowledge.py::test_the_committed_lock_matches_the_watchlist` exige igualdade exata entre o lock e a união das duas.
 
