@@ -139,6 +139,10 @@ def emr_cluster_path(cluster_id: str) -> str:
     return f".sparkforge/artifacts/emr/{cluster_id}.json"
 
 
+def emr_serverless_path(application_id: str) -> str:
+    return f".sparkforge/artifacts/emr_serverless/{application_id}.json"
+
+
 def _sha256_bytes(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
@@ -715,6 +719,65 @@ def collect_emr_cluster(cluster_id: str, root: Path, *, now: str) -> ArtifactEnt
     )
 
 
+# --------------------------------------------------------------------------- #
+# application EMR Serverless (`get-application`, e SO ela)
+# --------------------------------------------------------------------------- #
+
+
+def collect_emr_serverless(application_id: str, root: Path, *, now: str) -> ArtifactEntry:
+    """Baixa `get-application` de uma application EMR Serverless e grava a
+    resposta como ela vem.
+
+    UMA chamada, nao seis. O EMR on EC2 precisa de `describe-cluster` mais cinco
+    listagens porque grupos, fleets, bootstrap actions e politicas moram em APIs
+    separadas; no Serverless `GetApplication` ja devolve capacidade inicial,
+    maxima, auto-start/stop, `runtimeConfiguration` e `monitoringConfiguration`
+    dentro do mesmo objeto. Job runs ficam de fora por decisao de escopo desta
+    fase (spec secao 2), nao por limitacao da API.
+
+    **Nao ha `list-applications` aqui, e a razao e de identidade.** `GetApplication`
+    aceita `applicationId`, e resolver um id a partir do `name` exigiria listar e
+    escolher. Mas `name` e `Required: No` na referencia de API -- uma application
+    pode nao ter nenhum -- e nenhuma fonte lida na Task 1 declara que ele seja
+    unico. Um coletor que aceitasse nome escolheria uma entre N homonimas em
+    silencio e gravaria o artefato errado com aparencia de certo, que e a classe
+    de resultado que este pacote existe para nao produzir. Mesma disciplina de
+    `collect_emr_cluster`, que so aceita `j-XXXX` e nunca o `Name` do cluster.
+
+    O shape gravado e o da resposta da API, com a chave de topo `application` --
+    identico ao que `aws emr-serverless get-application --application-id ...`
+    imprime, para que coleta manual e automatica produzam o MESMO arquivo, e e
+    exatamente o que `sparkforge.facts.emr_serverless` documenta ler. Nenhuma
+    traducao acontece aqui: `cpu`/`memory`/`disk` continuam strings com unidade,
+    e interpreta-las e trabalho do extrator.
+    """
+    rel_path = emr_serverless_path(application_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("emr-serverless")
+
+    application = client.get_application(applicationId=application_id).get("application") or {}
+    payload: dict[str, Any] = {"application": application}
+
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="emr_serverless",
+        source=f"emr-serverless:get_application:{application_id}",
+        collect_command=(
+            f"sparkforge collect emr-serverless --application-id {application_id}"
+        ),
+        now=now,
+    )
+
+
 __all__ = [
     "CLOUDWATCH_METRICS",
     "CLOUDWATCH_METRIC_NAMES",
@@ -726,10 +789,12 @@ __all__ = [
     "collect_athena_workgroup",
     "collect_cloudwatch",
     "collect_emr_cluster",
+    "collect_emr_serverless",
     "collect_event_log",
     "collect_glue_job",
     "collect_iceberg_metadata",
     "emr_cluster_path",
+    "emr_serverless_path",
     "event_log_path",
     "glue_job_path",
     "iceberg_metadata_path",

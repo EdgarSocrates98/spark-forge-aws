@@ -25,11 +25,18 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 | SQL literal | `sparkforge_analyze_sql` |
 | schema do Glue Catalog | `sparkforge_analyze_catalog_schema` |
 | workgroup Athena | `sparkforge_analyze_athena_workgroup` |
+| application EMR Serverless | `sparkforge_analyze_emr_serverless` |
 | listagem S3 | `sparkforge_analyze_s3_listing` |
 | inventário de consumidores | `sparkforge_analyze_consumers` |
 
 Depois, `sparkforge_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
 disparam sobre facts fundidos.
+
+**Um limite que só existe na linha do EMR Serverless.** `get-application` descreve o
+**padrão da application**, e a AWS declara que as configurações passadas em `StartJobRun`
+sobrepõem as do nível da application — inclusive removendo classificação e destino de log.
+Nenhum fact `emrs.*` prova o que um job run executou. Reporte-os como propriedade da
+definição, nunca como afirmação sobre execução.
 
 ## Pressupõe
 

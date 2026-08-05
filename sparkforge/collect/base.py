@@ -34,6 +34,7 @@ ARTIFACT_KINDS = (
     "iceberg_metadata",
     "athena_workgroup",
     "emr_cluster",
+    "emr_serverless",
     "source",
 )
 

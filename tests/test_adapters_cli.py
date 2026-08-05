@@ -1049,6 +1049,107 @@ class TestAnalyzeEmrCluster:
         assert code == 2
 
 
+class TestAnalyzeEmrServerless:
+    _DUMP = json.dumps(
+        {
+            "application": {
+                "applicationId": "00fEXAMPLE",
+                "name": "etl",
+                "releaseLabel": "emr-7.5.0",
+                "type": "Spark",
+                "state": "STARTED",
+                "architecture": "X86_64",
+                "autoStopConfiguration": {"enabled": False},
+                "initialCapacity": {
+                    "EXECUTOR": {
+                        "workerCount": 10,
+                        "workerConfiguration": {
+                            "cpu": "4vCPU",
+                            "memory": "16GB",
+                            "disk": "20GB",
+                        },
+                    }
+                },
+                "maximumCapacity": {
+                    "cpu": "400vCPU",
+                    "memory": "3000GB",
+                    "disk": "20000GB",
+                },
+                "runtimeConfiguration": [
+                    {
+                        "classification": "spark-defaults",
+                        "properties": {"spark.dynamicAllocation.enabled": "true"},
+                    }
+                ],
+                "monitoringConfiguration": {
+                    "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrs-logs/"}
+                },
+            }
+        }
+    )
+
+    def test_prints_summary(self, repo, capsys):
+        dump = repo / "application.json"
+        dump.write_text(self._DUMP, encoding="utf-8")
+        _, output = run(["analyze", "emr-serverless", "--path", str(dump)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"]["emrs.initial_capacity"] == 1
+        assert payload["by_kind"]["emrs.monitoring"] == 1
+        assert payload["unresolved"] == 0
+
+    def test_unit_it_cannot_read_is_a_counted_blind_spot_not_a_guessed_number(
+        self, repo, capsys
+    ):
+        """`"16 gigabytes"` nao esta no conjunto documentado (`GB|gb|gB|Gb`).
+        O verbo tem que reportar ponto cego CONTADO -- um numero adivinhado ali
+        viraria capacidade inventada com aparencia de medida."""
+        dump = repo / "application.json"
+        dump.write_text(
+            json.dumps(
+                {
+                    "application": {
+                        "applicationId": "00fEXAMPLE",
+                        "releaseLabel": "emr-7.5.0",
+                        "initialCapacity": {
+                            "EXECUTOR": {
+                                "workerCount": 2,
+                                "workerConfiguration": {"memory": "16 gigabytes"},
+                            }
+                        },
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        _, output = run(["analyze", "emr-serverless", "--path", str(dump)], capsys)
+        payload = json.loads(output)
+        assert payload["unresolved"] >= 1
+        assert any(
+            u["reason"] == "unknown_capacity_unit" for u in payload["unresolved_at"]
+        )
+
+    def test_out_writes_the_full_list_that_judge_reads(self, repo, capsys):
+        """A cadeia inteira do verbo novo, na CLI: `--out` grava a lista COMPLETA
+        de facts (nao a pagina), e esse arquivo e o que `judge --facts` le. Verbo
+        de analise sem `--out` seria capacidade que so existe na tela."""
+        dump = repo / "application.json"
+        dump.write_text(self._DUMP, encoding="utf-8")
+        out = repo / "facts_emrs.json"
+        code, _ = run(
+            ["analyze", "emr-serverless", "--path", str(dump), "--out", str(out)], capsys
+        )
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        assert {f["kind"] for f in facts} >= {"emrs.application", "emrs.analyzed"}
+        code, judged = run(["judge", "--facts", str(out)], capsys)
+        assert code == 0
+        assert "total_count" in json.loads(judged)
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "emr-serverless", "--path", str(repo / "nope.json")], capsys)
+        assert code == 2
+
+
 class TestAnalyzeDataQuality:
     _SOURCE = (
         "def validar(vendas):\n"
