@@ -68,6 +68,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "funcval"
 
 REQUIRED_FIXTURES = {
+    "aggregate_exact_diverged",
     "aggregate_outside_tolerance",
     "aggregate_within_tolerance",
     "clean_equivalence",
@@ -329,6 +330,46 @@ class TestAdversarial:
         assert analyzed.measures["diverged_check_count"] == 0
         assert analyzed.measures["relative_delta_check_count"] == 1
 
+    def test_aggregate_exact_diverged_is_the_branch_no_fixture_exercised(self):
+        """A D-4c-23 em forma de teste. O `when.any` da SF-FVAL-004 tem duas
+        condicoes, e ate esta fixture existir apagar a EXATA nao deixava golden
+        nenhum vermelho -- nas sete comparacoes `agg:sum:cliente_id` era
+        identico dos dois lados, e o ramo que disparava era sempre o relativo.
+
+        Tres afirmacoes, e as tres precisam valer juntas para a fixture provar o
+        que o nome dela diz. (1) O agregado que se move e o EXATO, com o veredito
+        no proprio fact. (2) O de ponto flutuante fica identico, entao a condicao
+        relativa nao tem o que ler -- se ele se mexesse, o achado poderia estar
+        vindo do outro ramo e a fixture nao provaria nada. (3) A magnitude fecha
+        o contrafactual mais generoso: `relative_delta` fica ABAIXO da tolerancia
+        da regra, entao nem mesmo uma condicao relativa que lesse todo agregado
+        acharia isto aqui.
+        """
+        _, facts, findings, _ = run_fixture(FIXTURES / "aggregate_exact_diverged")
+        exato = _delta(facts, "agg:sum:cliente_id")
+        assert exato.attrs["comparison"] == "exact"
+        assert exato.attrs["diverged"] is True
+        assert exato.measures["value_after"] - exato.measures["value_before"] == 1
+
+        flutuante = _delta(facts, "agg:sum:valor")
+        assert flutuante.attrs["comparison"] == "relative"
+        assert flutuante.measures["value_before"] == flutuante.measures["value_after"]
+
+        tolerancia = next(
+            rule["threshold"]["relative_tolerance"]
+            for rule in load_catalog()
+            if rule["id"] == "SF-FVAL-004"
+        )
+        assert 0 < exato.measures["relative_delta"] < tolerancia
+        assert flutuante.measures["relative_delta"] == 0.0
+
+        # E os outros dois eixos parados, para que o achado nao possa vir deles.
+        for check in ("count", "schema"):
+            assert _delta(facts, check).attrs["diverged"] is False
+        assert [(f.rule_id, f.evidence) for f in findings] == [
+            ("SF-FVAL-004", [exato.id])
+        ]
+
     def test_aggregate_within_tolerance_is_the_legitimate_repartition(self):
         """A metade negativa da SF-FVAL-004. `_round` corta os valores em tres
         casas e os dois lados saem IDENTICOS em `measures`; `relative_delta` vai
@@ -444,7 +485,7 @@ class TestAdversarial:
             assert analyzed.attrs["plan_ref"] == plano.id, directory.name
             assert analyzed.attrs["plan_ref"], directory.name
             checados += 1
-        assert checados == 7
+        assert checados == 8
 
     def test_every_comparison_declares_the_proxy_limit_in_the_output(self):
         """Criterio 8 da §9: o limite mora na SAIDA, nao no spec. Quem le
