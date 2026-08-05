@@ -25,6 +25,7 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 | schema do Glue Catalog | `sparkforge_analyze_catalog_schema` |
 | workgroup Athena | `sparkforge_analyze_athena_workgroup` |
 | application EMR Serverless | `sparkforge_analyze_emr_serverless` |
+| processamento de grafo (GraphFrames) | `sparkforge_analyze_graph` |
 | listagem S3 | `sparkforge_analyze_s3_listing` |
 | inventário de consumidores | `sparkforge_analyze_consumers` |
 
