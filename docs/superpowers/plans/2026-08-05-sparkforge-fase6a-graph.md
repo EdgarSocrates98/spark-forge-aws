@@ -355,7 +355,7 @@ git commit -m "feat(rules): area SF-GRAPH, e os vetos que a pesquisa escreveu"
 **Files:**
 - Create: `tests/test_rules_graph_boundary.py`
 
-- [ ] **Step 1: Leia o precedente e a armadilha que ele resolveu**
+- [x] **Step 1: Leia o precedente e a armadilha que ele resolveu**
 
 ```bash
 sed -n '1,80p' tests/test_rules_emrs_boundary.py
@@ -368,17 +368,17 @@ A Fase 5d mediu duas coisas que você precisa:
 
 Aqui os prefixos não colidem (`SF-GRAPH` × `SF-DQ` × `SF-PY`), mas o mecanismo de área continua sendo o certo — e reusar o helper que a 5d escreveu é melhor que escrever outro.
 
-- [ ] **Step 2: O teste nas três direções**
+- [x] **Step 2: O teste nas três direções**
 
 Nenhuma regra `SF-GRAPH` dispara sobre golden de `fixtures/dq/` ou de `fixtures/pyspark/`; nenhuma `SF-DQ` ou `SF-PY` dispara sobre `fixtures/graph/`.
 
 **Cuidado com o runtime:** a 5d mediu (`D-5d-39`) que corpora diferentes declaram runtimes diferentes nos `meta.yaml`. Julgue cada direção com o runtime da própria fixture, e inclua o guarda que a 5d escreveu — senão regra pulada por `runtime_scope` some do resultado e o teste fica **verde por skip**. Isso importa mais aqui do que lá, porque esta área **usa** `runtime_scope` de propósito.
 
-- [ ] **Step 3: Desconfie se passar de primeira**
+- [x] **Step 3: Desconfie se passar de primeira**
 
 Quebre de propósito — mova uma regra `SF-GRAPH` para o arquivo do `SF-DQ`, ou troque um `requires_facts` para o kind do vizinho — e confirme vermelho **pela razão certa**, não por erro de carregamento. Use cópia do catálogo em scratch via `SPARKFORGE_CATALOG`, como a 5d fez, para não sujar a árvore.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 python -m pytest -q --no-header
@@ -936,3 +936,76 @@ que é Spark 3.3.0 e é a única das três correntes sem jar. Esta é a única
 medição do repositório em que a lista cobra a direção **positiva** da faixa: se
 `SF-GRAPH-002` passar a aparecer em 4.0, as nove células sem jar ficam sem
 cobertura e o teste diz isso pelo nome.
+
+**D-6a-40 — a porta dos goldens não serve para medir esta fronteira, e a Task 6 precisou de outra.**
+O Step 2 fala em "golden de `fixtures/dq/`" e "golden de `fixtures/pyspark/`" como
+se a porta de cada corpus produzisse os facts das três áreas. Medido:
+`tests/test_fixtures_golden_graph.py:96` extrai só `graph.*` (mais os `tf.*` das
+duas fixtures de IaC), e os goldens de `dq` e de `pyspark` isolam o contrato do
+seu extrator pela mesma razão — facts de dois extratores no mesmo golden
+quebrariam duas vezes pelo mesmo motivo. Sobre essas portas a fronteira é vácua
+**por construção**: `SF-PY` não pode disparar sobre um conjunto de facts que não
+tem nenhum `pyspark.*`. `tests/test_rules_graph_boundary.py` roda os **três**
+extratores sobre os três corpora — que é o que um agente faz numa investigação
+real de job de grafo, `analyze graph` e `analyze pyspark` sobre o mesmo `src/` —
+e é a única porta em que "a área vizinha invade?" tem resposta. Efeito colateral
+declarado: o `expects_rules: []` de catorze fixtures de grafo é afirmação sobre
+facts de **grafo**, nunca sobre o arquivo.
+
+**D-6a-41 — `SF-PY` dispara dezesseis vezes sobre `fixtures/graph/`, e é trabalho legítimo.**
+O Step 2 previa a possibilidade e cobrava argumento. Medido: `SF-PY-008` em
+**catorze** das dezenove fixtures e `SF-PY-012` em **duas**
+(`conf_checkpoint_dir_no_job`, `conf_local_checkpoints_no_job`). Nenhum é
+invasão, e o critério é a evidência, não a intenção: os dezesseis citam apenas
+`pyspark.cache` e `pyspark.conf_set`, o `subject.snippet` de cada um bate com a
+linha do arquivo que ele nomeia, e **nenhuma** das dezenove fixtures chama
+`unpersist` — `SF-PY-008` está certa sobre elas. É `V-GR-4` funcionando:
+`cache`/`persist`/`unpersist` ficaram fora do vocabulário de `graph.algorithm`
+porque `pyspark.cache` já os emite, e a explicação de `SF-GRAPH-003` declara a
+fronteira com `SF-PY-008` por escrito. O caso que mais parece defeito é
+`grafo_correto`, o negativo de referência da área, acusado na linha 28
+(`GraphFrame(v.cache(), e.cache())`): ele é correto **como job de grafo**, que é
+o que o golden afirma, e não é exemplo de ciclo de vida de cache. Os dezesseis
+estão nomeados um a um em `ESPERADO_PY_SOBRE_GRAFO`, com o argumento ao lado —
+silenciar a lista era a única saída errada.
+
+**D-6a-42 — o guarda de escopo da 5d não podia ser copiado: aqui ele reprova sobre catálogo íntegro.**
+O Step 2 manda incluir `test_a_area_vizinha_nunca_e_pulada_por_escopo_ou_bloqueio`.
+Medido: sob o runtime declarado dos corpora vizinhos (Spark 3.5.4, 13 + 17
+fixtures), `SF-GRAPH-002` é pulada por `runtime_scope` em **todas as trinta** —
+o guarda da 5d ficaria vermelho sobre um catálogo correto. A direção
+`SF-GRAPH` → vizinhos passou a ser julgada **duas vezes**: sob o runtime
+declarado, que é o que o produto faz, e sob o runtime da faixa, **lido** de
+`fixtures/graph/import_sem_jar_no_iac/meta.yaml` em vez de escrito à mão. Prova
+de que a segunda passagem não é decorativa: com `SF-GRAPH-002` reescrita para
+acusar `graph.module_analyzed` **mantendo** o escopo, a passagem declarada fica
+**verde** e a passagem na faixa fica vermelha nomeando as trinta fixtures. Na
+direção oposta — vizinhos sobre `fixtures/graph/` — o guarda da 5d vale inteiro
+e está lá, porque nenhuma regra de `SF-DQ` ou `SF-PY` é calada por escopo ali.
+
+**D-6a-43 — a sentinela é a superfície de invasão desta fronteira, e nada a cobria.**
+Com artefato compartilhado, `graph.module_analyzed`, `dq.module_analyzed` e
+`pyspark.module_analyzed` saem **juntas** em toda fixture dos três corpora
+(medido, 49 de 49). Uma regra ancorada só na sentinela da própria área seria
+AVALIADA sobre todo `.py` do repositório, e o silêncio dela passaria a depender
+do `when` — que é onde erro de regra mora. `SF-DQ-002` é o caso vivo: ela exige
+`dq.module_analyzed` de propósito, e o que a segura é a conjunção com `dq.check`.
+`test_toda_regra_exige_kind_proprio_que_nao_seja_a_sentinela` fixa isso, e a
+quebra que o justifica é a que ancora `SF-GRAPH-003` na sentinela: dois
+vermelhos, ele e a passagem na faixa.
+
+**D-6a-44 — o recorte por duas leituras deixa regra movida invisível, e só o arquivo da 5d pegava.**
+O mecanismo de área da 5d é importado inteiro
+(`from test_rules_emrs_boundary import ...`, que funciona porque não há
+`tests/__init__.py` e o pytest põe `tests/` no `sys.path`) — reusar é melhor que
+escrever um segundo jeito de responder "de que área é esta regra". Mas
+`_regras_da_area` exige que a área do documento e a do id **concordem**, e regra
+que discorde some das duas listas. Medido movendo `SF-GRAPH-003` para
+`data-quality.yaml`: `tests/test_rules_graph_boundary.py` ficou **inteiro
+verde** — inclusive `test_cada_corpus_dispara_a_propria_area_inteira`, cuja lista
+de esperadas encolheu junto —, e só
+`test_rules_emrs_boundary.py::test_area_do_documento_e_area_do_id_concordam`
+reprovou, porque ele caminha o catálogo inteiro. Depender do arquivo do vizinho
+para não ficar vácuo é exatamente como este apodreceria em silêncio:
+acrescentei `test_toda_regra_das_tres_areas_esta_no_documento_da_propria_area`,
+que fecha o buraco localmente e nomeia `(id, documento, área declarada)`.
