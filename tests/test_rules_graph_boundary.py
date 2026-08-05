@@ -13,7 +13,7 @@ Nenhum recorte de artefato separa as areas aqui. So a construcao das regras.
 golden.** `tests/test_fixtures_golden_graph.py` extrai `graph.*` (mais os `tf.*`
 das duas fixtures de IaC) e nada mais, porque um golden com facts de
 `pyspark_ast` sobre o mesmo `.py` quebraria duas vezes pelo mesmo motivo. Isso
-torna o `expects_rules: []` de catorze fixtures de grafo uma afirmacao sobre
+torna o `expects_rules: []` de dezenove fixtures de grafo uma afirmacao sobre
 facts de GRAFO -- nunca sobre o arquivo. A fronteira entre areas so existe onde
 os facts das duas convivem, entao aqui os tres extratores rodam sobre os tres
 corpora, que e o que um agente faz numa investigacao real de job de grafo:
@@ -44,18 +44,19 @@ corpora, que e o que um agente faz numa investigacao real de job de grafo:
    regra mora. `test_toda_regra_exige_kind_proprio_que_nao_seja_a_sentinela` e o
    que faz a fronteira ser por construcao com o artefato compartilhado.
 
-**SF-PY dispara sobre `fixtures/graph/`, e isso NAO e invasao.** Sao dezesseis
-achados: `SF-PY-008` em catorze fixtures e `SF-PY-012` em duas. Cada um cita
+**SF-PY dispara sobre `fixtures/graph/`, e isso NAO e invasao.** Sao vinte e
+tres achados: `SF-PY-008` em vinte fixtures e `SF-PY-012` em tres. Cada um cita
 `pyspark.cache` ou `pyspark.conf_set` -- nunca um `graph.*` --, e o `subject` de
 cada um aponta para uma linha que existe no arquivo e que e literalmente um
-`.cache()` ou um `spark.conf.set(...)`. As dezenove fixtures de grafo persistem
-vertices e arestas e **nenhuma** chama `unpersist`, porque o eixo delas e grafo e
-nao ciclo de vida de cache; `SF-PY-008` esta certa sobre elas. E a construcao
-funcionando, e nao apesar dela: `V-GR-4` deixou `cache`/`persist`/`unpersist`
-fora do vocabulario de `graph.algorithm` justamente porque `pyspark.cache` ja os
-emite, e a explicacao de `SF-GRAPH-003` declara a fronteira com `SF-PY-008` por
-escrito. `TestOQuePYDizSobreOCorpusDeGrafo` lista os dezesseis um a um: nenhum e
-silenciado, e um decimo setimo obriga alguem a repetir o argumento.
+`.cache()` ou um `spark.conf.set(...)`. As vinte e cinco fixtures de grafo
+persistem vertices e arestas e **nenhuma** chama `unpersist`, porque o eixo delas
+e grafo e nao ciclo de vida de cache; `SF-PY-008` esta certa sobre elas. E a
+construcao funcionando, e nao apesar dela: `V-GR-4` deixou
+`cache`/`persist`/`unpersist` fora do vocabulario de `graph.algorithm`
+justamente porque `pyspark.cache` ja os emite, e a explicacao de `SF-GRAPH-003`
+declara a fronteira com `SF-PY-008` por escrito.
+`TestOQuePYDizSobreOCorpusDeGrafo` lista os vinte e tres um a um: nenhum e
+silenciado, e um vigesimo quarto obriga alguem a repetir o argumento.
 
 O caso que mais parece defeito e o que melhor mostra a diferenca:
 `grafo_correto`, o negativo de referencia da area, e acusado por `SF-PY-008` na
@@ -115,7 +116,7 @@ CORPUS = {
 # valor a acompanha.
 FIXTURE_NA_FAIXA = CORPUS[GRAFO] / "import_sem_jar_no_iac"
 
-# Os vinte e dois achados de SF-PY sobre o corpus de grafo, nomeados. Nao e
+# Os vinte e tres achados de SF-PY sobre o corpus de grafo, nomeados. Nao e
 # supressao: `TestOQuePYDizSobreOCorpusDeGrafo` mede, para cada um, que a
 # evidencia e `pyspark.*` e que o `subject` aponta para uma linha real do
 # arquivo. Um achado a mais aqui nao e bug automatico -- e uma pergunta que
@@ -132,6 +133,7 @@ ESPERADO_PY_SOBRE_GRAFO = {
     "conf_chave_por_constante": ("SF-PY-008",),
     "conf_chave_por_keyword": ("SF-PY-008",),
     "conf_chave_por_laco": ("SF-PY-008",),
+    "dois_grafos_no_mesmo_arquivo": ("SF-PY-008",),
     "conf_local_checkpoints_ilegivel": ("SF-PY-008",),
     "connected_components_sem_checkpoint": ("SF-PY-008",),
     "exigencia_indecidivel": ("SF-PY-008",),
@@ -394,7 +396,7 @@ class TestNenhumaAreaLeONamespaceDaVizinha:
         `SF-DQ-002` e o caso a olhar: ela exige `dq.module_analyzed` de proposito
         -- acusa suite de validacao sem consumo, e para isso precisa do modulo
         inteiro --, e o que a segura e a conjuncao com `dq.check`. Sobre as
-        dezenove fixtures de grafo ela e calada por `requires_facts` por causa
+        vinte e cinco fixtures de grafo ela e calada por `requires_facts` por causa
         dessa segunda exigencia, nao da primeira.
         """
         proprio = NAMESPACE[area]
@@ -441,7 +443,7 @@ class TestFronteiraSobreOCorpusDeGrafo:
         assert not invasoes, (
             f"regra de qualidade de dado disparou sobre job de grafo: {invasoes}. "
             f"O extrator de `dq` LE esses arquivos -- a sentinela `dq.module_analyzed` "
-            f"sai nas dezenove --, entao o achado nao vem de artefato trocado: vem "
+            f"sai nas vinte e cinco --, entao o achado nao vem de artefato trocado: vem "
             f"de uma regra que chamou de validacao alguma coisa que e construcao de "
             f"grafo. `SF-DQ-003` e `SF-GRAPH-003` fazem a mesma pergunta sobre "
             f"sujeitos diferentes, e e exatamente ai que a confusao cabe."
@@ -492,7 +494,7 @@ class TestOQuePYDizSobreOCorpusDeGrafo:
     """SF-PY dispara aqui, e a diferenca entre invasao e trabalho e argumento.
 
     A pergunta nao e "disparou?", e "o achado cita evidencia sobre outra
-    pergunta?". Os dezesseis citam `pyspark.cache` e `pyspark.conf_set`, e o
+    pergunta?". Os vinte e tres citam `pyspark.cache` e `pyspark.conf_set`, e o
     `subject` de cada um aponta para uma linha que esta no arquivo. Nenhum cita
     um `graph.*`. E SF-PY fazendo o trabalho dela sobre codigo que e PySpark
     comum -- que todo job de grafo tambem e.
@@ -568,7 +570,7 @@ class TestOQuePYDizSobreOCorpusDeGrafo:
                 )
 
     def test_o_corpus_de_grafo_realmente_nunca_chama_unpersist(self):
-        """Por que `SF-PY-008` esta CERTA sobre catorze fixtures de grafo.
+        """Por que `SF-PY-008` esta CERTA sobre vinte fixtures de grafo.
 
         Se alguma fixture ganhar `unpersist`, o achado correspondente some e
         `ESPERADO_PY_SOBRE_GRAFO` fica errado -- e o motivo de ter sumido precisa

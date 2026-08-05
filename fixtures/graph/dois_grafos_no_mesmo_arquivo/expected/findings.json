@@ -1,0 +1,220 @@
+[
+  {
+    "rule_id": "SF-GRAPH-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Arestas do grafo não persistidas",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 34,
+      "col": 12,
+      "end_line": 34,
+      "symbol": "componentes_de_clientes",
+      "snippet": "grafo = GraphFrame(v, e)"
+    },
+    "evidence": [
+      "f_40d98a"
+    ],
+    "measured": {
+      "line": 34
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "As arestas deste grafo chegam ao construtor sem `cache`/`persist`, e é sobre elas que todo algoritmo iterativo de grafo passa uma vez por iteração. Spark é lazy: sem persistência, cada passada refaz o lineage inteiro — a leitura do S3, os filtros, os joins — em vez de reler o que já está materializado. O custo é proporcional ao lineage e ao número de iterações, não ao tamanho do grafo. A CHAVE `false` SÓ APARECE QUANDO O EXTRATOR VIU O NOME. Vértice ou aresta que chega por parâmetro deixa a chave OMITIDA, e `engine._where_matches` reprova caminho ausente — então esta regra é calada, e não acusadora, quando não pôde olhar. É subnotificação declarada: um helper que recebe o DataFrame do chamador nunca é julgado aqui. A EVIDÊNCIA É O EVENTO DE PERSISTÊNCIA NOS DOIS NOMES. `v = vertices.cache()` registra o evento em `vertices` e em `v`, porque casar só a raiz da cadeia faria `GraphFrame(v, e)` sair como não persistido sobre a forma mais comum de persistir em job real. ESTA REGRA FALA DAS ARESTAS, E SÓ DELAS. O caso simétrico — vértices não persistidos — não tem fixture no corpus desta fase, e condição sem golden que a exercite é condição não testada: escrevê-la por simetria seria exatamente a metade que some sem ninguém sentir. Limite declarado, não esquecimento. A FRONTEIRA COM `SF-PY-008` E `SF-DQ-003`: aquelas duas julgam `pyspark.cache` e `dq.check`; esta julga `graph.construction`. O sujeito é outro, e `cache`, `persist` e `unpersist` não são vocabulário de algoritmo desta área.",
+    "proposed_change": [
+      "Persistir as arestas antes de construir o `GraphFrame`, com o nível de storage adequado ao tamanho (`MEMORY_AND_DISK` para grafos que não cabem em memória), e liberar com `unpersist` depois da última action.",
+      "Se as arestas já vêm de uma tabela pequena e o algoritmo faz uma passada só (`bfs`, `find`, `triangleCount`), medir antes: persistir aqui pode custar mais do que economiza."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Persistir arestas de um grafo grande pressiona memória de executor e pode causar spill ou OOM — o remédio de um gargalo vira outro.",
+      "`unpersist` esquecido mantém blocos ocupando memória e disco até o fim do job, e o efeito aparece longe da mudança."
+    ],
+    "tradeoffs": [
+      "Persistir troca CPU e I/O de recomputo por memória; qual é melhor depende de qual recurso está saturado."
+    ],
+    "validation": [
+      "Número de jobs Spark submetidos antes e depois, na Spark UI — a queda é o sinal de que o lineage parou de ser refeito.",
+      "Contagem de arestas e contagem de vértices do resultado, inalteradas.",
+      "Tempo total de execução com o volume de produção."
+    ],
+    "rollback": [
+      "Remover as chamadas de `persist`/`unpersist` acrescentadas; nada mais muda no job."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Nenhuma fonte oficial quantifica o custo de recomputação de vértices ou arestas não persistidos: a documentação menciona `storage_level` e avisa que o DataFrame devolvido é persistido e deve ser liberado, mas não declara em lugar nenhum quantas passadas um algoritmo faz sobre a entrada (`knowledge/graph/graphframes-api.md` §8). O gatilho aqui é a laziness do Spark, que é comportamento do motor e não da biblioteca, e a forma da regra é herdada de `SF-DQ-003`. Sem limiar numérico, e nenhuma das páginas de GraphFrames é citada como se a sustentasse.\n"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-GRAPH-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Arestas do grafo não persistidas",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 45,
+      "col": 12,
+      "end_line": 45,
+      "symbol": "componentes_de_produtos",
+      "snippet": "grafo = GraphFrame(v, e)"
+    },
+    "evidence": [
+      "f_3ef2bd"
+    ],
+    "measured": {
+      "line": 45
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "As arestas deste grafo chegam ao construtor sem `cache`/`persist`, e é sobre elas que todo algoritmo iterativo de grafo passa uma vez por iteração. Spark é lazy: sem persistência, cada passada refaz o lineage inteiro — a leitura do S3, os filtros, os joins — em vez de reler o que já está materializado. O custo é proporcional ao lineage e ao número de iterações, não ao tamanho do grafo. A CHAVE `false` SÓ APARECE QUANDO O EXTRATOR VIU O NOME. Vértice ou aresta que chega por parâmetro deixa a chave OMITIDA, e `engine._where_matches` reprova caminho ausente — então esta regra é calada, e não acusadora, quando não pôde olhar. É subnotificação declarada: um helper que recebe o DataFrame do chamador nunca é julgado aqui. A EVIDÊNCIA É O EVENTO DE PERSISTÊNCIA NOS DOIS NOMES. `v = vertices.cache()` registra o evento em `vertices` e em `v`, porque casar só a raiz da cadeia faria `GraphFrame(v, e)` sair como não persistido sobre a forma mais comum de persistir em job real. ESTA REGRA FALA DAS ARESTAS, E SÓ DELAS. O caso simétrico — vértices não persistidos — não tem fixture no corpus desta fase, e condição sem golden que a exercite é condição não testada: escrevê-la por simetria seria exatamente a metade que some sem ninguém sentir. Limite declarado, não esquecimento. A FRONTEIRA COM `SF-PY-008` E `SF-DQ-003`: aquelas duas julgam `pyspark.cache` e `dq.check`; esta julga `graph.construction`. O sujeito é outro, e `cache`, `persist` e `unpersist` não são vocabulário de algoritmo desta área.",
+    "proposed_change": [
+      "Persistir as arestas antes de construir o `GraphFrame`, com o nível de storage adequado ao tamanho (`MEMORY_AND_DISK` para grafos que não cabem em memória), e liberar com `unpersist` depois da última action.",
+      "Se as arestas já vêm de uma tabela pequena e o algoritmo faz uma passada só (`bfs`, `find`, `triangleCount`), medir antes: persistir aqui pode custar mais do que economiza."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Persistir arestas de um grafo grande pressiona memória de executor e pode causar spill ou OOM — o remédio de um gargalo vira outro.",
+      "`unpersist` esquecido mantém blocos ocupando memória e disco até o fim do job, e o efeito aparece longe da mudança."
+    ],
+    "tradeoffs": [
+      "Persistir troca CPU e I/O de recomputo por memória; qual é melhor depende de qual recurso está saturado."
+    ],
+    "validation": [
+      "Número de jobs Spark submetidos antes e depois, na Spark UI — a queda é o sinal de que o lineage parou de ser refeito.",
+      "Contagem de arestas e contagem de vértices do resultado, inalteradas.",
+      "Tempo total de execução com o volume de produção."
+    ],
+    "rollback": [
+      "Remover as chamadas de `persist`/`unpersist` acrescentadas; nada mais muda no job."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Nenhuma fonte oficial quantifica o custo de recomputação de vértices ou arestas não persistidos: a documentação menciona `storage_level` e avisa que o DataFrame devolvido é persistido e deve ser liberado, mas não declara em lugar nenhum quantas passadas um algoritmo faz sobre a entrada (`knowledge/graph/graphframes-api.md` §8). O gatilho aqui é a laziness do Spark, que é comportamento do motor e não da biblioteca, e a forma da regra é herdada de `SF-DQ-003`. Sem limiar numérico, e nenhuma das páginas de GraphFrames é citada como se a sustentasse.\n"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-GRAPH-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Algoritmo de grafo dentro de laço Python",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 37,
+      "col": 21,
+      "end_line": 37,
+      "symbol": "componentes_de_clientes",
+      "snippet": "saida.append(grafo.connectedComponents())"
+    },
+    "evidence": [
+      "f_f74a92"
+    ],
+    "measured": {
+      "line": 37
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Este algoritmo de grafo é chamado dentro de um laço Python, e o laço roda no DRIVER: cada iteração submete um job Spark inteiro e espera por ele. Um algoritmo iterativo de grafo já é caro sozinho — `connectedComponents` faz vários superpassos e, no algoritmo default, grava checkpoint periodicamente —, e multiplicá-lo pelo número de iterações do laço multiplica também o tempo ocioso do cluster entre submissões, o planejamento do Catalyst e a escrita de checkpoint. A FORMA PODE SER LEGÍTIMA, e o achado precisa ser lido assim. Um grafo por dia processado, com vértices e arestas genuinamente disjuntos entre as partições, é o caso em que o laço é a resposta certa e não há o que consolidar. O que a análise estática vê é a estrutura, não a independência dos dados — por isso este achado é P2 e vem com a pergunta, não com a ordem. QUANDO NÃO É LEGÍTIMO, o padrão é o mesmo: o laço existe porque alguém pensou o problema um período por vez, e os grafos podem ser unidos numa execução só com uma coluna discriminadora. Componentes conexos sobre a união de grafos disjuntos dá o mesmo resultado que sobre cada um separadamente, com um job em vez de N. O QUE ESTA REGRA NÃO É: `SF-PY-004` acusa action ou write dentro de laço, sobre `pyspark.loop`; esta acusa a chamada de algoritmo de grafo, sobre `graph.algorithm`. Um arquivo pode disparar as duas, e elas estão dizendo coisas diferentes sobre a mesma linha.",
+    "proposed_change": [
+      "Unir os grafos das iterações num só, com uma coluna que identifique a partição lógica (a data, o cliente, a região), e rodar o algoritmo uma vez — quando os grafos são disjuntos, o resultado é idêntico.",
+      "Se os grafos precisam mesmo ser separados, tirar do laço tudo que não depende da iteração: a criação da sessão, o `setCheckpointDir`, a leitura de dimensões estáveis.",
+      "Se o laço fica, medir uma iteração isolada na Spark UI antes de multiplicar — o custo total é o custo de uma vezes N, e é isso que decide se vale consolidar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Unir grafos disjuntos num só aumenta o volume de um único job e pode levar a shuffle e a pressão de memória que as execuções separadas não tinham.",
+      "Se os grafos NÃO são disjuntos — há vértices com o mesmo id em iterações diferentes —, unir muda o resultado: componentes que eram separados passam a ser um só."
+    ],
+    "tradeoffs": [
+      "Consolidar troca N jobs pequenos por um job grande; a latência do resultado de cada partição lógica deixa de ser independente."
+    ],
+    "validation": [
+      "Comparar o resultado consolidado com o resultado do laço, partição lógica por partição lógica — mesma contagem de vértices e mesmo número de componentes em cada uma.",
+      "Contagem distinta de ids de vértice antes de unir, para provar que os grafos são de fato disjuntos.",
+      "Tempo total e número de jobs Spark submetidos, antes e depois."
+    ],
+    "rollback": [
+      "Restaurar o laço; a consolidação é uma mudança de código isolada e não altera dado escrito enquanto a validação não passar."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Nenhuma fonte de GraphFrames trata de chamada em laço, e não há número publicado para o custo fixo de submissão de um job Spark. O gatilho é estrutural — `inside_loop: true` no fact do algoritmo — e a forma é a mesma de `SF-PY-004`, que acusa action dentro de laço sobre outro sujeito. A severidade é P2 e não maior justamente porque o laço pode ser a forma correta quando os grafos são independentes, e a análise estática não distingue.\n"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-GRAPH-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Algoritmo de grafo dentro de laço Python",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 48,
+      "col": 21,
+      "end_line": 48,
+      "symbol": "componentes_de_produtos",
+      "snippet": "saida.append(grafo.connectedComponents())"
+    },
+    "evidence": [
+      "f_04e825"
+    ],
+    "measured": {
+      "line": 48
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Este algoritmo de grafo é chamado dentro de um laço Python, e o laço roda no DRIVER: cada iteração submete um job Spark inteiro e espera por ele. Um algoritmo iterativo de grafo já é caro sozinho — `connectedComponents` faz vários superpassos e, no algoritmo default, grava checkpoint periodicamente —, e multiplicá-lo pelo número de iterações do laço multiplica também o tempo ocioso do cluster entre submissões, o planejamento do Catalyst e a escrita de checkpoint. A FORMA PODE SER LEGÍTIMA, e o achado precisa ser lido assim. Um grafo por dia processado, com vértices e arestas genuinamente disjuntos entre as partições, é o caso em que o laço é a resposta certa e não há o que consolidar. O que a análise estática vê é a estrutura, não a independência dos dados — por isso este achado é P2 e vem com a pergunta, não com a ordem. QUANDO NÃO É LEGÍTIMO, o padrão é o mesmo: o laço existe porque alguém pensou o problema um período por vez, e os grafos podem ser unidos numa execução só com uma coluna discriminadora. Componentes conexos sobre a união de grafos disjuntos dá o mesmo resultado que sobre cada um separadamente, com um job em vez de N. O QUE ESTA REGRA NÃO É: `SF-PY-004` acusa action ou write dentro de laço, sobre `pyspark.loop`; esta acusa a chamada de algoritmo de grafo, sobre `graph.algorithm`. Um arquivo pode disparar as duas, e elas estão dizendo coisas diferentes sobre a mesma linha.",
+    "proposed_change": [
+      "Unir os grafos das iterações num só, com uma coluna que identifique a partição lógica (a data, o cliente, a região), e rodar o algoritmo uma vez — quando os grafos são disjuntos, o resultado é idêntico.",
+      "Se os grafos precisam mesmo ser separados, tirar do laço tudo que não depende da iteração: a criação da sessão, o `setCheckpointDir`, a leitura de dimensões estáveis.",
+      "Se o laço fica, medir uma iteração isolada na Spark UI antes de multiplicar — o custo total é o custo de uma vezes N, e é isso que decide se vale consolidar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Unir grafos disjuntos num só aumenta o volume de um único job e pode levar a shuffle e a pressão de memória que as execuções separadas não tinham.",
+      "Se os grafos NÃO são disjuntos — há vértices com o mesmo id em iterações diferentes —, unir muda o resultado: componentes que eram separados passam a ser um só."
+    ],
+    "tradeoffs": [
+      "Consolidar troca N jobs pequenos por um job grande; a latência do resultado de cada partição lógica deixa de ser independente."
+    ],
+    "validation": [
+      "Comparar o resultado consolidado com o resultado do laço, partição lógica por partição lógica — mesma contagem de vértices e mesmo número de componentes em cada uma.",
+      "Contagem distinta de ids de vértice antes de unir, para provar que os grafos são de fato disjuntos.",
+      "Tempo total e número de jobs Spark submetidos, antes e depois."
+    ],
+    "rollback": [
+      "Restaurar o laço; a consolidação é uma mudança de código isolada e não altera dado escrito enquanto a validação não passar."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Nenhuma fonte de GraphFrames trata de chamada em laço, e não há número publicado para o custo fixo de submissão de um job Spark. O gatilho é estrutural — `inside_loop: true` no fact do algoritmo — e a forma é a mesma de `SF-PY-004`, que acusa action dentro de laço sobre outro sujeito. A severidade é P2 e não maior justamente porque o laço pode ser a forma correta quando os grafos são independentes, e a análise estática não distingue.\n"
+      }
+    ]
+  }
+]
