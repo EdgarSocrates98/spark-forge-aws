@@ -204,15 +204,42 @@ heuristica se ela rodasse primeiro.
 
 Isso nao existe no vocabulario de `emr_cluster.py` e e acrescimo desta area.
 
+### LIMITE DECLARADO: a anotacao e bypass INCONDICIONAL da heuristica
+
+`_is_secret_reference` e `startswith` puro. Entao
+`"EMR.secret@AKIAIOSFODNN7EXAMPL"` e `"EMR.secret@jdbc://user:senha@host"` viram
+`secret_reference: True` e o valor **inteiro e escrito em `attrs.value`, sem
+redacao** -- e, num golden, commitado. A regra da secao seguinte ("quando casa, o
+valor NUNCA e escrito") vale para a heuristica; ela **nao** vale quando a
+anotacao vence antes.
+
+O comportamento fica, e a razao e medida. A fonte declara **so o prefixo** --
+*"add the `EMR.secret@` annotation to the configuration value"* --; o
+`{{SecretName}}` aparece no EXEMPLO, nao como gramatica exigida. Validar a forma
+`EMR.secret@{{nome}}` inventaria uma gramatica que a fonte nao declara, e toda
+anotacao legitima fora dela seria redigida **e** marcada `secret_pattern_match`,
+fazendo `SF-EMRS-002` acusar exatamente a correcao que recomenda -- o pior tipo
+de defeito de regra segundo `rules/catalog/README.md`.
+
+O que fecharia o buraco sem custo de falso positivo, se um dia valer a pena:
+manter `secret_reference: True` (achado nenhum) e **ainda assim** redigir
+`attrs.value` quando o valor anotado casa a heuristica. O custo e que a evidencia
+deixa de dizer QUAL segredo e referenciado, que e a parte util dela. Registrado
+em `docs/superpowers/STATUS.md`, em *Limites declarados*.
+
 ## Segredo: a heuristica e duplicada, como manda a convencao do pacote
 
 `_looks_like_secret` repete os quatro padroes de `facts/terraform.py` e
 `facts/emr_cluster.py`. A duplicacao e deliberada e ja esta justificada por
 escrito em `emr_cluster.py` (secao "Segredo"): extratores sao modulos
 independentes por desenho, como `iceberg_metadata._nearest_rank` em relacao a
-`event_log`. Quando casa, o valor NUNCA e escrito em `attrs` -- vira
+`event_log`. Quando ela casa, o valor nao e escrito em `attrs` -- vira
 `<redigido>`, com `attrs.secret_pattern_match: true`. Um golden commitado com
 credencial real seria o analisador causando o dano que a regra previne.
+
+**A heuristica so roda quando a anotacao `EMR.secret@` nao venceu antes**, e essa
+excecao esta declarada na secao anterior. Nao e "o valor NUNCA e escrito": e "o
+valor nao e escrito quando a heuristica decide".
 
 ## Release label: tres formas, e duas nao tem serie
 
@@ -361,6 +388,12 @@ def _put(target: dict[str, Any], key: str, value: Any) -> None:
 
 
 def _is_secret_reference(value: str) -> bool:
+    """`startswith` puro, e isso e BYPASS INCONDICIONAL da heuristica.
+
+    `EMR.secret@<credencial real>` sai com o valor inteiro em `attrs.value`, sem
+    redacao. Limite declarado, com a razao, na secao "LIMITE DECLARADO" da
+    docstring do modulo -- nao endurecer sem ler.
+    """
     return value.startswith(SECRET_REFERENCE_PREFIX)
 
 
