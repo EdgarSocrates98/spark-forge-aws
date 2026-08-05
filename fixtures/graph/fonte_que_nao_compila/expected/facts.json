@@ -1,0 +1,168 @@
+[
+  {
+    "id": "f_ab2ffe",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 12,
+      "col": 11,
+      "end_line": 12,
+      "symbol": "componentes",
+      "snippet": "return g.connectedComponents()"
+    },
+    "measures": {
+      "line": 12
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": false,
+      "receiver": "g",
+      "checkpoint_required": true,
+      "checkpoint_configured_in_module": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1abaa5bfea791feb1051d0489468feb64c1b7fc9501f98f0656edfb14bbbc2d5",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_4a1d9c",
+    "schema_version": 1,
+    "kind": "graph.checkpoint_dir",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 8,
+      "col": 4,
+      "end_line": 8,
+      "symbol": "componentes",
+      "snippet": "spark.sparkContext.setCheckpointDir(\"s3://checkpoints/grafo/\")"
+    },
+    "measures": {
+      "line": 8
+    },
+    "attrs": {
+      "form": "set_checkpoint_dir",
+      "literal": "s3://checkpoints/grafo/",
+      "receiver": "spark"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1abaa5bfea791feb1051d0489468feb64c1b7fc9501f98f0656edfb14bbbc2d5",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_31185f",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 11,
+      "col": 8,
+      "end_line": 11,
+      "symbol": "componentes",
+      "snippet": "g = GraphFrame(v, e)"
+    },
+    "measures": {
+      "line": 11
+    },
+    "attrs": {
+      "constructor": "GraphFrame",
+      "inside_loop": false,
+      "vertices_ref": "v",
+      "vertices_persisted": true,
+      "edges_ref": "e",
+      "edges_persisted": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1abaa5bfea791feb1051d0489468feb64c1b7fc9501f98f0656edfb14bbbc2d5",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_4e75af",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 2,
+      "col": 0,
+      "end_line": 2,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "measures": {
+      "line": 2
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes",
+      "symbol": "GraphFrame",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1abaa5bfea791feb1051d0489468feb64c1b7fc9501f98f0656edfb14bbbc2d5",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_eee1e1",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 1,
+      "construction_count": 1,
+      "algorithm_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1abaa5bfea791feb1051d0489468feb64c1b7fc9501f98f0656edfb14bbbc2d5",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_b8baae",
+    "schema_version": 1,
+    "kind": "graph.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "carga_quebrada.py",
+      "line": 5,
+      "col": 16,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "syntax_error",
+      "detail": "'(' was never closed"
+    },
+    "provenance": {
+      "artifact": "carga_quebrada.py",
+      "artifact_sha256": "3256575290db413977987904bc4bc524d41c4ad8b4974459736cf7eaba76f8c0",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

@@ -1,0 +1,20 @@
+name: conf_local_checkpoints_ilegivel
+proves: >
+  A conf de local checkpoints com valor que o `.py` nao permite ler. O estado do
+  arquivo vira `unreadable` e a decisao de exigencia e OMITIDA da chamada -- nao
+  ha `checkpoint_required` nenhum no `graph.algorithm` --, com o ponto cego
+  contado em `graph.unresolved`.
+  O alcance de ARQUIVO se prova aqui pelo lado que doi: uma conf ilegivel numa
+  funcao cala a decisao da chamada que esta noutra.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.unresolved
+  - graph.module_analyzed
+expects_rules: []

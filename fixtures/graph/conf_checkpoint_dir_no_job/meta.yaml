@@ -1,0 +1,20 @@
+name: conf_checkpoint_dir_no_job
+proves: >
+  Quarta forma de escrever certo, e a que a pesquisa tratava como externa:
+  `spark.conf.set("spark.checkpoint.dir", ...)` DENTRO do proprio job. A conf
+  satisfaz a exigencia sem nenhum `setCheckpointDir`, e ignora-la faria a regra
+  P0 disparar sobre codigo que configurou o checkpoint na linha de cima.
+  `checkpoint_required` continua `true` -- a exigencia se aplica --, e o que
+  muda e `checkpoint_configured_in_module: true`.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules: []

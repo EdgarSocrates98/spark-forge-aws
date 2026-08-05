@@ -1,0 +1,23 @@
+name: import_com_jar_declarado
+proves: >
+  A metade negativa da regra de disponibilidade: o MESMO `.py` e o MESMO runtime
+  sem jar, com `--extra-jars` declarado no `default_arguments` do Glue job.
+  Sem esta fixture, a regra acusaria todo job de grafo em Spark 3.3 -- inclusive
+  quem resolveu o problema --, e o golden do lado positivo sozinho nao
+  perceberia.
+runtime:
+  glue: "4.0"
+  spark: "3.3.0"
+  python: "3.10"
+  iceberg: "1.0.0"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: []

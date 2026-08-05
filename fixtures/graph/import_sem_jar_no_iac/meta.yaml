@@ -1,0 +1,26 @@
+name: import_sem_jar_no_iac
+proves: >
+  A fixture que cruza `graph.import` com `tf.attribute`. Glue 4.0 e Spark 3.3.0,
+  e NENHUMA linhagem publicou artefato para Spark 3.3 -- `0.8.2` para em 3.2,
+  `0.8.3` comeca em 3.4, `io.graphframes` compila contra 3.5. O codigo esta
+  correto em todos os eixos que o corpus mede; o defeito e que a plataforma nao
+  instala a biblioteca e o IaC nao declara o jar.
+  O `runtime` do meta e Glue 4.0 de proposito, e nao 5.0 como o resto do corpus:
+  o discriminador da regra e Spark 3.3.x, e uma fixture em 5.0 nao poderia
+  exercita-la.
+runtime:
+  glue: "4.0"
+  spark: "3.3.0"
+  python: "3.10"
+  iceberg: "1.0.0"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+  - tf.attribute
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+  - tf.resource
+expects_rules: []

@@ -1,0 +1,18 @@
+name: saida_intervalo_nao_positivo
+proves: >
+  Segunda forma de escrever certo: `checkpointInterval=-1`.
+  `shouldCheckpoint = checkpointInterval > 0`, e com valor nao positivo o bloco
+  inteiro e pulado. O `-1` esta na arvore como `UnaryOp(USub, Constant)` e nao
+  como constante negativa: um `_literal` que nao desembrulhe o unario le `None`,
+  cai em ilegivel, e a saida legitima vira ponto cego.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.module_analyzed
+expects_rules: []

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "f_5cc1cc",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 0,
+      "construction_count": 0,
+      "algorithm_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "713e3f35784e4c02ed5754dbdb82a92a1488193b903710c16f2d3e9420811733",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

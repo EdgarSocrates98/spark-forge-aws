@@ -35,6 +35,7 @@ from sparkforge.facts import (
     event_log,
     funcval,
     fusion,
+    graph,
     iceberg_metadata,
     pyspark_ast,
     runtime_detect,
@@ -71,6 +72,11 @@ EXTRACTORS = (
     # esta no repositorio.
     funcval,
     fusion,
+    # `graph` pela mesma razao, uma fase depois: sem ele aqui, os seis kinds
+    # `graph.*` contam como orfaos e as regras SF-GRAPH da Task 5 seriam
+    # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
+    # repositorio desde a Task 2 desta fase.
+    graph,
     iceberg_metadata,
     pyspark_ast,
     runtime_detect,
