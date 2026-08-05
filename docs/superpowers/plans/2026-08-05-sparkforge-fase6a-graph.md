@@ -118,7 +118,7 @@ git commit -m "docs(knowledge): GraphFrames, e as duas perguntas que decidem reg
 - Create: `sparkforge/facts/graph.py`
 - Create: `tests/test_facts_graph.py`
 
-- [ ] **Step 1: Leia o precedente, e o que ele recusa**
+- [x] **Step 1: Leia o precedente, e o que ele recusa**
 
 ```bash
 sed -n '1,90p' sparkforge/facts/data_quality.py
@@ -136,7 +136,7 @@ Anote quatro mecanismos, porque você vai reusar a **forma** deles:
 
 E a regra de governo de `data_quality.py:39-61`: **omitir chave × emitir `false` se decide pelo valor em que a regra consumidora dispara.** Se `false` e ausência calam a regra igualmente, emita o booleano; se `false` dispararia e a ausência é inerte, omita.
 
-- [ ] **Step 2: Escreva o teste que falha — a sentinela sai mesmo sem grafo**
+- [x] **Step 2: Escreva o teste que falha — a sentinela sai mesmo sem grafo**
 
 ```python
 # tests/test_facts_graph.py
@@ -154,7 +154,7 @@ def test_arquivo_sem_grafo_ainda_emite_sentinela():
 
 **Meça a assinatura antes de escrever.** A Fase 5d registrou `D-5d-12`: o plano assumiu `path_hint` e **nenhum extrator do repositório tem esse parâmetro**. Confira como `extract_data_quality` recebe o caminho e siga.
 
-- [ ] **Step 3: Rode e veja falhar**
+- [x] **Step 3: Rode e veja falhar**
 
 ```bash
 python -m pytest tests/test_facts_graph.py -q
@@ -162,7 +162,7 @@ python -m pytest tests/test_facts_graph.py -q
 
 Esperado: `ModuleNotFoundError: No module named 'sparkforge.facts.graph'`.
 
-- [ ] **Step 4: O mínimo que passa**
+- [x] **Step 4: O mínimo que passa**
 
 Cabeçalho do módulo declarando, em prosa, três coisas — porque o próximo leitor vai perguntar as três:
 
@@ -172,7 +172,7 @@ Cabeçalho do módulo declarando, em prosa, três coisas — porque o próximo l
 
 `EMITTED_KINDS` fechado, com guarda de namespace no fim (o padrão de `data_quality.py:1692-1694`, `raise AssertionError` se um kind escapar).
 
-- [ ] **Step 5: `graph.import`, com teste primeiro**
+- [x] **Step 5: `graph.import`, com teste primeiro**
 
 Meça o que o corpus real usa antes de decidir o alcance. Formas a considerar:
 
@@ -186,19 +186,19 @@ def f():
 
 Decida quais você lê e quais viram `graph.unresolved`, **escreva a razão**, e teste as duas listas. Não siga `importlib` — dinâmico é onde a análise estática mente.
 
-- [ ] **Step 6: `graph.algorithm` e `graph.construction`**
+- [x] **Step 6: `graph.algorithm` e `graph.construction`**
 
 `GraphFrame(v, e)` é `ast.Call` com `func=ast.Name` — o filtro de `pyspark_ast.py:255` o descartaria, então **não copie aquele laço**.
 
 Para cada algoritmo: `attrs.name`, o receptor, `inside_loop`, e o que a Task 1 mediu sobre limite de iteração. Se `pageRank` aceita `maxIter` **ou** `tol`, o fact precisa dizer qual veio — senão a regra acusa quem passou `tol`.
 
-- [ ] **Step 7: `graph.checkpoint_dir` e `graph.source_persisted`**
+- [x] **Step 7: `graph.checkpoint_dir` e `graph.source_persisted`**
 
 `setCheckpointDir` é chamado no `SparkContext`, não no grafo. Meça se ele aparece no mesmo escopo, no módulo, ou em qualquer lugar do arquivo — e decida o alcance com argumento.
 
 Para persistência de vértices/arestas: a §9 do spec deixa em aberto se é kind próprio ou atributo. **Meça antes de separar** — a Fase 5d registrou (`D-5d-17`) que correlação entre dois kinds casa objeto errado quando há vários sujeitos no mesmo diretório, e a solução foi pôr a measure no mesmo fact.
 
-- [ ] **Step 8: Suíte, ruff, commit**
+- [x] **Step 8: Suíte, ruff, commit**
 
 ```bash
 python -m pytest -q --no-header && ruff check .
@@ -517,3 +517,108 @@ release note da `0.8.3` afirma *"Support Spark 3.3 / Scala 2.12"* e o jar
 `0.8.3-spark3.3-s_2.12` responde **404**. Consequência de desenho: o
 `runtime_scope` da Task 5 deve ser escrito por **Spark 3.3.x**, não por lista de
 release — cobre as nove de uma vez e não envelhece a cada release nova de EMR.
+
+**D-6a-7 — `graph.source_persisted` não existe: virou atributo, e a §9 do spec previa a pergunta.**
+O spec (§4) lista o kind na tabela de facts. Medido: um kind separado precisaria
+ser reunido ao `graph.construction` **por nome de variável**, que é exatamente a
+correlação que `D-5d-17` mostrou casar objeto errado — e dois `GraphFrame(...)`
+no mesmo arquivo são o caso literal. `vertices_persisted` e `edges_persisted`
+são atributos do próprio `graph.construction`. Fica **6 kinds**, não 7. A §9 do
+spec autorizava a decisão ("medir antes de separar"); a §4 é que fica errada.
+
+**D-6a-8 — a assinatura do extrator é `(source, path)`, não `(tree, path, sha)`.**
+O plano (Step 2) escreve `extract_graph("x = 1\n", "sem_grafo.py")` e manda
+medir. Medido: `extract_data_quality(tree, path, artifact_sha256="")`
+(`data_quality.py:1627`) recebe **árvore**; `extract_source(source, path)`
+(`pyspark_ast.py:200`) recebe **texto**. O modelo certo é o segundo, e não por
+gosto: a sentinela e o `graph.unresolved` de `syntax_error` só existem se o
+próprio extrator tentar o parse, e quem recebe árvore pronta nunca vê o
+`SyntaxError`. O teste do plano já assumia isso sem dizer.
+
+**D-6a-9 — o motor não sabe dizer "a chave não está lá", e isso decidiu o desenho do fact.**
+O plano (Step 7) trata a exigência de checkpoint como correlação entre facts.
+Medido: `engine._where_matches` (`rules/engine.py:31-37`) compara por
+**igualdade** e reprova caminho ausente, e `_expr_matches` engole o `ExprError`
+devolvendo `False` — então `attrs.algorithm_arg != "graphx"` é **falso quando a
+chave não existe**, que é o caso comum. Nenhuma regra consegue exprimir "o
+código não declarou saída nenhuma". Logo quem enxerga as três saídas de uma vez
+é o extrator, e ele emite `checkpoint_required` **já decidido**, mais
+`checkpoint_configured_in_module` no mesmo fact. É o padrão que `SF-EMR-008`
+fixou e que `data_quality.py:6-12` declara — não juízo: severidade e limiar
+continuam no catálogo.
+
+**D-6a-10 — o `pregel` foi resolvido por `ast.Attribute` mais travessia para FORA, e não por `ast.Call`.**
+`D-6a-3` avisou que um `frozenset` casado contra `ast.Call` não emite fact para o
+Pregel. A solução: `pregel`, `triplets`, `inDegrees`, `outDegrees` (e `degrees`,
+ver `D-6a-11`) são casados como `ast.Attribute` em contexto `Load` que **não é o
+`func` de uma `Call`**; a partir desse nó a cadeia é percorrida **para fora**
+pelo mapa de pais, o que recupera `setMaxIter(10)` de
+`g.pregel.setMaxIter(10)...run()`. Todos os outros extratores caminham só para
+dentro (da chamada para a raiz) e por isso nunca precisaram de mapa de pais —
+este é o primeiro que precisa, e a razão está no `_pregel_chain`.
+
+**D-6a-11 — o vocabulário tem DOIS níveis, e três nomes da API ficaram de fora.**
+O plano e o spec supõem um `frozenset` único. Medido contra o risco de homônimo:
+`find` é método de `str`, e `validate`/`degrees` são identificadores que
+qualquer objeto de usuário pode ter — casá-los sempre produziria `graph.algorithm`
+sobre `"abc".find("b")`, que é **acusação falsa**, o pior modo de falha desta
+área. Eles são lidos **só quando o módulo importa GraphFrames**, que é a
+evidência independente que o `D-3` do spec justifica. E `cache`, `persist` e
+`unpersist` — que a API do `GraphFrame` de fato expõe — ficam **fora do
+vocabulário de algoritmo**: `pyspark.cache` já os emite sobre o mesmo artefato,
+e reemiti-los duplicaria o sujeito de `SF-PY-008` e apagaria justamente a
+fronteira que a Task 6 tem de provar. Entram só como evidência de persistência.
+
+**D-6a-12 — a conf de checkpoint às vezes ESTÁ no `.py`, e ignorá-la seria um P0 falso.**
+A pesquisa (§8) trata `spark.checkpoint.dir` e
+`spark.graphframes.useLocalCheckpoints` como saídas **fora do artefato**. Verdade
+quando vêm do IaC ou do `--conf` — mas `spark.conf.set("spark.checkpoint.dir",
+...)` dentro do próprio job é forma corrente, e não lê-la faria a regra P0
+disparar sobre código que configurou o checkpoint na linha de cima. O extrator lê
+as duas confs e as emite como `graph.checkpoint_dir` com `form`
+(`set_checkpoint_dir`, `conf_checkpoint_dir`, `conf_local_checkpoints`). A
+ressalva da regra continua valendo para o que vem de fora — o alcance do módulo
+não mudou, só deixou de ser cego ao que está dentro.
+
+**D-6a-13 — o alcance de `setCheckpointDir` é o ARQUIVO, e o argumento é o objeto.**
+O plano (Step 7) pede a decisão entre escopo, módulo e arquivo. `setCheckpointDir`
+é chamado no `SparkContext`, que é **singleton do processo**: o diretório vale
+para a aplicação inteira, não para um escopo de nome. A forma canônica de job
+Glue/EMR configura a sessão num `build_spark()` e roda o algoritmo noutra função
+— correlacionar por escopo produziria P0 sobre exatamente essa forma correta. O
+inverso continua valendo para nome de **dado**: vértices e arestas são apurados
+**por escopo**, porque ali dois nomes iguais são dois objetos. Não há dois
+`SparkContext`.
+
+**D-6a-14 — `v = vertices.cache()` teria saído como "não persistido".**
+Medição durante a implementação, e é acusação falsa sobre a forma mais comum de
+persistir em job real: `_persist_events` casando só a **raiz da cadeia** registra
+o evento em `vertices` e não em `v`, e `GraphFrame(v, e)` saía com
+`vertices_persisted: false`. A correção registra o evento nos **dois** nomes —
+raiz da cadeia e alvo da atribuição. `data_quality._persist_events` tem o mesmo
+recorte e o mesmo furo, mas lá o alvo do check é o nome da raiz, então ele não
+aparece; aqui aparece porque o sujeito é o argumento do construtor.
+
+**D-6a-15 — o `_SOURCE_TERMINALS` de `data_quality.py` é necessário aqui pelo mesmo motivo.**
+Nem o plano nem o spec o mencionam para esta fase. Medido:
+`GraphFrame(spark.read.parquet(p), e)` fazia `vertices_ref` sair como `"spark"` —
+a raiz da cadeia é a **sessão**, não o dado — e a persistência passaria a ser
+apurada sobre a sessão. A lista é a mesma de `data_quality.py:161`, e o
+`_data_root` que a consome é o análogo de `_chain_target`.
+
+**D-6a-16 — um ponto cego por chamada, porque `Fact.id` deixa `attrs` de fora.**
+`Fact.id` é sha de `kind + subject + measures` (`findings/models.py:41-55`), e
+`graph.unresolved` não tem measures. Dois `unresolved` sobre o **mesmo nó** —
+`g.connectedComponents("graphx", algorithm=x)` produz `positional_argument` e
+`non_literal_argument` — sairiam com **id idêntico**, e o `fact_id` que um
+Finding cita deixaria de identificar evidência. Decidido: no máximo um
+`graph.unresolved` por chamada de algoritmo, com precedência argumento antes de
+receptor, porque é o argumento que suprime a decisão de checkpoint. Há teste de
+unicidade de id sobre arquivo denso.
+
+**D-6a-17 — as referências de linha do plano e do spec envelheceram.**
+`pyspark_ast.py:255` (o filtro que descarta o que não é `ast.Attribute`, citado
+no plano Step 6 e na §1 do spec) está hoje em **`pyspark_ast.py:264`**. A guarda
+de namespace citada como `data_quality.py:1692-1694` está em **1692-1694** —
+essa confere. Nenhuma das duas muda decisão; ficam registradas porque o próximo
+leitor vai conferir.
