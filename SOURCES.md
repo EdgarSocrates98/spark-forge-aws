@@ -21,32 +21,41 @@ As Skills não devem tratar esta lista como substituta da documentação do runt
 ## Vigilância automatizada do frescor
 
 "Atualizada periodicamente" deixou de ser só intenção. `scripts/refresh_knowledge.py`
-confere se alguma fonte oficial **citada por uma regra** mudou desde a última leitura,
+confere se alguma fonte oficial **que este repositório cita** mudou desde a última leitura,
 e o workflow `.github/workflows/refresh-knowledge.yml` roda semanalmente (e sob demanda)
 abrindo PR quando há o que reler. Ele **nunca commita em `main`**: conhecimento entra por
 revisão humana, não por scraper.
 
-A watchlist não é mantida à mão — é o conjunto de `sources[].url` do próprio catálogo,
-então regra nova com fonte nova passa a ser vigiada sozinha. O estado fica em
+A watchlist não é mantida à mão, e tem **duas origens, as duas derivadas**: `sources[].url`
+das regras do catálogo (campo `rules`) e as URLs dos blocos `Fontes` de `knowledge/**.md`
+(campo `docs`). Regra nova com fonte nova, e página nova com fonte nova, passam a ser
+vigiadas sozinhas. O estado fica em
 [`knowledge/sources.lock.json`](knowledge/sources.lock.json): por URL, o hash do texto
-normalizado, a data da conferência e **quais `rule_id` dependem daquela fonte** — o
-relatório não diz "a doc mudou assim", diz "a doc mudou, e as regras X e Y dependem dela".
+normalizado, a data da conferência e **quem depende daquela fonte** — o relatório não diz
+"a doc mudou assim", diz "a doc mudou, e as regras X e Y, e a página Z, dependem dela".
 
 Fonte com versão no path (`docs/3.5.6/`, `apache-iceberg-1.0.0`) não é buscada: o conteúdo
-é imutável e vigiá-la só produziria ruído. Hoje são 37 fontes, 33 móveis e 4 fixas.
+é imutável e vigiá-la só produziria ruído. Hoje são **109 fontes, 103 móveis e 6 fixas** —
+51 citadas por regra, 104 citadas por `knowledge/`, e 46 pelas duas.
 
-**O que a watchlist não alcança, dito em voz alta.** Ela deriva das regras, então
-conhecimento **sem regra que o cite** nunca entra — e é o caso de
-[`knowledge/devin/agents-and-subagents.md`](knowledge/devin/agents-and-subagents.md), cujas
-**24 URLs** de `docs.devin.ai` (coletadas em 2026-08-04) envelhecem sem alarme. É a
-combinação mais cara possível, porque a própria fonte declara aquela superfície
-**experimental** — *"format, behavior, and configuration options may change"*. A saída
+**Por que a segunda origem existe.** Até 2026-08-05 a watchlist derivava só das regras, e
+conhecimento **sem regra que o citasse** nunca entrava. O caso que fechou a dívida é
+[`knowledge/devin/agents-and-subagents.md`](knowledge/devin/agents-and-subagents.md): ela
+não sustenta regra nenhuma — sustenta **perfil de agente** —, e as suas **24 URLs** de
+`docs.devin.ai` envelheciam sem alarme sobre uma superfície que a própria fonte declara
+**experimental** (*"format, behavior, and configuration options may change"*). A saída
 barata seria escrever uma regra de catálogo só para as URLs entrarem, e ela é errada:
-fabricaria diagnóstico sobre Spark que não existe, num catálogo que é dado julgado. A
-saída certa é ampliar a watchlist para varrer também os rodapés `Fontes` de
-`knowledge/**.md`, e é código que ninguém escreveu — está registrada como **dívida**, com
-o custo medido, em [`docs/superpowers/STATUS.md`](docs/superpowers/STATUS.md). Até lá, toda
-fase que tocar aquele mecanismo deve **reconferir a doc na data da entrega** (V-DV-6).
+fabricaria diagnóstico sobre Spark que não existe, num catálogo que é dado julgado.
+
+O preço da segunda origem é o **vínculo de volta**, e ele é obrigatório: fonte vigiada que
+ninguém cita é alarme sem endereço. Toda entrada do lock nomeia pelo menos um consumidor —
+regra, página, ou as duas — e há teste que exige isso. URL citada pelas duas origens com
+`retrieved` diferentes carrega **as duas datas**, para que a divergência apareça em vez de
+ser resolvida por chute. Fonte nova entra **sem hash**, e a primeira conferência com rede a
+relata como *NOVA*; alinhar o conjunto sem rede é
+`python scripts/refresh_knowledge.py --update --offline`. Continua valendo o V-DV-6: fase
+que tocar o mecanismo de subagentes do Devin **reconfere a doc na data da entrega**, porque
+vigiar o hash diz que mudou, não o que mudou.
 
 O que ele guarda é hash e procedência, nunca o texto das docs — copiar documentação de
 terceiro para o repositório é decisão de licenciamento que ninguém tomou, e o diff de uma

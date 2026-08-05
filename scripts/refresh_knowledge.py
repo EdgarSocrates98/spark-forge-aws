@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Detecta quando uma fonte oficial citada pelo catalogo mudou.
+"""Detecta quando uma fonte oficial que este repositorio cita mudou.
 
 Fecha a divida da secao 16 (Fase 2) da spec da Fase 0: `refresh_knowledge`, o
 harvest das docs oficiais que **nunca commita sozinho** -- abre PR com o
@@ -23,14 +23,44 @@ contra, na ordem em que pesam:
    dependem dela. Isso um hash resolve.
 
 Entao o que se guarda e `knowledge/sources.lock.json`: por URL, o hash do texto
-normalizado, a data da ultima conferencia, e a lista de `rule_id` que citam
-aquela URL. O relatorio nao diz "a doc mudou assim"; diz "a doc mudou, e as
-regras SF-X-001 e SF-Y-003 dependem dela -- releia".
+normalizado, a data da ultima conferencia, e QUEM DEPENDE dela. O relatorio nao
+diz "a doc mudou assim"; diz "a doc mudou, e as regras SF-X-001 e SF-Y-003
+dependem dela -- releia".
+
+DUAS ORIGENS, e a segunda existe porque a primeira sozinha mentia
+=================================================================
+
+A watchlist nasceu derivada SO das regras (`sources[].url` do catalogo), e o
+desenho era bom pela razao que continua valendo: lista mantida a mao apodrece.
+Mas ele tinha um efeito que ninguem tinha medido -- conhecimento que nenhuma
+regra cita nunca entrava. A pesquisa de subagentes do Devin
+(`knowledge/devin/agents-and-subagents.md`) e o caso limite: ela nao sustenta
+regra nenhuma, sustenta PERFIL DE AGENTE, e as suas 24 URLs de `docs.devin.ai`
+envelheciam sem alarme sobre uma superficie que a propria fonte declara
+experimental. A pagina que mais provavelmente muda era a unica que ninguem
+vigiava.
+
+Entao a watchlist tem duas origens, as duas DERIVADAS e nenhuma mantida a mao:
+
+  regra      `sources[].url` de cada regra do catalogo   -> campo `rules`
+  knowledge  URL na secao `Fontes` de `knowledge/**.md`  -> campo `docs`
+
+A segunda paga o preco que a primeira cobra: fonte vigiada precisa de VINCULO DE
+VOLTA, senao um alarme chega sem dizer o que reler. Uma URL citada pelas duas
+origens carrega os dois campos, e as datas `retrieved` das duas -- divergencia
+entre elas fica VISIVEL no relatorio em vez de ser resolvida por chute.
+
+O leitor da secao `Fontes` e deliberadamente simples: heading cujo texto e
+exatamente `Fontes`, URL nua no corpo da secao, `(retrieved AAAA-MM-DD)` opcional
+ao lado. URL dentro de crase e PADRAO, e nao citacao -- a §2 de
+`knowledge/emr-serverless/runtime-matrix.md` escreve
+`release-version-<N>.html` para descrever 24 paginas, e vigiar esse texto
+produziria um 404 permanente, que e o alarme falso que mata a ferramenta.
 
 URL FIXA versus URL MOVEL
 =========================
 
-Nem toda fonte precisa ser vigiada. O catalogo cita dois tipos:
+Nem toda fonte precisa ser vigiada. As duas origens citam dois tipos:
 
   fixa   https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html
          https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md
@@ -49,11 +79,18 @@ do catalogo que nao pode envelhecer em silencio.
 Uso
 ===
 
-    python scripts/refresh_knowledge.py --check     # so relata; exit 1 se mudou
-    python scripts/refresh_knowledge.py --update    # reescreve o lock
+    python scripts/refresh_knowledge.py --check              # so relata; exit 1 se mudou
+    python scripts/refresh_knowledge.py --update             # reescreve o lock
+    python scripts/refresh_knowledge.py --update --offline   # so sincroniza o lock
 
     --out CAMINHO   escreve o relatorio markdown num arquivo alem do stdout
-    --offline       nao acessa a rede; util para inspecionar a watchlist
+    --offline       nao acessa a rede; lista a watchlist, e com `--update`
+                    sincroniza o lock (entra fonte nova SEM hash, sai fonte que
+                    ninguem cita mais) sem carimbar conferencia nenhuma. E o
+                    caminho para o lock acompanhar regra ou pagina de knowledge
+                    nova em ambiente sem rede -- CI de fork, maquina offline --,
+                    e ele nunca inventa `sha256`: fonte sem hash aparece na
+                    proxima conferencia com rede como NOVA, que e a verdade.
 
 Nenhum modo escreve no git. O workflow
 `.github/workflows/refresh-knowledge.yml` roda `--update`, cria um branch e
@@ -155,17 +192,77 @@ def http_fetch(url: str) -> str:
     return raw.decode("utf-8", errors="replace")
 
 
-def watchlist() -> dict[str, dict]:
-    """URL -> {rules, retrieved, pinned}, derivada do proprio catalogo.
+def knowledge_sources() -> dict[str, dict]:
+    """URL -> {docs, retrieved}, lida das secoes `Fontes` de `knowledge/**.md`.
 
-    A watchlist nao e uma lista mantida a mao: ela E o conjunto de `sources[].url`
-    das regras. Regra nova com fonte nova passa a ser vigiada sem ninguem
-    lembrar de registrar a URL em outro lugar -- que e exatamente o tipo de
-    passo esquecido que faz um mecanismo de frescor apodrecer.
+    Derivada, como a origem de regra: pagina nova de knowledge com fonte nova
+    passa a ser vigiada sem ninguem registrar a URL em outro lugar.
+
+    O formato do rodape e prosa, e nao tem schema -- por isso o leitor e o mais
+    simples que resolve o corpus, e cada estreitamento tem razao medida:
+
+    - Heading cujo texto e EXATAMENTE `Fontes`. `## Fontes e frescor` do
+      `INDEX.md` fala SOBRE o mecanismo e nao cita fonte nenhuma; casar por
+      prefixo o transformaria em origem.
+    - A secao vai ate o proximo heading de nivel IGUAL OU MAIOR. Duas paginas
+      tem `### O que estas fontes NAO sustentam` dentro do bloco, e a subsecao
+      pertence a secao.
+    - URL dentro de crase e PADRAO, nao citacao: a §2 de
+      `emr-serverless/runtime-matrix.md` escreve `release-version-<N>.html` para
+      descrever 24 paginas, e o trecho antes do `<` e uma URL sintaticamente
+      valida que devolveria 404 para sempre. Alarme permanente e o modo de falha
+      que faz o operador parar de ler o relatorio.
+    """
+    heading = re.compile(r"^(#{1,6})\s+(.*?)\s*$")
+    inline_code = re.compile(r"`[^`]*`")
+    url_pattern = re.compile(r"https?://[^\s<>()\[\]\"'`]+")
+    retrieved_pattern = re.compile(r"retrieved[:\s]+(\d{4}-\d{2}-\d{2})")
+
+    docs: dict[str, set[str]] = defaultdict(set)
+    dates: dict[str, set[str]] = defaultdict(set)
+    for path in sorted((ROOT / "knowledge").rglob("*.md")):
+        anchor = path.relative_to(ROOT).as_posix()
+        level: int | None = None
+        for line in path.read_text(encoding="utf-8").splitlines():
+            match = heading.match(line)
+            if match is not None:
+                current = len(match.group(1))
+                if match.group(2).strip() == "Fontes":
+                    level = current
+                elif level is not None and current <= level:
+                    level = None
+                continue
+            if level is None:
+                continue
+            body = inline_code.sub(" ", line)
+            declared = set(retrieved_pattern.findall(body))
+            for raw in url_pattern.findall(body):
+                url = raw.rstrip(".,;:")
+                docs[url].add(anchor)
+                dates[url] |= declared
+    return {
+        url: {"docs": sorted(anchors), "retrieved": sorted(dates[url])}
+        for url, anchors in sorted(docs.items())
+    }
+
+
+def watchlist() -> dict[str, dict]:
+    """URL -> {rules, docs, retrieved, pinned}, das DUAS origens derivadas.
+
+    Nenhuma das duas e mantida a mao, e e isso que impede o mecanismo de
+    apodrecer: regra nova com fonte nova, ou pagina de knowledge nova com fonte
+    nova, passam a ser vigiadas sem ninguem lembrar de registrar a URL noutro
+    lugar. O passo que alguem esquece e o que mata frescor.
+
+    `rules` e `docs` sao o VINCULO DE VOLTA, e sem eles a segunda origem seria
+    ruido: quando uma fonte muda, o relatorio precisa dizer o que reler. Uma URL
+    citada pelas duas origens carrega os dois -- e `retrieved` acumula as datas
+    das duas, em vez de escolher uma. Divergencia entre a data que a regra
+    declara e a que a pagina declara e informacao sobre qual das duas citacoes
+    esta velha; resolve-la aqui seria apagar a pergunta.
     """
     from sparkforge.rules.loader import load_catalog
 
-    found: dict[str, dict] = {}
     citing: dict[str, list[str]] = defaultdict(list)
     dates: dict[str, set[str]] = defaultdict(set)
 
@@ -178,9 +275,15 @@ def watchlist() -> dict[str, dict]:
             if source.get("retrieved"):
                 dates[url].add(str(source["retrieved"]))
 
-    for url, rules in citing.items():
+    documented = knowledge_sources()
+    for url, meta in documented.items():
+        dates[url] |= set(meta["retrieved"])
+
+    found: dict[str, dict] = {}
+    for url in set(citing) | set(documented):
         found[url] = {
-            "rules": sorted(set(rules)),
+            "rules": sorted(set(citing.get(url, ()))),
+            "docs": list(documented.get(url, {}).get("docs", ())),
             "retrieved": sorted(dates[url]),
             "pinned": is_pinned(url),
         }
@@ -220,6 +323,7 @@ def compare(
             stored[url] = {
                 "pinned": True,
                 "rules": meta["rules"],
+                "docs": meta["docs"],
                 "retrieved": meta["retrieved"],
             }
             continue
@@ -234,6 +338,7 @@ def compare(
                 {
                     "pinned": False,
                     "rules": meta["rules"],
+                    "docs": meta["docs"],
                     "retrieved": meta["retrieved"],
                     "last_error": str(exc),
                 }
@@ -253,6 +358,7 @@ def compare(
             "sha256": current,
             "checked_at": today,
             "rules": meta["rules"],
+            "docs": meta["docs"],
             "retrieved": meta["retrieved"],
         }
 
@@ -261,6 +367,45 @@ def compare(
             del stored[url]
 
     return events, {"schema_version": 1, "sources": stored}
+
+
+def sync_metadata(entries: dict[str, dict], lock: dict) -> dict:
+    """Alinha o lock a watchlist SEM rede: quem cita, quando, e quem saiu.
+
+    Existe porque a watchlist tem duas origens derivadas, e as duas mexem no
+    CONJUNTO de URLs: uma regra nova ou uma pagina de knowledge nova mudam o
+    lock sem que nada tenha sido conferido. Sem este caminho, alinhar o lock
+    exigiria rede -- e num fork sem segredo, ou numa maquina offline, o
+    invariante `set(lock) == set(watchlist())` viraria um teste que so passa com
+    internet.
+
+    O QUE ELE NUNCA FAZ e inventar `sha256` ou `checked_at`. Fonte nova entra
+    SEM hash, e a proxima conferencia com rede a relata como NOVA -- que e a
+    verdade: ninguem a leu ainda. Carimbar hash aqui seria dizer "conferida",
+    que e a mesma mentira que `unreachable` existe para nao contar.
+    """
+    stored = dict(lock.get("sources") or {})
+    for url, meta in entries.items():
+        entry = dict(stored.get(url) or {})
+        entry.update(
+            {
+                "pinned": meta["pinned"],
+                "rules": meta["rules"],
+                "docs": meta["docs"],
+                "retrieved": meta["retrieved"],
+            }
+        )
+        if meta["pinned"]:
+            # Fonte fixa nunca e buscada, entao hash e data de conferencia sao
+            # campos sem sentido nela -- e o `compare` tambem nao os grava.
+            entry.pop("sha256", None)
+            entry.pop("checked_at", None)
+            entry.pop("last_error", None)
+        stored[url] = entry
+    for url in list(stored):
+        if url not in entries:
+            del stored[url]
+    return {"schema_version": 1, "sources": stored}
 
 
 def render_report(events: Iterable[dict], entries: dict[str, dict], today: str) -> str:
@@ -272,8 +417,10 @@ def render_report(events: Iterable[dict], entries: dict[str, dict], today: str) 
         "# refresh_knowledge — conferência de fontes",
         "",
         f"Data: {today}",
-        f"Fontes citadas pelo catálogo: {len(entries)} "
+        f"Fontes vigiadas: {len(entries)} "
         f"({len(moving)} móveis, {len(pinned)} fixas por versão)",
+        f"Origem: {sum(1 for m in entries.values() if m['rules'])} citadas por regra, "
+        f"{sum(1 for m in entries.values() if m['docs'])} citadas por `knowledge/`",
         "",
     ]
 
@@ -300,7 +447,13 @@ def render_report(events: Iterable[dict], entries: dict[str, dict], today: str) 
             }[event["kind"]]
             lines.append(f"### {label} — {event['url']}")
             lines.append("")
-            lines.append(f"- Regras que citam: {', '.join(event['rules'])}")
+            # As duas linhas sao o VINCULO DE VOLTA, e pelo menos uma sempre
+            # existe: a URL entrou na watchlist por alguma das duas origens.
+            # Fonte vigiada sem dizer o que reler seria alarme sem endereco.
+            if event.get("rules"):
+                lines.append(f"- Regras que citam: {', '.join(event['rules'])}")
+            if event.get("docs"):
+                lines.append(f"- Páginas de `knowledge/` que citam: {', '.join(event['docs'])}")
             if event.get("retrieved"):
                 lines.append(f"- `retrieved` declarado nas regras: {', '.join(event['retrieved'])}")
             if event.get("detail"):
@@ -312,10 +465,13 @@ def render_report(events: Iterable[dict], entries: dict[str, dict], today: str) 
             "## Fontes fixas por versão (não conferidas, por construção)",
             "",
             "Conteúdo imutável: a versão está no path. Aparecem aqui para que a parcela",
-            "do catálogo ancorada em fonte imutável seja visível, não para revisão.",
+            "ancorada em fonte imutável seja visível, não para revisão.",
             "",
         ]
-        lines += [f"- {url} — {', '.join(entries[url]['rules'])}" for url in pinned]
+        lines += [
+            f"- {url} — {', '.join(entries[url]['rules'] + entries[url]['docs'])}"
+            for url in pinned
+        ]
         lines.append("")
 
     return "\n".join(lines)
@@ -344,10 +500,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.offline:
         moving = sum(1 for m in entries.values() if not m["pinned"])
+        by_rule = sum(1 for m in entries.values() if m["rules"])
+        by_doc = sum(1 for m in entries.values() if m["docs"])
         print(f"{len(entries)} fontes ({moving} móveis, {len(entries) - moving} fixas)")
+        print(f"origem: {by_rule} citadas por regra, {by_doc} citadas por knowledge/")
         for url, meta in entries.items():
             marker = "fixa " if meta["pinned"] else "movel"
-            print(f"  [{marker}] {url} — {', '.join(meta['rules'])}")
+            print(f"  [{marker}] {url} — {', '.join(meta['rules'] + meta['docs'])}")
+        if args.update:
+            write_lock(sync_metadata(entries, load_lock()))
+            print(f"lock sincronizado (sem rede): {LOCK_PATH.relative_to(ROOT)}", file=sys.stderr)
         return 0
 
     events, lock = compare(entries, load_lock(), http_fetch, today)
