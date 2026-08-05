@@ -205,6 +205,22 @@ def build_parser() -> argparse.ArgumentParser:
     emr_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     emr_analyze_p.add_argument("--cursor")
 
+    emrs_analyze_p = analyze_sub.add_parser(
+        "emr-serverless",
+        help="Extrai facts de um dump JSON de application EMR Serverless "
+        "(get-application). Descreve o PADRAO da application, nunca o que um job run "
+        "executou -- StartJobRun sobrepoe.",
+    )
+    emrs_analyze_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps de application."
+    )
+    emrs_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    emrs_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    emrs_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    emrs_analyze_p.add_argument("--cursor")
+
     dq_p = analyze_sub.add_parser(
         "data-quality",
         help="Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great "
@@ -720,6 +736,21 @@ def build_parser() -> argparse.ArgumentParser:
     emr_collect_p.add_argument("--cluster-id", required=True, help="j-XXXXXXXXXXXXX")
     emr_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    emrs_collect_p = collect_sub.add_parser(
+        "emr-serverless",
+        help="Baixa get-application de uma application EMR Serverless. Uma chamada, "
+        "nao seis: capacidade, auto-stop, runtimeConfiguration e monitoramento chegam "
+        "no mesmo objeto.",
+    )
+    emrs_collect_p.add_argument("--repo", required=True)
+    emrs_collect_p.add_argument(
+        "--application-id",
+        required=True,
+        help="Id da application (`00fXXXXXXXXXXXXX`). Nome NAO serve: e opcional na API "
+        "e nao ha fonte que o declare unico.",
+    )
+    emrs_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
     )
@@ -964,6 +995,27 @@ def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
     full = _core.analyze_emr_cluster(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(payload)
+    return 0
+
+
+def _cmd_analyze_emr_serverless(args: argparse.Namespace) -> int:
+    full = _core.analyze_emr_serverless(args.path, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -1334,6 +1386,14 @@ def _cmd_collect_emr_cluster(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_emr_serverless(args: argparse.Namespace) -> int:
+    payload = _core.collect_emr_serverless(
+        args.repo, application_id=args.application_id, now=args.now
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_verify(args: argparse.Namespace) -> int:
     _print(_core.collect_verify(args.repo))
     return 0
@@ -1349,6 +1409,7 @@ _DISPATCH = {
     ("analyze", "sql"): _cmd_analyze_sql,
     ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
     ("analyze", "emr-cluster"): _cmd_analyze_emr_cluster,
+    ("analyze", "emr-serverless"): _cmd_analyze_emr_serverless,
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
@@ -1378,6 +1439,7 @@ _DISPATCH = {
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
+    ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
     ("collect", "verify"): _cmd_collect_verify,
 }
 

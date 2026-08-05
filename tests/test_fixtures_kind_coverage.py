@@ -29,6 +29,7 @@ from sparkforge.facts import (
     consumers,
     data_quality,
     emr_cluster,
+    emr_serverless,
     event_log,
     funcval,
     fusion,
@@ -52,6 +53,12 @@ EXTRACTORS = {
     "consumers": consumers,
     "data_quality": data_quality,
     "emr_cluster": emr_cluster,
+    # `emr_serverless` entra nas DUAS listas no mesmo commit da Task 4 da Fase
+    # 5d, ANTES de a area SF-EMRS existir. Sem ele aqui, os seis kinds `emrs.*`
+    # nao sao verificados por ninguem e o criterio 3 do spec -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar.
+    "emr_serverless": emr_serverless,
     "event_log": event_log,
     # Lista manual, duplicada em `tests/test_rules_catalog_reachability.py`:
     # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.

@@ -1630,6 +1630,47 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_emr_serverless": {
+        "description": (
+            "Extrai facts de um dump JSON de application Amazon EMR Serverless "
+            "(`get-application`): release, estado, arquitetura, capacidade pre-inicializada "
+            "por worker type (`emrs.initial_capacity`), teto de recursos, propriedades de "
+            "`runtimeConfiguration` (`emrs.configuration`) e destinos de log "
+            "(`emrs.monitoring`). NAO chama a API do EMR Serverless -- so le o JSON ja "
+            "salvo em disco (`sparkforge_collect_emr_serverless` ou "
+            "`aws emr-serverless get-application` a mao fazem isso). "
+            "LIMITE QUE VALE PARA TODO FACT DAQUI: `get-application` descreve o PADRAO da "
+            "application, nao o que um job rodou -- a AWS declara que as configuracoes de "
+            "`StartJobRun` sobrepoem as do nivel da application, inclusive removendo "
+            "classificacao e destino de log. Nenhum achado desta area pode ser redigido "
+            "como afirmacao sobre execucao. "
+            "`emrs.monitoring` e o unico fact do modulo que aplica default documentado, e "
+            "por necessidade: managed persistence tem default `true` e CloudWatch tem "
+            "default `false`, entao `*_declared` acompanha cada destino para distinguir o "
+            "que foi lido do que foi presumido. Auto-stop faz o oposto -- o default da AWS "
+            "e o estado SEGURO, entao o campo ausente NAO e materializado e "
+            "`auto_stop_declared` responde sobre o payload. Unidade de capacidade fora do "
+            "conjunto documentado vira `emrs.unresolved` contado, nunca numero adivinhado."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo ou diretorio com dumps de application.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_data_quality": {
         "description": (
             "Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do "
@@ -2330,6 +2371,34 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY_OPEN_WORLD,
     },
+    "sparkforge_collect_emr_serverless": {
+        "description": (
+            "Baixa `get-application` de uma application Amazon EMR Serverless e registra a "
+            "resposta no manifesto, no mesmo shape camelCase que "
+            "`aws emr-serverless get-application` devolve -- coleta manual e automatica "
+            "produzem o mesmo arquivo, que e o que `sparkforge_analyze_emr_serverless` le. "
+            "UMA chamada, nao seis como no EMR on EC2: capacidade inicial e maxima, "
+            "auto-start/stop, `runtimeConfiguration` e `monitoringConfiguration` chegam "
+            "todos dentro do mesmo objeto. Job runs ficam FORA por escopo. "
+            "Exige `application_id`, nunca nome: `name` e opcional na API e nenhuma fonte "
+            "o declara unico, entao resolver id por nome escolheria uma entre homonimas em "
+            "silencio. Mesma politica offline-first de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "application_id", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "application_id": {"type": "string", "description": "00fXXXXXXXXXXXXX"},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _READ_ONLY_OPEN_WORLD,
+    },
     "sparkforge_collect_verify": {
         "description": (
             "Verifica presenca e integridade (sha256 recalculado) de todos os artefatos "
@@ -2560,6 +2629,15 @@ def _h_analyze_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_emr_serverless(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_emr_serverless(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_data_quality(
         args["path"],
@@ -2674,6 +2752,12 @@ def _h_collect_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_emr_serverless(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_emr_serverless(
+        args["repo"], application_id=args["application_id"], now=args["now"]
+    )
+
+
 def _h_collect_verify(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_verify(args["repo"])
 
@@ -2696,6 +2780,7 @@ _HANDLERS = {
     "sparkforge_analyze_sql": _h_analyze_sql,
     "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
     "sparkforge_analyze_emr_cluster": _h_analyze_emr_cluster,
+    "sparkforge_analyze_emr_serverless": _h_analyze_emr_serverless,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
@@ -2716,6 +2801,7 @@ _HANDLERS = {
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
     "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,
+    "sparkforge_collect_emr_serverless": _h_collect_emr_serverless,
     "sparkforge_collect_verify": _h_collect_verify,
 }
 

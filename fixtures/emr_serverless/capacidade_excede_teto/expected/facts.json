@@ -1,0 +1,135 @@
+[
+  {
+    "id": "f_b8bfe9",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 2,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "1fbfcae88048851de61c4ca457d4d9f2a8fe2326816d8d2be824fc0933f9c656",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_ae5f87",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fexcede00000000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 11,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00fexcede00000000001",
+      "name": "capacidade-contraditoria",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "CREATED",
+      "architecture": "X86_64",
+      "auto_start_declared": true,
+      "auto_stop_declared": true,
+      "auto_start_enabled": true,
+      "auto_stop_enabled": true,
+      "initial_exceeds_maximum": true,
+      "capacity_axes_exceeded": [
+        "memory_gb"
+      ]
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "1fbfcae88048851de61c4ca457d4d9f2a8fe2326816d8d2be824fc0933f9c656",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_585faa",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fexcede00000000001/initial_capacity/DRIVER"
+    },
+    "measures": {
+      "worker_count": 1,
+      "cpu": 4,
+      "memory_gb": 30,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "DRIVER"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "1fbfcae88048851de61c4ca457d4d9f2a8fe2326816d8d2be824fc0933f9c656",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_d2c7fb",
+    "schema_version": 1,
+    "kind": "emrs.initial_capacity",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fexcede00000000001/initial_capacity/EXECUTOR"
+    },
+    "measures": {
+      "worker_count": 10,
+      "cpu": 4,
+      "memory_gb": 30,
+      "disk_gb": 20
+    },
+    "attrs": {
+      "worker_type": "EXECUTOR"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "1fbfcae88048851de61c4ca457d4d9f2a8fe2326816d8d2be824fc0933f9c656",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_c5a5b8",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fexcede00000000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 2
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": true,
+      "managed_persistence_declared": false,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "1fbfcae88048851de61c4ca457d4d9f2a8fe2326816d8d2be824fc0933f9c656",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

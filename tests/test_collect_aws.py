@@ -413,6 +413,118 @@ class TestCollectEmrCluster:
         assert len(emr.calls) == before
 
 
+class FakeEmrServerlessClient:
+    """UMA operacao, e e a unica que este coletor conhece.
+
+    O contraste com `FakeEmrClient` e o ponto: la a API espalha grupos, fleets,
+    bootstrap actions e politicas por seis chamadas, e metade delas pode nao se
+    aplicar ao cluster; aqui `GetApplication` devolve capacidade inicial, maxima,
+    auto-stop, `runtimeConfiguration` e `monitoringConfiguration` no mesmo objeto.
+    Nao ha `_emr_optional` equivalente porque nao ha secao opcional a omitir.
+    """
+
+    def __init__(self):
+        self.calls: list[tuple[str, dict]] = []
+
+    def get_application(self, **kwargs):
+        self.calls.append(("get_application", kwargs))
+        return {
+            "application": {
+                "applicationId": kwargs["applicationId"],
+                "arn": "arn:aws:emr-serverless:us-east-1:123456789012:/applications/00fEXAMPLE",
+                "name": "etl",
+                "releaseLabel": "emr-7.5.0",
+                "type": "Spark",
+                "state": "STARTED",
+                "architecture": "X86_64",
+                "autoStopConfiguration": {"enabled": True, "idleTimeoutMinutes": 15},
+                "initialCapacity": {
+                    "DRIVER": {
+                        "workerCount": 1,
+                        "workerConfiguration": {
+                            "cpu": "4vCPU",
+                            "memory": "16GB",
+                            "disk": "20GB",
+                        },
+                    }
+                },
+                # Teto E `disk` no worker sao deliberados. Os dois sao
+                # `Required: No` na API, e sem qualquer um deles o extrator emite
+                # `emrs.unresolved` com `capacity_comparison_undecidable` -- que e
+                # o comportamento CERTO, e nao o que este teste de coletor quer
+                # exercitar. Uma application com o eixo faltando e caso de fixture
+                # (Task 4); aqui o payload e completo justamente para que
+                # "artefato legivel sem ponto cego" seja uma afirmacao verificavel.
+                "maximumCapacity": {"cpu": "400vCPU", "memory": "3000GB", "disk": "20000GB"},
+                "runtimeConfiguration": [
+                    {
+                        "classification": "spark-defaults",
+                        "properties": {"spark.executor.cores": "4"},
+                    }
+                ],
+                "monitoringConfiguration": {
+                    "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrs-logs/"}
+                },
+            }
+        }
+
+
+class TestCollectEmrServerless:
+    def _collect(self, tmp_path, monkeypatch, now="2026-08-04T00:00:00Z"):
+        emrs = FakeEmrServerlessClient()
+        monkeypatch.setattr(
+            aws, "require_boto3", lambda: FakeBoto3(**{"emr-serverless": emrs})
+        )
+        entry = aws.collect_emr_serverless("00fEXAMPLE", tmp_path, now=now)
+        return emrs, entry, json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
+
+    def test_writes_the_response_in_the_shape_the_extractor_reads(self, tmp_path, monkeypatch):
+        _, entry, payload = self._collect(tmp_path, monkeypatch)
+        assert entry.kind == "emr_serverless"
+        assert entry.path == aws.emr_serverless_path("00fEXAMPLE")
+        # camelCase preservado, sem traducao: o arquivo tem que ser
+        # indistinguivel do que `aws emr-serverless get-application` imprime.
+        assert payload["application"]["releaseLabel"] == "emr-7.5.0"
+        assert payload["application"]["initialCapacity"]["DRIVER"]["workerCount"] == 1
+
+    def test_one_call_and_only_get_application(self, tmp_path, monkeypatch):
+        """Job runs estao fora do escopo desta fase, e `list-applications` esta
+        fora por identidade: `name` e opcional na API e nenhuma fonte o declara
+        unico, entao resolver id por nome escolheria uma entre homonimas em
+        silencio."""
+        emrs, _, _ = self._collect(tmp_path, monkeypatch)
+        assert [name for name, _ in emrs.calls] == ["get_application"]
+        assert emrs.calls[0][1] == {"applicationId": "00fEXAMPLE"}
+
+    def test_the_written_artifact_is_readable_by_the_extractor(self, tmp_path, monkeypatch):
+        """O contrato entre coletor e extrator, provado ponta a ponta."""
+        from sparkforge.facts.emr_serverless import extract_emr_serverless_path
+
+        _, entry, _ = self._collect(tmp_path, monkeypatch)
+        facts = extract_emr_serverless_path(tmp_path / entry.path, repo_root=tmp_path)
+        kinds = {f.kind for f in facts}
+        assert "emrs.unresolved" not in kinds
+        assert {"emrs.application", "emrs.initial_capacity", "emrs.configuration"} <= kinds
+
+    def test_second_call_is_a_local_no_op(self, tmp_path, monkeypatch):
+        emrs, first, _ = self._collect(tmp_path, monkeypatch)
+        before = len(emrs.calls)
+        monkeypatch.setattr(
+            aws, "require_boto3", lambda: FakeBoto3(**{"emr-serverless": emrs})
+        )
+        second = aws.collect_emr_serverless("00fEXAMPLE", tmp_path, now="2026-08-04T01:00:00Z")
+        assert second.collected_at == first.collected_at
+        assert len(emrs.calls) == before
+
+    def test_the_recollect_command_is_the_verb_the_cli_really_has(self, tmp_path, monkeypatch):
+        """`collect_command` cego deixa `resume()` sem saida: o case sabe que
+        falta o artefato e nao sabe como obte-lo."""
+        _, entry, _ = self._collect(tmp_path, monkeypatch)
+        assert entry.collect_command == (
+            "sparkforge collect emr-serverless --application-id 00fEXAMPLE"
+        )
+
+
 class TestCollectVerifyIntegration:
     def test_verify_reports_missing_artifact_with_its_recollect_command(self, tmp_path):
         from sparkforge.collect.base import ArtifactEntry, register_artifact

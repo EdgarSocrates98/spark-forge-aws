@@ -1,0 +1,35 @@
+name: unidade_desconhecida
+proves: >
+  Unidade fora do conjunto documentado vira `unresolved`, NUNCA numero
+  presumido. Dois jeitos diferentes de o valor ser ilegivel, um por worker type:
+    * `"16384MB"` -- `MB` nao e expressavel nos patterns da AWS
+      (`memory` aceita `GB|gb|gB|Gb`). Ler 16384 como GB inflaria a memoria em
+      mil vezes; ler como MB seria inventar uma unidade que a fonte nao declara.
+    * `cpu: 4` como NUMERO, nao string. O tipo declarado e string, e um payload
+      que devolva outra coisa e ponto cego, nao valor.
+  A armadilha `"16 GB"` contra `"16384 MB"` que o plano previu **nao pode
+  ocorrer** neste artefato (D-5d-3); o `unresolved` de unidade continua
+  necessario por outra razao: os patterns restringem a ENTRADA da API, e nada
+  declara que a resposta sempre os satisfaca.
+  A segunda coisa que esta fixture prova e que o ponto cego NAO e contado duas
+  vezes. Ha `maximumCapacity` completo e a comparacao poderia ser tentada, mas
+  como a leitura de capacidade ja falhou, `_capacity_decision` devolve as duas
+  chaves omitidas SEM emitir `capacity_comparison_undecidable`. Dois
+  `unresolved` para o mesmo buraco inflariam a contagem de ponto cego, e a
+  sentinela deixaria de medir o que diz medir.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.initial_capacity
+  - emrs.monitoring
+  - emrs.unresolved
+expects_rules: []

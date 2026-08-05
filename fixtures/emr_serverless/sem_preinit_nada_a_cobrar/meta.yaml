@@ -1,0 +1,42 @@
+name: sem_preinit_nada_a_cobrar
+proves: >
+  O segundo termo das duas regras de custo, e o unico golden que o apaga: sem
+  capacidade pre-inicializada, nem auto-stop desligado nem janela de sete dias
+  produzem achado.
+  Dois payloads, um por regra, porque as duas condicoes nao cabem na mesma
+  application -- uma exige `enabled: false`, a outra exige auto-stop LIGADO com
+  janela larga:
+    * `autostop_desligado.json` -- `autoStopConfiguration.enabled: false`, sem
+      `initialCapacity`. E a fixture que apaga o termo
+      `initial_capacity_worker_count >= 1` de SF-EMRS-001: sem ela, remover
+      esse termo do catalogo nao deixaria nenhum golden vermelho, e a metade
+      mais cara da conjuncao ficaria sem prova.
+    * `janela_longa.json` -- auto-stop ligado com `idleTimeoutMinutes: 10080`, o
+      teto da API, sem `initialCapacity`. Faz o mesmo por SF-EMRS-005, e o par
+      positivo dela e `autostop_longo`, que tem os mesmos 10080 COM pre-init.
+  A afirmacao que este golden negativo carrega e uma DEDUCAO, e ela esta
+  declarada como tal em `rules/catalog/emr-serverless.yaml`, item 2 do
+  cabecalho: a cobranca documentada e por worker existente ("from the time
+  workers are ready to run your workload until the time they stop"), e uma
+  application sem pre-init vai de `CREATED` a `STARTED` sem provisionar nada.
+  Mas nenhuma pagina afirma que uma application `STARTED` sem pre-init custe
+  ZERO, e nao encontrar nao e o mesmo que nao existir
+  (`knowledge/emr-serverless/application-configuration.md` secao 3, "O limite
+  declarado").
+  Entao este e o lugar onde a decisao aparece: se um dia a AWS publicar cobranca
+  por application existente, sao estes dois `expects_rules` vazios que precisam
+  mudar de lado, e o silencio de hoje deixa de ser a resposta certa.
+# Runtime vazio de PROPOSITO, e a razao e medida, nao omissao:
+# a documentacao do EMR Serverless nao publica a matriz de release
+# (D-5d-5), entao nao ha versao de Spark, Hadoop, Iceberg ou Python que
+# este artefato sustente. Declarar uma copiada do EMR on EC2 seria
+# exatamente a invencao que a fase recusou. Corolario para a Task 5:
+# toda regra SF-EMRS precisa de `runtime_scope: {}` -- qualquer
+# restricao de versao a tornaria inalcancavel neste corpus, e o golden
+# ficaria verde por SKIP, que e pior que ficar vermelho.
+runtime: {}
+expects_kinds:
+  - emrs.analyzed
+  - emrs.application
+  - emrs.monitoring
+expects_rules: []

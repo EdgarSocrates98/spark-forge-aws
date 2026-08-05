@@ -1,8 +1,8 @@
 # SparkForge AWS
 
-Sistema especialista de diagnóstico, tuning, revisão e benchmarking para jobs **PySpark no AWS Glue e no Amazon EMR on EC2**, com foco em **Amazon S3, Parquet, Apache Iceberg, Glue Data Catalog, Spark UI e CloudWatch**.
+Sistema especialista de diagnóstico, tuning, revisão e benchmarking para jobs **PySpark no AWS Glue e no Amazon EMR — on EC2 e Serverless**, com foco em **Amazon S3, Parquet, Apache Iceberg, Glue Data Catalog, Spark UI e CloudWatch**.
 
-O eixo de infraestrutura é o único que é específico da plataforma: a análise de código, plano físico, event log, Parquet e Iceberg é agnóstica por construção, e por isso o mesmo motor julga um job Glue definido em Terraform e um cluster EMR on EC2 definido por `describe-cluster`. Além de performance, o pacote lê **validação de dados** dentro do job — onde o check roda, se ele tem consequência e quantas passadas sobre o dado ele custa — que é pergunta de engenharia de dados, não de tuning.
+O eixo de infraestrutura é o único que é específico da plataforma: a análise de código, plano físico, event log, Parquet e Iceberg é agnóstica por construção, e por isso o mesmo motor julga um job Glue definido em Terraform, um cluster EMR on EC2 definido por `describe-cluster` e uma application EMR Serverless definida por `get-application`. Além de performance, o pacote lê **validação de dados** dentro do job — onde o check roda, se ele tem consequência e quantas passadas sobre o dado ele custa — que é pergunta de engenharia de dados, não de tuning.
 
 O pacote foi estruturado para funcionar em:
 
@@ -26,20 +26,20 @@ Há Skills específicas para arquitetura incremental (`design-incremental-proces
 
 `knowledge/` é a fonte de verdade sobre **como Spark, Glue, EMR, Athena, Parquet e Iceberg se comportam** — separada de `skills/` (procedimento) e de `.sparkforge/` (estado da investigação). Comece por [`knowledge/INDEX.md`](knowledge/INDEX.md).
 
-Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR on EC2, superfície corrente dos frameworks de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
+Cobertura: modelo de execução do Spark, referência de configuração com defaults exatos, shuffle/join/skew, memória e as sete classes de OOM, leitura de plano físico, matriz de runtime Glue, worker types e capacidade, argumentos de job, métricas de observabilidade, matriz de runtime EMR e configuração de cluster EMR on EC2, configuração de application EMR Serverless, superfície corrente dos frameworks de validação de dados, performance de Athena, layout Parquet/S3 e Iceberg.
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 71 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 77 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
-As 71 regras se distribuem em 13 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+As 77 regras se distribuem em 14 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## Camada determinística (Fase 0)
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
-de 71 regras versionado em YAML, e um ciclo de vida de case
+de 77 regras versionado em YAML, e um ciclo de vida de case
 (`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
 
 ### Sequência mínima
@@ -125,7 +125,7 @@ caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
 dentro de `site-packages` quando instalado por `pip`.
 
 Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
-**fora do repositório** e reproduz as 116 fixtures golden byte a byte a partir do
+**fora do repositório** e reproduz as 135 fixtures golden byte a byte a partir do
 pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
 usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
@@ -162,7 +162,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 17 extratores emitem 106 kinds distintos de fact, e todos são offline: leem
+Os 18 extratores emitem 112 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -177,6 +177,7 @@ tool MCP de mesmo nome.
 | SQL | `analyze sql` | `*.sql` e literais de `spark.sql(...)` |
 | Workgroup do Athena | `analyze athena-workgroup` | dump de `get_work_group` |
 | **Cluster EMR on EC2** | `analyze emr-cluster` | dump de `describe-cluster` e os cinco que o completam |
+| **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
 | Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
 | Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
@@ -193,12 +194,19 @@ AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
 essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
 o que falta para uma regra disparar é sempre coleta, nunca código.
 
-Cinco desses verbos mudam o alcance do projeto, e é por isso que aparecem
+Seis desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
 alimenta a release do EMR no `RuntimeContext`, de modo que os limiares passem
-a ser avaliados contra a versão certa fora do Glue. `analyze data-quality`
+a ser avaliados contra a versão certa fora do Glue. `analyze emr-serverless` faz a
+mesma pergunta sobre o **outro** modelo de execução do EMR — capacidade
+pré-inicializada faturada com a application ociosa, janela de auto-stop, destino
+de log e segredo em `runtimeConfiguration` — a partir de uma única chamada
+(`get-application`), em namespace disjunto (`emrs.*`) e área própria (`SF-EMRS`);
+ele **não** alimenta `RuntimeContext`, porque a AWS não publica a matriz de
+release do Serverless, e a razão está escrita em
+`knowledge/emr-serverless/runtime-matrix.md`. `analyze data-quality`
 responde sobre **onde a validação está**, não sobre se o dado está correto:
 reconhece o check artesanal, a `VerificationSuite` do PyDeequ e o Great
 Expectations pela forma do código — nunca por lista de nomes —, e o achado é
@@ -227,7 +235,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 106 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 112 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
@@ -521,7 +529,7 @@ manifesto silencioso é pior que erro barulhento:
 | `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
 
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
-constrói o artefato, instala num venv limpo e reproduz as 116 fixtures golden byte a byte.
+constrói o artefato, instala num venv limpo e reproduz as 135 fixtures golden byte a byte.
 
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
 de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o

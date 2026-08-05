@@ -1,0 +1,77 @@
+[
+  {
+    "rule_id": "SF-EMRS-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Janela de ociosidade do auto-stop larga demais para parar a application que paga pré-init",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00flongo00000000001"
+    },
+    "evidence": [
+      "f_f666cb"
+    ],
+    "measured": {
+      "initial_capacity_worker_count": 6,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 10080
+    },
+    "threshold": {
+      "idle_timeout_minutes": 1440
+    },
+    "runtime_scope": {},
+    "explanation": "O auto-stop está LIGADO — esta não é a application de SF-EMRS-001, e a pergunta é outra. O defeito aqui não é a ausência do controle, é a janela: um idleTimeoutMinutes maior que o intervalo ocioso típico da application nunca é alcançado. A application fica parada a noite inteira, o relógio de ociosidade reinicia no primeiro job da manhã, e o auto-stop nunca para nada. O controle existe no papel e não age nenhuma vez, enquanto os workers de initialCapacity continuam existindo — e é worker existente que se cobra, \"from the time workers are ready to run your workload until the time they stop\". O segundo termo da condição não é zelo: sem pré-init a application ociosa não tem worker de que cobrar, porque \"the state of an application with no pre-initialized capacity can immediately change from CREATED to STARTED\", e uma janela larga ali não custa fatura de worker. Essa linha é DEDUÇÃO do modelo de cobrança, não frase da AWS: esta coleta não encontrou página afirmando que uma application STARTED sem pré-init custe zero, e não encontrar não é o mesmo que não existir — o que o corte compra é não acusar uma configuração cujo custo não se conseguiu demonstrar. Como em SF-EMRS-001, esse termo conta WORKER declarado e não entrada do map: workerCount zero, ou ausente do payload, não prova worker existente e não dispara. Nada disso aparece em métrica de Spark: não há job, não há stage, não há falha, só a fatura. O que este achado NÃO prova é que a application esteja de fato ociosa; ele lê a definição, e a definição no momento da coleta — autoStopConfiguration não é parâmetro de StartJobRun, mas update-application a altera a qualquer momento. Ver knowledge/emr-serverless/application-configuration.md seções 3 e 4.",
+    "proposed_change": [
+      "Dimensionar a janela pelo maior intervalo ocioso que ainda vale a pena manter a pré-init quente, medido no histórico de submissão de job runs e não estimado.",
+      "Se a janela larga existe para evitar o tempo de provisionamento da pré-init entre execuções, tornar isso explícito: nomear quantas vezes por dia esse ganho é usado, e comparar com o custo do worker parado no resto do tempo.",
+      "Para application que roda uma carga por dia com folga longa entre execuções, avaliar remover a pré-init em vez de alargar a janela; sem pré-init não há o que manter quente, e o auto-stop deixa de ser o controle de custo principal.",
+      "Conferir o piso antes de encurtar: a referência declara 'minimum value of 1' minuto, e uma janela de um minuto derruba a pré-init entre dois jobs do mesmo lote."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Este é o risco central: encurtar a janela para a application no intervalo entre dois jobs de um mesmo processamento, e o job seguinte paga o provisionamento inteiro da pré-init. O intervalo entre submissões precisa ser medido antes, não depois.",
+      "Application parada com auto-start ligado volta sozinha ao receber job, mas com a latência de start-up completa. Onde há requisito de latência declarado, encurtar a janela pode violá-lo sem nenhum sinal de erro.",
+      "A propriedade é alterável a qualquer momento, então o efeito é imediato — inclusive o indesejado. Aplicar em janela de baixo movimento."
+    ],
+    "tradeoffs": [
+      "Janela larga compra tempo de espera com dinheiro. Pode ser a decisão certa quando religar a pré-init custa minutos no meio de um turno de trabalho; o que a regra recusa é que a decisão fique implícita num número que ninguém escolheu.",
+      "Limite declarado do gatilho: a regra lê o VALOR da janela e não pergunta com que frequência a application fica ociosa por esse tempo. Onde a application é de fato usada continuamente, a janela larga nunca chega a importar, e o achado é verdadeiro e inconsequente. O caminho de medir o intervalo ocioso real não existe neste artefato — ele está no histórico de job runs, que esta fase não lê."
+    ],
+    "validation": [
+      "GetApplication mostrando a janela nova.",
+      "Histórico de parada da application antes e depois: quantas vezes o auto-stop efetivamente parou a application no período, e não só que ele está configurado.",
+      "Custo do EMR Serverless por período comparável, antes e depois.",
+      "Latência de início dos job runs antes e depois, para confirmar que a troca foi a pretendida."
+    ],
+    "rollback": [
+      "`aws emr-serverless update-application --application-id <id> --auto-stop-configuration enabled=true,idleTimeoutMinutes=<valor-anterior>`. Este rollback não exige parar a application."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStopConfig.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://aws.amazon.com/emr/pricing/",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A fonte sustenta TODOS os números citados: o default de `enabled` (`true`), o default de 15 minutos, o mínimo de 1 e o máximo de 10080 (sete dias), e o modelo de cobrança por worker existente. O que ela NÃO declara é um ponto a partir do qual a janela passa a ser larga demais — esse ponto não existe na documentação, e o limiar de 1440 minutos é escolha de campo. Ele é um dia inteiro, e a razão da escolha é estrutural, não estatística: qualquer intervalo ocioso INTRADIÁRIO -- fim de expediente, madrugada, janela entre cargas -- é menor que 24 h, então uma janela de um dia ou mais não pode ser alcançada por nenhum deles e existe sem nunca agir. É o mesmo argumento e o mesmo número do limiar de 86400 s do SF-EMR-009, em minutos. O ramo P1 em 10080, esse sim, é o valor da fonte: é o teto da API. E o segundo termo da condição -- exigir pré-init -- apoia-se numa DEDUÇÃO declarada como tal no cabeçalho deste arquivo, item 2: que uma application ociosa sem pré-init não tenha worker faturável segue do modelo de cobrança, e não de uma frase da AWS."
+      }
+    ]
+  }
+]

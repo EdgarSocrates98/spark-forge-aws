@@ -98,6 +98,40 @@ def run(spark):
     df.coalesce(1).write.parquet("s3://bucket/out/")
 """
 
+# `aws emr-serverless get-application` com as DUAS iscas montadas de proposito.
+# No EMR on EC2 os dois campos equivalentes SAO produtores de runtime:
+# `emr.cluster.release_label` (`_core.py:209-211`) e `emr.configuration` com
+# `spark-env`/`PYSPARK_PYTHON` no nivel do cluster (`_core.py:245-249`). Aqui
+# nenhum dos dois pode virar versao, e o teste abaixo e o unico lugar do
+# repositorio onde isso deixa de ser prosa.
+EMR_SERVERLESS_APPLICATION = json.dumps(
+    {
+        "application": {
+            "applicationId": "00fisca000000000001",
+            "name": "etl",
+            "releaseLabel": "emr-7.5.0",
+            "type": "Spark",
+            "state": "STARTED",
+            "architecture": "X86_64",
+            "runtimeConfiguration": [
+                {
+                    "classification": "spark-env",
+                    "configurations": [
+                        {
+                            "classification": "export",
+                            "properties": {"PYSPARK_PYTHON": "/usr/bin/python3.11"},
+                        }
+                    ],
+                }
+            ],
+            "monitoringConfiguration": {
+                "s3MonitoringConfiguration": {"logUri": "s3://bucket/logs/"}
+            },
+        }
+    },
+    indent=2,
+)
+
 
 def _write(tmp_path, name: str, text: str):
     target = tmp_path / name
@@ -135,6 +169,13 @@ def _pyspark_facts(tmp_path):
     src = tmp_path / "src"
     _write(src, "job.py", PYSPARK_NO_VERSION)
     return extract_tree(src, repo_root=tmp_path)
+
+
+def _emr_serverless_facts(tmp_path):
+    from sparkforge.facts.emr_serverless import extract_emr_serverless_path
+
+    dump = _write(tmp_path, "emrs/application.json", EMR_SERVERLESS_APPLICATION)
+    return extract_emr_serverless_path(dump, repo_root=tmp_path)
 
 
 def _skipped_for_scope(payload) -> set[str]:
@@ -372,6 +413,45 @@ def test_pyspark_api_syntax_never_infers_a_version(tmp_path):
     assert facts, "a fixture precisa produzir facts de PySpark"
 
     assert _core.runtime_sources_from_facts(facts) == {}
+
+
+def test_an_emr_serverless_release_label_never_infers_a_version(tmp_path):
+    """A mesma fronteira negativa, para o EMR Serverless -- e ate aqui ela
+    existia em CINCO lugares em prosa e em nenhum teste.
+
+    `releaseLabel` do Serverless nao pode alimentar `RuntimeContext.emr`: a AWS
+    publica Spark, Hive e Tez por release e NAO publica Hadoop, Iceberg nem
+    Python (`knowledge/emr-serverless/runtime-matrix.md` secao 4). Tres das
+    quatro colunas de `EMR_MATRIX` nao tem fonte deste lado, e derivar por uma
+    matriz de EMR on EC2 produziria versao de Spark AFIRMADA sem artefato.
+
+    As duas iscas do payload sao os dois campos que, no EMR on EC2, SAO
+    produtores: o release label (`emr.cluster` -> `emr_release`) e
+    `spark-env`/`PYSPARK_PYTHON` (`emr.configuration` -> `python_version`). O
+    extrator le os dois -- eles estao nos facts, com valor --, e nenhum vira
+    fonte de runtime. Se alguem acrescentar a heuristica, este teste fica
+    vermelho, e e para ficar.
+    """
+    facts = list(_emr_serverless_facts(tmp_path))
+
+    # As iscas precisam estar realmente nos facts, senao o teste passa por
+    # vacuidade -- que e como esta classe de invariante costuma apodrecer.
+    assert any(
+        f.kind == "emrs.application" and f.attrs.get("release_label") == "emr-7.5.0"
+        for f in facts
+    ), "a fixture precisa carregar o release label lido"
+    assert any(
+        f.kind == "emrs.configuration" and f.attrs.get("key") == "PYSPARK_PYTHON" for f in facts
+    ), "a fixture precisa carregar PYSPARK_PYTHON lido"
+
+    assert _core.runtime_sources_from_facts(facts) == {}
+
+    context = _core.build_runtime_context(facts=facts)
+    assert context.emr == ""
+    assert context.spark == ""
+    assert context.python == ""
+    assert context.iceberg == ""
+    assert context.detected_from == []
 
 
 # --------------------------------------------------------------------------- #

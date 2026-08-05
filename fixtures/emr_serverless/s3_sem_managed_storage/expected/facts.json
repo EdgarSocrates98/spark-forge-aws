@@ -1,0 +1,84 @@
+[
+  {
+    "id": "f_6e6d69",
+    "schema_version": 1,
+    "kind": "emrs.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "application.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "application_count": 1,
+      "initial_capacity_count": 0,
+      "configuration_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "a059833cc087af5be4cfda8c71637391937a870ac3fba14ebc06c931321c3a80",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_ebd976",
+    "schema_version": 1,
+    "kind": "emrs.application",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsoS300000000001"
+    },
+    "measures": {
+      "initial_capacity_worker_count": 0,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 15
+    },
+    "attrs": {
+      "application_id": "00fsoS300000000001",
+      "name": "so-s3",
+      "release_label": "emr-7.5.0",
+      "type": "Spark",
+      "state": "STARTED",
+      "architecture": "X86_64",
+      "auto_start_declared": false,
+      "auto_stop_declared": true,
+      "auto_stop_enabled": true
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "a059833cc087af5be4cfda8c71637391937a870ac3fba14ebc06c931321c3a80",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  },
+  {
+    "id": "f_87210e",
+    "schema_version": 1,
+    "kind": "emrs.monitoring",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsoS300000000001/monitoring"
+    },
+    "measures": {
+      "log_destination_count": 1
+    },
+    "attrs": {
+      "monitoring_declared": true,
+      "s3_log_uri_present": true,
+      "managed_persistence_enabled": false,
+      "managed_persistence_declared": true,
+      "cloudwatch_enabled": false,
+      "cloudwatch_declared": false,
+      "s3_log_uri": "s3://exemplo-logs/emr-serverless/"
+    },
+    "provenance": {
+      "artifact": "application.json",
+      "artifact_sha256": "a059833cc087af5be4cfda8c71637391937a870ac3fba14ebc06c931321c3a80",
+      "extractor": "emr_serverless@0.1.0"
+    }
+  }
+]

@@ -18,7 +18,9 @@ Mapeia o terreno antes de qualquer análise:
 3. `sparkforge_collect_verify` — quais artefatos já existem e estão íntegros.
 4. Lista o que falta, com o comando exato de recoleta: `sparkforge_collect_event_log`,
    `sparkforge_collect_glue_job`, `sparkforge_collect_cloudwatch`,
-   `sparkforge_collect_iceberg_metadata`, `sparkforge_collect_athena_workgroup`.
+   `sparkforge_collect_iceberg_metadata`, `sparkforge_collect_athena_workgroup`,
+   `sparkforge_collect_emr_serverless` (exige o `applicationId`, nunca o nome — o nome é
+   opcional na API e nenhuma fonte o declara único).
 
 ## Pressupõe
 

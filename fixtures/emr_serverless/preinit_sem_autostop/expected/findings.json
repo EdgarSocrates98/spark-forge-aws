@@ -1,0 +1,71 @@
+[
+  {
+    "rule_id": "SF-EMRS-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Capacidade pré-inicializada com auto-stop desligado — worker faturado com a application ociosa",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fpreinit000000001"
+    },
+    "evidence": [
+      "f_afba8f"
+    ],
+    "measured": {
+      "initial_capacity_worker_count": 11,
+      "release_major": 7,
+      "release_minor": 5
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "É raro uma regra deste catálogo ter a fonte nomeando a combinação defeituosa e a consequência na mesma frase, e esta tem: \"You will be paying for provisioned pre-initialized workers even when the application is idle, hence we suggest enabling it for use cases that benefit from the fast start-up time and sizing it for optimal utilization of resources. EMR Serverless applications automatically shut down when idle. We suggest keeping this feature on when using pre-initialized workers to avoid unexpected charges.\" O mecanismo está declarado nas duas pontas: os workers de initialCapacity existem \"the whole time that the application is in the STARTED state\", e a cobrança vai \"from the time workers are ready to run your workload until the time they stop\". O que se cobra é worker existente, não job rodando, e a única coisa que faz o worker parar é a application parar. Com auto-stop desligado, nada a faz parar. Isto não aparece em métrica de Spark nenhuma — não há job, não há stage, não há falha, só a fatura —, e não aparece porque o defeito é a ausência de execução, não a execução. Os dois termos precisam ser verdadeiros ao mesmo tempo: auto-stop desligado sem pré-init não tem worker de que cobrar, porque \"the state of an application with no pre-initialized capacity can immediately change from CREATED to STARTED\", isto é, sem provisionar nada. O segundo termo conta WORKER declarado, não entrada do map initialCapacity: uma entrada com workerCount zero tem worker nenhum de que cobrar, e uma entrada sem workerCount não tem worker PROVADO — nesse caso o extrator já registrou o ponto cego em emrs.unresolved, e erguer uma P0 sobre ele seria o achado confiante e falso que este catálogo recusa. O que este achado NÃO prova é o quanto se está pagando: ele lê a definição da application, não o uso. E é sobre a definição no momento da coleta — initialCapacity e autoStopConfiguration não são parâmetros de StartJobRun, então nenhum job run os sobrepõe, mas update-application os altera com a application em CREATED ou STOPPED. Ver knowledge/emr-serverless/application-configuration.md seções 3 e 4.",
+    "proposed_change": [
+      "Religar o auto-stop: `aws emr-serverless update-application --application-id <id> --auto-stop-configuration enabled=true,idleTimeoutMinutes=<janela>`, dimensionando a janela pelo maior intervalo ocioso que ainda vale a pena manter os workers quentes.",
+      "Se a pré-init existe para latência de start-up e a application precisa mesmo ficar de pé, medir se ela está sendo usada: a fonte recomenda dimensioná-la 'for optimal utilization of resources', e pré-init subdimensionada é paga e não usada — o memory da capacidade inicial precisa ser maior que o pedido do job mais o overhead de 10% do Spark.",
+      "Se a latência de start-up não é requisito, remover initialCapacity inteira e deixar a application escalar sob demanda; sem pré-init a application vai de CREATED a STARTED sem provisionar worker.",
+      "Conferir o outro lado da conta antes de mexer: a modificação de capacidade é TOTAL, não parcial — 'because you can't make partial modifications, specify all compute configurations when you change values'."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Religar o auto-stop faz a application parar quando ociosa, e a pré-init fica inativa junto: o próximo job paga o tempo de provisionamento que a pré-init existia para evitar. Se a janela ficar curta demais, troca-se fatura por latência sem ninguém ter decidido isso.",
+      "initialCapacity e maximumCapacity só mudam com a application em CREATED ou STOPPED. Mexer neles exige parar a application, então a mudança não é aplicável no meio de um turno de trabalho — diferente do auto-stop, que é alterável a qualquer momento.",
+      "Remover a pré-init de uma application que serve carga interativa muda o perfil de latência percebida, e isso costuma ser reportado como lentidão do produto, não como mudança de configuração."
+    ],
+    "tradeoffs": [
+      "A pré-init com auto-stop LIGADO é o arranjo que a própria AWS recomenda — a regra não acusa pré-init. O que ela acusa é a combinação em que o desligamento automático foi retirado, que é o único jeito de o custo correr indefinidamente.",
+      "Janela de auto-stop longa compra tempo de start-up com dinheiro. Pode ser a decisão certa; o que a regra recusa é que ela seja implícita. O valor da janela é a pergunta de SF-EMRS-005."
+    ],
+    "validation": [
+      "get-application depois da mudança mostrando autoStopConfiguration.enabled=true e a janela escolhida.",
+      "Custo do EMR Serverless por período comparável, antes e depois: é a única evidência que fecha, porque o defeito é de fatura e não de execução.",
+      "Latência de início dos jobs antes e depois, para confirmar que a troca foi a que se pretendia fazer.",
+      "Contagem de linhas e agregados de controle do destino iguais antes e depois; mudar quando a application desliga não pode mudar resultado."
+    ],
+    "rollback": [
+      "`aws emr-serverless update-application --application-id <id> --auto-stop-configuration enabled=false` devolve o estado anterior. Diferente da capacidade, esta propriedade é alterável sem parar a application.",
+      "Se a pré-init foi removida e a latência regrediu, ela volta com update-application e a application em CREATED ou STOPPED, especificando TODAS as configurações de compute de uma vez."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://aws.amazon.com/emr/pricing/",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStopConfig.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html",
+        "retrieved": "2026-08-04"
+      }
+    ]
+  }
+]

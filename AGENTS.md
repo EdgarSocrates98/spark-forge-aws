@@ -1,7 +1,7 @@
 # Agent Instructions — SparkForge AWS
 
 This repository contains reusable Agent Skills for PySpark data engineering on AWS —
-performance on AWS Glue and on Amazon EMR on EC2, plus the placement and cost of data
+performance on AWS Glue and on Amazon EMR — both on EC2 and Serverless — plus the placement and cost of data
 validation inside the job.
 
 ## Operating contract
@@ -58,7 +58,7 @@ which executor ran and with what result — same mechanism as skill tracking
 | `athena-query-optimizer` | custo ou latência na consulta Athena, não no job — bytes escaneados, pruning de partição, engine, workgroup | SF-ATH, SF-PQ |
 | `pyspark-code-reviewer` | revisar código PySpark — PR, biblioteca ou job — correlacionando fonte, plano físico e call graph | SF-PY, SF-PLAN, SF-CG |
 | `iceberg-performance-engineer` | dívida de data files, delete files, manifests, snapshots e manutenção de tabela Iceberg | SF-ICE, SF-PQ |
-| `emr-infra-reviewer` | risco na definição de um cluster Amazon EMR on EC2 — fleets/groups, Spot por papel, managed scaling, Configurations em dois níveis, LogUri | SF-EMR, SF-ENV |
+| `emr-infra-reviewer` | risco na definição de um cluster Amazon EMR on EC2 — fleets/groups, Spot por papel, managed scaling, Configurations em dois níveis, LogUri — **ou** de uma application EMR Serverless: pré-init faturada com a application ociosa, auto-stop, destino de log, segredo em `runtimeConfiguration` | SF-EMR, SF-EMRS, SF-ENV |
 | `data-quality-reviewer` | o job valida dado e a pergunta é se a validação está no lugar certo, se ela tem consequência e quanto custa — não se o dado está correto | SF-DQ |
 
 Which coordinator to use is data, not judgment: routes `AGENT-001`…`AGENT-008` in
@@ -156,9 +156,9 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Seventeen extractors, all offline — they read artifacts already on disk and never
+Eighteen extractors, all offline — they read artifacts already on disk and never
 call AWS. Each has a CLI verb and an MCP tool with the same name, and together
-they emit 106 distinct fact kinds:
+they emit 112 distinct fact kinds:
 
 | Artifact | CLI verb | Reads |
 |---|---|---|
@@ -171,6 +171,7 @@ they emit 106 distinct fact kinds:
 | SQL | `analyze sql` | `*.sql` and `spark.sql(...)` literals |
 | Athena workgroup | `analyze athena-workgroup` | `get_work_group` dump |
 | EMR on EC2 cluster | `analyze emr-cluster` | `describe-cluster` dump and the five that complete it |
+| EMR Serverless application | `analyze emr-serverless` | `get-application` dump |
 | Data validation | `analyze data-quality` | the same `*.py`, read as checks rather than as work |
 | Call graph | `analyze call-graph` | derived from PySpark facts |
 | S3 object listing | `analyze s3-listing` | `s3api list-objects-v2` dump |
@@ -228,7 +229,10 @@ at P0, because every threshold downstream is evaluated against the wrong
 runtime until it is settled. See `knowledge/glue/runtime-matrix.md` for the
 Glue 4.0 / 5.0 / 5.1 matrix and the Iceberg V3 versus Athena trap in Glue 5.1, and
 `knowledge/emr/runtime-matrix.md` for the EMR 6.4.0 → 7.13.0 matrix and what the
-`-amzn-N` suffix means. Outside Glue the release comes from the cluster dump, not from a
+`-amzn-N` suffix means. **EMR Serverless has no matrix**: AWS publishes only Spark, Hive
+and Tez per release, without the `-amzn-N` suffix, so `emrs.application` is not a
+`RuntimeContext` producer and a `get-application` dump yields no `env.platform` at all —
+see `knowledge/emr-serverless/runtime-matrix.md`. Outside Glue the release comes from the cluster dump, not from a
 flag: `--emr` is a declaration, it loses to `describe-cluster` and to the event log, and
 disagreeing with either becomes a reported divergence — never a silent substitution.
 
