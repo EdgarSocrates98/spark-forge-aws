@@ -222,7 +222,7 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 38 tools fazem
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 40 tools fazem
 (seção 10), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
@@ -277,7 +277,8 @@ pergunta disponível, que nunca é o subagente.
 Forneça nesta ordem:
 
 1. Estrutura do repositório.
-2. Terraform — ou, se o Spark roda em EMR on EC2, o dump de `aws emr describe-cluster`.
+2. Terraform — ou, se o Spark roda em EMR on EC2, o dump de `aws emr describe-cluster`;
+   se roda em EMR Serverless, o dump de `aws emr-serverless get-application`.
 3. Entry point.
 4. Biblioteca.
 5. Plano `explain("formatted")`.
@@ -291,6 +292,22 @@ O item 2 troca de artefato porque só ele é específico da plataforma. O resto 
 muda: `analyze emr-cluster --path cluster.json` produz os facts de infraestrutura que
 `analyze terraform` produziria no Glue, e a release do EMR sai do próprio dump, sem
 ninguém precisar declará-la.
+
+Em EMR Serverless o artefato é um só, e os dois verbos são estes:
+
+```bash
+sparkforge collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
+sparkforge analyze emr-serverless --path .sparkforge/artifacts/<dir-ou-arquivo>   --out .sparkforge/facts_emr_serverless.json
+```
+
+`collect` exige o **id** da application e nunca o nome — `name` é opcional na API e a
+documentação não declara unicidade, então resolver por nome escolheria uma entre N
+homônimas em silêncio. **Use o `--out` do `analyze`, não a saída de tela:** o envelope
+pagina em 50 e `runtimeConfiguration` tem teto de 100 propriedades, cada uma virando um
+fact — medido, um dump com 60 propriedades produz 64 facts e a tela mostra 50, com
+`next_cursor` que ninguém precisa ler quando o arquivo tem tudo. Aqui a release **não**
+sai do dump para o `RuntimeContext`: a AWS não publica a matriz do Serverless, e a área
+`SF-EMRS` foi escrita sem guarda de versão justamente por isso.
 
 Se a biblioteca valida dado — `df.filter(...).count()` seguido de aborto,
 `VerificationSuite` do PyDeequ, ou Great Expectations —, rode também

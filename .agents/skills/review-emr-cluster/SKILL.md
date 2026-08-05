@@ -1,6 +1,6 @@
 ---
 name: review-emr-cluster
-description: Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for "por que esse cluster custa isso", "o cluster subiu e não desce", "esse cluster morreu no bootstrap" ou "cadê os logs do cluster que terminou", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-cluster` no olho, rode `sparkforge analyze emr-cluster` e `sparkforge judge` em vez disso — o extrator normaliza grupos e frotas num kind só e o catálogo aplica as regras SF-EMR sobre o que ele achou.
+description: Use quando revisar a definição de um cluster Amazon EMR on EC2 (instance fleets contra instance groups, purchasing option por papel, managed scaling com alocação dinâmica, Configurations de cluster sobrepostas por grupo, maximizeResourceAllocation, partitionOverwriteMode, LogUri, bootstrap actions, segredo em texto claro) em busca de contradição de dimensionamento, custo sem trabalho correspondente ou perda de capacidade de diagnóstico. Use também quando a pergunta for "por que esse cluster custa isso", "o cluster subiu e não desce", "esse cluster morreu no bootstrap" ou "cadê os logs do cluster que terminou", mesmo que ninguém fale em regra. Se você está prestes a ler `describe-cluster` no olho, rode `sparkforge analyze emr-cluster` e `sparkforge judge` em vez disso — o extrator normaliza grupos e frotas num kind só e o catálogo aplica as regras SF-EMR sobre o que ele achou. Cobre também EMR Serverless: se o dump é `get-application`, o verbo é `sparkforge analyze emr-serverless` e a área é SF-EMRS.
 subagent: true
 agent: emr-infra-reviewer
 ---
@@ -144,6 +144,53 @@ catálogo cresce, esta tabela é uma foto.
 | `SF-EMR-007` | `emr.cluster` (`attrs.state_change_reason_code`) | Cluster terminado por falha de bootstrap action — post-mortem, com onde olhar |
 | `SF-EMR-008` | `emr.cluster` + `emr.instance_capacity` (papel `TASK` em Spot), guardado por `emr.yarn.am_node_label` | ApplicationMaster elegível a nó Spot: em deploy-mode cluster ele é o driver, e a perda do nó derruba a aplicação inteira |
 
+## O outro modelo de execução: EMR Serverless
+
+Quando o dump for de `get-application` e não de `describe-cluster`, o procedimento inteiro
+acima **não se aplica** — não há grupo, frota, nó nem `Configurations` em dois níveis. O que
+se aplica é a mesma disciplina, sobre outra área (`SF-EMRS`) e outro namespace (`emrs.*`,
+disjunto de `emr.*` de propósito). A lista autoritativa das regras é
+`sparkforge rules lookup --category emr-serverless`, nunca memória.
+
+São **uma** chamada e um artefato, contra os seis do EC2:
+
+```bash
+sparkforge collect emr-serverless --repo . --application-id 00fXXXXXXXXXXXXX --now <ISO8601>
+sparkforge analyze emr-serverless --path <arquivo ou diretório> \
+  --out .sparkforge/facts_emr_serverless.json
+sparkforge judge --facts .sparkforge/facts_emr_serverless.json --show-skipped
+```
+
+Cinco coisas que decidem a leitura, e nenhuma delas existe no EC2:
+
+- **`--out` não é opcional na prática.** Medido: um `get-application` com 60 propriedades em
+  `runtimeConfiguration` produz 64 facts, e o envelope da tela devolve `returned_count: 50`
+  com `next_cursor: "50"`. O teto de `runtimeConfiguration` é **100 propriedades**, e cada
+  uma vira um `emrs.configuration` — uma application real estoura a página default com
+  facilidade. Quem lê pela tela vê metade da configuração **sem saber**; o arquivo do `--out`
+  traz a lista completa, e é o que `judge --facts` consome.
+- **O id é obrigatório e o nome não serve.** `collect emr-serverless` exige
+  `--application-id`. `name` é `Required: No` na API e a documentação não declara unicidade,
+  então resolver por nome escolheria uma entre N homônimas em silêncio.
+- **Ausência de bloco costuma ser o default SEGURO**, ao contrário do EC2.
+  `autoStopConfiguration.enabled` nasce `true` com 15 minutos, e
+  `managedPersistenceMonitoringConfiguration.enabled` nasce `true` com 30 dias de retenção.
+  Um achado de auto-stop desligado exige o campo **explícito**, e é por isso que
+  `emrs.application` carrega `auto_stop_declared`/`auto_start_declared`: eles separam "veio
+  desligado" de "nunca veio".
+- **`EMR.secret@{{Nome}}` em `runtimeConfiguration` é a correção, não o defeito.** É a
+  anotação de Secrets Manager, e o valor anotado é id de segredo. Acusá-la seria acusar o
+  conserto que o próprio achado recomenda.
+- **`get-application` descreve o PADRÃO da application, e `StartJobRun` o sobrepõe** —
+  inclusive removendo classificação e destino de log. Nenhum achado desta área prova o que um
+  job run executou, e toda recomendação precisa carregar esse recorte.
+
+E o que o motor **não** sabe aqui: `RuntimeContext.emr` fica vazio, porque a AWS não publica a
+matriz de release do Serverless (as páginas trazem só Spark, Hive e Tez, sem `-amzn-N`).
+`env.platform` também não sai — não há identidade de plataforma para Serverless em
+`_PLATFORM_KEYS`. Nenhuma das seis regras `SF-EMRS` depende disso (todas com `runtime_scope`
+vazio), mas versão que você cite entra **declarada**, nunca derivada do `releaseLabel`.
+
 ## Quando NÃO usar
 
 - O job roda em AWS Glue, não em EMR: a área é `SF-GLUE` e a skill é `review-glue-terraform`.
@@ -152,8 +199,11 @@ catálogo cresce, esta tabela é uma foto.
 - O problema está no código ou no plano físico: comece por `sparkforge-diagnose`.
 - A pergunta é sobre tabela Iceberg, small files ou layout: `optimize-iceberg-table` e
   `optimize-parquet-layout`.
-- Você quer decidir capacidade de EMR Serverless ou EMR on EKS: esta área cobre EMR on EC2,
-  e nenhum dos facts descreve os outros dois modelos de execução.
+- Você quer decidir capacidade de **EMR on EKS**: nenhum fact deste repositório descreve
+  virtual cluster, container provider, namespace nem pod template — esse modelo de execução
+  continua sem cobertura, e supor que `SF-EMR` ou `SF-EMRS` vale para ele é inventar.
+  **EMR Serverless deixou de estar nesta lista**: tem extrator, área e verbo próprios, e é a
+  seção acima.
 
 ## Red flags
 
