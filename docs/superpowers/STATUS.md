@@ -29,7 +29,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **4125** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **4157** passando, 5 skipped | `python -m pytest -q` |
 | Regras com `runtime_scope` não-vazio | **8 de 77**, todas sobre Glue | `load_catalog()` |
 | Extratores de facts | **18** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **112** | união de `EMITTED_KINDS` |
@@ -45,14 +45,14 @@ arquivo ganha.
 | Skills | **20** | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **132** em 20 domínios | `fixtures/` |
+| Fixtures golden | **135** em 20 domínios | `fixtures/` |
 | Fontes oficiais vigiadas | **51** | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-EMRS 6, SF-GLUE 6, SF-UI 6, SF-ATH 5,
 SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `pyspark` 17, `emr_serverless` 16, `emr` 13, `dq` 10,
+Fixtures por domínio: `emr_serverless` 19, `pyspark` 17, `emr` 13, `dq` 10,
 `funcval` 9, `iceberg` 8, `plan` 7, `runtime` 7, `terraform` 7, `bench` 6,
 `fusion` 5, `s3` 5, `sql` 4, `athena` 3, `callgraph` 3, `catalog` 3,
 `consumers` 3, `eventlog` 2, `infra_code` 2, `tfdiff` 2.
@@ -1259,17 +1259,19 @@ o spec ganhou §11 com os desvios que o tornaram errado, e não foi reescrito.
 
 **Números medidos no fechamento** (eram, ao fechar a 4c, os da esquerda): regras
 71 → **77**, áreas 13 → **14**, extratores 17 → **18**, kinds 106 → **112**,
-fixtures 116 em 19 domínios → **132 em 20**, tools MCP 38 → **40** (e **40 de
+fixtures 116 em 19 domínios → **135 em 20**, tools MCP 38 → **40** (e **40 de
 40** alcançáveis a partir de algum coordenador), fontes vigiadas 37 → **51**,
-testes 3831 → **4125**, 5 skipped. Rotas 24, coordenadores 8, executores 5,
-skills 20 e gates 4 — nenhum dos cinco mudou.
+testes 3831 → **4157**, 5 skipped. Rotas 24, coordenadores 8,
+executores 5, skills 20 e gates 4 — nenhum dos cinco mudou. As três fixtures
+acima de 132 e os testes acima de 4125 entraram na **revisão final**, descrita no
+fim desta seção.
 
 **O que entrou.** `knowledge/emr-serverless/` com dois arquivos de fonte datada;
 `sparkforge/facts/emr_serverless.py` com seis kinds `emrs.*`;
 `collect emr-serverless` e `analyze emr-serverless` nas cinco superfícies
-declarativas **mais uma sexta que nenhum documento previa**; 16 fixtures com
-golden bidirecional; a área `SF-EMRS` com 6 regras e três vetos escritos no
-cabeçalho; e `tests/test_rules_emrs_boundary.py`, que mede a fronteira com
+declarativas **mais uma sexta que nenhum documento previa**; **19** fixtures com
+golden bidirecional (16 no fechamento, 3 na revisão final); a área `SF-EMRS` com
+6 regras e três vetos escritos no cabeçalho; e `tests/test_rules_emrs_boundary.py`, que mede a fronteira com
 `SF-EMR` nas duas direções.
 
 **A pergunta da matriz de runtime teve um terceiro desfecho, e ele decide o resto
@@ -1282,7 +1284,7 @@ na `EMR_MATRIX`. Nas 24 releases comparáveis a versão de comunidade do Spark
 coincide uma a uma — mas três das quatro colunas não têm fonte do lado do
 Serverless. **O produtor não entra, e a razão escrita é "sem fonte", nunca "as
 matrizes divergem"**: afirmar divergência seria afirmar o que ninguém mediu. A
-consequência atravessa a fase inteira — as 16 fixtures declaram `runtime: {}`, as
+consequência atravessa a fase inteira — as 19 fixtures declaram `runtime: {}`, as
 6 regras têm `runtime_scope` vazio, e um `get-application` não emite
 `env.platform` nenhum, porque `_PLATFORM_KEYS` conhece só `emr` e `glue`.
 
@@ -1324,10 +1326,50 @@ das seis regras, no corpo do coordenador e na skill. Ver a linha própria em
 na escrita do manifesto, e nenhuma seção do spec ou do plano a citava. As cinco
 listadas são declarativas; esta é executável e falha tarde.
 
-**Quarenta e dois desvios registrados** (`D-5d-1` a `D-5d-42`, sem lacuna nem
-duplicata). Trinta e cinco cabeçalhos citam uma Task do plano, onze citam o spec
-e quatro citam os dois — a §11 do spec recolhe os que tornam aquele documento
-errado, e ela é o único lugar em que o spec foi tocado.
+**Quarenta e cinco desvios registrados** (`D-5d-1` a `D-5d-45`, sem lacuna nem
+duplicata; os três últimos são da revisão final). Trinta e cinco cabeçalhos citam
+uma Task do plano, onze citam o spec e quatro citam os dois — a §11 do spec
+recolhe os que tornam aquele documento errado, e ela é o único lugar em que o
+spec foi tocado.
+
+**A revisão final fechou quatro ressalvas, e uma delas era uma P0 falsa.**
+
+1. **Duas frases publicadas que o próprio HEAD tornou falsas.** `knowledge/INDEX.md`
+   ainda dizia que as fontes de `emr-serverless/` não estavam no lock — estão,
+   e o lock foi de 37 para **51** (13 URLs de Serverless mais
+   `aws.amazon.com/emr/pricing/`, que duas regras citam). E o docstring do golden
+   de Serverless ainda prometia a Task 5 no futuro, quando **6 das 16** fixturas
+   de então já disparavam regra, uma por `SF-EMRS`. As duas viraram passado, na
+   forma que `test_fixtures_golden_emr.py` já usava desde a 5b.
+2. **A P0 que disparava sobre pré-init sem worker** (`D-5d-43`). O measure que as
+   duas regras de custo liam contava **entradas do map `initialCapacity`**, não
+   workers: `{"DRIVER": {"workerCount": 0}}` com auto-stop desligado disparava
+   `SF-EMRS-001` em **P0**, e o mesmo payload **sem** `workerCount` disparava P0
+   no mesmo julgamento em que saía `emrs.unresolved{missing_worker_count}` —
+   achado confiante erguido sobre ponto cego declarado. A `explanation` da regra
+   funda o achado em *"o que se cobra é worker existente"*, e nenhum dos dois
+   prova worker existente. **Endurecido, não declarado como limite:** a fonte
+   registra `workerCount` só como "(número)", sem `Required` e sem mínimo, então
+   nada torna o estado inalcançável. O measure virou
+   `initial_capacity_worker_count`, soma dos `workerCount` **lidos**; a contagem
+   de entradas já existia em `emrs.analyzed`. Duas fixtures novas, dois payloads
+   cada, e 14 goldens de facts regenerados.
+3. **O invariante do runtime deixou de existir só em prosa.** `releaseLabel` do
+   Serverless não pode alimentar `RuntimeContext.emr`, e isso estava escrito em
+   **cinco** lugares e guardado por **zero** testes. Agora há um, na forma que o
+   repositório já usava para PySpark: `runtime_sources_from_facts(facts) == {}`,
+   com as duas iscas que no EC2 **são** produtoras — o release label e
+   `spark-env`/`PYSPARK_PYTHON` — presentes nos facts e afirmadas antes, para o
+   teste não passar por vacuidade.
+4. **A anotação de segredo é bypass incondicional, e o produto negava.** Ver a
+   linha própria em *Limites declarados*: o comportamento fica, com a razão de
+   fonte; o que mudou foi a prosa que afirmava o contrário, em três lugares.
+
+E uma quinta medição, que virou **dívida** em vez de conserto: das 7 regras do
+catálogo com `severity_by`, **6 tinham ramo de severidade sem golden nenhum**.
+Não é regressão da 5d — é anterior. `SF-EMRS-005` fechou o seu com dois payloads
+(1440 e 1439, que fixam o ramo P2 **e** o limiar `field-heuristic`); os **cinco**
+restantes estão registrados, com o teste que falta nomeado.
 
 ## Dívidas — fechadas em 2026-07-31
 
@@ -1545,8 +1587,15 @@ A divergência foi medida ao fechar a Fase 5d, contando as linhas em vez de soma
 o que a fase anterior tinha escrito. É o mesmo defeito que este arquivo acusa em
 `AGENTS.md`: número copiado envelhece, número medido não.
 
-**Contagem corrente, depois da Fase 5d (2026-08-05): 7 dívidas, 5 fases,
-16 limites declarados — 28 linhas abertas, e 25 fechadas.** Esta é a que vale.
+**Contagem depois da Fase 5d (2026-08-05) — superada pela da revisão final,
+logo abaixo: 7 dívidas, 5 fases, 16 limites declarados — 28 linhas abertas, e 25
+fechadas.**
+
+**Contagem corrente, depois da revisão final da Fase 5d (2026-08-05): 8 dívidas,
+5 fases, 17 limites declarados — 30 linhas abertas, e 25 fechadas.** Esta é a que
+vale, e as três parcelas foram obtidas **contando as linhas das três tabelas**,
+não somando o que a rodada anterior escreveu — que é o defeito registrado no
+parágrafo acima.
 
 **O que a Fase 5d moveu.** Nenhuma linha fechou, e uma **encolheu pela metade**:
 "EMR Serverless e EMR on EKS" passou a nomear só EKS. Em troca a fase abriu
