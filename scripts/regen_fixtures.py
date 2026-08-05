@@ -374,6 +374,23 @@ def regen_bench(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def with_plan_ref(result: dict, plan) -> dict:
+    """O resultado do operador com o `plan_ref` do plano que o corpus derivou.
+
+    Publica de proposito: `tests/test_fixtures_golden_funcval.py` refaz a
+    derivacao passo a passo, e esta injecao e a UNICA parte que nao pode divergir
+    por reimplementacao -- um `plan_ref` derivado de dois jeitos e o defeito que
+    a D-4c-22 recusou escrever a mao.
+
+    Nao muta o `input/`: recebe o objeto ja carregado e devolve uma copia. E nao
+    sobrescreve `plan_ref` declarado, porque fixture que declara o campo esta
+    afirmando sobre ele.
+    """
+    if str(result.get("plan_ref", "") or ""):
+        return result
+    return {**result, "plan_ref": plan.id}
+
+
 def regen_funcval(directory: Path) -> None:
     """Corpus de validacao funcional -- o unico que cobre DOIS verbos.
 
@@ -402,6 +419,18 @@ def regen_funcval(directory: Path) -> None:
     Os `*.json` de resultado sao os valores que o OPERADOR mediu. O motor nunca
     os produz -- se produzisse, estaria medindo, e a fase inteira existe para
     dizer que quem mede e o operador.
+
+    O `plan_ref` e injetado AQUI, na regeneracao, e nao escrito nos `*.json`
+    (D-4c-22). Ele e o `Fact.id` do `funcval.plan`, sha1 de (kind, subject,
+    measures), entao depende do corpus: escrito a mao no `input/`, ele
+    desatualizaria na primeira mudanca de `input/` e a fixture passaria a
+    quebrar por uma razao que nao e a dela -- e um `plan_ref` desatualizado e
+    exatamente o defeito que `_reject_foreign_plan_ref` existe para pegar.
+    Derivado na regeneracao, ele sobrevive a mudanca de `input/` pelo mesmo
+    mecanismo que faz o resto do golden sobreviver. A injecao so preenche o lado
+    que OMITE `plan_ref`: fixture que declare o campo esta afirmando alguma coisa
+    sobre ele (o conflito entre os lados, por exemplo), e sobrescrever isso
+    apagaria a fixture em vez de completa-la.
     """
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     input_dir = directory / "input"
@@ -427,8 +456,8 @@ def regen_funcval(directory: Path) -> None:
             )
         derived = build_comparison(
             plans[0].attrs,
-            json.loads(before_file.read_text(encoding="utf-8")),
-            json.loads(after_file.read_text(encoding="utf-8")),
+            with_plan_ref(json.loads(before_file.read_text(encoding="utf-8")), plans[0]),
+            with_plan_ref(json.loads(after_file.read_text(encoding="utf-8")), plans[0]),
             path_hint=directory.name,
         )
 
