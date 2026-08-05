@@ -1074,22 +1074,30 @@ def benchmark_runs(
 # --------------------------------------------------------------------------- #
 
 
-def _write_facts_artifact(out_path: str, facts: list[Fact], label: str) -> None:
+def _write_facts_artifact(
+    out_path: str, facts: list[Fact], label: str, example: str
+) -> None:
     """Grava a lista COMPLETA de facts (nunca a pagina) no caminho pedido.
 
-    A escrita mora aqui, e nao na CLI como nos verbos de `analyze`, porque o
-    plano nao e so uma saida legivel: e o ARTEFATO que `funcval compare --plan`
-    rele e que o gate `functional_validation_defined` cobra. Um cliente MCP que
-    so recebesse `structuredContent` teria a capacidade pela CLI e nao pelo MCP
-    -- a assimetria que `parity.yaml` existe para pegar, e a mesma razao pela
-    qual `report sign` escreve em vez de devolver o bloco para alguem colar.
+    A escrita mora aqui, e nao na CLI como nos verbos de `analyze`, porque
+    nenhum dos dois arquivos de `funcval` e so uma saida legivel: o plano e o
+    ARTEFATO que `funcval compare --plan` rele e que o gate
+    `functional_validation_defined` cobra, e a comparacao e o arquivo que
+    `judge --facts` le (D-4c-26). Um cliente MCP que so recebesse
+    `structuredContent` teria a capacidade pela CLI e nao pelo MCP -- a
+    assimetria que `parity.yaml` existe para pegar, e a mesma razao pela qual
+    `report sign` escreve em vez de devolver o bloco para alguem colar.
+
+    `example` e o comando do verbo QUE CHAMOU, e nao um exemplo fixo: mandar
+    quem errou o diretorio no `compare` rodar um `plan` seria o motor sugerindo
+    o passo errado no unico momento em que a pessoa esta seguindo a sugestao.
     """
     target = Path(out_path)
     if not target.parent.exists():
         raise AdapterError(
             f"Diretorio nao encontrado para {label}: {target.parent}\n"
             f"  Crie o diretorio antes, ou aponte para um caminho existente:\n"
-            f"    sparkforge funcval plan --facts <facts.json> --out .sparkforge/plan.json",
+            f"    {example}",
             exit_code=2,
         )
     target.write_text(
@@ -1146,7 +1154,12 @@ def funcval_plan(
     derived = build_plan(
         facts, keys=tuple(keys or ()), path_hint="+".join(facts_paths)
     )
-    _write_facts_artifact(out_path, derived, "--out")
+    _write_facts_artifact(
+        out_path,
+        derived,
+        "--out",
+        "sparkforge funcval plan --facts <facts.json> --out .sparkforge/plan.json",
+    )
     return _facts_page(derived, "funcval.unresolved", kind, limit, cursor)
 
 
@@ -1255,6 +1268,7 @@ def funcval_compare(
     plan_path: str,
     before_path: str,
     after_path: str,
+    out_path: str | None = None,
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
@@ -1276,6 +1290,25 @@ def funcval_compare(
     check que rodou e nao deu, check que o plano pediu e nao veio, e os tres
     bloqueios de comparacao inteira sao pontos cegos de verdade, e silencio ali
     seria indistinguivel de "nenhuma divergencia".
+
+    `out_path` e OPCIONAL, ao contrario do `--out` do plano, e a diferenca nao e
+    esquecimento: o plano e a ENTRADA deste verbo e a evidencia do gate, entao
+    plano sem arquivo nao serve para nada; a comparacao e saida terminal, e o
+    arquivo dela e a mesma conveniencia que `benchmark` e `fuse` oferecem. O que
+    ele conserta e a D-4c-26: `judge --facts` le ARQUIVO, e sem `--out` o
+    operador tinha que extrair `items` do envelope com `jq` ou `python -c` entre
+    os dois passos. Pior que o passo a mais: o envelope PAGINA (`--limit` vale
+    50 por default), entao quem extrai `items` sem conferir `next_cursor` julga a
+    primeira pagina e chama aquilo de comparacao -- o defeito que a
+    `SF-FVAL-005` acusa no dado do operador, cometido pelo fluxo do motor.
+
+    Por isso o arquivo traz a lista COMPLETA e nao a pagina: a escrita acontece
+    ANTES de `_facts_page`, sobre `facts`. Um `--out` que gravasse a pagina seria
+    a mesma armadilha com o nome trocado.
+
+    A escrita mora aqui e nao na CLI pelo mesmo motivo do plano: um cliente MCP
+    que so recebesse `structuredContent` teria pela CLI uma capacidade que nao
+    tem pelo MCP, e a assimetria entre as duas superficies e defeito por si so.
     """
     plan_facts = _load_facts_file(plan_path, _FACTS_FROM_FUNCVAL_PLAN, "--plan")
     plans = [fact for fact in plan_facts if fact.kind == "funcval.plan"]
@@ -1296,6 +1329,14 @@ def funcval_compare(
     facts = build_comparison(
         chosen.attrs, before, after, path_hint=f"{before_path}..{after_path}"
     )
+    if out_path:
+        _write_facts_artifact(
+            out_path,
+            facts,
+            "--out",
+            "sparkforge funcval compare --plan <plano.json> --before <antes.json> "
+            "--after <depois.json> --out .sparkforge/funcval.json",
+        )
     return _facts_page(facts, "funcval.unresolved", kind, limit, cursor)
 
 
