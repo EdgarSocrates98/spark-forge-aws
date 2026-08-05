@@ -1,0 +1,652 @@
+# Catálogo de regras — definição de application Amazon EMR Serverless
+#
+# Depende do extrator `sparkforge/facts/emr_serverless.py` (Fase 5d, Task 2),
+# que lê o dump já coletado de UMA chamada — `aws emr-serverless
+# get-application`. Diferente do EMR on EC2, que exige seis subcomandos, aqui a
+# resposta única traz capacidade inicial, capacidade máxima, auto-start/stop,
+# `runtimeConfiguration` e `monitoringConfiguration` no mesmo objeto.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O LIMITE QUE VALE PARA AS SEIS REGRAS, e por que ele não é a mesma frase
+# copiada seis vezes.
+#
+# `get-application` devolve **o padrão da application**, e a documentação
+# declara a sobreposição: "The priority of configurations that you provide at
+# `StartJobRun` supersede the configurations that you provide at the application
+# level". O merge inclui REMOÇÃO — `properties: {}` apaga uma classificação,
+# `s3MonitoringConfiguration: {}` apaga o destino S3. Nenhum achado desta área
+# prova o que um job run executou.
+#
+# A consequência não é uniforme, e é por isso que cada `explanation` diz a sua
+# em vez de repetir a genérica:
+#
+# - Em SF-EMRS-003 e SF-EMRS-004 o limite ENFRAQUECE o achado nas duas direções:
+#   um job run pode ter passado o seu próprio destino de log, e pode também ter
+#   removido o que a application declara. O achado é sobre a definição.
+# - Em SF-EMRS-002 o limite NÃO enfraquece nada. O que a regra acusa é o valor
+#   estar na resposta de `GetApplication` agora, para qualquer principal com
+#   permissão de leitura. Um job run que substitua a classificação não desfaz
+#   isso; o que ele desfaz é o uso, não a exposição.
+# - Em SF-EMRS-001, SF-EMRS-005 e SF-EMRS-006 a sobreposição documentada nem
+#   alcança os campos: ela é declarada para `applicationConfiguration` e
+#   `monitoringConfiguration`, e `initialCapacity`, `maximumCapacity` e
+#   `autoStopConfiguration` não são parâmetros de `StartJobRun`. O limite ali é
+#   outro, e é temporal: `update-application` altera essas três com a
+#   application em `CREATED` ou `STOPPED`, então o achado descreve a definição
+#   no momento da coleta.
+#
+# Ver `knowledge/emr-serverless/application-configuration.md` §0.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# ESCOPO. Toda regra desta área declara `runtime_scope: {}`, e aqui isso é mais
+# forte do que a decisão de `emr-infra.yaml:8-19` — lá o argumento é que a
+# release já vem no fact e um segundo guarda só poderia subtrair cobertura; aqui
+# a matriz **não existe**.
+#
+# `knowledge/emr-serverless/runtime-matrix.md` mediu as 24 páginas de release do
+# Serverless uma a uma: elas publicam Spark, Hive e Tez, e **não** publicam
+# Hadoop, Iceberg nem Python; o Spark vem sem o sufixo `-amzn-N`. Três das
+# quatro colunas de `EMR_MATRIX` não têm fonte deste lado, então o `releaseLabel`
+# NÃO alimenta `RuntimeContext.emr` (D-5d-5). Num `sparkforge judge` sobre um
+# artefato de Serverless, `RuntimeContext.emr` é vazio por construção — e
+# `in_scope` falha FECHADA. Uma regra desta área com escopo de versão seria
+# pulada em toda execução real e em todo golden, e o corpus ficaria verde por
+# SKIP, que é pior que ficar vermelho porque ninguém investiga o que passou.
+# `tests/test_fixtures_golden_emr_serverless.py::TestGolden::test_no_rule_of_this_area_is_skipped_for_runtime_scope`
+# transforma esse silêncio em falha.
+#
+# Quando a série da release importar, a condição vai no `when`, sobre
+# `measures.release_major` — que só existe quando o label casa
+# `emr-<major>.<minor>.<patch>`, e é omitida em `emr-spark-8.0.0` e
+# `emr-spark-8.0-preview` (D-5d-6). Nenhuma regra desta área precisa disso hoje.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE A PESQUISA DE 2026-08-04 VETOU OU REDUZIU. Não reintroduzir.
+#
+# As cinco candidatas do spec sobreviveram — nenhuma morreu por falta de fonte —,
+# mas **duas mudaram de forma**, e nas duas a mudança é exatamente o que impede a
+# regra de acusar o default seguro da AWS. O que morreu foi outra coisa.
+#
+# 1. "Application sem destino de log declarado", na forma do SF-EMR-006 — MORTO
+#    NESTA FORMA, e a fonte é quem mata. No EMR on EC2 `LogUri` ausente significa
+#    sem destino. No Serverless, `ManagedPersistenceMonitoringConfiguration.enabled`
+#    "defaults to true", e "By default, EMR Serverless stores application logs
+#    securely in Amazon EMR managed storage for a maximum of 30 days".
+#    `monitoringConfiguration` AUSENTE significa PROTEGIDO. Uma regra que
+#    dispare por ausência acusaria toda application que nunca tocou em
+#    monitoramento — que é a maioria —, e acusar configuração correta é o pior
+#    tipo de defeito de regra segundo `rules/catalog/README.md`. O que
+#    sobrevive é SF-EMRS-003, conjunção que exige `enabled: false` ESCRITO, e
+#    ela lê `measures.log_destination_count`, o fact que já é a conjunção dos
+#    três destinos (D-5d-15). Um `where` só sobre
+#    `managed_persistence_enabled == false` acusaria `s3_sem_managed_storage`,
+#    que grava log em S3 — e essa fixture existe no corpus por isso.
+#
+# 2. "Auto-stop desligado" sozinho — REDUZIDO, e o corte tem fonte. A cobrança é
+#    por worker existente: "You are charged for aggregate vCPU, memory, and
+#    storage resources used from the time workers are ready to run your workload
+#    until the time they stop". Uma application sem `initialCapacity` vai de
+#    `CREATED` a `STARTED` sem provisionar nada — "The state of an application
+#    with no pre-initialized capacity can immediately change from `CREATED` to
+#    `STARTED`" —, então ociosa ela não tem worker de que cobrar. Auto-stop
+#    desligado SEM pré-init não é o mesmo defeito, e SF-EMRS-001 exige os dois
+#    termos. Isso é a diferença estrutural com o `SF-EMR-009`: num cluster EC2
+#    ocioso a fatura corre SEMPRE, porque as instâncias estão de pé.
+#
+#    **Limite declarado deste corte:** que uma application `STARTED` sem pré-init
+#    custe ZERO é DEDUÇÃO do modelo de cobrança, não frase da AWS. A coleta não
+#    encontrou página afirmando ausência de cobrança de outra natureza, e não
+#    encontrar não é o mesmo que não existir. O que o corte compra é não acusar
+#    uma configuração cujo custo esta coleta não conseguiu demonstrar; o que ele
+#    custa é o silêncio sobre um custo que talvez exista. A fixture
+#    `sem_preinit_nada_a_cobrar` é o golden NEGATIVO dessa decisão: se um dia a
+#    AWS publicar cobrança por application existente, é ela que precisa mudar de
+#    lado, e o `expects_rules` vazio dela é o lugar onde isso aparece.
+#
+# 3. "Regra por AUSÊNCIA de `autoStopConfiguration`" — MORTO, e pelo motivo
+#    inverso do item 6 do cabeçalho de `emr-infra.yaml`. Lá a regra por ausência
+#    morreu porque o motor não sabe perguntar por measure ausente; aqui ela
+#    morreria de qualquer jeito porque a resposta estaria ERRADA:
+#    `autoStopConfiguration.enabled` "Defaults to true" com
+#    `idleTimeoutMinutes` "Defaults to 15 minutes". Ausência do bloco é o estado
+#    SEGURO. O extrator não materializa esse default de propósito (D-5d-16), e
+#    `attrs.auto_stop_declared` existe para o achado distinguir "a AWS não
+#    devolveu o bloco" de "o bloco veio" — nenhuma regra desta área precisou
+#    dele no `when`, e isso é o resultado certo: a chave OMITIDA já faz o
+#    `where` não casar.
+#
+# 4. `autoStartConfiguration` — VETADO, e não por falta de fonte. Com auto-start
+#    ligado, "A stopped application starts automatically when you submit a new
+#    job". Isso é conveniência, não defeito, e desligá-lo também não é: a
+#    consequência é o operador precisar chamar `start-application` antes de
+#    submeter. Não há custo nem risco de diagnóstico ligado ao campo que a fonte
+#    sustente. O extrator emite `auto_start_enabled` e `auto_start_declared`
+#    como descrição; nenhuma regra os lê, e isso não é dívida (ver a seção
+#    seguinte).
+#
+# 5. "Pré-init subdimensionada" — VETADO por indecidibilidade no artefato, e é o
+#    veto mais doloroso porque a fonte descreve o defeito com precisão: "For jobs
+#    to use pre-initialized workers, the initial capacity memory configuration
+#    should be greater than the memory that the job and the overhead request", e
+#    o Spark acrescenta 10% de overhead por default. Pré-init subdimensionada é
+#    paga E não usada — o pior dos dois mundos, invisível em métrica de Spark.
+#    O que falta é o outro lado da comparação: `spark.executor.memory` do job
+#    mora no `StartJobRun` ou no `runtimeConfiguration`, e o segundo caso seria
+#    decidível — mas só ele, e uma regra que acuse apenas quando o job declara a
+#    memória na application produziria silêncio exatamente onde a prática comum
+#    (declarar no job run) está. Ela nasce quando existir extrator de
+#    `get-job-run`, junto. NÃO nasce `blocked_on`:
+#    `tests/test_fixtures_kind_coverage.py::test_every_rule_has_a_fixture_that_fires_it`
+#    exige golden positivo para TODA regra, e o motor pula regra com
+#    `blocked_on` antes de olhar os facts — declará-la hoje quebraria a suíte.
+#
+# 6. `schedulerConfiguration` (`maxConcurrentRuns`, `queueTimeoutMinutes`) —
+#    CANDIDATO, não dívida, e o extrator nem o lê. Ele só existe em `emr-7.0.0`
+#    e acima, e nenhuma página lida nesta coleta declara o default de
+#    `queueTimeoutMinutes` nem o que acontece com o job quando ele expira. Regra
+#    sem fonte lida é o que a regra 1 de `rules/catalog/README.md` proíbe.
+#
+# 7. Citar o bloco *Warning* de texto claro do EMR on EC2 em SF-EMRS-002 —
+#    PROIBIDO, e essa é a diferença mais fácil de errar desta área. O aviso que
+#    sustenta o `SF-EMR-002` — "Amazon EMR Describe and List API operations emit
+#    custom and configurable settings (...) in plaintext" — **não foi encontrado
+#    na documentação do EMR Serverless** (D-5d-8). O que sustenta a regra aqui é
+#    a afirmação equivalente pelo avesso, na página de Secrets Manager, mais o
+#    *Response Syntax* de `GetApplication`. Copiar a URL do EC2 para cá seria
+#    citar fonte que não fala deste serviço.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE O EXTRATOR EMITE E NENHUMA REGRA LÊ — e por que nada disso é dívida.
+#
+# O critério é o mesmo que `emr-infra.yaml:107-147` fixou: capacidade de
+# extrator sem consumidor é dívida; atributo descritivo transcrito de uma
+# resposta que o extrator JÁ lê por outro motivo, não é. Lá o exemplo de dívida
+# era `measures.idle_timeout_seconds`, que era a razão INTEIRA de um dos seis
+# subcomandos existir. Aqui **não há esse caso**, e a razão é estrutural: o
+# coletor faz UMA chamada (`get_application`, e só ela —
+# `TestCollectEmrServerless.test_one_call_and_only_get_application` trava isso),
+# então todo campo cai de graça da mesma resposta. Não existe chamada de API
+# nesta área que só produza dado que ninguém julga.
+#
+# - `emrs.initial_capacity` INTEIRO — o kind com mais facts do corpus, e nenhuma
+#   regra o cita. É deliberado: a comparação com `maximumCapacity` mora em
+#   `emrs.application` (D-5d-17) porque `engine._condition_candidates` avalia um
+#   fact por vez e a soma atravessa facts. O kind existe para a ARITMÉTICA ser
+#   auditável — o operador que receber SF-EMRS-006 consegue reconstruir os três
+#   eixos a partir dos facts irmãos do que o achado cita. Fact sem regra que o
+#   leia, mas com consumidor humano declarado.
+# - `attrs.state` — DESCRITIVO. `CREATING|CREATED|STARTING|STARTED|STOPPING|
+#   STOPPED|TERMINATED` são todos legítimos; estado não é defeito. Tentador para
+#   SF-EMRS-006 ("se nunca chega a STARTED, a capacidade é impossível"), e é
+#   justamente ali que ele NÃO pode entrar: a fonte não declara a reachability,
+#   e usar o estado como prova dela seria inventar a metade que falta.
+# - `attrs.architecture` (`ARM64|X86_64`), `attrs.type`, `attrs.name` —
+#   DESCRITIVOS. `type` não tem `Valid Values` na referência de API, então
+#   tratá-lo como vocabulário fechado seria afirmar o que a fonte não diz.
+# - `measures.release_major`/`release_minor` — CONTEXTO, e a razão de existirem
+#   é negativa: elas provam que o label casou a forma numérica. Nenhuma regra
+#   desta área varia com a série hoje.
+# - `attrs.s3_log_uri` — DESCRITIVO, e útil no achado: SF-EMRS-004 cita o fact
+#   que o carrega, então o operador vê para onde o log vai sem uma segunda
+#   chamada.
+# - `attrs.capacity_axes_exceeded` — lido por HUMANO, não por `where`. `where` só
+#   compara igualdade e a lista tem sete combinações possíveis; a regra pergunta
+#   pelo booleano e o `explanation` manda ler a lista no fact citado.
+# - `attrs.monitoring_declared`, `managed_persistence_declared`,
+#   `cloudwatch_declared` — a distinção entre LIDO e PRESUMIDO. Nenhuma regra
+#   precisou deles no `when` porque `log_destination_count == 0` só é
+#   alcançável com managed persistence declarada `false` (o default é `true`,
+#   e presumido ele contaria 1). Ficam para o achado e para quem for escrever a
+#   próxima regra.
+# ─────────────────────────────────────────────────────────────────────────────
+
+catalog_version: 1
+schema_version: 1
+area: SF-EMRS
+retrieved: 2026-08-04
+
+rules:
+
+  # Os DOIS termos moram na MESMA condição, sobre o MESMO fact, e isso não é
+  # estilo. `engine._condition_candidates` avalia condição a condição contra a
+  # lista inteira de facts: duas condições `- fact: emrs.application` casariam
+  # com applications DIFERENTES num diretório com vários payloads, e o achado
+  # cruzaria o auto-stop de uma com a capacidade da outra — duas configurações
+  # corretas acusadas como uma errada. `same_subject` não resolveria: ele
+  # agrupa por subject e as duas condições já teriam o mesmo subject dentro do
+  # grupo, mas o custo seria uma partição inútil sobre um problema que a
+  # condição única já fecha. Por isso o extrator carrega
+  # `measures.initial_capacity_worker_type_count` DENTRO de `emrs.application`
+  # (D-5d-17), em vez de a regra correlacionar com `emrs.initial_capacity`.
+  #
+  # `where: {attrs.auto_stop_enabled: false}` e não `absent:` nem
+  # `auto_stop_declared: false`: a chave só existe quando a application
+  # DECLAROU o desligamento. Bloco ausente significa o default da AWS, que é
+  # ligado com 15 minutos — o estado seguro. A fixture
+  # `autostop_ausente_default_seguro` é o golden negativo dessa distinção.
+  - id: SF-EMRS-001
+    category: emr-serverless
+    title: Capacidade pré-inicializada com auto-stop desligado — worker faturado com a application ociosa
+    requires_facts: [emrs.application]
+    when:
+      all:
+        - fact: emrs.application
+          where: {attrs.auto_stop_enabled: false}
+          expr: "measures.initial_capacity_worker_type_count >= 1"
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      É raro uma regra deste catálogo ter a fonte nomeando a combinação
+      defeituosa e a consequência na mesma frase, e esta tem: "You will be
+      paying for provisioned pre-initialized workers even when the application
+      is idle, hence we suggest enabling it for use cases that benefit from the
+      fast start-up time and sizing it for optimal utilization of resources.
+      EMR Serverless applications automatically shut down when idle. We suggest
+      keeping this feature on when using pre-initialized workers to avoid
+      unexpected charges." O mecanismo está declarado nas duas pontas: os
+      workers de initialCapacity existem "the whole time that the application is
+      in the STARTED state", e a cobrança vai "from the time workers are ready
+      to run your workload until the time they stop". O que se cobra é worker
+      existente, não job rodando, e a única coisa que faz o worker parar é a
+      application parar. Com auto-stop desligado, nada a faz parar. Isto não
+      aparece em métrica de Spark nenhuma — não há job, não há stage, não há
+      falha, só a fatura —, e não aparece porque o defeito é a ausência de
+      execução, não a execução. Os dois termos precisam ser verdadeiros ao mesmo
+      tempo: auto-stop desligado sem pré-init não tem worker de que cobrar,
+      porque "the state of an application with no pre-initialized capacity can
+      immediately change from CREATED to STARTED", isto é, sem provisionar nada.
+      O que este achado NÃO prova é o quanto se está pagando: ele lê a definição
+      da application, não o uso. E é sobre a definição no momento da coleta —
+      initialCapacity e autoStopConfiguration não são parâmetros de StartJobRun,
+      então nenhum job run os sobrepõe, mas update-application os altera com a
+      application em CREATED ou STOPPED. Ver
+      knowledge/emr-serverless/application-configuration.md seções 3 e 4.
+    proposed_change:
+      - "Religar o auto-stop: `aws emr-serverless update-application --application-id <id> --auto-stop-configuration enabled=true,idleTimeoutMinutes=<janela>`, dimensionando a janela pelo maior intervalo ocioso que ainda vale a pena manter os workers quentes."
+      - "Se a pré-init existe para latência de start-up e a application precisa mesmo ficar de pé, medir se ela está sendo usada: a fonte recomenda dimensioná-la 'for optimal utilization of resources', e pré-init subdimensionada é paga e não usada — o memory da capacidade inicial precisa ser maior que o pedido do job mais o overhead de 10% do Spark."
+      - Se a latência de start-up não é requisito, remover initialCapacity inteira e deixar a application escalar sob demanda; sem pré-init a application vai de CREATED a STARTED sem provisionar worker.
+      - "Conferir o outro lado da conta antes de mexer: a modificação de capacidade é TOTAL, não parcial — 'because you can't make partial modifications, specify all compute configurations when you change values'."
+    risks:
+      - "Religar o auto-stop faz a application parar quando ociosa, e a pré-init fica inativa junto: o próximo job paga o tempo de provisionamento que a pré-init existia para evitar. Se a janela ficar curta demais, troca-se fatura por latência sem ninguém ter decidido isso."
+      - "initialCapacity e maximumCapacity só mudam com a application em CREATED ou STOPPED. Mexer neles exige parar a application, então a mudança não é aplicável no meio de um turno de trabalho — diferente do auto-stop, que é alterável a qualquer momento."
+      - Remover a pré-init de uma application que serve carga interativa muda o perfil de latência percebida, e isso costuma ser reportado como lentidão do produto, não como mudança de configuração.
+    tradeoffs:
+      - "A pré-init com auto-stop LIGADO é o arranjo que a própria AWS recomenda — a regra não acusa pré-init. O que ela acusa é a combinação em que o desligamento automático foi retirado, que é o único jeito de o custo correr indefinidamente."
+      - Janela de auto-stop longa compra tempo de start-up com dinheiro. Pode ser a decisão certa; o que a regra recusa é que ela seja implícita. O valor da janela é a pergunta de SF-EMRS-005.
+    validation:
+      - "get-application depois da mudança mostrando autoStopConfiguration.enabled=true e a janela escolhida."
+      - "Custo do EMR Serverless por período comparável, antes e depois: é a única evidência que fecha, porque o defeito é de fatura e não de execução."
+      - Latência de início dos jobs antes e depois, para confirmar que a troca foi a que se pretendia fazer.
+      - Contagem de linhas e agregados de controle do destino iguais antes e depois; mudar quando a application desliga não pode mudar resultado.
+    rollback:
+      - "`aws emr-serverless update-application --application-id <id> --auto-stop-configuration enabled=false` devolve o estado anterior. Diferente da capacidade, esta propriedade é alterável sem parar a application."
+      - Se a pré-init foi removida e a latência regrediu, ela volta com update-application e a application em CREATED ou STOPPED, especificando TODAS as configurações de compute de uma vez.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html", retrieved: 2026-08-04}
+      - {url: "https://aws.amazon.com/emr/pricing/", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStopConfig.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html", retrieved: 2026-08-04}
+
+  # `requires_facts` traz `emrs.application` junto com `emrs.configuration`, e
+  # não só o segundo. A razão é a mesma que `emr-infra.yaml:474-480` registra
+  # para SF-EMR-006: a sentinela `emrs.analyzed` seria genérica demais — ela sai
+  # até para payload ilegível —, e ancorar SÓ em `emrs.configuration` faria a
+  # regra sumir de `findings` E de `skipped` numa application que simplesmente
+  # não tem `runtimeConfiguration`. Com `emrs.application` na lista, um dump que
+  # não pôde ser lido reporta `requires_facts`, que é a verdade.
+  - id: SF-EMRS-002
+    category: emr-serverless
+    title: Segredo em texto claro em runtimeConfiguration da application
+    requires_facts: [emrs.application, emrs.configuration]
+    when:
+      all:
+        - fact: emrs.configuration
+          where: {attrs.secret_pattern_match: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A documentação do EMR Serverless não traz o bloco Warning sobre texto
+      claro em operações Describe e List que existe no EMR on EC2, e esta regra
+      não o cita. O que ela cita é a afirmação equivalente pelo avesso, na
+      página de Secrets Manager: "When you store your data in Secrets Manager
+      and use the secret ID in your configurations for EMR Serverless, you don't
+      pass sensitive configuration data to EMR Serverless in plain text and
+      expose it to external APIs." A leitura é direta — sem o cofre, o dado É
+      passado em texto claro e É exposto a APIs externas —, e o Response Syntax
+      de GetApplication confirma o que essa exposição é concretamente:
+      runtimeConfiguration[].properties volta como map de string para string,
+      sem redação, para qualquer principal com permissão de LEITURA sobre a
+      application. É achado de segurança e tem precedência sobre qualquer
+      recomendação de performance no mesmo relatório. Aqui o limite de
+      StartJobRun não enfraquece o achado, e vale dizer por quê: um job run pode
+      substituir a classificação inteira ou removê-la com properties vazio, e
+      isso muda o que o JOB usa — não muda que o literal está na resposta de
+      GetApplication agora. O valor nunca aparece no Fact: o extrator o
+      substitui por <redigido> e marca attrs.secret_pattern_match, para que o
+      próprio corpus de análise não vire a segunda cópia do segredo. E a
+      remediação desta área tem mecanismo próprio, mais barato que o do EMR on
+      EC2: anota-se o valor com EMR.secret@{{NomeDoSegredo}} e o EMR Serverless
+      "calls Secrets Manager and resolves the secret at the time of job
+      execution". Um valor já anotado é ID de segredo, não segredo, e esta regra
+      não o acusa — acusá-lo seria acusar exatamente a correção que ela
+      recomenda. Ver knowledge/emr-serverless/application-configuration.md
+      seção 7.
+    proposed_change:
+      - "Guardar o valor no AWS Secrets Manager e referenciá-lo na própria propriedade com a anotação do serviço: `\"spark.hadoop.javax.jdo.option.ConnectionPassword\": \"EMR.secret@{{NomeDoSegredo}}\"`."
+      - "Rotacionar o segredo exposto; ele deve ser considerado comprometido, porque não há como saber quem chamou GetApplication desde que a propriedade foi escrita."
+      - "Conceder ao papel de execução do job a permissão de leitura sobre o segredo; a resolução acontece na hora da execução do job, então é o papel do job que precisa dela, não o de quem criou a application."
+      - Revisar o IaC e o histórico do repositório que criou a application, onde o literal costuma persistir depois de removido da definição.
+      - Revisar quem tem emr-serverless:GetApplication e ListApplications na conta.
+    risks:
+      - Rotacionar segredo em uso exige coordenação com todos os consumidores; a janela entre rotação e reconfiguração derruba o job.
+      - "runtimeConfiguration só é alterável com a application em CREATED ou STOPPED, então a correção exige uma janela de parada — menos que o EMR on EC2, onde Configurations não é editável e corrigir significa cluster novo, mas não é imediato."
+      - "Job já em execução não pega valor novo: 'if you or a process updates the secret value in Secrets Manager, you must submit a new job so that the job can fetch the updated value'. Rotacionar durante um job longo não interrompe o job, e é por isso que o job seguinte pode falhar sem ninguém associar as duas coisas."
+    tradeoffs:
+      - Nenhum. Não existe justificativa de performance para manter segredo em texto claro numa superfície de leitura.
+    validation:
+      - GetApplication da application corrigida não contém mais o literal, e a propriedade aparece com o prefixo EMR.secret@.
+      - Um job novo executa com sucesso lendo do cofre — a resolução acontece na transição para running, então só um job novo prova.
+      - O segredo anterior está revogado, confirmado por uma tentativa de uso que falha.
+    rollback: >
+      Não reverter para o literal em texto claro. Se a resolução do cofre falha,
+      a correção é a política de IAM do papel de execução do job, não o método
+      de armazenamento.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/secrets-manager.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_GetApplication.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Configuration.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html", retrieved: 2026-08-04}
+      - {origin: field-heuristic, note: "O MECANISMO é da fonte, não de campo: a página de Secrets Manager declara a exposição pelo avesso e o Response Syntax de GetApplication mostra o map sem redação. O que é heurística de campo é o RECONHECIMENTO — os quatro padrões (`_looks_like_secret`) que decidem que uma propriedade carrega credencial são os mesmos de `facts/terraform.py` e `facts/emr_cluster.py`, e nenhuma página da AWS enumera nomes de propriedade sensíveis. A precedência de `EMR.secret@` sobre a heurística, essa é da fonte, e é o que impede a regra de acusar a própria correção."}
+
+  # A condição é UMA, sobre `measures.log_destination_count`, e a decomposição em
+  # três termos mora no EXTRATOR de propósito (D-5d-15). Escrever aqui os três
+  # `where` separados pareceria mais explícito e seria pior: os defaults da AWS
+  # são assimétricos — managed persistence nasce `true`, CloudWatch nasce
+  # `false` —, então cada termo precisaria carregar o seu default junto para não
+  # mentir, e o `where` do motor só compara igualdade. O extrator já aplica os
+  # defaults documentados campo a campo e resume; a regra pergunta a conjunção
+  # numa leitura só, sobre um fact só.
+  #
+  # `== 0` e não `<= 0`: a measure é uma contagem de destinos, e negativo não
+  # existe. `<=` sugeriria uma escala que não há.
+  - id: SF-EMRS-003
+    category: emr-serverless
+    title: Nenhum destino de log na definição da application — diagnóstico impossível
+    requires_facts: [emrs.application, emrs.monitoring]
+    when:
+      all:
+        - fact: emrs.monitoring
+          expr: "measures.log_destination_count == 0"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Não é problema de performance; é de capacidade de diagnóstico, e é o
+      análogo de SF-EMR-006 e SF-GLUE-002 no EMR Serverless — com uma diferença
+      que muda a leitura do achado: aqui o estado não pode ter acontecido por
+      omissão. O armazenamento gerenciado tem default LIGADO ("enables managed
+      logging and defaults to true"), e "by default, EMR Serverless stores
+      application logs securely in Amazon EMR managed storage for a maximum of
+      30 days". Zero destinos exige managedPersistence desligado por escrito,
+      nenhum s3MonitoringConfiguration.logUri e CloudWatch não habilitado ao
+      mesmo tempo — três atos, e a AWS declara o preço do primeiro sozinho: "if
+      you turn off the default option, Amazon EMR can't troubleshoot your jobs
+      on your behalf. Example: You cannot access Spark-UI from the EMR
+      Serverless Console." Sem event log e sem log de container, este motor não
+      diagnostica nada: as áreas SF-UI, SF-PLAN e metade de SF-PY dependem de
+      artefato de execução que ninguém está gravando. O limite de StartJobRun
+      corta nas DUAS direções aqui, e é preciso dizer as duas: um job run pode
+      ter passado o seu próprio s3MonitoringConfiguration e estar gravando log
+      apesar desta definição — então o achado não prova que nenhum log existe —,
+      e um job run pode também REMOVER o destino que a application declara,
+      passando s3MonitoringConfiguration vazio. O que o achado prova é que a
+      definição da application não oferece destino nenhum, e portanto que todo
+      job que não trouxer o seu próprio não deixa rastro. Ver
+      knowledge/emr-serverless/application-configuration.md seção 6.
+    proposed_change:
+      - "Religar o armazenamento gerenciado: é a opção que a AWS recomenda manter, é a única que sustenta as UIs embutidas, e não exige bucket nem política."
+      - "Se a retenção de 30 dias do armazenamento gerenciado não basta, acrescentar s3MonitoringConfiguration com um prefixo S3 e política de ciclo de vida — e manter o gerenciado ligado junto, porque S3 sozinho não sustenta a UI de aplicação."
+      - "Avaliar cloudWatchLoggingConfiguration quando a operação já vive no CloudWatch; ele nasce desligado e é o único dos três que precisa ser pedido explicitamente."
+      - "Antes de mudar, perguntar por que os três foram desligados: dado de aplicação no log é a razão legítima mais comum, e a resposta para ela é política de acesso no prefixo, não ausência de log."
+    risks:
+      - Log de container pode conter dado de aplicação; o destino precisa da mesma política de acesso do dado que o job processa.
+      - Logs consomem armazenamento continuamente; sem política de ciclo de vida no prefixo S3 o custo cresce sem teto. O armazenamento gerenciado não tem esse risco, e também não tem como estender os 30 dias.
+      - "A mudança não é retroativa: o que já foi executado sem destino não deixou rastro, e nenhuma configuração futura o recupera."
+    tradeoffs:
+      - Custo marginal de armazenamento contra a possibilidade de diagnosticar qualquer coisa depois do fato. Desligar tudo é uma economia real, e a contrapartida declarada pela AWS é a impossibilidade de a própria AWS ajudar no troubleshooting.
+      - "Manter os três destinos ligados duplica o log de container. Quando a retenção longa importa, o par gerenciado + S3 é o que a tabela da AWS marca como suportado para a UI de aplicação; CloudWatch entra por operação, não por diagnóstico de Spark."
+    validation:
+      - GetApplication depois da mudança mostrando pelo menos um destino habilitado.
+      - Um job novo executado e o event log localizado no destino escolhido — a configuração declarada e o objeto gravado são duas afirmações diferentes.
+      - Acesso à UI de aplicação pelo console do EMR Serverless para um job recente, que é o que o armazenamento gerenciado compra.
+    rollback:
+      - Desfazer é update-application com a configuração de monitoramento anterior. O que não volta é o log dos jobs executados no intervalo.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_ManagedPersistenceMonitoringConfiguration.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_CloudWatchLoggingConfiguration.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MonitoringConfiguration.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html", retrieved: 2026-08-04}
+
+  # Os DOIS termos são obrigatórios, e cada um sozinho seria uma regra errada:
+  # `managed_persistence_enabled: false` sozinho acusaria a fixture
+  # `sem_destino_de_log`, que já é SF-EMRS-003 e cujo problema é maior;
+  # `s3_log_uri_present: true` sozinho acusaria toda application que grava em S3,
+  # que é a maioria das corretas. O achado só existe no cruzamento: HÁ destino de
+  # log, e mesmo assim se perdeu a UI.
+  - id: SF-EMRS-004
+    category: emr-serverless
+    title: Armazenamento gerenciado desligado com log em S3 — o log sobrevive, a UI de aplicação não
+    requires_facts: [emrs.application, emrs.monitoring]
+    when:
+      all:
+        - fact: emrs.monitoring
+          where:
+            attrs.managed_persistence_enabled: false
+            attrs.s3_log_uri_present: true
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Esta application grava log — o destino S3 está declarado —, e mesmo assim
+      perdeu uma capacidade que a tabela de opções da AWS declara linha a linha.
+      Com "Amazon S3 bucket" como única opção, event logs e container logs vão
+      para o bucket e a Application UI aparece como "Not supported"; com
+      "Managed storage" ou com "Both managed storage and S3" ela é "Supported".
+      A recomendação da mesma página é explícita: "We suggest that you keep the
+      Managed storage option selected. Otherwise, you can't use the built-in
+      application UIs." O efeito prático é que o log existe, está íntegro, e a
+      investigação de um job passa a exigir baixar e ler event log em vez de
+      abrir a Spark UI — o que muda o custo de cada investigação, não a
+      possibilidade dela. Por isso este achado é menos grave que SF-EMRS-003,
+      que é a ausência de qualquer destino, e os dois nunca disparam juntos: um
+      exige s3_log_uri_present verdadeiro, o outro exige contagem zero. O
+      trade-off legítimo por trás desta configuração é retenção: o armazenamento
+      gerenciado guarda "a maximum of 30 days" e não há como estendê-lo, então
+      quem precisa de log mais antigo precisa de S3 — e a resposta correta é
+      manter os DOIS, não trocar um pelo outro. O limite de StartJobRun vale
+      aqui como em SF-EMRS-003: o merge é por tipo de configuração, então um job
+      run pode trazer o seu próprio managedPersistenceMonitoringConfiguration e
+      voltar ao default ligado; o achado é sobre a definição da application. Ver
+      knowledge/emr-serverless/application-configuration.md seção 6.
+    proposed_change:
+      - "Religar managedPersistenceMonitoringConfiguration e manter o destino S3: a tabela da AWS marca 'Both managed storage and S3' como suportado para a UI de aplicação, então não há escolha a fazer entre os dois."
+      - "Se o motivo de ter desligado foi custo, medi-lo antes de reverter: o armazenamento gerenciado tem retenção máxima de 30 dias, então o volume é limitado por construção, diferente do prefixo S3 sem ciclo de vida."
+      - Se o motivo foi política de dados — não querer log de aplicação fora do bucket controlado —, a decisão pode estar certa, e o que este achado pede é que ela fique declarada junto com a perda da UI, não que seja revertida.
+    risks:
+      - Religar o armazenamento gerenciado passa a duplicar o log de container, que vai para os dois destinos.
+      - Log em armazenamento gerenciado sai do controle direto do bucket da conta, e em ambiente com requisito de residência ou de criptografia por chave própria isso precisa ser conferido antes.
+    tradeoffs:
+      - "Trinta dias contra acesso à UI embutida. Manter os dois destinos resolve o dilema, e o custo é o volume duplicado de log de container."
+      - "Este achado é P2 de propósito: o log existe. Tratá-lo como P1 competiria com a ausência total de destino, que é outra ordem de problema."
+    validation:
+      - GetApplication mostrando managedPersistenceMonitoringConfiguration habilitado e o s3MonitoringConfiguration preservado.
+      - A UI de aplicação abre pelo console do EMR Serverless para um job executado depois da mudança.
+      - Objetos continuam chegando ao prefixo S3, para confirmar que religar o gerenciado não substituiu o destino existente.
+    rollback:
+      - "update-application com a configuração de monitoramento anterior. Não há perda associada ao rollback além da própria UI: o log em S3 nunca foi interrompido."
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_ManagedPersistenceMonitoringConfiguration.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html", retrieved: 2026-08-04}
+
+  # `expr` com `and` em vez de duas condições, pela mesma razão de SF-EMRS-001:
+  # duas condições `- fact: emrs.application` casariam com applications
+  # diferentes. E `and` em vez de `where` para o segundo termo porque `where` só
+  # compara igualdade, e os dois termos são comparações de ordem.
+  #
+  # Atenção ao avaliador: `_eval` de `ast.BoolOp` avalia TODOS os operandos
+  # antes de decidir — não há curto-circuito. Uma application sem
+  # `idle_timeout_minutes` levanta ExprError no primeiro operando, e
+  # `_expr_matches` a engole e devolve falso, que é o resultado certo: bloco de
+  # auto-stop ausente é o default seguro.
+  - id: SF-EMRS-005
+    category: emr-serverless
+    title: Janela de ociosidade do auto-stop larga demais para parar a application que paga pré-init
+    requires_facts: [emrs.application]
+    when:
+      all:
+        - fact: emrs.application
+          expr: >-
+            measures.idle_timeout_minutes >= threshold.idle_timeout_minutes
+            and measures.initial_capacity_worker_type_count >= 1
+    threshold:
+      idle_timeout_minutes: 1440
+    status: confirmed
+    severity_by:
+      # 10080 minutos são os 7 dias que a referência de API declara como
+      # "Maximum value" — a janela mais permissiva que se pode pedir. Ela
+      # existe, aparece em auditoria como controle de custo, e só age depois de
+      # uma semana inteira de application ociosa com worker de pé. É o mesmo
+      # teto do IdleTimeout do EMR on EC2 (604800 s), o que dá número de FONTE
+      # ao ramo mais permissivo nos dois modelos.
+      - {when: "measures.idle_timeout_minutes >= 10080", severity: P1}
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      O auto-stop está LIGADO — esta não é a application de SF-EMRS-001, e a
+      pergunta é outra. O defeito aqui não é a ausência do controle, é a janela:
+      um idleTimeoutMinutes maior que o intervalo ocioso típico da application
+      nunca é alcançado. A application fica parada a noite inteira, o relógio de
+      ociosidade reinicia no primeiro job da manhã, e o auto-stop nunca para
+      nada. O controle existe no papel e não age nenhuma vez, enquanto os
+      workers de initialCapacity continuam existindo — e é worker existente que
+      se cobra, "from the time workers are ready to run your workload until the
+      time they stop". O segundo termo da condição não é zelo: sem pré-init a
+      application ociosa não tem worker de que cobrar, porque "the state of an
+      application with no pre-initialized capacity can immediately change from
+      CREATED to STARTED", e uma janela larga ali não custa fatura de worker.
+      Essa linha é DEDUÇÃO do modelo de cobrança, não frase da AWS: esta coleta
+      não encontrou página afirmando que uma application STARTED sem pré-init
+      custe zero, e não encontrar não é o mesmo que não existir — o que o corte
+      compra é não acusar uma configuração cujo custo não se conseguiu
+      demonstrar. Nada disso aparece em métrica de Spark: não há job, não há
+      stage, não há falha, só a fatura. O que este achado NÃO prova é que a
+      application esteja de fato ociosa; ele lê a definição, e a definição no
+      momento da coleta — autoStopConfiguration não é parâmetro de StartJobRun,
+      mas update-application a altera a qualquer momento. Ver
+      knowledge/emr-serverless/application-configuration.md seções 3 e 4.
+    proposed_change:
+      - Dimensionar a janela pelo maior intervalo ocioso que ainda vale a pena manter a pré-init quente, medido no histórico de submissão de job runs e não estimado.
+      - "Se a janela larga existe para evitar o tempo de provisionamento da pré-init entre execuções, tornar isso explícito: nomear quantas vezes por dia esse ganho é usado, e comparar com o custo do worker parado no resto do tempo."
+      - Para application que roda uma carga por dia com folga longa entre execuções, avaliar remover a pré-init em vez de alargar a janela; sem pré-init não há o que manter quente, e o auto-stop deixa de ser o controle de custo principal.
+      - "Conferir o piso antes de encurtar: a referência declara 'minimum value of 1' minuto, e uma janela de um minuto derruba a pré-init entre dois jobs do mesmo lote."
+    risks:
+      - "Este é o risco central: encurtar a janela para a application no intervalo entre dois jobs de um mesmo processamento, e o job seguinte paga o provisionamento inteiro da pré-init. O intervalo entre submissões precisa ser medido antes, não depois."
+      - Application parada com auto-start ligado volta sozinha ao receber job, mas com a latência de start-up completa. Onde há requisito de latência declarado, encurtar a janela pode violá-lo sem nenhum sinal de erro.
+      - "A propriedade é alterável a qualquer momento, então o efeito é imediato — inclusive o indesejado. Aplicar em janela de baixo movimento."
+    tradeoffs:
+      - Janela larga compra tempo de espera com dinheiro. Pode ser a decisão certa quando religar a pré-init custa minutos no meio de um turno de trabalho; o que a regra recusa é que a decisão fique implícita num número que ninguém escolheu.
+      - "Limite declarado do gatilho: a regra lê o VALOR da janela e não pergunta com que frequência a application fica ociosa por esse tempo. Onde a application é de fato usada continuamente, a janela larga nunca chega a importar, e o achado é verdadeiro e inconsequente. O caminho de medir o intervalo ocioso real não existe neste artefato — ele está no histórico de job runs, que esta fase não lê."
+    validation:
+      - GetApplication mostrando a janela nova.
+      - "Histórico de parada da application antes e depois: quantas vezes o auto-stop efetivamente parou a application no período, e não só que ele está configurado."
+      - Custo do EMR Serverless por período comparável, antes e depois.
+      - Latência de início dos job runs antes e depois, para confirmar que a troca foi a pretendida.
+    rollback:
+      - "`aws emr-serverless update-application --application-id <id> --auto-stop-configuration enabled=true,idleTimeoutMinutes=<valor-anterior>`. Este rollback não exige parar a application."
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStopConfig.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html", retrieved: 2026-08-04}
+      - {url: "https://aws.amazon.com/emr/pricing/", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html", retrieved: 2026-08-04}
+      - {origin: field-heuristic, note: "A fonte sustenta TODOS os números citados: o default de `enabled` (`true`), o default de 15 minutos, o mínimo de 1 e o máximo de 10080 (sete dias), e o modelo de cobrança por worker existente. O que ela NÃO declara é um ponto a partir do qual a janela passa a ser larga demais — esse ponto não existe na documentação, e o limiar de 1440 minutos é escolha de campo. Ele é um dia inteiro, e a razão da escolha é estrutural, não estatística: qualquer intervalo ocioso INTRADIÁRIO -- fim de expediente, madrugada, janela entre cargas -- é menor que 24 h, então uma janela de um dia ou mais não pode ser alcançada por nenhum deles e existe sem nunca agir. É o mesmo argumento e o mesmo número do limiar de 86400 s do SF-EMR-009, em minutos. O ramo P1 em 10080, esse sim, é o valor da fonte: é o teto da API. E o segundo termo da condição -- exigir pré-init -- apoia-se numa DEDUÇÃO declarada como tal no cabeçalho deste arquivo, item 2: que uma application ociosa sem pré-init não tenha worker faturável segue do modelo de cobrança, e não de uma frase da AWS."}
+
+  # A regra mais frágil desta área, e a fragilidade está declarada em vez de
+  # escondida. A ARITMÉTICA tem fonte: as unidades de `initialCapacity` e de
+  # `maximumCapacity` são restringidas pelos MESMOS patterns na referência de
+  # API, `MB` não é expressável, o número é inteiro positivo — então somar
+  # `workerCount × cpu`, idem memória e disco, e comparar eixo a eixo é
+  # aritmética segura, e "no new resources will be created once any one of the
+  # defined limits is hit" autoriza tratar os eixos independentemente. O que NÃO
+  # tem fonte é a REACHABILITY: não há declaração de que a API aceite nem de que
+  # rejeite essa configuração.
+  #
+  # `where` sobre o booleano, e nunca sobre `capacity_axes_exceeded`: o extrator
+  # OMITE as duas chaves quando falta dado para decidir (`maximumCapacity` é
+  # `Required: No`, `disk` é opcional), e omitir é como este motor diz que não
+  # sabe. Escrever `false` ali afirmaria que a capacidade cabe.
+  - id: SF-EMRS-006
+    category: emr-serverless
+    title: Capacidade pré-inicializada somada acima do teto declarado da application
+    requires_facts: [emrs.application]
+    when:
+      all:
+        - fact: emrs.application
+          where: {attrs.initial_exceeds_maximum: true}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A soma de workerCount x cpu, workerCount x memory e workerCount x disk
+      sobre as entradas de initialCapacity estoura o maximumCapacity declarado
+      em pelo menos um eixo — o fact citado por este achado traz
+      attrs.capacity_axes_exceeded com quais. maximumCapacity é "the maximum
+      capacity of the application. This is cumulative across all workers at any
+      given point in time (...). No new resources will be created once any one
+      of the defined limits is hit", e é essa última frase que autoriza tratar
+      os eixos independentemente: basta um. A consequência plausível é que a
+      pré-init nunca seja provisionada por inteiro, e "an application moves to
+      the STARTED state only if the requested pre-initialized capacity has been
+      created and is ready to use" — mas AQUI a fonte para, e o achado precisa
+      parar junto. Não foi encontrada nenhuma declaração de que a API aceite
+      essa configuração, nem de que a rejeite; a página não trata do caso. A
+      reachability do estado é, portanto, NÃO DOCUMENTADA, e isso muda como ler
+      o achado de um jeito que vale a pena tornar explícito: se a API rejeitasse
+      o estado, este achado não poderia existir sobre artefato real, porque
+      get-application nunca o devolveria. Ele aparecer é, ele próprio, a
+      evidência de que o estado é atingível. A fixture positiva do corpus é
+      CONSTRUÍDA, não observada, e o meta.yaml dela diz isso. Este achado não
+      prova o que um job run executou, e nem poderia: initialCapacity e
+      maximumCapacity não são parâmetros de StartJobRun, então nenhuma
+      sobreposição de job run os alcança — o que ele descreve é a definição da
+      application no momento da coleta, alterável por update-application com a
+      application em CREATED ou STOPPED. Ver
+      knowledge/emr-serverless/application-configuration.md seção 5.
+    proposed_change:
+      - "Decidir qual dos dois números está errado antes de mexer: o teto é baixo demais para a pré-init pretendida, ou a pré-init foi dimensionada sem olhar o teto. O eixo que estourou, no fact citado, é o que diz qual conversa ter."
+      - "Corrigir com update-application, especificando TODAS as configurações de compute de uma vez — 'because you can't make partial modifications, specify all compute configurations when you change values' — e com a application em CREATED ou STOPPED."
+      - "Se o teto existe como guarda de custo, subi-lo derruba a guarda: nesse caso a correção é reduzir a pré-init, não alargar o teto."
+      - "Conferir o estado da application depois da mudança: ela precisa alcançar STARTED, e a fonte condiciona isso à pré-init inteira estar criada e pronta."
+    risks:
+      - "Subir maximumCapacity remove o limite que impedia a application de escalar sem teto; o custo passa a ser limitado só pela demanda dos jobs."
+      - "Reduzir a pré-init muda a latência de start-up dos jobs que a usavam, e isso costuma ser reportado como lentidão do produto."
+      - "A mudança exige a application em CREATED ou STOPPED, então não é aplicável no meio de um turno de trabalho."
+    tradeoffs:
+      - "O teto e a pré-init respondem a perguntas opostas — um limita gasto, o outro compra latência — e este achado é o ponto em que as duas respostas se contradizem numérica e explicitamente. Qual delas cede é decisão de operação, não de análise."
+      - "Limite declarado do gatilho: a regra compara números da definição e não afirma que a application esteja quebrada. Se a API rejeitar essa configuração na escrita, o achado simplesmente nunca aparece."
+    validation:
+      - "get-application depois da mudança com a soma dos três eixos abaixo do teto, recalculada a partir dos facts emrs.initial_capacity."
+      - "A application alcança o estado STARTED, que é a evidência de que a pré-init inteira foi provisionada."
+      - Latência de início dos job runs antes e depois, se a correção foi reduzir a pré-init.
+    rollback:
+      - "update-application com os valores anteriores, novamente com todas as configurações de compute especificadas de uma vez e a application parada. O rollback restaura a contradição, então ele é o caminho de emergência, não o desfecho."
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MaximumAllowedResources.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_WorkerResourceConfig.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/applications.html", retrieved: 2026-08-04}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html", retrieved: 2026-08-04}
+      - {origin: field-heuristic, note: "A ARITMÉTICA tem fonte inteira: `WorkerResourceConfig` e `MaximumAllowedResources` usam os MESMOS patterns para `cpu`, `memory` e `disk`, o conjunto de unidades é fechado e minúsculo (vCPU em três grafias, GB em quatro), `MB` não é expressável e o número é inteiro positivo sem decimal — então a comparação numérica é segura e a armadilha de unidades não pode ocorrer neste artefato. O que é heurística de campo é a REACHABILITY do estado acusado: nenhuma página declara que a API aceite `initialCapacity` acima de `maximumCapacity`, e nenhuma declara que a rejeite. A consequência plausível -- a application não alcançar `STARTED` -- é leitura de campo em cima de uma frase que fala de outro caso ('an application moves to the STARTED state only if the requested pre-initialized capacity has been created and is ready to use'). Por isso a fixture positiva do corpus é CONSTRUÍDA e não observada, e por isso a severidade é P1 e não P0: o mecanismo do dano não está declarado, só o número que se contradiz."}

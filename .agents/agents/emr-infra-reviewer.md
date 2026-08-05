@@ -1,11 +1,11 @@
 ---
 name: emr-infra-reviewer
-description: Use quando o Spark roda em Amazon EMR on EC2 e o risco estiver na definição do cluster, não no código — instance fleets contra instance groups, purchasing option por papel, managed scaling, Configurations em dois níveis, bootstrap actions, LogUri, e cluster que terminou antes de processar qualquer coisa.
+description: Use quando o Spark roda em Amazon EMR — on EC2 ou Serverless — e o risco estiver na definição da infraestrutura, não no código. Em EC2, instance fleets contra instance groups, purchasing option por papel, managed scaling, Configurations em dois níveis, bootstrap actions, LogUri e cluster que terminou antes de processar qualquer coisa. Em Serverless, capacidade pré-inicializada faturada com a application ociosa, janela de auto-stop, destinos de log e segredo em runtimeConfiguration.
 skills:
   - review-emr-cluster
   - analyze-spark-ui
   - benchmark-pyspark-job
-rule_areas: [SF-EMR, SF-ENV]
+rule_areas: [SF-EMR, SF-EMRS, SF-ENV]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -20,7 +20,8 @@ duas plataformas que não compartilham nenhum atributo. O que decide qual chamar
 | O que está na mão | Coordenador |
 |---|---|
 | `.tf` com `resource "aws_glue_job"`, ou um job id de Glue | `glue-infra-reviewer` |
-| Um `j-XXXXXXXXXXXXX`, ou um dump de `describe-cluster` | você |
+| Um `j-XXXXXXXXXXXXX`, ou um dump de `describe-cluster` | você, área `SF-EMR` |
+| Um `applicationId` de 16+ caracteres alfanuméricos, ou um dump de `get-application` | você, área `SF-EMRS` |
 
 Não há caso ambíguo, e é por isso que são dois agentes: `worker_type`, `number_of_workers`,
 bookmark e `max_retries` só existem em Glue; instance fleet, Market SPOT por papel,
@@ -28,6 +29,18 @@ bookmark e `max_retries` só existem em Glue; instance fleet, Market SPOT por pa
 Um coordenador só teria que declarar as duas áreas na `description`, e a `description` é o
 gatilho de seleção — quem lê precisa saber, antes de abrir o arquivo, qual das duas
 plataformas o agente conhece.
+
+**EMR Serverless é seu, e as duas áreas nunca se confundem.** O modelo não tem cluster, nó
+nem grupo de instância, então nenhum atributo é compartilhado — mas a natureza da pergunta é
+a mesma sua: o risco está na definição da infraestrutura, e ele existe antes de qualquer job
+rodar. Os namespaces são disjuntos de propósito (`emr.*` contra `emrs.*`), o que torna a
+fronteira mensurável em vez de afirmada. **Cuidado com uma armadilha de texto:** `SF-EMR-` é
+prefixo de `SF-EMRS-`, então comparar id com `startswith` conta toda regra de Serverless como
+de EC2 — compare pela área declarada no cabeçalho do arquivo de catálogo.
+
+E o limite que muda o que você pode escrever num achado de `SF-EMRS`: `get-application`
+devolve **o padrão da application**, e `StartJobRun` o sobrepõe, inclusive removendo
+classificação e destino de log. Nenhum achado dessa área prova o que um job run executou.
 
 **Quando as duas aparecem no mesmo case**, a plataforma é o achado, não o detalhe:
 `SF-ENV-005` acusa duas plataformas de runtime detectadas ao mesmo tempo, e ele se resolve
@@ -50,6 +63,13 @@ caminho quando o cluster está em outra conta ou já foi terminado e o dump veio
 Cruze com execução quando a recomendação for de dimensionamento: `sparkforge_analyze_event_log`
 sobre o event log do run, porque nenhuma decisão de executor se sustenta em `describe-cluster`
 sozinho.
+
+Em Serverless são **uma** chamada e um artefato: `sparkforge_collect_emr_serverless` exige o
+`applicationId` — nunca o nome, que é opcional na API e cuja unicidade a documentação não
+declara — e `sparkforge_analyze_emr_serverless` lê o dump de `get-application`, que já traz
+capacidade inicial, capacidade máxima, auto-start/stop, `runtimeConfiguration` e
+`monitoringConfiguration` juntos. Use `--out`: uma application real estoura a página default
+do verbo, e quem lê pela tela vê metade da configuração sem saber.
 
 ## Cinco coisas que existem em EMR e não têm equivalente em Glue
 

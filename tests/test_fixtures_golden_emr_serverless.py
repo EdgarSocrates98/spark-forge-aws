@@ -86,6 +86,13 @@ REQUIRED_FIXTURES = {
     # metade do vocabulario de `emrs.unresolved` nao aparece em golden nenhum.
     "secoes_malformadas",
     "identidade_ausente",
+    # A decima sexta, acrescentada pela Task 5 e medida pela verificacao de
+    # apagabilidade, nao prevista por tabela nenhuma: `initial_capacity_worker_type_count
+    # >= 1` e termo de SF-EMRS-001 e de SF-EMRS-005, e sem uma application SEM
+    # pre-init os dois termos podiam ser apagados do catalogo sem nenhum golden
+    # reclamar. Dois payloads, um por regra, porque as duas condicoes de
+    # auto-stop sao mutuamente exclusivas.
+    "sem_preinit_nada_a_cobrar",
 }
 
 

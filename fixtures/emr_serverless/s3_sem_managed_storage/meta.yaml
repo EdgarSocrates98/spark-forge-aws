@@ -26,4 +26,5 @@ expects_kinds:
   - emrs.analyzed
   - emrs.application
   - emrs.monitoring
-expects_rules: []
+expects_rules:
+  - SF-EMRS-004

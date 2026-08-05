@@ -60,6 +60,16 @@
       ],
       "sha256": "f46960f80928d464b5e92bf1a6ceb8bf355a3e6cb17c0bf2eefbb30ac17a5b35"
     },
+    "https://aws.amazon.com/emr/pricing/": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-001",
+        "SF-EMRS-005"
+      ]
+    },
     "https://docs.aws.amazon.com/athena/latest/ug/partitions.html": {
       "checked_at": "2026-07-31",
       "pinned": false,
@@ -72,6 +82,133 @@
         "SF-ATH-005"
       ],
       "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_AutoStopConfig.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-001",
+        "SF-EMRS-005"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_CloudWatchLoggingConfiguration.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Configuration.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_GetApplication.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_ManagedPersistenceMonitoringConfiguration.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-003",
+        "SF-EMRS-004"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MaximumAllowedResources.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-006"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MonitoringConfiguration.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-003"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_WorkerResourceConfig.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-006"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/applications.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-006"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-001",
+        "SF-EMRS-002",
+        "SF-EMRS-003",
+        "SF-EMRS-004",
+        "SF-EMRS-005",
+        "SF-EMRS-006"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-003",
+        "SF-EMRS-004"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-001",
+        "SF-EMRS-005",
+        "SF-EMRS-006"
+      ]
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/secrets-manager.html": {
+      "pinned": false,
+      "retrieved": [
+        "2026-08-04"
+      ],
+      "rules": [
+        "SF-EMRS-002"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html": {
       "pinned": false,
@@ -266,7 +403,8 @@
       "checked_at": "2026-07-31",
       "pinned": false,
       "retrieved": [
-        "2026-07-31"
+        "2026-07-31",
+        "2026-08-03"
       ],
       "rules": [
         "SF-CG-001",

@@ -1,1 +1,78 @@
-[]
+[
+  {
+    "rule_id": "SF-EMRS-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Capacidade pré-inicializada somada acima do teto declarado da application",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fexcede00000000001"
+    },
+    "evidence": [
+      "f_fee1f5"
+    ],
+    "measured": {
+      "initial_capacity_worker_type_count": 2,
+      "release_major": 7,
+      "release_minor": 5,
+      "idle_timeout_minutes": 15
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "A soma de workerCount x cpu, workerCount x memory e workerCount x disk sobre as entradas de initialCapacity estoura o maximumCapacity declarado em pelo menos um eixo — o fact citado por este achado traz attrs.capacity_axes_exceeded com quais. maximumCapacity é \"the maximum capacity of the application. This is cumulative across all workers at any given point in time (...). No new resources will be created once any one of the defined limits is hit\", e é essa última frase que autoriza tratar os eixos independentemente: basta um. A consequência plausível é que a pré-init nunca seja provisionada por inteiro, e \"an application moves to the STARTED state only if the requested pre-initialized capacity has been created and is ready to use\" — mas AQUI a fonte para, e o achado precisa parar junto. Não foi encontrada nenhuma declaração de que a API aceite essa configuração, nem de que a rejeite; a página não trata do caso. A reachability do estado é, portanto, NÃO DOCUMENTADA, e isso muda como ler o achado de um jeito que vale a pena tornar explícito: se a API rejeitasse o estado, este achado não poderia existir sobre artefato real, porque get-application nunca o devolveria. Ele aparecer é, ele próprio, a evidência de que o estado é atingível. A fixture positiva do corpus é CONSTRUÍDA, não observada, e o meta.yaml dela diz isso. Este achado não prova o que um job run executou, e nem poderia: initialCapacity e maximumCapacity não são parâmetros de StartJobRun, então nenhuma sobreposição de job run os alcança — o que ele descreve é a definição da application no momento da coleta, alterável por update-application com a application em CREATED ou STOPPED. Ver knowledge/emr-serverless/application-configuration.md seção 5.",
+    "proposed_change": [
+      "Decidir qual dos dois números está errado antes de mexer: o teto é baixo demais para a pré-init pretendida, ou a pré-init foi dimensionada sem olhar o teto. O eixo que estourou, no fact citado, é o que diz qual conversa ter.",
+      "Corrigir com update-application, especificando TODAS as configurações de compute de uma vez — 'because you can't make partial modifications, specify all compute configurations when you change values' — e com a application em CREATED ou STOPPED.",
+      "Se o teto existe como guarda de custo, subi-lo derruba a guarda: nesse caso a correção é reduzir a pré-init, não alargar o teto.",
+      "Conferir o estado da application depois da mudança: ela precisa alcançar STARTED, e a fonte condiciona isso à pré-init inteira estar criada e pronta."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir maximumCapacity remove o limite que impedia a application de escalar sem teto; o custo passa a ser limitado só pela demanda dos jobs.",
+      "Reduzir a pré-init muda a latência de start-up dos jobs que a usavam, e isso costuma ser reportado como lentidão do produto.",
+      "A mudança exige a application em CREATED ou STOPPED, então não é aplicável no meio de um turno de trabalho."
+    ],
+    "tradeoffs": [
+      "O teto e a pré-init respondem a perguntas opostas — um limita gasto, o outro compra latência — e este achado é o ponto em que as duas respostas se contradizem numérica e explicitamente. Qual delas cede é decisão de operação, não de análise.",
+      "Limite declarado do gatilho: a regra compara números da definição e não afirma que a application esteja quebrada. Se a API rejeitar essa configuração na escrita, o achado simplesmente nunca aparece."
+    ],
+    "validation": [
+      "get-application depois da mudança com a soma dos três eixos abaixo do teto, recalculada a partir dos facts emrs.initial_capacity.",
+      "A application alcança o estado STARTED, que é a evidência de que a pré-init inteira foi provisionada.",
+      "Latência de início dos job runs antes e depois, se a correção foi reduzir a pré-init."
+    ],
+    "rollback": [
+      "update-application com os valores anteriores, novamente com todas as configurações de compute especificadas de uma vez e a application parada. O rollback restaura a contradição, então ele é o caminho de emergência, não o desfecho."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_MaximumAllowedResources.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_WorkerResourceConfig.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/applications.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "A ARITMÉTICA tem fonte inteira: `WorkerResourceConfig` e `MaximumAllowedResources` usam os MESMOS patterns para `cpu`, `memory` e `disk`, o conjunto de unidades é fechado e minúsculo (vCPU em três grafias, GB em quatro), `MB` não é expressável e o número é inteiro positivo sem decimal — então a comparação numérica é segura e a armadilha de unidades não pode ocorrer neste artefato. O que é heurística de campo é a REACHABILITY do estado acusado: nenhuma página declara que a API aceite `initialCapacity` acima de `maximumCapacity`, e nenhuma declara que a rejeite. A consequência plausível -- a application não alcançar `STARTED` -- é leitura de campo em cima de uma frase que fala de outro caso ('an application moves to the STARTED state only if the requested pre-initialized capacity has been created and is ready to use'). Por isso a fixture positiva do corpus é CONSTRUÍDA e não observada, e por isso a severidade é P1 e não P0: o mecanismo do dano não está declarado, só o número que se contradiz."
+      }
+    ]
+  }
+]

@@ -39,7 +39,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 
 | Campo | Obrigatório | Nota |
 |---|---|---|
-| `id` | sim | Único. **Treze** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança) |
+| `id` | sim | Único. **Catorze** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `EMRS` (application EMR Serverless), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança). **`EMR` é prefixo de `EMRS`**: quem comparar área por `startswith` sobre o `id` conta toda regra `SF-EMRS-*` como `SF-EMR`, e a fronteira entre as duas passa a ser medida ao contrário — compare pelo `area:` declarado no cabeçalho do arquivo |
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |
@@ -210,6 +210,7 @@ O vocabulário, e o que cada forma faz:
 | `spark-plan.yaml` | `SF-PLAN-*` | Fase 2 (plano físico) |
 | `callgraph.yaml` | `SF-CG-*` | Fase 1 (grafo derivado de AST) |
 | `emr-infra.yaml` | `SF-EMR-*` | Fase 5b (dump de cluster EMR on EC2) |
+| `emr-serverless.yaml` | `SF-EMRS-*` | Fase 5d (dump de application EMR Serverless) |
 | `data-quality.yaml` | `SF-DQ-*` | Fase 5c (validação de dados no AST PySpark) |
 | `benchmark.yaml` | `SF-BENCH-*` | Fase 4a (comparador de duas execuções, derivado de facts de event log) |
 | `funcval.yaml` | `SF-FVAL-*` | Fase 4c (plano derivado de `pyspark.write` + `catalog.table_schema`, e comparação dos dois resultados que o operador mediu) |

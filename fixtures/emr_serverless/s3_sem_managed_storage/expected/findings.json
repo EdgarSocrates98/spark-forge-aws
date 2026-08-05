@@ -1,1 +1,61 @@
-[]
+[
+  {
+    "rule_id": "SF-EMRS-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Armazenamento gerenciado desligado com log em S3 — o log sobrevive, a UI de aplicação não",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "00fsoS300000000001/monitoring"
+    },
+    "evidence": [
+      "f_87210e"
+    ],
+    "measured": {
+      "log_destination_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Esta application grava log — o destino S3 está declarado —, e mesmo assim perdeu uma capacidade que a tabela de opções da AWS declara linha a linha. Com \"Amazon S3 bucket\" como única opção, event logs e container logs vão para o bucket e a Application UI aparece como \"Not supported\"; com \"Managed storage\" ou com \"Both managed storage and S3\" ela é \"Supported\". A recomendação da mesma página é explícita: \"We suggest that you keep the Managed storage option selected. Otherwise, you can't use the built-in application UIs.\" O efeito prático é que o log existe, está íntegro, e a investigação de um job passa a exigir baixar e ler event log em vez de abrir a Spark UI — o que muda o custo de cada investigação, não a possibilidade dela. Por isso este achado é menos grave que SF-EMRS-003, que é a ausência de qualquer destino, e os dois nunca disparam juntos: um exige s3_log_uri_present verdadeiro, o outro exige contagem zero. O trade-off legítimo por trás desta configuração é retenção: o armazenamento gerenciado guarda \"a maximum of 30 days\" e não há como estendê-lo, então quem precisa de log mais antigo precisa de S3 — e a resposta correta é manter os DOIS, não trocar um pelo outro. O limite de StartJobRun vale aqui como em SF-EMRS-003: o merge é por tipo de configuração, então um job run pode trazer o seu próprio managedPersistenceMonitoringConfiguration e voltar ao default ligado; o achado é sobre a definição da application. Ver knowledge/emr-serverless/application-configuration.md seção 6.",
+    "proposed_change": [
+      "Religar managedPersistenceMonitoringConfiguration e manter o destino S3: a tabela da AWS marca 'Both managed storage and S3' como suportado para a UI de aplicação, então não há escolha a fazer entre os dois.",
+      "Se o motivo de ter desligado foi custo, medi-lo antes de reverter: o armazenamento gerenciado tem retenção máxima de 30 dias, então o volume é limitado por construção, diferente do prefixo S3 sem ciclo de vida.",
+      "Se o motivo foi política de dados — não querer log de aplicação fora do bucket controlado —, a decisão pode estar certa, e o que este achado pede é que ela fique declarada junto com a perda da UI, não que seja revertida."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Religar o armazenamento gerenciado passa a duplicar o log de container, que vai para os dois destinos.",
+      "Log em armazenamento gerenciado sai do controle direto do bucket da conta, e em ambiente com requisito de residência ou de criptografia por chave própria isso precisa ser conferido antes."
+    ],
+    "tradeoffs": [
+      "Trinta dias contra acesso à UI embutida. Manter os dois destinos resolve o dilema, e o custo é o volume duplicado de log de container.",
+      "Este achado é P2 de propósito: o log existe. Tratá-lo como P1 competiria com a ausência total de destino, que é outra ordem de problema."
+    ],
+    "validation": [
+      "GetApplication mostrando managedPersistenceMonitoringConfiguration habilitado e o s3MonitoringConfiguration preservado.",
+      "A UI de aplicação abre pelo console do EMR Serverless para um job executado depois da mudança.",
+      "Objetos continuam chegando ao prefixo S3, para confirmar que religar o gerenciado não substituiu o destino existente."
+    ],
+    "rollback": [
+      "update-application com a configuração de monitoramento anterior. Não há perda associada ao rollback além da própria UI: o log em S3 nunca foi interrompido."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_ManagedPersistenceMonitoringConfiguration.html",
+        "retrieved": "2026-08-04"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/default-configs.html",
+        "retrieved": "2026-08-04"
+      }
+    ]
+  }
+]
