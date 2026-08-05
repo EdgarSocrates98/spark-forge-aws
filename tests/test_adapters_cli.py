@@ -1182,6 +1182,60 @@ class TestAnalyzeDataQuality:
         assert code == 2
 
 
+class TestAnalyzeGraph:
+    _SOURCE = (
+        "from graphframes import GraphFrame\n"
+        "\n"
+        "def rodar(spark, vertices, arestas):\n"
+        "    spark.sparkContext.setCheckpointDir"
+        '("s3://bucket/ckpt")\n'
+        "    g = GraphFrame(vertices.cache(), arestas.cache())\n"
+        "    return g.connectedComponents()\n"
+    )
+
+    def test_prints_summary(self, repo, capsys):
+        module = repo / "grafo.py"
+        module.write_text(self._SOURCE, encoding="utf-8")
+        _, output = run(["analyze", "graph", "--path", str(module)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"]["graph.import"] == 1
+        assert payload["by_kind"]["graph.construction"] == 1
+        assert payload["by_kind"]["graph.algorithm"] == 1
+        assert payload["by_kind"]["graph.checkpoint_dir"] == 1
+        assert payload["unresolved"] == 0
+
+    def test_module_without_graph_is_analyzed_not_silent(self, repo, capsys):
+        """Mesma invariante de `data-quality`: zero grafo num modulo LIDO nao
+        pode ser o mesmo que modulo nao lido -- `graph.module_analyzed` e o que
+        separa os dois, e pelo verbo tambem."""
+        module = repo / "sem_grafo.py"
+        module.write_text("def gravar(df, dest):\n    df.write.parquet(dest)\n", encoding="utf-8")
+        _, output = run(["analyze", "graph", "--path", str(module)], capsys)
+        payload = json.loads(output)
+        assert payload["by_kind"].get("graph.import", 0) == 0
+        assert payload["by_kind"]["graph.module_analyzed"] == 1
+
+    def test_out_writes_the_full_list_that_judge_reads(self, repo, capsys):
+        """A cadeia inteira do verbo novo, na CLI: `--out` grava a lista
+        COMPLETA de facts (nao a pagina), e esse arquivo e o que `judge --facts`
+        le. Nao se prova aqui que `judge` ACUSA algo -- a area `SF-GRAPH` ainda
+        nao existe --, e sim que o artefato do verbo e aceito pelo motor."""
+        module = repo / "grafo.py"
+        module.write_text(self._SOURCE, encoding="utf-8")
+        out = repo / "facts_graph.json"
+        code, _ = run(["analyze", "graph", "--path", str(module), "--out", str(out)], capsys)
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        assert {f["kind"] for f in facts} >= {"graph.construction", "graph.module_analyzed"}
+        code, judged = run(["judge", "--facts", str(out)], capsys)
+        assert code == 0
+        assert "total_count" in json.loads(judged)
+
+    def test_missing_path_is_actionable(self, repo, capsys):
+        code, _ = run(["analyze", "graph", "--path", str(repo / "nope.py")], capsys)
+        assert code == 2
+
+
 class TestAnalyzeCallGraph:
     def test_derives_from_pyspark_facts(self, repo, capsys):
         facts_path = repo / "facts.json"

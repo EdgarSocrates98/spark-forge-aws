@@ -61,6 +61,7 @@
     "sparkforge_analyze_emr_cluster",
     "sparkforge_analyze_emr_serverless",
     "sparkforge_analyze_event_log",
+    "sparkforge_analyze_graph",
     "sparkforge_analyze_iceberg",
     "sparkforge_analyze_plan",
     "sparkforge_analyze_pyspark",

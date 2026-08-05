@@ -622,3 +622,62 @@ no plano Step 6 e na §1 do spec) está hoje em **`pyspark_ast.py:264`**. A guar
 de namespace citada como `data_quality.py:1692-1694` está em **1692-1694** —
 essa confere. Nenhuma das duas muda decisão; ficam registradas porque o próximo
 leitor vai conferir.
+
+**D-6a-18 — a sexta superfície não tem entrada nova a fazer, e a medição por falha é que provou.**
+O Step 1 manda conferir `ARTIFACT_KINDS` (`sparkforge/collect/base.py:29`), a
+tupla fechada que a Fase 5d achou tarde. Medido: `analyze graph` lê o mesmo
+artefato de `analyze data-quality` — um `.py` do repositório —, cujo `kind` é
+`"source"`, **já declarado** em `collect/base.py:38`. A tupla é o vocabulário de
+artefato **coletado** (`ArtifactEntry`, escrito por `collect/aws.py:162,185`), e
+verbo que lê arquivo local do repo não cria linha de manifesto. Com o verbo
+inteiro implementado e nenhuma das seis superfícies declarativas atualizada, a
+suíte reprovou **6 testes em 4 arquivos** e **nenhum** deles em
+`tests/test_collect_base.py`. A sexta superfície continua sendo real; ela só não
+é atravessada por esta fase. Ela volta a valer se a Fase 6a ganhar coletor.
+
+**D-6a-19 — "quatro listas em `test_adapters_tools.py`" era para tool de COLETA; para tool de análise é uma.**
+O Step 1 repassa o número que a 5d confirmou. Medido por falha, com o verbo
+implementado e os testes intocados, as coleções que reprovam são:
+`tests/test_adapters_tools.py::TestToolSurface::test_the_full_tool_surface_is_declared`
+(o `set(TOOLS)` literal, linha 30) e a cadeia `if name == ...` de
+`_real_output_for` (linha 988, que **não é lista** e reprova como
+`test_real_output_matches_declared_schema[sparkforge_analyze_graph]`);
+`tests/test_capability_parity.py` **duas** vezes
+(`test_every_phase_zero_tool_appears_in_some_capability` e
+`test_every_cli_verb_has_an_mcp_tool_or_a_declared_reason` — esta última cita o
+verbo por nome: `['analyze graph']`); `tests/test_docs_coverage.py::TestManifest::test_tools_list_equals_the_real_tools_keys`
+(que é onde mora a "contagem de tools" do `manifest.json` — não existe campo
+`tool_count`, o invariante é `len(manifest["tools"]) == len(TOOLS)`, linha 227);
+e `tests/test_agent_coverage.py::test_no_tool_is_orphan`. As outras **três**
+listas manuais daquela classe — `open_world`, os não-`readOnly` e a de
+`test_only_case_and_report_writers_are_not_read_only` — só mudam para tool que
+toca rede ou escreve, que é o caso de `collect_emr_serverless` da 5d, não o de um
+`analyze_*`. `FAILABLE` (linha 1282) confirmou o outro lado do que a 5d
+registrou: **nenhum teste a deriva de `TOOLS`**, ela ficou silenciosa, e a
+entrada foi acrescentada mesmo assim — uma tool de fronteira sem caso de erro
+declarado é schema de sucesso prometido como total.
+
+**D-6a-20 — a tool órfã foi fechada no executor genérico, e é provisório.**
+`test_no_tool_is_orphan` reprovou no mesmo commit que criou a tool
+(`1 de 41 tools nao sao alcancaveis`), exatamente como `D-5d-21` previu. Citada
+em `agents/executors/sf-extractor.md`, na tabela artefato→tool, que é onde a 5d
+pôs `sparkforge_analyze_emr_serverless`. **Provisório de propósito**: nenhum
+coordenador temático cita `sparkforge_analyze_graph`, porque a `description` do
+coordenador é o **gatilho de seleção** e citar área que a Task 7 ainda não
+decidiu afirmaria cobertura que não existe. A Task 7 decide se `SF-GRAPH` ganha
+coordenador próprio ou entra em `pyspark-code-reviewer`.
+
+**D-6a-21 — arquivo de grafo realista NÃO estoura a página default.**
+O Step 3 manda escrever se estourar, porque a 5d mediu que 50 esconde metade da
+saída em artefato real. Medido sobre um `.py` de 71 linhas com dois imports,
+duas construções, cinco algoritmos (`connectedComponents`, `pageRank`,
+`triangleCount`, `aggregateMessages` dentro de um `for`, e `pregel` como
+`@property`) e um `setCheckpointDir` noutra função: **`total_count` 11,
+`returned_count` 11, `next_cursor: null`, `unresolved: 0`**. A razão é de
+desenho e não de tamanho do arquivo: este extrator emite **um fact por evento de
+grafo**, não um por linha de código nem um por partição — `emrs.*` e `emr.*`
+emitem por propriedade de configuração, e é por isso que eles enchem a página.
+Um diretório inteiro multiplica pelo número de módulos **que usam grafo**, e o
+`graph.module_analyzed` por `.py` é o único termo que cresce com a árvore. A
+skill da Task 7 não precisa de aviso de paginação para arquivo único; precisa
+dele para `--path src/`.

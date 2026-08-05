@@ -47,6 +47,7 @@ class TestToolSurface:
             "sparkforge_analyze_emr_cluster",
             "sparkforge_analyze_emr_serverless",
             "sparkforge_analyze_data_quality",
+            "sparkforge_analyze_graph",
             "sparkforge_analyze_call_graph",
             "sparkforge_analyze_s3_listing",
             "sparkforge_analyze_consumers",
@@ -977,6 +978,18 @@ _DQ_SOURCE = """def validar(vendas):
         raise ValueError("valor negativo")
 """
 
+# Mesma exigencia para `analyze graph`: o fonte precisa produzir `graph.import`,
+# `graph.construction` e `graph.algorithm` -- nao so o `graph.module_analyzed`
+# que sai de qualquer `.py` -- para que o schema declarado seja validado contra
+# a saida cheia do extrator, e nao contra a de um arquivo sem grafo nenhum.
+_GRAPH_SOURCE = """from graphframes import GraphFrame
+
+def rodar(spark, vertices, arestas):
+    v = vertices.cache()
+    g = GraphFrame(v, arestas.cache())
+    return g.connectedComponents()
+"""
+
 
 def _fake_collect_boto3(monkeypatch):
     """Injeta um client AWS falso para as ferramentas `collect_*` -- nunca toca
@@ -1111,6 +1124,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         dq_path = tmp_path / "validacao.py"
         dq_path.write_text(_DQ_SOURCE, encoding="utf-8")
         return call_tool("sparkforge_analyze_data_quality", {"path": str(dq_path)})
+
+    if name == "sparkforge_analyze_graph":
+        graph_path = tmp_path / "grafo.py"
+        graph_path.write_text(_GRAPH_SOURCE, encoding="utf-8")
+        return call_tool("sparkforge_analyze_graph", {"path": str(graph_path)})
 
     if name == "sparkforge_analyze_s3_listing":
         listing = tmp_path / "listing.json"
@@ -1296,6 +1314,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_emr_serverless", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_graph", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
         (
             "sparkforge_benchmark",
