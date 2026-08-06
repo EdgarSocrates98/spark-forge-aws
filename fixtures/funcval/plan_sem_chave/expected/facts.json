@@ -52,7 +52,7 @@
         "keys"
       ],
       "undeclared_axes_reason": {
-        "keys": "nenhum dos 102 kinds dos 16 extratores nomeia chave de negocio: pyspark.join da on_arity (o numero de colunas do on), pyspark.dedup e pyspark.window dao booleanos, e particao como proxy foi medida e rejeitada. Declare com --key <col>[,<col>] para o eixo entrar (D-4c-1, D-4c-2)"
+        "keys": "nenhum kind que os extratores emitem nomeia chave de negocio: pyspark.join da on_arity (o numero de colunas do on), pyspark.dedup e pyspark.window dao booleanos, e particao como proxy foi medida e rejeitada. Declare com --key <col>[,<col>] para o eixo entrar (D-4c-1, D-4c-2)"
       }
     },
     "provenance": {
@@ -95,7 +95,7 @@
       ],
       "undeclared_axes_reason": {
         "aggregates": "nenhum catalog.table_schema com symbol identico a 's3://bucket/curated/eventos/'; o casamento e por string, e casar por sufixo juntaria tabelas homonimas de catalogos diferentes",
-        "keys": "nenhum dos 102 kinds dos 16 extratores nomeia chave de negocio: pyspark.join da on_arity (o numero de colunas do on), pyspark.dedup e pyspark.window dao booleanos, e particao como proxy foi medida e rejeitada. Declare com --key <col>[,<col>] para o eixo entrar (D-4c-1, D-4c-2)",
+        "keys": "nenhum kind que os extratores emitem nomeia chave de negocio: pyspark.join da on_arity (o numero de colunas do on), pyspark.dedup e pyspark.window dao booleanos, e particao como proxy foi medida e rejeitada. Declare com --key <col>[,<col>] para o eixo entrar (D-4c-1, D-4c-2)",
         "schema": "nenhum catalog.table_schema com symbol identico a 's3://bucket/curated/eventos/'; o casamento e por string, e casar por sufixo juntaria tabelas homonimas de catalogos diferentes"
       }
     },

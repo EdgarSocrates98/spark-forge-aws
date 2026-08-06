@@ -282,8 +282,8 @@ rules:
       continua visível sem virar achado que ninguém pediu.
       DE ONDE VEM A CHAVE, e por que isso muda como ler este achado: ela é
       DECLARADA PELO OPERADOR (`funcval plan --key <coluna>[,<coluna>]`), não
-      derivada de fact nenhum. Foi medido na Task 1 desta fase que nenhum dos 102
-      kinds dos 16 extratores nomeia chave de negócio — `pyspark.join` carrega o
+      derivada de fact nenhum. Foi medido na Task 1 desta fase, kind a kind, que
+      nenhum kind do vocabulário nomeia chave de negócio — `pyspark.join` carrega o
       NÚMERO de colunas do `on` e nunca os nomes, e os outros seis candidatos
       carregam booleano, contagem ou coluna de outra natureza. A alternativa
       recusada era usar a coluna de partição como proxy, e ela foi rejeitada com

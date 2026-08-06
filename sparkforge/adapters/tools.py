@@ -1938,7 +1938,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             "detectou divergencia', nunca 'o resultado e identico'. (2) Ele NAO MEDE "
             "NADA: nao executa consulta, nao le a tabela, nao chama AWS. Os valores vem "
             "do resultado que VOCE produz em cada lado. (3) CHAVE DE NEGOCIO NAO E "
-            "DERIVAVEL: nenhum dos 102 kinds dos 16 extratores a nomeia (`pyspark.join` "
+            "DERIVAVEL: nenhum kind que os extratores emitem a nomeia (`pyspark.join` "
             "da o NUMERO de colunas do `on`, `pyspark.dedup` e `pyspark.window` dao "
             "booleanos, particao como proxy foi medida e rejeitada). Ela so entra por "
             "`keys`, com `origin: declared` e `derived_from: []` -- e chave declarada "
