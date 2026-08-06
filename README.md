@@ -458,7 +458,7 @@ pacote tem duas camadas de agente:
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
   contrato de handoff que fazem a cadeia ser determinística entre modelos.
 
-Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-008` de
+Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-010` de
 `rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
 coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
 

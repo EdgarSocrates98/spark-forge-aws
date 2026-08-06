@@ -394,18 +394,73 @@ rules:
       Fluxo full e incremental no mesmo job, latest-per-key em tabela bilionária e
       batching exigem mapear a biblioteca inteira antes de qualquer tuning localizado.
 
+  # `SF-EMRS` entra AQUI, e a correção é PRÉ-EXISTENTE — não é regressão da Fase 6a.
+  # `emr-infra-reviewer` declara a área em `rule_areas` desde a Fase 5d, e a condição
+  # casava `findings_area` por IGUALDADE exata: um case só com achados de EMR
+  # Serverless — as seis regras `SF-EMRS-*` — voltava de `next_step` com
+  # `recommended_agent: None`, sem coordenador nenhum. `all:` com uma condição vira
+  # `any:` com duas, e o destino é o mesmo agente, então não há pergunta de
+  # precedência dentro desta rota. Um case com SF-GLUE junto continua indo para a
+  # AGENT-002, que vem antes: nada do despacho já existente muda.
   - id: AGENT-007
     phase_in: [diagnosis, hypothesis]
-    title: Achado dominante em infraestrutura de cluster EMR
+    title: Achado dominante em infraestrutura EMR — cluster ou Serverless
     when:
-      all:
+      any:
         - {findings_area: SF-EMR, count_gt: 0}
+        - {findings_area: SF-EMRS, count_gt: 0}
     recommended_agent: emr-infra-reviewer
     reason: >
-      O gargalo ou o risco está na definição do cluster, não no código: modelo de
-      instância, purchasing option por papel, managed scaling e Configurations em dois
-      níveis. Nenhum deles tem equivalente em Glue, e a correção é o próximo
-      provisionamento — não uma edição no cluster em execução.
+      O gargalo ou o risco está na definição do cluster ou da application, não no código:
+      modelo de instância, purchasing option por papel, managed scaling e Configurations em
+      dois níveis no EMR on EC2; capacidade pré-inicializada faturada com a application
+      ociosa, janela de auto-stop e segredo em `runtimeConfiguration` no Serverless. Nenhum
+      deles tem equivalente em Glue, e a correção é o próximo provisionamento — não uma
+      edição no que já está em execução.
+
+  # AS TRÊS ÁREAS DE MEDIÇÃO, e a posição desta rota é precedência declarada.
+  # `SF-UI`, `SF-BENCH` e `SF-FVAL` são as três áreas cujo artefato é uma EXECUÇÃO —
+  # a Spark UI de um job que rodou, a comparação entre duas execuções, a validação
+  # funcional de antes e depois —, e `spark-performance-architect` é o único
+  # coordenador que declara as três em `rule_areas`. Como ele também declara `SF-PY` e
+  # `SF-PLAN`, esta rota vem DEPOIS da AGENT-004: um case com achado de código e de
+  # execução continua indo para o `pyspark-code-reviewer`, exatamente como antes desta
+  # linha existir. Medido: nenhum despacho já resolvido muda, porque antes daqui as
+  # três áreas não casavam rota nenhuma.
+  - id: AGENT-009
+    phase_in: [diagnosis, hypothesis]
+    title: Achado dominante em medição de execução
+    when:
+      any:
+        - {findings_area: SF-UI, count_gt: 0}
+        - {findings_area: SF-BENCH, count_gt: 0}
+        - {findings_area: SF-FVAL, count_gt: 0}
+    recommended_agent: spark-performance-architect
+    reason: >
+      O achado veio de uma execução medida — Spark UI, comparação entre duas execuções ou
+      validação funcional de antes e depois —, e nenhuma delas responde sozinha qual é o
+      gargalo dominante. Correlacionar código, plano físico e medição é o trabalho do
+      coordenador geral, e é ele quem decide se a especialização se justifica.
+
+  # `SF-ENV` POR ÚLTIMO, e a razão é que ela é a área que TRÊS coordenadores declaram:
+  # `glue-infra-reviewer`, `emr-infra-reviewer` e `glue-incremental-performance-architect`.
+  # A posição resolve o empate sem inventar condição de runtime: quando há qualquer
+  # evidência de outra área — Glue, EMR, Iceberg, código —, a rota daquela área vem antes
+  # e leva o case. Esta só casa quando SF-ENV é TUDO que há, e aí a pergunta é sobre a
+  # definição do job (versão de Glue, `glueContext`, default de AQE, format version do
+  # Iceberg), que é o assunto do `glue-infra-reviewer`.
+  - id: AGENT-010
+    phase_in: [diagnosis, hypothesis]
+    title: Achado apenas em ambiente e runtime
+    when:
+      all:
+        - {findings_area: SF-ENV, count_gt: 0}
+    recommended_agent: glue-infra-reviewer
+    reason: >
+      O achado é sobre o ambiente em que o job roda, e não sobre o que ele faz: divergência
+      entre fontes de detecção de runtime, format version escrita por um runtime e lida por
+      outro, observabilidade declarada sem o contexto que a alimenta. Todos se decidem na
+      definição do job, e nenhum se resolve editando transformação.
 
 # Fallback: nenhuma regra casou.
 fallback:
