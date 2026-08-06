@@ -10,7 +10,7 @@ rule_areas: [SF-DQ]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
-**Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
+**Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
 ## Quando você entra, e quando o irmão entra
 

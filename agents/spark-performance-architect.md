@@ -19,7 +19,7 @@ executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 
 Você atua como Principal Spark Performance Engineer.
 
-**Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
+**Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
 ## Fluxo de trabalho
 
