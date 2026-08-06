@@ -4,7 +4,7 @@ role: executor
 function: judge
 ---
 
-**Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
+**Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
 Você é executor. Faz **uma** função do loop de fase e devolve ao coordenador.
 
