@@ -55,14 +55,15 @@ A Fase 6a considerou dar à área um coordenador próprio, como a 5c fez com `SF
 critério da 4c é fronteira de **despacho** medida, e a 5d refinou: sem discriminador
 **em dado**, partir cria par roteado por prosa. **Aqui há discriminador em dado** —
 medido sobre os três corpora com os três extratores rodando juntos, `SF-GRAPH` dispara
-5 vezes em `fixtures/graph/` e **zero** vez nas 13 fixtures de `dq/` e nas 17 de
+9 vezes em `fixtures/graph/` e **zero** vez nas 13 fixtures de `dq/` e nas 17 de
 `pyspark/`. Uma rota `findings_area: SF-GRAPH` nunca casaria errado. O bloqueio da 5d
 não se aplica, e a decisão teve de ser tomada no outro eixo.
 
-**O que decidiu foi a proporção dentro do corpus da própria área.** Nas 19 fixtures de
-grafo, `SF-PY` dispara **16 vezes em 14 delas** e `SF-GRAPH` **5 vezes em 5** — e as
-cinco são **subconjunto** das catorze: não há, no corpus, um job em que a pergunta de
-grafo chegue sozinha. O precedente da 5c mede o inverso: nas 13 fixtures de `dq/`,
+**O que decidiu foi a proporção dentro do corpus da própria área.** Nas 25 fixtures de
+grafo, `SF-PY` dispara **23 vezes em 20 delas** e `SF-GRAPH` **9 vezes em 6** — e as
+seis são **subconjunto** das vinte: não há, no corpus, um job em que a pergunta de
+grafo chegue sozinha. (A revisão final da 6a levou o corpus de 19 para 25 fixtures, e a
+proporção não mudou de lado.) O precedente da 5c mede o inverso: nas 13 fixtures de `dq/`,
 `SF-DQ` dispara 10 vezes em 8 e `SF-PY` 2 vezes em 2. Lá a área nova domina o próprio
 corpus 4:1; aqui o vizinho domina 3:1. Um coordenador de grafo seria selecionado em 5
 de 19 jobs de grafo e entregaria os outros 14 a você — que precisaria declarar

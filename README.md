@@ -448,7 +448,8 @@ pacote tem duas camadas de agente:
   `iceberg-performance-engineer`, `emr-infra-reviewer` e `data-quality-reviewer`). Não
   executa: lê o case, decide qual executor rodar em seguida e registra no case qual
   executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
-  `emr-infra-reviewer` lê `SF-EMR`/`SF-ENV`, `data-quality-reviewer` lê `SF-DQ`, e
+  `emr-infra-reviewer` lê `SF-EMR`, `SF-EMRS` e `SF-ENV` — três desde a Fase 5d —,
+  `data-quality-reviewer` lê `SF-DQ`, e
   `spark-performance-architect` acumulou `SF-BENCH` porque *o job ficou mais rápido, e por
   quê* é a mesma pergunta que ele já respondia — e acumulou `SF-FVAL` pela metade que falta
   dela, *e o resultado continuou o mesmo*, que é o mesmo par antes/depois da mesma mudança.

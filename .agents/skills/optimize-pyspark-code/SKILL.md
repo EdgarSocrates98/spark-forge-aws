@@ -70,8 +70,8 @@ não por Glue: sobre um `.py` solto ela sai em `skipped` com `reason: runtime_sc
 saber o Spark. Para trazê-la de volta, dê a fonte de versão (o `.tf`, o dump de
 `describe-cluster`), nunca um `--glue` chutado.
 
-E `SF-PY-008` dispara sobre job de grafo, com razão. Medido nas 19 fixtures de
-`fixtures/graph/`: `SF-PY-008` em catorze delas, `SF-PY-012` em duas, e nenhum dos dezesseis
+E `SF-PY-008` dispara sobre job de grafo, com razão. Medido nas 25 fixtures de
+`fixtures/graph/`: `SF-PY-008` em vinte delas, `SF-PY-012` em três, e nenhum dos vinte e três
 cita fact `graph.*`. `cache`/`persist`/`unpersist` ficaram **fora** do vocabulário de
 `graph.algorithm` justamente porque `pyspark.cache` já os emite — as duas áreas falam da
 mesma linha dizendo coisas diferentes, e suprimir uma entrega metade do achado.

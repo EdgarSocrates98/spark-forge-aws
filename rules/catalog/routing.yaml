@@ -350,8 +350,9 @@ rules:
 
   # SF-GRAPH entra AQUI, e não numa rota própria antes desta, e o número que decidiu está
   # medido em `tests/test_rules_graph_boundary.py` e escrito em `agents/pyspark-code-reviewer.md`:
-  # nas 19 fixtures de `fixtures/graph/`, SF-PY dispara 16 vezes em 14 e SF-GRAPH 5 vezes em
-  # 5, e as cinco são SUBCONJUNTO das catorze. O inverso do que a Fase 5c mediu para SF-DQ,
+  # nas 25 fixtures de `fixtures/graph/`, SF-PY dispara 23 vezes em 20 e SF-GRAPH 9 vezes em
+  # 6, e as seis são SUBCONJUNTO das vinte — proporção remedida na revisão final da 6a,
+  # depois de o corpus ir de 19 para 25 fixtures, e ela não mudou de lado. O inverso do que a Fase 5c mediu para SF-DQ,
   # que por isso ganhou a AGENT-008 com precedência declarada. Como o destino é o MESMO
   # agente, a pergunta de precedência não existe nesta rota. Antes desta linha, um case com
   # achados só de grafo voltava de `next_step` com `recommended_agent: None`.
