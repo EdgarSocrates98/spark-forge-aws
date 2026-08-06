@@ -32,12 +32,15 @@
     "expected_effect": "",
     "benchmark_ref": "",
     "risks": [
-      "Aumentar memória quando a causa é alocação de objetos não resolve e encarece."
+      "Aumentar memória quando a causa é alocação de objetos não resolve e encarece.",
+      "Das três ações propostas, duas não tocam o resultado (heap, worker) e UMA toca: eliminar UDF Python troca a implementação que produz o valor. Nulo, precisão decimal, fuso, ordenação de string e comportamento de borda diferem entre a UDF e a função nativa que a substitui, e a diferença não aparece no tempo de GC — que é justamente o que esta regra mede."
     ],
     "tradeoffs": [],
     "validation": [
       "Razão gc/run após a mudança.",
-      "Runtime e DPU-hours antes e depois."
+      "Runtime e DPU-hours antes e depois.",
+      "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra representativa que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas. É a MESMA validação que SF-PY-001 e SF-PLAN-001 exigem para a MESMA troca, e ela não fica mais barata por a troca ter chegado aqui pela via do GC em vez da via do código.",
+      "Se a ação foi reduzir dado por executor ou trocar de worker: nenhum eixo de dado é exigido, e declarar isso é parte da validação — capacidade não move o resultado, e dizer qual das duas metades você aplicou é o que separa um run comparável de um experimento com duas variáveis."
     ],
     "rollback": [
       "Reverter a mudança de código ou de capacidade."
