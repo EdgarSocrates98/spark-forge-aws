@@ -103,9 +103,35 @@ Regras desta área, e o fact que cada uma consome. Os limiares **não** estão a
 - Compactar data files quando o sintoma real é manifests ou snapshots crescendo (`ROUTE-010` em `routing.yaml`): planejamento lento aponta para metadado, não para data file, e compactar dado custa horas de DPU sem tocar a causa.
 - Rodar procedure ou propriedade da doc `latest` do Iceberg sem confirmar suporte na versão embarcada pelo Glue.
 
+## Preservar o resultado, com o verbo que produz a evidência
+
+As três recomendações desta skill têm relações opostas com o dado. Compactação e reescrita de
+manifest não mudam linha. Mudar partition spec ou sort order muda qual linha cai em qual
+arquivo. E `expire_snapshots` e `remove_orphan_files` **destroem a capacidade de provar
+qualquer uma das duas depois**, porque apagam o time travel de onde sairia o lado `--before`.
+Por isso o plano se define **antes** do procedimento, e não depois.
+
+`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
+`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+<antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
+`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+`ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
+**antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
+
+Os quatro eixos são **proxies**, e escrever o contrário promete o que a ferramenta não
+entrega: contagem, schema, chaves e agregados iguais **não provam** que o dado é o mesmo — duas
+linhas podem trocar valores entre si e os quatro passam. Escreva "nenhum dos quatro proxies
+detectou divergência", nunca "o resultado é idêntico". Sem `--key`, a chave de negócio sai em
+`undeclared_axes` com a razão, e isso vai dito. `SF-FVAL-005` acesa invalida a leitura das
+outras quatro.
+
 ## Protocolo
 
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva só com confirmação explícita. E **derive o plano de validação funcional** com `funcval plan` antes de fechar a
+recomendação, comparando os dois lados medidos com `funcval compare` — a regra 10, e ela
+nomeia o produtor de propósito: exigência sem verbo é prosa.
