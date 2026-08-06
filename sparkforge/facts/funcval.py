@@ -9,7 +9,7 @@ le o resultado e compara. Quarto modulo desta natureza, depois de
 `engine._condition_candidates` avalia UM fact por vez, entao "o depois divergiu
 do antes" nao e expressavel como condicao de catalogo.
 
-O QUE O PLANO PODE AFIRMAR, medido kind a kind sobre os 102 kinds dos 16
+O QUE O PLANO PODE AFIRMAR, medido kind a kind sobre os kinds dos
 extratores (Task 1 da Fase 4c):
 
   * CONTAGEM sai de `pyspark.write.attrs.target` -- a IDENTIDADE do alvo, nunca
@@ -318,7 +318,7 @@ _RELATIVE_JUDGED_BY_CATALOG = (
 )
 
 _KEYS_UNDECLARED_REASON = (
-    "nenhum dos 102 kinds dos 16 extratores nomeia chave de negocio: "
+    "nenhum kind que os extratores emitem nomeia chave de negocio: "
     "pyspark.join da on_arity (o numero de colunas do on), pyspark.dedup e "
     "pyspark.window dao booleanos, e particao como proxy foi medida e rejeitada. "
     "Declare com --key <col>[,<col>] para o eixo entrar (D-4c-1, D-4c-2)"
