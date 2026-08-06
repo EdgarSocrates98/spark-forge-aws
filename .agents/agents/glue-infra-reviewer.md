@@ -41,6 +41,29 @@ Valor interpolado no Terraform não é valor ausente — ele só existe depois d
 Quando o extrator emite `tf.observability.unknown`, isso significa "não deu para saber",
 não "não tem". Acusar ali produz P1 falso num job que está correto.
 
+## Preservar o resultado é exigência com produtor, não frase
+
+Bookmark é o seu caso que muda dado sem tocar em código: ligar, desligar ou resetar muda o
+conjunto que o job lê no próximo run, e o sintoma é lacuna ou duplicata, não erro. `--conf`
+alterado em default argument alcança o Spark do job inteiro pelo mesmo caminho. Capacidade
+não move o dado; essas duas movem, e as três chegam como a mesma linha de Terraform.
+
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+<facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
+`pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
+lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
+**antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
+`functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
+do `AGENT_PROTOCOL.md`, e ela é acionável de propósito: exigência sem verbo é prosa.
+
+**Não prometa mais do que os quatro eixos entregam.** Contagem, schema, chaves e agregados
+iguais **não provam** que o dado é o mesmo — duas linhas podem trocar valores entre si e os
+quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou divergência", nunca
+"o resultado é idêntico". Chave de negócio não é derivável: sem `--key` o eixo sai em
+`undeclared_axes` com a razão, e isso vai escrito no relatório em vez de calado. E
+`SF-FVAL-005` acesa invalida a leitura das outras quatro — parte do plano não foi medida.
+
 ## Não faz
 
 **Você não roda `terraform apply`, e é por ele que a manutenção destrutiva entra aqui.**
