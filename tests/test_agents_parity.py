@@ -49,10 +49,29 @@ class TestProtocol:
     def test_protocol_exists(self):
         assert (ROOT / "AGENT_PROTOCOL.md").is_file()
 
-    def test_declares_the_nine_hard_rules(self):
+    def test_declares_the_ten_hard_rules(self):
         text = self._text()
-        for marker in ("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9."):
+        for marker in ("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10."):
             assert marker in text
+
+    def test_requires_a_functional_validation_plan_with_a_producing_verb(self):
+        """A regra 10 e a unica que nasceu com o defeito da 5 ja conhecido.
+
+        Ate esta rodada, "preserve correcao funcional" existia em `CLAUDE.md` e em
+        tres arquivos de agente/skill como PRINCIPIO, e o protocolo -- o unico texto
+        que alcanca agente rodando fora do Claude Code -- nao a tinha. Frase sem
+        comando e prosa: e o mesmo defeito que a Fase 4a mediu no `benchmark_ref`
+        antigo, e que a revisao da 4c mediu em capacidade listada sem verbo produtor.
+        Por isso o teste nao procura o principio; procura os DOIS produtores e o
+        limite que a saida deles carrega.
+        """
+        text = self._text()
+        for producer in ("funcval plan", "funcval compare"):
+            assert producer in text, f"regra 10 sem verbo produtor: {producer}"
+        assert "functional_validation_defined" in text, "regra 10 sem o gate que ela destrava"
+        # O limite declarado da SF-FVAL: prometer mais que proxy e prometer o que o
+        # repositorio nao entrega.
+        assert "proxies" in text, "regra 10 sem o limite dos quatro eixos"
 
     def test_forbids_numbers_without_a_fact(self):
         assert "fact_id" in self._text()

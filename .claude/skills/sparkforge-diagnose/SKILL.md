@@ -172,4 +172,6 @@ Como `next-step` decide, sem repetir a árvore inteira de `routing.yaml` — con
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva só com confirmação explícita. E **derive o plano de validação funcional** com `funcval plan` antes de fechar a
+recomendação, comparando os dois lados medidos com `funcval compare` — a regra 10, e ela
+nomeia o produtor de propósito: exigência sem verbo é prosa.

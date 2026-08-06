@@ -1,7 +1,7 @@
 # SparkForge AWS — estado por fase
 
 **Atualizado em:** 2026-08-05
-**Commit de referência:** fechamento da branch `feat/fase6a-graph`
+**Commit de referência:** fechamento da branch `feat/preservacao-semantica`
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -29,7 +29,9 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **4634** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **4723** passando, 5 skipped | `python -m pytest -q` |
+| Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
+| Regras com eixo de resultado no `validation` | **62 de 81** — as 19 restantes são segredo, log, capacidade, detecção de runtime e metodologia | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **9 de 81** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
 | Extratores de facts | **19** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **118** | união de `EMITTED_KINDS` |
@@ -1611,6 +1613,109 @@ gatilho de reabertura **não é nosso** — é a comunidade publicar artefato pa
 o que a release note da `0.8.3` afirma existir e o repositório de artefatos responde com
 404.
 
+### Preservação semântica — as superfícies que agem, e a regra que faltava — **CONCLUÍDA** em 2026-08-05
+
+Branch `feat/preservacao-semantica`, sete commits, um por natureza. **Não é fase de
+roadmap:** é o fechamento de uma exigência declarada imprescindível pelo dono do projeto —
+todo agente, skill e componente preserva o funcional; tunar e reduzir custo sim, alterar
+lógica, regra de negócio ou resultado não. Otimização que muda o resultado não é
+otimização: é defeito com ganho embutido, e mais caro de achar depois, porque o job fica
+*mais rápido* enquanto entrega dado errado.
+
+**O achado é sobre alcance, não sobre texto.** Medido: **33 de 33** arquivos de agente e
+skill apontam para `AGENT_PROTOCOL.md`, e preservar semântica não era uma das nove regras.
+`CLAUDE.md:12` tem a regra 8, e o próprio `AGENT_PROTOCOL.md:3-6` declara que aquele texto
+**não é injetado em lugar nenhum** — então a regra 8 alcança quem roda no Claude Code e
+mais ninguém. Devin, Copilot e Codex liam nove regras, e nenhuma delas era esta.
+
+**A assimetria mais cara estava em `agents/executors/sf-synthesizer.md`**, o arquivo onde
+toda recomendação é escrita: **onze linhas** exigindo `benchmark_ref` e explicando por que
+texto livre é fraude, e **zero** sobre preservar o resultado. O executor que escreve a
+recomendação destrutiva sabia cobrar o relógio e não sabia cobrar o dado.
+
+**Números medidos** — à esquerda o estado antes da branch, contado arquivo a arquivo:
+
+| Dimensão | Antes | Depois |
+|---|---|---|
+| Regras do `AGENT_PROTOCOL.md` | 9 | **10** |
+| Agentes que recomendam mudança com produtor nomeado | 1 de 8 | **8 de 8** |
+| Skills que recomendam mudança com produtor nomeado | 2 de 14 | **14 de 14** |
+| Regras do catálogo com eixo de resultado no `validation` | 59 de 81 | **62 de 81** |
+| Testes | 4713, 5 skipped | **4723**, 5 skipped |
+
+**Três medições contrariaram o levantamento que abriu a rodada, e as três estão aqui
+porque medição vence texto.** (1) O levantamento dizia "4 skills acionáveis, 1 parcial, 15
+mudas"; contadas uma a uma, **2** nomeavam produtor (`benchmark-pyspark-job`,
+`review-pyspark-pr`), **3** tinham o princípio sem verbo, **1** mencionava semântica por
+acidente e **14** calavam. (2) Dizia que `optimize-pyspark-code` tinha o princípio sem
+produtor; ele não tinha menção nenhuma — quem tinha eram `diagnose-data-skew`,
+`optimize-latest-per-key` e `design-incremental-processing`. (3) O eixo de resultado no
+catálogo era **59**, não 54; a diferença é a redação (`resultado idêntico` conta tanto
+quanto `resultado funcional`), e a contagem está no critério, não no número.
+
+**O que entrou.** A **regra 10** do protocolo, escrita na forma das outras nove e nomeando
+os dois produtores — `sparkforge funcval plan` e `sparkforge funcval compare`, com as tools
+`sparkforge_funcval_plan` e `sparkforge_funcval_compare` —, o gate
+`functional_validation_defined` que o plano destrava, e os três limites que a saída carrega.
+Seção nova em **8** perfis de agente e **14** skills, cada uma abrindo pelo que **move o
+dado naquele domínio**, não por princípio genérico. Três regras do catálogo com eixo de
+resultado: `SF-PY-009`, `SF-UI-004` e `SF-UI-005`.
+
+**O que ficou mudo, e é decisão, não esquecimento.** Os **4** executores de leitura
+(`sf-inventory`, `sf-extractor`, `sf-judge`, `sf-verifier`), que dizem por escrito que não
+propõem mudança, e as **4** skills de leitura (`analyze-library-call-graph`,
+`analyze-spark-plan`, `analyze-spark-ui`, `sparkforge-diagnose`). Texto decorativo em
+arquivo que não age é ruído que envelhece, e este arquivo já tem inventário demais de
+número copiado para acrescentar prosa copiada.
+
+**A contradição do catálogo era a medição mais forte da rodada, e não estava no
+levantamento.** `SF-UI-004` e `SF-UI-005` propõem "eliminar UDF Python" — com essas
+palavras — e mediam razão de GC, runtime e memória non-heap. `SF-PY-001`, `SF-PLAN-001`,
+`SF-PLAN-002` e `SF-PQ-002` propõem a **mesma troca** e todas exigem comparação linha a
+linha com nulls e bordas. O catálogo sabia a resposta três regras ao lado. A troca não fica
+mais barata por ter chegado pela via da Spark UI em vez da via do código, e
+`tests/test_rules_result_axis.py` pergunta ao catálogo quais regras propõem a troca em vez
+de fixar a lista — regra nova entra sozinha na parametrização.
+
+**Em `SF-PY-009` a metade contraintuitiva vem primeiro no `risks`, e ela é o motivo de a
+regra ter passado tanto tempo medindo só tempo e heap:** o conjunto de linhas do equi-join
+**não muda** entre `BroadcastHashJoin` e `SortMergeJoin`. Quem procurar a divergência na
+contagem não acha. O que muda é o particionamento e a ordem, e com eles todo operador não
+determinístico a jusante — `dropDuplicates`, `first`/`last`, `collect_list`,
+`monotonically_increasing_id`, `row_number` com empate — que devolve outra coisa com a
+**mesma** contagem. **Os quatro eixos de `SF-FVAL` passam inteiros enquanto a linha que
+sobreviveu é outra**, e é exatamente o ponto cego que a `SF-FVAL` declara. O `validation`
+foi escrito no padrão da `SF-EMR-005`, e a metade de campo do argumento está declarada em
+`sources` com `origin: field-heuristic`, porque a página do Spark sustenta o lado do plano
+e não sustenta o lado do resultado.
+
+**Um número que envelhecia dentro do texto que o produto emite.**
+`_KEYS_UNDECLARED_REASON` afirmava "nenhum dos 102 kinds dos 16 extratores nomeia chave de
+negócio", e essa frase é emitida em `funcval.plan.attrs.undeclared_axes`, aparece no
+`explanation` da `SF-FVAL-003`, na descrição de duas tools MCP e em três goldens. Medido: a
+união de `EMITTED_KINDS` tem **118** kinds em **19** módulos, e
+`spark-performance-architect.md` dizia **106** — três números diferentes para a mesma
+medida, nenhum certo. A correção não foi trocar 102 por 118, que envelhece pelo mesmo
+caminho: foi **tirar o número**. A afirmação que interessa continua inteira e passa a não
+ter validade.
+
+**Nenhum texto novo promete mais do que a ferramenta entrega**, e isso foi requisito de
+redação, não ressalva: os quatro eixos são **proxies** — contagem, schema, chaves e
+agregados iguais não provam que o dado é o mesmo, porque duas linhas podem trocar valores
+entre si e os quatro passam. Todo texto escrito nesta rodada carrega esse limite, e o teste
+do protocolo cobra a palavra `proxies` junto com os dois verbos e o gate.
+
+**Nada foi escrito em `description` de skill.** O teto de 1024 (`test_frontmatter_valido`)
+estava a **10** caracteres de distância em `review-emr-cluster` e a **44** em
+`optimize-pyspark-code`; o corpo não tem teto, e o digest de `## Protocolo` — que resume o
+contrato e existe nas 20 — ganhou a cláusula da regra 10 porque digest incompleto de um
+contrato de dez regras é a mesma família de defeito que este arquivo persegue em
+`AGENTS.md`.
+
+**Correção de contagem deste próprio arquivo.** A linha de *Números correntes* declarava
+**4634** testes; medidos na abertura da branch, eram **4713**. As 79 de diferença entraram
+com a revisão final da Fase 6a sem que o número subisse.
+
 ## Dívidas — fechadas em 2026-07-31
 
 As cinco dívidas listadas na versão anterior deste arquivo foram tratadas. Duas
@@ -1925,10 +2030,25 @@ declarados — 30 linhas abertas, e 25 fechadas.** As três parcelas foram obtid
 **contando as linhas das três tabelas**, não somando o que a rodada anterior
 escreveu — que é o defeito registrado no parágrafo acima.
 
-**Contagem corrente, depois da Fase 6a (2026-08-05): 3 dívidas, 6 fases, 21
-limites declarados — 30 linhas abertas, e 31 fechadas.** Contadas **linha a
-linha** nas três tabelas, e não somando o que a rodada anterior escreveu — que é
-o defeito registrado dois parágrafos acima. A Fase 6a **não fechou nenhuma
+**Contagem corrente, depois da rodada de preservação semântica (2026-08-05): 3
+dívidas, 8 fases, 23 limites declarados — 34 linhas abertas, e 31 fechadas.**
+Contadas **linha a linha** nas três tabelas, com script, e não somando o que a
+rodada anterior escreveu. A rodada **não fechou nenhuma linha** e abriu **duas**,
+as duas *fase* e as duas medidas antes de escritas: o invariante de eixo de
+resultado no `loader`, e a rejeição no `validate`. Nenhuma delas virou dívida, e
+a razão está escrita em cada linha — as duas fecham **decidindo um contrato**,
+não escrevendo código que alguém esqueceu, e a segunda depende da primeira.
+
+**A contagem da Fase 6a estava errada em duas linhas, e a correção fica aqui em
+vez de apagada.** O parágrafo abaixo declarava "21 limites declarados — 30 linhas
+abertas", e o cabeçalho da própria tabela já dizia `### Limites declarados (23)`.
+Contadas linha a linha na mesma data, são **23**, e o total aberto era **32**, não
+30. É o quarto registro deste mesmo defeito neste arquivo, e o mais irônico: a
+divergência estava entre o parágrafo e o **título da tabela que ele resume**.
+
+**Contagem anterior, depois da Fase 6a (2026-08-05), como foi escrita — superada
+pela de cima, e errada em duas linhas conforme o parágrafo acima: 3 dívidas, 6
+fases, 21 limites declarados — 30 linhas abertas, e 31 fechadas.** A Fase 6a **não fechou nenhuma
 linha** e abriu cinco: duas dívidas (o kind derivado que faltaria ao extrator de
 Terraform, e a fixture do limiar de `checkpointInterval`) e três limites
 declarados (jar de outro minor, conf de checkpoint fora do artefato, e o eixo
@@ -2026,7 +2146,7 @@ com teste. O que sustenta este número é o teste que ficou para trás, não a p
 | Nenhuma regra consegue dizer "o IaC não declarou o jar de GraphFrames" — falta `absent` filtrado por atributo, e o kind derivado que o substituiria | Fase 6a, veto `V-GR-1` no cabeçalho de `rules/catalog/graph.yaml`, medido ao escrever a regra que a §5 do spec previa | **Dívida — fechar é escrever código, e ninguém escreveu.** Medido: `engine._absent_satisfied` (`rules/engine.py:68-70`) compara **só `kind`**, e o kind é `tf.attribute` dos dois lados do par de fixtures — o que muda é `attrs.key`. Não existe `absent` filtrado por atributo nem `where` negado, então `absent: tf.attribute` seria falso para todo Terraform lido, e a regra acusaria **todo** job de grafo, inclusive quem declarou o jar. **O que fecharia** é um kind derivado no extrator de Terraform, no molde exato de `tf.observability.spark_ui`: o extrator decide uma vez e emite o kind já decidido, e a regra fica com `absent:` sobre ele. É código nosso, tem precedente no próprio repositório e não depende de terceiro. **O que NÃO fecha com ele** está na linha de *Limites declarados* sobre jar de outro minor: a metade **exculpatória** — tratar um `--extra-jars` como resolução — continua vetada na faixa 3.3 mesmo com o kind escrito, e as duas metades envelhecem de formas opostas. O par de fixtures `import_sem_jar_no_iac` × `import_com_jar_declarado` já existe, compartilha o `.py` byte a byte e difere só no `--extra-jars`: o corpus para a regra está pronto, o mecanismo é que não. |
 | `checkpointInterval > 2` tem fonte primária e limiar apurados, e nenhuma fixture o exercita | Fase 6a, veto `V-GR-2` no cabeçalho de `rules/catalog/graph.yaml`, medido contra as 25 fixtures | **Dívida — fechar é escrever corpus, e ninguém escreveu.** É o **único limiar numérico com fonte primária** desta área: `graphframes-api.md` §6 traz o aviso citável (o código adverte em `value <= 0 || value > 2`), e a §4.3.2 autoriza explicitamente "outra regra, com severidade menor". O que falta é golden positivo: o caso `> 2` **não tem fixture nenhuma**, e regra sem ele reprova `test_every_rule_has_a_fixture_that_fires_it`. O caso `<= 0` tem fixture, mas é `saida_intervalo_nao_positivo`, que o próprio `meta.yaml` declara "segunda forma de escrever certo" e que é uma das **cinco** saídas legítimas de `V-GF-1` — acusar o artefato que o corpus declara correto faria o relatório dizer as duas coisas ao mesmo tempo. **Fechar é uma fixture com `checkpointInterval` acima de 2 e um `<= 0` que não seja também saída legítima**, mais a regra. Nada a reverter, nada a esperar de terceiro. |
 
-### Fases (6)
+### Fases (8)
 
 Trabalho planejado. A coluna de impacto abre dizendo **onde a fase está
 prevista** — e **três** delas registram que a sua ainda não tem posição na fila.
@@ -2048,6 +2168,8 @@ também a que carrega o buraco medido de extrator, escrito na própria linha.
 | Job runs e `billedResourceUtilization` do EMR Serverless | Fase 5d, não-objetivo registrado na §2 do spec | **Fase, não dívida — é eixo novo, não código faltando.** `get-application` descreve **definição**; `get-job-run`/`list-job-runs` descrevem **execução**, e uma application tem N runs, o que obriga a decidir amostragem, agregação e "qual run é representativo" — classe de decisão que o eixo de configuração não tem. `billedResourceUtilization` é a evidência de custo mais direta que a AWS expõe em qualquer serviço deste repositório, e por isso merece fase que a trate com cuidado, não apêndice da 5d. Sem posição na *Ordem*. |
 | Pré-init subdimensionada não é acusável | Fase 5d, veto registrado no cabeçalho de `rules/catalog/emr-serverless.yaml` (`D-5d-33`) | **Fase, e é a primeira consumidora concreta da linha acima — não fecha sozinha.** É o veto mais doloroso da 5d justamente porque a fonte descreve o defeito com precisão: *"the initial capacity memory configuration should be greater than the memory that the job and the overhead request"*. O que falta não é regra nem extrator: é **o outro lado da comparação**, que mora no `StartJobRun` e que esta fase não lê. Uma regra que só acusasse quando o job declara a memória na própria application produziria silêncio exatamente onde a prática comum está — pior que não ter regra, porque o silêncio se lê como aprovação. Fechar exige o eixo de job runs; escrever a regra antes dele é impossível com a informação que o artefato de definição carrega. |
 | A área `SF-CFG` foi **planejada e nunca escrita** | **Pré-existente**: declarada no primeiro commit de `rules/catalog/README.md` (`ffcf150`) e nunca implementada; medida na revisão de documentação de 2026-08-04 | **Reclassificada em 2026-08-05, de dívida para fase: a medição que a própria linha exigia foi feita, e ela achou pergunta que nenhuma área faz.** A linha dizia "ninguém mediu qual dos dois é"; medido agora, é o segundo. (1) `knowledge/spark/config-reference.md` documenta **28** propriedades `spark.*` com default exato, em quatro tabelas — **35** contando as outras páginas de `knowledge/` —, e **nenhuma delas é lida por regra nenhuma**. (2) Das 81 regras, **12** tocam superfície de configuração, e o recorte delas é o argumento: **três** leem uma chave nomeada de um bloco `Configurations` do EMR (`SF-EMR-001` lê `maximizeResourceAllocation`, `SF-EMR-003` lê `spark.dynamicAllocation.enabled`, `SF-EMR-005` lê `spark.sql.sources.partitionOverwriteMode`) — e só **duas** dessas nomeiam uma propriedade `spark.*`; **três** leem qualquer chave, e só para caçar segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`); **cinco** nomeiam argumento de job Glue ou atributo de recurso Terraform (`SF-ENV-003`, `SF-GLUE-001`, `SF-GLUE-003`, `SF-GLUE-004`, `SF-GLUE-005`); e **uma** ignora a chave por completo (`SF-PY-012`, cujo `when` é `{fact: pyspark.conf_set}` e mais nada). **Zero regras fora da área EMR leem uma propriedade `spark.*` nomeada.** (3) O sintoma, e ele é literal: **cinco** regras recomendam `spark.sql.adaptive.enabled` no `proposed_change` — `SF-PQ-001`, `SF-PY-005`, `SF-PY-009`, `SF-PY-010` e `SF-UI-006` — e **nenhuma regra do catálogo lê se ela está ligada**. (4) O dado já está no repositório, com procedência: os goldens de `fixtures/emr/` carregam **36** facts `emr.configuration`, os 36 com `provenance` e `artifact_sha256`, cobrindo **cinco** propriedades `spark.*` distintas — e **três delas** (`spark.sql.shuffle.partitions`, `spark.executor.memory`, `spark.executor.instances`) **têm zero consumidores**. Fact extraído, hasheado, versionado em golden, e que nenhuma regra pergunta. (5) Dois buracos de extrator, e os dois medidos. `--conf` não é desmontado: em `fixtures/terraform/unresolvable_values/input/job.tf:21` ele chega num heredoc do Terraform, vira um `tf.unresolved` com `reason: heredoc`, e as duas propriedades de dentro somem — uma delas é `spark.sql.adaptive.enabled=true`, exatamente a que cinco regras recomendam ligar. E o event log **não** emite `SparkListenerEnvironmentUpdate` (`sparkforge/facts/event_log.py:485-486` o lista entre os eventos ignorados de propósito): **a configuração efetivamente aplicada num run não é lida por superfície nenhuma**. **Portanto ela não morre por escrito.** Existe pergunta de configuração que nenhuma das três áreas faz, e responder a ela é trabalho de fase: decidir se o eixo vira área própria ou extensão das existentes, fechar os dois buracos de extrator, e resolver o problema que o próprio `config-reference.md` declara no cabeçalho — default documentado não é valor efetivo, e o Glue sobrescreve parte deles. **Ela não tem posição na *Ordem***, do mesmo jeito que a linha do EMR Serverless não teve até esta semana, e enfileirá-la é decisão de roadmap que esta rodada não toma. **A leitura anterior, da triagem de 2026-08-04, fica abaixo inteira — reclassificar não é reescrever:** **Dívida, e a mais antiga do inventário — nada a reverter, só decidir.** O `README.md` do catálogo declarava a área `CFG` (config Spark) e o arquivo `spark-config.yaml` desde o dia em que foi escrito. Medido: `git log --diff-filter=A -- rules/catalog/spark-config.yaml` não devolve **nada** — o arquivo nunca existiu em commit nenhum —, e `SF-CFG` não aparece em nenhum `.yaml`, `.py` ou teste do repositório. A tabela listava **15** arquivos para **14** reais e implicava **14** áreas contra **13** medidas; as duas linhas foram removidas, e a contagem de áreas passou a ser declarada por escrito (**treze**) para que a próxima divergência apareça. **O que fica em aberto é a decisão, não o texto:** configuração de Spark hoje é julgada de forma dispersa — `pyspark.conf_set` alimenta regras de `SF-PY`, e a configuração declarada em IaC alimenta `SF-GLUE` e `SF-EMR` (que carrega `Configurations` em dois níveis). Ou isso é reconhecido como a resposta definitiva e a `CFG` morre por escrito, ou existe uma pergunta de configuração que nenhuma das três áreas faz e aí ela vira fase. **Ninguém mediu qual dos dois é**, e é essa medição — não código — que fecha esta linha |
+| O eixo de resultado é cobrado por **texto**, e o `loader` não o exige de nenhuma regra | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela depende de uma decisão de contrato, não de código.** O que fecharia é um invariante de carga: toda regra que pode mudar o resultado carrega eixo de resultado no `validation`. **O custo medido, e é ele que tira isto de dívida:** a classificação "pode mudar o resultado" **não está no dado**. Das 81 regras, **62** já carregam o eixo e **19** não — e as 19 estão certas: são segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`), destino de log (`SF-EMR-006`, `SF-EMRS-003`, `SF-EMRS-004`, `SF-GLUE-002`), capacidade (`SF-EMR-004`, `SF-EMRS-005`, `SF-GLUE-001`, `SF-GLUE-005`), detecção de runtime (as cinco `SF-ENV`) e metodologia (`SF-PLAN-004`, `SF-UI-002`). Um invariante "todas as regras" reprovaria as 19 corretas; um invariante seletivo exige um **campo declarado por regra** — os 18 campos de regra hoje (`load_catalog()`) não têm nenhum que sirva de gatilho —, e campo novo no contrato de regra é bump de `schema_version`, cujo preço este arquivo declara no cabeçalho: um Finding gravado com `catalog_version: 2` sugere que o limiar que o julgou é outro. São **81** decisões escritas à mão, e cada uma é exatamente a linha *fato versus julgamento* que este repositório traça. **O que existe hoje, e é o piso, não o teto:** `tests/test_rules_result_axis.py` pergunta ao `proposed_change` quais regras trocam a implementação que produz o valor — **7** regras — e cobra o eixo de cada uma, mais os invariantes específicos da `SF-PY-009`. Ele pega a regra que **cala**, que era o estado medido, e não a que fala pouco. Sem posição na *Ordem*. |
+| `validate_output` não rejeita recomendação sem referência de validação funcional, como rejeita ganho sem `benchmark_ref` | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela vem DEPOIS da linha acima — as duas não são paralelas, e essa ordem é o achado.** O molde existe e funciona: `benchmark_ref` cita o `fact_id` de um `bench.run_delta`, e `validate.py` (**116** linhas, **8** menções ao campo) o cobra em duas camadas, forma e pertinência. Um `funcval_ref` citando o `fact_id` de um `funcval.plan` seria a simetria. **O custo medido tem duas parcelas, e a segunda é a que manda.** (1) Campo novo em `findings/models.py` é bump de `schema_version` do contrato de findings, e **113** findings golden em **90** fixtures passariam a ser gravados sob um contrato que os anteriores não declaram. (2) **O gatilho não existe, e é por isso que a ordem importa:** `benchmark_ref` só é exigido quando `expected_effect` é quantificado — um gatilho que **está no próprio finding** e não precisa de julgamento. Não há equivalente para o eixo do dado: "esta recomendação pode mudar o resultado" é precisamente a classificação que a linha acima mede como ausente do catálogo. Sem ela, a rejeição só teria duas formas, e as duas são piores que o texto: exigir de **todas** as recomendações, o que faria o campo virar ritual preenchido para passar — o defeito que a Fase 4a mediu no `benchmark_ref` de texto livre —, ou exigir de nenhuma. **Fechar esta linha é decidir o gatilho, e o gatilho é a fase de cima.** Sem posição na *Ordem*. |
 
 ### Limites declarados (23)
 

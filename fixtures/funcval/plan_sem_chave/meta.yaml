@@ -4,7 +4,7 @@ proves: >
   ausencia escrita nas duas formas que ela tem.
   Em `db.eventos`, que casa com o dump do catalogo, o plano pede quatro
   checks e `undeclared_axes` traz exatamente `["keys"]`, com a razao por
-  escrito: nenhum dos 102 kinds dos 16 extratores nomeia chave de
+  escrito: nenhum kind que os extratores emitem nomeia chave de
   negocio. O eixo que falta fica DITO, e nao calado -- mesma disciplina de
   `dq.unresolved` e `bench.unresolved`.
   Em `s3://bucket/curated/eventos/`, que nao casa com simbolo nenhum, o

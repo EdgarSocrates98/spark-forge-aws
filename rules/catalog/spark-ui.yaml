@@ -182,11 +182,15 @@ rules:
       - Cruzar com a série temporal de heap dos executores para classificar a causa.
       - Se heap não está cheio, eliminar UDF Python e conversões por linha.
       - Se heap está cheio, reduzir dado por executor ou usar worker com mais memória.
-    risks: [Aumentar memória quando a causa é alocação de objetos não resolve e encarece.]
+    risks:
+      - Aumentar memória quando a causa é alocação de objetos não resolve e encarece.
+      - "Das três ações propostas, duas não tocam o resultado (heap, worker) e UMA toca: eliminar UDF Python troca a implementação que produz o valor. Nulo, precisão decimal, fuso, ordenação de string e comportamento de borda diferem entre a UDF e a função nativa que a substitui, e a diferença não aparece no tempo de GC — que é justamente o que esta regra mede."
     tradeoffs: []
     validation:
       - Razão gc/run após a mudança.
       - Runtime e DPU-hours antes e depois.
+      - "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra representativa que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas. É a MESMA validação que SF-PY-001 e SF-PLAN-001 exigem para a MESMA troca, e ela não fica mais barata por a troca ter chegado aqui pela via do GC em vez da via do código."
+      - "Se a ação foi reduzir dado por executor ou trocar de worker: nenhum eixo de dado é exigido, e declarar isso é parte da validação — capacidade não move o resultado, e dizer qual das duas metades você aplicou é o que separa um run comparável de um experimento com duas variáveis."
     rollback: [Reverter a mudança de código ou de capacidade.]
     sources:
       - {origin: field-heuristic, note: "Limiares 15% e 20% são heurística de campo amplamente usada; não há valor normativo da AWS ou do Apache."}
@@ -216,12 +220,17 @@ rules:
       - Reduzir o tamanho de batch de pandas_udf, se houver.
       - Eliminar UDF Python, que é a fonte mais comum de consumo fora do heap.
       - Cruzar com glue.ALL.memory.non-heap.used.percentage para confirmar.
-    risks: [Aumentar overhead reduz a memória disponível para o heap dentro do mesmo container.]
+    risks:
+      - Aumentar overhead reduz a memória disponível para o heap dentro do mesmo container.
+      - "Duas das quatro ações propostas mudam o resultado, e nenhuma delas falha ao mudá-lo. Eliminar UDF Python troca nulo, precisão, fuso e borda pela semântica da função nativa. E reduzir o tamanho de batch de pandas_udf muda o resultado de toda UDF vetorizada que NÃO seja linha a linha — normalização, ranking, preenchimento por vizinho e qualquer coisa que olhe o batch inteiro devolvem outro valor com outro tamanho de batch. Nada no plano físico nem no event log acusa isso: o nó continua sendo ArrowEvalPython."
     tradeoffs: [Em algum ponto, worker maior é mais simples do que rebalancear heap e overhead.]
     validation:
       - Ausência de executores removidos no run seguinte.
       - glue.ALL.memory.non-heap.used.percentage abaixo do nível anterior.
       - Categoria de erro do Glue Observability sem OUT_OF_MEMORY_ERROR.
+      - "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas — a mesma validação que SF-PY-001 e SF-PLAN-001 exigem para a mesma troca."
+      - "Se a ação foi reduzir o batch de pandas_udf: a coluna produzida pela UDF comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma entrada. Contagem e schema são iguais por construção nos dois, então os eixos baratos não dizem nada aqui; é o valor que responde se a UDF era linha a linha ou não."
+      - "Se a ação foi só memoryOverhead: nenhum eixo de dado é exigido, e declarar isso é parte da validação — é a única das quatro que mexe em capacidade e não em semântica."
     rollback: [Reverter o valor de memoryOverhead.]
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html", retrieved: 2026-07-29}

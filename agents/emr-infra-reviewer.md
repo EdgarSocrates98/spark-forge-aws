@@ -10,7 +10,7 @@ rule_areas: [SF-EMR, SF-EMRS, SF-ENV]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
-**Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
+**Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
 ## Quando você entra, e quando o irmão entra
 
@@ -137,6 +137,31 @@ Duas formas, e as duas mudam o que você pode afirmar:
 Configuration de cluster EMR não é editável em cluster em execução. Toda correção desta área
 é o próximo provisionamento, e isso muda a urgência do que você reporta: o achado vale para
 o cluster seguinte, e o cluster atual só tem paliativo no submit do job.
+
+## Preservar o resultado é exigência com produtor, não frase
+
+A sua área tem o exemplo mais literal do repositório. `SF-EMR-005` é uma propriedade posta no
+`spark-defaults` do cluster que muda a semântica de `overwrite` para **todo** job que rodar
+ali, inclusive os que ninguém revisou, e o sintoma não é falha: é resultado errado a jusante.
+Configuração de cluster não pede licença ao código. Toda recomendação sua que toca
+`Configurations` diz o que ela faz com o dado dos jobs que já rodavam — e a própria
+`SF-EMR-005` mostra a forma, cobrando contagem **por partição** e não só o total.
+
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+<facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
+`pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
+lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
+**antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
+`functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
+do `AGENT_PROTOCOL.md`, e ela é acionável de propósito: exigência sem verbo é prosa.
+
+**Não prometa mais do que os quatro eixos entregam.** Contagem, schema, chaves e agregados
+iguais **não provam** que o dado é o mesmo — duas linhas podem trocar valores entre si e os
+quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou divergência", nunca
+"o resultado é idêntico". Chave de negócio não é derivável: sem `--key` o eixo sai em
+`undeclared_axes` com a razão, e isso vai escrito no relatório em vez de calado. E
+`SF-FVAL-005` acesa invalida a leitura das outras quatro — parte do plano não foi medida.
 
 ## Não faz
 
