@@ -123,8 +123,9 @@
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # O QUE ESTA TASK VETOU OU REDUZIU, medindo contra o motor e contra o corpus.
-# Os vetos acima vieram da FONTE; estes vieram do que o motor e as 19 fixtures
-# conseguem provar.
+# Os vetos acima vieram da FONTE; estes vieram do que o motor e as 25 fixtures
+# conseguem provar (eram 19 quando a Task 5 os escreveu; a revisão final da
+# Fase 6a acrescentou seis, e nenhuma delas move estes vetos).
 #
 # V-GR-1  A REGRA DO IaC NAO ENTRA COMO REGRA PROPRIA, e por dois motivos
 #         independentes -- basta um.
@@ -180,7 +181,7 @@
 #         severidade precisa de golden que a produza
 #         (`test_every_severity_branch_has_a_golden_that_produces_it`), e os
 #         discriminadores plausiveis -- `attrs.guarded` do import, `inside_loop`
-#         do algoritmo acusado -- nao tem, no corpus de 19 fixtures, um caso de
+#         do algoritmo acusado -- nao tem, no corpus de 25 fixtures, um caso de
 #         cada lado DENTRO da mesma regra. Ramo sem golden e severidade que
 #         ninguem mediu.
 #

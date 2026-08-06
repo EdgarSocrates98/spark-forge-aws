@@ -196,14 +196,14 @@ the duplicate and the silence.
 between `SF-PY`, `SF-DQ` and `SF-GRAPH` is three-way and no artifact split
 separates any of them: `tests/test_rules_graph_boundary.py` runs all three
 extractors over all three corpora, which is the only door where "does the
-neighbouring area invade?" has an answer at all. Measured there — `SF-PY` fires **16 times over 14 of the
-19 graph fixtures** and that is legitimate work, not invasion: every one of the
-sixteen cites `pyspark.cache` or `pyspark.conf_set` and never a `graph.*` fact.
+neighbouring area invade?" has an answer at all. Measured there — `SF-PY` fires **23 times over 20 of the
+25 graph fixtures** and that is legitimate work, not invasion: every one of the
+twenty-three cites `pyspark.cache` or `pyspark.conf_set` and never a `graph.*` fact.
 `cache`/`persist`/`unpersist` were deliberately kept out of the graph algorithm
 vocabulary because `pyspark.cache` already emits them. The same measurement is
 what decided that `SF-GRAPH` stays with `pyspark-code-reviewer` instead of
-getting a coordinator of its own: `SF-GRAPH` fires on 5 of those 19 fixtures,
-and those 5 are a **subset** of the 14 — there is no measured job where the
+getting a coordinator of its own: `SF-GRAPH` fires on 6 of those 25 fixtures,
+and those 6 are a **subset** of the 20 — there is no measured job where the
 graph question arrives alone. The `SF-DQ` precedent measures the inverse
 (`SF-DQ` on 8 of 13 dq fixtures against `SF-PY` on 2), which is why that one did
 split.

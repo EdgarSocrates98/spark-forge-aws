@@ -27,6 +27,26 @@ TRES COISAS QUE O PROXIMO LEITOR VAI PERGUNTAR, respondidas antes.
    lidos quando ESTE modulo importa GraphFrames, e a evidencia independente que
    os habilita e exatamente a que o item 2 descreve.
 
+   `GraphFrame`, O CONSTRUTOR, ESTA NO NIVEL DISTINTIVO, e isso e decisao e nao
+   descuido: `constructors` nasce semeado com ele, sem exigir import. E o mesmo
+   criterio de `connectedComponents` -- nome publicado, especifico da biblioteca,
+   improvavel como identificador de usuario --, e exigir o import perderia forma
+   real: um `from minha_lib.grafo import GraphFrame` que reexporta o simbolo nao
+   deixa `graphframes` nenhum neste arquivo, e a construcao existe do mesmo
+   jeito.
+
+   O PRECO DOS DOIS NIVEIS TAMBEM APARECE EM ACHADO, e nao so em fact -- dizer o
+   contrario seria declarar meio preco. Com GraphFrames importado, um
+   `"...".find(x)` dentro de laco vira `graph.algorithm` com `inside_loop: true`
+   e sai como `SF-GRAPH-004` (P2); e um `GraphFrame(v, e)` sem import nenhum vira
+   `graph.construction` e pode sair como `SF-GRAPH-003` (P2). Fechar o primeiro
+   exigiria correlacionar o receptor com um nome que ESTE arquivo viu ser
+   construido como grafo -- o que trocaria um falso positivo estreito (import
+   presente E `str.find` dentro de laco) por um falso negativo largo, porque
+   grafo que chega por parametro e forma corrente e este modulo ja declara nao
+   saltar para o chamador. Medido, e nao fechado: as duas severidades sao P2, e
+   nenhuma das duas e a acusacao P0 que esta area existe para nao cometer.
+
    Tres nomes da API ficam DE FORA de proposito: `cache`, `persist` e
    `unpersist`. Sao herdados da forma de DataFrame, `pyspark.cache` ja os emite
    sobre o mesmo artefato, e reemiti-los aqui duplicaria o sujeito de
