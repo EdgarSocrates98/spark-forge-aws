@@ -104,7 +104,9 @@ escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória 
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
 manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
 retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
-operador na sessão.
+operador na sessão. E **derive o plano de validação funcional** com `funcval plan` antes de fechar a
+recomendação, comparando os dois lados medidos com `funcval compare` — a regra 10, e ela
+nomeia o produtor de propósito: exigência sem verbo é prosa.
 
 Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
 `ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a

@@ -95,9 +95,34 @@ Encerrar só com mais workers, mudança de `shuffle.partitions`, hint de broadca
 - Tratar `optimize-latest-per-key` como opcional quando existe cálculo de mais recente por chave sobre histórico Iceberg — não há regra de roteamento que lembre disso por você.
 - Ignorar `SF-PY-004` quando presente e seguir investigando joins ou skew antes de resolver o loop.
 
+## Preservar o resultado, com o verbo que produz a evidência
+
+A investigação que você coordena termina em mudança de lookback, de batching, de
+latest-per-key ou de bookmark — as quatro decidem **quais linhas existem no destino**, não
+quanto tempo o job leva. Um desempate de timestamp trocado não muda contagem nenhuma e muda a
+linha que ficou.
+
+`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
+`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+<antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
+`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+`ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
+**antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
+
+Os quatro eixos são **proxies**, e escrever o contrário promete o que a ferramenta não
+entrega: contagem, schema, chaves e agregados iguais **não provam** que o dado é o mesmo — duas
+linhas podem trocar valores entre si e os quatro passam. Escreva "nenhum dos quatro proxies
+detectou divergência", nunca "o resultado é idêntico". Sem `--key`, a chave de negócio sai em
+`undeclared_axes` com a razão, e isso vai dito. `SF-FVAL-005` acesa invalida a leitura das
+outras quatro.
+
 ## Protocolo
 
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
 escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória para limiar e
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
-manutenção destrutiva só com confirmação explícita.
+manutenção destrutiva só com confirmação explícita. E **derive o plano de validação funcional** com `funcval plan` antes de fechar a
+recomendação, comparando os dois lados medidos com `funcval compare` — a regra 10, e ela
+nomeia o produtor de propósito: exigência sem verbo é prosa.
