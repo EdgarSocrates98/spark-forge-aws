@@ -1,0 +1,119 @@
+[
+  {
+    "id": "f_0ec546",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 15,
+      "col": 11,
+      "end_line": 15,
+      "symbol": "componentes",
+      "snippet": "return g.connectedComponents(use_local_checkpoints=True)"
+    },
+    "measures": {
+      "line": 15
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": false,
+      "receiver": "g",
+      "use_local_checkpoints": true,
+      "checkpoint_required": false,
+      "checkpoint_configured_in_module": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "6c02f9a242d6a969cc675bb10bdd1f47c88f063a735c4a78da52f2fe0e0ed968",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_d69fe9",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 14,
+      "col": 8,
+      "end_line": 14,
+      "symbol": "componentes",
+      "snippet": "g = GraphFrame(v, e)"
+    },
+    "measures": {
+      "line": 14
+    },
+    "attrs": {
+      "constructor": "GraphFrame",
+      "inside_loop": false,
+      "vertices_ref": "v",
+      "vertices_persisted": true,
+      "edges_ref": "e",
+      "edges_persisted": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "6c02f9a242d6a969cc675bb10bdd1f47c88f063a735c4a78da52f2fe0e0ed968",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_80beb2",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "end_line": 6,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "measures": {
+      "line": 6
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes",
+      "symbol": "GraphFrame",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "6c02f9a242d6a969cc675bb10bdd1f47c88f063a735c4a78da52f2fe0e0ed968",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_eee1e1",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 1,
+      "construction_count": 1,
+      "algorithm_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "6c02f9a242d6a969cc675bb10bdd1f47c88f063a735c4a78da52f2fe0e0ed968",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

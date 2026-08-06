@@ -39,6 +39,14 @@ CURRENT = ("4.0", "5.0", "5.1")
 #               format V3 do Iceberg, que so existe a partir de 5.1. Em 4.0 e
 #               5.0 nao ha V3 para escrever, entao pular e correto.
 #
+#   SF-GRAPH-002 `spark: [">=3.3", "<3.4"]` -- "nao ha artefato de GraphFrames
+#               publicado para este Spark". Glue 4.0 e Spark 3.3.0 e e a UNICA
+#               das tres correntes sem jar, entao ela e avaliada la e pulada em
+#               5.0 (3.5.4) e 5.1 (3.5.6), onde ha `0.8.3-spark3.5` e a serie
+#               `io.graphframes` inteira. Esta e a direcao que doi ao contrario
+#               das outras: se ela aparecer em 4.0, a faixa esta errada, e as
+#               nove celulas sem jar ficam sem cobertura.
+#
 # SF-ENV-004 ESTAVA aqui, com `glue: "<4.0"`, e saiu na Task 3c da Fase 5a. O
 # guarda estava na camada errada: a condicao do `when` e `attrs.spark_minor <
 # 3.2`, puramente Spark, e um EMR com Spark 3.1.1 nao tem chave `glue` -- a
@@ -49,8 +57,8 @@ CURRENT = ("4.0", "5.0", "5.1")
 # `test_fixtures_golden_runtime.py::test_aqe_boundary_holds_on_both_sides`.
 EXPECTED_OUT_OF_SCOPE = {
     "4.0": {"SF-ENV-002"},
-    "5.0": {"SF-ENV-002"},
-    "5.1": set(),
+    "5.0": {"SF-ENV-002", "SF-GRAPH-002"},
+    "5.1": {"SF-GRAPH-002"},
 }
 
 

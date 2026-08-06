@@ -1,0 +1,205 @@
+[
+  {
+    "id": "f_f74a92",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 37,
+      "col": 21,
+      "end_line": 37,
+      "symbol": "componentes_de_clientes",
+      "snippet": "saida.append(grafo.connectedComponents())"
+    },
+    "measures": {
+      "line": 37
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": true,
+      "receiver": "grafo",
+      "checkpoint_required": true,
+      "checkpoint_configured_in_module": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1a2bfebbc7654ee28920b6f8eafa8df3c6c69e8a33697e4e9bc1910a4da3ee00",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_04e825",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 48,
+      "col": 21,
+      "end_line": 48,
+      "symbol": "componentes_de_produtos",
+      "snippet": "saida.append(grafo.connectedComponents())"
+    },
+    "measures": {
+      "line": 48
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": true,
+      "receiver": "grafo",
+      "checkpoint_required": true,
+      "checkpoint_configured_in_module": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1a2bfebbc7654ee28920b6f8eafa8df3c6c69e8a33697e4e9bc1910a4da3ee00",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_b8acb8",
+    "schema_version": 1,
+    "kind": "graph.checkpoint_dir",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 26,
+      "col": 4,
+      "end_line": 26,
+      "symbol": "_sessao",
+      "snippet": "spark.sparkContext.setCheckpointDir(\"s3://checkpoints/grafo/\")"
+    },
+    "measures": {
+      "line": 26
+    },
+    "attrs": {
+      "form": "set_checkpoint_dir",
+      "literal": "s3://checkpoints/grafo/",
+      "receiver": "spark"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1a2bfebbc7654ee28920b6f8eafa8df3c6c69e8a33697e4e9bc1910a4da3ee00",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_40d98a",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 34,
+      "col": 12,
+      "end_line": 34,
+      "symbol": "componentes_de_clientes",
+      "snippet": "grafo = GraphFrame(v, e)"
+    },
+    "measures": {
+      "line": 34
+    },
+    "attrs": {
+      "constructor": "GraphFrame",
+      "inside_loop": false,
+      "vertices_ref": "v",
+      "vertices_persisted": true,
+      "edges_ref": "e",
+      "edges_persisted": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1a2bfebbc7654ee28920b6f8eafa8df3c6c69e8a33697e4e9bc1910a4da3ee00",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_3ef2bd",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 45,
+      "col": 12,
+      "end_line": 45,
+      "symbol": "componentes_de_produtos",
+      "snippet": "grafo = GraphFrame(v, e)"
+    },
+    "measures": {
+      "line": 45
+    },
+    "attrs": {
+      "constructor": "GraphFrame",
+      "inside_loop": false,
+      "vertices_ref": "v",
+      "vertices_persisted": true,
+      "edges_ref": "e",
+      "edges_persisted": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1a2bfebbc7654ee28920b6f8eafa8df3c6c69e8a33697e4e9bc1910a4da3ee00",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_91332f",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 20,
+      "col": 0,
+      "end_line": 20,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "measures": {
+      "line": 20
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes",
+      "symbol": "GraphFrame",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1a2bfebbc7654ee28920b6f8eafa8df3c6c69e8a33697e4e9bc1910a4da3ee00",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_93c43c",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 1,
+      "construction_count": 2,
+      "algorithm_count": 2,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "1a2bfebbc7654ee28920b6f8eafa8df3c6c69e8a33697e4e9bc1910a4da3ee00",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

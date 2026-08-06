@@ -1,0 +1,21 @@
+name: graphframe_em_laco
+proves: >
+  Construcao e algoritmo POR ITERACAO: `inside_loop: true` nos dois facts. Um
+  grafo por dia processado, cada iteracao refazendo o trabalho inteiro.
+  Cobre tambem as duas dimensoes de posicao do import que nenhuma outra fixture
+  cobre: dentro de funcao (`scope: function`) e sob `try:` (`guarded: true`),
+  com alias -- o idioma de dependencia opcional, que continua sendo evidencia de
+  que este job usa GraphFrames.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.module_analyzed
+expects_rules:
+  - SF-GRAPH-004

@@ -57,6 +57,12 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 |---|---|
 | [`dq/validation-frameworks.md`](dq/validation-frameworks.md) | Superfície pública corrente de Great Expectations e PyDeequ, alcance de versões contra `GLUE_MATRIX`/`EMR_MATRIX`, o que a fonte primária garante sobre passadas sobre o dado, e `assert` sob `python -O`. Traz o bloco de **vetos** que o catálogo `SF-DQ` cita |
 
+### Grafo com Spark
+| Arquivo | Conteúdo |
+|---|---|
+| [`graph/graphframes-api.md`](graph/graphframes-api.md) | Superfície pública do GraphFrames nas **duas linhagens** (`graphframes` até 0.8.4, `io.graphframes` de 0.9.0 em diante): construção, colunas obrigatórias `id`/`src`/`dst`, vocabulário real de algoritmos, e as duas perguntas que decidem regra — checkpoint em `connectedComponents` é **exigência** e o algoritmo **falha** com `java.io.IOException`; `maxIter` **não** tem default único e em nenhum algoritmo a ausência é defeito. Traz o bloco de **vetos** `V-GF-*` |
+| [`graph/availability.md`](graph/availability.md) | Matriz GraphFrames × Spark × Glue/EMR: as **nove células sem jar nenhum** (Glue 4.0 e EMR 6.8.0–6.11.1, todas Spark 3.3), o piso de Python 3.10 de `graphframes-py`, e as listas da AWS onde GraphFrames **não** aparece. Traz o bloco de **vetos** `V-AV-*` |
+
 ### Plataformas de agente
 | Arquivo | Conteúdo |
 |---|---|
@@ -78,11 +84,11 @@ Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever
 
 ## Fontes e frescor
 
-Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, e `devin/` e `emr-serverless/` em **2026-08-04**.
+Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, `devin/` e `emr-serverless/` em **2026-08-04**, e `graph/` em **2026-08-05**.
 
 **A seção `Fontes` de cada arquivo daqui é vigiada.** `scripts/refresh_knowledge.py::watchlist` deriva a lista de URLs de **duas** origens, e nenhuma das duas é mantida à mão: `sources[].url` das regras do catálogo (campo `rules` no lock) e as URLs que aparecem nos blocos `Fontes` destas páginas (campo `docs`). `tests/test_refresh_knowledge.py::test_the_committed_lock_matches_the_watchlist` exige igualdade exata entre o lock e a união das duas.
 
-Até 2026-08-05 a origem era **só o catálogo**, e o efeito ninguém tinha medido: conhecimento que nenhuma regra cita nunca entrava. O caso que fechou a dívida foi `devin/agents-and-subagents.md` — ela não sustenta regra nenhuma, sustenta **perfil de agente**, e as 24 URLs de `docs.devin.ai` envelheciam sem alarme sobre uma superfície que a própria fonte declara experimental. O lock foi de **51 para 109** fontes: 58 entraram por `knowledge/` e nenhuma delas tem hash ainda, porque hash só se escreve depois de ler a página. A próxima conferência com rede as relata como **NOVA**, que é a verdade.
+Até 2026-08-05 a origem era **só o catálogo**, e o efeito ninguém tinha medido: conhecimento que nenhuma regra cita nunca entrava. O caso que fechou a dívida foi `devin/agents-and-subagents.md` — ela não sustenta regra nenhuma, sustenta **perfil de agente**, e as 24 URLs de `docs.devin.ai` envelheciam sem alarme sobre uma superfície que a própria fonte declara experimental. O lock foi de **51 para 109** fontes no dia em que a segunda origem entrou: 58 delas por `knowledge/` e nenhuma com hash ainda, porque hash só se escreve depois de ler a página — a próxima conferência com rede as relata como **NOVA**, que é a verdade. **Hoje o lock está em 131**, e as 22 que entraram depois vieram com a Fase 6a: 13 chegam **só** por `knowledge/graph/`, e o total de fontes que existem apenas pela segunda origem subiu de 58 para **70**.
 
 O **vínculo de volta** é o que impede a segunda origem de virar ruído: toda entrada do lock nomeia pelo menos um consumidor — regra, página, ou as duas —, e o relatório imprime os dois. URL citada pelas duas com `retrieved` diferentes carrega **as duas datas**, para que a divergência apareça em vez de ser resolvida por chute.
 

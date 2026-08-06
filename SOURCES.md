@@ -35,8 +35,8 @@ normalizado, a data da conferência e **quem depende daquela fonte** — o relat
 "a doc mudou assim", diz "a doc mudou, e as regras X e Y, e a página Z, dependem dela".
 
 Fonte com versão no path (`docs/3.5.6/`, `apache-iceberg-1.0.0`) não é buscada: o conteúdo
-é imutável e vigiá-la só produziria ruído. Hoje são **109 fontes, 103 móveis e 6 fixas** —
-51 citadas por regra, 104 citadas por `knowledge/`, e 46 pelas duas.
+é imutável e vigiá-la só produziria ruído. Hoje são **131 fontes, 123 móveis e 8 fixas** —
+61 citadas por regra, 126 citadas por `knowledge/`, e 56 pelas duas.
 
 **Por que a segunda origem existe.** Até 2026-08-05 a watchlist derivava só das regras, e
 conhecimento **sem regra que o citasse** nunca entrava. O caso que fechou a dívida é

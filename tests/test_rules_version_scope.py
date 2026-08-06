@@ -60,3 +60,48 @@ class TestInScope:
     def test_malformed_spec_raises(self):
         with pytest.raises(ValueError, match="runtime_scope"):
             in_scope({"glue": "~>5.0"}, {"glue": "5.0"})
+
+
+class TestListOfSpecsOnOneKey:
+    """Uma faixa de UM minor precisa de dois specs na mesma chave.
+
+    `runtime_scope` e um mapa, entao `>=3.3` e `<3.4` nao cabem em duas
+    entradas. E nenhum spec sozinho resolve: `"==3.3"` casa `3.3.0` e reprova
+    `3.3.1`/`3.3.2` -- os Sparks de EMR 6.10.x e 6.11.x --, e `">=3.3"` sozinho
+    estende a regra a 3.4 e 3.5. Primeiro consumidor: SF-GRAPH-002.
+    """
+
+    BANDA = {"spark": [">=3.3", "<3.4"]}
+
+    def test_the_band_accepts_every_patch_of_the_minor(self):
+        for versao in ("3.3", "3.3.0", "3.3.1", "3.3.2", "3.3.2-amzn-0.1"):
+            assert in_scope(self.BANDA, {"spark": versao}) is True, versao
+
+    def test_the_band_rejects_both_neighbours(self):
+        for versao in ("3.2.1-amzn-0", "3.2.0", "3.1.1", "3.4.0-amzn-0", "3.5.4"):
+            assert in_scope(self.BANDA, {"spark": versao}) is False, versao
+
+    def test_a_single_spec_could_not_express_it(self):
+        """A medicao que justifica a lista, e nao uma opiniao sobre ela."""
+        assert in_scope({"spark": "==3.3"}, {"spark": "3.3.0"}) is True
+        assert in_scope({"spark": "==3.3"}, {"spark": "3.3.2"}) is False
+        assert in_scope({"spark": ">=3.3"}, {"spark": "3.5.4"}) is True
+
+    def test_the_list_still_fails_closed_on_an_absent_key(self):
+        assert in_scope(self.BANDA, {"spark": ""}) is False
+        assert in_scope(self.BANDA, {}) is False
+
+    def test_the_list_composes_with_other_keys(self):
+        scope = {"spark": [">=3.3", "<3.4"], "glue": "*"}
+        assert in_scope(scope, {"spark": "3.3.0", "glue": "4.0"}) is True
+        assert in_scope(scope, {"spark": "3.3.0"}) is False
+
+    def test_an_empty_list_raises_instead_of_passing_vacuously(self):
+        """Chave que nao restringe nada parece guarda e nao e. Quem quer 'sem
+        restricao' escreve `runtime_scope: {}`."""
+        with pytest.raises(ValueError, match="lista vazia"):
+            in_scope({"spark": []}, {"spark": "3.3.0"})
+
+    def test_a_malformed_spec_inside_the_list_still_raises(self):
+        with pytest.raises(ValueError, match="runtime_scope"):
+            in_scope({"spark": [">=3.3", "~>3.4"]}, {"spark": "3.3.0"})

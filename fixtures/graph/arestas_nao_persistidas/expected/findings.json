@@ -1,0 +1,56 @@
+[
+  {
+    "rule_id": "SF-GRAPH-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Arestas do grafo não persistidas",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 16,
+      "col": 8,
+      "end_line": 16,
+      "symbol": "componentes",
+      "snippet": "g = GraphFrame(vertices, arestas)"
+    },
+    "evidence": [
+      "f_883b9c"
+    ],
+    "measured": {
+      "line": 16
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "As arestas deste grafo chegam ao construtor sem `cache`/`persist`, e é sobre elas que todo algoritmo iterativo de grafo passa uma vez por iteração. Spark é lazy: sem persistência, cada passada refaz o lineage inteiro — a leitura do S3, os filtros, os joins — em vez de reler o que já está materializado. O custo é proporcional ao lineage e ao número de iterações, não ao tamanho do grafo. A CHAVE `false` SÓ APARECE QUANDO O EXTRATOR VIU O NOME. Vértice ou aresta que chega por parâmetro deixa a chave OMITIDA, e `engine._where_matches` reprova caminho ausente — então esta regra é calada, e não acusadora, quando não pôde olhar. É subnotificação declarada: um helper que recebe o DataFrame do chamador nunca é julgado aqui. A EVIDÊNCIA É O EVENTO DE PERSISTÊNCIA NOS DOIS NOMES. `v = vertices.cache()` registra o evento em `vertices` e em `v`, porque casar só a raiz da cadeia faria `GraphFrame(v, e)` sair como não persistido sobre a forma mais comum de persistir em job real. ESTA REGRA FALA DAS ARESTAS, E SÓ DELAS. O caso simétrico — vértices não persistidos — não tem fixture no corpus desta fase, e condição sem golden que a exercite é condição não testada: escrevê-la por simetria seria exatamente a metade que some sem ninguém sentir. Limite declarado, não esquecimento. A FRONTEIRA COM `SF-PY-008` E `SF-DQ-003`: aquelas duas julgam `pyspark.cache` e `dq.check`; esta julga `graph.construction`. O sujeito é outro, e `cache`, `persist` e `unpersist` não são vocabulário de algoritmo desta área.",
+    "proposed_change": [
+      "Persistir as arestas antes de construir o `GraphFrame`, com o nível de storage adequado ao tamanho (`MEMORY_AND_DISK` para grafos que não cabem em memória), e liberar com `unpersist` depois da última action.",
+      "Se as arestas já vêm de uma tabela pequena e o algoritmo faz uma passada só (`bfs`, `find`, `triangleCount`), medir antes: persistir aqui pode custar mais do que economiza."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Persistir arestas de um grafo grande pressiona memória de executor e pode causar spill ou OOM — o remédio de um gargalo vira outro.",
+      "`unpersist` esquecido mantém blocos ocupando memória e disco até o fim do job, e o efeito aparece longe da mudança."
+    ],
+    "tradeoffs": [
+      "Persistir troca CPU e I/O de recomputo por memória; qual é melhor depende de qual recurso está saturado."
+    ],
+    "validation": [
+      "Número de jobs Spark submetidos antes e depois, na Spark UI — a queda é o sinal de que o lineage parou de ser refeito.",
+      "Contagem de arestas e contagem de vértices do resultado, inalteradas.",
+      "Tempo total de execução com o volume de produção."
+    ],
+    "rollback": [
+      "Remover as chamadas de `persist`/`unpersist` acrescentadas; nada mais muda no job."
+    ],
+    "sources": [
+      {
+        "origin": "field-heuristic",
+        "note": "Nenhuma fonte oficial quantifica o custo de recomputação de vértices ou arestas não persistidos: a documentação menciona `storage_level` e avisa que o DataFrame devolvido é persistido e deve ser liberado, mas não declara em lugar nenhum quantas passadas um algoritmo faz sobre a entrada (`knowledge/graph/graphframes-api.md` §8). O gatilho aqui é a laziness do Spark, que é comportamento do motor e não da biblioteca, e a forma da regra é herdada de `SF-DQ-003`. Sem limiar numérico, e nenhuma das páginas de GraphFrames é citada como se a sustentasse.\n"
+      }
+    ]
+  }
+]

@@ -1,0 +1,245 @@
+[
+  {
+    "id": "f_ee12d4",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 14,
+      "end_line": 22,
+      "symbol": "componentes",
+      "snippet": "anonimo = carregar(spark).pageRank(maxIter=5)"
+    },
+    "measures": {
+      "line": 22,
+      "iteration_literal": 5
+    },
+    "attrs": {
+      "name": "pageRank",
+      "form": "call",
+      "inside_loop": false,
+      "iteration_arg": "maxIter"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_46f172",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 21,
+      "col": 15,
+      "end_line": 21,
+      "symbol": "componentes",
+      "snippet": "variavel = g.connectedComponents(algorithm=escolha)"
+    },
+    "measures": {
+      "line": 21
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": false,
+      "receiver": "g"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_a222ff",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 20,
+      "col": 17,
+      "end_line": 20,
+      "symbol": "componentes",
+      "snippet": "posicional = g.connectedComponents(\"graphx\")"
+    },
+    "measures": {
+      "line": 20
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": false,
+      "receiver": "g"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_adab8e",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 15,
+      "col": 11,
+      "end_line": 15,
+      "symbol": "carregar",
+      "snippet": "return GraphFrame(v, e)"
+    },
+    "measures": {
+      "line": 15
+    },
+    "attrs": {
+      "constructor": "GraphFrame",
+      "inside_loop": false,
+      "vertices_ref": "v",
+      "vertices_persisted": true,
+      "edges_ref": "e",
+      "edges_persisted": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_707a85",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 8,
+      "col": 0,
+      "end_line": 8,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "measures": {
+      "line": 8
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes",
+      "symbol": "GraphFrame",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_63f7e4",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 1,
+      "construction_count": 1,
+      "algorithm_count": 3,
+      "unresolved_count": 3
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_b9369c",
+    "schema_version": 1,
+    "kind": "graph.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 14,
+      "end_line": 22,
+      "symbol": "componentes",
+      "snippet": "anonimo = carregar(spark).pageRank(maxIter=5)"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "receiver_without_name",
+      "algorithm": "pageRank"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_8efa1d",
+    "schema_version": 1,
+    "kind": "graph.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 21,
+      "col": 15,
+      "end_line": 21,
+      "symbol": "componentes",
+      "snippet": "variavel = g.connectedComponents(algorithm=escolha)"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "non_literal_argument",
+      "param": "algorithm"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_ca75a1",
+    "schema_version": 1,
+    "kind": "graph.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 20,
+      "col": 17,
+      "end_line": 20,
+      "symbol": "componentes",
+      "snippet": "posicional = g.connectedComponents(\"graphx\")"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "positional_argument",
+      "algorithm": "connectedComponents"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "946b87d78e53335d969a9222cef966812985e46a5bae10e0d0136fc528f988c1",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

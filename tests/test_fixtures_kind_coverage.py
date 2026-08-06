@@ -33,6 +33,7 @@ from sparkforge.facts import (
     event_log,
     funcval,
     fusion,
+    graph,
     iceberg_metadata,
     pyspark_ast,
     runtime_detect,
@@ -64,6 +65,14 @@ EXTRACTORS = {
     # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
     "funcval": funcval,
     "fusion": fusion,
+    # `graph` entra nas DUAS listas no mesmo commit da Task 4 da Fase 6a, ANTES
+    # de a area SF-GRAPH existir. Sem ele aqui, os seis kinds `graph.*` nao sao
+    # verificados por ninguem e o criterio 4 do spec -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar. Medido pelo contrafactual: tirando esta linha,
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova
+    # nomeando os seis.
+    "graph": graph,
     "iceberg_metadata": iceberg_metadata,
     "pyspark_ast": pyspark_ast,
     "runtime_detect": runtime_detect,

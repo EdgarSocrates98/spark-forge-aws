@@ -1,0 +1,502 @@
+[
+  {
+    "id": "f_a932f4",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 22,
+      "col": 11,
+      "end_line": 22,
+      "symbol": "componentes",
+      "snippet": "return g.connectedComponents()"
+    },
+    "measures": {
+      "line": 22
+    },
+    "attrs": {
+      "name": "connectedComponents",
+      "form": "call",
+      "inside_loop": false,
+      "receiver": "g",
+      "checkpoint_required": true,
+      "checkpoint_configured_in_module": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "491e417a733ad94b894350d167130883cbb4206eb8772e0be7b4925c09f509c7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_e19d36",
+    "schema_version": 1,
+    "kind": "graph.checkpoint_dir",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 18,
+      "col": 4,
+      "end_line": 18,
+      "symbol": "componentes",
+      "snippet": "spark.sparkContext.setCheckpointDir(\"s3://checkpoints/grafo/\")"
+    },
+    "measures": {
+      "line": 18
+    },
+    "attrs": {
+      "form": "set_checkpoint_dir",
+      "literal": "s3://checkpoints/grafo/",
+      "receiver": "spark"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "491e417a733ad94b894350d167130883cbb4206eb8772e0be7b4925c09f509c7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_5af620",
+    "schema_version": 1,
+    "kind": "graph.construction",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 21,
+      "col": 8,
+      "end_line": 21,
+      "symbol": "componentes",
+      "snippet": "g = GraphFrame(v, e)"
+    },
+    "measures": {
+      "line": 21
+    },
+    "attrs": {
+      "constructor": "GraphFrame",
+      "inside_loop": false,
+      "vertices_ref": "v",
+      "vertices_persisted": true,
+      "edges_ref": "e",
+      "edges_persisted": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "491e417a733ad94b894350d167130883cbb4206eb8772e0be7b4925c09f509c7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_32bc0d",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 12,
+      "col": 0,
+      "end_line": 12,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "measures": {
+      "line": 12
+    },
+    "attrs": {
+      "form": "from",
+      "module": "graphframes",
+      "symbol": "GraphFrame",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "491e417a733ad94b894350d167130883cbb4206eb8772e0be7b4925c09f509c7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_eee1e1",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 1,
+      "construction_count": 1,
+      "algorithm_count": 1,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "491e417a733ad94b894350d167130883cbb4206eb8772e0be7b4925c09f509c7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_53ec3f",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 10,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "glueetl",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_ffba78",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 11,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "script_location",
+      "value": "s3://artefatos/scripts/job.py",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_9f4599",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 12,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "python_version",
+      "value": "3",
+      "present": true,
+      "literal": true,
+      "block": "command"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_6595a9",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 16,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--job-language",
+      "value": "python",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_af4c32",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 17,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--enable-spark-ui",
+      "value": "true",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_18c985",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 18,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "--spark-event-logs-path",
+      "value": "s3://logs/sparkui/",
+      "present": true,
+      "literal": true,
+      "block": "default_arguments"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4004f3",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 2,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "name",
+      "value": "grafo-sem-jar",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_4e8393",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 3,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "role_arn",
+      "value": "aws_iam_role.glue.arn",
+      "present": true,
+      "literal": false,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d6e0ea",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 4,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "glue_version",
+      "value": "4.0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_e4c16c",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 5,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "worker_type",
+      "value": "G.2X",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_601ac9",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 6,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {
+      "value": 10
+    },
+    "attrs": {
+      "key": "number_of_workers",
+      "value": "10",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_62f4f0",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 7,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {
+      "value": 0
+    },
+    "attrs": {
+      "key": "max_retries",
+      "value": "0",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d9da16",
+    "schema_version": 1,
+    "kind": "tf.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "main.tf",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "resource_count": 1,
+      "attribute_count": 12,
+      "unresolved_count": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_7d812c",
+    "schema_version": 1,
+    "kind": "tf.observability.spark_ui",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_d9303b",
+    "schema_version": 1,
+    "kind": "tf.resource",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.grafo_sem_jar"
+    },
+    "measures": {
+      "attribute_count": 12
+    },
+    "attrs": {
+      "resource_type": "aws_glue_job",
+      "resource_name": "grafo_sem_jar"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "56bb0a02951b3d68352b07db11b6bacb6b641b5fd1573b897e3e74fcd61f75a4",
+      "extractor": "terraform@0.1.0"
+    }
+  }
+]

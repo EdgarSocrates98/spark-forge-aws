@@ -1716,6 +1716,48 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_graph": {
+        "description": (
+            "Extrai facts de PROCESSAMENTO DE GRAFO com GraphFrames do proprio codigo "
+            "PySpark (`.py` do repositorio, nunca API da AWS). Emite `graph.import` "
+            "(a evidencia honesta de que o job usa GraphFrames, com `scope` e "
+            "`guarded` para o import dentro de funcao ou sob `try`), "
+            "`graph.construction` (o `GraphFrame(v, e)` com `vertices_persisted` e "
+            "`edges_persisted`, porque um grafo cujos dois DataFrames nao estao "
+            "persistidos e recomputado a cada iteracao), `graph.algorithm` (o "
+            "algoritmo chamado, seus argumentos literais, `inside_loop`, "
+            "`iteration_arg` quando o codigo passou algum, e `checkpoint_required` JA "
+            "DECIDIDO), `graph.checkpoint_dir` (`setCheckpointDir`, "
+            "`spark.checkpoint.dir` e `spark.graphframes.useLocalCheckpoints` lidos "
+            "DENTRO do arquivo) e `graph.module_analyzed`, que prova que o modulo foi "
+            "lido para que 'nenhum grafo' nao se confunda com 'nao analisei'. "
+            "NAO AFIRMA VERSAO: `from graphframes import GraphFrame` e identico em "
+            "0.8.2 e em 0.12.1, e nenhum fact daqui diz qual linhagem esta instalada. "
+            "NAO JULGA: nao aplica limiar, nao atribui severidade e nao diz se o grafo "
+            "cabe na memoria. Nao adivinha: despacho dinamico (`getattr`), import "
+            "montado em runtime, argumento posicional de `connectedComponents` e "
+            "vertice que chega por parametro viram `graph.unresolved` com `reason`, "
+            "contados como ponto cego em vez de presumidos resolvidos."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Arquivo .py ou diretorio com codigo PySpark.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_s3_listing": {
         "description": (
             "Extrai facts de um dump de `aws s3api list-objects-v2`: contagem, media, "
@@ -2666,6 +2708,15 @@ def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_graph(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_graph(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+    )
+
+
 def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_call_graph(
         args["facts_path"],
@@ -2802,6 +2853,7 @@ _HANDLERS = {
     "sparkforge_analyze_emr_cluster": _h_analyze_emr_cluster,
     "sparkforge_analyze_emr_serverless": _h_analyze_emr_serverless,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
+    "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
