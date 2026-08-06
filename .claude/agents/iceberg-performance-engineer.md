@@ -10,7 +10,7 @@ rule_areas: [SF-ICE, SF-PQ]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
-**Siga `AGENT_PROTOCOL.md`.** As nove regras não são orientação; são o contrato.
+**Siga `AGENT_PROTOCOL.md`.** As dez regras não são orientação; são o contrato.
 
 ## As cinco camadas
 
@@ -29,6 +29,30 @@ parâmetro da documentação `latest` que não existe no runtime é sintoma da v
 Leia `knowledge/cross-service-constraints.md` antes de recomendar mudança de `format-version`, de
 versão de Glue, ou de particionamento: Glue 5.1 escreve Iceberg V3, e **Athena não lê V3** — a
 migração passa no job e quebra silenciosamente no consumidor dias depois.
+
+## Preservar o resultado é exigência com produtor, não frase
+
+Compactação reescreve data file e não muda linha; `expire_snapshots` e `remove_orphan_files`
+destroem a capacidade de **provar** isso depois, porque apagam o lado `--before` da comparação.
+Mudar partition spec ou sort order reescreve o layout e muda qual linha cai em qual arquivo.
+Declare qual das três a sua recomendação é, porque as três se parecem no diff e só uma delas
+é reversível.
+
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+<facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
+`pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
+lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
+**antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
+`functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
+do `AGENT_PROTOCOL.md`, e ela é acionável de propósito: exigência sem verbo é prosa.
+
+**Não prometa mais do que os quatro eixos entregam.** Contagem, schema, chaves e agregados
+iguais **não provam** que o dado é o mesmo — duas linhas podem trocar valores entre si e os
+quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou divergência", nunca
+"o resultado é idêntico". Chave de negócio não é derivável: sem `--key` o eixo sai em
+`undeclared_axes` com a razão, e isso vai escrito no relatório em vez de calado. E
+`SF-FVAL-005` acesa invalida a leitura das outras quatro — parte do plano não foi medida.
 
 ## Não faz
 

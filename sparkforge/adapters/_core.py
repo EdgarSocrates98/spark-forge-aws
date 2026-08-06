@@ -1163,7 +1163,7 @@ def funcval_plan(
 
     `keys` sao as chaves de negocio DECLARADAS pelo operador (`--key`), cada
     elemento uma chave (composta quando tem virgula). Elas entram declaradas
-    porque nenhum dos 102 kinds dos 16 extratores nomeia chave de negocio
+    porque nenhum kind que os extratores emitem nomeia chave de negocio
     (D-4c-1, D-4c-2); sem elas o plano nao inventa o eixo -- ele o escreve como
     ausente em `undeclared_axes`.
 

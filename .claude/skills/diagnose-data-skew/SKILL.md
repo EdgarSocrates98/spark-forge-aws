@@ -60,6 +60,30 @@ Limiares e severidade de cada regra vêm de `sparkforge rules lookup --id <ID>`,
 - Salting global sem identificar as hot keys primeiro.
 - Alterar a chave ou a regra de join sem validar duplicidade e semântica do resultado depois.
 
+## Preservar o resultado, com o verbo que produz a evidência
+
+Os três tratamentos mudam o dado de formas diferentes, e é por isso que a skill já mandava
+"validar duplicidade e semântica do resultado depois" — sem dizer com quê. Salting acrescenta
+coluna e exige uma segunda agregação para desfazer; pré-agregação só preserva o resultado se a
+função for associativa e comutativa; e trocar a chave ou a regra de join muda a cardinalidade
+por construção. Aqui a exigência ganha o produtor que lhe faltava.
+
+`sparkforge funcval plan --facts <facts.json> --out <plano.json>` deriva o plano — `--facts`
+é repetível, porque o alvo vem do `pyspark.write` e o schema e os agregados vêm do
+`catalog.table_schema` —, e `sparkforge funcval compare --plan <plano.json> --before
+<antes.json> --after <depois.json>` compara os dois lados **que o operador mediu**: nenhum dos
+dois executa consulta, roda Spark ou chama AWS. Tools MCP: `sparkforge_funcval_plan` e
+`sparkforge_funcval_compare`. O plano é a evidência do gate `functional_validation_defined`, e
+`ROUTE-015` é a rota que manda defini-lo. O lado `--before` só existe se alguém o mediu
+**antes** de a mudança tocar o alvo — um `overwrite` no meio o apaga sem deixar rastro.
+
+Os quatro eixos são **proxies**, e escrever o contrário promete o que a ferramenta não
+entrega: contagem, schema, chaves e agregados iguais **não provam** que o dado é o mesmo — duas
+linhas podem trocar valores entre si e os quatro passam. Escreva "nenhum dos quatro proxies
+detectou divergência", nunca "o resultado é idêntico". Sem `--key`, a chave de negócio sai em
+`undeclared_axes` com a razão, e isso vai dito. `SF-FVAL-005` acesa invalida a leitura das
+outras quatro.
+
 ## Protocolo
 
 Siga `AGENT_PROTOCOL.md`. Resumo: abra o case antes de analisar; chame `next_step` antes de
@@ -67,7 +91,9 @@ escolher skill; nenhum número sem `fact_id`; `rules_lookup` em vez de memória 
 versão; `validate_output` antes de apresentar; reporte `unresolved`; confirme o runtime;
 manutenção destrutiva você **não executa** — recomende, e a confirmação de escopo e
 retenção **sobe a quem pode ser perguntado**: o agente pai que despachou, ou o
-operador na sessão.
+operador na sessão. E **derive o plano de validação funcional** com `funcval plan` antes de fechar a
+recomendação, comparando os dois lados medidos com `funcval compare` — a regra 10, e ela
+nomeia o produtor de propósito: exigência sem verbo é prosa.
 
 Esta skill é **despachável** (`subagent: true` no espelho `.agents/skills/`), e
 `ask_user_question` é **sempre negado** a um subagente. Dentro do despacho, obter a
