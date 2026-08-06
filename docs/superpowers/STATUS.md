@@ -36,7 +36,7 @@ arquivo ganha.
 | Regras de diagnóstico | **81** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **81 de 81** | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **24** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-008`) | `rules/catalog/routing.yaml` |
+| Rotas determinísticas | **26** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-010`) | `rules/catalog/routing.yaml` |
 | Tools MCP | **41** | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **41 de 41** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |

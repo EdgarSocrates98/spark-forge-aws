@@ -239,7 +239,7 @@ Ou selecione o agente **Glue Incremental Performance Architect**.
 ## 5. Coordenador e playbook: como entrar sem escolher à mão
 
 Qual coordenador usar não é escolha manual. `sparkforge next-step` (CLI) ou
-`sparkforge_next_step` (MCP) consulta as rotas `AGENT-001`…`AGENT-008` de
+`sparkforge_next_step` (MCP) consulta as rotas `AGENT-001`…`AGENT-010` de
 `rules/catalog/routing.yaml` e devolve `recommended_agent` a partir do estado do case —
 fase da investigação e área do achado dominante. Há oito coordenadores, cada um com
 executores declarados: ver a tabela em `AGENTS.md`.
