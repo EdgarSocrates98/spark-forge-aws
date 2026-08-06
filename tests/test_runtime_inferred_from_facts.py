@@ -44,6 +44,18 @@ GLUE_GUARDED_RULES = (
 # repositorio.
 GLUE_GUARDED_IDS = list(GLUE_GUARDED_RULES)
 
+# A nona regra com `runtime_scope` nao-vazio, e ela NAO entra na lista acima.
+# SF-GRAPH-002 e guardada por `spark`, numa faixa de um minor
+# (`{spark: [">=3.3", "<3.4"]}`): com `glue_version=5.1` no Terraform o Spark
+# derivado e 3.5.6, e ela e -- corretamente -- PULADA. Poe-la no parametrize de
+# cima faria o teste cobrar dela o oposto do que ela significa.
+# A cobertura de faixa dela mora em
+# `tests/test_rule_scope_by_nature.py::TestSparkVersionedRulesFireOnlyInsideTheirBand`,
+# que caminha a `GLUE_MATRIX` inteira nas duas direcoes.
+SPARK_GUARDED_RULES = ("SF-GRAPH-002",)
+
+VERSION_GUARDED_RULES = GLUE_GUARDED_RULES + SPARK_GUARDED_RULES
+
 # Terraform de um job Glue plausivel de producao. `glue_version` literal na raiz
 # do recurso e a UNICA coisa que este arquivo precisa provar; o resto existe
 # para o recurso ser um `aws_glue_job` real e nao um esqueleto.
@@ -203,16 +215,20 @@ def test_terraform_glue_version_puts_a_glue_guarded_rule_in_scope_without_any_fl
     )
 
 
-def test_the_catalog_still_guards_exactly_the_eight_rules_this_file_names(tmp_path):
+def test_the_catalog_still_guards_exactly_the_rules_this_file_names(tmp_path):
     """Se o catalogo ganhar ou perder um guarda de versao, este arquivo mente.
 
     Sem esta trava, um `runtime_scope` novo entraria sem cobertura e um
     removido deixaria o teste acima verde por vacuidade.
+
+    O conjunto e a UNIAO das guardadas por `glue` com as guardadas por `spark`:
+    as duas familias tem cobertura, em arquivos diferentes, e a igualdade aqui e
+    o que impede uma terceira nascer sem nenhuma.
     """
     from sparkforge.rules.loader import load_catalog
 
     guarded = {r["id"] for r in load_catalog() if r.get("runtime_scope")}
-    assert guarded == set(GLUE_GUARDED_RULES)
+    assert guarded == set(VERSION_GUARDED_RULES)
 
 
 def test_glue_version_from_terraform_alone_fills_the_whole_matrix(tmp_path):

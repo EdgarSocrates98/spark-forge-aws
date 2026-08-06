@@ -46,6 +46,7 @@ from sparkforge.facts.emr_serverless import (
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
+from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
 from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
@@ -921,6 +922,36 @@ def analyze_data_quality(
 ) -> dict[str, Any]:
     facts = _extract_data_quality_facts(path)
     return _facts_page(facts, "dq.unresolved", kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# analyze graph
+# --------------------------------------------------------------------------- #
+
+
+def _extract_graph_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio do codigo PySpark ou para um arquivo .py:\n"
+            f"    sparkforge analyze graph --path src/ "
+            f"--out .sparkforge/facts_graph.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_graph_tree(target, repo_root=target)
+    return extract_graph_path(target, repo_root=target.parent)
+
+
+def analyze_graph(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    facts = _extract_graph_facts(path)
+    return _facts_page(facts, "graph.unresolved", kind, limit, cursor)
 
 
 # --------------------------------------------------------------------------- #

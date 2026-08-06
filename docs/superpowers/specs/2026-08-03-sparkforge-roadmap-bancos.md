@@ -1,9 +1,12 @@
 # SparkForge AWS — Roadmap: especialização por banco de dados
 
 **Data:** 2026-08-03
-**Status:** roadmap. **Não é spec de fase** — nenhuma destas fases está desenhada,
-e cada uma ganha spec e plano próprios quando chegar a vez.
+**Última atualização:** 2026-08-05 — a §3.1 (`SF-GRAPH`) foi entregue como Fase 6a.
+**Status:** roadmap. **Não é spec de fase** — cada fase ganha spec e plano
+próprios quando chega a vez. Este documento **se atualiza** conforme as fases
+fecham: ele não é registro histórico, e por isso não ganha seção de desvios.
 **Decidido com:** o mantenedor, em 2026-08-03, ao fechar a Fase 4a.
+**Entregue até aqui:** §3.1 `SF-GRAPH` (Fase 6a, 2026-08-05).
 **Estado corrente:** [`../STATUS.md`](../STATUS.md)
 
 ---
@@ -52,30 +55,53 @@ sustentá-lo.
 A ordem é por **custo de artefato**, do mais barato ao mais caro. Fase que precisa
 de coletor novo custa mais que fase que lê o `.py` que o motor já lê.
 
-### 3.1 `SF-GRAPH` — grafo com Spark
+### 3.1 `SF-GRAPH` — grafo com Spark — **CONCLUÍDA (Fase 6a, 2026-08-05)**
 
-**Por que primeiro:** o artefato é o `.py`. Nenhum coletor novo, nenhuma
-credencial, nenhum dump. Extrator no padrão de `data_quality.py`, que a Fase 5c
-provou duas vezes.
+Spec e decisões: [`2026-08-05-sparkforge-fase6a-graph-design.md`](2026-08-05-sparkforge-fase6a-graph-design.md).
+Estado corrente e dívidas: [`../STATUS.md`](../STATUS.md).
 
-**Artefato:** AST — GraphFrames e Pregel. `connectedComponents`, `pageRank`,
-`shortestPaths`, `aggregateMessages`, construção de `GraphFrame` a partir de dois
-DataFrames.
+**A previsão de "por que primeiro" se confirmou:** o artefato é o `.py`, nenhum
+coletor novo, nenhuma credencial. `sparkforge/facts/graph.py` é o 19º extrator e
+lê a mesma árvore que `pyspark_ast.py` e `data_quality.py`, pela terceira vez.
 
-**Candidatos de regra, a confirmar na pesquisa:**
-- `connectedComponents` sem `checkpointDir` — a própria biblioteca documenta que
-  o algoritmo exige checkpoint, e sem ele o lineage cresce até derrubar o driver
-- algoritmo iterativo sem limite de iteração (`maxIter` ausente em `pageRank`, ou
-  Pregel sem critério de parada)
-- DataFrame de arestas não persistido, consumido por algoritmo que o varre a cada
-  iteração — é `SF-DQ-003` com outro nome, e a fronteira entre as duas áreas
-  precisa ser desenhada como a D-3 da 5c desenhou a de `SF-DQ` com `SF-PY`
-- vértices e arestas com particionamento incompatível, forçando shuffle por
-  iteração
-- `GraphFrame` construído dentro de laço
+**O que de fato entrou:** seis kinds (`graph.import`, `graph.construction`,
+`graph.algorithm`, `graph.checkpoint_dir`, `graph.unresolved` e a sentinela
+`graph.module_analyzed`) e **quatro regras**:
 
-**Recusa:** modelagem. Se um atributo deve ser vértice ou propriedade é
-julgamento, e vai para `knowledge/`.
+| Regra | O que acusa | Severidade |
+|---|---|---|
+| `SF-GRAPH-001` | `connectedComponents` sem diretório de checkpoint em lugar nenhum do arquivo | P0 |
+| `SF-GRAPH-002` | GraphFrames importado num Spark sem artefato publicado (`>=3.3`, `<3.4`) | P1 |
+| `SF-GRAPH-003` | arestas do grafo não persistidas | P2 |
+| `SF-GRAPH-004` | algoritmo de grafo dentro de laço Python | P2 |
+
+**Dos cinco candidatos acima, dois morreram na Task 0 de pesquisa** — que é
+exatamente o que a §1 deste documento prevê como sucesso:
+
+- **"algoritmo iterativo sem limite de iteração" foi VETADA** (vetos `V-GF-2` e
+  `V-GF-3` em `rules/catalog/graph.yaml`). Em nenhum dos dezesseis algoritmos com
+  noção de iteração "ausente" é defeito: em seis é `TypeError`, em três é default
+  documentado, em `pageRank` `tol` é o modo oficial alternativo a `maxIter` — e
+  passar os dois é erro —, e em `connectedComponents` a doc recomenda **não**
+  mexer. Nenhum fact da área carrega booleano de ausência de limite: o que sai é
+  `iteration_arg`, que nomeia o parâmetro que o código passou.
+- **"particionamento incompatível entre vértices e arestas" nunca existiu.** O
+  `.py` não diz o particionamento de DataFrame nenhum, e a regra teria de inferir
+  de uma coisa que a análise estática não vê.
+
+Os outros três viraram regra: checkpoint (`SF-GRAPH-001`), arestas não
+persistidas (`SF-GRAPH-003`, com a fronteira contra `SF-DQ-003` e `SF-PY-008`
+medida em `tests/test_rules_graph_boundary.py`) e `GraphFrame` em laço, que
+virou **algoritmo** em laço (`SF-GRAPH-004`) porque o custo está na chamada e não
+na construção.
+
+**A quinta regra a pesquisa TROUXE, e ela não estava prevista aqui:**
+`SF-GRAPH-002` é a única do catálogo inteiro cuja resposta depende de uma faixa
+de um minor de Spark — não há artefato publicado de GraphFrames para Spark 3.3,
+em linhagem nenhuma, e são nove células de runtime (Glue 4.0 e EMR 6.8.0–6.11.1).
+
+**A recusa se manteve:** modelagem continua fora. Se um atributo deve ser vértice
+ou propriedade é julgamento, e está em `knowledge/graph/`.
 
 ### 3.2 `SF-DDB` — DynamoDB
 
@@ -162,7 +188,8 @@ motor já sabe ler o destino.
 
 ## 5. O que decide a ordem real
 
-A ordem da §3 é proposta, não compromisso. Três coisas podem mudá-la, e todas são
+A ordem da §3 é proposta, não compromisso — a §3.1 já foi entregue, e as outras
+três continuam abertas. Três coisas podem mudar a ordem restante, e todas são
 mensuráveis:
 
 1. **Qual banco aparece nos jobs que o operador tem à mão.** Cobertura sem caso

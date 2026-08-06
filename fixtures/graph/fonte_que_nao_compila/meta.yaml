@@ -1,0 +1,23 @@
+name: fonte_que_nao_compila
+proves: >
+  Arquivo que nao compila vira UM `graph.unresolved` com reason `syntax_error` e
+  NENHUMA sentinela -- a unica saida do extrator para aquele arquivo. A varredura
+  do diretorio continua no `.py` seguinte, que sai completo.
+  E a unica fixture do corpus com DOIS `.py`, e e ela que torna observavel a
+  escolha do regenerador: `extract_graph_tree` ordena globalmente por
+  (kind, subject, id) e intercala os dois arquivos, enquanto um laco por arquivo
+  concatenaria blocos por arquivo. Com um `.py` so as duas ordens coincidem, e a
+  divergencia passaria despercebida ate um corpus real (D-5d-24).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - graph.import
+  - graph.construction
+  - graph.algorithm
+  - graph.checkpoint_dir
+  - graph.unresolved
+  - graph.module_analyzed
+expects_rules: []

@@ -30,16 +30,16 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
-`rules/catalog/` é a forma **executável** desse conhecimento: 77 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
+`rules/catalog/` é a forma **executável** desse conhecimento: 81 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
-As 77 regras se distribuem em 14 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
+As 81 regras se distribuem em 15 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-GRAPH` 4 (processamento de grafo com GraphFrames), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
 
 ## Camada determinística (Fase 0)
 
 Além da base de conhecimento e das Skills (que orientam um LLM), o pacote
 inclui um analisador determinístico: extração de facts via AST estático
 (nunca importa nem executa código analisado), julgamento contra um catálogo
-de 77 regras versionado em YAML, e um ciclo de vida de case
+de 81 regras versionado em YAML, e um ciclo de vida de case
 (`.sparkforge/case.yaml`) que atravessa sessões e ferramentas.
 
 ### Sequência mínima
@@ -125,7 +125,7 @@ caminho pronto para abrir — dentro do repositório em modo desenvolvimento,
 dentro de `site-packages` quando instalado por `pip`.
 
 Essa paridade não é promessa: o CI constrói o wheel, instala em venv limpo
-**fora do repositório** e reproduz as 145 fixtures golden byte a byte a partir do
+**fora do repositório** e reproduz as 164 fixtures golden byte a byte a partir do
 pacote instalado, em Linux e em Windows — o mesmo golden que o repositório
 usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
@@ -162,7 +162,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 18 extratores emitem 112 kinds distintos de fact, e todos são offline: leem
+Os 19 extratores emitem 118 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -179,6 +179,7 @@ tool MCP de mesmo nome.
 | **Cluster EMR on EC2** | `analyze emr-cluster` | dump de `describe-cluster` e os cinco que o completam |
 | **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
+| **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
 | Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
 | Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
@@ -194,7 +195,7 @@ AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
 essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
 o que falta para uma regra disparar é sempre coleta, nunca código.
 
-Seis desses verbos mudam o alcance do projeto, e é por isso que aparecem
+Sete desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
@@ -215,7 +216,24 @@ passadas sobre um alvo que ninguém persistiu. Uma suíte não custa "uma
 passada": ela compartilha scan por agrupamento, e restrição de unicidade paga
 a sua própria.
 
-`benchmark` é o terceiro, e não é um `analyze`: ele não lê artefato nenhum e
+`analyze graph` é o terceiro, e lê o **mesmo `.py` pela terceira vez** — depois de
+`analyze pyspark` e `analyze data-quality` —, com um vocabulário fechado de
+GraphFrames que só é lido em módulo que **importa** a biblioteca: `find`,
+`degrees` e `validate` são nomes que qualquer objeto de usuário pode ter, e
+casá-los sem essa evidência produziria acusação falsa. A área `SF-GRAPH` tem
+quatro regras, e a primeira é a única P0 do repositório cujo modo de falha é o
+algoritmo **levantar exceção** em vez de degradar: `connectedComponents` exige
+diretório de checkpoint e lança `java.io.IOException` na primeira iteração — com
+três saídas legítimas escritas no `.py` (`algorithm="graphx"`,
+`checkpointInterval<=0`, `use_local_checkpoints=True`), mais duas por
+`spark.conf.set` dentro do próprio job, e uma sexta forma em que a conf é
+ilegível e o motor declara o ponto cego em vez de acusar. A segunda regra é a
+única do catálogo guardada por uma **faixa de um minor de Spark**: não há
+artefato de GraphFrames publicado para Spark 3.3 em linhagem nenhuma — nove das
+34 células da matriz Glue×EMR —, e a capacidade de escrever `{spark: [">=3.3",
+"<3.4"]}` num `runtime_scope` nasceu aí.
+
+`benchmark` é o quarto, e não é um `analyze`: ele não lê artefato nenhum e
 não executa nada — compara **dois conjuntos de facts** que `analyze event-log`
 já produziu, um por execução, e emite `bench.run_delta`, `bench.stage_delta`,
 `bench.unmatched`, `bench.analyzed` e `bench.unresolved`. É o produtor que o
@@ -235,7 +253,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 112 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 118 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que
@@ -253,6 +271,9 @@ sparkforge analyze emr-cluster --path cluster.json --out .sparkforge/facts.json
 
 # onde o job valida dado, e o que acontece quando o check falha
 sparkforge analyze data-quality --path lib/ --out .sparkforge/facts-dq.json
+
+# o mesmo lib/, pela ótica do GraphFrames — sem import da biblioteca, só sentinela
+sparkforge analyze graph --path lib/ --out .sparkforge/facts-graph.json
 
 # o antes e o depois, comparados — e o fact_id que o benchmark_ref cita
 sparkforge analyze event-log --path before.jsonl --out .sparkforge/before.json
@@ -427,7 +448,8 @@ pacote tem duas camadas de agente:
   `iceberg-performance-engineer`, `emr-infra-reviewer` e `data-quality-reviewer`). Não
   executa: lê o case, decide qual executor rodar em seguida e registra no case qual
   executor rodou e com que resultado. Cada um declara as `rule_areas` que consome —
-  `emr-infra-reviewer` lê `SF-EMR`/`SF-ENV`, `data-quality-reviewer` lê `SF-DQ`, e
+  `emr-infra-reviewer` lê `SF-EMR`, `SF-EMRS` e `SF-ENV` — três desde a Fase 5d —,
+  `data-quality-reviewer` lê `SF-DQ`, e
   `spark-performance-architect` acumulou `SF-BENCH` porque *o job ficou mais rápido, e por
   quê* é a mesma pergunta que ele já respondia — e acumulou `SF-FVAL` pela metade que falta
   dela, *e o resultado continuou o mesmo*, que é o mesmo par antes/depois da mesma mudança.
@@ -437,7 +459,7 @@ pacote tem duas camadas de agente:
   declara `## Faz`, `## Não faz`, `## Pressupõe` e `## Entrega` — a fronteira negativa e o
   contrato de handoff que fazem a cadeia ser determinística entre modelos.
 
-Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-008` de
+Qual coordenador usar é dado, não julgamento: as rotas `AGENT-001`…`AGENT-010` de
 `rules/catalog/routing.yaml` mapeiam fase do case e área do achado dominante para o
 coordenador certo, e `sparkforge_next_step`/`sparkforge next-step` as consulta.
 
@@ -529,7 +551,7 @@ manifesto silencioso é pior que erro barulhento:
 | `sparkforge/rules/catalog/`, `sparkforge/knowledge/` (só no artefato) | `rules/catalog/`, `knowledge/` | `python scripts/verify_wheel.py` | `force-include` do hatchling embarca no build, sem duplicar arquivo em git |
 
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
-constrói o artefato, instala num venv limpo e reproduz as 145 fixtures golden byte a byte.
+constrói o artefato, instala num venv limpo e reproduz as 164 fixtures golden byte a byte.
 
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
 de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o

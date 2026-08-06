@@ -43,12 +43,13 @@
     "OOM",
     "Terraform",
     "Latest Per Key",
-    "Data Validation"
+    "Data Validation",
+    "Graph Processing"
   ],
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 77,
+    "rule_count": 81,
     "retrieved": "2026-08-01"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
@@ -61,6 +62,7 @@
     "sparkforge_analyze_emr_cluster",
     "sparkforge_analyze_emr_serverless",
     "sparkforge_analyze_event_log",
+    "sparkforge_analyze_graph",
     "sparkforge_analyze_iceberg",
     "sparkforge_analyze_plan",
     "sparkforge_analyze_pyspark",

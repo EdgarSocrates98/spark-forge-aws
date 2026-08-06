@@ -1,0 +1,499 @@
+# Catálogo de regras — processamento de grafo com GraphFrames
+#
+# Consome os facts de `sparkforge/facts/graph.py` (Fase 6a, Task 2), que lê o
+# `.py` pela terceira vez — depois de `pyspark_ast.py` e `data_quality.py` — e
+# emite seis kinds: `graph.import`, `graph.construction`, `graph.algorithm`,
+# `graph.checkpoint_dir`, `graph.unresolved` e a sentinela
+# `graph.module_analyzed`. A pesquisa de fontes que decidiu o que entra está em
+# `knowledge/graph/graphframes-api.md` (a API) e `knowledge/graph/availability.md`
+# (onde a biblioteca existe).
+#
+# A pergunta desta área tem DUAS metades, e elas se respondem em camadas
+# diferentes. A primeira é sobre o CÓDIGO: o algoritmo que este job chama vai
+# rodar, ou vai levantar exceção na primeira iteração? A segunda é sobre a
+# PLATAFORMA: existe artefato publicado desta biblioteca para o Spark deste
+# runtime? A segunda é a única do catálogo inteiro cuja resposta depende de uma
+# faixa de UM minor de Spark, e é ela que justifica o `runtime_scope` desta área.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# ESCOPO. Três regras declaram `runtime_scope: {}` e UMA declara
+# `{spark: [">=3.3", "<3.4"]}`, e a assimetria é decisão medida.
+#
+# O critério é o da Fase 5a (`README.md` deste diretório, seção "O que
+# `runtime_scope` é, e o que ele não é"): escopo não-vazio só quando o GATILHO
+# genuinamente varia com a versão E essa versão vem do RUNTIME, não de um fact
+# que a regra já lê.
+#
+# SF-GRAPH-001, -003 e -004 têm gatilho de ESTRUTURA de código — um argumento de
+# chamada, uma persistência ausente, um laço Python. Nenhum deles muda com a
+# versão do Spark, e um `runtime_scope` não-vazio ali apagaria a regra inteira
+# num `sparkforge judge` sobre um `.py` solto, porque `RuntimeContext.spark` não
+# vem de arquivo Python nenhum e `in_scope` falha FECHADA.
+#
+# SF-GRAPH-002 é o inverso exato, e a §D-4 do spec desta fase registra por quê:
+# a afirmação é "não há artefato publicado para ESTE Spark". Sem saber o Spark,
+# a afirmação é impossível — então regra PULADA, com `reason: runtime_scope` em
+# `judge --show-skipped`, é a resposta certa, e não efeito colateral. É o oposto
+# da decisão de `emr-infra.yaml:8-19`, e é o oposto porque ali a release vinha do
+# próprio fact e aqui não vem de fact nenhum.
+#
+# POR QUE UMA LISTA DE DOIS SPECS, e não `"==3.3"`. As nove células sem jar são
+# Glue 4.0 e EMR 6.8.0–6.11.1, e o discriminador é o minor de Spark: 3.2 tem jar
+# (`0.8.2-spark3.2`), 3.4 tem (`0.8.3-spark3.4`), 3.3 não tem em linhagem
+# nenhuma. `version_scope._compare` faz padding de segmento, então `"==3.3"`
+# casa `3.3.0` e REPROVA `3.3.1` e `3.3.2` — e são exatamente esses os Sparks de
+# EMR 6.10.x e 6.11.x, quatro das nove células. `">=3.3"` sozinho estenderia a
+# acusação a 3.4 e 3.5, onde ela é falsa. Uma lista de release envelheceria a
+# cada release nova da nuvem, que é o que `runtime_scope` por VERSÃO existe para
+# evitar. A capacidade de listar specs numa chave nasceu aqui, em
+# `sparkforge/rules/version_scope.py::_specs`, e a lista conjuga como as chaves
+# entre si.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# POR QUE A DECISÃO DE CHECKPOINT VEM PRONTA DO EXTRATOR.
+#
+# Medido em `sparkforge/rules/engine.py` antes de escrever estas regras:
+# `_where_matches` (linhas 31-37) compara por IGUALDADE e reprova caminho
+# AUSENTE, e `_expr_matches` (40-45) engole o `ExprError` devolvendo `False`.
+# Logo `attrs.algorithm_arg != "graphx"` é FALSO quando a chave não existe — que
+# é o caso comum, porque a maioria das chamadas não passa o argumento. Nenhuma
+# regra deste catálogo consegue exprimir "o código não declarou saída nenhuma".
+#
+# Quem enxerga as três saídas de uma vez é o extrator, e ele emite
+# `checkpoint_required` JÁ DECIDIDO, junto com `checkpoint_configured_in_module`,
+# no MESMO fact. Não é juízo: é transcrição do modo de falha documentado
+# (`throw new IOException` na primeira iteração). Severidade, limiar e
+# recomendação continuam aqui. É o padrão que `SF-EMR-008` fixou e que
+# `sparkforge/facts/data_quality.py:6-12` declara.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# VETOS APURADOS NA PESQUISA DE FONTES (2026-08-05). Não reintroduzir.
+# Detalhe e URLs: knowledge/graph/graphframes-api.md e knowledge/graph/availability.md
+#
+# V-GF-1  Checkpoint em connectedComponents E EXIGENCIA e o algoritmo FALHA
+#         (java.io.IOException na 1a iteracao), o que autoriza P0. Mas a regra
+#         NAO pode disparar quando o codigo declara qualquer das tres saidas:
+#         algorithm="graphx"; checkpointInterval<=0; use_local_checkpoints=True.
+#         Ha uma quarta saida FORA do .py (conf spark.checkpoint.dir, 0.9.3+):
+#         a ressalva vai escrita DENTRO do achado, no padrao de V-AS-2.
+# V-GF-2  NAO exigir maxIter de pageRank. A API tem DOIS modos oficiais --
+#         maxIter (n fixo) e tol (ate convergir) -- e passar os dois e erro.
+#         Quem passou tol escreveu certo. O fact precisa dizer QUAL veio.
+# V-GF-3  NAO exigir max_iter de connectedComponents. A doc declara: "For
+#         graphx only... Default is Integer.MAX_VALUE (unlimited). It is
+#         generally not recommended to change this value." A regra
+#         contradiria a fonte.
+# V-GF-4  NAO estender a exigencia de checkpoint a labelPropagation,
+#         shortestPaths, k_core, cycles, all_paths e afins. Eles so passaram a
+#         checkpointar na linhagem io.graphframes; em 0.8.x vao por GraphX e
+#         nao exigem diretorio. O .py nao diz qual linhagem esta instalada.
+# V-GF-5  `pregel`, `triplets`, `degrees`, `inDegrees` e `outDegrees` sao
+#         @property, nao metodo. Vocabulario que so casa ast.Call perde o
+#         pregel inteiro -- silencio no lugar de fact.
+# V-GF-6  O vocabulario tem DUAS convencoes de nome no mesmo objeto:
+#         camelCase (0.8.x) e snake_case (0.10+). frozenset com uma so perde
+#         metade da superficie corrente.
+# V-GF-7  NAO acusar `g.triangleCount()` sem argumento. Em 0.12.1
+#         storage_level virou posicional obrigatorio, mas em toda versao
+#         anterior a forma sem argumento e a unica correta e e a que a doc usa.
+# V-GF-8  NAO recomendar `algorithm="graphframes"`: e alias DEPRECIADO de
+#         "two_phase" desde 0.10.0. Detecta-lo e legitimo; propo-lo nao.
+#
+# VETOS DE DISPONIBILIDADE (2026-08-05).
+# Detalhe e URLs: knowledge/graph/availability.md
+#
+# V-AV-1  As nove celulas sem jar sao Glue 4.0 e EMR 6.8.0-6.11.1, e o
+#         discriminador e Spark 3.3.x -- nao a release. runtime_scope escrito
+#         por Spark cobre as nove de uma vez e nao envelhece a cada release
+#         nova de EMR.
+# V-AV-2  NAO tratar "jar antigo" como "sem jar". Spark 3.1/3.2 tem
+#         0.8.2 (2021-10-17), ultimo da serie. Sem manutencao NAO e sem
+#         artefato, e juntar os dois numa regra so apaga a diferenca que o
+#         usuario precisa para decidir.
+# V-AV-3  NAO afirmar que o Python de GraphFrames falta em EMR 6.x/Glue 3.0.
+#         graphframes-py exige Python >= 3.10 e nao instala la, MAS o jar
+#         legado carrega 13 arquivos .py dentro dele (medido). O caminho por
+#         --py-files sobre o jar continua valido.
+# V-AV-4  A regra do IaC se apoia em ausencia MEDIDA na doc da AWS, nao em
+#         inferencia: 4 listas do release 7.13.0 do EMR e 5 listas de modulos
+#         do Glue, todas lidas, nenhuma citando GraphFrames.
+# V-AV-5  NAO citar a release note da 0.8.3 como fonte de suporte a Spark 3.3.
+#         Ela afirma o suporte; o artefato -spark3.3 responde 404. Para a
+#         pergunta "ha o que instalar?", o repositorio vence.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE ESTA TASK VETOU OU REDUZIU, medindo contra o motor e contra o corpus.
+# Os vetos acima vieram da FONTE; estes vieram do que o motor e as 25 fixtures
+# conseguem provar (eram 19 quando a Task 5 os escreveu; a revisão final da
+# Fase 6a acrescentou seis, e nenhuma delas move estes vetos).
+#
+# V-GR-1  A REGRA DO IaC NAO ENTRA COMO REGRA PROPRIA, e por dois motivos
+#         independentes -- basta um.
+#
+#         (a) O motor nao sabe dizer "esta chave nao esta la".
+#         `engine._absent_satisfied` (68-70) compara SO `kind`, e o kind aqui e
+#         `tf.attribute`, que existe nos dois lados do par: o job com
+#         `--extra-jars` e o job sem ele emitem `tf.attribute` igualmente, e o
+#         que muda e `attrs.key`. Nao ha `absent` filtrado por atributo, nem
+#         `where` negado. `absent: tf.attribute` seria falso para todo Terraform
+#         que o extrator leu. A saida seria um kind DERIVADO no extrator de
+#         Terraform, no molde de `tf.observability.spark_ui` -- capacidade que
+#         esta fase nao construiu, e que nao se inventa num catalogo.
+#
+#         (b) Mesmo se o motor soubesse, a FONTE nao sustenta a metade negativa.
+#         `availability.md` §7 recusa afirmar que um jar de outro minor roda no
+#         Spark corrente ("Nao afirmar que um jar de Spark 3.4 roda em Spark
+#         3.3"): compatibilidade binaria entre minors nao e declarada por fonte
+#         nenhuma. Como para Spark 3.3 nao existe artefato publicado, QUALQUER
+#         `--extra-jars` de GraphFrames ali aponta necessariamente para um jar
+#         construido para outro minor -- e tratar isso como "resolvido" seria
+#         inventar a garantia que a fonte recusa. Por isso SF-GRAPH-002 dispara
+#         nos DOIS jobs do par `import_sem_jar_no_iac` x
+#         `import_com_jar_declarado`, e o `--extra-jars` aparece no texto do
+#         achado como o que ele e: uma tentativa de contornar, nao uma prova de
+#         que a lacuna fechou.
+#
+# V-GR-2  A REGRA DE `checkpointInterval` FORA DA FAIXA NAO ENTRA NESTA FASE,
+#         embora a fonte de fato a autorize -- e ela e o unico limiar numerico
+#         com fonte primaria desta area. A doc diz "It is recommended to keep
+#         this value at 2 or below" e o codigo avisa em `value <= 0 || value >
+#         2`. Sao DOIS casos, e o corpus nao tem nenhum dos dois em condicao de
+#         virar regra:
+#
+#         - `> 2` nao tem fixture nenhuma. Regra sem golden positivo reprova
+#           `test_every_rule_has_a_fixture_that_fires_it`, e escrever a fixture
+#           e trabalho da Task 4, nao desta.
+#         - `<= 0` tem fixture (`saida_intervalo_nao_positivo`), mas ela e
+#           declarada no proprio `meta.yaml` como "segunda forma de escrever
+#           certo" e e uma das TRES saidas legitimas de V-GF-1. Acusar o mesmo
+#           artefato que o corpus declara correto -- ainda que por outra regra e
+#           com severidade menor, que e o que `graphframes-api.md` §4.3.2
+#           autoriza -- transformaria a saida documentada num achado, e o
+#           operador leria as duas coisas ao mesmo tempo: "voce escapou da
+#           exigencia" e "voce escapou errado".
+#
+#         Fica registrado como o proximo candidato desta area, com a fonte e o
+#         limiar ja apurados: `threshold: {max_interval: 2}` sobre
+#         `measures.checkpoint_interval`, assim que o corpus tiver o caso `> 2`
+#         e uma fixture de `<= 0` que NAO seja tambem a saida legitima.
+#
+# V-GR-3  NENHUMA REGRA DESTA AREA DECLARA `severity_by`. Toda faixa de
+#         severidade precisa de golden que a produza
+#         (`test_every_severity_branch_has_a_golden_that_produces_it`), e os
+#         discriminadores plausiveis -- `attrs.guarded` do import, `inside_loop`
+#         do algoritmo acusado -- nao tem, no corpus de 25 fixtures, um caso de
+#         cada lado DENTRO da mesma regra. Ramo sem golden e severidade que
+#         ninguem mediu.
+#
+# V-GR-4  `cache`, `persist` e `unpersist` NAO sao vocabulario de algoritmo, e
+#         nenhuma regra daqui os toma como sujeito. `pyspark.cache` ja os emite
+#         sobre o mesmo artefato e `SF-PY-008` ja os julga; reemitir aqui
+#         duplicaria o sujeito e apagaria a fronteira que a Task 6 tem de
+#         provar. Eles entram so como EVIDENCIA, dentro de
+#         `attrs.vertices_persisted`/`edges_persisted` da construcao.
+
+catalog_version: 1
+area: SF-GRAPH
+
+rules:
+  # ───────────────────────────────────────────────────────────────────────────
+  - id: SF-GRAPH-001
+    category: graph
+    title: connectedComponents sem diretório de checkpoint
+    # Ancorado no fact que PROVA a entidade -- a chamada do algoritmo -- e nunca
+    # na sentinela `graph.module_analyzed`, que so prova que o arquivo foi
+    # varrido (`emr-infra.yaml:474-480` registra a licao).
+    requires_facts: [graph.algorithm]
+    # SEM `same_subject`, e a razao e o alcance do remedio, medido em D-6a-13:
+    # `setCheckpointDir` e chamado no `SparkContext`, que e singleton do
+    # processo. Uma linha conserta o arquivo inteiro, entao dois
+    # `connectedComponents` no mesmo modulo sao UM achado e uma correcao -- e
+    # nao dois, como seria numa regra por entidade (SF-DQ-003, SF-GLUE-002).
+    when:
+      all:
+        - fact: graph.algorithm
+          where:
+            attrs.checkpoint_required: true
+            attrs.checkpoint_configured_in_module: false
+    status: structural
+    severity_default: P0
+    # Escopo vazio: o gatilho e o ARGUMENTO da chamada, lido do AST. A exigencia
+    # existe desde a 0.3.0 e continua na 0.12.1, e nenhuma versao de Spark a
+    # muda. Ver ESCOPO no cabecalho.
+    runtime_scope: {}
+    explanation: >
+      O algoritmo default de `connectedComponents` exige diretório de checkpoint e
+      FALHA sem ele — não degrada. A documentação usa o verbo "requires", e o código
+      diz o que acontece: `throw new IOException("Checkpoint directory is not set.
+      Please set it first using sc.setCheckpointDir().")`, na montagem do primeiro
+      passo, antes de qualquer trabalho útil. É o único ponto desta área em que a
+      fonte autoriza P0 sem heurística de campo.
+      OS DOIS ATRIBUTOS SÃO NECESSÁRIOS, e cada um sozinho acusaria código correto.
+      `checkpoint_required: true` já é a decisão do extrator depois de olhar as três
+      saídas documentadas — `algorithm="graphx"` (a implementação GraphX não faz
+      checkpoint), `checkpointInterval <= 0` (`shouldCheckpoint = checkpointInterval
+      > 0`, e o bloco inteiro é pulado) e `use_local_checkpoints=True` (0.9.3+, sem
+      diretório persistente). `checkpoint_configured_in_module: false` diz que o
+      arquivo não contém `sc.setCheckpointDir(...)`, nem
+      `spark.conf.set("spark.checkpoint.dir", ...)`, nem
+      `spark.conf.set("spark.graphframes.useLocalCheckpoints", "true")`. Sem o
+      primeiro atributo a regra acusaria as três saídas; sem o segundo acusaria todo
+      job que configurou o checkpoint corretamente.
+      O ALCANCE É O ARQUIVO, e é assim que o achado deve ser lido. `setCheckpointDir`
+      é chamado no `SparkContext`, que é singleton do processo: o diretório vale para
+      a aplicação inteira, e a forma canônica de job Glue/EMR configura a sessão num
+      `build_spark()` e roda o algoritmo noutra função. Correlacionar por escopo
+      léxico produziria P0 exatamente sobre essa forma correta.
+      A RESSALVA É PARTE DO ACHADO, e sem ela a regra afirma mais do que a evidência
+      sustenta: existe uma QUARTA saída que não está no `.py`. As confs
+      `spark.checkpoint.dir` (0.9.3+) e `spark.graphframes.useLocalCheckpoints` podem
+      vir do IaC, do `--conf` da submissão ou do `spark-defaults` do cluster, e nesses
+      casos o arquivo analisado não contém sinal nenhum e este achado é falso
+      positivo. Confira o argumento da submissão antes de mexer no código. Quando a
+      conf está DENTRO do job, o extrator a lê e a regra já não dispara.
+    proposed_change:
+      - "Chamar `spark.sparkContext.setCheckpointDir(\"s3://.../checkpoints/\")` uma vez, na construção da sessão, antes de qualquer chamada de algoritmo."
+      - "Se o diretório já vem da submissão ou do IaC (`spark.checkpoint.dir`), registrar isso no código ou no README do job — o achado é sobre o que o arquivo declara."
+      - "Se o grafo é pequeno e o custo de I/O do checkpoint não se justifica, declarar a saída explicitamente: `connectedComponents(algorithm=\"graphx\")` ou `use_local_checkpoints=True` na linhagem `io.graphframes`."
+    risks:
+      - Diretório de checkpoint em S3 acumula dados entre execuções e não é limpo pelo Spark; sem política de expiração o custo de armazenamento cresce em silêncio.
+      - "`localCheckpoints` dispensa o diretório mas grava no disco do executor: a documentação declara que são mais rápidos e MENOS confiáveis, e a perda de um executor força recomputação."
+      - "`algorithm=\"graphx\"` muda a implementação, não só a configuração: o desempenho e o consumo de memória são outros, e a doc da biblioteca recomenda o default para grafos grandes."
+    tradeoffs:
+      - Checkpoint troca I/O por truncamento de lineage; sem ele o plano lógico cresce a cada iteração e o driver passa a gastar mais tempo otimizando do que o cluster gasta executando.
+    validation:
+      - Executar o job com o volume de produção e confirmar que ele passa da primeira iteração — sem o diretório, a exceção é imediata.
+      - Contagem de vértices do resultado igual à contagem de vértices de entrada, e contagem distinta de componentes estável entre execuções.
+      - Conferir na Spark UI que os jobs de checkpoint aparecem no intervalo esperado.
+    rollback:
+      - Remover a chamada de `setCheckpointDir` restaura o comportamento anterior — que é a falha, e por isso o rollback aqui é reverter para a saída explícita (`graphx` ou `localCheckpoints`), não para a ausência.
+    sources:
+      - url: https://graphframes.io/04-user-guide/05-traversals.html
+        retrieved: 2026-08-05
+      - url: https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/src/main/scala/org/graphframes/lib/ConnectedComponents.scala
+        retrieved: 2026-08-05
+      - url: https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/graphframes/lib/TwoPhase.scala
+        retrieved: 2026-08-05
+      - url: https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/apache/spark/sql/graphframes/GraphFramesConf.scala
+        retrieved: 2026-08-05
+
+  # ───────────────────────────────────────────────────────────────────────────
+  - id: SF-GRAPH-002
+    category: graph
+    title: GraphFrames importado num Spark sem artefato publicado
+    # `graph.import` e a evidencia honesta de "este job usa GraphFrames": a
+    # chamada de metodo um `getattr` esconde e um homonimo falsifica, e a
+    # construcao um alias renomeia. O import sobrevive ate a um job que so passa
+    # o grafo para uma biblioteca interna.
+    requires_facts: [graph.import]
+    when:
+      all:
+        - fact: graph.import
+    status: structural
+    severity_default: P1
+    # A UNICA regra desta area com escopo nao-vazio, e a razao esta no cabecalho
+    # (ESCOPO). A lista conjuga: Spark >= 3.3 E < 3.4, que e a faixa exata sem
+    # artefato publicado -- 3.2 tem `0.8.2-spark3.2`, 3.4 tem `0.8.3-spark3.4`.
+    runtime_scope:
+      spark: [">=3.3", "<3.4"]
+    explanation: >
+      Este job importa GraphFrames, e para o Spark deste runtime nenhuma linhagem da
+      biblioteca publicou artefato. Medido por requisição direta ao repositório em
+      2026-08-05: `graphframes-0.8.3-spark3.3-s_2.12.jar` responde 404,
+      `graphframes-0.8.4-spark3.3-s_2.12.jar` responde 404, e a linhagem corrente
+      `io.graphframes` compila contra Spark 3.5 em todas as suas releases. A série
+      legada para em `0.8.2-spark3.2` de um lado e recomeça em `0.8.3-spark3.4` do
+      outro: Spark 3.3 é um buraco entre as duas. São nove células de runtime — Glue
+      4.0 e as oito releases de EMR de 6.8.0 a 6.11.1.
+      A RELEASE NOTE DIZ O CONTRÁRIO, E ELA PERDE. A nota da `0.8.3` afirma "Support
+      Spark 3.3 / Scala 2.12", e a listagem do spark-packages para essa versão traz
+      apenas `-spark3.4` e `-spark3.5`. O suporte foi construído; o artefato não foi
+      publicado. A pergunta desta regra não é "o projeto suporta?", é "há o que
+      instalar?", e para essa o repositório de artefatos é a autoridade.
+      A PLATAFORMA NÃO PREENCHE A LACUNA, e isso foi medido por ausência, não
+      inferido: a página de release do EMR 7.13.0 lista as 24 aplicações, a tabela de
+      versões, ~80 componentes instalados e ~140 classificações de configuração, e
+      GraphFrames não aparece em nenhuma das quatro; a página de bibliotecas Python do
+      Glue lista os módulos providos de fábrica para 2.0, 3.0, 4.0, 5.0 e 5.1, e
+      GraphFrames não está em nenhuma das cinco. A biblioteca é sempre dependência do
+      cliente, sob responsabilidade compartilhada — sem SLA e sem correção de
+      compatibilidade vinda da AWS.
+      UM `--extra-jars` NO IaC NÃO FECHA ESTE ACHADO, e é por isso que ele dispara
+      mesmo quando existe. Como não há artefato para este Spark, qualquer jar de
+      GraphFrames declarado aqui foi construído para OUTRO minor, e compatibilidade
+      binária entre minors de Spark não é declarada por fonte nenhuma — nem pelo
+      projeto nem pela AWS. Pode funcionar; a evidência não diz. O achado afirma o que
+      foi medido — "não há artefato publicado para este Spark" —, nunca "não funciona".
+      O QUE ESTE ACHADO NÃO AFIRMA: qual versão da biblioteca este job usa. `from
+      graphframes import GraphFrame` é idêntico em `0.8.2` e em `0.12.1`, e o
+      `__init__.py` das duas exporta um único nome. Nenhum fact desta área declara
+      versão de GraphFrames.
+    proposed_change:
+      - "Mover o job para um runtime com Spark 3.4 ou 3.5 — Glue 5.0/5.1, ou EMR 6.12.0+ / 7.x — onde há artefato publicado e mantido."
+      - "Se o runtime não pode mudar, tratar a dependência como build próprio: compilar GraphFrames contra o Spark do runtime, publicar o jar num repositório interno e declará-lo no IaC, assumindo a manutenção."
+      - "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência."
+    risks:
+      - Trocar de runtime muda a versão de Spark, de Python e de Iceberg de uma vez, e cada uma delas pode quebrar outra parte do job.
+      - Jar construído localmente contra um minor diferente pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança.
+      - Reescrever o algoritmo em SQL nativo troca uma dependência por código próprio, com o custo de manutenção e o risco de divergência semântica que isso implica.
+    tradeoffs:
+      - "Migrar de runtime é o caminho suportado e o mais caro; manter um build próprio é barato hoje e é dívida permanente."
+    validation:
+      - Executar o job no runtime alvo e conferir contagem de vértices, contagem de arestas e número de componentes contra a execução de referência.
+      - Conferir que a biblioteca realmente carrega, com um `import graphframes` no início do job — a falha de artefato aparece no driver, antes de qualquer stage.
+    rollback:
+      - Manter a definição anterior do job versionada; voltar é apontar a submissão para o runtime antigo.
+    sources:
+      - url: https://spark-packages.org/package/graphframes/graphframes
+        retrieved: 2026-08-05
+      - url: https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/maven-metadata.xml
+        retrieved: 2026-08-05
+      - url: https://repo1.maven.org/maven2/io/graphframes/graphframes-spark3_2.12/0.12.1/graphframes-spark3_2.12-0.12.1.pom
+        retrieved: 2026-08-05
+      - url: https://graphframes.io/02-quick-start/01-installation.html
+        retrieved: 2026-08-05
+      - url: https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html
+        retrieved: 2026-08-05
+      - url: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html
+        retrieved: 2026-08-05
+
+  # ───────────────────────────────────────────────────────────────────────────
+  - id: SF-GRAPH-003
+    category: graph
+    title: Arestas do grafo não persistidas
+    requires_facts: [graph.construction]
+    # `same_subject`: o remedio e um `cache()` POR construcao, entao dois grafos
+    # defeituosos no mesmo arquivo sao dois achados e duas correcoes -- subcontar
+    # engana como falso negativo (README deste diretorio, "Um Finding por
+    # subject"). A fixture `dois_grafos_no_mesmo_arquivo` fixa isso: sem
+    # `same_subject` ela cai de dois achados para um, e ate ela existir os dois
+    # `same_subject` desta area eram apagaveis com a suite inteira verde.
+    #
+    # A ENTIDADE, MEDIDA, E A FUNCAO -- e nao a construcao.
+    # `engine._subject_group_key` usa `subject.symbol` quando ele existe, e o
+    # `symbol` de todo fact de `facts/graph.py` e a funcao que contem o no
+    # (`_subject`). Duas construcoes com arestas nao persistidas DENTRO DA MESMA
+    # FUNCAO caem no mesmo grupo e viram um achado so, com a evidencia das duas.
+    # E subnotificacao declarada, e nao acusacao falsa: quem le o achado ve os
+    # dois facts. Fechar de verdade exigiria mudar a chave de agrupamento do
+    # motor, que vale para as quinze areas de uma vez -- decisao que nao cabe
+    # numa regra desta area.
+    when:
+      same_subject: true
+      all:
+        - fact: graph.construction
+          where: {attrs.edges_persisted: false}
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      As arestas deste grafo chegam ao construtor sem `cache`/`persist`, e é sobre elas
+      que todo algoritmo iterativo de grafo passa uma vez por iteração. Spark é lazy:
+      sem persistência, cada passada refaz o lineage inteiro — a leitura do S3, os
+      filtros, os joins — em vez de reler o que já está materializado. O custo é
+      proporcional ao lineage e ao número de iterações, não ao tamanho do grafo.
+      A CHAVE `false` SÓ APARECE QUANDO O EXTRATOR VIU O NOME. Vértice ou aresta que
+      chega por parâmetro deixa a chave OMITIDA, e `engine._where_matches` reprova
+      caminho ausente — então esta regra é calada, e não acusadora, quando não pôde
+      olhar. É subnotificação declarada: um helper que recebe o DataFrame do chamador
+      nunca é julgado aqui.
+      A EVIDÊNCIA É O EVENTO DE PERSISTÊNCIA NOS DOIS NOMES. `v = vertices.cache()`
+      registra o evento em `vertices` e em `v`, porque casar só a raiz da cadeia faria
+      `GraphFrame(v, e)` sair como não persistido sobre a forma mais comum de persistir
+      em job real.
+      ESTA REGRA FALA DAS ARESTAS, E SÓ DELAS. O caso simétrico — vértices não
+      persistidos — não tem fixture no corpus desta fase, e condição sem golden que a
+      exercite é condição não testada: escrevê-la por simetria seria exatamente a
+      metade que some sem ninguém sentir. Limite declarado, não esquecimento.
+      A FRONTEIRA COM `SF-PY-008` E `SF-DQ-003`: aquelas duas julgam `pyspark.cache` e
+      `dq.check`; esta julga `graph.construction`. O sujeito é outro, e `cache`,
+      `persist` e `unpersist` não são vocabulário de algoritmo desta área.
+    proposed_change:
+      - "Persistir as arestas antes de construir o `GraphFrame`, com o nível de storage adequado ao tamanho (`MEMORY_AND_DISK` para grafos que não cabem em memória), e liberar com `unpersist` depois da última action."
+      - "Se as arestas já vêm de uma tabela pequena e o algoritmo faz uma passada só (`bfs`, `find`, `triangleCount`), medir antes: persistir aqui pode custar mais do que economiza."
+    risks:
+      - Persistir arestas de um grafo grande pressiona memória de executor e pode causar spill ou OOM — o remédio de um gargalo vira outro.
+      - "`unpersist` esquecido mantém blocos ocupando memória e disco até o fim do job, e o efeito aparece longe da mudança."
+    tradeoffs:
+      - Persistir troca CPU e I/O de recomputo por memória; qual é melhor depende de qual recurso está saturado.
+    validation:
+      - Número de jobs Spark submetidos antes e depois, na Spark UI — a queda é o sinal de que o lineage parou de ser refeito.
+      - Contagem de arestas e contagem de vértices do resultado, inalteradas.
+      - Tempo total de execução com o volume de produção.
+    rollback:
+      - Remover as chamadas de `persist`/`unpersist` acrescentadas; nada mais muda no job.
+    sources:
+      - origin: field-heuristic
+        note: >
+          Nenhuma fonte oficial quantifica o custo de recomputação de vértices ou
+          arestas não persistidos: a documentação menciona `storage_level` e avisa que o
+          DataFrame devolvido é persistido e deve ser liberado, mas não declara em lugar
+          nenhum quantas passadas um algoritmo faz sobre a entrada
+          (`knowledge/graph/graphframes-api.md` §8). O gatilho aqui é a laziness do
+          Spark, que é comportamento do motor e não da biblioteca, e a forma da regra é
+          herdada de `SF-DQ-003`. Sem limiar numérico, e nenhuma das páginas de
+          GraphFrames é citada como se a sustentasse.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  - id: SF-GRAPH-004
+    category: graph
+    title: Algoritmo de grafo dentro de laço Python
+    requires_facts: [graph.algorithm]
+    # `same_subject`: dois lacos diferentes no mesmo modulo sao dois problemas
+    # com dois remedios, e a fixture `dois_grafos_no_mesmo_arquivo` fixa os dois
+    # achados -- sem `same_subject` ela cai para um. A entidade e a FUNCAO, pela
+    # mesma medicao registrada em `SF-GRAPH-003`: dois lacos dentro da mesma
+    # funcao viram um achado com a evidencia dos dois.
+    when:
+      same_subject: true
+      all:
+        - fact: graph.algorithm
+          where: {attrs.inside_loop: true}
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Este algoritmo de grafo é chamado dentro de um laço Python, e o laço roda no
+      DRIVER: cada iteração submete um job Spark inteiro e espera por ele. Um algoritmo
+      iterativo de grafo já é caro sozinho — `connectedComponents` faz vários
+      superpassos e, no algoritmo default, grava checkpoint periodicamente —, e
+      multiplicá-lo pelo número de iterações do laço multiplica também o tempo ocioso
+      do cluster entre submissões, o planejamento do Catalyst e a escrita de
+      checkpoint.
+      A FORMA PODE SER LEGÍTIMA, e o achado precisa ser lido assim. Um grafo por dia
+      processado, com vértices e arestas genuinamente disjuntos entre as partições, é o
+      caso em que o laço é a resposta certa e não há o que consolidar. O que a análise
+      estática vê é a estrutura, não a independência dos dados — por isso este achado é
+      P2 e vem com a pergunta, não com a ordem.
+      QUANDO NÃO É LEGÍTIMO, o padrão é o mesmo: o laço existe porque alguém pensou o
+      problema um período por vez, e os grafos podem ser unidos numa execução só com
+      uma coluna discriminadora. Componentes conexos sobre a união de grafos disjuntos
+      dá o mesmo resultado que sobre cada um separadamente, com um job em vez de N.
+      O QUE ESTA REGRA NÃO É: `SF-PY-004` acusa action ou write dentro de laço, sobre
+      `pyspark.loop`; esta acusa a chamada de algoritmo de grafo, sobre
+      `graph.algorithm`. Um arquivo pode disparar as duas, e elas estão dizendo coisas
+      diferentes sobre a mesma linha.
+    proposed_change:
+      - "Unir os grafos das iterações num só, com uma coluna que identifique a partição lógica (a data, o cliente, a região), e rodar o algoritmo uma vez — quando os grafos são disjuntos, o resultado é idêntico."
+      - "Se os grafos precisam mesmo ser separados, tirar do laço tudo que não depende da iteração: a criação da sessão, o `setCheckpointDir`, a leitura de dimensões estáveis."
+      - "Se o laço fica, medir uma iteração isolada na Spark UI antes de multiplicar — o custo total é o custo de uma vezes N, e é isso que decide se vale consolidar."
+    risks:
+      - Unir grafos disjuntos num só aumenta o volume de um único job e pode levar a shuffle e a pressão de memória que as execuções separadas não tinham.
+      - "Se os grafos NÃO são disjuntos — há vértices com o mesmo id em iterações diferentes —, unir muda o resultado: componentes que eram separados passam a ser um só."
+    tradeoffs:
+      - Consolidar troca N jobs pequenos por um job grande; a latência do resultado de cada partição lógica deixa de ser independente.
+    validation:
+      - Comparar o resultado consolidado com o resultado do laço, partição lógica por partição lógica — mesma contagem de vértices e mesmo número de componentes em cada uma.
+      - Contagem distinta de ids de vértice antes de unir, para provar que os grafos são de fato disjuntos.
+      - Tempo total e número de jobs Spark submetidos, antes e depois.
+    rollback:
+      - Restaurar o laço; a consolidação é uma mudança de código isolada e não altera dado escrito enquanto a validação não passar.
+    sources:
+      - origin: field-heuristic
+        note: >
+          Nenhuma fonte de GraphFrames trata de chamada em laço, e não há número
+          publicado para o custo fixo de submissão de um job Spark. O gatilho é
+          estrutural — `inside_loop: true` no fact do algoritmo — e a forma é a mesma de
+          `SF-PY-004`, que acusa action dentro de laço sobre outro sujeito. A severidade
+          é P2 e não maior justamente porque o laço pode ser a forma correta quando os
+          grafos são independentes, e a análise estática não distingue.

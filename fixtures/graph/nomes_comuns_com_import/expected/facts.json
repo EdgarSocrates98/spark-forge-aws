@@ -1,0 +1,142 @@
+[
+  {
+    "id": "f_944c24",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 28,
+      "col": 12,
+      "end_line": 28,
+      "symbol": "main",
+      "snippet": "graus = medidas.degrees"
+    },
+    "measures": {
+      "line": 28
+    },
+    "attrs": {
+      "name": "degrees",
+      "form": "property",
+      "inside_loop": false,
+      "receiver": "medidas"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "8e7107bbf4335fe0d6a52565cdf85527221587c4a9fe891401840073201ef2d7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_508025",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 25,
+      "col": 14,
+      "end_line": 25,
+      "symbol": "main",
+      "snippet": "posicao = cabecalho.find(\"src\")"
+    },
+    "measures": {
+      "line": 25
+    },
+    "attrs": {
+      "name": "find",
+      "form": "call",
+      "inside_loop": false,
+      "receiver": "cabecalho"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "8e7107bbf4335fe0d6a52565cdf85527221587c4a9fe891401840073201ef2d7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_4ecdd7",
+    "schema_version": 1,
+    "kind": "graph.algorithm",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 27,
+      "col": 4,
+      "end_line": 27,
+      "symbol": "main",
+      "snippet": "medidas.validate(spark)"
+    },
+    "measures": {
+      "line": 27
+    },
+    "attrs": {
+      "name": "validate",
+      "form": "call",
+      "inside_loop": false,
+      "receiver": "medidas"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "8e7107bbf4335fe0d6a52565cdf85527221587c4a9fe891401840073201ef2d7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_2c0a2d",
+    "schema_version": 1,
+    "kind": "graph.import",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 11,
+      "col": 0,
+      "end_line": 11,
+      "symbol": "",
+      "snippet": "import graphframes"
+    },
+    "measures": {
+      "line": 11
+    },
+    "attrs": {
+      "form": "plain",
+      "module": "graphframes",
+      "symbol": "graphframes",
+      "scope": "module",
+      "guarded": false
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "8e7107bbf4335fe0d6a52565cdf85527221587c4a9fe891401840073201ef2d7",
+      "extractor": "graph@0.1.0"
+    }
+  },
+  {
+    "id": "f_25d314",
+    "schema_version": 1,
+    "kind": "graph.module_analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "import_count": 1,
+      "construction_count": 0,
+      "algorithm_count": 3,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "parsed": true
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "8e7107bbf4335fe0d6a52565cdf85527221587c4a9fe891401840073201ef2d7",
+      "extractor": "graph@0.1.0"
+    }
+  }
+]

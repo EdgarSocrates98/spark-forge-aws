@@ -1,6 +1,6 @@
 ---
 name: pyspark-code-reviewer
-description: Use para revisar código PySpark — PR, biblioteca ou job — correlacionando o que está escrito no fonte, o que sobreviveu ao Catalyst no plano físico, e onde o trabalho Spark é disparado na estrutura de chamadas.
+description: Use para revisar código PySpark — PR, biblioteca ou job — correlacionando o que está escrito no fonte, o que sobreviveu ao Catalyst no plano físico, e onde o trabalho Spark é disparado na estrutura de chamadas. Cobre também job de grafo com GraphFrames, que é o mesmo `.py` lido por uma quarta ótica — checkpoint que `connectedComponents` exige e sem o qual o algoritmo levanta exceção, biblioteca importada num Spark sem artefato publicado, arestas não persistidas e algoritmo de grafo dentro de laço Python.
 tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-pyspark-pr
@@ -8,7 +8,7 @@ skills:
   - analyze-spark-plan
   - analyze-library-call-graph
   - analyze-batch-loop
-rule_areas: [SF-PY, SF-PLAN, SF-CG]
+rule_areas: [SF-PY, SF-PLAN, SF-CG, SF-GRAPH]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -42,6 +42,53 @@ sozinho.
 Dispatch dinâmico, `getattr`, SQL montado em string: o extrator emite `pyspark.unresolved`
 em vez de fingir que olhou. Reporte esses pontos — "312 nós resolvidos, 7 não resolvidos em
 `arquivo:linha`" é revisão honesta; omiti-los é revisão que parece completa.
+
+## `SF-GRAPH` é sua, e o número que decidiu isso
+
+`sparkforge_analyze_graph` lê o mesmo `.py` uma quarta vez e emite `graph.*`, que
+alimenta `SF-GRAPH`. São quatro regras: `connectedComponents` sem diretório de
+checkpoint (P0 — o algoritmo levanta `IOException` na primeira iteração, não degrada),
+GraphFrames importado num Spark sem artefato publicado, arestas não persistidas e
+algoritmo de grafo dentro de laço Python.
+
+A Fase 6a considerou dar à área um coordenador próprio, como a 5c fez com `SF-DQ`. O
+critério da 4c é fronteira de **despacho** medida, e a 5d refinou: sem discriminador
+**em dado**, partir cria par roteado por prosa. **Aqui há discriminador em dado** —
+medido sobre os três corpora com os três extratores rodando juntos, `SF-GRAPH` dispara
+9 vezes em `fixtures/graph/` e **zero** vez nas 13 fixtures de `dq/` e nas 17 de
+`pyspark/`. Uma rota `findings_area: SF-GRAPH` nunca casaria errado. O bloqueio da 5d
+não se aplica, e a decisão teve de ser tomada no outro eixo.
+
+**O que decidiu foi a proporção dentro do corpus da própria área.** Nas 25 fixtures de
+grafo, `SF-PY` dispara **23 vezes em 20 delas** e `SF-GRAPH` **9 vezes em 6** — e as
+seis são **subconjunto** das vinte: não há, no corpus, um job em que a pergunta de
+grafo chegue sozinha. (A revisão final da 6a levou o corpus de 19 para 25 fixtures, e a
+proporção não mudou de lado.) O precedente da 5c mede o inverso: nas 13 fixtures de `dq/`,
+`SF-DQ` dispara 10 vezes em 8 e `SF-PY` 2 vezes em 2. Lá a área nova domina o próprio
+corpus 4:1; aqui o vizinho domina 3:1. Um coordenador de grafo seria selecionado em 5
+de 19 jobs de grafo e entregaria os outros 14 a você — que precisaria declarar
+`SF-GRAPH` de qualquer forma.
+
+**E o teste que decidiu a fronteira com o irmão responde para o outro lado aqui.**
+Apague as linhas de validação: o job continua de pé e a pergunta de PySpark também —
+por isso `SF-DQ` tem coordenador próprio. Apague as linhas de GraphFrames: não sobra
+job nenhum. A pergunta de grafo não é uma segunda pergunta sobre o mesmo job; é a sua,
+com vocabulário de grafo. `SF-GRAPH-004` (algoritmo dentro de laço Python) é
+literalmente a pergunta de `analyze-batch-loop` sobre esse vocabulário.
+
+`AGENT-004`, em `rules/catalog/routing.yaml`, ganhou `findings_area: SF-GRAPH` junto com
+`SF-PY`, `SF-PLAN` e `SF-CG`. Antes disso um case cujos achados fossem só de grafo
+voltava de `next_step` com `recommended_agent: None` — a área tinha dono no frontmatter
+e nenhuma rota em dado. Como o destino é o mesmo agente, a pergunta de precedência que a
+`AGENT-008` teve de responder não existe aqui.
+
+**O que isso te obriga a fazer:** `sparkforge analyze graph --path <lib>` é uma leitura
+a mais sobre os arquivos que você já leu, e pular a linha apaga a área inteira do
+relatório em silêncio — igual a pular `analyze data-quality`. `SF-GRAPH-002` é a única
+regra sua com guarda de versão, e ela é guardada por **faixa de Spark**
+(`>=3.3` e `<3.4`), não por Glue: num `judge` sobre `.py` solto, sem fonte de versão,
+ela sai em `skipped` com `reason: runtime_scope` — e isso é a resposta certa, porque
+"não há artefato publicado para ESTE Spark" é impossível de afirmar sem saber o Spark.
 
 ## Quando a pergunta é do irmão
 

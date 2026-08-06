@@ -52,11 +52,16 @@ Nem tudo vai existir na primeira passada — o job pode não ter Spark UI habili
 ```bash
 sparkforge analyze pyspark --path <lib> --out .sparkforge/facts.json
 sparkforge analyze data-quality --path <lib> --out .sparkforge/facts_dq.json
+sparkforge analyze graph --path <lib> --out .sparkforge/facts_graph.json
 sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts_eventlog.json
 sparkforge analyze terraform --path <dir.tf> --out .sparkforge/facts_tf.json
 ```
 
 **`analyze data-quality` roda sobre o mesmo `<lib>` do `analyze pyspark`, e as duas leituras não se repetem.** `pyspark` vê "há uma action aqui"; `data-quality` vê "esta action é uma validação, e ela está depois do write, ou não tem consequência, ou recomputa o lineage". Nenhuma regra `SF-PY` lê fact `dq.*` e nenhuma `SF-DQ` lê fact `pyspark.*` — a fronteira é por construção, não por supressão, e há invariante que a trava. Pular esta linha não deixa a investigação mais enxuta: apaga a área `SF-DQ` inteira do relatório, em silêncio.
+
+**`analyze graph` é a terceira leitura do mesmo `<lib>`, e ela custa pouco quando não há grafo.** O vocabulário de GraphFrames só é lido em módulo que **importa** a biblioteca — sem isso, `find`, `degrees` e `validate` seriam acusação falsa sobre qualquer objeto de usuário —, então num repositório sem grafo a saída é uma sentinela `graph.module_analyzed` por `.py` e nada mais. Rodar e não achar nada é resposta; não rodar apaga a área `SF-GRAPH` inteira do relatório, em silêncio, exatamente como pular `analyze data-quality`.
+
+**Sobre a saída de tela deste verbo, ao contrário da de `analyze emr-serverless`:** um `.py` de grafo realista **não** estoura a página. Medido num arquivo de 71 linhas com dois imports, duas construções, cinco algoritmos e um `setCheckpointDir` noutra função: `total_count` 11 contra o teto de 50, `next_cursor: null`. A razão é de desenho — este extrator emite **um fact por evento de grafo**, não um por propriedade de configuração. O que multiplica é o diretório: `--path src/` cresce com o número de módulos que usam grafo, mais uma sentinela por `.py`. Use `--out` quando o alvo for árvore; para arquivo único a tela basta.
 
 Use `analyze iceberg` e `analyze catalog-schema` quando o escopo incluir tabela Iceberg ou revisão de catálogo.
 
@@ -66,13 +71,13 @@ Se o job roda em **EMR on EC2** em vez de Glue, o eixo de infraestrutura muda de
 
 ```bash
 sparkforge judge --facts .sparkforge/facts.json --facts .sparkforge/facts_dq.json \
-                 --facts .sparkforge/facts_tf.json \
+                 --facts .sparkforge/facts_graph.json --facts .sparkforge/facts_tf.json \
                  --facts .sparkforge/facts_eventlog.json --show-skipped
 ```
 
 `--facts` é repetível, e passar tudo que o passo 4 extraiu numa chamada só é o que fecha o eixo de versão sem digitar nada: `judge` refaz a detecção a partir desses mesmos facts antes de filtrar as regras. Leia o campo `runtime` da saída — ele traz o contexto **efetivamente usado**, `detected_from` diz de onde veio, e `divergences` lista as fontes que discordam. Divergência não é detalhe: é `SF-ENV-001` em P0, e trava qualquer conclusão dependente de versão até ser resolvida.
 
-`--show-skipped` não é opcional aqui, e agora tem dois motivos distintos para ler. Sem event log, todo `SF-UI-*` aparece em `skipped` por falta de fact — não por ausência de skew ou spill. Sem nenhuma fonte de versão, as oito regras versionadas (`SF-ENV-002`, `SF-ENV-003`, `SF-GLUE-001..006`) aparecem com `reason: runtime_scope` — não por estarem corretas, mas por não haver contexto para avaliá-las. Nos dois casos a confusão a evitar é a mesma, e é a mais cara desta skill: "nenhum problema" e "não coletei o dado que provaria o problema" são coisas diferentes.
+`--show-skipped` não é opcional aqui, e agora tem dois motivos distintos para ler. Sem event log, todo `SF-UI-*` aparece em `skipped` por falta de fact — não por ausência de skew ou spill. Sem nenhuma fonte de versão, as **nove** regras versionadas aparecem com `reason: runtime_scope` — não por estarem corretas, mas por não haver contexto para avaliá-las. Oito delas (`SF-ENV-002`, `SF-ENV-003`, `SF-GLUE-001..006`) são guardadas por **Glue**, e a razão é "esta infraestrutura pode não existir aqui". A nona, `SF-GRAPH-002`, é guardada por **faixa de Spark** (`>=3.3` e `<3.4`), e a razão é outra: a afirmação dela é "não há artefato de GraphFrames publicado para ESTE Spark", que é impossível de fazer sem saber o Spark. Uma versão de Glue declarada não a traz de volta se o Spark daquela versão estiver fora da faixa. Nos dois casos a confusão a evitar é a mesma, e é a mais cara desta skill: "nenhum problema" e "não coletei o dado que provaria o problema" são coisas diferentes.
 
 Se `runtime.glue` voltar vazio e não houver `.tf` no repositório, aí sim declare: `--glue 5.1`, com a versão vinda de fonte confiável e registrada no case. Não preencha por hábito.
 
