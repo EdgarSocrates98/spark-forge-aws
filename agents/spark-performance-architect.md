@@ -74,8 +74,9 @@ O plano é a evidência do gate `functional_validation_defined`, que guarda a fa
 `--strict-gates`; `ROUTE-015` é a rota que manda defini-lo. *Defined*, não *executed* — o que
 destrava é o `funcval.plan`.
 
-Três coisas que você não pode ler errado. **Chave de negócio não é derivável:** nenhum dos 106
-kinds a nomeia, então ou você a declara com `--key` (e o check sai com `origin: declared`) ou o
+Três coisas que você não pode ler errado. **Chave de negócio não é derivável:** nenhum fact
+que os extratores emitem a nomeia, então ou você a declara com `--key` (e o check sai com
+`origin: declared`) ou o
 plano escreve o eixo em `undeclared_axes` com a razão — declarar chave errada produz P0 sobre
 dado correto, e a responsabilidade pela declaração é de quem a declara. **Os quatro eixos são
 proxies:** contagem, schema, chaves e agregados iguais não provam que o dado é o mesmo — duas

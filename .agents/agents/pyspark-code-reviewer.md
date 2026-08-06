@@ -128,6 +128,30 @@ pergunta for sobre ela: onde ela está em relação ao write, se o resultado tem
 aborte, e quantas varreduras ela paga. Você enxerga a action; só ele sabe que aquela action
 é uma validação.
 
+## Preservar o resultado é exigência com produtor, não frase
+
+Você entrega diff, e o diff é onde a semântica muda. Trocar Python UDF por função nativa muda
+nulo, precisão e borda; remover hint de `broadcast` muda o particionamento e a ordem da saída,
+e com ela o que `dropDuplicates`, `first`, `collect_list` e `monotonically_increasing_id`
+devolvem — **sem mudar contagem nenhuma**. Reescrita que preserva a contagem e troca a linha
+passa nos quatro eixos, e é por isso que o limite deles entra no seu texto.
+
+Derive o plano com `sparkforge_funcval_plan` — na CLI, `sparkforge funcval plan --facts
+<facts.json> --out <plano.json>`, e `--facts` é repetível porque o alvo vem do
+`pyspark.write` e o schema e os agregados vêm do `catalog.table_schema` — e compare os dois
+lados medidos com `sparkforge_funcval_compare`. Nenhum dos dois executa consulta, roda Spark
+ou chama AWS: quem mede é o operador, e o lado `--before` só existe se alguém o mediu
+**antes** de a mudança tocar o alvo. O `funcval.plan` é a evidência do gate
+`functional_validation_defined`, e `ROUTE-015` é a rota que manda defini-lo. É a **regra 10**
+do `AGENT_PROTOCOL.md`, e ela é acionável de propósito: exigência sem verbo é prosa.
+
+**Não prometa mais do que os quatro eixos entregam.** Contagem, schema, chaves e agregados
+iguais **não provam** que o dado é o mesmo — duas linhas podem trocar valores entre si e os
+quatro passam. O que a saída afirma é "nenhum dos quatro proxies detectou divergência", nunca
+"o resultado é idêntico". Chave de negócio não é derivável: sem `--key` o eixo sai em
+`undeclared_axes` com a razão, e isso vai escrito no relatório em vez de calado. E
+`SF-FVAL-005` acesa invalida a leitura das outras quatro — parte do plano não foi medida.
+
 ## Não faz
 
 **As três leituras são estáticas, e a fronteira só aparece quando o achado vira sugestão.**
