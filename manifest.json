@@ -109,6 +109,18 @@
     "finding": "sparkforge/findings/schemas/finding.schema.json",
     "case": ".sparkforge/case.yaml"
   },
+  "agent_tooling": {
+    "_comment": "Ecossistema caveman, de Julius Brussee, MIT. Vendorizado para que a economia de token seja do projeto e nao da maquina: zero instalacao, zero rede, sem npm e sem npx. Creditos e procedencia em vendor/CREDITS.md.",
+    "credits": "vendor/CREDITS.md",
+    "pins": "vendor/PINS.json",
+    "manifest": "vendor/MANIFEST.sha256",
+    "marketplace": "vendor/.claude-plugin/marketplace.json",
+    "caveman_mode": "full",
+    "caveman_mode_config": ".caveman/config.json",
+    "vendored": ["caveman", "cavekit"],
+    "requires_install": [],
+    "gate": "python scripts/vendor_caveman.py --check"
+  },
   "cli": "sparkforge",
   "plugin": ".claude-plugin/plugin.json",
   "parity": "parity.yaml",
