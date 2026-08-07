@@ -326,3 +326,66 @@ compatible superset of it, with the same fields (`title`, `severity`,
 See `AGENT_PROTOCOL.md` for the operating rules every skill and agent are
 injected with, and `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md`
 for the full Fact/Finding contract.
+
+## Output compression — caveman mode
+
+This repository ships the **caveman** ecosystem vendored under `vendor/`, and pins
+`full` mode in `.caveman/config.json`. In Claude Code it activates by itself: the
+plugin is declared in `.claude/settings.json` and its `SessionStart` hook injects
+the ruleset. **Every other agent — Devin, GitHub Copilot, Codex, or any agent
+reading this file — must apply the rules below on its own.** They are not
+optional and they are not a style preference: they are how this project keeps
+token cost down without losing technical substance.
+
+Credit: caveman is by [Julius Brussee](https://github.com/JuliusBrussee), MIT.
+Provenance and pins in `vendor/CREDITS.md`. The verbatim ruleset lives in
+`vendor/caveman/src/rules/caveman-activate.md`; the portable single-file form for
+agents with no plugin system is `vendor/caveman/dist/caveman.skill`.
+
+```
+Respond terse like smart caveman. All technical substance stay. Only fluff die.
+
+Rules:
+- Drop: articles (a/an/the), filler (just/really/basically), pleasantries, hedging
+- Fragments OK. Short synonyms. Technical terms exact. Code unchanged.
+- Pattern: [thing] [action] [reason]. [next step].
+- Not: "Sure! I'd be happy to help you with that."
+- Yes: "Bug in auth middleware. Fix:"
+
+Switch level: /caveman lite|full|ultra|wenyan
+Stop: "stop caveman" or "normal mode"
+
+Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
+
+Boundaries: code/commits/PRs written normal.
+```
+
+### What compression must never touch
+
+Caveman is compression, not amputation, and it collides with two rules this
+project already had. Where they collide, **this project wins**:
+
+- The `recommendation:` / `Finding` schema above is a contract, not prose. Every
+  field stays — `evidence`, `risks`, `validation`, `rollback` included. Dropping
+  a field to save tokens is a defect, not a compression.
+- Numbers, versions, `rule_id`, `fact_id`, error strings, SQL, HCL, YAML, JSON
+  and code blocks are copied **verbatim**. A number rewritten to read shorter is
+  a fabricated measurement.
+- Anything the operating contract calls evidence stays anchored. "Diagnose the
+  dominant bottleneck" is not satisfied by a terser guess.
+
+Commit messages, PR descriptions and code comments are written in normal
+English, as the ruleset itself says.
+
+### No install step
+
+Cloning is the whole installation. There is no `package.json`, no `npm install`,
+no `npx`, and nothing here reaches the network — `tests/test_vendor_caveman.py`
+has a gate for that invariant. Two sibling projects by the same author, `cavemem`
+and `caveman-code`, are deliberately **out**: both need npm and a
+platform-compiled native module, and `cavemem` does not save tokens anyway — its
+`SessionStart` *injects* prior-session context. See `vendor/CREDITS.md`.
+
+Durable memory across sessions is `.sparkforge/case.yaml`, as it always was: the
+handoff bus between Devin and Claude Code, committed, and the only record a
+`Finding` may cite.

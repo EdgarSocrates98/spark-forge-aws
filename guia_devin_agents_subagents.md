@@ -159,6 +159,23 @@ Crie perfis especializados na pasta `agents/`:
 
 ---
 
+## 6.1 Compressão de output — obrigatória neste repositório
+
+O Devin **não carrega plugin nem hook do Claude Code**, então nada ativa o caveman
+por ele: o agente e todo subagente customizado aplicam o ruleset por conta própria.
+Ele está inline em [`AGENTS.md`](AGENTS.md), seção *Output compression — caveman
+mode*, junto com o recorte que este projeto impõe por cima — o schema
+`recommendation:`/`Finding` inteiro, números, versões, `rule_id`, `fact_id`,
+strings de erro e blocos de código são **verbatim**.
+
+A forma portátil de arquivo único, para colar num perfil de subagente que não lê
+`AGENTS.md`, é `vendor/caveman/dist/caveman.skill` (4,4 KB).
+
+Crédito: caveman é de [Julius Brussee](https://github.com/JuliusBrussee), MIT.
+Procedência e pins em [`vendor/CREDITS.md`](vendor/CREDITS.md).
+
+---
+
 ## 7. Melhores Práticas e Estratégia
 
 1.  **Contexto Longo:** Use o **GLM-5.2** para tarefas que exigem a leitura de centenas de arquivos simultaneamente.

@@ -61,6 +61,32 @@ O que ele guarda é hash e procedência, nunca o texto das docs — copiar docum
 terceiro para o repositório é decisão de licenciamento que ninguém tomou, e o diff de uma
 página da AWS é quase todo ruído de navegação.
 
+## Código de terceiro vendorizado
+
+`knowledge/` guarda hash e procedência de documentação, **nunca o texto** — a seção acima
+explica por quê. `vendor/` é o caso oposto e a exceção deliberada: ali estão **bytes de
+código de terceiro**, commitados, sob licença MIT que permite explicitamente a
+redistribuição com o aviso de copyright preservado.
+
+O que está lá, e de quem é:
+
+- **caveman** e **cavekit**, de [Julius Brussee](https://github.com/JuliusBrussee), MIT.
+  Pinados por SHA em [`vendor/PINS.json`](vendor/PINS.json) e por sha256 de cada arquivo em
+  `vendor/MANIFEST.sha256`. As licenças originais estão preservadas em
+  `vendor/caveman/LICENSE` e `vendor/cavekit/LICENSE`.
+- **cavemem** e **caveman-code**, do mesmo autor, MIT, **fora do repositório**: dependem de
+  módulo nativo compilado por plataforma e só existem via npm. Não há `package.json` aqui —
+  nenhum caminho padrão pode depender de `npm install` ou `npx`. A razão de cada um está em
+  [`vendor/CREDITS.md`](vendor/CREDITS.md), e o crédito continua valendo mesmo sem o código.
+
+A decisão de licenciamento aqui foi tomada, e é o que separa este caso do de documentação:
+MIT autoriza a cópia, o aviso de copyright viaja junto, e o crédito está em
+[`vendor/CREDITS.md`](vendor/CREDITS.md). Documentação da AWS não tem essa autorização — por
+isso continua fora.
+
+Atualizar é editar o `sha` em `PINS.json` e rodar `python scripts/vendor_caveman.py`. O gate
+sem rede é `python scripts/vendor_caveman.py --check`.
+
 ## Rastreabilidade por entrada
 
 `knowledge/` e `rules/catalog/` registram `url` e `retrieved` por entrada —

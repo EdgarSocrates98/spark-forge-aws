@@ -50,6 +50,15 @@ class TestSteps:
     def test_runs_ruff(self):
         assert any("ruff check" in run for run in _all_step_runs())
 
+    def test_runs_vendor_integrity_check(self):
+        """`vendor/` é código de terceiro commitado.
+
+        O teste equivalente já roda dentro da suíte, mas o gate próprio no
+        workflow faz a falha nomear a causa em vez de aparecer como "um teste
+        quebrou" no meio de 4765.
+        """
+        assert any("vendor_caveman.py --check" in run for run in _all_step_runs())
+
 
 class TestTriggers:
     def test_includes_workflow_dispatch(self):
