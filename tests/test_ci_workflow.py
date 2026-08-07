@@ -55,7 +55,7 @@ class TestSteps:
 
         O teste equivalente já roda dentro da suíte, mas o gate próprio no
         workflow faz a falha nomear a causa em vez de aparecer como "um teste
-        quebrou" no meio de 4765.
+        quebrou" no meio de 4771.
         """
         assert any("vendor_caveman.py --check" in run for run in _all_step_runs())
 

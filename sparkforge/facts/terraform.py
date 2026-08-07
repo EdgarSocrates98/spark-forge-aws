@@ -49,6 +49,7 @@ EXTRACTOR_ID = "terraform@0.1.0"
 EMITTED_KINDS = frozenset(
     {
         "tf.attribute",
+        "tf.spark_conf",
         "tf.resource",
         "tf.unresolved",
         "tf.module_analyzed",
@@ -434,7 +435,17 @@ def _parse_map_block(
                 facts.append(fact)
                 j = next_j
                 continue
-            facts.append(_attribute_fact(key, raw_value, path, j + 1, symbol, block, provenance))
+            attr_fact = _attribute_fact(key, raw_value, path, j + 1, symbol, block, provenance)
+            facts.append(attr_fact)
+            # So decompoe quando o `tf.attribute` saiu resolvido: valor com
+            # interpolacao ou heredoc ja virou `tf.unresolved`, e desmontar
+            # texto que o parser declarou nao entender inventaria propriedade.
+            if key == "--conf" and attr_fact.kind == "tf.attribute":
+                facts.extend(
+                    _spark_conf_facts(
+                        attr_fact.attrs.get("value", ""), path, j + 1, symbol, block, provenance
+                    )
+                )
         else:
             reason = _classify_unhandled_line(text)
             facts.append(
@@ -446,6 +457,82 @@ def _parse_map_block(
                 )
             )
         j += 1
+    return facts
+
+
+# `--conf` no Glue nao carrega UMA propriedade: carrega uma string com varias,
+# separadas pela repeticao literal do proprio flag. A forma que a AWS documenta e:
+#
+#   "--conf" = "spark.sql.shuffle.partitions=200 --conf spark.sql.adaptive.enabled=false"
+#
+# Como `tf.attribute`, isso e um unico fact cujo `value` e a string inteira.
+# Nenhuma regra consegue perguntar "o AQE esta desligado na definicao do job?"
+# sobre uma string dessas sem fazer parsing dentro da condicao do catalogo -- que
+# e exatamente o que o catalogo NAO faz, porque condicao com parser embutido
+# deixa de ser dado e vira codigo escondido em YAML.
+#
+# `tf.spark_conf` desmonta a string em um fact por propriedade, ao lado do
+# `tf.attribute` original, que continua sendo emitido intacto. Nada e
+# substituido: o fact bruto e a evidencia de que a linha existe com aquele texto,
+# e o decomposto e o que a regra cita.
+_CONF_SPLIT_RE = re.compile(r"\s*--conf\s+")
+
+
+def _spark_conf_facts(
+    raw_value: str,
+    path: str,
+    line: int,
+    symbol: str,
+    block: str,
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """Desmonta o valor de `--conf` em um fact por propriedade Spark.
+
+    Pedaco sem `=` nao vira fact silenciosamente: vira `tf.unresolved` com
+    `reason: malformed_conf_pair`. Um `--conf spark.sql.adaptive.enabled` sem
+    valor e erro de definicao de job que o operador quer ver, e engoli-lo
+    produziria o falso negativo de "a chave nao estava la".
+    """
+    facts: list[Fact] = []
+    for pedaco in _CONF_SPLIT_RE.split(raw_value.strip()):
+        pedaco = pedaco.strip()
+        if not pedaco:
+            continue
+        if "=" not in pedaco:
+            facts.append(
+                Fact(
+                    kind="tf.unresolved",
+                    subject=_line_subject(path, line),
+                    attrs={
+                        "reason": "malformed_conf_pair",
+                        "key": "--conf",
+                        "detail": pedaco,
+                        "block": block,
+                    },
+                    provenance=provenance,
+                )
+            )
+            continue
+        chave, _, valor = pedaco.partition("=")
+        chave, valor = chave.strip(), valor.strip()
+        attrs: dict[str, Any] = {
+            "key": chave,
+            "value": valor,
+            "source_argument": "--conf",
+            "block": block,
+        }
+        if _looks_like_secret(chave, valor):
+            attrs["value"] = "<redigido>"
+            attrs["redacted"] = True
+            attrs["secret_pattern_match"] = True
+        facts.append(
+            Fact(
+                kind="tf.spark_conf",
+                subject=_resource_subject(path, line, f"{symbol}#{chave}"),
+                attrs=attrs,
+                provenance=provenance,
+            )
+        )
     return facts
 
 

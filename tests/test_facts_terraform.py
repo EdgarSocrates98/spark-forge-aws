@@ -11,6 +11,7 @@ from sparkforge.findings.validate import validate_fact
 
 EXPECTED_KINDS = {
     "tf.attribute",
+    "tf.spark_conf",
     "tf.resource",
     "tf.unresolved",
     "tf.module_analyzed",
@@ -67,7 +68,7 @@ def job_with_args(*lines: str) -> str:
 
 def test_kind_namespace_is_complete_and_documented():
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 6
+    assert len(EMITTED_KINDS) == 7
     assert EXTRACTOR_ID.startswith("terraform@")
 
 

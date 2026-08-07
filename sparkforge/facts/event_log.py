@@ -28,6 +28,7 @@ from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.secrets import redact
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "event_log@0.1.0"
@@ -44,6 +45,8 @@ EMITTED_KINDS = frozenset(
         "spark.executor.memory_usage",
         "spark.job.spill_summary",
         "spark.runtime_version",
+        "spark.conf_effective",
+        "spark.conf_excluded",
         "spark.unresolved",
         "spark.log_analyzed",
     }
@@ -93,6 +96,21 @@ _HEAP_OOM_SIGNATURES = (
     "GC overhead limit",
     "Java heap space",
 )
+
+
+def _as_text(value: Any) -> str:
+    """Valor de propriedade como texto, sem interpretar.
+
+    O event log serializa "Spark Properties" com valores string, mas um log
+    sintetico ou reserializado pode trazer bool e numero. Normalizar para texto
+    mantem o fact comparavel com as outras quatro fontes de configuracao, que
+    tambem carregam `attrs.value` como string. `True` vira `"True"` e nao
+    `"true"` de proposito: o extrator nao inventa a forma que o Spark usaria --
+    quem le sabe que o valor nao veio como string do artefato.
+    """
+    if isinstance(value, str):
+        return value
+    return str(value)
 
 
 def _is_heap_oom(reason: str) -> bool:
@@ -318,6 +336,20 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
     app_id = ""
     spark_version = ""
 
+    # Configuracao efetiva, de "SparkListenerEnvironmentUpdate".
+    #
+    # `spark_properties` guarda o que a PRIMEIRA ocorrencia declarou. O evento e
+    # emitido uma vez por aplicacao, mas log concatenado de dois runs traz dois
+    # -- o mesmo caso que "SparkListenerLogStart" ja trata para a versao. A
+    # regra aqui e a mesma: o primeiro vence, e a divergencia vira ponto cego
+    # ancorado na linha que discordou, nunca escolha silenciosa.
+    #
+    # `excluded_sections` conta o que este extrator NAO desmonta. Ver o bloco
+    # de "SparkListenerEnvironmentUpdate" no laco para o recorte e a razao.
+    spark_properties: dict[str, str] = {}
+    excluded_sections: dict[str, int] = {}
+    seen_environment_update = False
+
     line_count = 0
     event_count = 0
     unresolved_count = 0
@@ -482,10 +514,84 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
                     declared_task_counts[stage_id] = int(num_tasks)
                 completed_stage_ids.add(stage_id)
 
+            elif event == "SparkListenerEnvironmentUpdate":
+                # A configuracao EFETIVA do run: o que o motor de fato aplicou,
+                # depois de resolver defaults, `--conf`, config de cluster e
+                # chamadas no codigo. E a unica fonte no projeto que responde
+                # "o que valeu", contra as outras quatro que dizem "o que foi
+                # pedido" (pyspark.conf_set, tf.spark_conf, emr.configuration,
+                # emrs.configuration).
+                #
+                # O QUE ESTE FACT NAO E, e vale repetir porque a linha do
+                # "SparkListenerLogStart" acima ja carrega o argumento para um
+                # caso particular: isto e o que o RUN REPORTOU como suas
+                # propriedades, nao uma medicao independente do motor. Um
+                # `--conf spark.qualquer.coisa=x` aparece aqui com valor
+                # arbitrario, e foi exatamente por isso que a versao de Spark
+                # NAO e lida daqui. Para configuracao de tuning a distincao e
+                # menos grave -- o valor reportado E o que o driver resolveu --
+                # mas ela nao some, e a explicacao da regra carrega isso.
+                #
+                # RECORTE: so "Spark Properties". O evento tambem traz "JVM
+                # Information", "System Properties", "Classpath Entries",
+                # "Hadoop Properties" e "Metrics Properties". Desmontar tudo
+                # multiplicaria o numero de facts por dez sem responder pergunta
+                # de tuning de Spark, e classpath num `facts.json` commitado e
+                # superficie de informacao sem contrapartida. O que ficou de
+                # fora e CONTADO em `spark.conf_excluded`, no mesmo padrao de
+                # `opaque_caller_function_count`: exclusao contada, nunca
+                # silenciosa -- quem le sabe que existia mais e quanto.
+                raw_props = event_obj.get("Spark Properties")
+                if not isinstance(raw_props, dict):
+                    facts.append(
+                        Fact(
+                            kind="spark.unresolved",
+                            subject=_line_subject(path, line_count, stripped[:200]),
+                            attrs={
+                                "reason": "missing_event_field",
+                                "detail": (
+                                    "SparkListenerEnvironmentUpdate sem 'Spark Properties' "
+                                    f"utilizavel: {type(raw_props).__name__}"
+                                ),
+                            },
+                            provenance=provenance,
+                        )
+                    )
+                    unresolved_count += 1
+                else:
+                    novo = {str(k): _as_text(v) for k, v in raw_props.items()}
+                    if not seen_environment_update:
+                        seen_environment_update = True
+                        spark_properties = novo
+                        for secao, conteudo in sorted(event_obj.items()):
+                            if secao in ("Event", "Spark Properties"):
+                                continue
+                            if isinstance(conteudo, dict):
+                                excluded_sections[secao] = len(conteudo)
+                            elif isinstance(conteudo, list):
+                                excluded_sections[secao] = len(conteudo)
+                    elif novo != spark_properties:
+                        # Dois runs concatenados. Escolher em silencio faria a
+                        # configuracao de um run julgar o outro.
+                        facts.append(
+                            Fact(
+                                kind="spark.unresolved",
+                                subject=_line_subject(path, line_count, stripped[:200]),
+                                attrs={
+                                    "reason": "conflicting_environment_update",
+                                    "detail": (
+                                        "segundo SparkListenerEnvironmentUpdate com "
+                                        "'Spark Properties' diferente; o primeiro prevalece"
+                                    ),
+                                },
+                                provenance=provenance,
+                            )
+                        )
+                        unresolved_count += 1
+
             # Outros eventos (SparkListenerJobStart/End, BlockManagerAdded,
-            # SparkListenerEnvironmentUpdate, SparkListenerApplicationEnd...)
-            # sao ignorados de proposito: nao alimentam nenhum dos fact kinds
-            # emitidos por este extrator.
+            # SparkListenerApplicationEnd...) sao ignorados de proposito: nao
+            # alimentam nenhum dos fact kinds emitidos por este extrator.
 
         except (KeyError, TypeError, ValueError) as exc:
             facts.append(
@@ -592,6 +698,63 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
             provenance=provenance,
         )
     )
+
+    # Um fact por propriedade de "Spark Properties".
+    #
+    # `subject.symbol` e a CHAVE, nao o app id. `Fact.id` e hash de (kind,
+    # subject, measures), e estes facts nao tem measures: com o app id no
+    # symbol, duzias de propriedades colidiriam num id so e o `facts.json`
+    # perderia todas menos uma. E o mesmo defeito que `_SymbolPool` resolve em
+    # `emr_cluster.py` para duas propriedades da mesma classificacao. O app id
+    # continua legivel em `attrs.app_id`.
+    #
+    # Valor com forma de credencial e redigido antes de entrar no fact. Nao e
+    # zelo generico: `facts.json` e commitado como barramento de handoff (§8.1
+    # da spec da Fase 0), e configuracao de Spark carrega
+    # `spark.hadoop.fs.s3a.secret.key` e senha dentro de URL de JDBC.
+    for key in sorted(spark_properties):
+        value, redacted = redact(key, spark_properties[key])
+        attrs = {
+            "key": key,
+            "value": value,
+            "app_id": app_id,
+            "source_event": "SparkListenerEnvironmentUpdate",
+        }
+        if redacted:
+            attrs["redacted"] = True
+        facts.append(
+            Fact(
+                kind="spark.conf_effective",
+                subject={"type": "job_run", "symbol": key},
+                attrs=attrs,
+                provenance=provenance,
+            )
+        )
+
+    # O que o evento trazia e este extrator nao desmontou, contado por secao.
+    #
+    # Sem isto, "spark.conf_effective ausente para a chave X" seria ambiguo
+    # entre "o run nao tinha X" e "X vive numa secao que ninguem le" -- o falso
+    # negativo silencioso que o item 4 do README do catalogo persegue. So e
+    # emitido quando houve `SparkListenerEnvironmentUpdate`: em log sem o
+    # evento, quem responde e a ausencia de `spark.conf_effective`.
+    if seen_environment_update:
+        facts.append(
+            Fact(
+                kind="spark.conf_excluded",
+                subject={"type": "job_run", "symbol": app_id},
+                measures={
+                    "extracted_property_count": len(spark_properties),
+                    "excluded_section_count": len(excluded_sections),
+                    "excluded_entry_count": sum(excluded_sections.values()),
+                },
+                attrs={
+                    "extracted_section": "Spark Properties",
+                    "excluded_sections": dict(sorted(excluded_sections.items())),
+                },
+                provenance=provenance,
+            )
+        )
 
     # Sentinela: prova de que a extracao rodou sobre este log. Sem isso, uma
     # condicao `absent: X` do catalogo seria vazamente verdadeira quando o

@@ -29,4 +29,6 @@ expects_kinds:
   - spark.runtime_version
   - spark.unresolved
   - spark.log_analyzed
+  - spark.conf_effective
+  - spark.conf_excluded
 expects_rules: []

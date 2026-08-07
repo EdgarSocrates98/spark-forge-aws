@@ -19,6 +19,157 @@
     }
   },
   {
+    "id": "f_784010",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.app.name"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.app.name",
+      "value": "rolling_parts_job",
+      "app_id": "application_1699000000000_0007",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_16040f",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.eventLog.rolling.enabled"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.eventLog.rolling.enabled",
+      "value": "true",
+      "app_id": "application_1699000000000_0007",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_93d162",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.cores"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.cores",
+      "value": "4",
+      "app_id": "application_1699000000000_0007",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f3132e",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.instances"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.instances",
+      "value": "2",
+      "app_id": "application_1699000000000_0007",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_00b1ed",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.master"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.master",
+      "value": "yarn",
+      "app_id": "application_1699000000000_0007",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_7b43fc",
+    "schema_version": 1,
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.sql.adaptive.enabled"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.sql.adaptive.enabled",
+      "value": "true",
+      "app_id": "application_1699000000000_0007",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f2faa7",
+    "schema_version": 1,
+    "kind": "spark.conf_excluded",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0007"
+    },
+    "measures": {
+      "extracted_property_count": 6,
+      "excluded_section_count": 1,
+      "excluded_entry_count": 3
+    },
+    "attrs": {
+      "extracted_section": "Spark Properties",
+      "excluded_sections": {
+        "JVM Information": 3
+      }
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_03c3e7",
     "schema_version": 1,
     "kind": "spark.job.spill_summary",
