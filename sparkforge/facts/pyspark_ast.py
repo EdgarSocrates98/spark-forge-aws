@@ -359,14 +359,46 @@ def extract_source(source: str, path: str) -> list[Fact]:
             if is_write:
                 facts.append(_write_fact(node, method, path, ctx, lines, provenance))
 
+            # Quatro formas de fixar configuracao de Spark no codigo, nao uma.
+            #
+            # Ate 2026-08-07 so `<algo>.conf.set(k, v)` era vista. Medido: das
+            # quatro formas que aparecem em job real, TRES nao emitiam fact
+            # nenhum -- nem `pyspark.conf_set`, nem `pyspark.unresolved`. Isso e
+            # pior que nao extrair: "nenhum conf_set neste arquivo" era
+            # indistinguivel de "o arquivo configura por uma forma que ninguem
+            # le", e uma regra com condicao `absent:` sobre a chave seria
+            # vazamente verdadeira. E o falso negativo silencioso do item 4 do
+            # README do catalogo.
+            #
+            #   spark.conf.set(k, v)                  -> "conf" em methods
+            #   SparkConf().set(k, v)                 -> raiz e Name("SparkConf")
+            #   sc._conf.set(k, v)                    -> "_conf" em methods
+            #   SparkSession.builder.config(k, v)     -> metodo "config"
+            #
+            # `builder.config(conf=objeto)` cai no ramo sem argumento posicional
+            # e vira `non_literal_conf` -- ponto cego registrado, que e o
+            # resultado correto: o valor esta noutro objeto e o AST nao o segue.
+            # `SparkConf().set(...)`: a raiz e a CHAMADA do construtor, nao um
+            # Name. `SparkConf.set(...)` (sem instanciar) tambem existe em
+            # codigo real e a raiz ali e Name -- os dois casos entram.
+            raiz_sparkconf = (isinstance(root, ast.Name) and root.id == "SparkConf") or (
+                isinstance(root, ast.Call)
+                and isinstance(root.func, ast.Name)
+                and root.func.id == "SparkConf"
+            )
+            eh_conf_set = method == "set" and (
+                "conf" in methods or "_conf" in methods or raiz_sparkconf
+            )
+            eh_builder_config = method == "config" and "builder" in methods
+            if eh_conf_set or eh_builder_config:
+                facts.append(_conf_set_fact(node, path, ctx, lines, provenance))
+
             if not _chain_root_call(node, ctx):
                 continue
 
             if isinstance(root, ast.Name) and root.id == "Window":
                 facts.append(_window_fact(node, methods, path, ctx, lines, provenance))
 
-            if method == "set" and "conf" in methods:
-                facts.append(_conf_set_fact(node, path, ctx, lines, provenance))
 
             if len(methods) < 2:
                 continue

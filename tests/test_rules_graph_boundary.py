@@ -129,7 +129,23 @@ ESPERADO_PY_SOBRE_GRAFO = {
     # com `.cache()` e nenhuma libera -- pelo mesmo motivo das doze acima: o eixo
     # em teste e a conf de checkpoint, ou a contagem de sujeitos, e escrever
     # `unpersist` nelas so trocaria o ruido de lugar.
-    "checkpoint_por_builder_config": ("SF-PY-008",),
+    # `SF-PY-012` entrou em 2026-08-07, e a resposta por escrito que esta lista
+    # exige e: NAO e invasao, e o achado anterior e que estava errado.
+    #
+    # A fixture se chama `checkpoint_por_builder_config` e configura
+    # `spark.checkpoint.dir` por `SparkSession.builder.config(...)`. Ate esta
+    # data o extrator so reconhecia `<algo>.conf.set(k, v)`: a chamada por
+    # `builder.config` nao emitia `pyspark.conf_set` NEM `pyspark.unresolved`.
+    # A fixture existia para exercitar exatamente essa forma e o corpus era mudo
+    # sobre ela -- o falso negativo silencioso do item 4 do README do catalogo,
+    # dentro do proprio corpus que serve de defesa.
+    #
+    # `SF-PY-012` pergunta se conf fixada em runtime sobrescreve o IaC em
+    # silencio. A pergunta vale para qualquer job, de grafo ou nao, e a
+    # evidencia do achado e o `pyspark.conf_set` de `spark.checkpoint.dir`
+    # ancorado na linha real. Trabalho legitimo da area SF-PY sobre um job que
+    # tambem e job PySpark, que e a definicao que o cabecalho desta lista da.
+    "checkpoint_por_builder_config": ("SF-PY-008", "SF-PY-012"),
     "conf_chave_por_constante": ("SF-PY-008",),
     "conf_chave_por_keyword": ("SF-PY-008",),
     "conf_chave_por_laco": ("SF-PY-008",),
