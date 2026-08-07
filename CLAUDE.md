@@ -16,6 +16,19 @@ Ao trabalhar em código PySpark destinado ao AWS Glue:
 Use o agente `spark-performance-architect` para investigações abrangentes e as Skills específicas para tarefas focadas.
 
 
+## Compressão de output
+
+O ecossistema caveman está vendorizado em `vendor/` e ligado por padrão, com o modo
+fixado em `full` por `.caveman/config.json`. No Claude Code ele se ativa sozinho.
+Qualquer outro agente aplica o ruleset de `AGENTS.md`, seção *Output compression —
+caveman mode*.
+
+O que a compressão **não** toca: o schema `recommendation:`/`Finding` inteiro,
+números, versões, `rule_id`, `fact_id`, strings de erro e blocos de código. Campo de
+evidência apagado para economizar token é defeito, não compressão.
+
+Créditos: [`vendor/CREDITS.md`](vendor/CREDITS.md).
+
 ## Investigação avançada
 
 Para jobs com fluxos full/incremental, use primeiro o agente `glue-incremental-performance-architect` e leia `PROMPT_INICIAL_MESTRE.md`. Não faça tuning localizado antes de mapear a biblioteca, actions, batching, latest-per-key e OOM.

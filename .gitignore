@@ -4,8 +4,21 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
-build/
-dist/
+# Ancorados na raiz de proposito: `dist/` solto tambem casava com
+# `vendor/caveman/dist/`, que E codigo vendorizado e precisa ser commitado.
+/build/
+/dist/
+
+# Por maquina, nunca commitado: guarda o allowlist de permissoes de quem
+# trabalha ali -- caminhos e comandos que aquele operador autorizou a rodar sem
+# confirmacao. Estava protegido so pelo gitignore GLOBAL de uma maquina ate
+# 2026-08-07. Ver tests/test_execution_surface.py.
+.claude/settings.local.json
+
+# Nao ha package.json neste repositorio, de proposito: nenhum caminho padrao
+# depende de `npm`/`npx` (ver vendor/CREDITS.md). A linha fica como rede de
+# seguranca para quem instalar algo Node localmente sem querer versiona-lo.
+node_modules/
 
 # SparkForge — estado de investigação.
 # case.yaml, facts.json, findings.json, handoff.md e artifacts/manifest.json SÃO

@@ -1,0 +1,31 @@
+{
+  "extraKnownMarketplaces": {
+    "sparkforge-caveman": {
+      "source": {
+        "source": "directory",
+        "path": "./vendor"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "caveman@sparkforge-caveman": true,
+    "ck@sparkforge-caveman": true,
+    "caveman@caveman": false,
+    "ck@cavekit": false
+  },
+  "enabledMcpjsonServers": ["sparkforge"],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v node >/dev/null 2>&1 || { echo 'CAVEMAN MODE ACTIVE - level: full (fallback sem Node)'; cat \"$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/caveman-activate.md\"; }",
+            "timeout": 5,
+            "statusMessage": "caveman: fallback sem Node..."
+          }
+        ]
+      }
+    ]
+  }
+}
