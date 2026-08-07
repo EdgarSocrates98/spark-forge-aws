@@ -28,6 +28,7 @@ REQUIRED_FIXTURES = {
     "clean_job",
     "unresolvable_values",
     "bookmarks_with_concurrency",
+    "spark_conf_in_arguments",
 }
 
 

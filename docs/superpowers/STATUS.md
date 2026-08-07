@@ -31,12 +31,12 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **4765** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **4771** passando, 5 skipped | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 81** — as 19 restantes são segredo, log, capacidade, detecção de runtime e metodologia | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **9 de 81** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
 | Extratores de facts | **19** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **118** | união de `EMITTED_KINDS` |
+| Fact kinds distintos emitidos | **121** | união de `EMITTED_KINDS` |
 | Regras de diagnóstico | **81** | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **81 de 81** | `tests/test_fixtures_kind_coverage.py` |
@@ -49,7 +49,7 @@ arquivo ganha.
 | Skills | **20** | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **164** em 21 domínios | `fixtures/` |
+| Fixtures golden | **171** em 21 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **131** (123 móveis, 8 fixas) — 61 citadas por regra, 126 por `knowledge/`, 56 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -60,10 +60,10 @@ Regras por área: SF-PY 12, SF-EMR 9, SF-EMRS 6, SF-GLUE 6, SF-UI 6, SF-ATH 5,
 SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-GRAPH 4,
 SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `emr_serverless` 19, `graph` 19, `pyspark` 17, `emr` 14, `dq` 13,
-`funcval` 10, `iceberg` 9, `plan` 7, `runtime` 7, `s3` 7, `terraform` 7,
-`bench` 6, `fusion` 5, `eventlog` 4, `sql` 4, `athena` 3, `callgraph` 3,
-`catalog` 3, `consumers` 3, `infra_code` 2, `tfdiff` 2.
+Fixtures por domínio: `graph` 25, `emr_serverless` 19, `pyspark` 17, `emr` 14, `dq` 13,
+`funcval` 10, `iceberg` 9, `terraform` 8, `plan` 7, `runtime` 7, `s3` 7, `bench` 6,
+`fusion` 5, `eventlog` 4, `sql` 4, `athena` 3, `callgraph` 3, `catalog` 3,
+`consumers` 3, `infra_code` 2, `tfdiff` 2.
 
 ---
 
@@ -1950,6 +1950,81 @@ O erro caro seria apresentar as três camadas com a mesma cara.
     à linha do EMR Serverless até a semana passada: enfileirar é decisão de
     roadmap, e o inventário registra a ausência em vez de fingir uma posição
 13. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior. As frentes sem artefato da especialização em bancos — escolha de banco, modelagem de grafo, boas práticas genéricas — entram por aqui, e até lá viram restrição auditável em `knowledge/`
+
+## Fase 6b — `SF-CFG`, configuração de Spark como coisa lida — **EM ANDAMENTO** (2026-08-07)
+
+A área declarada no `README.md` do catálogo desde o primeiro commit e nunca
+escrita. **Task 1 de 6 fechada**: os sinais. Área de regra, `cfg.effective`
+derivado, fixtures da área, rotas e perfis seguem abertos — e esta seção diz
+isso em vez de sugerir fase concluída.
+
+**Decisão de desenho, tomada antes do código.** Quando as camadas de
+configuração discordam e o event log **não** está disponível, a área **falha
+fechada**: nenhum `cfg.effective` é inferido, sai um fato de conflito nomeando
+as camadas, e toda regra que dependa do efetivo simplesmente não dispara. A
+alternativa — aplicar a precedência documentada do Spark e marcar
+`provenance: inferred` — cobriria mais casos e faria regra disparar sobre valor
+que ninguém mediu. Mesmo princípio do `emr.configuration.unapplied`, que já
+existia: qualidade da evidência é fato, não nota de rodapé.
+
+| Sinal | Onde | Estado |
+|---|---|---|
+| `spark.conf_effective` | `facts/event_log.py` | **novo** — um fact por propriedade de `SparkListenerEnvironmentUpdate` |
+| `spark.conf_excluded` | idem | **novo** — conta por seção o que o extrator não desmontou |
+| `tf.spark_conf` | `facts/terraform.py` | **novo** — desmonta o `--conf` do Glue, que empacota N propriedades numa string |
+| `pyspark.conf_set` | `facts/pyspark_ast.py` | **corrigido** — de 1 para 4 formas |
+
+**O defeito que a auditoria do `pyspark.conf_set` achou, e ele estava no
+corpus.** O extrator só reconhecia `<algo>.conf.set(k, v)`. Medido: das quatro
+formas que aparecem em job real, **três não emitiam fact nenhum** — nem o fato,
+nem `pyspark.unresolved`. `SparkConf().set()`, `SparkSession.builder.config()` e
+`sc._conf.set()` sumiam, e "nenhum `conf_set` neste arquivo" era indistinguível
+de "o arquivo configura por uma forma que ninguém lê". Qualquer regra com
+condição `absent:` sobre uma chave seria vaziamente verdadeira.
+
+Duas causas, e a segunda é a interessante: o gate era
+`method == "set" and "conf" in methods`, e a detecção estava **depois** do guard
+de raiz — `builder.config(...).getOrCreate()` fica no meio da cadeia e era
+descartado inteiro. Movida para antes do guard, pelo mesmo argumento que já
+isenta read/write dele, escrito no comentário daquele bloco desde a Fase 1.
+
+A prova de que isso não era hipótese: a fixture `checkpoint_por_builder_config`,
+do corpus de grafo, **existe para exercitar exatamente essa forma** — configura
+`spark.checkpoint.dir` por `builder.config` — e o corpus era mudo sobre ela. Com
+a correção ela passou a produzir `SF-PY-012`, e o gate de fronteira
+`test_rules_graph_boundary.py` exigiu a resposta por escrito antes de aceitar a
+linha nova. A resposta está lá: não é invasão, é a área SF-PY sobre um job que
+também é job PySpark, com evidência ancorada na linha real.
+
+**Recorte declarado.** De `SparkListenerEnvironmentUpdate`, só `Spark
+Properties`. `System Properties` e `Classpath Entries` num `facts.json`
+commitado são superfície de informação sem contrapartida para tuning. O que
+ficou de fora é **contado** em `spark.conf_excluded`, por seção — exclusão
+contada, nunca silenciosa, como `opaque_caller_function_count`.
+
+**Limite herdado, registrado.** `spark.conf_effective` é o que o run **reportou**
+como suas propriedades, não uma medição independente do motor. O próprio
+`event_log.py` já argumentava isso para a versão de Spark, e por essa razão a
+versão nunca foi lida daí. Para configuração de tuning a distinção é menos
+grave — o valor reportado é o que o driver resolveu — mas ela não some, e vai na
+explicação da regra quando a área for escrita.
+
+**Dívida nova, com custo medido.** `sparkforge/facts/secrets.py` nasce como
+fonte única de redação de segredo em par chave/valor. `_looks_like_secret` está
+implementado em `emr_cluster.py`, `emr_serverless.py` e `terraform.py`, os dois
+primeiros anotando em comentário que repetem o terceiro. Configuração de Spark é
+onde credencial mais aparece — `spark.hadoop.fs.s3a.secret.key`, senha em URL de
+JDBC — e virar a quarta cópia seria drift em superfície de segurança. Os três
+existentes **não** foram migrados: cada um tem golden gravado, e regravar golden
+sem defeito é risco de semântica sem ganho medido. Consolidá-los é dívida, não
+esquecimento.
+
+**Contagem que estava errada, corrigida no caminho.** *Números correntes* dizia
+**164** fixtures golden com `graph` em 19. Medido: **171**, com `graph` em 25 —
+a Fase 6a acrescentou seis e o total não acompanhou. A linha da Task 1
+acrescentou a 171ª (`terraform/spark_conf_in_arguments`), criada porque o gate
+`test_every_kind_of_every_extractor_appears_in_some_golden` reprovou
+`tf.spark_conf` sem corpus que o produzisse.
 
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
