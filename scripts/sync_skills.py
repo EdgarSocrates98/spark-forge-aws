@@ -229,6 +229,9 @@ DEVIN_SKILL_DISPATCH_KEYS = frozenset({"subagent", "agent"})
 # que. Uma skill despachavel a menos custa contexto do pai, e mais nada. Na
 # duvida, nao despacha.
 DISPATCHABLE_SKILLS = {
+    "verify-agent-evidence": "verifica findings contra fatos e fontes locais",
+    "engineer-agent-context": "compacta contexto preservando evidencia e kinds",
+    "engineer-agent-memory": "recupera memoria local auditavel por caso e dominio",
     "analyze-batch-loop": "extrai o loop do codigo e julga; a saida e relatorio",
     "analyze-library-call-graph": "varre a biblioteca e devolve o grafo; leitura fechada",
     "analyze-spark-plan": "interpreta um plano fisico ja salvo; nao pede nada a ninguem",

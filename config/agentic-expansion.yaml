@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "mode": "offline-first",
+  "network_required": false,
+  "agents": [
+    "sf-evidence-verifier",
+    "sf-agent-evaluation-specialist",
+    "sf-context-engineer",
+    "sf-memory-engineer",
+    "sf-cost-reviewer",
+    "sf-security-reviewer",
+    "sf-lineage-specialist",
+    "sf-schema-registry-specialist",
+    "sf-kinesis-specialist",
+    "sf-lake-formation-specialist"
+  ],
+  "subagents": [
+    "intake-packager",
+    "evidence-extractor",
+    "hypothesis-generator",
+    "experiment-designer",
+    "benchmark-comparator",
+    "schema-compatibility-checker",
+    "lineage-impact-analyzer",
+    "cost-estimator",
+    "security-gate",
+    "mutation-risk-checker",
+    "cross-reviewer",
+    "source-verifier",
+    "regression-judge",
+    "handoff-preparer",
+    "rollback-planner",
+    "release-gate"
+  ],
+  "tools": [
+    "sparkforge_offline_knowledge_verify",
+    "sparkforge_offline_knowledge_search",
+    "sparkforge_context_pack",
+    "sparkforge_schema_compare",
+    "sparkforge_lineage_extract",
+    "sparkforge_eval_golden_case",
+    "sparkforge_cost_estimate"
+  ],
+  "knowledge": [
+    "knowledge/streaming-reliability.md",
+    "knowledge/lake-governance.md",
+    "knowledge/data-contracts-schema-evolution.md",
+    "knowledge/data-lineage-impact.md",
+    "knowledge/data-platform-finops.md",
+    "knowledge/agent-evaluation.md",
+    "knowledge/offline-policy.md",
+    "knowledge/offline-manifest.json"
+  ],
+  "policy": {
+    "network": "forbidden_by_default",
+    "mutation": "approval_required",
+    "source": "local_manifest_first",
+    "unknown_source": "unresolved"
+  }
+}

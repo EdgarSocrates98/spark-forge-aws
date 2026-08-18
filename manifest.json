@@ -22,6 +22,8 @@
     "design-step-functions-orchestration",
     "diagnose-data-skew",
     "diagnose-oom",
+    "engineer-agent-context",
+    "engineer-agent-memory",
     "glue-incremental-performance-architect",
     "optimize-athena-queries",
     "optimize-iceberg-table",
@@ -38,7 +40,8 @@
     "sparkforge-diagnose",
     "token-efficient-agent",
     "tool-specialist-routing",
-    "tune-glue-job"
+    "tune-glue-job",
+    "verify-agent-evidence"
   ],
   "platforms": [
     "Claude Code",
