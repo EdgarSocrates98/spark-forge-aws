@@ -1,9 +1,14 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-07
-**Commit de referência:** vendorização do ecossistema caveman (ferramental de
-agente; nenhuma regra, extrator ou fact mudou). Fechamento anterior: branch
-`feat/preservacao-semantica`, 2026-08-05
+**Atualizado em:** 2026-08-18
+**Commit de referência:** fechamento da branch `feat/fase6b-sf-cfg` — expansão
+agêntica v2 (30 agentes `sf-*`, 20 skills, 35 áreas de coordenação `structural`,
+runtime de supervisão em `sparkforge/agents/`, ferramental em `sparkforge/tools/`
+e pacote offline com 43 documentos). **Nenhuma regra executável, extrator ou
+fact de diagnóstico mudou nesta branch** — os números de detecção abaixo são os
+mesmos de `feat/preservacao-semantica`; o que mudou foi o denominador do
+catálogo. Fechamentos anteriores: vendorização do ecossistema caveman
+(2026-08-07) e `feat/preservacao-semantica` (2026-08-05)
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -31,22 +36,22 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **4771** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **5446** passando, 5 skipped | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
-| Regras com eixo de resultado no `validation` | **62 de 81** — as 19 restantes são segredo, log, capacidade, detecção de runtime e metodologia | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **9 de 81** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
-| Extratores de facts | **19** | `sparkforge/facts/*.py` |
+| Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
+| Regras com `runtime_scope` não-vazio | **9 de 116** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
+| Extratores de facts | **21** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **121** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **81** | `load_catalog()` |
+| Regras de diagnóstico | **116**, sendo **55 executáveis** e **61 `structural`** (26 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **81 de 81** | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **26** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-010`) | `rules/catalog/routing.yaml` |
+| Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
+| Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
 | Tools MCP | **41** | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **41 de 41** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
-| Coordenadores | **8** | `agents/*.md` |
+| Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Skills | **20** | `skills/*/SKILL.md` |
+| Skills | **40** (20 herdadas + 20 da expansão agêntica) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
 | Fixtures golden | **171** em 21 domínios | `fixtures/` |
@@ -2212,6 +2217,63 @@ revisão do diff).
 
 Créditos e procedência completos: [`vendor/CREDITS.md`](../../vendor/CREDITS.md).
 
+## Expansão agêntica v2 — 30 coordenadores `sf-*`, 20 skills e o runtime que os supervisiona (2026-08-18)
+
+Branch `feat/fase6b-sf-cfg`, quatro commits sobre `3f76768`. **Nenhuma regra
+executável, extrator ou fact de diagnóstico mudou.** O catálogo foi de 81 para
+116 regras, e as 35 novas são todas `status: structural`: uma por área de
+coordenação, sem `requires_facts`, sem `when` e sem `sources`. Elas existem para
+que `routing.yaml` tenha um alvo nomeado por área; não julgam nada e não podem
+disparar. As 55 executáveis são as mesmas de antes, byte a byte — só
+`routing.yaml` foi tocado entre os arquivos de catálogo que já existiam.
+
+**O que entrou de código:** `sparkforge/agents/` (sala de conversa append-only,
+supervisor com orçamento, política de modelo, autonomia limitada e observabilidade
+opcional) e `sparkforge/tools/` (índice offline verificável por SHA-256,
+estimativa de token, avaliação de caso golden, lineage textual e comparação de
+JSON Schema). Mais 43 documentos de conhecimento registrados em
+`knowledge/offline-manifest.json`.
+
+### Três defeitos achados na revisão de fechamento, e o que foi feito
+
+**1. O default de `Budget` impedia o supervisor de terminar.** `max_rounds`
+cobra uma rodada por **fase** e `Supervisor.PHASES` tem sete; o default era `3`.
+Reproduzido: `Supervisor(room, [agent], {"a": handler}).run("goal")` voltava
+`blocked` / `budget_exhausted` na quarta fase para **qualquer** entrada, sem
+nunca chamar `verify`, `synthesize` ou `decide`. O consumidor lia falta de
+evidência onde havia orçamento acabando cedo. O único teste do supervisor
+forçava `max_tokens=1` e exercitava só o caminho de exaustão de token, por isso
+o defeito era invisível. Fechado: o default passou a ser `len(PHASES)`, com a
+razão escrita no docstring do módulo, e entrou
+`test_supervisor_completes_the_whole_pipeline_with_the_default_budget`.
+
+**2. `sparkforge-tools` era documentado e não existia depois do install.**
+`sparkforge/tools/cli.py` anuncia `prog="sparkforge-tools"` e
+`docs/agentic-expansion.md` documenta os três subcomandos, mas
+`[project.scripts]` só declarava `sparkforge`. Só `python -m sparkforge.tools.cli`
+funcionava. Fechado com a entrada no `pyproject.toml`.
+
+**3. O gate da garantia offline existia e não rodava em lugar nenhum.**
+`docs/operations-guide.md` lista `scripts/verify_offline_bundle.py` entre os
+gates finais; o `ci.yml` não o invocava, e o script ignorava o `--check` que a
+documentação manda passar. Manifest e disco podiam divergir sem que nada
+acusasse. Fechado: passo próprio no `ci.yml`, `--check` aceito de propósito (o
+script não tem outro modo, e recusar o argumento faria a linha documentada
+falhar por parsing e não por integridade) e `TestOfflineBundleGate` cobrando o
+passo.
+
+### O lint que a branch introduziu
+
+`ruff check sparkforge scripts tests` acusava **133 erros** em 21 arquivos
+novos, todos da expansão — o `ci.yml` roda esse comando, então a branch não
+podia fechar verde. A causa era estilo de escrita comprimido no fonte:
+`import hashlib, json, re`, `self.repo=Path(repo); self.manifest_path=...` e
+corpo de `if` na mesma linha. Corrigido em todos os 21, com a semântica
+preservada — o que mudou foi quebra de linha, nome de constante extraída
+(`_TERM_RE`, `_S3_RE`, `_TABLE_RE`) e `__all__` explícito em
+`sparkforge/tools/__init__.py`, que era o que os `F401` acusavam. Os módulos
+sem docstring ganharam um que diz **por que existem**, não o que fazem.
+
 ## Dívidas abertas
 
 A tabela era uma só e misturava **três naturezas**, e a mistura fazia o
@@ -2383,7 +2445,7 @@ que a varredura livre achou não estavam em candidato nenhum, nenhuma quebrava t
 todas eram texto que a própria pesquisa já tinha derrubado — sobrevivendo num `.py`, num
 docstring de teste e num arquivo da raiz, três lugares onde ninguém foi procurar.
 
-### Dívidas (3)
+### Dívidas (5)
 
 Fechar exige escrever código. Nada aqui espera fase nem depende de reverter
 decisão. **A tabela tinha oito linhas em 2026-08-05, caiu para uma no mesmo dia
@@ -2410,6 +2472,8 @@ com teste. O que sustenta este número é o teste que ficou para trás, não a p
 | `judge --emr` sobre facts de EMR Serverless grava versão de EC2 num artefato que não a declara | rodada de dívidas abertas, 2026-08-05, medida ao conferir o que o caminho alternativo do Serverless realmente enche | **Dívida, e a única aberta — fechar é escrever código, e ninguém escreveu.** Medido, reproduzível numa linha: `sparkforge judge --facts fixtures/emr_serverless/app_saudavel/expected/facts.json --emr 7.5.0` grava no contexto `{"emr": "7.5.0", "spark": "3.5.2-amzn-1", "python": "3.9", "iceberg": "1.6.1-amzn-1", "detected_from": ["cli"]}`, tudo derivado da `EMR_MATRIX` — **que é de EMR on EC2**. O conjunto de facts não tem um único fact de EC2: são cinco kinds `emrs.*`, todos de `get-application`. **Onde está o número certo:** `knowledge/emr-serverless/runtime-matrix.md:47` mede que `emr-7.5.0` no Serverless publica **`3.5.2`, sem o sufixo do fork**, e a §1 da mesma página (`knowledge/emr-serverless/runtime-matrix.md:30-31`) mede que o sufixo `-amzn-N` **não existe na fonte do Serverless** e que **três das quatro colunas da `EMR_MATRIX` não têm fonte nenhuma do lado do Serverless**. Ou seja: `spark` sai com um sufixo que a fonte não publica, e `python` e `iceberg` saem **inteiros do nada** — não é um campo com ruído, são três campos inventados sobre um artefato que não declara nenhum deles. **Nada no motor impede**, e o custo é do pior tipo: versão errada no contexto invalida toda recomendação versionada que vier depois, e o operador não tem como distinguir um eixo derivado de um eixo lido. É **dívida e não limite** porque o conserto é código nosso e há mais de uma forma de escrevê-lo: recusar `--emr` quando o conjunto tem fact `emrs.*`, avisar e marcar os eixos como derivados de matriz alheia, ou derivar da tabela do Serverless para o componente que ela publica e deixar vazio o que ela não publica. **Escolher entre as três é a decisão; nenhuma delas depende de terceiro.** Nenhum teste cobre a combinação hoje — `--emr` é exercitado com facts de EC2, e o Serverless é exercitado sem `--emr`. |
 | Nenhuma regra consegue dizer "o IaC não declarou o jar de GraphFrames" — falta `absent` filtrado por atributo, e o kind derivado que o substituiria | Fase 6a, veto `V-GR-1` no cabeçalho de `rules/catalog/graph.yaml`, medido ao escrever a regra que a §5 do spec previa | **Dívida — fechar é escrever código, e ninguém escreveu.** Medido: `engine._absent_satisfied` (`rules/engine.py:68-70`) compara **só `kind`**, e o kind é `tf.attribute` dos dois lados do par de fixtures — o que muda é `attrs.key`. Não existe `absent` filtrado por atributo nem `where` negado, então `absent: tf.attribute` seria falso para todo Terraform lido, e a regra acusaria **todo** job de grafo, inclusive quem declarou o jar. **O que fecharia** é um kind derivado no extrator de Terraform, no molde exato de `tf.observability.spark_ui`: o extrator decide uma vez e emite o kind já decidido, e a regra fica com `absent:` sobre ele. É código nosso, tem precedente no próprio repositório e não depende de terceiro. **O que NÃO fecha com ele** está na linha de *Limites declarados* sobre jar de outro minor: a metade **exculpatória** — tratar um `--extra-jars` como resolução — continua vetada na faixa 3.3 mesmo com o kind escrito, e as duas metades envelhecem de formas opostas. O par de fixtures `import_sem_jar_no_iac` × `import_com_jar_declarado` já existe, compartilha o `.py` byte a byte e difere só no `--extra-jars`: o corpus para a regra está pronto, o mecanismo é que não. |
 | `checkpointInterval > 2` tem fonte primária e limiar apurados, e nenhuma fixture o exercita | Fase 6a, veto `V-GR-2` no cabeçalho de `rules/catalog/graph.yaml`, medido contra as 25 fixtures | **Dívida — fechar é escrever corpus, e ninguém escreveu.** É o **único limiar numérico com fonte primária** desta área: `graphframes-api.md` §6 traz o aviso citável (o código adverte em `value <= 0 || value > 2`), e a §4.3.2 autoriza explicitamente "outra regra, com severidade menor". O que falta é golden positivo: o caso `> 2` **não tem fixture nenhuma**, e regra sem ele reprova `test_every_rule_has_a_fixture_that_fires_it`. O caso `<= 0` tem fixture, mas é `saida_intervalo_nao_positivo`, que o próprio `meta.yaml` declara "segunda forma de escrever certo" e que é uma das **cinco** saídas legítimas de `V-GF-1` — acusar o artefato que o corpus declara correto faria o relatório dizer as duas coisas ao mesmo tempo. **Fechar é uma fixture com `checkpointInterval` acima de 2 e um `<= 0` que não seja também saída legítima**, mais a regra. Nada a reverter, nada a esperar de terceiro. |
+| O gate de golden deixou de cobrar as regras `status: structural`, e nada impede que uma regra de detecção real seja marcada assim | expansão agêntica v2, 2026-08-18, medida ao revisar a branch | `tests/test_fixtures_kind_coverage.py` passou a filtrar por `_executable_rules()` para acomodar as 35 áreas de coordenação, que não julgam nada e não podem disparar. A mudança está certa para o que ela acomoda e **abriu uma porta**: `status` é campo livre do YAML, e uma regra com `when` de verdade marcada `structural` sai do gate de fixture, do gate de ramo de severidade e das duas asserções de área muda dos testes ponta a ponta — quatro redes de uma vez, com a suíte verde. Fechar é escrever o invariante que falta: `structural` **exige** `when: {all: []}`, `requires_facts: []` e `sources: []`, e qualquer regra com condição real que se declare `structural` derruba o teste. Não foi escrito nesta branch porque o conjunto de arquivos dela já era o da expansão |
+| `RELACAO_MEDIDA` em `tests/test_sync_render.py` é redefinido por um `update()` no meio do arquivo, e seis chaves ficam com valor morto | expansão agêntica v2, 2026-08-18, medida ao corrigir o lint do arquivo | O dicionário é declarado com as vinte skills e, ~60 linhas abaixo, um `RELACAO_MEDIDA.update({...})` sobrescreve seis entradas (`agentic-orchestration`, `token-efficient-agent`, `tool-specialist-routing`, `analyze-analytics`, `analyze-functional-rules`, `optimize-athena-queries`). O teste que consome lê só o valor final, então o primeiro valor das seis **nunca é exercitado** — quem editar a entrada de cima acha que mudou o teste e não mudou nada. Não é defeito de produto e por isso não bloqueou a branch; é armadilha de manutenção num arquivo cuja função é justamente ser a medida. Fechar é fundir o `update()` na declaração |
 
 ### Fases (8)
 
