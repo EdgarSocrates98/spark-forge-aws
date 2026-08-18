@@ -1,8 +1,9 @@
 """Bounded autonomy and policy-driven routing for SparkForge agents."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable
+
 
 @dataclass(frozen=True)
 class AutonomyBudget:
@@ -47,7 +48,15 @@ class AutonomyController:
             return "validation"
         return "improvement"
 
-    def route(self, *, goal: str, available_agents: Iterable[str], completed: set[str] | None = None, evidence_count: int = 0, risk: str = "low") -> RouteDecision:
+    def route(
+        self,
+        *,
+        goal: str,
+        available_agents: Iterable[str],
+        completed: set[str] | None = None,
+        evidence_count: int = 0,
+        risk: str = "low",
+    ) -> RouteDecision:
         done = completed or set()
         effort = self.estimate_effort(goal, risk=risk, evidence_count=evidence_count)
         phase = next((item for item in self.PHASE_ORDER if item not in done), "synthesize")
@@ -63,9 +72,23 @@ class AutonomyController:
         selected = tuple(name for name in preferred if name in allowed)[: self.budget.max_agents]
         if not selected:
             selected = tuple(sorted(allowed))[: self.budget.max_agents]
-        return RouteDecision(phase, selected, f"next unmet phase: {phase}", effort, self.focus_for_goal(goal))
+        return RouteDecision(
+            phase,
+            selected,
+            f"next unmet phase: {phase}",
+            effort,
+            self.focus_for_goal(goal),
+        )
 
-    def should_stop(self, *, iteration: int, tokens_used: int, progress: int, stagnant_iterations: int, terminal: bool = False) -> StopDecision:
+    def should_stop(
+        self,
+        *,
+        iteration: int,
+        tokens_used: int,
+        progress: int,
+        stagnant_iterations: int,
+        terminal: bool = False,
+    ) -> StopDecision:
         if terminal:
             return StopDecision(True, "terminal decision reached")
         if iteration >= self.budget.max_iterations:
@@ -78,7 +101,15 @@ class AutonomyController:
             return StopDecision(True, "quality regression detected")
         return StopDecision(False, "continue")
 
-    def authorize_tool(self, *, agent: str, tool: str, allowed_tools: Iterable[str], mutating: bool = False, approval: bool = False) -> tuple[bool, str]:
+    def authorize_tool(
+        self,
+        *,
+        agent: str,
+        tool: str,
+        allowed_tools: Iterable[str],
+        mutating: bool = False,
+        approval: bool = False,
+    ) -> tuple[bool, str]:
         if tool not in set(allowed_tools):
             return False, "tool not allowlisted for agent"
         if mutating and not approval:

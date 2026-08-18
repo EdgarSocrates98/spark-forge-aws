@@ -3,15 +3,22 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
+
 
 def estimate_tokens(value: Any) -> int:
-    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
+    if isinstance(value, str):
+        text = value
+    else:
+        text = json.dumps(value, ensure_ascii=False, sort_keys=True)
     return max(1, (len(text) + 3) // 4)
 
 def fingerprint(value: Any) -> str:
     text = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
 def deduplicate(records: Iterable[dict[str, Any]], key: str = "content") -> list[dict[str, Any]]:
     seen: set[str] = set()
     result: list[dict[str, Any]] = []
@@ -21,7 +28,15 @@ def deduplicate(records: Iterable[dict[str, Any]], key: str = "content") -> list
             seen.add(marker)
             result.append(record)
     return result
-def select_context(records: Iterable[dict[str, Any]], query: str, budget_tokens: int, *, preserve_kinds: set[str] | None = None) -> list[dict[str, Any]]:
+
+
+def select_context(
+    records: Iterable[dict[str, Any]],
+    query: str,
+    budget_tokens: int,
+    *,
+    preserve_kinds: set[str] | None = None,
+) -> list[dict[str, Any]]:
     preserve_kinds = preserve_kinds or {"task", "decision", "fact", "snapshot"}
     query_terms = {term.lower() for term in query.split() if len(term) > 2}
     unique = deduplicate(records)
@@ -50,6 +65,12 @@ def compact_summary(records: Iterable[dict[str, Any]], max_items: int = 12) -> d
     return {
         "record_count": len(rows),
         "kinds": sorted({str(row.get("kind", "unknown")) for row in rows}),
-        "message_ids": [row.get("message_id") for row in rows[-max_items:] if row.get("message_id")],
-        "facts": [row.get("content", {}).get("fact") for row in rows if row.get("kind") == "fact" and row.get("content", {}).get("fact")][:max_items],
+        "message_ids": [
+            row.get("message_id") for row in rows[-max_items:] if row.get("message_id")
+        ],
+        "facts": [
+            row.get("content", {}).get("fact")
+            for row in rows
+            if row.get("kind") == "fact" and row.get("content", {}).get("fact")
+        ][:max_items],
     }

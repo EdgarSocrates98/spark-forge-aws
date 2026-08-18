@@ -36,6 +36,8 @@ jobs:
         run: python scripts/gen_requirements.py --check
       - name: Vendored third-party integrity
         run: python scripts/vendor_caveman.py --check
+      - name: Offline knowledge bundle integrity
+        run: python scripts/verify_offline_bundle.py --check
       - name: Eval corpus consistency
         run: python scripts/check_evals.py
       - name: Catalog loads with expression validation

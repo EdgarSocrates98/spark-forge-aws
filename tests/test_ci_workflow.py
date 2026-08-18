@@ -196,3 +196,14 @@ class TestReleaseWorkflow:
             for step in job.get("steps", [])
         ]
         assert any("verify_wheel.py" in run for run in runs)
+
+
+class TestOfflineBundleGate:
+    def test_runs_offline_bundle_integrity_check(self):
+        """A garantia offline é "o arquivo confere", não "o arquivo existe".
+
+        `docs/operations-guide.md` lista este gate entre os finais. Ele existia
+        como script e não rodava em lugar nenhum: manifest e disco podiam
+        divergir sem que nada acusasse.
+        """
+        assert any("verify_offline_bundle.py" in run for run in _all_step_runs())
