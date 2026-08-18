@@ -241,9 +241,15 @@ DISPATCHABLE_SKILLS = {
     "review-emr-cluster": "revisa a definicao do cluster que ja esta em disco",
     "review-glue-terraform": "revisa o .tf que ja esta em disco",
     "review-pyspark-pr": "revisa um diff fechado e classifica risco",
+    "analyze-analytics": "Especialista de dominio; despacho por coordenador",
+    "analyze-functional-rules": "Especialista de dominio; despacho por coordenador",
+    "analyze-graph-data": "Especialista de dominio; despacho por coordenador",
 }
 
 NON_DISPATCHABLE_SKILLS = {
+    "agentic-orchestration": "coordena no agente pai",
+    "token-efficient-agent": "aplica contexto no agente atual",
+    "tool-specialist-routing": "valida roteamento no agente atual",
     # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,
     # por default, nao gera subagente proprio (`max-nesting`): despachar quem
     # orquestra e perder justamente a orquestracao.
@@ -284,6 +290,17 @@ NON_DISPATCHABLE_SKILLS = {
         "e `diagnose-data-skew`; subagente nao herda o historico do pai e teria de "
         "reconstruir a evidencia que motivou a chamada"
     ),
+    "design-data-architecture": "Especialista de dominio; despacho por coordenador",
+    "design-airflow-pipelines": "Especialista de dominio; despacho por coordenador",
+    "design-agent-systems": "Especialista de dominio; despacho por coordenador",
+    "optimize-iceberg-tables": "Especialista de dominio; despacho por coordenador",
+    "design-s3-data-lake": "Especialista de dominio; despacho por coordenador",
+    "review-terraform-data-platform": "Especialista de dominio; despacho por coordenador",
+    "design-neptune-graph": "Especialista de dominio; despacho por coordenador",
+    "design-dynamodb-model": "Especialista de dominio; despacho por coordenador",
+    "optimize-athena-queries": "Especialista de dominio; despacho por coordenador",
+    "design-lambda-serverless": "Especialista de dominio; despacho por coordenador",
+    "design-step-functions-orchestration": "Especialista de dominio; despacho por coordenador",
 }
 
 SKILL_DISPATCH_REASON = {**DISPATCHABLE_SKILLS, **NON_DISPATCHABLE_SKILLS}

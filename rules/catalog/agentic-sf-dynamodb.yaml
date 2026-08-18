@@ -1,0 +1,12 @@
+area: SF-DYNAMODB
+rules:
+- id: SF-DYNAMODB-001
+  category: agentic-platform
+  title: SF-DYNAMODB coordinator area
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  status: structural
+  runtime_scope: {}
+  sources: []

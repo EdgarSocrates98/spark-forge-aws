@@ -1,0 +1,12 @@
+area: SF-IAC
+rules:
+- id: SF-IAC-001
+  category: agentic-platform
+  title: SF-IAC coordinator area
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  status: structural
+  runtime_scope: {}
+  sources: []
