@@ -36,7 +36,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **5446** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **5447** passando, 5 skipped | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **9 de 116** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
@@ -2280,6 +2280,20 @@ mesmo processo e falha se o pacote tiver vindo do diretório-fonte. Copiar
 dele já declara: `plan_ref` derivado de dois jeitos diverge em silêncio (D-4c-22).
 Medido depois do conserto: 1386 testes passando dentro do venv do gate, `twine
 check` PASSED nos dois artefatos.
+
+**5. O manifest offline só era válido no Windows.** Consequência direta de
+ligar o gate do item 3: com ele no CI, `ubuntu-latest` reprovou os 43
+documentos com a árvore intacta. Os 43 são markdown que o git converte na saída
+(`core.autocrlf`), então o mesmo commit tem CRLF no Windows e LF no Linux, e o
+hash saía dos **bytes crus** — válido só na máquina onde foi gravado. A
+normalização **remove todo CR** em vez de traduzir `CRLF` para `LF`, e isso foi
+medido: `knowledge/model-selection-observability.md` tem 25 sequências
+`CR CR LF` (blob commitado já com CRLF, convertido de novo no checkout), onde
+traduzir devolveria `LF LF` no Windows e `LF` no Linux — o hash voltaria a
+depender da plataforma. Os 43 hashes foram regravados pela mesma função que os
+confere. O outro lado está travado por teste: as três formas (`LF`, `CRLF`,
+`CR CR LF`) verificam contra o mesmo manifest, e um byte injetado continua
+reprovando, nomeando o arquivo.
 
 ### O lint que a branch introduziu
 

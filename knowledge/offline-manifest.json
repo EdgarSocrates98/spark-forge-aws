@@ -6,22 +6,22 @@
     {
       "path": "knowledge/agent-creation.md",
       "title": "agent-creation",
-      "sha256": "fde6b5ff8a5b6fec71f1453868a67938b743665bca0639bae6d2b9d67bdbac1b"
+      "sha256": "75ccfc9dcbab70f9fd65c650c313df09edb0d3859ed7d4b56f46ba7c49d6c9f4"
     },
     {
       "path": "knowledge/agent-evaluation.md",
       "title": "agent-evaluation",
-      "sha256": "783ccb77d6a0246031288e16a74c694124d0c48ac73618deb8961afc1b35e1d6"
+      "sha256": "61465f598c89f5124fc13597e302cd814f4594c829b9cc39f3fb1aa9384922dd"
     },
     {
       "path": "knowledge/agentic-engineering.md",
       "title": "agentic-engineering",
-      "sha256": "bae2c7acc08b6b78c49aeb215a9130f0260d4562c824bfa95ab3cad755ab00a2"
+      "sha256": "1592c1e84d95fb5fc480c8e26b5045eeb29d7fc0d53a9d9049b0f5ce5df0ea0f"
     },
     {
       "path": "knowledge/airflow-pipelines.md",
       "title": "airflow-pipelines",
-      "sha256": "1ea10529381a9d8a2b5cdd81112ee40f13fc6d37c74e60e8ccb0ab9a368274c8"
+      "sha256": "8585285617f34c09d1202f01e778ee0876211f8f4a12638e9382cc2c47d2f349"
     },
     {
       "path": "knowledge/anti-patterns.md",
@@ -41,22 +41,22 @@
     {
       "path": "knowledge/data-contracts-schema-evolution.md",
       "title": "data-contracts-schema-evolution",
-      "sha256": "82999cb2d5673c98849db08797e53a44fc4f2aff9127757376bea9322c93454e"
+      "sha256": "05eab6d789d87f336d927e79b32cc641d99aa028c10d409305e625787f746fae"
     },
     {
       "path": "knowledge/data-lineage-impact.md",
       "title": "data-lineage-impact",
-      "sha256": "1cc8504bf23a6d005ad7869bfa625fb5ed2dd29fed0a7fc46f8100d2ce22ddc2"
+      "sha256": "1ebd29ef5e1666983a832946fb1a33350a037419cf2192beddbeee1be63f0ead"
     },
     {
       "path": "knowledge/data-platform-architecture.md",
       "title": "data-platform-architecture",
-      "sha256": "c7a4be7cbfad4637606623684c7be2a6803dfbaa97b65761566c75c274a8dffb"
+      "sha256": "2193926022897c3cb4346ac04bb8421280e79159c3e948960667dc6bd7e88c25"
     },
     {
       "path": "knowledge/data-platform-finops.md",
       "title": "data-platform-finops",
-      "sha256": "621ea14585eb4738450f8fe336e384aef176c5d98a625628ca230fc15314a7d8"
+      "sha256": "103ccd4f62f8914c7d994fd68ccae6ce5f416276d944b2ad7e06cbfc025234f9"
     },
     {
       "path": "knowledge/devin/agents-and-subagents.md",
@@ -66,7 +66,7 @@
     {
       "path": "knowledge/domain-tool-matrix.md",
       "title": "domain-tool-matrix",
-      "sha256": "7b1477d04780213361cb70a6c6a10fc805291dc9a68bb7a650991bb195ccb709"
+      "sha256": "672081d641fbc05ff77f73120cf0c1830b0c3e385920c539f93bf5f782c8638f"
     },
     {
       "path": "knowledge/dq/validation-frameworks.md",
@@ -126,32 +126,32 @@
     {
       "path": "knowledge/graphs-neptune-dynamodb-athena.md",
       "title": "graphs-neptune-dynamodb-athena",
-      "sha256": "0c9c9ac99977ecb48ef1a67e7b91f45eca5c6a1e00402c3b994cb460d94b5740"
+      "sha256": "89d24af7b9e10711e3ee5e679f38b94a9ae93f0e60514d0f24d2298e9e75aff4"
     },
     {
       "path": "knowledge/iceberg-parquet-s3.md",
       "title": "iceberg-parquet-s3",
-      "sha256": "76ccef62ba1bd9ebdf6383d617b8ec95e0bc8fb6dceadd4f044aa9184cf391b0"
+      "sha256": "b6a4d0688aa09f31afa3364a650d9df6f2e043a7c5c0e0a408e72de04a85ebf0"
     },
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "69861397771d264eb4cda9cb08eb046de790b89aa696f292441aeb42ef75186b"
+      "sha256": "03c2e3f562679471db0d8b81b99e9fdd76b562a16222a6e288678036f6fc9f7b"
     },
     {
       "path": "knowledge/lake-governance.md",
       "title": "lake-governance",
-      "sha256": "48ba75edbecc28ae06ae1f02a866f46004a2c34ab8cc6bc92bccc6841c462b39"
+      "sha256": "f8b7799c31bcedd8f43761b58cabecd2645ba78fc26a46e0f99bdbe858ee1c99"
     },
     {
       "path": "knowledge/model-selection-observability.md",
       "title": "model-selection-observability",
-      "sha256": "e72bf469d1a0d98c45d3671ef53fea49690e933a03b21a278710ca86b75f681b"
+      "sha256": "a308bfb93c52e8e9cfef97ef097e1819dedb5549f47e0f56710df77af52fa0ab"
     },
     {
       "path": "knowledge/offline-policy.md",
       "title": "offline-policy",
-      "sha256": "ccb4ff42b772b253a83177a712c09d20f4c9436f9134be659f43d1a33fd23661"
+      "sha256": "7b867d7159eb193d78fe246e59f6966fc65209c56c927a0c2dc16a10fe3aa97a"
     },
     {
       "path": "knowledge/performance-principles.md",
@@ -201,22 +201,22 @@
     {
       "path": "knowledge/streaming-reliability.md",
       "title": "streaming-reliability",
-      "sha256": "11633f8b594a2bfc312e45073bd4850de3aac4b99b5b247052d21e96144921d9"
+      "sha256": "f0df97cca35dfabba8fda91ced92ad0b503e671721de2f5e3399d7b62d526a05"
     },
     {
       "path": "knowledge/terraform-data-platform.md",
       "title": "terraform-data-platform",
-      "sha256": "f4ab8b94f3a74b267b49a1ab729939d27e1aa1ca1dc98e252a7df2db6231b3c6"
+      "sha256": "1c08c95844706dcc60c4f5f3b62e8977f6b2a8d9d86c19bc187c2e34a0fba782"
     },
     {
       "path": "knowledge/token-economy.md",
       "title": "token-economy",
-      "sha256": "0d91be66fd4383a80fbd8e07667accfa35ce0b09f7bbb169a109c4e874480799"
+      "sha256": "8a5c07b19cf68434104c87ed1ae6c19b0b65ea51e5f235e8f5508c9ee3b6a9af"
     },
     {
       "path": "knowledge/tool-specialization-matrix.md",
       "title": "tool-specialization-matrix",
-      "sha256": "27f972185045964a4a1a18f3023c135be490a086c285500c611727a8f9d6439e"
+      "sha256": "5c66dc69b98cb4de0acf0220814bd3a9b5008dd426e7e54b79e9a0fb466bf86e"
     }
   ]
 }
