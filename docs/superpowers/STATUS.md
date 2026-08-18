@@ -2262,6 +2262,25 @@ script não tem outro modo, e recusar o argumento faria a linha documentada
 falhar por parsing e não por integridade) e `TestOfflineBundleGate` cobrando o
 passo.
 
+**4. O gate de paridade do artefato estava vermelho desde `9474aa8`, nos dois
+sistemas operacionais da matriz.** Não é defeito desta branch — chegou por
+`main` — mas fechá-la sem consertar seria entregar PR que não pode ficar verde.
+`tests/test_fixtures_golden_funcval.py` importa `with_plan_ref` de
+`scripts/regen_fixtures.py`, e `scripts/` **não vai no wheel**: é andaime de
+teste. O gate roda a suíte de golden de um `cwd` fora do repositório, com
+`PYTHONSAFEPATH=1` e `-o pythonpath=`, exatamente para que `import sparkforge`
+venha do artefato — e isso tira `scripts/` do `sys.path` junto. A coleta parava
+com `ModuleNotFoundError: No module named 'scripts'` antes de qualquer asserção
+rodar. Fechado com `tests/conftest.py`, que **acrescenta** a raiz ao fim do
+`sys.path` — nunca insere no começo, para que `site-packages` continue vencendo
+para `sparkforge`. O que sustenta a honestidade disso não é a ordem, que se
+perde em refactor, e sim `tests/test_installed_provenance.py`, que roda no
+mesmo processo e falha se o pacote tiver vindo do diretório-fonte. Copiar
+`with_plan_ref` para dentro do teste foi recusado pela razão que o docstring
+dele já declara: `plan_ref` derivado de dois jeitos diverge em silêncio (D-4c-22).
+Medido depois do conserto: 1386 testes passando dentro do venv do gate, `twine
+check` PASSED nos dois artefatos.
+
 ### O lint que a branch introduziu
 
 `ruff check sparkforge scripts tests` acusava **133 erros** em 21 arquivos
