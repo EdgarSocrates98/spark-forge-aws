@@ -373,11 +373,22 @@ def _lista_de_topo(text: str, chave: str) -> list[str]:
 
 
 RELACAO_MEDIDA.update({
-    "agentic-orchestration": ("sf-orchestrator",),
-    "token-efficient-agent": ("sf-orchestrator", "sf-token-verifier"),
-    "tool-specialist-routing": ("sf-orchestrator", "sf-pyspark-specialist", "sf-runtime-specialist", "sf-storage-specialist"),
+    "agentic-orchestration": ("sf-agent-evaluation-specialist", "sf-context-engineer", "sf-evidence-verifier", "sf-memory-engineer", "sf-orchestrator"),
+    "token-efficient-agent": ("sf-agent-evaluation-specialist", "sf-context-engineer", "sf-cost-reviewer", "sf-memory-engineer", "sf-orchestrator", "sf-token-verifier"),
+    "tool-specialist-routing": ("sf-context-engineer", "sf-evidence-verifier", "sf-orchestrator", "sf-pyspark-specialist", "sf-runtime-specialist", "sf-storage-specialist"),
+    "analyze-analytics": ("sf-analytics-specialist", "sf-lineage-specialist"),
+    "analyze-functional-rules": ("sf-functional-rules-specialist", "sf-lineage-specialist", "sf-schema-registry-specialist"),
+    "design-agent-systems": ("sf-agent-builder", "sf-agent-evaluation-specialist", "sf-memory-engineer"),
+    "design-data-architecture": ("sf-cost-reviewer", "sf-data-architect", "sf-kinesis-specialist", "sf-lake-formation-specialist", "sf-lineage-specialist", "sf-schema-registry-specialist", "sf-security-reviewer"),
+    "design-s3-data-lake": ("sf-lake-formation-specialist", "sf-s3-specialist", "sf-security-reviewer"),
+    "design-step-functions-orchestration": ("sf-kinesis-specialist", "sf-step-functions-specialist"),
+    "optimize-athena-queries": ("sf-athena-specialist", "sf-cost-reviewer"),
+    "review-data-validation": ("data-quality-reviewer", "sf-evidence-verifier", "sf-kinesis-specialist", "sf-schema-registry-specialist"),
+    "review-terraform-data-platform": ("sf-lake-formation-specialist", "sf-security-reviewer", "sf-terraform-specialist"),
+    "verify-agent-evidence": ("sf-evidence-verifier",),
+    "engineer-agent-context": ("sf-context-engineer",),
+    "engineer-agent-memory": ("sf-memory-engineer",),
 })
-
 class TestRelacaoDerivada:
     """D-5: `agent:` sai do `skills:` que cada coordenador ja declara."""
 
@@ -655,11 +666,11 @@ class TestSkillsReais:
             if "agent" in front:
                 com_agent[skill.name] = front["agent"]
         assert com_agent == {
-            "analyze-analytics": "sf-analytics-specialist",
-            "analyze-functional-rules": "sf-functional-rules-specialist",
             "analyze-graph-data": "sf-graph-specialist",
-            "review-data-validation": "data-quality-reviewer",
             "review-emr-cluster": "emr-infra-reviewer",
+            "verify-agent-evidence": "sf-evidence-verifier",
+            "engineer-agent-context": "sf-context-engineer",
+            "engineer-agent-memory": "sf-memory-engineer",
         }
 
     def test_o_frontmatter_sobrevive_a_insercao(self):

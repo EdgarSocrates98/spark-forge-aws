@@ -1,0 +1,56 @@
+version: 1
+policy:
+  lifecycle: ephemeral
+  network: forbidden
+  max_rounds: 1
+  require_evidence: true
+  require_typed_output: true
+subagents:
+  - name: intake-packager
+    contract: subagents/intake-packager.md
+    max_tokens: 1800
+  - name: evidence-extractor
+    contract: subagents/evidence-extractor.md
+    max_tokens: 1800
+  - name: hypothesis-generator
+    contract: subagents/hypothesis-generator.md
+    max_tokens: 1800
+  - name: experiment-designer
+    contract: subagents/experiment-designer.md
+    max_tokens: 1800
+  - name: benchmark-comparator
+    contract: subagents/benchmark-comparator.md
+    max_tokens: 1800
+  - name: schema-compatibility-checker
+    contract: subagents/schema-compatibility-checker.md
+    max_tokens: 1800
+  - name: lineage-impact-analyzer
+    contract: subagents/lineage-impact-analyzer.md
+    max_tokens: 1800
+  - name: cost-estimator
+    contract: subagents/cost-estimator.md
+    max_tokens: 1800
+  - name: security-gate
+    contract: subagents/security-gate.md
+    max_tokens: 1800
+  - name: mutation-risk-checker
+    contract: subagents/mutation-risk-checker.md
+    max_tokens: 1800
+  - name: cross-reviewer
+    contract: subagents/cross-reviewer.md
+    max_tokens: 1800
+  - name: source-verifier
+    contract: subagents/source-verifier.md
+    max_tokens: 1800
+  - name: regression-judge
+    contract: subagents/regression-judge.md
+    max_tokens: 1800
+  - name: handoff-preparer
+    contract: subagents/handoff-preparer.md
+    max_tokens: 1800
+  - name: rollback-planner
+    contract: subagents/rollback-planner.md
+    max_tokens: 1800
+  - name: release-gate
+    contract: subagents/release-gate.md
+    max_tokens: 1800

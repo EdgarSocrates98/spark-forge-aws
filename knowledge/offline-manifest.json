@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "mode": "offline-first",
+  "network_required": false,
+  "documents": [
+    {
+      "path": "knowledge/agent-creation.md",
+      "title": "agent-creation",
+      "sha256": "fde6b5ff8a5b6fec71f1453868a67938b743665bca0639bae6d2b9d67bdbac1b"
+    },
+    {
+      "path": "knowledge/agent-evaluation.md",
+      "title": "agent-evaluation",
+      "sha256": "783ccb77d6a0246031288e16a74c694124d0c48ac73618deb8961afc1b35e1d6"
+    },
+    {
+      "path": "knowledge/agentic-engineering.md",
+      "title": "agentic-engineering",
+      "sha256": "bae2c7acc08b6b78c49aeb215a9130f0260d4562c824bfa95ab3cad755ab00a2"
+    },
+    {
+      "path": "knowledge/airflow-pipelines.md",
+      "title": "airflow-pipelines",
+      "sha256": "1ea10529381a9d8a2b5cdd81112ee40f13fc6d37c74e60e8ccb0ab9a368274c8"
+    },
+    {
+      "path": "knowledge/anti-patterns.md",
+      "title": "anti-patterns",
+      "sha256": "56181cb43733a29cf722cb5d381952d60e07d9ce7f3e839aa8ab8f2b0a4953dd"
+    },
+    {
+      "path": "knowledge/athena/performance.md",
+      "title": "performance",
+      "sha256": "bc76127d18a4fbfc6e97ae538671b9f275fadd4d46f00c57ad9197d422e8a777"
+    },
+    {
+      "path": "knowledge/cross-service-constraints.md",
+      "title": "cross-service-constraints",
+      "sha256": "9f2757d39746497317ad8ce7ddfbd64d0eeb4241a4b627dbdb5d45a6934c6f65"
+    },
+    {
+      "path": "knowledge/data-contracts-schema-evolution.md",
+      "title": "data-contracts-schema-evolution",
+      "sha256": "82999cb2d5673c98849db08797e53a44fc4f2aff9127757376bea9322c93454e"
+    },
+    {
+      "path": "knowledge/data-lineage-impact.md",
+      "title": "data-lineage-impact",
+      "sha256": "1cc8504bf23a6d005ad7869bfa625fb5ed2dd29fed0a7fc46f8100d2ce22ddc2"
+    },
+    {
+      "path": "knowledge/data-platform-architecture.md",
+      "title": "data-platform-architecture",
+      "sha256": "c7a4be7cbfad4637606623684c7be2a6803dfbaa97b65761566c75c274a8dffb"
+    },
+    {
+      "path": "knowledge/data-platform-finops.md",
+      "title": "data-platform-finops",
+      "sha256": "621ea14585eb4738450f8fe336e384aef176c5d98a625628ca230fc15314a7d8"
+    },
+    {
+      "path": "knowledge/devin/agents-and-subagents.md",
+      "title": "agents-and-subagents",
+      "sha256": "fb77890259ef1ce053aeebe097068421475192fff88cd797ad081bf9fc3292d1"
+    },
+    {
+      "path": "knowledge/domain-tool-matrix.md",
+      "title": "domain-tool-matrix",
+      "sha256": "7b1477d04780213361cb70a6c6a10fc805291dc9a68bb7a650991bb195ccb709"
+    },
+    {
+      "path": "knowledge/dq/validation-frameworks.md",
+      "title": "validation-frameworks",
+      "sha256": "f9eb3880b318a2bca3c911ab799338b3928b29ac086df2608979e2df09771946"
+    },
+    {
+      "path": "knowledge/emr/cluster-configuration.md",
+      "title": "cluster-configuration",
+      "sha256": "5d3115680f85f5ed14ba12b91e2810281742fa01aae41362e13012029b716cb3"
+    },
+    {
+      "path": "knowledge/emr/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "2db72d37e099d14d8fbe9e47f38c4f931b058fa3bd8568cbed6deac635851618"
+    },
+    {
+      "path": "knowledge/emr-serverless/application-configuration.md",
+      "title": "application-configuration",
+      "sha256": "4b2fe40ba32aa556f8fc817031811ab8b717728b11a681a81a22be3814b66137"
+    },
+    {
+      "path": "knowledge/emr-serverless/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "8cc4e2a5873d4224896cf9e9931668fe968e111021aa1c8f23f8120cc3476a73"
+    },
+    {
+      "path": "knowledge/glue/job-arguments.md",
+      "title": "job-arguments",
+      "sha256": "52c7109eeb424321284d54286be59d363b3f454f2d58052573f075e6d0cbcb3d"
+    },
+    {
+      "path": "knowledge/glue/observability.md",
+      "title": "observability",
+      "sha256": "49f7497e294c74749125bf553b91a4f50c2bddd50c422c88f6b730887920f22e"
+    },
+    {
+      "path": "knowledge/glue/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "aacaab15507e2660b85af3b6b1a726467ad0bbee69a51961affdcb0eef6a28a3"
+    },
+    {
+      "path": "knowledge/glue/workers-and-capacity.md",
+      "title": "workers-and-capacity",
+      "sha256": "37825df485504cc692273be964e6ce42cd22b1e6f6c0c890018dce0001ed690e"
+    },
+    {
+      "path": "knowledge/graph/availability.md",
+      "title": "availability",
+      "sha256": "1bf8807662560fba33c8f79bffc945ea04bc30d6d3adb3bcd6fc2421a27c30fd"
+    },
+    {
+      "path": "knowledge/graph/graphframes-api.md",
+      "title": "graphframes-api",
+      "sha256": "9c259b5895c1561504364e19e2d8b98bbc490c86913e8651e78c375490752afc"
+    },
+    {
+      "path": "knowledge/graphs-neptune-dynamodb-athena.md",
+      "title": "graphs-neptune-dynamodb-athena",
+      "sha256": "0c9c9ac99977ecb48ef1a67e7b91f45eca5c6a1e00402c3b994cb460d94b5740"
+    },
+    {
+      "path": "knowledge/iceberg-parquet-s3.md",
+      "title": "iceberg-parquet-s3",
+      "sha256": "76ccef62ba1bd9ebdf6383d617b8ec95e0bc8fb6dceadd4f044aa9184cf391b0"
+    },
+    {
+      "path": "knowledge/INDEX.md",
+      "title": "INDEX",
+      "sha256": "69861397771d264eb4cda9cb08eb046de790b89aa696f292441aeb42ef75186b"
+    },
+    {
+      "path": "knowledge/lake-governance.md",
+      "title": "lake-governance",
+      "sha256": "48ba75edbecc28ae06ae1f02a866f46004a2c34ab8cc6bc92bccc6841c462b39"
+    },
+    {
+      "path": "knowledge/model-selection-observability.md",
+      "title": "model-selection-observability",
+      "sha256": "e72bf469d1a0d98c45d3671ef53fea49690e933a03b21a278710ca86b75f681b"
+    },
+    {
+      "path": "knowledge/offline-policy.md",
+      "title": "offline-policy",
+      "sha256": "ccb4ff42b772b253a83177a712c09d20f4c9436f9134be659f43d1a33fd23661"
+    },
+    {
+      "path": "knowledge/performance-principles.md",
+      "title": "performance-principles",
+      "sha256": "0cc4bb1d436fa0f2b20c2d057028d7b044ced34831dcba62e65555de4a1e684e"
+    },
+    {
+      "path": "knowledge/runtime-compatibility.md",
+      "title": "runtime-compatibility",
+      "sha256": "1ba393b234e735fa607f39865751fd23c125840edb5431c9af2156b7ded581c3"
+    },
+    {
+      "path": "knowledge/spark/config-reference.md",
+      "title": "config-reference",
+      "sha256": "ed660e90d2b79fbd20d260634d7cadbce5477cabcdaed16d068b1f0dba3e8847"
+    },
+    {
+      "path": "knowledge/spark/execution-model.md",
+      "title": "execution-model",
+      "sha256": "dca5dbfb5570d1b1622d9ac980dffe17ce573d385293a5cfd3a81ff2542629a7"
+    },
+    {
+      "path": "knowledge/spark/memory-and-oom.md",
+      "title": "memory-and-oom",
+      "sha256": "7bd0bea7055af5475a4956e120bdae53a654c08b851df4b602ed563876c69d4a"
+    },
+    {
+      "path": "knowledge/spark/plan-reading.md",
+      "title": "plan-reading",
+      "sha256": "9d96dd55ae8a4f98c29e8661661d72b8e480c269780c28841ecf1357438654ac"
+    },
+    {
+      "path": "knowledge/spark/shuffle-join-skew.md",
+      "title": "shuffle-join-skew",
+      "sha256": "6965ae5d80fca0ef46fa79309960899b376d2283f88ade824aa4294aefc5de3f"
+    },
+    {
+      "path": "knowledge/storage/iceberg-performance.md",
+      "title": "iceberg-performance",
+      "sha256": "0d9f187c76a2800ccbb0e5ba8b8ddd8fe052c13da1b3ce040c8d6d054f2205b5"
+    },
+    {
+      "path": "knowledge/storage/parquet-layout.md",
+      "title": "parquet-layout",
+      "sha256": "871c8c2faa0ac33f2c663b7a482a45b2d88ae92dd1cd8a54f8c93f3061b5f191"
+    },
+    {
+      "path": "knowledge/streaming-reliability.md",
+      "title": "streaming-reliability",
+      "sha256": "11633f8b594a2bfc312e45073bd4850de3aac4b99b5b247052d21e96144921d9"
+    },
+    {
+      "path": "knowledge/terraform-data-platform.md",
+      "title": "terraform-data-platform",
+      "sha256": "f4ab8b94f3a74b267b49a1ab729939d27e1aa1ca1dc98e252a7df2db6231b3c6"
+    },
+    {
+      "path": "knowledge/token-economy.md",
+      "title": "token-economy",
+      "sha256": "0d91be66fd4383a80fbd8e07667accfa35ce0b09f7bbb169a109c4e874480799"
+    },
+    {
+      "path": "knowledge/tool-specialization-matrix.md",
+      "title": "tool-specialization-matrix",
+      "sha256": "27f972185045964a4a1a18f3023c135be490a086c285500c611727a8f9d6439e"
+    }
+  ]
+}

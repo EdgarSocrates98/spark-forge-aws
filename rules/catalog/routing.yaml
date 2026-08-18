@@ -1,4 +1,4 @@
-# Catálogo de roteamento — direcionamento determinístico
+﻿# Catálogo de roteamento — direcionamento determinístico
 # Mesmo motor de regras, predicado sobre o estado do case em vez de sobre facts.
 # É isto que faz o próximo passo ser decidido por dado e não por julgamento do modelo,
 # e é o que sobrevive à troca de sessão Devin <-> Claude Code e à troca de modelo.
@@ -904,6 +904,86 @@ rules:
     recommended_agent: sf-token-verifier
     reason: >
       Area SF-VALIDATION encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-066
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_evidence_quality__"}
+    recommended_agent: sf-evidence-verifier
+    reason: >
+      Evidence quality mode uses the local evidence coordinator.
+  - id: AGENT-067
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_agent_quality__"}
+    recommended_agent: sf-agent-evaluation-specialist
+    reason: >
+      Agent quality mode uses the evaluation coordinator.
+  - id: AGENT-068
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_context__"}
+    recommended_agent: sf-context-engineer
+    reason: >
+      Context engineering mode uses the context coordinator.
+  - id: AGENT-069
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_memory__"}
+    recommended_agent: sf-memory-engineer
+    reason: >
+      Memory engineering mode uses the memory coordinator.
+  - id: AGENT-070
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_finops__"}
+    recommended_agent: sf-cost-reviewer
+    reason: >
+      Data FinOps mode uses the cost coordinator.
+  - id: AGENT-071
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_security__"}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      Security governance mode uses the security coordinator.
+  - id: AGENT-072
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_lineage__"}
+    recommended_agent: sf-lineage-specialist
+    reason: >
+      Lineage impact mode uses the lineage coordinator.
+  - id: AGENT-073
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_schema_registry__"}
+    recommended_agent: sf-schema-registry-specialist
+    reason: >
+      Schema contract mode uses the schema coordinator.
+  - id: AGENT-074
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_streaming__"}
+    recommended_agent: sf-kinesis-specialist
+    reason: >
+      Streaming reliability mode uses the Kinesis coordinator.
+  - id: AGENT-075
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_lake_governance__"}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      Lake governance mode uses the Lake Formation coordinator.
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

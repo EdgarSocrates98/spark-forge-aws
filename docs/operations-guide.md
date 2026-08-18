@@ -1,4 +1,4 @@
-# Guia operacional multiplataforma — SparkForge AWS
+﻿# Guia operacional multiplataforma — SparkForge AWS
 
 ## 1. Objetivo e escopo
 
@@ -234,7 +234,7 @@ macOS — Terminal:
 Windows — PowerShell:
 ```powershellgit status --shortpython -m pytest tests/test_dq_investigation_end_to_end.py -qpython -m pytest -qpython .\scripts\sync_skills.py --checkgit diff --check```
 
-A suíte final desta entrega registrou `5354 passed, 5 skipped` em `698.92s`, sem falhas. Reexecute após qualquer mudança.
+A suíte final desta entrega registrou `5444 passed, 5 skipped` em `738.90s`, sem falhas. Reexecute após qualquer mudança.
 
 ## 13. Troubleshooting
 
@@ -269,3 +269,49 @@ Nenhum agent pode apagar dados, sobrescrever estado ou publicar mudança irrever
 [12]: https://developer.hashicorp.com/terraform/docs "Terraform Documentation"
 
 *Autor: Manus AI. Documento operacional mantido junto com o contrato do repositório.*
+## 15. Expansao agentic v2 e operacao offline-first
+
+A segunda onda acrescenta 10 agents coordenadores, 3 skills dispatchable, 16 subagents efemeros, 5 times cooperativos, 6 modulos de ferramentas locais e 6 novas bases de conhecimento, alem da politica offline. Os registros declarativos estao em `config/agentic-expansion.yaml`, `config/subagents.yaml` e `config/teams-expansion.yaml`; a arquitetura detalhada esta em `docs/agentic-expansion.md`.
+
+| Entregavel | Garantia |
+| --- | --- |
+| Subagents | `max_rounds: 1`, `network: forbidden`, sem mutacoes globais |
+| Ferramentas | Somente leitura, deterministicas, sem DNS, HTTP, SDK cloud ou telemetria |
+| Conhecimento | 43 documentos locais listados em `knowledge/offline-manifest.json` |
+| Integridade | SHA-256 divergente interrompe a operacao confiavel |
+
+O modo offline-first nunca faz fallback silencioso para a internet. Quando uma fonte local estiver ausente, o resultado deve registrar `unresolved`, explicar o impacto e indicar o proximo passo. Antes de iniciar um time, verifique o manifesto; depois consulte somente os trechos necessarios e encaminhe caminhos e checksums em vez de duplicar documentos inteiros.
+
+**Linux — Bash**
+
+```bash
+python -m sparkforge.tools.cli offline verify --repo .
+python -m sparkforge.tools.cli offline search "data contracts" --repo . --limit 5
+python -m sparkforge.tools.cli cost "revisar risco de migracao"
+python -m sparkforge.tools.cli lineage path/to/pipeline.py
+python -m pytest tests/test_offline_expansion.py -q
+```
+
+**macOS — Terminal**
+
+```bash
+python3 -m sparkforge.tools.cli offline verify --repo .
+python3 -m sparkforge.tools.cli offline search "data contracts" --repo . --limit 5
+python3 -m sparkforge.tools.cli cost "revisar risco de migracao"
+python3 -m sparkforge.tools.cli lineage path/to/pipeline.py
+python3 -m pytest tests/test_offline_expansion.py -q
+```
+
+**Windows — PowerShell**
+
+```powershell
+python -m sparkforge.tools.cli offline verify --repo .
+python -m sparkforge.tools.cli offline search "data contracts" --repo . --limit 5
+python -m sparkforge.tools.cli cost "revisar risco de migracao"
+python -m sparkforge.tools.cli lineage .\path\to\pipeline.py
+python -m pytest tests\test_offline_expansion.py -q
+```
+
+`offline verify` deve retornar JSON com `ok: true`. `cost` e uma estimativa deterministica, nao uma cobranca; `lineage` extrai arestas estaticas e nao prova execucao. O coordenador deve manter a selecao de modelos dinamica pelo inventario da conta Devin ou Claude, usar cheap-before-expensive, janela seletiva, handoffs por referencia, revisao cruzada e `token_notice: true`. A visualizacao de conversa permanece opcional com `trace_view: false` e `show_content: false` por padrao.
+
+Os gates finais sao sincronizacao, `python scripts/verify_offline_bundle.py --repo .`, testes focalizados, suite completa e `git diff --check`. Nesta entrega, a suite concluiu com **5444 passed, 5 skipped e 0 failed** em `738.90s`; qualquer alteracao posterior exige nova execucao.

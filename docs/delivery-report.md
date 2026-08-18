@@ -1,10 +1,10 @@
-# Relatório de entrega — SparkForge AWS Agentic Platform v2
+﻿# Relatório de entrega — SparkForge AWS Agentic Platform v2
 
 ## 1. Resumo executivo
 
 Esta entrega evolui o SparkForge AWS de um conjunto de skills e analisadores determinísticos para uma plataforma de times de agents especializados, cooperativos e verificáveis. O runtime agora controla loops, orçamento, contexto, autonomia, seleção adaptativa de modelos, observabilidade opcional, salas como protocolo de cooperação e handoffs estruturados. A solução cobre engenharia de dados AWS e engenharia agêntica, preservando os contratos existentes de skills, agents, regras, fixtures, adapters, sincronização e espelhos de plataforma.
 
-A evidência final da suíte foi **5354 passed, 5 skipped, 0 failed**, em `698.92s` (`11m38s`). O último bloqueio encontrado — áreas estruturais do catálogo DQ sendo tratadas como regras executáveis — foi corrigido no teste `tests/test_dq_investigation_end_to_end.py` com o filtro `status != "structural"`.
+A evidência final da suíte foi **5444 passed, 5 skipped, 0 failed**, em `738.90s` (`11m38s`). O último bloqueio encontrado — áreas estruturais do catálogo DQ sendo tratadas como regras executáveis — foi corrigido no teste `tests/test_dq_investigation_end_to_end.py` com o filtro `status != "structural"`.
 
 ## 2. Resultado contra os sete requisitos históricos
 
@@ -93,9 +93,9 @@ Os testes focais foram corrigidos e validados durante a entrega. A suíte estrut
 | --- | --- |
 | Teste DQ final | 9 passed |
 | Suíte estrutural consolidada | 1473 passed |
-| Suíte completa final | 5354 passed, 5 skipped |
+| Suíte completa final | 5444 passed, 5 skipped |
 | Falhas finais | 0 |
-| Duração da suíte completa | 698.92s |
+| Duração da suíte completa | 738.90s |
 | Sincronizador — modo check | Deve permanecer OK antes de cada commit |
 
 A suíte não substitui benchmark de workload real. O pacote não executa jobs AWS, não inventa melhoria de performance e não transforma estimativa de token em consumo faturado. Cada mudança de produção ainda exige evidência do ambiente específico, plano de rollback e aprovação.
@@ -105,7 +105,7 @@ A suíte não substitui benchmark de workload real. O pacote não executa jobs A
 | Pendência identificada | Fechamento |
 | --- | --- |
 | Filtro de áreas estruturais no teste DQ | Aplicado e validado com 9 testes passando |
-| Suíte completa sem falhas | Executada: 5354 passed, 5 skipped |
+| Suíte completa sem falhas | Executada: 5444 passed, 5 skipped |
 | Documentação Bash, PowerShell e macOS | `docs/operations-guide.md` criado com comandos equivalentes |
 | Lista completa dos requisitos históricos | Registrada neste relatório, seção 2 |
 | Sincronização dos espelhos | Executar `sync_skills.py` e `--check` na etapa final |
@@ -143,3 +143,36 @@ A autonomia é alta para melhoria, construção, documentação e validação, p
 [12]: https://developer.hashicorp.com/terraform/docs "Terraform Documentation"
 
 *Autor: Manus AI. Documento de entrega do SparkForge AWS.*
+
+
+## 7. Segunda onda de expansão agentic v2
+
+A segunda onda conclui a transformação do SparkForge AWS em uma plataforma de cooperação especializada com operação local verificável. Foram adicionados dez agents coordenadores permanentes para verificação de evidências, avaliação de agents, engenharia de contexto e memória, revisão de custo e segurança, lineage, schema registry, Kinesis e Lake Formation. Cada agent segue o contrato comum de protocolo, declara explicitamente suas fronteiras e encaminha mudanças destrutivas para confirmação.
+
+| Entregável | Resultado desta onda | Evidência no repositório |
+| --- | --- | --- |
+| Agents especializados | 10 novos agents coordenadores | `agents/`, `.claude/agents/`, `.agents/agents/` e `.github/agents/` |
+| Skills coordenadoras | 3 novas skills dispatchable com fronteiras e protocolo | `skills/verify-agent-evidence/`, `skills/engineer-agent-context/` e `skills/engineer-agent-memory/` |
+| Subagents efêmeros | 16 templates com `max_rounds: 1` e rede proibida | `subagents/` e `config/subagents.yaml` |
+| Ferramentas locais | Contexto, custo, schema, lineage, avaliação e índice offline | `sparkforge/tools/` |
+| Bases de conhecimento | 6 novas bases de domínio e política offline-first | `knowledge/` e `knowledge/offline-manifest.json` |
+| Times cooperativos | 5 novos times para evidência, governança, streaming, FinOps e qualidade | `config/teams-expansion.yaml` |
+| Roteamento e registros | Rotas AGENT-066 a AGENT-075 e registros declarativos | `rules/catalog/routing.yaml` e `config/agentic-expansion.yaml` |
+
+### 7.1 Garantia offline-first
+
+O pacote local contém 43 documentos de conhecimento registrados com SHA-256. O verificador `scripts/verify_offline_bundle.py` confirmou `offline: true`, `checked: 43`, `failed: []` e `ok: true`. O índice local não usa DNS, HTTP, SDK cloud nem telemetria; fontes ausentes não são completadas por inferência e devem retornar `unresolved` com impacto e próximo passo.
+
+A operação inclui comandos equivalentes para Bash, macOS e PowerShell no guia operacional. O fluxo recomendado é verificar o manifesto antes do caso, buscar somente trechos locais necessários, encaminhar referências por caminho e checksum, executar os gates focalizados e repetir a verificação antes do commit.
+
+### 7.2 Economia de tokens, autonomia e governança
+
+A expansão preserva a estratégia cheap-before-expensive, seleção de modelos pelo inventário vivo da conta Devin ou Claude, janela seletiva de contexto, handoffs tipados, revisão cruzada e critérios de parada explícitos. O coordenador não fixa identificadores de modelos e não escala uma rodada sem gate de completude, evidência e risco. A visualização das conversas permanece opcional, com conteúdo desativado por padrão e aviso de tokens quando a medição estiver disponível.
+
+Os subagents são descartáveis e restritos a uma rodada, sem rede ou mutações globais. As ferramentas locais são determinísticas e somente leitura. Essa separação mantém autonomia para melhoria, construção, documentação e validação sem transformar uma tarefa efêmera em um worker persistente ou em uma ação irreversível.
+
+### 7.3 Evidências finais
+
+A suíte completa do checkout desta entrega concluiu com **5444 passed, 5 skipped e 0 failed** em `738.90s`. Os testes focalizados de expansão e sincronização concluíram com **79 passed** em `1.34s`. O sincronizador retornou `OK`, e o pacote offline permaneceu íntegro com 43 documentos verificados.
+
+> **Conclusão:** a expansão agentic v2 está implementada, sincronizada entre Claude Code, Devin e GitHub, documentada para Linux, macOS e Windows e validada para execução sem internet. O próximo uso deve começar pelo verificador offline e pelos gates descritos em `docs/operations-guide.md`.
