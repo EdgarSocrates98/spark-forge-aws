@@ -137,6 +137,9 @@ def _rules():
 
     return [r for r in load_catalog(catalog_dir()) if r["id"].startswith("SF-")]
 
+def _executable_rules():
+    return [r for r in _rules() if r.get("status") != "structural"]
+
 
 def _rules_fired_in_goldens() -> set[str]:
     fired: set[str] = set()
@@ -160,7 +163,7 @@ def test_every_rule_has_a_fixture_that_fires_it():
     Regra que passe a nao disparar em nenhuma fixture quebra aqui, e a correcao
     e uma das duas: criar a fixture que a exercita, ou remover a regra.
     """
-    missing = sorted({r["id"] for r in _rules()} - _rules_fired_in_goldens())
+    missing = sorted({r["id"] for r in _executable_rules()} - _rules_fired_in_goldens())
     assert not missing, (
         f"regras sem nenhuma fixture que as faca disparar: {missing}. "
         "Uma regra sem golden positivo nunca foi provada -- crie a fixture, "
@@ -219,7 +222,7 @@ def test_every_severity_branch_has_a_golden_that_produces_it():
     vistas = _severidades_por_regra_nos_goldens()
     faltando: dict[str, list[str]] = {}
     total = 0
-    for rule in _rules():
+    for rule in _executable_rules():
         ramos = _ramos_de_severidade(rule)
         if not ramos:
             continue

@@ -389,3 +389,27 @@ platform-compiled native module, and `cavemem` does not save tokens anyway — i
 Durable memory across sessions is `.sparkforge/case.yaml`, as it always was: the
 handoff bus between Devin and Claude Code, committed, and the only record a
 `Finding` may cite.
+
+## Coordinators especializados
+sf-analytics-specialist
+sf-functional-rules-specialist
+sf-step-functions-specialist
+sf-lambda-serverless-specialist
+
+## Coordinators completos
+sf-agent-builder
+sf-airflow-specialist
+sf-athena-specialist
+sf-data-architect
+sf-dynamodb-specialist
+sf-graph-specialist
+sf-iceberg-specialist
+sf-neptune-specialist
+sf-orchestrator
+sf-parquet-specialist
+sf-pyspark-specialist
+sf-runtime-specialist
+sf-s3-specialist
+sf-storage-specialist
+sf-terraform-specialist
+sf-token-verifier

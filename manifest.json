@@ -2,16 +2,30 @@
   "name": "sparkforge-aws",
   "version": "0.5.0",
   "skills": [
+    "agentic-orchestration",
+    "analyze-analytics",
     "analyze-batch-loop",
+    "analyze-functional-rules",
+    "analyze-graph-data",
     "analyze-library-call-graph",
     "analyze-spark-plan",
     "analyze-spark-ui",
     "benchmark-pyspark-job",
+    "design-agent-systems",
+    "design-airflow-pipelines",
+    "design-data-architecture",
+    "design-dynamodb-model",
     "design-incremental-processing",
+    "design-lambda-serverless",
+    "design-neptune-graph",
+    "design-s3-data-lake",
+    "design-step-functions-orchestration",
     "diagnose-data-skew",
     "diagnose-oom",
     "glue-incremental-performance-architect",
+    "optimize-athena-queries",
     "optimize-iceberg-table",
+    "optimize-iceberg-tables",
     "optimize-latest-per-key",
     "optimize-parquet-layout",
     "optimize-pyspark-code",
@@ -20,7 +34,10 @@
     "review-emr-cluster",
     "review-glue-terraform",
     "review-pyspark-pr",
+    "review-terraform-data-platform",
     "sparkforge-diagnose",
+    "token-efficient-agent",
+    "tool-specialist-routing",
     "tune-glue-job"
   ],
   "platforms": [
@@ -49,7 +66,7 @@
   "knowledge_base": {
     "index": "knowledge/INDEX.md",
     "rule_catalog": "rules/catalog/",
-    "rule_count": 81,
+    "rule_count": 116,
     "retrieved": "2026-08-01"
   },
   "entry_prompt": "PROMPT_INICIAL_MESTRE.md",
@@ -117,7 +134,10 @@
     "marketplace": "vendor/.claude-plugin/marketplace.json",
     "caveman_mode": "full",
     "caveman_mode_config": ".caveman/config.json",
-    "vendored": ["caveman", "cavekit"],
+    "vendored": [
+      "caveman",
+      "cavekit"
+    ],
     "requires_install": [],
     "gate": "python scripts/vendor_caveman.py --check"
   },

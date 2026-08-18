@@ -1,0 +1,66 @@
+version: 2
+defaults:
+  max_rounds: 3
+  max_messages: 120
+  max_tokens: 12000
+  max_context_messages: 24
+  max_agents: 4
+  stagnation_limit: 2
+  cheap_before_expensive: true
+  require_evidence: true
+  require_approval_for_mutation: true
+  preserve_kinds: [task, fact, decision, snapshot]
+agents:
+  - name: sf-orchestrator
+    role: supervisor
+    allowed_tools: [sparkforge_case_open, sparkforge_next_step, sparkforge_playbook, sparkforge_resume]
+    knowledge_refs: [knowledge/agentic-engineering.md, knowledge/token-economy.md]
+  - name: sf-inventory
+    role: inventory
+    allowed_tools: [sparkforge_inventory, sparkforge_runtime_detect]
+    knowledge_refs: [knowledge/INDEX.md, knowledge/cross-service-constraints.md]
+  - name: sf-extractor
+    role: evidence-extractor
+    allowed_tools: [sparkforge_collect_event_log, sparkforge_collect_glue_job, sparkforge_collect_iceberg_metadata]
+    knowledge_refs: [knowledge/sources.lock.json]
+  - name: sf-pyspark-specialist
+    role: pyspark-performance
+    allowed_tools: [sparkforge_analyze_pyspark, sparkforge_analyze_plan, sparkforge_analyze_call_graph, sparkforge_benchmark, sparkforge_judge]
+    knowledge_refs: [knowledge/spark/execution-model.md, knowledge/spark/plan-reading.md, knowledge/performance-principles.md]
+  - name: sf-runtime-specialist
+    role: runtime-infrastructure
+    allowed_tools: [sparkforge_runtime_detect, sparkforge_collect_glue_job, sparkforge_collect_emr_cluster, sparkforge_collect_emr_serverless, sparkforge_analyze_terraform, sparkforge_rules_lookup]
+    knowledge_refs: [knowledge/glue/runtime-matrix.md, knowledge/emr/runtime-matrix.md, knowledge/emr-serverless/runtime-matrix.md]
+  - name: sf-storage-specialist
+    role: iceberg-parquet-storage
+    allowed_tools: [sparkforge_analyze_iceberg, sparkforge_collect_iceberg_metadata, sparkforge_analyze_s3_listing, sparkforge_analyze_catalog_schema, sparkforge_rules_lookup]
+    knowledge_refs: [knowledge/storage/iceberg-performance.md, knowledge/storage/parquet-layout.md, knowledge/iceberg-diagnostics.sql]
+  - name: sf-judge
+    role: bottleneck-judge
+    allowed_tools: [sparkforge_rules_lookup, sparkforge_judge, sparkforge_fuse]
+    knowledge_refs: [knowledge/performance-principles.md, knowledge/cross-service-constraints.md]
+  - name: sf-verifier
+    role: verifier
+    allowed_tools: [sparkforge_validate_output, sparkforge_report_verify, sparkforge_rules_lookup]
+    knowledge_refs: [knowledge/anti-patterns.md, knowledge/agentic-engineering.md]
+  - name: sf-token-verifier
+    role: token-quality-verifier
+    allowed_tools: [sparkforge_validate_output, sparkforge_report_verify, sparkforge_rules_lookup]
+    knowledge_refs: [knowledge/token-economy.md, knowledge/agentic-engineering.md]
+  - name: sf-synthesizer
+    role: report-synthesizer
+    allowed_tools: [sparkforge_report_sign, sparkforge_report_verify]
+    knowledge_refs: [knowledge/INDEX.md, knowledge/agentic-engineering.md]
+model_selection:
+  source: coordinator_account_inventory
+  never_hardcode_models: true
+  low_risk: cheapest_qualifying_model
+  high_risk: strongest_qualifying_reasoning_model
+  fallback: stop_and_report_unavailable
+observability:
+  trace_view: false
+  show_content: false
+  token_notice: true
+  record_usage_when_available: true
+  estimate_when_unavailable: true
+autonomy_focus: [improvement, construction, documentation, validation]

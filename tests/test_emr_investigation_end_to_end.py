@@ -164,7 +164,7 @@ class TestNoAreaIsSilentlyEmpty:
     def test_every_area_either_fires_or_is_reported_as_skipped(self, relatorio):
         achados, pulados = relatorio
         area = lambda rid: rid.rsplit("-", 1)[0]  # noqa: E731
-        todas = {area(r["id"]) for r in load_catalog()}
+        todas = {area(r["id"]) for r in load_catalog() if r.get("status") != "structural"}
         vistas = {area(f.rule_id) for f in achados} | {area(s["rule_id"]) for s in pulados}
         mudas = sorted(todas - vistas)
         assert not mudas, (

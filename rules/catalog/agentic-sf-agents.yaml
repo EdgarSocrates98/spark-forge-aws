@@ -1,0 +1,12 @@
+area: SF-AGENTS
+rules:
+- id: SF-AGENTS-001
+  category: agentic-platform
+  title: SF-AGENTS coordinator area
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  status: structural
+  runtime_scope: {}
+  sources: []
