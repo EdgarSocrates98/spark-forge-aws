@@ -249,9 +249,7 @@ RELACAO_MEDIDA = {
         "spark-performance-architect",
     ),
     "diagnose-oom": ("glue-incremental-performance-architect",),
-    "glue-incremental-performance-architect": (
-        "glue-incremental-performance-architect",
-    ),
+    "glue-incremental-performance-architect": ("glue-incremental-performance-architect",),
     "optimize-iceberg-table": (
         "athena-query-optimizer",
         "glue-incremental-performance-architect",
@@ -275,7 +273,12 @@ RELACAO_MEDIDA = {
         "glue-incremental-performance-architect",
         "glue-infra-reviewer",
     ),
-    "review-data-validation": ("data-quality-reviewer",),
+    "review-data-validation": (
+        "data-quality-reviewer",
+        "sf-evidence-verifier",
+        "sf-kinesis-specialist",
+        "sf-schema-registry-specialist",
+    ),
     "review-emr-cluster": ("emr-infra-reviewer",),
     "review-glue-terraform": (
         "glue-incremental-performance-architect",
@@ -295,28 +298,79 @@ RELACAO_MEDIDA = {
         "glue-infra-reviewer",
         "spark-performance-architect",
     ),
-    "design-data-architecture": ("sf-data-architect",),
+    "design-data-architecture": (
+        "sf-cost-reviewer",
+        "sf-data-architect",
+        "sf-kinesis-specialist",
+        "sf-lake-formation-specialist",
+        "sf-lineage-specialist",
+        "sf-schema-registry-specialist",
+        "sf-security-reviewer",
+    ),
     "design-airflow-pipelines": ("sf-airflow-specialist",),
-    "design-agent-systems": ("sf-agent-builder",),
+    "design-agent-systems": (
+        "sf-agent-builder",
+        "sf-agent-evaluation-specialist",
+        "sf-memory-engineer",
+    ),
     "optimize-iceberg-tables": ("sf-iceberg-specialist",),
-    "design-s3-data-lake": ("sf-s3-specialist",),
-    "review-terraform-data-platform": ("sf-terraform-specialist",),
+    "design-s3-data-lake": (
+        "sf-lake-formation-specialist",
+        "sf-s3-specialist",
+        "sf-security-reviewer",
+    ),
+    "review-terraform-data-platform": (
+        "sf-lake-formation-specialist",
+        "sf-security-reviewer",
+        "sf-terraform-specialist",
+    ),
     "analyze-graph-data": ("sf-graph-specialist",),
     "design-neptune-graph": ("sf-neptune-specialist",),
     "design-dynamodb-model": ("sf-dynamodb-specialist",),
-    "optimize-athena-queries": ("sf-athena-specialist",),
-    "analyze-analytics": ("sf-analytics-specialist",),
-    "analyze-functional-rules": ("sf-functional-rules-specialist",),
-    "agentic-orchestration": ("sf-orchestrator",),
-    "token-efficient-agent": ("sf-orchestrator", "sf-token-verifier",),
+    "optimize-athena-queries": (
+        "sf-athena-specialist",
+        "sf-cost-reviewer",
+    ),
+    "analyze-analytics": (
+        "sf-analytics-specialist",
+        "sf-lineage-specialist",
+    ),
+    "analyze-functional-rules": (
+        "sf-functional-rules-specialist",
+        "sf-lineage-specialist",
+        "sf-schema-registry-specialist",
+    ),
+    "agentic-orchestration": (
+        "sf-agent-evaluation-specialist",
+        "sf-context-engineer",
+        "sf-evidence-verifier",
+        "sf-memory-engineer",
+        "sf-orchestrator",
+    ),
+    "token-efficient-agent": (
+        "sf-agent-evaluation-specialist",
+        "sf-context-engineer",
+        "sf-cost-reviewer",
+        "sf-memory-engineer",
+        "sf-orchestrator",
+        "sf-token-verifier",
+    ),
     "tool-specialist-routing": (
+        "sf-context-engineer",
+        "sf-evidence-verifier",
         "sf-orchestrator",
         "sf-pyspark-specialist",
         "sf-runtime-specialist",
         "sf-storage-specialist",
     ),
     "design-lambda-serverless": ("sf-lambda-serverless-specialist",),
-    "design-step-functions-orchestration": ("sf-step-functions-specialist",),
+    "design-step-functions-orchestration": (
+        "sf-kinesis-specialist",
+        "sf-step-functions-specialist",
+    ),
+    "verify-agent-evidence": ("sf-evidence-verifier",),
+    "engineer-agent-context": ("sf-context-engineer",),
+    "engineer-agent-memory": ("sf-memory-engineer",),
 }
 
 
@@ -377,80 +431,59 @@ def _lista_de_topo(text: str, chave: str) -> list[str]:
     return valores
 
 
-RELACAO_MEDIDA.update({
-    "agentic-orchestration": (
-        "sf-agent-evaluation-specialist",
-        "sf-context-engineer",
-        "sf-evidence-verifier",
-        "sf-memory-engineer",
-        "sf-orchestrator",
-    ),
-    "token-efficient-agent": (
-        "sf-agent-evaluation-specialist",
-        "sf-context-engineer",
-        "sf-cost-reviewer",
-        "sf-memory-engineer",
-        "sf-orchestrator",
-        "sf-token-verifier",
-    ),
-    "tool-specialist-routing": (
-        "sf-context-engineer",
-        "sf-evidence-verifier",
-        "sf-orchestrator",
-        "sf-pyspark-specialist",
-        "sf-runtime-specialist",
-        "sf-storage-specialist",
-    ),
-    "analyze-analytics": ("sf-analytics-specialist", "sf-lineage-specialist"),
-    "analyze-functional-rules": (
-        "sf-functional-rules-specialist",
-        "sf-lineage-specialist",
-        "sf-schema-registry-specialist",
-    ),
-    "design-agent-systems": (
-        "sf-agent-builder",
-        "sf-agent-evaluation-specialist",
-        "sf-memory-engineer",
-    ),
-    "design-data-architecture": (
-        "sf-cost-reviewer",
-        "sf-data-architect",
-        "sf-kinesis-specialist",
-        "sf-lake-formation-specialist",
-        "sf-lineage-specialist",
-        "sf-schema-registry-specialist",
-        "sf-security-reviewer",
-    ),
-    "design-s3-data-lake": (
-        "sf-lake-formation-specialist",
-        "sf-s3-specialist",
-        "sf-security-reviewer",
-    ),
-    "design-step-functions-orchestration": (
-        "sf-kinesis-specialist",
-        "sf-step-functions-specialist",
-    ),
-    "optimize-athena-queries": ("sf-athena-specialist", "sf-cost-reviewer"),
-    "review-data-validation": (
-        "data-quality-reviewer",
-        "sf-evidence-verifier",
-        "sf-kinesis-specialist",
-        "sf-schema-registry-specialist",
-    ),
-    "review-terraform-data-platform": (
-        "sf-lake-formation-specialist",
-        "sf-security-reviewer",
-        "sf-terraform-specialist",
-    ),
-    "verify-agent-evidence": ("sf-evidence-verifier",),
-    "engineer-agent-context": ("sf-context-engineer",),
-    "engineer-agent-memory": ("sf-memory-engineer",),
-})
 class TestRelacaoDerivada:
     """D-5: `agent:` sai do `skills:` que cada coordenador ja declara."""
 
     def test_a_relacao_e_a_medida(self):
         assert sync_skills.coordinators_by_skill() == RELACAO_MEDIDA
+
+    def test_a_constante_e_declarada_uma_vez_so(self):
+        """`RELACAO_MEDIDA` nao pode ser remendada depois da declaracao.
+
+        A expansao agentica acrescentou as skills novas por um
+        `RELACAO_MEDIDA.update({...})` ~160 linhas abaixo da declaracao, e o
+        resultado foi **12 chaves com valor morto** no literal de cima: quem
+        editasse a entrada de `design-data-architecture` ali achava que tinha
+        mudado o teste e nao tinha mudado nada -- o `update()` sobrescrevia.
+        Numa constante cuja razao de existir e "a mudanca aparece como diff
+        aqui", editar o lugar errado em silencio e o pior defeito possivel.
+
+        O teste le o PROPRIO fonte por AST em vez de inspecionar o dicionario
+        em memoria, porque depois que o modulo carrega os dois jeitos de montar
+        a constante sao indistinguiveis -- e e exatamente a forma de montar que
+        esta sob teste.
+        """
+        import ast
+
+        modulo = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        atribuicoes = [
+            no
+            for no in ast.walk(modulo)
+            if isinstance(no, ast.Assign)
+            and any(
+                isinstance(alvo, ast.Name) and alvo.id == "RELACAO_MEDIDA"
+                for alvo in no.targets
+            )
+        ]
+        assert len(atribuicoes) == 1, (
+            f"RELACAO_MEDIDA atribuida {len(atribuicoes)} vezes; "
+            f"a constante e uma declaracao so"
+        )
+
+        mutacoes = [
+            no
+            for no in ast.walk(modulo)
+            if isinstance(no, ast.Call)
+            and isinstance(no.func, ast.Attribute)
+            and isinstance(no.func.value, ast.Name)
+            and no.func.value.id == "RELACAO_MEDIDA"
+            and no.func.attr in {"update", "setdefault", "pop", "clear"}
+        ]
+        assert not mutacoes, (
+            "RELACAO_MEDIDA mutada depois da declaracao por "
+            f"{sorted({no.func.attr for no in mutacoes})}: acrescente a chave na "
+            "declaracao, senao o valor de la vira letra morta"
+        )
 
     def test_toda_skill_do_disco_esta_na_relacao(self):
         """Skill que nenhum coordenador declara nao teria de onde derivar

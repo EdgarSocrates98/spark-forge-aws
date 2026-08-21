@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from sparkforge.findings.models import Fact
+from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import CatalogError, catalog_dir, load_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,13 +63,29 @@ class TestLoadCommittedCatalog:
             "title",
             "requires_facts",
             "when",
-            "status",
             "runtime_scope",
             "sources",
         )
         for rule in load_catalog():
             for key in required:
                 assert key in rule, f"{rule.get('id')} sem {key}"
+
+    def test_status_is_required_of_the_rules_that_judge_and_absent_from_the_others(self):
+        """`status` e status do FINDING, entao so quem produz finding o declara.
+
+        Area de coordenacao (`executable: false`) nao julga nada: declarar
+        `structural` ou `confirmed` ali seria afirmacao sobre um achado que nao
+        existe. Foi essa sobrecarga -- 35 areas escritas com `status:
+        structural` -- que tirou do gate de golden as 26 regras que sao
+        `structural` de verdade, por carona no filtro.
+        """
+        for rule in load_catalog():
+            if rule.get("executable", True):
+                assert "status" in rule, f"{rule['id']} executavel sem status"
+            else:
+                assert "status" not in rule, (
+                    f"{rule['id']} nao e executavel e declara status"
+                )
 
     def test_every_rule_has_a_severity(self):
         for rule in load_catalog():
@@ -105,7 +123,7 @@ class TestRejections:
     def test_duplicate_id_raises(self, tmp_path, monkeypatch):
         one = (
             "{id: SF-X-001, category: c, title: t, requires_facts: [k], "
-            "when: {all: []}, status: structural, severity_default: P2, "
+            "when: {all: [{fact: k}]}, status: structural, severity_default: P2, "
             'runtime_scope: {glue: "*"}, sources: [{origin: field-heuristic}]}'
         )
         body = "catalog_version: 1\narea: SF-X\nrules:\n  - " + one + "\n  - " + one + "\n"
@@ -187,6 +205,128 @@ class TestRejections:
         body = self._rule_with_when("      all:\n        - {absent: other.kind}\n")
         self._write(tmp_path, monkeypatch, "absent.yaml", body)
         assert [r["id"] for r in load_catalog()] == ["SF-X-004"]
+
+    # --- `executable`: a fronteira entre regra que julga e area de coordenacao ---
+    #
+    # As de baixo fecham o buraco que a expansao agentica abriu ao escrever 35
+    # areas de coordenacao com `status: structural` e ensinar os gates a filtrar
+    # por esse valor. `status` e status de FINDING; usa-lo como marca de "isto
+    # nao e regra" sobrecarregou um campo com dois sentidos, tirou do gate as 26
+    # regras que sao `structural` de verdade, e nao impedia uma regra de
+    # deteccao real de escapar de quatro redes so mudando uma palavra.
+
+    def _rule_body(self, extra_lines, when_block=None):
+        if when_block is None:
+            when_block = "      all:\n        - {fact: k}\n"
+        return (
+            "catalog_version: 1\n"
+            "area: SF-X\n"
+            "rules:\n"
+            "  - id: SF-X-005\n"
+            "    category: c\n"
+            "    title: t\n"
+            "    requires_facts: []\n"
+            "    when:\n" + when_block + "    severity_default: P2\n"
+            "    runtime_scope: {}\n"
+            "    sources: []\n" + extra_lines
+        )
+
+    def test_executable_rule_without_any_condition_raises(self, tmp_path, monkeypatch):
+        """`when: {all: []}` passava por `_validate_conditions` -- o grupo existe.
+
+        E o falso negativo mudo que aquela funcao foi escrita para matar, um
+        nivel acima: a regra nunca dispara, nao ha erro, o relatorio sai limpo.
+        Antes da expansao nenhuma regra commitada tinha essa forma; as 35 areas
+        de coordenacao a introduziram, e o loader precisa distinguir "inerte de
+        proposito" de "inerte por engano".
+        """
+        body = self._rule_body("    status: structural\n", when_block="      all: []\n")
+        self._write(tmp_path, monkeypatch, "vazia.yaml", body)
+        with pytest.raises(CatalogError, match="sem nenhuma condicao"):
+            load_catalog()
+
+    def test_non_executable_rule_that_declares_a_condition_raises(
+        self, tmp_path, monkeypatch
+    ):
+        """Declarar-se inerte e ter condicao real e a mentira que abre o buraco.
+
+        Uma regra de deteccao marcada assim sairia do gate de fixture, do gate
+        de ramo de severidade e das duas assercoes de area muda dos testes ponta
+        a ponta -- quatro redes de uma vez, com a suite verde.
+        """
+        body = self._rule_body("    executable: false\n")
+        self._write(tmp_path, monkeypatch, "mentira.yaml", body)
+        with pytest.raises(CatalogError, match="when"):
+            load_catalog()
+
+    @pytest.mark.parametrize(
+        "campo,valor",
+        [
+            ("requires_facts", "[k]"),
+            ("sources", "[{origin: field-heuristic}]"),
+            ("blocked_on", "extractor-x"),
+            ("status", "structural"),
+        ],
+    )
+    def test_non_executable_rule_that_declares_judging_fields_raises(
+        self, tmp_path, monkeypatch, campo, valor
+    ):
+        """Cada campo aqui e afirmacao sobre um achado que nao pode existir.
+
+        `requires_facts` e `sources` saem vazios do corpo base e a linha extra
+        sobrescreve o valor -- e o valor preenchido que se testa, nao a chave.
+        """
+        body = self._rule_body(
+            "    executable: false\n    " + campo + ": " + valor + "\n",
+            when_block="      all: []\n",
+        )
+        self._write(tmp_path, monkeypatch, "campo-" + campo + ".yaml", body)
+        with pytest.raises(CatalogError, match=campo):
+            load_catalog()
+
+    def test_the_executable_flag_has_to_be_boolean(self, tmp_path, monkeypatch):
+        """`executable: "false"` e verdadeiro em Python, e nao pode passar calado."""
+        body = self._rule_body(
+            '    executable: "false"\n', when_block="      all: []\n"
+        )
+        self._write(tmp_path, monkeypatch, "naobool.yaml", body)
+        with pytest.raises(CatalogError, match="booleano"):
+            load_catalog()
+
+    def test_a_coordination_area_loads_and_cannot_produce_a_finding(
+        self, tmp_path, monkeypatch
+    ):
+        """A forma valida, e a prova de que ela e inerte por contrato.
+
+        Que `when: {all: []}` nao produza achado hoje e propriedade de
+        `_evaluate_when`, que itera candidatos e nao encontra nenhum -- nao e
+        `all([]) is True`, que devolveria o oposto. Propriedade de implementacao
+        nao declarada some no proximo refactor, entao ela fica travada aqui.
+        """
+        body = self._rule_body("    executable: false\n", when_block="      all: []\n")
+        self._write(tmp_path, monkeypatch, "area.yaml", body)
+        regras = load_catalog()
+        assert [r["id"] for r in regras] == ["SF-X-005"]
+
+        fact = Fact(kind="k", subject={"path": "x"}, measures={"n": 1})
+        assert judge([fact], regras, {}) == []
+        assert judge([], regras, {}) == []
+
+    def test_every_committed_coordination_area_is_inert(self):
+        """O catalogo real, nao um dubles: nenhuma area de coordenacao julga.
+
+        Se uma delas ganhar condicao sem virar executavel, o loader recusa; se
+        ganhar condicao E virar executavel, ela cai no gate de golden. Este
+        teste cobre o terceiro caminho -- a que passa pelos dois e ainda assim
+        produz achado.
+        """
+        areas = [r for r in load_catalog() if not r.get("executable", True)]
+        assert areas, "nenhuma area de coordenacao no catalogo: o filtro mudou?"
+        facts = [
+            Fact(kind=kind, subject={"path": "x"}, measures={"n": 1})
+            for kind in ("pyspark.conf_set", "iceberg.snapshot", "glue.job")
+        ]
+        assert judge(facts, areas, {}) == []
 
     def test_real_catalog_still_passes_condition_validation(self):
         """Nenhuma regra commitada pode ter condicao malformada.

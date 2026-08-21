@@ -1,0 +1,24 @@
+{
+  "id": "ERR-LF-001",
+  "signature": "Insufficient Lake Formation permission(s) on",
+  "service": "lakeformation",
+  "versions": ["all"],
+  "symptoms": ["AccessDeniedException", "Unable to describe table from consumer account"],
+  "likely_causes": ["Missing Resource Link grant", "Target table grant not delegated to consumer", "RAM share not accepted"],
+  "evidence_required": ["lakeformation.missing_grant", "ram.unaccepted_share"],
+  "diagnostic_steps": [
+    "Check RAM resource share status in consumer account",
+    "Verify Describe grant on Resource Link in consumer account",
+    "Verify Select grant on Target Table in producer account"
+  ],
+  "fixes": [
+    "Accept RAM resource share in consumer account",
+    "Grant DESCRIBE on resource link to consumer role",
+    "Grant SELECT on target table in producer LF to consumer account ID"
+  ],
+  "unsafe_fixes": ["Granting Super on Catalog to IAMAllowedPrincipals"],
+  "verification": "Run `sparkforge lakeformation diagnose-cross-account`",
+  "rollback": "Revoke granted LF permissions",
+  "sources": ["https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account.html"],
+  "last_verified": "2026-08-15"
+}

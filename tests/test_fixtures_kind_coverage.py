@@ -138,7 +138,16 @@ def _rules():
     return [r for r in load_catalog(catalog_dir()) if r["id"].startswith("SF-")]
 
 def _executable_rules():
-    return [r for r in _rules() if r.get("status") != "structural"]
+    """As regras que julgam. Filtra por `executable`, nunca por `status`.
+
+    Filtrar por `status != "structural"` -- como esta funcao fazia quando
+    nasceu -- tirava do gate as 26 regras que sao `structural` DE VERDADE
+    (`SF-ATH-001`, `SF-DQ-001`, `SF-CG-001` e as outras: `requires_facts` real,
+    `when` real, golden que dispara). O gate ficava mais fraco do que era antes
+    da expansao agentica, e nada impedia uma regra de deteccao real de escapar
+    dele so declarando `structural`. Ver `_validate_executability` no loader.
+    """
+    return [r for r in _rules() if r.get("executable", True)]
 
 
 def _rules_fired_in_goldens() -> set[str]:
