@@ -131,6 +131,139 @@ def extract_numbers(path: Path) -> list[dict]:
     return found
 
 
+# Alegacao de capacidade sai de ESTRUTURA, nunca de prosa. Varrer prosa livre
+# atras de "o sistema faz X" produz falso positivo demais para ser gate.
+CAPABILITY_TABLES = ("CAPABILITY-MATRIX.md", "AGENT-CATALOG.md")
+
+
+def _is_table_separator(stripped: str) -> bool:
+    # Exige o "|" inicial explicitamente: sem isso, string vazia (linha em
+    # branco) tambem bateria (conjunto vazio e subconjunto de qualquer
+    # conjunto), e uma linha em branco depois de uma linha de tabela seria
+    # lida como separador por acidente.
+    return stripped.startswith("|") and set(stripped) <= set("|-: ")
+
+
+def extract_capabilities(root: Path = VNEXT) -> list[dict]:
+    found: list[dict] = []
+    for name in CAPABILITY_TABLES:
+        path = root / name
+        if not path.exists():
+            continue
+        # Mesma cerca de `extract_numbers`: linha dentro de bloco cercado e
+        # exemplo, nao alegacao. Sem isto, uma tabela ou lista ilustrativa
+        # dentro de um bloco de codigo em AGENT-CATALOG.md ou FINAL-REPORT.md
+        # (ambos ja tem blocos cercados hoje) vira alegacao real por acidente.
+        lines = _strip_code_blocks(path.read_text(encoding="utf-8"), path).split("\n")
+        for lineno, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if not stripped.startswith("|") or _is_table_separator(stripped):
+                continue
+            # Cabecalho de tabela GFM e definido por POSICAO, nao por
+            # vocabulario: e a linha imediatamente seguida pela linha
+            # separadora ("|---|---|"). Deteccao por posicao e exata e nao
+            # envelhece; a lista de palavras-chave anterior ("Capacidade",
+            # "Agent"...) vazava toda vez que uma tabela nova usava um
+            # cabecalho diferente ("Servico AWS", "Coordinator"), como o
+            # sanity check da Task 3 provou.
+            # Tabela sem linha separadora (Markdown malformado) nao tem
+            # ancora nenhuma linha nunca sera seguida por um separador, entao
+            # nenhuma linha e descartada como cabecalho, nem mesmo a que
+            # visualmente seria o cabecalho. Decisao deliberada: sem a linha
+            # separadora nao ha como distinguir cabecalho de dado por
+            # posicao, e tratar tudo como dado (falso positivo eventual) e
+            # preferivel a inventar uma heuristica de vocabulario -- que e
+            # exatamente o problema que esta reescrita elimina.
+            proxima = lines[lineno].strip() if lineno < len(lines) else ""
+            if _is_table_separator(proxima):
+                continue
+            cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+            if not cells or not cells[0]:
+                continue
+            found.append(
+                {
+                    "doc": _display_path(path),
+                    "line": lineno,
+                    "text": cells[0],
+                    "context": stripped[:120],
+                    "type": "capability",
+                }
+            )
+    found.extend(_final_report_inventory(root))
+    return found
+
+
+def _final_report_inventory(root: Path = VNEXT) -> list[dict]:
+    """Item de lista dentro da secao "## 4." do FINAL-REPORT (inventario de
+    pacotes, modulos e documentos entregues) tambem e alegacao de capacidade:
+    cada linha afirma que algo especifico foi criado. A deteccao usa o
+    prefixo "4." do titulo, nao o texto inteiro do titulo -- sobrevive a
+    renomeacao da secao ("Inventario..." virar outra coisa) desde que a
+    numeracao continue "## 4.".
+
+    Documento ausente (`FINAL-REPORT.md` nao existe) e tratado como lista
+    vazia sem erro -- e o caso pratico de qualquer fixture sintetica em
+    `tmp_path`, e ausencia do documento inteiro nao e a mesma falha que
+    ancora perdida dentro dele. Mas se o arquivo existe e a ancora "## 4."
+    NAO e encontrada -- secao renumerada, prefixo mudado -- isso e estourado
+    como ValueError, nao devolvido como lista vazia: um gate que perde o
+    proprio ponto de entrada e degrada em silencio nao vale nada, e este gate
+    existe exatamente para impedir que uma alegacao suma sem barulho. Pela
+    mesma razao, ancora encontrada mas ZERO itens coletados tambem estoura:
+    a lista so reconhece marcador "- ", entao uma secao 4 reescrita com lista
+    numerada ("1. ", "2. ") passa pela deteccao de ancora sem erro e devolve
+    lista vazia -- exatamente o miss silencioso que este gate existe para
+    impedir.
+
+    `text` guarda a linha do item inteira (sem o marcador "- "), com path e
+    descricao juntos: e a chave que o manifesto casa, e qualquer
+    reformatacao do inventario (novo caminho, nova descricao) precisa
+    re-registrar a alegacao -- aceitar so o path deixaria a descricao mudar
+    sem o gate perceber.
+    """
+    path = root / "FINAL-REPORT.md"
+    if not path.exists():
+        return []
+    found: list[dict] = []
+    in_section = False
+    anchor_found = False
+    text = _strip_code_blocks(path.read_text(encoding="utf-8"), path)
+    for lineno, line in enumerate(text.split("\n"), start=1):
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            in_section = stripped[3:].lstrip().startswith("4.")
+            anchor_found = anchor_found or in_section
+            continue
+        if not in_section:
+            continue
+        if stripped.startswith("- "):
+            item_text = stripped[2:].strip()
+            if not item_text:
+                continue
+            found.append(
+                {
+                    "doc": _display_path(path),
+                    "line": lineno,
+                    "text": item_text,
+                    "context": stripped[:120],
+                    "type": "capability",
+                }
+            )
+    if not anchor_found:
+        raise ValueError(
+            f"ancora de inventario '## 4.' nao encontrada em {_display_path(path)}"
+        )
+    if not found:
+        raise ValueError(
+            f"secao '## 4.' encontrada em {_display_path(path)} mas nenhum item de "
+            "lista foi coletado -- ou os marcadores de lista mudaram de forma (o "
+            "extrator so reconhece '- ') e precisa aprender o novo formato, ou a "
+            "secao foi esvaziada de proposito e a expectativa de ancora neste "
+            "script precisa ser atualizada deliberadamente"
+        )
+    return found
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full", action="store_true", help="Inclui provas tier slow.")

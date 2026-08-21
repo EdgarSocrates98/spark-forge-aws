@@ -99,3 +99,222 @@ class TestExtracaoNumerica:
         itens = gate.extract_numbers(doc)
         assert itens[0]["doc"] == doc.resolve().as_posix()
         assert "\\" not in itens[0]["doc"]
+
+
+MATRIZ_SINTETICA = """# Matriz
+
+| Capacidade | Estado |
+|---|---|
+| Compilador multi-plataforma | entregue |
+| Motor de economia em 7 tiers | entregue |
+
+Prosa solta afirmando coisas que nao sao linha de tabela.
+"""
+
+
+class TestExtracaoDeCapacidade:
+    def test_le_a_primeira_celula_de_cada_linha_de_tabela(self, tmp_path):
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(MATRIZ_SINTETICA, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert "Compilador multi-plataforma" in textos
+        assert "Motor de economia em 7 tiers" in textos
+
+    def test_ignora_cabecalho_separador_e_prosa(self, tmp_path):
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(MATRIZ_SINTETICA, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert "Capacidade" not in textos
+        assert not any(set(t) <= {"-", " ", ":"} for t in textos)
+        assert not any(t.startswith("Prosa") for t in textos)
+
+    def test_o_tipo_e_capability(self, tmp_path):
+        (tmp_path / "AGENT-CATALOG.md").write_text(MATRIZ_SINTETICA, encoding="utf-8")
+        for claim in gate.extract_capabilities(tmp_path):
+            assert claim["type"] == "capability"
+
+
+# Fixture sintetico que reproduz a forma real de docs/vnext/FINAL-REPORT.md:
+# secao "## 3." com lista solta (nao deve contar), secao "## 4." com
+# subcabecalho "###" e itens de inventario (deve contar), e secao "## 5."
+# com outro item de lista (nao deve contar por estar fora da secao 4).
+RELATORIO_SINTETICO = """# Relatorio
+
+## 3. KPIs e Resultados
+
+- Nao e alegacao de capacidade, e so um item de metrica solta.
+
+## 4. Inventario de Arquivos Criados e Estrutura
+
+### Novos Pacotes e Modulos:
+- [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): registro
+- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): economia
+
+## 5. Suporte a Plataformas
+
+- Nao deveria ser capturado, esta fora da secao 4.
+"""
+
+
+class TestExtracaoDeCapacidadeInventarioFinalReport:
+    def test_item_dentro_da_secao_4_vira_alegacao_de_capacidade(self, tmp_path):
+        (tmp_path / "FINAL-REPORT.md").write_text(RELATORIO_SINTETICO, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert any("sparkforge/registry" in t for t in textos)
+        assert any("sparkforge/economy" in t for t in textos)
+        for claim in gate.extract_capabilities(tmp_path):
+            assert claim["type"] == "capability"
+
+    def test_item_fora_da_secao_4_nao_vira_alegacao(self, tmp_path):
+        (tmp_path / "FINAL-REPORT.md").write_text(RELATORIO_SINTETICO, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert not any("metrica solta" in t for t in textos)
+        assert not any("fora da secao 4" in t for t in textos)
+
+
+class TestExtracaoDeCapacidadeProsaNaoConta:
+    def test_documento_fora_das_tres_fontes_estruturais_nao_contribui(self, tmp_path):
+        # Nem CAPABILITY-MATRIX.md, nem AGENT-CATALOG.md, nem FINAL-REPORT.md --
+        # mesmo com tabela e lista dentro, nao e fonte estrutural reconhecida.
+        (tmp_path / "ALGUM-OUTRO.md").write_text(
+            "- Isto parece item de lista mas nao esta em nenhuma das tres fontes.\n\n"
+            "| Capacidade | Estado |\n|---|---|\n| Coisa | ok |\n",
+            encoding="utf-8",
+        )
+        assert gate.extract_capabilities(tmp_path) == []
+
+
+TABELA_CABECALHO_INCOMUM = """# Matriz
+
+| Servico AWS | Estado |
+|---|---|
+| Glue | entregue |
+"""
+
+
+class TestCabecalhoDetectadoPorPosicao:
+    def test_cabecalho_com_palavra_fora_de_qualquer_lista_e_ignorado(self, tmp_path):
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(TABELA_CABECALHO_INCOMUM, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert textos == ["Glue"]
+
+    def test_tabela_sem_linha_separadora_trata_toda_linha_como_dado(self, tmp_path):
+        # Markdown malformado: sem a linha "|---|---|" nao ha ancora para
+        # distinguir cabecalho de dado por posicao. Decisao deliberada:
+        # tratar toda linha como dado (falso positivo eventual) em vez de
+        # reintroduzir uma heuristica de vocabulario para adivinhar o
+        # cabecalho -- essa heuristica e exatamente o que a Task 3 provou
+        # ser fragil.
+        tabela_sem_separador = (
+            "# Tabela malformada\n\n| Servico AWS | Estado |\n| Glue | entregue |\n"
+        )
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(tabela_sem_separador, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert textos == ["Servico AWS", "Glue"]
+
+
+RELATORIO_ANCORA_RENUMERADA = RELATORIO_SINTETICO.replace(
+    "## 4. Inventario de Arquivos Criados e Estrutura",
+    "## 5. Inventario de Arquivos Criados e Estrutura",
+).replace("## 5. Suporte a Plataformas", "## 6. Suporte a Plataformas")
+
+
+class TestAncoraDeInventarioPerdidaEstouraAlto:
+    def test_ancora_renumerada_estoura_value_error_nomeando_o_arquivo(self, tmp_path):
+        doc = tmp_path / "FINAL-REPORT.md"
+        doc.write_text(RELATORIO_ANCORA_RENUMERADA, encoding="utf-8")
+        with pytest.raises(ValueError) as exc_info:
+            gate.extract_capabilities(tmp_path)
+        assert doc.name in str(exc_info.value)
+
+    def test_arquivo_ausente_nao_estoura_e_nao_contribui(self, tmp_path):
+        # Documento inteiro ausente nao e a mesma falha que ancora perdida
+        # dentro de um documento presente -- fixture sintetica sem
+        # FINAL-REPORT.md e o caso normal de qualquer teste desta suite.
+        assert gate.extract_capabilities(tmp_path) == []
+
+
+MATRIZ_COM_TABELA_CERCADA = """# Matriz
+
+Exemplo ilustrativo dentro de bloco cercado -- nao e alegacao real:
+```
+| Capacidade | Estado |
+|---|---|
+| Fantasma dentro da cerca | fake |
+```
+
+| Capacidade | Estado |
+|---|---|
+| Compilador real | entregue |
+"""
+
+RELATORIO_COM_LISTA_CERCADA = """# Relatorio
+
+## 4. Inventario de Arquivos Criados e Estrutura
+
+Exemplo ilustrativo dentro de bloco cercado -- nao e alegacao real:
+```
+- fantasma/dentro/da/cerca: nao deveria contar
+```
+
+- sparkforge/registry/: entrega real
+
+## 5. Suporte a Plataformas
+"""
+
+
+class TestExtracaoDeCapacidadeRespeitaBlocoCercado:
+    # `extract_numbers` ja passa por `_strip_code_blocks` antes de iterar;
+    # `extract_capabilities` e `_final_report_inventory` faziam a leitura de
+    # linha direto do texto cru, entao uma tabela ou item de lista dentro de
+    # um bloco cercado (AGENT-CATALOG.md e FINAL-REPORT.md ja tem blocos
+    # cercados hoje) virava alegacao real por acidente. Reusa a mesma cerca
+    # em vez de reimplementar a varredura de linha pela terceira vez.
+    def test_linha_de_tabela_dentro_de_cerca_nao_vira_capacidade(self, tmp_path):
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(
+            MATRIZ_COM_TABELA_CERCADA, encoding="utf-8"
+        )
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert textos == ["Compilador real"]
+
+    def test_item_de_lista_dentro_de_cerca_na_secao_4_nao_vira_capacidade(self, tmp_path):
+        (tmp_path / "FINAL-REPORT.md").write_text(RELATORIO_COM_LISTA_CERCADA, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert textos == ["sparkforge/registry/: entrega real"]
+
+
+RELATORIO_SECAO_4_COM_LISTA_NUMERADA = """# Relatorio
+
+## 4. Inventario de Arquivos Criados e Estrutura
+
+1. sparkforge/registry/: entrega do registro canonico
+2. sparkforge/economy/: motor de economia em 7 tiers
+
+## 5. Suporte a Plataformas
+"""
+
+
+class TestSecao4ComAncoraMasSemItemEstouraAlto:
+    def test_lista_numerada_nao_reconhecida_estoura_value_error_nomeando_arquivo(
+        self, tmp_path
+    ):
+        # Ancora "## 4." e encontrada, mas o extrator so reconhece marcador
+        # "- ". Lista reescrita como "1. "/"2. " passa pela deteccao de
+        # ancora sem erro e devolveria lista vazia -- o mesmo miss silencioso
+        # que a guarda de ancora perdida existe para impedir, so que um
+        # degrau adiante.
+        doc = tmp_path / "FINAL-REPORT.md"
+        doc.write_text(RELATORIO_SECAO_4_COM_LISTA_NUMERADA, encoding="utf-8")
+        with pytest.raises(ValueError) as exc_info:
+            gate.extract_capabilities(tmp_path)
+        assert doc.name in str(exc_info.value)
+
+
+class TestLimiteUltimaLinhaSemQuebraFinal:
+    def test_tabela_cuja_ultima_linha_e_dado_sem_newline_final(self, tmp_path):
+        # Nada na suite exercitava lineno == len(lines) (ultima linha do
+        # arquivo, sem "\n" final) -- o ponto exato onde o lookahead
+        # `lines[lineno]` precisaria virar IndexError se a guarda
+        # `lineno < len(lines)` estivesse errada.
+        conteudo = "# Matriz\n\n| Capacidade | Estado |\n|---|---|\n| Ultima linha | ok |"
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(conteudo, encoding="utf-8")
+        textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
+        assert textos == ["Ultima linha"]
