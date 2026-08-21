@@ -1499,8 +1499,8 @@
       "context": "| **AWS Glue** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (4.0➔5.1) | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-123",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "A linha soma dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing) num unico check por servico; nenhum artefato prova as dez juntas. Existe codigo real e teste real so para uma fatia: sparkforge/collect/aws.py:collect_glue_job (tests/test_collect_aws.py) e sparkforge/migration/glue/analyzer.py, que cobre so a migracao de versao 4.0->5.1 (tests/test_migration_glue.py). As outras dimensoes (Architecture, Security, FinOps, Performance, Testing etc.) nao tem artefato dedicado."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1509,8 +1509,8 @@
       "context": "| **Lake Formation**| ✅ | ✅ | ✅ | ✅ (FGAC/FTA)| ✅ | ✅ | ✅ (Cross-Acc) | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-124",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing) num unico check. Existe codigo real -- sparkforge/lakeformation/doctor.py e graph.py, testados em tests/test_lakeformation_engine.py -- mas cobre so diagnostico de permissoes (a anotacao 'FGAC/FTA' da coluna Security), nao as outras nove dimensoes da linha."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1519,8 +1519,8 @@
       "context": "| **Apache Iceberg**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Doctor) | ✅ (v1/v2/v3) | ✅ (Compaction)| ✅ |",
       "type": "capability",
       "id": "VNX-125",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/iceberg/doctor.py e maintenance.py (tests/test_iceberg_doctor.py), sparkforge/facts/iceberg_metadata.py e collect_iceberg_metadata (tests/test_facts_iceberg_metadata.py, tests/test_collect_aws.py) -- mas cobre so coleta e diagnostico de metadados, nao arquitetura, FinOps ou performance de compaction como a coluna anuncia."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1529,8 +1529,8 @@
       "context": "| **Amazon S3** | ✅ | ✅ | ✅ | ✅ (Public Block)| ✅ (Tiering)| ✅ | ✅ (S3A/EMRFS) | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-126",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/facts/s3_listing.py, testado em tests/test_facts_s3_listing.py -- mas cobre so listagem/coleta de objetos, nao as outras nove dimensoes."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1539,8 +1539,8 @@
       "context": "| **Amazon Athena** | ✅ | ✅ | ✅ | ✅ (Workgroups)| ✅ (Scanned)| ✅ | ✅ | ✅ (Engine v3) | ✅ (Projection)| ✅ |",
       "type": "capability",
       "id": "VNX-127",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/facts/athena_workgroup.py (tests/test_facts_athena_workgroup.py) e collect_athena_workgroup (tests/test_collect_aws.py) -- mas cobre so coleta de configuracao de workgroup, nao as outras nove dimensoes."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1549,8 +1549,8 @@
       "context": "| **Amazon EMR EC2**| ✅ | ✅ | ✅ | ✅ | ✅ (Spot Fleets)| ✅ | ✅ | ✅ (6.x➔7.x) | ✅ (AQE/Spill) | ✅ |",
       "type": "capability",
       "id": "VNX-128",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/facts/emr_cluster.py (tests/test_facts_emr_cluster.py) e collect_emr_cluster (tests/test_collect_aws.py) -- mas cobre so coleta de definicao de cluster, nao as outras nove dimensoes."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1559,8 +1559,8 @@
       "context": "| **EMR Serverless**| ✅ | ✅ | ✅ | ✅ | ✅ (Auto-stop)| ✅ | ✅ | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-129",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/facts/emr_serverless.py (tests/test_facts_emr_serverless.py) e collect_emr_serverless (tests/test_collect_aws.py) -- mas cobre so coleta de aplicacao, nao as outras nove dimensoes."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1569,8 +1569,8 @@
       "context": "| **Amazon Redshift**| ✅ | ✅ | ✅ | ✅ | ✅ (Serverless)| ✅ | ✅ | ✅ | ✅ (WLM/Sort) | ✅ |",
       "type": "capability",
       "id": "VNX-130",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Nenhum modulo, coletor, analisador, agente dedicado ou teste existe para Amazon Redshift em lugar nenhum do repositorio -- nao ha agents/*redshift*.md nem sparkforge/**/*redshift*. As dez dimensoes desta linha nao tem lastro nenhum."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1579,8 +1579,8 @@
       "context": "| **Amazon DynamoDB**| ✅ | ✅ | ✅ | ✅ | ✅ (On-Demand)| ✅ | ✅ (Hot Part) | ✅ | ✅ (Adaptive) | ✅ |",
       "type": "capability",
       "id": "VNX-131",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/databases/dynamodb.py:DynamoDBSpecialist, testado em tests/test_database_specialists.py -- mas cobre so deteccao de hot partition (a anotacao 'Hot Part' da coluna Troubleshooting), nao as outras nove dimensoes."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1589,8 +1589,8 @@
       "context": "| **Amazon Neptune**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Explain) | ✅ (Neo4j➔Nept)| ✅ (Bulk Load) | ✅ |",
       "type": "capability",
       "id": "VNX-132",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/databases/neptune.py:NeptuneSpecialist, testado em tests/test_database_specialists.py -- mas cobre uma fatia estreita, nao as outras nove dimensoes da linha."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1599,8 +1599,8 @@
       "context": "| **Amazon MSK** | ✅ | ✅ | ✅ | ✅ (mTLS/IAM)| ✅ | ✅ | ✅ (Lag/Rebal) | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-133",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/streaming/kafka.py:KafkaMSKSpecialist, testado em tests/test_database_specialists.py -- mas cobre uma fatia estreita, nao as outras nove dimensoes da linha."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1609,8 +1609,8 @@
       "context": "| **Amazon Kinesis**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Hot Shards)| ✅ | ✅ (Fan-out) | ✅ |",
       "type": "capability",
       "id": "VNX-134",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- sparkforge/streaming/kinesis.py:KinesisSpecialist, testado em tests/test_database_specialists.py -- mas cobre uma fatia estreita, nao as outras nove dimensoes da linha."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1619,8 +1619,8 @@
       "context": "| **AWS DMS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (CDC/Full) | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-135",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). O unico modulo chamado 'migration' no repositorio (sparkforge/migration/glue/analyzer.py) analisa migracao de VERSAO do AWS Glue (4.0->5.1), nao o servico AWS Database Migration Service. Nenhum codigo, agente ou teste cobre DMS de verdade -- a anotacao 'CDC/Full' da coluna Migration nao tem lastro nenhum."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1629,8 +1629,8 @@
       "context": "| **Step Functions**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Retries) | ✅ | ✅ (Dist Map) | ✅ |",
       "type": "capability",
       "id": "VNX-136",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe o agente agents/sf-step-functions-specialist.md e a skill design-step-functions-orchestration, mas nenhum modulo de codigo nem teste em sparkforge/ exercita Step Functions -- so instrucao em Markdown para um agente seguir, sem artefato comportamental por tras."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1639,8 +1639,8 @@
       "context": "| **AWS Lambda** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Concurrency)| ✅ |",
       "type": "capability",
       "id": "VNX-137",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe o agente agents/sf-lambda-serverless-specialist.md e a skill design-lambda-serverless, mas nenhum modulo de codigo nem teste em sparkforge/ exercita AWS Lambda -- so instrucao em Markdown para um agente seguir, sem artefato comportamental por tras."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1649,8 +1649,8 @@
       "context": "| **EventBridge** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-138",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Nenhum modulo, coletor, analisador, agente dedicado ou teste existe para Amazon EventBridge em lugar nenhum do repositorio."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1659,8 +1659,8 @@
       "context": "| **SQS / SNS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (DLQ/Replay) | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-139",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Nenhum modulo, coletor, analisador, agente dedicado ou teste existe para Amazon SQS ou SNS em lugar nenhum do repositorio -- a anotacao 'DLQ/Replay' da coluna Troubleshooting nao tem lastro."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1669,8 +1669,8 @@
       "context": "| **Glue Schema Reg**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Evolution) | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-140",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe o agente agents/sf-schema-registry-specialist.md, mas nenhum modulo de codigo nem teste exercita o AWS Glue Schema Registry como servico -- sparkforge/tools/schema.py e sparkforge/facts/catalog_schema.py tratam de schema de dados e de catalogo Glue, nao do servico de registro de schema que a linha reivindica."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1679,8 +1679,8 @@
       "context": "| **IAM & KMS** | ✅ | ✅ | ✅ | ✅ (Least Priv)| ✅ | ✅ (CloudTrail)| ✅ | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-141",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe o agente agents/sf-security-reviewer.md, mas nenhum modulo de codigo dedicado nem teste exercita IAM ou KMS como servico -- as unicas mencoes no pacote sao strings de tipo de recurso Terraform (aws_iam_*, aws_kms_*) reconhecidas em sparkforge/terraform/plan_analyzer.py e sparkforge/facts/terraform.py, nao uma capacidade de IAM/KMS testada."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -1689,8 +1689,8 @@
       "context": "| **CloudWatch/Trail**|✅ | ✅ | ✅ | ✅ | ✅ (Retention)| ✅ | ✅ (Timeline) | ✅ | ✅ | ✅ |",
       "type": "capability",
       "id": "VNX-142",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). Existe codigo real -- collect_cloudwatch em sparkforge/collect/aws.py, testado em tests/test_collect_aws.py (inclui teste de escolha de estatistica por metrica) -- mas cobre so coleta de metricas CloudWatch, nao CloudTrail nem as outras oito dimensoes da linha."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1699,8 +1699,8 @@
       "context": "| **`forge-supervisor`** | Orquestração Geral | Controla o ciclo de vida da investigação, gates do caso e handoffs entre",
       "type": "capability",
       "id": "VNX-143",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Nao existe agents/forge-supervisor.md -- conferido no diretorio canonico agents/ (espelhado em .claude/agents/, .agents/agents/ e .github/agents/ por tests/test_agents_parity.py::TestMirrors), que nao tem nenhum arquivo com este nome. Os verbos citados (`sparkforge case`, `sparkforge playbook`) existem de fato na CLI real, mas nenhum agente com este nome os declara."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1709,8 +1709,8 @@
       "context": "| **`task-router`** | Roteamento Econômico | Classifica tarefas, seleciona tiers (0 a 6) e perfis de execução (`ECO`, et",
       "type": "capability",
       "id": "VNX-144",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Nao existe agents/task-router.md. Os verbos citados (`sparkforge inspect`, `sparkforge routing`) TAMBEM nao existem na CLI real -- os verbos de topo reais sao analyze, benchmark, case, collect, funcval, fuse, handoff, judge, knowledge, next-step, playbook, report, resume, rules, runtime, validate (sparkforge.adapters.cli.build_parser()). Nem o agente nem as ferramentas que a linha lhe atribui tem lastro."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1719,8 +1719,8 @@
       "context": "| **`data-engineering-architect`** | Arquitetura de Dados | Decisões transversais de pipelines (PySpark, SQL, Batch, Str",
       "type": "capability",
       "id": "VNX-145",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Nao existe agents/data-engineering-architect.md. O verbo citado (`sparkforge analyze pyspark/plan`) existe de fato na CLI (analyze pyspark, analyze plan), mas nenhum agente com este nome o declara; sf-data-architect.md e o agente real mais proximo por descricao, sob outro nome."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1729,8 +1729,8 @@
       "context": "| **`aws-data-architect`** | Infraestrutura Cloud | Desenho e revisão de serviços AWS (Glue, EMR, Athena, S3, Lake Forma",
       "type": "capability",
       "id": "VNX-146",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Nao existe agents/aws-data-architect.md. Os verbos citados (`sparkforge analyze terraform/emr`) existem de fato na CLI (analyze terraform, analyze emr-cluster), mas nenhum agente com este nome os declara; sf-data-architect.md e o mesmo agente real ja atribuido a data-engineering-architect na linha anterior, sob outro nome -- as duas linhas reivindicam dois coordenadores distintos que colapsam no mesmo agente real, que nao tem nenhum dos dois nomes."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1739,8 +1739,8 @@
       "context": "| **`evidence-verifier`** | Qualidade & Evidências | Julgamento de regras, ancoragem de fatos e validação funcional ante",
       "type": "capability",
       "id": "VNX-147",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Nao existe agents/evidence-verifier.md. Os verbos citados (`sparkforge judge`, `sparkforge report verify`) existem de fato na CLI, mas o agente real com papel equivalente se chama sf-evidence-verifier.md (nome diferente)."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1749,8 +1749,8 @@
       "context": "| **`security-governance`** | Segurança & Riscos | Avaliação de mutações, redação de segredos, IAM e integridade de data",
       "type": "capability",
       "id": "VNX-148",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Nao existe agents/security-governance.md. Os verbos citados (`sparkforge security`, `sparkforge audit`) TAMBEM nao existem na CLI real. sf-security-reviewer.md e o agente real mais proximo por descricao, sob outro nome -- nem o agente nem as ferramentas que a linha lhe atribui tem lastro."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1759,8 +1759,8 @@
       "context": "| **`finops-reviewer`** | FinOps & Token Economy | Otimização de custos AWS e monitoramento de eficiência de tokens (`sp",
       "type": "capability",
       "id": "VNX-149",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Nao existe agents/finops-reviewer.md. Os verbos citados (`sparkforge cost`, `sparkforge optimize`) TAMBEM nao existem na CLI real. sf-cost-reviewer.md e o agente real mais proximo por descricao, sob outro nome -- nem o agente nem as ferramentas que a linha lhe atribui tem lastro."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1769,8 +1769,13 @@
       "context": "| `spark-performance-architect` | **Core Coordinator** | Mantido como coordenador primário de performance PySpark. | `sp",
       "type": "capability",
       "id": "VNX-150",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/spark-performance-architect.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1779,8 +1784,13 @@
       "context": "| `glue-incremental-performance-architect` | **Core Coordinator** | Mantido para fluxos full + incremental complexos. | ",
       "type": "capability",
       "id": "VNX-151",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/glue-incremental-performance-architect.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1789,8 +1799,13 @@
       "context": "| `glue-infra-reviewer` | **Specialist Role** | Foco em infraestrutura Glue, worker types e auto scaling. | `glue-infra-",
       "type": "capability",
       "id": "VNX-152",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/glue-infra-reviewer.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1799,8 +1814,13 @@
       "context": "| `emr-infra-reviewer` | **Specialist Role** | Foco em clusters EMR EC2 e Serverless. | `emr-infra-reviewer` |",
       "type": "capability",
       "id": "VNX-153",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/emr-infra-reviewer.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1809,8 +1829,13 @@
       "context": "| `athena-query-optimizer` | **Specialist Role** | Otimização de consultas, pruning e workgroups Athena. | `athena-query",
       "type": "capability",
       "id": "VNX-154",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/athena-query-optimizer.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1819,8 +1844,13 @@
       "context": "| `pyspark-code-reviewer` | **Specialist Role** | Revisão de código PySpark e GraphFrames. | `pyspark-code-reviewer` |",
       "type": "capability",
       "id": "VNX-155",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/pyspark-code-reviewer.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1829,8 +1859,13 @@
       "context": "| `iceberg-performance-engineer` | **Specialist Role** | Manutenção e performance de tabelas Iceberg. | `iceberg-perform",
       "type": "capability",
       "id": "VNX-156",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/iceberg-performance-engineer.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1839,8 +1874,13 @@
       "context": "| `data-quality-reviewer` | **Specialist Role** | Auditoria do posicionamento e custo de regras de qualidade. | `data-qu",
       "type": "capability",
       "id": "VNX-157",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/data-quality-reviewer.md",
+        "test": "tests/test_router_agents.py",
+        "symbol": "next_step"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1849,8 +1889,12 @@
       "context": "| `sf-inventory` | **Executor** | Executor determinístico de inventário (Phase Loop). | `sf-inventory` |",
       "type": "capability",
       "id": "VNX-158",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/executors/sf-inventory.md",
+        "test": "tests/test_agent_coverage.py"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1859,8 +1903,12 @@
       "context": "| `sf-extractor` | **Executor** | Executor determinístico de evidências (Phase Loop). | `sf-extractor` |",
       "type": "capability",
       "id": "VNX-159",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/executors/sf-extractor.md",
+        "test": "tests/test_agent_coverage.py"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1869,8 +1917,12 @@
       "context": "| `sf-judge` | **Executor** | Executor de regras determinísticas (Phase Loop). | `sf-judge` |",
       "type": "capability",
       "id": "VNX-160",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/executors/sf-judge.md",
+        "test": "tests/test_agent_coverage.py"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1879,8 +1931,12 @@
       "context": "| `sf-verifier` | **Executor** | Executor de validação de saídas (Phase Loop). | `sf-verifier` |",
       "type": "capability",
       "id": "VNX-161",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/executors/sf-verifier.md",
+        "test": "tests/test_agent_coverage.py"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1889,8 +1945,12 @@
       "context": "| `sf-synthesizer` | **Executor** | Executor de síntese de relatório assinado. | `sf-synthesizer` |",
       "type": "capability",
       "id": "VNX-162",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/executors/sf-synthesizer.md",
+        "test": "tests/test_agent_coverage.py"
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1899,8 +1959,8 @@
       "context": "| `sf-pyspark-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`optimize-pyspark-code`). | `sf-pyspar",
       "type": "capability",
       "id": "VNX-163",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "A linha afirma que sf-pyspark-specialist foi 'Convertido em Skill Lazy-Loaded (optimize-pyspark-code)'. Falso: agents/sf-pyspark-specialist.md continua existindo como agente ativo, com rule_areas e executors declarados, e roteado de fato em rules/catalog/routing.yaml:480 (recommended_agent: sf-pyspark-specialist) -- rota exercitada por tests/test_router_agents.py. Nao houve conversao nenhuma; o agente antigo e a skill nova coexistem."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1909,8 +1969,8 @@
       "context": "| `sf-storage-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`optimize-iceberg-table`). | `sf-stora",
       "type": "capability",
       "id": "VNX-164",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "A linha afirma que sf-storage-specialist foi 'Convertido em Skill Lazy-Loaded (optimize-iceberg-table)'. Falso: agents/sf-storage-specialist.md continua existindo como agente ativo, roteado de fato em rules/catalog/routing.yaml:496 (recommended_agent: sf-storage-specialist) -- rota exercitada por tests/test_router_agents.py. Nao houve conversao nenhuma."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1919,8 +1979,8 @@
       "context": "| `sf-runtime-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`review-emr-cluster`). | `sf-runtime-s",
       "type": "capability",
       "id": "VNX-165",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "A linha afirma que sf-runtime-specialist foi 'Convertido em Skill Lazy-Loaded (review-emr-cluster)'. Falso: agents/sf-runtime-specialist.md continua existindo como agente ativo, roteado de fato em rules/catalog/routing.yaml:488 (recommended_agent: sf-runtime-specialist) -- rota exercitada por tests/test_router_agents.py. Nao houve conversao nenhuma."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1929,8 +1989,8 @@
       "context": "| `sf-token-verifier` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`token-efficient-agent`). | `sf-token-veri",
       "type": "capability",
       "id": "VNX-166",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "A linha afirma que sf-token-verifier foi 'Convertido em Skill Lazy-Loaded (token-efficient-agent)'. Falso: agents/sf-token-verifier.md continua existindo como agente ativo, roteado de fato em rules/catalog/routing.yaml:504 (recommended_agent: sf-token-verifier) -- rota exercitada por tests/test_router_agents.py. Nao houve conversao nenhuma."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1939,8 +1999,8 @@
       "context": "| `sf-cost-reviewer` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`data-platform-finops`). | `sf-cost-reviewe",
       "type": "capability",
       "id": "VNX-167",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "A linha afirma que sf-cost-reviewer foi 'Convertido em Skill Lazy-Loaded (data-platform-finops)'. Falso nos dois lados: agents/sf-cost-reviewer.md continua existindo como agente ativo, roteado de fato em rules/catalog/routing.yaml:944 (recommended_agent: sf-cost-reviewer); e a skill-alvo citada, `data-platform-finops`, nem existe em skills/ (40 skills no diretorio canonico, nenhuma com este nome)."
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -1949,8 +2009,8 @@
       "context": "| `sf-security-reviewer` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`security-review`). | `sf-security-revi",
       "type": "capability",
       "id": "VNX-168",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "A linha afirma que sf-security-reviewer foi 'Convertido em Skill Lazy-Loaded (security-review)'. Falso nos dois lados: agents/sf-security-reviewer.md continua existindo como agente ativo, roteado de fato em rules/catalog/routing.yaml:952 (recommended_agent: sf-security-reviewer); e a skill-alvo citada, `security-review`, nem existe em skills/ (40 skills no diretorio canonico, nenhuma com este nome)."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1959,8 +2019,13 @@
       "context": "- [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validat",
       "type": "capability",
       "id": "VNX-169",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/registry/models.py",
+        "test": "tests/test_canonical_registry.py",
+        "symbol": "AgentManifest"
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1969,8 +2034,13 @@
       "context": "- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `budget.py`, `cache.py`, `waste_dete",
       "type": "capability",
       "id": "VNX-170",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/economy/budget.py",
+        "test": "tests/test_economy_engine.py",
+        "symbol": "TokenUsage"
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1979,8 +2049,13 @@
       "context": "- [`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `know",
       "type": "capability",
       "id": "VNX-171",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/context/funnel.py",
+        "test": "tests/test_context_funnel.py",
+        "symbol": "ContextFunnel"
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1989,8 +2064,13 @@
       "context": "- [`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `an",
       "type": "capability",
       "id": "VNX-172",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/adapters/platforms/compiler.py",
+        "test": "tests/test_platform_compilers.py",
+        "symbol": "PlatformCompiler"
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1999,8 +2079,13 @@
       "context": "- [`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py",
       "type": "capability",
       "id": "VNX-173",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/workflows/spec.py",
+        "test": "tests/test_workflows_dag.py",
+        "symbol": "TaskSpec"
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2009,8 +2094,13 @@
       "context": "- [`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.js",
       "type": "capability",
       "id": "VNX-174",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/evals/runner.py",
+        "test": "tests/test_eval_runner.py",
+        "symbol": "EvaluationRunner"
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2019,8 +2109,13 @@
       "context": "- [`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`,",
       "type": "capability",
       "id": "VNX-175",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/observability/tracer.py",
+        "test": "tests/test_observability.py",
+        "symbol": "AgentOpsTracker"
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2029,8 +2124,8 @@
       "context": "- [`sparkforge/providers/`](file:///e:/projetos/spark-forge-aws/sparkforge/providers/): `mock.py`",
       "type": "capability",
       "id": "VNX-176",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "sparkforge/providers/mock.py define MockModelProvider, mas nenhum teste do repositorio o importa ou chama -- busca por 'sparkforge.providers' e 'providers.mock' em tests/ nao encontra nada. Modulo existe, comportamento nao e exercitado por teste nenhum."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2039,8 +2134,8 @@
       "context": "- [`sparkforge/cloud/`](file:///e:/projetos/spark-forge-aws/sparkforge/cloud/): `worker.py`, `__init__.py`",
       "type": "capability",
       "id": "VNX-177",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "sparkforge/cloud/worker.py define RemoteWorkerTask, RemoteWorkerResult e LocalFallbackWorkerBackend, mas nenhum teste do repositorio os importa ou chama. Modulo existe, comportamento nao e exercitado por teste nenhum -- consistente com a propria secao 7 do FINAL-REPORT.md, que lista 'remote worker com Terraform modules' como oportunidade futura vNext+1, nao entrega provada."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2049,8 +2144,8 @@
       "context": "- [`docs/vnext/CURRENT-STATE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/CURRENT-STATE.md) (Baseline Phase 0)",
       "type": "capability",
       "id": "VNX-178",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O arquivo existe em docs/vnext/, mas nenhum teste do repositorio verifica sua existencia ou conteudo como entrega. tests/test_vnext_claims.py::TestDocumentosAuditados::test_cobre_os_dois_diretorios_sem_repetir cita FINAL-REPORT.md e ADR-001-canonical-registry.md, mas so como exemplo incidental do funcionamento de audited_docs() (prova que o gate cobre os dois diretorios) -- nao como asserção de que o documento e uma entrega valida. Nenhum teste equivalente, incidental ou nao, existe para os outros quatro documentos desta lista."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2059,8 +2154,8 @@
       "context": "- [`docs/vnext/COURSE-KNOWLEDGE-MAP.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/COURSE-KNOWLEDGE-MAP.md) (Síntes",
       "type": "capability",
       "id": "VNX-179",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O arquivo existe em docs/vnext/, mas nenhum teste do repositorio verifica sua existencia ou conteudo como entrega. tests/test_vnext_claims.py::TestDocumentosAuditados::test_cobre_os_dois_diretorios_sem_repetir cita FINAL-REPORT.md e ADR-001-canonical-registry.md, mas so como exemplo incidental do funcionamento de audited_docs() (prova que o gate cobre os dois diretorios) -- nao como asserção de que o documento e uma entrega valida. Nenhum teste equivalente, incidental ou nao, existe para os outros quatro documentos desta lista."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2069,8 +2164,8 @@
       "context": "- [`docs/vnext/ARCHITECTURE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/ARCHITECTURE.md) (Arquitetura canônica v",
       "type": "capability",
       "id": "VNX-180",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O arquivo existe em docs/vnext/, mas nenhum teste do repositorio verifica sua existencia ou conteudo como entrega. tests/test_vnext_claims.py::TestDocumentosAuditados::test_cobre_os_dois_diretorios_sem_repetir cita FINAL-REPORT.md e ADR-001-canonical-registry.md, mas so como exemplo incidental do funcionamento de audited_docs() (prova que o gate cobre os dois diretorios) -- nao como asserção de que o documento e uma entrega valida. Nenhum teste equivalente, incidental ou nao, existe para os outros quatro documentos desta lista."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2079,8 +2174,8 @@
       "context": "- [`docs/vnext/AGENT-CATALOG.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/AGENT-CATALOG.md) (Catálogo refatorado ",
       "type": "capability",
       "id": "VNX-181",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O arquivo existe em docs/vnext/, mas nenhum teste do repositorio verifica sua existencia ou conteudo como entrega. tests/test_vnext_claims.py::TestDocumentosAuditados::test_cobre_os_dois_diretorios_sem_repetir cita FINAL-REPORT.md e ADR-001-canonical-registry.md, mas so como exemplo incidental do funcionamento de audited_docs() (prova que o gate cobre os dois diretorios) -- nao como asserção de que o documento e uma entrega valida. Nenhum teste equivalente, incidental ou nao, existe para os outros quatro documentos desta lista."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2089,8 +2184,8 @@
       "context": "- [`docs/vnext/DEMOS.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/DEMOS.md) (5 Demos interativas)",
       "type": "capability",
       "id": "VNX-182",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O arquivo existe em docs/vnext/, mas nenhum teste do repositorio verifica sua existencia ou conteudo como entrega. tests/test_vnext_claims.py::TestDocumentosAuditados::test_cobre_os_dois_diretorios_sem_repetir cita FINAL-REPORT.md e ADR-001-canonical-registry.md, mas so como exemplo incidental do funcionamento de audited_docs() (prova que o gate cobre os dois diretorios) -- nao como asserção de que o documento e uma entrega valida. Nenhum teste equivalente, incidental ou nao, existe para os outros quatro documentos desta lista."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2099,8 +2194,8 @@
       "context": "- [`docs/vnext/FINAL-REPORT.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/FINAL-REPORT.md) (Relatório final)",
       "type": "capability",
       "id": "VNX-183",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O arquivo existe em docs/vnext/, mas nenhum teste do repositorio verifica sua existencia ou conteudo como entrega. tests/test_vnext_claims.py::TestDocumentosAuditados::test_cobre_os_dois_diretorios_sem_repetir cita FINAL-REPORT.md e ADR-001-canonical-registry.md, mas so como exemplo incidental do funcionamento de audited_docs() (prova que o gate cobre os dois diretorios) -- nao como asserção de que o documento e uma entrega valida. Nenhum teste equivalente, incidental ou nao, existe para os outros quatro documentos desta lista."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -2109,8 +2204,8 @@
       "context": "- `docs/vnext/adrs/ADR-001` até `ADR-008` (Decisões arquiteturais registradas)",
       "type": "capability",
       "id": "VNX-184",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Os oito arquivos existem em docs/vnext/adrs/, mas so ADR-001-canonical-registry.md e citado por nome em teste (tests/test_vnext_claims.py, como exemplo incidental de cobertura de audited_docs(), nao como asserção de entrega -- mesmo caso de VNX-178 a VNX-183). ADR-002 a ADR-008 nao sao citados por nome em teste nenhum. A linha reivindica os oito coletivamente; sete de oito nao tem nenhum lastro de teste."
     }
   ]
 }
