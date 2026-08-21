@@ -318,3 +318,195 @@ class TestLimiteUltimaLinhaSemQuebraFinal:
         (tmp_path / "CAPABILITY-MATRIX.md").write_text(conteudo, encoding="utf-8")
         textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
         assert textos == ["Ultima linha"]
+
+
+def manifesto(claims):
+    return {"schema_version": 1, "extracted_from": "0" * 40, "claims": claims}
+
+
+def entrada(**kwargs):
+    base = {
+        "id": "VNX-001",
+        "doc": "docs/vnext/FINAL-REPORT.md",
+        "line": 31,
+        "text": "81,8%",
+        "context": "economia de 81,8%",
+        "type": "number",
+        "state": "REMOVIDA",
+        "note": "sem artefato de medicao no repositorio",
+    }
+    base.update(kwargs)
+    return base
+
+
+class TestValidacaoDoManifesto:
+    def test_aceita_manifesto_bem_formado(self):
+        assert gate.validate_manifest(manifesto([entrada()]), {}) == []
+
+    def test_exige_note_quando_nao_e_provada(self):
+        erros = gate.validate_manifest(manifesto([entrada(note="")]), {})
+        assert any("exige note" in e for e in erros)
+
+    def test_rejeita_id_repetido(self):
+        erros = gate.validate_manifest(manifesto([entrada(), entrada(text="94,5%")]), {})
+        assert any("id repetido" in e for e in erros)
+
+    def test_rejeita_estado_desconhecido(self):
+        erros = gate.validate_manifest(manifesto([entrada(state="TALVEZ")]), {})
+        assert any("state" in e for e in erros)
+
+    def test_rejeita_proof_fora_de_provada(self):
+        prova = {"kind": "source", "source_id": "x"}
+        erros = gate.validate_manifest(manifesto([entrada(proof=prova)]), {})
+        assert any("proof so e aceita em PROVADA" in e for e in erros)
+
+    def test_rejeita_schema_version_diferente(self):
+        m = manifesto([entrada()])
+        m["schema_version"] = 2
+        erros = gate.validate_manifest(m, {})
+        assert any("schema_version" in e for e in erros)
+
+
+class TestValidacaoDaProva:
+    def test_artifact_nao_prova_numero(self):
+        prova = {"kind": "artifact", "path": "scripts/check_vnext_claims.py",
+                 "test": "tests/test_vnext_claims.py"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("artifact nao prova alegacao numerica" in e for e in erros)
+
+    def test_artifact_prova_capacidade_quando_path_e_test_existem(self):
+        prova = {
+            "kind": "artifact",
+            "path": "scripts/check_vnext_claims.py",
+            "symbol": "audited_docs",
+            "test": "tests/test_vnext_claims.py",
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="capability")]), {}
+        )
+        assert erros == []
+
+    def test_artifact_com_path_inexistente_falha(self):
+        prova = {"kind": "artifact", "path": "nao/existe.py",
+                 "test": "tests/test_vnext_claims.py"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="capability")]), {}
+        )
+        assert any("proof.path inexistente" in e for e in erros)
+
+    def test_artifact_cujo_teste_nao_cita_o_simbolo_falha(self):
+        prova = {
+            "kind": "artifact",
+            "path": "scripts/check_vnext_claims.py",
+            "symbol": "funcao_que_ninguem_testa",
+            "test": "tests/test_vnext_claims.py",
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="capability")]), {}
+        )
+        assert any("nao referencia" in e for e in erros)
+
+    def test_source_exige_id_presente_no_sources_lock(self):
+        prova = {"kind": "source", "source_id": "https://exemplo/invalido"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="external_fact")]),
+            {"https://exemplo/valido": {}},
+        )
+        assert any("fora de knowledge/sources.lock.json" in e for e in erros)
+
+    def test_external_fact_so_aceita_source(self):
+        prova = {"kind": "command", "cmd": 'python -c "print(1)"', "tier": "fast",
+                 "expect": {"kind": "contains", "value": "1"}}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="external_fact")]), {}
+        )
+        assert any("external_fact exige proof source" in e for e in erros)
+
+    def test_command_exige_tier_valido(self):
+        prova = {"kind": "command", "cmd": 'python -c "print(1)"', "tier": "medio",
+                 "expect": {"kind": "contains", "value": "1"}}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("tier" in e for e in erros)
+
+    def test_artifact_path_absoluto_fora_do_repositorio_e_rejeitado(self):
+        # `ROOT / valor` descarta ROOT quando `valor` ja e absoluto -- sem
+        # esta checagem um path absoluto validaria com zero erros, mesmo
+        # apontando para fora do repositorio inteiro.
+        prova = {
+            "kind": "artifact",
+            "path": "C:/Windows/System32/drivers/etc/hosts",
+            "test": "tests/test_vnext_claims.py",
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="capability")]), {}
+        )
+        assert any("proof.path fora do repositorio" in e for e in erros)
+
+    def test_artifact_test_com_travessia_de_diretorio_e_rejeitado(self):
+        prova = {
+            "kind": "artifact",
+            "path": "scripts/check_vnext_claims.py",
+            "test": "../../elsewhere",
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="capability")]), {}
+        )
+        assert any("proof.test fora do repositorio" in e for e in erros)
+
+    def test_symbol_referenciado_por_qualificador_diferente_de_gate_e_aceito(self):
+        # A checagem de referencia nao pode travar no alias `gate.` que este
+        # proprio arquivo de teste usa -- a Task 9 vai anexar prova artifact
+        # contra modulos importados sob qualquer alias. `tests/test_agents_
+        # parity.py` importa `scripts/sync_skills.py` como `sync_skills` (sem
+        # alias `gate`) e chama `sync_skills.platform_for(...)` de verdade --
+        # caso real do repositorio, nao fixture sintetica.
+        prova = {
+            "kind": "artifact",
+            "path": "scripts/sync_skills.py",
+            "symbol": "platform_for",
+            "test": "tests/test_agents_parity.py",
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="capability")]), {}
+        )
+        assert erros == []
+
+    def test_expect_number_sem_grupo_de_captura_e_rejeitado(self):
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(1)"',
+            "tier": "fast",
+            "expect": {"kind": "number", "pattern": r"\d+"},
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("grupo de captura" in e for e in erros)
+
+    def test_expect_number_com_pattern_incompilavel_e_rejeitado(self):
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(1)"',
+            "tier": "fast",
+            "expect": {"kind": "number", "pattern": r"(\d+"},
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("expect.pattern invalido" in e for e in erros)
+
+    def test_expect_contains_sem_value_e_rejeitado(self):
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(1)"',
+            "tier": "fast",
+            "expect": {"kind": "contains"},
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("expect contains exige value" in e for e in erros)

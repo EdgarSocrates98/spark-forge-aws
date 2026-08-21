@@ -264,6 +264,184 @@ def _final_report_inventory(root: Path = VNEXT) -> list[dict]:
     return found
 
 
+ID_RE = re.compile(r"^VNX-\d{3}$")
+
+# Formatos de `expect` aceitos por uma prova `command`. "contains" e o caso
+# simples (substring no stdout); "number" exige `pattern` com grupo de
+# captura porque comparar numero exige extrair o numero do stdout antes de
+# comparar -- sem grupo de captura nao ha o que comparar.
+EXPECT_KINDS = frozenset({"number", "contains"})
+
+
+def validate_manifest(manifest: dict, sources: dict) -> list[str]:
+    """Valida a forma do manifesto e, para cada `claim`, a prova tipada.
+
+    `sources` e o conteudo ja carregado de `knowledge/sources.lock.json`
+    (chaveado por URL) -- passado pelo chamador em vez de lido aqui para a
+    funcao ficar testavel sem tocar disco real em todo teste.
+    """
+    errors: list[str] = []
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        errors.append(
+            f"schema_version deve ser {SCHEMA_VERSION}, veio {manifest.get('schema_version')!r}"
+        )
+    seen: set[str] = set()
+    for entry in manifest.get("claims", []):
+        cid = entry.get("id", "<sem id>")
+        if not ID_RE.match(str(cid)):
+            errors.append(f"{cid}: id fora do formato VNX-NNN")
+        if cid in seen:
+            errors.append(f"{cid}: id repetido")
+        seen.add(cid)
+        if entry.get("type") not in TYPES:
+            errors.append(f"{cid}: type desconhecido: {entry.get('type')!r}")
+        state = entry.get("state")
+        if state not in STATES:
+            errors.append(f"{cid}: state desconhecido: {state!r}")
+            continue
+        if state == "PROVADA":
+            errors.extend(_validate_proof(entry, sources))
+        else:
+            if not entry.get("note"):
+                errors.append(f"{cid}: state {state} exige note com o motivo")
+            if entry.get("proof"):
+                errors.append(f"{cid}: proof so e aceita em PROVADA")
+    return errors
+
+
+def _validate_path_field(cid: str, field_name: str, value: str) -> tuple[list[str], Path | None]:
+    """Resolve um campo de caminho de `proof` (`path` ou `test`) sob ROOT e
+    devolve (erros, caminho resolvido ou None).
+
+    Tres formas de falha, cada uma com mensagem propria porque cada uma
+    aponta para um conserto diferente:
+    - campo AUSENTE (string vazia ou chave faltando): quem escreveu o
+      manifesto esqueceu de preencher.
+    - campo FORA DO REPOSITORIO: `ROOT / valor` descarta ROOT quando `valor`
+      e absoluto (comportamento documentado do operador `/` do pathlib), e
+      `../` sobe da raiz -- as duas formas fariam o manifesto apontar para
+      fora do repositorio sem erro nenhum se so checassemos existencia. O
+      manifesto e editado a mao e a Task 7 vai EXECUTAR `cmd` do mesmo
+      arquivo, entao um typo de barra inicial muda de sentido em silencio, e
+      de forma diferente entre workstation Windows e CI Linux -- por isso
+      esta checagem roda ANTES da checagem de existencia, nao depois.
+    - campo aponta para dentro do repositorio mas o arquivo nao existe la:
+      erro de digitacao no caminho, nao de escopo.
+    """
+    if not value:
+        return [f"{cid}: proof.{field_name} ausente"], None
+    candidate = (ROOT / value).resolve()
+    if not candidate.is_relative_to(ROOT):
+        return [f"{cid}: proof.{field_name} fora do repositorio: {value!r}"], None
+    if not candidate.exists():
+        return [f"{cid}: proof.{field_name} inexistente: {value!r}"], None
+    return [], candidate
+
+
+def _validate_proof(entry: dict, sources: dict) -> list[str]:
+    """Valida a prova de uma entrada PROVADA, tipada por `proof.kind`.
+
+    Duas restricoes cruzam type x kind, e nenhuma das duas e negociavel:
+
+    - `artifact` NUNCA prova `type: number`. Um artefato so mostra que codigo
+      ou teste existe, nao que um numero especifico ("94,5% de acerto") saiu
+      dele. Sem esta regra o manifesto aceitaria "veja o arquivo" no lugar de
+      uma medicao de verdade, e a alegacao numerica ficaria de fato sem
+      lastro atras de uma prova que parece valida.
+    - `type: external_fact` SO aceita `source`. Versao de servico ou feature
+      de spec e fato de terceiro -- so se prova citando a documentacao
+      oficial versionada que este repositorio ja rastreia em
+      `knowledge/sources.lock.json`. Comando ou artefato local nao alcança
+      fato que vive fora do repositorio.
+    """
+    cid = entry.get("id", "<sem id>")
+    proof = entry.get("proof")
+    if not isinstance(proof, dict):
+        return [f"{cid}: PROVADA sem proof"]
+    kind = proof.get("kind")
+    if kind not in PROOF_KINDS:
+        return [f"{cid}: proof.kind desconhecido: {kind!r}"]
+
+    errors: list[str] = []
+    claim_type = entry.get("type")
+    if claim_type == "external_fact" and kind != "source":
+        errors.append(f"{cid}: external_fact exige proof source")
+
+    if kind == "artifact":
+        if claim_type == "number":
+            errors.append(f"{cid}: proof artifact nao prova alegacao numerica")
+        path_errors, _ = _validate_path_field(cid, "path", proof.get("path", ""))
+        errors.extend(path_errors)
+        test_errors, test_path = _validate_path_field(cid, "test", proof.get("test", ""))
+        errors.extend(test_errors)
+        if test_path is not None and proof.get("symbol"):
+            symbol = proof["symbol"]
+            texto_teste = test_path.read_text(encoding="utf-8")
+            # Substring nua bate em qualquer lugar do arquivo, inclusive
+            # dentro do literal de string de outro `proof["symbol"]` escrito
+            # no proprio arquivo de teste -- caso real encontrado ao rodar
+            # esta suite: o nome do simbolo negativo do teste de regressao
+            # aparecia, sem chamada nenhuma, dentro do proprio arquivo que a
+            # checagem le, e a checagem aceitava isso como referencia valida.
+            # Exigir forma de chamada (`simbolo(`, `alias.simbolo(` ou
+            # `mod.alias.simbolo(`) elimina esse falso positivo sem custar
+            # precisao real: o proposito e confirmar que o teste EXERCITA o
+            # simbolo, nao so o menciona. O prefixo qualificador e generico
+            # (nao trava em `gate.`) porque a Task 9 vai anexar prova
+            # `artifact` para dezenas de alegacoes de capacidade contra
+            # modulos arbitrarios, cujos testes importam do jeito que
+            # importam -- travar no alias deste arquivo quebraria todo
+            # simbolo importado sob outro nome.
+            referenciado = re.search(
+                rf"(?:[\w.]+\.)?{re.escape(symbol)}\s*\(", texto_teste
+            )
+            if not referenciado:
+                errors.append(f"{cid}: proof.test nao referencia {symbol}")
+    elif kind == "source":
+        if proof.get("source_id") not in sources:
+            errors.append(
+                f"{cid}: source_id fora de knowledge/sources.lock.json: "
+                f"{proof.get('source_id')!r}"
+            )
+    else:
+        if not proof.get("cmd"):
+            errors.append(f"{cid}: proof command sem cmd")
+        if proof.get("tier") not in TIERS:
+            errors.append(f"{cid}: proof.tier deve ser fast ou slow, veio {proof.get('tier')!r}")
+        expect = proof.get("expect") or {}
+        expect_kind = expect.get("kind")
+        if expect_kind not in EXPECT_KINDS:
+            errors.append(f"{cid}: expect.kind deve ser number ou contains")
+        elif expect_kind == "number":
+            # `pattern` truthy nao basta: a Task 7 vai compilar este regex e
+            # extrair o grupo 1 do stdout do comando. Um regex sem grupo de
+            # captura ou com sintaxe invalida passaria na checagem antiga e
+            # so explodiria na hora de rodar -- tarde demais para um erro que
+            # a validacao do manifesto deveria ter pego. Compilar aqui, com
+            # `try`, transforma "regex invalido" num erro de manifesto
+            # (mensagem clara, apontando o id) em vez de uma excecao de
+            # execucao sem contexto nenhum la na frente.
+            pattern = expect.get("pattern")
+            if not pattern:
+                errors.append(f"{cid}: expect number exige pattern com um grupo de captura")
+            else:
+                try:
+                    compiled = re.compile(pattern)
+                except re.error as exc:
+                    errors.append(f"{cid}: expect.pattern invalido: {exc}")
+                else:
+                    if compiled.groups < 1:
+                        errors.append(
+                            f"{cid}: expect number exige pattern com um grupo de captura"
+                        )
+        elif expect_kind == "contains" and not expect.get("value"):
+            # Mesmo raciocinio do lado "number": sem `value` nao ha o que
+            # procurar no stdout, e a Task 7 receberia uma prova que nao da
+            # para executar.
+            errors.append(f"{cid}: expect contains exige value")
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full", action="store_true", help="Inclui provas tier slow.")
