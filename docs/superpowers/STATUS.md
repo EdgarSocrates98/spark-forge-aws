@@ -1,14 +1,15 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-18
-**Commit de referência:** fechamento da branch `feat/fase6b-sf-cfg` — expansão
-agêntica v2 (30 agentes `sf-*`, 20 skills, 35 áreas de coordenação `structural`,
-runtime de supervisão em `sparkforge/agents/`, ferramental em `sparkforge/tools/`
-e pacote offline com 43 documentos). **Nenhuma regra executável, extrator ou
-fact de diagnóstico mudou nesta branch** — os números de detecção abaixo são os
-mesmos de `feat/preservacao-semantica`; o que mudou foi o denominador do
-catálogo. Fechamentos anteriores: vendorização do ecossistema caveman
-(2026-08-07) e `feat/preservacao-semantica` (2026-08-05)
+**Atualizado em:** 2026-08-21
+**Commit de referência:** `46b1187`, fechamento da auditoria de lastro do vNext
+sobre a branch `feat/fase6b-sf-cfg` — classificou as 184 alegações que
+`a5b9e96` publicou em `docs/vnext/` (48 `PROVADA`, 136 `REMOVIDA`) e removeu o
+texto sem lastro dos documentos; ver a seção *Fase vNext* abaixo.
+Fechamentos anteriores: expansão agêntica v2 (2026-08-18), vendorização do
+ecossistema caveman (2026-08-07) e `feat/preservacao-semantica` (2026-08-05).
+**Nenhuma regra executável, extrator ou fact de diagnóstico mudou na expansão
+agêntica v2** — os números de detecção abaixo são os mesmos de
+`feat/preservacao-semantica`; o que mudou foi o denominador do catálogo.
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -36,11 +37,11 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **5447** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **5627** passando, 5 skipped (5632 coletados) | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **9 de 116** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
-| Extratores de facts | **21** | `sparkforge/facts/*.py` |
+| Extratores de facts | **20** | `sparkforge/facts/*.py` |
 | Fact kinds distintos emitidos | **121** | união de `EMITTED_KINDS` |
 | Regras de diagnóstico | **116**, sendo **55 executáveis** e **61 `structural`** (26 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
@@ -2306,6 +2307,115 @@ preservada — o que mudou foi quebra de linha, nome de constante extraída
 (`_TERM_RE`, `_S3_RE`, `_TABLE_RE`) e `__all__` explícito em
 `sparkforge/tools/__init__.py`, que era o que os `F401` acusavam. Os módulos
 sem docstring ganharam um que diz **por que existem**, não o que fazem.
+
+## Fase vNext — Agent Factory, o gate de lastro e a auditoria de 184 alegações — **PARCIAL** (2026-08-21)
+
+`a5b9e96` publicou 17 documentos sob `docs/vnext/` afirmando capacidade e KPIs
+que o repositório não sustentava. Este arquivo não citava o commit até agora;
+esta seção fecha a lacuna e corrige os números da tabela acima que a auditoria
+mediu errados.
+
+### O que `a5b9e96` entregou de fato
+
+Sete pacotes novos de infraestrutura têm teste comportamental real —
+`sparkforge/registry` (canonical registry), `sparkforge/economy` (motor de
+tiers), `sparkforge/context` (funil de contexto), `sparkforge/adapters/platforms`
+(compilador de 7 plataformas), `sparkforge/workflows` (DAG em waves),
+`sparkforge/evals` (runner de avaliação) e `sparkforge/observability`
+(traces em SQLite) — nomeados assim em `docs/vnext/FINAL-REPORT.md` §6, com os
+sete arquivos de teste (`test_canonical_registry.py`,
+`test_economy_engine.py`, `test_context_funnel.py`,
+`test_platform_compilers.py`, `test_workflows_dag.py`, `test_eval_runner.py`,
+`test_observability.py`) presentes em `tests/`.
+
+Oito módulos de domínio, em contraste, são esqueleto: cada um com um teste
+entre 17 e 58 linhas.
+
+| Módulo | Linhas | Teste |
+|---|---|---|
+| `sparkforge/migration` | 150 | `test_migration_glue.py`, 36 linhas |
+| `sparkforge/lakeformation` | 218 | `test_lakeformation_engine.py`, 58 linhas |
+| `sparkforge/iceberg` | 179 | `test_iceberg_doctor.py`, 36 linhas |
+| `sparkforge/errors` | 77 | `test_error_matcher.py`, 26 linhas (compartilhado com `reliability`) |
+| `sparkforge/databases` | 127 | `test_database_specialists.py`, 46 linhas (compartilhado com `streaming`) |
+| `sparkforge/streaming` | 116 | `test_database_specialists.py`, 46 linhas (compartilhado com `databases`) |
+| `sparkforge/terraform` | 144 | `test_terraform_plan_scanner.py`, 29 linhas |
+| `sparkforge/reliability` | 95 | `test_error_matcher.py`, 26 linhas (compartilhado com `errors`) |
+
+Para comparação de escala: `sparkforge/adapters` — o pacote pré-existente que
+os sete novos compiladores de plataforma estendem — tem **7813** linhas e um
+gate de paridade que roda (`tests/test_fixtures_golden_funcval.py` e o passo
+de CI descrito na seção de expansão agêntica acima). Os oito módulos de domínio
+somados (1106 linhas) não chegam a um sétimo disso, e nenhum tem gate de
+paridade equivalente.
+
+Dois pacotes adicionais, `sparkforge/cloud` (58 linhas) e
+`sparkforge/providers` (22 linhas), não têm teste nenhum que os importe ou
+chame — `docs/vnext/FINAL-REPORT.md` §4 registra isso por escrito e por isso
+os exclui do inventário de "Novos Pacotes e Módulos".
+
+### A auditoria: 184 alegações, 48 provadas, 136 removidas
+
+`docs/vnext/claims.lock.json` extraiu 184 alegações numéricas e de capacidade
+dos 17 documentos. **48** carregam `state: PROVADA` com prova reproduzível
+(comando, artefato ou referência de código); **136** carregam
+`state: REMOVIDA`, e o texto correspondente saiu dos documentos — não foi
+reescrito, foi apagado, com a razão de cada uma registrada no próprio
+`claims.lock.json`. Entre as removidas: a contagem de extratores de facts
+(documentos diziam **21**, `sparkforge/facts/*.py` tem **20** — `VNX-042`,
+`VNX-057`) e a de catálogos de regras (documentos diziam **52**,
+`rules/catalog/*.yaml` tem **51** — `VNX-059`, `VNX-115`). A tabela de KPIs de
+economia que `docs/vnext/FINAL-REPORT.md` publicava originalmente (taxa de
+sucesso, mediana de tokens, custo por mil tarefas, cache hit rate) não tinha
+artefato de medição no repositório — nenhum comando reproduzia nenhum dos dois
+lados de nenhuma linha — e foi removida pela mesma razão, não reescrita com
+números novos.
+
+### Dois achados que importam além dos números
+
+`docs/vnext/AGENT-CATALOG.md` §2 listava sete "Core Coordinators" — uma
+camada permanente de supervisão e roteamento. Nenhum dos sete existe em
+`agents/`, o diretório canônico espelhado em `.claude/agents/`,
+`.agents/agents/` e `.github/agents/` e verificado por
+`tests/test_agents_parity.py::TestMirrors`.
+
+A mesma tabela, §3, tinha seis linhas (`sf-pyspark-specialist`,
+`sf-storage-specialist`, `sf-runtime-specialist`, `sf-token-verifier`,
+`sf-cost-reviewer`, `sf-security-reviewer`) marcadas "Convertido em Skill
+Lazy-Loaded". Nenhum foi convertido: os seis continuam agentes ativos em
+`agents/`, roteados de fato em `rules/catalog/routing.yaml` e exercitados por
+`tests/test_router_agents.py`. Pior: de duas das seis skills-alvo declaradas
+(`data-platform-finops` para `sf-cost-reviewer`, `security-review` para
+`sf-security-reviewer`) **nenhuma existe** em `skills/*/SKILL.md` — a
+alegação não só descrevia uma migração que não aconteceu, apontava para um
+destino que nunca foi criado.
+
+### O gate que impede a reintrodução
+
+`scripts/check_vnext_claims.py` roda contra `docs/vnext/claims.lock.json` e
+reprova o commit se um número ou capacidade citado num documento divergir do
+que o `state`/`proof` da alegação registra — `python
+scripts/check_vnext_claims.py` reporta `0 divergencia(s).` nesta revisão. O
+motivo de cada uma das 184 linhas — por que foi provada ou por que foi
+removida — vive em `docs/vnext/claims.lock.json`, campo por campo (`state`,
+`proof`, `context`), não em prosa solta neste arquivo.
+
+### Status: PARCIAL
+
+Sete pacotes de infraestrutura com comportamento testado não fazem uma
+"Agent Factory" — fazem sete pacotes de infraestrutura testados. Os oito
+módulos de domínio que dariam à infraestrutura algo de AWS/Spark para
+orquestrar são esqueleto (um teste de dezenas de linhas cada, sem gate de
+paridade), dois pacotes adicionais não têm teste nenhum, e a documentação que
+anunciava o conjunto como pronto tinha 136 alegações sem lastro — quase três
+vezes as 48 que se sustentaram. Nada aqui está quebrado ou revertido: o gate
+novo impede regressão, e o que ficou provado continua provado. Mas o volume
+comparativo (`adapters` 7813 linhas com gate de paridade vs. domínio 1106
+linhas sem nenhum) é o oposto do que a versão original do relatório afirmava.
+**PARCIAL** é a leitura honesta; **CONCLUÍDA** exigiria que os módulos de
+domínio tivessem cobertura e gate na mesma ordem de grandeza da
+infraestrutura que os invoca, e isso não foi medido em lugar nenhum porque não
+existe ainda.
 
 ## Dívidas abertas
 
