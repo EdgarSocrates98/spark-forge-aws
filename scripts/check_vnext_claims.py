@@ -17,6 +17,9 @@ from __future__ import annotations
 
 import argparse
 import re
+import shlex
+import subprocess
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +32,14 @@ STATES = frozenset({"PROVADA", "SEM_LASTRO", "REMOVIDA"})
 TYPES = frozenset({"number", "capability", "external_fact"})
 TIERS = frozenset({"fast", "slow"})
 PROOF_KINDS = frozenset({"command", "artifact", "source"})
+# Uma prova aponta para UM stream porque aceitar qualquer um dos dois deixa
+# texto nao relacionado provar a alegacao: stdout com a contagem real errada
+# e stderr com uma mensagem de erro que por acaso contem o numero esperado
+# (ou vice-versa) passariam se `run_command_proofs` aceitasse "qualquer um
+# dos dois" -- e "qualquer um dos dois" e o mesmo OR fabricado por outro
+# nome que a concatenacao de streams ja era. `stdout` e o default por ser o
+# canal normal de saida de um comando bem-sucedido.
+STREAMS = frozenset({"stdout", "stderr"})
 
 
 def rel(path: Path) -> str:
@@ -404,8 +415,23 @@ def _validate_proof(entry: dict, sources: dict) -> list[str]:
                 f"{proof.get('source_id')!r}"
             )
     else:
-        if not proof.get("cmd"):
+        cmd = proof.get("cmd")
+        if not cmd:
             errors.append(f"{cid}: proof command sem cmd")
+        elif "\\" in cmd:
+            # `shlex.split` interpreta `\` como escape POSIX em qualquer
+            # sistema operacional -- inclusive nesta workstation Windows,
+            # onde `cmd` do manifesto e digitado a mao (Task 9). Ele quebra
+            # alto, sem shell nenhum de por meio: `shlex.split(r"python
+            # scripts\check.py")` vira `['python', 'scriptscheck.py']`, e a
+            # barra some em silencio sem lancar excecao aqui. Barra normal
+            # `/` funciona igual em Windows e Linux, entao rejeitar aqui,
+            # na validacao do manifesto, poupa quem escreve `cmd` de
+            # descobrir isso so quando a Task 7 tenta executar.
+            errors.append(
+                f"{cid}: proof.cmd contem '\\\\' -- use barra normal '/' (funciona em "
+                "Windows e Linux); shlex.split trata '\\\\' como escape POSIX e corrompe o caminho"
+            )
         if proof.get("tier") not in TIERS:
             errors.append(f"{cid}: proof.tier deve ser fast ou slow, veio {proof.get('tier')!r}")
         expect = proof.get("expect") or {}
@@ -439,6 +465,187 @@ def _validate_proof(entry: dict, sources: dict) -> list[str]:
             # procurar no stdout, e a Task 7 receberia uma prova que nao da
             # para executar.
             errors.append(f"{cid}: expect contains exige value")
+        stream = expect.get("stream", "stdout")
+        if stream not in STREAMS:
+            # Mesmo estilo de `tier` e `expect.kind`: valor fora do
+            # vocabulario aceito e erro de manifesto, apontando o id, em vez
+            # de silenciosamente virar `None` e a Task 7 decidir algo por
+            # conta propria na hora de executar.
+            errors.append(f"{cid}: expect.stream deve ser stdout ou stderr, veio {stream!r}")
+    return errors
+
+
+def collect_claims(root: Path = VNEXT) -> list[dict]:
+    """Todas as alegacoes numericas de todo documento auditado, mais toda
+    alegacao de capacidade, numa unica lista -- a entrada que `check_orphans`
+    compara contra o manifesto."""
+    found: list[dict] = []
+    for path in audited_docs(root):
+        found.extend(extract_numbers(path))
+    found.extend(extract_capabilities(root))
+    return found
+
+
+def claim_key(entry: dict) -> tuple[str, str, str]:
+    """A chave ignora `line` de proposito: editar prosa nao deve quebrar o
+    gate, mas mover uma alegacao de documento deve."""
+    return (entry["doc"], entry["type"], entry["text"])
+
+
+def check_orphans(found: list[dict], manifest: dict) -> list[str]:
+    """Fail-closed nos dois sentidos: alegacao no documento sem entrada no
+    manifesto E entrada no manifesto sem alegacao no documento sao ambos
+    erro -- e a garantia central deste gate (ver `tests/test_docs_
+    coverage.py` para o defeito irmao que esta checagem existe para evitar).
+
+    Comparacao por multiset (`Counter`): a mesma alegacao aparecendo duas
+    vezes no mesmo documento exige duas entradas no manifesto.
+
+    `state: REMOVIDA` sai da segunda checagem -- o proposito da entrada e
+    justamente registrar que o texto foi apagado do documento. Mas se uma
+    alegacao REMOVIDA REAPARECER no documento, isso e erro proprio, com
+    mensagem propria, porque o manifesto estava desatualizado sobre o estado
+    real do texto.
+    """
+    claims = manifest.get("claims", [])
+
+    # Guarda `line` por chave, do lado documento e do lado manifesto -- nao
+    # so a contagem. Task 9 classifica estas mensagens a mao contra o corpus
+    # real (342 entradas, 218 chaves distintas, 56 colidindo): reportar so
+    # `{doc} :: {text}` sem a linha deixa ate colisao DISTINGUIVEL por linha
+    # indistinguivel na mensagem, e quem le precisa grepar o documento para
+    # decodificar o que o gate ja sabia.
+    doc_lines: dict[tuple[str, str, str], list[int]] = {}
+    for item in found:
+        doc_lines.setdefault(claim_key(item), []).append(item.get("line"))
+    manifest_lines: dict[tuple[str, str, str], list[int]] = {}
+    for c in claims:
+        if c.get("state") != "REMOVIDA":
+            manifest_lines.setdefault(claim_key(c), []).append(c.get("line"))
+    removed = {claim_key(c) for c in claims if c.get("state") == "REMOVIDA"}
+
+    in_docs = Counter({key: len(lines) for key, lines in doc_lines.items()})
+    in_manifest = Counter({key: len(lines) for key, lines in manifest_lines.items()})
+
+    errors: list[str] = []
+    for key, count in (in_docs - in_manifest).items():
+        linhas = ", ".join(str(n) for n in doc_lines[key])
+        if key in removed:
+            errors.append(
+                f"alegacao marcada REMOVIDA ainda aparece no documento ({count}x): "
+                f"{key[0]} :: {key[2]} (linhas: {linhas})"
+            )
+        else:
+            errors.append(
+                f"alegacao sem entrada no manifesto ({count}x): {key[0]} :: {key[2]} "
+                f"(linhas: {linhas})"
+            )
+    for key, count in (in_manifest - in_docs).items():
+        linhas = ", ".join(str(n) for n in manifest_lines[key])
+        errors.append(
+            f"entrada orfa no manifesto ({count}x): {key[0]} :: {key[2]} (linhas: {linhas})"
+        )
+    return errors
+
+
+# Timeout por tier, nao um valor fixo para as duas: uma prova `fast` que
+# trava bloquearia o gate por ate quinze minutos se usasse o mesmo teto de
+# uma prova `slow` (que existe justamente para comando caro/demorado).
+# `fast` e o tier default do dia a dia -- travar o gate inteiro por um
+# comando que deveria ser rapido e um sintoma (comando errado, ambiente
+# quebrado) que precisa aparecer rapido, nao em quinze minutos.
+_TIMEOUT_BY_TIER = {"fast": 60, "slow": 900}
+
+
+def _check_expect(output: str, expect: dict) -> tuple[bool, str]:
+    """Confere UM stream isolado (stdout OU stderr, nunca os dois juntos)
+    contra `expect`. Devolve (passou, motivo) -- motivo so e usado pelo
+    chamador quando `passou` e False.
+
+    Concatenar `stdout + stderr` antes de conferir fabrica casamento que
+    nenhum dos dois streams produziu sozinho: stdout `"4"` + stderr
+    `"1 tools"` concatenados formam `"41 tools"`, que bate com o padrao
+    `(\\d+) tools` valor 41 mesmo sem nenhum stream ter escrito "41 tools"
+    de verdade. Cada stream precisa satisfazer `expect` sozinho para a
+    alegacao contar como provada.
+    """
+    if expect.get("kind") == "contains":
+        value = expect.get("value")
+        if value not in output:
+            return False, f"saida nao contem {value!r}"
+        return True, ""
+    match = re.search(expect.get("pattern", ""), output)
+    if not match:
+        return False, f"padrao {expect.get('pattern')!r} nao casou na saida"
+    # O grupo capturado pode nao ser inteiro (padrao mal escrito) ou o regex
+    # pode ter casado sem grupo nenhum participar (grupo opcional que nao
+    # bateu) -- `_validate_proof` so garante que o padrao COMPILA e tem ao
+    # menos um grupo, nao que o grupo sempre captura digito. Sem esta
+    # guarda, um manifesto com padrao ruim faria o gate explodir com
+    # traceback cru em vez de reportar um erro de auditoria legivel.
+    try:
+        obtained = int(match.group(1))
+    except (ValueError, IndexError) as exc:
+        return False, f"grupo capturado por expect.pattern nao e inteiro: {exc}"
+    expected = expect.get("value")
+    if obtained != expected:
+        return False, f"prova command nao reproduz — esperado {expected}, obtido {obtained}"
+    return True, ""
+
+
+def run_command_proofs(manifest: dict, include_slow: bool) -> list[str]:
+    """Executa toda prova `command` do manifesto e compara a saida contra
+    `expect`.
+
+    `shlex.split` em vez de `shell=True` e deliberado: os comandos vem de um
+    arquivo versionado e revisado, mas entregar uma string para um shell e
+    uma superficie de execucao livre, e nenhuma prova legitima precisa de
+    pipe, redirecionamento ou expansao de shell -- `shlex.split` reduz o
+    comando a uma lista de argumentos executada diretamente, sem shell no
+    meio.
+    """
+    errors: list[str] = []
+    for entry in manifest.get("claims", []):
+        proof = entry.get("proof") or {}
+        if proof.get("kind") != "command":
+            continue
+        if proof.get("tier") == "slow" and not include_slow:
+            continue
+        cid = entry.get("id", "<sem id>")
+        timeout = _TIMEOUT_BY_TIER.get(proof.get("tier"), 900)
+        try:
+            completed = subprocess.run(  # noqa: S603 -- argv de shlex.split, sem shell
+                shlex.split(proof["cmd"]),
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            errors.append(f"{cid}: prova command nao executou: {exc}")
+            continue
+        # `completed.returncode` NAO vira gate de pass/fail aqui, de proposito:
+        # `python -m pytest --collect-only -q` (candidato real a prova command
+        # neste repositorio) sai com codigo diferente de zero em varios cenarios
+        # de colecao parcial mesmo imprimindo a contagem correta -- travar em
+        # returncode == 0 rejeitaria provas legitimas. A defesa contra "comando
+        # crashou e por acaso imprimiu o texto esperado" vem de `expect`
+        # exigir substring exata ou numero extraido por regex com grupo de
+        # captura, DE UM SO stream, o que `expect.stream` declara.
+        expect = proof.get("expect") or {}
+        # A prova aponta para UM stream, nunca "qualquer um dos dois": aceitar
+        # o primeiro que bater deixa texto nao relacionado no stream errado
+        # provar a alegacao -- caso real encontrado: stdout com a contagem
+        # real (errada) e stderr com uma mensagem de erro que por acaso
+        # contem o numero esperado, ou vice-versa, passariam se qualquer
+        # stream servisse. `stdout` e o default quando `expect.stream` esta
+        # ausente -- `_validate_proof` ja rejeita qualquer valor fora de
+        # `STREAMS`, entao aqui so os dois valores validos chegam.
+        stream_name = expect.get("stream", "stdout")
+        stream_output = completed.stderr if stream_name == "stderr" else completed.stdout
+        ok, motivo = _check_expect(stream_output, expect)
+        if not ok:
+            errors.append(f"{cid}: prova command nao reproduz em {stream_name} -- {motivo}")
     return errors
 
 

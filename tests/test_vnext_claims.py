@@ -510,3 +510,218 @@ class TestValidacaoDaProva:
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
         )
         assert any("expect contains exige value" in e for e in erros)
+
+    def test_cmd_com_barra_invertida_e_rejeitado(self):
+        # `shlex.split` trata `\` como escape POSIX em qualquer sistema --
+        # inclusive nesta workstation Windows, onde a Task 9 digita `cmd` a
+        # mao. `shlex.split(r"python scripts\check.py")` corrompe o caminho
+        # em silencio (sem lancar excecao), entao a rejeicao precisa
+        # acontecer aqui, na validacao do manifesto.
+        prova = {
+            "kind": "command",
+            "cmd": r"python scripts\check_thing.py",
+            "tier": "fast",
+            "expect": {"kind": "contains", "value": "ok"},
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("barra normal" in e for e in erros)
+
+    def test_expect_stream_invalido_e_rejeitado(self):
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(1)"',
+            "tier": "fast",
+            "expect": {"kind": "contains", "value": "1", "stream": "stdin"},
+        }
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("expect.stream" in e for e in erros)
+
+
+class TestOrfaos:
+    def _achado(self, text="81,8%", doc="docs/vnext/FINAL-REPORT.md", line=1):
+        return {"doc": doc, "line": line, "text": text, "context": "", "type": "number"}
+
+    def test_alegacao_sem_entrada_no_manifesto_falha(self):
+        erros = gate.check_orphans([self._achado()], manifesto([]))
+        assert any("sem entrada no manifesto" in e for e in erros)
+
+    def test_entrada_sem_alegacao_no_documento_falha(self):
+        erros = gate.check_orphans([], manifesto([entrada(state="SEM_LASTRO", note="pendente")]))
+        assert any("orfa no manifesto" in e for e in erros)
+
+    def test_removida_nao_conta_como_orfa(self):
+        erros = gate.check_orphans([], manifesto([entrada()]))
+        assert erros == []
+
+    def test_removida_que_reaparece_no_documento_falha(self):
+        erros = gate.check_orphans([self._achado()], manifesto([entrada()]))
+        assert any("REMOVIDA ainda aparece" in e for e in erros)
+
+    def test_removida_que_reaparece_multiplas_vezes_reporta_contagem(self):
+        # A ramificacao irma ("sem entrada no manifesto") ja reporta
+        # ({count}x); esta ramificacao (REMOVIDA reaparecendo) precisa da
+        # mesma contagem, senao reaparecer 1 vez ou 5 vezes le identico.
+        achados = [self._achado(), self._achado(), self._achado()]
+        erros = gate.check_orphans(achados, manifesto([entrada()]))
+        msg = next(e for e in erros if "REMOVIDA ainda aparece" in e)
+        assert "(3x)" in msg
+
+    def test_mensagem_de_orfao_no_documento_lista_as_linhas_das_ocorrencias(self):
+        achados = [self._achado(text="7", line=10), self._achado(text="7", line=45)]
+        erros = gate.check_orphans(achados, manifesto([]))
+        msg = next(e for e in erros if "sem entrada no manifesto" in e)
+        assert "10" in msg
+        assert "45" in msg
+
+    def test_mensagem_de_entrada_orfa_usa_a_linha_do_manifesto(self):
+        m = manifesto([entrada(state="SEM_LASTRO", note="pendente", line=77)])
+        erros = gate.check_orphans([], m)
+        msg = next(e for e in erros if "orfa no manifesto" in e)
+        assert "77" in msg
+
+    def test_alegacao_repetida_duas_vezes_no_documento_exige_duas_entradas(self):
+        # Multiset: a mesma alegacao aparecendo duas vezes no mesmo documento
+        # com apenas uma entrada no manifesto continua sendo alegacao sem
+        # lastro -- comparar por conjunto (em vez de Counter) deixaria a
+        # segunda ocorrencia passar batida.
+        achados = [self._achado(), self._achado()]
+        erros = gate.check_orphans(achados, manifesto([entrada(state="SEM_LASTRO", note="x")]))
+        assert any("sem entrada no manifesto (1x)" in e for e in erros)
+
+    def test_nada_orfao_quando_contagens_batem_dos_dois_lados(self):
+        achados = [self._achado(), self._achado()]
+        m = manifesto(
+            [
+                entrada(state="SEM_LASTRO", note="x"),
+                entrada(state="SEM_LASTRO", note="y"),
+            ]
+        )
+        assert gate.check_orphans(achados, m) == []
+
+
+class TestColetaDeAlegacoes:
+    def test_junta_numeros_e_capacidades_de_documento_sintetico(self, tmp_path):
+        (tmp_path / "SINTETICO.md").write_text(DOC_SINTETICO, encoding="utf-8")
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(MATRIZ_SINTETICA, encoding="utf-8")
+        achados = gate.collect_claims(tmp_path)
+        tipos = {a["type"] for a in achados}
+        assert "number" in tipos
+        assert "capability" in tipos
+
+    def test_chave_ignora_linha_mas_nao_documento_tipo_ou_texto(self):
+        a = {"doc": "d.md", "line": 1, "text": "81,8%", "type": "number"}
+        b = {"doc": "d.md", "line": 99, "text": "81,8%", "type": "number"}
+        assert gate.claim_key(a) == gate.claim_key(b)
+
+
+class TestProvasCommand:
+    def _com_prova(self, cmd, expect, tier="fast"):
+        prova = {"kind": "command", "cmd": cmd, "tier": tier, "expect": expect}
+        return manifesto([entrada(state="PROVADA", proof=prova, type="number")])
+
+    def test_prova_que_reproduz_passa(self):
+        m = self._com_prova(
+            'python -c "print(41, \'tools\')"',
+            {"kind": "number", "pattern": r"(\d+) tools", "value": 41},
+        )
+        assert gate.run_command_proofs(m, include_slow=False) == []
+
+    def test_prova_que_nao_reproduz_falha_com_os_dois_valores(self):
+        m = self._com_prova(
+            'python -c "print(5447, \'tests\')"',
+            {"kind": "number", "pattern": r"(\d+) tests", "value": 5485},
+        )
+        erros = gate.run_command_proofs(m, include_slow=False)
+        assert any("esperado 5485, obtido 5447" in e for e in erros)
+
+    def test_streams_concatenados_nao_fabricam_casamento(self):
+        # Caso do reviewer: stdout escreve "4" e stderr escreve "1 tools",
+        # sem separador nenhum entre eles. Concatenar os dois formaria
+        # "41 tools", que bateria com o padrao `(\d+) tools` valor 41 mesmo
+        # sem nenhum stream, sozinho, ter escrito "41 tools". A alegacao so
+        # pode contar como provada se UM stream, isolado, satisfaz `expect`.
+        m = self._com_prova(
+            "python -c \"import sys; print('4', end=''); "
+            "sys.stderr.write('1 tools')\"",
+            {"kind": "number", "pattern": r"(\d+) tools", "value": 41},
+        )
+        erros = gate.run_command_proofs(m, include_slow=False)
+        assert erros != []
+        assert not any("prova command nao reproduz — esperado 41, obtido 41" in e for e in erros)
+
+    def test_stream_nao_declarado_nao_aceita_valor_que_so_o_stderr_produziu(self):
+        # Imagem espelhada do caso acima: stdout imprime a contagem REAL
+        # (errada), stderr imprime uma mensagem de erro que por acidente
+        # contem o numero esperado. Sem `expect.stream`, o default e stdout
+        # -- aceitar "qualquer um dos dois streams que bater" faria stderr
+        # provar a alegacao, mesmo a mensagem de erro nao sendo a fonte da
+        # verdade da prova.
+        m = self._com_prova(
+            'python -c "import sys; print(\'50 tests\'); '
+            "sys.stderr.write('unexpected error, expected around 100 tests to run')\"",
+            {"kind": "number", "pattern": r"(\d+) tests", "value": 100},
+        )
+        erros = gate.run_command_proofs(m, include_slow=False)
+        assert any("esperado 100, obtido 50" in e for e in erros)
+
+    def test_expect_stream_stderr_declarado_confere_so_o_stderr(self):
+        # Mesmo comando do teste acima, mas agora `expect.stream: "stderr"`
+        # aponta explicitamente para onde a prova deve olhar -- o gate
+        # confere SO esse stream, e o valor que ele carrega e aceito.
+        m = self._com_prova(
+            'python -c "import sys; print(\'50 tests\'); '
+            "sys.stderr.write('unexpected error, expected around 100 tests to run')\"",
+            {"kind": "number", "pattern": r"(\d+) tests", "value": 100, "stream": "stderr"},
+        )
+        assert gate.run_command_proofs(m, include_slow=False) == []
+
+    def test_tier_slow_nao_roda_por_padrao(self):
+        m = self._com_prova(
+            "comando-que-nao-existe-em-lugar-nenhum",
+            {"kind": "contains", "value": "nada"},
+            tier="slow",
+        )
+        assert gate.run_command_proofs(m, include_slow=False) == []
+        assert gate.run_command_proofs(m, include_slow=True) != []
+
+    def test_prova_contains_que_passa(self):
+        m = self._com_prova(
+            'python -c "print(\'ola mundo\')"',
+            {"kind": "contains", "value": "ola mundo"},
+        )
+        assert gate.run_command_proofs(m, include_slow=False) == []
+
+    def test_prova_contains_que_falha(self):
+        m = self._com_prova(
+            'python -c "print(\'ola mundo\')"',
+            {"kind": "contains", "value": "nao esta aqui"},
+        )
+        erros = gate.run_command_proofs(m, include_slow=False)
+        assert any("saida nao contem" in e for e in erros)
+
+    def test_comando_inexistente_reporta_erro_sem_estourar(self):
+        # OSError (FileNotFoundError) quando o executavel nao existe -- o
+        # gate precisa reportar isso como erro de auditoria, nao deixar a
+        # excecao subir crua.
+        m = self._com_prova(
+            "comando-que-definitivamente-nao-existe-no-path",
+            {"kind": "contains", "value": "x"},
+        )
+        erros = gate.run_command_proofs(m, include_slow=False)
+        assert any("nao executou" in e for e in erros)
+
+    def test_grupo_capturado_nao_inteiro_nao_estoura(self):
+        # `_validate_proof` so garante que o pattern compila e tem grupo de
+        # captura, nao que o grupo sempre casa com digitos -- um pattern que
+        # captura texto nao numerico precisa virar erro de auditoria legivel,
+        # nao ValueError cru subindo do `int()`.
+        m = self._com_prova(
+            'python -c "print(\'quarenta e um tools\')"',
+            {"kind": "number", "pattern": r"(\w+) tools", "value": 41},
+        )
+        erros = gate.run_command_proofs(m, include_slow=False)
+        assert any("nao e inteiro" in e for e in erros)
