@@ -1,10 +1,10 @@
 ---
 name: sf-runtime-specialist
-description: Analisar Glue, EMR, runtimes, capacidade e infraestrutura.
+description: Analisar Glue, EMR, runtimes, capacidade, infraestrutura e compatibilidade entre versoes numa migracao.
 tools: Read, Grep, Glob, Bash
 skills:
   - tool-specialist-routing
-rule_areas: [SF-GLUE, SF-EMR, SF-ENV]
+rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
