@@ -1,4 +1,5 @@
 import json
+import shutil
 import types
 from pathlib import Path
 
@@ -1671,3 +1672,98 @@ class TestHeadCommit:
         assert gate._head_commit() == "desconhecido"
         erro = capsys.readouterr().err
         assert "aviso" in erro
+
+
+class TestGateReal:
+    def test_o_manifesto_do_repositorio_esta_consistente(self):
+        manifest = gate.load_manifest()
+        assert gate.validate_manifest(manifest, gate._load_sources()) == []
+        assert gate.check_orphans(gate.collect_claims(), manifest) == []
+
+    def test_nenhuma_alegacao_ficou_pendente(self):
+        estados = {c["state"] for c in gate.load_manifest()["claims"]}
+        assert "SEM_LASTRO" not in estados
+
+    def test_alegacao_reintroduzida_no_documento_derruba_o_gate(self, tmp_path, monkeypatch):
+        (tmp_path / "adrs").mkdir()
+        (tmp_path / "NOVO.md").write_text("Ganho de 99,9% em tudo.\n", encoding="utf-8")
+        monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        erros = gate.check_orphans(gate.collect_claims(tmp_path), manifesto([]))
+        assert any("sem entrada no manifesto" in e for e in erros)
+
+    def test_o_gate_roda_no_ci(self):
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        assert "scripts/check_vnext_claims.py" in ci
+
+    def test_alegacao_removida_reintroduzida_no_documento_real_derruba_o_gate(
+        self, tmp_path, monkeypatch
+    ):
+        # Os quatro testes acima nao provam a garantia central deste gate:
+        # que texto REMOVIDO pelo audit e reintroduzido no documento REAL
+        # (nao numa fixture sintetica que nunca existiu) derruba o CI. Uma
+        # fixture sintetica so prova que o mecanismo de deteccao funciona no
+        # vacuo -- nao que ele enxerga o corpus real, com a mesma allowlist e
+        # os mesmos padroes estruturais (Tier/Layer/Wave/Demo, titulo
+        # numerado, marcador de lista) que ja escondem numero de verdade
+        # hoje. A entrada REMOVIDA e escolhida por PROGRAMA, nao por id
+        # fixo -- um id copiado para dentro do teste apodrece do mesmo jeito
+        # que um numero copiado apodreceria: o corpus muda (Task 9 ainda
+        # pode reclassificar), o teste nao pode travar num ponto congelado
+        # dele. Restringe a `type: number`: reintroduzir uma alegacao de
+        # capacidade exigiria reconstruir a estrutura de tabela ou item de
+        # inventario que `extract_capabilities` exige -- fora do escopo
+        # desta garantia, que ja fica provada reintroduzindo um numero.
+        manifest = gate.load_manifest()
+        removida = next(
+            c
+            for c in manifest["claims"]
+            if c["state"] == "REMOVIDA" and c["type"] == "number"
+        )
+
+        copia = tmp_path / "vnext"
+        shutil.copytree(ROOT / "docs" / "vnext", copia)
+
+        # `_display_path` cai para caminho absoluto quando o documento nao
+        # esta sob ROOT (o caso da copia em tmp_path) -- sem remapear o
+        # campo `doc` do manifesto para o mesmo formato, `claim_key` nunca
+        # bateria e o teste provaria a coisa errada (chave sempre
+        # desencontrada dos dois lados, nao o mecanismo de REMOVIDA
+        # reaparecendo).
+        def remapeia(doc: str) -> str:
+            rel_path = Path(doc).relative_to("docs/vnext")
+            return (copia / rel_path).resolve().as_posix()
+
+        manifesto_remapado = {
+            **manifest,
+            "claims": [dict(c, doc=remapeia(c["doc"])) for c in manifest["claims"]],
+        }
+
+        alvo = copia / Path(removida["doc"]).relative_to("docs/vnext")
+        alvo.write_text(
+            alvo.read_text(encoding="utf-8")
+            + f"\nTexto reintroduzido de proposito: {removida['text']} de novo.\n",
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(gate, "VNEXT", copia)
+        achados = gate.collect_claims(copia)
+        erros = gate.check_orphans(achados, manifesto_remapado)
+        assert any("REMOVIDA ainda aparece" in e for e in erros)
+
+    def test_prova_command_que_para_de_reproduzir_derruba_a_alegacao_provada(self):
+        # Simetria com o teste acima: uma alegacao PROVADA nao e prova para
+        # sempre -- o comando que a sustenta pode mudar de saida (codigo
+        # editado, contagem que se moveu) sem que ninguem toque o manifesto.
+        # `run_command_proofs` e o mecanismo que capta isso; testa-lo aqui,
+        # dentro de TestGateReal, amarra a garantia ao caminho que o CI
+        # realmente exercita (`audit()` chama esta mesma funcao), nao so ao
+        # unitario isolado que `TestProvasCommand` ja cobre em separado.
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(41)"',
+            "tier": "fast",
+            "expect": {"kind": "number", "pattern": r"(\d+)", "value": 999},
+        }
+        manifest = manifesto([entrada(state="PROVADA", proof=prova, type="number")])
+        erros = gate.run_command_proofs(manifest, include_slow=False)
+        assert any("esperado 999" in e and "obtido 41" in e for e in erros)
