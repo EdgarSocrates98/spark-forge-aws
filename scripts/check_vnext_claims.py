@@ -63,10 +63,26 @@ def audited_docs(root: Path = VNEXT) -> list[Path]:
 # de um ou dois digitos (`8 coordenadores`, `38 agentes`) e a forma dominante
 # de alegacao nestes documentos, e por isso nao tem piso de tamanho aqui --
 # um numero que o extrator nao ve e uma alegacao que escapa da auditoria para
-# sempre, o que pesa mais que o ruido de sobra-capturar. O lookbehind e o
-# lookahead descartam sozinhos qualquer numero colado a `-` ou a letra, o que
-# mata data ISO (`2026-08-21`) e identificador (`ADR-003`) sem precisar de regra.
-NUMBER_RE = re.compile(r"(?<![\w.-])(\d(?:[\d.,]*\d)?\s*%?)(?![\w-])")
+# sempre, o que pesa mais que o ruido de sobra-capturar. O lookahead descarta
+# sozinho qualquer numero colado a letra depois dele. O lookbehind faz o
+# mesmo trabalho para identificador (`ADR-003`) e data ISO (`2026-08-21`),
+# mas NAO pode simplesmente proibir todo `-` antes do numero: achado ao ler a
+# semente inteira (Task 8) -- `FINAL-REPORT.md` alega "**-81.8%** de
+# economia" e esse token nunca virava candidato NENHUM com o lookbehind
+# antigo (`(?<![\w.-])` bloqueando hifen incondicionalmente), o que apagava
+# para sempre exatamente a alegacao que este gate mais precisa forcar a
+# provar. A alternativa abaixo resolve as duas exigencias em conjunto: um
+# numero comecando por `-` só entra na alegacao (grupo 2) quando esse `-` NAO
+# esta colado a letra/digito/ponto -- ou seja, quando e sinal de negativo
+# solto ("**-81.8%**", precedido por `*`), nao separador de identificador
+# ("ADR-003", hifen colado a "R") nem de data ISO ("2026-08-21", hifen
+# colado a digito). O ramo sem sinal (grupo 1) continua exatamente como
+# antes, hifen incluido no bloqueio, para nao reabrir a porta que capturava
+# "003" de dentro de "ADR-003" pela retomada do scan apos o hifen.
+NUMBER_RE = re.compile(
+    r"(?<![\w.-])(\d(?:[\d.,]*\d)?\s*%?)(?![\w-])"
+    r"|(?<![\w.])(-\d(?:[\d.,]*\d)?\s*%?)(?![\w-])"
+)
 
 # Cada padrao ignorado carrega a razao. Allowlist sem razao registrada vira
 # deposito de excecao conveniente, e ninguem consegue auditar depois por que
@@ -80,6 +96,89 @@ IGNORED_TOKENS = (
         re.compile(r"^(19|20)\d{2}$"),
         "ano de quatro digitos e datacao; o custo conhecido e mascarar uma "
         "contagem que caia em 1900-2099, aceito por ser improvavel nestes documentos",
+    ),
+)
+
+# Marcador de lista ordenada, numero de titulo Markdown, marca de fase e
+# rotulo de indice de taxonomia sao ruido ESTRUTURAL: o numero indica
+# POSICAO (o item e o terceiro da lista, a secao e a quarta do documento,
+# o titulo pertence a "Phase 4" do roadmap, "Tier 3" e o quarto tier da
+# cascata), nao um resultado medido. `IGNORED_TOKENS` nao serve aqui porque
+# ele casa o TOKEN isolado ("3") sem enxergar onde na linha ele apareceu --
+# um "3" de marcador de lista e um "3" de "3% de economia" sao o mesmo
+# token. Cada padrao aqui casa um TRECHO da linha -- prefixo (marcador de
+# lista, numero de titulo), sufixo (fase entre parenteses) ou qualquer
+# posicao (rotulo de taxonomia, que pode aparecer em titulo, crase ou
+# prosa) -- e SO esse trecho e trocado por espacos antes de `NUMBER_RE`
+# varrer a linha em `extract_numbers`; o resto da linha continua auditado
+# normalmente. Isso importa porque o mesmo texto que carrega o marcador com
+# frequencia carrega uma alegacao real logo depois ("1. **Antigravity
+# 2.0**: ..."): apagar a linha inteira apagaria "2.0" junto, e um numero
+# que o extrator deixa de ver e uma alegacao que escapa da auditoria para
+# sempre -- o custo errado do lado errado da assimetria que orienta esta
+# tarefa. Ver o comentario de cada padrao abaixo para o que exatamente ele
+# casa e por que.
+IGNORED_LINES = (
+    (
+        re.compile(r"^\s*\d+\.\s"),
+        "numero de marcador de lista ordenada indica a posicao do item na "
+        "lista, nao e alegacao de resultado",
+    ),
+    (
+        # Cobre tambem subsecao pontuada ("## 4.5 Subsecao", "## 4.5.2 Sub-
+        # subsecao"): achado em revisao de codigo -- o padrao antigo
+        # (`\d+\.` sozinho) so consumia "4." de "## 4.5 Subsecao" e deixava
+        # ".5" para tras, vazando "5" como alegacao. Nenhum titulo com essa
+        # forma existe hoje no corpus (conferido com grep), mas o padrao
+        # precisa aguentar a numeracao aparecer no dia em que alguem
+        # adicionar uma subsecao "N.M" -- o defeito e adormecido, nao
+        # inexistente. `(?:\.\d+)*` consome zero ou mais segmentos extras
+        # ("`.5`", "`.5.2`", ...) antes do `\.?` final opcional, que so
+        # sobra para o caso simples de hoje ("## 4." -- um numero, um ponto).
+        re.compile(r"^#{1,6}\s+\d+(?:\.\d+)*\.?"),
+        "numero de secao em titulo Markdown (incluindo subsecao pontuada "
+        "N.M) indica a posicao da secao no documento, nao e alegacao de "
+        "resultado",
+    ),
+    (
+        # Achado ao ler a semente inteira (Task 8): todo documento vNext abre
+        # com um titulo H1 terminado em "(Phase N)" -- 9 ocorrencias, uma por
+        # documento, sempre na linha 1. Revisao de codigo (mutation test):
+        # a versao anterior deste padrao era `\((?:Phase|Fase)\s+\d+\)` sem
+        # ancora nenhuma -- passava nos 115 testes mesmo removendo os
+        # parenteses exigidos, o que prova que nada prendia o padrao ao
+        # titulo que a razao alega. Sem ancora, "(Phase 3)" em QUALQUER
+        # lugar do documento (nao so no titulo H1) apagaria um numero real em
+        # silencio, para sempre -- a mesma classe de erro que o resto deste
+        # arquivo existe para evitar. A versao abaixo casa a linha INTEIRA
+        # (H1 unico, comeca com texto nao-vazio, termina no marcador de fase)
+        # mas so MASCARA o grupo 1 (o parenteses em si) -- ver o uso de
+        # `m.span(1)` no laco de `extract_numbers` -- entao um numero real no
+        # resto do titulo ("# Catalogo com 38 agentes (Phase 4)") continua
+        # visivel, exatamente como o marcador de lista e o numero de secao
+        # acima.
+        re.compile(r"^#\s+\S.*(\((?:Phase|Fase)\s+\d+\))\s*$"),
+        "numero de fase do roadmap interno entre parenteses no titulo H1 do "
+        "documento indica marco de entrega, nao alegacao de resultado",
+    ),
+    (
+        # Achado pelo reviewer ao ler a semente inteira (Task 8, revisao):
+        # rotulo de indice de taxonomia -- "Tier 3", "Layer 0", "Wave 2",
+        # "Demo 5" -- e a mesma classe estrutural do marcador de lista e do
+        # numero de titulo acima, so que o substantivo aparece ANTES do
+        # numero em vez de a linha comecar com ele, entao nao tem posicao
+        # fixa para ancorar (aparece em titulo `### Layer 0: ...`, em rotulo
+        # entre crases `` `Tier 3` ``, e em prosa solta "(Layer 0)"). O eixo
+        # que decide o que e alegacao e a ORDEM: substantivo-entao-digito e
+        # rotulo (indica qual item, nao quantidade); digito-entao-substantivo-
+        # no-plural ("7 Tiers", "3 niveis") e alegacao de quantidade e este
+        # padrao NUNCA casa nesse sentido, porque exige o substantivo vir
+        # PRIMEIRO. `\b` dos dois lados evita casar dentro de "Tiers" (plural)
+        # ou de uma palavra maior que contenha "Tier"/"Wave" como substring.
+        re.compile(r"\b(?:Tier|Layer|Wave|Demo)\s+\d+\b"),
+        "rotulo de indice de taxonomia (Tier/Layer/Wave/Demo N) indica qual "
+        "item da lista, nao e alegacao de quantidade -- \"N tiers\" (digito "
+        "antes do substantivo) nao casa aqui e continua sendo alegacao",
     ),
 )
 
@@ -129,8 +228,49 @@ def extract_numbers(path: Path) -> list[dict]:
             # real dividir linha com um link, ela some junto. Nenhum
             # documento atual faz isso; aceito ate acontecer de verdade.
             continue
-        for match in NUMBER_RE.finditer(line):
-            token = match.group(1).strip()
+        # Mascara o TRECHO estrutural de cada `IGNORED_LINES` que casar
+        # (marcador de lista, numero de titulo, "(Phase N)" de roadmap, ou
+        # rotulo de taxonomia), trocando-o por espacos de mesmo comprimento
+        # em vez de descartar a linha inteira -- o resto da linha (onde uma
+        # alegacao real costuma morar, ex. "1. **Antigravity 2.0**: ...")
+        # continua disponivel para `NUMBER_RE`. `search` (nao `match`) porque
+        # nem todo padrao fica ancorado no inicio da linha -- rotulo de
+        # taxonomia pode morar em qualquer lugar da linha, e o padrao de
+        # "(Phase N)" precisa da linha INTEIRA para confirmar que e um
+        # titulo H1 (ver comentario do padrao), mas so quer apagar o
+        # parenteses. Por isso o span mascarado e `m.span(1)` quando o match
+        # tem grupo de captura (o padrao pediu deliberadamente por um trecho
+        # mais estreito que o match inteiro) e `m.span()` quando nao tem --
+        # os outros padroes de hoje nao usam grupo, entao continuam mascarando
+        # o match inteiro como antes. Aplicar TODOS os padroes que casarem
+        # (sem `break` no primeiro) evita que um padrao futuro na mesma linha
+        # fique mascarado so pela metade por causa de outro que casou
+        # primeiro. `context` abaixo usa a `line` original, nao a mascarada:
+        # quem le o achado precisa ver o texto real do documento, nao o
+        # texto com espacos no lugar do marcador. O `while` interno mascara
+        # TODAS as ocorrencias de um padrao na mesma linha, nao so a
+        # primeira -- caso real do corpus: uma unica linha de tabela em
+        # COURSE-KNOWLEDGE-MAP.md encadeia "Tier 0 ... Tier 1 ... Tier 6"
+        # sete vezes. Um `if` em vez de `while` mascararia so "Tier 0" e
+        # deixaria "Tier 1" a "Tier 6" vazando como alegacao -- exatamente o
+        # falso negativo que este arquivo existe para evitar. Cada iteracao
+        # troca o trecho casado por espacos antes do proximo `search`, entao
+        # o laco sempre progride e termina (nenhum padrao aqui casa string
+        # vazia).
+        scan_line = line
+        for rx, _ in IGNORED_LINES:
+            while True:
+                m = rx.search(scan_line)
+                if not m:
+                    break
+                start, end = m.span(1) if m.lastindex else m.span()
+                scan_line = scan_line[:start] + " " * (end - start) + scan_line[end:]
+        for match in NUMBER_RE.finditer(scan_line):
+            # Grupo 1 casa quando o numero nao tem sinal; grupo 2, quando tem
+            # `-` de negativo solto (ver comentario de `NUMBER_RE`). Os dois
+            # ramos da alternativa sao mutuamente exclusivos por construcao
+            # -- exatamente um dos dois grupos captura por match.
+            token = (match.group(1) or match.group(2)).strip()
             if any(rx.match(token) for rx, _ in IGNORED_TOKENS):
                 continue
             found.append(
@@ -514,7 +654,7 @@ def check_orphans(found: list[dict], manifest: dict) -> list[str]:
 
     # Guarda `line` por chave, do lado documento e do lado manifesto -- nao
     # so a contagem. Task 9 classifica estas mensagens a mao contra o corpus
-    # real (342 entradas, 218 chaves distintas, 56 colidindo): reportar so
+    # real (184 entradas, 166 chaves distintas, 18 colidindo): reportar so
     # `{doc} :: {text}` sem a linha deixa ate colisao DISTINGUIVEL por linha
     # indistinguivel na mensagem, e quem le precisa grepar o documento para
     # decodificar o que o gate ja sabia.
@@ -722,12 +862,12 @@ def seed(force: bool = False) -> int:
     reaproveitando um numero. Isso torna `--seed` idempotente e nao
     destrutivo por padrao: editar uma alegacao no topo de um documento nao
     desloca mais o id de nenhuma outra (a numeracao antiga era posicional e
-    deslocava todo mundo abaixo do ponto editado), e classificar 342
+    deslocava todo mundo abaixo do ponto editado), e classificar 184
     entradas a mao (Task 9) sobrevive a um reseed de rotina como o que a
     Task 8 exige depois de mudar o allowlist.
 
     Chave duplicada -- a mesma `claim_key` aparecendo mais de uma vez, caso
-    real deste corpus (56 chaves cobrindo 180 entradas) -- e casada por
+    real deste corpus (18 chaves cobrindo 36 entradas) -- e casada por
     ORDEM E CONTAGEM: mantem-se uma fila FIFO por chave com as entradas
     antigas na ordem em que aparecem no manifesto, e a N-esima ocorrencia da
     chave na extracao fresca (na ordem de `collect_claims`, que e estavel:
@@ -767,7 +907,7 @@ def seed(force: bool = False) -> int:
     segunda categoria e tao perigosa quanto a primeira e mais facil de
     produzir por acidente: `.get("claims", [])` sozinho nunca levanta
     excecao para chave ausente, entao sem checagem explicita de forma um
-    JSON valido faltando `claims` (find/replace ruim editando as 342
+    JSON valido faltando `claims` (find/replace ruim editando as 184
     entradas a mao, formatter que derruba uma chave, script de teste que
     reseta o arquivo) passaria pelo `try` como se fosse um manifesto vazio
     -- a mesma perda de classificacao que a checagem de parseabilidade
@@ -825,7 +965,7 @@ def seed(force: bool = False) -> int:
                 # esse caso (ausencia de chave nao e erro de parse), entao
                 # sem esta checagem explicita a mesma perda de classificacao
                 # do `except` abaixo aconteceria aqui, sem passar por ele:
-                # acidente plausivel (find/replace ruim editando as 342
+                # acidente plausivel (find/replace ruim editando as 184
                 # entradas a mao, formatter que derruba uma chave, script de
                 # teste que reseta o arquivo) tratado como "manifesto vazio".
                 # Uma lista vazia de verdade (`"claims": []`) e a UNICA forma
@@ -842,7 +982,7 @@ def seed(force: bool = False) -> int:
 
         # NAO chamar `validate_manifest(loaded, sources)` aqui, de proposito
         # -- foi sugerido em revisao e a ideia faz sentido em abstrato, mas
-        # quebra o uso real da Task 9: alguem classificando 342 entradas em
+        # quebra o uso real da Task 9: alguem classificando 184 entradas em
         # varias sessoes vai ter, regularmente, um manifesto MEIO-CAMINHO --
         # uma prova cujo `path` ainda nao foi escrito, um `id` que a pessoa
         # esta prestes a corrigir. Recusar reseed porque uma prova ainda nao
@@ -884,6 +1024,21 @@ def seed(force: bool = False) -> int:
                 entry["note"] = "classificacao pendente"
                 claims.append(entry)
 
+        # `sumidas` nao distingue "alegacao sumiu do documento" de "allowlist
+        # parou de extrair este texto" -- as duas produzem exatamente o
+        # mesmo sintoma aqui (chave que existia no manifesto e nao aparece
+        # mais em `itens`), e o merge nao tem como saber qual das duas
+        # aconteceu sem guardar mais contexto do que guarda hoje. Isso NAO e
+        # defeito: e o default certo enquanto a Task 9 tem classificacao real
+        # em jogo -- nesse momento, decidir "documento mudou" vs "allowlist
+        # mudou" e julgamento humano, e descartar em silencio destruiria
+        # prova ou nota escrita a mao sem dar chance de revisao. Achado real
+        # (Task 8, correcao pos-revisao): tunar o allowlist DEPOIS de rodar
+        # `--seed` sem nenhuma classificacao ainda feita produz exatamente
+        # este caso -- toda entrada retida aqui era `SEM_LASTRO` com a nota
+        # padrao "classificacao pendente", entao reter era estritamente
+        # conservador, nao necessario; `--seed --force` foi a escolha certa
+        # NAQUELE momento porque nao havia nada para perder.
         sumidas = [entry for fila in existing_by_key.values() for entry in fila]
     except Exception as exc:  # noqa: BLE001 -- piso deliberado, ver comentario acima do try
         print(

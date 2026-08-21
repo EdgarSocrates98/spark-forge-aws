@@ -84,9 +84,261 @@ class TestExtracaoNumerica:
         assert "1000" not in textos
         assert not any("5-1" in t for t in textos)
 
+    def test_percentual_negativo_solto_vira_alegacao_com_o_sinal(self, tmp_path):
+        # Achado ao ler a semente inteira (Task 8): FINAL-REPORT.md alega
+        # "**-81.8%** de economia" -- exatamente o exemplo motivador desta
+        # tarefa -- e o NUMBER_RE antigo nunca produzia candidato nenhum pra
+        # esse token porque o lookbehind bloqueava incondicionalmente
+        # qualquer numero colado a `-`. O sinal precisa entrar no texto da
+        # alegacao: "-81.8%" e "81.8%" sao afirmacoes opostas.
+        doc = tmp_path / "NEGATIVO.md"
+        doc.write_text(
+            "| Custo | Antes | Depois |\n|---|---|---|\n"
+            "| Estimativa | $45.00 | **-81.8%** de economia |\n",
+            encoding="utf-8",
+        )
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert "-81.8%" in textos
+        assert "45.00" in textos
+
+    def test_hifen_de_identificador_continua_bloqueado_com_sinal_negativo_no_regex(
+        self, tmp_path
+    ):
+        # Guarda de nao-regressao: o novo ramo que aceita `-` de negativo nao
+        # pode reabrir a porta que o lookbehind original fechava para
+        # identificador (`ADR-003`) e data ISO (`2026-08-21`) -- nos dois
+        # casos o hifen esta colado a letra/digito, entao nao e sinal de
+        # negativo solto.
+        doc = tmp_path / "IDENTIFICADOR.md"
+        doc.write_text(
+            "Registrado em 2026-08-21 conforme ADR-003.\n", encoding="utf-8"
+        )
+        assert gate.extract_numbers(doc) == []
+
+    def test_numero_negativo_precedido_de_espaco_tambem_vira_alegacao(self, tmp_path):
+        doc = tmp_path / "NEGATIVO.md"
+        doc.write_text("Variacao de -5 unidades no periodo.\n", encoding="utf-8")
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["-5"]
+
+    def test_marcador_de_lista_com_hifen_seguido_de_espaco_nao_vira_negativo(
+        self, tmp_path
+    ):
+        # Marcador de lista Markdown ("- item") usa hifen seguido de ESPACO,
+        # nunca colado direto no digito -- o novo ramo exige `-\d` sem espaco
+        # entre os dois, entao um item de lista comecando com numero
+        # continua capturando so o numero, sem o hifen do marcador.
+        doc = tmp_path / "LISTA.md"
+        doc.write_text("- 5% de melhoria observada.\n", encoding="utf-8")
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["5%"]
+
     def test_cada_padrao_da_allowlist_declara_a_razao(self):
         for _, razao in gate.IGNORED_TOKENS:
             assert razao and len(razao) > 10
+
+    def test_cada_padrao_de_ignored_lines_declara_a_razao(self):
+        for _, razao in gate.IGNORED_LINES:
+            assert razao and len(razao) > 10
+
+    def test_marcador_de_lista_ordenada_nao_vira_alegacao(self, tmp_path):
+        doc = tmp_path / "LISTA.md"
+        doc.write_text(
+            "1. Primeiro item da lista.\n2. Segundo item da lista.\n"
+            "10. Decimo item, dois digitos no marcador.\n",
+            encoding="utf-8",
+        )
+        assert gate.extract_numbers(doc) == []
+
+    def test_marcador_de_lista_indentada_tambem_nao_vira_alegacao(self, tmp_path):
+        # Lista aninhada ("  1. sub-item") usa a mesma forma de marcador com
+        # indentacao antes do numero -- `IGNORED_LINES` aceita espaco opcional
+        # no inicio da linha por isso.
+        doc = tmp_path / "LISTA.md"
+        doc.write_text("  1. Sub-item indentado.\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_marcador_de_lista_nao_apaga_numero_real_na_mesma_linha(self, tmp_path):
+        # Caso real do corpus (ARCHITECTURE.md, FINAL-REPORT.md): o marcador
+        # "1." e ruido estrutural, mas "2.0" logo depois e uma alegacao de
+        # versao de verdade -- mascarar so o prefixo, nao a linha inteira,
+        # preserva ela.
+        doc = tmp_path / "LISTA.md"
+        doc.write_text(
+            "1. **Antigravity 2.0**: plataforma com progressive disclosure.\n",
+            encoding="utf-8",
+        )
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["2.0"]
+
+    def test_numero_de_titulo_markdown_nao_vira_alegacao(self, tmp_path):
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("## 3. Lacunas Identificadas\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_numero_de_titulo_com_ate_seis_cerquilhas_nao_vira_alegacao(self, tmp_path):
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("###### 12. Subsecao profunda\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_numero_de_titulo_nao_apaga_numero_real_no_resto_da_linha(self, tmp_path):
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("## 4. Suporte a 12 plataformas\n", encoding="utf-8")
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["12"]
+
+    def test_titulo_sem_numero_continua_capturando_numero_no_texto(self, tmp_path):
+        # Guarda contra um regex de titulo tao amplo que apague qualquer
+        # cerquilha -- so titulo cujo primeiro token e um numero seguido de
+        # ponto deve mascarar.
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("## Suporte a 12 plataformas\n", encoding="utf-8")
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["12"]
+
+    def test_numero_de_fase_do_roadmap_no_titulo_h1_nao_vira_alegacao(self, tmp_path):
+        # Achado ao ler a semente inteira: os 9 documentos vNext abrem com um
+        # titulo H1 terminado em "(Phase N)" -- marca de roadmap interno, nao
+        # resultado medido. O padrao mora no FIM da linha, nao no comeco
+        # (diferente de marcador de lista e numero de secao), entao precisa
+        # de `search`, nao `match`, no mecanismo de mascaramento.
+        doc = tmp_path / "TITULO.md"
+        doc.write_text(
+            "# SparkForge AWS — Canonical Agent & Skill Catalog vNext (Phase 4)\n",
+            encoding="utf-8",
+        )
+        assert gate.extract_numbers(doc) == []
+
+    def test_numero_de_fase_em_portugues_tambem_nao_vira_alegacao(self, tmp_path):
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("# Relatorio de Progresso (Fase 7)\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_numero_de_fase_nao_apaga_numero_real_no_resto_do_titulo(self, tmp_path):
+        doc = tmp_path / "TITULO.md"
+        doc.write_text(
+            "# Catalogo com 38 agentes permanentes (Phase 4)\n", encoding="utf-8"
+        )
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["38"]
+
+    def test_fase_fora_do_titulo_h1_continua_sendo_alegacao(self, tmp_path):
+        # Revisao de codigo: mutation test do reviewer provou que a versao
+        # anterior do padrao (sem ancora de linha) mascarava "(Phase N)" em
+        # QUALQUER posicao, nao so no titulo H1 que a razao do padrao alega.
+        # "(Phase 3)" solto em prosa, fora de um titulo H1, nao e a mesma
+        # coisa que a marca de roadmap do titulo -- pode ser uma referencia
+        # real a algo que precisa provar -- entao precisa sobreviver.
+        doc = tmp_path / "PROSA.md"
+        doc.write_text(
+            "Prosa comum mencionando (Phase 3) no meio do paragrafo.\n",
+            encoding="utf-8",
+        )
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["3"]
+
+    def test_fase_em_titulo_h2_nao_e_mascarada(self, tmp_path):
+        # A razao do padrao fala especificamente de titulo H1 (uma
+        # cerquilha) -- os 9 documentos reais so usam essa forma. Um titulo
+        # H2 com o mesmo sufixo nao e o caso que o padrao foi desenhado para
+        # cobrir, entao fica de fora da ancora deliberadamente.
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("## Subsecao qualquer (Phase 3)\n", encoding="utf-8")
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["3"]
+
+    def test_fase_no_meio_do_titulo_h1_nao_e_mascarada(self, tmp_path):
+        # O padrao exige "(Phase N)" no FIM da linha (`\s*$`) -- a razao diz
+        # "titulo H1 terminado em (Phase N)". Fase no meio do titulo, com
+        # texto depois, nao bate o formato real do corpus e fica de fora.
+        doc = tmp_path / "TITULO.md"
+        doc.write_text(
+            "# Relatorio (Phase 3) com revisao adicional\n", encoding="utf-8"
+        )
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["3"]
+
+    def test_titulo_pontuado_em_subsecao_nao_vaza_digito(self, tmp_path):
+        # Achado pelo reviewer: "## 4.5 Subsecao" so tinha "4." mascarado
+        # pelo padrao antigo, deixando ".5" para tras e vazando "5" como
+        # alegacao. Nenhum titulo assim existe no corpus hoje, mas o padrao
+        # precisa aguentar o dia em que alguem adicionar numeracao "N.M".
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("## 4.5 Subsecao com 12 itens\n", encoding="utf-8")
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["12"]
+
+    def test_titulo_pontuado_com_tres_niveis_nao_vaza_digito(self, tmp_path):
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("### 4.5.2 Sub-subsecao\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_titulo_pontuado_com_ponto_final_continua_mascarado_por_inteiro(
+        self, tmp_path
+    ):
+        # Forma equivalente com ponto final apos o ultimo segmento -- o
+        # `\.?` opcional no fim do padrao cobre esse caso sem duplicar regra.
+        doc = tmp_path / "TITULO.md"
+        doc.write_text("## 4.5. Subsecao pontuada\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_rotulo_tier_e_pruned(self, tmp_path):
+        # Achado pelo reviewer: rotulo de indice de taxonomia (substantivo
+        # ANTES do digito) indica qual item, nao quantidade.
+        doc = tmp_path / "ROTULO.md"
+        doc.write_text("`Tier 3` (Cheap / Local Model): descricao.\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_rotulo_layer_em_titulo_e_pruned(self, tmp_path):
+        doc = tmp_path / "ROTULO.md"
+        doc.write_text("### Layer 0: Deterministic Core\n", encoding="utf-8")
+        assert gate.extract_numbers(doc) == []
+
+    def test_rotulo_wave_e_demo_sao_pruned(self, tmp_path):
+        doc = tmp_path / "ROTULO.md"
+        doc.write_text(
+            "- `Wave 0`: Discovery.\n## Demo 2: Pipeline CDC\n", encoding="utf-8"
+        )
+        assert gate.extract_numbers(doc) == []
+
+    def test_quantidade_digito_antes_do_substantivo_continua_alegacao(self, tmp_path):
+        # O eixo que decide: substantivo-entao-digito e rotulo (prune);
+        # digito-entao-substantivo-plural e alegacao de quantidade (keep).
+        # Caso real do corpus: "Cascata de 7 Tiers".
+        doc = tmp_path / "QUANTIDADE.md"
+        doc.write_text(
+            "Motor de economia em 7 tiers, organizado em 3 waves e 12 layers.\n",
+            encoding="utf-8",
+        )
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert set(textos) == {"7", "3", "12"}
+
+    def test_rotulo_nao_apaga_numero_real_na_mesma_linha(self, tmp_path):
+        doc = tmp_path / "ROTULO.md"
+        doc.write_text("`Tier 3`: usa ate 40 mil tokens.\n", encoding="utf-8")
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        assert textos == ["40"]
+
+    def test_todas_as_ocorrencias_de_rotulo_na_mesma_linha_sao_mascaradas(
+        self, tmp_path
+    ):
+        # Regressao: caso real de COURSE-KNOWLEDGE-MAP.md:30 encadeia "Tier
+        # 0 ... Tier 1 ... Tier 6" sete vezes na MESMA linha. Um mecanismo
+        # de mascaramento que so trata a primeira ocorrencia por padrao
+        # deixaria "Tier 1" a "Tier 6" vazando como alegacao -- a mesma
+        # classe de falso negativo que toda esta suite existe para evitar.
+        doc = tmp_path / "CASCATA.md"
+        doc.write_text(
+            "Execucao em 7 tiers: Tier 0 Deterministico (0 tokens) "
+            "-> Tier 1 Cache -> Tier 2 Retrieval -> Tier 3 Cheap "
+            "-> Tier 4 Specialist -> Tier 5 Premium -> Tier 6 Multi-Agent.\n",
+            encoding="utf-8",
+        )
+        textos = [i["text"] for i in gate.extract_numbers(doc)]
+        # Sobrevive so o que NAO e rotulo "Tier N": o "7" de "7 tiers" (
+        # quantidade) e o "0" de "(0 tokens)" (quantidade). Os sete "Tier N"
+        # (0 a 6) somem todos, nao so o primeiro.
+        assert sorted(textos) == ["0", "7"]
 
     def test_fence_nao_fechado_estoura_com_nome_do_arquivo(self, tmp_path):
         doc = tmp_path / "FENCE_ABERTO.md"

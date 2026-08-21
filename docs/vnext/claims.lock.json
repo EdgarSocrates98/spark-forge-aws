@@ -1,0 +1,1846 @@
+{
+  "schema_version": 1,
+  "extracted_from": "7a0134264532f4674fd59cf449f4cfdff7b69678",
+  "claims": [
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 33,
+      "text": "0",
+      "context": "| **`task-router`** | Roteamento Econômico | Classifica tarefas, seleciona tiers (0 a 6) e perfis de execução (`ECO`, et",
+      "type": "number",
+      "id": "VNX-001",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 33,
+      "text": "6",
+      "context": "| **`task-router`** | Roteamento Econômico | Classifica tarefas, seleciona tiers (0 a 6) e perfis de execução (`ECO`, et",
+      "type": "number",
+      "id": "VNX-002",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/ARCHITECTURE.md",
+      "line": 66,
+      "text": "2.0",
+      "context": "1. **Antigravity 2.0**: `.agents/agents/`, `.agents/skills/`, `.agents/rules/` com progressive disclosure.",
+      "type": "number",
+      "id": "VNX-003",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/ARCHITECTURE.md",
+      "line": 74,
+      "text": "7",
+      "context": "- **Cascata de 7 Tiers**:",
+      "type": "number",
+      "id": "VNX-004",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/ARCHITECTURE.md",
+      "line": 75,
+      "text": "0",
+      "context": "- `Tier 0` (Determinístico): Extração de fatos e regras (Custo 0).",
+      "type": "number",
+      "id": "VNX-005",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/ARCHITECTURE.md",
+      "line": 83,
+      "text": "0",
+      "context": "- `ECO` (Default): Single-agent, cheap models, turns curtos, cache agressivo, 0 reflection desnecessária.",
+      "type": "number",
+      "id": "VNX-006",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/ARCHITECTURE.md",
+      "line": 154,
+      "text": "52",
+      "context": "3. **Preservação de Catálogos de Regras**: As 52 regras YAML existentes continuam sendo a fonte canônica para julgamento",
+      "type": "number",
+      "id": "VNX-007",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 3,
+      "text": "20",
+      "context": "Mapeamento de 20 serviços fundamentais de dados da AWS em 10 dimensões de engenharia:",
+      "type": "number",
+      "id": "VNX-008",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 3,
+      "text": "10",
+      "context": "Mapeamento de 20 serviços fundamentais de dados da AWS em 10 dimensões de engenharia:",
+      "type": "number",
+      "id": "VNX-009",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 7,
+      "text": "4.0",
+      "context": "| **AWS Glue** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (4.0➔5.1) | ✅ | ✅ |",
+      "type": "number",
+      "id": "VNX-010",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 7,
+      "text": "5.1",
+      "context": "| **AWS Glue** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (4.0➔5.1) | ✅ | ✅ |",
+      "type": "number",
+      "id": "VNX-011",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 12,
+      "text": "6",
+      "context": "| **Amazon EMR EC2**| ✅ | ✅ | ✅ | ✅ | ✅ (Spot Fleets)| ✅ | ✅ | ✅ (6.x➔7.x) | ✅ (AQE/Spill) | ✅ |",
+      "type": "number",
+      "id": "VNX-012",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 12,
+      "text": "7",
+      "context": "| **Amazon EMR EC2**| ✅ | ✅ | ✅ | ✅ | ✅ (Spot Fleets)| ✅ | ✅ | ✅ (6.x➔7.x) | ✅ (AQE/Spill) | ✅ |",
+      "type": "number",
+      "id": "VNX-013",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 17,
+      "text": "0",
+      "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
+      "type": "number",
+      "id": "VNX-014",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 17,
+      "text": "1",
+      "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
+      "type": "number",
+      "id": "VNX-015",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 17,
+      "text": "2",
+      "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
+      "type": "number",
+      "id": "VNX-016",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 17,
+      "text": "3",
+      "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
+      "type": "number",
+      "id": "VNX-017",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 17,
+      "text": "4",
+      "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
+      "type": "number",
+      "id": "VNX-018",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 28,
+      "text": "3",
+      "context": "| **Progressive Disclosure** | referência externa | Dividir conhecimento em 3 níveis (A: Metadados ~dezenas de tokens; B: Inst",
+      "type": "number",
+      "id": "VNX-019",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 30,
+      "text": "7",
+      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
+      "type": "number",
+      "id": "VNX-020",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 30,
+      "text": "0",
+      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
+      "type": "number",
+      "id": "VNX-021",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 32,
+      "text": "2.0",
+      "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity 2.0, Cursor (`.mdc",
+      "type": "number",
+      "id": "VNX-022",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 32,
+      "text": "7",
+      "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity 2.0, Cursor (`.mdc",
+      "type": "number",
+      "id": "VNX-023",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 13,
+      "text": "21",
+      "context": "| **Deterministic Facts** | 21 módulos (`sparkforge/facts/`) | 118 fact kinds | **Excelente**: 100% determinístico, offl",
+      "type": "number",
+      "id": "VNX-024",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 13,
+      "text": "118",
+      "context": "| **Deterministic Facts** | 21 módulos (`sparkforge/facts/`) | 118 fact kinds | **Excelente**: 100% determinístico, offl",
+      "type": "number",
+      "id": "VNX-025",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 13,
+      "text": "100%",
+      "context": "| **Deterministic Facts** | 21 módulos (`sparkforge/facts/`) | 118 fact kinds | **Excelente**: 100% determinístico, offl",
+      "type": "number",
+      "id": "VNX-026",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 14,
+      "text": "52",
+      "context": "| **Rules Engine** | 52 catálogos YAML (`rules/catalog/`) | AST Python puro | **Excelente**: Sem `eval()`, tipado e com ",
+      "type": "number",
+      "id": "VNX-027",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 16,
+      "text": "4",
+      "context": "| **Case Lifecycle** | 4 Gates duráveis (`sparkforge/case/`) | Fail-closed | **Excelente**: Overrides auditados e assina",
+      "type": "number",
+      "id": "VNX-028",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 18,
+      "text": "7",
+      "context": "| **Token Economy** | `sparkforge/economy/` | 7 Tiers + Router | **Sólido**: Perfis `ECO`, `BALANCED`, `QUALITY`, `OFFLI",
+      "type": "number",
+      "id": "VNX-029",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 20,
+      "text": "7",
+      "context": "| **Platform Compilers** | `sparkforge/adapters/platforms/` | 7 Targets | **Sólido**: Antigravity, Cursor, Claude, Devin",
+      "type": "number",
+      "id": "VNX-030",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 23,
+      "text": "100",
+      "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
+      "type": "number",
+      "id": "VNX-031",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 23,
+      "text": "5.463",
+      "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
+      "type": "number",
+      "id": "VNX-032",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 23,
+      "text": "100%",
+      "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
+      "type": "number",
+      "id": "VNX-033",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 23,
+      "text": "5.458",
+      "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
+      "type": "number",
+      "id": "VNX-034",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 23,
+      "text": "5",
+      "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
+      "type": "number",
+      "id": "VNX-035",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 23,
+      "text": "0",
+      "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
+      "type": "number",
+      "id": "VNX-036",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 29,
+      "text": "4.0",
+      "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
+      "type": "number",
+      "id": "VNX-037",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 29,
+      "text": "5.1",
+      "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
+      "type": "number",
+      "id": "VNX-038",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 29,
+      "text": "3.3",
+      "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
+      "type": "number",
+      "id": "VNX-039",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 29,
+      "text": "3.5",
+      "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
+      "type": "number",
+      "id": "VNX-040",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
+      "line": 29,
+      "text": "17",
+      "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
+      "type": "number",
+      "id": "VNX-041",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 39,
+      "text": "21",
+      "context": "1. **`sparkforge.facts`**: 21 extratores offline (AST de PySpark, physical plans formatados, JSONL Spark event logs, Ice",
+      "type": "number",
+      "id": "VNX-042",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 40,
+      "text": "4.0",
+      "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
+      "type": "number",
+      "id": "VNX-043",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 40,
+      "text": "5.0",
+      "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
+      "type": "number",
+      "id": "VNX-044",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 40,
+      "text": "5.1",
+      "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
+      "type": "number",
+      "id": "VNX-045",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 40,
+      "text": "6",
+      "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
+      "type": "number",
+      "id": "VNX-046",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 40,
+      "text": "7",
+      "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
+      "type": "number",
+      "id": "VNX-047",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 42,
+      "text": "4",
+      "context": "4. **`sparkforge.case`**: Gerenciador durável de casos de investigação com 4 gates (`baseline_captured`, `flows_mapped`,",
+      "type": "number",
+      "id": "VNX-048",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 52,
+      "text": "38",
+      "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
+      "type": "number",
+      "id": "VNX-049",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 52,
+      "text": "8",
+      "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
+      "type": "number",
+      "id": "VNX-050",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 52,
+      "text": "5",
+      "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
+      "type": "number",
+      "id": "VNX-051",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 52,
+      "text": "25",
+      "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
+      "type": "number",
+      "id": "VNX-052",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 53,
+      "text": "40",
+      "context": "| **Skills** | 40 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
+      "type": "number",
+      "id": "VNX-053",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 54,
+      "text": "16",
+      "context": "| **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens",
+      "type": "number",
+      "id": "VNX-054",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 54,
+      "text": "1.800",
+      "context": "| **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens",
+      "type": "number",
+      "id": "VNX-055",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 55,
+      "text": "5",
+      "context": "| **Teams** | 5 | `config/teams-expansion.yaml` | Composições de times (evidence-quality, governance, etc.) |",
+      "type": "number",
+      "id": "VNX-056",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 56,
+      "text": "21",
+      "context": "| **Extratores de Fatos** | 21 | `sparkforge/facts/*.py` | 118 kinds de fatos determinísticos |",
+      "type": "number",
+      "id": "VNX-057",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 56,
+      "text": "118",
+      "context": "| **Extratores de Fatos** | 21 | `sparkforge/facts/*.py` | 118 kinds de fatos determinísticos |",
+      "type": "number",
+      "id": "VNX-058",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 57,
+      "text": "52",
+      "context": "| **Catálogos de Regras** | 52 | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |",
+      "type": "number",
+      "id": "VNX-059",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 58,
+      "text": "35",
+      "context": "| **Knowledge Base** | 35+ | `knowledge/**/*.md`, `knowledge/**/*.json` | Guias de arquitetura, runtimes, anti-patterns,",
+      "type": "number",
+      "id": "VNX-060",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 59,
+      "text": "100",
+      "context": "| **Testes Automatizados** | 100 arquivos (5.463 testes) | `tests/test_*.py` | Cobertura massiva unitária, contratos, go",
+      "type": "number",
+      "id": "VNX-061",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 59,
+      "text": "5.463",
+      "context": "| **Testes Automatizados** | 100 arquivos (5.463 testes) | `tests/test_*.py` | Cobertura massiva unitária, contratos, go",
+      "type": "number",
+      "id": "VNX-062",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 60,
+      "text": "3",
+      "context": "| **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e D",
+      "type": "number",
+      "id": "VNX-063",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 66,
+      "text": "100%",
+      "context": "1. **Zero LLM para Fatos e Regras**: Análise de código, plano de execução, metadados e logs 100% determinística, offline",
+      "type": "number",
+      "id": "VNX-064",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 70,
+      "text": "5.400",
+      "context": "5. **Altíssima Cobertura de Testes**: Mais de 5.400 testes garantindo não-regressão, determinismo e reprodutibilidade.",
+      "type": "number",
+      "id": "VNX-065",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 79,
+      "text": "7",
+      "context": "3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não",
+      "type": "number",
+      "id": "VNX-066",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 81,
+      "text": "3",
+      "context": "5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não imple",
+      "type": "number",
+      "id": "VNX-067",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 88,
+      "text": "38",
+      "context": "1. **Proliferação Desordenada de Agentes**: Manter 38 agentes permanentes sem controle de ativação pode induzir custos d",
+      "type": "number",
+      "id": "VNX-068",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 96,
+      "text": "5.463",
+      "context": "- **Total de Testes**: 5.463 itens",
+      "type": "number",
+      "id": "VNX-069",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 98,
+      "text": "3.10",
+      "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
+      "type": "number",
+      "id": "VNX-070",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 98,
+      "text": "3.10",
+      "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
+      "type": "number",
+      "id": "VNX-071",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 98,
+      "text": "3.11",
+      "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
+      "type": "number",
+      "id": "VNX-072",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 98,
+      "text": "3.12",
+      "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
+      "type": "number",
+      "id": "VNX-073",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 98,
+      "text": "3.14",
+      "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
+      "type": "number",
+      "id": "VNX-074",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 99,
+      "text": "6.0",
+      "context": "- **Dependências de Produção Obrigatórias**: `PyYAML>=6.0`, `jsonschema>=4.0` (Zero dependência externa pesada).",
+      "type": "number",
+      "id": "VNX-075",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 99,
+      "text": "4.0",
+      "context": "- **Dependências de Produção Obrigatórias**: `PyYAML>=6.0`, `jsonschema>=4.0` (Zero dependência externa pesada).",
+      "type": "number",
+      "id": "VNX-076",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CURRENT-STATE.md",
+      "line": 105,
+      "text": "0",
+      "context": "- **D-1**: Manter camada determinística pura (Layer 0) com 0 chamadas de LLM para extração de fatos e avaliação de regra",
+      "type": "number",
+      "id": "VNX-077",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/DEMOS.md",
+      "line": 10,
+      "text": "4.0",
+      "context": "Um job AWS Glue 4.0 processando 500GB apresenta lentidão severa e OOM intermitente em um executor específico.",
+      "type": "number",
+      "id": "VNX-078",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/DEMOS.md",
+      "line": 44,
+      "text": "50",
+      "context": "Evolução de schema adicionando colunas e modificando tipos em tabela Iceberg com 50 consumidores downstream.",
+      "type": "number",
+      "id": "VNX-079",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/DEMOS.md",
+      "line": 48,
+      "text": "100%",
+      "context": "- **Rota**: `Tier 0 (Deterministic First)` — Cálculo de compatibilidade de schema 100% determinístico.",
+      "type": "number",
+      "id": "VNX-080",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/DEMOS.md",
+      "line": 49,
+      "text": "0",
+      "context": "- **Tokens Consumidos**: 0 tokens LLM.",
+      "type": "number",
+      "id": "VNX-081",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 6,
+      "text": "7",
+      "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
+      "type": "number",
+      "id": "VNX-082",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 6,
+      "text": "7",
+      "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
+      "type": "number",
+      "id": "VNX-083",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 6,
+      "text": "100%",
+      "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
+      "type": "number",
+      "id": "VNX-084",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 30,
+      "text": "98.2%",
+      "context": "| **Task Success Rate** | 98.2% | **100%** | +1.8% |",
+      "type": "number",
+      "id": "VNX-085",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 30,
+      "text": "100%",
+      "context": "| **Task Success Rate** | 98.2% | **100%** | +1.8% |",
+      "type": "number",
+      "id": "VNX-086",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 30,
+      "text": "1.8%",
+      "context": "| **Task Success Rate** | 98.2% | **100%** | +1.8% |",
+      "type": "number",
+      "id": "VNX-087",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 31,
+      "text": "3.500",
+      "context": "| **Median Tokens / Deterministic Task** | 3.500 | **0** | **-100%** (Tier 0 puro) |",
+      "type": "number",
+      "id": "VNX-088",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 31,
+      "text": "0",
+      "context": "| **Median Tokens / Deterministic Task** | 3.500 | **0** | **-100%** (Tier 0 puro) |",
+      "type": "number",
+      "id": "VNX-089",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 31,
+      "text": "-100%",
+      "context": "| **Median Tokens / Deterministic Task** | 3.500 | **0** | **-100%** (Tier 0 puro) |",
+      "type": "number",
+      "id": "VNX-090",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 32,
+      "text": "18.000",
+      "context": "| **Median Tokens / Specialist Task** | 18.000 | **3.800** | **-78.8%** (Funnel + Skill B) |",
+      "type": "number",
+      "id": "VNX-091",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 32,
+      "text": "3.800",
+      "context": "| **Median Tokens / Specialist Task** | 18.000 | **3.800** | **-78.8%** (Funnel + Skill B) |",
+      "type": "number",
+      "id": "VNX-092",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 32,
+      "text": "-78.8%",
+      "context": "| **Median Tokens / Specialist Task** | 18.000 | **3.800** | **-78.8%** (Funnel + Skill B) |",
+      "type": "number",
+      "id": "VNX-093",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 33,
+      "text": "45.00",
+      "context": "| **Estimated Cost / 1k Tasks** | $45.00 | **$8.20** | **-81.8%** de economia |",
+      "type": "number",
+      "id": "VNX-094",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 33,
+      "text": "8.20",
+      "context": "| **Estimated Cost / 1k Tasks** | $45.00 | **$8.20** | **-81.8%** de economia |",
+      "type": "number",
+      "id": "VNX-095",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 33,
+      "text": "-81.8%",
+      "context": "| **Estimated Cost / 1k Tasks** | $45.00 | **$8.20** | **-81.8%** de economia |",
+      "type": "number",
+      "id": "VNX-096",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 34,
+      "text": "35%",
+      "context": "| **Multi-Agent Escalation Rate** | ~35% | **< 5%** | Redução drástica de overhead |",
+      "type": "number",
+      "id": "VNX-097",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 34,
+      "text": "5%",
+      "context": "| **Multi-Agent Escalation Rate** | ~35% | **< 5%** | Redução drástica de overhead |",
+      "type": "number",
+      "id": "VNX-098",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 35,
+      "text": "0%",
+      "context": "| **Cache Hit Rate (Re-runs)** | 0% | **94.5%** | Tier 1 ArtifactCache |",
+      "type": "number",
+      "id": "VNX-099",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 35,
+      "text": "94.5%",
+      "context": "| **Cache Hit Rate (Re-runs)** | 0% | **94.5%** | Tier 1 ArtifactCache |",
+      "type": "number",
+      "id": "VNX-100",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 36,
+      "text": "5.463",
+      "context": "| **Test Suite Coverage** | 5.463 testes | **5.485+ testes** | +22 novos testes de infra |",
+      "type": "number",
+      "id": "VNX-101",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 36,
+      "text": "5.485",
+      "context": "| **Test Suite Coverage** | 5.463 testes | **5.485+ testes** | +22 novos testes de infra |",
+      "type": "number",
+      "id": "VNX-102",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 36,
+      "text": "22",
+      "context": "| **Test Suite Coverage** | 5.463 testes | **5.485+ testes** | +22 novos testes de infra |",
+      "type": "number",
+      "id": "VNX-103",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 54,
+      "text": "0",
+      "context": "- [`docs/vnext/CURRENT-STATE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/CURRENT-STATE.md) (Baseline Phase 0)",
+      "type": "number",
+      "id": "VNX-104",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 58,
+      "text": "5",
+      "context": "- [`docs/vnext/DEMOS.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/DEMOS.md) (5 Demos interativas)",
+      "type": "number",
+      "id": "VNX-105",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 66,
+      "text": "2.0",
+      "context": "1. **Antigravity 2.0**: `.agents/agents/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md`",
+      "type": "number",
+      "id": "VNX-106",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 84,
+      "text": "1",
+      "context": "## 7. Limitações Conhecidas e Próximos Passos (vNext+1)",
+      "type": "number",
+      "id": "VNX-107",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 87,
+      "text": "1",
+      "context": "- **Oportunidade vNext+1**: Expandir remote worker com Terraform modules prontos para deployment Serverless AWS (Lambda ",
+      "type": "number",
+      "id": "VNX-108",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 16,
+      "text": "4.0",
+      "context": "| **Glue Migration Lab** | `sparkforge.migration.glue` | Glue 4.0 ➔ 5.1 analyzer, S3A vs EMRFS detection, Migration Read",
+      "type": "number",
+      "id": "VNX-109",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 16,
+      "text": "5.1",
+      "context": "| **Glue Migration Lab** | `sparkforge.migration.glue` | Glue 4.0 ➔ 5.1 analyzer, S3A vs EMRFS detection, Migration Read",
+      "type": "number",
+      "id": "VNX-110",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 26,
+      "text": "2.0",
+      "context": "| **Antigravity 2.0** | `.agents/rules/` & `plugins/` | Evidence-first, AWS Safety, Terraform Safety, Migration Safety. ",
+      "type": "number",
+      "id": "VNX-111",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 32,
+      "text": "21",
+      "context": "1. **Deterministic Facts**: 21 extractors, 118 fact kinds, 0 hallucinated metrics.",
+      "type": "number",
+      "id": "VNX-112",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 32,
+      "text": "118",
+      "context": "1. **Deterministic Facts**: 21 extractors, 118 fact kinds, 0 hallucinated metrics.",
+      "type": "number",
+      "id": "VNX-113",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 32,
+      "text": "0",
+      "context": "1. **Deterministic Facts**: 21 extractors, 118 fact kinds, 0 hallucinated metrics.",
+      "type": "number",
+      "id": "VNX-114",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 33,
+      "text": "52",
+      "context": "2. **Deterministic Rules**: 52 catalog files evaluated via strict AST.",
+      "type": "number",
+      "id": "VNX-115",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
+      "line": 36,
+      "text": "5,463",
+      "context": "5. **Zero Breaking Changes**: Full backwards compatibility maintained with existing CLI and 5,463 baseline tests.",
+      "type": "number",
+      "id": "VNX-116",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-003-token-economy-and-model-routing.md",
+      "line": 10,
+      "text": "7",
+      "context": "Adotamos uma cascata de execução rigorosa em 7 Tiers:",
+      "type": "number",
+      "id": "VNX-117",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-003-token-economy-and-model-routing.md",
+      "line": 11,
+      "text": "0",
+      "context": "- **Tier 0**: Determinístico (0 chamadas LLM)",
+      "type": "number",
+      "id": "VNX-118",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-004-context-funnel-and-retrieval.md",
+      "line": 10,
+      "text": "3",
+      "context": "Adotamos o **Context Funnel** e o modelo de **Progressive Disclosure** em 3 níveis:",
+      "type": "number",
+      "id": "VNX-119",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-007-local-first-agentops-and-observability.md",
+      "line": 17,
+      "text": "100%",
+      "context": "- **Positivas**: 100% privado, sem custos de infraestrutura adicionais e totalmente funcional offline.",
+      "type": "number",
+      "id": "VNX-120",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-008-protocol-strategy-and-cloud-extension.md",
+      "line": 14,
+      "text": "24",
+      "context": "- **Positivas**: Núcleo leve e independente de rede; capacidade de escala em nuvem sob demanda sem custos fixos 24/7.",
+      "type": "number",
+      "id": "VNX-121",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-008-protocol-strategy-and-cloud-extension.md",
+      "line": 14,
+      "text": "7",
+      "context": "- **Positivas**: Núcleo leve e independente de rede; capacidade de escala em nuvem sob demanda sem custos fixos 24/7.",
+      "type": "number",
+      "id": "VNX-122",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 7,
+      "text": "**AWS Glue**",
+      "context": "| **AWS Glue** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (4.0➔5.1) | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-123",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 8,
+      "text": "**Lake Formation**",
+      "context": "| **Lake Formation**| ✅ | ✅ | ✅ | ✅ (FGAC/FTA)| ✅ | ✅ | ✅ (Cross-Acc) | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-124",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 9,
+      "text": "**Apache Iceberg**",
+      "context": "| **Apache Iceberg**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Doctor) | ✅ (v1/v2/v3) | ✅ (Compaction)| ✅ |",
+      "type": "capability",
+      "id": "VNX-125",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 10,
+      "text": "**Amazon S3**",
+      "context": "| **Amazon S3** | ✅ | ✅ | ✅ | ✅ (Public Block)| ✅ (Tiering)| ✅ | ✅ (S3A/EMRFS) | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-126",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 11,
+      "text": "**Amazon Athena**",
+      "context": "| **Amazon Athena** | ✅ | ✅ | ✅ | ✅ (Workgroups)| ✅ (Scanned)| ✅ | ✅ | ✅ (Engine v3) | ✅ (Projection)| ✅ |",
+      "type": "capability",
+      "id": "VNX-127",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 12,
+      "text": "**Amazon EMR EC2**",
+      "context": "| **Amazon EMR EC2**| ✅ | ✅ | ✅ | ✅ | ✅ (Spot Fleets)| ✅ | ✅ | ✅ (6.x➔7.x) | ✅ (AQE/Spill) | ✅ |",
+      "type": "capability",
+      "id": "VNX-128",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 13,
+      "text": "**EMR Serverless**",
+      "context": "| **EMR Serverless**| ✅ | ✅ | ✅ | ✅ | ✅ (Auto-stop)| ✅ | ✅ | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-129",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 14,
+      "text": "**Amazon Redshift**",
+      "context": "| **Amazon Redshift**| ✅ | ✅ | ✅ | ✅ | ✅ (Serverless)| ✅ | ✅ | ✅ | ✅ (WLM/Sort) | ✅ |",
+      "type": "capability",
+      "id": "VNX-130",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 15,
+      "text": "**Amazon DynamoDB**",
+      "context": "| **Amazon DynamoDB**| ✅ | ✅ | ✅ | ✅ | ✅ (On-Demand)| ✅ | ✅ (Hot Part) | ✅ | ✅ (Adaptive) | ✅ |",
+      "type": "capability",
+      "id": "VNX-131",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 16,
+      "text": "**Amazon Neptune**",
+      "context": "| **Amazon Neptune**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Explain) | ✅ (Neo4j➔Nept)| ✅ (Bulk Load) | ✅ |",
+      "type": "capability",
+      "id": "VNX-132",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 17,
+      "text": "**Amazon MSK**",
+      "context": "| **Amazon MSK** | ✅ | ✅ | ✅ | ✅ (mTLS/IAM)| ✅ | ✅ | ✅ (Lag/Rebal) | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-133",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 18,
+      "text": "**Amazon Kinesis**",
+      "context": "| **Amazon Kinesis**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Hot Shards)| ✅ | ✅ (Fan-out) | ✅ |",
+      "type": "capability",
+      "id": "VNX-134",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 19,
+      "text": "**AWS DMS**",
+      "context": "| **AWS DMS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (CDC/Full) | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-135",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 20,
+      "text": "**Step Functions**",
+      "context": "| **Step Functions**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Retries) | ✅ | ✅ (Dist Map) | ✅ |",
+      "type": "capability",
+      "id": "VNX-136",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 21,
+      "text": "**AWS Lambda**",
+      "context": "| **AWS Lambda** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Concurrency)| ✅ |",
+      "type": "capability",
+      "id": "VNX-137",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 22,
+      "text": "**EventBridge**",
+      "context": "| **EventBridge** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-138",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 23,
+      "text": "**SQS / SNS**",
+      "context": "| **SQS / SNS** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (DLQ/Replay) | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-139",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 24,
+      "text": "**Glue Schema Reg**",
+      "context": "| **Glue Schema Reg**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Evolution) | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-140",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 25,
+      "text": "**IAM & KMS**",
+      "context": "| **IAM & KMS** | ✅ | ✅ | ✅ | ✅ (Least Priv)| ✅ | ✅ (CloudTrail)| ✅ | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-141",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/CAPABILITY-MATRIX.md",
+      "line": 26,
+      "text": "**CloudWatch/Trail**",
+      "context": "| **CloudWatch/Trail**|✅ | ✅ | ✅ | ✅ | ✅ (Retention)| ✅ | ✅ (Timeline) | ✅ | ✅ | ✅ |",
+      "type": "capability",
+      "id": "VNX-142",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 32,
+      "text": "**`forge-supervisor`**",
+      "context": "| **`forge-supervisor`** | Orquestração Geral | Controla o ciclo de vida da investigação, gates do caso e handoffs entre",
+      "type": "capability",
+      "id": "VNX-143",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 33,
+      "text": "**`task-router`**",
+      "context": "| **`task-router`** | Roteamento Econômico | Classifica tarefas, seleciona tiers (0 a 6) e perfis de execução (`ECO`, et",
+      "type": "capability",
+      "id": "VNX-144",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 34,
+      "text": "**`data-engineering-architect`**",
+      "context": "| **`data-engineering-architect`** | Arquitetura de Dados | Decisões transversais de pipelines (PySpark, SQL, Batch, Str",
+      "type": "capability",
+      "id": "VNX-145",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 35,
+      "text": "**`aws-data-architect`**",
+      "context": "| **`aws-data-architect`** | Infraestrutura Cloud | Desenho e revisão de serviços AWS (Glue, EMR, Athena, S3, Lake Forma",
+      "type": "capability",
+      "id": "VNX-146",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 36,
+      "text": "**`evidence-verifier`**",
+      "context": "| **`evidence-verifier`** | Qualidade & Evidências | Julgamento de regras, ancoragem de fatos e validação funcional ante",
+      "type": "capability",
+      "id": "VNX-147",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 37,
+      "text": "**`security-governance`**",
+      "context": "| **`security-governance`** | Segurança & Riscos | Avaliação de mutações, redação de segredos, IAM e integridade de data",
+      "type": "capability",
+      "id": "VNX-148",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 38,
+      "text": "**`finops-reviewer`**",
+      "context": "| **`finops-reviewer`** | FinOps & Token Economy | Otimização de custos AWS e monitoramento de eficiência de tokens (`sp",
+      "type": "capability",
+      "id": "VNX-149",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 46,
+      "text": "`spark-performance-architect`",
+      "context": "| `spark-performance-architect` | **Core Coordinator** | Mantido como coordenador primário de performance PySpark. | `sp",
+      "type": "capability",
+      "id": "VNX-150",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 47,
+      "text": "`glue-incremental-performance-architect`",
+      "context": "| `glue-incremental-performance-architect` | **Core Coordinator** | Mantido para fluxos full + incremental complexos. | ",
+      "type": "capability",
+      "id": "VNX-151",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 48,
+      "text": "`glue-infra-reviewer`",
+      "context": "| `glue-infra-reviewer` | **Specialist Role** | Foco em infraestrutura Glue, worker types e auto scaling. | `glue-infra-",
+      "type": "capability",
+      "id": "VNX-152",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 49,
+      "text": "`emr-infra-reviewer`",
+      "context": "| `emr-infra-reviewer` | **Specialist Role** | Foco em clusters EMR EC2 e Serverless. | `emr-infra-reviewer` |",
+      "type": "capability",
+      "id": "VNX-153",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 50,
+      "text": "`athena-query-optimizer`",
+      "context": "| `athena-query-optimizer` | **Specialist Role** | Otimização de consultas, pruning e workgroups Athena. | `athena-query",
+      "type": "capability",
+      "id": "VNX-154",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 51,
+      "text": "`pyspark-code-reviewer`",
+      "context": "| `pyspark-code-reviewer` | **Specialist Role** | Revisão de código PySpark e GraphFrames. | `pyspark-code-reviewer` |",
+      "type": "capability",
+      "id": "VNX-155",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 52,
+      "text": "`iceberg-performance-engineer`",
+      "context": "| `iceberg-performance-engineer` | **Specialist Role** | Manutenção e performance de tabelas Iceberg. | `iceberg-perform",
+      "type": "capability",
+      "id": "VNX-156",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 53,
+      "text": "`data-quality-reviewer`",
+      "context": "| `data-quality-reviewer` | **Specialist Role** | Auditoria do posicionamento e custo de regras de qualidade. | `data-qu",
+      "type": "capability",
+      "id": "VNX-157",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 54,
+      "text": "`sf-inventory`",
+      "context": "| `sf-inventory` | **Executor** | Executor determinístico de inventário (Phase Loop). | `sf-inventory` |",
+      "type": "capability",
+      "id": "VNX-158",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 55,
+      "text": "`sf-extractor`",
+      "context": "| `sf-extractor` | **Executor** | Executor determinístico de evidências (Phase Loop). | `sf-extractor` |",
+      "type": "capability",
+      "id": "VNX-159",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 56,
+      "text": "`sf-judge`",
+      "context": "| `sf-judge` | **Executor** | Executor de regras determinísticas (Phase Loop). | `sf-judge` |",
+      "type": "capability",
+      "id": "VNX-160",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 57,
+      "text": "`sf-verifier`",
+      "context": "| `sf-verifier` | **Executor** | Executor de validação de saídas (Phase Loop). | `sf-verifier` |",
+      "type": "capability",
+      "id": "VNX-161",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 58,
+      "text": "`sf-synthesizer`",
+      "context": "| `sf-synthesizer` | **Executor** | Executor de síntese de relatório assinado. | `sf-synthesizer` |",
+      "type": "capability",
+      "id": "VNX-162",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 59,
+      "text": "`sf-pyspark-specialist`",
+      "context": "| `sf-pyspark-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`optimize-pyspark-code`). | `sf-pyspar",
+      "type": "capability",
+      "id": "VNX-163",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 60,
+      "text": "`sf-storage-specialist`",
+      "context": "| `sf-storage-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`optimize-iceberg-table`). | `sf-stora",
+      "type": "capability",
+      "id": "VNX-164",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 61,
+      "text": "`sf-runtime-specialist`",
+      "context": "| `sf-runtime-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`review-emr-cluster`). | `sf-runtime-s",
+      "type": "capability",
+      "id": "VNX-165",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 62,
+      "text": "`sf-token-verifier`",
+      "context": "| `sf-token-verifier` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`token-efficient-agent`). | `sf-token-veri",
+      "type": "capability",
+      "id": "VNX-166",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 63,
+      "text": "`sf-cost-reviewer`",
+      "context": "| `sf-cost-reviewer` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`data-platform-finops`). | `sf-cost-reviewe",
+      "type": "capability",
+      "id": "VNX-167",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/AGENT-CATALOG.md",
+      "line": 64,
+      "text": "`sf-security-reviewer`",
+      "context": "| `sf-security-reviewer` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`security-review`). | `sf-security-revi",
+      "type": "capability",
+      "id": "VNX-168",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 43,
+      "text": "[`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validator.py`, `__init__.py`",
+      "context": "- [`sparkforge/registry/`](file:///e:/projetos/spark-forge-aws/sparkforge/registry/): `models.py`, `loader.py`, `validat",
+      "type": "capability",
+      "id": "VNX-169",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 44,
+      "text": "[`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `budget.py`, `cache.py`, `waste_detector.py`, `router.py`, `__init__.py`",
+      "context": "- [`sparkforge/economy/`](file:///e:/projetos/spark-forge-aws/sparkforge/economy/): `budget.py`, `cache.py`, `waste_dete",
+      "type": "capability",
+      "id": "VNX-170",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 45,
+      "text": "[`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `knowledge_pack.py`, `__init__.py`",
+      "context": "- [`sparkforge/context/`](file:///e:/projetos/spark-forge-aws/sparkforge/context/): `funnel.py`, `progressive.py`, `know",
+      "type": "capability",
+      "id": "VNX-171",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 46,
+      "text": "[`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `antigravity.py`, `cursor.py`, `claude.py`, `targets.py`, `compiler.py`, `__init__.py`",
+      "context": "- [`sparkforge/adapters/platforms/`](file:///e:/projetos/spark-forge-aws/sparkforge/adapters/platforms/): `base.py`, `an",
+      "type": "capability",
+      "id": "VNX-172",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 47,
+      "text": "[`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`",
+      "context": "- [`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py",
+      "type": "capability",
+      "id": "VNX-173",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 48,
+      "text": "[`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.json`, `__init__.py`",
+      "context": "- [`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.js",
+      "type": "capability",
+      "id": "VNX-174",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 49,
+      "text": "[`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`, `__init__.py`",
+      "context": "- [`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`,",
+      "type": "capability",
+      "id": "VNX-175",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 50,
+      "text": "[`sparkforge/providers/`](file:///e:/projetos/spark-forge-aws/sparkforge/providers/): `mock.py`",
+      "context": "- [`sparkforge/providers/`](file:///e:/projetos/spark-forge-aws/sparkforge/providers/): `mock.py`",
+      "type": "capability",
+      "id": "VNX-176",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 51,
+      "text": "[`sparkforge/cloud/`](file:///e:/projetos/spark-forge-aws/sparkforge/cloud/): `worker.py`, `__init__.py`",
+      "context": "- [`sparkforge/cloud/`](file:///e:/projetos/spark-forge-aws/sparkforge/cloud/): `worker.py`, `__init__.py`",
+      "type": "capability",
+      "id": "VNX-177",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 54,
+      "text": "[`docs/vnext/CURRENT-STATE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/CURRENT-STATE.md) (Baseline Phase 0)",
+      "context": "- [`docs/vnext/CURRENT-STATE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/CURRENT-STATE.md) (Baseline Phase 0)",
+      "type": "capability",
+      "id": "VNX-178",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 55,
+      "text": "[`docs/vnext/COURSE-KNOWLEDGE-MAP.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/COURSE-KNOWLEDGE-MAP.md) (Síntese metodológica)",
+      "context": "- [`docs/vnext/COURSE-KNOWLEDGE-MAP.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/COURSE-KNOWLEDGE-MAP.md) (Síntes",
+      "type": "capability",
+      "id": "VNX-179",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 56,
+      "text": "[`docs/vnext/ARCHITECTURE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/ARCHITECTURE.md) (Arquitetura canônica vNext)",
+      "context": "- [`docs/vnext/ARCHITECTURE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/ARCHITECTURE.md) (Arquitetura canônica v",
+      "type": "capability",
+      "id": "VNX-180",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 57,
+      "text": "[`docs/vnext/AGENT-CATALOG.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/AGENT-CATALOG.md) (Catálogo refatorado e aliases)",
+      "context": "- [`docs/vnext/AGENT-CATALOG.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/AGENT-CATALOG.md) (Catálogo refatorado ",
+      "type": "capability",
+      "id": "VNX-181",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 58,
+      "text": "[`docs/vnext/DEMOS.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/DEMOS.md) (5 Demos interativas)",
+      "context": "- [`docs/vnext/DEMOS.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/DEMOS.md) (5 Demos interativas)",
+      "type": "capability",
+      "id": "VNX-182",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 59,
+      "text": "[`docs/vnext/FINAL-REPORT.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/FINAL-REPORT.md) (Relatório final)",
+      "context": "- [`docs/vnext/FINAL-REPORT.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/FINAL-REPORT.md) (Relatório final)",
+      "type": "capability",
+      "id": "VNX-183",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    },
+    {
+      "doc": "docs/vnext/FINAL-REPORT.md",
+      "line": 60,
+      "text": "`docs/vnext/adrs/ADR-001` até `ADR-008` (Decisões arquiteturais registradas)",
+      "context": "- `docs/vnext/adrs/ADR-001` até `ADR-008` (Decisões arquiteturais registradas)",
+      "type": "capability",
+      "id": "VNX-184",
+      "state": "SEM_LASTRO",
+      "note": "classificacao pendente"
+    }
+  ]
+}
