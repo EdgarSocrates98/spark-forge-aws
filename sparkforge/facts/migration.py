@@ -9,17 +9,25 @@ catalogo (Task 7 desta fase). Essa divisao e o que permite julgar facts
 antigos com um catalogo de regras novo sem reparsear o artefato -- o mesmo
 contrato descrito em `sparkforge/findings/models.py` para `Fact`.
 
-`EMITTED_KINDS` declara apenas `mig.sdk_import` por enquanto, embora a area de
-migracao preveja mais kinds (`mig.emrfs_config`, `mig.ansi_risk`, etc.). Cada
-um deles entra no vocabulario no MESMO commit em que ganha extrator e fixture
-golden -- convencao ja em uso em `graph.py` e `emr_serverless.py`, cujos
-comentarios de Task explicam por que: `tests/test_fixtures_kind_coverage.py`
-exige golden para todo kind de `EMITTED_KINDS` assim que o modulo entra no
-registro `EXTRACTORS` daquele teste (e do `tests/test_rules_catalog_reachability.py`).
-Declarar kinds aspiracionais aqui nao quebra nada HOJE porque `migration`
-ainda nao esta em nenhum dos dois registros -- mas quebraria assim que
-alguem o registrasse antes de todos os kinds terem golden, entao o vocabulario
-fica restrito ao que o modulo de fato emite.
+`EMITTED_KINDS` declarava apenas `mig.sdk_import` (Task 4). A Task 5 soma tres:
+`mig.emrfs_config`, `mig.legacy_conf` e `mig.deprecated_api`, lidos das mesmas
+linhas de fonte Python. Cada kind entra no vocabulario no MESMO commit em que
+ganha extrator e fixture golden -- convencao ja em uso em `graph.py` e
+`emr_serverless.py`, cujos comentarios de Task explicam por que:
+`tests/test_fixtures_kind_coverage.py` exige golden para todo kind de
+`EMITTED_KINDS` assim que o modulo entra no registro `EXTRACTORS` daquele
+teste (e do `tests/test_rules_catalog_reachability.py`). Declarar kinds
+aspiracionais aqui nao quebra nada HOJE porque `migration` ainda nao esta em
+nenhum dos dois registros -- mas quebraria assim que alguem o registrasse
+antes de todos os kinds terem golden, entao o vocabulario fica restrito ao que
+o modulo de fato emite.
+
+Os tres kinds novos sao OBSERVACAO, nao juizo: que `fs.s3.consistent` seja uma
+chave exclusiva do EMRFS e um fato sobre o vocabulario da chave, nao sobre se
+ela quebra alguma coisa. Que o S3A usado do Glue 5 em diante nao leia essa
+chave e nao reclame dela -- silencio, nao erro -- e o que torna a chave
+perigosa (ela sobrevive no codigo parecendo configurada) e e justamente o tipo
+de leitura que pertence a uma regra com `runtime_scope`, nunca a este modulo.
 """
 from __future__ import annotations
 
@@ -32,7 +40,9 @@ from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "migration@0.1.0"
 
-EMITTED_KINDS = frozenset({"mig.sdk_import"})
+EMITTED_KINDS = frozenset(
+    {"mig.sdk_import", "mig.emrfs_config", "mig.legacy_conf", "mig.deprecated_api"}
+)
 
 # SDK v1 da AWS para Java/Scala: `com.amazonaws.*`. Aparece em jobs Glue que
 # chamam a API do SDK diretamente (fora do que `awsglue`/`boto3` cobrem), tipo
@@ -46,6 +56,16 @@ _SDK_V2_RE = re.compile(r"\bsoftware\.amazon\.awssdk\b")
 _SDK_GENERATIONS: tuple[tuple[re.Pattern[str], str, str], ...] = (
     (_SDK_V1_RE, "v1", "com.amazonaws"),
     (_SDK_V2_RE, "v2", "software.amazon.awssdk"),
+)
+
+# Prefixo exclusivo do EMRFS. O S3A do Glue 5+ nao le nenhuma destas chaves,
+# entao elas sobrevivem no codigo sem efeito -- silencio, que e pior que erro.
+_EMRFS_PREFIXES = ("fs.s3.consistent", "fs.s3.enableServerSideEncryption", "fs.s3.maxRetries")
+_CONF_KEY_RE = re.compile(r'["\']([\w.\-]+)["\']')
+_LEGACY_CONF_RE = re.compile(r'["\'](spark\.sql\.legacy\.[\w.]+)["\']')
+_DEPRECATED_SYMBOLS = ("SQLContext", "HiveContext")
+_DEPRECATED_SYMBOL_RES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
+    (re.compile(r"\b" + re.escape(symbol) + r"\b"), symbol) for symbol in _DEPRECATED_SYMBOLS
 )
 
 
@@ -76,6 +96,50 @@ def _sdk_imports(text: str, anchor: str, provenance: dict[str, Any]) -> list[Fac
     return facts
 
 
+def _config_facts(text: str, anchor: str, provenance: dict[str, Any]) -> list[Fact]:
+    """EMRFS, config legada do Spark e API depreciada -- mesma varredura ingenua
+    linha a linha que `_sdk_imports` ja faz para `com.amazonaws`: regex sobre o
+    texto cru, sem checar se a linha e uma chamada real a `spark.conf.set` (nem
+    se esta dentro de comentario ou string). Decisao deliberada: sobre-capturar
+    custa a quem escreve a regra explicar um falso positivo; sub-capturar
+    esconde uma configuracao morta para sempre -- e essa e a categoria de erro
+    que este extrator existe para evitar (ver `tests/test_facts_migration.py`,
+    `test_reconhece_chave_de_emrfs_dentro_de_comentario_por_design`).
+    """
+    facts: list[Fact] = []
+    for lineno, linha in enumerate(text.split("\n"), start=1):
+        for legada in _LEGACY_CONF_RE.findall(linha):
+            facts.append(
+                Fact(
+                    kind="mig.legacy_conf",
+                    subject=_source_subject(anchor, lineno),
+                    attrs={"key": legada},
+                    provenance=provenance,
+                )
+            )
+        for chave in _CONF_KEY_RE.findall(linha):
+            if chave.startswith(_EMRFS_PREFIXES):
+                facts.append(
+                    Fact(
+                        kind="mig.emrfs_config",
+                        subject=_source_subject(anchor, lineno),
+                        attrs={"key": chave},
+                        provenance=provenance,
+                    )
+                )
+        for regex, simbolo in _DEPRECATED_SYMBOL_RES:
+            if regex.search(linha):
+                facts.append(
+                    Fact(
+                        kind="mig.deprecated_api",
+                        subject=_source_subject(anchor, lineno),
+                        attrs={"symbol": simbolo},
+                        provenance=provenance,
+                    )
+                )
+    return facts
+
+
 def extract_migration_path(path: Path, repo_root: Path | None = None) -> list[Fact]:
     """Extrai de um `.py`, ancorando o path relativo a `repo_root`."""
     rel = str(path.relative_to(repo_root)) if repo_root else str(path)
@@ -85,7 +149,7 @@ def extract_migration_path(path: Path, repo_root: Path | None = None) -> list[Fa
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
     provenance = {"artifact": anchor, "artifact_sha256": sha, "extractor": EXTRACTOR_ID}
 
-    facts = _sdk_imports(text, anchor, provenance)
+    facts = _sdk_imports(text, anchor, provenance) + _config_facts(text, anchor, provenance)
 
     unknown = {f.kind for f in facts} - EMITTED_KINDS
     if unknown:
