@@ -14,5 +14,5 @@ Adotamos uma infraestrutura de **Observabilidade Local-First**:
 - Integração opcional com OpenTelemetry / CloudWatch caso o usuário configure explicitamente, sem que isso seja dependência para o funcionamento local.
 
 ## Consequences
-- **Positivas**: 100% privado, sem custos de infraestrutura adicionais e totalmente funcional offline.
+- **Positivas**: núcleo de raciocínio local e privado, sem custos de infraestrutura adicionais, funcional offline — os coletores opcionais de `sparkforge.collect` chamam APIs da AWS pela rede quando invocados.
 - **Trade-offs**: Exige implementação própria de agregadores e consultas de métricas locais.

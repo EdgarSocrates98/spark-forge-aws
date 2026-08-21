@@ -11,5 +11,5 @@ O suporte a protocolos de agentes (MCP, A2A, ACP) e a execução de tarefas pesa
 - **Execução Cloud Opcional**: O core da factory opera localmente. Criamos uma camada de abstração de **Remote Worker** com arquitetura Serverless (AWS Lambda, ECS Fargate, AWS Batch com Spot) sob demanda e scale-to-zero para benchmarks pesados, ativada exclusivamente via configuração explícita do usuário.
 
 ## Consequences
-- **Positivas**: Núcleo leve e independente de rede; capacidade de escala em nuvem sob demanda sem custos fixos 24/7.
+- **Positivas**: Núcleo leve e independente de rede; capacidade de escala em nuvem sob demanda sem custos fixos contínuos.
 - **Trade-offs**: Abstração de execução local vs remota deve manter paridade de comportamento e contratos de segurança.

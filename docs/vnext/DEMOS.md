@@ -7,7 +7,7 @@ Demonstrações práticas mostrando o funcionamento da **Data & AWS Agent Factor
 ## Demo 1: Otimização de Job Glue PySpark com Skew de Memória
 
 ### Cenário
-Um job AWS Glue 4.0 processando 500GB apresenta lentidão severa e OOM intermitente em um executor específico.
+Um job AWS Glue processando 500GB apresenta lentidão severa e OOM intermitente em um executor específico.
 
 ### Execução na Factory
 ```bash
@@ -41,7 +41,7 @@ Desenhar arquitetura de Change Data Capture (CDC) do DynamoDB / RDS para Apache 
 ## Demo 3: Análise de Mudança de Schema em Tabela Iceberg
 
 ### Cenário
-Evolução de schema adicionando colunas e modificando tipos em tabela Iceberg com 50 consumidores downstream.
+Evolução de schema adicionando colunas e modificando tipos em tabela Iceberg com múltiplos consumidores downstream.
 
 ### Execução na Factory
 - **Camada Determinística**: `sparkforge analyze catalog-schema` + `sparkforge analyze consumers`

@@ -25,7 +25,7 @@ O **SparkForge AWS vNext** é projetado como uma **Data & AWS Agent Factory indu
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                    Layer 2: Multi-Platform Compilers & Protocols            │
 │   MCP Protocol, A2A/ACP Interfaces, Platform Exporters:                     │
-│   - Antigravity 2.0 (.agents/agents, .agents/skills, .agents/rules)         │
+│   - Antigravity (.agents/agents, .agents/skills, .agents/rules)             │
 │   - Cursor (.cursor/rules/*.mdc, MCP config)                                │
 │   - Claude Code (CLAUDE.md bootstrap, .claude/agents, .claude/skills)       │
 │   - Devin / Windsurf (Platform adapters, instructions, memory)              │
@@ -36,7 +36,7 @@ O **SparkForge AWS vNext** é projetado como uma **Data & AWS Agent Factory indu
 │   TeamManifest, WorkflowManifest, PolicyManifest, KnowledgeManifest, Eval   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                    Layer 0: Deterministic Core (0 Tokens LLM)                │
-│   sparkforge.facts (21 extractors, 118 kinds), sparkforge.rules (AST Engine)│
+│   sparkforge.facts (extractors, fact kinds), sparkforge.rules (AST Engine)  │
 │   sparkforge.findings (Immutable Evidence Schema), sparkforge.case (Gates)  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -63,7 +63,7 @@ O **SparkForge AWS vNext** é projetado como uma **Data & AWS Agent Factory indu
 ### Layer 2: Platform Compiler & Adapter Layer
 - Arquitetura de compilação: `Canonical Registry` → `Platform Compiler` → `Target Artifacts`.
 - Suporte nativo aos ecossistemas:
-  1. **Antigravity 2.0**: `.agents/agents/`, `.agents/skills/`, `.agents/rules/` com progressive disclosure.
+  1. **Antigravity**: `.agents/agents/`, `.agents/skills/`, `.agents/rules/` com progressive disclosure.
   2. **Cursor**: `.cursor/rules/*.mdc` com escopo por arquivo/linguagem/tarefa e MCP config.
   3. **Claude Code**: `CLAUDE.md` conciso como bootstrap, espelhos `.claude/agents/` e `.claude/skills/`.
   4. **Devin & Windsurf**: Mapeamento limpo e isolado sem vazar detalhes no core.
@@ -80,7 +80,7 @@ O **SparkForge AWS vNext** é projetado como uma **Data & AWS Agent Factory indu
   - `Tier 5` (Premium Reasoning): Modelos topo de linha acionados apenas sob alto risco ou complexidade extrema.
   - `Tier 6` (Multi-Agent): Decomposição paralela apenas quando o benefício superar mensuravelmente o custo.
 - **Perfis de Execução**:
-  - `ECO` (Default): Single-agent, cheap models, turns curtos, cache agressivo, 0 reflection desnecessária.
+  - `ECO` (Default): Single-agent, cheap models, turns curtos, cache agressivo.
   - `BALANCED`: Equilíbrio entre custo e verificação adicional.
   - `QUALITY`: Modelos fortes com critic/refiner e validações ampliadas.
   - `OFFLINE`: Zero chamadas externas, inferência local ou determinística.
@@ -151,4 +151,4 @@ sparkforge/
 
 1. **Retrocompatibilidade de CLI**: O comando `sparkforge` continuará aceitando todos os subcomandos existentes (`analyze`, `judge`, `case`, `report`, `benchmark`, `funcval`, `runtime`, `fuse`). Novos comandos (`export`, `doctor`, `inspect`, `optimize`, `workflow`, `eval`) serão introduzidos de forma aditiva.
 2. **Retrocompatibilidade de MCP**: As ferramentas MCP expostas continuam com as mesmas assinaturas e retornos JSON estruturados.
-3. **Preservação de Catálogos de Regras**: As 52 regras YAML existentes continuam sendo a fonte canônica para julgamentos.
+3. **Preservação de Catálogos de Regras**: Os catálogos de regras YAML existentes em `rules/catalog/` continuam sendo a fonte canônica para julgamentos.

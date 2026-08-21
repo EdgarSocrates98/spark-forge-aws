@@ -115,17 +115,8 @@
       "context": "Mapeamento de 20 serviços fundamentais de dados da AWS em 10 dimensões de engenharia:",
       "type": "number",
       "id": "VNX-008",
-      "state": "PROVADA",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib; lines=pathlib.Path(\"docs/vnext/CAPABILITY-MATRIX.md\").read_text(encoding=\"utf-8\").split(chr(10)); rows=[l for l in lines if l.strip().startswith(\"| **\")]; print(len(rows), \"servicos\")'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) servicos",
-          "value": 20
-        }
-      }
+      "state": "REMOVIDA",
+      "note": "A prova relia na contagem de linhas do proprio documento (linhas iniciando com '| **' em CAPABILITY-MATRIX.md), o que so prova que o arquivo Markdown tem 20 linhas casando um padrao, nunca que 20 servicos AWS tem cobertura real em dez dimensoes de engenharia. Mesmo defeito de VNX-049 e VNX-068 (numero provado contando estrutura do proprio documento, nao capacidade), agravado por ser inteiramente auto-referencial. A tabela foi removida pela auditoria; provar cobertura por servico exigiria artefato externo ao documento -- modulo, coletor ou teste por servico."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -134,17 +125,8 @@
       "context": "Mapeamento de 20 serviços fundamentais de dados da AWS em 10 dimensões de engenharia:",
       "type": "number",
       "id": "VNX-009",
-      "state": "PROVADA",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib; lines=pathlib.Path(\"docs/vnext/CAPABILITY-MATRIX.md\").read_text(encoding=\"utf-8\").split(chr(10)); header=[l for l in lines if l.strip().startswith(\"| Servi\")][0]; cells=[c.strip() for c in header.strip(\"|\").split(\"|\")]; print(len(cells)-1, \"dimensoes\")'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) dimensoes",
-          "value": 10
-        }
-      }
+      "state": "REMOVIDA",
+      "note": "A prova relia na contagem de celulas do cabecalho do proprio documento (a linha iniciando com '| Servi' em CAPABILITY-MATRIX.md), o que so prova que o arquivo Markdown tem um cabecalho de tabela com dez colunas, nunca que dez dimensoes de engenharia sao cobertas de fato para qualquer servico. Mesmo defeito de VNX-049 e VNX-068 (numero provado contando estrutura do proprio documento, nao capacidade), agravado por ser inteiramente auto-referencial. A tabela foi removida pela auditoria; provar cobertura por servico exigiria artefato externo ao documento -- modulo, coletor ou teste por servico."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",

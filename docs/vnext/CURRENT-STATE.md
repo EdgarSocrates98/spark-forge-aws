@@ -10,12 +10,12 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
              │
              ▼
 ┌────────────────────────────────────────┐
-│  sparkforge.facts (21 Extratores)      │ ──> 118 Fact Kinds Determinísticos
+│  sparkforge.facts (Extratores)         │ ──> Fact Kinds Determinísticos
 └────────────────────────────────────────┘
              │
              ▼
 ┌────────────────────────────────────────┐
-│  sparkforge.rules (Motor AST Seguro)   │ <── rules/catalog/*.yaml (52 Catálogos)
+│  sparkforge.rules (Motor AST Seguro)   │ <── rules/catalog/*.yaml (Catálogos)
 └────────────────────────────────────────┘
              │
              ▼
@@ -36,8 +36,8 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 
 ### Componentes Principais
 
-1. **`sparkforge.facts`**: 21 extratores offline (AST de PySpark, physical plans formatados, JSONL Spark event logs, Iceberg metadata dumps, Glue Data Catalog, Terraform HCL, SQL literals, Athena workgroups, EMR clusters, EMR Serverless, Data Quality checks, Graph/GraphFrames, Call Graphs, S3 listings, Table consumers, Terraform diffs, Benchmarks, Functional validation, Runtime detection, Fusion).
-2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e escopos de versão (Glue 4.0/5.0/5.1, EMR 6.x/7.x).
+1. **`sparkforge.facts`**: extratores offline (AST de PySpark, physical plans formatados, JSONL Spark event logs, Iceberg metadata dumps, Glue Data Catalog, Terraform HCL, SQL literals, Athena workgroups, EMR clusters, EMR Serverless, Data Quality checks, Graph/GraphFrames, Call Graphs, S3 listings, Table consumers, Terraform diffs, Benchmarks, Functional validation, Runtime detection, Fusion).
+2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e escopos de versão (Glue e EMR).
 3. **`sparkforge.findings`**: Estrutura imutável e assinável de achados técnicos com rastreabilidade obrigatória de `fact_id` e `rule_id`.
 4. **`sparkforge.case`**: Gerenciador durável de casos de investigação com 4 gates (`baseline_captured`, `flows_mapped`, `functional_validation_defined`, `dominant_bottleneck_identified`) com bloqueio fail-closed e trilha de override auditada.
 5. **`sparkforge.agents`**: Supervisores, políticas de modelo, observabilidade básica e controle de autonomia.
@@ -49,15 +49,18 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 
 | Categoria | Quantidade | Localização | Descrição |
 |---|---|---|---|
-| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |
+| **Agents** | 5 executores de ciclo (+ demais especialistas) | `agents/*.md`, `agents/executors/*.md` | Agentes especialistas e executores determinísticos de fase (Phase Loop) |
 | **Skills** | 40 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |
 | **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens) |
 | **Teams** | 5 | `config/teams-expansion.yaml` | Composições de times (evidence-quality, governance, etc.) |
-| **Extratores de Fatos** | 21 | `sparkforge/facts/*.py` | 118 kinds de fatos determinísticos |
-| **Catálogos de Regras** | 52 | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |
-| **Knowledge Base** | 35+ | `knowledge/**/*.md`, `knowledge/**/*.json` | Guias de arquitetura, runtimes, anti-patterns, lockfiles |
-| **Testes Automatizados** | 100 arquivos (5.463 testes) | `tests/test_*.py` | Cobertura massiva unitária, contratos, golden cases e paridade |
+| **Extratores de Fatos** | — | `sparkforge/facts/*.py` | Fatos determinísticos extraídos localmente |
+| **Catálogos de Regras** | — | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |
+| **Knowledge Base** | — | `knowledge/**/*.md`, `knowledge/**/*.json` | Guias de arquitetura, runtimes, anti-patterns, lockfiles |
+| **Testes Automatizados** | — | `tests/test_*.py` | Cobertura unitária, contratos, golden cases e paridade |
 | **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e Devin |
+
+As linhas acima que perderam a contagem ("—") tinham número desatualizado ou sem
+artefato de medição — ver `docs/vnext/claims.lock.json` para o motivo de cada uma.
 
 ---
 
@@ -67,7 +70,7 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 2. **Evidência Rastreável por Construção**: É impossível gerar um `Finding` válido sem lista não-vazia de `fact_id` ancorados.
 3. **Gates Fail-Closed com Assinatura Criptográfica**: Investigação rigorosa com integridade de relatório protegida por hash SHA-256 sobre fatos, regras e corpo.
 4. **Respeito a Runtimes e Versões**: Matrizes formais de compatibilidade Glue/EMR impedem sugestões inválidas de APIs.
-5. **Altíssima Cobertura de Testes**: Mais de 5.400 testes garantindo não-regressão, determinismo e reprodutibilidade.
+5. **Cobertura de Testes**: Suíte extensa de testes garantindo não-regressão, determinismo e reprodutibilidade.
 6. **Build Reprodutível**: Configuração hatchling com normalização de permissões, timestamps e ordem de arquivos.
 
 ---
@@ -78,14 +81,14 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 2. **Sincronização Manual de Plataformas**: A geração de espelhos para IDEs depende de scripts Python pontuais (`sync_skills.py`, `install_skills.py`) em vez de um compilador canônico com pipeline de exportação padronizado.
 3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não há engine unificado que aplique a cascata de 7 tiers (Tier 0 Deterministic → Tier 1 Cache → Tier 2 Retrieval → Tier 3 Cheap → Tier 4 Specialist → Tier 5 Premium → Tier 6 Multi-Agent).
 4. **Model Router Inicial**: Seleção de modelos baseada em regras simples em vez de avaliação multidimensional (complexidade × risco × capacidade × custo × privacidade).
-5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não implementa formalmente o funil de contexto e disclosure progressivo em 3 níveis (A: Metadados, B: Instruções, C: Referências).
+5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não implementa formalmente o funil de contexto e disclosure progressivo em níveis (A: Metadados, B: Instruções, C: Referências).
 6. **Observabilidade Local Não-Centralizada**: Falta de storage padronizado para rastreamento completo de execuções (`run_id`, `span_id`, traces estruturados, SQLite/JSONL unificado).
 
 ---
 
 ## 5. Riscos
 
-1. **Proliferação Desordenada de Agentes**: Manter 38 agentes permanentes sem controle de ativação pode induzir custos desnecessários em plataformas que carregam perfis automaticamente.
+1. **Proliferação Desordenada de Agentes**: Manter agentes permanentes sem controle de ativação pode induzir custos desnecessários em plataformas que carregam perfis automaticamente.
 2. **Quebra de Compatibilidade de Exportação**: Mudanças nas convenções do Cursor (`.mdc`), Claude Code (`.claude/`) ou Devin podem degradar a experiência se não houver golden tests dedicados para cada target.
 3. **Overhead de Contexto**: Se descrições de ferramentas e skills ficarem muito extensas, consomem a janela de contexto antes mesmo da execução.
 
@@ -93,10 +96,10 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 
 ## 6. Baseline de Testes e Funcionalidades
 
-- **Total de Testes**: 5.463 itens
+- **Total de Testes**: contagem removida — o número publicado em `a5b9e96` está desatualizado (ver `docs/vnext/claims.lock.json`).
 - **Tempo Médio de Execução da Suite Completa**: ~90-120 segundos
-- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)
-- **Dependências de Produção Obrigatórias**: `PyYAML>=6.0`, `jsonschema>=4.0` (Zero dependência externa pesada).
+- **Compatibilidade Python**: piso mínimo e versões testadas declarados em `pyproject.toml` (`requires-python`).
+- **Dependências de Produção Obrigatórias**: `PyYAML`, `jsonschema` (versões mínimas em `pyproject.toml`; zero dependência externa pesada).
 
 ---
 

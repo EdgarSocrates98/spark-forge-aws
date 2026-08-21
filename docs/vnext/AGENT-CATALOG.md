@@ -6,36 +6,32 @@ Para evitar proliferação desordenada e desperdício de tokens, o SparkForge vN
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   A. CORE COORDINATORS (7)                  │
-│  Supervisão, Roteamento, Decisões de Alto Nível e Políticas │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Dispara sob demanda
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 B. SPECIALIST ROLES / SUBAGENTS             │
-│  Execução de Tarefas Específicas com Limites Estritos       │
+│                 A. SPECIALIST ROLES / SUBAGENTS              │
+│  Execução de Tarefas Específicas com Limites Estritos        │
 └──────────────────────────────┬──────────────────────────────┘
                                │ Carrega proceduralmente
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 C. COMPOSABLE SKILLS (40+)                  │
-│  Instruções, Checklists e Procedimentos Lazy-Loaded (A/B/C) │
+│                 B. COMPOSABLE SKILLS (40+)                  │
+│  Instruções, Checklists e Procedimentos Lazy-Loaded (A/B)    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Core Coordinators (Permanentes)
+## 2. Roteamento por Tiers
 
-| Coordinator | Papel | Responsabilidade Principal | Ferramentas Chave |
-|---|---|---|---|
-| **`forge-supervisor`** | Orquestração Geral | Controla o ciclo de vida da investigação, gates do caso e handoffs entre etapas. | `sparkforge case`, `sparkforge playbook` |
-| **`task-router`** | Roteamento Econômico | Classifica tarefas, seleciona tiers (0 a 6) e perfis de execução (`ECO`, etc.). | `sparkforge inspect`, `sparkforge routing` |
-| **`data-engineering-architect`** | Arquitetura de Dados | Decisões transversais de pipelines (PySpark, SQL, Batch, Streaming, Particionamento). | `sparkforge analyze pyspark/plan` |
-| **`aws-data-architect`** | Infraestrutura Cloud | Desenho e revisão de serviços AWS (Glue, EMR, Athena, S3, Lake Formation, IAM). | `sparkforge analyze terraform/emr` |
-| **`evidence-verifier`** | Qualidade & Evidências | Julgamento de regras, ancoragem de fatos e validação funcional antes de relatórios. | `sparkforge judge`, `sparkforge report verify` |
-| **`security-governance`** | Segurança & Riscos | Avaliação de mutações, redação de segredos, IAM e integridade de data lake. | `sparkforge security`, `sparkforge audit` |
-| **`finops-reviewer`** | FinOps & Token Economy | Otimização de custos AWS e monitoramento de eficiência de tokens (`sparkforge optimize`). | `sparkforge cost`, `sparkforge optimize` |
+Este documento descrevia, em versões anteriores, uma camada de "Core
+Coordinators" — sete agentes permanentes de supervisão e roteamento. Nenhum
+dos sete existe em `agents/`, o diretório canônico (espelhado em
+`.claude/agents/`, `.agents/agents/` e `.github/agents/` e verificado por
+`tests/test_agents_parity.py::TestMirrors`). A auditoria registrada em
+`docs/vnext/claims.lock.json` documenta, alegação por alegação, o motivo de
+cada um.
+
+O que existe de fato é o motor de economia de tokens em
+`sparkforge/economy/budget.py`, que define tiers de 0 a 6 (`TIER_PRICING`)
+usados para selecionar o perfil de execução de cada tarefa.
 
 ---
 
@@ -56,12 +52,14 @@ Para evitar proliferação desordenada e desperdício de tokens, o SparkForge vN
 | `sf-judge` | **Executor** | Executor de regras determinísticas (Phase Loop). | `sf-judge` |
 | `sf-verifier` | **Executor** | Executor de validação de saídas (Phase Loop). | `sf-verifier` |
 | `sf-synthesizer` | **Executor** | Executor de síntese de relatório assinado. | `sf-synthesizer` |
-| `sf-pyspark-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`optimize-pyspark-code`). | `sf-pyspark-specialist` |
-| `sf-storage-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`optimize-iceberg-table`). | `sf-storage-specialist` |
-| `sf-runtime-specialist` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`review-emr-cluster`). | `sf-runtime-specialist` |
-| `sf-token-verifier` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`token-efficient-agent`). | `sf-token-verifier` |
-| `sf-cost-reviewer` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`data-platform-finops`). | `sf-cost-reviewer` |
-| `sf-security-reviewer` | **Skill Composta** | Convertido em Skill Lazy-Loaded (`security-review`). | `sf-security-reviewer` |
+
+Seis agentes (`sf-pyspark-specialist`, `sf-storage-specialist`,
+`sf-runtime-specialist`, `sf-token-verifier`, `sf-cost-reviewer`,
+`sf-security-reviewer`) apareciam aqui como "Convertidos em Skill
+Lazy-Loaded". Nenhum foi convertido: todos continuam existindo como agentes
+ativos em `agents/`, roteados de fato em `rules/catalog/routing.yaml` e
+exercitados por `tests/test_router_agents.py`. A linha foi removida, não
+reescrita — ver `docs/vnext/claims.lock.json` para o motivo de cada um.
 
 ---
 

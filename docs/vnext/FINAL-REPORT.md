@@ -3,7 +3,7 @@
 ## 1. Executive Summary
 
 O **SparkForge AWS** foi transformado com sucesso em uma **Data & AWS Agent Factory** industrial, local-first, modular, token-eficiente e multiplataforma.
-A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers (`sparkforge.economy`), funil de contexto (`sparkforge.context`), compilador para 7 plataformas de desenvolvimento (`sparkforge.adapters.platforms`), orquestrador de DAG em waves (`sparkforge.workflows`), framework de avaliação contínua (`sparkforge.evals`) e observabilidade local via SQLite (`sparkforge.observability`), mantendo 100% de retrocompatibilidade com a base de regras e ferramentas determinísticas.
+A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers (`sparkforge.economy`), funil de contexto (`sparkforge.context`), compilador para 7 plataformas de desenvolvimento (`sparkforge.adapters.platforms`), orquestrador de DAG em waves (`sparkforge.workflows`), framework de avaliação contínua (`sparkforge.evals`) e observabilidade local via SQLite (`sparkforge.observability`), preservando a base de regras e ferramentas determinísticas existentes.
 
 ---
 
@@ -25,15 +25,13 @@ BEFORE (v0.5.0)                                    AFTER (vNext Agent Factory)
 
 ## 3. KPIs e Resultados de Economia
 
-| KPI | Baseline (v0.5.0) | vNext Factory | Delta / Ganho |
-|---|---:|---:|---:|
-| **Task Success Rate** | 98.2% | **100%** | +1.8% |
-| **Median Tokens / Deterministic Task** | 3.500 | **0** | **-100%** (Tier 0 puro) |
-| **Median Tokens / Specialist Task** | 18.000 | **3.800** | **-78.8%** (Funnel + Skill B) |
-| **Estimated Cost / 1k Tasks** | $45.00 | **$8.20** | **-81.8%** de economia |
-| **Multi-Agent Escalation Rate** | ~35% | **< 5%** | Redução drástica de overhead |
-| **Cache Hit Rate (Re-runs)** | 0% | **94.5%** | Tier 1 ArtifactCache |
-| **Test Suite Coverage** | 5.463 testes | **5.485+ testes** | +22 novos testes de infra |
+A tabela de KPIs publicada em `a5b9e96` (taxa de sucesso de tarefas, mediana de
+tokens por tarefa determinística e por tarefa de especialista, custo estimado por
+mil tarefas, taxa de escalonamento multi-agente, cache hit rate e cobertura de
+testes) não tem artefato de medição no repositório — nenhum comando reproduz
+nenhum dos dois lados de nenhuma linha. A auditoria registrada em
+`docs/vnext/claims.lock.json` documenta o motivo de cada número. A tabela foi
+removida, não reescrita.
 
 ---
 
@@ -47,23 +45,22 @@ BEFORE (v0.5.0)                                    AFTER (vNext Agent Factory)
 - [`sparkforge/workflows/`](file:///e:/projetos/spark-forge-aws/sparkforge/workflows/): `spec.py`, `dag.py`, `handoff.py`, `__init__.py`
 - [`sparkforge/evals/`](file:///e:/projetos/spark-forge-aws/sparkforge/evals/): `runner.py`, `datasets/router_dataset.json`, `__init__.py`
 - [`sparkforge/observability/`](file:///e:/projetos/spark-forge-aws/sparkforge/observability/): `tracer.py`, `store.py`, `__init__.py`
-- [`sparkforge/providers/`](file:///e:/projetos/spark-forge-aws/sparkforge/providers/): `mock.py`
-- [`sparkforge/cloud/`](file:///e:/projetos/spark-forge-aws/sparkforge/cloud/): `worker.py`, `__init__.py`
 
-### Documentação e ADRs:
-- [`docs/vnext/CURRENT-STATE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/CURRENT-STATE.md) (Baseline Phase 0)
-- [`docs/vnext/COURSE-KNOWLEDGE-MAP.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/COURSE-KNOWLEDGE-MAP.md) (Síntese metodológica)
-- [`docs/vnext/ARCHITECTURE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/ARCHITECTURE.md) (Arquitetura canônica vNext)
-- [`docs/vnext/AGENT-CATALOG.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/AGENT-CATALOG.md) (Catálogo refatorado e aliases)
-- [`docs/vnext/DEMOS.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/DEMOS.md) (5 Demos interativas)
-- [`docs/vnext/FINAL-REPORT.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/FINAL-REPORT.md) (Relatório final)
-- `docs/vnext/adrs/ADR-001` até `ADR-008` (Decisões arquiteturais registradas)
+`sparkforge/providers/mock.py` e `sparkforge/cloud/worker.py` também existem no
+repositório, mas nenhum teste os importa ou chama — não estão listados acima
+por isso (ver `docs/vnext/claims.lock.json`).
+
+A subseção "Documentação e ADRs", que listava nove documentos como entrega
+verificada, foi removida: só `ADR-001-canonical-registry.md` é citado por nome em
+teste, e mesmo assim apenas como exemplo incidental de `tests/test_vnext_claims.py`,
+não como asserção de entrega. Os documentos continuam existindo em `docs/vnext/`
+e `docs/vnext/adrs/`; `docs/vnext/DEMOS.md` documenta 5 demonstrações interativas.
 
 ---
 
 ## 5. Suporte a Plataformas
 
-1. **Antigravity 2.0**: `.agents/agents/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md`
+1. **Antigravity**: `.agents/agents/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md`
 2. **Cursor**: `.cursor/rules/*.mdc` com globs e frontmatter estruturado.
 3. **Claude Code**: `CLAUDE.md`, `.claude/agents/`, `.claude/skills/`.
 4. **Devin**: `knowledge/devin/INSTRUCTIONS.md` e espelhos de subagentes.
@@ -81,7 +78,7 @@ BEFORE (v0.5.0)                                    AFTER (vNext Agent Factory)
 
 ---
 
-## 7. Limitações Conhecidas e Próximos Passos (vNext+1)
+## 7. Limitações Conhecidas e Próximos Passos
 
 - **Limitação**: O compilador de plataformas atualmente gera arquivos estáticos; a sincronização contínua em tempo real pode ser integrada com hooks de Git ou file watchers.
-- **Oportunidade vNext+1**: Expandir remote worker com Terraform modules prontos para deployment Serverless AWS (Lambda container image + EventBridge).
+- **Oportunidade Futura**: Expandir remote worker com Terraform modules prontos para deployment Serverless AWS (Lambda container image + EventBridge).

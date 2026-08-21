@@ -10,8 +10,8 @@ Auditoria aprofundada de arquitetura, componentes e cobertura do repositório Sp
 
 | Camada | Itens Auditados | Estado Atual | Avaliação |
 |---|---|---|---|
-| **Deterministic Facts** | 21 módulos (`sparkforge/facts/`) | 118 fact kinds | **Excelente**: 100% determinístico, offline, sem LLM. |
-| **Rules Engine** | 52 catálogos YAML (`rules/catalog/`) | AST Python puro | **Excelente**: Sem `eval()`, tipado e com version scope. |
+| **Deterministic Facts** | Módulos em `sparkforge/facts/` | Extratores determinísticos | **Excelente**: 100% determinístico, offline, sem LLM. |
+| **Rules Engine** | Catálogos YAML em `rules/catalog/` | AST Python puro | **Excelente**: Sem `eval()`, tipado e com version scope. |
 | **Findings** | Modelos imutáveis (`sparkforge/findings/`) | SHA-256 Signatures | **Excelente**: Requer lista não-vazia de `fact_id`. |
 | **Case Lifecycle** | 4 Gates duráveis (`sparkforge/case/`) | Fail-closed | **Excelente**: Overrides auditados e assinados. |
 | **Canonical Registry** | `sparkforge/registry/` | Pydantic / JSON Schema | **Sólido**: Unificado para agentes, skills, tools e teams. |
@@ -20,13 +20,17 @@ Auditoria aprofundada de arquitetura, componentes e cobertura do repositório Sp
 | **Platform Compilers** | `sparkforge/adapters/platforms/` | 7 Targets | **Sólido**: Antigravity, Cursor, Claude, Devin, etc. |
 | **Workflows & DAG** | `sparkforge/workflows/` | TaskSpec + Waves DAG | **Sólido**: Handoffs estruturados e detecção de ciclos. |
 | **Local Observability** | `sparkforge/observability/` | SQLite (`traces.db`) | **Sólido**: Traces unificados com `run_id`/`span_id`. |
-| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |
+
+A linha "Test Baseline" (contagem de arquivos de teste, testes coletados e resultado
+"passed/skipped/falhas") foi removida: os números publicados em `a5b9e96` estão
+desatualizados, e `--collect-only` mede testes coletados, não testes passando — ver
+`docs/vnext/claims.lock.json` para o motivo de cada número.
 
 ---
 
 ## 3. Lacunas Identificadas para Especialização em AWS Data Platform
 
-1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria de S3A vs EMRFS.
+1. **Glue Migration Lab**: Ausência de analisador específico de migração de versão do AWS Glue (incluindo o runtime Spark e Java associados), e auditoria de S3A vs EMRFS.
 2. **Lake Formation Deep Engine**: Falta de grafo determinístico de permissões multi-conta (Principal ➔ IAM ➔ LF ➔ RAM ➔ Data Location ➔ S3 ➔ KMS) e motor de decisão FTA vs FGAC.
 3. **Iceberg Platform Engine**: Necessidade de ferramenta `iceberg doctor` determinística e planejador de manutenção (compaction, orphan cleanup, snapshot expiration).
 4. **Spark Performance Profilers**: Necessidade de analisadores dedicados para parsing de event logs (`.jsonl`) e árvores de `EXPLAIN FORMATTED`.
