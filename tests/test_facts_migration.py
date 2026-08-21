@@ -112,3 +112,93 @@ class TestConfiguracaoLegada:
             if f.kind == "mig.emrfs_config"
         ]
         assert chaves == ["fs.s3.consistent"]
+
+
+REQUIREMENTS = "pandas==2.0.3\npyarrow==14.0.1\nrequests==2.31.0\n"
+
+JOB_COM_CAST = '''
+df = df.withColumn("valor", col("texto").cast("int"))
+tabela = spark.sql("SELECT CAST(x AS DECIMAL(10,2)) FROM t")
+seguro = df.withColumn("v", try_cast(col("texto"), "int"))
+'''
+
+
+class TestDependenciaEFormato:
+    def test_reconhece_jar_com_scala_no_nome(self, tmp_path):
+        (tmp_path / "conector_2.12-1.4.0.jar").write_bytes(b"")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        jars = [f for f in facts if f.kind == "mig.jar_binary"]
+        assert len(jars) == 1
+        assert jars[0].attrs["scala"] == "2.12"
+
+    def test_jar_sem_scala_no_nome_ainda_e_observado(self, tmp_path):
+        (tmp_path / "opaco.jar").write_bytes(b"")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        jars = [f for f in facts if f.kind == "mig.jar_binary"]
+        assert len(jars) == 1
+        assert jars[0].attrs["scala"] == ""
+
+    def test_reconhece_dependencia_python_declarada(self, tmp_path):
+        (tmp_path / "requirements.txt").write_text(REQUIREMENTS, encoding="utf-8")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        deps = {
+            f.attrs["package"]: f.attrs["version"]
+            for f in facts
+            if f.kind == "mig.python_dep"
+        }
+        assert deps == {"pandas": "2.0.3", "pyarrow": "14.0.1", "requests": "2.31.0"}
+
+    def test_reconhece_cast_sem_guarda_e_ignora_try_cast(self, tmp_path):
+        (tmp_path / "job.py").write_text(JOB_COM_CAST, encoding="utf-8")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        riscos = [f for f in facts if f.kind == "mig.ansi_risk"]
+        assert len(riscos) == 2, [f.subject["line"] for f in riscos]
+        assert all(f.attrs["form"] == "cast" for f in riscos)
+
+
+JOB_COM_FORMAT_VERSION = '''
+spark.sql("ALTER TABLE t SET TBLPROPERTIES ('format-version'='2')")
+'''
+
+
+class TestFormatoDeTabela:
+    # Decisao pinada por este teste: o atributo se chama `format_version`, nao
+    # `version` puro, para deixar explicito que e a versao do FORMATO da
+    # tabela (spec Iceberg/Hudi/Delta) -- nao a versao da BIBLIOTECA que le ou
+    # escreve. Confundir as duas e o erro citado em `prompt_migrations_glue.md`
+    # Sec 8.8; um atributo generico `version` reintroduziria a mesma ambiguidade
+    # que o kind existe para evitar.
+    def test_reconhece_format_version_da_tabela(self, tmp_path):
+        (tmp_path / "job.py").write_text(JOB_COM_FORMAT_VERSION, encoding="utf-8")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        formatos = [f for f in facts if f.kind == "mig.table_format"]
+        assert len(formatos) == 1
+        assert formatos[0].attrs["format_version"] == "2"
+
+
+# Decisao pinada por este teste: comentario, linha em branco e pacote sem pin
+# (`pandas` sem `==`) NAO emitem `mig.python_dep`. Nenhum dos tres fixa uma
+# versao -- e fixar versao e exatamente o que este kind observa. Sub-capturar
+# aqui nao esconde um binario ou uma config morta (a categoria de erro que
+# este modulo evita por design); so evita afirmar uma versao que o arquivo
+# nao afirma.
+REQUIREMENTS_COM_CASOS_NEGATIVOS = (
+    "# pandas==2.0.3\n"
+    "\n"
+    "pandas\n"
+    "requests==2.31.0\n"
+)
+
+
+class TestNegativoDependenciaPython:
+    def test_ignora_comentario_branco_e_pacote_sem_pin(self, tmp_path):
+        (tmp_path / "requirements.txt").write_text(
+            REQUIREMENTS_COM_CASOS_NEGATIVOS, encoding="utf-8"
+        )
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        deps = {
+            f.attrs["package"]: f.attrs["version"]
+            for f in facts
+            if f.kind == "mig.python_dep"
+        }
+        assert deps == {"requests": "2.31.0"}
