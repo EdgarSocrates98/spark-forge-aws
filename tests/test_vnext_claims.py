@@ -1,3 +1,5 @@
+import json
+import types
 from pathlib import Path
 
 import pytest
@@ -725,3 +727,695 @@ class TestProvasCommand:
         )
         erros = gate.run_command_proofs(m, include_slow=False)
         assert any("nao e inteiro" in e for e in erros)
+
+
+def _sources_file(tmp_path, sources=None):
+    caminho = tmp_path / "sources.lock.json"
+    caminho.write_text(json.dumps({"sources": sources or {}}), encoding="utf-8")
+    return caminho
+
+
+class TestSuperficie:
+    def test_seed_produz_uma_entrada_por_alegacao_em_sem_lastro(self, tmp_path, monkeypatch):
+        (tmp_path / "adrs").mkdir()
+        (tmp_path / "UM.md").write_text("Economia de 81,8% e 5.485 testes.\n", encoding="utf-8")
+        destino = tmp_path / "claims.lock.json"
+        monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        assert dados["schema_version"] == 1
+        assert {c["state"] for c in dados["claims"]} == {"SEM_LASTRO"}
+        assert [c["id"] for c in dados["claims"]] == ["VNX-001", "VNX-002"]
+
+    def test_report_emite_uma_linha_por_alegacao(self, tmp_path, monkeypatch, capsys):
+        destino = tmp_path / "claims.lock.json"
+        destino.write_text(json.dumps(manifesto([entrada()])), encoding="utf-8")
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.report() == 0
+        saida = capsys.readouterr().out
+        assert "VNX-001" in saida
+        assert "REMOVIDA" in saida
+
+
+class TestSeedMerge:
+    """Reviewer (revisao de b6753d1, Critical 1 e 2): `--seed` sem merge
+    renumerava tudo posicionalmente (uma alegacao nova no topo do documento
+    deslocava o id de todas as outras) e a unica saida da guarda de
+    classificacao era `--force`, que apagava as 342 entradas classificadas a
+    mao inteiras. `seed()` agora funde por `claim_key` -- ids sao sticky, e
+    a guarda de classificacao foi removida porque deixou de ter trabalho: um
+    `--seed` sem `--force` nao arrisca mais nada que valha proteger.
+    """
+
+    def _doc(self, tmp_path, monkeypatch, texto):
+        (tmp_path / "adrs").mkdir()
+        (tmp_path / "UM.md").write_text(texto, encoding="utf-8")
+        destino = tmp_path / "claims.lock.json"
+        monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        return destino
+
+    def test_reseed_preserva_id_estado_nota_e_prova_e_novo_ganha_id_acima_do_maximo(
+        self, tmp_path, monkeypatch
+    ):
+        destino = self._doc(
+            tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\nEconomia de 81,8%.\n"
+        )
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        por_texto = {c["text"]: c for c in dados["claims"]}
+        assert por_texto["38"]["id"] == "VNX-001"
+        assert por_texto["81,8%"]["id"] == "VNX-002"
+
+        # classificacao a mao (Task 9), simulada diretamente no arquivo --
+        # o proprio `seed()` nunca escreve `state: PROVADA`.
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(38)"',
+            "tier": "fast",
+            "expect": {"kind": "number", "pattern": r"(\d+)", "value": 38},
+        }
+        for claim in dados["claims"]:
+            if claim["text"] == "38":
+                claim["state"] = "PROVADA"
+                claim["note"] = "conferido"
+                claim["proof"] = prova
+            elif claim["text"] == "81,8%":
+                claim["state"] = "REMOVIDA"
+                claim["note"] = "numero fantasioso, removido do documento"
+        destino.write_text(json.dumps(dados), encoding="utf-8")
+
+        # Uma alegacao nova aparece no TOPO do documento -- sob numeracao
+        # posicional (comportamento antigo) isso deslocaria o id de tudo
+        # abaixo dela; sob merge por chave, os ids antigos nao se movem.
+        (tmp_path / "UM.md").write_text(
+            "Novo dado: 7 tabelas.\nSao 38 agentes no catalogo.\nEconomia de 81,8%.\n",
+            encoding="utf-8",
+        )
+        assert gate.seed() == 0
+        refeito = json.loads(destino.read_text(encoding="utf-8"))
+        por_texto2 = {c["text"]: c for c in refeito["claims"]}
+
+        assert por_texto2["38"]["id"] == "VNX-001"
+        assert por_texto2["38"]["state"] == "PROVADA"
+        assert por_texto2["38"]["note"] == "conferido"
+        assert por_texto2["38"]["proof"] == prova
+        assert por_texto2["81,8%"]["id"] == "VNX-002"
+        assert por_texto2["81,8%"]["state"] == "REMOVIDA"
+        assert por_texto2["81,8%"]["note"] == "numero fantasioso, removido do documento"
+
+        # nova alegacao ganha id acima do maximo ja emitido -- nunca reaproveita
+        assert por_texto2["7"]["id"] == "VNX-003"
+        assert por_texto2["7"]["state"] == "SEM_LASTRO"
+
+    def test_alegacao_sumida_do_documento_e_retida_e_reportada(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        dados["claims"][0]["state"] = "PROVADA"
+        dados["claims"][0]["note"] = "conferido"
+        dados["claims"][0]["proof"] = {"kind": "source", "source_id": "x"}
+        destino.write_text(json.dumps(dados), encoding="utf-8")
+
+        # a alegacao some do documento (reescrito sem numero nenhum)
+        (tmp_path / "UM.md").write_text("Nada de numerico por aqui.\n", encoding="utf-8")
+        assert gate.seed() == 0
+        saida = capsys.readouterr().out
+        assert "sumida" in saida
+
+        refeito = json.loads(destino.read_text(encoding="utf-8"))
+        assert len(refeito["claims"]) == 1
+        retida = refeito["claims"][0]
+        assert retida["text"] == "38"
+        assert retida["id"] == "VNX-001"
+        assert retida["state"] == "PROVADA"
+        assert retida["proof"] == {"kind": "source", "source_id": "x"}
+
+        # o proximo `audit` (via `check_orphans`, ja testado em TestOrfaos)
+        # reporta essa entrada retida como orfa -- nada fica silenciosamente
+        # perdido nem silenciosamente escondido.
+        erros = gate.check_orphans(gate.collect_claims(gate.VNEXT), refeito)
+        assert any("orfa no manifesto" in e for e in erros)
+
+    def test_chaves_duplicadas_casam_por_ordem_e_contagem(self, tmp_path, monkeypatch):
+        # "3" aparece tres vezes na mesma linha -- mesma claim_key, contagem 3.
+        destino = self._doc(
+            tmp_path, monkeypatch, "Sao 3 tabelas, 3 colunas e 3 indices no total.\n"
+        )
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        tres = [c for c in dados["claims"] if c["text"] == "3"]
+        assert len(tres) == 3
+        ids_originais = sorted(c["id"] for c in tres)
+
+        # reseed sem nenhuma mudanca no documento: casamento por ordem e
+        # contagem (fila FIFO por chave) precisa devolver exatamente os
+        # mesmos tres ids, nao uma permutacao nem uma renumeracao.
+        assert gate.seed() == 0
+        refeito = json.loads(destino.read_text(encoding="utf-8"))
+        tres2 = [c for c in refeito["claims"] if c["text"] == "3"]
+        assert sorted(c["id"] for c in tres2) == ids_originais
+        assert len(refeito["claims"]) == len(dados["claims"])
+
+    def test_force_descarta_e_renumera_do_zero(self, tmp_path, monkeypatch):
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        dados["claims"][0]["state"] = "PROVADA"
+        dados["claims"][0]["note"] = "conferido"
+        dados["claims"][0]["proof"] = {"kind": "source", "source_id": "x"}
+        destino.write_text(json.dumps(dados), encoding="utf-8")
+
+        assert gate.seed(force=True) == 0
+        refeito = json.loads(destino.read_text(encoding="utf-8"))
+        assert refeito["claims"][0]["id"] == "VNX-001"
+        assert refeito["claims"][0]["state"] == "SEM_LASTRO"
+        assert "proof" not in refeito["claims"][0]
+
+    def test_sem_manifesto_previo_gera_semente_normal(self, tmp_path, monkeypatch):
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        assert not destino.exists()
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        assert dados["claims"][0]["id"] == "VNX-001"
+        assert dados["claims"][0]["state"] == "SEM_LASTRO"
+
+    def test_manifesto_corrompido_com_classificacao_recusa_e_preserva_o_arquivo(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # Reviewer (Critical, revisao de 87cef4a): antes desta correcao, um
+        # manifesto EXISTENTE mas ilegivel (JSON truncado) caia para geracao
+        # fresca em silencio -- exatamente a mesma assinatura de "descarta
+        # tudo" que `--force` tem, so que sem a confirmacao explicita nem o
+        # aviso que tornam `--force` seguro. Reproduzido contra o codigo
+        # anterior (commit 87cef4a): `seed()` sem `--force` devolvia 0 e
+        # reescrevia a entrada PROVADA como "1 nova(s)" SEM_LASTRO -- pior
+        # que silencio, porque reporta uma entrada destruida como se fosse
+        # nova. Agora `seed()` recusa: retorna nao-zero, imprime as duas
+        # saidas reais (restaurar via git, ou `--force` de proposito), e o
+        # arquivo no disco fica byte-a-byte identico ao que a tentativa
+        # encontrou.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        dados["claims"][0]["state"] = "PROVADA"
+        dados["claims"][0]["note"] = "conferido"
+        dados["claims"][0]["proof"] = {"kind": "source", "source_id": "x"}
+        destino.write_text(json.dumps(dados), encoding="utf-8")
+        antes = destino.read_bytes()
+
+        # trunca o arquivo pela metade -- simula crash no meio da escrita,
+        # arquivo travado, editor que salvou parcialmente, etc.
+        destino.write_bytes(antes[: len(antes) // 2])
+        truncado = destino.read_bytes()
+
+        assert gate.seed() != 0
+        saida = capsys.readouterr().out
+        assert "--force" in saida
+        assert "git checkout" in saida
+        # nada foi reescrito por cima do dano -- o arquivo continua
+        # exatamente como a tentativa de seed o encontrou.
+        assert destino.read_bytes() == truncado
+
+    def test_manifesto_corrompido_com_force_descarta_e_renumera(self, tmp_path, monkeypatch):
+        # Mesma configuracao do teste acima, mas com `--force`: essa e a
+        # unica forma legitima de descartar um manifesto ilegivel -- ja
+        # funcionava assim antes desta correcao (o caminho `force` nunca
+        # tentava ler o arquivo existente) e continua funcionando depois.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        dados["claims"][0]["state"] = "PROVADA"
+        dados["claims"][0]["note"] = "conferido"
+        dados["claims"][0]["proof"] = {"kind": "source", "source_id": "x"}
+        destino.write_text(json.dumps(dados), encoding="utf-8")
+        antes = destino.read_bytes()
+        destino.write_bytes(antes[: len(antes) // 2])
+
+        assert gate.seed(force=True) == 0
+        refeito = json.loads(destino.read_text(encoding="utf-8"))
+        assert refeito["claims"][0]["id"] == "VNX-001"
+        assert refeito["claims"][0]["state"] == "SEM_LASTRO"
+
+    def _classificar(self, destino):
+        """Semente + uma entrada classificada PROVADA a mao, devolvendo os
+        bytes do arquivo classificado (o "antes" que a recusa precisa
+        preservar byte a byte)."""
+        gate.seed()
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        dados["claims"][0]["state"] = "PROVADA"
+        dados["claims"][0]["note"] = "conferido"
+        dados["claims"][0]["proof"] = {"kind": "source", "source_id": "x"}
+        destino.write_text(json.dumps(dados), encoding="utf-8")
+        return destino.read_bytes()
+
+    def test_manifesto_com_chave_claims_ausente_recusa_e_preserva_o_arquivo(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # Reviewer (Critical, round 4): JSON valido, objeto valido, so falta
+        # a chave `claims` -- `load_manifest().get("claims", [])` nunca
+        # levanta pra esse caso (chave ausente nao e erro de parse), entao a
+        # recusa da correcao anterior nunca disparava aqui. Reproduzido
+        # contra o codigo anterior (commit 06fa17c): `seed()` sem `--force`
+        # devolvia 0 e reescrevia a entrada PROVADA como "1 nova(s)"
+        # SEM_LASTRO -- a mesma perda de classificacao do bug anterior, um
+        # passo ao lado do que a correcao anterior cobriu.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        self._classificar(destino)
+
+        # sobrescreve com JSON valido, objeto valido, sem a chave `claims`
+        destino.write_text(
+            json.dumps({"schema_version": 1, "extracted_from": "abc"}), encoding="utf-8"
+        )
+        sem_claims = destino.read_bytes()
+
+        assert gate.seed() != 0
+        saida = capsys.readouterr().out
+        assert "--force" in saida
+        assert "git checkout" in saida
+        assert destino.read_bytes() == sem_claims
+
+    def test_manifesto_com_claims_de_tipo_errado_recusa_sem_traceback(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # Vizinho mapeado pelo reviewer: `claims` presente mas nao e lista
+        # (aqui, uma string) crashava com `TypeError` cru antes de escrever
+        # qualquer coisa -- seguro quanto a nao perder dado, mas uma
+        # experiencia ruim pra quem roda o comando. A mesma checagem de
+        # forma que fecha o buraco da chave ausente converte este caso na
+        # mesma recusa amigavel, com a mesma mensagem de duas saidas.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        self._classificar(destino)
+
+        destino.write_text(
+            json.dumps({"schema_version": 1, "extracted_from": "abc", "claims": "oops"}),
+            encoding="utf-8",
+        )
+        malformado = destino.read_bytes()
+
+        assert gate.seed() != 0
+        saida = capsys.readouterr().out
+        assert "--force" in saida
+        assert "git checkout" in saida
+        assert destino.read_bytes() == malformado
+
+    def test_manifesto_top_level_lista_recusa_sem_traceback(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # Outro vizinho mapeado pelo reviewer: JSON top-level e uma lista,
+        # nao um objeto -- crashava com `AttributeError` cru (`'list' object
+        # has no attribute 'get'`) antes desta correcao. Mesma recusa
+        # amigavel agora.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        self._classificar(destino)
+
+        destino.write_text(json.dumps([1, 2, 3]), encoding="utf-8")
+        lista_top_level = destino.read_bytes()
+
+        assert gate.seed() != 0
+        saida = capsys.readouterr().out
+        assert "--force" in saida
+        assert "git checkout" in saida
+        assert destino.read_bytes() == lista_top_level
+
+    def test_manifesto_com_claims_vazia_de_verdade_faz_reseed_normal_sem_force(
+        self, tmp_path, monkeypatch
+    ):
+        # Correcao ao reviewer: `"claims": []` NAO e a mesma coisa que
+        # `claims` ausente. Uma lista vazia e um manifesto legitimo sem nada
+        # para perder -- e exatamente o que este `seed` escreve para um
+        # conjunto de documentos sem nenhuma alegacao. Recusar aqui quebraria
+        # reseed legitimo; este teste existe para que ninguem aperte demais
+        # a checagem de forma mais tarde e transforme isso num falso
+        # positivo.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        destino.write_text(
+            json.dumps({"schema_version": 1, "extracted_from": "abc", "claims": []}),
+            encoding="utf-8",
+        )
+
+        assert gate.seed() == 0
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        assert [c["id"] for c in dados["claims"]] == ["VNX-001"]
+        assert dados["claims"][0]["state"] == "SEM_LASTRO"
+
+    def test_null_dentro_de_claims_recusa_sem_traceback_e_preserva_o_arquivo(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # Reviewer (round 5): entrada malformada DENTRO da lista `claims`
+        # (nao a lista em si -- um item dela) crashava com `TypeError` cru
+        # antes desta correcao, porque a checagem de forma so olha o nivel
+        # de fora ("claims e uma lista?"), nao o que tem dentro. Reproduzido
+        # contra o codigo anterior (commit 837849c): `claim_key(None)`
+        # estoura `TypeError: 'NoneType' object is not subscriptable` no
+        # meio do laco de merge, sem nada escrito (a escrita so acontece no
+        # fim de `seed`) mas tambem sem a recusa amigavel. O `except
+        # Exception` que envolve o laco inteiro converte isso na mesma
+        # recusa de duas saidas.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        self._classificar(destino)
+        destino.write_text(
+            json.dumps({"schema_version": 1, "extracted_from": "x", "claims": [None]}),
+            encoding="utf-8",
+        )
+        malformado = destino.read_bytes()
+
+        assert gate.seed() != 0
+        saida = capsys.readouterr().out
+        assert "--force" in saida
+        assert "git checkout" in saida
+        assert destino.read_bytes() == malformado
+
+    def test_entrada_nao_dict_dentro_de_claims_recusa_sem_traceback(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # Vizinho mapeado pelo reviewer: item de `claims` que e string em vez
+        # de objeto. Contra o codigo anterior: `TypeError: string indices
+        # must be integers, not 'str'` cru. Mesma recusa agora.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        self._classificar(destino)
+        destino.write_text(
+            json.dumps({"schema_version": 1, "extracted_from": "x", "claims": ["oops"]}),
+            encoding="utf-8",
+        )
+        malformado = destino.read_bytes()
+
+        assert gate.seed() != 0
+        saida = capsys.readouterr().out
+        assert "--force" in saida
+        assert "git checkout" in saida
+        assert destino.read_bytes() == malformado
+
+    def test_entrada_casada_sem_id_recusa_sem_traceback(self, tmp_path, monkeypatch, capsys):
+        # Terceiro vizinho mapeado pelo reviewer: a entrada e um dict valido
+        # e CASA por `claim_key` (tem doc/type/text) mas nao tem `id` --
+        # `claim_key()` sozinho nao usa `id`, entao a entrada passa pela
+        # indexacao por chave sem erro; o `KeyError: 'id'` cru so acontecia
+        # depois, quando o merge tenta copiar `antiga["id"]` para a entrada
+        # fresca que casou. Contra o codigo anterior isso tambem crashava
+        # cru. Mesma recusa agora.
+        destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
+        gate.seed()
+        dados = json.loads(destino.read_text(encoding="utf-8"))
+        sem_id = dict(dados["claims"][0])
+        sem_id.pop("id")
+        sem_id["state"] = "PROVADA"
+        sem_id["note"] = "conferido"
+        sem_id["proof"] = {"kind": "source", "source_id": "x"}
+        destino.write_text(
+            json.dumps({"schema_version": 1, "extracted_from": "x", "claims": [sem_id]}),
+            encoding="utf-8",
+        )
+        malformado = destino.read_bytes()
+
+        assert gate.seed() != 0
+        saida = capsys.readouterr().out
+        assert "--force" in saida
+        assert "git checkout" in saida
+        assert destino.read_bytes() == malformado
+
+
+class TestSeedIdEstouraFormato:
+    """Judgment call 1: alem de 999 alegacoes o id `VNX-NNN` nao cabe mais
+    em tres digitos -- a falha precisa ser um erro visivel na geracao, nao
+    um id malformado escrito em silencio."""
+
+    def test_mais_de_999_alegacoes_estoura_em_vez_de_gerar_id_malformado(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        destino = tmp_path / "claims.lock.json"
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        fabricadas = [
+            {"doc": "d.md", "line": i, "text": str(i), "context": "", "type": "number"}
+            for i in range(1000)
+        ]
+        monkeypatch.setattr(gate, "collect_claims", lambda root: fabricadas)
+        with pytest.raises(ValueError) as exc_info:
+            gate.seed()
+        assert "999" in str(exc_info.value)
+        assert not destino.exists()
+
+
+class TestAuditoria:
+    def _prep(self, tmp_path, monkeypatch, doc_text="Sao 38 agentes no catalogo.\n"):
+        (tmp_path / "adrs").mkdir()
+        (tmp_path / "UM.md").write_text(doc_text, encoding="utf-8")
+        monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        destino = tmp_path / "claims.lock.json"
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        monkeypatch.setattr(gate, "SOURCES_LOCK", _sources_file(tmp_path))
+        return destino
+
+    def test_manifesto_ausente_orienta_a_rodar_seed(self, tmp_path, monkeypatch, capsys):
+        destino = self._prep(tmp_path, monkeypatch)
+        assert not destino.exists()
+        assert gate.audit(include_slow=False) == 1
+        saida = capsys.readouterr().out
+        assert "--seed" in saida
+
+    def test_manifesto_com_json_invalido_reporta_erro_legivel(self, tmp_path, monkeypatch, capsys):
+        destino = self._prep(tmp_path, monkeypatch)
+        destino.write_text("{isso nao e json", encoding="utf-8")
+        assert gate.audit(include_slow=False) == 1
+        saida = capsys.readouterr().out
+        assert "JSON" in saida
+
+    def test_manifesto_consistente_retorna_0(self, tmp_path, monkeypatch):
+        destino = self._prep(tmp_path, monkeypatch)
+        achados = gate.collect_claims(gate.VNEXT)
+        claims = [
+            {**item, "id": f"VNX-{i:03d}", "state": "SEM_LASTRO", "note": "pendente"}
+            for i, item in enumerate(achados, start=1)
+        ]
+        destino.write_text(json.dumps(manifesto(claims)), encoding="utf-8")
+        assert gate.audit(include_slow=False) == 0
+
+    def test_manifesto_inconsistente_retorna_1_e_imprime_divergencia(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        destino = self._prep(tmp_path, monkeypatch)
+        destino.write_text(json.dumps(manifesto([])), encoding="utf-8")
+        assert gate.audit(include_slow=False) == 1
+        saida = capsys.readouterr().out
+        assert "sem entrada no manifesto" in saida
+        assert "divergencia" in saida
+
+    def test_pula_provas_command_quando_ha_erro_estrutural(self, tmp_path, monkeypatch, capsys):
+        # Reviewer (Important 4): id duplicado e um erro que `validate_
+        # manifest` acusa instantaneamente -- nao deveria custar um
+        # subprocesso para reportar.
+        destino = self._prep(
+            tmp_path, monkeypatch, doc_text="Sao 38 agentes no catalogo e 12 skills.\n"
+        )
+        achados = gate.collect_claims(gate.VNEXT)
+        assert len(achados) >= 2
+        claims = [
+            {**item, "id": "VNX-001", "state": "SEM_LASTRO", "note": "pendente"}
+            for item in achados
+        ]  # todas com o mesmo id -> "id repetido"
+        destino.write_text(json.dumps(manifesto(claims)), encoding="utf-8")
+
+        chamadas = []
+        monkeypatch.setattr(
+            gate,
+            "run_command_proofs",
+            lambda *a, **k: (chamadas.append(1), ["prova nao deveria ter rodado"])[1],
+        )
+        assert gate.audit(include_slow=False) == 1
+        assert chamadas == []
+        saida = capsys.readouterr().out
+        assert "id repetido" in saida
+        assert "prova nao deveria ter rodado" not in saida
+        assert "NAO executadas" in saida
+
+    def test_executa_provas_command_quando_manifesto_e_estruturalmente_valido(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        destino = self._prep(tmp_path, monkeypatch)
+        achados = gate.collect_claims(gate.VNEXT)
+        claims = [
+            {**item, "id": f"VNX-{i:03d}", "state": "SEM_LASTRO", "note": "pendente"}
+            for i, item in enumerate(achados, start=1)
+        ]
+        claims[0]["state"] = "PROVADA"
+        claims[0]["proof"] = {
+            "kind": "command",
+            "cmd": 'python -c "print(1)"',
+            "tier": "fast",
+            "expect": {"kind": "contains", "value": "nao esta na saida"},
+        }
+        destino.write_text(json.dumps(manifesto(claims)), encoding="utf-8")
+        assert gate.audit(include_slow=False) == 1
+        saida = capsys.readouterr().out
+        assert "saida nao contem" in saida
+        assert "NAO executadas" not in saida
+
+
+class TestRelatorioComPipeNoTexto:
+    """Judgment call 4 (Task 7) / Critical 3 (revisao): prova
+    `command`/`artifact`/`source` embute texto do manifesto (cmd, path,
+    source_id) que pode conter `|` e fragmentar a tabela Markdown gerada."""
+
+    def test_pipe_na_prova_nao_fragmenta_a_linha_da_tabela(self, tmp_path, monkeypatch, capsys):
+        destino = tmp_path / "claims.lock.json"
+        prova = {
+            "kind": "command",
+            "cmd": "python -c \"print('a|b')\"",
+            "tier": "fast",
+            "expect": {"kind": "contains", "value": "a|b"},
+        }
+        destino.write_text(
+            json.dumps(manifesto([entrada(state="PROVADA", proof=prova, type="number")])),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.report() == 0
+        linha = next(
+            linha_candidata
+            for linha_candidata in capsys.readouterr().out.splitlines()
+            if linha_candidata.startswith("| VNX-001")
+        )
+        import re as _re
+
+        delimitadores = _re.findall(r"(?<!\\)\|", linha)
+        # 7 colunas de dado (id, documento, tipo, texto, estado, prova,
+        # motivo) == 8 pipes delimitadores nao escapados (bordas + 6
+        # separadores internos); um `|` cru vindo do cmd empurraria essa
+        # contagem para cima.
+        assert len(delimitadores) == 8
+        assert "a\\|b" in linha
+
+
+class TestRelatorioColunas:
+    """Critical 3 (revisao): sem `texto` um leitor de LASTRO.md nao sabe o
+    QUE esta sendo alegado; sem `motivo` nao sabe POR QUE algo e REMOVIDA.
+    Cobre tambem os dois ramos de prova (`artifact`, `source`) que a
+    revisao apontou sem teste nenhum."""
+
+    def test_removida_mostra_texto_e_nota(self, tmp_path, monkeypatch, capsys):
+        destino = tmp_path / "claims.lock.json"
+        destino.write_text(json.dumps(manifesto([entrada()])), encoding="utf-8")
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.report() == 0
+        saida = capsys.readouterr().out
+        assert "81,8%" in saida
+        assert "sem artefato de medicao no repositorio" in saida
+
+    def test_prova_artifact_renderiza(self, tmp_path, monkeypatch, capsys):
+        prova = {
+            "kind": "artifact",
+            "path": "scripts/check_vnext_claims.py",
+            "test": "tests/test_vnext_claims.py",
+        }
+        destino = tmp_path / "claims.lock.json"
+        destino.write_text(
+            json.dumps(
+                manifesto([entrada(state="PROVADA", proof=prova, type="capability")])
+            ),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.report() == 0
+        saida = capsys.readouterr().out
+        assert "artifact" in saida
+        assert "scripts/check_vnext_claims.py" in saida
+
+    def test_prova_source_renderiza(self, tmp_path, monkeypatch, capsys):
+        prova = {
+            "kind": "source",
+            "source_id": "https://docs.aws.amazon.com/glue/latest/dg/release-notes-5-1.html",
+        }
+        destino = tmp_path / "claims.lock.json"
+        destino.write_text(
+            json.dumps(
+                manifesto([entrada(state="PROVADA", proof=prova, type="external_fact")])
+            ),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.report() == 0
+        saida = capsys.readouterr().out
+        assert "source" in saida
+        assert "release-notes-5-1" in saida
+
+    def test_prova_command_sem_cmd_nao_imprime_none(self, tmp_path, monkeypatch, capsys):
+        # Minor 7: campo de prova ausente nao pode virar a string literal
+        # "None" na tabela.
+        prova = {"kind": "command", "tier": "fast", "expect": {"kind": "contains", "value": "x"}}
+        destino = tmp_path / "claims.lock.json"
+        destino.write_text(
+            json.dumps(manifesto([entrada(state="PROVADA", proof=prova, type="number")])),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.report() == 0
+        saida = capsys.readouterr().out
+        assert "None" not in saida
+        assert "sem cmd" in saida
+
+    def test_cmd_com_crase_nao_quebra_o_code_span(self, tmp_path, monkeypatch, capsys):
+        # Minor 6: `_md_cell` nao escapava crase, e `report()` envolve
+        # cmd/path/source_id em crase -- um valor com crase quebrava o span.
+        prova = {
+            "kind": "command",
+            "cmd": "python -c \"print('a`b')\"",
+            "tier": "fast",
+            "expect": {"kind": "contains", "value": "a`b"},
+        }
+        destino = tmp_path / "claims.lock.json"
+        destino.write_text(
+            json.dumps(manifesto([entrada(state="PROVADA", proof=prova, type="number")])),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(gate, "MANIFEST", destino)
+        assert gate.report() == 0
+        saida = capsys.readouterr().out
+        linha = next(
+            linha_candidata
+            for linha_candidata in saida.splitlines()
+            if linha_candidata.startswith("| VNX-001")
+        )
+        # delimitador precisa ser mais longo que a maior corrida de crases
+        # dentro do valor (uma crase == corrida de 1) -- crase dupla.
+        assert "``" in linha
+
+
+class TestHeadCommit:
+    """Important 5 (revisao): `_head_commit()` caia para 'desconhecido' em
+    silencio quando o git falha -- nenhum aviso, nenhum teste sequer no
+    caminho feliz."""
+
+    def test_caminho_feliz_devolve_o_sha_sem_aviso(self, monkeypatch, capsys):
+        def fake_run(*args, **kwargs):
+            return types.SimpleNamespace(stdout="abc123def\n", stderr="", returncode=0)
+
+        monkeypatch.setattr(gate.subprocess, "run", fake_run)
+        assert gate._head_commit() == "abc123def"
+        assert capsys.readouterr().err == ""
+
+    def test_git_indisponivel_cai_para_desconhecido_com_aviso_no_stderr(
+        self, monkeypatch, capsys
+    ):
+        def fake_run(*args, **kwargs):
+            raise FileNotFoundError("git nao encontrado")
+
+        monkeypatch.setattr(gate.subprocess, "run", fake_run)
+        assert gate._head_commit() == "desconhecido"
+        erro = capsys.readouterr().err
+        assert "aviso" in erro
+        assert "desconhecido" in erro
+
+    def test_stdout_vazio_cai_para_desconhecido_com_aviso_no_stderr(self, monkeypatch, capsys):
+        def fake_run(*args, **kwargs):
+            return types.SimpleNamespace(
+                stdout="", stderr="fatal: not a git repository", returncode=128
+            )
+
+        monkeypatch.setattr(gate.subprocess, "run", fake_run)
+        assert gate._head_commit() == "desconhecido"
+        erro = capsys.readouterr().err
+        assert "aviso" in erro
