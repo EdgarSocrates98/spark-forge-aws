@@ -1,6 +1,6 @@
 ---
 name: sf-storage-specialist
-description: Use quando for necessario analisar Iceberg, Parquet, catalogo, particionamento ou layout.
+description: Analisar Iceberg, Parquet, catalogo, particionamento e layout.
 skills:
   - tool-specialist-routing
 rule_areas: [SF-ICE, SF-PQ, SF-CATALOG]

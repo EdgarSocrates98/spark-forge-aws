@@ -1,6 +1,6 @@
 ---
 name: sf-context-engineer
-description: Use quando for necessaria especializacao em contexto e compressao.
+description: Contexto e compressao de agents.
 tools: Read, Grep, Glob, Bash
 skills:
   - token-efficient-agent

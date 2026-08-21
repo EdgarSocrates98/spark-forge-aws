@@ -1,6 +1,6 @@
 ---
 name: sf-graph-specialist
-description: Use quando for necessario analisar ou modelar dados em grafos.
+description: Analisar ou modelar dados em grafos.
 tools: Read, Grep, Glob, Bash
 skills:
   - analyze-graph-data

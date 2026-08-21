@@ -1,6 +1,6 @@
 ---
 name: sf-dynamodb-specialist
-description: Use quando for necessario modelar ou revisar DynamoDB.
+description: Modelar ou revisar DynamoDB.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-dynamodb-model

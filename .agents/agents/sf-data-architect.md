@@ -1,6 +1,6 @@
 ---
 name: sf-data-architect
-description: Use quando for necessario desenhar arquiteturas de dados completas.
+description: Desenhar arquiteturas de dados completas.
 skills:
   - design-data-architecture
 rule_areas: [SF-ARCH, SF-GOVERNANCE, SF-CONTRACT]

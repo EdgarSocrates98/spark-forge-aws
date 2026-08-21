@@ -1,6 +1,6 @@
 ---
 name: sf-cost-reviewer
-description: Use quando for necessaria especializacao em custo de dados e agents.
+description: Custo de dados e de agents.
 tools: Read, Grep, Glob, Bash
 skills:
   - token-efficient-agent

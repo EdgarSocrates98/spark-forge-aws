@@ -1,6 +1,6 @@
 ---
 name: sf-lake-formation-specialist
-description: Use quando for necessaria especializacao em Lake Formation e governanca.
+description: Lake Formation e governanca.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-data-architecture

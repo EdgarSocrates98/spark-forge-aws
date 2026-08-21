@@ -1,6 +1,6 @@
 ---
 name: sf-runtime-specialist
-description: Use quando for necessario analisar Glue, EMR, runtimes, capacidade ou infraestrutura.
+description: Analisar Glue, EMR, runtimes, capacidade e infraestrutura.
 tools: Read, Grep, Glob, Bash
 skills:
   - tool-specialist-routing

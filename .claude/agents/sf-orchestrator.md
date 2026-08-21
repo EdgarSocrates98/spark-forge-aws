@@ -1,6 +1,6 @@
 ---
 name: sf-orchestrator
-description: Use quando for necessario coordenar agents em fases limitadas, com roteamento, handoffs e criterios de parada.
+description: Coordenar agents em fases limitadas - roteamento, handoffs, criterios de parada.
 tools: Read, Grep, Glob, Bash
 skills:
   - agentic-orchestration

@@ -1,6 +1,6 @@
 ---
 name: sf-airflow-specialist
-description: Use quando for necessario projetar ou revisar Airflow e DAGs.
+description: Projetar ou revisar Airflow e DAGs.
 skills:
   - design-airflow-pipelines
 rule_areas: [SF-AIRFLOW, SF-PIPELINE, SF-OPS]

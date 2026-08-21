@@ -1,6 +1,6 @@
 ---
 name: glue-infra-reviewer
-description: Use quando o gargalo ou o risco estiver na definição do job Glue e não no código — worker type e número, auto scaling, bookmark, retries, argumentos de job, observabilidade, e o Terraform que os declara.
+description: Gargalo ou risco na definicao do job Glue e nao no codigo - worker type e numero, auto scaling, bookmark, retries, argumentos de job, observabilidade, Terraform.
 tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-glue-terraform

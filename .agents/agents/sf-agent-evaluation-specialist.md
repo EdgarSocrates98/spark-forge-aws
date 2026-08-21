@@ -1,6 +1,6 @@
 ---
 name: sf-agent-evaluation-specialist
-description: Use quando for necessaria especializacao em golden cases e qualidade.
+description: Golden cases e qualidade de agents.
 skills:
   - design-agent-systems
   - agentic-orchestration

@@ -1,6 +1,6 @@
 ---
 name: sf-pyspark-specialist
-description: Use quando for necessario analisar PySpark, planos, joins, skew, memoria ou benchmarks.
+description: Analisar PySpark - planos, joins, skew, memoria, benchmarks.
 skills:
   - tool-specialist-routing
 rule_areas: [SF-PY, SF-PLAN, SF-CG, SF-BENCH]

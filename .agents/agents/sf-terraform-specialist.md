@@ -1,6 +1,6 @@
 ---
 name: sf-terraform-specialist
-description: Use quando for necessario revisar ou construir Terraform para plataformas de dados.
+description: Revisar ou construir Terraform para plataformas de dados.
 skills:
   - review-terraform-data-platform
 rule_areas: [SF-TERRAFORM, SF-IAC, SF-SECURITY]

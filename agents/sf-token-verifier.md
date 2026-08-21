@@ -1,6 +1,6 @@
 ---
 name: sf-token-verifier
-description: Use quando for necessario verificar qualidade, cobertura de evidencia e economia de tokens.
+description: Verificar qualidade, cobertura de evidencia e economia de tokens.
 tools: Read, Grep, Glob, Bash
 skills:
   - token-efficient-agent

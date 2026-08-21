@@ -1,6 +1,6 @@
 ---
 name: sf-memory-engineer
-description: Use quando for necessaria especializacao em memoria auditavel.
+description: Memoria auditavel de agents.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-agent-systems

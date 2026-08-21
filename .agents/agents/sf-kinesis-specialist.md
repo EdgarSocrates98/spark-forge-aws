@@ -1,6 +1,6 @@
 ---
 name: sf-kinesis-specialist
-description: Use quando for necessaria especializacao em Kinesis e streaming.
+description: Kinesis e streaming.
 skills:
   - design-data-architecture
   - design-step-functions-orchestration

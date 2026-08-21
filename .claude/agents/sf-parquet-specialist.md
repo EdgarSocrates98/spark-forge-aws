@@ -1,6 +1,6 @@
 ---
 name: sf-parquet-specialist
-description: Use quando for necessario otimizar Parquet e layout de arquivos.
+description: Otimizar Parquet e layout de arquivos.
 tools: Read, Grep, Glob, Bash
 skills:
   - optimize-parquet-layout

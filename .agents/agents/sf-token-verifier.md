@@ -1,6 +1,6 @@
 ---
 name: sf-token-verifier
-description: Use quando for necessario verificar qualidade, cobertura de evidencia e economia de tokens.
+description: Verificar qualidade, cobertura de evidencia e economia de tokens.
 skills:
   - token-efficient-agent
 rule_areas: [SF-DQ, SF-REPORT, SF-VALIDATION]

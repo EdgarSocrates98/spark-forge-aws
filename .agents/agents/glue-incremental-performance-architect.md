@@ -1,6 +1,6 @@
 ---
 name: glue-incremental-performance-architect
-description: Use quando investigar de ponta a ponta um job ou biblioteca Glue PySpark com fluxos full e incremental, latest-per-key em Iceberg bilionário, batching, OOM após horas e cargas muito variáveis, coordenando as skills especializadas em vez de tuning localizado.
+description: Investigacao ponta a ponta de job ou biblioteca Glue PySpark com fluxos full e incremental - latest-per-key em Iceberg bilionario, batching, OOM apos horas, carga variavel. Coordena skills em vez de tuning localizado.
 skills:
   - glue-incremental-performance-architect
   - sparkforge-diagnose

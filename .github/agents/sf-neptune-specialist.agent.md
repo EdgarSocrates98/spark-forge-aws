@@ -1,6 +1,6 @@
 ---
 name: sf-neptune-specialist
-description: Use quando for necessario projetar ou revisar Amazon Neptune.
+description: Projetar ou revisar Amazon Neptune.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-neptune-graph

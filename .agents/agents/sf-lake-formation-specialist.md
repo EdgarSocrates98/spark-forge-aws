@@ -1,6 +1,6 @@
 ---
 name: sf-lake-formation-specialist
-description: Use quando for necessaria especializacao em Lake Formation e governanca.
+description: Lake Formation e governanca.
 skills:
   - design-data-architecture
   - design-s3-data-lake

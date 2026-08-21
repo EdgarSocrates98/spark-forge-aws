@@ -1,6 +1,6 @@
 ---
 name: sf-agent-builder
-description: Use quando for necessario criar e avaliar agents e skills.
+description: Criar e avaliar agents e skills.
 skills:
   - design-agent-systems
 rule_areas: [SF-AGENTS, SF-ORCH, SF-EVAL]

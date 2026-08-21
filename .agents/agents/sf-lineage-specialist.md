@@ -1,6 +1,6 @@
 ---
 name: sf-lineage-specialist
-description: Use quando for necessaria especializacao em lineage e impacto.
+description: Lineage e impacto.
 skills:
   - design-data-architecture
   - analyze-analytics

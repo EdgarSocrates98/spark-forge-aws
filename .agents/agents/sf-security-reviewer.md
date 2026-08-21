@@ -1,6 +1,6 @@
 ---
 name: sf-security-reviewer
-description: Use quando for necessaria especializacao em IAM, KMS, S3 e exfiltracao.
+description: IAM, KMS, S3 e exfiltracao.
 skills:
   - review-terraform-data-platform
   - design-s3-data-lake

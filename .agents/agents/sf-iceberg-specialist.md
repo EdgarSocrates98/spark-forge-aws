@@ -1,6 +1,6 @@
 ---
 name: sf-iceberg-specialist
-description: Use quando for necessario otimizar Apache Iceberg.
+description: Otimizar Apache Iceberg.
 skills:
   - optimize-iceberg-tables
 rule_areas: [SF-ICEBERG, SF-STORAGE, SF-TRANSACTION]

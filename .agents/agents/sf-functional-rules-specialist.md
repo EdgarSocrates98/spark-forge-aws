@@ -1,6 +1,6 @@
 ---
 name: sf-functional-rules-specialist
-description: Use quando for necessario estudar regras funcionais, contratos e estados.
+description: Regras funcionais, contratos e estados.
 skills:
   - analyze-functional-rules
 rule_areas: [SF-RULES, SF-CONTRACT]

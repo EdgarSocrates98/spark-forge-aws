@@ -1,6 +1,6 @@
 ---
 name: sf-s3-specialist
-description: Use quando for necessario projetar ou revisar S3 e data lakes.
+description: Projetar ou revisar S3 e data lakes.
 skills:
   - design-s3-data-lake
 rule_areas: [SF-S3, SF-LAKE, SF-SECURITY]

@@ -1,6 +1,6 @@
 ---
 name: sf-athena-specialist
-description: Use quando for necessario otimizar consultas e tabelas no Athena.
+description: Otimizar consultas e tabelas no Athena.
 skills:
   - optimize-athena-queries
 rule_areas: [SF-ATHENA, SF-SQL, SF-COST]

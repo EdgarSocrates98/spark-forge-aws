@@ -1,6 +1,6 @@
 ---
 name: sf-dynamodb-specialist
-description: Use quando for necessario modelar ou revisar DynamoDB.
+description: Modelar ou revisar DynamoDB.
 skills:
   - design-dynamodb-model
 rule_areas: [SF-DYNAMODB, SF-NOSQL, SF-API]

@@ -1,6 +1,6 @@
 ---
 name: sf-data-architect
-description: Use quando for necessario desenhar arquiteturas de dados completas.
+description: Desenhar arquiteturas de dados completas.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-data-architecture

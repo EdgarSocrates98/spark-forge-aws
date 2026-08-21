@@ -1,6 +1,6 @@
 ---
 name: sf-lambda-serverless-specialist
-description: Use quando for necessario desenhar Lambda serverless, idempotencia e concorrencia.
+description: Desenhar Lambda serverless, idempotencia e concorrencia.
 skills:
   - design-lambda-serverless
 rule_areas: [SF-LAMBDA, SF-SERVERLESS]

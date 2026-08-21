@@ -1,6 +1,6 @@
 ---
 name: sf-iceberg-specialist
-description: Use quando for necessario otimizar Apache Iceberg.
+description: Otimizar Apache Iceberg.
 tools: Read, Grep, Glob, Bash
 skills:
   - optimize-iceberg-tables

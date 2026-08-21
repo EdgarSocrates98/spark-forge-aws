@@ -1,6 +1,6 @@
 ---
 name: sf-s3-specialist
-description: Use quando for necessario projetar ou revisar S3 e data lakes.
+description: Projetar ou revisar S3 e data lakes.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-s3-data-lake

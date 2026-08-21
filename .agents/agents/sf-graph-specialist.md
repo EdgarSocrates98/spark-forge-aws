@@ -1,6 +1,6 @@
 ---
 name: sf-graph-specialist
-description: Use quando for necessario analisar ou modelar dados em grafos.
+description: Analisar ou modelar dados em grafos.
 skills:
   - analyze-graph-data
 rule_areas: [SF-GRAPH, SF-ANALYTICS, SF-MODEL]

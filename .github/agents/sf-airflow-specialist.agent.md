@@ -1,6 +1,6 @@
 ---
 name: sf-airflow-specialist
-description: Use quando for necessario projetar ou revisar Airflow e DAGs.
+description: Projetar ou revisar Airflow e DAGs.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-airflow-pipelines

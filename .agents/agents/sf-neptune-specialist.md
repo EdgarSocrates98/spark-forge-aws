@@ -1,6 +1,6 @@
 ---
 name: sf-neptune-specialist
-description: Use quando for necessario projetar ou revisar Amazon Neptune.
+description: Projetar ou revisar Amazon Neptune.
 skills:
   - design-neptune-graph
 rule_areas: [SF-NEPTUNE, SF-GRAPH, SF-AWS]

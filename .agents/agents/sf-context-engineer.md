@@ -1,6 +1,6 @@
 ---
 name: sf-context-engineer
-description: Use quando for necessaria especializacao em contexto e compressao.
+description: Contexto e compressao de agents.
 skills:
   - token-efficient-agent
   - agentic-orchestration

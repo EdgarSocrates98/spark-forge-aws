@@ -1,6 +1,6 @@
 ---
 name: sf-analytics-specialist
-description: Use quando for necessario analisar dados, analytics, Athena e qualidade.
+description: Analisar dados, analytics, Athena e qualidade.
 tools: Read, Grep, Glob, Bash
 skills:
   - analyze-analytics

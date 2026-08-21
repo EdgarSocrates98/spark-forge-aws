@@ -1,6 +1,6 @@
 ---
 name: sf-evidence-verifier
-description: Use quando for necessaria especializacao em evidence e findings.
+description: Evidence e findings.
 skills:
   - agentic-orchestration
   - review-data-validation

@@ -1,6 +1,6 @@
 ---
 name: sf-schema-registry-specialist
-description: Use quando for necessaria especializacao em schema e contratos.
+description: Schema e contratos.
 skills:
   - design-data-architecture
   - review-data-validation

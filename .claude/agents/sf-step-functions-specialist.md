@@ -1,6 +1,6 @@
 ---
 name: sf-step-functions-specialist
-description: Use quando for necessario desenhar Step Functions, EventBridge e retries.
+description: Desenhar Step Functions, EventBridge e retries.
 tools: Read, Grep, Glob, Bash
 skills:
   - design-step-functions-orchestration

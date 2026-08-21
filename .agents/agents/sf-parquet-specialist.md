@@ -1,6 +1,6 @@
 ---
 name: sf-parquet-specialist
-description: Use quando for necessario otimizar Parquet e layout de arquivos.
+description: Otimizar Parquet e layout de arquivos.
 skills:
   - optimize-parquet-layout
 rule_areas: [SF-PARQUET, SF-ATHENA, SF-STORAGE]

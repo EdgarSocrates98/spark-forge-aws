@@ -1,6 +1,6 @@
 ---
 name: sf-athena-specialist
-description: Use quando for necessario otimizar consultas e tabelas no Athena.
+description: Otimizar consultas e tabelas no Athena.
 tools: Read, Grep, Glob, Bash
 skills:
   - optimize-athena-queries
