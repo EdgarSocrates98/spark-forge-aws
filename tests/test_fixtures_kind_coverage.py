@@ -35,6 +35,7 @@ from sparkforge.facts import (
     fusion,
     graph,
     iceberg_metadata,
+    migration,
     pyspark_ast,
     runtime_detect,
     s3_listing,
@@ -74,6 +75,16 @@ EXTRACTORS = {
     # nomeando os seis.
     "graph": graph,
     "iceberg_metadata": iceberg_metadata,
+    # `migration` entra nas DUAS listas no mesmo commit da Task 7 da Fase 6b,
+    # junto com `rules/catalog/glue-migration.yaml`: sem ele aqui os oito kinds
+    # `mig.*` nao sao verificados por ninguem. Este modulo VAI cobrar golden
+    # para os oito assim que ele entra -- inclusive os cinco que nenhuma regra
+    # desta Task usa (`mig.legacy_conf`, `mig.deprecated_api`, `mig.table_format`,
+    # `mig.jar_binary`, `mig.python_dep`) -- porque o teste conta por EXTRATOR,
+    # nao por regra. Essas fixtures sao trabalho da Task 9; ate la,
+    # `test_every_kind_of_every_extractor_appears_in_some_golden[migration]` fica
+    # vermelho de proposito, nao em silencio.
+    "migration": migration,
     "pyspark_ast": pyspark_ast,
     "runtime_detect": runtime_detect,
     "s3_listing": s3_listing,

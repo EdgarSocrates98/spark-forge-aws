@@ -1,0 +1,165 @@
+# Catálogo de regras — compatibilidade de migração entre versões de Glue
+# Depende do extrator `sparkforge/facts/migration.py` (Tasks 4–6 desta fase), que
+# observa sinais de migração no código-fonte sem julgar. Julgamento -- se um sinal é
+# bloqueante para uma versão-alvo -- pertence a esta regra, com `runtime_scope`
+# declarado quando (e só quando) a fronteira de versão está confirmada na matriz de
+# `knowledge/glue/runtime-matrix.yaml`.
+#
+# GLUE 6.0 NÃO ESTÁ NA MATRIZ. Ninguém confirmou a linha de runtime dele contra uma
+# fonte oficial ainda -- Task 11 desta fase faz essa pesquisa. Isso restringe o que
+# esta área pode escrever com honestidade hoje: SF-MIG-001 e SF-MIG-002 dependem de
+# uma fronteira DENTRO das versões que a matriz já confirma (Glue 5.0), então
+# declaram `runtime_scope`. SF-MIG-003 depende de uma fronteira (ANSI mode passando a
+# default) que só existe em Spark 4.1 -- runtime que a matriz não cobre -- e por isso
+# não pode declarar `runtime_scope` sem afirmar uma versão que ninguém verificou. Ela
+# fica `blocked_on`, registrando o que falta em vez de adivinhar.
+
+catalog_version: 1
+schema_version: 1
+area: SF-MIG
+retrieved: 2026-08-21
+
+rules:
+
+  - id: SF-MIG-001
+    category: glue-migration
+    title: Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais
+    requires_facts: [mig.sdk_import]
+    when:
+      all:
+        - fact: mig.sdk_import
+          where: {attrs.generation: "v1"}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o
+      classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado
+      do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do
+      Glue 4.0 não falha na submissão do job -- falha em runtime, com
+      `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de
+      processamento. É o pior tipo de quebra de migração: passa em todo smoke test
+      que não exercita aquele caminho de código, e aparece como falha de produção,
+      não de deploy.
+    proposed_change:
+      - Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o
+        cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.
+      - Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor
+        se há build compatível com SDK v2 antes de migrar o job.
+    risks:
+      - SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica
+        sem revisão de comportamento pode trocar um erro silencioso por outro.
+    tradeoffs:
+      - Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração
+        custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0
+        substitui o classpath do 4.0 -- não é uma troca com lado gratuito.
+    validation:
+      - Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não
+        só na submissão.
+      - Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio.
+    rollback: [Reverter o import e o cliente para SDK v1, e manter o job no Glue 4.0 até a reescrita estar pronta.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html", retrieved: 2026-07-29}
+      - {url: "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1", retrieved: 2026-07-29}
+
+  - id: SF-MIG-002
+    category: glue-migration
+    title: Configuração exclusiva do EMRFS sobrevivendo em runtime S3A
+    requires_facts: [mig.emrfs_config]
+    when:
+      all:
+        - fact: mig.emrfs_config
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O
+      S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption`
+      ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é
+      silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e
+      quem lê o job vê uma configuração que parece ativa (consistência forçada,
+      SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não
+      está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura
+      inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.
+    proposed_change:
+      - Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente
+        S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.
+      - Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A,
+        como consistência forçada, revisar se a garantia ainda é necessária -- o S3A
+        sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum.
+    risks:
+      - Remover a chave sem verificar o equivalente S3A pode desligar de fato uma
+        configuração de segurança (SSE) que só parecia ativa antes.
+    tradeoffs:
+      - Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave
+        morta no código custa clareza para quem vier depois e assumir uma garantia
+        (criptografia, retry) que não existe mais.
+    validation:
+      - Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.
+      - Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via
+        `aws s3api head-object`.
+    rollback: [Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html", retrieved: 2026-07-29}
+
+  # BLOQUEADA POR DESENHO: `mig.ansi_risk` já tem extrator (Task 6) e já é emitido --
+  # o bloqueio aqui não é "falta capacidade de coleta", é "falta fronteira de versão
+  # confirmada para julgar o que foi coletado". ANSI mode passa a default em Spark
+  # 4.1 (`prompt_migrations_glue.md` seção 8.1), e nenhuma versão do Glue com Spark
+  # 4.1 está em `knowledge/glue/runtime-matrix.yaml` -- a mais recente confirmada é
+  # 5.1 (Spark 3.5.6). Escrever `runtime_scope: {glue: ">=6.0"}` aqui seria declarar
+  # como fato uma fronteira que ninguém verificou contra fonte oficial -- exatamente o
+  # defeito que a auditoria de 11 tasks anterior a esta fase eliminou do resto do
+  # catálogo (ver cabeçalho de `rules/catalog/athena.yaml`). Task 11 desta fase
+  # pesquisa a linha de runtime do Glue 6.0; quando `runtime-matrix.yaml` ganhar essa
+  # entrada com fonte e `retrieved`, esta regra troca `blocked_on` por
+  # `runtime_scope: {glue: ">=X.Y"}` usando o valor confirmado, e nada mais muda.
+  - id: SF-MIG-003
+    category: glue-migration
+    title: Cast sem guarda sob ANSI mode
+    requires_facts: [mig.ansi_risk]
+    when:
+      all:
+        - fact: mig.ansi_risk
+          where: {attrs.form: "cast"}
+    status: confirmed
+    severity_default: P1
+    # Vazio, nao `{glue: ">=6.0"}`: essa fronteira nao esta confirmada na matriz (ver
+    # comentario acima da regra). `blocked_on` abaixo e quem impede o disparo -- o
+    # motor checa `runtime_scope` antes de `blocked_on` (`rules/engine.py`), entao um
+    # escopo vazio aqui so significa "nao restrinjo por versao", nunca "avalie".
+    runtime_scope: {}
+    blocked_on: "runtime-matrix-glue-6.0: falta confirmar contra fonte oficial a versão do Glue cujo Spark habilita ANSI mode por padrão (Spark 4.1, prompt_migrations_glue.md secao 8.1); ver Task 11 desta fase"
+    explanation: >
+      Sob ANSI mode, um `cast(` para um tipo incompatível lança erro em vez de
+      devolver `NULL`. Um job escrito contra o comportamento pré-ANSI, onde `cast`
+      inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na
+      mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o
+      job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o
+      comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que
+      este fact distingue de `cast(` puro.
+    proposed_change:
+      - Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento
+        esperado e documentado, preservando a semântica atual.
+      - Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido,
+        tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um
+        problema real, não criando um.
+    risks:
+      - Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha
+        visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI
+        corrige, mascarando dado inválido em vez de tratá-lo.
+    tradeoffs:
+      - Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o
+        trabalho de revisar cada cast, mas mascara o problema no nível errado e adia
+        a descoberta para produção, no runtime que forçar ANSI por padrão sem opção
+        de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo
+        dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis.
+    validation:
+      - Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de
+        runtime, para o mesmo lote de entrada -- divergência indica cast que estava
+        mascarando dado inválido.
+      - Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de
+        cast não tratada.
+    rollback: [Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html", retrieved: 2026-07-29}
