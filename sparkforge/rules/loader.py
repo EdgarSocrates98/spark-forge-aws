@@ -20,13 +20,14 @@ from sparkforge.rules.expr import ExprError, evaluate
 
 ROUTING_FILE = "routing.yaml"
 
+# `status` NAO entra aqui: ele e exigido so de regra executavel, por
+# `_validate_executability`. Ver o docstring daquela funcao.
 _REQUIRED = (
     "id",
     "category",
     "title",
     "requires_facts",
     "when",
-    "status",
     "runtime_scope",
     "sources",
 )
@@ -122,6 +123,84 @@ def _validate_conditions(rule_id: str, rule: dict[str, Any]) -> None:
                 )
 
 
+def _conditions(rule: dict[str, Any]) -> list[Any]:
+    when = rule.get("when") or {}
+    return [c for group in ("all", "any") for c in (when.get(group) or [])]
+
+
+def _validate_executability(rule_id: str, rule: dict[str, Any]) -> None:
+    """Separa regra que julga de area de coordenacao que so existe para ser roteada.
+
+    POR QUE ESTE CAMPO EXISTE, e por que `status` nao servia.
+
+    `status` e o status do FINDING -- `structural` contra `confirmed` diz se a
+    evidencia foi lida do codigo/IaC ou confirmada em runtime. Ele viaja para
+    dentro do achado (`engine.py`, `_build_finding`) e e o vocabulario de
+    `STATUS_VALUES` em `findings/models.py`.
+
+    A expansao agentica precisou de 35 entradas que NAO julgam nada: uma por
+    area, para que `routing.yaml` tivesse alvo nomeado. Elas foram escritas com
+    `status: structural`, e os gates de cobertura passaram a filtrar por esse
+    valor para nao cobrar golden delas. **Isso sobrecarregou um campo com dois
+    sentidos e abriu um buraco nos dois lados:**
+
+    1. As 26 regras que sao `structural` DE VERDADE -- `SF-ATH-001`,
+       `SF-DQ-001`, `SF-CG-001` e as outras, todas com `requires_facts` e `when`
+       reais, todas disparando em golden -- sairam do gate junto, por carona no
+       filtro. O gate ficou mais fraco do que era antes da expansao.
+    2. Nada impedia que uma regra de deteccao real fosse marcada `structural` e
+       escapasse do gate de fixture, do gate de ramo de severidade e das duas
+       assercoes de area muda dos testes ponta a ponta -- quatro redes de uma
+       vez, com a suite verde.
+
+    `executable: false` e o campo proprio dessas 35, e a validacao fecha as duas
+    direcoes:
+
+    - **Nao executavel** nao pode ter condicao, `requires_facts`, `sources`,
+      `severity_by` nem `blocked_on` -- se tem qualquer um deles, esta se
+      declarando inerte e nao e. E nao pode declarar `status`, porque status de
+      finding em algo que nao produz finding e afirmacao sobre nada.
+    - **Executavel** precisa de pelo menos uma condicao. `when: {all: []}`
+      passava por `_validate_conditions` (o grupo existe, so esta vazio) e e
+      exatamente o falso negativo mudo que aquela funcao foi escrita para
+      matar: regra que nunca dispara, sem erro, com relatorio limpo.
+    """
+    executavel = rule.get("executable", True)
+    if not isinstance(executavel, bool):
+        raise CatalogError(
+            f"{rule_id}: `executable` precisa ser booleano, veio {executavel!r}"
+        )
+
+    condicoes = _conditions(rule)
+
+    if executavel:
+        if "status" not in rule:
+            raise CatalogError(f"{rule_id}: campos obrigatorios ausentes: status")
+        if not condicoes:
+            raise CatalogError(
+                f"{rule_id}: regra executavel com `when` sem nenhuma condicao. "
+                f"Ela nunca dispararia, em silencio. Escreva a condicao ou "
+                f"declare `executable: false` se for area de coordenacao."
+            )
+        return
+
+    proibidos = [
+        campo
+        for campo in ("requires_facts", "sources", "severity_by", "blocked_on")
+        if rule.get(campo)
+    ]
+    if condicoes:
+        proibidos.append("when")
+    if "status" in rule:
+        proibidos.append("status")
+    if proibidos:
+        raise CatalogError(
+            f"{rule_id}: `executable: false` mas declara {', '.join(sorted(proibidos))}. "
+            f"Area de coordenacao nao julga nada: sem condicao, sem fact exigido, "
+            f"sem fonte e sem status de finding."
+        )
+
+
 def _collect_exprs(rule: dict[str, Any]) -> list[str]:
     found: list[str] = []
     when = rule.get("when") or {}
@@ -203,6 +282,7 @@ def load_catalog(
             # Sempre, nao so sob validate_exprs: condicao malformada e defeito
             # estrutural, da mesma classe de campo obrigatorio ausente.
             _validate_conditions(rule_id, rule)
+            _validate_executability(rule_id, rule)
 
             if validate_exprs:
                 for expr in _collect_exprs(rule):

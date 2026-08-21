@@ -7,6 +7,6 @@ rules:
   when:
     all: []
   severity_default: P2
-  status: structural
+  executable: false
   runtime_scope: {}
   sources: []

@@ -28,3 +28,4 @@ node_modules/
 # Ver docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md §8.1
 .sparkforge/artifacts/*
 !.sparkforge/artifacts/manifest.json
+.tokensave
