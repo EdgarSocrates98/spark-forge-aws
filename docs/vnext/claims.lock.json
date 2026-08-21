@@ -9,8 +9,17 @@
       "context": "| **`task-router`** | Roteamento Econômico | Classifica tarefas, seleciona tiers (0 a 6) e perfis de execução (`ECO`, et",
       "type": "number",
       "id": "VNX-001",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; ids=sorted(int(k.split(\"_\")[1]) for k in TIER_PRICING); print(ids[0], ids[-1])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        }
+      }
     },
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -19,8 +28,17 @@
       "context": "| **`task-router`** | Roteamento Econômico | Classifica tarefas, seleciona tiers (0 a 6) e perfis de execução (`ECO`, et",
       "type": "number",
       "id": "VNX-002",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; ids=sorted(int(k.split(\"_\")[1]) for k in TIER_PRICING); print(ids[0], ids[-1])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+)$",
+          "value": 6
+        }
+      }
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
@@ -29,8 +47,8 @@
       "context": "1. **Antigravity 2.0**: `.agents/agents/`, `.agents/skills/`, `.agents/rules/` com progressive disclosure.",
       "type": "number",
       "id": "VNX-003",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Antigravity 2.0, plataforma de IDE de terceiro), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
@@ -39,8 +57,17 @@
       "context": "- **Cascata de 7 Tiers**:",
       "type": "number",
       "id": "VNX-004",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(len(TIER_PRICING), \"tiers\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) tiers",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
@@ -49,8 +76,17 @@
       "context": "- `Tier 0` (Determinístico): Extração de fatos e regras (Custo 0).",
       "type": "number",
       "id": "VNX-005",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(TIER_PRICING[\"tier_0_deterministic\"].input_price_per_m, \"custo\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+)\\.\\d+ custo",
+          "value": 0
+        }
+      }
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
@@ -59,8 +95,8 @@
       "context": "- `ECO` (Default): Single-agent, cheap models, turns curtos, cache agressivo, 0 reflection desnecessária.",
       "type": "number",
       "id": "VNX-006",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'0 reflection desnecessaria' e descricao comportamental/qualitativa, nao contagem: descreve o comportamento pretendido do perfil `ECO` em prosa; nao ha contador de 'reflection' no motor de roteamento de modelos. Nenhum comando no repositorio mede isso diretamente."
     },
     {
       "doc": "docs/vnext/ARCHITECTURE.md",
@@ -69,8 +105,8 @@
       "context": "3. **Preservação de Catálogos de Regras**: As 52 regras YAML existentes continuam sendo a fonte canônica para julgamento",
       "type": "number",
       "id": "VNX-007",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'52 catalogos/regras YAML' esta desatualizado: `rules/catalog/*.yaml` tem 51 arquivos hoje (medido nesta sessao), e `load_catalog()` (o derivador dado na tarefa) retorna 116 regras individuais -- nenhum dos dois reproduz '52'. Sao duas unidades de medida diferentes (arquivo de catalogo vs. regra individual) e nenhuma bate com o numero alegado."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -79,8 +115,17 @@
       "context": "Mapeamento de 20 serviços fundamentais de dados da AWS em 10 dimensões de engenharia:",
       "type": "number",
       "id": "VNX-008",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; lines=pathlib.Path(\"docs/vnext/CAPABILITY-MATRIX.md\").read_text(encoding=\"utf-8\").split(chr(10)); rows=[l for l in lines if l.strip().startswith(\"| **\")]; print(len(rows), \"servicos\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) servicos",
+          "value": 20
+        }
+      }
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -89,8 +134,17 @@
       "context": "Mapeamento de 20 serviços fundamentais de dados da AWS em 10 dimensões de engenharia:",
       "type": "number",
       "id": "VNX-009",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; lines=pathlib.Path(\"docs/vnext/CAPABILITY-MATRIX.md\").read_text(encoding=\"utf-8\").split(chr(10)); header=[l for l in lines if l.strip().startswith(\"| Servi\")][0]; cells=[c.strip() for c in header.strip(\"|\").split(\"|\")]; print(len(cells)-1, \"dimensoes\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) dimensoes",
+          "value": 10
+        }
+      }
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -99,8 +153,8 @@
       "context": "| **AWS Glue** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (4.0➔5.1) | ✅ | ✅ |",
       "type": "number",
       "id": "VNX-010",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 4.0, origem da faixa de migracao 4.0->5.1), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -109,8 +163,8 @@
       "context": "| **AWS Glue** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (4.0➔5.1) | ✅ | ✅ |",
       "type": "number",
       "id": "VNX-011",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 5.1, destino da faixa de migracao 4.0->5.1), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -119,8 +173,8 @@
       "context": "| **Amazon EMR EC2**| ✅ | ✅ | ✅ | ✅ | ✅ (Spot Fleets)| ✅ | ✅ | ✅ (6.x➔7.x) | ✅ (AQE/Spill) | ✅ |",
       "type": "number",
       "id": "VNX-012",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Amazon EMR 6.x, origem da faixa de migracao 6.x->7.x), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -129,8 +183,8 @@
       "context": "| **Amazon EMR EC2**| ✅ | ✅ | ✅ | ✅ | ✅ (Spot Fleets)| ✅ | ✅ | ✅ (6.x➔7.x) | ✅ (AQE/Spill) | ✅ |",
       "type": "number",
       "id": "VNX-013",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Amazon EMR 7.x, destino da faixa de migracao 6.x->7.x), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -139,8 +193,8 @@
       "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
       "type": "number",
       "id": "VNX-014",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -149,8 +203,8 @@
       "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
       "type": "number",
       "id": "VNX-015",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -159,8 +213,8 @@
       "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
       "type": "number",
       "id": "VNX-016",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -169,8 +223,8 @@
       "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
       "type": "number",
       "id": "VNX-017",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -179,8 +233,8 @@
       "context": "| **Waves de Execução** | referência externa | Execução paralela de tarefas independentes e sequencial de dependentes, bloque",
       "type": "number",
       "id": "VNX-018",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -189,8 +243,8 @@
       "context": "| **Progressive Disclosure** | referência externa | Dividir conhecimento em 3 níveis (A: Metadados ~dezenas de tokens; B: Inst",
       "type": "number",
       "id": "VNX-019",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'3 niveis' de Progressive Disclosure (metadados / instrucoes / referencias) nao esta implementado como estrutura distinguivel: `skills/*/SKILL.md` tem hoje um unico arquivo por skill (verificado nesta sessao -- nenhum `concise.md` ou `patterns.md` ao lado), nao os tres arquivos que o texto descreve. E design pretendido, nao capacidade construida."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -199,8 +253,17 @@
       "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
       "type": "number",
       "id": "VNX-020",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(len(TIER_PRICING), \"tiers\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) tiers",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -209,8 +272,17 @@
       "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
       "type": "number",
       "id": "VNX-021",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(TIER_PRICING[\"tier_0_deterministic\"].input_price_per_m, \"custo\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+)\\.\\d+ custo",
+          "value": 0
+        }
+      }
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -219,8 +291,8 @@
       "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity 2.0, Cursor (`.mdc",
       "type": "number",
       "id": "VNX-022",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Antigravity 2.0, plataforma de IDE de terceiro), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
@@ -229,8 +301,17 @@
       "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity 2.0, Cursor (`.mdc",
       "type": "number",
       "id": "VNX-023",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.platforms.compiler import PlatformCompiler; print(len(PlatformCompiler().exporters), \"targets\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) targets",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -239,8 +320,8 @@
       "context": "| **Deterministic Facts** | 21 módulos (`sparkforge/facts/`) | 118 fact kinds | **Excelente**: 100% determinístico, offl",
       "type": "number",
       "id": "VNX-024",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'21 extratores' esta desatualizado: `sparkforge/facts/*.py` excluindo `__init__.py` tem 20 modulos hoje (medido com o derivador dado na tarefa). O '21' do documento provavelmente veio de contar `__init__.py` como extrator, o que nao e -- e o arquivo de pacote, nao um extrator de fato."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -249,8 +330,8 @@
       "context": "| **Deterministic Facts** | 21 módulos (`sparkforge/facts/`) | 118 fact kinds | **Excelente**: 100% determinístico, offl",
       "type": "number",
       "id": "VNX-025",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'118 fact kinds' nao e derivavel barato: exigiria enumerar todo identificador `kind=` distinto usado nos 20 modulos de `sparkforge/facts`, o que nao e um dos sete derivadores fornecidos nem um comando que ja existe no repositorio hoje. Fica para quando existir esse enumerador, nao para esta tarefa."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -259,8 +340,17 @@
       "context": "| **Deterministic Facts** | 21 módulos (`sparkforge/facts/`) | 118 fact kinds | **Excelente**: 100% determinístico, offl",
       "type": "number",
       "id": "VNX-026",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; terms=[\"anthropic\",\"openai\",\"LLMProvider\",\"llm_call\"]; files=list(pathlib.Path(\"sparkforge/facts\").rglob(\"*.py\"))+list(pathlib.Path(\"sparkforge/rules\").rglob(\"*.py\")); count=sum(1 for f in files if any(t in f.read_text(encoding=\"utf-8\") for t in terms)); print((100 if count==0 else 0), \"por cento deterministico\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) por cento",
+          "value": 100
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -269,8 +359,8 @@
       "context": "| **Rules Engine** | 52 catálogos YAML (`rules/catalog/`) | AST Python puro | **Excelente**: Sem `eval()`, tipado e com ",
       "type": "number",
       "id": "VNX-027",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'52 catalogos/regras YAML' esta desatualizado: `rules/catalog/*.yaml` tem 51 arquivos hoje (medido nesta sessao), e `load_catalog()` (o derivador dado na tarefa) retorna 116 regras individuais -- nenhum dos dois reproduz '52'. Sao duas unidades de medida diferentes (arquivo de catalogo vs. regra individual) e nenhuma bate com o numero alegado."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -279,8 +369,17 @@
       "context": "| **Case Lifecycle** | 4 Gates duráveis (`sparkforge/case/`) | Fail-closed | **Excelente**: Overrides auditados e assina",
       "type": "number",
       "id": "VNX-028",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.case.store import GATES; print(len(GATES), \"gates\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) gates",
+          "value": 4
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -289,8 +388,17 @@
       "context": "| **Token Economy** | `sparkforge/economy/` | 7 Tiers + Router | **Sólido**: Perfis `ECO`, `BALANCED`, `QUALITY`, `OFFLI",
       "type": "number",
       "id": "VNX-029",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(len(TIER_PRICING), \"tiers\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) tiers",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -299,8 +407,17 @@
       "context": "| **Platform Compilers** | `sparkforge/adapters/platforms/` | 7 Targets | **Sólido**: Antigravity, Cursor, Claude, Devin",
       "type": "number",
       "id": "VNX-030",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.platforms.compiler import PlatformCompiler; print(len(PlatformCompiler().exporters), \"targets\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) targets",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -309,8 +426,8 @@
       "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
       "type": "number",
       "id": "VNX-031",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'100 arquivos de teste' esta desatualizado: `tests/test_*.py` tem 115 arquivos hoje (medido nesta sessao), nao 100."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -319,8 +436,8 @@
       "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
       "type": "number",
       "id": "VNX-032",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'5.463 testes' esta desatualizado: `python -m pytest --collect-only -q` coleta 5632 testes agora (medido nesta sessao), nao 5.463. O repositorio cresceu desde `a5b9e96`. Ver tambem VNX-033/034/035/036 (mesma linha, alegacao de 'passando')."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -329,8 +446,8 @@
       "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
       "type": "number",
       "id": "VNX-033",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Alegacao de testes PASSANDO ('100% Verde'), nao apenas coletados -- `--collect-only` conta testes COLETADOS e nao prova passagem (a armadilha do enunciado desta tarefa). Provar 'passando' exigiria rodar a suite completa (`tier: slow`, mais de 600s conforme D-3 do design doc), e mesmo assim o numero ja esta desatualizado (5632 coletados agora vs. 100% Verde alegado). REMOVIDA por dois motivos independentes: numero obsoleto e metrica errada para `--collect-only`."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -339,8 +456,8 @@
       "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
       "type": "number",
       "id": "VNX-034",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Alegacao de testes PASSANDO ('5.458 passed'), nao apenas coletados -- `--collect-only` conta testes COLETADOS e nao prova passagem (a armadilha do enunciado desta tarefa). Provar 'passando' exigiria rodar a suite completa (`tier: slow`, mais de 600s conforme D-3 do design doc), e mesmo assim o numero ja esta desatualizado (5632 coletados agora vs. 5.458 passed alegado). REMOVIDA por dois motivos independentes: numero obsoleto e metrica errada para `--collect-only`."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -349,8 +466,8 @@
       "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
       "type": "number",
       "id": "VNX-035",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Alegacao de testes PASSANDO ('5 skipped'), nao apenas coletados -- `--collect-only` conta testes COLETADOS e nao prova passagem (a armadilha do enunciado desta tarefa). Provar 'passando' exigiria rodar a suite completa (`tier: slow`, mais de 600s conforme D-3 do design doc), e mesmo assim o numero ja esta desatualizado (5632 coletados agora vs. 5 skipped alegado). REMOVIDA por dois motivos independentes: numero obsoleto e metrica errada para `--collect-only`."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -359,8 +476,8 @@
       "context": "| **Test Baseline** | 100 arquivos de teste | 5.463 testes | **100% Verde**: 5.458 passed, 5 skipped, 0 falhas. |",
       "type": "number",
       "id": "VNX-036",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Alegacao de testes PASSANDO ('0 falhas'), nao apenas coletados -- `--collect-only` conta testes COLETADOS e nao prova passagem (a armadilha do enunciado desta tarefa). Provar 'passando' exigiria rodar a suite completa (`tier: slow`, mais de 600s conforme D-3 do design doc), e mesmo assim o numero ja esta desatualizado (5632 coletados agora vs. 0 falhas alegado). REMOVIDA por dois motivos independentes: numero obsoleto e metrica errada para `--collect-only`."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -369,8 +486,8 @@
       "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
       "type": "number",
       "id": "VNX-037",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 4.0, origem do Migration Lab), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -379,8 +496,8 @@
       "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
       "type": "number",
       "id": "VNX-038",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 5.1, destino do Migration Lab), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -389,8 +506,8 @@
       "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
       "type": "number",
       "id": "VNX-039",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Apache Spark 3.3, origem da migracao), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -399,8 +516,8 @@
       "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
       "type": "number",
       "id": "VNX-040",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Apache Spark 3.5, destino da migracao), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -409,8 +526,8 @@
       "context": "1. **Glue 4.0 ➔ 5.1 Migration Lab**: Ausência de analisador específico de migração Spark 3.3 ➔ 3.5, Java 17, e auditoria",
       "type": "number",
       "id": "VNX-041",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Java 17, runtime do Glue 5.1), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -419,8 +536,8 @@
       "context": "1. **`sparkforge.facts`**: 21 extratores offline (AST de PySpark, physical plans formatados, JSONL Spark event logs, Ice",
       "type": "number",
       "id": "VNX-042",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'21 extratores' esta desatualizado: `sparkforge/facts/*.py` excluindo `__init__.py` tem 20 modulos hoje (medido com o derivador dado na tarefa). O '21' do documento provavelmente veio de contar `__init__.py` como extrator, o que nao e -- e o arquivo de pacote, nao um extrator de fato."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -429,8 +546,8 @@
       "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
       "type": "number",
       "id": "VNX-043",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 4.0, escopo de versao do motor de regras), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -439,8 +556,8 @@
       "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
       "type": "number",
       "id": "VNX-044",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 5.0, escopo de versao do motor de regras), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -449,8 +566,8 @@
       "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
       "type": "number",
       "id": "VNX-045",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 5.1, escopo de versao do motor de regras), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -459,8 +576,8 @@
       "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
       "type": "number",
       "id": "VNX-046",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Amazon EMR 6.x, escopo de versao do motor de regras), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -469,8 +586,8 @@
       "context": "2. **`sparkforge.rules`**: Motor de avaliação seguro em Python AST sem `eval()`, com suporte a operadores tipados e esco",
       "type": "number",
       "id": "VNX-047",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Amazon EMR 7.x, escopo de versao do motor de regras), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -479,8 +596,17 @@
       "context": "4. **`sparkforge.case`**: Gerenciador durável de casos de investigação com 4 gates (`baseline_captured`, `flows_mapped`,",
       "type": "number",
       "id": "VNX-048",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.case.store import GATES; print(len(GATES), \"gates\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) gates",
+          "value": 4
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -489,8 +615,8 @@
       "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
       "type": "number",
       "id": "VNX-049",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'38 Agents' estava PROVADA pela razao errada: o proof original contava so `agents/*.md` (38, medido) e batia com o numero alegado por coincidencia, mas o proprio documento cita DUAS fontes na coluna Location -- `agents/*.md` e `agents/executors/*.md` -- e a propria quebra da linha ('8 coordenadores, 5 executores de ciclo, 25 especialistas') exige que os executores estejam dentro do total. Medido agora: 38 arquivos em `agents/*.md`, 5 em `agents/executors/*.md`, sem sobreposicao entre os dois conjuntos -- a uniao das duas fontes que o proprio documento cita e 43, nao 38. A linha precisa ser reescrita (parte C), nao provada como esta."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -499,8 +625,8 @@
       "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
       "type": "number",
       "id": "VNX-050",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'8 coordenadores' nao e derivavel barato: nao existe no repositorio nenhum campo de frontmatter, subdiretorio ou registro que classifique os 38 arquivos de `agents/*.md` em coordenador vs. especialista -- a busca por 'coorden' no corpo dos arquivos acha 9 ocorrencias, nao 8, e nao e um criterio confiavel de classificacao. A alegacao afirma uma composicao sem artefato que a sustente. Achado adicional da revisao: `available_coordinators()` em `sparkforge/case/playbook.py:51` e `coordinators()` em `tests/test_agent_coverage.py:34` definem 'coordenador' como o CONJUNTO INTEIRO de `agents/*.md` (as 38 entradas), nao um subconjunto de 8 -- evidencia de repositorio de que a taxonomia 8/25 do documento nao existe em lugar nenhum do codigo."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -509,8 +635,17 @@
       "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
       "type": "number",
       "id": "VNX-051",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('agents/executors').glob('*.md'))), 'executores')\"",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) executores",
+          "value": 5
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -519,8 +654,8 @@
       "context": "| **Agents** | 38 | `agents/*.md`, `agents/executors/*.md` | 8 coordenadores, 5 executores de ciclo, 25 especialistas |",
       "type": "number",
       "id": "VNX-052",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'25 especialistas' nao e derivavel barato: nao existe no repositorio nenhum campo de frontmatter, subdiretorio ou registro que classifique os 38 arquivos de `agents/*.md` em coordenador vs. especialista -- a busca por 'coorden' no corpo dos arquivos acha 9 ocorrencias, nao 8, e nao e um criterio confiavel de classificacao. A alegacao afirma uma composicao sem artefato que a sustente. Achado adicional da revisao: `available_coordinators()` em `sparkforge/case/playbook.py:51` e `coordinators()` em `tests/test_agent_coverage.py:34` definem 'coordenador' como o CONJUNTO INTEIRO de `agents/*.md` (as 38 entradas), nao um subconjunto de 8 -- evidencia de repositorio de que a taxonomia 8/25 do documento nao existe em lugar nenhum do codigo."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -529,8 +664,17 @@
       "context": "| **Skills** | 40 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
       "type": "number",
       "id": "VNX-053",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('skills').glob('*/SKILL.md'))), 'skills')\"",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) skills",
+          "value": 40
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -539,8 +683,17 @@
       "context": "| **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens",
       "type": "number",
       "id": "VNX-054",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('subagents').glob('*.md'))), 'subagents')\"",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) subagents",
+          "value": 16
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -549,8 +702,17 @@
       "context": "| **Subagents** | 16 | `config/subagents.yaml`, `subagents/*.md` | Contratos efêmeros com limite de tokens (1.800 tokens",
       "type": "number",
       "id": "VNX-055",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import yaml; d=yaml.safe_load(open(\"config/subagents.yaml\", encoding=\"utf-8\")); print(max(s[\"max_tokens\"] for s in d[\"subagents\"]), \"tokens\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) tokens",
+          "value": 1800
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -559,8 +721,17 @@
       "context": "| **Teams** | 5 | `config/teams-expansion.yaml` | Composições de times (evidence-quality, governance, etc.) |",
       "type": "number",
       "id": "VNX-056",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import yaml; d=yaml.safe_load(open(\"config/teams-expansion.yaml\", encoding=\"utf-8\")); print(len(d[\"teams\"]), \"teams\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) teams",
+          "value": 5
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -569,8 +740,8 @@
       "context": "| **Extratores de Fatos** | 21 | `sparkforge/facts/*.py` | 118 kinds de fatos determinísticos |",
       "type": "number",
       "id": "VNX-057",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'21 extratores' esta desatualizado: `sparkforge/facts/*.py` excluindo `__init__.py` tem 20 modulos hoje (medido com o derivador dado na tarefa). O '21' do documento provavelmente veio de contar `__init__.py` como extrator, o que nao e -- e o arquivo de pacote, nao um extrator de fato."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -579,8 +750,8 @@
       "context": "| **Extratores de Fatos** | 21 | `sparkforge/facts/*.py` | 118 kinds de fatos determinísticos |",
       "type": "number",
       "id": "VNX-058",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'118 fact kinds' nao e derivavel barato: exigiria enumerar todo identificador `kind=` distinto usado nos 20 modulos de `sparkforge/facts`, o que nao e um dos sete derivadores fornecidos nem um comando que ja existe no repositorio hoje. Fica para quando existir esse enumerador, nao para esta tarefa."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -589,8 +760,8 @@
       "context": "| **Catálogos de Regras** | 52 | `rules/catalog/*.yaml` | Regras estruturadas com condições, severidade e ações |",
       "type": "number",
       "id": "VNX-059",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'52 catalogos/regras YAML' esta desatualizado: `rules/catalog/*.yaml` tem 51 arquivos hoje (medido nesta sessao), e `load_catalog()` (o derivador dado na tarefa) retorna 116 regras individuais -- nenhum dos dois reproduz '52'. Sao duas unidades de medida diferentes (arquivo de catalogo vs. regra individual) e nenhuma bate com o numero alegado."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -599,8 +770,8 @@
       "context": "| **Knowledge Base** | 35+ | `knowledge/**/*.md`, `knowledge/**/*.json` | Guias de arquitetura, runtimes, anti-patterns,",
       "type": "number",
       "id": "VNX-060",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'35+ Knowledge Base' esta desatualizado e o '+' e inerentemente nao-falseavel por igualdade exata: `knowledge/**/*.md` mais `knowledge/**/*.json` soma 48 arquivos hoje (medido nesta sessao), nao 35. O gate so sabe comparar igualdade exata (`expect.kind: number`), nao 'pelo menos'."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -609,8 +780,8 @@
       "context": "| **Testes Automatizados** | 100 arquivos (5.463 testes) | `tests/test_*.py` | Cobertura massiva unitária, contratos, go",
       "type": "number",
       "id": "VNX-061",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'100 arquivos de teste' esta desatualizado: `tests/test_*.py` tem 115 arquivos hoje (medido nesta sessao), nao 100."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -619,8 +790,8 @@
       "context": "| **Testes Automatizados** | 100 arquivos (5.463 testes) | `tests/test_*.py` | Cobertura massiva unitária, contratos, go",
       "type": "number",
       "id": "VNX-062",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'5.463 testes' esta desatualizado: `python -m pytest --collect-only -q` coleta 5632 testes agora (medido nesta sessao), nao 5.463. O repositorio cresceu desde `a5b9e96`."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -629,8 +800,17 @@
       "context": "| **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e D",
       "type": "number",
       "id": "VNX-063",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import pathlib;paths=['.agents','.claude','manifest.json'];print(sum(1 for p in paths if pathlib.Path(p).exists()), 'adapters')\"",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) adapters",
+          "value": 3
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -639,8 +819,17 @@
       "context": "1. **Zero LLM para Fatos e Regras**: Análise de código, plano de execução, metadados e logs 100% determinística, offline",
       "type": "number",
       "id": "VNX-064",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; terms=[\"anthropic\",\"openai\",\"LLMProvider\",\"llm_call\"]; files=list(pathlib.Path(\"sparkforge/facts\").rglob(\"*.py\"))+list(pathlib.Path(\"sparkforge/rules\").rglob(\"*.py\")); count=sum(1 for f in files if any(t in f.read_text(encoding=\"utf-8\") for t in terms)); print((100 if count==0 else 0), \"por cento deterministico\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) por cento",
+          "value": 100
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -649,8 +838,8 @@
       "context": "5. **Altíssima Cobertura de Testes**: Mais de 5.400 testes garantindo não-regressão, determinismo e reprodutibilidade.",
       "type": "number",
       "id": "VNX-065",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'Mais de 5.400 testes' usa linguagem de limite aberto ('mais de'), que o mecanismo de prova `expect: number` nao expressa (so igualdade exata). Mesmo sendo tecnicamente verdadeiro hoje (5632 testes coletados > 5400), nao ha como codificar essa desigualdade sem um `expect.kind` que o schema nao define hoje."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -659,8 +848,17 @@
       "context": "3. **Falta de Cascata Formal de Economia de Tokens**: Embora exista `knowledge/token-economy.md` e regras de budget, não",
       "type": "number",
       "id": "VNX-066",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(len(TIER_PRICING), \"tiers\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) tiers",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -669,8 +867,8 @@
       "context": "5. **Ausência de Context Funnel Estruturado**: O empacotamento de contexto (`context_pack`) ainda é genérico e não imple",
       "type": "number",
       "id": "VNX-067",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'3 niveis' de Progressive Disclosure (metadados / instrucoes / referencias) nao esta implementado como estrutura distinguivel: `skills/*/SKILL.md` tem hoje um unico arquivo por skill (verificado nesta sessao -- nenhum `concise.md` ou `patterns.md` ao lado), nao os tres arquivos que o texto descreve. E design pretendido, nao capacidade construida."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -679,8 +877,8 @@
       "context": "1. **Proliferação Desordenada de Agentes**: Manter 38 agentes permanentes sem controle de ativação pode induzir custos d",
       "type": "number",
       "id": "VNX-068",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'38 Agents' estava PROVADA pela razao errada: o proof original contava so `agents/*.md` (38, medido) e batia com o numero alegado por coincidencia, mas o proprio documento cita DUAS fontes na coluna Location -- `agents/*.md` e `agents/executors/*.md` -- e a propria quebra da linha ('8 coordenadores, 5 executores de ciclo, 25 especialistas') exige que os executores estejam dentro do total. Medido agora: 38 arquivos em `agents/*.md`, 5 em `agents/executors/*.md`, sem sobreposicao entre os dois conjuntos -- a uniao das duas fontes que o proprio documento cita e 43, nao 38. A linha precisa ser reescrita (parte C), nao provada como esta."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -689,8 +887,8 @@
       "context": "- **Total de Testes**: 5.463 itens",
       "type": "number",
       "id": "VNX-069",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'5.463 testes' esta desatualizado: `python -m pytest --collect-only -q` coleta 5632 testes agora (medido nesta sessao), nao 5.463. O repositorio cresceu desde `a5b9e96`."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -699,8 +897,8 @@
       "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
       "type": "number",
       "id": "VNX-070",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Python >=3.10, piso minimo suportado), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -709,8 +907,8 @@
       "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
       "type": "number",
       "id": "VNX-071",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Python 3.10, versao testada), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -719,8 +917,8 @@
       "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
       "type": "number",
       "id": "VNX-072",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Python 3.11, versao testada), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -729,8 +927,8 @@
       "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
       "type": "number",
       "id": "VNX-073",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Python 3.12, versao testada), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -739,8 +937,8 @@
       "context": "- **Compatibilidade Python**: Python >=3.10 (testado em 3.10, 3.11, 3.12, 3.14)",
       "type": "number",
       "id": "VNX-074",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Python 3.14, versao testada), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -749,8 +947,8 @@
       "context": "- **Dependências de Produção Obrigatórias**: `PyYAML>=6.0`, `jsonschema>=4.0` (Zero dependência externa pesada).",
       "type": "number",
       "id": "VNX-075",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (PyYAML >=6.0, dependencia de producao), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -759,8 +957,8 @@
       "context": "- **Dependências de Produção Obrigatórias**: `PyYAML>=6.0`, `jsonschema>=4.0` (Zero dependência externa pesada).",
       "type": "number",
       "id": "VNX-076",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (jsonschema >=4.0, dependencia de producao), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -769,8 +967,17 @@
       "context": "- **D-1**: Manter camada determinística pura (Layer 0) com 0 chamadas de LLM para extração de fatos e avaliação de regra",
       "type": "number",
       "id": "VNX-077",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; terms=[\"anthropic\",\"openai\",\"LLMProvider\",\"llm_call\"]; files=list(pathlib.Path(\"sparkforge/facts\").rglob(\"*.py\"))+list(pathlib.Path(\"sparkforge/rules\").rglob(\"*.py\")); count=sum(1 for f in files if any(t in f.read_text(encoding=\"utf-8\") for t in terms)); print(count, \"chamadas LLM\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) chamadas",
+          "value": 0
+        }
+      }
     },
     {
       "doc": "docs/vnext/DEMOS.md",
@@ -779,8 +986,8 @@
       "context": "Um job AWS Glue 4.0 processando 500GB apresenta lentidão severa e OOM intermitente em um executor específico.",
       "type": "number",
       "id": "VNX-078",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 4.0, cenario de demo), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/DEMOS.md",
@@ -789,8 +996,8 @@
       "context": "Evolução de schema adicionando colunas e modificando tipos em tabela Iceberg com 50 consumidores downstream.",
       "type": "number",
       "id": "VNX-079",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'50 consumidores downstream' e dado de cenario ficticio de demonstracao, nao medicao real do repositorio: e o roteiro do Demo 3 (evolucao de schema Iceberg), nao uma tabela ou cliente real cadastrado no repositorio. Nenhum comando produz esse numero porque nao ha nada real para medir -- e ilustracao do roteiro da demo, nao resultado de execucao."
     },
     {
       "doc": "docs/vnext/DEMOS.md",
@@ -799,8 +1006,17 @@
       "context": "- **Rota**: `Tier 0 (Deterministic First)` — Cálculo de compatibilidade de schema 100% determinístico.",
       "type": "number",
       "id": "VNX-080",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; terms=[\"anthropic\",\"openai\",\"LLMProvider\",\"llm_call\"]; files=[pathlib.Path(\"sparkforge/facts/catalog_schema.py\"), pathlib.Path(\"sparkforge/facts/consumers.py\")]; count=sum(1 for f in files if any(t in f.read_text(encoding=\"utf-8\") for t in terms)); print((100 if count==0 else 0), \"por cento deterministico\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) por cento",
+          "value": 100
+        }
+      }
     },
     {
       "doc": "docs/vnext/DEMOS.md",
@@ -809,8 +1025,17 @@
       "context": "- **Tokens Consumidos**: 0 tokens LLM.",
       "type": "number",
       "id": "VNX-081",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; terms=[\"anthropic\",\"openai\",\"LLMProvider\",\"llm_call\"]; files=[pathlib.Path(\"sparkforge/facts/catalog_schema.py\"), pathlib.Path(\"sparkforge/facts/consumers.py\")]; count=sum(1 for f in files if any(t in f.read_text(encoding=\"utf-8\") for t in terms)); print(count, \"chamadas LLM\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) chamadas",
+          "value": 0
+        }
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -819,8 +1044,17 @@
       "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
       "type": "number",
       "id": "VNX-082",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(len(TIER_PRICING), \"tiers\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) tiers",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -829,8 +1063,17 @@
       "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
       "type": "number",
       "id": "VNX-083",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.platforms.compiler import PlatformCompiler; print(len(PlatformCompiler().exporters), \"targets\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) targets",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -839,8 +1082,8 @@
       "context": "A plataforma agora conta com um Registro Canônico tipado (`sparkforge.registry`), motor de economia de tokens em 7 tiers",
       "type": "number",
       "id": "VNX-084",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'100% de retrocompatibilidade' nao tem artefato de medicao: `a5b9e96` nao trouxe suite de comparacao de compatibilidade entre versoes do produto. Nenhum comando neste repositorio calcula esse percentual."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -849,8 +1092,8 @@
       "context": "| **Task Success Rate** | 98.2% | **100%** | +1.8% |",
       "type": "number",
       "id": "VNX-085",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "KPI de `a5b9e96` sem artefato de medicao: nenhum comando neste repositorio produz taxa de sucesso de tarefas (linha 'antes', 98,2%). Reabrir quando existir motor de medicao de execucao de tarefas."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -859,8 +1102,8 @@
       "context": "| **Task Success Rate** | 98.2% | **100%** | +1.8% |",
       "type": "number",
       "id": "VNX-086",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "KPI de `a5b9e96` sem artefato de medicao: nenhum comando neste repositorio produz taxa de sucesso de tarefas (linha 'depois', 100%). Reabrir quando existir motor de medicao de execucao de tarefas."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -869,8 +1112,8 @@
       "context": "| **Task Success Rate** | 98.2% | **100%** | +1.8% |",
       "type": "number",
       "id": "VNX-087",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Delta calculado a partir de dois numeros (98,2% -> 100%) que nao tem artefato de medicao -- ver VNX-085 e VNX-086. Sem os dois lados medidos, o delta tambem nao tem lastro."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -879,8 +1122,8 @@
       "context": "| **Median Tokens / Deterministic Task** | 3.500 | **0** | **-100%** (Tier 0 puro) |",
       "type": "number",
       "id": "VNX-088",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mediana de tokens por tarefa deterministica (linha 'antes', 3.500): nenhum comando neste repositorio mede consumo de tokens por execucao real. `a5b9e96` nao trouxe instrumentacao de observabilidade ligada a este numero."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -889,8 +1132,8 @@
       "context": "| **Median Tokens / Deterministic Task** | 3.500 | **0** | **-100%** (Tier 0 puro) |",
       "type": "number",
       "id": "VNX-089",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mediana de tokens por tarefa deterministica (linha 'depois', 0): coincide com o custo zero da tier_0 na tabela estatica de precos (ver VNX-005), mas a alegacao aqui e sobre tokens medidos numa execucao real, nao sobre a tabela de precos. `a5b9e96` nao trouxe instrumentacao que meca isso; mesma ausencia de VNX-088."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -899,8 +1142,8 @@
       "context": "| **Median Tokens / Deterministic Task** | 3.500 | **0** | **-100%** (Tier 0 puro) |",
       "type": "number",
       "id": "VNX-090",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Delta entre VNX-088 e VNX-089 (-100%); nenhum dos dois lados foi medido, entao o delta tambem nao tem lastro."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -909,8 +1152,8 @@
       "context": "| **Median Tokens / Specialist Task** | 18.000 | **3.800** | **-78.8%** (Funnel + Skill B) |",
       "type": "number",
       "id": "VNX-091",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mediana de tokens por tarefa de especialista (linha 'antes', 18.000): nenhum comando neste repositorio mede isso; sem instrumentacao de observabilidade de execucao real ligada a este numero."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -919,8 +1162,8 @@
       "context": "| **Median Tokens / Specialist Task** | 18.000 | **3.800** | **-78.8%** (Funnel + Skill B) |",
       "type": "number",
       "id": "VNX-092",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Mediana de tokens por tarefa de especialista (linha 'depois', 3.800): mesma ausencia de instrumentacao de VNX-091."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -929,8 +1172,8 @@
       "context": "| **Median Tokens / Specialist Task** | 18.000 | **3.800** | **-78.8%** (Funnel + Skill B) |",
       "type": "number",
       "id": "VNX-093",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Delta entre VNX-091 e VNX-092 (-78,8%); nenhum dos dois lados foi medido, entao o delta tambem nao tem lastro."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -939,8 +1182,8 @@
       "context": "| **Estimated Cost / 1k Tasks** | $45.00 | **$8.20** | **-81.8%** de economia |",
       "type": "number",
       "id": "VNX-094",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Custo estimado por 1k tarefas (linha 'antes', $45.00): nenhum comando neste repositorio calcula custo agregado de execucao real; so existe `TIER_PRICING`, uma tabela estatica de precos por milhao de tokens, que nao mede uso real."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -949,8 +1192,8 @@
       "context": "| **Estimated Cost / 1k Tasks** | $45.00 | **$8.20** | **-81.8%** de economia |",
       "type": "number",
       "id": "VNX-095",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Custo estimado por 1k tarefas (linha 'depois', $8.20): mesma ausencia de motor de custo real de VNX-094."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -959,8 +1202,8 @@
       "context": "| **Estimated Cost / 1k Tasks** | $45.00 | **$8.20** | **-81.8%** de economia |",
       "type": "number",
       "id": "VNX-096",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O KPI mais visivel do commit: '-81,8%' de economia estimada de custo. `a5b9e96` nao trouxe artefato de medicao de custo; nenhum comando reproduz nem o valor 'antes' nem o 'depois' (VNX-094, VNX-095). Hipotese do design doc (`2026-08-21-auditoria-lastro-vnext-design.md` SS7) confirmada pela auditoria: cai em REMOVIDA."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -969,8 +1212,8 @@
       "context": "| **Multi-Agent Escalation Rate** | ~35% | **< 5%** | Redução drástica de overhead |",
       "type": "number",
       "id": "VNX-097",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Taxa de escalonamento multi-agente (linha 'antes', ~35%): nenhum comando mede quantas execucoes escalam de single-agent para multi-agent; sem instrumentacao ligada a este numero."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -979,8 +1222,8 @@
       "context": "| **Multi-Agent Escalation Rate** | ~35% | **< 5%** | Redução drástica de overhead |",
       "type": "number",
       "id": "VNX-098",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Taxa de escalonamento multi-agente (linha 'depois', <5%): mesma ausencia de instrumentacao de VNX-097."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -989,8 +1232,8 @@
       "context": "| **Cache Hit Rate (Re-runs)** | 0% | **94.5%** | Tier 1 ArtifactCache |",
       "type": "number",
       "id": "VNX-099",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Taxa de acerto de cache (linha 'antes', 0%): nenhum comando neste repositorio mede cache hit rate em reexecucoes; `sparkforge.economy` nao expoe metrica de cache observada."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -999,8 +1242,8 @@
       "context": "| **Cache Hit Rate (Re-runs)** | 0% | **94.5%** | Tier 1 ArtifactCache |",
       "type": "number",
       "id": "VNX-100",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "O segundo KPI mais visivel do commit: '94,5%' de cache hit rate. `a5b9e96` nao trouxe artefato de medicao; nenhum comando reproduz o numero. Mesma conclusao do design doc (hipotese confirmada)."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1009,8 +1252,8 @@
       "context": "| **Test Suite Coverage** | 5.463 testes | **5.485+ testes** | +22 novos testes de infra |",
       "type": "number",
       "id": "VNX-101",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Alegacao de testes PASSANDO ('5.463 testes'), nao apenas coletados -- `--collect-only` conta testes COLETADOS e nao prova passagem (a armadilha do enunciado desta tarefa). Provar 'passando' exigiria rodar a suite completa (`tier: slow`, mais de 600s conforme D-3 do design doc), e mesmo assim o numero ja esta desatualizado (5632 coletados agora vs. 5.463 testes alegado). REMOVIDA por dois motivos independentes: numero obsoleto e metrica errada para `--collect-only`."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1019,8 +1262,8 @@
       "context": "| **Test Suite Coverage** | 5.463 testes | **5.485+ testes** | +22 novos testes de infra |",
       "type": "number",
       "id": "VNX-102",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Alegacao de testes PASSANDO ('5.485+ testes'), nao apenas coletados -- `--collect-only` conta testes COLETADOS e nao prova passagem (a armadilha do enunciado desta tarefa). Provar 'passando' exigiria rodar a suite completa (`tier: slow`, mais de 600s conforme D-3 do design doc), e mesmo assim o numero ja esta desatualizado (5632 coletados agora vs. 5.485+ testes alegado). REMOVIDA por dois motivos independentes: numero obsoleto e metrica errada para `--collect-only`."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1029,8 +1272,8 @@
       "context": "| **Test Suite Coverage** | 5.463 testes | **5.485+ testes** | +22 novos testes de infra |",
       "type": "number",
       "id": "VNX-103",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Delta '+22 novos testes' entre VNX-101 e VNX-102, nenhum dos dois lados tem lastro (ver notas respectivas); o delta herda a mesma ausencia e, alem disso, a contagem atual (5632 coletados) ja nao bate com nenhum dos dois lados do delta."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1039,8 +1282,8 @@
       "context": "- [`docs/vnext/CURRENT-STATE.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/CURRENT-STATE.md) (Baseline Phase 0)",
       "type": "number",
       "id": "VNX-104",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'(Baseline Phase 0)' e marcador de roteiro/fase (rotulo de fase do roadmap interno, referenciando CURRENT-STATE.md como marco 'Phase 0'), nao resultado medido -- mesma classe estrutural que `IGNORED_LINES` ja filtra para outros padroes (numero de secao, rotulo Tier/Layer/Wave/Demo), mas esta ocorrencia especifica nao bate com nenhum padrao da allowlist hoje (achado desta tarefa, nao consertado aqui porque mudar o extrator esta fora do escopo da Task 9a)."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1049,8 +1292,17 @@
       "context": "- [`docs/vnext/DEMOS.md`](file:///e:/projetos/spark-forge-aws/docs/vnext/DEMOS.md) (5 Demos interativas)",
       "type": "number",
       "id": "VNX-105",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; text=pathlib.Path(\"docs/vnext/DEMOS.md\").read_text(encoding=\"utf-8\"); demos=[l for l in text.split(chr(10)) if l.startswith(\"## Demo \")]; print(len(demos), \"demos\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) demos",
+          "value": 5
+        }
+      }
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1059,8 +1311,8 @@
       "context": "1. **Antigravity 2.0**: `.agents/agents/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md`",
       "type": "number",
       "id": "VNX-106",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Antigravity 2.0, plataforma de IDE de terceiro), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1069,8 +1321,8 @@
       "context": "## 7. Limitações Conhecidas e Próximos Passos (vNext+1)",
       "type": "number",
       "id": "VNX-107",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'vNext+1' e marcador de roteiro/fase (incremento de versao do roadmap, titulo da secao de limitacoes e proximos passos), nao resultado medido -- mesma classe estrutural que `IGNORED_LINES` ja filtra para outros padroes (numero de secao, rotulo Tier/Layer/Wave/Demo), mas esta ocorrencia especifica nao bate com nenhum padrao da allowlist hoje (achado desta tarefa, nao consertado aqui porque mudar o extrator esta fora do escopo da Task 9a)."
     },
     {
       "doc": "docs/vnext/FINAL-REPORT.md",
@@ -1079,8 +1331,8 @@
       "context": "- **Oportunidade vNext+1**: Expandir remote worker com Terraform modules prontos para deployment Serverless AWS (Lambda ",
       "type": "number",
       "id": "VNX-108",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'vNext+1' e marcador de roteiro/fase (incremento de versao do roadmap, rotulo de oportunidade futura), nao resultado medido -- mesma classe estrutural que `IGNORED_LINES` ja filtra para outros padroes (numero de secao, rotulo Tier/Layer/Wave/Demo), mas esta ocorrencia especifica nao bate com nenhum padrao da allowlist hoje (achado desta tarefa, nao consertado aqui porque mudar o extrator esta fora do escopo da Task 9a)."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1089,8 +1341,8 @@
       "context": "| **Glue Migration Lab** | `sparkforge.migration.glue` | Glue 4.0 ➔ 5.1 analyzer, S3A vs EMRFS detection, Migration Read",
       "type": "number",
       "id": "VNX-109",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 4.0, origem do Migration Lab analyzer), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1099,8 +1351,8 @@
       "context": "| **Glue Migration Lab** | `sparkforge.migration.glue` | Glue 4.0 ➔ 5.1 analyzer, S3A vs EMRFS detection, Migration Read",
       "type": "number",
       "id": "VNX-110",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (AWS Glue 5.1, destino do Migration Lab analyzer), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1109,8 +1361,8 @@
       "context": "| **Antigravity 2.0** | `.agents/rules/` & `plugins/` | Evidence-first, AWS Safety, Terraform Safety, Migration Safety. ",
       "type": "number",
       "id": "VNX-111",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Fato de versao externa (Antigravity 2.0, plataforma de IDE de terceiro), nao resultado medido deste repositorio. `type: number` esta errado para esta entrada -- deveria ser `external_fact` (mesmo tratamento dado a outras versoes no manifesto), mas mudar `type` esta fora do escopo da Task 9a (so classifica `number`). REMOVIDA: precisa de fonte oficial em `knowledge/sources.lock.json`, nao de comando."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1119,8 +1371,8 @@
       "context": "1. **Deterministic Facts**: 21 extractors, 118 fact kinds, 0 hallucinated metrics.",
       "type": "number",
       "id": "VNX-112",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'21 extratores' esta desatualizado: `sparkforge/facts/*.py` excluindo `__init__.py` tem 20 modulos hoje (medido com o derivador dado na tarefa). O '21' do documento provavelmente veio de contar `__init__.py` como extrator, o que nao e -- e o arquivo de pacote, nao um extrator de fato."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1129,8 +1381,8 @@
       "context": "1. **Deterministic Facts**: 21 extractors, 118 fact kinds, 0 hallucinated metrics.",
       "type": "number",
       "id": "VNX-113",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'118 fact kinds' nao e derivavel barato: exigiria enumerar todo identificador `kind=` distinto usado nos 20 modulos de `sparkforge/facts`, o que nao e um dos sete derivadores fornecidos nem um comando que ja existe no repositorio hoje. Fica para quando existir esse enumerador, nao para esta tarefa."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1139,8 +1391,8 @@
       "context": "1. **Deterministic Facts**: 21 extractors, 118 fact kinds, 0 hallucinated metrics.",
       "type": "number",
       "id": "VNX-114",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'0 hallucinated metrics' e descricao comportamental/qualitativa, nao contagem: afirma ausencia de metricas alucinadas; nao ha como um comando provar uma negativa sobre alucinacao de LLM -- so a ausencia de chamada de LLM no codigo (ver VNX-077, VNX-026, VNX-064), que e uma alegacao diferente desta. Nenhum comando no repositorio mede isso diretamente."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1149,8 +1401,8 @@
       "context": "2. **Deterministic Rules**: 52 catalog files evaluated via strict AST.",
       "type": "number",
       "id": "VNX-115",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'52 catalogos/regras YAML' esta desatualizado: `rules/catalog/*.yaml` tem 51 arquivos hoje (medido nesta sessao), e `load_catalog()` (o derivador dado na tarefa) retorna 116 regras individuais -- nenhum dos dois reproduz '52'. Sao duas unidades de medida diferentes (arquivo de catalogo vs. regra individual) e nenhuma bate com o numero alegado."
     },
     {
       "doc": "docs/vnext/IMPLEMENTATION-REPORT.md",
@@ -1159,8 +1411,8 @@
       "context": "5. **Zero Breaking Changes**: Full backwards compatibility maintained with existing CLI and 5,463 baseline tests.",
       "type": "number",
       "id": "VNX-116",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "Alegacao de testes PASSANDO ('5,463 baseline tests'), nao apenas coletados -- `--collect-only` conta testes COLETADOS e nao prova passagem (a armadilha do enunciado desta tarefa). Provar 'passando' exigiria rodar a suite completa (`tier: slow`, mais de 600s conforme D-3 do design doc), e mesmo assim o numero ja esta desatualizado (5632 coletados agora vs. 5,463 baseline tests alegado). REMOVIDA por dois motivos independentes: numero obsoleto e metrica errada para `--collect-only`."
     },
     {
       "doc": "docs/vnext/adrs/ADR-003-token-economy-and-model-routing.md",
@@ -1169,8 +1421,17 @@
       "context": "Adotamos uma cascata de execução rigorosa em 7 Tiers:",
       "type": "number",
       "id": "VNX-117",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(len(TIER_PRICING), \"tiers\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+) tiers",
+          "value": 7
+        }
+      }
     },
     {
       "doc": "docs/vnext/adrs/ADR-003-token-economy-and-model-routing.md",
@@ -1179,8 +1440,17 @@
       "context": "- **Tier 0**: Determinístico (0 chamadas LLM)",
       "type": "number",
       "id": "VNX-118",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(TIER_PRICING[\"tier_0_deterministic\"].input_price_per_m, \"custo\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "(\\d+)\\.\\d+ custo",
+          "value": 0
+        }
+      }
     },
     {
       "doc": "docs/vnext/adrs/ADR-004-context-funnel-and-retrieval.md",
@@ -1189,8 +1459,8 @@
       "context": "Adotamos o **Context Funnel** e o modelo de **Progressive Disclosure** em 3 níveis:",
       "type": "number",
       "id": "VNX-119",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'3 niveis' de Progressive Disclosure (metadados / instrucoes / referencias) nao esta implementado como estrutura distinguivel: `skills/*/SKILL.md` tem hoje um unico arquivo por skill (verificado nesta sessao -- nenhum `concise.md` ou `patterns.md` ao lado), nao os tres arquivos que o texto descreve. E design pretendido, nao capacidade construida."
     },
     {
       "doc": "docs/vnext/adrs/ADR-007-local-first-agentops-and-observability.md",
@@ -1199,8 +1469,8 @@
       "context": "- **Positivas**: 100% privado, sem custos de infraestrutura adicionais e totalmente funcional offline.",
       "type": "number",
       "id": "VNX-120",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'100% privado ... offline' e alegacao sobre a arquitetura inteira, nao sobre um escopo estreito como fatos/regras. O repositorio inclui `sparkforge/collect/*`, que chama APIs da AWS via rede quando invocado (coleta de Glue, EMR, Athena, CloudWatch) -- uma verificacao de '0 chamadas de rede' cobrindo o pacote inteiro seria falsa. Nenhum comando barato distingue 'nucleo de raciocinio offline' de 'coletores opcionais online'."
     },
     {
       "doc": "docs/vnext/adrs/ADR-008-protocol-strategy-and-cloud-extension.md",
@@ -1209,8 +1479,8 @@
       "context": "- **Positivas**: Núcleo leve e independente de rede; capacidade de escala em nuvem sob demanda sem custos fixos 24/7.",
       "type": "number",
       "id": "VNX-121",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'24/7' faz parte da expressao idiomatica '24/7' (disponibilidade continua), nao uma contagem medida. Nenhum comando neste repositorio produz '24/7' como numero real -- e forma de linguagem, nao resultado de medicao."
     },
     {
       "doc": "docs/vnext/adrs/ADR-008-protocol-strategy-and-cloud-extension.md",
@@ -1219,8 +1489,8 @@
       "context": "- **Positivas**: Núcleo leve e independente de rede; capacidade de escala em nuvem sob demanda sem custos fixos 24/7.",
       "type": "number",
       "id": "VNX-122",
-      "state": "SEM_LASTRO",
-      "note": "classificacao pendente"
+      "state": "REMOVIDA",
+      "note": "'24/7' faz parte da expressao idiomatica '24/7' (disponibilidade continua), nao uma contagem medida. Nenhum comando neste repositorio produz '24/7' como numero real -- e forma de linguagem, nao resultado de medicao."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
