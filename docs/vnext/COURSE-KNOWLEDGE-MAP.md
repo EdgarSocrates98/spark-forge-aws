@@ -1,10 +1,10 @@
 # SparkForge AWS — Course & Reference Knowledge Map (Phase 0)
 
-Mapeamento de conceitos das referências metodológicas (`referencia-externa` e `referencia-externa`) para a arquitetura do **SparkForge AWS — Data & AWS Agent Factory vNext**.
+Mapeamento de conceitos de referências metodológicas externas para a arquitetura do **SparkForge AWS — Data & AWS Agent Factory vNext**.
 
 ---
 
-## 1. Mapeamento de Conceitos: referência externa
+## 1. Mapeamento de Conceitos: engenharia de harness
 
 | Conceito | Fonte | Aplicação no SparkForge | Decisão de Implementação |
 |---|---|---|---|
@@ -19,7 +19,7 @@ Mapeamento de conceitos das referências metodológicas (`referencia-externa` e 
 
 ---
 
-## 2. Mapeamento de Conceitos: referência externa
+## 2. Mapeamento de Conceitos: engenharia de contexto e economia de token
 
 | Conceito | Fonte | Aplicação no SparkForge | Decisão de Implementação |
 |---|---|---|---|

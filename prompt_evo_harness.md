@@ -670,7 +670,7 @@ Incorporar profundamente:
 
 sessions/d2/02-harness-contract.md
 
-do curso referencia-externa.
+do material de referência de harness.
 
 Criar HarnessContract.
 
@@ -2818,7 +2818,7 @@ CLAUDE.md deve permanecer pequeno.
 96. COURSE MATERIAL
 ======================================================================
 
-Revisite no ZIP referencia-externa:
+Revisite no material de referência de harness:
 
 AGENTS.md
 
@@ -2840,7 +2840,7 @@ skills/spec-before-build/SKILL.md
 
 skills/harness-scaffold/SKILL.md
 
-Revisite no ZIP referencia-externa:
+Revisite no material de referência de engenharia de contexto:
 
 l1-evals
 
