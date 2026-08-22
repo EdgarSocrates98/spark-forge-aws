@@ -1,0 +1,25 @@
+[
+  {
+    "id": "f_dd6298",
+    "schema_version": 1,
+    "kind": "mig.removed_api",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 4,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "symbol": "append",
+      "replacement": "ps.concat"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "a38d105a4dadeff3f9c4c73d8427817880355b7f4ab426af0fe9b71d222b8cb2",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

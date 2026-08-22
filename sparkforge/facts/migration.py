@@ -63,6 +63,7 @@ EMITTED_KINDS = frozenset(
         "mig.jar_binary",
         "mig.python_dep",
         "mig.renamed_conf",
+        "mig.removed_api",
     }
 )
 
@@ -144,6 +145,43 @@ _RENAMED_CONF: dict[str, str] = {
     # fato observado e o mesmo -- um nome que o runtime alvo nao aceita mais.
     "lz4raw": "lz4_raw",
 }
+
+
+# APIs de pandas-on-Spark removidas no Spark 4.0. Mapa fechado: so entra aqui
+# o que a fonte oficial lista como REMOVIDO, nunca o que ela chama de
+# deprecado -- deprecado ainda roda, e acusar os dois junto apagaria a
+# diferenca entre "quebra" e "vai quebrar".
+_REMOVED_API: dict[str, str] = {
+    "append": "ps.concat",
+    "iteritems": ".items",
+    "to_koalas": "DataFrame.pandas_api",
+    "koalas": "DataFrame.pandas_on_spark",
+    "get_dtype_counts": "DataFrame.dtypes.value_counts()",
+    "is_monotonic": ".is_monotonic_increasing",
+    "backfill": ".bfill",
+    "pad": ".ffill",
+    "mad": "",
+    "Int64Index": "Index",
+    "Float64Index": "Index",
+}
+
+# Nome que comeca com minuscula e metodo/propriedade: so casa precedido de
+# ponto, senao a variavel local `pad = 4` viraria observacao de API removida.
+# O `\b` FINAL e o que separa `is_monotonic` de `is_monotonic_increasing` --
+# sem ele o casamento por substring acusaria justamente o codigo JA CORRIGIDO,
+# o falso positivo mais caro que existe porque ensina a ignorar a regra.
+# Nome que comeca com maiuscula (`Int64Index`, `Float64Index`) e CLASSE, nao
+# metodo: aparece como nome livre em import, anotacao ou construtor, entao casa
+# por fronteira de palavra dos dois lados -- exigir ponto ali perderia todas as
+# tres formas.
+_REMOVED_API_RES: tuple[tuple[re.Pattern[str], str, str], ...] = tuple(
+    (
+        re.compile((r"\b" if nome[:1].isupper() else r"\.") + re.escape(nome) + r"\b"),
+        nome,
+        substituto,
+    )
+    for nome, substituto in _REMOVED_API.items()
+)
 
 
 def _source_subject(file: str, line: int) -> dict[str, Any]:
@@ -268,6 +306,40 @@ def _renamed_conf_facts(text: str, anchor: str, provenance: dict[str, Any]) -> l
     return facts
 
 
+def _removed_api_facts(text: str, anchor: str, provenance: dict[str, Any]) -> list[Fact]:
+    """Observa nome de API de pandas-on-Spark removida no Spark 4.0.
+
+    Le a LINHA CRUA em vez da AST de proposito. `sparkforge/facts/pyspark_ast.py`
+    existe e e mais preciso -- separaria `.append(` de um atributo homonimo e
+    daria coluna exata -- mas exige que o arquivo seja Python VALIDO para o
+    interpretador que roda este processo, e parte do corpus que este extrator
+    varre e codigo escrito para um Python mais antigo: justamente o codigo com
+    mais chance de ainda usar API removida. Leitura por linha degrada para
+    "observei um nome"; leitura por AST degradaria para "nao observei nada",
+    que e falso negativo silencioso -- o erro que este extrator existe para
+    evitar.
+
+    Quebra as linhas com `split("\\n")` pela mesma razao que
+    `_renamed_conf_facts`: `splitlines()` tambem corta em form feed e U+2028, e
+    dois detectores numerando a MESMA linha de forma diferente mandariam quem
+    le os subjects procurar em dois lugares, um dos quais nao existe.
+    """
+    facts: list[Fact] = []
+    for numero, linha in enumerate(text.split("\n"), start=1):
+        for regex, nome, substituto in _REMOVED_API_RES:
+            if not regex.search(linha):
+                continue
+            facts.append(
+                Fact(
+                    kind="mig.removed_api",
+                    subject=_source_subject(anchor, numero),
+                    attrs={"symbol": nome, "replacement": substituto},
+                    provenance=provenance,
+                )
+            )
+    return facts
+
+
 def _jar_facts(path: Path, anchor: str, provenance: dict[str, Any]) -> list[Fact]:
     """Um `.jar` e uma OBSERVACAO de arquivo inteiro: um binario nao tem linha
     de fonte para varrer, entao um fact por arquivo (nao por linha) e a
@@ -327,6 +399,7 @@ def extract_migration_path(path: Path, repo_root: Path | None = None) -> list[Fa
         _sdk_imports(text, anchor, provenance)
         + _config_facts(text, anchor, provenance)
         + _renamed_conf_facts(text, anchor, provenance)
+        + _removed_api_facts(text, anchor, provenance)
     )
 
     unknown = {f.kind for f in facts} - EMITTED_KINDS

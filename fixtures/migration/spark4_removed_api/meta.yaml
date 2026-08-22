@@ -1,0 +1,18 @@
+name: spark4_removed_api
+proves: >
+  API de pandas-on-Spark REMOVIDA no Spark 4.0: `DataFrame.append` sumiu, sem
+  substituto compativel por assinatura (o caminho e `ps.concat`). Diferente do
+  par renomeado da fixture `spark4_renamed_conf`, aqui nao ha silencio: o job
+  QUEBRA. Mas quebra em RUNTIME, quando a linha executa -- nao na submissao,
+  que nao le o corpo do job -- entao um job de horas pode falhar no fim, depois
+  de ja ter escrito parte da saida. Runtime Glue 6.0 porque e onde o Spark 4
+  vive; a regra que julgue este kind ainda nao existe no catalogo, entao a
+  fixture prova so o vocabulario do fact.
+runtime:
+  glue: "6.0"
+  spark: "4.1.1"
+  python: "3.13"
+  iceberg: "1.11.0"
+expects_kinds:
+  - mig.removed_api
+expects_rules: []

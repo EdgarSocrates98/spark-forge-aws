@@ -17,7 +17,7 @@ id) -- um laco por arquivo concatenaria blocos ja ordenados por arquivo e o
 golden descreveria uma ordenacao que nenhuma superficie do produto emite.
 
 O corpus e desenhado por eixo, uma fixture por kind, mais o par negativo/
-positivo de SF-MIG-003 que a Task 11 acrescentou (onze fixtures para nove
+positivo de SF-MIG-003 que a Task 11 acrescentou (doze fixtures para dez
 kinds):
 
   * `sdk_v1_import` -- dispara SF-MIG-001 (`com.amazonaws.*` sobrevivendo no
@@ -43,6 +43,13 @@ kinds):
     junto porque a chave comeca com `spark.sql.legacy.`) -- e a unica fixture
     do corpus onde dois kinds observam o mesmo trecho, o que prova que os dois
     detectores leem a linha sem se atropelar.
+  * `spark4_removed_api` -- `DataFrame.append`, removida no Spark 4.0, julgada
+    em Glue 6.0. Tambem observacao pura: a regra que consuma `mig.removed_api`
+    ainda nao existe. Fica ao lado de `spark4_renamed_conf` de proposito, para
+    que o corpus guarde os dois modos de falha da versao 4 lado a lado --
+    renomeado quebra em SILENCIO (o nome antigo nao e lido e nao reclama),
+    removido quebra em RUNTIME (a linha executa e estoura, so que depois da
+    submissao ter passado).
   * `clean_job` -- o negativo de referencia: job escrito do jeito atual (SDK
     v2, sem config de EMRFS, sem API depreciada, sem cast sem guarda). Zero
     facts, zero findings -- se algum kind `mig.*` disparar aqui, e falso
@@ -83,6 +90,7 @@ REQUIRED_FIXTURES = {
     "jar_binary",
     "python_dep",
     "spark4_renamed_conf",
+    "spark4_removed_api",
     "clean_job",
 }
 

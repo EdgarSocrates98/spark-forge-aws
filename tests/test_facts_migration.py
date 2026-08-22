@@ -250,3 +250,36 @@ class TestConfigRenomeadaNoSpark4:
         facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
         linhas = {f.kind: f.subject["line"] for f in facts}
         assert linhas["mig.renamed_conf"] == linhas["mig.legacy_conf"]
+
+
+class TestApiRemovidaNoSpark4:
+    def test_reconhece_metodo_removido(self, tmp_path):
+        (tmp_path / "job.py").write_text("novo = base.append(extra)\n", encoding="utf-8")
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        removidas = [f for f in facts if f.kind == "mig.removed_api"]
+        assert [f.attrs["symbol"] for f in removidas] == ["append"]
+        assert removidas[0].attrs["replacement"] == "ps.concat"
+
+    def test_reconhece_propriedade_removida_sem_parenteses(self, tmp_path):
+        (tmp_path / "job.py").write_text("if serie.is_monotonic:\n    pass\n", encoding="utf-8")
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        removidas = [f for f in facts if f.kind == "mig.removed_api"]
+        assert [f.attrs["symbol"] for f in removidas] == ["is_monotonic"]
+
+    def test_o_nome_substituto_nao_e_confundido_com_o_removido(self, tmp_path):
+        """`is_monotonic_increasing` CONTEM `is_monotonic`. Casar por substring
+        acusaria justamente o codigo ja corrigido -- o falso positivo mais caro
+        possivel, porque ensina a ignorar a regra."""
+        (tmp_path / "job.py").write_text(
+            "if serie.is_monotonic_increasing:\n    pass\n", encoding="utf-8"
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        assert [f for f in facts if f.kind == "mig.removed_api"] == []
+
+    def test_metodo_de_outro_objeto_com_o_mesmo_nome_tambem_e_observado(self, tmp_path):
+        """`.append(` num `list` Python nao e a API removida. O extrator OBSERVA
+        assim mesmo -- ele nao tem tipo para distinguir, e inventar um seria
+        juizo dentro do extrator. Quem separa e a regra."""
+        (tmp_path / "job.py").write_text("acc = []\nacc.append(1)\n", encoding="utf-8")
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        assert len([f for f in facts if f.kind == "mig.removed_api"]) == 1
