@@ -23,11 +23,18 @@ import pytest
 from sparkforge.adapters import _core
 from sparkforge.facts.runtime_detect import GLUE_MATRIX
 
-# As 8 regras que ainda declaram `runtime_scope` nao-vazio, todas guardadas por
+# As 10 regras que ainda declaram `runtime_scope` nao-vazio, todas guardadas por
 # `glue`. Lista literal de proposito: derivar do catalogo faria o teste
 # concordar com qualquer coisa que o catalogo virasse, inclusive com o catalogo
 # perdendo o guarda por acidente. Se esta lista divergir do catalogo, o primeiro
 # teste abaixo falha e diz qual dos dois mudou.
+#
+# SF-MIG-001 e SF-MIG-002 entraram na Task 7 da fase de migracao com
+# `runtime_scope: {glue: ">=5.0"}` -- fronteira de versao confirmada, a mesma
+# razao que guarda SF-GLUE-001. Elas exigem `mig.sdk_import`/`mig.emrfs_config`
+# (ver `requires_facts`), entao um Terraform sozinho nao as faz DISPARAR --
+# mas isso e um skip por `requires_facts`, nao por `runtime_scope`, e e o
+# segundo que este arquivo mede.
 GLUE_GUARDED_RULES = (
     "SF-ENV-002",
     "SF-ENV-003",
@@ -37,6 +44,8 @@ GLUE_GUARDED_RULES = (
     "SF-GLUE-004",
     "SF-GLUE-005",
     "SF-GLUE-006",
+    "SF-MIG-001",
+    "SF-MIG-002",
 )
 
 # `ids=` precomputado, NUNCA `ids=lambda`: com lista vazia o pytest 8.x aborta a

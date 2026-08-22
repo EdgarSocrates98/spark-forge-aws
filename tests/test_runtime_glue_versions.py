@@ -55,8 +55,18 @@ CURRENT = ("4.0", "5.0", "5.1")
 # porque as tres resolvem para Spark >= 3.3, o que a CONDICAO barra. A fronteira
 # do AQE continua fixada nos dois sentidos por
 # `test_fixtures_golden_runtime.py::test_aqe_boundary_holds_on_both_sides`.
+#
+# SF-MIG-001  `glue: ">=5.0"` -- import de AWS SDK v1 sobrevivendo num runtime
+#             que deixa de garantir o classpath v1. A quebra so existe A
+#             PARTIR do Glue 5.0 (Java 8 -> Java 17), entao em 4.0 ela e
+#             corretamente fora de escopo: nao ha classpath novo para faltar.
+#
+# SF-MIG-002  `glue: ">=5.0"` -- chave exclusiva do EMRFS sobrevivendo num
+#             runtime que le S3A, nao EMRFS. O S3A so vira o sistema de
+#             arquivos padrao A PARTIR do Glue 5.0; em 4.0 o EMRFS ainda le a
+#             chave, entao nao ha risco de configuracao inerte para acusar.
 EXPECTED_OUT_OF_SCOPE = {
-    "4.0": {"SF-ENV-002"},
+    "4.0": {"SF-ENV-002", "SF-MIG-001", "SF-MIG-002"},
     "5.0": {"SF-ENV-002", "SF-GRAPH-002"},
     "5.1": {"SF-GRAPH-002"},
 }

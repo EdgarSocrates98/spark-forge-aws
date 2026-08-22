@@ -984,6 +984,29 @@ rules:
     recommended_agent: sf-lake-formation-specialist
     reason: >
       Lake governance mode uses the Lake Formation coordinator.
+
+  # SF-MIG entrou na Task 7 desta fase (compatibilidade de migracao entre
+  # versoes de Glue: SDK v1 fora do classpath, EMRFS virando S3A, cast sem
+  # guarda sob ANSI mode) e o commit que ligou o coordenador (`ad176ff`) so
+  # editou `agents/sf-runtime-specialist.md` -- acrescentou SF-MIG a
+  # `rule_areas` sem escrever rota nenhuma aqui. Declarar nao e rotear, o mesmo
+  # furo que custou SF-BENCH/SF-EMRS/SF-ENV/SF-FVAL/SF-UI antes desta fase (ver
+  # cabecalho deste arquivo de teste em `tests/test_router_agents.py`): um case
+  # so com achados SF-MIG voltava de `next_step` com `recommended_agent: None`.
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-MIG em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota.
+  - id: AGENT-076
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-MIG, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Compatibilidade entre versoes de Glue numa migracao -- import de SDK
+      sobrevivendo em runtime que nao o carrega mais, configuracao exclusiva
+      do EMRFS num runtime S3A, cast sem guarda sob ANSI mode. Nenhum se
+      resolve editando transformacao de negocio; todos se decidem na fronteira
+      de runtime que a migracao cruza.
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

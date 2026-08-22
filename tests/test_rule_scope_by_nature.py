@@ -87,7 +87,16 @@ NON_GLUE_IDS = [nome for nome, _ in NON_GLUE_RUNTIMES]
 # Hoje tem `runtime_scope: {}` e o gate e a propria condicao, que so pode ser
 # verdadeira quando a versao FOI resolvida. Ver o comentario dela em
 # `rules/catalog/env.yaml`.
-GLUE_VERSIONED = {"SF-ENV-002", "SF-ENV-003", "SF-GLUE-001"}
+#
+# SF-MIG-001 e SF-MIG-002 ENTRARAM na Task 7 desta fase, com
+# `runtime_scope: {glue: ">=5.0"}`. Nao sao GLUE_INFRA: elas nao leem
+# `aws_glue_job` do Terraform, leem sinal de codigo (`mig.sdk_import`,
+# `mig.emrfs_config`). O que as torna dependentes de Glue e uma fronteira de
+# VERSAO -- o SDK v1 sai do classpath e o EMRFS vira S3A exatamente ao cruzar
+# para o Glue 5.0, fronteira ja confirmada em `knowledge/glue/runtime-matrix.yaml`
+# -- exatamente a mesma natureza que justifica SF-ENV-002/003 e SF-GLUE-001
+# aqui. Ver o comentario acima das regras em `rules/catalog/glue-migration.yaml`.
+GLUE_VERSIONED = {"SF-ENV-002", "SF-ENV-003", "SF-GLUE-001", "SF-MIG-001", "SF-MIG-002"}
 
 # Estas leem infraestrutura Glue do Terraform mas declaram `{glue: "*"}`, que
 # hoje nao filtra nada -- sao o alvo da fase.
