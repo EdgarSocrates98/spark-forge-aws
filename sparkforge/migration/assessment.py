@@ -15,10 +15,20 @@ exatamente o que `sparkforge/migration/version_path.py` existe para nao
 esconder (ver o docstring daquele modulo: "os breaking changes se acumulam
 degrau a degrau e um salto esconde os do meio"). `by_step` registra cada
 nascimento com o degrau; `findings` e a lista completa, na mesma cardinalidade.
-Um consumidor que queira "primeiro degrau em que isso aparece" deriva isso de
-`by_step` agrupando por `rule_id` -- a informacao esta presente, so nao
-descartada de antemao. `docs/superpowers/plans/2026-08-21-glue-migration-compat.md`
-(Task 8, Step 4) registra esta mesma escolha como o comportamento pretendido.
+`docs/superpowers/plans/2026-08-21-glue-migration-compat.md` (Task 8, Step 4)
+registra esta mesma escolha como o comportamento pretendido.
+
+DECISAO 1b -- o RELATORIO deduplica; o dado por degrau nao.
+
+As duas visoes respondem perguntas diferentes e por isso convivem. `findings` e
+`by_step` respondem "isto ainda vale depois do proximo salto?", e precisam da
+cardinalidade por degrau. `report()` responde a pergunta de quem LE: "quantos
+problemas eu tenho?" -- e ali o mesmo problema tres vezes, porque o caminho tem
+tres degraus, faz um assessment de 4.0 para 6.0 parecer tres vezes pior que o
+mesmo job de 5.1 para 6.0 sem que nada de fato seja pior. `report()` colapsa por
+`(rule_id, subject, evidence)`, guarda a instancia mais severa e lista TODOS os
+degraus em que o problema vale -- deduplicar sem dizer onde vale trocaria ruido
+por perda de informacao.
 
 DECISAO 2 -- o gate de compatibilidade usa severidade, nao so presenca.
 
@@ -32,11 +42,12 @@ so houver P2 a P4; `PASS` sem nenhum finding.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
 from sparkforge.facts import runtime_matrix
-from sparkforge.findings.models import Fact, Finding, sort_findings
+from sparkforge.findings.models import SEVERITY_ORDER, Fact, Finding, sort_findings
 from sparkforge.migration import version_path
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
@@ -74,6 +85,39 @@ _EXECUTION_GATES: dict[str, str] = {
 
 
 @dataclass
+class ReportedFinding:
+    """Um problema, uma vez, com todos os degraus em que ele vale.
+
+    `finding` e a instancia MAIS SEVERA entre as duplicatas, nao a primeira:
+    uma regra com `severity_by` condicionado ao runtime pode nascer P2 num
+    degrau e P1 no seguinte, e reportar a primeira subestimaria o risco pelo
+    unico motivo de a ordem do caminho ser essa. `steps` preserva a informacao
+    que a deduplicacao poderia apagar -- que o breaking change continua valendo
+    depois do proximo salto.
+    """
+
+    finding: Finding
+    steps: list[tuple[str, str]]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"finding": self.finding.to_dict(), "steps": [list(s) for s in self.steps]}
+
+
+def _chave_de_problema(finding: Finding) -> tuple[str, str, tuple[str, ...]]:
+    """Identidade de um problema, para deduplicar entre degraus.
+
+    NAO e `rule_id` sozinho: dois `SF-MIG-001` em imports diferentes sao dois
+    problemas distintos, e colapsa-los esconderia um deles -- o oposto exato do
+    que a deduplicacao existe para fazer. `subject` localiza a entidade e
+    `evidence` nomeia os facts que sustentam o juizo; duas instancias do mesmo
+    problema nascidas em degraus diferentes coincidem nos tres, porque o motor
+    julga os MESMOS facts uma vez por degrau.
+    """
+    subject = json.dumps(finding.subject, sort_keys=True, separators=(",", ":"))
+    return (finding.rule_id, subject, tuple(finding.evidence))
+
+
+@dataclass
 class MigrationAssessment:
     """Resultado de julgar `SF-MIG` sobre todo o caminho origem->alvo.
 
@@ -92,6 +136,41 @@ class MigrationAssessment:
     missing_evidence: dict[str, str] = field(default_factory=dict)
     recommendation: str = "NO_GO"
 
+    def report(self) -> list[ReportedFinding]:
+        """A visao para o RELATORIO: cada problema uma vez so.
+
+        `findings` e `by_step` continuam com a cardinalidade por degrau, que e a
+        DECISAO 1 do modulo e nao muda -- quem pergunta "isto ainda vale depois
+        do proximo salto?" precisa dela. Esta e a outra pergunta, a de quem le o
+        relatorio: "quantos problemas eu tenho?". Mostrar o mesmo problema tres
+        vezes porque o caminho tem tres degraus e ruido que faz um assessment de
+        `4.0` para `6.0` parecer tres vezes pior que o mesmo job em `5.1` para
+        `6.0`, sem que nada de fato seja pior.
+
+        Ordem: a de `findings`, que ja passou por `sort_findings` -- determinista,
+        por severidade. O primeiro aparecimento de cada problema fixa a posicao.
+        """
+        agrupado: dict[tuple[str, str, tuple[str, ...]], ReportedFinding] = {}
+        for finding, degrau in self.by_step:
+            chave = _chave_de_problema(finding)
+            atual = agrupado.get(chave)
+            if atual is None:
+                agrupado[chave] = ReportedFinding(finding=finding, steps=[degrau])
+                continue
+            if degrau not in atual.steps:
+                atual.steps.append(degrau)
+            if SEVERITY_ORDER.index(finding.severity) < SEVERITY_ORDER.index(
+                atual.finding.severity
+            ):
+                atual.finding = finding
+
+        posicao: dict[tuple[str, str, tuple[str, ...]], int] = {}
+        for indice, finding in enumerate(self.findings):
+            posicao.setdefault(_chave_de_problema(finding), indice)
+        return sorted(
+            agrupado.values(), key=lambda r: posicao[_chave_de_problema(r.finding)]
+        )
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "source_runtime": self.source,
@@ -101,6 +180,11 @@ class MigrationAssessment:
             "by_step": [
                 {"finding": f.to_dict(), "step": list(step)} for f, step in self.by_step
             ],
+            # A visao deduplicada entra AO LADO das outras duas, nunca no lugar
+            # delas: um consumidor que ja lia `findings` continua lendo o mesmo,
+            # e quem monta relatorio para humano tem de onde tirar a contagem
+            # honesta sem reimplementar a deduplicacao.
+            "report": [r.to_dict() for r in self.report()],
             "gates": dict(self.gates),
             "missing_evidence": dict(self.missing_evidence),
             "recommendation": self.recommendation,

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "0d5ed9eaea17d35c8735ac0842f69ba823ba9247",
+  "extracted_from": "09b4d110ae01e46afb40faee7710c414934effd9",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3641,7 +3641,7 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 170,
+      "line": 172,
       "text": "3.13",
       "context": "as três fontes oficiais dizem 3.13, e o registro ficou `VERIFIED` com as três, não um",
       "type": "number",
@@ -3660,7 +3660,7 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 177,
+      "line": 182,
       "text": "4",
       "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
       "type": "number",
@@ -4189,6 +4189,22 @@
         "path": "sparkforge/migration/assessment.py",
         "test": "tests/test_migration_assessment.py",
         "symbol": "assess"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 49,
+      "text": "Deduplicação de finding entre degraus (§40)",
+      "context": "| Deduplicação de finding entre degraus (§40) | EXISTE, com teste | `MigrationAssessment.report()` colapsa por `(rule_id",
+      "type": "capability",
+      "id": "VNX-428",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py",
+        "symbol": "report"
       }
     },
     {

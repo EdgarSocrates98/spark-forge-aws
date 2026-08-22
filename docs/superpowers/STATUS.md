@@ -2166,6 +2166,36 @@ e mede a consequência que importa: regra guardada por componente retido é pula
 cada `claim` também é conferida contra o lock — sem essa metade, uma URL citada
 dentro de `claims` ficaria sem `retrieved` revalidado.
 
+### Continuação — o relatório de migração deduplica; o dado por degrau não (2026-08-22)
+
+A §40 do `prompt_glue_harness.md` pede que o relatório final de uma migração
+multi-degrau não mostre o mesmo problema três vezes. A DECISÃO 1 de
+`sparkforge/migration/assessment.py` fixou o oposto **de propósito**, com teste e
+razão escrita: um finding cuja faixa cobre dois degraus nasce nos dois, porque
+apagar isso esconderia que o breaking change continua valendo depois do próximo
+salto.
+
+As duas coisas são verdadeiras porque respondem perguntas diferentes, e a
+entrega atende as duas sem revogar nenhuma. `findings` e `by_step` continuam com
+a cardinalidade por degrau — a pergunta "isto ainda vale depois do próximo
+salto?". `MigrationAssessment.report()` é a visão de quem **lê**: cada problema
+uma vez, colapsado por `(rule_id, subject, evidence)`, com a instância **mais
+severa** e a lista de todos os degraus em que vale. `to_dict()` traz as três
+visões lado a lado; consumidor que já lia `findings` não muda.
+
+Três decisões que o teste fixa, todas com o defeito que evitam escrito junto:
+a chave **não** é `rule_id` (dois achados da mesma regra com evidência diferente
+são dois problemas, e colapsá-los esconderia um); a instância guardada é a mais
+severa (uma regra com `severity_by` por runtime pode nascer P2 num degrau e P1
+no seguinte, e reportar a primeira subestimaria o risco pela ordem do caminho);
+e deduplicar **sem** dizer onde vale trocaria ruído por perda de informação.
+
+Medido de passagem e registrado em teste: o motor **já** emite um só
+`SF-MIG-001` para dois imports de SDK v1 no mesmo arquivo, citando os dois facts
+como evidência — a colapsagem por arquivo acontece antes da deduplicação do
+relatório, e achar o contrário mandaria alguém procurar o bug no lugar errado no
+dia em que a contagem parecesse baixa demais.
+
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
 Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.

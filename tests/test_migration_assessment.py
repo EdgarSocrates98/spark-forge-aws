@@ -169,3 +169,145 @@ class TestParGenerico:
             and proibido.search(p.read_text(encoding="utf-8"))
         ]
         assert ofensores == [], f"par de versao embutido no motor: {ofensores}"
+
+
+class TestRelatorioDeduplica:
+    """A outra metade de `TestDuplicataEntreDegraus`.
+
+    As duas visoes convivem de proposito. `findings`/`by_step` respondem "isto
+    ainda vale depois do proximo salto?", e por isso guardam a cardinalidade por
+    degrau -- e a DECISAO 1 do modulo, e ela nao mudou. `report()` responde a
+    pergunta de quem LE o relatorio: "quantos problemas eu tenho?". Mostrar o
+    mesmo problema tres vezes porque o caminho tem tres degraus faz um
+    assessment de 4.0 para 6.0 parecer tres vezes pior que o mesmo job de 5.1
+    para 6.0, sem que nada de fato seja pior.
+    """
+
+    def test_o_mesmo_problema_aparece_uma_vez_so(self, tmp_path):
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        no_relatorio = [r for r in resultado.report() if r.finding.rule_id == "SF-MIG-001"]
+        assert len(no_relatorio) == 1
+
+    def test_a_cardinalidade_por_degrau_continua_intacta(self, tmp_path):
+        """Deduplicar no relatorio nao pode custar a informacao que `by_step`
+        carrega -- se custasse, seria a DECISAO 1 revogada pela porta dos fundos."""
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        assert len([f for f in resultado.findings if f.rule_id == "SF-MIG-001"]) == 2
+
+    def test_o_relatorio_diz_em_que_degraus_o_problema_vale(self, tmp_path):
+        """Deduplicar sem dizer onde vale trocaria ruido por perda: quem le
+        precisa saber que o breaking change sobrevive ao proximo salto."""
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        entrada = next(r for r in resultado.report() if r.finding.rule_id == "SF-MIG-001")
+        assert entrada.steps == [("4.0", "5.0"), ("5.0", "5.1")]
+
+    def test_dois_imports_no_mesmo_arquivo_ja_sao_um_achado_so_antes_daqui(self, tmp_path):
+        """Medido, nao suposto: o motor ja emite UM `SF-MIG-001` para dois
+        imports de SDK v1 no mesmo arquivo, citando os dois facts como
+        evidencia. A deduplicacao do relatorio nao tem nada a fazer aqui -- e
+        importa saber disso, porque a alternativa (achar que o relatorio e quem
+        colapsa) mandaria alguem procurar o bug no lugar errado no dia em que a
+        contagem parecesse baixa demais."""
+        (tmp_path / "job.py").write_text(
+            "import com.amazonaws.services.s3.AmazonS3\n"
+            "import com.amazonaws.services.dynamodbv2.AmazonDynamoDB\n",
+            encoding="utf-8",
+        )
+        facts = facts_migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        resultado = assessment.assess(facts, source="4.0", target="5.1")
+        por_degrau = [f for f in resultado.findings if f.rule_id == "SF-MIG-001"]
+        assert len(por_degrau) == 2, "um por degrau, nao um por import"
+        assert len(por_degrau[0].evidence) == 2, "os dois imports na mesma evidencia"
+
+    def test_problemas_com_evidencia_distinta_nao_colapsam(self):
+        """A chave de deduplicacao NAO e `rule_id`. Dois achados da mesma regra
+        sustentados por facts DIFERENTES sao dois problemas, e colapsa-los
+        esconderia um -- o oposto exato do que a deduplicacao existe para fazer.
+
+        Montado direto, pelo mesmo motivo do teste de severidade abaixo: o que
+        se fixa aqui e a chave, e amarra-la a uma regra especifica faria o teste
+        morrer quando aquela regra mudasse de forma.
+        """
+        from sparkforge.findings.models import Finding
+
+        def _finding(linha: int, fact_id: str) -> Finding:
+            return Finding(
+                rule_id="SF-MIG-001",
+                title="import de SDK v1",
+                severity="P1",
+                confidence="high",
+                status="structural",
+                subject={"type": "source_location", "file": "job.py", "line": linha},
+                evidence=[fact_id],
+            )
+
+        primeiro, segundo = _finding(1, "f_aaa111"), _finding(9, "f_bbb222")
+        resultado = assessment.MigrationAssessment(
+            source="4.0",
+            target="5.1",
+            steps=[("4.0", "5.0"), ("5.0", "5.1")],
+            findings=[primeiro, segundo, primeiro, segundo],
+            by_step=[
+                (primeiro, ("4.0", "5.0")),
+                (segundo, ("4.0", "5.0")),
+                (primeiro, ("5.0", "5.1")),
+                (segundo, ("5.0", "5.1")),
+            ],
+        )
+        relatorio = resultado.report()
+        assert len(relatorio) == 2
+        assert {r.finding.subject["line"] for r in relatorio} == {1, 9}
+        assert all(r.steps == [("4.0", "5.0"), ("5.0", "5.1")] for r in relatorio)
+
+    def test_a_ordem_do_relatorio_segue_a_de_findings(self, tmp_path):
+        """`findings` ja passou por `sort_findings` -- por severidade, de forma
+        determinista. O relatorio herda essa ordem em vez de inventar outra."""
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        vistos: list[str] = []
+        for finding in resultado.findings:
+            if finding.rule_id not in vistos:
+                vistos.append(finding.rule_id)
+        assert [r.finding.rule_id for r in resultado.report()] == vistos
+
+    def test_to_dict_traz_as_tres_visoes(self, tmp_path):
+        d = assessment.assess(_facts(tmp_path), source="4.0", target="5.1").to_dict()
+        assert {"findings", "by_step", "report"} <= set(d)
+        assert len(d["report"]) < len(d["findings"])
+        assert d["report"][0]["steps"] == [["4.0", "5.0"], ["5.0", "5.1"]]
+
+
+class TestRelatorioMantemAPiorSeveridade:
+    def test_a_instancia_mais_severa_ganha(self):
+        """Uma regra com `severity_by` condicionado ao runtime pode nascer P2
+        num degrau e P1 no seguinte. Reportar a primeira subestimaria o risco
+        pelo unico motivo de a ordem do caminho ser essa.
+
+        Monta o `MigrationAssessment` direto em vez de procurar no catalogo uma
+        regra com esse formato: o comportamento a fixar e o da deduplicacao, e
+        amarra-lo a uma regra especifica faria o teste morrer no dia em que
+        aquela regra mudasse de forma, sem que nada aqui tivesse quebrado.
+        """
+        from sparkforge.findings.models import Finding
+
+        def _finding(severidade: str) -> Finding:
+            return Finding(
+                rule_id="SF-MIG-001",
+                title="mesmo problema",
+                severity=severidade,
+                confidence="high",
+                status="structural",
+                subject={"type": "source_location", "file": "job.py", "line": 1},
+                evidence=["f_abc123"],
+            )
+
+        leve, grave = _finding("P2"), _finding("P1")
+        resultado = assessment.MigrationAssessment(
+            source="4.0",
+            target="5.1",
+            steps=[("4.0", "5.0"), ("5.0", "5.1")],
+            findings=[grave, leve],
+            by_step=[(leve, ("4.0", "5.0")), (grave, ("5.0", "5.1"))],
+        )
+        (entrada,) = resultado.report()
+        assert entrada.finding.severity == "P1"
+        assert entrada.steps == [("4.0", "5.0"), ("5.0", "5.1")]

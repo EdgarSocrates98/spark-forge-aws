@@ -46,7 +46,7 @@ Terraform e a avaliação de migração.
 |---|---|---|---|
 | Expansão `origem → alvo` em degraus | EXISTE, com teste | `sparkforge/migration/version_path.py:steps()` deriva os degraus da ordem da matriz, sem par de versão escrito no código | `tests/test_version_path.py` |
 | Composição multi-hop (§7) | EXISTE, com teste | `sparkforge/migration/assessment.py:assess()` chama o `judge` uma vez por degrau e agrega em `by_step`, compondo os degraus intermediários sem obrigar execução deles | `tests/test_migration_assessment.py::test_cada_finding_registra_em_que_degrau_nasceu` |
-| Deduplicação de finding entre degraus (§40) | NÃO EXISTE | O comportamento medido hoje é o oposto, e está fixado em teste: regra cuja faixa cobre dois degraus produz finding nos dois. A §40 pede que o relatório final não mostre o mesmo problema repetido | `tests/test_migration_assessment.py::test_finding_cuja_faixa_cobre_dois_degraus_nasce_nos_dois` |
+| Deduplicação de finding entre degraus (§40) | EXISTE, com teste | `MigrationAssessment.report()` colapsa por `(rule_id, subject, evidence)`, guarda a instância mais severa e lista todos os degraus em que o problema vale. `findings` e `by_step` mantêm a cardinalidade por degrau — as duas visões respondem perguntas diferentes, e `to_dict()` traz as três | `tests/test_migration_assessment.py::TestRelatorioDeduplica`, `::TestRelatorioMantemAPiorSeveridade` |
 | `RuntimeChangeGraph` com nós por componente (§41) | NÃO EXISTE | `version_path` é uma cadeia linear de versões de Glue. Não há nó `Spark`/`Python`/`Java`/`Scala`/`Iceberg`/`connector` com aresta `from_version`/`to_version`/`breaking`/`severity` consultável sem LLM | — |
 
 ## 3. Extração determinística e catálogo de regras (§42, §43)
@@ -159,7 +159,9 @@ Terraform e a avaliação de migração.
 
 ## O que este mapa recomenda atacar primeiro
 
-Três frentes saíram do mapa com custo baixo e consumidor real. A primeira já foi feita:
+Três frentes saíram do mapa com custo baixo e consumidor real. **As três já foram feitas** —
+o que sobra do prompt está nas linhas `NÃO EXISTE` das tabelas acima, e o parágrafo final
+diz por onde não começar:
 
 1. ~~Ligar o diff de Terraform à avaliação de migração (§62, §64).~~ **Feito**: `SF-MIG-004`.
    Era a única linha deste documento em que o trabalho era conexão, não construção — os dois
@@ -169,8 +171,11 @@ Três frentes saíram do mapa com custo baixo e consumidor real. A primeira já 
    junto: a divergência de versão de Python que a §2 do prompt afirma **não se reproduz** —
    as três fontes oficiais dizem 3.13, e o registro ficou `VERIFIED` com as três, não um
    `CONFLICTING` inventado para exercitar o mecanismo.
-3. **Decidir sobre deduplicação de finding entre degraus (§40).** O comportamento oposto está
-   fixado em teste, com razão registrada; mudá-lo exige decisão explícita, não conserto.
+3. ~~Decidir sobre deduplicação de finding entre degraus (§40).~~ **Feito**, e sem revogar a
+   decisão anterior: a deduplicação vive na camada de relatório (`report()`), e o dado por
+   degrau continua com a cardinalidade que o módulo já fixava. As duas visões
+   respondem perguntas diferentes — "quantos problemas eu tenho?" e "isto ainda vale depois
+   do próximo salto?".
 
 O que este mapa recomenda **não** fazer agora: as skills das §9 e §12 e a
 `IcebergFeatureCompatibilityMatrix` da §19. As primeiras não têm consumidor enquanto o
