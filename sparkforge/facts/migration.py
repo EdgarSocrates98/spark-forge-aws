@@ -389,14 +389,47 @@ def _jar_facts(path: Path, anchor: str, provenance: dict[str, Any]) -> list[Fact
     granularidade correta. `line=0` no subject marca isso -- nao ha linha
     nenhuma a apontar, so o arquivo. Mora fora de `extract_migration_path` por
     isso: aquela funcao existe para varrer texto Python linha a linha.
+
+    `scala_minor` e o segundo segmento do que ja foi observado em `scala`
+    ("2.12" -> 12). Extrair o numero e OBSERVACAO, nao juizo, pelo mesmo
+    criterio que separa `mig.python_dep.major` do limiar que o compara: o
+    numero esta ESCRITO no nome do arquivo, e le-lo nao da poder novo nenhum ao
+    extrator. Existe porque o avaliador de `expr` do catalogo
+    (`sparkforge/rules/expr.py`) compara NUMEROS, nao versoes: uma regra de
+    fronteira binaria de Scala precisa de um inteiro em `attrs` para comparar, e
+    a string "2.12" nao e comparavel com 13 naquele avaliador. O LIMIAR continua
+    na regra, que e onde o juizo mora.
+
+    O campo so aparece quando o major capturado e `2`, e essa guarda existe
+    porque `_JAR_SCALA_RE` casa QUALQUER `_X.Y-`, nao so o sufixo de Scala:
+    `minhalib_1.0-SNAPSHOT.jar` daria `scala_minor` 0 e faria uma regra de piso
+    acusar em P0 um artefato que nunca teve Scala nenhum. `2` e o unico major
+    que usa essa forma -- Scala 3 publica `_3-`, sem minor, que este regex nao
+    captura de qualquer jeito.
+
+    Jar cujo nome nao encodifica a versao (`scala == ""`) fica SEM a chave, e
+    isso e fail-closed deliberado: as alternativas seriam adivinhar um numero
+    (`0`, `-1`) ou marcar com `None`, e as duas fariam uma regra de piso --
+    `attrs.scala_minor < 13` -- disparar sobre um jar cuja versao de Scala
+    ninguem leu. Pior: um jar que nao declara Scala no nome pode ser JAVA PURO,
+    que nao tem versao de Scala nenhuma para estar errada -- acusa-lo seria
+    acusar artefato correto, que e o estrago que `rules/catalog/README.md`
+    registra como o mais caro de todos. Sem a chave, o caminho fica ausente no
+    avaliador (`ExprError`, logo `False`) e a regra fica muda sobre o que nao
+    consegue afirmar. A OBSERVACAO "existe um jar aqui" continua sendo emitida
+    de qualquer forma.
     """
     scala_match = _JAR_SCALA_RE.search(path.name)
     scala = scala_match.group(1) if scala_match else ""
+    attrs: dict[str, Any] = {"scala": scala}
+    major, _, minor = scala.partition(".")
+    if major == "2":
+        attrs["scala_minor"] = int(minor)
     return [
         Fact(
             kind="mig.jar_binary",
             subject=_source_subject(anchor, 0),
-            attrs={"scala": scala},
+            attrs=attrs,
             provenance=provenance,
         )
     ]

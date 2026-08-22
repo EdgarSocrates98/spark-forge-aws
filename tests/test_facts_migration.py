@@ -133,12 +133,62 @@ class TestDependenciaEFormato:
         assert len(jars) == 1
         assert jars[0].attrs["scala"] == "2.12"
 
+    def test_scala_minor_e_o_numero_depois_do_ponto(self, tmp_path):
+        """`scala_minor` existe porque o avaliador de `expr` do catalogo
+        (`sparkforge/rules/expr.py`) compara NUMERO, nao versao: a string
+        "2.12" nao e comparavel com 13 ali. Mesma razao de
+        `mig.python_dep.major`, e o limiar continua na regra."""
+        (tmp_path / "conector_2.12-1.4.0.jar").write_bytes(b"")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        jars = [f for f in facts if f.kind == "mig.jar_binary"]
+        assert jars[0].attrs["scala_minor"] == 12
+
+    @pytest.mark.parametrize(
+        ("nome", "esperado"),
+        [
+            ("conector_2.11-1.0.0.jar", 11),
+            ("conector_2.12-1.4.0.jar", 12),
+            ("conector_2.13-1.4.0.jar", 13),
+        ],
+    )
+    def test_scala_minor_acompanha_o_sufixo_do_nome(self, tmp_path, nome, esperado):
+        (tmp_path / nome).write_bytes(b"")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        jars = [f for f in facts if f.kind == "mig.jar_binary"]
+        assert jars[0].attrs["scala_minor"] == esperado
+
     def test_jar_sem_scala_no_nome_ainda_e_observado(self, tmp_path):
         (tmp_path / "opaco.jar").write_bytes(b"")
         facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
         jars = [f for f in facts if f.kind == "mig.jar_binary"]
         assert len(jars) == 1
         assert jars[0].attrs["scala"] == ""
+
+    def test_versao_que_nao_e_de_scala_no_nome_nao_vira_scala_minor(self, tmp_path):
+        """`_JAR_SCALA_RE` casa qualquer `_X.Y-`, nao so o sufixo de Scala.
+        `minhalib_1.0-SNAPSHOT.jar` daria `scala_minor` 0, e uma regra de piso
+        acusaria em P0 um artefato que nunca teve Scala nenhum -- o falso
+        positivo mais caro que existe. `2` e o unico major de Scala que usa
+        essa forma."""
+        (tmp_path / "minhalib_1.0-SNAPSHOT.jar").write_bytes(b"")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        jars = [f for f in facts if f.kind == "mig.jar_binary"]
+        assert len(jars) == 1
+        assert "scala_minor" not in jars[0].attrs
+
+    def test_jar_sem_scala_no_nome_nao_recebe_scala_minor(self, tmp_path):
+        """Fail-closed deliberado: a chave simplesmente NAO aparece. As
+        alternativas seriam adivinhar um numero (`0`, `-1`) ou marcar `None`, e
+        as duas fariam uma regra de piso -- `attrs.scala_minor < 13` -- disparar
+        sobre um jar cuja versao de Scala ninguem leu. E um jar que nao declara
+        Scala no nome pode ser JAVA PURO, que nao tem versao de Scala nenhuma:
+        acusa-lo seria acusar artefato correto. Sem a chave, o caminho fica
+        ausente no avaliador (`ExprError`, logo `False`) e a regra fica muda
+        sobre o que nao consegue afirmar."""
+        (tmp_path / "opaco.jar").write_bytes(b"")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        jars = [f for f in facts if f.kind == "mig.jar_binary"]
+        assert "scala_minor" not in jars[0].attrs
 
     def test_reconhece_dependencia_python_declarada(self, tmp_path):
         (tmp_path / "requirements.txt").write_text(REQUIREMENTS, encoding="utf-8")

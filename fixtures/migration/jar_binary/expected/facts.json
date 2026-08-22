@@ -13,7 +13,8 @@
     },
     "measures": {},
     "attrs": {
-      "scala": "2.12"
+      "scala": "2.12",
+      "scala_minor": 12
     },
     "provenance": {
       "artifact": "connector_2.12-1.4.0.jar",
