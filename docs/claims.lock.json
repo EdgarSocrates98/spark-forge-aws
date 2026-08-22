@@ -770,13 +770,8 @@
       "context": "- **Commit medido**: `6686156` (`git rev-parse --short HEAD`)",
       "type": "number",
       "id": "VNX-185",
-      "state": "PROVADA",
-      "note": "medicao historica ancorada no commit citado (docs/harness/BASELINE.md e explicito: baseline medido antes do harness, nao estado atual) -- ver PROOF_KINDS/historical em scripts/check_vnext_claims.py",
-      "proof": {
-        "kind": "historical",
-        "cmd": "git rev-parse --short HEAD",
-        "commit": "6a76b7a"
-      }
+      "state": "REMOVIDA",
+      "note": "O SHA citado mudou com a reescrita de historia que removeu nomes de material sigiloso -- o baseline continua ancorado, agora em 6a76b7a, e as provas historical do manifesto foram remapeadas pelo commit-map da propria reescrita. O SHA novo tem letra e por isso nao e capturado pelo extrator de numeros; a ancora que importa continua conferida por proof.commit, que o gate valida com git cat-file."
     },
     {
       "doc": "docs/harness/BASELINE.md",

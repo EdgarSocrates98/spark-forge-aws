@@ -11,11 +11,11 @@ de outro documento do repositório. Onde isso não foi possível — porque a
 medição exigiria infraestrutura que o repositório ainda não tem — a seção
 final diz isso explicitamente, em vez de estimar.
 
-- **Commit medido**: `6686156` (`git rev-parse --short HEAD`)
+- **Commit medido**: `6a76b7a` (`git rev-parse --short HEAD`)
 - **Branch**: `feat/fase6b-sf-cfg`
 - **Data**: 2026-08-22
 
-Precedente direto: o commit `a5b9e96` publicou `docs/vnext/FINAL-REPORT.md`
+Precedente direto: o commit `6c3c396` publicou `docs/vnext/FINAL-REPORT.md`
 com números como "-81,8% custo por 1k tasks" e "94,5% cache hit rate" sem
 nenhum artefato de medição por trás. Uma auditoria de onze tarefas provou isso
 e removeu os números; `docs/claims.lock.json` e
