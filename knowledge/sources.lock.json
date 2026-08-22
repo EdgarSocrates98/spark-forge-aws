@@ -1516,6 +1516,26 @@
         "SF-PY-010"
       ]
     },
+    "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html": {
+      "docs": [
+        "knowledge/spark/spark4-migration.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
+    "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html": {
+      "docs": [
+        "knowledge/spark/spark4-migration.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
     "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html": {
       "checked_at": "2026-07-31",
       "docs": [],

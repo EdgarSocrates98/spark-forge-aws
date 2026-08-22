@@ -4,6 +4,11 @@
   "network_required": false,
   "documents": [
     {
+      "path": "knowledge/INDEX.md",
+      "title": "INDEX",
+      "sha256": "03c2e3f562679471db0d8b81b99e9fdd76b562a16222a6e288678036f6fc9f7b"
+    },
+    {
       "path": "knowledge/agent-creation.md",
       "title": "agent-creation",
       "sha256": "75ccfc9dcbab70f9fd65c650c313df09edb0d3859ed7d4b56f46ba7c49d6c9f4"
@@ -74,16 +79,6 @@
       "sha256": "f9eb3880b318a2bca3c911ab799338b3928b29ac086df2608979e2df09771946"
     },
     {
-      "path": "knowledge/emr/cluster-configuration.md",
-      "title": "cluster-configuration",
-      "sha256": "5d3115680f85f5ed14ba12b91e2810281742fa01aae41362e13012029b716cb3"
-    },
-    {
-      "path": "knowledge/emr/runtime-matrix.md",
-      "title": "runtime-matrix",
-      "sha256": "2db72d37e099d14d8fbe9e47f38c4f931b058fa3bd8568cbed6deac635851618"
-    },
-    {
       "path": "knowledge/emr-serverless/application-configuration.md",
       "title": "application-configuration",
       "sha256": "4b2fe40ba32aa556f8fc817031811ab8b717728b11a681a81a22be3814b66137"
@@ -92,6 +87,16 @@
       "path": "knowledge/emr-serverless/runtime-matrix.md",
       "title": "runtime-matrix",
       "sha256": "8cc4e2a5873d4224896cf9e9931668fe968e111021aa1c8f23f8120cc3476a73"
+    },
+    {
+      "path": "knowledge/emr/cluster-configuration.md",
+      "title": "cluster-configuration",
+      "sha256": "5d3115680f85f5ed14ba12b91e2810281742fa01aae41362e13012029b716cb3"
+    },
+    {
+      "path": "knowledge/emr/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "2db72d37e099d14d8fbe9e47f38c4f931b058fa3bd8568cbed6deac635851618"
     },
     {
       "path": "knowledge/glue/job-arguments.md",
@@ -132,11 +137,6 @@
       "path": "knowledge/iceberg-parquet-s3.md",
       "title": "iceberg-parquet-s3",
       "sha256": "b6a4d0688aa09f31afa3364a650d9df6f2e043a7c5c0e0a408e72de04a85ebf0"
-    },
-    {
-      "path": "knowledge/INDEX.md",
-      "title": "INDEX",
-      "sha256": "03c2e3f562679471db0d8b81b99e9fdd76b562a16222a6e288678036f6fc9f7b"
     },
     {
       "path": "knowledge/lake-governance.md",
@@ -187,6 +187,11 @@
       "path": "knowledge/spark/shuffle-join-skew.md",
       "title": "shuffle-join-skew",
       "sha256": "6965ae5d80fca0ef46fa79309960899b376d2283f88ade824aa4294aefc5de3f"
+    },
+    {
+      "path": "knowledge/spark/spark4-migration.md",
+      "title": "spark4-migration",
+      "sha256": "5b7dc2a4619df4a0d4a3a284d397ea15d744648b236039a0b767a480e2f73b7e"
     },
     {
       "path": "knowledge/storage/iceberg-performance.md",
