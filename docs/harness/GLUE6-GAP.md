@@ -70,9 +70,9 @@ Terraform e a avaliação de migração.
 
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
-| Observação de JAR no job | EXISTE PARCIAL | `mig.jar_binary` é emitido por arquivo inteiro em `sparkforge/facts/migration.py`. Falta o que a §13 pede para julgar: sufixo de Scala, coordenadas Maven, `MANIFEST.MF` e dependências de Spark, Iceberg, Hadoop e SDK | `tests/test_facts_migration.py` |
+| Observação de JAR no job | EXISTE, com teste | `mig.jar_binary` carrega `scala` e `scala_minor` derivados do sufixo do nome do artefato, e `SF-SPARK4-004` julga em P0 quem estiver abaixo de Scala 2.13 sob Spark 4. Limite declarado: o fact observa todo `.jar` da árvore, inclusive um que seja recurso de teste fora do classpath do job — separar exigiria um fact sobre `--extra-jars`, que não existe | `tests/test_spark4_rules.py`, `tests/test_facts_migration.py` |
 | `sparkforge_jar_compatibility_scan` (§13) | NÃO EXISTE | — | — |
-| Golden de JAR Scala antigo em Glue 6.0 (§14) | NÃO EXISTE | `fixtures/migration/jar_binary/` cobre a observação do fato, não o veredito `RECOMPILE_REQUIRED` ou `BLOCKED` | — |
+| Golden de JAR Scala antigo em Glue 6.0 (§14) | EXISTE, com teste | `fixtures/migration/spark4_jar_scala_212/` dispara `SF-SPARK4-004`; `fixtures/migration/jar_binary/` é o par negativo **por versão** — mesmo artefato, runtime abaixo do Spark 4. Os vereditos nomeados pela §14 (`RECOMPILE_REQUIRED`, `BLOCKED`) continuam sem existir como vocabulário próprio | `tests/test_fixtures_golden_migration.py` |
 
 ## 6. Python e dependências (§15, §16)
 

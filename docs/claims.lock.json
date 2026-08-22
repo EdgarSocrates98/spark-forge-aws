@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "1fe223982c7151ea6d114a7172adbd5a5fed3f24",
+  "extracted_from": "b41d52d3b863f9e6c2bb1e14a0df805148339c20",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -762,16 +762,6 @@
         "test": "tests/test_observability.py",
         "symbol": "AgentOpsTracker"
       }
-    },
-    {
-      "doc": "docs/harness/BASELINE.md",
-      "line": 14,
-      "text": "6686156",
-      "context": "- **Commit medido**: `6686156` (`git rev-parse --short HEAD`)",
-      "type": "number",
-      "id": "VNX-185",
-      "state": "REMOVIDA",
-      "note": "O SHA citado mudou com a reescrita de historia que removeu nomes de material sigiloso -- o baseline continua ancorado, agora em 6a76b7a, e as provas historical do manifesto foram remapeadas pelo commit-map da propria reescrita. O SHA novo tem letra e por isso nao e capturado pelo extrator de numeros; a ancora que importa continua conferida por proof.commit, que o gate valida com git cat-file."
     },
     {
       "doc": "docs/harness/BASELINE.md",
@@ -3377,9 +3367,47 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 73,
+      "text": "2.13",
+      "context": "| Observação de JAR no job | EXISTE, com teste | `mig.jar_binary` carrega `scala` e `scala_minor` derivados do sufixo do",
+      "type": "number",
+      "id": "VNX-432",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import yaml; c=yaml.safe_load(open(\"rules/catalog/spark4.yaml\",encoding=\"utf-8\")); print([r[\"when\"][\"all\"][0].get(\"expr\") for r in c[\"rules\"] if r[\"id\"]==\"SF-SPARK4-004\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "scala_minor < 13"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 73,
+      "text": "4",
+      "context": "| Observação de JAR no job | EXISTE, com teste | `mig.jar_binary` carrega `scala` e `scala_minor` derivados do sufixo do",
+      "type": "number",
+      "id": "VNX-374",
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^([0-9]+)",
+          "value": 4
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 75,
       "text": "6.0",
-      "context": "| Golden de JAR Scala antigo em Glue 6.0 (§14) | NÃO EXISTE | `fixtures/migration/jar_binary/` cobre a observação do fat",
+      "context": "| Golden de JAR Scala antigo em Glue 6.0 (§14) | EXISTE, com teste | `fixtures/migration/spark4_jar_scala_212/` dispara ",
       "type": "number",
       "id": "VNX-376",
       "state": "PROVADA",
@@ -3391,6 +3419,25 @@
         "expect": {
           "kind": "contains",
           "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 75,
+      "text": "4",
+      "context": "| Golden de JAR Scala antigo em Glue 6.0 (§14) | EXISTE, com teste | `fixtures/migration/spark4_jar_scala_212/` dispara ",
+      "type": "number",
+      "id": "VNX-375",
+      "state": "PROVADA",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^([0-9]+)",
+          "value": 4
         }
       }
     },
@@ -3571,9 +3618,19 @@
       "text": "4",
       "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
       "type": "number",
-      "id": "VNX-374",
-      "state": "REMOVIDA",
-      "note": "Alegacao da linha que dizia que a unica mudanca de Spark 4 codificada era o ANSI mode. A linha foi reescrita quando knowledge/spark/spark4-migration.md e a area SF-SPARK4 passaram a existir, e o texto novo nao repete o numero naquela posicao."
+      "id": "VNX-385",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 4,
+          "pattern": "^([0-9]+)"
+        }
+      }
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
@@ -4198,7 +4255,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 73,
       "text": "Observação de JAR no job",
-      "context": "| Observação de JAR no job | EXISTE PARCIAL | `mig.jar_binary` é emitido por arquivo inteiro em `sparkforge/facts/migrat",
+      "context": "| Observação de JAR no job | EXISTE, com teste | `mig.jar_binary` carrega `scala` e `scala_minor` derivados do sufixo do",
       "type": "capability",
       "id": "VNX-397",
       "state": "PROVADA",
@@ -4207,6 +4264,21 @@
         "kind": "artifact",
         "path": "sparkforge/facts/migration.py",
         "test": "tests/test_facts_migration.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 75,
+      "text": "Golden de JAR Scala antigo em Glue 6.0 (§14)",
+      "context": "| Golden de JAR Scala antigo em Glue 6.0 (§14) | EXISTE, com teste | `fixtures/migration/spark4_jar_scala_212/` dispara ",
+      "type": "capability",
+      "id": "VNX-433",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "fixtures/migration/spark4_jar_scala_212",
+        "test": "tests/test_fixtures_golden_migration.py"
       }
     },
     {
@@ -4600,46 +4672,6 @@
       "note": "'0 reflection desnecessaria' e descricao comportamental/qualitativa, nao contagem: descreve o comportamento pretendido do perfil `ECO` em prosa; nao ha contador de 'reflection' no motor de roteamento de modelos. Nenhum comando no repositorio mede isso diretamente."
     },
     {
-      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
-      "line": 30,
-      "text": "7",
-      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
-      "type": "number",
-      "id": "VNX-020",
-      "state": "REMOVIDA",
-      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
-    },
-    {
-      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
-      "line": 32,
-      "text": "7",
-      "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity, Cursor (`.mdc`), ",
-      "type": "number",
-      "id": "VNX-023",
-      "state": "REMOVIDA",
-      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
-    },
-    {
-      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
-      "line": 30,
-      "text": "0",
-      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
-      "type": "number",
-      "id": "VNX-014",
-      "state": "REMOVIDA",
-      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
-    },
-    {
-      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
-      "line": 30,
-      "text": "0",
-      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
-      "type": "number",
-      "id": "VNX-021",
-      "state": "REMOVIDA",
-      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
-    },
-    {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
       "line": 23,
       "text": "100%",
@@ -4679,6 +4711,16 @@
       }
     },
     {
+      "doc": "docs/harness/BASELINE.md",
+      "line": 14,
+      "text": "6686156",
+      "context": "- **Commit medido**: `6686156` (`git rev-parse --short HEAD`)",
+      "type": "number",
+      "id": "VNX-185",
+      "state": "REMOVIDA",
+      "note": "O SHA citado mudou com a reescrita de historia que removeu nomes de material sigiloso -- o baseline continua ancorado, agora em 6a76b7a, e as provas historical do manifesto foram remapeadas pelo commit-map da propria reescrita. O SHA novo tem letra e por isso nao e capturado pelo extrator de numeros; a ancora que importa continua conferida por proof.commit, que o gate valida com git cat-file."
+    },
+    {
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 169,
       "text": "6.0",
@@ -4689,34 +4731,44 @@
       "note": "O texto que continha esta alegacao foi reescrito quando a lacuna que ele descrevia foi fechada: a frase dizia que a matriz escolhia uma fonte para a versao de Python do Glue 6.0 e explicava isso num comentario de YAML onde nenhum gate le. Agora o registro esta na forma longa, com as tres fontes e status VERIFIED, e a frase nova nao repete o numero da versao de Glue."
     },
     {
-      "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 66,
-      "text": "4",
-      "context": "| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | `sparkforge/facts/pyspark_ast.py` faz análise AST de PySpa",
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 30,
+      "text": "7",
+      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
       "type": "number",
-      "id": "VNX-375",
+      "id": "VNX-020",
       "state": "REMOVIDA",
-      "note": "A linha da tabela foi reescrita quando o vocabulario de Spark 4 passou a existir: ela dizia que faltava o vocabulario de API removida, e agora ele existe em mig.renamed_conf e mig.removed_api. O texto novo nao repete o numero da versao maior do Spark nessa posicao."
+      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
     },
     {
-      "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 182,
-      "text": "4",
-      "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 32,
+      "text": "7",
+      "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity, Cursor (`.mdc`), ",
       "type": "number",
-      "id": "VNX-385",
-      "state": "PROVADA",
-      "note": "classificacao pendente",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "value": 4,
-          "pattern": "^([0-9]+)"
-        }
-      }
+      "id": "VNX-023",
+      "state": "REMOVIDA",
+      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 30,
+      "text": "0",
+      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
+      "type": "number",
+      "id": "VNX-014",
+      "state": "REMOVIDA",
+      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 30,
+      "text": "0",
+      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
+      "type": "number",
+      "id": "VNX-021",
+      "state": "REMOVIDA",
+      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",

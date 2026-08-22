@@ -40,10 +40,10 @@ arquivo ganha.
 | Testes | **5633** passando, 5 skipped, medido em `4705049` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **15 de 123** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
+| Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
 | Extratores de facts | **20** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 22 `.py`, e `runtime_matrix.py` e `secrets.py` nao emitem kind |
 | Fact kinds distintos emitidos | **131** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **123**, sendo **58 `confirmed`** e **65 `structural`** (30 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
+| Regras de diagnóstico | **124**, sendo **58 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
@@ -55,7 +55,7 @@ arquivo ganha.
 | Skills | **40** (20 herdadas + 20 da expansão agêntica) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **186** em 22 domínios | `fixtures/` |
+| Fixtures golden | **187** em 22 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **137** (127 móveis, 10 fixas) — 63 citadas por regra, 130 por `knowledge/`, 58 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -2258,6 +2258,28 @@ ou `from pyspark.pandas import ...`), e o **juízo** foi para a regra, como
 limiar `15` de `SF-SPARK4-003`: o extrator lê o que está escrito, a regra decide o que
 aquilo significa. O preço está declarado no catálogo — um módulo que recebe o DataFrame de
 outro, sem importar `pyspark.pandas` ele mesmo, fica fora.
+
+### Continuação — fase G2, fronteira binária de Scala (2026-08-22)
+
+Glue 6.0 sobe Scala de 2.12 para 2.13, e a própria AWS chama isso de breaking change:
+JAR compilado para 2.12 falha com `NoSuchMethodError` ou `ClassNotFoundException`. O fact
+`mig.jar_binary` já observava o sufixo do nome do artefato; faltava o julgamento.
+
+`scala_minor` (inteiro) entrou no `attrs` pelo mesmo motivo do `major` de
+`mig.python_dep` — o avaliador do catálogo compara número, e a versão morava como string.
+`SF-SPARK4-004` julga em **P0**, e a severidade é deliberada: não é degradação nem risco,
+é falha certa, e que aparece em runtime, não na submissão.
+
+**A auto-revisão do implementador achou um falso positivo P0 antes de ele existir em
+produção.** O regex de sufixo casa qualquer `_X.Y-`, não só Scala: um
+`minhalib_1.0-SNAPSHOT.jar` teria recebido `scala_minor: 0` e um P0 mandando recompilar
+contra Scala 2.13 um artefato que nunca teve Scala. Ficou com guarda de major, mais teste
+no extrator e no nível da regra.
+
+**Limite declarado, não escondido:** `mig.jar_binary` observa todo `.jar` da árvore,
+inclusive um que seja recurso de teste fora do classpath do job — e `SF-SPARK4-004` herda
+isso. Separar exigiria um fact sobre `--extra-jars`, que não existe. Está escrito na linha
+correspondente de `docs/harness/GLUE6-GAP.md`.
 
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
