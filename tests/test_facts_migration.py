@@ -233,3 +233,20 @@ class TestConfigRenomeadaNoSpark4:
         )
         facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
         assert [f for f in facts if f.kind == "mig.renamed_conf"] == []
+
+    def test_numera_a_linha_igual_ao_detector_de_config_legada(self, tmp_path):
+        """Form feed (`\f`) e separador de pagina legal em fonte Python. Sob
+        `splitlines()` ele contaria como quebra de linha e sob `split("\n")`
+        nao, entao os dois detectores dariam numeros diferentes para a MESMA
+        linha -- e quem lesse os dois subjects procuraria a config em dois
+        lugares, um dos quais nao existe.
+        """
+        (tmp_path / "job.py").write_text(
+            'import os\n\f\nspark.conf.set('
+            '"spark.sql.legacy.parquet.int96RebaseModeInWrite", "CORRECTED")\n',
+            encoding="utf-8",
+            newline="",
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        linhas = {f.kind: f.subject["line"] for f in facts}
+        assert linhas["mig.renamed_conf"] == linhas["mig.legacy_conf"]

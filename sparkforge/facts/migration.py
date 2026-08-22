@@ -242,9 +242,17 @@ def _renamed_conf_facts(text: str, anchor: str, provenance: dict[str, Any]) -> l
     Le o mesmo token entre aspas que `_config_facts` ja le -- nao reparseia a
     linha de outro jeito, para que as duas leituras nunca discordem sobre o que
     esta escrito ali.
+
+    Quebra as linhas com `split("\\n")`, e nao com `splitlines()`, pela mesma
+    razao: `splitlines()` tambem corta em form feed (`\\f`, separador de pagina
+    legal em fonte Python), `\\v` e U+2028, e `split("\\n")` nao. Um job com
+    qualquer um desses caracteres faria `mig.legacy_conf` e `mig.renamed_conf`
+    numerarem a MESMA linha de forma diferente, e um operador lendo dois
+    subjects divergentes procuraria a config em dois lugares -- um dos quais
+    nao existe.
     """
     facts: list[Fact] = []
-    for numero, linha in enumerate(text.splitlines(), start=1):
+    for numero, linha in enumerate(text.split("\n"), start=1):
         for token in _CONF_KEY_RE.findall(linha):
             novo = _RENAMED_CONF.get(token)
             if novo is None:
