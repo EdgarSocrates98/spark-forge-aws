@@ -194,6 +194,22 @@ _REMOVED_API_RES: tuple[tuple[re.Pattern[str], str, str], ...] = tuple(
     for nome, substituto in _REMOVED_API.items()
 )
 
+# Import de pandas-on-Spark no TEXTO do modulo. Conjunto FECHADO de formas -- as
+# quatro que a documentacao do pandas-on-Spark usa. Reconhecer forma inventada
+# aqui seria voltar a adivinhar, que e exatamente o defeito que este sinal
+# conserta.
+#
+# `import pandas` puro NAO entra: quem removeu `DataFrame.append` foi o
+# `pyspark.pandas`, e o pandas do PyPI segue o proprio ciclo de vida.
+_PANDAS_ON_SPARK_IMPORT_RE = re.compile(
+    r"^\s*(?:"
+    r"import\s+pyspark\.pandas\b"  # cobre tambem `import pyspark.pandas as <alias>`
+    r"|from\s+pyspark\.pandas\s+import\b"
+    r"|from\s+pyspark\s+import\s+pandas\b"
+    r")",
+    re.MULTILINE,
+)
+
 
 def _source_subject(file: str, line: int) -> dict[str, Any]:
     return {
@@ -334,8 +350,20 @@ def _removed_api_facts(text: str, anchor: str, provenance: dict[str, Any]) -> li
     `_renamed_conf_facts`: `splitlines()` tambem corta em form feed e U+2028, e
     dois detectores numerando a MESMA linha de forma diferente mandariam quem
     le os subjects procurar em dois lugares, um dos quais nao existe.
+
+    `attrs.pandas_on_spark_module` diz se o TEXTO deste modulo importa
+    `pyspark.pandas`. E OBSERVACAO, nao juizo, pelo mesmo criterio que separa
+    `mig.python_dep.major` do limiar que o compara: a afirmacao e sobre o que
+    esta ESCRITO no arquivo -- existe uma linha de import ali --, e o extrator ja
+    le o modulo inteiro para varrer linha a linha, entao observar os imports nao
+    lhe da poder novo nenhum. O JUIZO -- "entao este `.append` provavelmente e a
+    API removida, e nao o metodo de uma lista Python" -- mora em SF-SPARK4-002,
+    via `where`, que e onde limiar e decisao pertencem.
     """
     facts: list[Fact] = []
+    # Uma vez por arquivo, nao por linha: o import e propriedade do MODULO, e a
+    # linha do `.append(` nao muda o que o cabecalho do arquivo importa.
+    pandas_on_spark = bool(_PANDAS_ON_SPARK_IMPORT_RE.search(text))
     for numero, linha in enumerate(text.split("\n"), start=1):
         for regex, nome, substituto in _REMOVED_API_RES:
             if not regex.search(linha):
@@ -344,7 +372,11 @@ def _removed_api_facts(text: str, anchor: str, provenance: dict[str, Any]) -> li
                 Fact(
                     kind="mig.removed_api",
                     subject=_source_subject(anchor, numero),
-                    attrs={"symbol": nome, "replacement": substituto},
+                    attrs={
+                        "symbol": nome,
+                        "replacement": substituto,
+                        "pandas_on_spark_module": pandas_on_spark,
+                    },
                     provenance=provenance,
                 )
             )

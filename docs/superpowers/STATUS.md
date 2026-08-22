@@ -2242,6 +2242,23 @@ Duas alegações de `CURRENT-HARNESS-GAP.md` deixaram de bater e foram remedidas
 afrouxadas: `routing.yaml` cresceu de 42 para 43 KB com a rota nova, e `tools.py` passou
 `_core.py` como maior arquivo do pacote determinístico.
 
+**Um quarto defeito, achado em revisão depois da fase.** `SF-SPARK4-002` consumia
+`mig.removed_api` sem nenhum filtro, e o detector casa nome precedido de ponto —
+`.append`, `.pad`, `.mad`. Um `acc.append(1)` numa lista Python comum recebia um **P1**
+mandando trocar por `ps.concat`, num job que nunca importou `pyspark.pandas`. É a mesma
+classe de estrago que `rules/catalog/README.md` já nomeia: acusar código correto destrói a
+confiança em todo o resto do relatório.
+
+O conserto **não** tirou o fact — "existe um `.append(` nesta linha" continua sendo
+verdade, e apagar a observação criaria falso negativo silencioso. Em vez disso,
+`mig.removed_api` ganhou `attrs.pandas_on_spark_module` (booleano: o texto do módulo tem
+`import pyspark.pandas`, `from pyspark import pandas`, `import pyspark.pandas as <alias>`
+ou `from pyspark.pandas import ...`), e o **juízo** foi para a regra, como
+`where: {attrs.pandas_on_spark_module: true}`. Mesma divisão de `mig.python_dep.major` e o
+limiar `15` de `SF-SPARK4-003`: o extrator lê o que está escrito, a regra decide o que
+aquilo significa. O preço está declarado no catálogo — um módulo que recebe o DataFrame de
+outro, sem importar `pyspark.pandas` ele mesmo, fica fora.
+
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
 Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.

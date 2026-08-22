@@ -1,3 +1,5 @@
+import pytest
+
 from sparkforge.facts import migration
 
 JOB_COM_SDK_V1 = '''
@@ -283,6 +285,68 @@ class TestApiRemovidaNoSpark4:
         (tmp_path / "job.py").write_text("acc = []\nacc.append(1)\n", encoding="utf-8")
         facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
         assert len([f for f in facts if f.kind == "mig.removed_api"]) == 1
+
+
+# `pandas_on_spark_module` e OBSERVACAO, nao juizo: "o texto deste modulo contem
+# um import de `pyspark.pandas`" e uma afirmacao sobre o ARQUIVO, do mesmo tipo
+# que "esta linha contem `.append(`". O extrator ja le o modulo inteiro para
+# varrer linha a linha, entao observar os imports nao lhe da poder novo nenhum.
+#
+# O JUIZO -- "entao este `.append` provavelmente e a API removida do
+# pandas-on-Spark, e nao o metodo de uma lista Python" -- mora em SF-SPARK4-002,
+# via `where`, que e onde limiar e decisao pertencem. Sem o campo, a regra
+# acusava `acc.append(1)` num job que nunca importou `pyspark.pandas`, e
+# `rules/catalog/README.md` ja diz o que isso custa: acusar codigo correto
+# destroi a confianca no relatorio inteiro.
+class TestModuloDePandasOnSpark:
+    def test_modulo_que_importa_pyspark_pandas_e_observado_como_tal(self, tmp_path):
+        (tmp_path / "job.py").write_text(
+            "import pyspark.pandas as ps\nnovo = base.append(extra)\n", encoding="utf-8"
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        removidas = [f for f in facts if f.kind == "mig.removed_api"]
+        assert [f.attrs["pandas_on_spark_module"] for f in removidas] == [True]
+
+    def test_modulo_sem_import_nenhum_nao_e_observado_como_tal(self, tmp_path):
+        """`acc.append(1)` numa lista Python comum. O fact continua sendo
+        emitido -- o `.append(` esta escrito ali, e isso e verdade --, mas o
+        modulo nao importa pandas-on-Spark, e e esse campo que a regra le."""
+        (tmp_path / "job.py").write_text("acc = []\nacc.append(1)\n", encoding="utf-8")
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        removidas = [f for f in facts if f.kind == "mig.removed_api"]
+        assert [f.attrs["pandas_on_spark_module"] for f in removidas] == [False]
+
+    @pytest.mark.parametrize(
+        "linha_de_import",
+        [
+            "import pyspark.pandas",
+            "from pyspark import pandas",
+            "import pyspark.pandas as ps",
+            "import pyspark.pandas as qualquer_alias",
+            "from pyspark.pandas import DataFrame",
+        ],
+    )
+    def test_reconhece_as_formas_declaradas_de_import(self, tmp_path, linha_de_import):
+        """Conjunto FECHADO de formas, de proposito -- as mesmas quatro que a
+        documentacao do pandas-on-Spark usa. Inventar uma quinta aqui seria
+        voltar a adivinhar, que e o defeito que este campo conserta."""
+        (tmp_path / "job.py").write_text(
+            f"{linha_de_import}\nnovo = base.append(extra)\n", encoding="utf-8"
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        removidas = [f for f in facts if f.kind == "mig.removed_api"]
+        assert [f.attrs["pandas_on_spark_module"] for f in removidas] == [True]
+
+    def test_import_de_pandas_puro_nao_conta(self, tmp_path):
+        """`import pandas as pd` e pandas de verdade, nao pandas-on-Spark. Quem
+        removeu `DataFrame.append` foi o `pyspark.pandas`; o pandas do PyPI
+        segue com o seu proprio ciclo de vida."""
+        (tmp_path / "job.py").write_text(
+            "import pandas as pd\nnovo = base.append(extra)\n", encoding="utf-8"
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        removidas = [f for f in facts if f.kind == "mig.removed_api"]
+        assert [f.attrs["pandas_on_spark_module"] for f in removidas] == [False]
 
 
 # `major` e OBSERVACAO, nao juizo: o extrator le o primeiro segmento numerico da

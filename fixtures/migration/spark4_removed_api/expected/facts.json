@@ -14,7 +14,8 @@
     "measures": {},
     "attrs": {
       "symbol": "append",
-      "replacement": "ps.concat"
+      "replacement": "ps.concat",
+      "pandas_on_spark_module": true
     },
     "provenance": {
       "artifact": "job.py",

@@ -92,6 +92,24 @@ rules:
     sources:
       - {url: "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html", retrieved: 2026-08-22}
 
+  # O `where` é o que separa esta regra de um gerador de ruído. O extrator lê
+  # LINHA CRUA, sem tipo -- `.append(`, `.pad(`, `.mad(` casam igual num
+  # `list` Python, num logger e num DataFrame do pandas-on-Spark. Sem o filtro,
+  # um job que nunca importou `pyspark.pandas` recebia um P1 mandando trocar
+  # `acc.append(1)` por `ps.concat`, e `rules/catalog/README.md` já registra o
+  # preço disso: acusar código correto destrói a confiança em todo o resto do
+  # relatório.
+  #
+  # O filtro mora AQUI, e não no extrator, de propósito. "Existe um `.append(`
+  # nesta linha" continua sendo verdade, e apagar a observação criaria falso
+  # negativo silencioso. "Este módulo importa pandas-on-Spark" também é
+  # observação -- está escrito no arquivo, e o extrator já lê o texto inteiro.
+  # O JUÍZO é a conjunção das duas, e juízo é o que uma regra faz.
+  #
+  # O preço do filtro é declarado: um módulo que recebe um DataFrame de
+  # pandas-on-Spark de OUTRO módulo, sem importar `pyspark.pandas` ele mesmo,
+  # fica fora. É a troca deliberada -- o falso negativo custa um achado que a
+  # revisão do módulo de origem ainda pega; o falso positivo custava a regra.
   - id: SF-SPARK4-002
     category: spark4-migration
     title: API de pandas-on-Spark removida na versão 4 ainda chamada no código
@@ -99,6 +117,7 @@ rules:
     when:
       all:
         - fact: mig.removed_api
+          where: {attrs.pandas_on_spark_module: true}
     status: structural
     severity_default: P1
     runtime_scope: {spark: ">=4.0.0"}
@@ -113,7 +132,11 @@ rules:
       executa, possivelmente depois de minutos de processamento e de parte da
       saída já ter sido escrita, e passa em todo smoke test que não exercita
       aquela linha exata. O substituto está em `attrs.replacement` quando
-      existe. Ver `knowledge/spark/spark4-migration.md` §3.
+      existe. Esta regra só acusa arquivo cujo texto importa `pyspark.pandas`
+      (`attrs.pandas_on_spark_module`) -- vários dos nomes removidos (`append`,
+      `pad`, `mad`) existem em objetos Python comuns, e acusá-los fora de um
+      módulo de pandas-on-Spark seria mandar consertar código correto. Ver
+      `knowledge/spark/spark4-migration.md` §3.
     proposed_change:
       - Trocar a chamada pelo substituto declarado em `attrs.replacement`,
         conferindo a assinatura -- nenhum dos substitutos é um drop-in por

@@ -8,7 +8,12 @@ proves: >
   de ja ter escrito parte da saida. Runtime Glue 6.0 porque e onde o Spark 4
   vive, e e onde SF-SPARK4-002 dispara -- o `runtime_scope` da regra e
   `{spark: ">=4.0.0"}`, guardado pela versao do APACHE e nao pela do Glue,
-  porque quem removeu a API foi o Apache.
+  porque quem removeu a API foi o Apache. O `job.py` importa `pyspark.pandas`
+  na primeira linha, e isso e carga da fixture, nao decoracao: desde que
+  SF-SPARK4-002 ganhou `where: {attrs.pandas_on_spark_module: true}`, o import
+  e o que separa esta chamada de um `.append` de lista Python -- sem ele o
+  `expects_rules` daqui ficaria vazio, e o disparo P1 e justamente o que esta
+  fixture prova.
 runtime:
   glue: "6.0"
   spark: "4.1.1"
