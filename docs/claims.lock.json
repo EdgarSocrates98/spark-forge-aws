@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "c7ecf6b646b7853e2fb49544f965bebb2850aa81",
+  "extracted_from": "f1d452ac3408a1a3ccf9e8a5a9ebc4b1b5211121",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3139,6 +3139,527 @@
       }
     },
     {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 3,
+      "text": "6.0",
+      "context": "`prompt_glue_harness.md` propõe suporte profundo a AWS Glue 6.0, Spark 4.1, Iceberg 1.11 e",
+      "type": "number",
+      "id": "VNX-359",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "AWS Glue 6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 3,
+      "text": "4.1",
+      "context": "`prompt_glue_harness.md` propõe suporte profundo a AWS Glue 6.0, Spark 4.1, Iceberg 1.11 e",
+      "type": "number",
+      "id": "VNX-360",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "Apache Spark 4.1"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 3,
+      "text": "1.11",
+      "context": "`prompt_glue_harness.md` propõe suporte profundo a AWS Glue 6.0, Spark 4.1, Iceberg 1.11 e",
+      "type": "number",
+      "id": "VNX-361",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"AWS Glue 6.0\"); print(ls[i:i + 4])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "Apache Iceberg 1.11"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 4,
+      "text": "5.1",
+      "context": "Iceberg spec v3, além das cinco migrações com alvo Glue 5.1 ou 6.0 que ele enumera. Sua §28 é",
+      "type": "number",
+      "id": "VNX-362",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"Glue 4.0 \" + chr(8594) + \" 5.1\"); alvos = [l.split()[-1] for l in ls[i:i + 5]]; print(alvos.count(\"5.1\"))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 2,
+          "pattern": "^([0-9]+)$"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 4,
+      "text": "6.0",
+      "context": "Iceberg spec v3, além das cinco migrações com alvo Glue 5.1 ou 6.0 que ele enumera. Sua §28 é",
+      "type": "number",
+      "id": "VNX-363",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; ls = pathlib.Path(\"prompt_glue_harness.md\").read_text(encoding=\"utf-8\").splitlines(); i = ls.index(\"Glue 4.0 \" + chr(8594) + \" 5.1\"); alvos = [l.split()[-1] for l in ls[i:i + 5]]; print(alvos.count(\"6.0\"))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 3,
+          "pattern": "^([0-9]+)$"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 26,
+      "text": "4",
+      "context": "conflito entre fontes, conhecimento de Spark 4 e de Iceberg v3, e a ligação entre um diff de",
+      "type": "number",
+      "id": "VNX-364",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 4,
+          "pattern": "^([0-9]+)"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 36,
+      "text": "6.0",
+      "context": "| Baseline das versões a validar (§3) | EXISTE, com teste | Cinco versões na matriz. Glue 6.0 declara Spark `4.1.1`, Pyt",
+      "type": "number",
+      "id": "VNX-365",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 36,
+      "text": "3.13",
+      "context": "| Baseline das versões a validar (§3) | EXISTE, com teste | Cinco versões na matriz. Glue 6.0 declara Spark `4.1.1`, Pyt",
+      "type": "number",
+      "id": "VNX-366",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"python\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "3.13"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 36,
+      "text": "17",
+      "context": "| Baseline das versões a validar (§3) | EXISTE, com teste | Cinco versões na matriz. Glue 6.0 declara Spark `4.1.1`, Pyt",
+      "type": "number",
+      "id": "VNX-367",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"java\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 17,
+          "pattern": "^([0-9]+)$"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 37,
+      "text": "6.0",
+      "context": "| Fonte oficial vigiada com data de recuperação | EXISTE, com teste | `knowledge/sources.lock.json` guarda `retrieved` p",
+      "type": "number",
+      "id": "VNX-368",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 57,
+      "text": "6.0",
+      "context": "| Área de regras de migração com `runtime_scope` | EXISTE, com teste | `rules/catalog/glue-migration.yaml` traz a área `",
+      "type": "number",
+      "id": "VNX-369",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import yaml; d = yaml.safe_load(open(\"rules/catalog/glue-migration.yaml\", encoding=\"utf-8\")); print([r[\"runtime_scope\"][\"glue\"] for r in d[\"rules\"] if r[\"id\"] == \"SF-MIG-003\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": ">=6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 57,
+      "text": "4.1",
+      "context": "| Área de regras de migração com `runtime_scope` | EXISTE, com teste | `rules/catalog/glue-migration.yaml` traz a área `",
+      "type": "number",
+      "id": "VNX-370",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "4.1"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 61,
+      "text": "4",
+      "context": "## 4. Spark 4 (§10, §11, §12)",
+      "type": "number",
+      "id": "VNX-371",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 4,
+          "pattern": "^([0-9]+)"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 65,
+      "text": "3.3",
+      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
+      "type": "number",
+      "id": "VNX-372",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"4.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "3.3"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 65,
+      "text": "4.1",
+      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
+      "type": "number",
+      "id": "VNX-373",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "4.1"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 65,
+      "text": "4",
+      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
+      "type": "number",
+      "id": "VNX-374",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 4,
+          "pattern": "^([0-9]+)"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 66,
+      "text": "4",
+      "context": "| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | `sparkforge/facts/pyspark_ast.py` faz análise AST de PySpa",
+      "type": "number",
+      "id": "VNX-375",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 4,
+          "pattern": "^([0-9]+)"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 75,
+      "text": "6.0",
+      "context": "| Golden de JAR Scala antigo em Glue 6.0 (§14) | NÃO EXISTE | `fixtures/migration/jar_binary/` cobre a observação do fat",
+      "type": "number",
+      "id": "VNX-376",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 84,
+      "text": "1.11",
+      "context": "## 7. Iceberg 1.11 e spec v3 (§17 a §24, §47 a §50)",
+      "type": "number",
+      "id": "VNX-377",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"iceberg\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "1.11"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 90,
+      "text": "1.11",
+      "context": "| Conhecimento de Iceberg 1.11 (§17) | NÃO EXISTE | A matriz declara a versão de biblioteca do Glue 6.0. Nada descreve r",
+      "type": "number",
+      "id": "VNX-378",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"iceberg\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "1.11"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 90,
+      "text": "6.0",
+      "context": "| Conhecimento de Iceberg 1.11 (§17) | NÃO EXISTE | A matriz declara a versão de biblioteca do Glue 6.0. Nada descreve r",
+      "type": "number",
+      "id": "VNX-379",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 142,
+      "text": "6",
+      "context": "| Skills de Glue 6 com disclosure progressivo (§9, §72) | NÃO EXISTE | Nenhuma skill atual é de Glue 6. A infraestrutura",
+      "type": "number",
+      "id": "VNX-380",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 142,
+      "text": "6",
+      "context": "| Skills de Glue 6 com disclosure progressivo (§9, §72) | NÃO EXISTE | Nenhuma skill atual é de Glue 6. A infraestrutura",
+      "type": "number",
+      "id": "VNX-381",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 150,
+      "text": "6.0",
+      "context": "| Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39) | NÃO EXISTE | Os goldens de hoje são por kind de fact, n",
+      "type": "number",
+      "id": "VNX-382",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 156,
+      "text": "6.0",
+      "context": "| ADR de suporte a Glue 6.0 (§83) | NÃO EXISTE | `docs/vnext/adrs/` é o diretório onde entraria | — |",
+      "type": "number",
+      "id": "VNX-383",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 169,
+      "text": "6.0",
+      "context": "aqui: a matriz escolheu uma fonte para a versão de Python do Glue 6.0 e explicou isso num",
+      "type": "number",
+      "id": "VNX-384",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 176,
+      "text": "4",
+      "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
+      "type": "number",
+      "id": "VNX-385",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 4,
+          "pattern": "^([0-9]+)"
+        }
+      }
+    },
+    {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 36,
       "text": "**TaskSpec**",
@@ -3511,6 +4032,537 @@
         "kind": "artifact",
         "path": "tests/test_fixtures_golden_migration.py",
         "test": "tests/test_fixtures_golden_terraform.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 35,
+      "text": "Matriz de runtime verificada, fora do código",
+      "context": "| Matriz de runtime verificada, fora do código | EXISTE, com teste | `knowledge/glue/runtime-matrix.yaml` (dado, com `so",
+      "type": "capability",
+      "id": "VNX-386",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/glue/runtime-matrix.yaml",
+        "test": "tests/test_runtime_matrix.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 36,
+      "text": "Baseline das versões a validar (§3)",
+      "context": "| Baseline das versões a validar (§3) | EXISTE, com teste | Cinco versões na matriz. Glue 6.0 declara Spark `4.1.1`, Pyt",
+      "type": "capability",
+      "id": "VNX-387",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/glue/runtime-matrix.yaml",
+        "test": "tests/test_runtime_glue_versions.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 37,
+      "text": "Fonte oficial vigiada com data de recuperação",
+      "context": "| Fonte oficial vigiada com data de recuperação | EXISTE, com teste | `knowledge/sources.lock.json` guarda `retrieved` p",
+      "type": "capability",
+      "id": "VNX-388",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/sources.lock.json",
+        "test": "tests/test_runtime_matrix.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 41,
+      "text": "TTL de conhecimento por domínio (§44)",
+      "context": "| TTL de conhecimento por domínio (§44) | EXISTE PARCIAL | `sparkforge/context/knowledge_pack.py:KnowledgePackLoader` ca",
+      "type": "capability",
+      "id": "VNX-389",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/context/knowledge_pack.py",
+        "test": "tests/test_context_funnel.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 47,
+      "text": "Expansão `origem → alvo` em degraus",
+      "context": "| Expansão `origem → alvo` em degraus | EXISTE, com teste | `sparkforge/migration/version_path.py:steps()` deriva os deg",
+      "type": "capability",
+      "id": "VNX-390",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/version_path.py",
+        "test": "tests/test_version_path.py",
+        "symbol": "steps"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 48,
+      "text": "Composição multi-hop (§7)",
+      "context": "| Composição multi-hop (§7) | EXISTE, com teste | `sparkforge/migration/assessment.py:assess()` chama o `judge` uma vez ",
+      "type": "capability",
+      "id": "VNX-391",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py",
+        "symbol": "assess"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 56,
+      "text": "Extrator de facts de migração",
+      "context": "| Extrator de facts de migração | EXISTE, com teste | `sparkforge/facts/migration.py` emite kinds fechados em `EMITTED_K",
+      "type": "capability",
+      "id": "VNX-392",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/migration.py",
+        "test": "tests/test_facts_migration.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 57,
+      "text": "Área de regras de migração com `runtime_scope`",
+      "context": "| Área de regras de migração com `runtime_scope` | EXISTE, com teste | `rules/catalog/glue-migration.yaml` traz a área `",
+      "type": "capability",
+      "id": "VNX-393",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "rules/catalog/glue-migration.yaml",
+        "test": "tests/test_migration_glue.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 59,
+      "text": "Roteamento explicável das regras de migração",
+      "context": "| Roteamento explicável das regras de migração | EXISTE, com teste | `rules/catalog/routing.yaml` roteia `SF-MIG` e devo",
+      "type": "capability",
+      "id": "VNX-394",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "rules/catalog/routing.yaml",
+        "test": "tests/test_case_router.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 65,
+      "text": "Conhecimento de breaking changes de Spark `3.3` a `4.1`",
+      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
+      "type": "capability",
+      "id": "VNX-395",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "rules/catalog/glue-migration.yaml",
+        "test": "tests/test_migration_glue.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 66,
+      "text": "`sparkforge_spark4_migration_scan` (§11)",
+      "context": "| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | `sparkforge/facts/pyspark_ast.py` faz análise AST de PySpa",
+      "type": "capability",
+      "id": "VNX-396",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/pyspark_ast.py",
+        "test": "tests/test_facts_pyspark_ast.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 73,
+      "text": "Observação de JAR no job",
+      "context": "| Observação de JAR no job | EXISTE PARCIAL | `mig.jar_binary` é emitido por arquivo inteiro em `sparkforge/facts/migrat",
+      "type": "capability",
+      "id": "VNX-397",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/migration.py",
+        "test": "tests/test_facts_migration.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 81,
+      "text": "Observação de dependência Python",
+      "context": "| Observação de dependência Python | EXISTE PARCIAL | `mig.python_dep` observa dependência declarada. Falta o julgamento",
+      "type": "capability",
+      "id": "VNX-398",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/migration.py",
+        "test": "tests/test_facts_migration.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 88,
+      "text": "Diagnóstico de tabela Iceberg",
+      "context": "| Diagnóstico de tabela Iceberg | EXISTE, com teste | `sparkforge/iceberg/doctor.py:IcebergTableDoctor` devolve `format_",
+      "type": "capability",
+      "id": "VNX-399",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/iceberg/doctor.py",
+        "test": "tests/test_iceberg_doctor.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 89,
+      "text": "Versão do formato distinta da versão da biblioteca (§18)",
+      "context": "| Versão do formato distinta da versão da biblioteca (§18) | EXISTE, com teste | `mig.table_format` separa as duas — é o",
+      "type": "capability",
+      "id": "VNX-400",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/migration.py",
+        "test": "tests/test_facts_migration.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 94,
+      "text": "Iceberg Doctor v2 com prontidão para v3 (§50)",
+      "context": "| Iceberg Doctor v2 com prontidão para v3 (§50) | EXISTE PARCIAL | O relatório existe e carrega `format_version`; pronti",
+      "type": "capability",
+      "id": "VNX-401",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/iceberg/doctor.py",
+        "test": "tests/test_iceberg_doctor.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 100,
+      "text": "Inventário de consumidores (§25)",
+      "context": "| Inventário de consumidores (§25) | EXISTE, com teste | `sparkforge/facts/consumers.py` emite `env.consumer` com vocabu",
+      "type": "capability",
+      "id": "VNX-402",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/consumers.py",
+        "test": "tests/test_facts_consumers.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 102,
+      "text": "Grafo de permissão Lake Formation",
+      "context": "| Grafo de permissão Lake Formation | EXISTE, com teste | `sparkforge/lakeformation/graph.py:LakeFormationPermissionGrap",
+      "type": "capability",
+      "id": "VNX-403",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/lakeformation/graph.py",
+        "test": "tests/test_lakeformation_engine.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 104,
+      "text": "Separação entre control plane e data plane (§30)",
+      "context": "| Separação entre control plane e data plane (§30) | EXISTE PARCIAL | O grafo modela aresta de permissão com origem e de",
+      "type": "capability",
+      "id": "VNX-404",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/lakeformation/graph.py",
+        "test": "tests/test_lakeformation_engine.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 110,
+      "text": "Contrato com entrada, gates e recomendação",
+      "context": "| Contrato com entrada, gates e recomendação | EXISTE, com teste | `sparkforge/migration/assessment.py:MigrationAssessme",
+      "type": "capability",
+      "id": "VNX-405",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py",
+        "symbol": "assess"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 111,
+      "text": "Blocker vence score (§37)",
+      "context": "| Blocker vence score (§37) | EXISTE, com teste | Gate de compatibilidade em `FAIL` força `NO_GO`; gate sem evidência na",
+      "type": "capability",
+      "id": "VNX-406",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py",
+        "symbol": "test_gate_sem_evidencia_e_blocked_nunca_pass"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 112,
+      "text": "Early exit determinístico (§35)",
+      "context": "| Early exit determinístico (§35) | EXISTE PARCIAL | A avaliação é determinística de ponta a ponta e não chama agente ne",
+      "type": "capability",
+      "id": "VNX-407",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 113,
+      "text": "Pipeline nomeado da §32",
+      "context": "| Pipeline nomeado da §32 | EXISTE PARCIAL | As etapas existentes são as regras `SF-MIG` mais os gates de compatibilidad",
+      "type": "capability",
+      "id": "VNX-408",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 114,
+      "text": "Entradas opcionais da §31 (Terraform, JAR, topologia de Lake Formation, inventário de consumidores)",
+      "context": "| Entradas opcionais da §31 (Terraform, JAR, topologia de Lake Formation, inventário de consumidores) | EXISTE PARCIAL |",
+      "type": "capability",
+      "id": "VNX-409",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 120,
+      "text": "Leitura de `glue_version` no HCL",
+      "context": "| Leitura de `glue_version` no HCL | EXISTE, com teste | `sparkforge/facts/terraform.py` lê `glue_version` como atributo",
+      "type": "capability",
+      "id": "VNX-410",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/terraform.py",
+        "test": "tests/test_facts_terraform.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 121,
+      "text": "Diff com valor anterior",
+      "context": "| Diff com valor anterior | EXISTE, com teste | `extract_terraform_diff()` anota todo `tf.attribute` com `changed` e, qu",
+      "type": "capability",
+      "id": "VNX-411",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/terraform.py",
+        "test": "tests/test_fixtures_golden_tfdiff.py",
+        "symbol": "extract_terraform_diff"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 128,
+      "text": "Comparação de execuções",
+      "context": "| Comparação de execuções | EXISTE, com teste | `sparkforge/facts/benchmark.py` e `sparkforge/facts/event_log.py` compar",
+      "type": "capability",
+      "id": "VNX-412",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/benchmark.py",
+        "test": "tests/test_facts_benchmark.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 129,
+      "text": "Correção antes de performance (§54)",
+      "context": "| Correção antes de performance (§54) | EXISTE, com teste | `sparkforge/facts/funcval.py` faz validação funcional de saí",
+      "type": "capability",
+      "id": "VNX-413",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/funcval.py",
+        "test": "tests/test_facts_funcval.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 130,
+      "text": "Gate que impede performance sem correção",
+      "context": "| Gate que impede performance sem correção | EXISTE, com teste | Em `assess()`, os gates de dados, performance e custo n",
+      "type": "capability",
+      "id": "VNX-414",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/migration/assessment.py",
+        "test": "tests/test_migration_assessment.py",
+        "symbol": "test_gate_sem_evidencia_e_blocked_nunca_pass"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 138,
+      "text": "Modo offline com manifesto e checksum",
+      "context": "| Modo offline com manifesto e checksum | EXISTE, com teste | `knowledge/offline-manifest.json` mais `scripts/verify_off",
+      "type": "capability",
+      "id": "VNX-415",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/offline-manifest.json",
+        "test": "tests/test_offline_expansion.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 139,
+      "text": "Paridade entre repo, wheel, MCP e plugin",
+      "context": "| Paridade entre repo, wheel, MCP e plugin | EXISTE, com teste | `parity.yaml`, `scripts/sync_skills.py --check` e `mani",
+      "type": "capability",
+      "id": "VNX-416",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "parity.yaml",
+        "test": "tests/test_capability_parity.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 140,
+      "text": "Tools MCP a expandir em vez de multiplicar (§70)",
+      "context": "| Tools MCP a expandir em vez de multiplicar (§70) | EXISTE, com teste | `sparkforge/adapters/tools.py:TOOLS` já expõe `",
+      "type": "capability",
+      "id": "VNX-417",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/adapters/tools.py",
+        "test": "tests/test_adapters_tools.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 143,
+      "text": "Agent especialista em migração (§8)",
+      "context": "| Agent especialista em migração (§8) | EXISTE PARCIAL | `agents/sf-runtime-specialist.md` declara compatibilidade entre",
+      "type": "capability",
+      "id": "VNX-418",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "agents/sf-runtime-specialist.md",
+        "test": "tests/test_agents_parity.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 149,
+      "text": "Goldens do domínio de migração",
+      "context": "| Goldens do domínio de migração | EXISTE, com teste | `fixtures/migration/` cobre um caso por kind emitido, no formato ",
+      "type": "capability",
+      "id": "VNX-419",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "fixtures/migration",
+        "test": "tests/test_fixtures_golden_migration.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 153,
+      "text": "Gate de CI sobre alegação publicada",
+      "context": "| Gate de CI sobre alegação publicada | EXISTE, com teste | `scripts/check_vnext_claims.py` audita `docs/vnext/` e `docs",
+      "type": "capability",
+      "id": "VNX-420",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "scripts/check_vnext_claims.py",
+        "test": "tests/test_vnext_claims.py"
       }
     },
     {

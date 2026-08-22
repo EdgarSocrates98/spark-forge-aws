@@ -152,6 +152,14 @@ toda classificação) para fundir a alegação nova, depois classifique manualme
 (`state: PROVADA` com `proof`, ou `REMOVIDA` com `note`). `SEM_LASTRO` não é um estado
 terminal aceitável para commit.
 
+Um **mapa de lacuna** -- documento de tabela `Componente | Classificação | Módulo(s) |
+Teste`, como `docs/harness/CURRENT-HARNESS-GAP.md` e `docs/harness/GLUE6-GAP.md` -- é
+descoberto por padrão de nome (`*-GAP.md`, em `gap_documents()`), não por lista escrita à
+mão. Um mapa novo entra na auditoria só por se chamar assim; renomeá-lo para fora do padrão
+não passa calado, porque as entradas dele viram órfãs no manifesto. Só linha cuja
+classificação começa em `EXISTE` vira alegação: a linha que diz `NÃO EXISTE` descreve uma
+ausência, e ausência não é capacidade a provar.
+
 Um número que descreve um estado ATUAL (re-executável, e portanto obrigado a
 continuar batendo) usa `proof.kind: "command"`. Um número que descreve uma MEDIÇÃO
 PASSADA ancorada a um commit (um baseline, que por definição envelhece) usa

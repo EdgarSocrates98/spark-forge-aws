@@ -527,10 +527,32 @@ def _final_report_inventory(root: Path = VNEXT) -> list[dict]:
     return found
 
 
+def gap_documents(root: Path = HARNESS) -> tuple[Path, ...]:
+    """Os mapas de lacuna auditados, declarados em UM so lugar.
+
+    Um mapa de lacuna e um documento de tabela `Componente | Classificacao |
+    Modulo(s) | Teste` que responde "isto ja existe aqui?" componente a
+    componente -- `CURRENT-HARNESS-GAP.md` foi o primeiro, `GLUE6-GAP.md` o
+    segundo, e o padrao se repete a cada prompt grande que chega. Casar por
+    sufixo `-GAP.md` em vez de listar nomes a mao existe pela mesma razao de
+    `audited_roots()`: lista escrita a mao envelhece calada, e um mapa novo
+    que o extrator nao ve e um documento inteiro de alegacoes fora da
+    auditoria.
+
+    Renomear um mapa para fora do padrao NAO passa despercebido: as entradas
+    dele viram orfas no manifesto e o gate reprova por esse lado, que e
+    fail-closed. Ordenado para que a numeracao de id ficar estavel entre
+    execucoes nao dependa da ordem do sistema de arquivos.
+    """
+    if not root.is_dir():
+        return ()
+    return tuple(sorted(root.glob("*-GAP.md")))
+
+
 def _harness_gap_capabilities(root: Path = HARNESS) -> list[dict]:
-    """Linha de tabela do CURRENT-HARNESS-GAP.md cuja Classificacao comeca em
-    "EXISTE" vira alegacao de capacidade. Documento ausente (fixture
-    sintetica, ou root=VNEXT onde este arquivo nao mora) devolve lista vazia,
+    """Linha de tabela de mapa de lacuna cuja Classificacao comeca em
+    "EXISTE" vira alegacao de capacidade. Nenhum mapa presente (fixture
+    sintetica, ou root=VNEXT onde eles nao moram) devolve lista vazia,
     mesmo padrao de `_final_report_inventory`.
 
     Por que isto NAO pode reusar o mecanismo generico de `CAPABILITY_TABLES`
@@ -553,10 +575,20 @@ def _harness_gap_capabilities(root: Path = HARNESS) -> list[dict]:
     Confirmado por leitura de `docs/harness/CURRENT-HARNESS-GAP.md` (Task de
     extensao do gate): 31 linhas de dado no total, 24 comecando em "EXISTE" e
     7 em "NAO EXISTE" -- as 7 ficam de fora aqui de proposito.
+
+    Varre todo mapa devolvido por `gap_documents()`, nao um nome fixo: ver o
+    raciocinio la.
     """
-    path = root / "CURRENT-HARNESS-GAP.md"
-    if not path.exists():
-        return []
+    found: list[dict] = []
+    for path in gap_documents(root):
+        found.extend(_gap_capabilities_of(path))
+    return found
+
+
+def _gap_capabilities_of(path: Path) -> list[dict]:
+    """Le UM mapa de lacuna. Separado de `_harness_gap_capabilities` para que
+    o erro de ancora perdida (abaixo) nomeie o arquivo exato, e nao o
+    conjunto."""
     found: list[dict] = []
     linhas_de_dado = 0
     lines = _strip_code_blocks(path.read_text(encoding="utf-8"), path).split("\n")
@@ -1457,6 +1489,24 @@ def audit(include_slow: bool) -> int:
     return 1 if errors else 0
 
 
+def _make_output_encoding_safe() -> None:
+    """Impede que o gate morra ao IMPRIMIR a divergencia que ele acabou de achar.
+
+    O console padrao do Windows usa cp1252, e o texto auditado e portugues
+    tecnico cheio de caractere fora dessa tabela -- acento nao, mas seta
+    (`->` escrito como caractere unico), travessao e simbolo de secao sim. Um
+    documento novo que usasse qualquer um deles derrubava o `audit()` com
+    `UnicodeEncodeError` no meio do relatorio: exit code diferente de zero,
+    porem por traceback, escondendo QUAIS alegacoes estavam sem lastro --
+    exatamente a informacao pela qual o gate existe. Substituir o caractere
+    ilegivel por `?` na saida perde estetica e nao perde nenhuma alegacao.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="replace")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full", action="store_true", help="Inclui provas tier slow.")
@@ -1470,6 +1520,7 @@ def main() -> int:
     )
     parser.add_argument("--report", action="store_true", help="Tabela de lastro.")
     args = parser.parse_args()
+    _make_output_encoding_safe()
     if args.seed:
         return seed(force=args.force)
     if args.report:

@@ -1889,3 +1889,54 @@ class TestGateReal:
         manifest = manifesto([entrada(state="PROVADA", proof=prova, type="number")])
         erros = gate.run_command_proofs(manifest, include_slow=False)
         assert any("esperado 999" in e and "obtido 41" in e for e in erros)
+
+
+class TestMapasDeLacunaDescobertosPorPadrao:
+    """`_harness_gap_capabilities` lia UM nome fixo (`CURRENT-HARNESS-GAP.md`).
+
+    Quando `GLUE6-GAP.md` chegou -- mesmo genero de documento, mesma tabela de
+    quatro colunas, mesma pergunta "isto ja existe aqui?" -- o extrator nao o
+    via, e um documento inteiro de alegacoes de capacidade ficava fora da
+    auditoria SEM que nada acusasse. Estes testes fixam a descoberta por
+    padrao (`*-GAP.md`), que e a mesma decisao de `audited_roots()`: declarar
+    num lugar so em vez de manter lista a mao que envelhece calada.
+    """
+
+    def _mapa(self, path, componente, classificacao="EXISTE, com teste"):
+        path.write_text(
+            "| Componente | Classificacao | Modulo(s) | Teste |\n"
+            "|---|---|---|---|\n"
+            f"| {componente} | {classificacao} | `x.py` | `tests/t.py` |\n",
+            encoding="utf-8",
+        )
+
+    def test_mapa_novo_entra_na_auditoria_sem_editar_o_gate(self, tmp_path):
+        self._mapa(tmp_path / "CURRENT-HARNESS-GAP.md", "Primeiro")
+        self._mapa(tmp_path / "GLUE6-GAP.md", "Segundo")
+        textos = {c["text"] for c in gate._harness_gap_capabilities(tmp_path)}
+        assert textos == {"Primeiro", "Segundo"}
+
+    def test_documento_fora_do_padrao_nao_e_lido_como_mapa(self, tmp_path):
+        # `BASELINE.md` mora no mesmo diretorio e NAO e mapa de lacuna: ele
+        # afirma medicao passada, nao capacidade por componente. Ler qualquer
+        # `.md` do diretorio transformaria as linhas dele em alegacao de
+        # capacidade, que e outra natureza de alegacao e outra prova.
+        self._mapa(tmp_path / "BASELINE.md", "Nao e mapa")
+        assert gate.gap_documents(tmp_path) == ()
+        assert gate._harness_gap_capabilities(tmp_path) == []
+
+    def test_linha_que_nega_existencia_nao_vira_alegacao(self, tmp_path):
+        self._mapa(tmp_path / "NOVO-GAP.md", "Ausente", classificacao="NAO EXISTE")
+        assert gate._harness_gap_capabilities(tmp_path) == []
+
+    def test_mapa_sem_tabela_estoura_nomeando_o_arquivo(self, tmp_path):
+        # Ancora estrutural perdida em UM mapa precisa dizer QUAL mapa -- com
+        # mais de um documento sob o mesmo extrator, "nenhuma linha de tabela
+        # reconhecida" sem nome de arquivo manda o operador procurar em todos.
+        (tmp_path / "VAZIO-GAP.md").write_text("So prosa, sem tabela.\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="VAZIO-GAP.md"):
+            gate._harness_gap_capabilities(tmp_path)
+
+    def test_os_mapas_reais_do_repositorio_estao_sob_o_gate(self):
+        nomes = {p.name for p in gate.gap_documents()}
+        assert {"CURRENT-HARNESS-GAP.md", "GLUE6-GAP.md"} <= nomes
