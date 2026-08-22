@@ -775,7 +775,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "git rev-parse --short HEAD",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -790,7 +790,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "git show a5b9e96:docs/vnext/FINAL-REPORT.md",
-        "commit": "a5b9e96"
+        "commit": "6c3c396"
       }
     },
     {
@@ -805,7 +805,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "git show a5b9e96:docs/vnext/FINAL-REPORT.md",
-        "commit": "a5b9e96"
+        "commit": "6c3c396"
       }
     },
     {
@@ -820,7 +820,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest --collect-only -q",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -835,7 +835,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -850,7 +850,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -865,7 +865,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -880,7 +880,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python scripts/check_vnext_claims.py",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -895,7 +895,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python scripts/check_vnext_claims.py",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -910,7 +910,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python scripts/sync_skills.py --check",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -925,7 +925,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python scripts/check_evals.py",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -940,7 +940,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python scripts/check_evals.py",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -955,7 +955,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python scripts/verify_offline_bundle.py",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -970,7 +970,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python scripts/verify_offline_bundle.py",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -985,7 +985,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest --collect-only -q",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1000,7 +1000,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1015,7 +1015,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1030,7 +1030,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest --collect-only -q",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1045,7 +1045,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; c=load_catalog(); print(len(c))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1060,7 +1060,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; c=load_catalog(); print(sum(1 for r in c if r.get(\"blocked_on\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1075,7 +1075,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; c=load_catalog(); print(len(set(r.get(\"category\") for r in c)))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1090,7 +1090,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "ls sparkforge/facts/",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1105,7 +1105,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pkgutil, importlib; import sparkforge.facts as pkg; mods=[m.name for m in pkgutil.iter_modules(pkg.__path__)]; print(sum(1 for m in mods if hasattr(importlib.import_module(\"sparkforge.facts.\"+m), \"EMITTED_KINDS\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1120,7 +1120,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pkgutil, importlib; import sparkforge.facts as pkg; mods=[m.name for m in pkgutil.iter_modules(pkg.__path__)]; print(sum(1 for m in mods if not hasattr(importlib.import_module(\"sparkforge.facts.\"+m), \"EMITTED_KINDS\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1135,7 +1135,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pkgutil, importlib; import sparkforge.facts as pkg; mods=[m.name for m in pkgutil.iter_modules(pkg.__path__)]; kinds=set(); [kinds.update(getattr(importlib.import_module(\"sparkforge.facts.\"+m), \"EMITTED_KINDS\", [])) for m in mods]; print(len(kinds))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1150,7 +1150,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1165,7 +1165,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import yaml; d=yaml.safe_load(open(\"rules/catalog/routing.yaml\", encoding=\"utf-8\")); print(len(d[\"rules\"]))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1180,7 +1180,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "ls agents/*.md | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1195,7 +1195,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "ls agents/executors/*.md | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1210,7 +1210,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "ls skills/*/SKILL.md | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1225,7 +1225,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1240,7 +1240,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1255,7 +1255,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1270,7 +1270,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1285,7 +1285,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1300,7 +1300,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1315,7 +1315,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1330,7 +1330,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1345,7 +1345,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1360,7 +1360,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1375,7 +1375,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1390,7 +1390,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1405,7 +1405,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1420,7 +1420,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1435,7 +1435,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1450,7 +1450,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1465,7 +1465,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1480,7 +1480,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1495,7 +1495,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1510,7 +1510,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.rules.loader import load_catalog; from collections import Counter; c=load_catalog(); print(sorted(Counter(r.get(\"category\") for r in c).items()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1525,7 +1525,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/<domínio> -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1540,7 +1540,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/<domínio> -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1555,7 +1555,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/graph -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1570,7 +1570,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/emr_serverless -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1585,7 +1585,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/pyspark -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1600,7 +1600,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/dq -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1615,7 +1615,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/emr -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1630,7 +1630,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/funcval -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1645,7 +1645,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/migration -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1660,7 +1660,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/iceberg -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1675,7 +1675,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/terraform -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1690,7 +1690,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/plan -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1705,7 +1705,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/runtime -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1720,7 +1720,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/s3 -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1735,7 +1735,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/fusion -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1750,7 +1750,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/eventlog -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1765,7 +1765,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/sql -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1780,7 +1780,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/athena -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1795,7 +1795,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/callgraph -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1810,7 +1810,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/catalog -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1825,7 +1825,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/consumers -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1840,7 +1840,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/infra_code -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1855,7 +1855,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/tfdiff -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1870,7 +1870,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures/bench -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1885,7 +1885,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1900,7 +1900,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures -mindepth 2 -maxdepth 2 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1915,7 +1915,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "find fixtures -mindepth 1 -maxdepth 1 -type d | wc -l",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1930,7 +1930,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/workflows\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1945,7 +1945,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/workflows\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1960,7 +1960,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/economy\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1975,7 +1975,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/economy\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -1990,7 +1990,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/context\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2005,7 +2005,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/context\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2020,7 +2020,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/registry\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2035,7 +2035,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/registry\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2050,7 +2050,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/evals\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2065,7 +2065,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/evals\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2080,7 +2080,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/observability\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2095,7 +2095,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/observability\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2110,7 +2110,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/providers\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2125,7 +2125,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/providers\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2140,7 +2140,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/cloud\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2155,7 +2155,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/cloud\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2170,7 +2170,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"sparkforge/adapters\").glob(\"*.py\") if f.name != \"__init__.py\"))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2185,7 +2185,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/adapters\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2200,7 +2200,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(1 for f in pathlib.Path(\"tests\").glob(\"*.py\") if \"sparkforge.adapters\" in f.read_text(encoding=\"utf-8\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2215,7 +2215,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(len(pathlib.Path(\"sparkforge/providers/mock.py\").read_text(encoding=\"utf-8\").splitlines()))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2230,7 +2230,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import pathlib; print(sum(len(f.read_text(encoding=\"utf-8\").splitlines()) for f in pathlib.Path(\"sparkforge/cloud\").glob(\"*.py\")))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2245,7 +2245,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_3_cheap_local\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2260,7 +2260,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_3_cheap_local\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2275,7 +2275,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_5_premium\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2290,7 +2290,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; t=TIER_PRICING[\"tier_5_premium\"]; print(t.input_price_per_m, t.output_price_per_m)'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2305,7 +2305,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import sparkforge.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2320,7 +2320,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import sparkforge.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2335,7 +2335,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import sparkforge.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2350,7 +2350,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import sparkforge.economy.router as m; import inspect; print(inspect.getsource(m.CapabilityModelRouter.route_task))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2365,7 +2365,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2380,7 +2380,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.economy.router import CapabilityModelRouter; d=CapabilityModelRouter().route_task(\"x\", is_deterministic_available=True); print(d.max_tokens, d.estimated_cost_usd)'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2395,7 +2395,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.economy.router import CapabilityModelRouter; d=CapabilityModelRouter().route_task(\"x\", is_deterministic_available=True); print(d.max_tokens, d.estimated_cost_usd)'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2410,7 +2410,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2425,7 +2425,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -c 'import yaml; d=yaml.safe_load(open(\"rules/catalog/routing.yaml\", encoding=\"utf-8\")); print(len(d[\"rules\"]))'",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2440,7 +2440,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
@@ -2455,7 +2455,7 @@
       "proof": {
         "kind": "historical",
         "cmd": "python -m pytest -q -p no:randomly",
-        "commit": "6686156"
+        "commit": "6a76b7a"
       }
     },
     {
