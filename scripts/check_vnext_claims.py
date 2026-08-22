@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
-"""Gate de lastro das alegações publicadas em `docs/vnext/`.
+"""Gate de lastro das alegações publicadas em `docs/vnext/` e `docs/harness/`
+(a lista completa, num só lugar, vive em `audited_roots()` abaixo).
 
-Fonte da verdade: `docs/vnext/claims.lock.json`. Toda alegação dos documentos
+Fonte da verdade: `docs/claims.lock.json`. Toda alegação dos documentos
 precisa existir no manifesto, e toda entrada do manifesto precisa existir nos
 documentos -- fail-closed nos dois sentidos, pela mesma razão registrada em
 `tests/test_docs_coverage.py`: lista copiada envelhece sem que nada acuse.
+
+`docs/harness/BASELINE.md` é diferente em natureza dos demais: não afirma
+estado ATUAL, afirma uma medição PASSADA, ancorada num commit ("5786 testes,
+medido no commit X"). Uma prova `command` comum reexecutaria o comando e
+compararia contra o valor de HOJE -- certo para `docs/vnext/`, errado para um
+baseline, que por definição envelhece. `proof.kind: "historical"` existe para
+isso: confere que o commit citado existe e que o comando está documentado,
+mas NUNCA reexecuta. Ver o comentário de `PROOF_KINDS` e `_validate_proof`.
 
 Uso:
     python scripts/check_vnext_claims.py             # audita; sai 1 se divergir
@@ -26,15 +35,30 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VNEXT = ROOT / "docs" / "vnext"
-MANIFEST = VNEXT / "claims.lock.json"
+DOCS = ROOT / "docs"
+VNEXT = DOCS / "vnext"
+HARNESS = DOCS / "harness"
+# O manifesto mora em `docs/`, nao em `docs/vnext/`: a partir do momento em
+# que `docs/harness/` tambem entra sob o gate (Task de generalizacao), um
+# arquivo chamado `claims.lock.json` dentro de `docs/vnext/` mas cobrindo
+# alegacoes de `docs/harness/` tambem e a mesma mentira estrutural que a
+# tarefa pede para consertar -- so que no proprio nome do caminho, nao no
+# conteudo de um documento. Um path neutro nao precisa mentir sobre o que
+# audita.
+MANIFEST = DOCS / "claims.lock.json"
 SOURCES_LOCK = ROOT / "knowledge" / "sources.lock.json"
 
 SCHEMA_VERSION = 1
 STATES = frozenset({"PROVADA", "SEM_LASTRO", "REMOVIDA"})
 TYPES = frozenset({"number", "capability", "external_fact"})
 TIERS = frozenset({"fast", "slow"})
-PROOF_KINDS = frozenset({"command", "artifact", "source"})
+# `historical` prova uma medicao ancorada num commit passado -- NAO reexecuta
+# o comando, so confere que ele esta descrito e que o commit existe. Ver
+# `_validate_proof` e `audited_roots` para o raciocinio completo: um baseline
+# ("5786 testes, medido no commit X") envelhece por natureza, e um gate que
+# forca esse numero a continuar batendo HOJE deixou de medir o passado -- so
+# que sem avisar ninguem disso.
+PROOF_KINDS = frozenset({"command", "artifact", "source", "historical"})
 # Uma prova aponta para UM stream porque aceitar qualquer um dos dois deixa
 # texto nao relacionado provar a alegacao: stdout com a contagem real errada
 # e stderr com uma mensagem de erro que por acaso contem o numero esperado
@@ -55,6 +79,25 @@ def audited_docs(root: Path = VNEXT) -> list[Path]:
     # Fail-open deliberado: `adrs/` ausente ou renomeado devolve glob vazio,
     # nao erro -- um gate que degrada em silencio para de vigiar sem avisar.
     return sorted(root.glob("*.md")) + sorted((root / "adrs").glob("*.md"))
+
+
+def audited_roots() -> tuple[Path, ...]:
+    """A lista declarada, em UM so lugar, dos diretorios que o gate audita.
+
+    Uma FUNCAO, nao uma tupla de modulo calculada uma unica vez na carga do
+    arquivo: `collect_claims()` (abaixo) chama isto a cada execucao, e os
+    testes usam `monkeypatch.setattr(gate, "VNEXT", tmp_path)` /
+    `monkeypatch.setattr(gate, "HARNESS", tmp_path)` para isolar o corpo real
+    do repositorio -- uma tupla congelada no import teria capturado os `Path`
+    originais antes de qualquer monkeypatch rodar, e o teste continuaria
+    varrendo o disco real por baixo do pano. Referenciar `VNEXT`/`HARNESS`
+    dentro do corpo desta funcao resolve os dois nomes no NAMESPACE do modulo
+    a cada chamada, entao o monkeypatch e visto.
+
+    Adicionar um terceiro diretorio auditado no futuro e uma linha aqui, nao
+    uma busca por todo lugar que hoje diz `VNEXT` ou `HARNESS` a mao.
+    """
+    return (VNEXT, HARNESS)
 
 
 # Qualquer numero, com sinal de percentual opcional. O grupo so pode terminar
@@ -180,6 +223,58 @@ IGNORED_LINES = (
         "item da lista, nao e alegacao de quantidade -- \"N tiers\" (digito "
         "antes do substantivo) nao casa aqui e continua sendo alegacao",
     ),
+    (
+        # Achado ao trazer `docs/harness/CURRENT-HARNESS-GAP.md` para debaixo
+        # do gate: o documento cita a secao de `prompt_evo_harness.md` que
+        # cada componente cobre 72 vezes, formato "§NN" ("(§30)", "§43,
+        # \"critico\"", "(§79) / ... (§31)"). E a MESMA classe estrutural do
+        # rotulo de indice de taxonomia acima -- indica QUAL secao do
+        # documento-fonte, nao uma quantidade medida deste repositorio --
+        # so que aqui o simbolo vem ANTES do numero, entao precisa do proprio
+        # padrao (o de Tier/Layer/Wave/Demo exige um substantivo ASCII antes
+        # do digito, "§" nao casa `\b\w+\b`). Sem isto, cada referencia de
+        # secao vira uma alegacao numerica que ninguem consegue "provar" --
+        # nao ha comando que reproduza "a secao 30 do prompt existe". Zero
+        # ocorrencias de "§" em `docs/vnext/*.md` (conferido com grep antes
+        # de acrescentar este padrao), entao isto nao muda nenhuma das 184
+        # alegacoes ja classificadas.
+        re.compile(r"§\s*\d+"),
+        "referencia a secao do documento-fonte (\"§NN\") indica qual secao "
+        "de `prompt_evo_harness.md` o componente cobre, nao uma quantidade "
+        "medida deste repositorio",
+    ),
+    (
+        # Mesmo achado: `CURRENT-HARNESS-GAP.md` numera os 5 golden cases do
+        # §48 como "Caso 1/2 (Glue 4.0->5.1...)", "caso 4 (Terraform...)",
+        # "Caso 3 (Lake Formation...)", "Caso 5 (Spark performance...)" --
+        # rotulo de indice, mesma classe estrutural de "Tier N" acima (o
+        # substantivo "caso" vem ANTES do numero, indica QUAL caso, nao uma
+        # quantidade). `[Cc]aso` cobre a forma capitalizada (inicio de frase)
+        # e a minuscula (meio de frase, "e caso 4"); `(?:/\d+)?` cobre a forma
+        # dupla "Caso 1/2" (dois casos citados juntos, um so rotulo composto)
+        # sem deixar o "2" de "1/2" escapar como alegacao separada. Zero
+        # ocorrencias de "aso \d" em `docs/vnext/*.md` (conferido com grep),
+        # entao isto nao muda nenhuma das 184 alegacoes ja classificadas.
+        re.compile(r"\b[Cc]aso\s+\d+(?:/\d+)?\b"),
+        "rotulo de indice de golden case (\"Caso N\" ou \"Caso N/M\") indica "
+        "qual caso dos 5 do §48, nao e alegacao de quantidade",
+    ),
+    (
+        # Mesmo achado: "ver tabela 1" (auto-referencia cruzada dentro do
+        # proprio documento) e "o nível 1 do §45" (rotulo ordinal de grader
+        # hierarchy -- ha so UM nivel implementado hoje, mas o "1" aqui indica
+        # QUAL nivel na hierarquia, nao "quantos" niveis existem). Mesma
+        # classe estrutural de Tier/Layer/Wave/Demo/Caso: substantivo ANTES
+        # do digito. Nao afeta a forma plural de quantidade real ("3 níveis",
+        # ja provado para ContextManager) porque essa vem com o digito
+        # primeiro. Uma ocorrencia de cada em todo o corpus (conferido com
+        # busca por regex antes de acrescentar este padrao), so em
+        # `CURRENT-HARNESS-GAP.md`.
+        re.compile(r"\btabela\s+\d+\b|\bn[ií]vel\s+\d+\b", re.IGNORECASE),
+        "\"tabela N\" e auto-referencia cruzada dentro do documento; "
+        "\"nível N\" (singular) e rotulo ordinal de qual nivel da hierarquia "
+        "-- nenhum dos dois e alegacao de quantidade",
+    ),
 )
 
 
@@ -227,6 +322,19 @@ def extract_numbers(path: Path) -> list[dict]:
             # produto. Descarta a linha inteira -- se algum dia uma alegacao
             # real dividir linha com um link, ela some junto. Nenhum
             # documento atual faz isso; aceito ate acontecer de verdade.
+            continue
+        if line.strip().startswith("*Fontes:"):
+            # Mesma razao do `http` acima, achado ao trazer `docs/harness/
+            # CURRENT-HARNESS-GAP.md` para debaixo do gate: o rodape "*Fontes:
+            # ...*" cita intervalo de linha e numero de secao de um documento
+            # EXTERNO (`prompt_evo_harness.md`) -- os numeros pertencem a
+            # citacao bibliografica, nao a um resultado medido deste
+            # repositorio. Descarta a linha inteira, mesmo raciocinio do link:
+            # se um dia uma alegacao real dividir linha com essa citacao, ela
+            # some junto -- aceito ate acontecer de verdade. So um documento
+            # usa este rodape hoje (conferido com grep antes de acrescentar
+            # este padrao), entao isto nao muda nenhuma das 184 alegacoes ja
+            # classificadas.
             continue
         # Mascara o TRECHO estrutural de cada `IGNORED_LINES` que casar
         # (marcador de lista, numero de titulo, "(Phase N)" de roadmap, ou
@@ -344,6 +452,7 @@ def extract_capabilities(root: Path = VNEXT) -> list[dict]:
                 }
             )
     found.extend(_final_report_inventory(root))
+    found.extend(_harness_gap_capabilities(root))
     return found
 
 
@@ -414,6 +523,76 @@ def _final_report_inventory(root: Path = VNEXT) -> list[dict]:
             "extrator so reconhece '- ') e precisa aprender o novo formato, ou a "
             "secao foi esvaziada de proposito e a expectativa de ancora neste "
             "script precisa ser atualizada deliberadamente"
+        )
+    return found
+
+
+def _harness_gap_capabilities(root: Path = HARNESS) -> list[dict]:
+    """Linha de tabela do CURRENT-HARNESS-GAP.md cuja Classificacao comeca em
+    "EXISTE" vira alegacao de capacidade. Documento ausente (fixture
+    sintetica, ou root=VNEXT onde este arquivo nao mora) devolve lista vazia,
+    mesmo padrao de `_final_report_inventory`.
+
+    Por que isto NAO pode reusar o mecanismo generico de `CAPABILITY_TABLES`
+    (que so olha `cells[0]`, a primeira coluna): a tabela deste documento tem
+    4 colunas -- Componente | Classificacao | Modulo(s) | Teste -- e ela
+    documenta DELIBERADAMENTE tanto o que existe quanto o que NAO existe no
+    mesmo formato de linha ("RecoveryEngine | NAO EXISTE | ...", ao lado de
+    "TaskSpec | EXISTE, com teste | ..."). O mecanismo generico so olha
+    `cells[0]` (o nome do componente) e ignora a classificacao -- se este
+    arquivo fosse simplesmente somado a `CAPABILITY_TABLES`, TODA linha viraria
+    alegacao de capacidade, inclusive "RecoveryEngine", que o proprio
+    documento afirma nao existir. Isso e o oposto do que uma alegacao de
+    capacidade deveria significar, e pior: marcar essa entrada como REMOVIDA
+    no manifesto derrubaria o gate na hora, porque o texto CONTINUA presente
+    no documento (REMOVIDA e para texto apagado, nao para texto que descreve
+    uma ausencia). A linha so vira alegacao quando `cells[1]` comeca com
+    "EXISTE" -- "EXISTE PARCIAL", "EXISTE, com teste — duplicado" contam;
+    "NAO EXISTE" e "NAO EXISTE, para o proposito pedido" nao.
+
+    Confirmado por leitura de `docs/harness/CURRENT-HARNESS-GAP.md` (Task de
+    extensao do gate): 31 linhas de dado no total, 24 comecando em "EXISTE" e
+    7 em "NAO EXISTE" -- as 7 ficam de fora aqui de proposito.
+    """
+    path = root / "CURRENT-HARNESS-GAP.md"
+    if not path.exists():
+        return []
+    found: list[dict] = []
+    linhas_de_dado = 0
+    lines = _strip_code_blocks(path.read_text(encoding="utf-8"), path).split("\n")
+    for lineno, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if not stripped.startswith("|") or _is_table_separator(stripped):
+            continue
+        proxima = lines[lineno].strip() if lineno < len(lines) else ""
+        if _is_table_separator(proxima):
+            continue  # cabecalho de tabela (mesma deteccao por posicao do mecanismo generico)
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if not cells or not cells[0]:
+            continue
+        linhas_de_dado += 1
+        classificacao = cells[1] if len(cells) > 1 else ""
+        if not classificacao.startswith("EXISTE"):
+            continue
+        found.append(
+            {
+                "doc": _display_path(path),
+                "line": lineno,
+                "text": cells[0],
+                "context": stripped[:120],
+                "type": "capability",
+            }
+        )
+    if linhas_de_dado == 0:
+        # Arquivo existe mas nenhuma linha de tabela foi reconhecida -- a
+        # ancora estrutural (tabela GFM com cabecalho+separador) sumiu ou
+        # mudou de forma. Mesmo raciocinio de `_final_report_inventory`:
+        # perder o proprio ponto de entrada em silencio e pior que estourar.
+        raise ValueError(
+            f"nenhuma linha de tabela reconhecida em {_display_path(path)} -- "
+            "a estrutura de tabela GFM (Componente | Classificacao | Modulo(s) | "
+            "Teste) mudou, ou o arquivo foi esvaziado de proposito e este "
+            "extrator precisa ser atualizado deliberadamente"
         )
     return found
 
@@ -492,6 +671,32 @@ def _validate_path_field(cid: str, field_name: str, value: str) -> tuple[list[st
     return [], candidate
 
 
+def _commit_exists(commit: str) -> bool:
+    """`True` quando `commit` resolve a um objeto commit git de verdade neste
+    repositorio -- a unica checagem que uma prova `historical` faz sobre o
+    commit que ela cita. `git cat-file -t <sha>` devolve o tipo do objeto
+    (`commit`, `blob`, `tree`, `tag`) quando o objeto existe, e sai com
+    codigo diferente de zero (sem imprimir tipo nenhum) quando nao existe --
+    aceita SHA completo ou abreviado, exatamente como o resto do git.
+
+    Falha de processo (git ausente, timeout, nao e repositorio) NAO deve
+    travar toda a validacao do manifesto com uma excecao crua: devolve
+    `False`, o mesmo resultado pratico de "commit nao confirmado", e
+    `_validate_proof` reporta isso como divergencia legivel apontando o id,
+    igual a qualquer outro erro de manifesto."""
+    try:
+        completed = subprocess.run(
+            ["git", "cat-file", "-t", commit],  # noqa: S603,S607 -- argv fixo, sem shell
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return completed.returncode == 0 and completed.stdout.strip() == "commit"
+
+
 def _validate_proof(entry: dict, sources: dict) -> list[str]:
     """Valida a prova de uma entrada PROVADA, tipada por `proof.kind`.
 
@@ -557,6 +762,43 @@ def _validate_proof(entry: dict, sources: dict) -> list[str]:
                 f"{cid}: source_id fora de knowledge/sources.lock.json: "
                 f"{proof.get('source_id')!r}"
             )
+    elif kind == "historical":
+        # Medicao ancorada num commit PASSADO -- NAO reexecutada. Ver o
+        # comentario de `PROOF_KINDS` no topo do arquivo para o porque: um
+        # baseline ("5786 testes, medido no commit X") envelhece por
+        # natureza, e comparar o comando contra o HEAD de hoje reprovaria o
+        # baseline pelo unico motivo de o tempo ter passado -- exatamente o
+        # oposto do que um baseline serve para registrar. Duas exigencias, as
+        # duas obrigatorias, e nenhuma delas reexecuta nada: `cmd` documenta
+        # COMO o numero foi medido (para alguem reproduzir, fazendo
+        # `git checkout` do commit certo, nao rodando no HEAD de hoje) e
+        # `commit` ancora QUANDO. Sem os dois, "medido uma vez, confie" e
+        # indistinguivel do numero fantasioso que a auditoria de onze tarefas
+        # (`docs/claims.lock.json`) removeu.
+        cmd = proof.get("cmd")
+        if not cmd:
+            errors.append(f"{cid}: proof historical sem cmd")
+        elif "\\" in cmd:
+            # Mesma razao do ramo `command` abaixo: `shlex.split` nunca roda
+            # sobre uma prova `historical` (ela nao e reexecutada), mas o
+            # `cmd` ainda serve de RECEITA para quem for reproduzir a mao --
+            # uma barra invertida digitada nesta workstation Windows
+            # continua sendo o erro tipico, e vale barrar aqui pela mesma
+            # razao pratica, nao so por simetria.
+            errors.append(
+                f"{cid}: proof.cmd contem '\\\\' -- use barra normal '/' (funciona em "
+                "Windows e Linux); shlex.split trata '\\\\' como escape POSIX e corrompe o caminho"
+            )
+        commit = proof.get("commit")
+        if not commit:
+            errors.append(f"{cid}: proof historical sem commit")
+        elif not _commit_exists(commit):
+            errors.append(
+                f"{cid}: proof.commit {commit!r} nao existe neste repositorio "
+                "('git cat-file -t' nao devolveu 'commit') -- um baseline que cita um "
+                "commit que ninguem consegue conferir nao e reproduzivel nem em "
+                "principio, que e a unica garantia que este proof.kind oferece"
+            )
     else:
         cmd = proof.get("cmd")
         if not cmd:
@@ -618,14 +860,25 @@ def _validate_proof(entry: dict, sources: dict) -> list[str]:
     return errors
 
 
-def collect_claims(root: Path = VNEXT) -> list[dict]:
+def collect_claims(root: Path | None = None) -> list[dict]:
     """Todas as alegacoes numericas de todo documento auditado, mais toda
     alegacao de capacidade, numa unica lista -- a entrada que `check_orphans`
-    compara contra o manifesto."""
+    compara contra o manifesto.
+
+    `root=None` (o default real, usado por `seed()` e `audit()`) audita TODOS
+    os diretorios de `audited_roots()` -- hoje `docs/vnext/` e
+    `docs/harness/`. Passar um `root` explicito (usado pela suite inteira de
+    testes sinteticos, e por quem quiser auditar um unico diretorio de
+    proposito) restringe a coleta a esse UNICO diretorio, exatamente como o
+    comportamento anterior -- nao muda o contrato para quem ja chama esta
+    funcao com um `Path` fixo.
+    """
+    roots: tuple[Path, ...] = (root,) if root is not None else audited_roots()
     found: list[dict] = []
-    for path in audited_docs(root):
-        found.extend(extract_numbers(path))
-    found.extend(extract_capabilities(root))
+    for r in roots:
+        for path in audited_docs(r):
+            found.extend(extract_numbers(path))
+        found.extend(extract_capabilities(r))
     return found
 
 
@@ -929,7 +1182,7 @@ def seed(force: bool = False) -> int:
     `--force`, porque nesse caso nao ha nada que a fusao poderia estar
     destruindo.
     """
-    itens = list(collect_claims(VNEXT))
+    itens = list(collect_claims())
 
     # Tudo entre aqui e `MANIFEST.write_text` roda dentro de UM try: a
     # invariante que este bloco garante e "so escreve se o manifesto anterior
@@ -1138,6 +1391,11 @@ def report() -> int:
             prova = f"artifact {_md_code(proof.get('path') or '(sem path)')}"
         elif kind == "source":
             prova = f"source {_md_code(proof.get('source_id') or '(sem source_id)')}"
+        elif kind == "historical":
+            prova = (
+                f"historical @ {_md_code(proof.get('commit') or '(sem commit)')} "
+                f"{_md_code(proof.get('cmd') or '(sem cmd)')}"
+            )
         else:
             prova = "—"
         motivo = entry.get("note") or "—"
@@ -1178,7 +1436,7 @@ def audit(include_slow: bool) -> int:
         return 1
 
     errors = validate_manifest(manifest, _load_sources())
-    errors += check_orphans(collect_claims(VNEXT), manifest)
+    errors += check_orphans(collect_claims(), manifest)
     for error in errors:
         print(error)
 

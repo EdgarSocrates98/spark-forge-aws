@@ -30,7 +30,7 @@ tokens por tarefa determinística e por tarefa de especialista, custo estimado p
 mil tarefas, taxa de escalonamento multi-agente, cache hit rate e cobertura de
 testes) não tem artefato de medição no repositório — nenhum comando reproduz
 nenhum dos dois lados de nenhuma linha. A auditoria registrada em
-`docs/vnext/claims.lock.json` documenta o motivo de cada número. A tabela foi
+`docs/claims.lock.json` documenta o motivo de cada número. A tabela foi
 removida, não reescrita.
 
 ---
@@ -48,7 +48,7 @@ removida, não reescrita.
 
 `sparkforge/providers/mock.py` e `sparkforge/cloud/worker.py` também existem no
 repositório, mas nenhum teste os importa ou chama — não estão listados acima
-por isso (ver `docs/vnext/claims.lock.json`).
+por isso (ver `docs/claims.lock.json`).
 
 A subseção "Documentação e ADRs", que listava nove documentos como entrega
 verificada, foi removida: só `ADR-001-canonical-registry.md` é citado por nome em

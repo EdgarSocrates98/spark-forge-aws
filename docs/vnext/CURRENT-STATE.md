@@ -60,7 +60,7 @@ A arquitetura atual baseia-se em um pipeline puramente determinístico para extr
 | **Adapters / Mirrors** | 3 | `.agents/`, `.claude/`, `manifest.json` | Configurações para Antigravity, Claude Code e Devin |
 
 As linhas acima que perderam a contagem ("—") tinham número desatualizado ou sem
-artefato de medição — ver `docs/vnext/claims.lock.json` para o motivo de cada uma.
+artefato de medição — ver `docs/claims.lock.json` para o motivo de cada uma.
 
 ---
 
@@ -96,7 +96,7 @@ artefato de medição — ver `docs/vnext/claims.lock.json` para o motivo de cad
 
 ## 6. Baseline de Testes e Funcionalidades
 
-- **Total de Testes**: contagem removida — o número publicado em `a5b9e96` está desatualizado (ver `docs/vnext/claims.lock.json`).
+- **Total de Testes**: contagem removida — o número publicado em `a5b9e96` está desatualizado (ver `docs/claims.lock.json`).
 - **Tempo Médio de Execução da Suite Completa**: ~90-120 segundos
 - **Compatibilidade Python**: piso mínimo e versões testadas declarados em `pyproject.toml` (`requires-python`).
 - **Dependências de Produção Obrigatórias**: `PyYAML`, `jsonschema` (versões mínimas em `pyproject.toml`; zero dependência externa pesada).

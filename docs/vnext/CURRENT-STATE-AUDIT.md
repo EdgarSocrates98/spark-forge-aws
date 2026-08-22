@@ -24,7 +24,7 @@ Auditoria aprofundada de arquitetura, componentes e cobertura do repositório Sp
 A linha "Test Baseline" (contagem de arquivos de teste, testes coletados e resultado
 "passed/skipped/falhas") foi removida: os números publicados em `a5b9e96` estão
 desatualizados, e `--collect-only` mede testes coletados, não testes passando — ver
-`docs/vnext/claims.lock.json` para o motivo de cada número.
+`docs/claims.lock.json` para o motivo de cada número.
 
 ---
 

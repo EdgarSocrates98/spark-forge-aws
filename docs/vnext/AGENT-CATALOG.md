@@ -26,7 +26,7 @@ Coordinators" — sete agentes permanentes de supervisão e roteamento. Nenhum
 dos sete existe em `agents/`, o diretório canônico (espelhado em
 `.claude/agents/`, `.agents/agents/` e `.github/agents/` e verificado por
 `tests/test_agents_parity.py::TestMirrors`). A auditoria registrada em
-`docs/vnext/claims.lock.json` documenta, alegação por alegação, o motivo de
+`docs/claims.lock.json` documenta, alegação por alegação, o motivo de
 cada um.
 
 O que existe de fato é o motor de economia de tokens em
@@ -59,7 +59,7 @@ Seis agentes (`sf-pyspark-specialist`, `sf-storage-specialist`,
 Lazy-Loaded". Nenhum foi convertido: todos continuam existindo como agentes
 ativos em `agents/`, roteados de fato em `rules/catalog/routing.yaml` e
 exercitados por `tests/test_router_agents.py`. A linha foi removida, não
-reescrita — ver `docs/vnext/claims.lock.json` para o motivo de cada um.
+reescrita — ver `docs/claims.lock.json` para o motivo de cada um.
 
 ---
 

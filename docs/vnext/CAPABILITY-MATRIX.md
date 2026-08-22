@@ -2,7 +2,7 @@
 
 A matriz publicada em `a5b9e96` cruzava serviços AWS fundamentais de dados contra
 dimensões de engenharia, marcando um único check por célula. A auditoria
-registrada em `docs/vnext/claims.lock.json` não encontrou, para nenhum serviço
+registrada em `docs/claims.lock.json` não encontrou, para nenhum serviço
 listado, artefato que provasse a cobertura simultânea de todas as dimensões
 afirmadas — para vários serviços não existe nenhum código, coletor, agente ou
 teste dedicado no repositório. A matriz afirmava uma cobertura que o repositório

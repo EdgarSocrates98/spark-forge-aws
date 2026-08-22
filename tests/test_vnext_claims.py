@@ -10,6 +10,23 @@ from scripts import check_vnext_claims as gate
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _isola_harness(tmp_path, monkeypatch, nome="harness-vazio"):
+    """`collect_claims()`/`seed()`/`audit()` sem argumento auditam TODOS os
+    diretorios de `audited_roots()` -- hoje `VNEXT` e `HARNESS`. Um teste que
+    so monkeypatcha `gate.VNEXT` para um `tmp_path` sintetico, sem tambem
+    isolar `gate.HARNESS`, continuaria varrendo o `docs/harness/` REAL do
+    repositorio por baixo do pano, misturando alegacoes reais do repo com a
+    fixture sintetica do teste. Este helper aponta `gate.HARNESS` para um
+    diretorio vazio dedicado (nao o mesmo `tmp_path` usado para VNEXT, que ja
+    tem `UM.md`/`adrs/` escritos por quem chama) -- vazio contribui zero
+    alegacoes, entao o comportamento observado pelo teste continua identico
+    ao de auditar VNEXT sozinho."""
+    vazio = tmp_path / nome
+    vazio.mkdir(exist_ok=True)
+    monkeypatch.setattr(gate, "HARNESS", vazio)
+    return vazio
+
+
 class TestDocumentosAuditados:
     def test_cobre_os_dois_diretorios_sem_repetir(self):
         docs = gate.audited_docs()
@@ -796,6 +813,90 @@ class TestValidacaoDaProva:
         assert any("expect.stream" in e for e in erros)
 
 
+class TestProvaHistorica:
+    """`proof.kind: "historical"` prova uma medicao ancorada num commit
+    PASSADO (ex.: `docs/harness/BASELINE.md`, "5786 testes, medido no commit
+    X") -- ao contrario de `command`, NUNCA reexecuta `cmd`. A garantia que
+    ela oferece e mais fraca de proposito: nao "este numero bate hoje", so
+    "este numero foi medido, e o commit onde isso foi medido existe e pode
+    ser conferido". Ver o comentario de `PROOF_KINDS` em
+    `scripts/check_vnext_claims.py` para o raciocinio completo."""
+
+    def test_commit_existente_no_repositorio_real_passa(self):
+        # `6686156` e um commit real deste repositorio (o commit que
+        # `docs/harness/BASELINE.md` cita como medido) -- teste de integracao
+        # deliberado, nao mockado, porque a garantia central de `historical`
+        # e justamente que o commit e VERIFICAVEL contra o git real.
+        prova = {"kind": "historical", "cmd": "python -m pytest -q -p no:randomly", "commit": "6686156"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert erros == []
+
+    def test_commit_inexistente_falha(self):
+        prova = {"kind": "historical", "cmd": "python -m pytest -q", "commit": "0000000"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("nao existe neste repositorio" in e for e in erros)
+
+    def test_sem_commit_falha(self):
+        prova = {"kind": "historical", "cmd": "python -m pytest -q"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("proof historical sem commit" in e for e in erros)
+
+    def test_sem_cmd_falha(self):
+        prova = {"kind": "historical", "commit": "6686156"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("proof historical sem cmd" in e for e in erros)
+
+    def test_cmd_com_barra_invertida_e_rejeitado(self):
+        prova = {"kind": "historical", "cmd": r"python scripts\check.py", "commit": "6686156"}
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert any("barra normal" in e for e in erros)
+
+    def test_nao_precisa_de_expect(self):
+        # Ao contrario de `command`, `historical` nao tem `expect` nenhum --
+        # nao ha saida nenhuma para comparar, porque nada e executado. Uma
+        # prova so com `cmd`+`commit`, sem `expect`, precisa passar.
+        prova = {"kind": "historical", "cmd": "python -m pytest -q -p no:randomly", "commit": "6686156"}
+        assert "expect" not in prova
+        erros = gate.validate_manifest(
+            manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
+        )
+        assert erros == []
+
+    def test_run_command_proofs_nunca_reexecuta_historical(self):
+        # A garantia central: `run_command_proofs` so processa `proof.kind ==
+        # "command"`. Uma prova `historical` com um `cmd` que FALHARIA se
+        # rodado (comando inexistente) precisa passar batido, sem nenhum
+        # subprocess disparado -- e exatamente isso que faz `historical`
+        # seguro para um baseline que envelhece: o comando nunca e cobrado a
+        # bater com o HOJE.
+        prova = {
+            "kind": "historical",
+            "cmd": "comando-que-definitivamente-nao-existe-no-path",
+            "commit": "6686156",
+        }
+        m = manifesto([entrada(state="PROVADA", proof=prova, type="number")])
+        assert gate.run_command_proofs(m, include_slow=False) == []
+
+    def test_commit_abreviado_e_aceito(self):
+        # `git cat-file -t` aceita SHA abreviado -- o mesmo formato que
+        # `docs/harness/BASELINE.md` usa ("Commit medido: `6686156`",
+        # 7 caracteres, o formato de `git rev-parse --short HEAD`).
+        assert gate._commit_exists("6686156") is True
+
+    def test_commit_vazio_nao_existe(self):
+        assert gate._commit_exists("") is False
+
+
 class TestOrfaos:
     def _achado(self, text="81,8%", doc="docs/vnext/FINAL-REPORT.md", line=1):
         return {"doc": doc, "line": line, "text": text, "context": "", "type": "number"}
@@ -994,6 +1095,7 @@ class TestSuperficie:
         (tmp_path / "UM.md").write_text("Economia de 81,8% e 5.485 testes.\n", encoding="utf-8")
         destino = tmp_path / "claims.lock.json"
         monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        _isola_harness(tmp_path, monkeypatch)
         monkeypatch.setattr(gate, "MANIFEST", destino)
         assert gate.seed() == 0
         dados = json.loads(destino.read_text(encoding="utf-8"))
@@ -1026,6 +1128,7 @@ class TestSeedMerge:
         (tmp_path / "UM.md").write_text(texto, encoding="utf-8")
         destino = tmp_path / "claims.lock.json"
         monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        _isola_harness(tmp_path, monkeypatch)
         monkeypatch.setattr(gate, "MANIFEST", destino)
         return destino
 
@@ -1406,7 +1509,10 @@ class TestSeedIdEstouraFormato:
             {"doc": "d.md", "line": i, "text": str(i), "context": "", "type": "number"}
             for i in range(1000)
         ]
-        monkeypatch.setattr(gate, "collect_claims", lambda root: fabricadas)
+        # `seed()` chama `collect_claims()` sem argumento (agrega todos os
+        # diretorios de `audited_roots()`) -- o stub precisa aceitar essa
+        # forma de chamada, nao so `collect_claims(root)`.
+        monkeypatch.setattr(gate, "collect_claims", lambda *a, **k: fabricadas)
         with pytest.raises(ValueError) as exc_info:
             gate.seed()
         assert "999" in str(exc_info.value)
@@ -1418,6 +1524,7 @@ class TestAuditoria:
         (tmp_path / "adrs").mkdir()
         (tmp_path / "UM.md").write_text(doc_text, encoding="utf-8")
         monkeypatch.setattr(gate, "VNEXT", tmp_path)
+        _isola_harness(tmp_path, monkeypatch)
         destino = tmp_path / "claims.lock.json"
         monkeypatch.setattr(gate, "MANIFEST", destino)
         monkeypatch.setattr(gate, "SOURCES_LOCK", _sources_file(tmp_path))
@@ -1717,7 +1824,13 @@ class TestGateReal:
         removida = next(
             c
             for c in manifest["claims"]
+            # Restrito a `docs/vnext/`: este teste copia SO `docs/vnext/`
+            # para `copia` abaixo (nao `docs/harness/`, que o gate tambem
+            # audita desde a generalizacao para `audited_roots()`) -- uma
+            # entrada REMOVIDA de `docs/harness/` nao tem copia para
+            # reintroduzir o texto nela.
             if c["state"] == "REMOVIDA" and c["type"] == "number"
+            and c["doc"].startswith("docs/vnext/")
         )
 
         copia = tmp_path / "vnext"
@@ -1730,6 +1843,15 @@ class TestGateReal:
         # desencontrada dos dois lados, nao o mecanismo de REMOVIDA
         # reaparecendo).
         def remapeia(doc: str) -> str:
+            # O manifesto real agora tambem cobre `docs/harness/` (gate
+            # generalizado para `audited_roots()`) -- so os claims sob
+            # `docs/vnext/` tem copia em `copia` para remapear; um claim de
+            # `docs/harness/...` fica com o caminho real inalterado (nao foi
+            # copiado, `achados` abaixo nunca vai bater com ele mesmo assim,
+            # o que so produz "entrada orfa" extra, irrelevante para este
+            # teste, que so verifica a mensagem "REMOVIDA ainda aparece").
+            if not doc.startswith("docs/vnext/"):
+                return doc
             rel_path = Path(doc).relative_to("docs/vnext")
             return (copia / rel_path).resolve().as_posix()
 

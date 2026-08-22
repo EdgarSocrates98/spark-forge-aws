@@ -129,6 +129,38 @@ python -m pytest tests/test_router_agents.py tests/test_case_router.py \
   tests/test_case_store.py tests/test_artifact_contents.py -q
 ```
 
+## Alterar `scripts/check_vnext_claims.py`, `docs/claims.lock.json`, ou alegação em
+## `docs/vnext/` ou `docs/harness/`
+
+```
+python scripts/check_vnext_claims.py
+python -m pytest tests/test_vnext_claims.py -q
+python -m pytest tests/test_docs_coverage.py tests/test_installed_provenance.py -q
+```
+
+O gate audita todo diretório declarado em `audited_roots()` (hoje `docs/vnext/` e
+`docs/harness/`), não só `docs/vnext/`. `docs/claims.lock.json` é o manifesto único
+para os dois -- moveu de `docs/vnext/claims.lock.json` quando `docs/harness/` entrou
+sob o gate, porque um manifesto cobrindo dois diretórios morando dentro de só um deles
+é a mesma mentira estrutural que o gate existe para impedir em texto, só que no próprio
+caminho do arquivo.
+
+Editar prosa em `docs/vnext/*.md` ou `docs/harness/*.md` sem rodar `--seed` primeiro
+reprova o gate com "alegacao sem entrada no manifesto" ou "entrada orfa" -- rode
+`python scripts/check_vnext_claims.py --seed` (NUNCA `--seed --force`, que descarta
+toda classificação) para fundir a alegação nova, depois classifique manualmente
+(`state: PROVADA` com `proof`, ou `REMOVIDA` com `note`). `SEM_LASTRO` não é um estado
+terminal aceitável para commit.
+
+Um número que descreve um estado ATUAL (re-executável, e portanto obrigado a
+continuar batendo) usa `proof.kind: "command"`. Um número que descreve uma MEDIÇÃO
+PASSADA ancorada a um commit (um baseline, que por definição envelhece) usa
+`proof.kind: "historical"` -- carrega `cmd` (a receita, nunca reexecutada) e `commit`
+(verificado contra o git real via `git cat-file -t`). Confundir os dois é o defeito
+que motivou o `proof.kind` novo: um baseline validado como `command` reprova sozinho
+assim que o tempo passa, pelo único motivo de ter envelhecido -- não porque o número
+parou de ser verdade no dia em que foi medido.
+
 ---
 
 ## Quando nada acima serve

@@ -18,7 +18,7 @@ final diz isso explicitamente, em vez de estimar.
 Precedente direto: o commit `a5b9e96` publicou `docs/vnext/FINAL-REPORT.md`
 com números como "-81,8% custo por 1k tasks" e "94,5% cache hit rate" sem
 nenhum artefato de medição por trás. Uma auditoria de onze tarefas provou isso
-e removeu os números; `docs/vnext/claims.lock.json` e
+e removeu os números; `docs/claims.lock.json` e
 `scripts/check_vnext_claims.py` agora impedem que voltem. Este documento é do
 mesmo gênero — uma tabela de números que alguém vai comparar depois — então
 segue a mesma disciplina desde o primeiro rascunho.
@@ -167,12 +167,12 @@ funções):
   grava e lê valores fabricados pelo próprio teste.
 
 **Conclusão**: o baseline de economia de token está **ausente**, não
-estimado-mal. Para existir, precisaria de: (1) um ponto de instrumentação
+estimado-mal. Para existir, precisaria de: primeiro, um ponto de instrumentação
 real no caminho de execução de um agente — algo que capture
 `input_tokens`/`output_tokens`/`cached_tokens` de uma resposta de modelo de
-verdade e chame `AgentOpsTracker.end_span()` com esses números; (2) pelo
+verdade e chame `AgentOpsTracker.end_span()` com esses números; segundo, pelo
 menos uma execução de referência gravada em `SQLiteTraceStore` para servir de
-ponto de comparação; (3) a mesma disciplina de proveniência que este
+ponto de comparação; terceiro, a mesma disciplina de proveniência que este
 documento segue — cada número futuro citando o `run_id` que o produziu, não
 uma tabela de preço.
 
