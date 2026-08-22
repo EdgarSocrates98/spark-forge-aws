@@ -717,9 +717,23 @@
         "2026-07-29"
       ],
       "rules": [
-        "SF-ENV-001"
+        "SF-ENV-001",
+        "SF-MIG-001",
+        "SF-MIG-002"
       ],
       "sha256": "8df8427d8f815c4d9c443c40d22b5082d9c3129cb8bc053ad5969ad119044439"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-21"
+      ],
+      "rules": [
+        "SF-MIG-003"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html": {
       "checked_at": "2026-07-31",
@@ -751,6 +765,16 @@
       "pinned": false,
       "retrieved": [
         "2026-07-29"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/release-notes.html": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-21"
       ],
       "rules": []
     },
@@ -1426,7 +1450,9 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [
+        "SF-MIG-001"
+      ]
     },
     "https://spark-packages.org/package/graphframes/graphframes": {
       "docs": [

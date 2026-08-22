@@ -1,0 +1,19 @@
+name: cast_sem_guarda_ansi_default
+proves: >
+  O par positivo de `cast_sem_guarda`. Mesmo `job.py` (`cast(` sem guarda na
+  linha 6, `try_cast(` guardado na linha 7 -- o extrator so emite o risco
+  para o primeiro), julgado em Glue 6.0: a partir daqui `runtime_scope:
+  {glue: ">=6.0"}` de SF-MIG-003 inclui o degrau, e a fonte confirmada na
+  Task 11 (`migrating-version-60.html`: "ANSI mode is enabled by default in
+  Spark 4.1") deixa de ser hipotese e vira o motivo do disparo. Prova que a
+  regra dispara em P1 assim que a fronteira e cruzada -- exatamente o runtime
+  em que `cast_sem_guarda` (Glue 5.0) prova o silencio.
+runtime:
+  glue: "6.0"
+  spark: "4.1.1"
+  python: "3.13"
+  iceberg: "1.11.0"
+expects_kinds:
+  - mig.ansi_risk
+expects_rules:
+  - SF-MIG-003

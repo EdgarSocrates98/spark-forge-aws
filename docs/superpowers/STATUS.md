@@ -2032,6 +2032,63 @@ acrescentou a 171ª (`terraform/spark_conf_in_arguments`), criada porque o gate
 `test_every_kind_of_every_extractor_appears_in_some_golden` reprovou
 `tf.spark_conf` sem corpus que o produzisse.
 
+## Compatibilidade de migração Glue por par de versões (SF-MIG) — **CONCLUÍDA** (2026-08-21)
+
+Onze tasks (`docs/superpowers/plans/2026-08-21-glue-migration-compat.md`): a
+matriz de runtime saiu de `GLUE_MATRIX` compilado para
+`knowledge/glue/runtime-matrix.yaml`, com fonte e `retrieved` como qualquer
+outro fato externo; `sparkforge/migration/version_path.py` expande um par
+origem/alvo nos degraus intermediários; `sparkforge/facts/migration.py` emite
+oito kinds `mig.*` por observação pura; `rules/catalog/glue-migration.yaml`
+julga com `runtime_scope`; `sparkforge/migration/assessment.py` aplica o
+catálogo uma vez por degrau e agrega, com gates fail-closed para dado que só
+existe com execução real (dados, performance, custo, canary).
+
+**Task 11 fechou a última pergunta em aberto: onde fica a fronteira do Glue
+6.0.** Confirmado em 2026-08-21 contra `migrating-version-60.html` e
+`release-notes.html`, as duas oficiais — runtime Spark 4.1.1, Python 3.13,
+Scala 2.13.17, Java 17, Iceberg 1.11.0. `migrating-version-60.html` afirma,
+textualmente: "ANSI mode is enabled by default in Spark 4.1. Operations that
+previously returned NULL on overflow (for example, integer arithmetic, cast
+operations) now throw exceptions." Glue 5.1 roda Spark 3.5.6, onde ANSI é
+default OFF — a fronteira é Glue 6.0, não antes. Isso desbloqueou
+`SF-MIG-003` (cast sem guarda sob ANSI mode), que ficava `blocked_on` desde a
+Task 7 por falta exatamente dessa confirmação: trocou para
+`runtime_scope: {glue: ">=6.0"}` real, e o catálogo volta a ter **zero**
+regras `blocked_on` — o mesmo estado que valia antes da Task 7 introduzir
+SF-MIG. O par de fixtures `cast_sem_guarda` (Glue 5.0, silêncio por versão) /
+`cast_sem_guarda_ansi_default` (Glue 6.0, dispara em P1) prova as duas pontas
+no nível do golden; `TestRegraBloqueadaNuncaAparece` e o teste novo
+`test_sf_mig_003_dispara_no_degrau_que_cruza_glue_6_0` provam o mesmo no
+nível do assessment multi-degrau.
+
+**Dívida registrada, não dívida nova.** `sparkforge/migration/glue/analyzer.py`
+(`GlueMigrationAnalyzer`) é o analisador que a área SF-MIG substitui —
+correspondência de substring sem fonte, sem `runtime_scope`, sem procedência,
+com `target_runtime` default `"5.1"` fixado no código. A Task 11 mediu se ele
+ainda tem consumidor real antes de decidir: `TOKENSAVE_DISABLE_GREP_HOOK=1
+grep -rn "GlueMigrationAnalyzer\|analyze_script\|migration.glue" --include=*.py
+--include=*.yaml --include=*.json .` acha um fora do próprio teste e do
+re-export — `sparkforge/cli/forge.py:16,108-109`, o comando `cmd_migrate_glue`
+da CLI, que importa `GlueMigrationAnalyzer` e chama `analyzer.analyze_script(
+content, source_runtime=args.from_runtime, target_runtime=args.to_runtime)`.
+Mesmo padrão de `sparkforge/facts/secrets.py`: dívida **medida**, não
+implícita. O módulo antigo **não foi apagado** porque apagá-lo quebraria esse
+comando; `sparkforge/migration/__init__.py` reexporta `GlueMigrationAnalyzer`,
+`GlueMigrationAssessment` e `MigrationFinding` por causa dele, e
+`tests/test_migration_assessment.py::test_nenhum_par_de_versao_aparece_no_codigo_do_motor`
+já isenta `glue/analyzer.py` do teste de par de versão embutido no motor,
+citando esta mesma decisão desde a Task 10. **Fechar** é migrar
+`cmd_migrate_glue` para `sparkforge.migration.assessment.assess()` — que já
+expande o caminho por `version_path.steps` e julga por degrau, com o mesmo
+catálogo `SF-MIG` — e só então apagar o analisador antigo, `tests/test_migration_glue.py`
+e a exceção do teste de genericidade. É código nosso, sem decisão de terceiro
+para reverter; fica fora do escopo desta task porque a CLI tem consumidor
+externo hoje (`docs/vnext/claims.lock.json` cita `sparkforge/migration/glue/analyzer.py`
+como o único artefato real por trás da dimensão "Migration" numa alegação
+composta), e trocar o backend de um comando publicado não é o mesmo trabalho
+que confirmar uma versão de runtime.
+
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
 Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.

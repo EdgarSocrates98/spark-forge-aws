@@ -84,6 +84,15 @@ EXTRACTORS = {
     # nao por regra. Essas fixtures sao trabalho da Task 9; ate la,
     # `test_every_kind_of_every_extractor_appears_in_some_golden[migration]` fica
     # vermelho de proposito, nao em silencio.
+    #
+    # SF-MIG-003 (`mig.ansi_risk`) era `blocked_on` ate a Task 11, entao nenhuma
+    # fixture podia faze-la disparar -- `test_every_rule_has_a_fixture_that_fires_it`
+    # e `test_every_severity_branch_has_a_golden_that_produces_it` ficavam
+    # vermelhos so para ela, pelo mesmo motivo estrutural. A Task 11 confirmou a
+    # fronteira (Glue 6.0) e acrescentou `cast_sem_guarda_ansi_default` como o
+    # golden positivo em P1; `cast_sem_guarda` continua provando o negativo,
+    # agora por `runtime_scope` (Glue 5.0, abaixo da fronteira) em vez de
+    # `blocked_on`.
     "migration": migration,
     "pyspark_ast": pyspark_ast,
     "runtime_detect": runtime_detect,

@@ -504,20 +504,12 @@ class TestBlockedOnIsDistinctFromMissingData:
     # `tests/test_rules_catalog_reachability.py`: allowlist nomeada + teste-par
     # que reprova a entrada assim que ela parar de ser verdade
     # (`test_bloqueio_consciente_nao_sobrevive_ao_desbloqueio` abaixo).
-    BLOQUEIO_CONSCIENTE = {
-        "SF-MIG-003": (
-            "a fronteira de versao em que o Spark liga ANSI mode por default "
-            "(Spark 4.1, `prompt_migrations_glue.md` Sec 8.1) nao tem linha "
-            "confirmada em `knowledge/glue/runtime-matrix.yaml` -- Glue 6.0 fica "
-            "de fora da matriz ate a Task 11 desta fase pesquisar contra fonte "
-            "oficial. Escrever `runtime_scope: {glue: '>=6.0'}` hoje afirmaria "
-            "uma fronteira que ninguem verificou -- o mesmo defeito que a "
-            "auditoria de 11 tasks anterior a esta fase removeu do catalogo "
-            "inteiro (ver cabecalho de `rules/catalog/athena.yaml`). A entrada "
-            "expira quando a Task 11 confirmar a versao e a regra trocar "
-            "`blocked_on` por `runtime_scope` real."
-        ),
-    }
+    # SF-MIG-003 saiu daqui na Task 11: a fronteira (Glue 6.0, onde ANSI mode
+    # passa a default) foi confirmada contra `migrating-version-60.html` e
+    # `release-notes.html`, e a regra trocou `blocked_on` por
+    # `runtime_scope: {glue: ">=6.0"}` real. Allowlist vazia e o estado
+    # honesto: nenhum `blocked_on` sobrevive no catalogo hoje.
+    BLOQUEIO_CONSCIENTE: dict[str, str] = {}
 
     def test_the_real_catalog_has_no_blocked_rule_left(self):
         """Este teste era o inverso: fixava SF-GLUE-005 como bloqueada em

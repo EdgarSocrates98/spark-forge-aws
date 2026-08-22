@@ -65,10 +65,17 @@ CURRENT = ("4.0", "5.0", "5.1")
 #             runtime que le S3A, nao EMRFS. O S3A so vira o sistema de
 #             arquivos padrao A PARTIR do Glue 5.0; em 4.0 o EMRFS ainda le a
 #             chave, entao nao ha risco de configuracao inerte para acusar.
+#
+# SF-MIG-003  `glue: ">=6.0"` -- cast sem guarda sob ANSI mode (Task 11 desta
+#             fase, confirmado contra migrating-version-60.html). Nenhuma das
+#             tres versoes CORRENTES (4.0, 5.0, 5.1) chega no Glue 6.0, entao
+#             ela fica fora de escopo nas tres -- e a unica regra do catalogo
+#             que hoje nao dispara em runtime corrente nenhum, o que e correto:
+#             a fronteira do ANSI mode ainda nao foi cruzada por nenhum deles.
 EXPECTED_OUT_OF_SCOPE = {
-    "4.0": {"SF-ENV-002", "SF-MIG-001", "SF-MIG-002"},
-    "5.0": {"SF-ENV-002", "SF-GRAPH-002"},
-    "5.1": {"SF-GRAPH-002"},
+    "4.0": {"SF-ENV-002", "SF-MIG-001", "SF-MIG-002", "SF-MIG-003"},
+    "5.0": {"SF-ENV-002", "SF-GRAPH-002", "SF-MIG-003"},
+    "5.1": {"SF-GRAPH-002", "SF-MIG-003"},
 }
 
 
@@ -146,10 +153,19 @@ class TestRuleScopeOnTheCurrentRuntimes:
         out = {r["id"] for r in _rules() if not in_scope(r.get("runtime_scope") or {}, runtime)}
         assert out == EXPECTED_OUT_OF_SCOPE[version], version
 
+    # Excecao de AREA INTEIRA, e nao regra a regra como EXPECTED_OUT_OF_SCOPE
+    # acima: SF-MIG tem tres regras (001/002 `>=5.0`, 003 `>=6.0` desde a Task
+    # 11), e em Glue 4.0 nenhuma das duas fronteiras foi cruzada -- a area
+    # inteira fica muda, e isso e correto: 4.0 antecede toda quebra de migracao
+    # que o catalogo julga hoje. Em 5.0 e 5.1 a area sobrevive por SF-MIG-001/002
+    # (SF-MIG-003 continua fora, ja coberto por EXPECTED_OUT_OF_SCOPE).
+    AREA_FULLY_OUT_OF_SCOPE = {"4.0": {"SF-MIG"}}
+
     @pytest.mark.parametrize("version", CURRENT)
     def test_every_area_of_the_catalog_survives_the_version_guard(self, version):
-        """Nenhuma area inteira pode sumir num runtime corrente. SF-ENV e a
-        unica com excecoes, e mesmo ela mantem regra avaliavel nas tres."""
+        """Nenhuma area inteira pode sumir num runtime corrente, exceto a
+        declarada em `AREA_FULLY_OUT_OF_SCOPE` -- SF-ENV e a outra excecao, e
+        mesmo ela mantem regra avaliavel nas tres."""
         context, _ = detect_runtime({"terraform": {"glue_version": version}})
         runtime = context.to_dict()
         surviving = {
@@ -162,7 +178,8 @@ class TestRuleScopeOnTheCurrentRuntimes:
         # ESCONDER area nova que sumiu inteira no guard, porque ela nunca chegou
         # a entrar no conjunto esperado.
         all_areas = {r["id"].rsplit("-", 1)[0] for r in _rules()}
-        assert surviving == all_areas, version
+        esperado = all_areas - self.AREA_FULLY_OUT_OF_SCOPE.get(version, set())
+        assert surviving == esperado, version
 
     def test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51(self):
         """SF-ENV-002 guarda a armadilha do format V3 (Glue 5.1 escreve, Athena

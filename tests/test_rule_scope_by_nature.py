@@ -96,7 +96,21 @@ NON_GLUE_IDS = [nome for nome, _ in NON_GLUE_RUNTIMES]
 # para o Glue 5.0, fronteira ja confirmada em `knowledge/glue/runtime-matrix.yaml`
 # -- exatamente a mesma natureza que justifica SF-ENV-002/003 e SF-GLUE-001
 # aqui. Ver o comentario acima das regras em `rules/catalog/glue-migration.yaml`.
-GLUE_VERSIONED = {"SF-ENV-002", "SF-ENV-003", "SF-GLUE-001", "SF-MIG-001", "SF-MIG-002"}
+#
+# SF-MIG-003 ENTROU na Task 11 desta fase, com `runtime_scope: {glue: ">=6.0"}`
+# real (era `blocked_on` ate `knowledge/glue/runtime-matrix.yaml` ganhar a
+# linha do Glue 6.0). Mesma natureza de SF-MIG-001/002: le `mig.ansi_risk`, um
+# sinal de codigo, e a fronteira e a versao em que o Spark liga ANSI mode por
+# default (confirmado contra migrating-version-60.html), nao a existencia de
+# infraestrutura Glue.
+GLUE_VERSIONED = {
+    "SF-ENV-002",
+    "SF-ENV-003",
+    "SF-GLUE-001",
+    "SF-MIG-001",
+    "SF-MIG-002",
+    "SF-MIG-003",
+}
 
 # Estas leem infraestrutura Glue do Terraform mas declaram `{glue: "*"}`, que
 # hoje nao filtra nada -- sao o alvo da fase.
@@ -351,6 +365,18 @@ ALL_RUNTIME_IDS = [nome for nome, _ in ALL_RUNTIMES]
 # e `requires_facts`, e o `runtime_scope` deve ser `{}`.
 AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     "SF-GLUE": (lambda runtime: not runtime.get("glue"), "runtime sem `glue` detectado"),
+    # SF-MIG entrou na Task 11 desta fase: as tres regras da area sao
+    # GLUE_VERSIONED (SF-MIG-001/002 `>=5.0`, SF-MIG-003 `>=6.0`) e nenhuma le
+    # outra infraestrutura -- sinal de codigo (`mig.sdk_import`,
+    # `mig.emrfs_config`, `mig.ansi_risk`), nao Terraform. Um runtime sem Glue
+    # ou com Glue abaixo de 5.0 nao tem quebra de migracao nenhuma para
+    # acusar: reusa `in_scope` com o menor limiar da area em vez de reimplementar
+    # comparacao de versao aqui.
+    "SF-MIG": (
+        lambda runtime: not in_scope({"glue": ">=5.0"}, runtime),
+        "runtime sem `glue` detectado ou com Glue abaixo de 5.0 (a menor "
+        "fronteira entre as tres regras de SF-MIG)",
+    ),
 }
 
 

@@ -6,6 +6,7 @@ Confirme sempre contra o runtime **efetivo** do job. Esta tabela orienta; não s
 
 | AWS Glue | Apache Spark | Python | Scala | Iceberg | Hudi | Delta Lake |
 |---|---|---|---|---|---|---|
+| 6.0 | 4.1.1 | 3.13 | 2.13.17 | 1.11.0 | a verificar | a verificar |
 | 5.1 | 3.5.6 | 3.11 | 2.12.18 | 1.10.0 | 1.0.2 | 3.3.2 |
 | 5.0 | 3.5.4 | 3.11 | 2.12 | 1.7.1 | 0.15.0 | 3.3.0 |
 | 4.0 | 3.3.0 | 3.10 | 2.12 | 1.0.0 | 0.12.1 | 2.1.0 |
@@ -24,7 +25,10 @@ O salto 1.0.0 (Glue 4.0) → 1.7.1 (5.0) → 1.10.0 (5.1) é grande. Procediment
 Capacidades novas em Iceberg 1.10.0 / Glue 5.1: Materialized View, **format version 3**, valores default de coluna, deletion vectors para tabelas merge-on-read, transforms multi-argumento, row lineage tracking.
 
 ### Python
-3.7 (Glue 3.0) → 3.10 (4.0) → 3.11 (5.x). Biblioteca própria que usa sintaxe de 3.11 não roda em Glue 4.0. `match` statement (3.10+) não roda em Glue 3.0.
+3.7 (Glue 3.0) → 3.10 (4.0) → 3.11 (5.x) → 3.13 (6.0). Biblioteca própria que usa sintaxe de 3.11 não roda em Glue 4.0. `match` statement (3.10+) não roda em Glue 3.0.
+
+### ANSI mode (fronteira Glue 6.0)
+`migrating-version-60.html` afirma, textualmente: "ANSI mode is enabled by default in Spark 4.1. Operations that previously returned NULL on overflow (for example, integer arithmetic, cast operations) now throw exceptions." Glue 5.1 roda Spark 3.5.6, onde ANSI é default OFF. A fronteira é **Glue 6.0** — antes dele, `cast(` inválido devolve `NULL`; a partir dele, lança exceção. `try_cast(` preserva o comportamento antigo em qualquer versão. No SparkForge isso é o finding `SF-MIG-003`.
 
 ## 3. Armadilha de versão mais séria: Iceberg V3 e Athena
 
@@ -61,9 +65,12 @@ Divergência entre fontes **não** é resolvida escolhendo uma. É registrada co
 
 ## Fontes
 
+- Migrating AWS Glue for Spark jobs to AWS Glue version 6.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html (retrieved 2026-08-21)
+- AWS Glue version release notes. https://docs.aws.amazon.com/glue/latest/dg/release-notes.html (retrieved 2026-08-21)
 - Migrating AWS Glue for Spark jobs to AWS Glue version 5.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html (retrieved 2026-07-29)
 - Introducing AWS Glue 5.1 for Apache Spark — AWS Big Data Blog. https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark (retrieved 2026-07-29)
 - Introducing AWS Glue 5.1 — What's New. https://aws.amazon.com/about-aws/whats-new/2025/11/aws-glue-5-1 (retrieved 2026-07-29)
 - Breaking Changes Checklist: Migrating AWS Glue Jobs to Version 5.0/5.1 — AWS re:Post. https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1 (retrieved 2026-07-29)
 - AWS Glue Release Notes. https://docs.aws.amazon.com/glue/latest/dg/aws-glue-release-notes.rss (retrieved 2026-07-29)
 - Linhas de Glue 3.0/4.0 para Hudi e Delta não foram reconfirmadas nesta coleta. Marcar como a verificar.
+- Hudi e Delta Lake para Glue 6.0 não foram confirmados contra fonte oficial nesta coleta (Task 11) — `migrating-version-60.html` e `release-notes.html` foram lidas para Spark/Python/Scala/Java/Iceberg, não para essas duas colunas. Marcar como a verificar.

@@ -163,23 +163,12 @@ def test_condicao_absent_nao_e_vacuamente_verdadeira(rule: dict) -> None:
 # `test_toda_regra_bloqueada_explica_o_bloqueio_em_comentario` ja registra que
 # essa granularidade nao cobre tudo -- cita SF-ICE-004 (hoje desbloqueada) como
 # exemplo hipotetico de bloqueio por ATRIBUTO que uma checagem de kind nao
-# enxerga. SF-MIG-003 e o primeiro caso REAL: `mig.ansi_risk` tem extrator
-# desde a Task 6 (`sparkforge/facts/migration.py`) e esta em EMITTABLE assim
-# que `migration` entra em EXTRACTORS acima -- o que falta nao e capacidade de
-# coleta, e uma linha confirmada em `knowledge/glue/runtime-matrix.yaml` para a
-# versao do Glue onde ANSI mode passa a default (Spark 4.1, Glue 6.0 nao esta
-# na matriz). Sem esta allowlist a asserção abaixo leria isso como
-# `blocked_on` obsoleto e mandaria remove-lo -- o que reintroduziria a mentira
-# que a Fase 5a eliminou: declarar `runtime_scope: {glue: ">=6.0"}` sem fonte
-# confirmada. Task 11 desta fase pesquisa essa fronteira; quando
-# `runtime-matrix.yaml` ganhar a entrada, SF-MIG-003 troca `blocked_on` por
-# `runtime_scope` real e sai desta allowlist.
-BLOQUEIO_SEM_KIND_ORFAO = {
-    "SF-MIG-003": (
-        "bloqueada por fronteira de runtime nao confirmada (Glue 6.0 fora da "
-        "matriz), nao por kind sem extrator -- `mig.ansi_risk` ja e emitido."
-    ),
-}
+# enxerga. SF-MIG-003 era o primeiro caso REAL disso e saiu daqui na Task 11:
+# `knowledge/glue/runtime-matrix.yaml` ganhou a linha do Glue 6.0, confirmada
+# contra `migrating-version-60.html` e `release-notes.html`, e a regra trocou
+# `blocked_on` por `runtime_scope: {glue: ">=6.0"}` real. Allowlist vazia e o
+# estado honesto: nenhum `blocked_on` sobrevive no catalogo hoje.
+BLOQUEIO_SEM_KIND_ORFAO: dict[str, str] = {}
 
 
 @pytest.mark.parametrize("rule", RULES, ids=RULE_IDS)

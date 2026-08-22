@@ -52,19 +52,38 @@ class TestAvaliacaoPorDegrau:
 
 
 class TestRegraBloqueadaNuncaAparece:
-    def test_sf_mig_003_bloqueada_por_blocked_on_nunca_produz_finding(self, tmp_path):
-        # O fact mig.ansi_risk existe (extrator ja o emite desde a Task 6), mas
-        # a regra que o julgaria (SF-MIG-003) esta `blocked_on` porque nenhuma
-        # fonte confirma a versao do Glue em que ANSI vira default (Task 11
-        # ainda nao rodou). `judge` reporta isso como skipped, nunca como
-        # finding -- provar isso em CADA degrau do caminho, nao so num, e o
-        # que garante que nenhum runtime_scope futuro reintroduza o disparo
-        # por acidente antes de a matriz ganhar a fronteira.
+    def test_sf_mig_003_fora_do_runtime_scope_nunca_produz_finding_no_caminho_3_0_a_5_1(
+        self, tmp_path
+    ):
+        # O fact mig.ansi_risk existe (extrator ja o emite desde a Task 6), e
+        # desde a Task 11 a regra que o julga (SF-MIG-003) tem
+        # `runtime_scope: {glue: ">=6.0"}` real -- nao e mais `blocked_on`. O
+        # caminho 3.0 -> 5.1 nunca cruza 6.0, entao nenhum degrau satisfaz o
+        # escopo e a regra continua fora de `findings`, agora pela mesma
+        # guarda de versao que `TestGuardaDeVersao` ja prova para SF-MIG-001/002
+        # -- provar isso em CADA degrau do caminho, nao so num, e o que garante
+        # que nenhuma mudanca futura em `runtime_scope` reintroduza o disparo
+        # por acidente antes do degrau que a cruza (ver `TestParGenerico`
+        # abaixo para o par que CRUZA a fronteira).
         facts = _facts_com_cast(tmp_path)
         resultado = assessment.assess(facts, source="3.0", target="5.1")
         assert resultado.steps, "caminho precisa ter ao menos um degrau"
         assert "SF-MIG-003" not in {f.rule_id for f in resultado.findings}
         assert "SF-MIG-003" not in {f.rule_id for f, _ in resultado.by_step}
+
+    def test_sf_mig_003_dispara_no_degrau_que_cruza_glue_6_0(self, tmp_path):
+        # O par positivo, no nivel do assessment multi-degrau: o caminho
+        # 5.1 -> 6.0 tem um unico degrau, e o ALVO dele (6.0) satisfaz
+        # `runtime_scope: {glue: ">=6.0"}`. Prova que a matriz confirmada na
+        # Task 11 nao so existe -- ela alcanca o motor de migracao ponta a
+        # ponta, nao so o `judge()` de runtime unico que o golden
+        # `cast_sem_guarda_ansi_default` ja cobre.
+        facts = _facts_com_cast(tmp_path)
+        resultado = assessment.assess(facts, source="5.1", target="6.0")
+        assert resultado.steps == [("5.1", "6.0")]
+        rule_ids = {f.rule_id for f in resultado.findings}
+        assert "SF-MIG-003" in rule_ids
+        assert (("5.1", "6.0")) in {degrau for _, degrau in resultado.by_step}
 
 
 class TestGuardaDeVersao:

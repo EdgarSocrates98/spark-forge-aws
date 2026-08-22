@@ -13,8 +13,27 @@
 # 5.1 -- ambos ja vigiados em sources.lock.json antes desta entrega. `scala` e
 # `java` foram acrescentados so onde a fonte lida os declara explicitamente;
 # omitidos onde nao ha essa confirmacao (nao adivinhados).
+#
+# GLUE 6.0 (Task 11 desta fase): confirmado em 2026-08-21 contra
+# migrating-version-60.html e release-notes.html, as duas oficiais. E A
+# FRONTEIRA que `rules/catalog/glue-migration.yaml` (SF-MIG-003) esperava --
+# migrating-version-60.html afirma, textualmente: "ANSI mode is enabled by
+# default in Spark 4.1. Operations that previously returned NULL on overflow
+# (for example, integer arithmetic, cast operations) now throw exceptions."
+# Glue 5.1 roda Spark 3.5.6, onde ANSI e default OFF -- a fronteira e Glue
+# 6.0, nao antes.
 schema_version: 1
 versions:
+  "6.0":
+    spark: "4.1.1"
+    python: "3.13"
+    scala: "2.13.17"
+    java: "17"
+    iceberg: "1.11.0"
+    sources:
+      - "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+      - "https://docs.aws.amazon.com/glue/latest/dg/release-notes.html"
+    retrieved: "2026-08-21"
   "5.1":
     spark: "3.5.6"
     python: "3.11"

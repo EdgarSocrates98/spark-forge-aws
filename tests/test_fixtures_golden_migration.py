@@ -16,19 +16,23 @@ quando o `--path` e diretorio, e ela ordena GLOBALMENTE por (kind, subject,
 id) -- um laco por arquivo concatenaria blocos ja ordenados por arquivo e o
 golden descreveria uma ordenacao que nenhuma superficie do produto emite.
 
-O corpus e desenhado por eixo, uma fixture por kind (nove fixtures para oito
-kinds, porque `cast_sem_guarda` carrega dois papeis: prova `mig.ansi_risk` E
-prova que SF-MIG-003 fica muda):
+O corpus e desenhado por eixo, uma fixture por kind, mais o par negativo/
+positivo de SF-MIG-003 que a Task 11 acrescentou (dez fixtures para oito
+kinds):
 
   * `sdk_v1_import` -- dispara SF-MIG-001 (`com.amazonaws.*` sobrevivendo no
     Glue 5.0+).
   * `emrfs_config` -- dispara SF-MIG-002 (chave exclusiva do EMRFS sobrevivendo
     no S3A do Glue 5.0+).
-  * `cast_sem_guarda` -- emite `mig.ansi_risk`, mas SF-MIG-003 e `blocked_on`
-    (nenhuma fonte confirma a versao do Glue em que o Spark liga ANSI mode por
-    default -- ver comentario acima da regra em
-    `rules/catalog/glue-migration.yaml`). O ponto da fixture e o NEGATIVO: o
-    fact existe, a regra fica muda.
+  * `cast_sem_guarda` -- emite `mig.ansi_risk` em Glue 5.0. Ate a Task 11,
+    SF-MIG-003 era `blocked_on` e esta fixture provava esse bloqueio; a partir
+    dela a regra tem `runtime_scope: {glue: ">=6.0"}` real, e Glue 5.0 fica
+    ABAIXO da fronteira -- o NEGATIVO agora e de versao, nao de capacidade: o
+    fact existe, a regra e julgavel, mas o degrau nao cruza `>=6.0`.
+  * `cast_sem_guarda_ansi_default` -- o par POSITIVO, criado na Task 11: mesmo
+    `job.py`, julgado em Glue 6.0. `runtime_scope` inclui o degrau, e a fonte
+    confirmada nesta task (`migrating-version-60.html`) sustenta o disparo em
+    P1.
   * `legacy_conf`, `deprecated_api`, `table_format`, `jar_binary`,
     `python_dep` -- os cinco kinds que a Task 5/6 emitiu sem regra
     correspondente ainda (observacao pura). Cada um prova so o vocabulario do
@@ -38,17 +42,15 @@ prova que SF-MIG-003 fica muda):
     facts, zero findings -- se algum kind `mig.*` disparar aqui, e falso
     positivo do extrator.
 
-`SF-MIG-003` e o motivo de `test_every_rule_has_a_fixture_that_fires_it` e
+Antes da Task 11, `SF-MIG-003` era o motivo de
+`test_every_rule_has_a_fixture_that_fires_it` e
 `test_every_severity_branch_has_a_golden_that_produces_it`
 (`tests/test_fixtures_kind_coverage.py`) continuarem vermelhos para essa regra
-especifica mesmo depois deste corpus: `blocked_on` faz `judge()` pular a regra
-incondicionalmente (`sparkforge/rules/engine.py`, antes mesmo de checar
-`runtime_scope` ou `requires_facts`), entao NENHUMA fixture pode faze-la
-disparar enquanto o bloqueio existir -- e o bloqueio e uma decisao consciente
-registrada no catalogo, nao uma lacuna de corpus. Essa e exatamente a garantia
-que `TestRegraBloqueadaNuncaAparece` em `tests/test_migration_assessment.py`
-ja fixa no nivel do assessment multi-degrau; aqui ela e fixada no nivel do
-`judge()` de um runtime unico.
+especifica mesmo com o corpus completo: `blocked_on` faz `judge()` pular a
+regra incondicionalmente, entao nenhuma fixture podia faze-la disparar
+enquanto o bloqueio existisse. Com a fronteira confirmada e `blocked_on`
+removido, `cast_sem_guarda_ansi_default` fecha as duas lacunas: prova a regra
+disparando e prova o ramo de severidade P1.
 """
 import json
 from pathlib import Path
@@ -68,6 +70,7 @@ REQUIRED_FIXTURES = {
     "sdk_v1_import",
     "emrfs_config",
     "cast_sem_guarda",
+    "cast_sem_guarda_ansi_default",
     "legacy_conf",
     "deprecated_api",
     "table_format",
@@ -158,19 +161,34 @@ class TestAdversarial:
             vistos.update(f.kind for f in facts)
         assert set(EMITTED_KINDS) - vistos == set()
 
-    def test_sf_mig_003_never_fires_despite_the_evidence_it_needs(self):
+    def test_sf_mig_003_stays_silent_below_the_runtime_boundary(self):
         """`cast_sem_guarda` carrega o fact que SF-MIG-003 exige
         (`mig.ansi_risk` com `attrs.form == "cast"`), e mesmo assim a regra
-        fica muda: `blocked_on` faz o motor pular ANTES de avaliar `when`
-        (`sparkforge/rules/engine.py::judge`). O skip precisa ter o motivo
-        certo -- `blocked_on`, nunca `requires_facts` -- senao um operador
-        que leia `skipped` esperaria o fact que ja esta la.
+        fica muda em Glue 5.0: desde a Task 11 o skip e por `runtime_scope`
+        (`{glue: ">=6.0"}`), nunca mais por `blocked_on` -- a fronteira foi
+        confirmada e a regra e julgavel. O skip precisa ter o motivo certo --
+        `runtime_scope`, nao `requires_facts` -- senao um operador que leia
+        `skipped` acharia que falta o fact, que ja esta la.
         """
         _, facts, findings, skipped = run_fixture(FIXTURES / "cast_sem_guarda")
         assert _by_kind(facts, "mig.ansi_risk"), "a fixture perdeu o fact que a justifica"
         assert "SF-MIG-003" not in {f.rule_id for f in findings}
         bloqueio = next(s for s in skipped if s["rule_id"] == "SF-MIG-003")
-        assert bloqueio["reason"] == "blocked_on"
+        assert bloqueio["reason"] == "runtime_scope"
+
+    def test_sf_mig_003_fires_once_the_runtime_boundary_is_crossed(self):
+        """O par positivo de `cast_sem_guarda`: mesmo fact, julgado em Glue
+        6.0 -- onde `runtime_scope: {glue: ">=6.0"}` inclui o degrau -- dispara
+        SF-MIG-003 em P1. Fecha, no nivel deste golden, o que
+        `tests/test_fixtures_kind_coverage.py::test_every_rule_has_a_fixture_that_fires_it`
+        e `test_every_severity_branch_has_a_golden_that_produces_it` cobravam
+        desde que a regra deixou de ser `blocked_on`."""
+        _, facts, findings, skipped = run_fixture(FIXTURES / "cast_sem_guarda_ansi_default")
+        assert _by_kind(facts, "mig.ansi_risk"), "a fixture perdeu o fact que a justifica"
+        disparadas = {f.rule_id: f for f in findings}
+        assert "SF-MIG-003" in disparadas
+        assert disparadas["SF-MIG-003"].severity == "P1"
+        assert "SF-MIG-003" not in {s["rule_id"] for s in skipped}
 
     def test_the_clean_job_is_never_accused(self):
         """O sentido negativo do golden vale tanto quanto o positivo: um job
