@@ -15,6 +15,11 @@ validation inside the job.
 - Treat Glue, Spark and Iceberg versions as material constraints.
 - Prefer algorithmic and data-layout improvements before scaling infrastructure.
 - Provide rollback for production changes.
+- Before committing a change to this repository, run the gates that change touches.
+  `docs/gates-por-mudanca.md` maps each kind of change to its gates, with the defect
+  each one caught in real life. Targeted test runs do not reach them: adding a rule
+  area, a `runtime_scope`, an extractor kind or a `knowledge/` document each leaves a
+  hand-written list or a manifest stale somewhere else in the tree.
 
 ## Mandatory recommendation schema
 
