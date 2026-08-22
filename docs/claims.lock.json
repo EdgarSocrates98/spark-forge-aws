@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "efcd9d8105ec2a53c397676ec502d1d36977ef5d",
+  "extracted_from": "1fe223982c7151ea6d114a7172adbd5a5fed3f24",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -75,54 +75,6 @@
           "kind": "number",
           "pattern": "(\\d+)\\.\\d+ custo",
           "value": 0
-        }
-      }
-    },
-    {
-      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
-      "line": 30,
-      "text": "7",
-      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
-      "type": "number",
-      "id": "VNX-020",
-      "state": "PROVADA",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(len(TIER_PRICING), \"tiers\")'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) tiers",
-          "value": 7
-        }
-      }
-    },
-    {
-      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
-      "line": 30,
-      "text": "0",
-      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
-      "type": "number",
-      "id": "VNX-014",
-      "state": "REMOVIDA",
-      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
-    },
-    {
-      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
-      "line": 32,
-      "text": "7",
-      "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity, Cursor (`.mdc`), ",
-      "type": "number",
-      "id": "VNX-023",
-      "state": "PROVADA",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.adapters.platforms.compiler import PlatformCompiler; print(len(PlatformCompiler().exporters), \"targets\")'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+) targets",
-          "value": 7
         }
       }
     },
@@ -4655,21 +4607,42 @@
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
       "line": 30,
+      "text": "7",
+      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
+      "type": "number",
+      "id": "VNX-020",
+      "state": "REMOVIDA",
+      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 32,
+      "text": "7",
+      "context": "| **Platform Adapters** | referência externa | Compilação canônica única gerando artefatos para Antigravity, Cursor (`.mdc`), ",
+      "type": "number",
+      "id": "VNX-023",
+      "state": "REMOVIDA",
+      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 30,
+      "text": "0",
+      "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
+      "type": "number",
+      "id": "VNX-014",
+      "state": "REMOVIDA",
+      "note": "Descreve um design pretendido (Waves 0 a 4, nomeadas Discovery / Research / Build / Validate / Gate) que `sparkforge.workflows.dag` nao implementa: `ExecutionDAG.compute_waves()` (verificado nesta sessao) e um algoritmo generico de onda topologica, sem os cinco estagios nomeados e numerados que o texto alega. Nenhum comando reproduz essa numeracao especifica porque ela nao existe no codigo."
+    },
+    {
+      "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",
+      "line": 30,
       "text": "0",
       "context": "| **Token Economy Cascade** | referência externa | Execução em 7 tiers: Tier 0 Determinístico (0 tokens) → Tier 1 Cache → Tier",
       "type": "number",
       "id": "VNX-021",
-      "state": "PROVADA",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.economy.budget import TIER_PRICING; print(TIER_PRICING[\"tier_0_deterministic\"].input_price_per_m, \"custo\")'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "(\\d+)\\.\\d+ custo",
-          "value": 0
-        }
-      }
+      "state": "REMOVIDA",
+      "note": "Documento reescrito e renomeado: a tabela de intencoes da primeira fase virou indice de vocabulario, e o texto que sustentava esta alegacao nao existe mais. A medicao componente a componente vive nos mapas de lacuna de docs/harness/."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE-AUDIT.md",
@@ -4711,26 +4684,6 @@
       }
     },
     {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 62,
-      "text": "42",
-      "context": "| **Routing L0–L4** (§11) | EXISTE PARCIAL | `sparkforge/case/router.py:next_step()` sobre `rules/catalog/routing.yaml` ",
-      "type": "number",
-      "id": "VNX-313",
-      "state": "REMOVIDA",
-      "note": "Numero de estado ATUAL que mudou quando a area SF-SPARK4 entrou: a rota nova cresceu `routing.yaml`, e o padrao de `rule_id` nos schemas obrigou editar `tools.py`. O valor medido no commit anterior deixou de bater, e a entrada nova o substitui."
-    },
-    {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 83,
-      "text": "118,5",
-      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
-      "type": "number",
-      "id": "VNX-323",
-      "state": "REMOVIDA",
-      "note": "Numero de estado ATUAL que mudou quando a area SF-SPARK4 entrou: a rota nova cresceu `routing.yaml`, e o padrao de `rule_id` nos schemas obrigou editar `tools.py`. O valor medido no commit anterior deixou de bater, e a entrada nova o substitui."
-    },
-    {
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 169,
       "text": "6.0",
@@ -4769,6 +4722,26 @@
           "pattern": "^([0-9]+)"
         }
       }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 62,
+      "text": "42",
+      "context": "| **Routing L0–L4** (§11) | EXISTE PARCIAL | `sparkforge/case/router.py:next_step()` sobre `rules/catalog/routing.yaml` ",
+      "type": "number",
+      "id": "VNX-313",
+      "state": "REMOVIDA",
+      "note": "Numero de estado ATUAL que mudou quando a area SF-SPARK4 entrou: a rota nova cresceu `routing.yaml`, e o padrao de `rule_id` nos schemas obrigou editar `tools.py`. O valor medido no commit anterior deixou de bater, e a entrada nova o substitui."
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 83,
+      "text": "118,5",
+      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "type": "number",
+      "id": "VNX-323",
+      "state": "REMOVIDA",
+      "note": "Numero de estado ATUAL que mudou quando a area SF-SPARK4 entrou: a rota nova cresceu `routing.yaml`, e o padrao de `rule_id` nos schemas obrigou editar `tools.py`. O valor medido no commit anterior deixou de bater, e a entrada nova o substitui."
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",

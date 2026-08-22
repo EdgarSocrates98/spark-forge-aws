@@ -340,7 +340,7 @@ class TestExtracaoNumerica:
     def test_todas_as_ocorrencias_de_rotulo_na_mesma_linha_sao_mascaradas(
         self, tmp_path
     ):
-        # Regressao: caso real de COURSE-KNOWLEDGE-MAP.md:30 encadeia "Tier
+        # Regressao: caso real de KNOWLEDGE-MAP.md:30 encadeia "Tier
         # 0 ... Tier 1 ... Tier 6" sete vezes na MESMA linha. Um mecanismo
         # de mascaramento que so trata a primeira ocorrencia por padrao
         # deixaria "Tier 1" a "Tier 6" vazando como alegacao -- a mesma

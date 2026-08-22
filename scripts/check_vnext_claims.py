@@ -358,7 +358,7 @@ def extract_numbers(path: Path) -> list[dict]:
         # texto com espacos no lugar do marcador. O `while` interno mascara
         # TODAS as ocorrencias de um padrao na mesma linha, nao so a
         # primeira -- caso real do corpus: uma unica linha de tabela em
-        # COURSE-KNOWLEDGE-MAP.md encadeia "Tier 0 ... Tier 1 ... Tier 6"
+        # KNOWLEDGE-MAP.md encadeia "Tier 0 ... Tier 1 ... Tier 6"
         # sete vezes. Um `if` em vez de `while` mascararia so "Tier 0" e
         # deixaria "Tier 1" a "Tier 6" vazando como alegacao -- exatamente o
         # falso negativo que este arquivo existe para evitar. Cada iteracao
