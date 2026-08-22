@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-MIG-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 3,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_e06ded"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+    "proposed_change": [
+      "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+      "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+    ],
+    "tradeoffs": [
+      "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+    ],
+    "validation": [
+      "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+      "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+    ],
+    "rollback": [
+      "Reverter o import e o cliente para SDK v1",
+      "e manter o job no Glue 4.0 até a reescrita estar pronta."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

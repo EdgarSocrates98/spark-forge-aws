@@ -38,6 +38,7 @@ from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
+from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
 from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
@@ -71,6 +72,7 @@ FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
 FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
+FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -356,6 +358,23 @@ def regen_graph(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_migration(directory: Path) -> None:
+    """Corpus de compatibilidade de migracao: `*.py`, `*.jar` e
+    `requirements*.txt` sob `input/`, extraidos com `extract_migration_tree`
+    (Tasks 4-6 desta fase) -- mesma razao de `regen_graph` para usar a funcao
+    `_tree` e nao um laco por arquivo: `adapters/_core.py` chama essa funcao
+    quando o `--path` e diretorio, e ela ordena GLOBALMENTE por (kind,
+    subject, id); um laco por arquivo concatenaria blocos ja ordenados por
+    arquivo e o golden descreveria uma ordenacao que nenhuma superficie do
+    produto emite.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_migration_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
 def regen_plan(directory: Path) -> None:
     """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
     input/ (a saida colada de `explain("formatted")`), extraida com
@@ -533,6 +552,7 @@ def main() -> int:
                 (FIXTURES_BENCH / name, regen_bench),
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),
+                (FIXTURES_MIGRATION / name, regen_migration),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -602,6 +622,12 @@ def main() -> int:
     if FIXTURES_GRAPH.is_dir():
         for directory in sorted(p for p in FIXTURES_GRAPH.iterdir() if p.is_dir()):
             regen_graph(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/migration/`
+    # nasce na Task 9 desta fase, e a regeneracao completa roda ENTRE a Task 8
+    # e ela.
+    if FIXTURES_MIGRATION.is_dir():
+        for directory in sorted(p for p in FIXTURES_MIGRATION.iterdir() if p.is_dir()):
+            regen_migration(directory)
     return 0
 
 

@@ -1,0 +1,54 @@
+[
+  {
+    "rule_id": "SF-MIG-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_ab3222",
+      "f_2e15fb"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+    "proposed_change": [
+      "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+      "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+    ],
+    "tradeoffs": [
+      "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+    ],
+    "validation": [
+      "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+      "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+    ],
+    "rollback": [
+      "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  }
+]

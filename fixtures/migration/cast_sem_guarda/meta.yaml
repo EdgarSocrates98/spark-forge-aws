@@ -1,0 +1,19 @@
+name: cast_sem_guarda
+proves: >
+  `cast(` sem a forma guardada `try_cast(` -- o extrator emite `mig.ansi_risk`
+  normalmente (Task 6 ja o cobre por unidade), mas SF-MIG-003 e `blocked_on`
+  porque nenhuma fonte confirma ainda a versao do Glue em que o Spark liga
+  ANSI mode por default (`rules/catalog/glue-migration.yaml`, comentario
+  acima da regra). O motor reporta isso como skipped, nunca como finding
+  (`sparkforge/rules/engine.py::judge`), entao esta fixture prova o NEGATIVO
+  deliberado: o fact existe e a regra continua muda, em qualquer runtime --
+  Glue 5.0 aqui so por consistencia com o resto do corpus, o bloqueio nao
+  depende de versao (`runtime_scope: {}`).
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.ansi_risk
+expects_rules: []

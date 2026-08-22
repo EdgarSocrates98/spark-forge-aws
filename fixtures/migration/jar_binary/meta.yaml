@@ -1,0 +1,16 @@
+name: jar_binary
+proves: >
+  Um `.jar` e observacao de ARQUIVO INTEIRO, nao de linha de fonte
+  (`_jar_facts`, `sparkforge/facts/migration.py`): um binario nao tem linha
+  Python para varrer. O nome codifica a versao de Scala
+  (`conector_2.12-1.4.0.jar` -> "2.12"), que o extrator le do nome do
+  arquivo, nao do conteudo -- sem regra no catalogo hoje. Runtime Glue 5.0
+  por consistencia com o resto do corpus.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.jar_binary
+expects_rules: []

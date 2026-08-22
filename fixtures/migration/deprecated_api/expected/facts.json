@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f_4dfd8e",
+    "schema_version": 1,
+    "kind": "mig.deprecated_api",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 5,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "symbol": "SQLContext"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "3ed360ea397e012a0de14bfa84864cfddb0cd6a616bd730140875ebdeb6ee2cb",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

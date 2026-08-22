@@ -1,0 +1,46 @@
+[
+  {
+    "id": "f_ab3222",
+    "schema_version": 1,
+    "kind": "mig.emrfs_config",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "fs.s3.consistent"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "3d3c5f59bd09c8fae6149525a239c85523904334367d3a670c0088c838ffeb53",
+      "extractor": "migration@0.1.0"
+    }
+  },
+  {
+    "id": "f_2e15fb",
+    "schema_version": 1,
+    "kind": "mig.emrfs_config",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 7,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "fs.s3.maxRetries"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "3d3c5f59bd09c8fae6149525a239c85523904334367d3a670c0088c838ffeb53",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]

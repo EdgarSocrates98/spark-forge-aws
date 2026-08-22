@@ -1,0 +1,24 @@
+[
+  {
+    "id": "f_3c6471",
+    "schema_version": 1,
+    "kind": "mig.table_format",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 6,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "format_version": "2"
+    },
+    "provenance": {
+      "artifact": "job.py",
+      "artifact_sha256": "5c4d1b5df2a02c379e27dd9b3d684bb20162ec7b4a3d95c4b1f46febd0dc1819",
+      "extractor": "migration@0.1.0"
+    }
+  }
+]
