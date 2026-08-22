@@ -83,3 +83,56 @@ class TestPisoDeDependencia:
         facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
         findings = judge(facts, load_catalog(), SPARK_4)
         assert "SF-SPARK4-003" not in {f.rule_id for f in findings}
+
+
+class TestFronteiraBinariaDoScala:
+    """SF-SPARK4-004. O guarda e por SPARK e nao por Glue porque quem subiu o
+    Scala para 2.13 foi o Spark 4, nao o empacotamento da AWS -- a afirmacao
+    vale igual num EMR com Spark 4. Mesma razao das outras tres da area."""
+
+    def _jars(self, tmp_path, nome: str):
+        (tmp_path / nome).write_bytes(b"")
+        return migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+
+    def test_jar_de_scala_212_dispara_em_spark_4(self, tmp_path):
+        findings = judge(self._jars(tmp_path, "conector_2.12-1.4.0.jar"), load_catalog(), SPARK_4)
+        acusadas = {f.rule_id: f for f in findings}
+        assert "SF-SPARK4-004" in acusadas
+        assert acusadas["SF-SPARK4-004"].severity == "P0"
+
+    def test_jar_de_scala_212_nao_dispara_em_spark_35(self, tmp_path):
+        """Scala 2.12 e o CERTO em Spark 3.5. Acusa-lo ali seria mandar
+        recompilar um artefato que esta correto para o runtime em que roda."""
+        findings = judge(self._jars(tmp_path, "conector_2.12-1.4.0.jar"), load_catalog(), SPARK_35)
+        assert "SF-SPARK4-004" not in {f.rule_id for f in findings}
+
+    def test_jar_de_scala_213_nao_dispara_em_spark_4(self, tmp_path):
+        """O jar ja recompilado e exatamente o estado desejado -- acusa-lo
+        tornaria a regra ruido em todo job que ja migrou."""
+        findings = judge(self._jars(tmp_path, "conector_2.13-1.4.0.jar"), load_catalog(), SPARK_4)
+        assert "SF-SPARK4-004" not in {f.rule_id for f in findings}
+
+    def test_jar_de_scala_213_nao_dispara_em_spark_35(self, tmp_path):
+        findings = judge(self._jars(tmp_path, "conector_2.13-1.4.0.jar"), load_catalog(), SPARK_35)
+        assert "SF-SPARK4-004" not in {f.rule_id for f in findings}
+
+    def test_jar_sem_sufixo_de_scala_nao_dispara(self, tmp_path):
+        """Sem `attrs.scala_minor` o caminho fica ausente no avaliador
+        (`ExprError`, logo `False`). Um jar que nao declara Scala no nome pode
+        ser Java puro: acusa-lo seria acusar artefato correto."""
+        findings = judge(self._jars(tmp_path, "opaco.jar"), load_catalog(), SPARK_4)
+        assert "SF-SPARK4-004" not in {f.rule_id for f in findings}
+
+    def test_jar_com_versao_que_nao_e_de_scala_no_nome_nao_dispara(self, tmp_path):
+        """`minhalib_1.0-SNAPSHOT.jar` casa o regex do sufixo por acidente --
+        `_1.0-` tem a mesma forma de `_2.12-`. Sem a guarda de major no
+        extrator, esse jar receberia `scala_minor` 0 e levaria um P0 mandando
+        recompilar contra Scala 2.13 um artefato que nunca teve Scala."""
+        findings = judge(self._jars(tmp_path, "minhalib_1.0-SNAPSHOT.jar"), load_catalog(), SPARK_4)
+        assert "SF-SPARK4-004" not in {f.rule_id for f in findings}
+
+    def test_o_fact_continua_sendo_emitido_para_o_jar_opaco(self, tmp_path):
+        """A observacao nao some: o extrator viu um jar e diz isso. Quem decide
+        que nao da para afirmar nada sobre ele e a regra."""
+        facts = self._jars(tmp_path, "opaco.jar")
+        assert [f.kind for f in facts] == ["mig.jar_binary"]

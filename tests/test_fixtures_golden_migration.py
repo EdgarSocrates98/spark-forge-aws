@@ -33,10 +33,15 @@ SF-SPARK4-003 que a area SF-SPARK4 trouxe (treze fixtures para dez kinds):
     `job.py`, julgado em Glue 6.0. `runtime_scope` inclui o degrau, e a fonte
     confirmada nesta task (`migrating-version-60.html`) sustenta o disparo em
     P1.
-  * `legacy_conf`, `deprecated_api`, `table_format`, `jar_binary` -- os quatro
-    kinds que a Task 5/6 emitiu sem regra correspondente ainda (observacao
-    pura). Cada um prova so o vocabulario do fact, `expects_rules` vazio de
-    proposito.
+  * `legacy_conf`, `deprecated_api`, `table_format`, `jar_binary` -- kinds que a Task
+    5/6 emitiu sem regra correspondente ainda (observacao pura). Cada um
+    prova so o vocabulario do fact, `expects_rules` vazio de proposito.
+    `jar_binary` deixou de ser observacao pura quando SF-SPARK4-004 entrou:
+    ele carrega `connector_2.12-1.4.0.jar` (`scala_minor` 12, ABAIXO do
+    limiar `< 13`) e mesmo assim nao acusa nada, porque o runtime e Glue 5.0
+    (Spark 3.5.4), abaixo de `{spark: ">=4.0.0"}`. Virou o par NEGATIVO POR
+    VERSAO de `spark4_jar_scala_212` sem mudar um byte da entrada -- e o
+    `expects_rules` vazio dele passou a sustentar peso.
   * `python_dep` -- carrega `pyarrow==14.0.1`, ABAIXO do piso 15.0.0 do Spark
     4.1, e mesmo assim `expects_rules` fica vazio: o runtime e Glue 5.0
     (Spark 3.5.4), abaixo do `runtime_scope: {spark: ">=4.1.0"}` de
@@ -59,6 +64,12 @@ SF-SPARK4-003 que a area SF-SPARK4 trouxe (treze fixtures para dez kinds):
     de SF-SPARK4-003 (P1). `pandas==2.2.0` entra junto acima do piso do 4.1 e
     NAO e acusado, o que prova que a condicao filtra por `attrs.package` em vez
     de acusar toda dependencia pinada.
+  * `spark4_jar_scala_212` -- `conector_2.12-1.4.0.jar` julgado em Glue 6.0,
+    o positivo de SF-SPARK4-004 e o unico P0 do corpus de migracao. A
+    fronteira aqui e BINARIA e nao de API -- 2.12 e 2.13 nao sao compativeis
+    em bytecode --, entao o modo de falha e o terceiro da area: nao e
+    silencio (renomeado) nem excecao numa linha (removido), e a classe nao
+    carregar. O negativo dele e `jar_binary`, por VERSAO.
   * `clean_job` -- o negativo de referencia: job escrito do jeito atual (SDK
     v2, sem config de EMRFS, sem API depreciada, sem cast sem guarda). Zero
     facts, zero findings -- se algum kind `mig.*` disparar aqui, e falso
@@ -101,6 +112,7 @@ REQUIRED_FIXTURES = {
     "spark4_renamed_conf",
     "spark4_removed_api",
     "spark4_pyarrow_pin",
+    "spark4_jar_scala_212",
     "clean_job",
 }
 

@@ -142,10 +142,14 @@ def _minor(spark: str) -> tuple[int, int]:
 #
 # A area SF-GRAPH NAO some com isso: SF-GRAPH-001, -003 e -004 declaram
 # `runtime_scope: {}`, e sao elas que sustentam o invariante de area la embaixo.
-# SF-SPARK4-001/002/003 ENTRARAM aqui com a area SF-SPARK4. Sao guardadas por
-# versao de SPARK e nao de Glue porque quem mudou o produto foi o APACHE, nao a
-# AWS: o Spark 4.0 renomeou `spark.sql.legacy.parquet.*` e removeu as APIs de
-# pandas-on-Spark, e o 4.1 subiu o piso do PyArrow para 15.0.0. As tres
+# SF-SPARK4-001/002/003/004 ENTRARAM aqui com a area SF-SPARK4. Sao guardadas
+# por versao de SPARK e nao de Glue porque quem mudou o produto foi o APACHE,
+# nao a AWS: o Spark 4.0 renomeou `spark.sql.legacy.parquet.*`, removeu as APIs
+# de pandas-on-Spark e subiu o Scala de 2.12 para 2.13, e o 4.1 subiu o piso do
+# PyArrow para 15.0.0. SF-SPARK4-004 e a que mais parece excecao e nao e -- a
+# FONTE dela e da AWS (`migrating-version-60.html`), mas a fronteira continua
+# sendo do Apache: a AWS registrou a consequencia de uma mudanca que nao foi
+# dela. As quatro
 # afirmacoes valem igual num EMR com Spark 4, num EMR Serverless e num cluster
 # on-prem -- guardar por Glue amarraria a afirmacao a um empacotamento que nao
 # a produziu e apagaria a area em todo runtime nao-Glue com Spark 4, que e o
@@ -155,8 +159,10 @@ def _minor(spark: str) -> tuple[int, int]:
 # codigo, mas as fronteiras delas (classpath sem SDK v1, EMRFS virando S3A) sao
 # do empacotamento da AWS. Mesma forma, origem diferente.
 #
-# A fronteira NAO e a mesma para as tres: -001 e -002 declaram `>=4.0.0` e -003
-# declara `>=4.1.0`, porque o piso de 15.0.0 e do 4.1 (no 4.0 era 11.0.0).
+# A fronteira NAO e a mesma para as quatro: -001, -002 e -004 declaram
+# `>=4.0.0` e -003 declara `>=4.1.0`, porque o piso de 15.0.0 e do 4.1 (no 4.0
+# era 11.0.0). O Scala 2.13 chegou junto com o Spark 4.0, entao -004 fica na
+# ponta de baixo com -001 e -002.
 # Acusar `pyarrow==11.0.0` num runtime 4.0 seria acusar a versao que a
 # documentacao daquele release declara suficiente.
 #
@@ -189,6 +195,13 @@ SPARK_VERSIONED: dict[str, tuple] = {
     "SF-SPARK4-003": (
         lambda spark: _minor(spark) >= (4, 1),
         [("4.1.0", True), ("4.1.1-amzn-0", True), ("4.0.0", False), ("3.5.6", False)],
+    ),
+    # Volta para `>=4.0.0`, e a ponta de baixo e a do Scala 2.13 -- que entrou
+    # no Spark 4.0, nao no 4.1. Um `>=4.1.0` aqui deixaria passar calado todo
+    # JAR de 2.12 num runtime 4.0, onde ele ja nao carrega.
+    "SF-SPARK4-004": (
+        lambda spark: _minor(spark) >= (4, 0),
+        [("4.0.0", True), ("4.1.1-amzn-0", True), ("3.5.6", False)],
     ),
 }
 
@@ -445,8 +458,9 @@ AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     # leitura que importa: a area nao e sobre uma versao que NAO FOI DETECTADA,
     # e sobre uma fronteira do Apache que este runtime comprovadamente NAO
     # CRUZOU. Em Glue 5.1 (Spark 3.5.6) e nos dois EMR daqui (3.5.1) a versao
-    # ESTA detectada, e a afirmacao das tres regras -- config renomeada no 4.0,
-    # API removida no 4.0, piso do PyArrow no 4.1 -- e literalmente FALSA ali:
+    # ESTA detectada, e a afirmacao das quatro regras -- config renomeada no
+    # 4.0, API removida no 4.0, Scala 2.13 no 4.0, piso do PyArrow no 4.1 -- e
+    # literalmente FALSA ali:
     # `spark.sql.legacy.parquet.int96RebaseModeInWrite` e o nome CERTO em 3.5,
     # e acusa-lo seria mandar consertar o que nao esta quebrado. Calar e a
     # resposta correta, nao cobertura perdida.
@@ -464,7 +478,9 @@ AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     # (`rules/catalog/README.md`, "O guarda falha fechado"), e aparece para o
     # operador como PULADA com `reason: runtime_scope`, nunca como "revisei e
     # esta tudo bem". A saida NAO e trocar o guarda por `runtime_scope: {}`:
-    # sem guarda nenhum as tres acusariam todo job em Spark 3.5, que e o erro
+    # sem guarda nenhum as quatro acusariam todo job em Spark 3.5 -- inclusive
+    # mandando recompilar contra 2.13 um JAR de 2.12 que e o CERTO ali --, que
+    # e o erro
     # mais caro dos dois.
     "SF-SPARK4": (
         _spark_below_4,

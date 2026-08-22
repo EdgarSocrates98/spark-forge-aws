@@ -71,7 +71,42 @@ quem desenha o plano de regressão:
   circular.
 - Storage-Partitioned Join passa a ligado por padrão.
 
+## 6. Fronteira binária do Scala em 4.0
+
+O Spark 4 subiu o Scala de **2.12 para 2.13**, e o Glue 6.0 empacota **2.13.17**. As duas
+versões **não são compatíveis em bytecode**: não é API depreciada que ainda roda com
+aviso, é a fronteira binária da própria linguagem. Um JAR customizado compilado contra
+2.12 **não carrega** num runtime de Scala 2.13.
+
+O sintoma é `NoSuchMethodError` ou `ClassNotFoundException`, e ele aparece em **runtime**,
+não na submissão — a submissão não carrega classe nenhuma do JAR. Na prática a falha
+chega na primeira vez que aquele caminho de código executa, possivelmente depois de
+minutos de processamento, e passa em qualquer smoke test que não exercite exatamente
+aquela chamada. A documentação do Glue 6.0 diz isso de `--extra-jars` com todas as
+letras.
+
+O conserto é recompilar contra Scala 2.13.17. As três mudanças de código que a AWS
+nomeia:
+
+| removido em 2.13 | substituto |
+|---|---|
+| `JavaConversions` | `CollectionConverters` |
+| `MutableList` | `ListBuffer` |
+| coleções paralelas no escopo padrão | exigem import próprio |
+
+Quando o JAR vem de terceiro e não há build para 2.13, **não existe conserto local**: sem
+o fonte não dá para recompilar, e a migração está *bloqueada*, não atrasada. Confirmar
+isso com o mantenedor é pré-requisito do plano, não tarefa dele.
+
+No SparkForge isso é `SF-SPARK4-004`, a única regra **P0** da área — as outras três
+descrevem silêncio, degradação ou risco de comportamento; esta descreve falha certa. O
+sinal é o sufixo de Scala no nome do artefato (`conector_2.12-1.4.0.jar`), observado em
+`mig.jar_binary.attrs.scala_minor`. JAR cujo nome não codifica a versão não recebe o
+campo e não é acusado: ele pode ser Java puro, que não tem versão de Scala nenhuma para
+estar errada.
+
 ## Fontes
 
 - Migration Guide: SQL, Datasets and DataFrame — Apache Spark 4.1.1. https://spark.apache.org/docs/4.1.1/sql-migration-guide.html (retrieved 2026-08-22)
 - Upgrading PySpark — Apache Spark 4.1.1. https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html (retrieved 2026-08-22)
+- Migrating AWS Glue for Spark jobs to AWS Glue version 6.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html (retrieved 2026-08-22)

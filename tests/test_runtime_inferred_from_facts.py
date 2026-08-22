@@ -63,12 +63,13 @@ GLUE_GUARDED_IDS = list(GLUE_GUARDED_RULES)
 # `tests/test_rule_scope_by_nature.py::TestSparkVersionedRulesFireOnlyInsideTheirBand`,
 # que caminha a `GLUE_MATRIX` inteira nas duas direcoes.
 #
-# SF-SPARK4-001/002/003 entraram nesta mesma familia com a area SF-SPARK4: as
-# tres sao guardadas por `spark` (`>=4.0.0` as duas primeiras, `>=4.1.0` a
-# terceira, porque o piso de 15.0.0 do PyArrow e do 4.1). `GLUE_JOB_TF` fixa
-# `glue_version = "5.1"`, que resolve para Spark 3.5.6 -- abaixo das tres --
+# SF-SPARK4-001/002/003/004 entraram nesta mesma familia com a area SF-SPARK4:
+# as quatro sao guardadas por `spark` (`>=4.0.0` a -001, a -002 e a -004,
+# `>=4.1.0` a -003, porque o piso de 15.0.0 do PyArrow e do 4.1).
+# `GLUE_JOB_TF` fixa `glue_version = "5.1"`, que resolve para Spark 3.5.6 --
+# abaixo das quatro --
 # entao poe-las no parametrize de cima cobraria delas o oposto do que
-# significam, exatamente como em SF-GRAPH-002. A cobertura de faixa das tres
+# significam, exatamente como em SF-GRAPH-002. A cobertura de faixa das quatro
 # mora em
 # `tests/test_rule_scope_by_nature.py::TestSparkVersionedRulesFireOnlyInsideTheirBand`,
 # que agora caminha a `GLUE_MATRIX` com a faixa declarada POR REGRA.
@@ -77,6 +78,7 @@ SPARK_GUARDED_RULES = (
     "SF-SPARK4-001",
     "SF-SPARK4-002",
     "SF-SPARK4-003",
+    "SF-SPARK4-004",
 )
 
 # A decima regra com `runtime_scope` nao-vazio, e ela tambem NAO entra em

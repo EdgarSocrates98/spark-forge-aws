@@ -191,7 +191,7 @@
     {
       "path": "knowledge/spark/spark4-migration.md",
       "title": "spark4-migration",
-      "sha256": "5b7dc2a4619df4a0d4a3a284d397ea15d744648b236039a0b767a480e2f73b7e"
+      "sha256": "1c086749a2a97d9909df261f67cabb5f9d7088099312ad4f3787a4ebbf2c0feb"
     },
     {
       "path": "knowledge/storage/iceberg-performance.md",

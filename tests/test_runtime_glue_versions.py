@@ -73,15 +73,19 @@ CURRENT = ("4.0", "5.0", "5.1")
 #             que hoje nao dispara em runtime corrente nenhum, o que e correto:
 #             a fronteira do ANSI mode ainda nao foi cruzada por nenhum deles.
 #
-# SF-SPARK4-001/002 `spark: ">=4.0.0"` e SF-SPARK4-003 `spark: ">=4.1.0"` --
-#             config renomeada, API de pandas-on-Spark removida e piso do
-#             PyArrow. As tres fronteiras sao do APACHE, nao do empacotamento
+# SF-SPARK4-001/002/004 `spark: ">=4.0.0"` e SF-SPARK4-003 `spark: ">=4.1.0"`
+#             -- config renomeada, API de pandas-on-Spark removida, piso do
+#             PyArrow e JAR de Scala anterior ao 2.13. As quatro fronteiras
+#             sao do APACHE, nao do empacotamento
 #             da AWS, entao o guarda e por versao de SPARK: 4.0 resolve para
 #             Spark 3.3.0, 5.0 para 3.5.4 e 5.1 para 3.5.6, todas abaixo de
 #             4.0.0. Ficam fora de escopo nas tres correntes pelo mesmo motivo
 #             que SF-MIG-003 -- a fronteira ainda nao foi cruzada por nenhuma
 #             delas -- e sao avaliadas em Glue 6.0 (Spark 4.1.1), que esta na
-#             matriz mas fora de `CURRENT`.
+#             matriz mas fora de `CURRENT`. SF-SPARK4-004 esta na lista pela
+#             mesma razao das irmas, ainda que a FONTE dela seja da AWS
+#             (`migrating-version-60.html`): quem subiu o Scala para 2.13 foi
+#             o Apache no Spark 4, e a AWS so registrou a consequencia.
 EXPECTED_OUT_OF_SCOPE = {
     "4.0": {
         "SF-ENV-002",
@@ -91,6 +95,7 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-SPARK4-001",
         "SF-SPARK4-002",
         "SF-SPARK4-003",
+        "SF-SPARK4-004",
     },
     "5.0": {
         "SF-ENV-002",
@@ -99,6 +104,7 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-SPARK4-001",
         "SF-SPARK4-002",
         "SF-SPARK4-003",
+        "SF-SPARK4-004",
     },
     "5.1": {
         "SF-GRAPH-002",
@@ -106,6 +112,7 @@ EXPECTED_OUT_OF_SCOPE = {
         "SF-SPARK4-001",
         "SF-SPARK4-002",
         "SF-SPARK4-003",
+        "SF-SPARK4-004",
     },
 }
 
@@ -198,9 +205,10 @@ class TestRuleScopeOnTheCurrentRuntimes:
     # seria letra morta pre-aprovando um sumico que ja nao acontece.
     #
     # SF-SPARK4 ENTROU AQUI com a area, e pelo motivo simetrico ao que tirou
-    # SF-MIG: as tres regras dela sao guardadas por versao de SPARK
-    # (`>=4.0.0` a -001 e a -002, `>=4.1.0` a -003, porque o piso 15.0.0 do
-    # PyArrow e do 4.1), e as tres versoes CORRENTES de Glue rodam Spark 3.x --
+    # SF-MIG: as quatro regras dela sao guardadas por versao de SPARK
+    # (`>=4.0.0` a -001, a -002 e a -004, `>=4.1.0` a -003, porque o piso
+    # 15.0.0 do PyArrow e do 4.1), e as tres versoes CORRENTES de Glue rodam
+    # Spark 3.x --
     # 4.0 resolve para 3.3.0, 5.0 para 3.5.4 e 5.1 para 3.5.6. Nenhuma cruza a
     # fronteira do Apache, entao a area sumir inteira nas tres nao e cobertura
     # perdida: e a afirmacao "este codigo e incompativel com o Spark 4" sendo
