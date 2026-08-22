@@ -161,6 +161,21 @@ def _executable_rules():
     return [r for r in _rules() if r.get("executable", True)]
 
 
+def _judgeable_rules():
+    """`_executable_rules()` menos as bloqueadas por `blocked_on`.
+
+    `blocked_on` faz `judge()` pular a regra INCONDICIONALMENTE, antes mesmo
+    de olhar `runtime_scope` ou `when` (`sparkforge/rules/engine.py`). Uma
+    regra bloqueada NUNCA aparece em `findings.json` -- nao porque falte
+    fixture, mas porque o motor nunca a avalia. Exigir golden positivo ou
+    ramo de severidade dela e exigir cobertura de um julgamento que nao
+    acontece, que nao e uma coisa que existe: a regra bloqueada declara O QUE
+    ela nao pode julgar, isso e o contrato, e nenhuma fixture muda isso
+    enquanto o bloqueio existir.
+    """
+    return [r for r in _executable_rules() if not r.get("blocked_on")]
+
+
 def _rules_fired_in_goldens() -> set[str]:
     fired: set[str] = set()
     for path in FIXTURES.glob("*/*/expected/findings.json"):
@@ -182,8 +197,15 @@ def test_every_rule_has_a_fixture_that_fires_it():
 
     Regra que passe a nao disparar em nenhuma fixture quebra aqui, e a correcao
     e uma das duas: criar a fixture que a exercita, ou remover a regra.
+
+    Exceto regra `blocked_on`: `judge()` a pula incondicionalmente
+    (`sparkforge/rules/engine.py`), entao nenhuma fixture pode fazer uma
+    regra bloqueada disparar -- ver `_judgeable_rules()`. Isso nao e uma
+    lacuna de corpus, e o contrato do bloqueio; a decisao consciente de
+    manter cada `blocked_on` no catalogo mora em
+    `tests/test_rules_engine.py::TestBlockedOnIsDistinctFromMissingData.BLOQUEIO_CONSCIENTE`.
     """
-    missing = sorted({r["id"] for r in _executable_rules()} - _rules_fired_in_goldens())
+    missing = sorted({r["id"] for r in _judgeable_rules()} - _rules_fired_in_goldens())
     assert not missing, (
         f"regras sem nenhuma fixture que as faca disparar: {missing}. "
         "Uma regra sem golden positivo nunca foi provada -- crie a fixture, "
@@ -238,11 +260,15 @@ def test_every_severity_branch_has_a_golden_that_produces_it():
     a proxima de nascer em silencio. Ele nao substitui os testes adversariais
     por area (aqueles provam O QUE separa os ramos); ele so garante que nenhum
     ramo fique sem nenhum golden.
+
+    Mesma excecao de `test_every_rule_has_a_fixture_that_fires_it`: regra
+    `blocked_on` nunca produz finding nenhum, entao nenhum ramo dela pode ter
+    golden -- ver `_judgeable_rules()`.
     """
     vistas = _severidades_por_regra_nos_goldens()
     faltando: dict[str, list[str]] = {}
     total = 0
-    for rule in _executable_rules():
+    for rule in _judgeable_rules():
         ramos = _ramos_de_severidade(rule)
         if not ramos:
             continue

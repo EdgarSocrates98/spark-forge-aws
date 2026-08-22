@@ -498,6 +498,27 @@ class TestBlockedOnIsDistinctFromMissingData:
         _, skipped = judge([], [rule()], GLUE_50, return_skipped=True)
         assert skipped[0]["reason"] == "requires_facts"
 
+    # `blocked_on` que sobrevive a este teste tem que ser uma decisao CONSCIENTE,
+    # registrada aqui com o motivo -- nao uma excecao muda herdada de quem
+    # passou pelo teste sem olhar. Mesmo padrao de `BLOQUEIO_SEM_KIND_ORFAO` em
+    # `tests/test_rules_catalog_reachability.py`: allowlist nomeada + teste-par
+    # que reprova a entrada assim que ela parar de ser verdade
+    # (`test_bloqueio_consciente_nao_sobrevive_ao_desbloqueio` abaixo).
+    BLOQUEIO_CONSCIENTE = {
+        "SF-MIG-003": (
+            "a fronteira de versao em que o Spark liga ANSI mode por default "
+            "(Spark 4.1, `prompt_migrations_glue.md` Sec 8.1) nao tem linha "
+            "confirmada em `knowledge/glue/runtime-matrix.yaml` -- Glue 6.0 fica "
+            "de fora da matriz ate a Task 11 desta fase pesquisar contra fonte "
+            "oficial. Escrever `runtime_scope: {glue: '>=6.0'}` hoje afirmaria "
+            "uma fronteira que ninguem verificou -- o mesmo defeito que a "
+            "auditoria de 11 tasks anterior a esta fase removeu do catalogo "
+            "inteiro (ver cabecalho de `rules/catalog/athena.yaml`). A entrada "
+            "expira quando a Task 11 confirmar a versao e a regra trocar "
+            "`blocked_on` por `runtime_scope` real."
+        ),
+    }
+
     def test_the_real_catalog_has_no_blocked_rule_left(self):
         """Este teste era o inverso: fixava SF-GLUE-005 como bloqueada em
         `extrator-de-diff-terraform`. O extrator existe agora
@@ -507,8 +528,31 @@ class TestBlockedOnIsDistinctFromMissingData:
         A checagem vira uma varredura, e nao volta a citar regra por nome de
         proposito: o proximo `blocked_on` a aparecer no catalogo tem que ser uma
         decisao consciente de quem o escreve, e nao herdar a passagem por um
-        teste que so olhava uma regra."""
+        teste que so olhava uma regra. `BLOQUEIO_CONSCIENTE` acima E essa
+        decisao -- registrada com o motivo, nao uma excecao muda -- e qualquer
+        `blocked_on` que nao esteja nela continua reprovando aqui, sem
+        excecao."""
         from sparkforge.rules.loader import load_catalog
 
         blocked = {r["id"]: r["blocked_on"] for r in load_catalog() if r.get("blocked_on")}
-        assert blocked == {}, blocked
+        inesperados = {k: v for k, v in blocked.items() if k not in self.BLOQUEIO_CONSCIENTE}
+        assert inesperados == {}, inesperados
+
+    def test_bloqueio_consciente_nao_sobrevive_ao_desbloqueio(self):
+        """Entrada obsoleta em `BLOQUEIO_CONSCIENTE` esconderia um `blocked_on`
+        morto para sempre -- mesmo risco que
+        `test_bloqueio_sem_kind_orfao_nao_guarda_regra_que_ja_foi_corrigida`
+        cobre em `tests/test_rules_catalog_reachability.py` para a allowlist
+        irma. Quando a Task 11 confirmar a fronteira e SF-MIG-003 trocar
+        `blocked_on` por `runtime_scope`, esta asserção reprova ate alguem
+        tirar a entrada da allowlist -- a isencao nao pode sobreviver ao motivo
+        que a justifica."""
+        from sparkforge.rules.loader import load_catalog
+
+        by_id = {r["id"]: r for r in load_catalog()}
+        for rule_id in self.BLOQUEIO_CONSCIENTE:
+            regra = by_id.get(rule_id)
+            assert regra is not None, (
+                f"{rule_id} esta em BLOQUEIO_CONSCIENTE e nao existe no catalogo."
+            )
+            assert regra.get("blocked_on"), f"{rule_id} perdeu `blocked_on`; remova da allowlist."
