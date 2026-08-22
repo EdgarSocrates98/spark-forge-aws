@@ -110,3 +110,43 @@ class TestDuplicataEntreDegraus:
             degrau for finding, degrau in resultado.by_step if finding.rule_id == "SF-MIG-001"
         )
         assert degraus_do_achado == [("4.0", "5.0"), ("5.0", "5.1")]
+
+
+class TestParGenerico:
+    def test_pares_diferentes_selecionam_regras_diferentes(self, tmp_path):
+        facts = _facts(tmp_path)
+        curto = assessment.assess(facts, source="5.0", target="5.1")
+        longo = assessment.assess(facts, source="4.0", target="5.1")
+        assert len(longo.steps) > len(curto.steps)
+        assert len(longo.by_step) >= len(curto.by_step)
+
+    def test_par_que_nao_cruza_a_faixa_nao_dispara_a_regra(self, tmp_path):
+        # SF-MIG-001 declara `glue: ">=5.0"`. Um caminho que termina em 4.0 nao
+        # cruza a faixa, entao a regra nao deve aparecer.
+        facts = _facts(tmp_path)
+        resultado = assessment.assess(facts, source="3.0", target="4.0")
+        assert "SF-MIG-001" not in {f.rule_id for f in resultado.findings}
+
+    def test_nenhum_par_de_versao_aparece_no_codigo_do_motor(self):
+        import re
+        from pathlib import Path
+
+        raiz = Path(__file__).resolve().parents[1] / "sparkforge" / "migration"
+        proibido = re.compile(r'"[3-9]\.\d+"')
+        # Excecao conhecida e restrita: `glue/analyzer.py` e o analisador antigo
+        # que esta fase substitui (`source_runtime: str = "4.0"`,
+        # `target_runtime: str = "5.1"`). O Task 11 decide o destino dele --
+        # ele tem consumidor declarado (`sparkforge/migration/__init__.py`
+        # reexporta `GlueMigrationAnalyzer`), entao nao e removido aqui. Este
+        # teste cobre so os modulos que esta fase construiu: `version_path.py`,
+        # `assessment.py` e qualquer irmao novo -- nao o pacote `migration`
+        # inteiro, para nao esconder uma regressao futura atras de uma
+        # excecao larga demais.
+        excecoes = {Path("glue") / "analyzer.py"}
+        ofensores = [
+            str(p.relative_to(raiz))
+            for p in raiz.rglob("*.py")
+            if p.relative_to(raiz) not in excecoes
+            and proibido.search(p.read_text(encoding="utf-8"))
+        ]
+        assert ofensores == [], f"par de versao embutido no motor: {ofensores}"
