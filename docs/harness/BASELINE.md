@@ -45,8 +45,9 @@ entre coleta e execução neste commit.
 | Regras no catálogo | 119 | `python -c "from sparkforge.rules.loader import load_catalog; c=load_catalog(); print(len(c))"` |
 | Regras bloqueadas (`blocked_on` presente) | 0 | mesmo catálogo, contando `r.get('blocked_on')` truthy |
 | Áreas de regra (`category`, derivado do catálogo) | 17 | contagem de `r.get('category')` distintos no catálogo carregado |
-| Extratores de fatos (`sparkforge/facts/*.py`, exceto `__init__.py`) | 22 | `ls sparkforge/facts/` |
-| Extratores com `EMITTED_KINDS` declarado | 20 de 22 (faltam `runtime_matrix.py` e `secrets.py`) | import de cada módulo em `sparkforge/facts/`, leitura do atributo `EMITTED_KINDS` |
+| Arquivos em `sparkforge/facts/` (exceto `__init__.py`) | 22 | `ls sparkforge/facts/` |
+| **Extratores de fatos** (modulo com `EMITTED_KINDS`) | **20** | import de cada modulo, contagem dos que declaram `EMITTED_KINDS` |
+| Arquivos que NAO sao extratores | 2 (`runtime_matrix.py` e `secrets.py`, que nao emitem kind) | import de cada módulo em `sparkforge/facts/`, leitura do atributo `EMITTED_KINDS` |
 | Kinds de fato únicos (união de todo `EMITTED_KINDS`) | 129 | mesmo script, união dos conjuntos |
 | Ferramentas MCP | 41 | `python -c "from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))"` |
 | Rotas no catálogo de roteamento | 92 | `yaml.safe_load(open('rules/catalog/routing.yaml'))['rules']`, contagem da lista |
