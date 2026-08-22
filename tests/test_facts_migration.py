@@ -283,3 +283,41 @@ class TestApiRemovidaNoSpark4:
         (tmp_path / "job.py").write_text("acc = []\nacc.append(1)\n", encoding="utf-8")
         facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
         assert len([f for f in facts if f.kind == "mig.removed_api"]) == 1
+
+
+# `major` e OBSERVACAO, nao juizo: o extrator le o primeiro segmento numerico da
+# versao pinada e para por ai. O LIMIAR (`< 15` para PyArrow no Spark 4.1) mora
+# na regra `SF-SPARK4-003`, que e onde o juizo pertence -- o extrator nao sabe,
+# e nao pode saber, contra o que aquele numero sera comparado.
+#
+# Existe porque o avaliador de `expr` do catalogo (`sparkforge/rules/expr.py`)
+# compara NUMEROS, nao versoes: sem um inteiro em `attrs`, uma regra de piso de
+# dependencia teria que comparar a string `"11.0.0"` com `15`, o que nao e uma
+# comparacao que aquele avaliador faz.
+class TestMajorDaVersaoPinada:
+    def test_extrai_o_major_da_versao(self, tmp_path):
+        (tmp_path / "requirements.txt").write_text("pyarrow==11.0.0\n", encoding="utf-8")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        dep = next(f for f in facts if f.kind == "mig.python_dep")
+        assert dep.attrs["major"] == 11
+        assert dep.attrs["version"] == "11.0.0"
+
+    def test_versao_que_nao_comeca_por_digito_nao_recebe_major(self, tmp_path):
+        """Fail-closed: a chave simplesmente NAO APARECE.
+
+        `pacote==@git+https://...` fixa um commit, nao um numero de versao. As
+        alternativas seriam adivinhar (`0`? `-1`?) ou marcar (`major: None`), e
+        as duas fazem a regra de piso disparar sobre uma dependencia cuja
+        versao ninguem leu -- `0 < 15` e verdadeiro, e acusar um pin de git de
+        estar abaixo do piso do PyArrow e um falso positivo que ensina a
+        ignorar a regra. Sem a chave, `attrs.major` vira caminho ausente no
+        avaliador (`ExprError`, logo `False`), e a regra fica muda sobre o que
+        nao consegue afirmar -- ausencia de juizo, nao juizo errado.
+        """
+        (tmp_path / "requirements.txt").write_text(
+            "pacote==@git+https://exemplo.invalido/x.git\n", encoding="utf-8"
+        )
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        dep = next(f for f in facts if f.kind == "mig.python_dep")
+        assert "major" not in dep.attrs
+        assert dep.attrs["version"] == "@git+https://exemplo.invalido/x.git"

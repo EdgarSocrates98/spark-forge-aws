@@ -14,7 +14,8 @@
     "measures": {},
     "attrs": {
       "package": "pandas",
-      "version": "2.0.3"
+      "version": "2.0.3",
+      "major": 2
     },
     "provenance": {
       "artifact": "requirements.txt",
@@ -37,7 +38,8 @@
     "measures": {},
     "attrs": {
       "package": "pyarrow",
-      "version": "14.0.1"
+      "version": "14.0.1",
+      "major": 14
     },
     "provenance": {
       "artifact": "requirements.txt",

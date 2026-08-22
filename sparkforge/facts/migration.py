@@ -118,6 +118,17 @@ _JAR_SCALA_RE = re.compile(r"_(\d+\.\d+)-")
 # observa, entao uma linha sem `==` nao e um fato deste vocabulario.
 _REQUIREMENT_RE = re.compile(r"^([A-Za-z0-9_.\-]+)==([^\s#]+)")
 
+# Primeiro segmento numerico da versao pinada, ancorado no INICIO da string.
+# Ler o major e OBSERVACAO -- o numero esta escrito no arquivo -- e existe
+# porque o avaliador de `expr` do catalogo (`sparkforge/rules/expr.py`) compara
+# NUMEROS, nao versoes: uma regra de piso de dependencia precisa de um inteiro
+# em `attrs` para comparar, e a string `"11.0.0"` nao e comparavel com `15`
+# naquele avaliador. O LIMIAR continua na regra, que e onde o juizo mora.
+#
+# Ancorado (`^`) de proposito: sem a ancora, `@git+https://host/x.git@v2` daria
+# um "major" tirado do meio de uma URL -- um numero inventado com cara de fato.
+_VERSION_MAJOR_RE = re.compile(r"^(\d+)")
+
 
 # Configs que MUDARAM DE NOME no Spark 4.0 -- o nome antigo nao e lido e nao
 # reclama, entao o job segue rodando com a configuracao que quem le acha que
@@ -365,6 +376,16 @@ def _python_dep_facts(text: str, anchor: str, provenance: dict[str, Any]) -> lis
     `extract_migration_tree`. Linha em branco, comentario (`#`) e pacote sem
     pin (`pandas` sem `==`) nao emitem fact de proposito: nenhuma das tres
     fixa uma versao, e fixar versao e exatamente o que este kind observa.
+
+    `major` so entra em `attrs` quando a versao COMECA por digito. Versao que
+    nao comeca por digito (`pacote==@git+https://...` fixa um commit, nao um
+    numero) fica SEM a chave, e isso e fail-closed deliberado: as alternativas
+    seriam adivinhar um numero (`0`, `-1`) ou marcar com `None`, e as duas
+    fariam uma regra de piso -- `attrs.major < 15` -- disparar sobre uma
+    dependencia cuja versao ninguem leu. Sem a chave, o caminho fica ausente no
+    avaliador (`ExprError`, logo `False`) e a regra fica muda sobre o que nao
+    consegue afirmar. Ausencia de juizo custa um achado que nao foi feito;
+    juizo sobre um numero inventado custa a confianca no relatorio inteiro.
     """
     facts: list[Fact] = []
     for lineno, linha in enumerate(text.split("\n"), start=1):
@@ -375,11 +396,15 @@ def _python_dep_facts(text: str, anchor: str, provenance: dict[str, Any]) -> lis
         if not match:
             continue
         pacote, versao = match.group(1), match.group(2)
+        attrs: dict[str, Any] = {"package": pacote, "version": versao}
+        major = _VERSION_MAJOR_RE.match(versao)
+        if major:
+            attrs["major"] = int(major.group(1))
         facts.append(
             Fact(
                 kind="mig.python_dep",
                 subject=_source_subject(anchor, lineno),
-                attrs={"package": pacote, "version": versao},
+                attrs=attrs,
                 provenance=provenance,
             )
         )
