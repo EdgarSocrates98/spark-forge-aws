@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "03c2e3f562679471db0d8b81b99e9fdd76b562a16222a6e288678036f6fc9f7b"
+      "sha256": "0ab901d4953e6440ee640636cecda62fb745f650185152b8cd5f974af7309387"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -197,6 +197,11 @@
       "path": "knowledge/storage/iceberg-performance.md",
       "title": "iceberg-performance",
       "sha256": "0d9f187c76a2800ccbb0e5ba8b8ddd8fe052c13da1b3ce040c8d6d054f2205b5"
+    },
+    {
+      "path": "knowledge/storage/iceberg-v3.md",
+      "title": "iceberg-v3",
+      "sha256": "afe67e88cc2ee8e4b5943362a96b410eb3afb799e79651763bbec3ab42595d25"
     },
     {
       "path": "knowledge/storage/parquet-layout.md",

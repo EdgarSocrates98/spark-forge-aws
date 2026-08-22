@@ -50,6 +50,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 |---|---|
 | [`storage/parquet-layout.md`](storage/parquet-layout.md) | Row group, page, dictionary, estatísticas, small files, listing S3 |
 | [`storage/iceberg-performance.md`](storage/iceberg-performance.md) | Data/delete files, manifests, snapshots, partition spec, sort order, manutenção |
+| [`storage/iceberg-v3.md`](storage/iceberg-v3.md) | Iceberg 1.11.0 e o formato v3, com **feature da spec separada de suporte da engine**: tipos novos, default de coluna, transforms multi-argumento, row lineage, deletion vectors; piso de Java 17 e Spark 3.4 deprecado; e as limitações declaradas pela AWS no Glue 6.0 — incluindo `Cannot read unsupported version 3` no Athena |
 | [`iceberg-diagnostics.sql`](iceberg-diagnostics.sql) | Queries de metadata tables |
 
 ### Validação de dados

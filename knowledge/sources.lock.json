@@ -747,7 +747,8 @@
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html": {
       "docs": [
         "knowledge/glue/runtime-matrix.md",
-        "knowledge/spark/spark4-migration.md"
+        "knowledge/spark/spark4-migration.md",
+        "knowledge/storage/iceberg-v3.md"
       ],
       "pinned": false,
       "retrieved": [
@@ -1181,6 +1182,16 @@
         "SF-ICE-004"
       ]
     },
+    "https://github.com/apache/iceberg/releases/tag/apache-iceberg-1.11.0": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
     "https://github.com/awslabs/python-deequ": {
       "checked_at": "2026-08-03",
       "docs": [
@@ -1314,6 +1325,16 @@
       "pinned": false,
       "retrieved": [
         "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
       ],
       "rules": []
     },
