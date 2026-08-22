@@ -196,7 +196,31 @@ class TestRuleScopeOnTheCurrentRuntimes:
     # `runtime_scope: {}` e e gateada por `requires_facts: [tf.attribute]`.
     # Com ela a area sobrevive ao guard em toda versao, e manter a excecao aqui
     # seria letra morta pre-aprovando um sumico que ja nao acontece.
-    AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {}
+    #
+    # SF-SPARK4 ENTROU AQUI com a area, e pelo motivo simetrico ao que tirou
+    # SF-MIG: as tres regras dela sao guardadas por versao de SPARK
+    # (`>=4.0.0` a -001 e a -002, `>=4.1.0` a -003, porque o piso 15.0.0 do
+    # PyArrow e do 4.1), e as tres versoes CORRENTES de Glue rodam Spark 3.x --
+    # 4.0 resolve para 3.3.0, 5.0 para 3.5.4 e 5.1 para 3.5.6. Nenhuma cruza a
+    # fronteira do Apache, entao a area sumir inteira nas tres nao e cobertura
+    # perdida: e a afirmacao "este codigo e incompativel com o Spark 4" sendo
+    # corretamente calada onde ela e FALSA.
+    #
+    # A area NAO some no guard de Glue 6.0 (Spark 4.1.1), que esta em
+    # `GLUE_MATRIX` mas fora de `CURRENT` -- `CURRENT` lista os runtimes alvo
+    # de recomendacao nova, e o 6.0 entrou na matriz depois. E a mesma forma de
+    # SF-MIG-003 (`glue: ">=6.0"`), que aparece nas tres entradas de
+    # `EXPECTED_OUT_OF_SCOPE` pela mesma razao.
+    #
+    # No dia em que o 6.0 entrar em `CURRENT`, esta entrada precisa sair para a
+    # versao dele -- e sai sozinha, porque
+    # `test_every_area_of_the_catalog_survives_the_version_guard` compara o
+    # conjunto por igualdade e reprova excecao que nao se realiza.
+    AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {
+        "4.0": {"SF-SPARK4"},
+        "5.0": {"SF-SPARK4"},
+        "5.1": {"SF-SPARK4"},
+    }
 
     @pytest.mark.parametrize("version", CURRENT)
     def test_every_area_of_the_catalog_survives_the_version_guard(self, version):

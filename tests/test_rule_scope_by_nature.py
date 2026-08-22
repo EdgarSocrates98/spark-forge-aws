@@ -429,8 +429,47 @@ ALL_RUNTIME_IDS = [nome for nome, _ in ALL_RUNTIMES]
 # EXISTENCIA de uma infraestrutura que o runtime comprovadamente nao tem. Nunca
 # sobre uma versao que simplesmente nao foi detectada -- para isso o gate certo
 # e `requires_facts`, e o `runtime_scope` deve ser `{}`.
+def _spark_below_4(runtime: dict[str, str]) -> bool:
+    """Spark ausente ou abaixo de 4.0 -- a condicao em que SF-SPARK4 nao tem
+    nada a afirmar. Ausente conta como abaixo porque `in_scope` falha fechada:
+    sem versao, toda regra da area e pulada."""
+    try:
+        return _minor(runtime.get("spark") or "") < (4, 0)
+    except (ValueError, IndexError):
+        return True
+
+
 AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     "SF-GLUE": (lambda runtime: not runtime.get("glue"), "runtime sem `glue` detectado"),
+    # SF-SPARK4 entrou aqui com a area, e o criterio acima e satisfeito na
+    # leitura que importa: a area nao e sobre uma versao que NAO FOI DETECTADA,
+    # e sobre uma fronteira do Apache que este runtime comprovadamente NAO
+    # CRUZOU. Em Glue 5.1 (Spark 3.5.6) e nos dois EMR daqui (3.5.1) a versao
+    # ESTA detectada, e a afirmacao das tres regras -- config renomeada no 4.0,
+    # API removida no 4.0, piso do PyArrow no 4.1 -- e literalmente FALSA ali:
+    # `spark.sql.legacy.parquet.int96RebaseModeInWrite` e o nome CERTO em 3.5,
+    # e acusa-lo seria mandar consertar o que nao esta quebrado. Calar e a
+    # resposta correta, nao cobertura perdida.
+    #
+    # O contraste com SF-ICE, que motivou o criterio: tabela Iceberg EXISTE num
+    # EMR, e a area sumia so porque ninguem detecta a versao de Iceberg fora do
+    # Glue -- falso negativo. Aqui `spark` E detectado, por duas fontes de fact
+    # (`spark.runtime_version` do event log e a derivacao de `glue_version` pela
+    # `GLUE_MATRIX`), entao a area sobrevive em qualquer analise real de um job
+    # que rode em Spark 4.
+    #
+    # O RESIDUO, declarado porque nao some: no runtime `vazio-cli` -- `sparkforge
+    # judge` sem flag e sem fact de versao -- a area some por falta de deteccao,
+    # nao por afirmacao falsa. Isso e o fail-closed do `runtime_scope`
+    # (`rules/catalog/README.md`, "O guarda falha fechado"), e aparece para o
+    # operador como PULADA com `reason: runtime_scope`, nunca como "revisei e
+    # esta tudo bem". A saida NAO e trocar o guarda por `runtime_scope: {}`:
+    # sem guarda nenhum as tres acusariam todo job em Spark 3.5, que e o erro
+    # mais caro dos dois.
+    "SF-SPARK4": (
+        _spark_below_4,
+        "runtime com Spark abaixo de 4.0, ou sem Spark detectado",
+    ),
     # SF-MIG SAIU DAQUI quando SF-MIG-004 entrou no catalogo.
     #
     # A excecao existia porque as tres regras de entao eram todas
