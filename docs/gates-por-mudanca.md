@@ -99,6 +99,31 @@ python scripts/refresh_knowledge.py --update --offline
 python -m pytest tests/test_refresh_knowledge.py -q
 ```
 
+## Alterar `knowledge/glue/runtime-matrix.yaml`
+
+```
+python -m pytest tests/test_runtime_matrix.py tests/test_runtime_detect.py \
+  tests/test_runtime_glue_versions.py tests/test_runtime_inferred_from_facts.py \
+  tests/test_version_path.py tests/test_migration_assessment.py -q
+```
+
+A matriz é **dado com consumidor em código**: `runtime_detect` monta `GLUE_MATRIX`
+a partir dela no nível de módulo, `version_path` deriva os degraus da ordem das
+versões, e todo `runtime_scope` é comparado contra o que ela resolve. Uma versão
+acrescentada muda o conjunto de degraus de todo par que a atravessa.
+
+Componente pode ser escalar ou vir na **forma longa** (`status` + `claims`). Nesse
+caso a fonte de cada claim precisa estar em `knowledge/sources.lock.json` — o
+mesmo lock da lista `sources` da linha, e conferido por teste próprio. Fonte nova
+entra pelo `## Fontes` do `.md` correspondente mais
+`python scripts/refresh_knowledge.py --update --offline`, e o `.md` editado exige
+regravar o `sha256` no `knowledge/offline-manifest.json` (seção acima).
+
+Status `CONFLICTING` ou `UNRESOLVED` **retém** o valor do componente, e valor
+retido apaga toda regra guardada por ele — por isso
+`test_a_matriz_publicada_nao_tem_componente_em_disputa` existe: o primeiro
+componente em disputa tem que ser decisão consciente de quem editou a matriz.
+
 ## Ler dado do disco em código de `sparkforge/`
 
 ```

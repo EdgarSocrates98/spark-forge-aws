@@ -57,7 +57,7 @@ arquivo ganha.
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
 | Fixtures golden | **183** em 22 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **131** (123 móveis, 8 fixas) — 61 citadas por regra, 126 por `knowledge/`, 56 pelas duas | `knowledge/sources.lock.json` |
+| Fontes oficiais vigiadas | **135** (127 móveis, 8 fixas) — 63 citadas por regra, 130 por `knowledge/`, 58 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
@@ -2119,6 +2119,52 @@ lugar. `docs/gates-por-mudanca.md` ganhou as duas listas, que não estavam lá.
 
 O catálogo vai a 120 regras; `manifest.json` acompanha. `rules/catalog/README.md`
 listava quinze áreas e não citava `MIG` desde que a área nasceu — corrigido aqui.
+
+### Continuação — evidência por fonte na matriz de runtime (2026-08-22)
+
+`knowledge/glue/runtime-matrix.md` §5 dizia, desde a primeira versão, que
+*"divergência entre fontes não é resolvida escolhendo uma. É registrada como
+divergência"* — e não havia mecanismo nenhum atrás da frase. Um componente da
+matriz era um escalar: um valor, sem quem o afirmou.
+
+Agora um componente pode ser escrito em **forma longa** — `status` mais uma lista
+de `claims`, cada uma com `value`, `source`, `source_type` e `retrieved`.
+`sparkforge/facts/runtime_matrix.py` resolve para o valor quando `status:
+VERIFIED` e **retém** o valor quando o status é `CONFLICTING` ou `UNRESOLVED`.
+Valor retido é *fail-closed*: sem a chave no runtime, `in_scope` reprova a regra
+guardada por aquele componente e o motor a reporta como pulada — nunca julgada
+contra um número que duas fontes oficiais não confirmam juntas.
+
+**Duas invariantes ficaram em código, não em disciplina de quem edita YAML.**
+`VERIFIED` com fontes afirmando valores diferentes estoura — é a regra "nunca
+transformar CONFLICTING em VERIFIED", e a forma prática de violá-la não é mentir,
+é editar o valor de uma claim e esquecer a outra. `CONFLICTING` com todas as
+fontes concordando também estoura: conflito inventado apaga em silêncio toda regra
+guardada pelo componente, que é o mesmo estrago do conflito escondido na direção
+oposta.
+
+`STALE` e `UNVERIFIED` **não** são aceitos. Os dois afirmam frescor, e frescor
+depende de um TTL por domínio que este repositório ainda não tem como dado — a
+lacuna está registrada em `docs/harness/GLUE6-GAP.md`. Vocabulário sem mecanismo
+que o produza é etiqueta decorativa. `source_type` é vocabulário fechado com os
+sete tipos que a §46 do prompt nomeia; ranking de autoridade **explica** a
+discordância e não a apaga.
+
+**A medição que veio junto, e que corrige a premissa do prompt.** A §2 de
+`prompt_glue_harness.md` afirma que duas fontes oficiais divergem sobre a versão
+de Python do Glue 6.0 — 3.12 numa, 3.13 noutra — e manda não escolher. Lidas as
+três fontes diretamente em 2026-08-22: Developer Guide (*"Python upgrade from 3.11
+to 3.13"*, mais a tabela do Apêndice A), AWS News Blog e What's New **dizem 3.13**.
+A divergência não se reproduz. O único lugar onde "3.12" aparece é um resumo de
+resultado de busca, que não é fonte oficial e não foi possível conferir contra a
+página. O registro ficou `VERIFIED` com as três fontes e três `source_type`
+distintos — inventar um `CONFLICTING` para exercitar o mecanismo é exatamente o que
+o carregador recusa. O golden obrigatório da §78 é sintético e declarado como tal,
+e mede a consequência que importa: regra guardada por componente retido é pulada.
+
+`sources.lock.json` passa a vigiar as duas URLs novas (135 fontes), e a fonte de
+cada `claim` também é conferida contra o lock — sem essa metade, uma URL citada
+dentro de `claims` ficaria sem `retrieved` revalidado.
 
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 

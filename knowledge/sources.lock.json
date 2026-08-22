@@ -56,6 +56,26 @@
       ],
       "rules": []
     },
+    "https://aws.amazon.com/about-aws/whats-new/2026/08/aws-glue-6-0-price-reduction-iceberg-v3/": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
+    "https://aws.amazon.com/blogs/aws/aws-glue-6-0-now-available-with-30-lower-price-and-full-apache-iceberg-v3-support/": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
     "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -719,7 +739,8 @@
       "rules": [
         "SF-ENV-001",
         "SF-MIG-001",
-        "SF-MIG-002"
+        "SF-MIG-002",
+        "SF-MIG-004"
       ],
       "sha256": "8df8427d8f815c4d9c443c40d22b5082d9c3129cb8bc053ad5969ad119044439"
     },
@@ -729,10 +750,12 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-08-21"
+        "2026-08-21",
+        "2026-08-22"
       ],
       "rules": [
-        "SF-MIG-003"
+        "SF-MIG-003",
+        "SF-MIG-004"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html": {

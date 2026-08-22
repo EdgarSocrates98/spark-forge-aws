@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "ace6968934b6bc4873aeb9ea89149cb255d1742e",
+  "extracted_from": "0d5ed9eaea17d35c8735ac0842f69ba823ba9247",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3641,26 +3641,26 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 169,
-      "text": "6.0",
-      "context": "aqui: a matriz escolheu uma fonte para a versão de Python do Glue 6.0 e explicou isso num",
+      "line": 170,
+      "text": "3.13",
+      "context": "as três fontes oficiais dizem 3.13, e o registro ficou `VERIFIED` com as três, não um",
       "type": "number",
-      "id": "VNX-421",
+      "id": "VNX-423",
       "state": "PROVADA",
       "note": "classificacao pendente",
       "proof": {
         "kind": "command",
-        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"python\"])'",
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "6.0"
+          "value": "3.13"
         }
       }
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 176,
+      "line": 177,
       "text": "4",
       "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
       "type": "number",
@@ -4095,6 +4095,52 @@
       "proof": {
         "kind": "artifact",
         "path": "knowledge/sources.lock.json",
+        "test": "tests/test_runtime_matrix.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 38,
+      "text": "Campos `source_type`, `status` e `retrieved` por fato temporal (§1)",
+      "context": "| Campos `source_type`, `status` e `retrieved` por fato temporal (§1) | EXISTE, com teste | Forma longa de componente em",
+      "type": "capability",
+      "id": "VNX-424",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/glue/runtime-matrix.yaml",
+        "test": "tests/test_runtime_matrix.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 39,
+      "text": "Estados `VERIFIED`/`CONFLICTING`/`UNRESOLVED` (§1, §45, §78)",
+      "context": "| Estados `VERIFIED`/`CONFLICTING`/`UNRESOLVED` (§1, §45, §78) | EXISTE, com teste | `runtime_matrix.load()` retém o val",
+      "type": "capability",
+      "id": "VNX-425",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/runtime_matrix.py",
+        "test": "tests/test_runtime_matrix.py",
+        "symbol": "conflicting"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 40,
+      "text": "Classificação de qualidade de fonte (§46)",
+      "context": "| Classificação de qualidade de fonte (§46) | EXISTE, com teste | `runtime_matrix.SOURCE_TYPES`, vocabulário fechado com",
+      "type": "capability",
+      "id": "VNX-426",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/runtime_matrix.py",
         "test": "tests/test_runtime_matrix.py"
       }
     },
@@ -4586,6 +4632,22 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 152,
+      "text": "Golden de fontes conflitantes (§78)",
+      "context": "| Golden de fontes conflitantes (§78) | EXISTE, com teste | Sintético e assim declarado: a matriz publicada não tem comp",
+      "type": "capability",
+      "id": "VNX-427",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/runtime_matrix.py",
+        "test": "tests/test_runtime_matrix.py",
+        "symbol": "in_scope"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 153,
       "text": "Gate de CI sobre alegação publicada",
       "context": "| Gate de CI sobre alegação publicada | EXISTE, com teste | `scripts/check_vnext_claims.py` audita `docs/vnext/` e `docs",
@@ -4666,6 +4728,16 @@
           "value": 7
         }
       }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 169,
+      "text": "6.0",
+      "context": "aqui: a matriz escolheu uma fonte para a versão de Python do Glue 6.0 e explicou isso num",
+      "type": "number",
+      "id": "VNX-421",
+      "state": "REMOVIDA",
+      "note": "O texto que continha esta alegacao foi reescrito quando a lacuna que ele descrevia foi fechada: a frase dizia que a matriz escolhia uma fonte para a versao de Python do Glue 6.0 e explicava isso num comentario de YAML onde nenhum gate le. Agora o registro esta na forma longa, com as tres fontes e status VERIFIED, e a frase nova nao repete o numero da versao de Glue."
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",

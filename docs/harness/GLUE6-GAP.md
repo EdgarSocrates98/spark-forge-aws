@@ -35,9 +35,9 @@ Terraform e a avaliação de migração.
 | Matriz de runtime verificada, fora do código | EXISTE, com teste | `knowledge/glue/runtime-matrix.yaml` (dado, com `sources` e `retrieved` por versão) carregado por `sparkforge/facts/runtime_matrix.py`; `GLUE_MATRIX` já foi apagado de `sparkforge/facts/runtime_detect.py` | `tests/test_runtime_matrix.py`, incluindo `TestSemVersaoNoCodigo`, que proíbe versão de Glue hardcoded fora do loader |
 | Baseline das versões a validar (§3) | EXISTE, com teste | Cinco versões na matriz. Glue 6.0 declara Spark `4.1.1`, Python `3.13`, Scala `2.13.17`, Java `17` e Iceberg `1.11.0` | `tests/test_runtime_glue_versions.py`, `tests/test_runtime_matrix.py` |
 | Fonte oficial vigiada com data de recuperação | EXISTE, com teste | `knowledge/sources.lock.json` guarda `retrieved` por URL; `migrating-version-60.html` e `release-notes.html` são as fontes citadas pela linha de Glue 6.0 da matriz | `tests/test_runtime_matrix.py::TestMatrizDeVersoes::test_toda_fonte_esta_no_lock_de_fontes` |
-| Campos `source_type`, `confidence` e `status` por fato temporal (§1) | NÃO EXISTE | O lock guarda `docs`, `rules`, `pinned` e `retrieved` por URL. Não há tipo de fonte, nem confiança, nem estado do fato | — |
-| Estados `VERIFIED`/`CONFLICTING`/`STALE`/`UNRESOLVED` (§1, §45, §78) | NÃO EXISTE | Nada no repositório representa duas fontes oficiais discordando. A matriz resolveu a divergência de versão de Python **escolhendo uma fonte** e registrando o porquê num comentário de YAML — que é o que a §2 proíbe fazer em silêncio | — |
-| Classificação de qualidade de fonte (§46) | NÃO EXISTE | — | — |
+| Campos `source_type`, `status` e `retrieved` por fato temporal (§1) | EXISTE, com teste | Forma longa de componente em `knowledge/glue/runtime-matrix.yaml`, resolvida por `sparkforge/facts/runtime_matrix.py`: cada `claim` carrega `value`, `source`, `source_type` e `retrieved`. `confidence` continua sem existir — severidade e status já cobrem o uso que o motor faz hoje, e um campo a mais sem consumidor seria etiqueta | `tests/test_runtime_matrix.py::TestEvidenciaPorFonte` |
+| Estados `VERIFIED`/`CONFLICTING`/`UNRESOLVED` (§1, §45, §78) | EXISTE, com teste | `runtime_matrix.load()` retém o valor de componente em disputa em vez de escolher um, e `conflicting()` lista os pares retidos. Duas invariantes ficam em código, não em disciplina: `VERIFIED` com fontes discordantes estoura, e `CONFLICTING` com fontes concordando também. `STALE` e `UNVERIFIED` são recusados de propósito — afirmam frescor, que depende do TTL por domínio que ainda não existe | `tests/test_runtime_matrix.py::TestEvidenciaPorFonte`, `::TestComponenteEmDisputaNaoJulgaRegra` |
+| Classificação de qualidade de fonte (§46) | EXISTE, com teste | `runtime_matrix.SOURCE_TYPES`, vocabulário fechado com os sete tipos que a §46 nomeia. Ranking de autoridade explica a discordância; não a apaga — o status continua sendo o que retém o valor | `tests/test_runtime_matrix.py::TestEvidenciaPorFonte::test_source_type_fora_do_vocabulario_estoura` |
 | TTL de conhecimento por domínio (§44) | EXISTE PARCIAL | `sparkforge/context/knowledge_pack.py:KnowledgePackLoader` calcula staleness de pacote de conhecimento e `scripts/refresh_knowledge.py` reconcilia o lock. Falta o que a §44 pede: TTL configurável **por domínio**, hoje inexistente como dado | `tests/test_context_funnel.py`, `tests/test_refresh_knowledge.py` |
 
 ## 2. Caminho e grafo de migração (§7, §40, §41)
@@ -149,7 +149,7 @@ Terraform e a avaliação de migração.
 | Goldens do domínio de migração | EXISTE, com teste | `fixtures/migration/` cobre um caso por kind emitido, no formato `meta.yaml` mais `input/` e `expected/` | `tests/test_fixtures_golden_migration.py`, `tests/test_fixtures_kind_coverage.py` |
 | Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39) | NÃO EXISTE | Os goldens de hoje são por kind de fact, não por cenário de migração como `iceberg-merge`, `lakeformation-fgac` ou `custom-jar` | — |
 | Holdout não exposto às skills (§77) | NÃO EXISTE | — | — |
-| Golden de fontes conflitantes (§78) | NÃO EXISTE | Depende da representação de conflito, que também não existe | — |
+| Golden de fontes conflitantes (§78) | EXISTE, com teste | Sintético e assim declarado: a matriz publicada não tem componente em disputa, e inventar um para exercitar o mecanismo é o que o próprio carregador recusa. O teste monta a matriz em disco e mede a consequência que importa — regra guardada pelo componente retido é pulada, não julgada | `tests/test_runtime_matrix.py::TestComponenteEmDisputaNaoJulgaRegra` |
 | Gate de CI sobre alegação publicada | EXISTE, com teste | `scripts/check_vnext_claims.py` audita `docs/vnext/` e `docs/harness/`, fail-closed nos dois sentidos | `tests/test_vnext_claims.py` |
 | Conhecimento de erro por domínio novo (§79) | NÃO EXISTE | `knowledge/errors/` já existe com subdiretórios por domínio, então o lugar está definido | — |
 | Documentação dedicada e guia de decisão (§80, §81) | NÃO EXISTE | — | — |
@@ -164,10 +164,11 @@ Três frentes saíram do mapa com custo baixo e consumidor real. A primeira já 
 1. ~~Ligar o diff de Terraform à avaliação de migração (§62, §64).~~ **Feito**: `SF-MIG-004`.
    Era a única linha deste documento em que o trabalho era conexão, não construção — os dois
    lados já existiam e eram testados. A linha da §64 na tabela acima registra o resultado.
-2. **Representar conflito entre fontes (§1, §2, §45, §78).** É a capacidade que o próprio
-   prompt chama de essencial, e a única cuja ausência já produziu uma decisão silenciosa
-   aqui: a matriz escolheu uma fonte para a versão de Python do Glue 6.0 e explicou isso num
-   comentário de YAML, onde nenhum gate lê.
+2. ~~Representar conflito entre fontes (§1, §2, §45, §78).~~ **Feito**: forma longa de
+   componente na matriz, com `status`, `source_type` e valor retido em disputa. A medição
+   junto: a divergência de versão de Python que a §2 do prompt afirma **não se reproduz** —
+   as três fontes oficiais dizem 3.13, e o registro ficou `VERIFIED` com as três, não um
+   `CONFLICTING` inventado para exercitar o mecanismo.
 3. **Decidir sobre deduplicação de finding entre degraus (§40).** O comportamento oposto está
    fixado em teste, com razão registrada; mudá-lo exige decisão explícita, não conserto.
 
