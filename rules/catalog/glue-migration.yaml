@@ -155,3 +155,88 @@ rules:
     rollback: ["Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."]
     sources:
       - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html", retrieved: 2026-08-21}
+
+  # SF-MIG-004 NÃO é guardada por versão, e isso é deliberado. As três regras
+  # acima declaram `runtime_scope` porque a afirmação delas só é verdadeira
+  # depois de cruzar uma fronteira de versão confirmada (SDK v1 sai do
+  # classpath no Glue 5.0; ANSI liga por padrão no Glue 6.0). Esta afirma outra
+  # coisa: que o diff MUDOU `glue_version`. Isso é verdade para 3.0->4.0 e para
+  # 5.1->6.0 igualmente, e não depende de nenhum runtime ter sido detectado --
+  # a versão de origem e a de destino vêm do próprio fact. O gate correto aqui
+  # é `requires_facts: [tf.attribute]`, exatamente como o critério de
+  # `AREA_MAY_VANISH_WHEN` em `tests/test_rule_scope_by_nature.py` manda:
+  # `runtime_scope` guarda VERSÃO, e o que gateia por natureza do artefato é
+  # `requires_facts`.
+  #
+  # Consequência assumida: a área SF-MIG deixa de sumir inteira num runtime sem
+  # Glue -- a exceção dela saiu de `AREA_MAY_VANISH_WHEN` no mesmo commit. Num
+  # job EMR a regra é AVALIADA e não casa, porque não existe `tf.attribute` com
+  # `key: glue_version` para casar. "Avaliada e não casou" é informação
+  # diferente de "área inteira pulada", e é a informação certa.
+  #
+  # `expr` exige `previous_value` diferente de `value`, e não só
+  # `changed: true`. Um `aws_glue_job` NOVO no PR também nasce com
+  # `changed: true` (e `previously_absent: true`), e chamar a criação de um job
+  # de "migração de runtime detectada" mandaria o revisor procurar uma migração
+  # que não existe. `previous_value` só aparece quando o atributo existia antes
+  # com outro valor -- caminho ausente vira `ExprError` no avaliador, que é
+  # `False`, e o job novo não casa.
+  - id: SF-MIG-004
+    category: glue-migration
+    title: Mudança de `glue_version` no Terraform é migração de runtime, não ajuste de configuração
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          # `block: root` porque `glue_version` é atributo de raiz de
+          # `aws_glue_job`; casar em qualquer bloco aceitaria uma chave de mesmo
+          # nome dentro de `command {}` ou `default_arguments {}` no futuro.
+          where: {attrs.key: "glue_version", attrs.block: "root"}
+          expr: "attrs.changed == True and attrs.previous_value != attrs.value"
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Uma linha de `glue_version` alterada num `aws_glue_job` tem o tamanho de um
+      ajuste de configuração no diff e o efeito de uma troca inteira de runtime:
+      Spark, Python, Scala, Java, sistema de arquivos S3 e a biblioteca Iceberg
+      mudam juntos, e cada degrau entre a versão antiga e a nova acumula os
+      breaking changes do anterior. `knowledge/glue/runtime-matrix.yaml` registra
+      quais componentes mudam em cada versão, com fonte e data. Revisar essa linha
+      como configuração é o modo de falha que esta regra existe para impedir: o PR
+      é aprovado em minutos, e a quebra aparece no primeiro run real -- import de
+      SDK que não resolve mais, `cast` que passa a lançar sob ANSI, chave `fs.s3.*`
+      que virou inerte. Nenhum desses aparece no `terraform plan`.
+      A severidade é P2 porque a mudança não é um defeito em si: é uma migração que
+      precisa de avaliação. O que seria defeito é tratá-la como se não fosse.
+    proposed_change:
+      - Rodar a avaliação de migração para o par (`previous_value` -> `value`)
+        sobre o código do job, não só sobre o Terraform -- `sparkforge.migration.assessment.assess`
+        expande o caminho em degraus e aplica o catálogo `SF-MIG` em cada um.
+      - Tratar os gates de dados, performance e custo dessa avaliação como trabalho
+        do PR, não como formalidade -- eles nascem `BLOCKED` porque exigem execução
+        real do job nos dois runtimes.
+      - Versionar a definição antiga do job (script e Terraform) antes do merge, para
+        que o rollback seja uma reversão de commit e não uma reconstrução.
+    risks:
+      - Aprovar a mudança de versão sem avaliar o código do job troca uma quebra
+        visível no deploy por uma quebra silenciosa em runtime, depois de minutos de
+        processamento.
+      - Migrar direto para a versão mais nova sem comparar com o degrau intermediário
+        pode ser a decisão certa e pode não ser -- o catálogo não decide isso, quem
+        conhece os consumidores do job decide.
+    tradeoffs:
+      - Exigir avaliação completa a cada mudança de `glue_version` atrasa PRs de
+        infraestrutura que talvez não mexam em nada sensível; não exigir aceita que a
+        primeira notícia da incompatibilidade venha de produção.
+    validation:
+      - Avaliação de migração executada para o par de versões do diff, com os findings
+        do catálogo `SF-MIG` sobre o código do job anexados ao PR.
+      - Job roda de ponta a ponta no runtime novo, sobre a mesma entrada, e a saída
+        reconcilia com a do runtime antigo em contagem, schema e agregados de negócio.
+    rollback:
+      - Reverter o `glue_version` no Terraform para o valor anterior e reaplicar; a
+        definição do job é control plane e volta sem tocar em dado.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html", retrieved: 2026-07-29}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html", retrieved: 2026-08-21}

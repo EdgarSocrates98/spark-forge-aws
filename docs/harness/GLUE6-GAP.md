@@ -119,7 +119,7 @@ Terraform e a avaliação de migração.
 |---|---|---|---|
 | Leitura de `glue_version` no HCL | EXISTE, com teste | `sparkforge/facts/terraform.py` lê `glue_version` como atributo de raiz de `aws_glue_job` | `tests/test_facts_terraform.py`, `tests/test_fixtures_golden_terraform.py` |
 | Diff com valor anterior | EXISTE, com teste | `extract_terraform_diff()` anota todo `tf.attribute` com `changed` e, quando muda, `previous_value` — a matéria-prima exata da §62 | `tests/test_fixtures_golden_tfdiff.py` |
-| Finding de migração de runtime detectada (§64) | NÃO EXISTE | Nenhuma regra casa `glue_version` com `changed: true` para acionar a avaliação de migração. É a ligação mais barata deste documento: os dois lados já existem e são testados | — |
+| Finding de migração de runtime detectada (§64) | EXISTE, com teste | `SF-MIG-004`, em `rules/catalog/glue-migration.yaml`: casa `tf.attribute` com `key: glue_version` e exige `previous_value` diferente de `value`, então um `aws_glue_job` criado já em Glue 6.0 não é acusado de migrar. Declara `runtime_scope: {}` — a afirmação não depende de fronteira de versão, e o par origem/alvo vem do próprio fact | `tests/test_fixtures_golden_tfdiff.py`, com o par de fixtures `glue_version_migrado` (dispara) e `glue_job_novo` (não dispara) |
 
 ## 11. Custo, performance e correção de dados (§51 a §54)
 
@@ -159,11 +159,11 @@ Terraform e a avaliação de migração.
 
 ## O que este mapa recomenda atacar primeiro
 
-Três frentes saem do mapa com custo baixo e consumidor real hoje, nesta ordem:
+Três frentes saíram do mapa com custo baixo e consumidor real. A primeira já foi feita:
 
-1. **Ligar o diff de Terraform à avaliação de migração (§62, §64).** Os dois lados existem e
-   são testados; falta uma regra que case `glue_version` com `changed: true`. É a única linha
-   deste documento em que o trabalho é conexão, não construção.
+1. ~~Ligar o diff de Terraform à avaliação de migração (§62, §64).~~ **Feito**: `SF-MIG-004`.
+   Era a única linha deste documento em que o trabalho era conexão, não construção — os dois
+   lados já existiam e eram testados. A linha da §64 na tabela acima registra o resultado.
 2. **Representar conflito entre fontes (§1, §2, §45, §78).** É a capacidade que o próprio
    prompt chama de essencial, e a única cuja ausência já produziu uma decisão silenciosa
    aqui: a matriz escolheu uma fonte para a versão de Python do Glue 6.0 e explicou isso num

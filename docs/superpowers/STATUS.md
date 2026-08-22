@@ -40,10 +40,10 @@ arquivo ganha.
 | Testes | **5633** passando, 5 skipped, medido em `4705049` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **9 de 116** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
+| Regras com `runtime_scope` não-vazio | **12 de 120** — 11 guardadas por `glue` (3 delas `SF-MIG`), 1 por faixa de Spark (`SF-GRAPH-002`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
 | Extratores de facts | **20** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 22 `.py`, e `runtime_matrix.py` e `secrets.py` nao emitem kind |
 | Fact kinds distintos emitidos | **121** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **116**, sendo **55 executáveis** e **61 `structural`** (26 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
+| Regras de diagnóstico | **120**, sendo **58 `confirmed`** e **62 `structural`** (27 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
@@ -55,7 +55,7 @@ arquivo ganha.
 | Skills | **40** (20 herdadas + 20 da expansão agêntica) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **171** em 21 domínios | `fixtures/` |
+| Fixtures golden | **183** em 22 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **131** (123 móveis, 8 fixas) — 61 citadas por regra, 126 por `knowledge/`, 56 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -2088,6 +2088,37 @@ externo hoje (`docs/vnext/claims.lock.json` cita `sparkforge/migration/glue/anal
 como o único artefato real por trás da dimensão "Migration" numa alegação
 composta), e trocar o backend de um comando publicado não é o mesmo trabalho
 que confirmar uma versão de runtime.
+
+### Continuação — `SF-MIG-004`, o diff de Terraform ligado à migração (2026-08-22)
+
+`docs/harness/GLUE6-GAP.md` mediu o que `prompt_glue_harness.md` pede contra o
+que já existe, e apontou uma única linha em que o trabalho era **conexão, e não
+construção**: `extract_terraform_diff` já anotava todo `tf.attribute` com
+`changed` e `previous_value`, e `assess()` já expandia um par de versões em
+degraus, mas nenhuma regra ligava os dois. Uma linha de `glue_version` alterada
+num PR tinha o tamanho de um ajuste de configuração e o efeito de trocar Spark,
+Python, Scala, Java e Iceberg de uma vez.
+
+`SF-MIG-004` fecha isso. Ela casa `tf.attribute` com `key: glue_version` no bloco
+raiz e exige `previous_value` **diferente** de `value` — não apenas
+`changed: true`, que também é verdade para um `aws_glue_job` criado no próprio PR
+já em Glue 6.0, onde não existe migração nenhuma para avaliar. O par de fixtures
+`fixtures/tfdiff/glue_version_migrado` (dispara) e `fixtures/tfdiff/glue_job_novo`
+(não dispara) prova as duas pontas.
+
+**A regra é a primeira de SF-MIG com `runtime_scope: {}`, e isso teve consequência
+medida.** As três anteriores são guardadas por fronteira de versão; esta afirma
+que o diff mudou a versão, o que vale para qualquer par e não depende de runtime
+detectado — o gate correto é `requires_facts: [tf.attribute]`. Com ela a área
+deixou de sumir inteira num runtime sem Glue, e as duas exceções de ÁREA que
+declaravam esse sumiço viraram letra morta: `AREA_MAY_VANISH_WHEN`
+(`tests/test_rule_scope_by_nature.py`) e `AREA_FULLY_OUT_OF_SCOPE`
+(`tests/test_runtime_glue_versions.py`) reprovaram juntas, em seis testes, pedindo
+que a exceção fosse reexaminada. As duas saíram, com a justificativa registrada no
+lugar. `docs/gates-por-mudanca.md` ganhou as duas listas, que não estavam lá.
+
+O catálogo vai a 120 regras; `manifest.json` acompanha. `rules/catalog/README.md`
+listava quinze áreas e não citava `MIG` desde que a área nasceu — corrigido aqui.
 
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 

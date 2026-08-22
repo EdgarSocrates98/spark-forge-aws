@@ -50,6 +50,15 @@ Estes três mantêm **listas escritas à mão** de quais regras são guardadas p
 `EXPECTED_OUT_OF_SCOPE`). Uma regra com escopo que não entre na lista certa faz o
 teste falhar pedindo justificativa — e é isso que ele quer, não um bypass.
 
+Duas dessas listas são sobre a ÁREA inteira, não sobre a regra, e por isso quebram
+quando a regra nova tem natureza diferente das irmãs: `AREA_MAY_VANISH_WHEN`
+(`test_rule_scope_by_nature.py`) e `AREA_FULLY_OUT_OF_SCOPE`
+(`test_runtime_glue_versions.py`) declaram em que runtime uma área pode sumir por
+completo. Medido em `SF-MIG-004`: acrescentar à área uma regra com
+`runtime_scope: {}` faz a área deixar de sumir, e as duas exceções viram letra morta
+— seis testes vermelhos de uma vez, todos pedindo que a exceção seja reexaminada e
+não contornada.
+
 O comentário no fim de `test_rule_scope_by_nature.py` explica por que o agregado é
 medido: na Fase 3b, `SF-ICE-001..005` não estavam em lista nenhuma, caíram em
 `_AGNOSTICAS` e cinco regras sumiram juntas de um runtime. *"O furo nao estava na

@@ -39,7 +39,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 
 | Campo | Obrigatório | Nota |
 |---|---|---|
-| `id` | sim | Único. **Quinze** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `EMRS` (application EMR Serverless), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança), `GRAPH` (processamento de grafo com GraphFrames). **`EMR` é prefixo de `EMRS`**: quem comparar área por `startswith` sobre o `id` conta toda regra `SF-EMRS-*` como `SF-EMR`, e a fronteira entre as duas passa a ser medida ao contrário — compare pelo `area:` declarado no cabeçalho do arquivo |
+| `id` | sim | Único. **Dezesseis** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `EMRS` (application EMR Serverless), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança), `GRAPH` (processamento de grafo com GraphFrames), `MIG` (compatibilidade de migração entre versões de runtime). **`EMR` é prefixo de `EMRS`**: quem comparar área por `startswith` sobre o `id` conta toda regra `SF-EMRS-*` como `SF-EMR`, e a fronteira entre as duas passa a ser medida ao contrário — compare pelo `area:` declarado no cabeçalho do arquivo |
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |

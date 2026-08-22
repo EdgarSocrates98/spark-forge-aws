@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "f1d452ac3408a1a3ccf9e8a5a9ebc4b1b5211121",
+  "extracted_from": "ace6968934b6bc4873aeb9ea89149cb255d1742e",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3546,6 +3546,25 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 122,
+      "text": "6.0",
+      "context": "| Finding de migração de runtime detectada (§64) | EXISTE, com teste | `SF-MIG-004`, em `rules/catalog/glue-migration.ya",
+      "type": "number",
+      "id": "VNX-382",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 142,
       "text": "6",
       "context": "| Skills de Glue 6 com disclosure progressivo (§9, §72) | NÃO EXISTE | Nenhuma skill atual é de Glue 6. A infraestrutura",
@@ -3588,7 +3607,7 @@
       "text": "6.0",
       "context": "| Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39) | NÃO EXISTE | Os goldens de hoje são por kind de fact, n",
       "type": "number",
-      "id": "VNX-382",
+      "id": "VNX-383",
       "state": "PROVADA",
       "note": "classificacao pendente",
       "proof": {
@@ -3607,7 +3626,7 @@
       "text": "6.0",
       "context": "| ADR de suporte a Glue 6.0 (§83) | NÃO EXISTE | `docs/vnext/adrs/` é o diretório onde entraria | — |",
       "type": "number",
-      "id": "VNX-383",
+      "id": "VNX-384",
       "state": "PROVADA",
       "note": "classificacao pendente",
       "proof": {
@@ -3626,7 +3645,7 @@
       "text": "6.0",
       "context": "aqui: a matriz escolheu uma fonte para a versão de Python do Glue 6.0 e explicou isso num",
       "type": "number",
-      "id": "VNX-384",
+      "id": "VNX-421",
       "state": "PROVADA",
       "note": "classificacao pendente",
       "proof": {
@@ -4427,6 +4446,21 @@
         "path": "sparkforge/facts/terraform.py",
         "test": "tests/test_fixtures_golden_tfdiff.py",
         "symbol": "extract_terraform_diff"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 122,
+      "text": "Finding de migração de runtime detectada (§64)",
+      "context": "| Finding de migração de runtime detectada (§64) | EXISTE, com teste | `SF-MIG-004`, em `rules/catalog/glue-migration.ya",
+      "type": "capability",
+      "id": "VNX-422",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "rules/catalog/glue-migration.yaml",
+        "test": "tests/test_fixtures_golden_tfdiff.py"
       }
     },
     {

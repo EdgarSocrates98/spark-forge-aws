@@ -154,12 +154,18 @@ class TestRuleScopeOnTheCurrentRuntimes:
         assert out == EXPECTED_OUT_OF_SCOPE[version], version
 
     # Excecao de AREA INTEIRA, e nao regra a regra como EXPECTED_OUT_OF_SCOPE
-    # acima: SF-MIG tem tres regras (001/002 `>=5.0`, 003 `>=6.0` desde a Task
-    # 11), e em Glue 4.0 nenhuma das duas fronteiras foi cruzada -- a area
-    # inteira fica muda, e isso e correto: 4.0 antecede toda quebra de migracao
-    # que o catalogo julga hoje. Em 5.0 e 5.1 a area sobrevive por SF-MIG-001/002
-    # (SF-MIG-003 continua fora, ja coberto por EXPECTED_OUT_OF_SCOPE).
-    AREA_FULLY_OUT_OF_SCOPE = {"4.0": {"SF-MIG"}}
+    # acima.
+    #
+    # SF-MIG SAIU DAQUI quando SF-MIG-004 entrou. A excecao dizia que em Glue
+    # 4.0 a area inteira fica muda, porque as tres regras de entao (001/002
+    # `>=5.0`, 003 `>=6.0`) so valem depois de cruzar uma fronteira de versao
+    # que o 4.0 antecede. SF-MIG-004 nao e desse tipo: ela afirma que o diff de
+    # Terraform MUDOU `glue_version`, o que e verdade para qualquer par de
+    # versoes e nao depende de runtime detectado nenhum -- por isso declara
+    # `runtime_scope: {}` e e gateada por `requires_facts: [tf.attribute]`.
+    # Com ela a area sobrevive ao guard em toda versao, e manter a excecao aqui
+    # seria letra morta pre-aprovando um sumico que ja nao acontece.
+    AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {}
 
     @pytest.mark.parametrize("version", CURRENT)
     def test_every_area_of_the_catalog_survives_the_version_guard(self, version):

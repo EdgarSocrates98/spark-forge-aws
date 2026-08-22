@@ -365,18 +365,24 @@ ALL_RUNTIME_IDS = [nome for nome, _ in ALL_RUNTIMES]
 # e `requires_facts`, e o `runtime_scope` deve ser `{}`.
 AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     "SF-GLUE": (lambda runtime: not runtime.get("glue"), "runtime sem `glue` detectado"),
-    # SF-MIG entrou na Task 11 desta fase: as tres regras da area sao
-    # GLUE_VERSIONED (SF-MIG-001/002 `>=5.0`, SF-MIG-003 `>=6.0`) e nenhuma le
-    # outra infraestrutura -- sinal de codigo (`mig.sdk_import`,
-    # `mig.emrfs_config`, `mig.ansi_risk`), nao Terraform. Um runtime sem Glue
-    # ou com Glue abaixo de 5.0 nao tem quebra de migracao nenhuma para
-    # acusar: reusa `in_scope` com o menor limiar da area em vez de reimplementar
-    # comparacao de versao aqui.
-    "SF-MIG": (
-        lambda runtime: not in_scope({"glue": ">=5.0"}, runtime),
-        "runtime sem `glue` detectado ou com Glue abaixo de 5.0 (a menor "
-        "fronteira entre as tres regras de SF-MIG)",
-    ),
+    # SF-MIG SAIU DAQUI quando SF-MIG-004 entrou no catalogo.
+    #
+    # A excecao existia porque as tres regras de entao eram todas
+    # GLUE_VERSIONED (001/002 `>=5.0`, 003 `>=6.0`): num runtime sem Glue, ou
+    # com Glue abaixo de 5.0, nenhuma delas tinha fronteira cruzada para
+    # acusar, e a area sumia inteira por versao.
+    #
+    # SF-MIG-004 afirma outra coisa -- que o diff de Terraform MUDOU
+    # `glue_version` -- e isso vale para 3.0->4.0 tanto quanto para 5.1->6.0,
+    # sem depender de runtime detectado. Ela declara `runtime_scope: {}` e e
+    # gateada por `requires_facts: [tf.attribute]`, que e exatamente o criterio
+    # escrito no comentario acima deste mapa. Consequencia: num runtime EMR a
+    # area SF-MIG passa a ser AVALIADA e simplesmente nao casa, por falta do
+    # fact -- estado diferente de "area inteira pulada", e o estado certo.
+    # Manter a excecao aqui seria letra morta pre-aprovando um sumico que ja
+    # nao acontece, que e o que
+    # `test_declared_exceptions_really_vanish_when_their_condition_holds`
+    # existe para impedir.
 }
 
 
