@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "b41d52d3b863f9e6c2bb1e14a0df805148339c20",
+  "extracted_from": "106066b9f6e060d12a0b62e1a49660a4aef466d2",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3464,7 +3464,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 90,
       "text": "1.11",
-      "context": "| Conhecimento de Iceberg 1.11 (§17) | NÃO EXISTE | A matriz declara a versão de biblioteca do Glue 6.0. Nada descreve r",
+      "context": "| Conhecimento de Iceberg 1.11 (§17) | EXISTE, com teste | `knowledge/storage/iceberg-v3.md` traz o que a release de 1.1",
       "type": "number",
       "id": "VNX-378",
       "state": "PROVADA",
@@ -3482,8 +3482,65 @@
     {
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 90,
+      "text": "11",
+      "context": "| Conhecimento de Iceberg 1.11 (§17) | EXISTE, com teste | `knowledge/storage/iceberg-v3.md` traz o que a release de 1.1",
+      "type": "number",
+      "id": "VNX-434",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; t=pathlib.Path(\"knowledge/storage/iceberg-v3.md\").read_text(encoding=\"utf-8\"); print(\"1.11.0\" in t)'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "True"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 90,
+      "text": "3.4",
+      "context": "| Conhecimento de Iceberg 1.11 (§17) | EXISTE, com teste | `knowledge/storage/iceberg-v3.md` traz o que a release de 1.1",
+      "type": "number",
+      "id": "VNX-435",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; t=pathlib.Path(\"knowledge/storage/iceberg-v3.md\").read_text(encoding=\"utf-8\"); print(\"Spark 3.4\" in t)'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "True"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 90,
+      "text": "4.1",
+      "context": "| Conhecimento de Iceberg 1.11 (§17) | EXISTE, com teste | `knowledge/storage/iceberg-v3.md` traz o que a release de 1.1",
+      "type": "number",
+      "id": "VNX-436",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; t=pathlib.Path(\"knowledge/storage/iceberg-v3.md\").read_text(encoding=\"utf-8\"); print(\"Spark 4.1\" in t)'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "True"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 91,
       "text": "6.0",
-      "context": "| Conhecimento de Iceberg 1.11 (§17) | NÃO EXISTE | A matriz declara a versão de biblioteca do Glue 6.0. Nada descreve r",
+      "context": "| Domínio `iceberg-v3`, Variant, deletion vectors e row lineage (§18, §21, §22, §23) | EXISTE PARCIAL | `knowledge/stora",
       "type": "number",
       "id": "VNX-379",
       "state": "PROVADA",
@@ -4328,6 +4385,36 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 90,
+      "text": "Conhecimento de Iceberg 1.11 (§17)",
+      "context": "| Conhecimento de Iceberg 1.11 (§17) | EXISTE, com teste | `knowledge/storage/iceberg-v3.md` traz o que a release de 1.1",
+      "type": "capability",
+      "id": "VNX-437",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/storage/iceberg-v3.md",
+        "test": "tests/test_offline_expansion.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 91,
+      "text": "Domínio `iceberg-v3`, Variant, deletion vectors e row lineage (§18, §21, §22, §23)",
+      "context": "| Domínio `iceberg-v3`, Variant, deletion vectors e row lineage (§18, §21, §22, §23) | EXISTE PARCIAL | `knowledge/stora",
+      "type": "capability",
+      "id": "VNX-438",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/storage/iceberg-v3.md",
+        "test": "tests/test_offline_expansion.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 94,
       "text": "Iceberg Doctor v2 com prontidão para v3 (§50)",
       "context": "| Iceberg Doctor v2 com prontidão para v3 (§50) | EXISTE PARCIAL | O relatório existe e carrega `format_version`; pronti",
@@ -4711,16 +4798,6 @@
       }
     },
     {
-      "doc": "docs/harness/BASELINE.md",
-      "line": 14,
-      "text": "6686156",
-      "context": "- **Commit medido**: `6686156` (`git rev-parse --short HEAD`)",
-      "type": "number",
-      "id": "VNX-185",
-      "state": "REMOVIDA",
-      "note": "O SHA citado mudou com a reescrita de historia que removeu nomes de material sigiloso -- o baseline continua ancorado, agora em 6a76b7a, e as provas historical do manifesto foram remapeadas pelo commit-map da propria reescrita. O SHA novo tem letra e por isso nao e capturado pelo extrator de numeros; a ancora que importa continua conferida por proof.commit, que o gate valida com git cat-file."
-    },
-    {
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 169,
       "text": "6.0",
@@ -4729,6 +4806,16 @@
       "id": "VNX-421",
       "state": "REMOVIDA",
       "note": "O texto que continha esta alegacao foi reescrito quando a lacuna que ele descrevia foi fechada: a frase dizia que a matriz escolhia uma fonte para a versao de Python do Glue 6.0 e explicava isso num comentario de YAML onde nenhum gate le. Agora o registro esta na forma longa, com as tres fontes e status VERIFIED, e a frase nova nao repete o numero da versao de Glue."
+    },
+    {
+      "doc": "docs/harness/BASELINE.md",
+      "line": 14,
+      "text": "6686156",
+      "context": "- **Commit medido**: `6686156` (`git rev-parse --short HEAD`)",
+      "type": "number",
+      "id": "VNX-185",
+      "state": "REMOVIDA",
+      "note": "O SHA citado mudou com a reescrita de historia que removeu nomes de material sigiloso -- o baseline continua ancorado, agora em 6a76b7a, e as provas historical do manifesto foram remapeadas pelo commit-map da propria reescrita. O SHA novo tem letra e por isso nao e capturado pelo extrator de numeros; a ancora que importa continua conferida por proof.commit, que o gate valida com git cat-file."
     },
     {
       "doc": "docs/vnext/COURSE-KNOWLEDGE-MAP.md",

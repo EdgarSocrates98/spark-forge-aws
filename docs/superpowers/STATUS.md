@@ -57,7 +57,7 @@ arquivo ganha.
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
 | Fixtures golden | **187** em 22 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **137** (127 móveis, 10 fixas) — 63 citadas por regra, 130 por `knowledge/`, 58 pelas duas | `knowledge/sources.lock.json` |
+| Fontes oficiais vigiadas | **139** (127 móveis, 12 fixas) — 63 citadas por regra, 130 por `knowledge/`, 58 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
@@ -2280,6 +2280,32 @@ no extrator e no nível da regra.
 inclusive um que seja recurso de teste fora do classpath do job — e `SF-SPARK4-004` herda
 isso. Separar exigiria um fact sobre `--extra-jars`, que não existe. Está escrito na linha
 correspondente de `docs/harness/GLUE6-GAP.md`.
+
+### Continuação — fase G3, Iceberg 1.11 e spec v3 como dado (2026-08-22)
+
+`knowledge/storage/iceberg-v3.md` entra com uma separação que a §18 do prompt exige e que é
+o ponto inteiro do documento: **feature da spec** é uma coisa, **suporte da engine** é
+outra, e uma não se deduz da outra. As duas metades ficam fisicamente separadas, e o caso
+dos transforms multi-argumento aparece nas duas com veredito oposto — a spec v3 os define,
+o Glue 6.0 declara que não os suporta.
+
+Da spec v3: tipos novos (timestamp de nanossegundo, `unknown`, `variant`, `geometry`,
+`geography`), valor default de coluna, transforms multi-argumento, row lineage e deletion
+vectors binários. Da biblioteca 1.11.0: remote scan planning com REST catalog, API de
+estatística de partição, Java 11 removido, Spark 3.4 deprecado e Spark 4.1 suportado. Da
+engine: as seis limitações que a AWS declara para o Glue 6.0, incluindo a que já tem
+regra — tabela v3 não é lida pelo Athena, que é `SF-ENV-002`.
+
+**Nenhuma regra nova, e isso foi decisão medida.** Os facts que permitiriam julgar uso de
+Variant, transform multi-argumento ou DynamicFrame não existem, e a única armadilha
+judicável hoje já está coberta. Criar extrator sem consumidor é o erro que o mapa de lacuna
+existe para impedir. O candidato mais forte — tipo v3 sob DynamicFrame, cujo modo de falha
+é silencioso — está nomeado no próprio documento, com os dois facts que faltariam.
+
+Duas afirmações ficaram marcadas **a verificar**, na convenção de `runtime-matrix.md`: o
+custo de pruning e shredding de VARIANT, e o alcance do "suporte inicial" a `MERGE INTO`
+com evolução de schema no Spark 4.1. As duas exigiriam completar de memória o que a fonte
+não diz.
 
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
