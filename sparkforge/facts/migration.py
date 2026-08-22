@@ -62,6 +62,7 @@ EMITTED_KINDS = frozenset(
         "mig.table_format",
         "mig.jar_binary",
         "mig.python_dep",
+        "mig.renamed_conf",
     }
 )
 
@@ -115,6 +116,34 @@ _JAR_SCALA_RE = re.compile(r"_(\d+\.\d+)-")
 # forma pinada de proposito: e exatamente essa fixacao de versao que o kind
 # observa, entao uma linha sem `==` nao e um fato deste vocabulario.
 _REQUIREMENT_RE = re.compile(r"^([A-Za-z0-9_.\-]+)==([^\s#]+)")
+
+
+# Configs que MUDARAM DE NOME no Spark 4.0 -- o nome antigo nao e lido e nao
+# reclama, entao o job segue rodando com a configuracao que quem le acha que
+# esta ativa. Mesmo modo de falha de `fs.s3.consistent` no Glue 5 (SF-MIG-002):
+# silencio, nao erro. Mapa fechado de proposito: `spark.sql.legacy.` continua
+# sendo um prefixo VALIDO em Spark 4 (`timeParserPolicy`, `ctePrecedencePolicy`),
+# e tratar a familia inteira como renomeada acusaria config correta.
+_RENAMED_CONF: dict[str, str] = {
+    "spark.sql.legacy.parquet.int96RebaseModeInWrite": (
+        "spark.sql.parquet.int96RebaseModeInWrite"
+    ),
+    "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": (
+        "spark.sql.parquet.datetimeRebaseModeInWrite"
+    ),
+    "spark.sql.legacy.parquet.int96RebaseModeInRead": (
+        "spark.sql.parquet.int96RebaseModeInRead"
+    ),
+    "spark.sql.legacy.avro.datetimeRebaseModeInWrite": (
+        "spark.sql.avro.datetimeRebaseModeInWrite"
+    ),
+    "spark.sql.legacy.avro.datetimeRebaseModeInRead": (
+        "spark.sql.avro.datetimeRebaseModeInRead"
+    ),
+    # Nao e config: e valor de `compression`. Entra no mesmo kind porque o
+    # fato observado e o mesmo -- um nome que o runtime alvo nao aceita mais.
+    "lz4raw": "lz4_raw",
+}
 
 
 def _source_subject(file: str, line: int) -> dict[str, Any]:
@@ -207,6 +236,30 @@ def _config_facts(text: str, anchor: str, provenance: dict[str, Any]) -> list[Fa
     return facts
 
 
+def _renamed_conf_facts(text: str, anchor: str, provenance: dict[str, Any]) -> list[Fact]:
+    """Observa nome antigo de config renomeada no Spark 4.0.
+
+    Le o mesmo token entre aspas que `_config_facts` ja le -- nao reparseia a
+    linha de outro jeito, para que as duas leituras nunca discordem sobre o que
+    esta escrito ali.
+    """
+    facts: list[Fact] = []
+    for numero, linha in enumerate(text.splitlines(), start=1):
+        for token in _CONF_KEY_RE.findall(linha):
+            novo = _RENAMED_CONF.get(token)
+            if novo is None:
+                continue
+            facts.append(
+                Fact(
+                    kind="mig.renamed_conf",
+                    subject=_source_subject(anchor, numero),
+                    attrs={"key": token, "renamed_to": novo},
+                    provenance=provenance,
+                )
+            )
+    return facts
+
+
 def _jar_facts(path: Path, anchor: str, provenance: dict[str, Any]) -> list[Fact]:
     """Um `.jar` e uma OBSERVACAO de arquivo inteiro: um binario nao tem linha
     de fonte para varrer, entao um fact por arquivo (nao por linha) e a
@@ -262,7 +315,11 @@ def extract_migration_path(path: Path, repo_root: Path | None = None) -> list[Fa
     sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
     provenance = {"artifact": anchor, "artifact_sha256": sha, "extractor": EXTRACTOR_ID}
 
-    facts = _sdk_imports(text, anchor, provenance) + _config_facts(text, anchor, provenance)
+    facts = (
+        _sdk_imports(text, anchor, provenance)
+        + _config_facts(text, anchor, provenance)
+        + _renamed_conf_facts(text, anchor, provenance)
+    )
 
     unknown = {f.kind for f in facts} - EMITTED_KINDS
     if unknown:

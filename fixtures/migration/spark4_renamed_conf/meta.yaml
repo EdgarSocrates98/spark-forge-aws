@@ -1,0 +1,21 @@
+name: spark4_renamed_conf
+proves: >
+  Config e codec que MUDARAM DE NOME no Spark 4.0. As duas linhas rodam sem
+  erro em Spark 3.5 e continuam sem erro em 4.0 -- so param de ter efeito: o
+  nome antigo nao e lido e nao reclama, entao a submissao passa e o job roda
+  com a configuracao que quem le o codigo acha que esta ativa. Silencio, nao
+  erro -- o mesmo modo de falha de `fs.s3.consistent` no Glue 5 (SF-MIG-002).
+  Runtime Glue 6.0 porque e onde o Spark 4 vive; a regra que julgue este kind
+  ainda nao existe no catalogo, entao a fixture prova so o vocabulario do
+  fact. `mig.legacy_conf` sai junto de proposito: a chave comeca com
+  `spark.sql.legacy.` e aquele kind observa a familia inteira, sem julgar se o
+  nome sobreviveu a versao 4.
+runtime:
+  glue: "6.0"
+  spark: "4.1.1"
+  python: "3.13"
+  iceberg: "1.11.0"
+expects_kinds:
+  - mig.legacy_conf
+  - mig.renamed_conf
+expects_rules: []

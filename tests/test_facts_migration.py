@@ -202,3 +202,34 @@ class TestNegativoDependenciaPython:
             if f.kind == "mig.python_dep"
         }
         assert deps == {"requests": "2.31.0"}
+
+
+class TestConfigRenomeadaNoSpark4:
+    def test_reconhece_a_chave_de_rebase_com_prefixo_legacy(self, tmp_path):
+        (tmp_path / "job.py").write_text(
+            'spark.conf.set("spark.sql.legacy.parquet.int96RebaseModeInWrite", "CORRECTED")\n',
+            encoding="utf-8",
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        renomeadas = [f for f in facts if f.kind == "mig.renamed_conf"]
+        assert len(renomeadas) == 1
+        assert renomeadas[0].attrs["key"] == "spark.sql.legacy.parquet.int96RebaseModeInWrite"
+        assert renomeadas[0].attrs["renamed_to"] == "spark.sql.parquet.int96RebaseModeInWrite"
+
+    def test_codec_lz4raw_e_observado_pelo_mesmo_kind(self, tmp_path):
+        (tmp_path / "job.py").write_text(
+            'df.write.option("compression", "lz4raw").parquet(destino)\n', encoding="utf-8"
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        renomeadas = [f for f in facts if f.kind == "mig.renamed_conf"]
+        assert [f.attrs["renamed_to"] for f in renomeadas] == ["lz4_raw"]
+
+    def test_chave_legacy_que_nao_foi_renomeada_nao_vira_este_kind(self, tmp_path):
+        """`spark.sql.legacy.timeParserPolicy` continua existindo com esse nome
+        em Spark 4. Tratar toda chave `legacy.` como renomeada acusaria config
+        correta -- e `mig.legacy_conf` ja observa a familia inteira."""
+        (tmp_path / "job.py").write_text(
+            'spark.conf.set("spark.sql.legacy.timeParserPolicy", "LEGACY")\n', encoding="utf-8"
+        )
+        facts = migration.extract_migration_path(tmp_path / "job.py", repo_root=tmp_path)
+        assert [f for f in facts if f.kind == "mig.renamed_conf"] == []

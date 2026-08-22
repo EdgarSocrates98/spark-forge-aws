@@ -17,7 +17,7 @@ id) -- um laco por arquivo concatenaria blocos ja ordenados por arquivo e o
 golden descreveria uma ordenacao que nenhuma superficie do produto emite.
 
 O corpus e desenhado por eixo, uma fixture por kind, mais o par negativo/
-positivo de SF-MIG-003 que a Task 11 acrescentou (dez fixtures para oito
+positivo de SF-MIG-003 que a Task 11 acrescentou (onze fixtures para nove
 kinds):
 
   * `sdk_v1_import` -- dispara SF-MIG-001 (`com.amazonaws.*` sobrevivendo no
@@ -37,6 +37,12 @@ kinds):
     `python_dep` -- os cinco kinds que a Task 5/6 emitiu sem regra
     correspondente ainda (observacao pura). Cada um prova so o vocabulario do
     fact, `expects_rules` vazio de proposito.
+  * `spark4_renamed_conf` -- config e codec renomeados no Spark 4.0, julgados
+    em Glue 6.0. Tambem observacao pura: a regra que consuma `mig.renamed_conf`
+    ainda nao existe. Emite dois kinds na mesma linha (`mig.legacy_conf` sai
+    junto porque a chave comeca com `spark.sql.legacy.`) -- e a unica fixture
+    do corpus onde dois kinds observam o mesmo trecho, o que prova que os dois
+    detectores leem a linha sem se atropelar.
   * `clean_job` -- o negativo de referencia: job escrito do jeito atual (SDK
     v2, sem config de EMRFS, sem API depreciada, sem cast sem guarda). Zero
     facts, zero findings -- se algum kind `mig.*` disparar aqui, e falso
@@ -76,6 +82,7 @@ REQUIRED_FIXTURES = {
     "table_format",
     "jar_binary",
     "python_dep",
+    "spark4_renamed_conf",
     "clean_job",
 }
 
