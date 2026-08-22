@@ -40,10 +40,10 @@ arquivo ganha.
 | Testes | **5633** passando, 5 skipped, medido em `4705049` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **12 de 120** — 11 guardadas por `glue` (3 delas `SF-MIG`), 1 por faixa de Spark (`SF-GRAPH-002`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
+| Regras com `runtime_scope` não-vazio | **15 de 123** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
 | Extratores de facts | **20** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 22 `.py`, e `runtime_matrix.py` e `secrets.py` nao emitem kind |
-| Fact kinds distintos emitidos | **121** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **120**, sendo **58 `confirmed`** e **62 `structural`** (27 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
+| Fact kinds distintos emitidos | **131** | união de `EMITTED_KINDS` |
+| Regras de diagnóstico | **123**, sendo **58 `confirmed`** e **65 `structural`** (30 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
@@ -55,9 +55,9 @@ arquivo ganha.
 | Skills | **40** (20 herdadas + 20 da expansão agêntica) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **183** em 22 domínios | `fixtures/` |
+| Fixtures golden | **186** em 22 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **135** (127 móveis, 8 fixas) — 63 citadas por regra, 130 por `knowledge/`, 58 pelas duas | `knowledge/sources.lock.json` |
+| Fontes oficiais vigiadas | **137** (127 móveis, 10 fixas) — 63 citadas por regra, 130 por `knowledge/`, 58 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
@@ -2195,6 +2195,52 @@ Medido de passagem e registrado em teste: o motor **já** emite um só
 como evidência — a colapsagem por arquivo acontece antes da deduplicação do
 relatório, e achar o contrário mandaria alguém procurar o bug no lugar errado no
 dia em que a contagem parecesse baixa demais.
+
+### Continuação — fase G1, Spark 4 como dado (2026-08-22)
+
+Plano em [`plans/2026-08-22-spark4-como-dado.md`](plans/2026-08-22-spark4-como-dado.md),
+executado por subagentes, uma task por vez, com gate entre elas.
+
+Antes desta fase o repositório tinha **uma** mudança de Spark 4 codificada — o ANSI mode,
+em `SF-MIG-003` — enquanto Glue 6.0 *é* Spark 4.1.1. `knowledge/spark/spark4-migration.md`
+fecha isso com o que as duas páginas oficiais do Spark 4.1.1 afirmam, lidas em 2026-08-22:
+configs de rebase que perderam o prefixo `legacy`, APIs de pandas-on-Spark removidas, pisos
+de PyArrow/pandas/NumPy, e as mudanças de comportamento **sem sinal no código**, que ficam
+registradas como conhecimento para o plano de regressão em vez de virarem regra que nunca
+dispararia.
+
+Dois kinds novos em `sparkforge/facts/migration.py` — `mig.renamed_conf` e
+`mig.removed_api` — e um campo novo em `mig.python_dep` (`major`, inteiro), porque o
+avaliador de expressões do catálogo compara número e a versão morava só como string.
+Extrair o major é observação; o limiar `15` mora na regra.
+
+`rules/catalog/spark4.yaml` traz a área **`SF-SPARK4`** com três regras, guardadas por
+versão de **Spark** e não de Glue: quem mudou o produto foi o Apache, e as três afirmações
+valem igual num EMR com Spark 4. Guardar por Glue amarraria a afirmação a um empacotamento
+que não a produziu.
+
+**Três defeitos que a execução achou e que o plano não previa.**
+
+O primeiro: o schema de finding exigia `^SF-[A-Z]+-[0-9]{3}$` no `rule_id`, e o dígito de
+`SF-SPARK4` fazia a área inteira ser rejeitada na validação. O padrão passou a
+`^SF-[A-Z][A-Z0-9]*-[0-9]{3}$` nos três lugares em que estava escrito.
+
+O segundo: o detector novo usava `text.splitlines()`, enquanto os irmãos usam
+`text.split("
+")`. `splitlines()` também quebra em form feed, `` e U+2028 — um job com
+qualquer um deles faria dois kinds numerarem a **mesma** linha de forma diferente, e quem
+lesse o relatório procuraria a config em dois lugares, um dos quais não existe. Foi achado
+pela auto-revisão do próprio implementador, com teste de regressão junto.
+
+O terceiro: a área `SF-SPARK4` some inteira em Glue 4.0, 5.0 e 5.1, porque as três rodam
+Spark 3.x. Isso é **correto** e precisava ser declarado, não contornado —
+`AREA_FULLY_OUT_OF_SCOPE` ganhou a entrada com a justificativa. É o espelho exato do que
+aconteceu com `SF-MIG` no commit `70bda53`, onde a exceção foi **removida** porque
+`SF-MIG-004` fez a área deixar de sumir.
+
+Duas alegações de `CURRENT-HARNESS-GAP.md` deixaram de bater e foram remedidas em vez de
+afrouxadas: `routing.yaml` cresceu de 42 para 43 KB com a rota nova, e `tools.py` passou
+`_core.py` como maior arquivo do pacote determinístico.
 
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 

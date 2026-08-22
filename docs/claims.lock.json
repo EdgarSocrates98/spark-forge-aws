@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "09b4d110ae01e46afb40faee7710c414934effd9",
+  "extracted_from": "efcd9d8105ec2a53c397676ec502d1d36977ef5d",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -2805,12 +2805,12 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 62,
-      "text": "42",
+      "text": "43",
       "context": "| **Routing L0–L4** (§11) | EXISTE PARCIAL | `sparkforge/case/router.py:next_step()` sobre `rules/catalog/routing.yaml` ",
       "type": "number",
-      "id": "VNX-313",
+      "id": "VNX-430",
       "state": "PROVADA",
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "classificacao pendente",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'import os; print(os.path.getsize(\"rules/catalog/routing.yaml\")//1024)'",
@@ -2818,7 +2818,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 42
+          "value": 43
         }
       }
     },
@@ -2983,8 +2983,27 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
+      "text": "121,7",
+      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "type": "number",
+      "id": "VNX-431",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "121,7"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 83,
       "text": "120,7",
-      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-322",
       "state": "PROVADA",
@@ -3002,27 +3021,8 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "118,5",
-      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
-      "type": "number",
-      "id": "VNX-323",
-      "state": "PROVADA",
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "contains",
-          "value": "118,5"
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 83,
       "text": "713",
-      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-324",
       "state": "PROVADA",
@@ -3042,7 +3042,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "539",
-      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-325",
       "state": "PROVADA",
@@ -3062,7 +3062,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "227",
-      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-326",
       "state": "PROVADA",
@@ -3082,7 +3082,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "1479",
-      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-327",
       "state": "PROVADA",
@@ -3394,7 +3394,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 65,
       "text": "3.3",
-      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
+      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE, com teste | `knowledge/spark/spark4-migration.md`, c",
       "type": "number",
       "id": "VNX-372",
       "state": "PROVADA",
@@ -3413,7 +3413,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 65,
       "text": "4.1",
-      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
+      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE, com teste | `knowledge/spark/spark4-migration.md`, c",
       "type": "number",
       "id": "VNX-373",
       "state": "PROVADA",
@@ -3425,46 +3425,6 @@
         "expect": {
           "kind": "contains",
           "value": "4.1"
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 65,
-      "text": "4",
-      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
-      "type": "number",
-      "id": "VNX-374",
-      "state": "PROVADA",
-      "note": "classificacao pendente",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "value": 4,
-          "pattern": "^([0-9]+)"
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 66,
-      "text": "4",
-      "context": "| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | `sparkforge/facts/pyspark_ast.py` faz análise AST de PySpa",
-      "type": "number",
-      "id": "VNX-375",
-      "state": "PROVADA",
-      "note": "classificacao pendente",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "value": 4,
-          "pattern": "^([0-9]+)"
         }
       }
     },
@@ -3664,19 +3624,9 @@
       "text": "4",
       "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
       "type": "number",
-      "id": "VNX-385",
-      "state": "PROVADA",
-      "note": "classificacao pendente",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "value": 4,
-          "pattern": "^([0-9]+)"
-        }
-      }
+      "id": "VNX-374",
+      "state": "REMOVIDA",
+      "note": "Alegacao da linha que dizia que a unica mudanca de Spark 4 codificada era o ANSI mode. A linha foi reescrita quando knowledge/spark/spark4-migration.md e a area SF-SPARK4 passaram a existir, e o texto novo nao repete o numero naquela posicao."
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
@@ -4239,6 +4189,21 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 58,
+      "text": "Áreas `SF-SPARK4` e `SF-ICE-V3` (§43)",
+      "context": "| Áreas `SF-SPARK4` e `SF-ICE-V3` (§43) | EXISTE PARCIAL | `SF-SPARK4` existe em `rules/catalog/spark4.yaml` com três re",
+      "type": "capability",
+      "id": "VNX-429",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "rules/catalog/spark4.yaml",
+        "test": "tests/test_spark4_rules.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 59,
       "text": "Roteamento explicável das regras de migração",
       "context": "| Roteamento explicável das regras de migração | EXISTE, com teste | `rules/catalog/routing.yaml` roteia `SF-MIG` e devo",
@@ -4256,7 +4221,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 65,
       "text": "Conhecimento de breaking changes de Spark `3.3` a `4.1`",
-      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje ",
+      "context": "| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE, com teste | `knowledge/spark/spark4-migration.md`, c",
       "type": "capability",
       "id": "VNX-395",
       "state": "PROVADA",
@@ -4271,7 +4236,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 66,
       "text": "`sparkforge_spark4_migration_scan` (§11)",
-      "context": "| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | `sparkforge/facts/pyspark_ast.py` faz análise AST de PySpa",
+      "context": "| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | O vocabulário existe: `sparkforge/facts/migration.py` emit",
       "type": "capability",
       "id": "VNX-396",
       "state": "PROVADA",
@@ -4746,6 +4711,26 @@
       }
     },
     {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 62,
+      "text": "42",
+      "context": "| **Routing L0–L4** (§11) | EXISTE PARCIAL | `sparkforge/case/router.py:next_step()` sobre `rules/catalog/routing.yaml` ",
+      "type": "number",
+      "id": "VNX-313",
+      "state": "REMOVIDA",
+      "note": "Numero de estado ATUAL que mudou quando a area SF-SPARK4 entrou: a rota nova cresceu `routing.yaml`, e o padrao de `rule_id` nos schemas obrigou editar `tools.py`. O valor medido no commit anterior deixou de bater, e a entrada nova o substitui."
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 83,
+      "text": "118,5",
+      "context": "Confirmado por tamanho: `_core.py` (120,7 KB) e `tools.py` (118,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "type": "number",
+      "id": "VNX-323",
+      "state": "REMOVIDA",
+      "note": "Numero de estado ATUAL que mudou quando a area SF-SPARK4 entrou: a rota nova cresceu `routing.yaml`, e o padrao de `rule_id` nos schemas obrigou editar `tools.py`. O valor medido no commit anterior deixou de bater, e a entrada nova o substitui."
+    },
+    {
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 169,
       "text": "6.0",
@@ -4754,6 +4739,36 @@
       "id": "VNX-421",
       "state": "REMOVIDA",
       "note": "O texto que continha esta alegacao foi reescrito quando a lacuna que ele descrevia foi fechada: a frase dizia que a matriz escolhia uma fonte para a versao de Python do Glue 6.0 e explicava isso num comentario de YAML onde nenhum gate le. Agora o registro esta na forma longa, com as tres fontes e status VERIFIED, e a frase nova nao repete o numero da versao de Glue."
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 66,
+      "text": "4",
+      "context": "| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | `sparkforge/facts/pyspark_ast.py` faz análise AST de PySpa",
+      "type": "number",
+      "id": "VNX-375",
+      "state": "REMOVIDA",
+      "note": "A linha da tabela foi reescrita quando o vocabulario de Spark 4 passou a existir: ela dizia que faltava o vocabulario de API removida, e agora ele existe em mig.renamed_conf e mig.removed_api. O texto novo nao repete o numero da versao maior do Spark nessa posicao."
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 182,
+      "text": "4",
+      "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
+      "type": "number",
+      "id": "VNX-385",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "value": 4,
+          "pattern": "^([0-9]+)"
+        }
+      }
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",

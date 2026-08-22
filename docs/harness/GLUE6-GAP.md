@@ -55,15 +55,15 @@ Terraform e a avaliação de migração.
 |---|---|---|---|
 | Extrator de facts de migração | EXISTE, com teste | `sparkforge/facts/migration.py` emite kinds fechados em `EMITTED_KINDS`: `mig.sdk_import`, `mig.emrfs_config`, `mig.legacy_conf`, `mig.deprecated_api`, `mig.ansi_risk`, `mig.table_format`, `mig.jar_binary` e `mig.python_dep` | `tests/test_facts_migration.py`, `tests/test_fixtures_golden_migration.py` |
 | Área de regras de migração com `runtime_scope` | EXISTE, com teste | `rules/catalog/glue-migration.yaml` traz a área `SF-MIG`, cada regra declarando a faixa de runtime onde vale — `SF-MIG-003` só a partir de Glue 6.0, pelo ANSI ligado por padrão no Spark 4.1 | `tests/test_migration_glue.py`, `tests/test_rules_catalog_reachability.py` |
-| Áreas `SF-SPARK4` e `SF-ICE-V3` (§43) | NÃO EXISTE | — | — |
+| Áreas `SF-SPARK4` e `SF-ICE-V3` (§43) | EXISTE PARCIAL | `SF-SPARK4` existe em `rules/catalog/spark4.yaml` com três regras, guardadas por versão de **Spark** e não de Glue — a fronteira é do Apache e vale igual num EMR. `SF-ICE-V3` continua sem existir e depende do conhecimento de Iceberg v3 como dado | `tests/test_spark4_rules.py`, `tests/test_rule_scope_by_nature.py` |
 | Roteamento explicável das regras de migração | EXISTE, com teste | `rules/catalog/routing.yaml` roteia `SF-MIG` e devolve razão, evidência e alternativas | `tests/test_case_router.py`, `tests/test_router_agents.py` |
 
 ## 4. Spark 4 (§10, §11, §12)
 
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
-| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE PARCIAL | A única mudança de Spark 4 codificada hoje é o ANSI ligado por padrão, em `SF-MIG-003`. `knowledge/runtime-compatibility.md` cita a versão, não o conjunto de mudanças | `tests/test_migration_glue.py` |
-| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | `sparkforge/facts/pyspark_ast.py` faz análise AST de PySpark e `sparkforge/facts/sql_literal.py` lê SQL — é a base estática que a §11 pede. Falta o vocabulário de API removida e depreciada do Spark 4, e a tool que o consulte | `tests/test_facts_pyspark_ast.py` |
+| Conhecimento de breaking changes de Spark `3.3` a `4.1` | EXISTE, com teste | `knowledge/spark/spark4-migration.md`, confirmado contra o SQL migration guide e o Upgrading PySpark do Spark 4.1.1: configs renomeadas, APIs de pandas-on-Spark removidas, pisos de dependência e as mudanças de comportamento sem sinal no código. As três primeiras viraram regra em `rules/catalog/spark4.yaml` | `tests/test_spark4_rules.py`, `tests/test_offline_expansion.py` |
+| `sparkforge_spark4_migration_scan` (§11) | EXISTE PARCIAL | O vocabulário existe: `sparkforge/facts/migration.py` emite `mig.renamed_conf` e `mig.removed_api`, e `sparkforge/facts/pyspark_ast.py` cobre a análise AST. Falta só a tool MCP dedicada — e ela pode não ser necessária, porque `sparkforge_analyze_pyspark` mais `sparkforge_judge` já entregam o mesmo resultado sem superfície nova | `tests/test_facts_migration.py`, `tests/test_spark4_rules.py` |
 | Skills `spark-4-*` (§12) | NÃO EXISTE | — | — |
 
 ## 5. Compatibilidade binária: Scala, Java e JAR (§13, §14)
