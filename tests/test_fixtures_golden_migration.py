@@ -16,9 +16,9 @@ quando o `--path` e diretorio, e ela ordena GLOBALMENTE por (kind, subject,
 id) -- um laco por arquivo concatenaria blocos ja ordenados por arquivo e o
 golden descreveria uma ordenacao que nenhuma superficie do produto emite.
 
-O corpus e desenhado por eixo, uma fixture por kind, mais o par negativo/
-positivo de SF-MIG-003 que a Task 11 acrescentou (doze fixtures para dez
-kinds):
+O corpus e desenhado por eixo, uma fixture por kind, mais os pares negativo/
+positivo por VERSAO -- o de SF-MIG-003 que a Task 11 acrescentou e o de
+SF-SPARK4-003 que a area SF-SPARK4 trouxe (treze fixtures para dez kinds):
 
   * `sdk_v1_import` -- dispara SF-MIG-001 (`com.amazonaws.*` sobrevivendo no
     Glue 5.0+).
@@ -33,23 +33,32 @@ kinds):
     `job.py`, julgado em Glue 6.0. `runtime_scope` inclui o degrau, e a fonte
     confirmada nesta task (`migrating-version-60.html`) sustenta o disparo em
     P1.
-  * `legacy_conf`, `deprecated_api`, `table_format`, `jar_binary`,
-    `python_dep` -- os cinco kinds que a Task 5/6 emitiu sem regra
-    correspondente ainda (observacao pura). Cada um prova so o vocabulario do
-    fact, `expects_rules` vazio de proposito.
+  * `legacy_conf`, `deprecated_api`, `table_format`, `jar_binary` -- os quatro
+    kinds que a Task 5/6 emitiu sem regra correspondente ainda (observacao
+    pura). Cada um prova so o vocabulario do fact, `expects_rules` vazio de
+    proposito.
+  * `python_dep` -- carrega `pyarrow==14.0.1`, ABAIXO do piso 15.0.0 do Spark
+    4.1, e mesmo assim `expects_rules` fica vazio: o runtime e Glue 5.0
+    (Spark 3.5.4), abaixo do `runtime_scope: {spark: ">=4.1.0"}` de
+    SF-SPARK4-003. E o par NEGATIVO POR VERSAO de `spark4_pyarrow_pin`, mesma
+    forma de `cast_sem_guarda` para SF-MIG-003: o fact esta la, a regra e
+    pulada por versao e nao por falta de dado.
   * `spark4_renamed_conf` -- config e codec renomeados no Spark 4.0, julgados
-    em Glue 6.0. Tambem observacao pura: a regra que consuma `mig.renamed_conf`
-    ainda nao existe. Emite dois kinds na mesma linha (`mig.legacy_conf` sai
-    junto porque a chave comeca com `spark.sql.legacy.`) -- e a unica fixture
-    do corpus onde dois kinds observam o mesmo trecho, o que prova que os dois
-    detectores leem a linha sem se atropelar.
+    em Glue 6.0, onde SF-SPARK4-001 dispara em P2. Emite dois kinds na mesma
+    linha (`mig.legacy_conf` sai junto porque a chave comeca com
+    `spark.sql.legacy.`) -- e a unica fixture do corpus onde dois kinds
+    observam o mesmo trecho, o que prova que os dois detectores leem a linha
+    sem se atropelar.
   * `spark4_removed_api` -- `DataFrame.append`, removida no Spark 4.0, julgada
-    em Glue 6.0. Tambem observacao pura: a regra que consuma `mig.removed_api`
-    ainda nao existe. Fica ao lado de `spark4_renamed_conf` de proposito, para
-    que o corpus guarde os dois modos de falha da versao 4 lado a lado --
-    renomeado quebra em SILENCIO (o nome antigo nao e lido e nao reclama),
-    removido quebra em RUNTIME (a linha executa e estoura, so que depois da
-    submissao ter passado).
+    em Glue 6.0, onde SF-SPARK4-002 dispara em P1. Fica ao lado de
+    `spark4_renamed_conf` de proposito, para que o corpus guarde os dois modos
+    de falha da versao 4 lado a lado -- renomeado quebra em SILENCIO (o nome
+    antigo nao e lido e nao reclama), removido quebra em RUNTIME (a linha
+    executa e estoura, so que depois da submissao ter passado).
+  * `spark4_pyarrow_pin` -- `pyarrow==11.0.0` julgado em Glue 6.0, o positivo
+    de SF-SPARK4-003 (P1). `pandas==2.2.0` entra junto acima do piso do 4.1 e
+    NAO e acusado, o que prova que a condicao filtra por `attrs.package` em vez
+    de acusar toda dependencia pinada.
   * `clean_job` -- o negativo de referencia: job escrito do jeito atual (SDK
     v2, sem config de EMRFS, sem API depreciada, sem cast sem guarda). Zero
     facts, zero findings -- se algum kind `mig.*` disparar aqui, e falso
@@ -91,6 +100,7 @@ REQUIRED_FIXTURES = {
     "python_dep",
     "spark4_renamed_conf",
     "spark4_removed_api",
+    "spark4_pyarrow_pin",
     "clean_job",
 }
 
@@ -223,6 +233,37 @@ class TestAdversarial:
         _, facts, _, _ = run_fixture(FIXTURES / "python_dep")
         deps = {f.attrs["package"]: f.attrs["version"] for f in _by_kind(facts, "mig.python_dep")}
         assert deps == {"pandas": "2.0.3", "pyarrow": "14.0.1"}
+
+    def test_sf_spark4_003_stays_silent_below_the_runtime_boundary(self):
+        """`python_dep` carrega `pyarrow==14.0.1` -- abaixo do piso 15.0.0 do
+        Spark 4.1 -- e o `major` que SF-SPARK4-003 compara. A regra fica muda
+        assim mesmo porque o runtime da fixture e Glue 5.0 (Spark 3.5.4), e o
+        piso de 15.0.0 e do 4.1: no 4.0 o piso era 11.0.0, e no 3.5 nao ha piso
+        nenhum a cobrar. O motivo do skip precisa ser `runtime_scope` -- se
+        virar `requires_facts`, um operador lendo `skipped` procuraria um fact
+        que ja esta la."""
+        _, facts, findings, skipped = run_fixture(FIXTURES / "python_dep")
+        pyarrow = next(
+            f for f in _by_kind(facts, "mig.python_dep") if f.attrs["package"] == "pyarrow"
+        )
+        assert pyarrow.attrs["major"] == 14, "a fixture perdeu o numero que a regra compara"
+        assert "SF-SPARK4-003" not in {f.rule_id for f in findings}
+        bloqueio = next(s for s in skipped if s["rule_id"] == "SF-SPARK4-003")
+        assert bloqueio["reason"] == "runtime_scope"
+
+    def test_sf_spark4_003_fires_once_the_runtime_boundary_is_crossed(self):
+        """O par positivo: `pyarrow==11.0.0` julgado em Glue 6.0 (Spark 4.1.1),
+        onde `{spark: ">=4.1.0"}` inclui o degrau. `pandas==2.2.0` esta na mesma
+        fixture, acima do piso do 4.1, e NAO e acusado -- e o que separa "esta
+        regra le o piso do PyArrow" de "esta regra acusa dependencia pinada"."""
+        _, facts, findings, skipped = run_fixture(FIXTURES / "spark4_pyarrow_pin")
+        disparadas = {f.rule_id: f for f in findings}
+        assert "SF-SPARK4-003" in disparadas
+        assert disparadas["SF-SPARK4-003"].severity == "P1"
+        assert "SF-SPARK4-003" not in {s["rule_id"] for s in skipped}
+        pacotes = {f.attrs["package"] for f in _by_kind(facts, "mig.python_dep")}
+        assert pacotes == {"pyarrow", "pandas"}
+        assert len(findings) == 1, [f.rule_id for f in findings]
 
     def test_jar_binary_reads_scala_from_the_file_name_not_the_content(self):
         """`.jar` e observacao de ARQUIVO INTEIRO, ancorada em `line: 0`: nao

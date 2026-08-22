@@ -1007,6 +1007,30 @@ rules:
       do EMRFS num runtime S3A, cast sem guarda sob ANSI mode. Nenhum se
       resolve editando transformacao de negocio; todos se decidem na fronteira
       de runtime que a migracao cruza.
+
+  # SF-SPARK4 entrou depois de SF-MIG e ganha ENTRADA PROPRIA, nao um `any` na
+  # de cima. Declarar a area em `rule_areas` do agente NAO roteia -- e o furo
+  # que orfanou SF-BENCH/SF-EMRS/SF-ENV/SF-FVAL/SF-UI e, de novo, o proprio
+  # SF-MIG na Task 7. Entrada separada porque `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-SPARK4-001` ->
+  # `SF-SPARK4`), entao a contagem de SF-MIG nunca inclui SF-SPARK4: um case so
+  # com achados de Spark 4 voltaria de `next_step` com
+  # `recommended_agent: None` se dependesse da regra acima.
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-SPARK4 em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota.
+  - id: AGENT-077
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-SPARK4, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Compatibilidade do codigo com o Apache Spark 4 -- config que mudou de
+      nome e parou de ser lida, API de pandas-on-Spark removida que quebra em
+      runtime, pin de dependencia Python abaixo do piso do 4.1. A fronteira e
+      do Apache e nao do Glue, entao vale igual num EMR com Spark 4; quem
+      decide os tres e quem conhece o runtime, nao quem conhece a regra de
+      negocio.
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

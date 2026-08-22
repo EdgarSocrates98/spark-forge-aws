@@ -356,7 +356,7 @@ NEGATION_WINDOW = 60
 CATALOG = load_catalog()
 RULE_IDS = frozenset(str(r["id"]) for r in CATALOG)
 BLOCKED_RULE_IDS = frozenset(str(r["id"]) for r in CATALOG if r.get("blocked_on"))
-RULE_ID_PATTERN = re.compile(r"\bSF-[A-Z]+-\d+\b")
+RULE_ID_PATTERN = re.compile(r"\bSF-[A-Z][A-Z0-9]*-\d+\b")
 
 
 def _sentences(text: str) -> list[tuple[int, str]]:

@@ -72,10 +72,41 @@ CURRENT = ("4.0", "5.0", "5.1")
 #             ela fica fora de escopo nas tres -- e a unica regra do catalogo
 #             que hoje nao dispara em runtime corrente nenhum, o que e correto:
 #             a fronteira do ANSI mode ainda nao foi cruzada por nenhum deles.
+#
+# SF-SPARK4-001/002 `spark: ">=4.0.0"` e SF-SPARK4-003 `spark: ">=4.1.0"` --
+#             config renomeada, API de pandas-on-Spark removida e piso do
+#             PyArrow. As tres fronteiras sao do APACHE, nao do empacotamento
+#             da AWS, entao o guarda e por versao de SPARK: 4.0 resolve para
+#             Spark 3.3.0, 5.0 para 3.5.4 e 5.1 para 3.5.6, todas abaixo de
+#             4.0.0. Ficam fora de escopo nas tres correntes pelo mesmo motivo
+#             que SF-MIG-003 -- a fronteira ainda nao foi cruzada por nenhuma
+#             delas -- e sao avaliadas em Glue 6.0 (Spark 4.1.1), que esta na
+#             matriz mas fora de `CURRENT`.
 EXPECTED_OUT_OF_SCOPE = {
-    "4.0": {"SF-ENV-002", "SF-MIG-001", "SF-MIG-002", "SF-MIG-003"},
-    "5.0": {"SF-ENV-002", "SF-GRAPH-002", "SF-MIG-003"},
-    "5.1": {"SF-GRAPH-002", "SF-MIG-003"},
+    "4.0": {
+        "SF-ENV-002",
+        "SF-MIG-001",
+        "SF-MIG-002",
+        "SF-MIG-003",
+        "SF-SPARK4-001",
+        "SF-SPARK4-002",
+        "SF-SPARK4-003",
+    },
+    "5.0": {
+        "SF-ENV-002",
+        "SF-GRAPH-002",
+        "SF-MIG-003",
+        "SF-SPARK4-001",
+        "SF-SPARK4-002",
+        "SF-SPARK4-003",
+    },
+    "5.1": {
+        "SF-GRAPH-002",
+        "SF-MIG-003",
+        "SF-SPARK4-001",
+        "SF-SPARK4-002",
+        "SF-SPARK4-003",
+    },
 }
 
 

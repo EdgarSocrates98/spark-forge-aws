@@ -1,0 +1,235 @@
+# Catálogo de regras — compatibilidade de código com o Apache Spark 4
+# Depende do extrator `sparkforge/facts/migration.py`, que observa os sinais
+# (`mig.renamed_conf`, `mig.removed_api`, `mig.python_dep`) sem julgar.
+#
+# POR QUE A ÁREA É GUARDADA POR VERSÃO DE SPARK, E NÃO DE GLUE
+#
+# `SF-MIG` guarda por Glue porque as afirmações dela são sobre o que a AWS
+# monta em volta do Spark -- o classpath que deixa de carregar o SDK v1 no Glue
+# 5.0, o EMRFS que vira S3A na mesma fronteira. Nenhuma das três é verdade por
+# causa do Apache.
+#
+# As três regras daqui são o contrário. Quem renomeou `spark.sql.legacy.parquet.*`,
+# quem removeu `DataFrame.append` e quem subiu o piso do PyArrow foi o Apache
+# Spark, no release 4.0 e no 4.1 -- e isso vale igual num EMR com Spark 4, num
+# EMR Serverless, num cluster on-prem e num Glue 6.0. Guardar por Glue amarraria
+# a afirmação a um empacotamento que não a produziu, e apagaria a área inteira
+# em todo runtime não-Glue com Spark 4 -- exatamente o falso negativo que
+# `runtime_scope` existe para evitar, e não para criar. O Glue entra aqui só
+# como a tradução da fronteira (Glue 6.0 roda Spark 4.1.1; Glue 5.1 roda 3.5.6),
+# registrada em `knowledge/glue/runtime-matrix.yaml`.
+#
+# A fronteira NÃO é a mesma para as três: SF-SPARK4-001 e -002 valem desde o
+# 4.0, e SF-SPARK4-003 desde o 4.1, porque o piso de 15.0.0 do PyArrow é do 4.1
+# (no 4.0 o piso era 11.0.0). Ver `knowledge/spark/spark4-migration.md` §2, §3 e §4.
+
+catalog_version: 1
+schema_version: 1
+area: SF-SPARK4
+retrieved: 2026-08-22
+
+rules:
+
+  - id: SF-SPARK4-001
+    category: spark4-migration
+    title: Configuração do Spark que mudou de nome na versão 4 sobrevivendo com o nome antigo
+    requires_facts: [mig.renamed_conf]
+    when:
+      all:
+        - fact: mig.renamed_conf
+    status: structural
+    severity_default: P2
+    runtime_scope: {spark: ">=4.0.0"}
+    explanation: >
+      As configurações de rebase de data e hora perderam o prefixo `legacy` no
+      Spark 4.0 -- `spark.sql.legacy.parquet.int96RebaseModeInWrite` virou
+      `spark.sql.parquet.int96RebaseModeInWrite`, e o mesmo vale para as
+      variantes `datetimeRebaseMode` de Parquet e Avro; o codec Parquet
+      `lz4raw` virou `lz4_raw`. O risco não é erro, é SILÊNCIO. O Spark ignora
+      a chave que não conhece, a submissão passa, o job roda até o fim, e quem
+      lê o código vê uma configuração que parece ativa e não está em vigor
+      nenhuma. É o mesmo modo de falha de `fs.s3.consistent` no Glue 5
+      (`SF-MIG-002`), e ele é pior que uma quebra: uma quebra aparece, um
+      rebase de timestamp que não aconteceu aparece meses depois, dentro do
+      dado. Ver `knowledge/spark/spark4-migration.md` §2 para a tabela completa
+      de nomes antigos e novos.
+    proposed_change:
+      - Renomear a chave para o nome novo declarado em `attrs.renamed_to`,
+        preservando o valor -- a semântica da configuração não mudou, só o nome.
+      - Onde a chave veio de um template ou de uma biblioteca compartilhada,
+        corrigir na origem, para que o próximo job criado a partir dela não
+        nasça com o nome morto.
+      - Conferir se o valor ainda é o desejado antes de renomear -- uma chave
+        inerte pode estar carregando um valor que ninguém revisa desde que ela
+        parou de ter efeito.
+    risks:
+      - Renomear a chave LIGA uma configuração que estava inerte. Se o job
+        passou a depender do comportamento default enquanto a chave não valia,
+        o rebase de timestamp volta a acontecer e a saída muda -- a mudança de
+        resultado vem de a configuração passar a funcionar, não de um defeito.
+      - Uma chave `spark.sql.legacy.*` que NÃO está na tabela de renomeadas
+        continua válida no Spark 4 (`timeParserPolicy`, `ctePrecedencePolicy`).
+        Renomear por analogia de prefixo desliga configuração correta.
+    tradeoffs:
+      - Remover a chave em vez de renomeá-la é mais barato e assume o default do
+        Spark 4; renomear preserva a intenção original de quem a escreveu. A
+        escolha depende de a intenção ainda valer, e o catálogo não sabe disso.
+      - Deixar a chave antiga no código não quebra nada hoje e custa clareza
+        para sempre -- o próximo leitor vai assumir uma garantia que não existe.
+    validation:
+      - Configuração efetiva do job no runtime alvo contém a chave NOVA com o
+        valor esperado, lida de `spark.conf.get` ou da aba Environment da Spark
+        UI, não do código-fonte.
+      - Para as chaves de rebase, contagem de linhas e agregado (mín, máx) da
+        coluna de timestamp afetada, antes e depois, sobre o mesmo lote de
+        entrada -- divergência mostra que a chave estava inerte e passou a valer.
+      - Contagem total de linhas e schema idênticos aos do runtime anterior.
+    rollback:
+      - Reverter para o nome antigo e reaplicar. A chave volta a ser inerte no
+        Spark 4, então o rollback restaura o comportamento observado hoje --
+        documentar isso no commit, para que a inércia não seja lida como
+        configuração ativa de novo.
+    sources:
+      - {url: "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html", retrieved: 2026-08-22}
+
+  - id: SF-SPARK4-002
+    category: spark4-migration
+    title: API de pandas-on-Spark removida na versão 4 ainda chamada no código
+    requires_facts: [mig.removed_api]
+    when:
+      all:
+        - fact: mig.removed_api
+    status: structural
+    severity_default: P1
+    runtime_scope: {spark: ">=4.0.0"}
+    explanation: >
+      O Spark 4.0 REMOVEU um conjunto de APIs de pandas-on-Spark que vinham
+      depreciadas -- `DataFrame.append`, `iteritems`, `to_koalas`, `koalas`,
+      `get_dtype_counts`, `is_monotonic`, `backfill`, `pad`, `mad`, `Int64Index`
+      e `Float64Index`. Removida não é depreciada, e a diferença é o que torna
+      esta regra P1 -- depreciado ainda roda; removido quebra. E quebra em
+      RUNTIME, não na submissão -- a submissão não lê o corpo do job. O
+      `AttributeError` aparece na primeira vez que aquele caminho de código
+      executa, possivelmente depois de minutos de processamento e de parte da
+      saída já ter sido escrita, e passa em todo smoke test que não exercita
+      aquela linha exata. O substituto está em `attrs.replacement` quando
+      existe. Ver `knowledge/spark/spark4-migration.md` §3.
+    proposed_change:
+      - Trocar a chamada pelo substituto declarado em `attrs.replacement`,
+        conferindo a assinatura -- nenhum dos substitutos é um drop-in por
+        nome; `ps.concat` recebe uma lista de objetos, e `DataFrame.append`
+        recebia um objeto só.
+      - Para `mad`, que não tem substituto, reescrever o cálculo explicitamente
+        a partir de `mean` e `abs`, e fixar o resultado esperado num teste
+        antes de trocar.
+      - Rodar o job de ponta a ponta num ambiente com Spark 4 antes do corte,
+        para que o caminho de código seja de fato executado e não só compilado.
+    risks:
+      - >-
+        `ps.concat` no lugar de `.append` muda o tratamento de índice e a ordem
+        das colunas quando os schemas divergem; substituição mecânica pode
+        mudar o resultado sem levantar erro.
+      - >-
+        `.is_monotonic_increasing` no lugar de `.is_monotonic` é o mesmo
+        predicado, mas quem trocou por `is_monotonic_decreasing` por engano
+        inverte a condição em silêncio.
+    tradeoffs:
+      - Fixar o job numa versão de Spark anterior à 4 evita a reescrita e
+        congela o runtime, adiando também todo o resto da migração; reescrever
+        custa desenvolvimento e teste agora, com o job ainda rodando na versão
+        antiga para comparar.
+      - Reescrever a etapa fora de pandas-on-Spark, em DataFrame nativo, resolve
+        esta classe inteira de uma vez e é mais trabalho do que trocar a
+        chamada -- vale quando as chamadas removidas são muitas, e não vale
+        quando é uma.
+    validation:
+      - Job completo executa sem `AttributeError` num run de ponta a ponta no
+        runtime alvo, sobre dado real, não só na submissão.
+      - Contagem total de linhas, contagem por chave e schema idênticos aos do
+        runtime anterior, sobre o mesmo lote de entrada.
+      - Para a troca de `.append` por `ps.concat`, comparação da ordem de
+        colunas e da contagem de nulos por coluna antes e depois -- é onde a
+        divergência de índice aparece.
+    rollback:
+      - Reverter a chamada para a API antiga e manter o job no runtime com
+        Spark 3.5, onde ela ainda existe. O rollback é de código, não de dado,
+        desde que a saída parcial do run que falhou seja descartada antes.
+    sources:
+      - {url: "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html", retrieved: 2026-08-22}
+
+  # `runtime_scope` desta é `>=4.1.0` e não `>=4.0.0` porque o piso 15.0.0 é do
+  # Spark 4.1. No 4.0 o piso do PyArrow era 11.0.0, então um job com
+  # `pyarrow==11.0.0` está NO piso do 4.0 e ABAIXO do piso do 4.1 -- acusá-lo
+  # num runtime 4.0 seria acusar uma versão que a documentação daquele release
+  # declara suficiente. `knowledge/spark/spark4-migration.md` §4 tem a tabela
+  # dos dois pisos lado a lado.
+  #
+  # O limiar mora aqui, e o extrator só observa o `major` da versão escrita no
+  # arquivo. `attrs.major` não existe quando a versão não começa por dígito
+  # (`pacote==@git+https://...`), e caminho ausente vira `ExprError` no
+  # avaliador, logo `False` -- a regra fica muda sobre um pin cuja versão
+  # ninguém leu, em vez de julgar um número inventado.
+  - id: SF-SPARK4-003
+    category: spark4-migration
+    title: PyArrow pinado abaixo do piso declarado pelo Spark 4.1
+    requires_facts: [mig.python_dep]
+    when:
+      all:
+        - fact: mig.python_dep
+          where: {attrs.package: "pyarrow"}
+          expr: "attrs.major < 15"
+    status: structural
+    severity_default: P1
+    runtime_scope: {spark: ">=4.1.0"}
+    explanation: >
+      O Spark 4.1 declara PyArrow 15.0.0 como piso de dependência -- abaixo
+      disso o comportamento das conversões Arrow (pandas UDF, `toPandas`,
+      `createDataFrame` a partir de pandas, pandas-on-Spark) não é o que a
+      versão do Spark espera. O pin SOBREVIVE à migração porque não está no
+      runtime, está escrito no `requirements.txt` do job, e
+      `--additional-python-modules` o instala POR CIMA do que o runtime traz --
+      o Glue 6.0 pode empacotar um PyArrow moderno e o job continuar rodando
+      com o antigo, porque foi ele que pediu. Trocar de runtime não corrige um
+      pin; corrigir o pin é trabalho separado, e é fácil de esquecer justamente
+      porque o arquivo que o carrega não aparece no diff da migração. Ver
+      `knowledge/spark/spark4-migration.md` §4 para a tabela de pisos.
+    proposed_change:
+      - Subir o pin de PyArrow para 15.0.0 ou mais no `requirements.txt` do job
+        e reinstalar o ambiente.
+      - Conferir na mesma passada os outros dois pisos do 4.1 -- pandas 2.2.0 e
+        NumPy 1.21 -- que vivem no mesmo arquivo e têm a mesma sobrevida.
+      - Onde o pin existe para contornar um defeito conhecido de uma versão
+        mais nova, registrar o motivo no próprio `requirements.txt` antes de
+        subir, para que a decisão não seja refeita às cegas.
+    risks:
+      - Subir PyArrow muda o comportamento de conversão de tipos temporais e
+        decimais em pandas UDF; o job pode passar a produzir valores diferentes
+        sem levantar erro.
+      - Se outra dependência do job pina PyArrow por baixo, subir aqui cria um
+        conflito de resolução que só aparece na instalação do ambiente, não na
+        leitura do arquivo.
+    tradeoffs:
+      - Remover o pin em vez de subi-lo deixa o job usar o PyArrow do runtime e
+        elimina a divergência para sempre, ao custo de a versão passar a mudar
+        sem o job pedir -- previsibilidade contra manutenção.
+      - Manter o pin abaixo do piso mantém o comportamento observado hoje e
+        aceita rodar fora da combinação que o Spark 4.1 declara suportada, o
+        que transforma qualquer defeito de conversão numa investigação sem
+        apoio de documentação.
+    validation:
+      - Versão efetivamente instalada no runtime confirmada por
+        `pyarrow.__version__` dentro do job, não pelo conteúdo do
+        `requirements.txt` -- o arquivo declara a intenção, o ambiente é o fato.
+      - Contagem total de linhas, contagem de nulos por coluna e agregados de
+        controle das colunas produzidas por pandas UDF, antes e depois, sobre o
+        mesmo lote de entrada.
+      - Comparação de schema, com atenção a precisão decimal e a tipo temporal,
+        que é onde a conversão Arrow diverge entre versões.
+    rollback:
+      - Reverter o pin para a versão anterior no `requirements.txt` e
+        reinstalar o ambiente. É mudança de ambiente, não de dado -- mas a
+        saída produzida pelo run com a versão nova precisa ser descartada ou
+        reconciliada antes, se houve divergência de valor.
+    sources:
+      - {url: "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html", retrieved: 2026-08-22}
+      - {url: "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html", retrieved: 2026-08-22}

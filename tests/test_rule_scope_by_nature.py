@@ -118,6 +118,17 @@ GLUE_INFRA = {"SF-GLUE-002", "SF-GLUE-003", "SF-GLUE-004", "SF-GLUE-005", "SF-GL
 
 GLUE_DEPENDENT = GLUE_VERSIONED | GLUE_INFRA
 
+def _minor(spark: str) -> tuple[int, int]:
+    """(major, minor) da versao de Spark, ignorando patch e sufixo de vendor.
+
+    `3.3.2-amzn-0.1` e `4.1.1` chegam aqui como vem do runtime detectado, entao
+    o parser tem que aguentar o sufixo -- comparar string crua poria
+    `3.10` antes de `3.9` e a faixa erraria em silencio.
+    """
+    partes = spark.split("-")[0].split(".")
+    return (int(partes[0]), int(partes[1]))
+
+
 # Guardadas por versao de SPARK, e nao por Glue. Grupo proprio porque a razao e
 # outra: nao e "esta infraestrutura nao existe neste runtime", e sim "a
 # afirmacao desta regra so e verdadeira nesta FAIXA de versao".
@@ -131,9 +142,57 @@ GLUE_DEPENDENT = GLUE_VERSIONED | GLUE_INFRA
 #
 # A area SF-GRAPH NAO some com isso: SF-GRAPH-001, -003 e -004 declaram
 # `runtime_scope: {}`, e sao elas que sustentam o invariante de area la embaixo.
-SPARK_VERSIONED = {"SF-GRAPH-002"}
+# SF-SPARK4-001/002/003 ENTRARAM aqui com a area SF-SPARK4. Sao guardadas por
+# versao de SPARK e nao de Glue porque quem mudou o produto foi o APACHE, nao a
+# AWS: o Spark 4.0 renomeou `spark.sql.legacy.parquet.*` e removeu as APIs de
+# pandas-on-Spark, e o 4.1 subiu o piso do PyArrow para 15.0.0. As tres
+# afirmacoes valem igual num EMR com Spark 4, num EMR Serverless e num cluster
+# on-prem -- guardar por Glue amarraria a afirmacao a um empacotamento que nao
+# a produziu e apagaria a area em todo runtime nao-Glue com Spark 4, que e o
+# falso negativo que a Fase 5a acabou.
+#
+# Contraste com GLUE_VERSIONED logo acima: SF-MIG-001/002 tambem leem sinal de
+# codigo, mas as fronteiras delas (classpath sem SDK v1, EMRFS virando S3A) sao
+# do empacotamento da AWS. Mesma forma, origem diferente.
+#
+# A fronteira NAO e a mesma para as tres: -001 e -002 declaram `>=4.0.0` e -003
+# declara `>=4.1.0`, porque o piso de 15.0.0 e do 4.1 (no 4.0 era 11.0.0).
+# Acusar `pyarrow==11.0.0` num runtime 4.0 seria acusar a versao que a
+# documentacao daquele release declara suficiente.
+#
+# MAPA e nao conjunto, desde que SF-SPARK4 entrou. A faixa e propriedade DA
+# REGRA, nao do grupo: enquanto SF-GRAPH-002 era a unica aqui, a faixa dela
+# (`3.3.x`) ficava escrita como constante da classe de teste, e qualquer regra
+# nova que entrasse no grupo era medida contra a faixa do GraphFrames. Cada
+# entrada declara agora a propria faixa, como predicado sobre a versao de Spark,
+# mais as PERTURBACOES DE LIMITE que provam que cada ponta do `runtime_scope`
+# esta sustentando peso.
+SPARK_VERSIONED: dict[str, tuple] = {
+    "SF-GRAPH-002": (
+        lambda spark: _minor(spark) == (3, 3),
+        # Ambas as pontas sustentam peso: sem o `<3.4` a regra acusaria Glue
+        # 5.0/5.1; sem o `>=3.3` acusaria Glue 3.0.
+        [("3.3.2-amzn-0.1", True), ("3.2.1-amzn-0", False), ("3.4.0-amzn-0", False)],
+    ),
+    "SF-SPARK4-001": (
+        lambda spark: _minor(spark) >= (4, 0),
+        [("4.0.0", True), ("4.1.1-amzn-0", True), ("3.5.6", False)],
+    ),
+    "SF-SPARK4-002": (
+        lambda spark: _minor(spark) >= (4, 0),
+        [("4.0.0", True), ("4.1.1-amzn-0", True), ("3.5.6", False)],
+    ),
+    # A ponta de baixo desta e 4.1 e nao 4.0, e a diferenca e o limiar da propria
+    # regra: o piso de 15.0.0 do PyArrow e do Spark 4.1 -- no 4.0 o piso era
+    # 11.0.0. Um `>=4.0.0` aqui acusaria `pyarrow==11.0.0` num runtime 4.0, onde
+    # a documentacao daquele release declara essa versao suficiente.
+    "SF-SPARK4-003": (
+        lambda spark: _minor(spark) >= (4, 1),
+        [("4.1.0", True), ("4.1.1-amzn-0", True), ("4.0.0", False), ("3.5.6", False)],
+    ),
+}
 
-VERSION_DEPENDENT = GLUE_DEPENDENT | SPARK_VERSIONED
+VERSION_DEPENDENT = GLUE_DEPENDENT | set(SPARK_VERSIONED)
 
 
 def _rules() -> list[dict]:
@@ -185,21 +244,21 @@ class TestSparkVersionedRulesFireOnlyInsideTheirBand:
     conferir uma versao so.
     """
 
-    _BAND = {"3.3.0", "3.3.1", "3.3.2"}
-
     @pytest.mark.parametrize("rule_id", sorted(SPARK_VERSIONED))
     @pytest.mark.parametrize("glue_version", sorted(GLUE_MATRIX))
-    def test_the_band_matches_exactly_the_glue_versions_without_a_jar(
+    def test_the_band_matches_exactly_the_declared_spark_versions(
         self, rule_id, glue_version
     ):
         rule = next(r for r in _rules() if r["id"] == rule_id)
+        banda, _probes = SPARK_VERSIONED[rule_id]
         runtime = _detected(terraform={"glue_version": glue_version})
-        esperado = GLUE_MATRIX[glue_version]["spark"] in self._BAND
+        esperado = banda(GLUE_MATRIX[glue_version]["spark"])
         assert in_scope(rule.get("runtime_scope") or {}, runtime) is esperado, (
             f"{rule_id} em Glue {glue_version} (Spark "
             f"{GLUE_MATRIX[glue_version]['spark']}): esperado in_scope={esperado}. "
-            f"Spark 3.3.x e a UNICA faixa sem artefato de GraphFrames publicado; "
-            f"3.1/3.2 tem `0.8.2` e 3.4/3.5 tem `0.8.3`+."
+            f"A faixa declarada em SPARK_VERSIONED e o `runtime_scope` do "
+            f"catalogo discordam -- um dos dois esta errado, e o catalogo nao e "
+            f"automaticamente o certo."
         )
 
     @pytest.mark.parametrize("nome,runtime", NON_GLUE_RUNTIMES, ids=NON_GLUE_IDS)
@@ -215,14 +274,21 @@ class TestSparkVersionedRulesFireOnlyInsideTheirBand:
         )
 
     @pytest.mark.parametrize("rule_id", sorted(SPARK_VERSIONED))
-    def test_both_ends_of_the_band_are_load_bearing(self, rule_id):
-        """Perturbacao de limite, porque `in_scope` conjuga a lista de specs e
-        um spec sozinho passaria despercebido no catalogo: sem o `<3.4` a regra
-        acusaria Glue 5.0/5.1; sem o `>=3.3` acusaria Glue 3.0."""
+    def test_every_end_of_the_band_is_load_bearing(self, rule_id):
+        """Perturbacao de limite, uma versao de cada lado de cada ponta.
+
+        `in_scope` conjuga a lista de specs, entao um spec que sobre ou que
+        falte passa despercebido na leitura do catalogo: a faixa continua com
+        cara de faixa. As probes de cada regra vivem em `SPARK_VERSIONED`, ao
+        lado da faixa que elas provam, porque perturbacao de limite so tem
+        sentido contra o limite DAQUELA regra."""
         scope = next(r for r in _rules() if r["id"] == rule_id)["runtime_scope"]
-        assert in_scope(scope, {"spark": "3.3.2-amzn-0.1"}) is True
-        assert in_scope(scope, {"spark": "3.2.1-amzn-0"}) is False
-        assert in_scope(scope, {"spark": "3.4.0-amzn-0"}) is False
+        _banda, probes = SPARK_VERSIONED[rule_id]
+        for spark, esperado in probes:
+            assert in_scope(scope, {"spark": spark}) is esperado, (
+                f"{rule_id} com Spark {spark}: esperado in_scope={esperado}. "
+                f"Uma ponta do `runtime_scope` deixou de sustentar peso."
+            )
 
 
 # Quem pode usar curinga, por chave de `runtime_scope`. Uma entrada `{X: "*"}`

@@ -182,7 +182,10 @@ _FINDING_ITEM: dict[str, Any] = {
         "sources",
     ],
     "properties": {
-        "rule_id": {"type": "string", "pattern": "^SF-[A-Z]+-[0-9]{3}$"},
+        # `[A-Z][A-Z0-9]*` e nao `[A-Z]+`: a area pode ter digito no NOME
+        # (`SF-SPARK4` fala do Apache Spark 4), e o digito ali nao e numeracao.
+        # Tem que casar com `findings/schemas/finding.schema.json`.
+        "rule_id": {"type": "string", "pattern": "^SF-[A-Z][A-Z0-9]*-[0-9]{3}$"},
         "schema_version": {"type": "integer"},
         "catalog_version": {"type": "integer"},
         "title": {"type": "string"},
@@ -951,7 +954,8 @@ _RULE_ITEM: dict[str, Any] = {
         "catalog_version",
     ],
     "properties": {
-        "id": {"type": "string", "pattern": "^SF-[A-Z]+-[0-9]{3}$"},
+        # Mesma abertura de `rule_id` acima, pela mesma razao (`SF-SPARK4`).
+        "id": {"type": "string", "pattern": "^SF-[A-Z][A-Z0-9]*-[0-9]{3}$"},
         "category": {"type": "string"},
         "title": {"type": "string"},
         "requires_facts": {"type": "array", "items": {"type": "string"}},

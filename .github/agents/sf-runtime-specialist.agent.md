@@ -4,7 +4,7 @@ description: Analisar Glue, EMR, runtimes, capacidade, infraestrutura e compatib
 tools: Read, Grep, Glob, Bash
 skills:
   - tool-specialist-routing
-rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG]
+rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 

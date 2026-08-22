@@ -6,8 +6,9 @@ proves: >
   QUEBRA. Mas quebra em RUNTIME, quando a linha executa -- nao na submissao,
   que nao le o corpo do job -- entao um job de horas pode falhar no fim, depois
   de ja ter escrito parte da saida. Runtime Glue 6.0 porque e onde o Spark 4
-  vive; a regra que julgue este kind ainda nao existe no catalogo, entao a
-  fixture prova so o vocabulario do fact.
+  vive, e e onde SF-SPARK4-002 dispara -- o `runtime_scope` da regra e
+  `{spark: ">=4.0.0"}`, guardado pela versao do APACHE e nao pela do Glue,
+  porque quem removeu a API foi o Apache.
 runtime:
   glue: "6.0"
   spark: "4.1.1"
@@ -15,4 +16,5 @@ runtime:
   iceberg: "1.11.0"
 expects_kinds:
   - mig.removed_api
-expects_rules: []
+expects_rules:
+  - SF-SPARK4-002
