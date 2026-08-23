@@ -94,7 +94,7 @@ aqui, e mexer neles agora arrasta superfície sem necessidade.
 | `sparkforge/facts/scan.py` | **Novo.** `iter_source_files()` — a varredura única, com denylist e confinamento | J0 |
 | `tests/test_facts_scan.py` | **Novo.** Denylist, traversal, symlink, arquivo especial | J0 |
 | `sparkforge/facts/terraform.py`, `emr_cluster.py`, `emr_serverless.py` | Perdem a cópia privada de `_looks_like_secret` | J0 |
-| `sparkforge/findings/models.py` | `Fact.to_dict()` ganha modo sem `provenance` inline | J1 |
+| `sparkforge/findings/models.py` | **Não muda.** A projeção opera sobre o dicionário já serializado, em `_core.py` — `Fact` continua com uma forma só | J1 |
 | `sparkforge/adapters/_core.py` | `project_items()` novo; os 7 pontos de envelope passam a chamá-lo | J1 |
 | `sparkforge/adapters/tools.py` | `detail_level` no `inputSchema` das tools que paginam | J1 |
 | `sparkforge/adapters/mcp.py:83` | Separadores compactos | J1 |
@@ -685,7 +685,7 @@ git commit -m "refactor(facts): os doze rglob passam pela varredura com denylist
 ## Task 6: procedência declarada uma vez
 
 **Arquivos:**
-- Modificar: `sparkforge/findings/models.py`
+- Criar: `tests/test_adapters_detail_level.py`
 - Criar: `tests/test_adapters_detail_level.py`
 
 - [ ] **Passo 1: medir o custo atual, e guardar o número**
@@ -951,7 +951,7 @@ prova nada.
 - [ ] **Passo 7: commit**
 
 ```bash
-git add sparkforge/adapters/ sparkforge/findings/models.py tests/test_adapters_detail_level.py docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
+git add sparkforge/adapters/ tests/test_adapters_detail_level.py docs/harness/CODEINTEL-GAP.md docs/claims.lock.json
 git commit -m "feat(adapters): detail_level e procedencia por referencia"
 ```
 
