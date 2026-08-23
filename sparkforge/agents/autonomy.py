@@ -138,10 +138,19 @@ class ToolClass(str, Enum):
     familia de defeito que a Fase 5c achou nos dois `EXTRACTORS` mantidos em
     paralelo: uma cresce, a outra nao, e o desacordo e mudo.
 
-    `DESTRUCTIVE` nasce VAZIA -- nenhuma tool de hoje declara
-    `destructiveHint`. Isso e o resultado, nao lacuna: o valor da
-    classificacao agora nao e bloquear o que existe, e impedir que uma tool
-    futura entre sem classe.
+    DUAS classes ficam sem membro no catalogo de hoje, por razoes diferentes,
+    e nenhuma das duas e lacuna:
+
+    - `DESTRUCTIVE`, porque nenhuma tool declara `destructiveHint`.
+    - `CLOUD_READ`, porque nao existe uma unica tool que toque a rede sem
+      TAMBEM escrever em disco -- os sete coletores AWS gravam o artefato e o
+      manifesto de integridade, entao caem em `CLOUD_MUTATION`.
+
+    A segunda so ficou vazia quando a anotacao dos coletores parou de mentir
+    (eles declaravam `readOnlyHint: True` e escrevem). Derivar a classe da
+    anotacao foi o que expos isso -- e e esse o valor da derivacao, nao a
+    classificacao em si. O valor de classificar agora nao e bloquear o que
+    existe, e impedir que uma tool futura entre sem classe.
 
     NAO se mapeia para `sparkforge/registry/models.py:RiskLevel`, e a
     incompatibilidade e de EIXO, nao de granularidade: `RiskLevel`
@@ -220,9 +229,22 @@ def _perfil_canonico(profile: object) -> ExecutionProfile | None:
     nenhum e comparava `False` -- o teto de rede sumia e a decisao saia
     gravada como `"autorizado"`, indistinguivel de permissao legitima.
 
-    `str(ExecutionProfile.OFFLINE)` devolve `"ExecutionProfile.OFFLINE"`, e
-    nao `"offline"`; por isso o teste de tipo vem antes, e a normalizacao por
-    texto so alcanca `str` de verdade.
+    O ramo `isinstance(profile, ExecutionProfile)` NAO e necessario hoje, e a
+    honestidade sobre isso importa mais que a aparencia de rigor. Como
+    `ExecutionProfile` e mixin de `str`, um membro ja responde
+    `.strip().lower()` com o proprio valor (`"offline"`), entao o ramo de
+    texto sozinho classificaria certo -- e nenhum teste consegue distinguir a
+    presenca do ramo da ausencia dele. Ele fica por uma razao de futuro, nao
+    de presente: no dia em que `ExecutionProfile` deixar de herdar de `str`
+    (migrar para `StrEnum`, ou virar `Enum` puro), o ramo de texto passa a
+    receber um objeto sem `.strip()` e a funcao devolveria `None` para o
+    valor MAIS canonico que existe -- recusando tudo, em vez de autorizar
+    tudo. O ramo torna esse dia inerte.
+
+    Cuidado que ele tambem evita: `str(ExecutionProfile.OFFLINE)` devolve
+    `"ExecutionProfile.OFFLINE"`, e nao `"offline"`. Esta funcao nunca chama
+    `str(profile)` justamente por isso -- se alguem "simplificar" a
+    normalizacao para `str(profile).lower()`, o teto volta a falhar aberto.
 
     Normaliza caixa porque as duas grafias ja circulam neste repositorio e
     recusar a maiuscula converteria um defeito de teto num defeito de

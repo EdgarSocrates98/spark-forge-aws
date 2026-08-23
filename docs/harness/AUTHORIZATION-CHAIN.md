@@ -61,6 +61,19 @@ O defeito é anterior a esta fase. Derivar a classe da anotação foi o que o to
 visível, e isso é o valor da derivação: uma segunda tabela mantida à mão teria
 concordado com a anotação errada em silêncio.
 
+### Consequência visível para clientes MCP
+
+`readOnlyHint` não é um campo interno: os sete coletores agora anunciam
+`readOnlyHint: false` **no protocolo**. Qualquer host MCP que auto-aprove tools
+read-only — comportamento comum, e a razão de o campo existir — passa a **pedir
+confirmação** nas sete.
+
+Isso é o efeito pretendido, não um dano colateral: uma tool que grava artefato e
+reescreve o livro-razão de integridade não deveria rodar sem alguém saber. Mas é
+mudança de comportamento observável fora deste repositório, e por isso está
+escrita aqui em vez de descoberta por quem usa. A direção é a segura — mais
+confirmação, não menos —, e nenhuma capacidade foi removida.
+
 ## Duas classes ficam sem membro, e não são as esperadas
 
 Distribuição depois da correção, derivada executando `tool_class()` sobre as
@@ -82,10 +95,23 @@ classe vazia, e `CLOUD_MUTATION` é onde os sete coletores vivem.
 O valor da classificação hoje não é bloquear o que existe — é impedir que uma
 tool futura entre sem classe. `tool_class()` levanta `KeyError` para nome
 desconhecido em vez de devolver `READ_ONLY`: default permissivo para o que
-ninguém declarou é exatamente como uma tool nova passa sem aprovação. As duas
-classes sem membro têm teste próprio, com catálogo sintético — o ramo que
-classifica uma tool destrutiva só roda de verdade no dia em que a primeira
-entrar, e nesse dia já não há ninguém olhando.
+ninguém declarou é exatamente como uma tool nova passa sem aprovação.
+
+As duas classes sem membro são exercitadas com catálogo sintético, e vale dizer
+**o que** cada uma tem coberto, porque "têm teste próprio" é literalmente
+verdade e induz leitura falsa:
+
+| classe vazia | classificação | teto `OFFLINE` | aprovação por classe |
+|---|---|---|---|
+| `CLOUD_READ` | sim | sim | sim, sob perfil sem teto |
+| `DESTRUCTIVE` | sim | não se aplica (não é de rede) | sim |
+
+A distinção não é acadêmica. O teto dispara **antes** da checagem de aprovação,
+então um teste de `CLOUD_READ` que rode sob `OFFLINE` nunca chega à linha da
+aprovação — o `approvals=` dele é decorativo por construção. Teste de mutação
+provou o buraco: remover `CLOUD_READ` de `_EXIGEM_APROVACAO` deixava a suíte
+inteira verde. O caso sob `ECO` fecha, e é a classe que mais importa cobrir,
+porque foi esta fase que a esvaziou e é a mais provável de voltar a ter membro.
 
 ## O que a cadeia acrescenta
 
@@ -134,10 +160,17 @@ Limite de granularidade desta fase, declarado porque tem consequência:
 `authorize()` não recebe os argumentos da tool. `path`, `bucket` e `report_path`
 estão fora da decisão **por construção**.
 
-Medido: as 32 tools `READ_ONLY` aceitam `path` arbitrário, e ler
-`~/.aws/credentials` é read-only. A revisão desta fase conseguiu ler um segredo
-de fora do repositório sob perfil `OFFLINE`, com a cadeia funcionando exatamente
-como especificada.
+Medido: **31** das tools `READ_ONLY` declaram algum argumento de caminho de
+sistema de arquivos (`path`, `repo`, `facts_path`, `before`/`after`, `file`,
+`report_path`, `findings_path`), e `authorize()` não examina nenhum deles. A
+única exceção é `sparkforge_rules_lookup`, que só aceita `category`, `id`,
+`limit` e `cursor` — a afirmação anterior generalizava para **todas** as
+`READ_ONLY`, e vendia um quantificador universal como se fosse medição.
+
+Ler `~/.aws/credentials` é read-only. A revisão desta fase conseguiu ler um
+segredo de fora do repositório sob perfil `OFFLINE`, com a cadeia funcionando
+exatamente como especificada. A conclusão de segurança não dependia do número —
+mas o número precisava estar certo.
 
 Isto **não** é consertável dentro da assinatura atual, e não há solução inventada
 aqui. A consequência que precisa estar escrita é a direção: um hook `PreToolUse`

@@ -153,26 +153,44 @@ class TestToolSurface:
         opcional, porque um plano sem arquivo nao serve para nada e uma
         comparacao sem arquivo ainda e legivel.
 
-        A Fase I3 acrescentou os SETE coletores AWS, e nao por mudanca de
-        capacidade: a anotacao deles dizia `readOnlyHint: True` e mentia. Eles
-        gravam o artefato e o manifesto de integridade via
-        `sparkforge.collect.aws._write_and_register` desde que existem. O que
-        mudou foi a anotacao passar a dizer o que o codigo faz -- ver o
-        comentario de `_WRITE_LOCAL_OPEN_WORLD` em `tools.py`."""
+        A Fase I3 descobriu que os SETE coletores AWS tambem escrevem, e nao
+        por mudanca de capacidade: a anotacao deles dizia `readOnlyHint: True`
+        e mentia. Eles gravam o artefato e o manifesto de integridade via
+        `sparkforge.collect.aws._write_and_register` desde que existem -- ver
+        o comentario de `_WRITE_LOCAL_OPEN_WORLD` em `tools.py`.
+
+        Eles NAO entram na lista a mao, e a razao nao e economia de digitacao:
+        os sete ja estao garantidos por dois testes desta mesma classe --
+        `test_only_collect_tools_are_open_world` fixa o conjunto `openWorld`
+        EXATAMENTE nesses sete nomes, e
+        `test_every_open_world_tool_also_writes_locally` cobra
+        `readOnlyHint is False` de cada tool `openWorld`. Repetir os sete aqui
+        somaria garantia zero e cresceria a cada coletor novo. Descontar o
+        conjunto de rede e afirmar o resto preserva a garantia inteira e para
+        de crescer.
+
+        Os CINCO locais continuam a mao de proposito, e ai a lista carrega
+        garantia real: nao ha nenhuma outra propriedade declarada que separe
+        `case_open` de `analyze_pyspark` -- derivar de `TOOLS` seria escrever
+        `writers == writers` e o teste deixaria de cobrar decisao humana
+        quando uma tool trocasse de lado.
+
+        O RISCO desta forma, escrito porque ja se materializou aqui: quando um
+        pin escrito a mao falha, o conserto barato e editar a expectativa em
+        vez de consertar a anotacao. Foi exatamente o que aconteceu com
+        `test_every_open_world_tool_is_still_read_only`, que entrou em
+        `afd2c96` (2026-07-30) afirmando o CONTRARIO do que o codigo fazia e
+        trancou a mentira por centenas de commits. Um pin que falha nao e um
+        pin que protege: quem editar esta lista precisa provar que a tool
+        mudou de lado, nao so fazer o vermelho sumir."""
+        de_rede = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
-        assert writers == {
+        assert writers - de_rede == {
             "sparkforge_case_open",
             "sparkforge_case_update",
             "sparkforge_funcval_compare",
             "sparkforge_funcval_plan",
             "sparkforge_report_sign",
-            "sparkforge_collect_event_log",
-            "sparkforge_collect_glue_job",
-            "sparkforge_collect_cloudwatch",
-            "sparkforge_collect_iceberg_metadata",
-            "sparkforge_collect_athena_workgroup",
-            "sparkforge_collect_emr_cluster",
-            "sparkforge_collect_emr_serverless",
         }
 
     def test_every_tool_has_a_description(self):

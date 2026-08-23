@@ -336,6 +336,44 @@ class TestClassesSemMembroHoje:
         assert decisao.authorized is False
         assert "OFFLINE" in decisao.reason
 
+    def test_cloud_read_exige_aprovacao_propria_sob_perfil_sem_teto(self, monkeypatch):
+        """O teste do teto acima NAO cobre a aprovacao de `CLOUD_READ`, e a
+        diferenca e estrutural, nao de gosto.
+
+        Sob `OFFLINE` o teto dispara ANTES da checagem de aprovacao, entao o
+        `approvals=(CLOUD_READ,)` daquele teste e decorativo por construcao --
+        ele existe para provar que aprovacao nao fura teto. O efeito colateral
+        e que a linha de `_EXIGEM_APROVACAO` nunca via `CLOUD_READ`: remover a
+        classe daquele frozenset deixava a suite inteira verde.
+
+        Isso importa mais para `CLOUD_READ` do que para as outras: ela e a
+        classe que esta fase ESVAZIOU, e a mais provavel de voltar a ter
+        membro na primeira tool que leia da nuvem sem persistir nada."""
+        catalogo_falso(
+            monkeypatch,
+            tool_leitura_nuvem={
+                "readOnlyHint": True,
+                "openWorldHint": True,
+                "destructiveHint": False,
+            },
+        )
+        comum = {
+            "agent": "a",
+            "tool": "tool_leitura_nuvem",
+            "allowed_tools": ["tool_leitura_nuvem"],
+            "profile": ExecutionProfile.ECO,
+        }
+        sem = authorize(**comum, approvals=())
+        assert sem.authorized is False
+        assert sem.required_approval is ToolClass.CLOUD_READ
+
+        com = authorize(**comum, approvals=(ToolClass.CLOUD_READ,))
+        assert com.authorized is True
+        assert com.granted_by is ToolClass.CLOUD_READ
+
+        outra = authorize(**comum, approvals=(ToolClass.LOCAL_MUTATION,))
+        assert outra.authorized is False, "aprovacao de outra classe nao vale"
+
     def test_cloud_mutation_bate_no_teto_OFFLINE(self):
         """`CLOUD_MUTATION` deixou de ser vazia na Fase I3 -- os sete coletores
         caem nela desde que a anotacao passou a dizer que eles escrevem. Usa o
