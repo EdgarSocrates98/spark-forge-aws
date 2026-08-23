@@ -12,7 +12,7 @@ defende.
 |---|---|---|
 | O que faz | executa tasks | **mede** o runtime |
 | Onde mora | `sparkforge/` menos `sparkforge/evals/` | `sparkforge/evals/`, `evals/`, `tests/test_fixtures_golden_*.py`, `scripts/check_evals.py` |
-| Superfície | CLI `sparkforge analyze/judge/case/next/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fase0.xml`, `evals/holdout/`, os 23 corpora de `fixtures/` |
+| Superfície | CLI `sparkforge analyze/judge/case/next-step/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fase0.xml`, `evals/holdout/`, os 23 corpora de `fixtures/` |
 
 ## O invariante, e a direção dele
 
@@ -35,6 +35,27 @@ registra o que ainda não é medido — latência por operação, taxa de resolu
 determinística sobre um corpus de tarefas reais, comportamento de CLI ponta a
 ponta. A fronteira estar declarada não torna a cobertura completa; torna a
 cobertura **interpretável**.
+
+**Não afirma que todo grader mora do lado da avaliação.** Há uma exceção
+conhecida, e ela é nomeada aqui em vez de ficar implícita:
+`sparkforge/tools/evaluation.py` é lógica de grader — `evaluate_golden_case`
+devolve `passed`, `missing`, `unexpected` e `match_rate` sobre ids de caso
+golden — e está exportada na API pública do runtime (`sparkforge/tools/__init__.py`).
+Ela fica do lado *runtime* da linha que o teste desenha. Isso significa que
+"o runtime nunca importa `sparkforge.evals`" continua verdadeiro em parte
+porque esse grader não está sob `sparkforge/evals/` — exatamente o tipo de
+separação por acidente contra o qual este documento existe. Mover o módulo é
+decisão de outra fase; enquanto não for tomada, a exceção fica declarada, não
+escondida.
+
+**Não afirma que o teste enxerga import dinâmico.**
+`tests/test_harness_boundary.py` lê a AST, então resolve `import`,
+`from x import y` e as formas relativas (`from ..evals.runner import X`,
+`from . import evals`). Um `importlib.import_module("sparkforge.evals")` passa
+por ele sem ser visto. Nenhum módulo de runtime faz isso hoje, e a resposta
+certa não é um analisador mais esperto — que perseguiria strings construídas em
+tempo de execução e nunca terminaria. A resposta é declarar o limite: a
+garantia vale para import estático, que é como o cruzamento distraído nasce.
 
 ## Uma recusa registrada aqui, porque é do mesmo tipo
 
