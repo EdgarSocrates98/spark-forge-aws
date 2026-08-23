@@ -7,13 +7,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from sparkforge.adapters import _core
 from sparkforge.databases.dynamodb import DynamoDBSpecialist
 from sparkforge.databases.neptune import NeptuneSpecialist
 from sparkforge.errors.matcher import DeterministicErrorMatcher
 from sparkforge.iceberg.doctor import IcebergTableDoctor
 from sparkforge.lakeformation.doctor import LakeFormationDoctor
 from sparkforge.lakeformation.graph import LakeFormationPermissionGraph
-from sparkforge.migration.glue.analyzer import GlueMigrationAnalyzer
 from sparkforge.registry.loader import CanonicalRegistry
 from sparkforge.spark.eventlog_analyzer import SparkEventLogAnalyzer
 from sparkforge.spark.plan_profiler import SparkPlanProfiler
@@ -100,14 +100,28 @@ def cmd_errors_match(args: argparse.Namespace) -> int:
 
 
 def cmd_migrate_glue(args: argparse.Namespace) -> int:
-    path = Path(args.script)
-    if not path.is_file():
-        _print({"error": f"File not found: {args.script}"})
+    """Avalia a migracao com o catalogo de regras, nao com correspondencia de
+    substring.
+
+    Aceita DIRETORIO ou ARQUIVO. O diretorio e o caso que interessa: uma
+    migracao de Glue e julgada sobre o conjunto de artefatos do job -- codigo,
+    `requirements*.txt` e `.jar` --, e o analisador antigo, que lia um `.py`
+    por vez, nao enxergava nem a dependencia pinada nem o binario que quebram
+    a migracao. O `.py` continua aceito porque era a interface publicada deste
+    comando, e quebra-la em silencio trocaria um defeito por outro.
+
+    O par de versoes vem de quem chama, sempre. Ver o `required=True` no
+    parser: o default `"5.1"` que morava aqui respondia sobre um alvo que
+    ninguem declarou.
+    """
+    try:
+        resultado = _core.migration_assess(
+            args.path, source=args.from_runtime, target=args.to_runtime
+        )
+    except _core.AdapterError as exc:
+        _print({"error": exc.message})
         return 1
-    content = path.read_text(encoding="utf-8")
-    analyzer = GlueMigrationAnalyzer()
-    res = analyzer.analyze_script(content, source_runtime=args.from_runtime, target_runtime=args.to_runtime)
-    _print(res.to_dict())
+    _print(resultado)
     return 0
 
 
@@ -182,9 +196,11 @@ def build_parser() -> argparse.ArgumentParser:
     mig_p = sub.add_parser("migrate", help="Migration intelligence")
     mig_sub = mig_p.add_subparsers(dest="subcommand", required=True)
     mig_g = mig_sub.add_parser("glue", help="Analyze Glue migration")
-    mig_g.add_argument("script", help="PySpark script path")
-    mig_g.add_argument("--from", dest="from_runtime", default="4.0")
-    mig_g.add_argument("--to", dest="to_runtime", default="5.1")
+    mig_g.add_argument("path", help="Diretorio do job (ou um arquivo .py)")
+    # Sem default, os dois. O `--to` default `"5.1"` que ficava aqui devolvia
+    # um veredito sobre um alvo que ninguem pediu.
+    mig_g.add_argument("--from", dest="from_runtime", required=True)
+    mig_g.add_argument("--to", dest="to_runtime", required=True)
 
     # forge iceberg doctor
     ice_p = sub.add_parser("iceberg", help="Iceberg intelligence")

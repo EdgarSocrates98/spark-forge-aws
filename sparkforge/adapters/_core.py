@@ -51,6 +51,10 @@ from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
+from sparkforge.facts.migration import (
+    extract_migration_path,
+    extract_migration_tree,
+)
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
@@ -66,6 +70,7 @@ from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
+from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 
@@ -1063,6 +1068,59 @@ def analyze_call_graph(
     fact_list = _load_facts_file(facts_path)
     derived = build_call_graph(fact_list, path_hint=facts_path)
     return _facts_page(derived, None, kind, limit, cursor)
+
+
+# --------------------------------------------------------------------------- #
+# migration assess
+# --------------------------------------------------------------------------- #
+
+
+def migration_assess(path: str, source: str, target: str) -> dict[str, Any]:
+    """Julga a migracao de um job Glue entre um par de versoes, pelo catalogo.
+
+    Composicao, nao motor novo: `sparkforge.migration.assessment.assess()` ja
+    expande o par em degraus, julga cada degrau com o `judge` e agrega com
+    gates fail-closed. O que faltava era a porta de entrada -- ate esta funcao
+    existir, o catalogo `SF-MIG`/`SF-SPARK4`/`SF-LF` so era alcancavel por
+    quem chamasse `assess()` em Python.
+
+    DIRETORIO **ou** ARQUIVO, a mesma convencao de todo `analyze_*` deste
+    modulo. Um diretorio e o caso que interessa -- uma migracao e julgada
+    sobre o conjunto de artefatos do job, e `requirements*.txt` e `.jar` nao
+    tem linha de fonte Python para varrer --, mas um `.py` sozinho continua
+    respondido: recusa-lo quebraria a interface publicada de
+    `forge migrate glue` sem que nada de util fosse ganho.
+
+    `source` e `target` nao tem default, aqui nem em quem chama. Um par
+    embutido no codigo responde sobre um alvo que ninguem declarou, e o
+    veredito sai com a mesma cara de qualquer outro.
+    """
+    target_path = Path(path)
+    if not target_path.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado: {target_path}\n"
+            f"  Aponte para o diretorio do job (codigo, requirements*.txt e .jar)\n"
+            f"  ou para um arquivo .py:\n"
+            f"    sparkforge migrate glue ./meu-job --from 4.0 --to 6.0",
+            exit_code=2,
+        )
+    if target_path.is_dir():
+        facts = extract_migration_tree(target_path, repo_root=target_path)
+    else:
+        facts = extract_migration_path(target_path, target_path.parent)
+
+    try:
+        return assess_migration(facts, source=source, target=target).to_dict()
+    except ValueError as exc:
+        # `version_path.steps` ja nomeia o defeito ("alvo anterior a origem",
+        # "versao fora da matriz; conhecidas: ..."). Traduzir para um erro
+        # generico perderia a unica informacao util da falha.
+        raise AdapterError(
+            f"{exc}\n"
+            f"  Confira o par contra a matriz de runtime:\n"
+            f"    sparkforge runtime detect --glue 6.0",
+            exit_code=2,
+        ) from exc
 
 
 # --------------------------------------------------------------------------- #
