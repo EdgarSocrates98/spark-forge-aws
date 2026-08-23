@@ -16,6 +16,7 @@ from typing import Any
 
 import yaml
 
+from sparkforge.findings.models import area_of
 from sparkforge.rules.loader import (
     ROUTING_FILE,
     CatalogError,
@@ -206,18 +207,8 @@ def _condition_operator(condition: dict[str, Any]) -> tuple[str, Any]:
     return key, condition[key]
 
 
-def _finding_area(rule_id: str) -> str:
-    """Área de um `rule_id`: o prefixo até o último hífen.
-
-    `SF-GLUE-002` -> `SF-GLUE`. É o mesmo agrupamento que separa os coordenadores —
-    infra Glue, Athena, PySpark, Iceberg/layout — então a rota de agente conta
-    achados por área sem precisar de uma lista de `rule_id` mantida à mão.
-    """
-    return rule_id.rsplit("-", 1)[0]
-
-
 def _count_finding_area(finding_ids: frozenset[str], area: str) -> int:
-    return sum(1 for fid in finding_ids if _finding_area(fid) == area)
+    return sum(1 for fid in finding_ids if area_of(fid) == area)
 
 
 def _eval_condition(

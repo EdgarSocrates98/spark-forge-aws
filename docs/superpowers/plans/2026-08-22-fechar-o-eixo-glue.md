@@ -156,19 +156,19 @@ Commit: `feat(cli): forge migrate glue passa a usar o motor de regras`.
 
 **Files:** `sparkforge/migration/assessment.py`, `tests/test_migration_assessment.py`
 
-- [ ] **Step 1: `collect()` — a composição que falta**
+- [x] **Step 1: `collect()` — a composição que falta**
 
 `assess()` recebe `list[Fact]`. Quem chama pela CLI precisa que alguém componha os extratores. Criar `sparkforge/migration/collect.py` com uma função que, dado um diretório, chama `extract_migration_tree` e, quando houver `.tf`, também `extract_terraform_tree`, e devolve a união ordenada.
 
 Por que função separada e não dentro de `assess()`: `assess()` é puro sobre facts e é isso que torna testável julgar sem tocar disco. A composição é I/O, e I/O tem lugar próprio — mesmo motivo pelo qual `extract_migration_tree` não vive dentro de `judge`.
 
-- [ ] **Step 2: etapas nomeadas (§32)**
+- [x] **Step 2: etapas nomeadas (§32)**
 
 `MigrationAssessment.gates` hoje tem `compatibilidade`, `dados`, `performance`, `custo`, `canary`. A §32 nomeia etapas que não existem: Lake Formation, cross-account, IAM/KMS, rede, consumidor.
 
 **Não crie gate que ninguém preenche.** Acrescente apenas os que têm produtor: `lakeformation` tem produtor (`SF-LF`), `consumidor` ganha produtor em H3. Os demais (`iam_kms`, `rede`, `cross_account`) entram como `missing_evidence` nomeado — dizendo que o eixo não foi avaliado e o que o preencheria —, que é diferente de fingir que passou.
 
-- [ ] **Step 3: gates e commit**
+- [x] **Step 3: gates e commit**
 
 ```bash
 python -m pytest tests/test_migration_assessment.py tests/test_cli_migrate_glue.py \

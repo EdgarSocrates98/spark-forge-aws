@@ -202,13 +202,22 @@
     }
   ],
   "gates": {
+    "compatibilidade": "PASS",
+    "lakeformation": "FAIL",
+    "consumidor": "BLOCKED",
+    "iam_kms": "BLOCKED",
+    "rede": "BLOCKED",
+    "cross_account": "BLOCKED",
     "dados": "BLOCKED",
     "performance": "BLOCKED",
     "custo": "BLOCKED",
-    "canary": "BLOCKED",
-    "compatibilidade": "FAIL"
+    "canary": "BLOCKED"
   },
   "missing_evidence": {
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge/consumers.yaml` (ver `sparkforge/facts/consumers.py`)",
+    "iam_kms": "nenhuma regra do catalogo julga papel de execucao, politica de KMS ou permissao de S3 do runtime contra o par de versoes -- o eixo exige um extrator de IAM/KMS que nao existe",
+    "rede": "nenhuma regra do catalogo julga VPC, subnet, security group ou endpoint de servico contra o par de versoes -- o eixo exige um extrator de rede que nao existe",
+    "cross_account": "nenhuma regra do catalogo julga compartilhamento entre contas contra o par de versoes; `forge lakeformation diagnose-cross-account` diagnostica a topologia, mas nao esta ligado a este assessment",
     "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
     "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",
     "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",

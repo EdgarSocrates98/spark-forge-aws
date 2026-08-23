@@ -2977,8 +2977,8 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "126,8",
-      "context": "Confirmado por tamanho: `tools.py` (126,8 KB) e `_core.py` (123,2 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "124,8",
+      "context": "Confirmado por tamanho: `tools.py` (124,8 KB) e `_core.py` (123,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-431",
       "state": "PROVADA",
@@ -2989,15 +2989,15 @@
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "126,8"
+          "value": "124,8"
         }
       }
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "123,2",
-      "context": "Confirmado por tamanho: `tools.py` (126,8 KB) e `_core.py` (123,2 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "123,0",
+      "context": "Confirmado por tamanho: `tools.py` (126,8 KB) e `_core.py` (123,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-322",
       "state": "PROVADA",
@@ -3008,7 +3008,7 @@
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "123,2"
+          "value": "123,0"
         }
       }
     },
@@ -4615,7 +4615,7 @@
       "type": "capability",
       "id": "VNX-408",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "Reclassificada na fase H2: os eixos `lakeformation` e `consumidor` passaram a ser calculados, e `iam_kms`, `rede` e `cross_account` entraram BLOCKED com a evidencia que os preencheria. Continua PARCIAL pelos tres sem produtor.",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/assessment.py",
@@ -4630,11 +4630,11 @@
       "type": "capability",
       "id": "VNX-409",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "Fechada na fase H2 por `sparkforge/migration/collect.py`, que compoe codigo, `.tf` quando existe e o inventario de consumidores na convencao declarada. Prova reapontada do modulo que julga para o que compoe.",
       "proof": {
         "kind": "artifact",
-        "path": "sparkforge/migration/assessment.py",
-        "test": "tests/test_migration_assessment.py"
+        "path": "sparkforge/migration/collect.py",
+        "test": "tests/test_migration_collect.py"
       }
     },
     {

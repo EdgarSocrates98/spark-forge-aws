@@ -47,7 +47,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from sparkforge.facts import runtime_matrix
-from sparkforge.findings.models import SEVERITY_ORDER, Fact, Finding, sort_findings
+from sparkforge.findings.models import (
+    SEVERITY_ORDER,
+    Fact,
+    Finding,
+    area_of,
+    sort_findings,
+)
 from sparkforge.migration import version_path
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
@@ -80,6 +86,59 @@ _EXECUTION_GATES: dict[str, str] = {
     "canary": (
         "canary exige execucao paralela controlada em producao, com trafego "
         "real, contra os dois runtimes -- nenhum canary executado"
+    ),
+}
+
+
+# Eixos do contrato que TEM produtor no repositorio: area do catalogo que os
+# move, e o kind de fact sem o qual o eixo nao foi avaliado. Gate sem produtor e
+# gate que ninguem preenche, e um gate que nunca muda de valor e decoracao.
+_EIXOS_COM_PRODUTOR: dict[str, tuple[str, str]] = {
+    # A topologia de FGAC e declarada em `default_arguments` do job no
+    # Terraform, nunca no codigo Python: sem `.tf` composto, o eixo nao foi
+    # avaliado.
+    "lakeformation": ("SF-LF", "tf.attribute"),
+    # `env.consumer`, nao `env.consumers_analyzed`: inventario lido e vazio nao
+    # e "sem consumidor". Ausencia de declaracao nao e declaracao de ausencia --
+    # ver o docstring de `sparkforge/facts/consumers.py`.
+    "consumidor": ("SF-ENV", "env.consumer"),
+}
+
+# Evidencia que destrava cada eixo com produtor, quando o fact dele nao veio.
+_EVIDENCIA_DOS_EIXOS: dict[str, str] = {
+    "lakeformation": (
+        "nenhum `tf.attribute` nos facts -- a topologia de controle de acesso "
+        "fino e declarada nos `default_arguments` do job no Terraform, entao "
+        "aponte a analise para o diretorio que contem os `.tf` do job"
+    ),
+    "consumidor": (
+        "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no "
+        "codigo do job, no plano fisico nem no metadata Iceberg; declare o "
+        "inventario em `.sparkforge/consumers.yaml` (ver "
+        "`sparkforge/facts/consumers.py`)"
+    ),
+}
+
+# Eixos que a secao 32 nomeia e que NAO tem produtor nenhum no repositorio. Eles
+# entram BLOCKED com a evidencia que os preencheria, e nunca mudam de valor --
+# que e a diferenca entre "nao avaliei" e "passou". Quando um extrator e uma
+# area de regra existirem para um deles, ele migra para `_EIXOS_COM_PRODUTOR` e
+# passa a ser calculado como os outros.
+_EIXOS_SEM_PRODUTOR: dict[str, str] = {
+    "iam_kms": (
+        "nenhuma regra do catalogo julga papel de execucao, politica de KMS ou "
+        "permissao de S3 do runtime contra o par de versoes -- o eixo exige um "
+        "extrator de IAM/KMS que nao existe"
+    ),
+    "rede": (
+        "nenhuma regra do catalogo julga VPC, subnet, security group ou "
+        "endpoint de servico contra o par de versoes -- o eixo exige um "
+        "extrator de rede que nao existe"
+    ),
+    "cross_account": (
+        "nenhuma regra do catalogo julga compartilhamento entre contas contra o "
+        "par de versoes; `forge lakeformation diagnose-cross-account` diagnostica "
+        "a topologia, mas nao esta ligado a este assessment"
     ),
 }
 
@@ -214,6 +273,25 @@ def _compatibility_gate(findings: list[Finding]) -> str:
     return "PASS_WITH_RISK"
 
 
+def _eixo_de(finding: Finding) -> str:
+    """Qual eixo do contrato este achado move.
+
+    Um achado conta em UM eixo, nunca em dois: se `SF-LF-001` movesse tambem
+    `compatibilidade`, o eixo nomeado seria decoracao para o veredito -- o mesmo
+    problema fechando dois gates parece dois problemas.
+
+    `compatibilidade` e o eixo RESIDUAL, e de proposito. Uma area sem eixo
+    proprio (`SF-GLUE`, `SF-ICE`) cai nele em vez de nao mover gate nenhum:
+    achado P0 que nao fecha gate viraria `CONDITIONAL_GO` com um P0 na lista, e
+    entre bloquear demais e passar de menos este repositorio escolhe fail-closed.
+    """
+    area = area_of(finding.rule_id)
+    for eixo, (area_do_eixo, _) in _EIXOS_COM_PRODUTOR.items():
+        if area == area_do_eixo:
+            return eixo
+    return "compatibilidade"
+
+
 def assess(facts: list[Fact], source: str, target: str) -> MigrationAssessment:
     """Julga `facts` contra o catalogo `SF-MIG`, uma vez por degrau de `source`
     ate `target`.
@@ -238,16 +316,43 @@ def assess(facts: list[Fact], source: str, target: str) -> MigrationAssessment:
 
     findings = sort_findings(findings)
 
-    gates: dict[str, str] = {nome: "BLOCKED" for nome in _EXECUTION_GATES}
-    gates["compatibilidade"] = _compatibility_gate(findings)
-    missing_evidence = dict(_EXECUTION_GATES)
+    por_eixo: dict[str, list[Finding]] = {}
+    for finding in findings:
+        por_eixo.setdefault(_eixo_de(finding), []).append(finding)
 
-    if gates["compatibilidade"] == "FAIL":
+    # Ordem declarada, nao ordem de construcao: `compatibilidade` primeiro
+    # porque e o eixo residual e o unico que sempre tem produtor, depois os
+    # eixos nomeados com produtor, depois os que so declaram o que falta. Quem
+    # le o JSON le nesta ordem, e ela nao pode mudar por causa de refatoracao.
+    gates: dict[str, str] = {
+        "compatibilidade": _compatibility_gate(por_eixo.get("compatibilidade", []))
+    }
+    missing_evidence: dict[str, str] = {}
+
+    kinds = {f.kind for f in facts}
+    for eixo, (_, kind_exigido) in _EIXOS_COM_PRODUTOR.items():
+        if kind_exigido not in kinds:
+            # Fail-closed: o eixo nao foi avaliado, e isso e diferente de ter
+            # passado. Quem le precisa distinguir "nao achei problema" de "nao
+            # olhei" -- o invariante que esta secao do contrato existe para nao
+            # violar.
+            gates[eixo] = "BLOCKED"
+            missing_evidence[eixo] = _EVIDENCIA_DOS_EIXOS[eixo]
+            continue
+        gates[eixo] = _compatibility_gate(por_eixo.get(eixo, []))
+
+    gates.update({nome: "BLOCKED" for nome in _EIXOS_SEM_PRODUTOR})
+    missing_evidence.update(_EIXOS_SEM_PRODUTOR)
+
+    gates.update({nome: "BLOCKED" for nome in _EXECUTION_GATES})
+    missing_evidence.update(_EXECUTION_GATES)
+
+    if any(estado == "FAIL" for estado in gates.values()):
         recommendation = "NO_GO"
     else:
-        # Os quatro gates de execucao real nascem sempre BLOCKED nesta analise
-        # (nenhum job nem AWS viva): GO exigiria todo gate em PASS, entao o
-        # melhor desfecho possivel aqui e CONDITIONAL_GO -- nunca GO.
+        # Os gates de execucao real nascem sempre BLOCKED nesta analise (nenhum
+        # job nem AWS viva): GO exigiria todo gate em PASS, entao o melhor
+        # desfecho possivel aqui e CONDITIONAL_GO -- nunca GO.
         recommendation = "CONDITIONAL_GO"
 
     return MigrationAssessment(

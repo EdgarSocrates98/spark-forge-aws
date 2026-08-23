@@ -2454,6 +2454,68 @@ dizendo que ele foi apagado e o que ocupou o lugar.
 números; a prova é comando, então foi reexecutada: 121,7 KB → 126,8 KB e 120,7 KB → 123,2 KB.
 
 
+### Continuação — fase H2, composição de artefato e os eixos do contrato (2026-08-23)
+
+Duas lacunas que H1 tornou visíveis assim que a CLI existiu.
+
+**`collect()`, e por que fora de `assess()`.** `assess()` recebe `list[Fact]` e é puro sobre
+eles — é isso que torna testável julgar uma migração sem tocar disco. Quem chama pela CLI
+precisava de alguém que compusesse os extratores, e composição é I/O.
+`sparkforge/migration/collect.py` faz essa metade: código, `.jar` e `requirements*.txt`
+sempre; `.tf` quando existe; inventário de consumidores só na convenção que o extrator
+declara.
+
+**Cada entrada é decidida diferente, e a razão está escrita.** Um arquivo com extensão `.tf`
+**é** Terraform — não há o que adivinhar, e sem ele a área `SF-LF` fica sem produtor, porque
+a topologia de FGAC é declarada nos `default_arguments` do job. Um `.yaml`, não: varrer toda
+a árvore acharia o inventário e, junto com ele, todo workflow de CI e todo arquivo de
+configuração, cada um virando um `env.consumers_analyzed` que afirma "inventário lido" sobre
+arquivo que não é inventário. Por isso o inventário é procurado em
+`.sparkforge/consumers.yaml` (ou `.sparkforge/consumers/` dividido por domínio), a convenção
+que `sparkforge/facts/consumers.py` já declarava no próprio docstring. O limite fica dito:
+inventário fora da convenção não é lido, e o silêncio aparece como o eixo `consumidor` em
+`BLOCKED` nomeando o arquivo que o preencheria.
+
+**`scripts/regen_fixtures.py` passou a chamar a mesma função.** `regen_scenario` tinha a
+composição reimplementada — `extract_migration_tree` mais `.tf` quando existe. Golden que
+descreve uma união que nenhuma superfície do produto emite é exatamente o defeito que o
+corpus de cenário existe para pegar.
+
+**Os eixos da §32, e a regra que decidiu quais entraram.** Gate sem produtor é gate que
+ninguém preenche, e gate que nunca muda de valor é decoração. `lakeformation` (área `SF-LF`
+sobre `tf.attribute`) e `consumidor` (área `SF-ENV` sobre `env.consumer`) são **calculados**,
+e nascem `BLOCKED` quando o fact que os alimenta não veio. `iam_kms`, `rede` e
+`cross_account` não têm produtor nenhum: entram `BLOCKED` com a evidência que os preencheria,
+e é a diferença entre "não avaliei" e "passou".
+
+**Desvio do plano, medido.** O plano dizia acrescentar só `lakeformation` agora, porque
+`consumidor` "ganha produtor em H3". Medido: `SF-ENV-002` já existe em `rules/catalog/env.yaml`
+e cobre Athena × Iceberg format v3, e `collect()` passou a compor o inventário — o produtor
+existe hoje. H3 generaliza a regra; o eixo não esperava por ela.
+
+**Um achado move um eixo, nunca dois.** `compatibilidade` virou o eixo **residual**: todo
+achado cuja área não tem eixo próprio cai nele. Sem isso, um `SF-LF-001` fecharia
+`lakeformation` **e** `compatibilidade`, e o mesmo problema fechando dois gates pareceria dois
+problemas. Residual e não "nenhum eixo" porque área sem eixo próprio (`SF-GLUE`, `SF-ICE`)
+precisa mover alguma coisa: achado P0 que não fecha gate nenhum viraria `CONDITIONAL_GO` com
+um P0 na lista, e entre bloquear demais e passar de menos este repositório escolhe
+fail-closed. A recomendação passou a ser `NO_GO` se **qualquer** gate for `FAIL`.
+
+**Duas expectativas de teste mudaram, e as duas mediam a coisa errada.**
+`test_uma_regra_de_outra_area_atravessa_o_motor_de_migracao` afirmava
+`gates["compatibilidade"] == "FAIL"` para um cenário cujo único achado é `SF-LF-001` — agora
+afirma `gates["lakeformation"]`. `test_algum_holdout_termina_fora_de_no_go` comparava
+`gates["compatibilidade"]` dos cenários visíveis contra `{"FAIL"}` para dizer "todos fecham em
+NO_GO"; passou a comparar a recomendação, que é o que a frase sempre quis dizer e não mudou.
+Os cinco goldens de cenário e holdout foram regenerados: `gates` e `missing_evidence`
+cresceram, nenhum `finding` mudou.
+
+**`area_of` deixou de ser privado de um módulo.** `sparkforge/case/router.py` tinha
+`_finding_area(rule_id)` — prefixo até o último hífen — e `assessment.py` precisava do mesmo
+agrupamento para dizer qual eixo um achado move. Promovido para
+`sparkforge/findings/models.py::area_of`, com um chamador a menos do que duas cópias.
+
+
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
 Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.

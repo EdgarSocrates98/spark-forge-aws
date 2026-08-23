@@ -282,11 +282,16 @@ class TestAdversarial:
     def test_uma_regra_de_outra_area_atravessa_o_motor_de_migracao(self):
         """`assess()` chama `judge()` com o catalogo INTEIRO uma vez por degrau.
         SF-LF-001 e de `rules/catalog/lakeformation.yaml`, nao de `SF-MIG`, e
-        chega ao relatorio pelo degrau cujo alvo satisfaz a fronteira dela."""
+        chega ao relatorio pelo degrau cujo alvo satisfaz a fronteira dela.
+
+        E fecha o eixo DELA, nao o de compatibilidade: desde a fase H2 o
+        contrato tem eixo `lakeformation`, e um achado move um eixo so -- se
+        `SF-LF-001` movesse tambem `compatibilidade`, o mesmo problema fechando
+        dois gates pareceria dois problemas."""
         _, _, resultado = run_scenario(FIXTURES / "glue_60_fgac_com_jar")
         achado = next(f for f in resultado.findings if f.rule_id == "SF-LF-001")
         assert achado.severity == "P0"
-        assert resultado.gates["compatibilidade"] == "FAIL"
+        assert resultado.gates["lakeformation"] == "FAIL"
         assert resultado.recommendation == "NO_GO"
 
     def test_todo_cenario_dispara_ao_menos_uma_regra(self):

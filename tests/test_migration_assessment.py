@@ -305,3 +305,85 @@ class TestRelatorioMantemAPiorSeveridade:
         (entrada,) = resultado.report()
         assert entrada.finding.severity == "P1"
         assert entrada.steps == [("4.0", "5.0"), ("5.0", "5.1")]
+
+
+class TestEixosNomeados:
+    """A secao 32 do prompt nomeia etapas que o contrato nao tinha.
+
+    A regra que governou quais entraram: gate sem produtor e gate que ninguem
+    preenche, e um gate que nunca muda de valor e decoracao. `lakeformation`
+    tem produtor (`SF-LF` sobre `tf.attribute`) e `consumidor` tem produtor
+    (`SF-ENV` sobre `env.consumer`). `iam_kms`, `rede` e `cross_account` nao tem
+    nenhum -- entram BLOCKED com a evidencia que os preencheria, que e diferente
+    de fingir que passaram.
+    """
+
+    def test_eixo_sem_produtor_nasce_blocked_com_evidencia_nomeada(self, tmp_path):
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        for nome in ("iam_kms", "rede", "cross_account"):
+            assert resultado.gates[nome] == "BLOCKED", nome
+            assert resultado.missing_evidence[nome], f"{nome} sem evidencia nomeada"
+
+    def test_lakeformation_sem_terraform_e_blocked_nunca_pass(self, tmp_path):
+        # So codigo Python nos facts: a topologia de FGAC e declarada no
+        # Terraform, entao o eixo nao foi avaliado -- nao passou.
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        assert resultado.gates["lakeformation"] == "BLOCKED"
+        assert resultado.missing_evidence["lakeformation"]
+
+    def test_consumidor_sem_inventario_e_blocked_nunca_pass(self, tmp_path):
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        assert resultado.gates["consumidor"] == "BLOCKED"
+        assert resultado.missing_evidence["consumidor"]
+
+    def test_toda_evidencia_faltante_corresponde_a_um_gate_blocked(self, tmp_path):
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
+        for nome in resultado.missing_evidence:
+            assert resultado.gates[nome] == "BLOCKED", (
+                f"{nome} declara evidencia faltante mas nao esta bloqueado"
+            )
+
+
+class TestEixoNomeadoNaoSomaDuasVezes:
+    """Um finding conta em UM eixo, nunca em dois.
+
+    Sem isto, `compatibilidade` absorveria tudo e o eixo nomeado seria
+    decorativo para o veredito -- o mesmo achado moveria os dois.
+    """
+
+    @staticmethod
+    def _facts_com_fgac_e_jar(tmp_path):
+        from sparkforge.migration import collect as collect_mod
+
+        (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
+        (tmp_path / "infra.tf").write_text(
+            'resource "aws_glue_job" "curated" {\n'
+            "  default_arguments = {\n"
+            '    "--enable-lakeformation-fine-grained-access" = "true"\n'
+            '    "--extra-jars"                               = "s3://b/c.jar"\n'
+            "  }\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        return collect_mod.collect(tmp_path)
+
+    def test_finding_de_lake_formation_move_o_eixo_dele(self, tmp_path):
+        resultado = assessment.assess(
+            self._facts_com_fgac_e_jar(tmp_path), source="5.1", target="6.0"
+        )
+        assert "SF-LF-001" in {f.rule_id for f in resultado.findings}
+        assert resultado.gates["lakeformation"] == "FAIL"
+        assert resultado.recommendation == "NO_GO"
+
+    def test_o_mesmo_finding_nao_move_compatibilidade(self, tmp_path):
+        # O caminho 5.1->6.0 nao cruza a faixa de SF-MIG-001 (`>=5.0` ja valia
+        # em 5.1, e o fact de import de SDK v1 continua ali) -- entao o que
+        # sobra em `compatibilidade` e o que NAO e de eixo nomeado.
+        resultado = assessment.assess(
+            self._facts_com_fgac_e_jar(tmp_path), source="5.1", target="6.0"
+        )
+        de_lf = [f for f in resultado.findings if f.rule_id.startswith("SF-LF-")]
+        assert de_lf, "o cenario precisa ter finding de SF-LF para medir isto"
+        outros = [f for f in resultado.findings if not f.rule_id.startswith("SF-LF-")]
+        esperado = assessment._compatibility_gate(outros)
+        assert resultado.gates["compatibilidade"] == esperado

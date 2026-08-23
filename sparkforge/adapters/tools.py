@@ -988,9 +988,17 @@ _MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
             "type": "object",
             "additionalProperties": {"type": "string"},
             "description": (
-                "`compatibilidade` sai do catalogo. Os quatro eixos que exigem "
-                "execucao real (dados, performance, custo, canary) nascem BLOCKED: "
-                "nem job real nem AWS viva existem nesta analise."
+                "Um eixo do contrato por chave, em ordem declarada. "
+                "`compatibilidade` e o eixo RESIDUAL -- todo achado que nao "
+                "pertence a um eixo nomeado cai nele, e um achado conta em UM "
+                "eixo, nunca em dois. `lakeformation` (area `SF-LF`) e "
+                "`consumidor` (area `SF-ENV`) sao calculados quando o fact que "
+                "os alimenta existe (`tf.attribute`, `env.consumer`) e nascem "
+                "BLOCKED quando nao. `iam_kms`, `rede` e `cross_account` sao "
+                "nomeados pelo contrato e nao tem produtor nenhum: sempre "
+                "BLOCKED, nunca PASS. Os quatro que exigem execucao real "
+                "(dados, performance, custo, canary) nascem BLOCKED: nem job "
+                "real nem AWS viva existem nesta analise."
             ),
         },
         "missing_evidence": {
@@ -1948,8 +1956,12 @@ TOOLS: dict[str, dict[str, Any]] = {
             "e `target` nao tem default: um par embutido responderia sobre um alvo "
             "que ninguem declarou. Devolve `findings` (cardinalidade por degrau), "
             "`report` (cada problema uma vez, com os degraus em que vale), `gates` e "
-            "`missing_evidence` -- os quatro eixos que exigem execucao real (dados, "
-            "performance, custo, canary) nascem BLOCKED com o motivo, nunca PASS."
+            "`missing_evidence`. Compoe o job inteiro: codigo, `.tf` quando existe "
+            "(sem ele a area `SF-LF` fica sem produtor, porque a topologia de FGAC "
+            "e declarada no Terraform) e o inventario de consumidores em "
+            "`.sparkforge/consumers.yaml`. Todo eixo sem evidencia nasce BLOCKED "
+            "com o motivo, nunca PASS -- inclusive os que o contrato nomeia e "
+            "nenhuma regra preenche (`iam_kms`, `rede`, `cross_account`)."
         ),
         "inputSchema": {
             "type": "object",

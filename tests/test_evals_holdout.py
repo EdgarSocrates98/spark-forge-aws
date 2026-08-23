@@ -224,15 +224,21 @@ class TestOHoldoutNaoRepeteOsVisiveis:
         """DECISAO 2 de `sparkforge/migration/assessment.py`: o gate de
         compatibilidade separa por SEVERIDADE, nao por presenca. Os tres
         cenarios de `fixtures/scenarios/` disparam P0/P1 e todos fecham em
-        FAIL/NO_GO -- nenhum deles pode medir o outro ramo. O holdout de
+        NO_GO -- nenhum deles pode medir o outro ramo. O holdout de
         configuracao indireta so dispara P2, entao ele e o unico exemplar de
-        PASS_WITH_RISK/CONDITIONAL_GO do repositorio."""
+        PASS_WITH_RISK/CONDITIONAL_GO do repositorio.
+
+        O lado dos visiveis mede a RECOMENDACAO, nao `gates["compatibilidade"]`:
+        desde os eixos nomeados da fase H2, `glue_60_fgac_com_jar` fecha em
+        `gates["lakeformation"]` e deixa `compatibilidade` em PASS -- um achado
+        move um eixo so. O que a frase "todos fecham em NO_GO" sempre quis dizer
+        e o desfecho, e ele nao mudou."""
         desfechos = {
             d.name: run_scenario(d)[2].gates["compatibilidade"] for d in holdout_dirs()
         }
         assert "PASS_WITH_RISK" in desfechos.values(), desfechos
-        visiveis = {r.gates["compatibilidade"] for _, _, r in self._visiveis()}
-        assert visiveis == {"FAIL"}, visiveis
+        visiveis = {r.recommendation for _, _, r in self._visiveis()}
+        assert visiveis == {"NO_GO"}, visiveis
 
     def test_o_holdout_dispara_regra_que_nenhum_cenario_visivel_dispara(self):
         """Se toda regra do holdout ja aparece nos visiveis, um sistema

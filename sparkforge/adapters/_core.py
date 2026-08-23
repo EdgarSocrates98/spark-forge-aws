@@ -51,10 +51,6 @@ from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
-from sparkforge.facts.migration import (
-    extract_migration_path,
-    extract_migration_tree,
-)
 from sparkforge.facts.pyspark_ast import extract_path, extract_tree
 from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
@@ -71,6 +67,7 @@ from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
+from sparkforge.migration.collect import collect as collect_migration
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 
@@ -1104,10 +1101,7 @@ def migration_assess(path: str, source: str, target: str) -> dict[str, Any]:
             f"    sparkforge migrate glue ./meu-job --from 4.0 --to 6.0",
             exit_code=2,
         )
-    if target_path.is_dir():
-        facts = extract_migration_tree(target_path, repo_root=target_path)
-    else:
-        facts = extract_migration_path(target_path, target_path.parent)
+    facts = collect_migration(target_path)
 
     try:
         return assess_migration(facts, source=source, target=target).to_dict()

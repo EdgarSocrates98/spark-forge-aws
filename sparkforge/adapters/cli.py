@@ -315,7 +315,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Julga a migracao de um job Glue entre um par de versoes, degrau a degrau.",
     )
     migrate_glue_p.add_argument(
-        "path", help="Diretorio do job (codigo, requirements*.txt e .jar), ou um .py."
+        "path",
+        help=(
+            "Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando "
+            "existem e o inventario de consumidores em .sparkforge/consumers.yaml "
+            "--, ou um .py sozinho."
+        ),
     )
     # Sem default, os dois: um par embutido no codigo responde sobre um alvo
     # que ninguem declarou, e o veredito sai com a mesma cara de qualquer outro.

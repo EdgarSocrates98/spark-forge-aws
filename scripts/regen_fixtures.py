@@ -49,6 +49,7 @@ from sparkforge.facts.terraform import (  # noqa: E402
     extract_terraform_tree,
 )
 from sparkforge.migration.assessment import assess  # noqa: E402
+from sparkforge.migration.collect import collect as collect_migration  # noqa: E402
 from sparkforge.rules.engine import judge  # noqa: E402
 from sparkforge.rules.loader import load_catalog  # noqa: E402
 
@@ -391,16 +392,15 @@ def regen_scenario(directory: Path) -> None:
     `meta.yaml`; `assess()` o deriva da matriz para o ALVO de cada degrau, entao
     um cenario nao pode mentir sobre o runtime que julgou.
 
-    A extracao cobre os dois tipos de artefato que um job real tem no
-    repositorio -- codigo (`.py`, `.jar`, `requirements*.txt`) e infraestrutura
-    (`.tf`) -- e o `.tf` entra QUANDO EXISTE, no molde de `regen_graph`. Um
-    cenario com os dois julga a uniao, que e o que o operador tem em maos.
+    A extracao e `sparkforge.migration.collect.collect()`, a MESMA funcao que a
+    CLI e a tool MCP chamam -- codigo, `.tf` quando existe e o inventario de
+    consumidores na convencao. Reimplementar a composicao aqui faria o golden
+    descrever uma uniao que nenhuma superficie do produto emite, que e o defeito
+    que este corpus existe para pegar.
     """
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     input_dir = directory / "input"
-    facts = list(extract_migration_tree(input_dir, repo_root=input_dir))
-    if any(input_dir.rglob("*.tf")):
-        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    facts = collect_migration(input_dir)
     resultado = assess(facts, source=str(meta["source"]), target=str(meta["target"]))
 
     out = directory / "expected"
