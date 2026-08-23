@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "614cf44a1a7c0e4367fe87fd389ae11100b82d72",
+  "extracted_from": "41aad5b11576f1a2694906fef348cf5b76f6efc2",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -2839,43 +2839,13 @@
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 74,
+      "line": 75,
       "text": "22",
-      "context": "| **Runtime harness vs evaluation harness** (§43, \"crítico\") | EXISTE PARCIAL, e já separado na prática | O runtime (CLI",
+      "context": "| **Grader hierarchy** (§45) | EXISTE, com teste — nunca formalizado como hierarquia | Toda a suíte de `tests/test_fixtu",
       "type": "number",
       "id": "VNX-355",
-      "state": "PROVADA",
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib; print(len(list(pathlib.Path(\"tests\").glob(\"test_fixtures_golden*.py\"))))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 22
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 74,
-      "text": "21",
-      "context": "| **Runtime harness vs evaluation harness** (§43, \"crítico\") | EXISTE PARCIAL, e já separado na prática | O runtime (CLI",
-      "type": "number",
-      "id": "VNX-356",
-      "state": "PROVADA",
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib; print(len(list(pathlib.Path(\"tests\").glob(\"test_fixtures_golden*.py\")))-1)'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 21
-        }
-      }
+      "state": "REMOVIDA",
+      "note": "A Fase I1 reescreveu a linha 74 de CURRENT-HARNESS-GAP.md ao reclassificar o paragrafo 43 para EXISTE, com teste. A nova evidencia cita RUNTIME-VS-EVALUATION.md e test_harness_boundary.py, e nao mais a contagem de 22 arquivos de golden fixtures. O mesmo numero segue provado na linha 75, por VNX-357 e VNX-358."
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
@@ -2884,26 +2854,6 @@
       "context": "| **Grader hierarchy** (§45) | EXISTE, com teste — nunca formalizado como hierarquia | Toda a suíte de `tests/test_fixtu",
       "type": "number",
       "id": "VNX-357",
-      "state": "PROVADA",
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib; print(len(list(pathlib.Path(\"tests\").glob(\"test_fixtures_golden*.py\"))))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 22
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 75,
-      "text": "22",
-      "context": "| **Grader hierarchy** (§45) | EXISTE, com teste — nunca formalizado como hierarquia | Toda a suíte de `tests/test_fixtu",
-      "type": "number",
-      "id": "VNX-358",
       "state": "PROVADA",
       "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
       "proof": {
@@ -4014,6 +3964,126 @@
       }
     },
     {
+      "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
+      "line": 15,
+      "text": "23",
+      "context": "| Superfície | CLI `sparkforge analyze/judge/case/next/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fase0.xm",
+      "type": "number",
+      "id": "VNX-469",
+      "state": "PROVADA",
+      "note": "Os 23 corpora de fixtures/ sao contados em disco, nao copiados: a prova enumera os subdiretorios. A tabela de RUNTIME-VS-EVALUATION.md usa esse numero para dizer o tamanho da superficie de avaliacao.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; print(sum(1 for p in pathlib.Path(\"fixtures\").iterdir() if p.is_dir()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 23
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
+      "line": 44,
+      "text": "100",
+      "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
+      "type": "number",
+      "id": "VNX-470",
+      "state": "PROVADA",
+      "note": "O 100 e o ponto de partida da formula que o documento cita para explicar por que o score nao significa nada. A prova roda o diagnostico sem fail e sem warn, entao o 100 vem da funcao real e nao da leitura da linha de codigo.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.lakeformation.doctor import LakeFormationDoctor as D; f=lambda c: D().diagnose_cross_account(c).health_score; perfeito={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": True, \"kms_key_policy_includes_consumer\": True}; um_fail={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": True}; fail_warn={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": False}; print(f(perfeito))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 100
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
+      "line": 44,
+      "text": "35",
+      "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
+      "type": "number",
+      "id": "VNX-471",
+      "state": "PROVADA",
+      "note": "O peso 35 de cada fail e medido como a queda que a propria funcao produz entre a configuracao sem fail e a com um fail. Medir a queda, em vez de reler a constante, e o que prova que o peso esta em uso.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.lakeformation.doctor import LakeFormationDoctor as D; f=lambda c: D().diagnose_cross_account(c).health_score; perfeito={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": True, \"kms_key_policy_includes_consumer\": True}; um_fail={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": True}; fail_warn={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": False}; print(f(perfeito) - f(um_fail))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 35
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
+      "line": 44,
+      "text": "15",
+      "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
+      "type": "number",
+      "id": "VNX-472",
+      "state": "PROVADA",
+      "note": "Mesma tecnica do peso de fail: o 15 de cada warn e a queda entre a configuracao com um fail e a com um fail mais um warn. O numero sai da funcao, nao da formula transcrita.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.lakeformation.doctor import LakeFormationDoctor as D; f=lambda c: D().diagnose_cross_account(c).health_score; perfeito={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": True, \"kms_key_policy_includes_consumer\": True}; um_fail={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": True}; fail_warn={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": False}; print(f(um_fail) - f(fail_warn))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 15
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
+      "line": 44,
+      "text": "65",
+      "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
+      "type": "number",
+      "id": "VNX-473",
+      "state": "PROVADA",
+      "note": "O 65 nao e exemplo inventado: e o score que a funcao devolve com um fail e nenhum warn. O documento o usa para mostrar que 65 e 50 nao se comparam em unidade nenhuma, e a prova mostra que os dois sao saidas reais do mesmo calculo.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.lakeformation.doctor import LakeFormationDoctor as D; f=lambda c: D().diagnose_cross_account(c).health_score; perfeito={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": True, \"kms_key_policy_includes_consumer\": True}; um_fail={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": True}; fail_warn={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": False}; print(f(um_fail))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 65
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
+      "line": 45,
+      "text": "50",
+      "context": "\"melhor\" que 50 em unidade nenhuma, e os pesos não vieram de fonte.",
+      "type": "number",
+      "id": "VNX-474",
+      "state": "PROVADA",
+      "note": "O 50 e o score com um fail e um warn -- o outro lado da comparacao que o documento recusa. Prova pela funcao real, pelo mesmo motivo que o 65.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.lakeformation.doctor import LakeFormationDoctor as D; f=lambda c: D().diagnose_cross_account(c).health_score; perfeito={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": True, \"kms_key_policy_includes_consumer\": True}; um_fail={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": True}; fail_warn={\"ram_share_status\": \"ACCEPTED\", \"resource_link_exists\": False, \"kms_key_policy_includes_consumer\": False}; print(f(fail_warn))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 50
+        }
+      }
+    },
+    {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 36,
       "text": "**TaskSpec**",
@@ -4347,7 +4417,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 74,
       "text": "**Runtime harness vs evaluation harness** (§43, \"crítico\")",
-      "context": "| **Runtime harness vs evaluation harness** (§43, \"crítico\") | EXISTE PARCIAL, e já separado na prática | O runtime (CLI",
+      "context": "| **Runtime harness vs evaluation harness** (§43, \"crítico\") | EXISTE, com teste | Fase I1: `docs/harness/RUNTIME-VS-EVA",
       "type": "capability",
       "id": "VNX-352",
       "state": "PROVADA",
@@ -5338,6 +5408,36 @@
           "value": 7
         }
       }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 75,
+      "text": "22",
+      "context": "| **Grader hierarchy** (§45) | EXISTE, com teste — nunca formalizado como hierarquia | Toda a suíte de `tests/test_fixtu",
+      "type": "number",
+      "id": "VNX-358",
+      "state": "PROVADA",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; print(len(list(pathlib.Path(\"tests\").glob(\"test_fixtures_golden*.py\"))))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 22
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 74,
+      "text": "21",
+      "context": "| **Runtime harness vs evaluation harness** (§43, \"crítico\") | EXISTE PARCIAL, e já separado na prática | O runtime (CLI",
+      "type": "number",
+      "id": "VNX-356",
+      "state": "REMOVIDA",
+      "note": "Mesma reescrita da linha 74 na Fase I1. O 21 era a contagem de familias de golden fixtures menos uma, citada so naquele texto; some do documento junto com ele."
     },
     {
       "doc": "docs/harness/BASELINE.md",
