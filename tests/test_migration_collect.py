@@ -122,3 +122,43 @@ class TestUniaoOrdenada:
         facts = collect_mod.collect(raiz)
         anchors = [f.provenance["artifact"] for f in facts if f.kind == "tf.resource"]
         assert len(anchors) == len(set(anchors))
+
+
+class TestDumpDeMetadadosIceberg:
+    """A ponta que o eixo `consumidor` deixava sem fechar por tabela.
+
+    Sem `iceberg.table_property`, `SF-ENV-002` nunca dispara a partir do
+    diretorio do job: o codigo observa `format-version` numa linha de fonte,
+    sem identidade de tabela. O dump de metadados tem a tabela, e a convencao
+    de onde ele mora ja existe -- `sparkforge collect iceberg-metadata` escreve
+    em `.sparkforge/artifacts/iceberg/<db_tabela>.json`.
+    """
+
+    @staticmethod
+    def _dump(raiz: Path) -> Path:
+        pasta = raiz / ".sparkforge" / "artifacts" / "iceberg"
+        pasta.mkdir(parents=True)
+        return pasta
+
+    def test_le_o_dump_da_convencao_do_coletor(self, tmp_path):
+        raiz = _job(tmp_path)
+        origem = Path("fixtures/iceberg/healthy_table/input/dump.json")
+        (self._dump(raiz) / "db_t.json").write_text(
+            origem.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        facts = collect_mod.collect(raiz)
+        assert [f for f in facts if f.kind.startswith("iceberg.")], (
+            "o dump na convencao precisa virar fact"
+        )
+
+    def test_sem_dump_nenhum_fact_de_iceberg(self, tmp_path):
+        facts = collect_mod.collect(_job(tmp_path))
+        assert not [f for f in facts if f.kind.startswith("iceberg.")]
+
+    def test_json_fora_da_convencao_nao_vira_dump(self, tmp_path):
+        raiz = _job(tmp_path)
+        (raiz / "config.json").write_text('{"qualquer": 1}', encoding="utf-8")
+        facts = collect_mod.collect(raiz)
+        assert not [f for f in facts if f.kind.startswith("iceberg.")], (
+            "um `.json` qualquer da arvore nao e dump de metadados"
+        )

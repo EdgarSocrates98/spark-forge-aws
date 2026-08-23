@@ -454,3 +454,46 @@ class TestBloqueioPorConsumidorIncompativel:
         # Athena consome, mas nada neste job pede v3: bloquear aqui acusaria uma
         # migracao pelo que ela NAO faz.
         assert resultado.gates["consumidor"] != "FAIL"
+
+
+class TestConsumidorPorTabela:
+    """Quando a tabela e observavel, o eixo pergunta por ELA.
+
+    Antes, `mig.table_format` nao carregava identidade de tabela e o eixo so
+    conseguia responder pelo JOB: "esta migracao vai escrever v3, e ha
+    consumidor declarado?". Isso acusa uma migracao que escreve v3 numa tabela
+    que ninguem consome, so porque OUTRA tabela do inventario tem consumidor.
+    """
+
+    @staticmethod
+    def _facts(tmp_path, tabela_no_codigo: str, tabela_no_inventario: str):
+        from sparkforge.migration import collect as collect_mod
+
+        (tmp_path / "job.py").write_text(
+            f"spark.sql(\"CREATE TABLE {tabela_no_codigo} (id INT) USING iceberg "
+            "TBLPROPERTIES ('format-version'='3')\")\n",
+            encoding="utf-8",
+        )
+        pasta = tmp_path / ".sparkforge"
+        pasta.mkdir()
+        (pasta / "consumers.yaml").write_text(
+            f"consumers:\n  - table: {tabela_no_inventario}\n    service: athena\n",
+            encoding="utf-8",
+        )
+        return collect_mod.collect(tmp_path)
+
+    def test_consumidor_da_mesma_tabela_fecha_o_eixo(self, tmp_path):
+        facts = self._facts(tmp_path, "db.pedidos", "db.pedidos")
+        resultado = assessment.assess(facts, source="5.1", target="6.0")
+        assert resultado.gates["consumidor"] == "FAIL"
+
+    def test_consumidor_de_outra_tabela_nao_fecha_o_eixo(self, tmp_path):
+        facts = self._facts(tmp_path, "db.pedidos", "db.faturas")
+        resultado = assessment.assess(facts, source="5.1", target="6.0")
+        assert resultado.gates["consumidor"] != "FAIL", (
+            "acusar por causa do consumidor de OUTRA tabela e acusar a tabela errada"
+        )
+        assert resultado.missing_evidence.get("consumidor"), (
+            "nao acusar nao e aprovar: a tabela que vai para v3 continua sem "
+            "consumidor declarado, e isso precisa aparecer"
+        )

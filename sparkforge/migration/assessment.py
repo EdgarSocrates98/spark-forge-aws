@@ -303,25 +303,55 @@ def _pior(*estados: str) -> str:
     return min(estados, key=_ORDEM_DE_GATE.index)
 
 
-def _pede_format_v3(facts: list[Fact]) -> bool:
-    """O job pede format version 3 em algum artefato composto?
+def _tabelas_em_v3(facts: list[Fact]) -> tuple[bool, set[str]]:
+    """`(pede v3?, tabelas nomeadas que vao para v3)`.
 
     Duas fontes, e as duas contam. `mig.table_format` e a observacao no CODIGO
-    do job (`tableProperty("format-version", "3")`), sem identidade de tabela --
-    o subject e a linha de fonte. `iceberg.table_property` vem do dump de
-    metadados de uma tabela real, e tem a tabela. A pergunta do gate e do JOB,
-    nao da tabela: "esta migracao vai escrever v3, e quem le isso?".
+    do job; ela carrega `attrs.table` QUANDO o nome esta na mesma linha do
+    `format-version` (um `CREATE`/`ALTER TABLE`), e nao carrega quando nao esta.
+    `iceberg.table_property` vem do dump de metadados de uma tabela real, e o
+    subject dela E a tabela.
+
+    O conjunto pode ficar VAZIO com o booleano `True`: e o caso de um job que
+    fixa `format-version` num dicionario de configuracao, sem nomear a tabela na
+    linha. Ai a unica pergunta respondivel volta a ser a do JOB -- "esta
+    migracao vai escrever v3, e quem le isso?" --, e o gate degrada para ela em
+    vez de fingir precisao que o artefato nao tem.
     """
+    pede = False
+    tabelas: set[str] = set()
     for fact in facts:
         if fact.kind == "mig.table_format" and str(fact.attrs.get("format_version")) == "3":
-            return True
-        if (
+            pede = True
+            nome = str(fact.attrs.get("table", "")).strip()
+            if nome:
+                tabelas.add(nome)
+        elif (
             fact.kind == "iceberg.table_property"
             and fact.attrs.get("key") == "format-version"
             and str(fact.attrs.get("value")) == "3"
         ):
-            return True
-    return False
+            pede = True
+            nome = str(fact.subject.get("symbol", "")).strip()
+            if nome:
+                tabelas.add(nome)
+    return pede, tabelas
+
+
+def _mesma_tabela(declarada: str, observada: str) -> bool:
+    """Casamento de nome de tabela, com o mesmo recorte de `facts/fusion.py`.
+
+    Igualdade do nome inteiro, sem diferenciar maiuscula. Se falhar, o ULTIMO
+    segmento contra o ultimo segmento -- `glue_catalog.curated.pedidos` casa com
+    `curated.pedidos` e com `pedidos`. Nao ha aqui a guarda de ambiguidade que a
+    fusao tem, porque o conjunto comparado e pequeno e a consequencia de casar
+    demais e BLOQUEAR uma migracao a mais, nao aprovar uma a menos: entre
+    bloquear demais e passar de menos, este repositorio escolhe fail-closed.
+    """
+    a, b = declarada.strip().lower(), observada.strip().lower()
+    if not a or not b:
+        return False
+    return a == b or a.split(".")[-1] == b.split(".")[-1]
 
 
 def _gate_de_consumidor(facts: list[Fact], por_regra: str) -> tuple[str, str]:
@@ -336,23 +366,35 @@ def _gate_de_consumidor(facts: list[Fact], por_regra: str) -> tuple[str, str]:
     unsupported version 3"); este cruzamento move o GATE. Um caso ja coberto
     pela regra produz um achado e um gate fechado, nunca dois achados.
     """
-    engines = sorted(
-        {
-            str(f.attrs.get("service", ""))
-            for f in facts
-            if f.kind == "env.consumer" and f.attrs.get("service")
-        }
-    )
-    if not _pede_format_v3(facts):
+    pede_v3, tabelas_v3 = _tabelas_em_v3(facts)
+    if not pede_v3:
         # Nada nesta migracao pede v3. Bloquear aqui acusaria o job pelo que
         # ele NAO faz, e o inventario continua servindo as regras do catalogo.
         return por_regra, ""
+
+    consumidores = [f for f in facts if f.kind == "env.consumer" and f.attrs.get("service")]
+    if tabelas_v3:
+        # A tabela e observavel: pergunte por ELA. Consultar todo consumidor
+        # declarado acusaria esta migracao por causa do consumidor de OUTRA
+        # tabela -- e nome de tabela errado num achado manda alguem conferir a
+        # tabela errada.
+        consumidores = [
+            f
+            for f in consumidores
+            if any(_mesma_tabela(str(f.attrs.get("table", "")), t) for t in tabelas_v3)
+        ]
+    engines = sorted({str(f.attrs["service"]) for f in consumidores})
 
     veredito = storage_upgrade.assess_upgrade(engines, target_spec_version=3)
     if veredito.verdict == "BLOCKED":
         return _pior(por_regra, "FAIL"), ""
     if veredito.verdict == "UNRESOLVED":
-        return _pior(por_regra, "BLOCKED"), "; ".join(veredito.unresolved)
+        faltante = "; ".join(veredito.unresolved)
+        if tabelas_v3:
+            # Dizer QUAL tabela vai para v3 e o que transforma "declare o
+            # inventario" numa instrucao acionavel.
+            faltante = f"tabelas que vao para format v3: {sorted(tabelas_v3)} -- {faltante}"
+        return _pior(por_regra, "BLOCKED"), faltante
     if veredito.verdict == "CONDITIONAL":
         return _pior(por_regra, "PASS_WITH_RISK"), ""
     return por_regra, ""

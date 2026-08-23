@@ -107,6 +107,23 @@ _CAST_RE = re.compile(r"(?<!try_)\bcast\s*\(", re.IGNORECASE)
 # nao responde "esta tabela e v3", e vice-versa. `knowledge/storage/
 # iceberg-v3.md` separa as duas metades, e `sparkforge/storage/
 # feature_support.py` grava a separacao em codigo.
+# Nome da tabela na MESMA linha do `format-version`, quando ele esta la.
+# `CREATE TABLE`/`ALTER TABLE`/`REPLACE TABLE` sao as tres formas em que o SQL
+# nomeia a tabela cuja propriedade esta sendo fixada. `IF NOT EXISTS` entra
+# opcional porque e a forma idiomatica em job idempotente.
+#
+# POR QUE SO A MESMA LINHA: este extrator e linha a linha, como todo o resto do
+# modulo. Um `CREATE TABLE` numa linha e o `TBLPROPERTIES` tres linhas abaixo
+# nao casa -- e a chave `table` fica AUSENTE, que e o resultado honesto. Casar
+# com a ultima tabela vista no arquivo atribuiria a propriedade a uma tabela
+# que talvez nao seja a dela, e nome de tabela errado num achado de consumidor
+# manda alguem conferir a tabela errada.
+_TABELA_RE = re.compile(
+    r"\b(?:CREATE|REPLACE|ALTER)\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?"
+    r"([A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*)",
+    re.IGNORECASE,
+)
+
 _FORMAT_VERSION_RE = re.compile(r"format-version['\"]?\s*[=:]\s*['\"]?(\d+)")
 
 # Scala embutido no nome do jar, ex. `conector_2.12-1.4.0.jar` -> "2.12".
@@ -293,11 +310,18 @@ def _config_facts(text: str, anchor: str, provenance: dict[str, Any]) -> list[Fa
             )
         formato = _FORMAT_VERSION_RE.search(linha)
         if formato:
+            attrs_formato: dict[str, Any] = {"format_version": formato.group(1)}
+            tabela = _TABELA_RE.search(linha)
+            if tabela:
+                # Identidade de tabela e o que separa "esta migracao vai
+                # escrever v3" de "esta tabela quebra para este consumidor".
+                # Sem ela o eixo de consumidor so responde pelo job.
+                attrs_formato["table"] = tabela.group(1)
             facts.append(
                 Fact(
                     kind="mig.table_format",
                     subject=_source_subject(anchor, lineno),
-                    attrs={"format_version": formato.group(1)},
+                    attrs=attrs_formato,
                     provenance=provenance,
                 )
             )

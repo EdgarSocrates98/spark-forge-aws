@@ -13,7 +13,8 @@
     },
     "measures": {},
     "attrs": {
-      "format_version": "2"
+      "format_version": "2",
+      "table": "catalog.db.tabela"
     },
     "provenance": {
       "artifact": "job.py",

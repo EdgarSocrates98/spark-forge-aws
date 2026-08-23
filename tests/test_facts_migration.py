@@ -436,3 +436,47 @@ class TestMajorDaVersaoPinada:
         dep = next(f for f in facts if f.kind == "mig.python_dep")
         assert "major" not in dep.attrs
         assert dep.attrs["version"] == "@git+https://exemplo.invalido/x.git"
+
+
+class TestIdentidadeDaTabelaNoFormato:
+    """`mig.table_format` observa `format-version` numa LINHA de fonte, e o
+    subject e a linha -- nao a tabela. Sem o nome da tabela, o eixo de
+    consumidor so consegue responder pelo JOB ("esta migracao vai escrever v3"),
+    nunca por tabela ("esta tabela quebra para este consumidor").
+
+    A chave `table` entra QUANDO E OBSERVAVEL na mesma linha, e fica AUSENTE
+    quando nao e -- mesma disciplina de `attrs.major` em `mig.python_dep`:
+    caminho ausente no avaliador reprova a condicao, e a regra fica muda sobre
+    o que nao conseguiu ler, em vez de julgar um nome inventado.
+    """
+
+    @staticmethod
+    def _formato(tmp_path, corpo: str):
+        (tmp_path / "job.py").write_text(corpo, encoding="utf-8")
+        facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)
+        return [f for f in facts if f.kind == "mig.table_format"]
+
+    def test_create_table_qualificada(self, tmp_path):
+        formatos = self._formato(
+            tmp_path,
+            "spark.sql(\"CREATE TABLE glue_catalog.curated.pedidos (id INT) "
+            "USING iceberg TBLPROPERTIES ('format-version'='3')\")\n",
+        )
+        assert formatos[0].attrs["table"] == "glue_catalog.curated.pedidos"
+
+    def test_alter_table_qualificada(self, tmp_path):
+        formatos = self._formato(
+            tmp_path,
+            "spark.sql(\"ALTER TABLE db.t SET TBLPROPERTIES ('format-version'='3')\")\n",
+        )
+        assert formatos[0].attrs["table"] == "db.t"
+
+    def test_sem_tabela_na_linha_a_chave_nao_existe(self, tmp_path):
+        formatos = self._formato(tmp_path, "props = {'format-version': '3'}\n")
+        assert "table" not in formatos[0].attrs, (
+            "nome de tabela inventado e pior que ausencia declarada"
+        )
+
+    def test_a_ausencia_nao_apaga_a_observacao(self, tmp_path):
+        formatos = self._formato(tmp_path, "props = {'format-version': '3'}\n")
+        assert formatos[0].attrs["format_version"] == "3"

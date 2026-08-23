@@ -11,6 +11,15 @@ O QUE ENTRA, E POR QUE CADA UM E DECIDIDO DIFERENTE.
 - `.tf` entra quando existe. Um arquivo com extensao `.tf` E Terraform -- nao ha
   o que adivinhar --, e sem ele a area `SF-LF` fica sem produtor: a topologia de
   FGAC e declarada no Terraform do job, nunca no codigo Python.
+- O dump de metadados Iceberg entra so do diretorio em que o COLETOR o grava
+  (`.sparkforge/artifacts/iceberg/`). Um `.json` qualquer da arvore nao e dump:
+  varrer a arvore inteira faria `package-lock.json` e `tsconfig.json` passarem
+  pelo parser de metadados e virarem `iceberg.unresolved` -- ruido que afirma
+  que alguem tentou ler metadados de um arquivo que ninguem disse ser metadado.
+  E o dump e o que traz IDENTIDADE DE TABELA: `mig.table_format` observa
+  `format-version` numa linha de fonte Python e nao sabe de que tabela ela
+  fala; `iceberg.table_property` sabe, e e o que faz `SF-ENV-002` acusar por
+  tabela em vez de o gate bloquear por job.
 - O inventario de consumidores entra so na CONVENCAO que
   `sparkforge/facts/consumers.py` declara (`.sparkforge/consumers.yaml`, ou
   `.sparkforge/consumers/` dividido por dominio). Varrer todo `*.yaml` da arvore
@@ -30,6 +39,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
+from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
 from sparkforge.facts.migration import extract_migration_path, extract_migration_tree
 from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.models import Fact, sort_facts
@@ -39,6 +49,12 @@ from sparkforge.findings.models import Fact, sort_facts
 # consumers.py` -- arquivo unico, ou diretorio dividido por dominio.
 INVENTARIO_ARQUIVO = Path(".sparkforge") / "consumers.yaml"
 INVENTARIO_DIRETORIO = Path(".sparkforge") / "consumers"
+
+# Onde `sparkforge collect iceberg-metadata` GRAVA o dump de metadados -- ver
+# `sparkforge/collect/aws.py`, que monta
+# `.sparkforge/artifacts/iceberg/<db_tabela>.json`. Ler dai nao inventa
+# convencao nova: usa a que o coletor ja publica.
+DUMPS_ICEBERG = Path(".sparkforge") / "artifacts" / "iceberg"
 
 
 def collect(path: Path | str, repo_root: Path | None = None) -> list[Fact]:
@@ -72,5 +88,9 @@ def collect(path: Path | str, repo_root: Path | None = None) -> list[Fact]:
     diretorio = raiz / INVENTARIO_DIRETORIO
     if diretorio.is_dir():
         facts.extend(extract_consumers_tree(diretorio, repo_root=base))
+
+    dumps = raiz / DUMPS_ICEBERG
+    if dumps.is_dir():
+        facts.extend(extract_iceberg_metadata_tree(dumps, repo_root=base))
 
     return sort_facts(facts)
