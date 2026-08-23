@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "41aad5b11576f1a2694906fef348cf5b76f6efc2",
+  "extracted_from": "6906e57f841da704a8d473d79cf23683d37e1304",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -2928,19 +2928,19 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "133,0",
-      "context": "Confirmado por tamanho: `tools.py` (133,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "133,3",
+      "context": "Confirmado por tamanho: `tools.py` (133,3 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-431",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "medida de tamanho do arquivo, reexecutada -- a frase I2 acrescentada a description de sparkforge_analyze_pyspark levou tools.py de 133,0 KB para 133,3 KB, e a prova le o tamanho real do arquivo em disco, entao o numero no documento tem que acompanhar",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "133,0"
+          "value": "133,3"
         }
       }
     },
@@ -3967,7 +3967,7 @@
       "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
       "line": 15,
       "text": "23",
-      "context": "| Superfície | CLI `sparkforge analyze/judge/case/next/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fase0.xm",
+      "context": "| Superfície | CLI `sparkforge analyze/judge/case/next-step/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fas",
       "type": "number",
       "id": "VNX-469",
       "state": "PROVADA",
@@ -3985,7 +3985,7 @@
     },
     {
       "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
-      "line": 44,
+      "line": 65,
       "text": "100",
       "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
       "type": "number",
@@ -4005,7 +4005,7 @@
     },
     {
       "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
-      "line": 44,
+      "line": 65,
       "text": "35",
       "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
       "type": "number",
@@ -4025,7 +4025,7 @@
     },
     {
       "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
-      "line": 44,
+      "line": 65,
       "text": "15",
       "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
       "type": "number",
@@ -4045,7 +4045,7 @@
     },
     {
       "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
-      "line": 44,
+      "line": 65,
       "text": "65",
       "context": "`100 - fails*35 - warns*15`, e esse número não significa nada — 65 não é",
       "type": "number",
@@ -4065,7 +4065,7 @@
     },
     {
       "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
-      "line": 45,
+      "line": 66,
       "text": "50",
       "context": "\"melhor\" que 50 em unidade nenhuma, e os pesos não vieram de fonte.",
       "type": "number",
@@ -4381,6 +4381,25 @@
         "kind": "artifact",
         "path": "tests/test_execution_surface.py",
         "test": "tests/test_agent_autonomy.py"
+      }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 71,
+      "text": "**Prompt injection** (§42)",
+      "context": "| **Prompt injection** (§42) | EXISTE PARCIAL | Fase I2: `docs/harness/UNTRUSTED-CONTENT.md` declara o invariante e `tes",
+      "type": "capability",
+      "id": "VNX-475",
+      "state": "PROVADA",
+      "note": "a linha afirma que o invariante do 42 esta declarado em docs/harness/UNTRUSTED-CONTENT.md e defendido por tests/test_harness_untrusted.py nas duas direcoes. A prova roda esse teste: ele monta um job com injecao, passa por extract_tree e judge, e verifica que a injecao nao aparece em nenhum campo de catalogo do Finding e que continua visivel no subject.snippet. A prova deriva o fato executando o motor -- se alguem quebrar a separacao de campo, ou sanitizar a evidencia para esconder o vazamento, o teste falha e a prova cai junto. PARCIAL nao entra na prova porque e o que o documento declara descoberto, nao capacidade a verificar",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import subprocess, sys; r = subprocess.run([sys.executable, \"-m\", \"pytest\", \"tests/test_harness_untrusted.py\", \"-q\"], capture_output=True); print(\"PROVA_OK\" if r.returncode == 0 else \"PROVA_FALHOU\")'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "PROVA_OK"
+        }
       }
     },
     {
