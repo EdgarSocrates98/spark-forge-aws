@@ -1,0 +1,20 @@
+name: lote_misto_iceberg_parquet
+source: "4.0"
+target: "5.1"
+proves: >
+  Um job que nao e um arquivo: um pacote Python (`main.py` mais
+  `pipeline/__init__.py`, `pipeline/leitura.py`, `pipeline/escrita.py`) onde
+  cada sinal mora num modulo DIFERENTE -- o import do SDK v1 e a config do
+  EMRFS em `leitura.py`, o `cast` sem guarda e a tabela Iceberg em
+  `escrita.py`, e nenhum dos dois em `main.py`. Le Parquet e grava Iceberg no
+  mesmo job, entao os dois formatos convivem na mesma arvore.
+  O par e `4.0 -> 5.1`, que NAO alcanca o Glue 6.0: `mig.ansi_risk` esta
+  presente e SF-MIG-003 fica calada em todos os degraus, porque nenhum deles
+  cruza a fronteira dela. E o negativo por CAMINHO -- diferente do negativo por
+  valor e do negativo por runtime unico --, e ele so pode ser medido num
+  assessment de par, nunca num `judge()` de runtime fixo.
+  `pyarrow==16.1.0` esta acima do piso do Spark 4.1 e o alvo nem chega la;
+  nenhuma regra de Spark 4 e sequer avaliada neste caminho.
+expects_rules:
+  - SF-MIG-001
+  - SF-MIG-002

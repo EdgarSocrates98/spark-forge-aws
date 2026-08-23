@@ -302,6 +302,72 @@ def build_parser() -> argparse.ArgumentParser:
     call_graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     call_graph_p.add_argument("--cursor")
 
+    # migrate --------------------------------------------------------------
+    # Verbo de TOPO, nao `analyze migrate`: tudo sob `analyze` extrai facts de
+    # um artefato e para ali. Este extrai E julga, uma vez por degrau do
+    # caminho -- mesma razao de `judge` e `fuse` serem verbos proprios.
+    migrate_p = sub.add_parser(
+        "migrate", help="Avalia migracao entre versoes de runtime com o catalogo."
+    )
+    migrate_sub = migrate_p.add_subparsers(dest="migrate_action", required=True)
+    migrate_glue_p = migrate_sub.add_parser(
+        "glue",
+        help="Julga a migracao de um job Glue entre um par de versoes, degrau a degrau.",
+    )
+    migrate_glue_p.add_argument(
+        "path",
+        help=(
+            "Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando "
+            "existem e o inventario de consumidores em .sparkforge/consumers.yaml "
+            "--, ou um .py sozinho."
+        ),
+    )
+    # Sem default, os dois: um par embutido no codigo responde sobre um alvo
+    # que ninguem declarou, e o veredito sai com a mesma cara de qualquer outro.
+    migrate_glue_p.add_argument(
+        "--from", dest="from_runtime", required=True, help="Versao de Glue de origem."
+    )
+    migrate_glue_p.add_argument(
+        "--to", dest="to_runtime", required=True, help="Versao de Glue alvo."
+    )
+    migrate_glue_p.add_argument(
+        "--out", help="Escreve o assessment completo (JSON) neste arquivo."
+    )
+
+    # glue / iceberg -------------------------------------------------------
+    # Verbos de TOPO por SERVICO, e nao mais um degrau sob `analyze`: os dois
+    # comandos abaixo extraem E julgam, e `analyze` para na extracao. Cada um
+    # nasce com um subcomando so; o parser fica assim para que o proximo
+    # comando do mesmo servico entre sem renomear o que ja foi publicado.
+    glue_p = sub.add_parser("glue", help="Comandos especificos do runtime AWS Glue.")
+    glue_sub = glue_p.add_subparsers(dest="glue_action", required=True)
+    dep_p = glue_sub.add_parser(
+        "dependency-audit",
+        help="Audita dependencia Python e binario Scala do job contra um runtime.",
+    )
+    dep_p.add_argument("path", help="Diretorio do job (requirements*.txt e .jar).")
+    # Sem default: risco de ABI nao existe em abstrato. Um `.jar` de Scala 2.12
+    # e correto sob Glue 5.1 e quebra sob 6.0.
+    dep_p.add_argument(
+        "--glue", required=True, dest="glue_version", help="Versao de Glue a auditar."
+    )
+
+    iceberg_p = sub.add_parser("iceberg", help="Comandos especificos de Apache Iceberg.")
+    iceberg_sub = iceberg_p.add_subparsers(dest="iceberg_action", required=True)
+    upgrade_p = iceberg_sub.add_parser(
+        "assess-upgrade",
+        help="Avalia subir o format version da tabela contra quem a consome. NAO executa.",
+    )
+    upgrade_p.add_argument(
+        "path", help="Diretorio do job, com o inventario em .sparkforge/consumers.yaml."
+    )
+    upgrade_p.add_argument(
+        "--from", dest="from_spec", type=int, required=True, help="Format version de origem."
+    )
+    upgrade_p.add_argument(
+        "--to", dest="to_spec", type=int, required=True, help="Format version alvo."
+    )
+
     # benchmark ------------------------------------------------------------
     # Verbo de TOPO, nao `analyze benchmark`: tudo sob `analyze` extrai facts de
     # um artefato, e este nao extrai nada -- compara dois conjuntos de facts ja
@@ -325,6 +391,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     benchmark_p.add_argument(
         "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    # Secao 52. Opcionais os dois: comparar duas execucoes no MESMO runtime
+    # continua valendo -- e o caso de medir mudanca de codigo. Rotular um lado
+    # so devolve `missing_runtime_label` nomeando o que falta, e rotular os dois
+    # com o mesmo valor devolve `same_runtime_label`, porque comparar um runtime
+    # consigo mesmo nao prova nada sobre trocar de runtime.
+    benchmark_p.add_argument(
+        "--before-runtime", dest="before_runtime", default="",
+        help="Versao de runtime em que a execucao ANTES rodou (ex.: 5.1).",
+    )
+    benchmark_p.add_argument(
+        "--after-runtime", dest="after_runtime", default="",
+        help="Versao de runtime em que a execucao DEPOIS rodou (ex.: 6.0).",
     )
     benchmark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     benchmark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
@@ -996,6 +1075,30 @@ def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_migrate_glue(args: argparse.Namespace) -> int:
+    payload = _core.migration_assess(
+        args.path, source=args.from_runtime, target=args.to_runtime
+    )
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_glue_dependency_audit(args: argparse.Namespace) -> int:
+    _print(_core.glue_dependency_audit(args.path, glue=args.glue_version))
+    return 0
+
+
+def _cmd_iceberg_assess_upgrade(args: argparse.Namespace) -> int:
+    _print(
+        _core.iceberg_assess_upgrade(args.path, source=args.from_spec, target=args.to_spec)
+    )
+    return 0
+
+
 def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
     full = _core.analyze_athena_workgroup(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -1121,7 +1224,14 @@ def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
 
 
 def _cmd_benchmark(args: argparse.Namespace) -> int:
-    full = _core.benchmark_runs(args.before, args.after, kind=args.kind, limit=None)
+    full = _core.benchmark_runs(
+        args.before,
+        args.after,
+        kind=args.kind,
+        limit=None,
+        before_runtime=args.before_runtime,
+        after_runtime=args.after_runtime,
+    )
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -1467,6 +1577,9 @@ _DISPATCH = {
     ("analyze", "s3-listing"): _cmd_analyze_s3_listing,
     ("analyze", "consumers"): _cmd_analyze_consumers,
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
+    ("migrate", "glue"): _cmd_migrate_glue,
+    ("glue", "dependency-audit"): _cmd_glue_dependency_audit,
+    ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
     ("benchmark", None): _cmd_benchmark,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
@@ -1506,6 +1619,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "rules_action", None)
         or getattr(args, "report_action", None)
         or getattr(args, "collect_action", None)
+        or getattr(args, "migrate_action", None)
+        or getattr(args, "glue_action", None)
+        or getattr(args, "iceberg_action", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))
     if handler is None:

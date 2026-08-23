@@ -37,6 +37,7 @@ from sparkforge.facts import (
     fusion,
     graph,
     iceberg_metadata,
+    migration,
     pyspark_ast,
     runtime_detect,
     s3_listing,
@@ -78,6 +79,16 @@ EXTRACTORS = (
     # repositorio desde a Task 2 desta fase.
     graph,
     iceberg_metadata,
+    # `migration` entra nas DUAS listas no mesmo commit da Task 7 desta fase,
+    # mesma razao de `funcval`/`graph`: as Tasks 4-6 ja deixaram o extrator no
+    # repositorio emitindo `mig.sdk_import`, `mig.emrfs_config` e `mig.ansi_risk`
+    # (entre outros); sem ele aqui, esses tres kinds contam como orfaos e
+    # SF-MIG-001 e SF-MIG-002 -- que NAO estao bloqueadas por falta de extrator,
+    # so por `runtime_scope` confirmado -- seriam forcadas a `blocked_on` por um
+    # motivo que nao e o delas. `test_fixtures_kind_coverage.py` cobra golden
+    # para os OITO kinds de `EMITTED_KINDS` assim que o modulo entra la tambem;
+    # essa fixture e trabalho da Task 9, nao desta.
+    migration,
     pyspark_ast,
     runtime_detect,
     s3_listing,
@@ -145,6 +156,21 @@ def test_condicao_absent_nao_e_vacuamente_verdadeira(rule: dict) -> None:
     )
 
 
+# `blocked_on` sobre capacidade que NAO e kind de extrator.
+#
+# `test_blocked_on_obsoleto_e_mentira_silenciosa` so enxerga uma forma de
+# capacidade faltando: kind sem extrator. O proprio docstring de
+# `test_toda_regra_bloqueada_explica_o_bloqueio_em_comentario` ja registra que
+# essa granularidade nao cobre tudo -- cita SF-ICE-004 (hoje desbloqueada) como
+# exemplo hipotetico de bloqueio por ATRIBUTO que uma checagem de kind nao
+# enxerga. SF-MIG-003 era o primeiro caso REAL disso e saiu daqui na Task 11:
+# `knowledge/glue/runtime-matrix.yaml` ganhou a linha do Glue 6.0, confirmada
+# contra `migrating-version-60.html` e `release-notes.html`, e a regra trocou
+# `blocked_on` por `runtime_scope: {glue: ">=6.0"}` real. Allowlist vazia e o
+# estado honesto: nenhum `blocked_on` sobrevive no catalogo hoje.
+BLOQUEIO_SEM_KIND_ORFAO: dict[str, str] = {}
+
+
 @pytest.mark.parametrize("rule", RULES, ids=RULE_IDS)
 def test_blocked_on_obsoleto_e_mentira_silenciosa(rule: dict) -> None:
     """`blocked_on` que sobrevive ao extrator e pior que nao ter regra.
@@ -160,8 +186,13 @@ def test_blocked_on_obsoleto_e_mentira_silenciosa(rule: dict) -> None:
     Foi exatamente o risco ao desbloquear SF-PQ-002/SF-PQ-004: sem este teste,
     construir o parser de plano e esquecer de tirar o `blocked_on` deixaria
     todo o trabalho invisivel, e nada falharia.
+
+    Excecao: regra em `BLOQUEIO_SEM_KIND_ORFAO`, cujo bloqueio e sobre uma
+    capacidade que este teste nao consegue enxergar (ver comentario acima).
     """
     if not rule.get("blocked_on"):
+        return
+    if rule["id"] in BLOQUEIO_SEM_KIND_ORFAO:
         return
     required = set(rule.get("requires_facts") or [])
     present, absent = _referenced_kinds(rule.get("when") or {})
@@ -172,6 +203,23 @@ def test_blocked_on_obsoleto_e_mentira_silenciosa(rule: dict) -> None:
         f"nunca vai disparar e o operador le 'falta construir o extrator' sobre uma "
         f"capacidade que existe. Remova o `blocked_on`."
     )
+
+
+def test_bloqueio_sem_kind_orfao_nao_guarda_regra_que_ja_foi_corrigida() -> None:
+    """Entrada obsoleta em `BLOQUEIO_SEM_KIND_ORFAO` esconde `blocked_on` morto.
+
+    Mesmo padrao de `TestAbsentSemSameSubjectSeJustifica.test_a_allowlist_nao_
+    guarda_regra_que_ja_foi_corrigida`: se a regra saiu do catalogo, perdeu
+    `blocked_on`, ou passou a ter um kind genuinamente orfao, a entrada aqui
+    vira permissao para o defeito que o teste acima existe para pegar.
+    """
+    by_id = {r["id"]: r for r in RULES}
+    for rule_id in BLOQUEIO_SEM_KIND_ORFAO:
+        rule = by_id.get(rule_id)
+        assert rule is not None, (
+            f"{rule_id} esta em BLOQUEIO_SEM_KIND_ORFAO e nao existe no catalogo."
+        )
+        assert rule.get("blocked_on"), f"{rule_id} perdeu `blocked_on`; remova da allowlist."
 
 
 class TestAbsentSemSameSubjectSeJustifica:

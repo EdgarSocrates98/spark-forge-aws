@@ -16,7 +16,8 @@
   "properties": {
     "rule_id": {
       "type": "string",
-      "pattern": "^(SF-[A-Z]+-[0-9]{3})$"
+      "description": "SF-<AREA>-<NNN>. A area comeca por letra e aceita digito depois: `SF-SPARK4` nomeia a versao do Apache Spark de que a area fala, e o digito e parte do nome, nao numeracao. O padrao anterior (`[A-Z]+`) rejeitava a area inteira na validacao do finding.",
+      "pattern": "^(SF-[A-Z][A-Z0-9]*-[0-9]{3})$"
     },
     "schema_version": {
       "type": "integer",

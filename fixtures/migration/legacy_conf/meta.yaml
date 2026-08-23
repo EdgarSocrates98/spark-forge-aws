@@ -1,0 +1,16 @@
+name: legacy_conf
+proves: >
+  `spark.sql.legacy.*` sobrevivendo num job Glue -- observacao pura, sem
+  regra nenhuma no catalogo hoje (`mig.legacy_conf` nao aparece em nenhum
+  `requires_facts` de `rules/catalog/glue-migration.yaml`; a Task 5 emitiu o
+  kind, a regra que o julgue e trabalho futuro). Runtime Glue 5.0 por
+  consistencia com o resto do corpus -- nao ha fronteira de versao a provar
+  aqui, so o vocabulario do fact.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.legacy_conf
+expects_rules: []

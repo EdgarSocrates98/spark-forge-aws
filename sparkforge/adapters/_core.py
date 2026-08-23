@@ -66,8 +66,11 @@ from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
+from sparkforge.migration.assessment import assess as assess_migration
+from sparkforge.migration.collect import collect as collect_migration
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
+from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
 
 DEFAULT_LIMIT = 50
 
@@ -1066,6 +1069,169 @@ def analyze_call_graph(
 
 
 # --------------------------------------------------------------------------- #
+# migration assess
+# --------------------------------------------------------------------------- #
+
+
+def migration_assess(path: str, source: str, target: str) -> dict[str, Any]:
+    """Julga a migracao de um job Glue entre um par de versoes, pelo catalogo.
+
+    Composicao, nao motor novo: `sparkforge.migration.assessment.assess()` ja
+    expande o par em degraus, julga cada degrau com o `judge` e agrega com
+    gates fail-closed. O que faltava era a porta de entrada -- ate esta funcao
+    existir, o catalogo `SF-MIG`/`SF-SPARK4`/`SF-LF` so era alcancavel por
+    quem chamasse `assess()` em Python.
+
+    DIRETORIO **ou** ARQUIVO, a mesma convencao de todo `analyze_*` deste
+    modulo. Um diretorio e o caso que interessa -- uma migracao e julgada
+    sobre o conjunto de artefatos do job, e `requirements*.txt` e `.jar` nao
+    tem linha de fonte Python para varrer --, mas um `.py` sozinho continua
+    respondido: recusa-lo quebraria a interface publicada de
+    `forge migrate glue` sem que nada de util fosse ganho.
+
+    `source` e `target` nao tem default, aqui nem em quem chama. Um par
+    embutido no codigo responde sobre um alvo que ninguem declarou, e o
+    veredito sai com a mesma cara de qualquer outro.
+    """
+    target_path = Path(path)
+    if not target_path.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado: {target_path}\n"
+            f"  Aponte para o diretorio do job (codigo, requirements*.txt e .jar)\n"
+            f"  ou para um arquivo .py:\n"
+            f"    sparkforge migrate glue ./meu-job --from 4.0 --to 6.0",
+            exit_code=2,
+        )
+    facts = collect_migration(target_path)
+
+    try:
+        return assess_migration(facts, source=source, target=target).to_dict()
+    except ValueError as exc:
+        # `version_path.steps` ja nomeia o defeito ("alvo anterior a origem",
+        # "versao fora da matriz; conhecidas: ..."). Traduzir para um erro
+        # generico perderia a unica informacao util da falha.
+        raise AdapterError(
+            f"{exc}\n"
+            f"  Confira o par contra a matriz de runtime:\n"
+            f"    sparkforge runtime detect --glue 6.0",
+            exit_code=2,
+        ) from exc
+
+
+# --------------------------------------------------------------------------- #
+# glue dependency-audit / iceberg assess-upgrade
+# --------------------------------------------------------------------------- #
+
+# Os dois kinds que carregam dependencia declarada. Nao ha terceiro: o extrator
+# de migracao nomeia `mig.python_dep` (uma linha pinada de `requirements*.txt`,
+# com `major` ja separado) e `mig.jar_binary` (um `.jar`, com `scala_minor` ja
+# separado do resto da versao).
+_KINDS_DE_DEPENDENCIA = ("mig.python_dep", "mig.jar_binary")
+
+
+def glue_dependency_audit(path: str, glue: str) -> dict[str, Any]:
+    """Pins declarados, e o que o catalogo diz sobre eles NUM runtime.
+
+    `glue` nao tem default e nao e opcional. Risco de ABI nao existe em
+    abstrato: um `.jar` de Scala 2.12 e correto sob Glue 5.1 e quebra sob 6.0,
+    e um piso de `pyarrow` so e piso a partir da versao de Spark que o exige.
+    Auditar dependencia sem dizer contra qual runtime produziria uma lista de
+    versoes com cara de veredito.
+
+    Composicao, nao motor: `collect()` extrai, `judge` julga com o mesmo
+    catalogo de sempre. O que este comando acrescenta e a VISAO -- a
+    dependencia observada ao lado do achado que ela produziu.
+    """
+    alvo = Path(path)
+    if not alvo.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado: {alvo}\n"
+            "  Aponte para o diretorio do job (codigo, requirements*.txt e .jar):\n"
+            "    sparkforge glue dependency-audit ./meu-job --glue 6.0",
+            exit_code=2,
+        )
+
+    facts = collect_migration(alvo)
+    context = build_runtime_context(glue=glue, facts=facts)
+    runtime = context.to_dict()
+    findings = run_judge(facts, load_catalog(), runtime)
+
+    dependencias = [
+        {
+            "kind": fact.kind,
+            # `package` para dependencia Python; para um `.jar` a identidade e
+            # o proprio artefato, porque o extrator nao le nome de artefato de
+            # dentro do binario e inventa-lo a partir do nome do arquivo seria
+            # afirmar o que ninguem observou.
+            "name": fact.attrs.get("package") or fact.provenance.get("artifact", ""),
+            # Os attrs INTEIROS, e nao um subconjunto escolhido aqui: sao eles
+            # que as regras comparam contra um piso (`major`, `scala_minor`),
+            # e recorta-los faria o achado deixar de ser conferivel sem
+            # reabrir os facts.
+            "attrs": dict(fact.attrs),
+            "artifact": fact.provenance.get("artifact", ""),
+        }
+        for fact in facts
+        if fact.kind in _KINDS_DE_DEPENDENCIA
+    ]
+
+    return {
+        "path": str(alvo),
+        "runtime": runtime,
+        "dependencies": dependencias,
+        "findings": [f.to_dict() for f in findings],
+        "by_severity": _count_by([f.to_dict() for f in findings], lambda f: f["severity"]),
+    }
+
+
+def iceberg_assess_upgrade(path: str, source: int, target: int) -> dict[str, Any]:
+    """Veredito de subir o format version de uma tabela, dado quem a consome.
+
+    NUNCA executa o upgrade -- a secao 94 do prompt e explicita, e a garantia e
+    estrutural: `sparkforge/storage/upgrade.py` nao importa cliente de AWS nem
+    Spark. Ver o teste que mede isso pelos imports do modulo.
+
+    `source` entra para RECUSAR o que nao e upgrade (alvo anterior a origem, ou
+    igual). Ele nao muda o veredito: quem decide e a matriz de suporte da
+    versao ALVO, porque a pergunta e o que as engines conseguem ler depois da
+    mudanca, nao o que liam antes.
+    """
+    if target <= source:
+        raise AdapterError(
+            f"alvo {target} nao e upgrade de {source}: informe um alvo maior que a origem",
+            exit_code=2,
+        )
+
+    alvo = Path(path)
+    if not alvo.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado: {alvo}\n"
+            "  Aponte para o diretorio do job, com o inventario em "
+            "`.sparkforge/consumers.yaml`:\n"
+            "    sparkforge iceberg assess-upgrade ./meu-job --from 2 --to 3",
+            exit_code=2,
+        )
+
+    facts = collect_migration(alvo)
+    engines = sorted(
+        {
+            str(f.attrs.get("service", ""))
+            for f in facts
+            if f.kind == "env.consumer" and f.attrs.get("service")
+        }
+    )
+    try:
+        resultado = assess_iceberg_upgrade(engines, target_spec_version=target)
+    except ValueError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+
+    payload = resultado.to_dict()
+    payload["source_spec_version"] = source
+    payload["path"] = str(alvo)
+    return payload
+
+
+# --------------------------------------------------------------------------- #
 # benchmark
 # --------------------------------------------------------------------------- #
 
@@ -1076,6 +1242,8 @@ def benchmark_runs(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    before_runtime: str = "",
+    after_runtime: str = "",
 ) -> dict[str, Any]:
     """Compara DOIS arquivos de facts de event log (`analyze event-log --out`)
     e emite os fatos `bench.*`. Funcao pura sobre Facts: nao executa Spark, nao
@@ -1093,10 +1261,21 @@ def benchmark_runs(
     que a comparacao nao se sustenta e o silencio seria indistinguivel de
     "nenhuma diferenca". O `path_hint` e `"<antes>..<depois>"` porque o fato
     afirma sobre o PAR, nao sobre um dos dois arquivos.
+
+    `before_runtime`/`after_runtime` sao os rotulos da secao 52. Opcionais: uma
+    comparacao entre duas execucoes no MESMO runtime continua valendo, e e o
+    caso de medir uma mudanca de codigo. O que eles acrescentam e o eixo que
+    distingue "ficou mais rapido" de "ficou mais rapido AO TROCAR DE RUNTIME".
     """
     before = _load_facts_file(before_path, _FACTS_FROM_EVENT_LOG, "--before")
     after = _load_facts_file(after_path, _FACTS_FROM_EVENT_LOG, "--after")
-    facts = build_benchmark(before, after, path_hint=f"{before_path}..{after_path}")
+    facts = build_benchmark(
+        before,
+        after,
+        path_hint=f"{before_path}..{after_path}",
+        before_runtime=before_runtime,
+        after_runtime=after_runtime,
+    )
     return _facts_page(facts, "bench.unresolved", kind, limit, cursor)
 
 

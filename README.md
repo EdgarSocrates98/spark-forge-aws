@@ -30,6 +30,8 @@ Cobertura: modelo de execução do Spark, referência de configuração com defa
 
 Ler [`knowledge/cross-service-constraints.md`](knowledge/cross-service-constraints.md) antes de recomendar mudança de versão, formato de tabela ou particionamento — são as armadilhas em que a mudança funciona no job e quebra no consumidor.
 
+**AWS Glue 6.0** é suportado e analisado: matriz de runtime com procedência por fonte, áreas de regra para a fronteira do Spark 4 (`SF-SPARK4`) e para o Lake Formation FGAC (`SF-LF`), compatibilidade de feature Iceberg por engine como dado, e cenários de migração por par de versões. A documentação dedicada — incluindo o guia de decisão e o que a ferramenta **não** sabe — está em [`docs/aws/glue/6.0/`](docs/aws/glue/6.0/).
+
 `rules/catalog/` é a forma **executável** desse conhecimento: 81 regras de diagnóstico em YAML com `rule_id`, limiar, guarda de versão e fonte com data, mais 24 rotas determinísticas em `routing.yaml` (16 de skill, `ROUTE-001`…`ROUTE-016`, e 8 de coordenador, `AGENT-001`…`AGENT-008`). Funciona como conhecimento consultável mesmo sem o motor Python — é o terceiro degrau da escada de portabilidade. Ver [`rules/catalog/README.md`](rules/catalog/README.md).
 
 As 81 regras se distribuem em 15 áreas: `SF-PY` 12 (código PySpark), `SF-EMR` 9 (cluster EMR on EC2), `SF-EMRS` 6 (application EMR Serverless), `SF-GLUE` 6 (infraestrutura Glue), `SF-UI` 6 (event log), `SF-ATH` 5 (Athena), `SF-ENV` 5 (ambiente e versão), `SF-FVAL` 5 (validação funcional de uma mudança), `SF-ICE` 5 (Iceberg), `SF-PQ` 5 (Parquet/S3), `SF-BENCH` 4 (comparação entre execuções), `SF-DQ` 4 (validação de dados), `SF-GRAPH` 4 (processamento de grafo com GraphFrames), `SF-PLAN` 4 (plano físico) e `SF-CG` 1 (grafo de chamadas). A área não é etiqueta de serviço: o que gateia uma regra é `requires_facts` — provar que alguém coletou o artefato — e `runtime_scope`, que é guarda de **versão** e nada mais.
@@ -561,6 +563,117 @@ plataforma não deve receber; a derivação pega os dois, e o gate acusa também
 qualquer profundidade e de qualquer extensão** — `.agents/agents/<nome>/AGENT.md` é layout
 de descoberta do Devin, e passar por ali publicaria perfil que ninguém revisou.
 
+## Ecossistema caveman — economia de token nativa
+
+A compressão de output, de [Julius Brussee](https://github.com/JuliusBrussee), está
+embutida neste repositório e **ligada por padrão**. Clonar é a instalação inteira:
+não há `npm install`, não há `npx`, não há `package.json`, e nada aqui vai à rede.
+
+| Peça | O que faz | Como chega | Instalar? |
+|---|---|---|---|
+| [`caveman`](https://github.com/JuliusBrussee/caveman) | Modo de comunicação comprimido: corta o output do agente preservando a substância técnica | `vendor/caveman/`, plugin declarado em `.claude/settings.json` | **Nada** |
+| [`cavekit`](https://github.com/JuliusBrussee/cavekit) (`ck`) | Loop de spec-driven development sobre um `SPEC.md`: grill → spec → research → review → build, com backprop de bug para invariante | `vendor/cavekit/`, mesmo marketplace | **Nada** |
+
+Créditos, licenças, SHAs pinados e os patches locais: [`vendor/CREDITS.md`](vendor/CREDITS.md).
+
+O invariante "nenhum caminho padrão usa `npm` ou `npx`" tem gate próprio em
+`tests/test_vendor_caveman.py::TestSemNpm` — inclusive contra o `plugin.json` do
+projeto de terceiro, que pode mudar num bump futuro.
+
+### O que já está ligado sem instalar nada
+
+`vendor/` é um **marketplace de plugin local**, declarado em `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "sparkforge-caveman": { "source": { "source": "directory", "path": "./vendor" } }
+  },
+  "enabledPlugins": { "caveman@sparkforge-caveman": true, "ck@sparkforge-caveman": true }
+}
+```
+
+O caminho é **relativo**, para que funcione em qualquer clone; ele é resolvido a partir
+do diretório em que o Claude Code foi aberto, então abra-o na raiz do repositório.
+A instalação é cópia de disco — não há rede envolvida.
+
+**Sem Node na máquina também funciona.** Os dois hooks do plugin caveman são
+`node ...`; sem Node eles não rodam e o ruleset não seria injetado — as skills
+continuariam carregando, e o caveman deixaria de ser "ligado por padrão" sem que nada
+acusasse. O `.claude/settings.json` tem um fallback em shell que só dispara quando
+`node` não está no `PATH`:
+
+```sh
+command -v node >/dev/null 2>&1 || cat "$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/caveman-activate.md"
+```
+
+Com Node é no-op, sem injeção dupla. Sem Node, perde-se apenas o flag de modo
+(`/caveman lite|full|ultra`) e o `/caveman-stats`, que dependem do hook em JS.
+
+O modo é fixado em [`.caveman/config.json`](.caveman/config.json) como `full` — o
+*repo-local config* que o caveman resolve **antes** da configuração de usuário. Quem já
+usa caveman em outro nível não perde a própria configuração fora deste repositório, e
+troca o modo só na sessão atual com `/caveman lite|full|ultra`.
+
+As mesmas duas linhas de `enabledPlugins` **desligam** `caveman@caveman` e `ck@cavekit`
+dentro deste projeto. Não é hostilidade com quem já os instalou globalmente: dois
+caveman ligados injetam o ruleset duas vezes por sessão, que é exatamente o oposto de
+economizar token. Vale a cópia vendorizada, que é a pinada e revisada.
+
+### Vendorizado, medido e **não** ligado: `caveman-shrink`
+
+`vendor/caveman/src/mcp-servers/caveman-shrink/` é um proxy MCP do mesmo autor, **sem
+dependência nenhuma**, que comprime o campo `description` do catálogo de tools antes do
+modelo lê-lo. Está em disco e pronto — e continua desligado, porque foi medido contra os
+41 tools do servidor `sparkforge` em 2026-08-07:
+
+| | bytes |
+|---|---|
+| `tools/list` cru | 146 438 |
+| `tools/list` pelo proxy | 146 295 |
+| **Economia** | **143 bytes — 0,1 %** |
+
+As regras dele cortam artigo, filler e hedging **em inglês** (`the`, `just`, `really`); as
+descrições deste catálogo são em português. Nomes de tool e `inputSchema` saem idênticos —
+o proxy está correto, só não tem o que cortar aqui. Pôr um proxy no caminho do MCP por
+0,1 % seria risco sem retorno. Como ligar, se o catálogo passar a ter descrição em inglês:
+[`vendor/CREDITS.md`](vendor/CREDITS.md).
+
+### O que ficou de fora, e por quê
+
+Duas peças do mesmo autor **não** entram aqui, porque nenhuma das duas cabe em
+"clonar é a instalação inteira":
+
+| Projeto | Por que fica fora |
+|---|---|
+| [`cavemem`](https://github.com/JuliusBrussee/cavemem) | Memória entre sessões. Depende de `better-sqlite3`, módulo **nativo** compilado por plataforma — vendorizar prebuilds seria commitar binário para win32/linux/darwin × x64/arm64. E **não economiza token**: o `SessionStart` dele *injeta* contexto da sessão anterior. É memória, não compressão. |
+| [`caveman-code`](https://www.npmjs.com/package/@juliusbrussee/caveman-code) | Agente de terminal próprio, 15 MB desempacotados com `better-sqlite3` nativo na árvore. Roda **fora** do Claude Code — é um cliente alternativo, não um componente deste projeto. |
+
+Quem quiser qualquer um dos dois instala globalmente, por conta própria e fora deste
+repositório: `npm install -g cavemem && cavemem install`.
+
+### Procedência e atualização
+
+`vendor/` não é espelho gerado de nada deste repositório — é código de terceiro pinado.
+O que o mantém honesto:
+
+| Arquivo | Papel |
+|---|---|
+| [`vendor/PINS.json`](vendor/PINS.json) | SHA upstream, lista de arquivos mantidos e patches locais, por projeto |
+| `vendor/MANIFEST.sha256` | sha256 de cada arquivo vendorizado |
+| `scripts/vendor_caveman.py` | Reconstrói a árvore a partir dos pins (usa rede) |
+| `python scripts/vendor_caveman.py --check` | Gate **sem rede**: falha se qualquer byte divergir. Roda em `tests/test_vendor_caveman.py` |
+
+Atualizar é editar o `sha` em `PINS.json`, rodar o script, revisar o diff e rodar a suíte.
+
+### Agentes que não são o Claude Code
+
+Devin, GitHub Copilot e Codex não carregam plugin nem hook. Para eles o ruleset caveman
+está inline em [`AGENTS.md`](AGENTS.md), seção "Output compression — caveman mode", junto
+com o que a compressão **não** pode tocar aqui: o schema `recommendation:`/`Finding`
+inteiro, números, versões, `rule_id`, `fact_id`, strings de erro e blocos de código. A
+forma portátil de arquivo único é `vendor/caveman/dist/caveman.skill`.
+
 ## Uso rápido
 
 ### Claude Code
@@ -624,5 +737,44 @@ Forneça, sempre que possível:
 > Não ajustar por intuição. Medir, formular hipótese, testar isoladamente e validar o resultado funcional.
 
 ## Segurança
+
+### Superfície de execução
+
+Clonar este repositório e abrir o Claude Code **executa código** antes de alguém digitar
+qualquer coisa: hooks de `SessionStart` e o comando de cada servidor MCP. Um PR que toque
+nesses arquivos não muda "a configuração do projeto" — muda o que roda na máquina de todo
+contribuidor, e num diff grande passa como linha de JSON.
+
+`tests/test_execution_surface.py` é a lista fechada disso. Não é allowlist de *padrão* —
+padrão vaza, `node .*` autorizaria `node -e "..."` — é a **string exata** de cada comando,
+em três superfícies: `.claude/settings.json` (nosso), o `plugin.json` do caveman
+vendorizado (de terceiro) e os servidores de `.mcp.json`. Mudar qualquer uma obriga a
+passar pelo teste, e a mudança aparece na revisão como o que de fato é.
+
+Camada dois: um deny-list das construções que transformam um hook em canal de execução
+arbitrária — `curl`/`wget`, `| sh`, `base64`, `eval`, `$(...)`, crase, `chmod +x`, `npm`.
+`>/dev/null` e `2>&1` ficam de fora do deny-list de propósito: redirecionar não busca nem
+decodifica nada, e o fallback legítimo usa os dois.
+
+O que executa hoje, na íntegra:
+
+| Superfície | Comando |
+|---|---|
+| `.claude/settings.json`, `SessionStart` | `command -v node >/dev/null 2>&1 \|\| { echo '...'; cat "$CLAUDE_PROJECT_DIR/vendor/caveman/src/rules/caveman-activate.md"; }` |
+| `vendor/caveman` plugin, `SessionStart` | `node "${CLAUDE_PLUGIN_ROOT}/src/hooks/caveman-activate.js"` |
+| `vendor/caveman` plugin, `UserPromptSubmit` | `node "${CLAUDE_PLUGIN_ROOT}/src/hooks/caveman-mode-tracker.js"` |
+| `.mcp.json` | `python -m sparkforge.adapters.mcp --transport stdio` |
+
+Os dois hooks em JS são código de terceiro. Auditados em 2026-08-07 no SHA pinado:
+**nenhuma chamada de rede**, um único `execFileSync` em forma argv (sem shell, sem caminho
+de injeção), e escritas confinadas a `~/.claude/.caveman-*` e aos arquivos de agente do
+próprio plugin. `caveman-stats.js` **lê os transcripts de sessão** (`~/.claude/projects/**`)
+para calcular economia de token — leitura local, sem rede.
+
+`.claude/settings.local.json` é por máquina e nunca commitado: guarda o allowlist de
+permissões de quem trabalha ali. Está no `.gitignore` do repositório desde 2026-08-07 —
+antes disso dependia do gitignore global de uma máquina só.
+
+### Operações destrutivas
 
 As Skills não executam automaticamente alterações destrutivas. Operações como expiração de snapshots, remoção de arquivos órfãos, mudanças de particionamento e overwrite devem ser propostas com escopo, retenção, dry run quando disponível e plano de rollback.

@@ -1,0 +1,1415 @@
+{
+  "source_runtime": "4.0",
+  "target_runtime": "6.0",
+  "steps": [
+    [
+      "4.0",
+      "5.0"
+    ],
+    [
+      "5.0",
+      "5.1"
+    ],
+    [
+      "5.1",
+      "6.0"
+    ]
+  ],
+  "findings": [
+    {
+      "rule_id": "SF-SPARK4-004",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "JAR compilado contra Scala anterior ao 2.13 no classpath de um runtime Spark 4",
+      "severity": "P0",
+      "confidence": "high",
+      "status": "structural",
+      "subject": {
+        "type": "source_location",
+        "file": "geoutils_2.12-1.4.0.jar",
+        "line": 0,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_e53c80"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "spark": ">=4.0.0"
+      },
+      "explanation": "O Spark 4 subiu o Scala de 2.12 para 2.13, e 2.12 e 2.13 NAO sao compativeis em bytecode -- nao e uma questao de API depreciada, e a fronteira binaria da propria linguagem. A documentacao da AWS para o Glue 6.0 declara isso como breaking change textual: JARs customizados compilados contra Scala 2.12 nao funcionam, e qualquer `--extra-jars` de 2.12 falha com `NoSuchMethodError` ou `ClassNotFoundException`. Esta e a unica regra P0 da area, e a diferenca e categoria, nao grau -- as outras tres descrevem degradacao, silencio ou risco de comportamento; esta descreve FALHA CERTA. O job nao roda. E nao falha na submissao, que nao carrega classe nenhuma do JAR: falha em RUNTIME, na primeira vez que aquela classe e carregada, possivelmente depois de minutos de processamento e de parte da saida ja ter sido escrita -- e passa em qualquer smoke test que nao exercite aquele caminho exato. As tres APIs que a AWS nomeia como mudanca de codigo estao em `knowledge/spark/spark4-migration.md` Sec 6.",
+      "proposed_change": [
+        "Recompilar o JAR contra Scala 2.13.17 e publicar o artefato novo antes de trocar o runtime -- o binario e pre-requisito da migracao, nao consequencia dela.",
+        "Trocar `JavaConversions`, removido em 2.13, por `CollectionConverters`; trocar `MutableList`, tambem removido, por `ListBuffer`; e acrescentar o import proprio que coleccoes paralelas passaram a exigir.",
+        "Se o JAR vem de terceiro, confirmar com o mantenedor se existe build para 2.13 ANTES de planejar a migracao. Sem ele a migracao esta BLOQUEADA, nao atrasada -- e a diferenca decide se o plano tem data ou tem dependencia externa em aberto.",
+        "Conferir o classpath inteiro na mesma passada, e nao so o JAR acusado -- `--extra-jars` costuma carregar mais de um artefato, e um unico remanescente de 2.12 derruba o job igual."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Recompilar um JAR de terceiro sem o codigo-fonte NAO e possivel. Quando o mantenedor nao publica build para 2.13, nao existe conserto local, e tratar isso como tarefa de engenharia produz um plano que nao fecha.",
+        "Trocar o artefato por uma versao 2.13 de outra linha de release muda mais que o binario -- comportamento, defaults e assinaturas podem ter mudado junto, e a diferenca nao aparece no nome do arquivo.",
+        "A substituicao de `JavaConversions` por `CollectionConverters` troca conversao IMPLICITA por explicita; onde o codigo dependia da implicita para uma coercao silenciosa, o comportamento muda antes de compilar, e onde compila e porque alguem escolheu a conversao -- possivelmente a errada."
+      ],
+      "tradeoffs": [
+        "Fixar o job num runtime com Spark 3.5 evita a recompilacao e congela a migracao inteira, inclusive as correcoes que nao dependem do JAR; recompilar custa build, publicacao e teste agora, com o job ainda rodando na versao antiga para comparar.",
+        "Remover a dependencia do JAR -- reescrevendo em PySpark nativo o que ele fazia -- elimina a fronteira binaria para sempre e e muito mais trabalho que recompilar. Vale quando o JAR e pequeno e mal mantido, e nao vale quando ele carrega logica de negocio que ninguem mais entende."
+      ],
+      "validation": [
+        "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de codigo que carrega a classe do JAR. Submissao bem-sucedida NAO e validacao aqui -- a submissao nao carrega a classe, e e exatamente por isso que a falha escapa do smoke test.",
+        "Contagem total de linhas, contagem por chave e schema identicos aos do runtime anterior sobre o mesmo lote de entrada, para separar \"o JAR novo carrega\" de \"o JAR novo faz a mesma coisa\".",
+        "Para JAR de terceiro trocado por outra versao, comparacao de valor das colunas que ele produz, e nao so de contagem -- e ali que a diferenca de release aparece."
+      ],
+      "rollback": [
+        "Voltar o artefato de 2.12 e manter o job no runtime com Spark 3.5, onde ele carrega. O rollback e de artefato e de runtime, nao de dado, desde que a saida parcial do run que falhou seja descartada antes -- e ela existe, porque a falha e em runtime e nao na submissao."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+          "retrieved": "2026-08-22"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-MIG-001",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_clientes.py",
+        "line": 9,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_9332dc"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+      "proposed_change": [
+        "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+        "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+      ],
+      "tradeoffs": [
+        "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+      ],
+      "validation": [
+        "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+        "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+      ],
+      "rollback": [
+        "Reverter o import e o cliente para SDK v1",
+        "e manter o job no Glue 4.0 até a reescrita estar pronta."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        },
+        {
+          "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+          "retrieved": "2026-07-29"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-MIG-001",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_clientes.py",
+        "line": 9,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_9332dc"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+      "proposed_change": [
+        "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+        "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+      ],
+      "tradeoffs": [
+        "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+      ],
+      "validation": [
+        "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+        "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+      ],
+      "rollback": [
+        "Reverter o import e o cliente para SDK v1",
+        "e manter o job no Glue 4.0 até a reescrita estar pronta."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        },
+        {
+          "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+          "retrieved": "2026-07-29"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-MIG-001",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_clientes.py",
+        "line": 9,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_9332dc"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+      "proposed_change": [
+        "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+        "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+      ],
+      "tradeoffs": [
+        "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+      ],
+      "validation": [
+        "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+        "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+      ],
+      "rollback": [
+        "Reverter o import e o cliente para SDK v1",
+        "e manter o job no Glue 4.0 até a reescrita estar pronta."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        },
+        {
+          "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+          "retrieved": "2026-07-29"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-MIG-003",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Cast sem guarda sob ANSI mode",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_clientes.py",
+        "line": 26,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_a3d759"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=6.0"
+      },
+      "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+      "proposed_change": [
+        "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+        "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+      ],
+      "tradeoffs": [
+        "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+      ],
+      "validation": [
+        "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+        "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+      ],
+      "rollback": [
+        "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+          "retrieved": "2026-08-21"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-SPARK4-003",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "PyArrow pinado abaixo do piso declarado pelo Spark 4.1",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "structural",
+      "subject": {
+        "type": "source_location",
+        "file": "requirements.txt",
+        "line": 1,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_9034f2"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "spark": ">=4.1.0"
+      },
+      "explanation": "O Spark 4.1 declara PyArrow 15.0.0 como piso de dependência -- abaixo disso o comportamento das conversões Arrow (pandas UDF, `toPandas`, `createDataFrame` a partir de pandas, pandas-on-Spark) não é o que a versão do Spark espera. O pin SOBREVIVE à migração porque não está no runtime, está escrito no `requirements.txt` do job, e `--additional-python-modules` o instala POR CIMA do que o runtime traz -- o Glue 6.0 pode empacotar um PyArrow moderno e o job continuar rodando com o antigo, porque foi ele que pediu. Trocar de runtime não corrige um pin; corrigir o pin é trabalho separado, e é fácil de esquecer justamente porque o arquivo que o carrega não aparece no diff da migração. Ver `knowledge/spark/spark4-migration.md` §4 para a tabela de pisos.",
+      "proposed_change": [
+        "Subir o pin de PyArrow para 15.0.0 ou mais no `requirements.txt` do job e reinstalar o ambiente.",
+        "Conferir na mesma passada os outros dois pisos do 4.1 -- pandas 2.2.0 e NumPy 1.21 -- que vivem no mesmo arquivo e têm a mesma sobrevida.",
+        "Onde o pin existe para contornar um defeito conhecido de uma versão mais nova, registrar o motivo no próprio `requirements.txt` antes de subir, para que a decisão não seja refeita às cegas."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Subir PyArrow muda o comportamento de conversão de tipos temporais e decimais em pandas UDF; o job pode passar a produzir valores diferentes sem levantar erro.",
+        "Se outra dependência do job pina PyArrow por baixo, subir aqui cria um conflito de resolução que só aparece na instalação do ambiente, não na leitura do arquivo."
+      ],
+      "tradeoffs": [
+        "Remover o pin em vez de subi-lo deixa o job usar o PyArrow do runtime e elimina a divergência para sempre, ao custo de a versão passar a mudar sem o job pedir -- previsibilidade contra manutenção.",
+        "Manter o pin abaixo do piso mantém o comportamento observado hoje e aceita rodar fora da combinação que o Spark 4.1 declara suportada, o que transforma qualquer defeito de conversão numa investigação sem apoio de documentação."
+      ],
+      "validation": [
+        "Versão efetivamente instalada no runtime confirmada por `pyarrow.__version__` dentro do job, não pelo conteúdo do `requirements.txt` -- o arquivo declara a intenção, o ambiente é o fato.",
+        "Contagem total de linhas, contagem de nulos por coluna e agregados de controle das colunas produzidas por pandas UDF, antes e depois, sobre o mesmo lote de entrada.",
+        "Comparação de schema, com atenção a precisão decimal e a tipo temporal, que é onde a conversão Arrow diverge entre versões."
+      ],
+      "rollback": [
+        "Reverter o pin para a versão anterior no `requirements.txt` e reinstalar o ambiente. É mudança de ambiente, não de dado -- mas a saída produzida pelo run com a versão nova precisa ser descartada ou reconciliada antes, se houve divergência de valor."
+      ],
+      "sources": [
+        {
+          "url": "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html",
+          "retrieved": "2026-08-22"
+        },
+        {
+          "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
+          "retrieved": "2026-08-22"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-MIG-002",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+      "severity": "P2",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_clientes.py",
+        "line": 19,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_da8db4",
+        "f_71cc23"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+      "proposed_change": [
+        "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+        "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+      ],
+      "tradeoffs": [
+        "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+      ],
+      "validation": [
+        "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+        "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+      ],
+      "rollback": [
+        "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-MIG-002",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+      "severity": "P2",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_clientes.py",
+        "line": 19,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_da8db4",
+        "f_71cc23"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+      "proposed_change": [
+        "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+        "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+      ],
+      "tradeoffs": [
+        "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+      ],
+      "validation": [
+        "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+        "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+      ],
+      "rollback": [
+        "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-MIG-002",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+      "severity": "P2",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_clientes.py",
+        "line": 19,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_da8db4",
+        "f_71cc23"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+      "proposed_change": [
+        "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+        "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+      ],
+      "tradeoffs": [
+        "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+      ],
+      "validation": [
+        "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+        "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+      ],
+      "rollback": [
+        "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        }
+      ]
+    }
+  ],
+  "by_step": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 9,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9332dc"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+        "proposed_change": [
+          "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+          "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+        ],
+        "tradeoffs": [
+          "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+        ],
+        "validation": [
+          "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+          "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+        ],
+        "rollback": [
+          "Reverter o import e o cliente para SDK v1",
+          "e manter o job no Glue 4.0 até a reescrita estar pronta."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          },
+          {
+            "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "step": [
+        "4.0",
+        "5.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 19,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_da8db4",
+          "f_71cc23"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "step": [
+        "4.0",
+        "5.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 9,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9332dc"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+        "proposed_change": [
+          "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+          "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+        ],
+        "tradeoffs": [
+          "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+        ],
+        "validation": [
+          "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+          "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+        ],
+        "rollback": [
+          "Reverter o import e o cliente para SDK v1",
+          "e manter o job no Glue 4.0 até a reescrita estar pronta."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          },
+          {
+            "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "step": [
+        "5.0",
+        "5.1"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 19,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_da8db4",
+          "f_71cc23"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "step": [
+        "5.0",
+        "5.1"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-SPARK4-004",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "JAR compilado contra Scala anterior ao 2.13 no classpath de um runtime Spark 4",
+        "severity": "P0",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "source_location",
+          "file": "geoutils_2.12-1.4.0.jar",
+          "line": 0,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_e53c80"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "spark": ">=4.0.0"
+        },
+        "explanation": "O Spark 4 subiu o Scala de 2.12 para 2.13, e 2.12 e 2.13 NAO sao compativeis em bytecode -- nao e uma questao de API depreciada, e a fronteira binaria da propria linguagem. A documentacao da AWS para o Glue 6.0 declara isso como breaking change textual: JARs customizados compilados contra Scala 2.12 nao funcionam, e qualquer `--extra-jars` de 2.12 falha com `NoSuchMethodError` ou `ClassNotFoundException`. Esta e a unica regra P0 da area, e a diferenca e categoria, nao grau -- as outras tres descrevem degradacao, silencio ou risco de comportamento; esta descreve FALHA CERTA. O job nao roda. E nao falha na submissao, que nao carrega classe nenhuma do JAR: falha em RUNTIME, na primeira vez que aquela classe e carregada, possivelmente depois de minutos de processamento e de parte da saida ja ter sido escrita -- e passa em qualquer smoke test que nao exercite aquele caminho exato. As tres APIs que a AWS nomeia como mudanca de codigo estao em `knowledge/spark/spark4-migration.md` Sec 6.",
+        "proposed_change": [
+          "Recompilar o JAR contra Scala 2.13.17 e publicar o artefato novo antes de trocar o runtime -- o binario e pre-requisito da migracao, nao consequencia dela.",
+          "Trocar `JavaConversions`, removido em 2.13, por `CollectionConverters`; trocar `MutableList`, tambem removido, por `ListBuffer`; e acrescentar o import proprio que coleccoes paralelas passaram a exigir.",
+          "Se o JAR vem de terceiro, confirmar com o mantenedor se existe build para 2.13 ANTES de planejar a migracao. Sem ele a migracao esta BLOQUEADA, nao atrasada -- e a diferenca decide se o plano tem data ou tem dependencia externa em aberto.",
+          "Conferir o classpath inteiro na mesma passada, e nao so o JAR acusado -- `--extra-jars` costuma carregar mais de um artefato, e um unico remanescente de 2.12 derruba o job igual."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Recompilar um JAR de terceiro sem o codigo-fonte NAO e possivel. Quando o mantenedor nao publica build para 2.13, nao existe conserto local, e tratar isso como tarefa de engenharia produz um plano que nao fecha.",
+          "Trocar o artefato por uma versao 2.13 de outra linha de release muda mais que o binario -- comportamento, defaults e assinaturas podem ter mudado junto, e a diferenca nao aparece no nome do arquivo.",
+          "A substituicao de `JavaConversions` por `CollectionConverters` troca conversao IMPLICITA por explicita; onde o codigo dependia da implicita para uma coercao silenciosa, o comportamento muda antes de compilar, e onde compila e porque alguem escolheu a conversao -- possivelmente a errada."
+        ],
+        "tradeoffs": [
+          "Fixar o job num runtime com Spark 3.5 evita a recompilacao e congela a migracao inteira, inclusive as correcoes que nao dependem do JAR; recompilar custa build, publicacao e teste agora, com o job ainda rodando na versao antiga para comparar.",
+          "Remover a dependencia do JAR -- reescrevendo em PySpark nativo o que ele fazia -- elimina a fronteira binaria para sempre e e muito mais trabalho que recompilar. Vale quando o JAR e pequeno e mal mantido, e nao vale quando ele carrega logica de negocio que ninguem mais entende."
+        ],
+        "validation": [
+          "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de codigo que carrega a classe do JAR. Submissao bem-sucedida NAO e validacao aqui -- a submissao nao carrega a classe, e e exatamente por isso que a falha escapa do smoke test.",
+          "Contagem total de linhas, contagem por chave e schema identicos aos do runtime anterior sobre o mesmo lote de entrada, para separar \"o JAR novo carrega\" de \"o JAR novo faz a mesma coisa\".",
+          "Para JAR de terceiro trocado por outra versao, comparacao de valor das colunas que ele produz, e nao so de contagem -- e ali que a diferenca de release aparece."
+        ],
+        "rollback": [
+          "Voltar o artefato de 2.12 e manter o job no runtime com Spark 3.5, onde ele carrega. O rollback e de artefato e de runtime, nao de dado, desde que a saida parcial do run que falhou seja descartada antes -- e ela existe, porque a falha e em runtime e nao na submissao."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-22"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 9,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9332dc"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+        "proposed_change": [
+          "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+          "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+        ],
+        "tradeoffs": [
+          "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+        ],
+        "validation": [
+          "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+          "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+        ],
+        "rollback": [
+          "Reverter o import e o cliente para SDK v1",
+          "e manter o job no Glue 4.0 até a reescrita estar pronta."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          },
+          {
+            "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Cast sem guarda sob ANSI mode",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 26,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_a3d759"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=6.0"
+        },
+        "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+        "proposed_change": [
+          "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+          "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+        ],
+        "tradeoffs": [
+          "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+        ],
+        "validation": [
+          "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+          "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+        ],
+        "rollback": [
+          "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-21"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-SPARK4-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "PyArrow pinado abaixo do piso declarado pelo Spark 4.1",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "source_location",
+          "file": "requirements.txt",
+          "line": 1,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9034f2"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "spark": ">=4.1.0"
+        },
+        "explanation": "O Spark 4.1 declara PyArrow 15.0.0 como piso de dependência -- abaixo disso o comportamento das conversões Arrow (pandas UDF, `toPandas`, `createDataFrame` a partir de pandas, pandas-on-Spark) não é o que a versão do Spark espera. O pin SOBREVIVE à migração porque não está no runtime, está escrito no `requirements.txt` do job, e `--additional-python-modules` o instala POR CIMA do que o runtime traz -- o Glue 6.0 pode empacotar um PyArrow moderno e o job continuar rodando com o antigo, porque foi ele que pediu. Trocar de runtime não corrige um pin; corrigir o pin é trabalho separado, e é fácil de esquecer justamente porque o arquivo que o carrega não aparece no diff da migração. Ver `knowledge/spark/spark4-migration.md` §4 para a tabela de pisos.",
+        "proposed_change": [
+          "Subir o pin de PyArrow para 15.0.0 ou mais no `requirements.txt` do job e reinstalar o ambiente.",
+          "Conferir na mesma passada os outros dois pisos do 4.1 -- pandas 2.2.0 e NumPy 1.21 -- que vivem no mesmo arquivo e têm a mesma sobrevida.",
+          "Onde o pin existe para contornar um defeito conhecido de uma versão mais nova, registrar o motivo no próprio `requirements.txt` antes de subir, para que a decisão não seja refeita às cegas."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Subir PyArrow muda o comportamento de conversão de tipos temporais e decimais em pandas UDF; o job pode passar a produzir valores diferentes sem levantar erro.",
+          "Se outra dependência do job pina PyArrow por baixo, subir aqui cria um conflito de resolução que só aparece na instalação do ambiente, não na leitura do arquivo."
+        ],
+        "tradeoffs": [
+          "Remover o pin em vez de subi-lo deixa o job usar o PyArrow do runtime e elimina a divergência para sempre, ao custo de a versão passar a mudar sem o job pedir -- previsibilidade contra manutenção.",
+          "Manter o pin abaixo do piso mantém o comportamento observado hoje e aceita rodar fora da combinação que o Spark 4.1 declara suportada, o que transforma qualquer defeito de conversão numa investigação sem apoio de documentação."
+        ],
+        "validation": [
+          "Versão efetivamente instalada no runtime confirmada por `pyarrow.__version__` dentro do job, não pelo conteúdo do `requirements.txt` -- o arquivo declara a intenção, o ambiente é o fato.",
+          "Contagem total de linhas, contagem de nulos por coluna e agregados de controle das colunas produzidas por pandas UDF, antes e depois, sobre o mesmo lote de entrada.",
+          "Comparação de schema, com atenção a precisão decimal e a tipo temporal, que é onde a conversão Arrow diverge entre versões."
+        ],
+        "rollback": [
+          "Reverter o pin para a versão anterior no `requirements.txt` e reinstalar o ambiente. É mudança de ambiente, não de dado -- mas a saída produzida pelo run com a versão nova precisa ser descartada ou reconciliada antes, se houve divergência de valor."
+        ],
+        "sources": [
+          {
+            "url": "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html",
+            "retrieved": "2026-08-22"
+          },
+          {
+            "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
+            "retrieved": "2026-08-22"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 19,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_da8db4",
+          "f_71cc23"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    }
+  ],
+  "report": [
+    {
+      "finding": {
+        "rule_id": "SF-SPARK4-004",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "JAR compilado contra Scala anterior ao 2.13 no classpath de um runtime Spark 4",
+        "severity": "P0",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "source_location",
+          "file": "geoutils_2.12-1.4.0.jar",
+          "line": 0,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_e53c80"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "spark": ">=4.0.0"
+        },
+        "explanation": "O Spark 4 subiu o Scala de 2.12 para 2.13, e 2.12 e 2.13 NAO sao compativeis em bytecode -- nao e uma questao de API depreciada, e a fronteira binaria da propria linguagem. A documentacao da AWS para o Glue 6.0 declara isso como breaking change textual: JARs customizados compilados contra Scala 2.12 nao funcionam, e qualquer `--extra-jars` de 2.12 falha com `NoSuchMethodError` ou `ClassNotFoundException`. Esta e a unica regra P0 da area, e a diferenca e categoria, nao grau -- as outras tres descrevem degradacao, silencio ou risco de comportamento; esta descreve FALHA CERTA. O job nao roda. E nao falha na submissao, que nao carrega classe nenhuma do JAR: falha em RUNTIME, na primeira vez que aquela classe e carregada, possivelmente depois de minutos de processamento e de parte da saida ja ter sido escrita -- e passa em qualquer smoke test que nao exercite aquele caminho exato. As tres APIs que a AWS nomeia como mudanca de codigo estao em `knowledge/spark/spark4-migration.md` Sec 6.",
+        "proposed_change": [
+          "Recompilar o JAR contra Scala 2.13.17 e publicar o artefato novo antes de trocar o runtime -- o binario e pre-requisito da migracao, nao consequencia dela.",
+          "Trocar `JavaConversions`, removido em 2.13, por `CollectionConverters`; trocar `MutableList`, tambem removido, por `ListBuffer`; e acrescentar o import proprio que coleccoes paralelas passaram a exigir.",
+          "Se o JAR vem de terceiro, confirmar com o mantenedor se existe build para 2.13 ANTES de planejar a migracao. Sem ele a migracao esta BLOQUEADA, nao atrasada -- e a diferenca decide se o plano tem data ou tem dependencia externa em aberto.",
+          "Conferir o classpath inteiro na mesma passada, e nao so o JAR acusado -- `--extra-jars` costuma carregar mais de um artefato, e um unico remanescente de 2.12 derruba o job igual."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Recompilar um JAR de terceiro sem o codigo-fonte NAO e possivel. Quando o mantenedor nao publica build para 2.13, nao existe conserto local, e tratar isso como tarefa de engenharia produz um plano que nao fecha.",
+          "Trocar o artefato por uma versao 2.13 de outra linha de release muda mais que o binario -- comportamento, defaults e assinaturas podem ter mudado junto, e a diferenca nao aparece no nome do arquivo.",
+          "A substituicao de `JavaConversions` por `CollectionConverters` troca conversao IMPLICITA por explicita; onde o codigo dependia da implicita para uma coercao silenciosa, o comportamento muda antes de compilar, e onde compila e porque alguem escolheu a conversao -- possivelmente a errada."
+        ],
+        "tradeoffs": [
+          "Fixar o job num runtime com Spark 3.5 evita a recompilacao e congela a migracao inteira, inclusive as correcoes que nao dependem do JAR; recompilar custa build, publicacao e teste agora, com o job ainda rodando na versao antiga para comparar.",
+          "Remover a dependencia do JAR -- reescrevendo em PySpark nativo o que ele fazia -- elimina a fronteira binaria para sempre e e muito mais trabalho que recompilar. Vale quando o JAR e pequeno e mal mantido, e nao vale quando ele carrega logica de negocio que ninguem mais entende."
+        ],
+        "validation": [
+          "Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando o caminho de codigo que carrega a classe do JAR. Submissao bem-sucedida NAO e validacao aqui -- a submissao nao carrega a classe, e e exatamente por isso que a falha escapa do smoke test.",
+          "Contagem total de linhas, contagem por chave e schema identicos aos do runtime anterior sobre o mesmo lote de entrada, para separar \"o JAR novo carrega\" de \"o JAR novo faz a mesma coisa\".",
+          "Para JAR de terceiro trocado por outra versao, comparacao de valor das colunas que ele produz, e nao so de contagem -- e ali que a diferenca de release aparece."
+        ],
+        "rollback": [
+          "Voltar o artefato de 2.12 e manter o job no runtime com Spark 3.5, onde ele carrega. O rollback e de artefato e de runtime, nao de dado, desde que a saida parcial do run que falhou seja descartada antes -- e ela existe, porque a falha e em runtime e nao na submissao."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-22"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 9,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9332dc"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do Glue 4.0 não falha na submissão do job -- falha em runtime, com `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de processamento. É o pior tipo de quebra de migração: passa em todo smoke test que não exercita aquele caminho de código, e aparece como falha de produção, não de deploy.",
+        "proposed_change": [
+          "Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.",
+          "Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor se há build compatível com SDK v2 antes de migrar o job."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica sem revisão de comportamento pode trocar um erro silencioso por outro."
+        ],
+        "tradeoffs": [
+          "Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0 substitui o classpath do 4.0 -- não é uma troca com lado gratuito."
+        ],
+        "validation": [
+          "Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não só na submissão.",
+          "Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio."
+        ],
+        "rollback": [
+          "Reverter o import e o cliente para SDK v1",
+          "e manter o job no Glue 4.0 até a reescrita estar pronta."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          },
+          {
+            "url": "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "4.0",
+          "5.0"
+        ],
+        [
+          "5.0",
+          "5.1"
+        ],
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Cast sem guarda sob ANSI mode",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 26,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_a3d759"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=6.0"
+        },
+        "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+        "proposed_change": [
+          "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+          "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+        ],
+        "tradeoffs": [
+          "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+        ],
+        "validation": [
+          "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+          "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+        ],
+        "rollback": [
+          "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-21"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-SPARK4-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "PyArrow pinado abaixo do piso declarado pelo Spark 4.1",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "source_location",
+          "file": "requirements.txt",
+          "line": 1,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9034f2"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "spark": ">=4.1.0"
+        },
+        "explanation": "O Spark 4.1 declara PyArrow 15.0.0 como piso de dependência -- abaixo disso o comportamento das conversões Arrow (pandas UDF, `toPandas`, `createDataFrame` a partir de pandas, pandas-on-Spark) não é o que a versão do Spark espera. O pin SOBREVIVE à migração porque não está no runtime, está escrito no `requirements.txt` do job, e `--additional-python-modules` o instala POR CIMA do que o runtime traz -- o Glue 6.0 pode empacotar um PyArrow moderno e o job continuar rodando com o antigo, porque foi ele que pediu. Trocar de runtime não corrige um pin; corrigir o pin é trabalho separado, e é fácil de esquecer justamente porque o arquivo que o carrega não aparece no diff da migração. Ver `knowledge/spark/spark4-migration.md` §4 para a tabela de pisos.",
+        "proposed_change": [
+          "Subir o pin de PyArrow para 15.0.0 ou mais no `requirements.txt` do job e reinstalar o ambiente.",
+          "Conferir na mesma passada os outros dois pisos do 4.1 -- pandas 2.2.0 e NumPy 1.21 -- que vivem no mesmo arquivo e têm a mesma sobrevida.",
+          "Onde o pin existe para contornar um defeito conhecido de uma versão mais nova, registrar o motivo no próprio `requirements.txt` antes de subir, para que a decisão não seja refeita às cegas."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Subir PyArrow muda o comportamento de conversão de tipos temporais e decimais em pandas UDF; o job pode passar a produzir valores diferentes sem levantar erro.",
+          "Se outra dependência do job pina PyArrow por baixo, subir aqui cria um conflito de resolução que só aparece na instalação do ambiente, não na leitura do arquivo."
+        ],
+        "tradeoffs": [
+          "Remover o pin em vez de subi-lo deixa o job usar o PyArrow do runtime e elimina a divergência para sempre, ao custo de a versão passar a mudar sem o job pedir -- previsibilidade contra manutenção.",
+          "Manter o pin abaixo do piso mantém o comportamento observado hoje e aceita rodar fora da combinação que o Spark 4.1 declara suportada, o que transforma qualquer defeito de conversão numa investigação sem apoio de documentação."
+        ],
+        "validation": [
+          "Versão efetivamente instalada no runtime confirmada por `pyarrow.__version__` dentro do job, não pelo conteúdo do `requirements.txt` -- o arquivo declara a intenção, o ambiente é o fato.",
+          "Contagem total de linhas, contagem de nulos por coluna e agregados de controle das colunas produzidas por pandas UDF, antes e depois, sobre o mesmo lote de entrada.",
+          "Comparação de schema, com atenção a precisão decimal e a tipo temporal, que é onde a conversão Arrow diverge entre versões."
+        ],
+        "rollback": [
+          "Reverter o pin para a versão anterior no `requirements.txt` e reinstalar o ambiente. É mudança de ambiente, não de dado -- mas a saída produzida pelo run com a versão nova precisa ser descartada ou reconciliada antes, se houve divergência de valor."
+        ],
+        "sources": [
+          {
+            "url": "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html",
+            "retrieved": "2026-08-22"
+          },
+          {
+            "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
+            "retrieved": "2026-08-22"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_clientes.py",
+          "line": 19,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_da8db4",
+          "f_71cc23"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "4.0",
+          "5.0"
+        ],
+        [
+          "5.0",
+          "5.1"
+        ],
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    }
+  ],
+  "gates": {
+    "compatibilidade": "FAIL",
+    "lakeformation": "BLOCKED",
+    "consumidor": "BLOCKED",
+    "iam_kms": "BLOCKED",
+    "rede": "BLOCKED",
+    "cross_account": "BLOCKED",
+    "dados": "BLOCKED",
+    "performance": "BLOCKED",
+    "custo": "BLOCKED",
+    "canary": "BLOCKED"
+  },
+  "missing_evidence": {
+    "lakeformation": "nenhum `tf.attribute` nos facts -- a topologia de controle de acesso fino e declarada nos `default_arguments` do job no Terraform, entao aponte a analise para o diretorio que contem os `.tf` do job",
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge/consumers.yaml` (ver `sparkforge/facts/consumers.py`)",
+    "iam_kms": "nenhum `tf.attribute` nos facts -- security configuration, papel de execucao e a rota ate o KMS sao declarados no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "rede": "nenhum `tf.attribute` nos facts -- a conexao que coloca o job dentro da VPC e declarada no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "cross_account": "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta aparece como propriedade Spark no `default_arguments` do job, e sem os `.tf` do job nao ha o que ler",
+    "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
+    "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",
+    "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",
+    "canary": "canary exige execucao paralela controlada em producao, com trafego real, contra os dois runtimes -- nenhum canary executado"
+  },
+  "recommendation": "NO_GO"
+}

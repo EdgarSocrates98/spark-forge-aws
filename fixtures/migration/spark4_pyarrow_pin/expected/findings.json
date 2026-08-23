@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-SPARK4-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "PyArrow pinado abaixo do piso declarado pelo Spark 4.1",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "requirements.txt",
+      "line": 1,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_9034f2"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=4.1.0"
+    },
+    "explanation": "O Spark 4.1 declara PyArrow 15.0.0 como piso de dependência -- abaixo disso o comportamento das conversões Arrow (pandas UDF, `toPandas`, `createDataFrame` a partir de pandas, pandas-on-Spark) não é o que a versão do Spark espera. O pin SOBREVIVE à migração porque não está no runtime, está escrito no `requirements.txt` do job, e `--additional-python-modules` o instala POR CIMA do que o runtime traz -- o Glue 6.0 pode empacotar um PyArrow moderno e o job continuar rodando com o antigo, porque foi ele que pediu. Trocar de runtime não corrige um pin; corrigir o pin é trabalho separado, e é fácil de esquecer justamente porque o arquivo que o carrega não aparece no diff da migração. Ver `knowledge/spark/spark4-migration.md` §4 para a tabela de pisos.",
+    "proposed_change": [
+      "Subir o pin de PyArrow para 15.0.0 ou mais no `requirements.txt` do job e reinstalar o ambiente.",
+      "Conferir na mesma passada os outros dois pisos do 4.1 -- pandas 2.2.0 e NumPy 1.21 -- que vivem no mesmo arquivo e têm a mesma sobrevida.",
+      "Onde o pin existe para contornar um defeito conhecido de uma versão mais nova, registrar o motivo no próprio `requirements.txt` antes de subir, para que a decisão não seja refeita às cegas."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir PyArrow muda o comportamento de conversão de tipos temporais e decimais em pandas UDF; o job pode passar a produzir valores diferentes sem levantar erro.",
+      "Se outra dependência do job pina PyArrow por baixo, subir aqui cria um conflito de resolução que só aparece na instalação do ambiente, não na leitura do arquivo."
+    ],
+    "tradeoffs": [
+      "Remover o pin em vez de subi-lo deixa o job usar o PyArrow do runtime e elimina a divergência para sempre, ao custo de a versão passar a mudar sem o job pedir -- previsibilidade contra manutenção.",
+      "Manter o pin abaixo do piso mantém o comportamento observado hoje e aceita rodar fora da combinação que o Spark 4.1 declara suportada, o que transforma qualquer defeito de conversão numa investigação sem apoio de documentação."
+    ],
+    "validation": [
+      "Versão efetivamente instalada no runtime confirmada por `pyarrow.__version__` dentro do job, não pelo conteúdo do `requirements.txt` -- o arquivo declara a intenção, o ambiente é o fato.",
+      "Contagem total de linhas, contagem de nulos por coluna e agregados de controle das colunas produzidas por pandas UDF, antes e depois, sobre o mesmo lote de entrada.",
+      "Comparação de schema, com atenção a precisão decimal e a tipo temporal, que é onde a conversão Arrow diverge entre versões."
+    ],
+    "rollback": [
+      "Reverter o pin para a versão anterior no `requirements.txt` e reinstalar o ambiente. É mudança de ambiente, não de dado -- mas a saída produzida pelo run com a versão nova precisa ser descartada ou reconciliada antes, se houve divergência de valor."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html",
+        "retrieved": "2026-08-22"
+      },
+      {
+        "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
+        "retrieved": "2026-08-22"
+      }
+    ]
+  }
+]

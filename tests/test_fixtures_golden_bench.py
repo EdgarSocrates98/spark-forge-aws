@@ -40,6 +40,7 @@ FIXTURES = ROOT / "fixtures" / "bench"
 
 REQUIRED_FIXTURES = {
     "clean_improvement",
+    "migracao_entre_runtimes",
     "different_input_volume",
     "faster_but_spilling",
     "most_stages_renamed",
@@ -63,10 +64,17 @@ def _derive(directory: Path):
     emite a sentinela para todo arquivo que ele consegue ler. Ver o `proves`
     daquele meta.yaml.
     """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     input_dir = directory / "input"
     before = extract_event_log_path(input_dir / "before.jsonl", repo_root=input_dir)
     after = extract_event_log_path(input_dir / "after.jsonl", repo_root=input_dir)
-    return build_benchmark(before, after, path_hint=directory.name)
+    return build_benchmark(
+        before,
+        after,
+        path_hint=directory.name,
+        before_runtime=str(meta.get("before_runtime", "")),
+        after_runtime=str(meta.get("after_runtime", "")),
+    )
 
 
 def run_fixture(directory: Path):
@@ -127,7 +135,7 @@ class TestGolden:
 
 class TestAdversarial:
     def test_the_corpus_exercises_every_kind_of_the_namespace(self):
-        """Os cinco kinds de `EMITTED_KINDS` precisam nascer em algum diretorio
+        """Os seis kinds de `EMITTED_KINDS` precisam nascer em algum diretorio
         daqui. `tests/test_fixtures_kind_coverage.py` faz a mesma pergunta sobre
         o corpus inteiro; esta copia local diz QUAL corpus deveria ter coberto,
         que e a informacao que falta quando aquele teste acende."""

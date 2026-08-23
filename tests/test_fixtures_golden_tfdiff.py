@@ -23,7 +23,12 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "tfdiff"
 
-REQUIRED_FIXTURES = {"worker_upsized_no_evidence", "worker_upsized_with_spill"}
+REQUIRED_FIXTURES = {
+    "worker_upsized_no_evidence",
+    "worker_upsized_with_spill",
+    "glue_version_migrado",
+    "glue_job_novo",
+}
 
 
 def fixture_dirs():
@@ -132,3 +137,40 @@ class TestAdversarial:
         _, facts, _, _ = run_fixture(FIXTURES / "worker_upsized_with_spill")
         summary = next(f for f in facts if f.kind == "spark.job.spill_summary")
         assert summary.measures["stages_with_spill"] == 1
+
+    def test_glue_version_changed_is_reported_as_a_runtime_migration(self):
+        """O par de fixtures de SF-MIG-004. Uma linha de `glue_version`
+        alterada tem o tamanho de um ajuste de configuracao no diff e o efeito
+        de trocar Spark, Python, Scala, Java e Iceberg de uma vez."""
+        _, _, findings, _ = run_fixture(FIXTURES / "glue_version_migrado")
+        assert "SF-MIG-004" in {f.rule_id for f in findings}
+
+    def test_a_brand_new_glue_job_is_not_a_migration(self):
+        """A metade que impede a regra de acusar migracao em todo job novo:
+        `changed: true` sozinho nao distingue "mudou de 4.0 para 6.0" de
+        "passou a existir ja em 6.0"."""
+        _, _, findings, _ = run_fixture(FIXTURES / "glue_job_novo")
+        assert "SF-MIG-004" not in {f.rule_id for f in findings}
+
+    def test_the_migration_finding_carries_both_versions(self):
+        """Sem as duas versoes o achado diz "migrou" e obriga o revisor a ir ao
+        git descobrir de que para que -- e o par origem/alvo e exatamente a
+        entrada de `sparkforge.migration.assessment.assess`."""
+        _, facts, _, _ = run_fixture(FIXTURES / "glue_version_migrado")
+        versao = next(
+            f for f in facts if f.kind == "tf.attribute" and f.attrs.get("key") == "glue_version"
+        )
+        assert versao.attrs["previous_value"] == "4.0"
+        assert versao.attrs["value"] == "6.0"
+
+    def test_the_new_job_attribute_has_no_previous_value(self):
+        """O discriminante entre as duas fixtures, medido no fact e nao
+        deduzido: atributo que nasce no PR e `previously_absent`, sem
+        `previous_value` nenhum para comparar."""
+        _, facts, _, _ = run_fixture(FIXTURES / "glue_job_novo")
+        versao = next(
+            f for f in facts if f.kind == "tf.attribute" and f.attrs.get("key") == "glue_version"
+        )
+        assert versao.attrs["changed"] is True
+        assert versao.attrs["previously_absent"] is True
+        assert "previous_value" not in versao.attrs

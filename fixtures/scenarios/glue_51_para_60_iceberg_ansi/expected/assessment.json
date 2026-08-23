@@ -1,0 +1,210 @@
+{
+  "source_runtime": "5.1",
+  "target_runtime": "6.0",
+  "steps": [
+    [
+      "5.1",
+      "6.0"
+    ]
+  ],
+  "findings": [
+    {
+      "rule_id": "SF-MIG-003",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Cast sem guarda sob ANSI mode",
+      "severity": "P1",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "job_vendas.py",
+        "line": 32,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_6f82bc",
+        "f_5e1057"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=6.0"
+      },
+      "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+      "proposed_change": [
+        "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+        "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+      ],
+      "tradeoffs": [
+        "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+      ],
+      "validation": [
+        "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+        "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+      ],
+      "rollback": [
+        "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+          "retrieved": "2026-08-21"
+        }
+      ]
+    }
+  ],
+  "by_step": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Cast sem guarda sob ANSI mode",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_vendas.py",
+          "line": 32,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_6f82bc",
+          "f_5e1057"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=6.0"
+        },
+        "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+        "proposed_change": [
+          "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+          "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+        ],
+        "tradeoffs": [
+          "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+        ],
+        "validation": [
+          "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+          "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+        ],
+        "rollback": [
+          "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-21"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    }
+  ],
+  "report": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-003",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Cast sem guarda sob ANSI mode",
+        "severity": "P1",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "job_vendas.py",
+          "line": 32,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_6f82bc",
+          "f_5e1057"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=6.0"
+        },
+        "explanation": "A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um `cast(` para um tipo incompatível lança erro em vez de devolver `NULL` (fonte: migrating-version-60.html). Um job escrito contra o comportamento pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de resultado ou passa a falhar na mesma linha que hoje processa sem reclamar -- e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de lançar) e é a forma guardada que este fact distingue de `cast(` puro.",
+        "proposed_change": [
+          "Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento esperado e documentado, preservando a semântica atual.",
+          "Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido, tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um problema real, não criando um."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI corrige, mascarando dado inválido em vez de tratá-lo."
+        ],
+        "tradeoffs": [
+          "Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o trabalho de revisar cada cast, mas mascara o problema no nível errado e adia a descoberta para produção, no runtime que forçar ANSI por padrão sem opção de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis."
+        ],
+        "validation": [
+          "Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de runtime, para o mesmo lote de entrada -- divergência indica cast que estava mascarando dado inválido.",
+          "Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de cast não tratada."
+        ],
+        "rollback": [
+          "Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html",
+            "retrieved": "2026-08-21"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    }
+  ],
+  "gates": {
+    "compatibilidade": "FAIL",
+    "lakeformation": "BLOCKED",
+    "consumidor": "BLOCKED",
+    "iam_kms": "BLOCKED",
+    "rede": "BLOCKED",
+    "cross_account": "BLOCKED",
+    "dados": "BLOCKED",
+    "performance": "BLOCKED",
+    "custo": "BLOCKED",
+    "canary": "BLOCKED"
+  },
+  "missing_evidence": {
+    "lakeformation": "nenhum `tf.attribute` nos facts -- a topologia de controle de acesso fino e declarada nos `default_arguments` do job no Terraform, entao aponte a analise para o diretorio que contem os `.tf` do job",
+    "consumidor": "nenhum `env.consumer` nos facts -- quem consome a tabela nao esta no codigo do job, no plano fisico nem no metadata Iceberg; declare o inventario em `.sparkforge/consumers.yaml` (ver `sparkforge/facts/consumers.py`)",
+    "iam_kms": "nenhum `tf.attribute` nos facts -- security configuration, papel de execucao e a rota ate o KMS sao declarados no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "rede": "nenhum `tf.attribute` nos facts -- a conexao que coloca o job dentro da VPC e declarada no Terraform do job, entao aponte a analise para o diretorio que contem os `.tf`",
+    "cross_account": "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta aparece como propriedade Spark no `default_arguments` do job, e sem os `.tf` do job nao ha o que ler",
+    "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
+    "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",
+    "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",
+    "canary": "canary exige execucao paralela controlada em producao, com trafego real, contra os dois runtimes -- nenhum canary executado"
+  },
+  "recommendation": "NO_GO"
+}

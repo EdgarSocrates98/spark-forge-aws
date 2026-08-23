@@ -1,0 +1,24 @@
+name: migracao_entre_runtimes
+proves: >
+  O eixo que a secao 52 acrescentou, e que nenhum outro diretorio deste corpus
+  exercita: os dois lados rodaram em runtimes DIFERENTES, e por isso a
+  comparacao sustenta uma afirmacao sobre MIGRACAO -- nao sobre uma mudanca de
+  codigo. Sem `bench.runtime_pair`, um benchmark de 5.1 contra 6.0 e
+  indistinguivel de um benchmark do mesmo job antes e depois de um commit, e as
+  duas coisas levam a decisoes opostas. As execucoes sao as mesmas de
+  `clean_improvement` de proposito: o que este diretorio prova nao e uma medida
+  nova, e o ROTULO -- mudar tambem os event logs misturaria as duas variaveis e
+  o golden deixaria de dizer qual delas produziu o fato.
+runtime:
+  glue: "6.0"
+  spark: "4.1.1"
+  python: "3.13"
+  iceberg: "1.11.0"
+before_runtime: "5.1"
+after_runtime: "6.0"
+expects_kinds:
+  - bench.analyzed
+  - bench.run_delta
+  - bench.runtime_pair
+  - bench.stage_delta
+expects_rules: []

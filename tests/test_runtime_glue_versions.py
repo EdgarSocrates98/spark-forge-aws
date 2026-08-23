@@ -55,10 +55,75 @@ CURRENT = ("4.0", "5.0", "5.1")
 # porque as tres resolvem para Spark >= 3.3, o que a CONDICAO barra. A fronteira
 # do AQE continua fixada nos dois sentidos por
 # `test_fixtures_golden_runtime.py::test_aqe_boundary_holds_on_both_sides`.
+#
+# SF-MIG-001  `glue: ">=5.0"` -- import de AWS SDK v1 sobrevivendo num runtime
+#             que deixa de garantir o classpath v1. A quebra so existe A
+#             PARTIR do Glue 5.0 (Java 8 -> Java 17), entao em 4.0 ela e
+#             corretamente fora de escopo: nao ha classpath novo para faltar.
+#
+# SF-MIG-002  `glue: ">=5.0"` -- chave exclusiva do EMRFS sobrevivendo num
+#             runtime que le S3A, nao EMRFS. O S3A so vira o sistema de
+#             arquivos padrao A PARTIR do Glue 5.0; em 4.0 o EMRFS ainda le a
+#             chave, entao nao ha risco de configuracao inerte para acusar.
+#
+# SF-MIG-003  `glue: ">=6.0"` -- cast sem guarda sob ANSI mode (Task 11 desta
+#             fase, confirmado contra migrating-version-60.html). Nenhuma das
+#             tres versoes CORRENTES (4.0, 5.0, 5.1) chega no Glue 6.0, entao
+#             ela fica fora de escopo nas tres -- e a unica regra do catalogo
+#             que hoje nao dispara em runtime corrente nenhum, o que e correto:
+#             a fronteira do ANSI mode ainda nao foi cruzada por nenhum deles.
+#
+# SF-SPARK4-001/002/004 `spark: ">=4.0.0"` e SF-SPARK4-003 `spark: ">=4.1.0"`
+#             -- config renomeada, API de pandas-on-Spark removida, piso do
+#             PyArrow e JAR de Scala anterior ao 2.13. As quatro fronteiras
+#             sao do APACHE, nao do empacotamento
+#             da AWS, entao o guarda e por versao de SPARK: 4.0 resolve para
+#             Spark 3.3.0, 5.0 para 3.5.4 e 5.1 para 3.5.6, todas abaixo de
+#             4.0.0. Ficam fora de escopo nas tres correntes pelo mesmo motivo
+#             que SF-MIG-003 -- a fronteira ainda nao foi cruzada por nenhuma
+#             delas -- e sao avaliadas em Glue 6.0 (Spark 4.1.1), que esta na
+#             matriz mas fora de `CURRENT`. SF-SPARK4-004 esta na lista pela
+#             mesma razao das irmas, ainda que a FONTE dela seja da AWS
+#             (`migrating-version-60.html`): quem subiu o Scala para 2.13 foi
+#             o Apache no Spark 4, e a AWS so registrou a consequencia.
+#
+# SF-LF-001/002 `glue: ">=5.0"` -- controle de acesso fino do Lake Formation
+#             dentro de um job Spark do Glue existe a partir do 5.0. Em 4.0 o
+#             parametro `--enable-lakeformation-fine-grained-access` nao tem
+#             efeito, entao nao ha combinacao bloqueada para acusar, e as duas
+#             ficam corretamente fora de escopo -- mesma forma de SF-MIG-001/002.
+#             Em 5.0 e 5.1 elas SAO avaliadas, e por isso nao aparecem nas duas
+#             entradas de baixo.
 EXPECTED_OUT_OF_SCOPE = {
-    "4.0": {"SF-ENV-002"},
-    "5.0": {"SF-ENV-002", "SF-GRAPH-002"},
-    "5.1": {"SF-GRAPH-002"},
+    "4.0": {
+        "SF-ENV-002",
+        "SF-LF-001",
+        "SF-LF-002",
+        "SF-MIG-001",
+        "SF-MIG-002",
+        "SF-MIG-003",
+        "SF-SPARK4-001",
+        "SF-SPARK4-002",
+        "SF-SPARK4-003",
+        "SF-SPARK4-004",
+    },
+    "5.0": {
+        "SF-ENV-002",
+        "SF-GRAPH-002",
+        "SF-MIG-003",
+        "SF-SPARK4-001",
+        "SF-SPARK4-002",
+        "SF-SPARK4-003",
+        "SF-SPARK4-004",
+    },
+    "5.1": {
+        "SF-GRAPH-002",
+        "SF-MIG-003",
+        "SF-SPARK4-001",
+        "SF-SPARK4-002",
+        "SF-SPARK4-003",
+        "SF-SPARK4-004",
+    },
 }
 
 
@@ -136,10 +201,58 @@ class TestRuleScopeOnTheCurrentRuntimes:
         out = {r["id"] for r in _rules() if not in_scope(r.get("runtime_scope") or {}, runtime)}
         assert out == EXPECTED_OUT_OF_SCOPE[version], version
 
+    # Excecao de AREA INTEIRA, e nao regra a regra como EXPECTED_OUT_OF_SCOPE
+    # acima.
+    #
+    # SF-MIG SAIU DAQUI quando SF-MIG-004 entrou. A excecao dizia que em Glue
+    # 4.0 a area inteira fica muda, porque as tres regras de entao (001/002
+    # `>=5.0`, 003 `>=6.0`) so valem depois de cruzar uma fronteira de versao
+    # que o 4.0 antecede. SF-MIG-004 nao e desse tipo: ela afirma que o diff de
+    # Terraform MUDOU `glue_version`, o que e verdade para qualquer par de
+    # versoes e nao depende de runtime detectado nenhum -- por isso declara
+    # `runtime_scope: {}` e e gateada por `requires_facts: [tf.attribute]`.
+    # Com ela a area sobrevive ao guard em toda versao, e manter a excecao aqui
+    # seria letra morta pre-aprovando um sumico que ja nao acontece.
+    #
+    # SF-SPARK4 ENTROU AQUI com a area, e pelo motivo simetrico ao que tirou
+    # SF-MIG: as quatro regras dela sao guardadas por versao de SPARK
+    # (`>=4.0.0` a -001, a -002 e a -004, `>=4.1.0` a -003, porque o piso
+    # 15.0.0 do PyArrow e do 4.1), e as tres versoes CORRENTES de Glue rodam
+    # Spark 3.x --
+    # 4.0 resolve para 3.3.0, 5.0 para 3.5.4 e 5.1 para 3.5.6. Nenhuma cruza a
+    # fronteira do Apache, entao a area sumir inteira nas tres nao e cobertura
+    # perdida: e a afirmacao "este codigo e incompativel com o Spark 4" sendo
+    # corretamente calada onde ela e FALSA.
+    #
+    # A area NAO some no guard de Glue 6.0 (Spark 4.1.1), que esta em
+    # `GLUE_MATRIX` mas fora de `CURRENT` -- `CURRENT` lista os runtimes alvo
+    # de recomendacao nova, e o 6.0 entrou na matriz depois. E a mesma forma de
+    # SF-MIG-003 (`glue: ">=6.0"`), que aparece nas tres entradas de
+    # `EXPECTED_OUT_OF_SCOPE` pela mesma razao.
+    #
+    # No dia em que o 6.0 entrar em `CURRENT`, esta entrada precisa sair para a
+    # versao dele -- e sai sozinha, porque
+    # `test_every_area_of_the_catalog_survives_the_version_guard` compara o
+    # conjunto por igualdade e reprova excecao que nao se realiza.
+    #
+    # SF-LF ENTROU AQUI, e so no 4.0. As duas regras da area sao guardadas por
+    # `glue: ">=5.0"` -- FGAC em job Spark do Glue existe a partir do 5.0 --,
+    # entao no 4.0 a area some inteira, e sumir e o certo: nao ha
+    # funcionalidade para ser incompativel com nada. Nos outros dois runtimes
+    # correntes (5.0 e 5.1) a area sobrevive, e por isso a excecao nao aparece
+    # nas entradas deles -- excecao que nao se realiza reprova em
+    # `test_every_area_of_the_catalog_survives_the_version_guard`.
+    AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {
+        "4.0": {"SF-LF", "SF-SPARK4"},
+        "5.0": {"SF-SPARK4"},
+        "5.1": {"SF-SPARK4"},
+    }
+
     @pytest.mark.parametrize("version", CURRENT)
     def test_every_area_of_the_catalog_survives_the_version_guard(self, version):
-        """Nenhuma area inteira pode sumir num runtime corrente. SF-ENV e a
-        unica com excecoes, e mesmo ela mantem regra avaliavel nas tres."""
+        """Nenhuma area inteira pode sumir num runtime corrente, exceto a
+        declarada em `AREA_FULLY_OUT_OF_SCOPE` -- SF-ENV e a outra excecao, e
+        mesmo ela mantem regra avaliavel nas tres."""
         context, _ = detect_runtime({"terraform": {"glue_version": version}})
         runtime = context.to_dict()
         surviving = {
@@ -152,7 +265,8 @@ class TestRuleScopeOnTheCurrentRuntimes:
         # ESCONDER area nova que sumiu inteira no guard, porque ela nunca chegou
         # a entrar no conjunto esperado.
         all_areas = {r["id"].rsplit("-", 1)[0] for r in _rules()}
-        assert surviving == all_areas, version
+        esperado = all_areas - self.AREA_FULLY_OUT_OF_SCOPE.get(version, set())
+        assert surviving == esperado, version
 
     def test_the_iceberg_v3_rule_is_scoped_to_51_and_only_51(self):
         """SF-ENV-002 guarda a armadilha do format V3 (Glue 5.1 escreve, Athena

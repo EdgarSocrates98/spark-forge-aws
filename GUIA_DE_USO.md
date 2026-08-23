@@ -222,8 +222,8 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
 
-**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 41 tools fazem
-(seção 10), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
+**E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 44 tools fazem
+(seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
 
 ## 4. GitHub Copilot
@@ -428,7 +428,45 @@ Checklist de retomada, em ordem:
    escolha a próxima skill por julgamento próprio — é isso que divergiria
    entre modelos e entre ferramentas.
 
-## 10. Sem MCP e sem Python
+## 10. Economia de token: o que já vem ligado
+
+O **caveman**, de [Julius Brussee](https://github.com/JuliusBrussee) (MIT —
+créditos em [`vendor/CREDITS.md`](vendor/CREDITS.md)), está embutido no
+repositório. **Clonar é a instalação inteira**: não há `npm install`, não há
+`npx`, não há `package.json`, e nada aqui vai à rede.
+
+| Você quer | Comando |
+|---|---|
+| Compressão de output (já ativa, modo `full`) | nada — abra o Claude Code na raiz do repositório |
+| Trocar o nível só nesta sessão | `/caveman lite`, `/caveman full`, `/caveman ultra` |
+| Ver quanto a sessão economizou | `/caveman-stats` |
+| Mensagem de commit comprimida | `/caveman-commit` |
+| Revisão de diff comprimida | `/caveman-review` |
+| Comprimir um arquivo de memória (`CLAUDE.md`, notas) | `/caveman-compress <arquivo>` |
+| Loop de spec-driven development sobre um `SPEC.md` | `/spec`, `/build`, `/check`, `/grill`, `/deepen` |
+| Delegar a subagente comprimido | skill `cavecrew` → `cavecrew-investigator`, `cavecrew-builder`, `cavecrew-reviewer` |
+| Voltar ao português normal | `stop caveman` ou `normal mode` |
+
+Sem Node na máquina a compressão continua ativa, por um fallback em shell no
+`.claude/settings.json`; o que se perde é só o flag de modo e o
+`/caveman-stats`, que dependem do hook em JS.
+
+**O que a compressão nunca corta neste projeto:** o schema
+`recommendation:`/`Finding` inteiro — `evidence`, `risks`, `validation`,
+`rollback` incluídos —, números, versões, `rule_id`, `fact_id`, strings de erro,
+SQL, HCL, YAML, JSON e blocos de código. Campo de evidência apagado para
+economizar token é defeito, não compressão. O recorte completo está em
+`AGENTS.md`, seção *Output compression — caveman mode*, que é também o que Devin
+e Copilot leem, já que eles não carregam plugin nem hook.
+
+**O que ficou de fora.** `cavemem` (memória entre sessões) e `caveman-code`
+(agente de terminal), do mesmo autor, exigem `npm` e módulo nativo — não cabem
+em "clonar é a instalação inteira", e o primeiro nem economiza token: o
+`SessionStart` dele *injeta* contexto da sessão anterior. Quem quiser instala
+globalmente, fora deste repositório. A razão completa está em
+[`vendor/CREDITS.md`](vendor/CREDITS.md).
+
+## 11. Sem MCP e sem Python
 
 Se as tools MCP não estiverem disponíveis, use a CLI `sparkforge` (mesmas
 funções, mesma saída). Se nem Python estiver disponível, leia

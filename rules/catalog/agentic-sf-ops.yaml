@@ -1,0 +1,12 @@
+area: SF-OPS
+rules:
+- id: SF-OPS-001
+  category: agentic-platform
+  title: SF-OPS coordinator area
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  executable: false
+  runtime_scope: {}
+  sources: []

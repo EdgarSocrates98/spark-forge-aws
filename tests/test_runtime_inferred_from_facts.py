@@ -23,11 +23,23 @@ import pytest
 from sparkforge.adapters import _core
 from sparkforge.facts.runtime_detect import GLUE_MATRIX
 
-# As 8 regras que ainda declaram `runtime_scope` nao-vazio, todas guardadas por
+# As 10 regras que ainda declaram `runtime_scope` nao-vazio, todas guardadas por
 # `glue`. Lista literal de proposito: derivar do catalogo faria o teste
 # concordar com qualquer coisa que o catalogo virasse, inclusive com o catalogo
 # perdendo o guarda por acidente. Se esta lista divergir do catalogo, o primeiro
 # teste abaixo falha e diz qual dos dois mudou.
+#
+# SF-MIG-001 e SF-MIG-002 entraram na Task 7 da fase de migracao com
+# `runtime_scope: {glue: ">=5.0"}` -- fronteira de versao confirmada, a mesma
+# razao que guarda SF-GLUE-001. Elas exigem `mig.sdk_import`/`mig.emrfs_config`
+# (ver `requires_facts`), entao um Terraform sozinho nao as faz DISPARAR --
+# mas isso e um skip por `requires_facts`, nao por `runtime_scope`, e e o
+# segundo que este arquivo mede.
+#
+# SF-LF-001 e SF-LF-002 entraram com a area de Lake Formation FGAC, com
+# `runtime_scope: {glue: ">=5.0"}` -- a MESMA fronteira de SF-MIG-001/002, que
+# `GLUE_JOB_TF` (`glue_version = "5.1"`) satisfaz. Entram nesta lista, e nao em
+# `GLUE_GUARDED_RULES_ABOVE_5_1`, exatamente por isso.
 GLUE_GUARDED_RULES = (
     "SF-ENV-002",
     "SF-ENV-003",
@@ -37,6 +49,10 @@ GLUE_GUARDED_RULES = (
     "SF-GLUE-004",
     "SF-GLUE-005",
     "SF-GLUE-006",
+    "SF-LF-001",
+    "SF-LF-002",
+    "SF-MIG-001",
+    "SF-MIG-002",
 )
 
 # `ids=` precomputado, NUNCA `ids=lambda`: com lista vazia o pytest 8.x aborta a
@@ -52,9 +68,37 @@ GLUE_GUARDED_IDS = list(GLUE_GUARDED_RULES)
 # A cobertura de faixa dela mora em
 # `tests/test_rule_scope_by_nature.py::TestSparkVersionedRulesFireOnlyInsideTheirBand`,
 # que caminha a `GLUE_MATRIX` inteira nas duas direcoes.
-SPARK_GUARDED_RULES = ("SF-GRAPH-002",)
+#
+# SF-SPARK4-001/002/003/004 entraram nesta mesma familia com a area SF-SPARK4:
+# as quatro sao guardadas por `spark` (`>=4.0.0` a -001, a -002 e a -004,
+# `>=4.1.0` a -003, porque o piso de 15.0.0 do PyArrow e do 4.1).
+# `GLUE_JOB_TF` fixa `glue_version = "5.1"`, que resolve para Spark 3.5.6 --
+# abaixo das quatro --
+# entao poe-las no parametrize de cima cobraria delas o oposto do que
+# significam, exatamente como em SF-GRAPH-002. A cobertura de faixa das quatro
+# mora em
+# `tests/test_rule_scope_by_nature.py::TestSparkVersionedRulesFireOnlyInsideTheirBand`,
+# que agora caminha a `GLUE_MATRIX` com a faixa declarada POR REGRA.
+SPARK_GUARDED_RULES = (
+    "SF-GRAPH-002",
+    "SF-SPARK4-001",
+    "SF-SPARK4-002",
+    "SF-SPARK4-003",
+    "SF-SPARK4-004",
+)
 
-VERSION_GUARDED_RULES = GLUE_GUARDED_RULES + SPARK_GUARDED_RULES
+# A decima regra com `runtime_scope` nao-vazio, e ela tambem NAO entra em
+# GLUE_GUARDED_RULES -- mesma razao de SF-GRAPH-002, fronteira diferente da
+# que `GLUE_JOB_TF` (abaixo) satisfaz. SF-MIG-003 entrou na Task 11 com
+# `runtime_scope: {glue: ">=6.0"}` (confirmado contra migrating-version-60.html),
+# e `GLUE_JOB_TF` fixa `glue_version = "5.1"` -- abaixo da fronteira dela, ainda
+# que acima da de SF-MIG-001/002 (`>=5.0`). Testar "em escopo sem flag" com o
+# mesmo Terraform provaria o oposto do que a regra significa; a cobertura dela
+# mora em `test_terraform_glue_6_0_puts_sf_mig_003_in_scope_without_any_flag`
+# abaixo, com um Terraform proprio.
+GLUE_GUARDED_RULES_ABOVE_5_1 = ("SF-MIG-003",)
+
+VERSION_GUARDED_RULES = GLUE_GUARDED_RULES + SPARK_GUARDED_RULES + GLUE_GUARDED_RULES_ABOVE_5_1
 
 # Terraform de um job Glue plausivel de producao. `glue_version` literal na raiz
 # do recurso e a UNICA coisa que este arquivo precisa provar; o resto existe
@@ -83,6 +127,12 @@ resource "aws_glue_job" "etl" {
 # da referencia (`var.glue_version`) com `literal: false` -- e texto de
 # referencia nao e versao observada.
 GLUE_JOB_TF_VAR = GLUE_JOB_TF.replace('glue_version      = "5.1"', "glue_version      = var.gv")
+
+# O mesmo job em Glue 6.0 -- a fronteira de SF-MIG-003 (Task 11), acima da que
+# `GLUE_JOB_TF` satisfaz. Fixture propria porque nenhuma outra regra deste
+# arquivo precisa dela; existe so para provar que SF-MIG-003 tambem evalua sem
+# flag, na sua PROPRIA fronteira.
+GLUE_JOB_TF_60 = GLUE_JOB_TF.replace('glue_version      = "5.1"', 'glue_version      = "6.0"')
 
 # Um event log minimo: `SparkListenerLogStart` e a primeira linha de todo event
 # log moderno e a leitura mais confiavel da versao, porque nao e uma propriedade
@@ -211,6 +261,19 @@ def test_terraform_glue_version_puts_a_glue_guarded_rule_in_scope_without_any_fl
 
     assert rule_id not in _skipped_for_scope(payload), (
         f"{rule_id} foi pulada por runtime_scope mesmo com glue_version=5.1 observado no "
+        f"Terraform. runtime detectado: {payload['runtime']}"
+    )
+
+
+def test_terraform_glue_6_0_puts_sf_mig_003_in_scope_without_any_flag(tmp_path):
+    """A contraparte de `GLUE_GUARDED_RULES_ABOVE_5_1`: SF-MIG-003 exige Glue
+    6.0, um degrau acima do que `GLUE_JOB_TF` declara. Com `glue_version = "6.0"`
+    ela avalia sem flag nenhuma, do mesmo jeito que as demais avaliam em 5.1."""
+    facts_path = _facts_file(tmp_path, "facts.json", _terraform_facts(tmp_path, GLUE_JOB_TF_60))
+    payload = _core.judge_findings(facts_path=facts_path, limit=None, show_skipped=True)
+
+    assert "SF-MIG-003" not in _skipped_for_scope(payload), (
+        f"SF-MIG-003 foi pulada por runtime_scope mesmo com glue_version=6.0 observado no "
         f"Terraform. runtime detectado: {payload['runtime']}"
     )
 

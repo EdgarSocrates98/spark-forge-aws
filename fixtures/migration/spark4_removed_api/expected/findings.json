@@ -1,0 +1,57 @@
+[
+  {
+    "rule_id": "SF-SPARK4-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "API de pandas-on-Spark removida na versão 4 ainda chamada no código",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 4,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_dd6298"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "spark": ">=4.0.0"
+    },
+    "explanation": "O Spark 4.0 REMOVEU um conjunto de APIs de pandas-on-Spark que vinham depreciadas -- `DataFrame.append`, `iteritems`, `to_koalas`, `koalas`, `get_dtype_counts`, `is_monotonic`, `backfill`, `pad`, `mad`, `Int64Index` e `Float64Index`. Removida não é depreciada, e a diferença é o que torna esta regra P1 -- depreciado ainda roda; removido quebra. E quebra em RUNTIME, não na submissão -- a submissão não lê o corpo do job. O `AttributeError` aparece na primeira vez que aquele caminho de código executa, possivelmente depois de minutos de processamento e de parte da saída já ter sido escrita, e passa em todo smoke test que não exercita aquela linha exata. O substituto está em `attrs.replacement` quando existe. Esta regra só acusa arquivo cujo texto importa `pyspark.pandas` (`attrs.pandas_on_spark_module`) -- vários dos nomes removidos (`append`, `pad`, `mad`) existem em objetos Python comuns, e acusá-los fora de um módulo de pandas-on-Spark seria mandar consertar código correto. Ver `knowledge/spark/spark4-migration.md` §3.",
+    "proposed_change": [
+      "Trocar a chamada pelo substituto declarado em `attrs.replacement`, conferindo a assinatura -- nenhum dos substitutos é um drop-in por nome; `ps.concat` recebe uma lista de objetos, e `DataFrame.append` recebia um objeto só.",
+      "Para `mad`, que não tem substituto, reescrever o cálculo explicitamente a partir de `mean` e `abs`, e fixar o resultado esperado num teste antes de trocar.",
+      "Rodar o job de ponta a ponta num ambiente com Spark 4 antes do corte, para que o caminho de código seja de fato executado e não só compilado."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "`ps.concat` no lugar de `.append` muda o tratamento de índice e a ordem das colunas quando os schemas divergem; substituição mecânica pode mudar o resultado sem levantar erro.",
+      "`.is_monotonic_increasing` no lugar de `.is_monotonic` é o mesmo predicado, mas quem trocou por `is_monotonic_decreasing` por engano inverte a condição em silêncio."
+    ],
+    "tradeoffs": [
+      "Fixar o job numa versão de Spark anterior à 4 evita a reescrita e congela o runtime, adiando também todo o resto da migração; reescrever custa desenvolvimento e teste agora, com o job ainda rodando na versão antiga para comparar.",
+      "Reescrever a etapa fora de pandas-on-Spark, em DataFrame nativo, resolve esta classe inteira de uma vez e é mais trabalho do que trocar a chamada -- vale quando as chamadas removidas são muitas, e não vale quando é uma."
+    ],
+    "validation": [
+      "Job completo executa sem `AttributeError` num run de ponta a ponta no runtime alvo, sobre dado real, não só na submissão.",
+      "Contagem total de linhas, contagem por chave e schema idênticos aos do runtime anterior, sobre o mesmo lote de entrada.",
+      "Para a troca de `.append` por `ps.concat`, comparação da ordem de colunas e da contagem de nulos por coluna antes e depois -- é onde a divergência de índice aparece."
+    ],
+    "rollback": [
+      "Reverter a chamada para a API antiga e manter o job no runtime com Spark 3.5, onde ela ainda existe. O rollback é de código, não de dado, desde que a saída parcial do run que falhou seja descartada antes."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html",
+        "retrieved": "2026-08-22"
+      }
+    ]
+  }
+]

@@ -1,0 +1,29 @@
+name: glue_60_fgac_com_jar
+source: "5.1"
+target: "6.0"
+proves: >
+  O eixo que os outros dois cenarios nao tocam: o artefato julgado e
+  INFRAESTRUTURA (`.tf`), nao codigo do job, e a regra que dispara vem de outra
+  area (`SF-LF`, Lake Formation) atravessando o MESMO motor de migracao. Prova
+  que `assess()` nao e um motor de `SF-MIG`: ele chama `judge()` com o catalogo
+  inteiro uma vez por degrau, e qualquer regra com `runtime_scope` compativel
+  entra -- SF-LF-001 (`glue >= 5.0`) entra pelo degrau 5.1 -> 6.0.
+  O que o golden por kind de `fixtures/infra_code/fgac_com_jar_extra` nao
+  prova: ali o runtime e um dicionario escrito a mao no `meta.yaml`. Aqui ele
+  e derivado da matriz pelo degrau, e a mesma acusacao P0 sobrevive a essa
+  troca de origem do runtime.
+  SF-MIG-004 NAO dispara, e isso e informacao, nao lacuna: ela exige
+  `attrs.changed == True`, que so existe em fact vindo de
+  `extract_terraform_diff` (dois estados do mesmo `.tf`). Um `.tf` sozinho nao
+  tem estado anterior: o arquivo diz `glue_version = "6.0"` e nada nele diz que
+  antes era outra coisa, entao a migracao que este cenario avalia e invisivel
+  para a regra que existe justamente para acusa-la. O cenario documenta essa
+  fronteira em vez de esconde-la mudando a entrada ate o resultado ficar bonito.
+  O job declara observabilidade completa (`--enable-spark-ui`,
+  `--spark-event-logs-path`, `--enable-continuous-cloudwatch-log`,
+  `--enable-metrics`) e `max_concurrent_runs = 1` com bookmark desabilitado de
+  proposito, e o efeito foi medido: apagando os quatro argumentos de
+  observabilidade do mesmo `.tf`, SF-GLUE-002 (P1) entra junto e o cenario
+  passaria a medir duas coisas ao mesmo tempo.
+expects_rules:
+  - SF-LF-001

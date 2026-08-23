@@ -1,6 +1,6 @@
 ---
 name: emr-infra-reviewer
-description: Use quando o Spark roda em Amazon EMR — on EC2 ou Serverless — e o risco estiver na definição da infraestrutura, não no código. Em EC2, instance fleets contra instance groups, purchasing option por papel, managed scaling, Configurations em dois níveis, bootstrap actions, LogUri e cluster que terminou antes de processar qualquer coisa. Em Serverless, capacidade pré-inicializada faturada com a application ociosa, janela de auto-stop, destinos de log e segredo em runtimeConfiguration.
+description: Spark em Amazon EMR on EC2 ou Serverless com risco na infraestrutura e nao no codigo - instance fleets contra instance groups, purchasing option, managed scaling, Configurations em dois niveis, bootstrap actions, LogUri, capacidade pre-inicializada ociosa, auto-stop, destinos de log, segredo em runtimeConfiguration.
 tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-emr-cluster

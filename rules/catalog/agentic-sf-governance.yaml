@@ -1,0 +1,12 @@
+area: SF-GOVERNANCE
+rules:
+- id: SF-GOVERNANCE-001
+  category: agentic-platform
+  title: SF-GOVERNANCE coordinator area
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  executable: false
+  runtime_scope: {}
+  sources: []

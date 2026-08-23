@@ -60,7 +60,7 @@ class TestPytestCommand:
 class TestGoldenModuleDiscovery:
     def test_discovers_every_golden_module_on_disk(self):
         """Corpus novo sem entrada aqui sairia do gate em silencio."""
-        on_disk = {p.name for p in (ROOT / "tests").glob("test_fixtures_golden*.py")}
+        on_disk = {p.name for p in (ROOT / "tests").glob("test_fixtures_*.py")}
         assert set(GOLDEN_MODULES) == on_disk
 
     def test_there_is_more_than_one(self):

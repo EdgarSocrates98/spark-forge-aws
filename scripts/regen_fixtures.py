@@ -38,6 +38,7 @@ from sparkforge.facts.iceberg_metadata import (  # noqa: E402
     extract_iceberg_metadata_path,
     extract_iceberg_metadata_tree,
 )
+from sparkforge.facts.migration import extract_migration_tree  # noqa: E402
 from sparkforge.facts.pyspark_ast import extract_tree  # noqa: E402
 from sparkforge.facts.runtime_detect import detect_runtime  # noqa: E402
 from sparkforge.facts.s3_listing import extract_s3_listing_path  # noqa: E402
@@ -47,6 +48,8 @@ from sparkforge.facts.terraform import (  # noqa: E402
     extract_terraform_diff,
     extract_terraform_tree,
 )
+from sparkforge.migration.assessment import assess  # noqa: E402
+from sparkforge.migration.collect import collect as collect_migration  # noqa: E402
 from sparkforge.rules.engine import judge  # noqa: E402
 from sparkforge.rules.loader import load_catalog  # noqa: E402
 
@@ -71,6 +74,11 @@ FIXTURES_INFRA_CODE = ROOT / "fixtures" / "infra_code"
 FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
+FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
+FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
+# Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
+# `evals/holdout/README.md` e `regen_scenario`.
+HOLDOUT = ROOT / "evals" / "holdout"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -356,6 +364,60 @@ def regen_graph(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_migration(directory: Path) -> None:
+    """Corpus de compatibilidade de migracao: `*.py`, `*.jar` e
+    `requirements*.txt` sob `input/`, extraidos com `extract_migration_tree`
+    (Tasks 4-6 desta fase) -- mesma razao de `regen_graph` para usar a funcao
+    `_tree` e nao um laco por arquivo: `adapters/_core.py` chama essa funcao
+    quando o `--path` e diretorio, e ela ordena GLOBALMENTE por (kind,
+    subject, id); um laco por arquivo concatenaria blocos ja ordenados por
+    arquivo e o golden descreveria uma ordenacao que nenhuma superficie do
+    produto emite.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_migration_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_scenario(directory: Path) -> None:
+    """Corpus de CENARIO: um job inteiro atravessando um PAR de versoes.
+
+    Difere de `regen_migration` em duas coisas, e as duas sao o motivo de o
+    corpus existir separado. Primeira: o golden nao e `facts`+`findings`, e o
+    `to_dict()` do `MigrationAssessment` -- porque o que um cenario prova nao e
+    "este fact vira este finding", e "este par de versoes expande nestes
+    degraus, e cada achado nasce neste degrau". Segunda: o runtime nao vem do
+    `meta.yaml`; `assess()` o deriva da matriz para o ALVO de cada degrau, entao
+    um cenario nao pode mentir sobre o runtime que julgou.
+
+    A extracao e `sparkforge.migration.collect.collect()`, a MESMA funcao que a
+    CLI e a tool MCP chamam -- codigo, `.tf` quando existe e o inventario de
+    consumidores na convencao. Reimplementar a composicao aqui faria o golden
+    descrever uma uniao que nenhuma superficie do produto emite, que e o defeito
+    que este corpus existe para pegar.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = collect_migration(input_dir)
+    resultado = assess(facts, source=str(meta["source"]), target=str(meta["target"]))
+
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    text = json.dumps(resultado.to_dict(), indent=2, ensure_ascii=False) + "\n"
+    # Mesma razao de `_write_expected`: `newline="\n"` para o golden nao virar
+    # diff de fim de linha quando regenerado no Windows.
+    (out / "assessment.json").write_text(text, encoding="utf-8", newline="\n")
+
+    disparadas = ", ".join(sorted({f.rule_id for f in resultado.findings})) or "nenhuma"
+    print(
+        f"{directory.name}: {len(resultado.steps)} degraus, "
+        f"{len(resultado.by_step)} por degrau, {len(resultado.report())} no relatorio "
+        f"({disparadas})"
+    )
+
+
 def regen_plan(directory: Path) -> None:
     """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
     input/ (a saida colada de `explain("formatted")`), extraida com
@@ -405,7 +467,17 @@ def regen_bench(directory: Path) -> None:
     input_dir = directory / "input"
     before = extract_event_log_path(input_dir / "before.jsonl", repo_root=input_dir)
     after = extract_event_log_path(input_dir / "after.jsonl", repo_root=input_dir)
-    facts = build_benchmark(before, after, path_hint=directory.name)
+    # Os rotulos de runtime sao OPCIONAIS no `meta.yaml`, e so um diretorio os
+    # declara: comparar duas execucoes no mesmo runtime continua valendo, e e o
+    # que os outros cinco medem. Passa-los sempre vazios mantem os goldens
+    # existentes byte-identicos.
+    facts = build_benchmark(
+        before,
+        after,
+        path_hint=directory.name,
+        before_runtime=str(meta.get("before_runtime", "")),
+        after_runtime=str(meta.get("after_runtime", "")),
+    )
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -533,6 +605,9 @@ def main() -> int:
                 (FIXTURES_BENCH / name, regen_bench),
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),
+                (FIXTURES_MIGRATION / name, regen_migration),
+                (FIXTURES_SCENARIOS / name, regen_scenario),
+                (HOLDOUT / name, regen_scenario),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -602,6 +677,21 @@ def main() -> int:
     if FIXTURES_GRAPH.is_dir():
         for directory in sorted(p for p in FIXTURES_GRAPH.iterdir() if p.is_dir()):
             regen_graph(directory)
+    # Mesma guarda, e pelo mesmo intervalo (D-4a-18): `fixtures/migration/`
+    # nasce na Task 9 desta fase, e a regeneracao completa roda ENTRE a Task 8
+    # e ela.
+    if FIXTURES_MIGRATION.is_dir():
+        for directory in sorted(p for p in FIXTURES_MIGRATION.iterdir() if p.is_dir()):
+            regen_migration(directory)
+    # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
+    # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
+    # que este script seja o primeiro a saber.
+    for raiz in (FIXTURES_SCENARIOS, HOLDOUT):
+        if not raiz.is_dir():
+            continue
+        for directory in sorted(p for p in raiz.iterdir() if p.is_dir()):
+            if (directory / "meta.yaml").exists():
+                regen_scenario(directory)
     return 0
 
 

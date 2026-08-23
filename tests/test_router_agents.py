@@ -196,4 +196,4 @@ class TestTodaAreaAlcancaUmCoordenador:
         """
         assert len(_areas()) == len({rule["id"].rsplit("-", 1)[0] for rule in load_catalog()})
         for area in _areas():
-            assert re.fullmatch(r"SF-[A-Z]+", area), area
+            assert re.fullmatch(r"SF-[A-Z0-9-]+", area), area

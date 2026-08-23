@@ -49,6 +49,7 @@ EXTRACTOR_ID = "terraform@0.1.0"
 EMITTED_KINDS = frozenset(
     {
         "tf.attribute",
+        "tf.spark_conf",
         "tf.resource",
         "tf.unresolved",
         "tf.module_analyzed",
@@ -63,7 +64,7 @@ EMITTED_KINDS = frozenset(
 
 # Atributos de raiz do bloco `resource "aws_glue_job" "x" { ... }` que as
 # regras do catalogo referenciam. Uma chave de raiz fora desta lista (ex.:
-# `description`, `tags`, `connections`) nao e um caso de parse malsucedido --
+# `description`, `tags`) nao e um caso de parse malsucedido --
 # e uma decisao deliberada de escopo, e por isso e ignorada em silencio, ao
 # contrario de uma construcao genuinamente nao suportada (que sempre vira
 # `tf.unresolved`).
@@ -78,6 +79,13 @@ _ROOT_ATTRS = frozenset(
         "execution_class",
         "role_arn",
         "name",
+        # Os dois entraram com as areas SF-KMS e SF-NET: `security_configuration`
+        # e a ponta de encriptacao que exige rota ate o KMS, e `connections` e o
+        # que coloca o job dentro da VPC. Antes deles o comentario acima citava
+        # `connections` como exemplo de chave DELIBERADAMENTE fora de escopo --
+        # e estava certo enquanto nenhuma regra a consumia. Agora duas consomem.
+        "security_configuration",
+        "connections",
     }
 )
 
@@ -216,6 +224,19 @@ def _classify_unhandled_line(text: str) -> str:
     return "function_call"
 
 
+# Lista LITERAL de strings numa linha so: `["a", "b"]`, e tambem a vazia `[]`.
+# Antes desta adicao ela caia no reason `function_call`, que e classificacao
+# ERRADA -- `["a"]` nao e chamada de funcao nenhuma. O defeito so nao aparecia
+# porque nenhuma chave de `_ROOT_ATTRS` era lista; `connections` passou a ser, e
+# um `tf.unresolved` mentindo o motivo e pior que um valor nao lido.
+#
+# Lista com interpolacao, referencia ou quebra de linha NAO casa aqui e continua
+# indo para o reason generico: este parser e linha a linha, e adivinhar o
+# conteudo de uma lista que continua na proxima linha seria inventar valor.
+_STRING_ITEM_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
+_STRING_LIST_RE = re.compile(r'^\[\s*(?:"(?:[^"\\]|\\.)*"\s*,?\s*)*\]$')
+
+
 def _classify_value(raw_value: str) -> tuple[str | None, Any, bool]:
     """Classifica o lado direito de `chave = valor`.
 
@@ -242,6 +263,16 @@ def _classify_value(raw_value: str) -> tuple[str | None, Any, bool]:
         return None, (float(value) if "." in value else int(value)), True
     if _REF_RE.match(value):
         return None, value, False
+    if _STRING_LIST_RE.match(value):
+        # Uma lista vira UM valor: os elementos juntos, separados por virgula.
+        # Nao um fact por elemento -- a pergunta que as regras fazem sobre
+        # `connections` e "o job esta dentro de uma VPC?", e essa pergunta e do
+        # job, nao de cada conexao. Lista VAZIA devolve string vazia, que e
+        # distinguivel de ausente: `attrs.present` continua True e
+        # `attrs.value == ""` diz que a chave foi declarada sem conteudo -- o
+        # mesmo par que `SF-LF-001` usa para nao acusar `--extra-jars = ""`.
+        itens = _STRING_ITEM_RE.findall(value)
+        return None, ",".join(_unescape(item) for item in itens), True
     if _FUNC_CALL_RE.match(value):
         return "function_call", None, False
     # Ternario, aritmetica, lista/mapa literal, ou qualquer outra expressao
@@ -434,7 +465,17 @@ def _parse_map_block(
                 facts.append(fact)
                 j = next_j
                 continue
-            facts.append(_attribute_fact(key, raw_value, path, j + 1, symbol, block, provenance))
+            attr_fact = _attribute_fact(key, raw_value, path, j + 1, symbol, block, provenance)
+            facts.append(attr_fact)
+            # So decompoe quando o `tf.attribute` saiu resolvido: valor com
+            # interpolacao ou heredoc ja virou `tf.unresolved`, e desmontar
+            # texto que o parser declarou nao entender inventaria propriedade.
+            if key == "--conf" and attr_fact.kind == "tf.attribute":
+                facts.extend(
+                    _spark_conf_facts(
+                        attr_fact.attrs.get("value", ""), path, j + 1, symbol, block, provenance
+                    )
+                )
         else:
             reason = _classify_unhandled_line(text)
             facts.append(
@@ -446,6 +487,82 @@ def _parse_map_block(
                 )
             )
         j += 1
+    return facts
+
+
+# `--conf` no Glue nao carrega UMA propriedade: carrega uma string com varias,
+# separadas pela repeticao literal do proprio flag. A forma que a AWS documenta e:
+#
+#   "--conf" = "spark.sql.shuffle.partitions=200 --conf spark.sql.adaptive.enabled=false"
+#
+# Como `tf.attribute`, isso e um unico fact cujo `value` e a string inteira.
+# Nenhuma regra consegue perguntar "o AQE esta desligado na definicao do job?"
+# sobre uma string dessas sem fazer parsing dentro da condicao do catalogo -- que
+# e exatamente o que o catalogo NAO faz, porque condicao com parser embutido
+# deixa de ser dado e vira codigo escondido em YAML.
+#
+# `tf.spark_conf` desmonta a string em um fact por propriedade, ao lado do
+# `tf.attribute` original, que continua sendo emitido intacto. Nada e
+# substituido: o fact bruto e a evidencia de que a linha existe com aquele texto,
+# e o decomposto e o que a regra cita.
+_CONF_SPLIT_RE = re.compile(r"\s*--conf\s+")
+
+
+def _spark_conf_facts(
+    raw_value: str,
+    path: str,
+    line: int,
+    symbol: str,
+    block: str,
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """Desmonta o valor de `--conf` em um fact por propriedade Spark.
+
+    Pedaco sem `=` nao vira fact silenciosamente: vira `tf.unresolved` com
+    `reason: malformed_conf_pair`. Um `--conf spark.sql.adaptive.enabled` sem
+    valor e erro de definicao de job que o operador quer ver, e engoli-lo
+    produziria o falso negativo de "a chave nao estava la".
+    """
+    facts: list[Fact] = []
+    for pedaco in _CONF_SPLIT_RE.split(raw_value.strip()):
+        pedaco = pedaco.strip()
+        if not pedaco:
+            continue
+        if "=" not in pedaco:
+            facts.append(
+                Fact(
+                    kind="tf.unresolved",
+                    subject=_line_subject(path, line),
+                    attrs={
+                        "reason": "malformed_conf_pair",
+                        "key": "--conf",
+                        "detail": pedaco,
+                        "block": block,
+                    },
+                    provenance=provenance,
+                )
+            )
+            continue
+        chave, _, valor = pedaco.partition("=")
+        chave, valor = chave.strip(), valor.strip()
+        attrs: dict[str, Any] = {
+            "key": chave,
+            "value": valor,
+            "source_argument": "--conf",
+            "block": block,
+        }
+        if _looks_like_secret(chave, valor):
+            attrs["value"] = "<redigido>"
+            attrs["redacted"] = True
+            attrs["secret_pattern_match"] = True
+        facts.append(
+            Fact(
+                kind="tf.spark_conf",
+                subject=_resource_subject(path, line, f"{symbol}#{chave}"),
+                attrs=attrs,
+                provenance=provenance,
+            )
+        )
     return facts
 
 

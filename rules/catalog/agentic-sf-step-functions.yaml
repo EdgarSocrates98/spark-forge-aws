@@ -1,0 +1,12 @@
+area: SF-STEP-FUNCTIONS
+rules:
+- id: SF-STEP-FUNCTIONS-001
+  category: agentic-platform
+  title: SF-STEP-FUNCTIONS coordinator area
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  executable: false
+  runtime_scope: {}
+  sources: []

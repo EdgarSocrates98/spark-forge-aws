@@ -87,13 +87,64 @@ NON_GLUE_IDS = [nome for nome, _ in NON_GLUE_RUNTIMES]
 # Hoje tem `runtime_scope: {}` e o gate e a propria condicao, que so pode ser
 # verdadeira quando a versao FOI resolvida. Ver o comentario dela em
 # `rules/catalog/env.yaml`.
-GLUE_VERSIONED = {"SF-ENV-002", "SF-ENV-003", "SF-GLUE-001"}
+#
+# SF-MIG-001 e SF-MIG-002 ENTRARAM na Task 7 desta fase, com
+# `runtime_scope: {glue: ">=5.0"}`. Nao sao GLUE_INFRA: elas nao leem
+# `aws_glue_job` do Terraform, leem sinal de codigo (`mig.sdk_import`,
+# `mig.emrfs_config`). O que as torna dependentes de Glue e uma fronteira de
+# VERSAO -- o SDK v1 sai do classpath e o EMRFS vira S3A exatamente ao cruzar
+# para o Glue 5.0, fronteira ja confirmada em `knowledge/glue/runtime-matrix.yaml`
+# -- exatamente a mesma natureza que justifica SF-ENV-002/003 e SF-GLUE-001
+# aqui. Ver o comentario acima das regras em `rules/catalog/glue-migration.yaml`.
+#
+# SF-MIG-003 ENTROU na Task 11 desta fase, com `runtime_scope: {glue: ">=6.0"}`
+# real (era `blocked_on` ate `knowledge/glue/runtime-matrix.yaml` ganhar a
+# linha do Glue 6.0). Mesma natureza de SF-MIG-001/002: le `mig.ansi_risk`, um
+# sinal de codigo, e a fronteira e a versao em que o Spark liga ANSI mode por
+# default (confirmado contra migrating-version-60.html), nao a existencia de
+# infraestrutura Glue.
+#
+# SF-LF-001 e SF-LF-002 ENTRARAM aqui com a area SF-LF (Lake Formation com
+# controle de acesso fino), com `runtime_scope: {glue: ">=5.0"}`. Sao
+# GLUE_VERSIONED e nao GLUE_INFRA, e a diferenca importa: elas LEEM
+# `aws_glue_job` do Terraform como as GLUE_INFRA, mas o que as guarda nao e a
+# existencia da infraestrutura -- e uma fronteira de VERSAO, porque FGAC em job
+# Spark do Glue so existe a partir do 5.0. Num Glue 4.0 a infraestrutura Glue
+# EXISTE e a afirmacao continua sendo falsa, que e exatamente o que separa os
+# dois grupos.
+#
+# NAO sao SPARK_VERSIONED, e essa e a pergunta que a area obriga a responder:
+# quem empacota FGAC dentro do job e a AWS, nao o Apache. Nao existe "Lake
+# Formation fine-grained access" num cluster Spark on-prem, entao guardar por
+# `spark` amarraria a afirmacao a um componente que nao a produziu -- o inverso
+# exato do raciocinio que poe SF-SPARK4 no grupo de baixo.
+GLUE_VERSIONED = {
+    "SF-ENV-002",
+    "SF-ENV-003",
+    "SF-GLUE-001",
+    "SF-LF-001",
+    "SF-LF-002",
+    "SF-MIG-001",
+    "SF-MIG-002",
+    "SF-MIG-003",
+}
 
 # Estas leem infraestrutura Glue do Terraform mas declaram `{glue: "*"}`, que
 # hoje nao filtra nada -- sao o alvo da fase.
 GLUE_INFRA = {"SF-GLUE-002", "SF-GLUE-003", "SF-GLUE-004", "SF-GLUE-005", "SF-GLUE-006"}
 
 GLUE_DEPENDENT = GLUE_VERSIONED | GLUE_INFRA
+
+def _minor(spark: str) -> tuple[int, int]:
+    """(major, minor) da versao de Spark, ignorando patch e sufixo de vendor.
+
+    `3.3.2-amzn-0.1` e `4.1.1` chegam aqui como vem do runtime detectado, entao
+    o parser tem que aguentar o sufixo -- comparar string crua poria
+    `3.10` antes de `3.9` e a faixa erraria em silencio.
+    """
+    partes = spark.split("-")[0].split(".")
+    return (int(partes[0]), int(partes[1]))
+
 
 # Guardadas por versao de SPARK, e nao por Glue. Grupo proprio porque a razao e
 # outra: nao e "esta infraestrutura nao existe neste runtime", e sim "a
@@ -108,9 +159,70 @@ GLUE_DEPENDENT = GLUE_VERSIONED | GLUE_INFRA
 #
 # A area SF-GRAPH NAO some com isso: SF-GRAPH-001, -003 e -004 declaram
 # `runtime_scope: {}`, e sao elas que sustentam o invariante de area la embaixo.
-SPARK_VERSIONED = {"SF-GRAPH-002"}
+# SF-SPARK4-001/002/003/004 ENTRARAM aqui com a area SF-SPARK4. Sao guardadas
+# por versao de SPARK e nao de Glue porque quem mudou o produto foi o APACHE,
+# nao a AWS: o Spark 4.0 renomeou `spark.sql.legacy.parquet.*`, removeu as APIs
+# de pandas-on-Spark e subiu o Scala de 2.12 para 2.13, e o 4.1 subiu o piso do
+# PyArrow para 15.0.0. SF-SPARK4-004 e a que mais parece excecao e nao e -- a
+# FONTE dela e da AWS (`migrating-version-60.html`), mas a fronteira continua
+# sendo do Apache: a AWS registrou a consequencia de uma mudanca que nao foi
+# dela. As quatro
+# afirmacoes valem igual num EMR com Spark 4, num EMR Serverless e num cluster
+# on-prem -- guardar por Glue amarraria a afirmacao a um empacotamento que nao
+# a produziu e apagaria a area em todo runtime nao-Glue com Spark 4, que e o
+# falso negativo que a Fase 5a acabou.
+#
+# Contraste com GLUE_VERSIONED logo acima: SF-MIG-001/002 tambem leem sinal de
+# codigo, mas as fronteiras delas (classpath sem SDK v1, EMRFS virando S3A) sao
+# do empacotamento da AWS. Mesma forma, origem diferente.
+#
+# A fronteira NAO e a mesma para as quatro: -001, -002 e -004 declaram
+# `>=4.0.0` e -003 declara `>=4.1.0`, porque o piso de 15.0.0 e do 4.1 (no 4.0
+# era 11.0.0). O Scala 2.13 chegou junto com o Spark 4.0, entao -004 fica na
+# ponta de baixo com -001 e -002.
+# Acusar `pyarrow==11.0.0` num runtime 4.0 seria acusar a versao que a
+# documentacao daquele release declara suficiente.
+#
+# MAPA e nao conjunto, desde que SF-SPARK4 entrou. A faixa e propriedade DA
+# REGRA, nao do grupo: enquanto SF-GRAPH-002 era a unica aqui, a faixa dela
+# (`3.3.x`) ficava escrita como constante da classe de teste, e qualquer regra
+# nova que entrasse no grupo era medida contra a faixa do GraphFrames. Cada
+# entrada declara agora a propria faixa, como predicado sobre a versao de Spark,
+# mais as PERTURBACOES DE LIMITE que provam que cada ponta do `runtime_scope`
+# esta sustentando peso.
+SPARK_VERSIONED: dict[str, tuple] = {
+    "SF-GRAPH-002": (
+        lambda spark: _minor(spark) == (3, 3),
+        # Ambas as pontas sustentam peso: sem o `<3.4` a regra acusaria Glue
+        # 5.0/5.1; sem o `>=3.3` acusaria Glue 3.0.
+        [("3.3.2-amzn-0.1", True), ("3.2.1-amzn-0", False), ("3.4.0-amzn-0", False)],
+    ),
+    "SF-SPARK4-001": (
+        lambda spark: _minor(spark) >= (4, 0),
+        [("4.0.0", True), ("4.1.1-amzn-0", True), ("3.5.6", False)],
+    ),
+    "SF-SPARK4-002": (
+        lambda spark: _minor(spark) >= (4, 0),
+        [("4.0.0", True), ("4.1.1-amzn-0", True), ("3.5.6", False)],
+    ),
+    # A ponta de baixo desta e 4.1 e nao 4.0, e a diferenca e o limiar da propria
+    # regra: o piso de 15.0.0 do PyArrow e do Spark 4.1 -- no 4.0 o piso era
+    # 11.0.0. Um `>=4.0.0` aqui acusaria `pyarrow==11.0.0` num runtime 4.0, onde
+    # a documentacao daquele release declara essa versao suficiente.
+    "SF-SPARK4-003": (
+        lambda spark: _minor(spark) >= (4, 1),
+        [("4.1.0", True), ("4.1.1-amzn-0", True), ("4.0.0", False), ("3.5.6", False)],
+    ),
+    # Volta para `>=4.0.0`, e a ponta de baixo e a do Scala 2.13 -- que entrou
+    # no Spark 4.0, nao no 4.1. Um `>=4.1.0` aqui deixaria passar calado todo
+    # JAR de 2.12 num runtime 4.0, onde ele ja nao carrega.
+    "SF-SPARK4-004": (
+        lambda spark: _minor(spark) >= (4, 0),
+        [("4.0.0", True), ("4.1.1-amzn-0", True), ("3.5.6", False)],
+    ),
+}
 
-VERSION_DEPENDENT = GLUE_DEPENDENT | SPARK_VERSIONED
+VERSION_DEPENDENT = GLUE_DEPENDENT | set(SPARK_VERSIONED)
 
 
 def _rules() -> list[dict]:
@@ -162,21 +274,21 @@ class TestSparkVersionedRulesFireOnlyInsideTheirBand:
     conferir uma versao so.
     """
 
-    _BAND = {"3.3.0", "3.3.1", "3.3.2"}
-
     @pytest.mark.parametrize("rule_id", sorted(SPARK_VERSIONED))
     @pytest.mark.parametrize("glue_version", sorted(GLUE_MATRIX))
-    def test_the_band_matches_exactly_the_glue_versions_without_a_jar(
+    def test_the_band_matches_exactly_the_declared_spark_versions(
         self, rule_id, glue_version
     ):
         rule = next(r for r in _rules() if r["id"] == rule_id)
+        banda, _probes = SPARK_VERSIONED[rule_id]
         runtime = _detected(terraform={"glue_version": glue_version})
-        esperado = GLUE_MATRIX[glue_version]["spark"] in self._BAND
+        esperado = banda(GLUE_MATRIX[glue_version]["spark"])
         assert in_scope(rule.get("runtime_scope") or {}, runtime) is esperado, (
             f"{rule_id} em Glue {glue_version} (Spark "
             f"{GLUE_MATRIX[glue_version]['spark']}): esperado in_scope={esperado}. "
-            f"Spark 3.3.x e a UNICA faixa sem artefato de GraphFrames publicado; "
-            f"3.1/3.2 tem `0.8.2` e 3.4/3.5 tem `0.8.3`+."
+            f"A faixa declarada em SPARK_VERSIONED e o `runtime_scope` do "
+            f"catalogo discordam -- um dos dois esta errado, e o catalogo nao e "
+            f"automaticamente o certo."
         )
 
     @pytest.mark.parametrize("nome,runtime", NON_GLUE_RUNTIMES, ids=NON_GLUE_IDS)
@@ -192,14 +304,21 @@ class TestSparkVersionedRulesFireOnlyInsideTheirBand:
         )
 
     @pytest.mark.parametrize("rule_id", sorted(SPARK_VERSIONED))
-    def test_both_ends_of_the_band_are_load_bearing(self, rule_id):
-        """Perturbacao de limite, porque `in_scope` conjuga a lista de specs e
-        um spec sozinho passaria despercebido no catalogo: sem o `<3.4` a regra
-        acusaria Glue 5.0/5.1; sem o `>=3.3` acusaria Glue 3.0."""
+    def test_every_end_of_the_band_is_load_bearing(self, rule_id):
+        """Perturbacao de limite, uma versao de cada lado de cada ponta.
+
+        `in_scope` conjuga a lista de specs, entao um spec que sobre ou que
+        falte passa despercebido na leitura do catalogo: a faixa continua com
+        cara de faixa. As probes de cada regra vivem em `SPARK_VERSIONED`, ao
+        lado da faixa que elas provam, porque perturbacao de limite so tem
+        sentido contra o limite DAQUELA regra."""
         scope = next(r for r in _rules() if r["id"] == rule_id)["runtime_scope"]
-        assert in_scope(scope, {"spark": "3.3.2-amzn-0.1"}) is True
-        assert in_scope(scope, {"spark": "3.2.1-amzn-0"}) is False
-        assert in_scope(scope, {"spark": "3.4.0-amzn-0"}) is False
+        _banda, probes = SPARK_VERSIONED[rule_id]
+        for spark, esperado in probes:
+            assert in_scope(scope, {"spark": spark}) is esperado, (
+                f"{rule_id} com Spark {spark}: esperado in_scope={esperado}. "
+                f"Uma ponta do `runtime_scope` deixou de sustentar peso."
+            )
 
 
 # Quem pode usar curinga, por chave de `runtime_scope`. Uma entrada `{X: "*"}`
@@ -340,8 +459,102 @@ ALL_RUNTIME_IDS = [nome for nome, _ in ALL_RUNTIMES]
 # EXISTENCIA de uma infraestrutura que o runtime comprovadamente nao tem. Nunca
 # sobre uma versao que simplesmente nao foi detectada -- para isso o gate certo
 # e `requires_facts`, e o `runtime_scope` deve ser `{}`.
+def _spark_below_4(runtime: dict[str, str]) -> bool:
+    """Spark ausente ou abaixo de 4.0 -- a condicao em que SF-SPARK4 nao tem
+    nada a afirmar. Ausente conta como abaixo porque `in_scope` falha fechada:
+    sem versao, toda regra da area e pulada."""
+    try:
+        return _minor(runtime.get("spark") or "") < (4, 0)
+    except (ValueError, IndexError):
+        return True
+
+
+def _glue_below_5(runtime: dict[str, str]) -> bool:
+    """Glue ausente ou abaixo de 5.0 -- a condicao em que SF-LF nao tem nada a
+    afirmar. Ausente conta como abaixo porque `in_scope` falha fechada."""
+    partes = (runtime.get("glue") or "").split(".")
+    try:
+        return (int(partes[0]), int(partes[1])) < (5, 0)
+    except (ValueError, IndexError):
+        return True
+
+
 AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     "SF-GLUE": (lambda runtime: not runtime.get("glue"), "runtime sem `glue` detectado"),
+    # SF-LF entrou aqui com a area, e o criterio escrito acima e satisfeito na
+    # leitura que ele exige: a area e sobre a EXISTENCIA de uma infraestrutura
+    # que o runtime comprovadamente nao tem. Controle de acesso fino do Lake
+    # Formation dentro de um job Spark e coisa que a AWS empacota no Glue a
+    # partir do 5.0 -- num EMR, num EMR Serverless ou num cluster on-prem ele
+    # nao existe, e num Glue 3.0/4.0 ele ainda nao existia. As duas regras
+    # afirmam "voce ligou FGAC E pediu algo que FGAC bloqueia"; onde FGAC nao
+    # existe, a primeira metade da afirmacao e vazia e calar e a resposta certa.
+    #
+    # O contraste com SF-ICE, que motivou o criterio: tabela Iceberg EXISTE num
+    # EMR, e a area sumia so porque ninguem detecta a versao de Iceberg fora do
+    # Glue -- falso negativo por deteccao, nao por escopo. Aqui `glue` e
+    # detectado pela propria fonte que produz os facts da regra (o
+    # `glue_version` do `aws_glue_job`), entao a area sobrevive em qualquer
+    # analise real de um Terraform de Glue 5.0 ou acima.
+    #
+    # O RESIDUO, declarado porque nao some: num `.tf` cujo `glue_version` vem de
+    # variavel (`literal: false`, logo versao NAO observada) a area some por
+    # falta de deteccao, nao por afirmacao falsa. E o fail-closed do
+    # `runtime_scope`, e aparece como PULADA com `reason: runtime_scope`, nunca
+    # como "revisei e esta tudo bem". A saida NAO e `runtime_scope: {}`: sem
+    # guarda as duas acusariam job de Glue 4.0, onde o parametro de FGAC nao
+    # tem efeito nenhum e a incompatibilidade nao existe.
+    "SF-LF": (_glue_below_5, "runtime com Glue abaixo de 5.0, ou sem Glue detectado"),
+    # SF-SPARK4 entrou aqui com a area, e o criterio acima e satisfeito na
+    # leitura que importa: a area nao e sobre uma versao que NAO FOI DETECTADA,
+    # e sobre uma fronteira do Apache que este runtime comprovadamente NAO
+    # CRUZOU. Em Glue 5.1 (Spark 3.5.6) e nos dois EMR daqui (3.5.1) a versao
+    # ESTA detectada, e a afirmacao das quatro regras -- config renomeada no
+    # 4.0, API removida no 4.0, Scala 2.13 no 4.0, piso do PyArrow no 4.1 -- e
+    # literalmente FALSA ali:
+    # `spark.sql.legacy.parquet.int96RebaseModeInWrite` e o nome CERTO em 3.5,
+    # e acusa-lo seria mandar consertar o que nao esta quebrado. Calar e a
+    # resposta correta, nao cobertura perdida.
+    #
+    # O contraste com SF-ICE, que motivou o criterio: tabela Iceberg EXISTE num
+    # EMR, e a area sumia so porque ninguem detecta a versao de Iceberg fora do
+    # Glue -- falso negativo. Aqui `spark` E detectado, por duas fontes de fact
+    # (`spark.runtime_version` do event log e a derivacao de `glue_version` pela
+    # `GLUE_MATRIX`), entao a area sobrevive em qualquer analise real de um job
+    # que rode em Spark 4.
+    #
+    # O RESIDUO, declarado porque nao some: no runtime `vazio-cli` -- `sparkforge
+    # judge` sem flag e sem fact de versao -- a area some por falta de deteccao,
+    # nao por afirmacao falsa. Isso e o fail-closed do `runtime_scope`
+    # (`rules/catalog/README.md`, "O guarda falha fechado"), e aparece para o
+    # operador como PULADA com `reason: runtime_scope`, nunca como "revisei e
+    # esta tudo bem". A saida NAO e trocar o guarda por `runtime_scope: {}`:
+    # sem guarda nenhum as quatro acusariam todo job em Spark 3.5 -- inclusive
+    # mandando recompilar contra 2.13 um JAR de 2.12 que e o CERTO ali --, que
+    # e o erro
+    # mais caro dos dois.
+    "SF-SPARK4": (
+        _spark_below_4,
+        "runtime com Spark abaixo de 4.0, ou sem Spark detectado",
+    ),
+    # SF-MIG SAIU DAQUI quando SF-MIG-004 entrou no catalogo.
+    #
+    # A excecao existia porque as tres regras de entao eram todas
+    # GLUE_VERSIONED (001/002 `>=5.0`, 003 `>=6.0`): num runtime sem Glue, ou
+    # com Glue abaixo de 5.0, nenhuma delas tinha fronteira cruzada para
+    # acusar, e a area sumia inteira por versao.
+    #
+    # SF-MIG-004 afirma outra coisa -- que o diff de Terraform MUDOU
+    # `glue_version` -- e isso vale para 3.0->4.0 tanto quanto para 5.1->6.0,
+    # sem depender de runtime detectado. Ela declara `runtime_scope: {}` e e
+    # gateada por `requires_facts: [tf.attribute]`, que e exatamente o criterio
+    # escrito no comentario acima deste mapa. Consequencia: num runtime EMR a
+    # area SF-MIG passa a ser AVALIADA e simplesmente nao casa, por falta do
+    # fact -- estado diferente de "area inteira pulada", e o estado certo.
+    # Manter a excecao aqui seria letra morta pre-aprovando um sumico que ja
+    # nao acontece, que e o que
+    # `test_declared_exceptions_really_vanish_when_their_condition_holds`
+    # existe para impedir.
 }
 
 

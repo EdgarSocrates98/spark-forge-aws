@@ -27,6 +27,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`glue/workers-and-capacity.md`](glue/workers-and-capacity.md) | Worker types G/R, DPU, disco, Auto Scaling, Flex, cálculo de capacidade |
 | [`glue/job-arguments.md`](glue/job-arguments.md) | Argumentos que afetam performance, precedência código × IaC |
 | [`glue/observability.md`](glue/observability.md) | Métricas CloudWatch exatas, 28 categorias de erro, o que cada uma prova |
+| [`glue/lakeformation-fgac.md`](glue/lakeformation-fgac.md) | Controle de acesso fino do Lake Formation — o que exige, o que bloqueia, realocação de worker, recorte de Iceberg |
 
 ### Amazon EMR
 | Arquivo | Conteúdo |
@@ -50,6 +51,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 |---|---|
 | [`storage/parquet-layout.md`](storage/parquet-layout.md) | Row group, page, dictionary, estatísticas, small files, listing S3 |
 | [`storage/iceberg-performance.md`](storage/iceberg-performance.md) | Data/delete files, manifests, snapshots, partition spec, sort order, manutenção |
+| [`storage/iceberg-v3.md`](storage/iceberg-v3.md) | Iceberg 1.11.0 e o formato v3, com **feature da spec separada de suporte da engine**: tipos novos, default de coluna, transforms multi-argumento, row lineage, deletion vectors; piso de Java 17 e Spark 3.4 deprecado; e as limitações declaradas pela AWS no Glue 6.0 — incluindo `Cannot read unsupported version 3` no Athena |
 | [`iceberg-diagnostics.sql`](iceberg-diagnostics.sql) | Queries de metadata tables |
 
 ### Validação de dados
@@ -97,3 +99,18 @@ Duas convenções do rodapé, e as duas têm razão medida: o bloco é o heading
 Sem rede: `python scripts/refresh_knowledge.py --update --offline` alinha o conjunto do lock (entra fonte nova sem hash, sai fonte que ninguém cita mais) sem carimbar conferência nenhuma.
 
 Conhecimento aqui **não substitui** a documentação do runtime real. Quando o job em análise contradiz esta base, o runtime ganha e a base é corrigida.
+ 
+## Engenharia agentica 
+agentic-engineering.md - contratos, autonomia, memoria e avaliacao 
+token-economy.md - reducao de contexto, cache, deduplicacao e metricas 
+tool-specialization-matrix.md - especializacao, ferramentas e escalonamento
+model-selection-observability.md - selecao adaptativa de modelos, traces opcionais e avisos de tokens
+## Bases da plataforma e especialidades
+
+- [data-platform-architecture.md](data-platform-architecture.md) - arquitetura, dominios, contratos, governanca e tradeoffs.
+- [airflow-pipelines.md](airflow-pipelines.md) - DAGs, idempotencia, particoes, retries e backfill.
+- [iceberg-parquet-s3.md](iceberg-parquet-s3.md) - tabelas, layout colunar, S3, lifecycle e custo.
+- [terraform-data-platform.md](terraform-data-platform.md) - state, plan, IAM, dependencias, drift e rollback.
+- [graphs-neptune-dynamodb-athena.md](graphs-neptune-dynamodb-athena.md) - grafos, Neptune, DynamoDB, Athena e conectores.
+- [agent-creation.md](agent-creation.md) - contratos, loops, handoffs, avaliacao e economia de tokens.
+- [domain-tool-matrix.md](domain-tool-matrix.md) - roteamento por dominio, evidencias e handoffs.

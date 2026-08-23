@@ -1,6 +1,6 @@
 ---
 name: iceberg-performance-engineer
-description: Use quando o gargalo estiver em tabelas Apache Iceberg no Glue Data Catalog e S3 — small files, delete files, snapshots, manifests, metadata planning, partition spec, sort order, writes e manutenção.
+description: Gargalo em tabelas Apache Iceberg no Glue Data Catalog e S3 - small files, delete files, snapshots, manifests, metadata planning, partition spec, sort order, writes, manutencao.
 skills:
   - optimize-iceberg-table
   - optimize-parquet-layout

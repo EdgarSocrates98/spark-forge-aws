@@ -88,7 +88,42 @@ class TestProvenance:
 
         rules = load_catalog()
         assert len(rules) >= 48, f"catalogo embarcado com {len(rules)} regras"
-        assert not [r for r in rules if r.get("blocked_on")]
+
+        # A linha original aqui era `assert not [r for r in rules if
+        # r.get("blocked_on")]` -- nenhuma regra bloqueada podia sobreviver ao
+        # empacotamento. Isso nao era o CONTRATO do campo, era o estado
+        # corrente no dia em que a linha foi escrita: o catalogo tinha zero
+        # regras `blocked_on` (a Fase 6b Task 7 introduziu a primeira,
+        # SF-MIG-003). O campo em si e suportado pelo loader
+        # (`sparkforge/rules/loader.py::_REQUIRED`, `_validate_executability`)
+        # e pelo motor (`sparkforge/rules/engine.py::judge`, que pula a regra
+        # ANTES de olhar os facts) desde muito antes desta fase; e
+        # `STATUS.md` rastreia a contagem de regras bloqueadas como numero
+        # MEDIDO na tabela de estado atual, nao como algo que devesse ser
+        # zero. Proibir `blocked_on` no artefato publicado bania do pacote a
+        # unica forma que este catalogo tem de declarar "sei o que falta
+        # verificar e nao vou fingir que verifiquei" -- exatamente o que a
+        # auditoria de 11 tasks antes desta fase existiu para tornar possivel
+        # (declarar o gap bate fingir que ele esta fechado).
+        #
+        # O que o piso anti-truncamento realmente precisa continua valendo
+        # sem proibir o mecanismo: uma regra `blocked_on` so e legitima se
+        # ela EXPLICA o que falta. `blocked_on: ""` ou `blocked_on: None` no
+        # artefato publicado e o mesmo truncamento grosseiro que o resto
+        # desta funcao pega -- um campo presente sem conteudo, indistinguivel
+        # de um campo que o empacotamento cortou pela metade. Essa checagem e
+        # self-contida (nao precisa de oraculo fora do artefato: o proprio
+        # dict da regra ja diz se `blocked_on` e uma string nao-vazia) e
+        # ainda falha num catalogo mangled pelo empacotamento.
+        for rule in rules:
+            blocked_on = rule.get("blocked_on")
+            if blocked_on is None:
+                continue
+            assert isinstance(blocked_on, str) and blocked_on.strip(), (
+                f"{rule.get('id')}: `blocked_on` presente mas vazio/nao-string no "
+                f"catalogo embarcado ({blocked_on!r}). Um `blocked_on` sem "
+                f"explicacao e indistinguivel de campo truncado pelo empacotamento."
+            )
 
     def test_knowledge_comes_from_inside_the_package(self):
         from sparkforge.knowledge_ref import knowledge_dir

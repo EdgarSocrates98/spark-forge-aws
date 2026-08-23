@@ -1,0 +1,12 @@
+area: SF-VALIDATION
+rules:
+- id: SF-VALIDATION-001
+  category: agentic-platform
+  title: Validation and evidence checks
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  executable: false
+  runtime_scope: {}
+  sources: []

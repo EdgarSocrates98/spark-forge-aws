@@ -1,0 +1,61 @@
+[
+  {
+    "rule_id": "SF-LF-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Controle de acesso fino do Lake Formation habilitado em job de streaming",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 15,
+      "symbol": "aws_glue_job.stream_fgac"
+    },
+    "evidence": [
+      "f_fdf460",
+      "f_de6e79"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=5.0"
+    },
+    "explanation": "A AWS nomeia Spark streaming entre as funcionalidades NÃO suportadas sob controle de acesso fino do Lake Formation, ao lado de RDD, de escrita com permissão concedida pelo Lake Formation e de controle de acesso para coluna aninhada. Um `aws_glue_job` com `command { name = \"gluestreaming\" }` mais `--enable-lakeformation-fine-grained-access` é exatamente essa combinação, declarada no Terraform. A severidade é P0 pela mesma razão de SF-LF-001 -- não é risco de degradação, é a documentação da AWS dizendo que essa combinação não é suportada, e o job foi escrito pedindo as duas. Some-se a isso que FGAC exige uma ÚNICA sessão Spark ao longo do job inteiro, o que já colide com boa parte do que um job de streaming faz. Ver `knowledge/glue/lakeformation-fgac.md` §1 e §2.",
+    "proposed_change": [
+      "Decidir entre FGAC e streaming, porque a AWS não oferece a combinação -- não existe argumento, versão de runtime nem configuração de sessão que reconcilie os dois.",
+      "Para manter a governança fina -- mover a leitura da tabela governada para um job BATCH sob FGAC, e deixar o job de streaming operando sobre a saída dele. O controle fino passa a valer na fronteira do batch, e a latência do pipeline passa a ser a do intervalo entre execuções.",
+      "Para manter o streaming -- remover `--enable-lakeformation-fine-grained-access` e controlar o acesso por permissão IAM sobre o caminho S3 do runtime role, registrando com quem responde pela governança qual granularidade se perdeu.",
+      "Conferir se o job é streaming de verdade. Um `gluestreaming` que roda uma vez por hora sobre um lote fechado é um batch com o comando errado, e nesse caso a correção é trocar o comando para `glueetl` -- o que resolve a incompatibilidade sem abrir mão de nada."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Trocar streaming por batch muda a LATÊNCIA do pipeline, e latência costuma ser requisito contratado com quem consome a saída. A mudança precisa ser acordada, não deduzida do achado.",
+      "Remover FGAC afrouxa o controle de acesso do job. Permissão de coluna ou de linha concedida no Lake Formation deixa de ser aplicada na leitura.",
+      "Trocar `gluestreaming` por `glueetl` num job que É streaming quebra o job -- o comando define o modelo de execução, não só o rótulo. Só vale depois de confirmar, no código, que não há `readStream`/`writeStream`."
+    ],
+    "tradeoffs": [
+      "A escolha é entre FGAC e streaming, e cada lado custa uma coisa diferente -- granularidade de governança de um lado, latência do outro. O catálogo não sabe qual dos dois é contratado, e por isso não escolhe.",
+      "Partir o pipeline em dois (batch governado + streaming sobre a saída) preserva os dois requisitos ao custo de um artefato intermediário, de uma etapa a mais para manter, e do controle de acesso sobre esse intermediário -- que passa a ser o elo mais fraco da cadeia."
+    ],
+    "validation": [
+      "Job roda de ponta a ponta no runtime alvo, sobre dado real. Submissão bem-sucedida não é validação -- a submissão não exercita o caminho de leitura governado.",
+      "Contagem total de linhas por janela e contagem por chave comparadas com a contagem esperada na origem, para provar que a troca de modelo de execução não perdeu nem duplicou registro.",
+      "Se FGAC foi mantido no lado batch -- consulta de controle com um principal que TEM e outro que NÃO TEM a permissão concedida, conferindo que a projeção de coluna e o filtro de linha diferem entre os dois.",
+      "Se FGAC foi removido -- inventário das permissões que existiam no Lake Formation sobre a tabela, com confirmação explícita de qual passou a ser coberta por IAM e qual deixou de ser coberta."
+    ],
+    "rollback": [
+      "Restaurar `default_arguments` e o bloco `command` anteriores e reaplicar. É rollback de configuração, não de dado.",
+      "Rollback que reponha os dois juntos devolve o job ao estado não suportado. Só é rollback válido o que remove um dos dois.",
+      "Se a mudança foi de streaming para batch, o rollback precisa considerar a lacuna de janela entre o último micro-batch do streaming e a primeira execução do batch -- é ali que registro se perde, e é de dado, não de configuração."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html",
+        "retrieved": "2026-08-22"
+      }
+    ]
+  }
+]

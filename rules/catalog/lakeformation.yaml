@@ -1,0 +1,292 @@
+# Catálogo de regras — Lake Formation com controle de acesso fino (FGAC) em job Glue
+#
+# Depende do extrator de Terraform HCL (`sparkforge/facts/terraform.py`), que já
+# observa tudo o que as duas regras precisam. Não há capacidade nova nesta área:
+# os dois defeitos são combinações de atributos do MESMO `aws_glue_job`, e o
+# extrator já emite os três como `tf.attribute` — o parâmetro de FGAC e
+# `--extra-jars` sob `attrs.block: default_arguments`, o tipo de comando sob
+# `attrs.key: name` com `attrs.block: command`.
+#
+# POR QUE `runtime_scope` É `{glue: ">=5.0"}`
+#
+# FGAC em job Spark do Glue existe a partir do Glue 5.0. Abaixo dessa fronteira
+# o parâmetro `--enable-lakeformation-fine-grained-access` não tem efeito, e
+# acusar a combinação ali seria afirmar uma incompatibilidade com uma
+# funcionalidade que aquele runtime não oferece. A guarda é por versão de GLUE, e
+# não de Spark, porque quem empacota FGAC no job é a AWS -- é infraestrutura de
+# Glue, não fronteira do Apache. Contraste com `spark4.yaml`, onde a fronteira é
+# do Apache e a guarda é por `spark`.
+#
+# A fronteira exata NÃO está declarada na fonte desta área
+# (`security-lf-enable-considerations.html` não cita versão de Glue nenhuma);
+# `knowledge/glue/lakeformation-fgac.md` §5 registra isso como a verificar, e a
+# guarda de 5.0 é a leitura conservadora — errar para o lado de calar em 4.0, onde
+# a funcionalidade não existe, em vez de acusar.
+#
+# O CASO CEGO DAS DUAS, declarado onde ele opera
+#
+# Valor com interpolação (`"--extra-jars" = "s3://${var.b}/x.jar"`) NÃO vira
+# `tf.attribute` -- vira `tf.unresolved` com `attrs.reason: interpolation`. O
+# `when` é uma conjunção plana (`rules/engine.py::_evaluate_when` não aninha
+# `any` dentro de `all`), então não há como escrever "declarou `--extra-jars`,
+# resolvido ou não" numa condição só. A consequência é falso negativo: um job com
+# FGAC e `--extra-jars` interpolado fica calado. É a troca deliberada -- o
+# extrator já reporta o `tf.unresolved` ao operador como ponto cego, então o
+# eixo não desaparece do relatório, só não vira achado. A saída definitiva seria
+# um kind `tf.extra_jars.unknown` no extrator, no molde de
+# `tf.observability.unknown`, e ela não foi feita nesta fase.
+
+catalog_version: 1
+schema_version: 1
+area: SF-LF
+retrieved: 2026-08-22
+
+rules:
+
+  # `same_subject: true` é o que separa esta regra de um gerador de acusação
+  # falsa. Um `.tf` com dois jobs -- um com FGAC e sem JAR, outro com JAR e sem
+  # FGAC -- tem as DUAS condições satisfeitas no arquivo, e os dois jobs estão
+  # corretos. Sem o campo, o motor casaria cruzando os dois e acusaria em P0
+  # configuração que a AWS suporta. É o defeito que a §`same_subject` de
+  # `rules/catalog/README.md` descreve, e `tests/test_lakeformation_rules.py`
+  # o mede nos dois sentidos -- prova que a regra fica calada, e prova que uma
+  # cópia do catálogo SEM `same_subject` acusa.
+  #
+  # A âncora é `tf.attribute` e não `tf.resource` porque as duas condições são
+  # atributos, e o subject de todo `tf.attribute` de um job é o mesmo
+  # (`aws_glue_job.<nome>`) -- o grupo do subject já é o job. Mesma forma de
+  # SF-GLUE-001 e SF-GLUE-003.
+  - id: SF-LF-001
+    category: lakeformation-fgac
+    title: JAR adicional declarado em job com controle de acesso fino do Lake Formation
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where:
+            attrs.key: "--enable-lakeformation-fine-grained-access"
+            attrs.value: "true"
+            attrs.block: default_arguments
+        # `expr` e nao `where` porque `where` so compara igualdade, e o que
+        # precisa ser dito aqui e uma DESIGUALDADE. `"--extra-jars" = ""` e
+        # HCL valido e produz `tf.attribute` com `value: ""` -- argumento
+        # declarado que nao fornece JAR nenhum. Sem este filtro a regra
+        # acusaria em P0 um job que nao pede nada, que e exatamente a classe de
+        # falso positivo que `same_subject` existe para evitar do outro lado.
+        - fact: tf.attribute
+          where:
+            attrs.key: "--extra-jars"
+            attrs.block: default_arguments
+            attrs.present: true
+          expr: 'attrs.value != ""'
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      Sob controle de acesso fino do Lake Formation, a AWS BLOQUEIA o
+      fornecimento de JAR adicional para extensão do Spark, conector ou
+      metastore. O bloqueio não é lacuna de roadmap -- a documentação declara
+      que ele existe para preservar o isolamento completo do system driver, o
+      mesmo motivo que bloqueia UDT, HiveUDF, função com classe customizada,
+      data source customizado e `ANALYZE TABLE`. Um job que declara
+      `--enable-lakeformation-fine-grained-access` E `--extra-jars` está pedindo
+      duas coisas que a AWS declara incompatíveis, e isso é visível no Terraform
+      antes de qualquer execução. A severidade é P0 porque não é risco nem
+      degradação -- é configuração declarada bloqueada, e o que acontece com ela
+      não é escolha de quem escreveu o Terraform. Ver
+      `knowledge/glue/lakeformation-fgac.md` §2.
+    proposed_change:
+      - >-
+        Decidir qual das duas fica, porque não existe meio-termo de configuração
+        -- a AWS não oferece um modo de FGAC que aceite JAR adicional, e nenhum
+        ajuste de argumento reconcilia os dois. Ou o job mantém FGAC e perde a
+        dependência, ou mantém a dependência e perde FGAC.
+      - >-
+        Para manter FGAC -- reescrever em Spark SQL nativo ou em API do
+        DataFrame o que o JAR fazia, e remover `--extra-jars`. Vale quando o JAR
+        é um conector para formato que o runtime já lê nativamente, ou uma
+        biblioteca de utilidade pequena.
+      - >-
+        Para manter a dependência -- remover
+        `--enable-lakeformation-fine-grained-access` e mover o controle de
+        acesso para o mecanismo que sobra, que é permissão IAM sobre o caminho
+        S3 do runtime role. É controle mais grosso, e a diferença precisa ser
+        registrada com quem responde pela governança, não absorvida em silêncio.
+      - >-
+        Conferir o classpath inteiro na mesma passada, e não só o JAR que
+        motivou o achado -- `--extra-jars` costuma carregar mais de um artefato,
+        e cada um é uma decisão separada de reescrever ou abandonar.
+    risks:
+      - >-
+        Remover `--enable-lakeformation-fine-grained-access` para manter o JAR
+        AFROUXA o controle de acesso do job. Se havia permissão de coluna ou de
+        linha concedida no Lake Formation contando com FGAC, ela deixa de ser
+        aplicada na leitura, e o job passa a ler o que o runtime role puder ler.
+      - >-
+        Reescrever sem o JAR muda o caminho de leitura ou de escrita, e com ele
+        o tratamento de tipo, de nulo e de encoding que a biblioteca fazia. A
+        saída pode mudar de valor sem levantar erro.
+      - >-
+        Sob FGAC a escrita continua usando permissão IAM do runtime role, e não
+        a concedida no Lake Formation. Quem remove FGAC esperando "perder o
+        controle de escrita" está removendo algo que nunca controlou a escrita
+        -- e quem o mantém esperando que ele cubra escrita está errado sobre
+        metade do modelo.
+    tradeoffs:
+      - >-
+        Não há troca de configuração aqui, e é isso que torna a decisão
+        arquitetural em vez de operacional. A escolha é entre FGAC e a
+        dependência, e ela custa desenvolvimento (reescrever) de um lado e
+        granularidade de governança do outro.
+      - >-
+        Separar o job em dois -- um sob FGAC lendo a tabela governada, outro sem
+        FGAC usando o JAR sobre a saída intermediária -- preserva os dois, ao
+        custo de uma etapa a mais, de um artefato intermediário e do controle de
+        acesso sobre ele. Vale quando a tabela governada é a entrada e o JAR
+        atua depois; não vale quando o JAR é o próprio leitor da tabela.
+    validation:
+      - >-
+        Job roda de PONTA A PONTA no runtime alvo, sobre dado real, exercitando
+        o caminho de código que usava o JAR. Submissão bem-sucedida não é
+        validação -- ela não carrega classe nenhuma.
+      - >-
+        Contagem total de linhas, contagem por chave e schema idênticos aos do
+        run anterior sobre o mesmo lote de entrada, para separar "roda" de "faz
+        a mesma coisa".
+      - >-
+        Se FGAC foi mantido -- consulta de controle com um principal que TEM e
+        outro que NÃO TEM a permissão concedida no Lake Formation, conferindo
+        que a projeção de coluna e o filtro de linha diferem entre os dois. Sem
+        esse par, "FGAC está ligado" é uma afirmação sobre o argumento, não
+        sobre o efeito.
+      - >-
+        Se FGAC foi removido -- inventário das permissões que existiam no Lake
+        Formation sobre a tabela, e confirmação explícita de que o novo controle
+        por IAM cobre cada uma, ou registro de qual deixou de ser coberta.
+    rollback:
+      - >-
+        Restaurar os `default_arguments` anteriores e reaplicar. É rollback de
+        configuração, não de dado -- mas a saída produzida pelo run com o
+        caminho novo precisa ser descartada ou reconciliada antes, se houve
+        divergência de valor.
+      - >-
+        Rollback que reponha `--extra-jars` COM FGAC ligado devolve o job ao
+        estado bloqueado. Só é rollback válido o que remove um dos dois.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-08-22}
+
+  # O filtro `attrs.block: command` NÃO é decoração. `attrs.key: name` existe
+  # DUAS vezes por `aws_glue_job` -- uma na raiz (o nome do job) e outra dentro
+  # do bloco `command` (o tipo de comando) --, e as duas chegam ao motor como
+  # `tf.attribute` com a mesma chave. Sem o filtro de bloco, um job de BATCH
+  # chamado `gluestreaming` casaria a condição e receberia um P0 por uma
+  # incompatibilidade que ele não tem. A forma dos três atributos foi MEDIDA
+  # contra o extrator e está fixada em
+  # `tests/test_lakeformation_rules.py::TestTheShapeOfTheFactsTheRulesMatch`,
+  # para que uma mudança de forma quebre um teste em vez de calar a regra.
+  - id: SF-LF-002
+    category: lakeformation-fgac
+    title: Controle de acesso fino do Lake Formation habilitado em job de streaming
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where:
+            attrs.key: "--enable-lakeformation-fine-grained-access"
+            attrs.value: "true"
+            attrs.block: default_arguments
+        - fact: tf.attribute
+          where:
+            attrs.key: name
+            attrs.value: gluestreaming
+            attrs.block: command
+    status: structural
+    severity_default: P0
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A AWS nomeia Spark streaming entre as funcionalidades NÃO suportadas sob
+      controle de acesso fino do Lake Formation, ao lado de RDD, de escrita com
+      permissão concedida pelo Lake Formation e de controle de acesso para
+      coluna aninhada. Um `aws_glue_job` com `command { name = "gluestreaming" }`
+      mais `--enable-lakeformation-fine-grained-access` é exatamente essa
+      combinação, declarada no Terraform. A severidade é P0 pela mesma razão de
+      SF-LF-001 -- não é risco de degradação, é a documentação da AWS dizendo
+      que essa combinação não é suportada, e o job foi escrito pedindo as duas.
+      Some-se a isso que FGAC exige uma ÚNICA sessão Spark ao longo do job
+      inteiro, o que já colide com boa parte do que um job de streaming faz.
+      Ver `knowledge/glue/lakeformation-fgac.md` §1 e §2.
+    proposed_change:
+      - >-
+        Decidir entre FGAC e streaming, porque a AWS não oferece a combinação --
+        não existe argumento, versão de runtime nem configuração de sessão que
+        reconcilie os dois.
+      - >-
+        Para manter a governança fina -- mover a leitura da tabela governada
+        para um job BATCH sob FGAC, e deixar o job de streaming operando sobre a
+        saída dele. O controle fino passa a valer na fronteira do batch, e a
+        latência do pipeline passa a ser a do intervalo entre execuções.
+      - >-
+        Para manter o streaming -- remover
+        `--enable-lakeformation-fine-grained-access` e controlar o acesso por
+        permissão IAM sobre o caminho S3 do runtime role, registrando com quem
+        responde pela governança qual granularidade se perdeu.
+      - >-
+        Conferir se o job é streaming de verdade. Um `gluestreaming` que roda
+        uma vez por hora sobre um lote fechado é um batch com o comando errado,
+        e nesse caso a correção é trocar o comando para `glueetl` -- o que
+        resolve a incompatibilidade sem abrir mão de nada.
+    risks:
+      - >-
+        Trocar streaming por batch muda a LATÊNCIA do pipeline, e latência
+        costuma ser requisito contratado com quem consome a saída. A mudança
+        precisa ser acordada, não deduzida do achado.
+      - >-
+        Remover FGAC afrouxa o controle de acesso do job. Permissão de coluna ou
+        de linha concedida no Lake Formation deixa de ser aplicada na leitura.
+      - >-
+        Trocar `gluestreaming` por `glueetl` num job que É streaming quebra o
+        job -- o comando define o modelo de execução, não só o rótulo. Só vale
+        depois de confirmar, no código, que não há `readStream`/`writeStream`.
+    tradeoffs:
+      - >-
+        A escolha é entre FGAC e streaming, e cada lado custa uma coisa
+        diferente -- granularidade de governança de um lado, latência do outro.
+        O catálogo não sabe qual dos dois é contratado, e por isso não escolhe.
+      - >-
+        Partir o pipeline em dois (batch governado + streaming sobre a saída)
+        preserva os dois requisitos ao custo de um artefato intermediário, de
+        uma etapa a mais para manter, e do controle de acesso sobre esse
+        intermediário -- que passa a ser o elo mais fraco da cadeia.
+    validation:
+      - >-
+        Job roda de ponta a ponta no runtime alvo, sobre dado real. Submissão
+        bem-sucedida não é validação -- a submissão não exercita o caminho de
+        leitura governado.
+      - >-
+        Contagem total de linhas por janela e contagem por chave comparadas com
+        a contagem esperada na origem, para provar que a troca de modelo de
+        execução não perdeu nem duplicou registro.
+      - >-
+        Se FGAC foi mantido no lado batch -- consulta de controle com um
+        principal que TEM e outro que NÃO TEM a permissão concedida, conferindo
+        que a projeção de coluna e o filtro de linha diferem entre os dois.
+      - >-
+        Se FGAC foi removido -- inventário das permissões que existiam no Lake
+        Formation sobre a tabela, com confirmação explícita de qual passou a ser
+        coberta por IAM e qual deixou de ser coberta.
+    rollback:
+      - >-
+        Restaurar `default_arguments` e o bloco `command` anteriores e
+        reaplicar. É rollback de configuração, não de dado.
+      - >-
+        Rollback que reponha os dois juntos devolve o job ao estado não
+        suportado. Só é rollback válido o que remove um dos dois.
+      - >-
+        Se a mudança foi de streaming para batch, o rollback precisa considerar
+        a lacuna de janela entre o último micro-batch do streaming e a primeira
+        execução do batch -- é ali que registro se perde, e é de dado, não de
+        configuração.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html", retrieved: 2026-08-22}

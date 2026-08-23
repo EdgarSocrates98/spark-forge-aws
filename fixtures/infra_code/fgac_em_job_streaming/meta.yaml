@@ -1,0 +1,25 @@
+name: fgac_em_job_streaming
+proves: >
+  `command { name = "gluestreaming" }` junto com
+  `--enable-lakeformation-fine-grained-access` no MESMO `aws_glue_job`. A AWS
+  nomeia Spark streaming entre as funcionalidades NAO suportadas sob controle
+  de acesso fino do Lake Formation, entao ligar FGAC num job de streaming e
+  pedir duas coisas que a documentacao declara incompativeis. SF-LF-002
+  dispara em P0.
+  O segundo job e o par cruzado de SF-LF-001: `etl_com_jar_sem_fgac` tem
+  `--extra-jars` e NAO tem FGAC. Sem `same_subject`, o motor casaria o
+  parametro de FGAC do primeiro job com o `--extra-jars` do segundo e acusaria
+  em P0 dois jobs corretos. E o defeito que a secao `same_subject` de
+  `rules/catalog/README.md` descreve, medido em vez de suposto.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-LF-002

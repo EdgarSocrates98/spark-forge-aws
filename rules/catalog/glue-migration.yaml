@@ -1,0 +1,242 @@
+# Catálogo de regras — compatibilidade de migração entre versões de Glue
+# Depende do extrator `sparkforge/facts/migration.py` (Tasks 4–6 desta fase), que
+# observa sinais de migração no código-fonte sem julgar. Julgamento -- se um sinal é
+# bloqueante para uma versão-alvo -- pertence a esta regra, com `runtime_scope`
+# declarado quando (e só quando) a fronteira de versão está confirmada na matriz de
+# `knowledge/glue/runtime-matrix.yaml`.
+#
+# GLUE 6.0 ENTROU NA MATRIZ NA TASK 11 desta fase, confirmado em 2026-08-21 contra
+# `migrating-version-60.html` e `release-notes.html`, as duas oficiais. Isso destrava
+# SF-MIG-003: `migrating-version-60.html` afirma, textualmente, que "ANSI mode is
+# enabled by default in Spark 4.1" -- e Glue 5.1 roda Spark 3.5.6, onde ANSI é
+# default OFF. A fronteira é Glue 6.0, e agora tem fonte e data para sustentar
+# `runtime_scope: {glue: ">=6.0"}` sem adivinhar. As três regras da área têm
+# `runtime_scope` real: SF-MIG-001 e SF-MIG-002 desde a Task 7 (Glue 5.0), SF-MIG-003
+# desde a Task 11 (Glue 6.0).
+
+catalog_version: 1
+schema_version: 1
+area: SF-MIG
+retrieved: 2026-08-21
+
+rules:
+
+  - id: SF-MIG-001
+    category: glue-migration
+    title: Import do AWS SDK v1 sobrevivendo em runtime que não o carrega mais
+    requires_facts: [mig.sdk_import]
+    when:
+      all:
+        - fact: mig.sdk_import
+          where: {attrs.generation: "v1"}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A partir do Glue 5.0 o ambiente gerenciado muda de Java 8 para Java 17 e o
+      classpath deixa de garantir o AWS SDK para Java v1 (`com.amazonaws.*`) ao lado
+      do v2. Um import v1 que hoje resolve porque o JAR ainda está no classpath do
+      Glue 4.0 não falha na submissão do job -- falha em runtime, com
+      `NoClassDefFoundError`, na primeira chamada ao SDK v1 depois de minutos de
+      processamento. É o pior tipo de quebra de migração: passa em todo smoke test
+      que não exercita aquele caminho de código, e aparece como falha de produção,
+      não de deploy.
+    proposed_change:
+      - Migrar o import para `software.amazon.awssdk.*` (SDK v2), reescrevendo o
+        cliente e o padrão de chamada -- a API v2 não é um drop-in replacement.
+      - Se o import vem de um conector ou UDF de terceiros, confirmar com o mantenedor
+        se há build compatível com SDK v2 antes de migrar o job.
+    risks:
+      - SDK v2 muda modelo de credenciais, builders e exceptions; reescrita mecânica
+        sem revisão de comportamento pode trocar um erro silencioso por outro.
+    tradeoffs:
+      - Reescrever para v2 custa tempo de desenvolvimento e teste; adiar a migração
+        custa um job que passa hoje e quebra em runtime real assim que o Glue 5.0
+        substitui o classpath do 4.0 -- não é uma troca com lado gratuito.
+    validation:
+      - Job executa sem `NoClassDefFoundError` num run completo no runtime alvo, não
+        só na submissão.
+      - Grep por `com.amazonaws` no código e nos JARs de `--extra-jars` retorna vazio.
+    rollback: [Reverter o import e o cliente para SDK v1, e manter o job no Glue 4.0 até a reescrita estar pronta.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html", retrieved: 2026-07-29}
+      - {url: "https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1", retrieved: 2026-07-29}
+
+  - id: SF-MIG-002
+    category: glue-migration
+    title: Configuração exclusiva do EMRFS sobrevivendo em runtime S3A
+    requires_facts: [mig.emrfs_config]
+    when:
+      all:
+        - fact: mig.emrfs_config
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {glue: ">=5.0"}
+    explanation: >
+      A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O
+      S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption`
+      ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é
+      silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e
+      quem lê o job vê uma configuração que parece ativa (consistência forçada,
+      SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não
+      está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura
+      inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.
+    proposed_change:
+      - Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente
+        S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.
+      - Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A,
+        como consistência forçada, revisar se a garantia ainda é necessária -- o S3A
+        sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum.
+    risks:
+      - Remover a chave sem verificar o equivalente S3A pode desligar de fato uma
+        configuração de segurança (SSE) que só parecia ativa antes.
+    tradeoffs:
+      - Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave
+        morta no código custa clareza para quem vier depois e assumir uma garantia
+        (criptografia, retry) que não existe mais.
+    validation:
+      - Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.
+      - Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via
+        `aws s3api head-object`.
+    rollback: [Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime.]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html", retrieved: 2026-07-29}
+
+  # DESBLOQUEADA NA TASK 11: a fronteira de versao que faltava confirmar contra
+  # fonte oficial agora tem fonte e data. `migrating-version-60.html` (Apendice de
+  # migracao do Glue 6.0, retrieved 2026-08-21) afirma, textualmente: "ANSI mode is
+  # enabled by default in Spark 4.1. Operations that previously returned NULL on
+  # overflow (for example, integer arithmetic, cast operations) now throw
+  # exceptions." Glue 5.1 roda Spark 3.5.6, onde ANSI e default OFF -- a fronteira e
+  # Glue 6.0, e `knowledge/glue/runtime-matrix.yaml` ja tem a linha dele. `mig.ansi_risk`
+  # ja tinha extrator (Task 6); o que faltava era so a versao, e agora existe.
+  - id: SF-MIG-003
+    category: glue-migration
+    title: Cast sem guarda sob ANSI mode
+    requires_facts: [mig.ansi_risk]
+    when:
+      all:
+        - fact: mig.ansi_risk
+          where: {attrs.form: "cast"}
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {glue: ">=6.0"}
+    explanation: >
+      A partir do Glue 6.0 (Spark 4.1.1), ANSI mode vem ligado por padrão: um
+      `cast(` para um tipo incompatível lança erro em vez de devolver `NULL`
+      (fonte: migrating-version-60.html). Um job escrito contra o comportamento
+      pré-ANSI, onde `cast` inválido virava `NULL` silenciosamente, muda de
+      resultado ou passa a falhar na mesma linha que hoje processa sem reclamar --
+      e a mudança só aparece quando o job roda no runtime com ANSI habilitado, não
+      antes. `try_cast(` preserva o comportamento antigo (devolve `NULL` em vez de
+      lançar) e é a forma guardada que este fact distingue de `cast(` puro.
+    proposed_change:
+      - Trocar `cast(` por `try_cast(` onde o `NULL` silencioso é o comportamento
+        esperado e documentado, preservando a semântica atual.
+      - Onde o valor inválido é dado sujo que deveria ser corrigido, não escondido,
+        tratar a origem do dado em vez de guardar o cast -- ANSI está expondo um
+        problema real, não criando um.
+    risks:
+      - Trocar todo `cast` por `try_cast` sem revisar caso a caso troca uma falha
+        visível (erro) por uma silenciosa (NULL) na direção oposta da que ANSI
+        corrige, mascarando dado inválido em vez de tratá-lo.
+    tradeoffs:
+      - Desabilitar ANSI globalmente (`spark.sql.ansi.enabled=false`) evita o
+        trabalho de revisar cada cast, mas mascara o problema no nível errado e adia
+        a descoberta para produção, no runtime que forçar ANSI por padrão sem opção
+        de desligar. `try_cast` preserva o comportamento antigo mas esconde o mesmo
+        dado sujo que o ANSI existiria para revelar -- nenhuma das duas é grátis.
+    validation:
+      - Contagem de linhas com `NULL` na coluna do cast antes e depois da mudança de
+        runtime, para o mesmo lote de entrada -- divergência indica cast que estava
+        mascarando dado inválido.
+      - Job completo sob ANSI mode habilitado, num ambiente de teste, sem exceção de
+        cast não tratada.
+    rollback: ["Reverter `try_cast` para `cast` e, se necessário, desabilitar ANSI mode explicitamente enquanto a correção de dado é desenhada."]
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html", retrieved: 2026-08-21}
+
+  # SF-MIG-004 NÃO é guardada por versão, e isso é deliberado. As três regras
+  # acima declaram `runtime_scope` porque a afirmação delas só é verdadeira
+  # depois de cruzar uma fronteira de versão confirmada (SDK v1 sai do
+  # classpath no Glue 5.0; ANSI liga por padrão no Glue 6.0). Esta afirma outra
+  # coisa: que o diff MUDOU `glue_version`. Isso é verdade para 3.0->4.0 e para
+  # 5.1->6.0 igualmente, e não depende de nenhum runtime ter sido detectado --
+  # a versão de origem e a de destino vêm do próprio fact. O gate correto aqui
+  # é `requires_facts: [tf.attribute]`, exatamente como o critério de
+  # `AREA_MAY_VANISH_WHEN` em `tests/test_rule_scope_by_nature.py` manda:
+  # `runtime_scope` guarda VERSÃO, e o que gateia por natureza do artefato é
+  # `requires_facts`.
+  #
+  # Consequência assumida: a área SF-MIG deixa de sumir inteira num runtime sem
+  # Glue -- a exceção dela saiu de `AREA_MAY_VANISH_WHEN` no mesmo commit. Num
+  # job EMR a regra é AVALIADA e não casa, porque não existe `tf.attribute` com
+  # `key: glue_version` para casar. "Avaliada e não casou" é informação
+  # diferente de "área inteira pulada", e é a informação certa.
+  #
+  # `expr` exige `previous_value` diferente de `value`, e não só
+  # `changed: true`. Um `aws_glue_job` NOVO no PR também nasce com
+  # `changed: true` (e `previously_absent: true`), e chamar a criação de um job
+  # de "migração de runtime detectada" mandaria o revisor procurar uma migração
+  # que não existe. `previous_value` só aparece quando o atributo existia antes
+  # com outro valor -- caminho ausente vira `ExprError` no avaliador, que é
+  # `False`, e o job novo não casa.
+  - id: SF-MIG-004
+    category: glue-migration
+    title: Mudança de `glue_version` no Terraform é migração de runtime, não ajuste de configuração
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          # `block: root` porque `glue_version` é atributo de raiz de
+          # `aws_glue_job`; casar em qualquer bloco aceitaria uma chave de mesmo
+          # nome dentro de `command {}` ou `default_arguments {}` no futuro.
+          where: {attrs.key: "glue_version", attrs.block: "root"}
+          expr: "attrs.changed == True and attrs.previous_value != attrs.value"
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Uma linha de `glue_version` alterada num `aws_glue_job` tem o tamanho de um
+      ajuste de configuração no diff e o efeito de uma troca inteira de runtime:
+      Spark, Python, Scala, Java, sistema de arquivos S3 e a biblioteca Iceberg
+      mudam juntos, e cada degrau entre a versão antiga e a nova acumula os
+      breaking changes do anterior. `knowledge/glue/runtime-matrix.yaml` registra
+      quais componentes mudam em cada versão, com fonte e data. Revisar essa linha
+      como configuração é o modo de falha que esta regra existe para impedir: o PR
+      é aprovado em minutos, e a quebra aparece no primeiro run real -- import de
+      SDK que não resolve mais, `cast` que passa a lançar sob ANSI, chave `fs.s3.*`
+      que virou inerte. Nenhum desses aparece no `terraform plan`.
+      A severidade é P2 porque a mudança não é um defeito em si: é uma migração que
+      precisa de avaliação. O que seria defeito é tratá-la como se não fosse.
+    proposed_change:
+      - Rodar a avaliação de migração para o par (`previous_value` -> `value`)
+        sobre o código do job, não só sobre o Terraform -- `sparkforge.migration.assessment.assess`
+        expande o caminho em degraus e aplica o catálogo `SF-MIG` em cada um.
+      - Tratar os gates de dados, performance e custo dessa avaliação como trabalho
+        do PR, não como formalidade -- eles nascem `BLOCKED` porque exigem execução
+        real do job nos dois runtimes.
+      - Versionar a definição antiga do job (script e Terraform) antes do merge, para
+        que o rollback seja uma reversão de commit e não uma reconstrução.
+    risks:
+      - Aprovar a mudança de versão sem avaliar o código do job troca uma quebra
+        visível no deploy por uma quebra silenciosa em runtime, depois de minutos de
+        processamento.
+      - Migrar direto para a versão mais nova sem comparar com o degrau intermediário
+        pode ser a decisão certa e pode não ser -- o catálogo não decide isso, quem
+        conhece os consumidores do job decide.
+    tradeoffs:
+      - Exigir avaliação completa a cada mudança de `glue_version` atrasa PRs de
+        infraestrutura que talvez não mexam em nada sensível; não exigir aceita que a
+        primeira notícia da incompatibilidade venha de produção.
+    validation:
+      - Avaliação de migração executada para o par de versões do diff, com os findings
+        do catálogo `SF-MIG` sobre o código do job anexados ao PR.
+      - Job roda de ponta a ponta no runtime novo, sobre a mesma entrada, e a saída
+        reconcilia com a do runtime antigo em contagem, schema e agregados de negócio.
+    rollback:
+      - Reverter o `glue_version` no Terraform para o valor anterior e reaplicar; a
+        definição do job é control plane e volta sem tocar em dado.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html", retrieved: 2026-07-29}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html", retrieved: 2026-08-21}

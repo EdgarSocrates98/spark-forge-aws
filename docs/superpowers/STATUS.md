@@ -1,7 +1,19 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-05
-**Commit de referência:** fechamento da branch `feat/preservacao-semantica`
+**Atualizado em:** 2026-08-23
+**Commit de referência:** `433598c`, fechamento do harness v0.1 (fases I1 a I3)
+sobre a branch `feat/fase6b-sf-cfg` — três invariantes escritos como teste, sem
+módulo novo; a última fase teve duas revisões independentes que a reprovaram e
+expuseram sete tools cuja anotação mentia. Ver a seção
+*Harness v0.1* abaixo.
+Fechamentos anteriores: eixo Glue, fases G1 a H6 (2026-08-23); auditoria de
+lastro do vNext em `46b1187` (2026-08-21), que classificou as 184 alegações que
+`a5b9e96` publicou em `docs/vnext/`; expansão agêntica v2 (2026-08-18);
+vendorização do ecossistema caveman (2026-08-07) e `feat/preservacao-semantica`
+(2026-08-05).
+**Nenhuma regra executável, extrator ou fact de diagnóstico mudou na expansão
+agêntica v2** — os números de detecção abaixo são os mesmos de
+`feat/preservacao-semantica`; o que mudou foi o denominador do catálogo.
 **Versão do pacote:** `0.5.0` — consistente em `pyproject.toml`, `manifest.json`,
 `.claude-plugin/plugin.json` e `sparkforge.__version__`. A concordância entre as
 quatro é verificada por
@@ -29,37 +41,39 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **4723** passando, 5 skipped | `python -m pytest -q` |
+| Testes | **6361** passando, 5 skipped, medido em `433598c` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
-| Regras com eixo de resultado no `validation` | **62 de 81** — as 19 restantes são segredo, log, capacidade, detecção de runtime e metodologia | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **9 de 81** — 8 guardadas por `glue`, 1 por faixa de Spark (`SF-GRAPH-002`) | `load_catalog()` |
-| Extratores de facts | **19** | `sparkforge/facts/*.py` |
-| Fact kinds distintos emitidos | **118** | união de `EMITTED_KINDS` |
-| Regras de diagnóstico | **81** | `load_catalog()` |
+| Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
+| Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
+| Extratores de facts | **20** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 24 `.py`, e `runtime_matrix.py`, `pricing.py`, `secrets.py` e `__init__.py` nao emitem kind — os dois primeiros sao carregadores de conhecimento, nao extratores |
+| Fact kinds distintos emitidos | **132** | união de `EMITTED_KINDS`; o kind novo é `bench.runtime_pair`, da fase H5 |
+| Regras de diagnóstico | **130**, sendo **58 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **81 de 81** | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **26** (`ROUTE-001`…`ROUTE-016`, `AGENT-001`…`AGENT-010`) | `rules/catalog/routing.yaml` |
-| Tools MCP | **41** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **41 de 41** | `tests/test_agent_coverage.py` |
+| Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
+| Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
+| Tools MCP | **44** | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **44 de 44** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
-| Coordenadores | **8** | `agents/*.md` |
+| Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Skills | **20** | `skills/*/SKILL.md` |
-| Skills que declaram despacho | **12 de 20**, sendo **2** com `agent:` (3 têm declarante único; `diagnose-oom` fica fora porque o único é o orquestrador) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
+| Skills | **44** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6) | `skills/*/SKILL.md` |
+| Skills que declaram despacho | **21 de 44**, sendo **8** com `agent:` (declarante único; `diagnose-oom` fica fora porque o único é o orquestrador). As três despacháveis da fase H6 declaram a fronteira que o gate cobra; `iceberg-v3-readiness` é a quarta e **não** é despachável, porque exige o inventário de consumidores | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **164** em 21 domínios | `fixtures/` |
+| Fixtures golden | **194** em 23 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **131** (123 móveis, 8 fixas) — 61 citadas por regra, 126 por `knowledge/`, 56 pelas duas | `knowledge/sources.lock.json` |
+| Fontes oficiais vigiadas | **143** (131 móveis, 12 fixas) — 69 citadas por regra, 135 por `knowledge/`, 61 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
+| Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
+| Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
 
 Regras por área: SF-PY 12, SF-EMR 9, SF-EMRS 6, SF-GLUE 6, SF-UI 6, SF-ATH 5,
 SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-GRAPH 4,
 SF-PLAN 4, SF-CG 1.
 
-Fixtures por domínio: `emr_serverless` 19, `graph` 19, `pyspark` 17, `emr` 14, `dq` 13,
-`funcval` 10, `iceberg` 9, `plan` 7, `runtime` 7, `s3` 7, `terraform` 7,
-`bench` 6, `fusion` 5, `eventlog` 4, `sql` 4, `athena` 3, `callgraph` 3,
-`catalog` 3, `consumers` 3, `infra_code` 2, `tfdiff` 2.
+Fixtures por domínio: `graph` 25, `emr_serverless` 19, `pyspark` 17, `emr` 14, `dq` 13,
+`funcval` 10, `iceberg` 9, `terraform` 8, `plan` 7, `runtime` 7, `s3` 7, `bench` 6,
+`fusion` 5, `eventlog` 4, `sql` 4, `athena` 3, `callgraph` 3, `catalog` 3,
+`consumers` 3, `infra_code` 2, `tfdiff` 2.
 
 ---
 
@@ -1947,6 +1961,1264 @@ O erro caro seria apresentar as três camadas com a mesma cara.
     roadmap, e o inventário registra a ausência em vez de fingir uma posição
 13. **Trilha paralela** — mecanismo de recomendação com garantia declarada, quando a base de restrições estiver maior. As frentes sem artefato da especialização em bancos — escolha de banco, modelagem de grafo, boas práticas genéricas — entram por aqui, e até lá viram restrição auditável em `knowledge/`
 
+## Fase 6b — `SF-CFG`, configuração de Spark como coisa lida — **EM ANDAMENTO** (2026-08-07)
+
+A área declarada no `README.md` do catálogo desde o primeiro commit e nunca
+escrita. **Task 1 de 6 fechada**: os sinais. Área de regra, `cfg.effective`
+derivado, fixtures da área, rotas e perfis seguem abertos — e esta seção diz
+isso em vez de sugerir fase concluída.
+
+**Decisão de desenho, tomada antes do código.** Quando as camadas de
+configuração discordam e o event log **não** está disponível, a área **falha
+fechada**: nenhum `cfg.effective` é inferido, sai um fato de conflito nomeando
+as camadas, e toda regra que dependa do efetivo simplesmente não dispara. A
+alternativa — aplicar a precedência documentada do Spark e marcar
+`provenance: inferred` — cobriria mais casos e faria regra disparar sobre valor
+que ninguém mediu. Mesmo princípio do `emr.configuration.unapplied`, que já
+existia: qualidade da evidência é fato, não nota de rodapé.
+
+| Sinal | Onde | Estado |
+|---|---|---|
+| `spark.conf_effective` | `facts/event_log.py` | **novo** — um fact por propriedade de `SparkListenerEnvironmentUpdate` |
+| `spark.conf_excluded` | idem | **novo** — conta por seção o que o extrator não desmontou |
+| `tf.spark_conf` | `facts/terraform.py` | **novo** — desmonta o `--conf` do Glue, que empacota N propriedades numa string |
+| `pyspark.conf_set` | `facts/pyspark_ast.py` | **corrigido** — de 1 para 4 formas |
+
+**O defeito que a auditoria do `pyspark.conf_set` achou, e ele estava no
+corpus.** O extrator só reconhecia `<algo>.conf.set(k, v)`. Medido: das quatro
+formas que aparecem em job real, **três não emitiam fact nenhum** — nem o fato,
+nem `pyspark.unresolved`. `SparkConf().set()`, `SparkSession.builder.config()` e
+`sc._conf.set()` sumiam, e "nenhum `conf_set` neste arquivo" era indistinguível
+de "o arquivo configura por uma forma que ninguém lê". Qualquer regra com
+condição `absent:` sobre uma chave seria vaziamente verdadeira.
+
+Duas causas, e a segunda é a interessante: o gate era
+`method == "set" and "conf" in methods`, e a detecção estava **depois** do guard
+de raiz — `builder.config(...).getOrCreate()` fica no meio da cadeia e era
+descartado inteiro. Movida para antes do guard, pelo mesmo argumento que já
+isenta read/write dele, escrito no comentário daquele bloco desde a Fase 1.
+
+A prova de que isso não era hipótese: a fixture `checkpoint_por_builder_config`,
+do corpus de grafo, **existe para exercitar exatamente essa forma** — configura
+`spark.checkpoint.dir` por `builder.config` — e o corpus era mudo sobre ela. Com
+a correção ela passou a produzir `SF-PY-012`, e o gate de fronteira
+`test_rules_graph_boundary.py` exigiu a resposta por escrito antes de aceitar a
+linha nova. A resposta está lá: não é invasão, é a área SF-PY sobre um job que
+também é job PySpark, com evidência ancorada na linha real.
+
+**Recorte declarado.** De `SparkListenerEnvironmentUpdate`, só `Spark
+Properties`. `System Properties` e `Classpath Entries` num `facts.json`
+commitado são superfície de informação sem contrapartida para tuning. O que
+ficou de fora é **contado** em `spark.conf_excluded`, por seção — exclusão
+contada, nunca silenciosa, como `opaque_caller_function_count`.
+
+**Limite herdado, registrado.** `spark.conf_effective` é o que o run **reportou**
+como suas propriedades, não uma medição independente do motor. O próprio
+`event_log.py` já argumentava isso para a versão de Spark, e por essa razão a
+versão nunca foi lida daí. Para configuração de tuning a distinção é menos
+grave — o valor reportado é o que o driver resolveu — mas ela não some, e vai na
+explicação da regra quando a área for escrita.
+
+**Dívida nova, com custo medido.** `sparkforge/facts/secrets.py` nasce como
+fonte única de redação de segredo em par chave/valor. `_looks_like_secret` está
+implementado em `emr_cluster.py`, `emr_serverless.py` e `terraform.py`, os dois
+primeiros anotando em comentário que repetem o terceiro. Configuração de Spark é
+onde credencial mais aparece — `spark.hadoop.fs.s3a.secret.key`, senha em URL de
+JDBC — e virar a quarta cópia seria drift em superfície de segurança. Os três
+existentes **não** foram migrados: cada um tem golden gravado, e regravar golden
+sem defeito é risco de semântica sem ganho medido. Consolidá-los é dívida, não
+esquecimento.
+
+**Contagem que estava errada, corrigida no caminho.** *Números correntes* dizia
+**164** fixtures golden com `graph` em 19. Medido: **171**, com `graph` em 25 —
+a Fase 6a acrescentou seis e o total não acompanhou. A linha da Task 1
+acrescentou a 171ª (`terraform/spark_conf_in_arguments`), criada porque o gate
+`test_every_kind_of_every_extractor_appears_in_some_golden` reprovou
+`tf.spark_conf` sem corpus que o produzisse.
+
+## Compatibilidade de migração Glue por par de versões (SF-MIG) — **CONCLUÍDA** (2026-08-21)
+
+Onze tasks (`docs/superpowers/plans/2026-08-21-glue-migration-compat.md`): a
+matriz de runtime saiu de `GLUE_MATRIX` compilado para
+`knowledge/glue/runtime-matrix.yaml`, com fonte e `retrieved` como qualquer
+outro fato externo; `sparkforge/migration/version_path.py` expande um par
+origem/alvo nos degraus intermediários; `sparkforge/facts/migration.py` emite
+oito kinds `mig.*` por observação pura; `rules/catalog/glue-migration.yaml`
+julga com `runtime_scope`; `sparkforge/migration/assessment.py` aplica o
+catálogo uma vez por degrau e agrega, com gates fail-closed para dado que só
+existe com execução real (dados, performance, custo, canary).
+
+**Task 11 fechou a última pergunta em aberto: onde fica a fronteira do Glue
+6.0.** Confirmado em 2026-08-21 contra `migrating-version-60.html` e
+`release-notes.html`, as duas oficiais — runtime Spark 4.1.1, Python 3.13,
+Scala 2.13.17, Java 17, Iceberg 1.11.0. `migrating-version-60.html` afirma,
+textualmente: "ANSI mode is enabled by default in Spark 4.1. Operations that
+previously returned NULL on overflow (for example, integer arithmetic, cast
+operations) now throw exceptions." Glue 5.1 roda Spark 3.5.6, onde ANSI é
+default OFF — a fronteira é Glue 6.0, não antes. Isso desbloqueou
+`SF-MIG-003` (cast sem guarda sob ANSI mode), que ficava `blocked_on` desde a
+Task 7 por falta exatamente dessa confirmação: trocou para
+`runtime_scope: {glue: ">=6.0"}` real, e o catálogo volta a ter **zero**
+regras `blocked_on` — o mesmo estado que valia antes da Task 7 introduzir
+SF-MIG. O par de fixtures `cast_sem_guarda` (Glue 5.0, silêncio por versão) /
+`cast_sem_guarda_ansi_default` (Glue 6.0, dispara em P1) prova as duas pontas
+no nível do golden; `TestRegraBloqueadaNuncaAparece` e o teste novo
+`test_sf_mig_003_dispara_no_degrau_que_cruza_glue_6_0` provam o mesmo no
+nível do assessment multi-degrau.
+
+**Dívida registrada, não dívida nova.** `sparkforge/migration/glue/analyzer.py`
+(`GlueMigrationAnalyzer`) é o analisador que a área SF-MIG substitui —
+correspondência de substring sem fonte, sem `runtime_scope`, sem procedência,
+com `target_runtime` default `"5.1"` fixado no código. A Task 11 mediu se ele
+ainda tem consumidor real antes de decidir: `TOKENSAVE_DISABLE_GREP_HOOK=1
+grep -rn "GlueMigrationAnalyzer\|analyze_script\|migration.glue" --include=*.py
+--include=*.yaml --include=*.json .` acha um fora do próprio teste e do
+re-export — `sparkforge/cli/forge.py:16,108-109`, o comando `cmd_migrate_glue`
+da CLI, que importa `GlueMigrationAnalyzer` e chama `analyzer.analyze_script(
+content, source_runtime=args.from_runtime, target_runtime=args.to_runtime)`.
+Mesmo padrão de `sparkforge/facts/secrets.py`: dívida **medida**, não
+implícita. O módulo antigo **não foi apagado** porque apagá-lo quebraria esse
+comando; `sparkforge/migration/__init__.py` reexporta `GlueMigrationAnalyzer`,
+`GlueMigrationAssessment` e `MigrationFinding` por causa dele, e
+`tests/test_migration_assessment.py::test_nenhum_par_de_versao_aparece_no_codigo_do_motor`
+já isenta `glue/analyzer.py` do teste de par de versão embutido no motor,
+citando esta mesma decisão desde a Task 10. **Fechar** é migrar
+`cmd_migrate_glue` para `sparkforge.migration.assessment.assess()` — que já
+expande o caminho por `version_path.steps` e julga por degrau, com o mesmo
+catálogo `SF-MIG` — e só então apagar o analisador antigo, `tests/test_migration_glue.py`
+e a exceção do teste de genericidade. É código nosso, sem decisão de terceiro
+para reverter; fica fora do escopo desta task porque a CLI tem consumidor
+externo hoje (`docs/vnext/claims.lock.json` cita `sparkforge/migration/glue/analyzer.py`
+como o único artefato real por trás da dimensão "Migration" numa alegação
+composta), e trocar o backend de um comando publicado não é o mesmo trabalho
+que confirmar uma versão de runtime.
+
+> **FECHADA na fase H1 (2026-08-23).** `cmd_migrate_glue` passou a chamar
+> `sparkforge.migration.assessment.assess()` em `9b58855`, e o analisador antigo,
+> `tests/test_migration_glue.py`, os reexports de `sparkforge/migration/__init__.py` e a
+> exceção do teste de genericidade foram apagados. Detalhe na seção da fase H1, abaixo.
+
+### Continuação — `SF-MIG-004`, o diff de Terraform ligado à migração (2026-08-22)
+
+`docs/harness/GLUE6-GAP.md` mediu o que `prompt_glue_harness.md` pede contra o
+que já existe, e apontou uma única linha em que o trabalho era **conexão, e não
+construção**: `extract_terraform_diff` já anotava todo `tf.attribute` com
+`changed` e `previous_value`, e `assess()` já expandia um par de versões em
+degraus, mas nenhuma regra ligava os dois. Uma linha de `glue_version` alterada
+num PR tinha o tamanho de um ajuste de configuração e o efeito de trocar Spark,
+Python, Scala, Java e Iceberg de uma vez.
+
+`SF-MIG-004` fecha isso. Ela casa `tf.attribute` com `key: glue_version` no bloco
+raiz e exige `previous_value` **diferente** de `value` — não apenas
+`changed: true`, que também é verdade para um `aws_glue_job` criado no próprio PR
+já em Glue 6.0, onde não existe migração nenhuma para avaliar. O par de fixtures
+`fixtures/tfdiff/glue_version_migrado` (dispara) e `fixtures/tfdiff/glue_job_novo`
+(não dispara) prova as duas pontas.
+
+**A regra é a primeira de SF-MIG com `runtime_scope: {}`, e isso teve consequência
+medida.** As três anteriores são guardadas por fronteira de versão; esta afirma
+que o diff mudou a versão, o que vale para qualquer par e não depende de runtime
+detectado — o gate correto é `requires_facts: [tf.attribute]`. Com ela a área
+deixou de sumir inteira num runtime sem Glue, e as duas exceções de ÁREA que
+declaravam esse sumiço viraram letra morta: `AREA_MAY_VANISH_WHEN`
+(`tests/test_rule_scope_by_nature.py`) e `AREA_FULLY_OUT_OF_SCOPE`
+(`tests/test_runtime_glue_versions.py`) reprovaram juntas, em seis testes, pedindo
+que a exceção fosse reexaminada. As duas saíram, com a justificativa registrada no
+lugar. `docs/gates-por-mudanca.md` ganhou as duas listas, que não estavam lá.
+
+O catálogo vai a 120 regras; `manifest.json` acompanha. `rules/catalog/README.md`
+listava quinze áreas e não citava `MIG` desde que a área nasceu — corrigido aqui.
+
+### Continuação — evidência por fonte na matriz de runtime (2026-08-22)
+
+`knowledge/glue/runtime-matrix.md` §5 dizia, desde a primeira versão, que
+*"divergência entre fontes não é resolvida escolhendo uma. É registrada como
+divergência"* — e não havia mecanismo nenhum atrás da frase. Um componente da
+matriz era um escalar: um valor, sem quem o afirmou.
+
+Agora um componente pode ser escrito em **forma longa** — `status` mais uma lista
+de `claims`, cada uma com `value`, `source`, `source_type` e `retrieved`.
+`sparkforge/facts/runtime_matrix.py` resolve para o valor quando `status:
+VERIFIED` e **retém** o valor quando o status é `CONFLICTING` ou `UNRESOLVED`.
+Valor retido é *fail-closed*: sem a chave no runtime, `in_scope` reprova a regra
+guardada por aquele componente e o motor a reporta como pulada — nunca julgada
+contra um número que duas fontes oficiais não confirmam juntas.
+
+**Duas invariantes ficaram em código, não em disciplina de quem edita YAML.**
+`VERIFIED` com fontes afirmando valores diferentes estoura — é a regra "nunca
+transformar CONFLICTING em VERIFIED", e a forma prática de violá-la não é mentir,
+é editar o valor de uma claim e esquecer a outra. `CONFLICTING` com todas as
+fontes concordando também estoura: conflito inventado apaga em silêncio toda regra
+guardada pelo componente, que é o mesmo estrago do conflito escondido na direção
+oposta.
+
+`STALE` e `UNVERIFIED` **não** são aceitos. Os dois afirmam frescor, e frescor
+depende de um TTL por domínio que este repositório ainda não tem como dado — a
+lacuna está registrada em `docs/harness/GLUE6-GAP.md`. Vocabulário sem mecanismo
+que o produza é etiqueta decorativa. `source_type` é vocabulário fechado com os
+sete tipos que a §46 do prompt nomeia; ranking de autoridade **explica** a
+discordância e não a apaga.
+
+**A medição que veio junto, e que corrige a premissa do prompt.** A §2 de
+`prompt_glue_harness.md` afirma que duas fontes oficiais divergem sobre a versão
+de Python do Glue 6.0 — 3.12 numa, 3.13 noutra — e manda não escolher. Lidas as
+três fontes diretamente em 2026-08-22: Developer Guide (*"Python upgrade from 3.11
+to 3.13"*, mais a tabela do Apêndice A), AWS News Blog e What's New **dizem 3.13**.
+A divergência não se reproduz. O único lugar onde "3.12" aparece é um resumo de
+resultado de busca, que não é fonte oficial e não foi possível conferir contra a
+página. O registro ficou `VERIFIED` com as três fontes e três `source_type`
+distintos — inventar um `CONFLICTING` para exercitar o mecanismo é exatamente o que
+o carregador recusa. O golden obrigatório da §78 é sintético e declarado como tal,
+e mede a consequência que importa: regra guardada por componente retido é pulada.
+
+`sources.lock.json` passa a vigiar as duas URLs novas (135 fontes), e a fonte de
+cada `claim` também é conferida contra o lock — sem essa metade, uma URL citada
+dentro de `claims` ficaria sem `retrieved` revalidado.
+
+### Continuação — o relatório de migração deduplica; o dado por degrau não (2026-08-22)
+
+A §40 do `prompt_glue_harness.md` pede que o relatório final de uma migração
+multi-degrau não mostre o mesmo problema três vezes. A DECISÃO 1 de
+`sparkforge/migration/assessment.py` fixou o oposto **de propósito**, com teste e
+razão escrita: um finding cuja faixa cobre dois degraus nasce nos dois, porque
+apagar isso esconderia que o breaking change continua valendo depois do próximo
+salto.
+
+As duas coisas são verdadeiras porque respondem perguntas diferentes, e a
+entrega atende as duas sem revogar nenhuma. `findings` e `by_step` continuam com
+a cardinalidade por degrau — a pergunta "isto ainda vale depois do próximo
+salto?". `MigrationAssessment.report()` é a visão de quem **lê**: cada problema
+uma vez, colapsado por `(rule_id, subject, evidence)`, com a instância **mais
+severa** e a lista de todos os degraus em que vale. `to_dict()` traz as três
+visões lado a lado; consumidor que já lia `findings` não muda.
+
+Três decisões que o teste fixa, todas com o defeito que evitam escrito junto:
+a chave **não** é `rule_id` (dois achados da mesma regra com evidência diferente
+são dois problemas, e colapsá-los esconderia um); a instância guardada é a mais
+severa (uma regra com `severity_by` por runtime pode nascer P2 num degrau e P1
+no seguinte, e reportar a primeira subestimaria o risco pela ordem do caminho);
+e deduplicar **sem** dizer onde vale trocaria ruído por perda de informação.
+
+Medido de passagem e registrado em teste: o motor **já** emite um só
+`SF-MIG-001` para dois imports de SDK v1 no mesmo arquivo, citando os dois facts
+como evidência — a colapsagem por arquivo acontece antes da deduplicação do
+relatório, e achar o contrário mandaria alguém procurar o bug no lugar errado no
+dia em que a contagem parecesse baixa demais.
+
+### Continuação — fase G1, Spark 4 como dado (2026-08-22)
+
+Plano em [`plans/2026-08-22-spark4-como-dado.md`](plans/2026-08-22-spark4-como-dado.md),
+executado por subagentes, uma task por vez, com gate entre elas.
+
+Antes desta fase o repositório tinha **uma** mudança de Spark 4 codificada — o ANSI mode,
+em `SF-MIG-003` — enquanto Glue 6.0 *é* Spark 4.1.1. `knowledge/spark/spark4-migration.md`
+fecha isso com o que as duas páginas oficiais do Spark 4.1.1 afirmam, lidas em 2026-08-22:
+configs de rebase que perderam o prefixo `legacy`, APIs de pandas-on-Spark removidas, pisos
+de PyArrow/pandas/NumPy, e as mudanças de comportamento **sem sinal no código**, que ficam
+registradas como conhecimento para o plano de regressão em vez de virarem regra que nunca
+dispararia.
+
+Dois kinds novos em `sparkforge/facts/migration.py` — `mig.renamed_conf` e
+`mig.removed_api` — e um campo novo em `mig.python_dep` (`major`, inteiro), porque o
+avaliador de expressões do catálogo compara número e a versão morava só como string.
+Extrair o major é observação; o limiar `15` mora na regra.
+
+`rules/catalog/spark4.yaml` traz a área **`SF-SPARK4`** com três regras, guardadas por
+versão de **Spark** e não de Glue: quem mudou o produto foi o Apache, e as três afirmações
+valem igual num EMR com Spark 4. Guardar por Glue amarraria a afirmação a um empacotamento
+que não a produziu.
+
+**Três defeitos que a execução achou e que o plano não previa.**
+
+O primeiro: o schema de finding exigia `^SF-[A-Z]+-[0-9]{3}$` no `rule_id`, e o dígito de
+`SF-SPARK4` fazia a área inteira ser rejeitada na validação. O padrão passou a
+`^SF-[A-Z][A-Z0-9]*-[0-9]{3}$` nos três lugares em que estava escrito.
+
+O segundo: o detector novo usava `text.splitlines()`, enquanto os irmãos usam
+`text.split("
+")`. `splitlines()` também quebra em form feed, `` e U+2028 — um job com
+qualquer um deles faria dois kinds numerarem a **mesma** linha de forma diferente, e quem
+lesse o relatório procuraria a config em dois lugares, um dos quais não existe. Foi achado
+pela auto-revisão do próprio implementador, com teste de regressão junto.
+
+O terceiro: a área `SF-SPARK4` some inteira em Glue 4.0, 5.0 e 5.1, porque as três rodam
+Spark 3.x. Isso é **correto** e precisava ser declarado, não contornado —
+`AREA_FULLY_OUT_OF_SCOPE` ganhou a entrada com a justificativa. É o espelho exato do que
+aconteceu com `SF-MIG` no commit `70bda53`, onde a exceção foi **removida** porque
+`SF-MIG-004` fez a área deixar de sumir.
+
+Duas alegações de `CURRENT-HARNESS-GAP.md` deixaram de bater e foram remedidas em vez de
+afrouxadas: `routing.yaml` cresceu de 42 para 43 KB com a rota nova, e `tools.py` passou
+`_core.py` como maior arquivo do pacote determinístico.
+
+**Um quarto defeito, achado em revisão depois da fase.** `SF-SPARK4-002` consumia
+`mig.removed_api` sem nenhum filtro, e o detector casa nome precedido de ponto —
+`.append`, `.pad`, `.mad`. Um `acc.append(1)` numa lista Python comum recebia um **P1**
+mandando trocar por `ps.concat`, num job que nunca importou `pyspark.pandas`. É a mesma
+classe de estrago que `rules/catalog/README.md` já nomeia: acusar código correto destrói a
+confiança em todo o resto do relatório.
+
+O conserto **não** tirou o fact — "existe um `.append(` nesta linha" continua sendo
+verdade, e apagar a observação criaria falso negativo silencioso. Em vez disso,
+`mig.removed_api` ganhou `attrs.pandas_on_spark_module` (booleano: o texto do módulo tem
+`import pyspark.pandas`, `from pyspark import pandas`, `import pyspark.pandas as <alias>`
+ou `from pyspark.pandas import ...`), e o **juízo** foi para a regra, como
+`where: {attrs.pandas_on_spark_module: true}`. Mesma divisão de `mig.python_dep.major` e o
+limiar `15` de `SF-SPARK4-003`: o extrator lê o que está escrito, a regra decide o que
+aquilo significa. O preço está declarado no catálogo — um módulo que recebe o DataFrame de
+outro, sem importar `pyspark.pandas` ele mesmo, fica fora.
+
+### Continuação — fase G2, fronteira binária de Scala (2026-08-22)
+
+Glue 6.0 sobe Scala de 2.12 para 2.13, e a própria AWS chama isso de breaking change:
+JAR compilado para 2.12 falha com `NoSuchMethodError` ou `ClassNotFoundException`. O fact
+`mig.jar_binary` já observava o sufixo do nome do artefato; faltava o julgamento.
+
+`scala_minor` (inteiro) entrou no `attrs` pelo mesmo motivo do `major` de
+`mig.python_dep` — o avaliador do catálogo compara número, e a versão morava como string.
+`SF-SPARK4-004` julga em **P0**, e a severidade é deliberada: não é degradação nem risco,
+é falha certa, e que aparece em runtime, não na submissão.
+
+**A auto-revisão do implementador achou um falso positivo P0 antes de ele existir em
+produção.** O regex de sufixo casa qualquer `_X.Y-`, não só Scala: um
+`minhalib_1.0-SNAPSHOT.jar` teria recebido `scala_minor: 0` e um P0 mandando recompilar
+contra Scala 2.13 um artefato que nunca teve Scala. Ficou com guarda de major, mais teste
+no extrator e no nível da regra.
+
+**Limite declarado, não escondido:** `mig.jar_binary` observa todo `.jar` da árvore,
+inclusive um que seja recurso de teste fora do classpath do job — e `SF-SPARK4-004` herda
+isso. Separar exigiria um fact sobre `--extra-jars`, que não existe. Está escrito na linha
+correspondente de `docs/harness/GLUE6-GAP.md`.
+
+### Continuação — fase G3, Iceberg 1.11 e spec v3 como dado (2026-08-22)
+
+`knowledge/storage/iceberg-v3.md` entra com uma separação que a §18 do prompt exige e que é
+o ponto inteiro do documento: **feature da spec** é uma coisa, **suporte da engine** é
+outra, e uma não se deduz da outra. As duas metades ficam fisicamente separadas, e o caso
+dos transforms multi-argumento aparece nas duas com veredito oposto — a spec v3 os define,
+o Glue 6.0 declara que não os suporta.
+
+Da spec v3: tipos novos (timestamp de nanossegundo, `unknown`, `variant`, `geometry`,
+`geography`), valor default de coluna, transforms multi-argumento, row lineage e deletion
+vectors binários. Da biblioteca 1.11.0: remote scan planning com REST catalog, API de
+estatística de partição, Java 11 removido, Spark 3.4 deprecado e Spark 4.1 suportado. Da
+engine: as seis limitações que a AWS declara para o Glue 6.0, incluindo a que já tem
+regra — tabela v3 não é lida pelo Athena, que é `SF-ENV-002`.
+
+**Nenhuma regra nova, e isso foi decisão medida.** Os facts que permitiriam julgar uso de
+Variant, transform multi-argumento ou DynamicFrame não existem, e a única armadilha
+judicável hoje já está coberta. Criar extrator sem consumidor é o erro que o mapa de lacuna
+existe para impedir. O candidato mais forte — tipo v3 sob DynamicFrame, cujo modo de falha
+é silencioso — está nomeado no próprio documento, com os dois facts que faltariam.
+
+Duas afirmações ficaram marcadas **a verificar**, na convenção de `runtime-matrix.md`: o
+custo de pruning e shredding de VARIANT, e o alcance do "suporte inicial" a `MERGE INTO`
+com evolução de schema no Spark 4.1. As duas exigiriam completar de memória o que a fonte
+não diz.
+
+### Continuação — fases G4, G5 e G6 (2026-08-22)
+
+**G4 — matriz de compatibilidade de feature Iceberg por engine.**
+`knowledge/storage/iceberg-feature-support.yaml` mais `sparkforge/storage/feature_support.py`.
+A regra da §20 do prompt ficou em **código**, não em disciplina: célula com status
+afirmativo sem `source`, `source_type` e `retrieved` faz o carregador estourar. `UNKNOWN` é
+o único status que dispensa fonte, e a razão está escrita no módulo — desconhecimento não
+precisa de prova, afirmação precisa.
+
+A maioria esmagadora das células ficou `UNKNOWN`, e esse **é** o resultado honesto. O
+implementador registrou o que a tentação pedia e ele não preencheu: a linha inteira do EMR
+(a fonte sustenta só que nenhuma release listada traz Iceberg 1.11, não que o EMR não leia
+v3) e `default_values` no Glue 6.0 (a AWS não nomeia a feature nem entre suportadas nem
+entre limitações).
+
+**A auto-revisão pegou uma inferência que ele mesmo tinha feito.** Ele havia marcado
+`UNSUPPORTED` em várias features de Athena derivando de *"Athena não lê `format-version`
+3"*. Essa frase é sobre o **formato da tabela**, não sobre feature — fabricar células a
+partir dela é a mesma classe de defeito da inferência entre engines, na direção negativa.
+Reduziu para a única célula que a fonte sustenta, e escreveu teste que fixa a assimetria,
+porque ela parece bug para quem editar a matriz depois.
+
+**G5 — Lake Formation com controle de acesso fino.**
+`knowledge/glue/lakeformation-fgac.md` mais a área `SF-LF`, com duas regras em P0 sobre
+incompatibilidades que a **própria AWS declara**: sob FGAC não se fornece JAR adicional, e
+streaming não é suportado. As duas correlacionam atributos do mesmo `aws_glue_job` com
+`same_subject`, e o filtro por bloco é obrigatório — `attrs.key == "name"` existe duas vezes
+por job, no `root` como nome e no `command` como tipo, e sem o filtro um job de batch
+chamado `gluestreaming` levaria P0.
+
+Dois pontos cegos do extrator de Terraform saíram dessa auto-revisão e valem para regras
+que já existiam: `non_overridable_arguments` não produz fact nenhum, então um job que
+forneça argumento por ali é invisível também para `SF-GLUE-002` e `SF-GLUE-003`; e valor
+interpolado vira `tf.unresolved`, o que cala regra de condição conjuntiva. Os dois estão em
+`docs/gates-por-mudanca.md`, que é onde quem escreve regra nova procura o que herda sem
+perceber.
+
+**G6 — cenário por par de versões, e holdout que se prova.**
+`fixtures/scenarios/` traz cenário com mais de um artefato, medido de ponta a ponta por
+`assess()`. O do salto longo é o que paga: regras de três degraus diferentes, e a
+deduplicação do relatório medida num caso realista em vez de sintético.
+
+**O cenário achou uma fronteira da regra que esta mesma sessão escreveu.** `SF-MIG-004`
+existe para acusar mudança de `glue_version`, e **não dispara** num `.tf` sozinho: ela
+exige `attrs.changed`, que só existe em fact de diff. A regra que existe para acusar
+migração de runtime não vê a migração num estado único. Está fixado em teste, não escondido.
+
+`evals/holdout/` fica **fora** de `fixtures/` de propósito, porque os invariantes de lá
+cobram cobertura e holdout não é cobertura — é a amostra retida para não ser otimizada
+contra. A propriedade é provada por teste que varre `skills/`, `agents/`, `knowledge/` e os
+espelhos, com guarda de não-vacuidade, e foi verificada por contrafactual: citar um cenário
+numa skill reprova o gate.
+
+### Continuação — fase G7, a documentação e o ADR (2026-08-22)
+
+Última fase da sequência. **Nada de capacidade nova**: tudo o que esta fase documenta já
+existia e já tinha sido medido nas seis anteriores. O que ela entrega é a porta de entrada e
+o registro de decisão.
+
+`docs/aws/glue/6.0/` com oito documentos: porta de entrada, runtime, a fronteira do Spark,
+Iceberg, Lake Formation, prova, `known-unknowns.md` e `decision-guide.md`.
+
+**A regra que governou a escrita: não repetir número.** Onde um documento quis citar uma
+contagem, uma versão ou uma medição, ele aponta para o arquivo que a sustenta em vez de
+copiá-la. Versão de runtime só existe em `knowledge/glue/runtime-matrix.yaml`; contagem de
+regra só em `rules/catalog/README.md`; contagem de célula só no cabeçalho da própria matriz
+de feature. A auditoria de lastro existiu para remover número publicado sem prova, e
+recriá-lo numa pasta que o gate **não** vigia seria a mesma dívida num lugar pior.
+
+**`known-unknowns.md` é o documento que justifica a pasta.** Ele agrupa por consequência
+para quem usa — não por seção do prompt — as linhas `NÃO EXISTE` e `EXISTE PARCIAL` do mapa,
+as notas "a verificar" de `knowledge/`, as células `UNKNOWN` da matriz e os pontos cegos dos
+extratores. A regra que o abre: silêncio da ferramenta nunca é atestado de ausência de
+risco.
+
+**O guia de decisão sustenta duas coisas que era fácil diluir.** "Ficar na versão anterior"
+é resposta legítima, com as condições em que ela é a certa — inclusive a de que deletion
+vectors e row lineage já vinham no runtime anterior, então migrar por eles é pagar por algo
+que já se tem. E a redução de preço anunciada pela AWS fica **separada** de performance, que
+este repositório não mediu: sem baseline, sem execução comparada, sem número. Onde não há
+regra que automatize a checagem, o guia diz que a checagem é manual, em vez de omiti-la.
+
+`docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md` registra as decisões da sequência:
+conhecimento externo como dado versionado com fonte; guarda por versão de **Spark** quando a
+fronteira é do Apache e por **Glue** quando é do empacotamento; célula sem evidência é
+`UNKNOWN` e o carregador recusa afirmação sem fonte; as skills que o prompt enumera **não**
+foram criadas, porque skill é apresentação sobre conhecimento e o consumidor não existia; e
+extrator novo só com consumidor — o que impediu regras de Variant, transform multi-argumento
+e DynamicFrame.
+
+**Limite declarado, e é o achado desta fase.** `docs/aws/` **não** está em `audited_roots()`
+do gate de lastro: nenhuma alegação daqueles documentos é auditada e nenhum teste cobra a
+existência deles. Trazer o diretório para o gate é decisão de outra fase — fazê-la aqui
+geraria centenas de alegações a classificar de uma vez. Por isso as duas linhas do mapa que
+saíram de `NÃO EXISTE` foram para **`EXISTE PARCIAL`**, não para `EXISTE, com teste`: o
+parcial é o que falta em volta, não o conteúdo, e o mapa continua sem dizer "testado" sem
+nome de arquivo de teste.
+
+
+### Continuação — fase H1, a porta de entrada da migração (2026-08-23)
+
+O achado que ordenou a fase: as dez regras de `SF-MIG`, `SF-SPARK4` e `SF-LF` que G1–G7
+construíram eram alcançáveis por quem chamasse `assess()` em Python ou lesse o YAML — pela
+CLI e pelo MCP, **não**. `forge migrate glue` ainda rodava `GlueMigrationAnalyzer`, e das 41
+tools MCP nenhuma era de migração: compor o resultado exigia três chamadas à mão
+(`sparkforge_judge`, `sparkforge_rules_lookup`, `sparkforge_runtime_detect`). A fase não
+construiu motor nenhum; ela ligou o que já existia.
+
+**O comando aceita diretório, não arquivo.** O analisador antigo lia um `.py` por vez, e por
+isso não conseguia ver o que sobrevive à troca de runtime sem ter linha de fonte Python: um
+pin de `requirements*.txt` e um `.jar` de Scala 2.12. `sparkforge migrate glue <dir> --from X
+--to Y` compõe os extratores sobre a árvore. `--from` e `--to` são `required=True`, sem
+default: o `"5.1"` fixado no código respondia sobre um alvo que ninguém declarou, com a mesma
+cara de qualquer outro veredito.
+
+**`migrate` é verbo de topo, não `analyze migrate`.** Tudo sob `analyze` extrai facts de um
+artefato e para ali. Este extrai **e** julga, uma vez por degrau — a mesma razão pela qual
+`judge` e `fuse` são verbos próprios.
+
+**Uma tool nova, não três.** `sparkforge_migration_assess` absorve o que
+`sparkforge_spark4_migration_scan` e `sparkforge_jar_compatibility_scan` devolveriam: as
+regras que julgam Spark 4 e binário de Scala já estão no catálogo e saem no mesmo assessment.
+Expandir em vez de multiplicar superfície — cada tool nova entra em quatro gates de paridade
+e lá fica. A saída traz `findings` (cardinalidade por degrau), `report` (cada problema uma
+vez, com os degraus em que vale), `gates` e `missing_evidence`; os quatro eixos que exigem
+execução real — dados, performance, custo e canary — nascem `BLOCKED` com o motivo, e por
+isso `recommendation` nunca é `GO` nesta análise.
+
+**O analisador antigo foi apagado, e só depois dos passos acima verdes.** Saíram
+`sparkforge/migration/glue/`, `tests/test_migration_glue.py`, os reexports de
+`sparkforge/migration/__init__.py` e a exceção de
+`tests/test_migration_assessment.py::test_nenhum_par_de_versao_aparece_no_codigo_do_motor` —
+que agora cobre o pacote `migration` inteiro, sem isenção. Nenhuma alegação `PROVADA` apontava
+para o arquivo: as quatro que o citam (`VNX-109`, `VNX-110`, `VNX-123`, `VNX-135`) já eram
+`REMOVIDA`, e as duas cujas notas o descreviam como artefato existente ganharam a atualização
+dizendo que ele foi apagado e o que ocupou o lugar.
+
+**Duas alegações remedidas, não ajustadas.** `VNX-431` e `VNX-322` afirmam o tamanho de
+`tools.py` e `_core.py` em `docs/harness/CURRENT-HARNESS-GAP.md`. A tool nova mudou os dois
+números; a prova é comando, então foi reexecutada: 121,7 KB → 126,8 KB e 120,7 KB → 123,2 KB.
+
+
+### Continuação — fase H2, composição de artefato e os eixos do contrato (2026-08-23)
+
+Duas lacunas que H1 tornou visíveis assim que a CLI existiu.
+
+**`collect()`, e por que fora de `assess()`.** `assess()` recebe `list[Fact]` e é puro sobre
+eles — é isso que torna testável julgar uma migração sem tocar disco. Quem chama pela CLI
+precisava de alguém que compusesse os extratores, e composição é I/O.
+`sparkforge/migration/collect.py` faz essa metade: código, `.jar` e `requirements*.txt`
+sempre; `.tf` quando existe; inventário de consumidores só na convenção que o extrator
+declara.
+
+**Cada entrada é decidida diferente, e a razão está escrita.** Um arquivo com extensão `.tf`
+**é** Terraform — não há o que adivinhar, e sem ele a área `SF-LF` fica sem produtor, porque
+a topologia de FGAC é declarada nos `default_arguments` do job. Um `.yaml`, não: varrer toda
+a árvore acharia o inventário e, junto com ele, todo workflow de CI e todo arquivo de
+configuração, cada um virando um `env.consumers_analyzed` que afirma "inventário lido" sobre
+arquivo que não é inventário. Por isso o inventário é procurado em
+`.sparkforge/consumers.yaml` (ou `.sparkforge/consumers/` dividido por domínio), a convenção
+que `sparkforge/facts/consumers.py` já declarava no próprio docstring. O limite fica dito:
+inventário fora da convenção não é lido, e o silêncio aparece como o eixo `consumidor` em
+`BLOCKED` nomeando o arquivo que o preencheria.
+
+**`scripts/regen_fixtures.py` passou a chamar a mesma função.** `regen_scenario` tinha a
+composição reimplementada — `extract_migration_tree` mais `.tf` quando existe. Golden que
+descreve uma união que nenhuma superfície do produto emite é exatamente o defeito que o
+corpus de cenário existe para pegar.
+
+**Os eixos da §32, e a regra que decidiu quais entraram.** Gate sem produtor é gate que
+ninguém preenche, e gate que nunca muda de valor é decoração. `lakeformation` (área `SF-LF`
+sobre `tf.attribute`) e `consumidor` (área `SF-ENV` sobre `env.consumer`) são **calculados**,
+e nascem `BLOCKED` quando o fact que os alimenta não veio. `iam_kms`, `rede` e
+`cross_account` não têm produtor nenhum: entram `BLOCKED` com a evidência que os preencheria,
+e é a diferença entre "não avaliei" e "passou".
+
+**Desvio do plano, medido.** O plano dizia acrescentar só `lakeformation` agora, porque
+`consumidor` "ganha produtor em H3". Medido: `SF-ENV-002` já existe em `rules/catalog/env.yaml`
+e cobre Athena × Iceberg format v3, e `collect()` passou a compor o inventário — o produtor
+existe hoje. H3 generaliza a regra; o eixo não esperava por ela.
+
+**Um achado move um eixo, nunca dois.** `compatibilidade` virou o eixo **residual**: todo
+achado cuja área não tem eixo próprio cai nele. Sem isso, um `SF-LF-001` fecharia
+`lakeformation` **e** `compatibilidade`, e o mesmo problema fechando dois gates pareceria dois
+problemas. Residual e não "nenhum eixo" porque área sem eixo próprio (`SF-GLUE`, `SF-ICE`)
+precisa mover alguma coisa: achado P0 que não fecha gate nenhum viraria `CONDITIONAL_GO` com
+um P0 na lista, e entre bloquear demais e passar de menos este repositório escolhe
+fail-closed. A recomendação passou a ser `NO_GO` se **qualquer** gate for `FAIL`.
+
+**Duas expectativas de teste mudaram, e as duas mediam a coisa errada.**
+`test_uma_regra_de_outra_area_atravessa_o_motor_de_migracao` afirmava
+`gates["compatibilidade"] == "FAIL"` para um cenário cujo único achado é `SF-LF-001` — agora
+afirma `gates["lakeformation"]`. `test_algum_holdout_termina_fora_de_no_go` comparava
+`gates["compatibilidade"]` dos cenários visíveis contra `{"FAIL"}` para dizer "todos fecham em
+NO_GO"; passou a comparar a recomendação, que é o que a frase sempre quis dizer e não mudou.
+Os cinco goldens de cenário e holdout foram regenerados: `gates` e `missing_evidence`
+cresceram, nenhum `finding` mudou.
+
+**`area_of` deixou de ser privado de um módulo.** `sparkforge/case/router.py` tinha
+`_finding_area(rule_id)` — prefixo até o último hífen — e `assessment.py` precisava do mesmo
+agrupamento para dizer qual eixo um achado move. Promovido para
+`sparkforge/findings/models.py::area_of`, com um chamador a menos do que duas cópias.
+
+
+### Continuação — fase H3, o consumidor que bloqueia (2026-08-23)
+
+O inventário de consumidores existia. A matriz de suporte de feature existia. Nada cruzava as
+duas, e por isso nada impedia recomendar Iceberg format v3 para quem tem Athena consumindo.
+
+**A forma escolhida não foi a que o plano preferia, e a razão está medida.** O plano pedia uma
+regra do catálogo — o padrão do repositório — e ela foi tentada primeiro. O avaliador de `expr`
+tem whitelist de nós AST sem `Call` e sem `In`, e `where` compara igualdade: não há como
+escrever "serviço que a matriz não declara suportado" numa condição. A alternativa seria uma
+regra por engine, cada uma repetindo em YAML o que a matriz já diz com `source`, `source_type`
+e `retrieved` — e a matriz existe precisamente porque suporte é dado com procedência e versão.
+
+**E é por isso que não duplica.** `sparkforge/storage/upgrade.py` não emite `Finding` nenhum:
+alimenta um **gate**. `SF-ENV-002` continua sendo o achado P0 do caso documentado, com o erro
+textual `Cannot read unsupported version 3`. Um caso de Athena com tabela v3 produz **um**
+achado e um gate fechado — nunca dois achados para o mesmo problema, que é exatamente o que o
+plano mandava medir.
+
+**Vocabulário fechado, com precedência escrita.** `BLOCKED` vence `UNRESOLVED` porque já existe
+fonte dizendo não, e não há o que resolver. `UNRESOLVED` vence `CONDITIONAL` e `SAFE` porque
+desconhecimento não pode ser absorvido por uma célula boa de outra engine. Inventário vazio
+devolve `UNRESOLVED`, nunca `SAFE`.
+
+**A garantia da §94 é estrutural, não textual.** O módulo não importa `boto3`, `botocore`,
+`subprocess`, `os` nem `pyspark`, e o teste mede isso pelos *imports*. A primeira versão do
+teste procurava substring na fonte e quebrava na palavra "subprocesso" dentro de uma frase
+honesta — teste que confunde prosa com chamada não mede o que diz medir.
+
+### Continuação — fase H4, as duas entradas que faltavam (2026-08-23)
+
+Nenhuma constrói julgamento novo. `sparkforge glue dependency-audit <dir> --glue X` lê
+`mig.python_dep` e `mig.jar_binary` e julga com o mesmo catálogo; o que acrescenta é a **visão**
+— a dependência observada ao lado do achado que ela produziu, e o runtime que decidiu quais
+regras avaliaram. `--glue` é obrigatório e sem default: risco de ABI não existe em abstrato.
+
+`sparkforge iceberg assess-upgrade <dir> --from 2 --to 3` devolve o veredito **com as células
+consultadas e a fonte de cada uma** — veredito sem elas seria uma palavra que ninguém consegue
+conferir. `--from` só recusa o que não é upgrade; quem decide é a matriz da versão alvo.
+
+**Os dois foram no mesmo commit, e o plano pedia separados.** A razão: `tests/test_capability_parity.py`
+cobra tool MCP para todo verbo de CLI, e as duas tools entram no mesmo `manifest.json` e no mesmo
+`parity.yaml`. Separar deixaria o gate de paridade vermelho no commit do meio — commit que não
+passa no próprio gate do repositório não é entrega menor, é entrega quebrada.
+
+Duas tools novas (44 no total), citadas em `sf-runtime-specialist` e `sf-iceberg-specialist`,
+que é o que `tests/test_agent_coverage.py` cobra de toda tool.
+
+### Continuação — fase H5, preço e benchmark por runtime (2026-08-23)
+
+**Preço.** `knowledge/glue/pricing.yaml` guarda o preço publicado por DPU-hora com `source`,
+`source_type`, `retrieved`, região e versão de runtime. As duas últimas são `UNQUALIFIED`, e
+esse é o achado da fase: a página oficial de pricing publica **um** preço e **não** diferencia
+por versão de runtime, e não serve a tabela por região no HTML. Escrever `us-east-1` porque é o
+default comum seria precisão fabricada.
+
+A redução de 30% anunciada para o Glue 6.0 entra como **anúncio com fonte**, em lista separada,
+com `baseline` vazio — a fonte diz "compared to previous AWS Glue versions" sem nomear qual.
+Não existe função que combine as duas listas, e `differentiates_by_runtime_version()` devolve
+`False` como **resultado**, não como lacuna. O prompt proíbe codificar "-30%"; o que o
+repositório faz é registrar as duas afirmações oficiais e dizer que elas não se resolvem uma na
+outra.
+
+**Benchmark.** `build_benchmark` ganhou `before_runtime`/`after_runtime`. Dois rótulos
+diferentes emitem `bench.runtime_pair` — o único fato que sustenta uma afirmação sobre
+migração. Dois rótulos iguais emitem `same_runtime_label`, porque comparar um runtime consigo
+mesmo não prova nada sobre trocar de runtime. Um rótulo só emite `missing_runtime_label`
+nomeando o lado que falta, e os deltas continuam saindo: o que fica sem lastro é o eixo, não a
+comparação. **Sem rótulo nenhum não emite nada** — responder "falta" a uma pergunta que ninguém
+fez é ruído, e essa escolha manteve os goldens existentes byte-idênticos.
+
+**Dois gates que a rodada dirigida não alcançou, e o que eles ensinaram.** A suíte completa
+acusou `bench.runtime_pair` sem fixture: `tests/test_fixtures_kind_coverage.py` cobra que todo
+kind de `EMITTED_KINDS` nasça em algum golden. A fixture nova, `fixtures/bench/migracao_entre_runtimes/`,
+reusa os event logs de `clean_improvement` de propósito — o que ela prova não é uma medida
+nova, é o **rótulo**, e mudar também os logs misturaria as duas variáveis.
+
+O segundo foi o schema: o `type` de `subject` é vocabulário **fechado**, e `runtime_pair` não
+está nele. O fato passou a usar `job_run`, que é o que os outros `bench.*` já usam e o que
+descreve a coisa — o fato afirma sobre o par de execuções. O par de runtimes entra no `symbol`
+porque `Fact.id` é sha de `(kind, subject, measures)` e `attrs` fica de fora: sem isso, dois
+pares diferentes teriam o mesmo id. Na mesma passada, `_unresolved_subject` virou
+`_job_run_subject` — o nome antigo descrevia o único chamador da época, não o que a função faz,
+e nome que descreve o chamador envelhece no segundo chamador.
+
+### Continuação — fase H6, skills e conhecimento de erro (2026-08-23)
+
+**Quatro skills, não quarenta.** `migrate-glue-6`, `spark4-compatibility`,
+`iceberg-v3-readiness` e `lakeformation-fgac-guard` — as que têm conhecimento por trás e
+superfície de uso. Cada uma é `SKILL.md` curto com referência sob demanda para `knowledge/` e
+`docs/aws/glue/6.0/`, que é o disclosure progressivo da §72.
+
+**A decisão de despacho de cada uma é declarada, não default.** Três são despacháveis: leem
+artefato que já está em disco e o veredito sai do catálogo. `iceberg-v3-readiness` é **não
+despachável**, e a razão está escrita: subir `format-version` é decisão de ida e a skill exige o
+inventário de consumidores, que é conhecimento da organização, escrito por uma pessoa, e não
+derivável de artefato. Dentro de subagente a pergunta "quem mais lê esta tabela?" é
+inalcançável, e a resposta errada quebra o consumidor dias depois.
+
+**Conhecimento de erro, só o observado.** Três entradas novas em `knowledge/errors/`, com o
+texto exato do Developer Guide de migração para o Glue 6.0: `NoSuchMethodError` /
+`ClassNotFoundException` (JAR de Scala 2.12 sob runtime 2.13), `NoSuchFieldError` (AWS SDK v2
+anterior a 2.44.6 com `--user-jars-first`) e `Cannot read unsupported version 3` (Athena sobre
+tabela Iceberg v3). A §79 proíbe inventar erro hipotético como conhecido, e o teste novo cobra
+`sources` e `last_verified` de toda entrada do diretório — inclusive das três que já existiam.
+
+**Uma alegação estava presa a uma linha que andou.** `VNX-421` era `REMOVIDA` e ancorada em
+`(documento, linha, texto)`; as linhas do mapa andaram quando H3, H4 e H5 fecharam suas lacunas,
+e a linha 150 passou a carregar outra ocorrência de `6.0`. A frase que a alegação removeu
+continua removida — o que mudou é que aquele ponto do documento agora afirma outra coisa, e
+afirma com lastro, provada pela mesma matriz de runtime das irmãs.
+
+
+### Continuação — o que estava registrado como pendência (2026-08-23)
+
+Fase que não fecha lacuna do mapa: fecha o que as fases H1–H6 registraram no **próprio
+inventário deste arquivo**. Uma linha de *Fases* e dois *Limites declarados*.
+
+**Os três eixos deixaram de ser decorativos.** `iam_kms`, `rede` e `cross_account`
+devolviam `BLOCKED` em toda saída e nunca mudavam de valor. `BLOCKED` com motivo é honesto;
+`BLOCKED` que nunca muda lê como "não avaliei" na primeira leitura e como ruído na décima.
+Cada um ganhou área própria de catálogo — `SF-KMS`, `SF-NET`, `SF-XACC` — com quatro regras
+no total, cada uma com fonte oficial e `retrieved`.
+
+**O que as quatro afirmam, e o que não afirmam.** Nenhuma acusa "faltou o endpoint" ou
+"faltou a permissão". Elas não podem: o motor avalia uma condição contra **um** fact, e a
+ausência de um `aws_vpc_endpoint` declarado em outro `.tf` não é expressável — a mesma lacuna
+que este arquivo registra como dívida (`absent` filtrado por atributo). O que elas afirmam é
+o que o artefato mostra: esta combinação de atributos **exige**, pela documentação da AWS,
+uma configuração que o job não declara e o extrator não vê. Por isso as quatro são
+`structural` e nenhuma passa de P2 — a saída manda conferir, não conclui. É a mesma postura
+de `missing_evidence`, uma camada abaixo.
+
+**Três áreas e não uma, e a razão é mecânica.** O eixo é derivado da área do `rule_id`
+(`area_of`), e um achado move um eixo só. Área única deixaria os três empatados no mesmo
+balde, e a separação que o contrato pede voltaria a ser decorativa — que era o defeito.
+
+**`runtime_scope: {}`, e o gate pegou a primeira versão.** As quatro nasceram com
+`{glue: ">=4.0"}`, que é etiqueta de serviço disfarçada de guarda de versão — o defeito que a
+Fase 5a nomeou. `tests/test_rule_scope_by_nature.py` acusou: com aquela guarda, as três áreas
+**desapareciam inteiras** num runtime detectado a partir de event log, que preenche `spark` e
+não `glue`. Área que desaparece inteira lê como "nada encontrado nesse eixo" — o falso
+negativo que a guarda deveria evitar, produzido pela própria guarda. Quem gateia é
+`requires_facts`: sem `tf.attribute` de um `aws_glue_job`, a regra não dispara.
+
+**Um defeito de extrator achado no caminho.** `connections = ["rds-curated"]` virava
+`tf.unresolved` com `reason: function_call`. Lista literal de strings não é chamada de função
+nenhuma — classificação errada, e `unresolved` que mente o motivo é pior que valor não lido.
+O parser passou a entender lista literal de string numa linha; lista com interpolação ou
+referência continua indo para o reason genérico, porque adivinhar o conteúdo seria inventar
+valor. Lista vazia devolve `present: true, value: ""`, o mesmo par que `SF-LF-001` usa para
+não acusar `--extra-jars = ""`.
+
+**Os dois limites de tabela fecharam juntos, porque eram a mesma lacuna.** O eixo
+`consumidor` só respondia pelo **job** porque nada no diretório carregava identidade de
+tabela. `collect()` passou a ler o dump de metadados Iceberg de
+`.sparkforge/artifacts/iceberg/` — onde `sparkforge collect iceberg-metadata` já grava, então
+não há convenção nova —, e `mig.table_format` ganhou `table` quando o nome está na mesma linha
+do `format-version`. O gate consulta os consumidores **daquela** tabela; sem tabela
+observável, degrada para a pergunta do job em vez de fingir precisão. E não acusar não é
+aprovar: sem consumidor declarado para a tabela que vai para v3, o eixo fica `BLOCKED` e a
+evidência faltante **nomeia a tabela**.
+
+**O que permanece limite declarado, e por quê.** O preço continua sem eixo de versão, região
+ou tipo de worker: o gatilho de reabertura não é nosso — depende de a AWS publicar. Os três
+eixos de plataforma continuam sem poder afirmar ausência, pela lacuna de `absent` filtrado por
+atributo, e essa dívida já estava registrada antes desta fase.
+
+
+## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
+
+Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.
+É **infraestrutura de sessão** — o que o repositório gasta em token para operar
+os agentes que já tinha.
+
+**Critério de entrada, fixado depois de duas rodadas:** clonar é a instalação
+inteira. Não há `package.json` no repositório, nenhum caminho padrão chama `npm`
+ou `npx`, e nada aqui vai à rede. Peça que não cabe nisso fica **fora**, com a
+razão registrada.
+
+| Peça | Autor | Como chega | Estado |
+|---|---|---|---|
+| `caveman` | Julius Brussee, MIT | `vendor/caveman/`, pinado em `ec83e5ba` | Plugin do marketplace local `sparkforge-caveman`. **Ligado, zero instalação** |
+| `cavekit` (`ck`) | Julius Brussee, MIT | `vendor/cavekit/`, pinado em `c322f0bb` | Mesmo marketplace. **Ligado, zero instalação** |
+| `caveman-shrink` | Julius Brussee, MIT | `vendor/caveman/src/mcp-servers/`, sem dependência | **Em disco, desligado** — medido em 0,1 % neste catálogo |
+| `cavemem` | Julius Brussee, MIT | — | **Fora**: npm + módulo nativo, e não economiza token |
+| `caveman-code` | Julius Brussee, MIT | — | **Fora**: npm + módulo nativo, e roda fora do Claude Code |
+
+**Por que marketplace local e não `.claude/skills/`.** Aquele diretório é
+espelho gerado de `skills/`, e `scripts/sync_skills.py --check` acusa **órfão em
+qualquer profundidade** — skill de terceiro colocada ali quebraria o gate na
+primeira execução, e `sync_skills.py` (modo default) a apagaria. `vendor/` como
+marketplace `directory` mantém o layout do upstream intacto, não toca espelho
+nenhum, e carrega skills, subagentes, comandos e hooks pela porta que o Claude
+Code já tem para isso.
+
+**As duas lacunas do "clonar e usar", e como cada uma fechou.** A primeira
+rodada entregou plugin vendorizado e ativação declarada, e ainda assim o alvo —
+*não instalar nada além do repositório* — não estava atingido:
+
+1. **Node.** Os dois hooks do plugin caveman são `node ...`. Sem Node eles não
+   rodam, as skills continuam carregando, e "ligado por padrão" vira "ligado
+   quando alguém digitar `/caveman`" — sem nada acusar. Fechada com um hook de
+   `SessionStart` em shell puro, guardado por `command -v node`: com Node é
+   no-op (sem injeção dupla), sem Node imprime o ruleset de
+   `vendor/caveman/src/rules/caveman-activate.md`. Perde-se só o flag de modo e
+   o `/caveman-stats`, que são do hook em JS.
+2. **`npm`.** Fechada por **remoção**, não por conveniência. A rodada anterior
+   tentou um bootstrap opt-in que disparava `npm ci` sozinho; a decisão final
+   foi tirar `cavemem` e `caveman-code` do repositório. `package.json`,
+   `package-lock.json`, os cinco hooks do cavemem, o servidor MCP dele e o
+   wrapper `scripts/hooks/` foram apagados. O invariante virou gate:
+   `tests/test_vendor_caveman.py::TestSemNpm` falha se aparecer `package.json`
+   na raiz, ou `npm`/`npx`/`node_modules` em qualquer comando de hook ou
+   servidor MCP — **inclusive no `plugin.json` do projeto de terceiro**, que
+   pode mudar num bump futuro.
+
+**Por que remover em vez de manter opcional.** `cavemem` não economiza token:
+o `SessionStart` dele *injeta* contexto da sessão anterior — medido em ~2 k tokens
+numa sessão de teste. É memória, e memória durável neste projeto já tem dono:
+`.sparkforge/case.yaml`, commitado, que é o único registro que um `Finding` pode
+citar. `caveman-code` é um cliente de terminal alternativo, roda fora do Claude
+Code e não participa da economia daqui. Nenhum dos dois pagava o custo de pôr
+npm, registry e compilação nativa no caminho de quem clona.
+
+**`caveman-shrink`: vendorizado, medido, desligado.** Proxy MCP do mesmo autor,
+**sem dependência nenhuma**, que comprime o campo `description` do catálogo de
+tools. Medido contra os 41 tools do `sparkforge` em 2026-08-07:
+**146 438 → 146 295 bytes, 0,1 %**. As regras cortam artigo e filler **em
+inglês**; as descrições deste catálogo são em português. Nomes e `inputSchema`
+saem idênticos — o proxy está correto, só não tem o que cortar. Fica em disco
+com a medição registrada em `vendor/CREDITS.md` e um teste que garante as duas
+metades: continua disponível, e nada o põe no caminho do MCP sem medição nova.
+
+**Dois defeitos, encontrados e depois descartados junto com o código.** Ao
+exercitar o bootstrap apareceram `spawn('npm.cmd', …)` levantando **EINVAL**
+desde a correção do CVE-2024-27980 (Node 18.20 / 20.12) — escondido atrás de um
+lock gravado antes do spawn — e `process.stdout.write` seguido de `process.exit`
+**perdendo a linha** com stdout em pipe, que é como o Claude Code chama o hook.
+Ambos foram corrigidos e o código todo saiu na decisão acima. Ficam registrados
+porque a lição sobrevive ao código: **caminho de hook não exercitado é caminho
+não testado**, e os dois só apareceram ao rodar, nunca ao ler.
+
+**Modo `full` fixado no repositório.** `.caveman/config.json` é o *repo-local
+config* que o caveman resolve antes da configuração de usuário e depois só da
+variável de ambiente. Fixa o modo para quem clonar sem alterar a configuração
+global de ninguém.
+
+**As cópias upstream ficam desligadas dentro do projeto.** `.claude/settings.json`
+declara `caveman@caveman: false` e `ck@cavekit: false`. Dois caveman ligados
+injetam o ruleset duas vezes por sessão — ativar em dobro custa o token que a
+peça existe para cortar.
+
+**Agente sem plugin.** Devin, Copilot e Codex não carregam plugin nem hook. Para
+eles o ruleset está inline em `AGENTS.md`, com o recorte que este projeto impõe
+por cima: o schema `recommendation:`/`Finding` inteiro, números, versões,
+`rule_id`, `fact_id`, strings de erro e blocos de código são **verbatim**.
+Compressão que apaga campo de evidência é defeito, não economia.
+
+**O que impede o vendor de apodrecer.** `vendor/PINS.json` guarda repo, SHA,
+lista de arquivos mantidos e o patch local; `vendor/MANIFEST.sha256` guarda o
+sha256 de cada um dos 127 arquivos. `python scripts/vendor_caveman.py --check`
+é gate **sem rede** e roda em `tests/test_vendor_caveman.py`, com 29 testes que
+cobrem procedência, ativação e crédito. Um único patch declarado: o
+`caveman-compress` do upstream publica o `SKILL.md` em `skills/` e os scripts
+que ele executa só em `plugins/` — sem a cópia, a skill carrega e falha em uso.
+
+**A superfície de execução virou lista fechada.** Vendorizar código de terceiro
+que roda como hook criou uma superfície que o repositório não tinha: clonar e
+abrir o Claude Code passa a **executar código** antes de alguém digitar nada. O
+`MANIFEST.sha256` cobre os bytes de `vendor/`, mas não cobria o
+`.claude/settings.json`, que é nosso e commitado — um PR que acrescentasse um
+`curl | sh` ali executaria na máquina de todo contribuidor, e num diff grande
+passaria como linha de JSON.
+
+`tests/test_execution_surface.py` fecha isso com a **string exata** de cada
+comando em três superfícies (`.claude/settings.json`, o `plugin.json`
+vendorizado, os servidores de `.mcp.json`), mais um deny-list de construções de
+execução arbitrária como segunda camada. Allowlist de padrão foi recusada de
+propósito: `node .*` autorizaria `node -e "..."`.
+
+O gate foi verificado por mutação, não por leitura: injetar
+`curl -s https://… | sh` no `SessionStart` faz **3 dos 12 testes falharem** —
+o da lista fechada, o do deny-list e o de permissão morta.
+
+No mesmo passe, `.claude/settings.local.json` entrou no `.gitignore` do
+repositório. Ele estava protegido apenas pelo gitignore **global** de uma
+máquina; em qualquer outro clone um `git add -A` o commitaria — e o arquivo
+descreve o que aquele operador autorizou a rodar sem confirmação.
+
+**Auditoria do que foi vendorizado, 2026-08-07, no SHA pinado.** Comportamento
+observável dos hooks em JS: **zero** chamadas de rede; **um** `execFileSync`, em
+forma argv, sem shell — o argumento que vem do prompt (`--since`) entra como
+elemento separado do argv, sem caminho de injeção; escritas confinadas a
+`~/.claude/.caveman-*` e aos arquivos de agente do próprio plugin, e só quando
+`CAVECREW_*_MODEL` está no ambiente. `caveman-stats.js` **lê os transcripts de
+sessão** para calcular economia de token — leitura local, sem rede, mas é o
+conteúdo das conversas passando por código de terceiro, e isso fica registrado.
+O que **não** foi feito: leitura linha a linha dos ~226 KB de `src/`, e o Python
+de `caveman-compress/scripts/` segue fora do ruff (`exclude = ["fixtures",
+"vendor"]`) — ele só executa se alguém invocar `/caveman-compress`.
+
+**Revisão de segurança da própria rodada (2026-08-07).** Três candidatos
+levantados, cada um verificado por um revisor independente. Dois caíram:
+
+- *Injeção de argumento no `git`* — **falso positivo**. A alegação era que uma
+  URL `ext::<comando>` em `PINS.json` executaria no `fetch`. Errada: o git
+  classifica `ext` como transporte "scary" e o default de `protocol.ext.allow`
+  é **`never`** desde a série de hardening v2.11.1/v2.12. E o cenário assumia
+  CI verde, o que também é falso: `pytest` roda em todo PR e
+  `test_cada_projeto_declara_repo_sha_e_licenca` já rejeitava `repo` fora de
+  `https://github.com/` e `sha` fora de 40 hex.
+- *Gate de integridade insuficiente* — **falso positivo**. O caminho descrito
+  ("PR malicioso edita um arquivo vendorizado e a linha do manifest") tem o
+  mesmo privilégio de editar qualquer `.py` de `sparkforge/`. É a fronteira de
+  confiança inerente a vendorizar, não defeito novo.
+
+Um sobreviveu, e era **defeito real em código escrito nesta rodada**:
+
+**Path traversal em `scripts/vendor_caveman.py`.** `materialize()` fazia
+`dest / entry["keep"]` e `dest / patch["to"]` sem contenção, seguidos de
+`shutil.rmtree`/`copytree`. `Path("vendor") / "/etc/x"` devolve `/etc/x` — o
+operador `/` do pathlib **descarta** o lado esquerdo quando o direito é
+absoluto, e `..` nunca é normalizado. Um `to` de `../../.claude/settings.json`
+num PR de "bump de pin" escreveria fora de `vendor/`, e o CI não veria: ele só
+roda `--check`, que nunca lê os campos de caminho do `PINS.json`. Pior:
+`actual_manifest()` só varre `VENDOR.rglob`, então o arquivo escrito fora ficava
+**invisível para o único gate que o script existe para sustentar**.
+
+Era inconsistência, não decisão: `install_skills.py::install_dest` e
+`verify_wheel.py::_artifact_dest` já aplicavam exatamente essa guarda. Corrigido
+com `_confinado()` sobre `dest`, `keep`, `patches[].copy` e `patches[].to`, mais
+validação de `repo`/`sha` movida para dentro de `clone_at()` — teste não protege
+quem roda o script antes da suíte. Verificado por mutação de ponta a ponta: com
+o `PINS.json` envenenado, o script recusa com
+`` `patches[].to` = '../../.claude/settings.json' contem `..`. Recusado. `` e o
+`settings.json` fica intacto.
+
+No mesmo passe, a docstring do módulo foi corrigida: ela dizia que o manifest
+"amarra cada byte a um SHA upstream declarado". Não amarra — é regravado a
+partir do disco e commitado no mesmo tree. Agora diz o que o gate pega
+(divergência acidental) e o que não pega (commit deliberado, cujo controle é a
+revisão do diff).
+
+**Limites declarados.** Dois, e os dois são escolha, não pendência:
+
+- **Sem memória entre sessões.** `cavemem` está fora, pelas razões acima. O que
+  atravessa sessão continua sendo `.sparkforge/case.yaml`. Reverter significa
+  aceitar npm no caminho de quem clona — decisão de produto, não de código.
+- **`caveman-shrink` desligado.** Reavaliar só se o catálogo passar a ter
+  descrição em inglês. A medição de 2026-08-07 está registrada; reverter sem
+  medir de novo é adivinhar.
+
+Créditos e procedência completos: [`vendor/CREDITS.md`](../../vendor/CREDITS.md).
+
+## Expansão agêntica v2 — 30 coordenadores `sf-*`, 20 skills e o runtime que os supervisiona (2026-08-18)
+
+Branch `feat/fase6b-sf-cfg`, quatro commits sobre `3f76768`. **Nenhuma regra
+executável, extrator ou fact de diagnóstico mudou.** O catálogo foi de 81 para
+116 regras, e as 35 novas são todas `status: structural`: uma por área de
+coordenação, sem `requires_facts`, sem `when` e sem `sources`. Elas existem para
+que `routing.yaml` tenha um alvo nomeado por área; não julgam nada e não podem
+disparar. As 55 executáveis são as mesmas de antes, byte a byte — só
+`routing.yaml` foi tocado entre os arquivos de catálogo que já existiam.
+
+**O que entrou de código:** `sparkforge/agents/` (sala de conversa append-only,
+supervisor com orçamento, política de modelo, autonomia limitada e observabilidade
+opcional) e `sparkforge/tools/` (índice offline verificável por SHA-256,
+estimativa de token, avaliação de caso golden, lineage textual e comparação de
+JSON Schema). Mais 43 documentos de conhecimento registrados em
+`knowledge/offline-manifest.json`.
+
+### Três defeitos achados na revisão de fechamento, e o que foi feito
+
+**1. O default de `Budget` impedia o supervisor de terminar.** `max_rounds`
+cobra uma rodada por **fase** e `Supervisor.PHASES` tem sete; o default era `3`.
+Reproduzido: `Supervisor(room, [agent], {"a": handler}).run("goal")` voltava
+`blocked` / `budget_exhausted` na quarta fase para **qualquer** entrada, sem
+nunca chamar `verify`, `synthesize` ou `decide`. O consumidor lia falta de
+evidência onde havia orçamento acabando cedo. O único teste do supervisor
+forçava `max_tokens=1` e exercitava só o caminho de exaustão de token, por isso
+o defeito era invisível. Fechado: o default passou a ser `len(PHASES)`, com a
+razão escrita no docstring do módulo, e entrou
+`test_supervisor_completes_the_whole_pipeline_with_the_default_budget`.
+
+**2. `sparkforge-tools` era documentado e não existia depois do install.**
+`sparkforge/tools/cli.py` anuncia `prog="sparkforge-tools"` e
+`docs/agentic-expansion.md` documenta os três subcomandos, mas
+`[project.scripts]` só declarava `sparkforge`. Só `python -m sparkforge.tools.cli`
+funcionava. Fechado com a entrada no `pyproject.toml`.
+
+**3. O gate da garantia offline existia e não rodava em lugar nenhum.**
+`docs/operations-guide.md` lista `scripts/verify_offline_bundle.py` entre os
+gates finais; o `ci.yml` não o invocava, e o script ignorava o `--check` que a
+documentação manda passar. Manifest e disco podiam divergir sem que nada
+acusasse. Fechado: passo próprio no `ci.yml`, `--check` aceito de propósito (o
+script não tem outro modo, e recusar o argumento faria a linha documentada
+falhar por parsing e não por integridade) e `TestOfflineBundleGate` cobrando o
+passo.
+
+**4. O gate de paridade do artefato estava vermelho desde `9474aa8`, nos dois
+sistemas operacionais da matriz.** Não é defeito desta branch — chegou por
+`main` — mas fechá-la sem consertar seria entregar PR que não pode ficar verde.
+`tests/test_fixtures_golden_funcval.py` importa `with_plan_ref` de
+`scripts/regen_fixtures.py`, e `scripts/` **não vai no wheel**: é andaime de
+teste. O gate roda a suíte de golden de um `cwd` fora do repositório, com
+`PYTHONSAFEPATH=1` e `-o pythonpath=`, exatamente para que `import sparkforge`
+venha do artefato — e isso tira `scripts/` do `sys.path` junto. A coleta parava
+com `ModuleNotFoundError: No module named 'scripts'` antes de qualquer asserção
+rodar. Fechado com `tests/conftest.py`, que **acrescenta** a raiz ao fim do
+`sys.path` — nunca insere no começo, para que `site-packages` continue vencendo
+para `sparkforge`. O que sustenta a honestidade disso não é a ordem, que se
+perde em refactor, e sim `tests/test_installed_provenance.py`, que roda no
+mesmo processo e falha se o pacote tiver vindo do diretório-fonte. Copiar
+`with_plan_ref` para dentro do teste foi recusado pela razão que o docstring
+dele já declara: `plan_ref` derivado de dois jeitos diverge em silêncio (D-4c-22).
+Medido depois do conserto: 1386 testes passando dentro do venv do gate, `twine
+check` PASSED nos dois artefatos.
+
+**5. O manifest offline só era válido no Windows.** Consequência direta de
+ligar o gate do item 3: com ele no CI, `ubuntu-latest` reprovou os 43
+documentos com a árvore intacta. Os 43 são markdown que o git converte na saída
+(`core.autocrlf`), então o mesmo commit tem CRLF no Windows e LF no Linux, e o
+hash saía dos **bytes crus** — válido só na máquina onde foi gravado. A
+normalização **remove todo CR** em vez de traduzir `CRLF` para `LF`, e isso foi
+medido: `knowledge/model-selection-observability.md` tem 25 sequências
+`CR CR LF` (blob commitado já com CRLF, convertido de novo no checkout), onde
+traduzir devolveria `LF LF` no Windows e `LF` no Linux — o hash voltaria a
+depender da plataforma. Os 43 hashes foram regravados pela mesma função que os
+confere. O outro lado está travado por teste: as três formas (`LF`, `CRLF`,
+`CR CR LF`) verificam contra o mesmo manifest, e um byte injetado continua
+reprovando, nomeando o arquivo.
+
+### O lint que a branch introduziu
+
+`ruff check sparkforge scripts tests` acusava **133 erros** em 21 arquivos
+novos, todos da expansão — o `ci.yml` roda esse comando, então a branch não
+podia fechar verde. A causa era estilo de escrita comprimido no fonte:
+`import hashlib, json, re`, `self.repo=Path(repo); self.manifest_path=...` e
+corpo de `if` na mesma linha. Corrigido em todos os 21, com a semântica
+preservada — o que mudou foi quebra de linha, nome de constante extraída
+(`_TERM_RE`, `_S3_RE`, `_TABLE_RE`) e `__all__` explícito em
+`sparkforge/tools/__init__.py`, que era o que os `F401` acusavam. Os módulos
+sem docstring ganharam um que diz **por que existem**, não o que fazem.
+
+## Fase vNext — Agent Factory, o gate de lastro e a auditoria de 184 alegações — **PARCIAL** (2026-08-21)
+
+`a5b9e96` publicou 17 documentos sob `docs/vnext/` afirmando capacidade e KPIs
+que o repositório não sustentava. Este arquivo não citava o commit até agora;
+esta seção fecha a lacuna e corrige os números da tabela acima que a auditoria
+mediu errados.
+
+### O que `a5b9e96` entregou de fato
+
+Sete pacotes novos de infraestrutura têm teste comportamental real —
+`sparkforge/registry` (canonical registry), `sparkforge/economy` (motor de
+tiers), `sparkforge/context` (funil de contexto), `sparkforge/adapters/platforms`
+(compilador de 7 plataformas), `sparkforge/workflows` (DAG em waves),
+`sparkforge/evals` (runner de avaliação) e `sparkforge/observability`
+(traces em SQLite) — nomeados assim em `docs/vnext/FINAL-REPORT.md` §6, com os
+sete arquivos de teste (`test_canonical_registry.py`,
+`test_economy_engine.py`, `test_context_funnel.py`,
+`test_platform_compilers.py`, `test_workflows_dag.py`, `test_eval_runner.py`,
+`test_observability.py`) presentes em `tests/`.
+
+Oito módulos de domínio, em contraste, são esqueleto: cada um com um teste
+entre 17 e 58 linhas.
+
+| Módulo | Linhas | Teste |
+|---|---|---|
+| `sparkforge/migration` | 150 | `test_migration_glue.py`, 36 linhas |
+| `sparkforge/lakeformation` | 218 | `test_lakeformation_engine.py`, 58 linhas |
+| `sparkforge/iceberg` | 179 | `test_iceberg_doctor.py`, 36 linhas |
+| `sparkforge/errors` | 77 | `test_error_matcher.py`, 26 linhas (compartilhado com `reliability`) |
+| `sparkforge/databases` | 127 | `test_database_specialists.py`, 46 linhas (compartilhado com `streaming`) |
+| `sparkforge/streaming` | 116 | `test_database_specialists.py`, 46 linhas (compartilhado com `databases`) |
+| `sparkforge/terraform` | 144 | `test_terraform_plan_scanner.py`, 29 linhas |
+| `sparkforge/reliability` | 95 | `test_error_matcher.py`, 26 linhas (compartilhado com `errors`) |
+
+Para comparação de escala: `sparkforge/adapters` — o pacote pré-existente que
+os sete novos compiladores de plataforma estendem — tem **7813** linhas e um
+gate de paridade que roda (`tests/test_fixtures_golden_funcval.py` e o passo
+de CI descrito na seção de expansão agêntica acima). Os oito módulos de domínio
+somados (1106 linhas) não chegam a um sétimo disso, e nenhum tem gate de
+paridade equivalente.
+
+Dois pacotes adicionais, `sparkforge/cloud` (58 linhas) e
+`sparkforge/providers` (22 linhas), não têm teste nenhum que os importe ou
+chame — `docs/vnext/FINAL-REPORT.md` §4 registra isso por escrito e por isso
+os exclui do inventário de "Novos Pacotes e Módulos".
+
+### A auditoria: 184 alegações, 48 provadas, 136 removidas
+
+`docs/vnext/claims.lock.json` extraiu 184 alegações numéricas e de capacidade
+dos 17 documentos. **48** carregam `state: PROVADA` com prova reproduzível
+(comando, artefato ou referência de código); **136** carregam
+`state: REMOVIDA`, e o texto correspondente saiu dos documentos — não foi
+reescrito, foi apagado, com a razão de cada uma registrada no próprio
+`claims.lock.json`. Entre as removidas: a contagem de extratores de facts
+(documentos diziam **21**, `sparkforge/facts/*.py` tem **20** — `VNX-042`,
+`VNX-057`) e a de catálogos de regras (documentos diziam **52**,
+`rules/catalog/*.yaml` tem **51** — `VNX-059`, `VNX-115`). A tabela de KPIs de
+economia que `docs/vnext/FINAL-REPORT.md` publicava originalmente (taxa de
+sucesso, mediana de tokens, custo por mil tarefas, cache hit rate) não tinha
+artefato de medição no repositório — nenhum comando reproduzia nenhum dos dois
+lados de nenhuma linha — e foi removida pela mesma razão, não reescrita com
+números novos.
+
+### Dois achados que importam além dos números
+
+`docs/vnext/AGENT-CATALOG.md` §2 listava sete "Core Coordinators" — uma
+camada permanente de supervisão e roteamento. Nenhum dos sete existe em
+`agents/`, o diretório canônico espelhado em `.claude/agents/`,
+`.agents/agents/` e `.github/agents/` e verificado por
+`tests/test_agents_parity.py::TestMirrors`.
+
+A mesma tabela, §3, tinha seis linhas (`sf-pyspark-specialist`,
+`sf-storage-specialist`, `sf-runtime-specialist`, `sf-token-verifier`,
+`sf-cost-reviewer`, `sf-security-reviewer`) marcadas "Convertido em Skill
+Lazy-Loaded". Nenhum foi convertido: os seis continuam agentes ativos em
+`agents/`, roteados de fato em `rules/catalog/routing.yaml` e exercitados por
+`tests/test_router_agents.py`. Pior: de duas das seis skills-alvo declaradas
+(`data-platform-finops` para `sf-cost-reviewer`, `security-review` para
+`sf-security-reviewer`) **nenhuma existe** em `skills/*/SKILL.md` — a
+alegação não só descrevia uma migração que não aconteceu, apontava para um
+destino que nunca foi criado.
+
+### O gate que impede a reintrodução
+
+`scripts/check_vnext_claims.py` roda contra `docs/vnext/claims.lock.json` e
+reprova o commit se um número ou capacidade citado num documento divergir do
+que o `state`/`proof` da alegação registra — `python
+scripts/check_vnext_claims.py` reporta `0 divergencia(s).` nesta revisão. O
+motivo de cada uma das 184 linhas — por que foi provada ou por que foi
+removida — vive em `docs/vnext/claims.lock.json`, campo por campo (`state`,
+`proof`, `context`), não em prosa solta neste arquivo.
+
+### Status: PARCIAL
+
+Sete pacotes de infraestrutura com comportamento testado não fazem uma
+"Agent Factory" — fazem sete pacotes de infraestrutura testados. Os oito
+módulos de domínio que dariam à infraestrutura algo de AWS/Spark para
+orquestrar são esqueleto (um teste de dezenas de linhas cada, sem gate de
+paridade), dois pacotes adicionais não têm teste nenhum, e a documentação que
+anunciava o conjunto como pronto tinha 136 alegações sem lastro — quase três
+vezes as 48 que se sustentaram. Nada aqui está quebrado ou revertido: o gate
+novo impede regressão, e o que ficou provado continua provado. Mas o volume
+comparativo (`adapters` 7813 linhas com gate de paridade vs. domínio 1106
+linhas sem nenhum) é o oposto do que a versão original do relatório afirmava.
+**PARCIAL** é a leitura honesta; **CONCLUÍDA** exigiria que os módulos de
+domínio tivessem cobertura e gate na mesma ordem de grandeza da
+infraestrutura que os invoca, e isso não foi medido em lugar nenhum porque não
+existe ainda.
+
+## Harness v0.1 — as três lacunas do mapa que tinham mecanismo e consumidor (2026-08-23)
+
+Plano em [`plans/2026-08-23-harness-v0-1.md`](plans/2026-08-23-harness-v0-1.md).
+O mapa que originou a fase é [`docs/harness/CURRENT-HARNESS-GAP.md`](../harness/CURRENT-HARNESS-GAP.md),
+e o achado dele decide o escopo: das quinze linhas do harness pedido, a maioria
+**já estava implementada** em três pacotes que não se conhecem
+(`sparkforge/economy`, `sparkforge/agents`, `sparkforge/case` + `sparkforge/workflows`).
+O que sobrou sem equivalente algum foram três invariantes — e as fases as
+escrevem como **teste**, não como camada nova. Nenhum módulo novo foi criado.
+
+As fases são numeradas com `I` e não com `H` de propósito: as fases `H` são do
+eixo Glue e continuam na seção acima. Um `H7` sugeriria continuidade que não existe.
+
+### I1 — a fronteira entre runtime e avaliação
+
+Documento: [`docs/harness/RUNTIME-VS-EVALUATION.md`](../harness/RUNTIME-VS-EVALUATION.md) ·
+teste: `tests/test_harness_boundary.py` (**9 testes**).
+
+O runtime nunca importa `sparkforge.evals`; a avaliação importa o runtime. O gate
+é por AST, não por texto — e a primeira versão dele era **verde por engano**:
+deixava passar import relativo, porque `from ..evals.runner import X` chega ao
+visitante como `node.module == "evals.runner"`, e `from . import evals` chega como
+`node.module is None`. A correção (`a31c989`) resolve a âncora relativa a partir
+da raiz do pacote em vez de subir enquanto houver `__init__.py` — subir deixaria
+buracos, porque `sparkforge/providers`, `evals/datasets`, `findings/schemas` e
+`migration/glue` são namespace packages sem `__init__.py`.
+
+Registrou também a **primeira recusa da fase**: `readiness_score` (§50 do harness
+pedido) não foi escrito. É o mesmo defeito de `LakeFormationDoctor.health_score`
+(`100 - fails*35 - warns*15`) — número composto que não significa nada e que
+esconde bloqueador atrás de média.
+
+Commits: `d7b2df4`, `a31c989`, `6906e57`.
+
+### I2 — conteúdo de artefato é dado, nunca instrução
+
+Documento: [`docs/harness/UNTRUSTED-CONTENT.md`](../harness/UNTRUSTED-CONTENT.md) ·
+teste: `tests/test_harness_untrusted.py` (**4 testes**).
+
+A defesa é **separação de campo**, não sanitização — e a recusa de sanitizar está
+escrita: apagar texto do artefato apagaria a evidência que o achado existe para
+mostrar. Campo controlado pelo catálogo (`rule_id`, `title`, `explanation`,
+`recommendation`, `severity`, `sources`, `threshold`, `benchmark_ref`, …) e campo
+derivado do artefato (`subject`, `measured`, `evidence`) nunca se misturam. O
+teste afirma nos dois sentidos: a marca injetada não aparece em campo de catálogo,
+e **continua visível** no campo do artefato.
+
+Três defeitos de medição foram pegos aqui, e os três são da mesma família — contar
+por `grep` e chamar de conferência:
+
+1. A contagem de extratores com `subject.snippet` era **5** por `grep` e **4** por
+   execução: `terraform` usa `subject.symbol`, não `snippet`. A alegação falsa já
+   tinha vazado para a `description` de uma tool, que é superfície que o modelo lê.
+2. O filtro `nome.startswith("extract")` pulava **5 dos 20** módulos em silêncio
+   (`build_benchmark`, `build_call_graph`, `build_plan`, `fuse`, `detect_runtime`),
+   enquanto a nota da alegação prometia cobertura de todos.
+3. Alargar o filtro revelou o terceiro: `fusion.fuse` **repassa** facts de entrada
+   (117 com snippet) sem criar nenhum. A contagem passou a descontar repasse por
+   `f.id`.
+
+O gate de lastro fechou em **0 divergências com o erro (1) dentro** — porque o
+documento tinha zero entrada no manifesto e escrevia "cinco" por extenso, e o
+extrator numérico não vê número por extenso. Desde então o documento escreve
+dígito e as contagens têm prova que **executa** os 20 módulos.
+
+Commits: `c32c4f9`, `8509047`, `33d4351`, `89de8ee`.
+
+### I3 — a cadeia de autorização, e a anotação que mentia
+
+Documento: [`docs/harness/AUTHORIZATION-CHAIN.md`](../harness/AUTHORIZATION-CHAIN.md) ·
+teste: `tests/test_harness_authorization.py` (**83 testes**) ·
+código: `sparkforge/agents/autonomy.py`.
+
+`tool_class()` deriva cinco níveis de risco (`READ_ONLY`, `LOCAL_MUTATION`,
+`CLOUD_READ`, `CLOUD_MUTATION`, `DESTRUCTIVE`) das anotações MCP que cada tool já
+declara — não de uma tabela paralela. `authorize()` devolve `AuthorizationDecision`
+com a cadeia inteira; a aprovação é por **classe**, e o perfil é **teto**.
+`authorize_tool`, a função booleana antiga, ficou intocada: é superfície pública
+e isto é adição, não migração. Ela não tem chamador de produção — só testes —, e
+o texto que afirmava o contrário foi corrigido nos três lugares onde estava.
+
+**Duas revisões independentes reprovaram a primeira entrega, e as duas achavam a
+mesma coisa por caminhos diferentes.**
+
+O teto `OFFLINE` **falhava aberto**. O código comparava `profile == "OFFLINE"`, e
+o tipo canônico do repositório é `ExecutionProfile` (`sparkforge/registry/models.py`),
+cujo valor é `"offline"` minúsculo. Por ser `str, Enum`, ele atravessa a anotação
+`profile: str` sem erro de tipo e compara falso — então o enum do próprio
+repositório desligava o teto, e a decisão gravava `reason="autorizado"`,
+indistinguível de aprovação legítima. Qualquer perfil desconhecido (`''`, `None`,
+`'NAO_EXISTE'`) significava "sem teto". O teste passava `"OFFLINE"` maiúsculo, que
+é **a única grafia que funcionava**: ele trancava o literal, não o conceito.
+Restaurado o código antigo, a classe de teste nova falha em 11 de 19.
+
+O segundo achado é maior e **não foi esta fase que o criou — foi esta fase que o
+revelou.** As sete tools `sparkforge_collect_*` declaravam `readOnlyHint: True` e
+**escrevem em disco**: o artefato coletado (`sparkforge/collect/aws.py`) e o
+manifesto de integridade `path` + `sha256` que `sparkforge_collect_verify` depois
+confere (`sparkforge/collect/base.py`). Aprovar "ler da AWS" concedia escrita no
+repositório sem nenhuma aprovação de mutação local. Derivar a classe da anotação
+foi o que expôs a mentira — e é esse o valor do mecanismo.
+
+A distribuição **remedida por execução** depois da correção:
+
+| classe | tools |
+|---|---|
+| `READ_ONLY` | 32 |
+| `CLOUD_MUTATION` | 7 |
+| `LOCAL_MUTATION` | 5 |
+| `CLOUD_READ` | 0 |
+| `DESTRUCTIVE` | 0 |
+
+Duas classes continuam vazias, **mas não as que o plano previu**. `CLOUD_READ` é
+uma delas: nenhuma tool do SparkForge toca a rede sem também gravar em disco. A
+previsão do plano estava errada porque foi feita a partir da anotação, e a
+anotação mentia.
+
+Commits: `58e0f2a`, `433598c`.
+
+### Status: PARCIAL, e a razão está na linha do mapa
+
+`Authorization chain` ficou **`EXISTE PARCIAL`** em
+[`docs/harness/CURRENT-HARNESS-GAP.md`](../harness/CURRENT-HARNESS-GAP.md), e a
+razão é específica: a cadeia **decide**, e nada a **impõe**. Não há hook
+`PreToolUse`; um agente que chame `terraform destroy` por shell nunca passa por
+`authorize()`. Nenhum dos quatro caminhos de execução do repositório
+(`adapters/mcp.py`, `adapters/tools.py`, `adapters/cli.py`, `agents/supervisor.py`)
+chama a cadeia hoje.
+
+Dois limites ficaram declarados no produto, não só aqui:
+
+- **A cadeia autoriza um NOME, nunca uma CHAMADA.** `authorize()` não recebe
+  `arguments`; `path`, `bucket` e `report_path` estão fora da decisão por
+  construção. A medição que sustenta a linha: uma tool `READ_ONLY` com `path`
+  arbitrário leu um segredo de fora do repositório sob perfil `OFFLINE`. A
+  consequência que importa para o trabalho seguinte é que **um hook `PreToolUse`
+  vê argumentos, e `authorize()` não tem onde recebê-los**.
+- **Duas classificações incomensuráveis.** `ToolManifest.mutation_class: RiskLevel`
+  (`sparkforge/registry/models.py`) é um segundo eixo de 4 níveis que
+  `tool_class()` não consulta. Não há divergência viva — `CanonicalRegistry`
+  nunca popula `self.tools` —, mas os eixos não se mapeiam: `RiskLevel` não tem
+  dimensão de nuvem, `ToolClass` não tem `reversible`/`sensitive`. Está registrado
+  na docstring de `ToolClass`, não só no mapa.
+
+---
+
 ## Dívidas abertas
 
 A tabela era uma só e misturava **três naturezas**, e a mistura fazia o
@@ -2118,7 +3390,7 @@ que a varredura livre achou não estavam em candidato nenhum, nenhuma quebrava t
 todas eram texto que a própria pesquisa já tinha derrubado — sobrevivendo num `.py`, num
 docstring de teste e num arquivo da raiz, três lugares onde ninguém foi procurar.
 
-### Dívidas (3)
+### Dívidas (5)
 
 Fechar exige escrever código. Nada aqui espera fase nem depende de reverter
 decisão. **A tabela tinha oito linhas em 2026-08-05, caiu para uma no mesmo dia
@@ -2145,6 +3417,8 @@ com teste. O que sustenta este número é o teste que ficou para trás, não a p
 | `judge --emr` sobre facts de EMR Serverless grava versão de EC2 num artefato que não a declara | rodada de dívidas abertas, 2026-08-05, medida ao conferir o que o caminho alternativo do Serverless realmente enche | **Dívida, e a única aberta — fechar é escrever código, e ninguém escreveu.** Medido, reproduzível numa linha: `sparkforge judge --facts fixtures/emr_serverless/app_saudavel/expected/facts.json --emr 7.5.0` grava no contexto `{"emr": "7.5.0", "spark": "3.5.2-amzn-1", "python": "3.9", "iceberg": "1.6.1-amzn-1", "detected_from": ["cli"]}`, tudo derivado da `EMR_MATRIX` — **que é de EMR on EC2**. O conjunto de facts não tem um único fact de EC2: são cinco kinds `emrs.*`, todos de `get-application`. **Onde está o número certo:** `knowledge/emr-serverless/runtime-matrix.md:47` mede que `emr-7.5.0` no Serverless publica **`3.5.2`, sem o sufixo do fork**, e a §1 da mesma página (`knowledge/emr-serverless/runtime-matrix.md:30-31`) mede que o sufixo `-amzn-N` **não existe na fonte do Serverless** e que **três das quatro colunas da `EMR_MATRIX` não têm fonte nenhuma do lado do Serverless**. Ou seja: `spark` sai com um sufixo que a fonte não publica, e `python` e `iceberg` saem **inteiros do nada** — não é um campo com ruído, são três campos inventados sobre um artefato que não declara nenhum deles. **Nada no motor impede**, e o custo é do pior tipo: versão errada no contexto invalida toda recomendação versionada que vier depois, e o operador não tem como distinguir um eixo derivado de um eixo lido. É **dívida e não limite** porque o conserto é código nosso e há mais de uma forma de escrevê-lo: recusar `--emr` quando o conjunto tem fact `emrs.*`, avisar e marcar os eixos como derivados de matriz alheia, ou derivar da tabela do Serverless para o componente que ela publica e deixar vazio o que ela não publica. **Escolher entre as três é a decisão; nenhuma delas depende de terceiro.** Nenhum teste cobre a combinação hoje — `--emr` é exercitado com facts de EC2, e o Serverless é exercitado sem `--emr`. |
 | Nenhuma regra consegue dizer "o IaC não declarou o jar de GraphFrames" — falta `absent` filtrado por atributo, e o kind derivado que o substituiria | Fase 6a, veto `V-GR-1` no cabeçalho de `rules/catalog/graph.yaml`, medido ao escrever a regra que a §5 do spec previa | **Dívida — fechar é escrever código, e ninguém escreveu.** Medido: `engine._absent_satisfied` (`rules/engine.py:68-70`) compara **só `kind`**, e o kind é `tf.attribute` dos dois lados do par de fixtures — o que muda é `attrs.key`. Não existe `absent` filtrado por atributo nem `where` negado, então `absent: tf.attribute` seria falso para todo Terraform lido, e a regra acusaria **todo** job de grafo, inclusive quem declarou o jar. **O que fecharia** é um kind derivado no extrator de Terraform, no molde exato de `tf.observability.spark_ui`: o extrator decide uma vez e emite o kind já decidido, e a regra fica com `absent:` sobre ele. É código nosso, tem precedente no próprio repositório e não depende de terceiro. **O que NÃO fecha com ele** está na linha de *Limites declarados* sobre jar de outro minor: a metade **exculpatória** — tratar um `--extra-jars` como resolução — continua vetada na faixa 3.3 mesmo com o kind escrito, e as duas metades envelhecem de formas opostas. O par de fixtures `import_sem_jar_no_iac` × `import_com_jar_declarado` já existe, compartilha o `.py` byte a byte e difere só no `--extra-jars`: o corpus para a regra está pronto, o mecanismo é que não. |
 | `checkpointInterval > 2` tem fonte primária e limiar apurados, e nenhuma fixture o exercita | Fase 6a, veto `V-GR-2` no cabeçalho de `rules/catalog/graph.yaml`, medido contra as 25 fixtures | **Dívida — fechar é escrever corpus, e ninguém escreveu.** É o **único limiar numérico com fonte primária** desta área: `graphframes-api.md` §6 traz o aviso citável (o código adverte em `value <= 0 || value > 2`), e a §4.3.2 autoriza explicitamente "outra regra, com severidade menor". O que falta é golden positivo: o caso `> 2` **não tem fixture nenhuma**, e regra sem ele reprova `test_every_rule_has_a_fixture_that_fires_it`. O caso `<= 0` tem fixture, mas é `saida_intervalo_nao_positivo`, que o próprio `meta.yaml` declara "segunda forma de escrever certo" e que é uma das **cinco** saídas legítimas de `V-GF-1` — acusar o artefato que o corpus declara correto faria o relatório dizer as duas coisas ao mesmo tempo. **Fechar é uma fixture com `checkpointInterval` acima de 2 e um `<= 0` que não seja também saída legítima**, mais a regra. Nada a reverter, nada a esperar de terceiro. |
+| O gate de golden deixou de cobrar as regras `status: structural`, e nada impede que uma regra de detecção real seja marcada assim | expansão agêntica v2, 2026-08-18, medida ao revisar a branch | `tests/test_fixtures_kind_coverage.py` passou a filtrar por `_executable_rules()` para acomodar as 35 áreas de coordenação, que não julgam nada e não podem disparar. A mudança está certa para o que ela acomoda e **abriu uma porta**: `status` é campo livre do YAML, e uma regra com `when` de verdade marcada `structural` sai do gate de fixture, do gate de ramo de severidade e das duas asserções de área muda dos testes ponta a ponta — quatro redes de uma vez, com a suíte verde. Fechar é escrever o invariante que falta: `structural` **exige** `when: {all: []}`, `requires_facts: []` e `sources: []`, e qualquer regra com condição real que se declare `structural` derruba o teste. Não foi escrito nesta branch porque o conjunto de arquivos dela já era o da expansão |
+| `RELACAO_MEDIDA` em `tests/test_sync_render.py` é redefinido por um `update()` no meio do arquivo, e seis chaves ficam com valor morto | expansão agêntica v2, 2026-08-18, medida ao corrigir o lint do arquivo | O dicionário é declarado com as vinte skills e, ~60 linhas abaixo, um `RELACAO_MEDIDA.update({...})` sobrescreve seis entradas (`agentic-orchestration`, `token-efficient-agent`, `tool-specialist-routing`, `analyze-analytics`, `analyze-functional-rules`, `optimize-athena-queries`). O teste que consome lê só o valor final, então o primeiro valor das seis **nunca é exercitado** — quem editar a entrada de cima acha que mudou o teste e não mudou nada. Não é defeito de produto e por isso não bloqueou a branch; é armadilha de manutenção num arquivo cuja função é justamente ser a medida. Fechar é fundir o `update()` na declaração |
 
 ### Fases (8)
 
@@ -2171,7 +3445,7 @@ também a que carrega o buraco medido de extrator, escrito na própria linha.
 | O eixo de resultado é cobrado por **texto**, e o `loader` não o exige de nenhuma regra | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela depende de uma decisão de contrato, não de código.** O que fecharia é um invariante de carga: toda regra que pode mudar o resultado carrega eixo de resultado no `validation`. **O custo medido, e é ele que tira isto de dívida:** a classificação "pode mudar o resultado" **não está no dado**. Das 81 regras, **62** já carregam o eixo e **19** não — e as 19 estão certas: são segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`), destino de log (`SF-EMR-006`, `SF-EMRS-003`, `SF-EMRS-004`, `SF-GLUE-002`), capacidade (`SF-EMR-004`, `SF-EMRS-005`, `SF-GLUE-001`, `SF-GLUE-005`), detecção de runtime (as cinco `SF-ENV`) e metodologia (`SF-PLAN-004`, `SF-UI-002`). Um invariante "todas as regras" reprovaria as 19 corretas; um invariante seletivo exige um **campo declarado por regra** — os 18 campos de regra hoje (`load_catalog()`) não têm nenhum que sirva de gatilho —, e campo novo no contrato de regra é bump de `schema_version`, cujo preço este arquivo declara no cabeçalho: um Finding gravado com `catalog_version: 2` sugere que o limiar que o julgou é outro. São **81** decisões escritas à mão, e cada uma é exatamente a linha *fato versus julgamento* que este repositório traça. **O que existe hoje, e é o piso, não o teto:** `tests/test_rules_result_axis.py` pergunta ao `proposed_change` quais regras trocam a implementação que produz o valor — **7** regras — e cobra o eixo de cada uma, mais os invariantes específicos da `SF-PY-009`. Ele pega a regra que **cala**, que era o estado medido, e não a que fala pouco. Sem posição na *Ordem*. |
 | `validate_output` não rejeita recomendação sem referência de validação funcional, como rejeita ganho sem `benchmark_ref` | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela vem DEPOIS da linha acima — as duas não são paralelas, e essa ordem é o achado.** O molde existe e funciona: `benchmark_ref` cita o `fact_id` de um `bench.run_delta`, e `validate.py` (**116** linhas, **8** menções ao campo) o cobra em duas camadas, forma e pertinência. Um `funcval_ref` citando o `fact_id` de um `funcval.plan` seria a simetria. **O custo medido tem duas parcelas, e a segunda é a que manda.** (1) Campo novo em `findings/models.py` é bump de `schema_version` do contrato de findings, e **113** findings golden em **90** fixtures passariam a ser gravados sob um contrato que os anteriores não declaram. (2) **O gatilho não existe, e é por isso que a ordem importa:** `benchmark_ref` só é exigido quando `expected_effect` é quantificado — um gatilho que **está no próprio finding** e não precisa de julgamento. Não há equivalente para o eixo do dado: "esta recomendação pode mudar o resultado" é precisamente a classificação que a linha acima mede como ausente do catálogo. Sem ela, a rejeição só teria duas formas, e as duas são piores que o texto: exigir de **todas** as recomendações, o que faria o campo virar ritual preenchido para passar — o defeito que a Fase 4a mediu no `benchmark_ref` de texto livre —, ou exigir de nenhuma. **Fechar esta linha é decidir o gatilho, e o gatilho é a fase de cima.** Sem posição na *Ordem*. |
 
-### Limites declarados (23)
+### Limites declarados (24)
 
 Decisão tomada com o custo registrado. "Fechar" cada uma destas significa
 **reverter** a decisão que a criou — e a coluna de impacto abre nomeando qual.
@@ -2224,6 +3498,7 @@ contada.
 | Igualdade bit-a-bit não vale entre plataformas nem entre versões do backend | medido em 2026-08-01, ao fechar a dívida acima | **Limite declarado.** Fechar não é escrever código que falta: é **reverter a decisão** de não pinar `hatchling==` e não nomear um interpretador de referência — as duas recusadas, com o motivo na própria linha (o artefato publicado já declara o `Generator:` que o produziu). Dois eixos sobrevivem à `reproducible = true`, e nenhum é do hatchling. (1) A versão do backend vaza para `WHEEL` como `Generator: hatchling X.Y.Z`, e `requires = ["hatchling>=1.25"]` não é pin — dois builds separados por um release do hatchling divergem. (2) O fluxo de deflate depende da implementação de zlib do interpretador: o CPython 3.14 do Windows usado na medição roda `zlib-ng` (`ZLIB_RUNTIME_VERSION = 1.3.1.zlib-ng`), o `ubuntu-latest`/3.11 do CI roda zlib padrão, e as duas comprimem os mesmos bytes de formas diferentes. Consequência: `verify_wheel.py` prova reprodutibilidade **dentro de uma plataforma**, que é o que o job `wheel` mede nos dois SOs separadamente — não entre elas. Fechar exigiria pinar `hatchling==` e nomear um interpretador de referência; nenhum dos dois foi feito, porque o artefato publicado já declara o `Generator:` que o produziu |
 | O espelho do Devin sai **sem `tools:`**, e o subagente herda o que o harness der | fase de perfis de subagente do Devin, decisão registrada na §2 do spec e travada por teste | **Limite declarado, e o gatilho de reabertura não é nosso: a Cognition documentar o mapeamento.** A fonte diz que o **campo** `tools` do Claude Code é aceito pelo Devin ("Both formats are supported automatically") e a página de permissões enumera os nomes de tool dele (`read`, `edit`, `grep`, `glob`, `exec`) — mas **nenhuma página documenta o mapeamento de valores**: `Bash` → `exec` e `Write` → `write` não estão escritos em lugar nenhum (V-DV-8). Fechar significa reverter a decisão de não chutar, e o custo do chute foi medido nos dois sentidos: traduzir errado para menos **nega** uma tool que o perfil precisa, e o subagente para sem dizer por quê; traduzir errado para mais **concede** o que ninguém revisou, num campo cuja função é justamente restringir. Omitido, o perfil herda o que o harness dá, que é o comportamento default documentado — menos preciso do que gostaríamos, e o único que não afirma o que a fonte não diz. `render_agent(..., "devin")` remove a linha e as continuações dela, para a remoção nunca engolir a chave seguinte, e `tools:` **no corpo** do perfil não é tocado. **Reabre no dia em que a doc do Devin publicar a tabela de correspondência**: aí a tradução vira derivação de dado publicado, e a decisão se inverte com o mesmo argumento que a criou. **O que esta linha não afirmava, e a revisão final de 2026-08-04 obrigou a escrever:** a omissão **não é fronteira**, e o argumento acima nunca disse que era — ele é só sobre mapeamento de valores, e nunca mencionava que **o outro caminho carrega o campo**. Os dois diretórios de descoberta estão ligados por default (`read_config_from` tem `agents_standard` e `claude`, ambos `true`), a fonte é **silenciosa** sobre precedência entre eles, e `allowed-tools` tem default *"all tools"* — logo omitir é a opção **mais permissiva**, não a mais restrita, e o mesmo perfil pode chegar pelo `.claude/agents/` **com** `tools:`. A segurança não depende disso em grau nenhum: ela é a prosa de `## Não faz` no corpo, byte-idêntica nos dois espelhos, e a declaração de despacho das doze skills. Três textos afirmavam efeito onde não há (`README.md`, `AGENTS.md` e esta linha) e foram corrigidos na mesma varredura |
 | Custom subagents são **experimentais** pela própria Cognition | fase de perfis de subagente do Devin, risco registrado na §7 do spec | **Limite declarado — e é o único do inventário cujo fechamento não depende deste repositório em nenhum grau.** A fonte declara literalmente: *"Custom subagents are **experimental**. The format, behavior, and configuration options may change in future releases"* (V-DV-6), e o mesmo se aplica a `subagent:`/`agent:` em skills. Some junto o formato de descoberta: nada garante que `.agents/agents/` continue sendo varrido, nem que a importação de `.claude/agents/*.md` sobreviva. **A mitigação é estrutural e já está no manifesto:** nenhuma capacidade declara `subagent` sem `playbook`, travado por teste — se o despacho sumir, o piso permanece e a única perda é o paralelismo. **O que não existe é vigilância:** ver a dívida da watchlist, logo acima; hoje a página que declara a experimentalidade é a mesma que ninguém confere quando muda. O que **deve** acontecer em toda fase futura que toque neste mecanismo está escrito no V-DV-6 e vale repetir aqui: **re-verificar a doc na data da entrega**, nunca construir garantia dura sobre ele |
+| Nenhuma fonte oficial publica preço do Glue por **versão de runtime**, e a página de pricing não serve a tabela por região nem os tipos de worker | Fase H5, medido em 2026-08-23 ao coletar as duas fontes | **Limite declarado, e o gatilho de reabertura não é nosso.** `knowledge/glue/pricing.yaml` guarda o preço único com `region: UNQUALIFIED` e `runtime_version: UNQUALIFIED`, e o anúncio de 30% em lista separada com `baseline` vazio. Fechar exige a AWS publicar preço por versão — multiplicar as duas afirmações produziria um número que fonte nenhuma sustenta. `differentiates_by_runtime_version()` devolve `False` como resultado, e há teste que quebra no dia em que isso mudar |
 | Dez das doze skills despacháveis saem **sem `agent:`**, e o Devin escolhe o perfil | fase de perfis de subagente do Devin, desvio D-DV-11, medido na Task 4; a décima entrou na revisão final de 2026-08-04 | **Limite declarado, e a alternativa foi recusada com o contraexemplo na mão — não por gosto.** Medido na relação derivada de `skills:` dos oito coordenadores: **14 das 20** skills são declaradas por dois a cinco coordenadores, e entre as **12** despacháveis apenas **3** têm resposta única (`review-emr-cluster` → `emr-infra-reviewer`, `review-data-validation` → `data-quality-reviewer`, `diagnose-oom` → `glue-incremental-performance-architect`). O caso ambíguo é a **maioria**, não a exceção. As outras nove declaram `subagent: true` sem `agent:`, que é forma documentada — o campo tem default *none* na tabela de frontmatter da fonte —, e o roteamento passa a ser do harness. Fechar significa reverter essa decisão e escolher um perfil por skill; a saída óbvia do plano ("o primeiro em ordem determinística") foi recusada porque a medição mostrou que ela **erra**: em ordem alfabética `review-pyspark-pr` cairia em `data-quality-reviewer` e `analyze-spark-plan` em `glue-incremental-performance-architect`, quando o especialista de ambas é `pyspark-code-reviewer`. Ordem alfabética não é critério de competência, e publicá-la como se fosse seria roteamento errado com cara de decisão. O contraexemplo está fixado em `test_a_ordem_alfabetica_seria_o_perfil_errado`. **O que fecharia de verdade é dado que não existe:** uma declaração de especialidade por skill, hoje inferível só do julgamento de quem escreveu os coordenadores. Enquanto ela não existir, o invariante bidirecional é a garantia que sobra — `agent:` presente sempre nomeia perfil que existe **e** que declara aquela skill. **A revisão final de 2026-08-04 mediu que "declarante único" não bastava, e a terceira atribuição caiu:** `diagnose-oom` → `glue-incremental-performance-architect` era única só porque `spark-performance-architect` **não lista** `diagnose-oom` no `skills:` dele — embora liste `diagnose-data-skew`, `analyze-spark-ui` e `tune-glue-job`, toda a vizinhança do mesmo diagnóstico. Isso é **omissão numa lista pré-existente**, não juízo de competência, e o perfil que sobrava era o orquestrador, cuja skill homônima este arquivo declara não-despachável por orquestrar via `next-step` — despachar investigação fechada para dentro dele publica o método que a mesma fase recusou. A regra nova é **derivada, não mantida à mão**: `orchestrator_profiles()` é o conjunto dos perfis cuja skill homônima está em `NON_DISPATCHABLE_SKILLS`, hoje com **um** elemento; se aquela skill virar despachável, a exclusão some sozinha. Sobram **duas** atribuições, e o limite ficou maior — dez de doze, não nove |
 | Os cinco executores não estão num layout de descoberta documentado do Devin | varredura de completude do Devin, 2026-08-04, medida contra a §1.1 da pesquisa | **Limite declarado, e o gatilho de reabertura é dos dois lados: a Cognition documentar a recursão, ou este repositório decidir achatar o espelho.** Medido: a fonte descreve **dois** layouts de perfil customizado — *flat file* `agents/<nome>.md` e *directory* `agents/<nome>/AGENT.md`, com `AGENTS.md`, `agent.md` e `agents.md` também aceitos nessa precedência — e a importação do Claude Code casa `.claude/agents/*.md`, que é **raso**. `.agents/agents/executors/sf-judge.md` não é nenhum dos dois: pelo layout *directory*, `executors/` só publicaria um perfil chamado `executors`, e só se tivesse dentro um `AGENT.md`. Se a varredura recorre, **a documentação não diz** — é a mesma ambiguidade do `agents/` da raiz (V-DV-7), e vale a mesma regra. **Quatro textos afirmavam o contrário** (`README.md`, `AGENTS.md`, a tabela da §3.1 do `GUIA_DE_USO.md` e o desvio D-DV-R4 do spec, que escreve *"os executores também são perfis de subagente válidos"*), e a afirmação nunca teve fonte: ela foi lida da contagem de arquivos do espelho, não de uma página. Corrigidos os quatro. **Nada se perde na prática**, e é por isso que isto é limite e não dívida: `sparkforge playbook <coordenador>` lê `agents/executors/` do próprio repositório e devolve os mesmos cinco passos em qualquer plataforma, sem depender de descoberta nenhuma. **Fechar é decisão de desenho com custo, não código faltando:** achatar os executores para `.agents/agents/sf-judge.md` os tornaria treze perfis de topo, e aí `run_subagent` poderia escolher `sf-judge` para conduzir uma investigação inteira — o executor sozinho não é coordenador, e publicar os dois no mesmo espaço de nomes é exatamente o que o subdiretório existe para impedir. Fazer isso **só no espelho do Devin** é possível (`platform_for` já deriva a plataforma do alvo), e é fase própria: muda o que a plataforma enxerga, não como o arquivo é traduzido |
 | Um coordenador despachado como subagente no Devin **não** despacha os cinco executores | varredura de completude do Devin, 2026-08-04, medida contra a §5.2 da pesquisa | **Limite declarado, e fechá-lo é reverter uma decisão que ninguém tomou por escrito até agora: declarar `max-nesting`.** A fonte é literal — *"By default, subagents cannot spawn their own subagents — only the root agent can. Subagent tools (`run_subagent` and `read_subagent`) are **disabled** inside a subagent"* —, e o campo que reverte isso (`max-nesting`, introduzido em 2026-05-26) **não** é declarado em perfil nenhum deste repositório. Consequência: o modelo de execução da Fase 4 — coordenador despacha os cinco executores — **não se traduz** quando o próprio coordenador é o subagente. O que se traduz é o **método**: o corpo do perfil, o `## Não faz`, as áreas de regra. A decomposição roda inline, e ela tem nome e verbo: `sparkforge playbook <coordenador>`, que é o piso das cinco plataformas justamente por não depender de despacho. **A decisão de não declarar `max-nesting` tem os mesmos três argumentos que a de não declarar `model:`**, e um quarto: (1) o campo é de um mecanismo que a própria Cognition declara **experimental**; (2) *"cost scales with the number of subagents [...] tasks that fan out into many subagents (or nest them) cost more"*, e aninhar é o caso caro; (3) nenhum arquivo versionado pode garantir que o despacho esteja sequer ligado; e (4) o `playbook` já entrega a decomposição, então o que se ganharia é paralelismo, não método. **Reabre no dia em que alguém medir que o paralelismo aninhado paga o custo** — e aí é uma linha por coordenador, no renderizador do Devin, com o número na mão |

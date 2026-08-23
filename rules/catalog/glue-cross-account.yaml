@@ -1,0 +1,102 @@
+# Catálogo de regras — o eixo `cross_account` da §32. Ver `glue-kms.yaml` para o
+# cabeçalho comum aos três eixos.
+#
+# O SINAL OBSERVÁVEL, e por que é este. Um job Glue que lê o Data Catalog de
+# OUTRA conta declara isso numa propriedade Spark:
+# `spark.hadoop.hive.metastore.glue.catalogid`. O extrator já desmonta cada
+# `--conf` do `default_arguments` em `tf.spark_conf`, um fact por propriedade
+# (ver `sparkforge/facts/terraform.py`), então a observação não custa extrator
+# novo. O resto da cadeia -- concessão do Lake Formation, aceitação do convite
+# do AWS RAM, resource link na conta consumidora -- vive em recursos e em
+# estado de outra conta, e nada disso é alcançável a partir do `.tf` do job.
+
+area: SF-XACC
+retrieved: 2026-08-23
+
+rules:
+
+  - id: SF-XACC-001
+    category: cross-account-catalog
+    title: Job lê o Data Catalog de outra conta e depende de uma cadeia que este artefato não mostra
+    requires_facts: [tf.spark_conf]
+    when:
+      all:
+        - fact: tf.spark_conf
+          # Sem `attrs.present`: `tf.spark_conf` nasce da decomposicao de um
+          # `--conf` que ja existe, entao a chave so aparece quando foi
+          # declarada -- o campo `present` e do `tf.attribute` bruto, nao do
+          # decomposto. Exigi-lo aqui deixaria a regra muda para sempre.
+          where:
+            attrs.key: spark.hadoop.hive.metastore.glue.catalogid
+          expr: 'attrs.value != ""'
+    status: structural
+    severity_default: P2
+    # ESCOPO VAZIO, E DE PROPOSITO. A primeira versao declarava
+    # `{glue: ">=4.0"}`, e isso era etiqueta de servico disfarcada de guarda de
+    # versao -- o defeito que a Fase 5a nomeou e que
+    # `tests/test_rule_scope_by_nature.py` existe para pegar. Nao ha fronteira
+    # de versao aqui: a exigencia da documentacao vale igual em toda versao de
+    # Glue que aceita a combinacao, e nenhuma fonte declara um piso.
+    #
+    # Quem gateia e `requires_facts`: sem `tf.attribute` de um `aws_glue_job`,
+    # a regra nao dispara, e um `aws_glue_job` so existe onde ha Glue. Com
+    # `{glue: ">=4.0"}` a area inteira desaparecia num runtime detectado a
+    # partir de event log (que preenche `spark`, nao `glue`), e area que
+    # desaparece inteira le como "nada encontrado nesse eixo" -- o falso
+    # negativo que a guarda deveria evitar, produzido pela propria guarda.
+    runtime_scope: {}
+    explanation: >
+      Apontar `spark.hadoop.hive.metastore.glue.catalogid` para outra conta faz
+      o job ler metadados compartilhados, e a documentação do Lake Formation
+      descreve a cadeia que sustenta isso: a concessão entre contas usa o AWS
+      Resource Access Manager, e "if the grantee account is not in the same
+      organization, AWS RAM sends an invitation to the grantee account to accept
+      or reject the resource grant" -- sem a aceitação, o recurso compartilhado
+      não fica disponível. A mesma página declara que "integrated services such
+      as Athena and Amazon Redshift Spectrum require resource links to be able to
+      include shared resources in queries", ou seja: o job pode enxergar a tabela
+      e um consumidor de BI da mesma conta não enxergar, porque falta o resource
+      link. Nada dessa cadeia está no Terraform do job. Este achado marca a
+      dependência para que ela seja conferida, e não afirma que ela está
+      quebrada.
+    proposed_change:
+      - >-
+        Confirmar o estado do compartilhamento no AWS RAM da conta consumidora
+        -- convite aceito, não pendente.
+      - >-
+        Confirmar que existe resource link no Data Catalog da conta consumidora
+        apontando para o banco ou a tabela compartilhados, se algum consumidor
+        for Athena ou Redshift Spectrum. O job Spark não precisa dele; esses
+        serviços precisam.
+      - >-
+        Se o compartilhamento usa LF-TBAC para uma organização ou unidade
+        organizacional, confirmar que o *Cross account version settings* está em
+        versão 3 ou acima -- a documentação declara esse piso para essa forma de
+        concessão.
+      - >-
+        Se os dados estão encriptados com chave gerenciada pelo cliente,
+        confirmar que a política da chave autoriza o papel da conta consumidora.
+    risks:
+      - >-
+        A falha típica é assimétrica e por isso confunde: o job passa e o
+        consumidor de BI quebra, ou o inverso -- e a causa está numa conta que
+        quem lê o Terraform do job não administra.
+    tradeoffs:
+      - >-
+        Ler o catálogo de outra conta evita copiar dado, e em troca amarra a
+        execução do job a uma cadeia de permissões operada por outro time.
+    validation:
+      - >-
+        `aws ram get-resource-shares --resource-owner OTHER-ACCOUNTS` na conta
+        consumidora, conferindo o status do compartilhamento.
+      - >-
+        Uma consulta de smoke test pelo consumidor real (Athena, Redshift
+        Spectrum) sobre a tabela compartilhada.
+      - >-
+        Uma execução do job que leia a tabela e termine sem erro de permissão.
+    rollback: >
+      Remover a propriedade devolve o job ao catálogo da própria conta -- e junto
+      o acesso ao dado compartilhado que motivou a configuração. É decisão de
+      arquitetura, não rollback.
+    sources:
+      - {url: "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html", retrieved: 2026-08-23}

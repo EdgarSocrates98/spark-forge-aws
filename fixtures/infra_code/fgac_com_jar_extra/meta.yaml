@@ -1,0 +1,27 @@
+name: fgac_com_jar_extra
+proves: >
+  `--enable-lakeformation-fine-grained-access` junto com `--extra-jars` no MESMO
+  `aws_glue_job`. A AWS declara bloqueado, sob FGAC, o fornecimento de JAR
+  adicional para extensao do Spark, conector ou metastore -- o bloqueio existe
+  para preservar o isolamento do system driver. SF-LF-001 dispara em P0: nao e
+  risco, e configuracao que a documentacao declara incompativel, visivel no
+  Terraform antes de qualquer execucao.
+  Os outros dois jobs do arquivo sao os pares negativos, e cada um prova uma
+  coisa diferente. `etl_fgac_sem_jar` tem FGAC e NAO tem JAR extra: FGAC sozinho
+  nao e achado, e sem ele a regra passaria acusando todo job com o parametro.
+  `stream_sem_fgac` e `gluestreaming` e NAO tem FGAC: e o par cruzado de
+  SF-LF-002 -- sem `same_subject`, o motor casaria o parametro de FGAC do
+  primeiro job com o `command.name` do terceiro e acusaria dois jobs corretos
+  de uma incompatibilidade que nenhum dos dois tem.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-LF-001

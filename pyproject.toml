@@ -74,6 +74,10 @@ dev = [
 
 [project.scripts]
 sparkforge = "sparkforge.adapters.cli:main"
+# `sparkforge/tools/cli.py` ja anuncia `prog="sparkforge-tools"` e docs/agentic-expansion.md
+# documenta o comando. Sem esta entrada o nome nao existia depois do install: so
+# `python -m sparkforge.tools.cli` funcionava, e a documentacao mentia.
+sparkforge-tools = "sparkforge.tools.cli:main"
 
 # Reprodutibilidade bit-a-bit do artefato. `reproducible = true` JA e o default
 # do hatchling -- esta declarado aqui porque default implicito nao e contrato:
@@ -147,7 +151,9 @@ line-length = 100
 target-version = "py310"
 # fixtures/ contem PySpark deliberadamente defeituoso para golden tests;
 # lintar codigo de amostra ruim de proposito e ruido, nao sinal.
-exclude = ["fixtures"]
+# vendor/ e codigo de terceiro pinado byte a byte por vendor/MANIFEST.sha256:
+# corrigir lint ali quebraria o gate e mentiria sobre a procedencia.
+exclude = ["fixtures", "vendor"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "S"]

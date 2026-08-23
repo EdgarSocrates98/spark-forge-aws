@@ -229,6 +229,9 @@ DEVIN_SKILL_DISPATCH_KEYS = frozenset({"subagent", "agent"})
 # que. Uma skill despachavel a menos custa contexto do pai, e mais nada. Na
 # duvida, nao despacha.
 DISPATCHABLE_SKILLS = {
+    "verify-agent-evidence": "verifica findings contra fatos e fontes locais",
+    "engineer-agent-context": "compacta contexto preservando evidencia e kinds",
+    "engineer-agent-memory": "recupera memoria local auditavel por caso e dominio",
     "analyze-batch-loop": "extrai o loop do codigo e julga; a saida e relatorio",
     "analyze-library-call-graph": "varre a biblioteca e devolve o grafo; leitura fechada",
     "analyze-spark-plan": "interpreta um plano fisico ja salvo; nao pede nada a ninguem",
@@ -241,9 +244,21 @@ DISPATCHABLE_SKILLS = {
     "review-emr-cluster": "revisa a definicao do cluster que ja esta em disco",
     "review-glue-terraform": "revisa o .tf que ja esta em disco",
     "review-pyspark-pr": "revisa um diff fechado e classifica risco",
+    "analyze-analytics": "Especialista de dominio; despacho por coordenador",
+    "analyze-functional-rules": "Especialista de dominio; despacho por coordenador",
+    "analyze-graph-data": "Especialista de dominio; despacho por coordenador",
+    # As tres de Glue 6 que LEEM e julgam, sem decisao de terceiro no caminho:
+    # os artefatos (codigo, .tf, requirements, .jar) ja estao em disco, e o
+    # veredito sai do catalogo e da matriz.
+    "migrate-glue-6": "extrai a arvore do job e julga degrau a degrau; leitura fechada",
+    "spark4-compatibility": "julga o codigo e os pins contra a fronteira do Spark 4",
+    "lakeformation-fgac-guard": "correlaciona FGAC e classpath no .tf que ja esta em disco",
 }
 
 NON_DISPATCHABLE_SKILLS = {
+    "agentic-orchestration": "coordena no agente pai",
+    "token-efficient-agent": "aplica contexto no agente atual",
+    "tool-specialist-routing": "valida roteamento no agente atual",
     # As duas que dirigem o loop. Um subagente nao herda o historico do pai e,
     # por default, nao gera subagente proprio (`max-nesting`): despachar quem
     # orquestra e perder justamente a orquestracao.
@@ -257,6 +272,13 @@ NON_DISPATCHABLE_SKILLS = {
         "PROMPT_INICIAL_MESTRE.md; subagente nao gera subagente por default"
     ),
     # As que precisam de uma decisao que nao esta no repositorio.
+    "iceberg-v3-readiness": (
+        "subir `format-version` e decisao de IDA, e a skill exige o inventario de "
+        "consumidores -- que e conhecimento da organizacao, escrito por uma pessoa, "
+        "nao derivavel de artefato. Dentro de subagente a pergunta 'quem mais le "
+        "esta tabela?' e inalcancavel, e a resposta errada quebra o consumidor dias "
+        "depois"
+    ),
     "optimize-iceberg-table": (
         "`expire_snapshots` e `remove_orphan_files` nao tem desfazer, e a propria "
         "skill exige que a retencao venha do dono dos dados. Dentro de subagente "
@@ -284,6 +306,17 @@ NON_DISPATCHABLE_SKILLS = {
         "e `diagnose-data-skew`; subagente nao herda o historico do pai e teria de "
         "reconstruir a evidencia que motivou a chamada"
     ),
+    "design-data-architecture": "Especialista de dominio; despacho por coordenador",
+    "design-airflow-pipelines": "Especialista de dominio; despacho por coordenador",
+    "design-agent-systems": "Especialista de dominio; despacho por coordenador",
+    "optimize-iceberg-tables": "Especialista de dominio; despacho por coordenador",
+    "design-s3-data-lake": "Especialista de dominio; despacho por coordenador",
+    "review-terraform-data-platform": "Especialista de dominio; despacho por coordenador",
+    "design-neptune-graph": "Especialista de dominio; despacho por coordenador",
+    "design-dynamodb-model": "Especialista de dominio; despacho por coordenador",
+    "optimize-athena-queries": "Especialista de dominio; despacho por coordenador",
+    "design-lambda-serverless": "Especialista de dominio; despacho por coordenador",
+    "design-step-functions-orchestration": "Especialista de dominio; despacho por coordenador",
 }
 
 SKILL_DISPATCH_REASON = {**DISPATCHABLE_SKILLS, **NON_DISPATCHABLE_SKILLS}

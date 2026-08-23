@@ -56,6 +56,26 @@
       ],
       "rules": []
     },
+    "https://aws.amazon.com/about-aws/whats-new/2026/08/aws-glue-6-0-price-reduction-iceberg-v3/": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
+    "https://aws.amazon.com/blogs/aws/aws-glue-6-0-now-available-with-30-lower-price-and-full-apache-iceberg-v3-support/": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
     "https://aws.amazon.com/blogs/aws/new-improve-apache-iceberg-query-performance-in-amazon-s3-with-sort-and-z-order-compaction": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -534,11 +554,13 @@
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/Iceberg-release-history.html": {
       "docs": [
-        "knowledge/emr-serverless/runtime-matrix.md"
+        "knowledge/emr-serverless/runtime-matrix.md",
+        "knowledge/storage/iceberg-v3.md"
       ],
       "pinned": false,
       "retrieved": [
-        "2026-08-04"
+        "2026-08-04",
+        "2026-08-22"
       ],
       "rules": []
     },
@@ -707,6 +729,18 @@
       ],
       "rules": []
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-23"
+      ],
+      "rules": [
+        "SF-KMS-001",
+        "SF-KMS-002",
+        "SF-NET-001"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -717,9 +751,29 @@
         "2026-07-29"
       ],
       "rules": [
-        "SF-ENV-001"
+        "SF-ENV-001",
+        "SF-MIG-001",
+        "SF-MIG-002",
+        "SF-MIG-004"
       ],
       "sha256": "8df8427d8f815c4d9c443c40d22b5082d9c3129cb8bc053ad5969ad119044439"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md",
+        "knowledge/spark/spark4-migration.md",
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-21",
+        "2026-08-22"
+      ],
+      "rules": [
+        "SF-MIG-003",
+        "SF-MIG-004",
+        "SF-SPARK4-004"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html": {
       "checked_at": "2026-07-31",
@@ -754,6 +808,39 @@
       ],
       "rules": []
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/release-notes.html": {
+      "docs": [
+        "knowledge/glue/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-21"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
+      "docs": [
+        "knowledge/glue/lakeformation-fgac.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": [
+        "SF-LF-001",
+        "SF-LF-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/setup-vpc-for-glue-access.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-23"
+      ],
+      "rules": [
+        "SF-NET-001"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -767,6 +854,16 @@
         "SF-GLUE-005"
       ],
       "sha256": "a587377ca988f6727e8031eeb861bcebd9322f7988b6793952f0ef7fd2a95cdb"
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-23"
+      ],
+      "rules": [
+        "SF-XACC-001"
+      ]
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction": {
       "docs": [
@@ -1132,6 +1229,16 @@
         "SF-ICE-004"
       ]
     },
+    "https://github.com/apache/iceberg/releases/tag/apache-iceberg-1.11.0": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
     "https://github.com/awslabs/python-deequ": {
       "checked_at": "2026-08-03",
       "docs": [
@@ -1265,6 +1372,16 @@
       "pinned": false,
       "retrieved": [
         "2026-08-03"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
       ],
       "rules": []
     },
@@ -1426,7 +1543,9 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": []
+      "rules": [
+        "SF-MIG-001"
+      ]
     },
     "https://spark-packages.org/package/graphframes/graphframes": {
       "docs": [
@@ -1465,6 +1584,32 @@
         "SF-PY-008",
         "SF-PY-009",
         "SF-PY-010"
+      ]
+    },
+    "https://spark.apache.org/docs/4.1.1/api/python/migration_guide/pyspark_upgrade.html": {
+      "docs": [
+        "knowledge/spark/spark4-migration.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": [
+        "SF-SPARK4-002",
+        "SF-SPARK4-003"
+      ]
+    },
+    "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html": {
+      "docs": [
+        "knowledge/spark/spark4-migration.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": [
+        "SF-SPARK4-001",
+        "SF-SPARK4-003"
       ]
     },
     "https://spark.apache.org/docs/latest/api/python/tutorial/sql/arrow_pandas.html": {

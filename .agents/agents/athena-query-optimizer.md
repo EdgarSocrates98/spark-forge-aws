@@ -1,6 +1,6 @@
 ---
 name: athena-query-optimizer
-description: Use quando o custo ou a latência estiver na consulta e não no job — bytes escaneados no Athena, pruning de partição, projeção de coluna, versão do engine, workgroup, e o layout de armazenamento que a consulta enxerga.
+description: Custo ou latencia na consulta Athena e nao no job - bytes escaneados, pruning de particao, projecao de coluna, versao do engine, workgroup, layout de armazenamento.
 skills:
   - optimize-parquet-layout
   - optimize-iceberg-table

@@ -1,4 +1,4 @@
-# Catálogo de roteamento — direcionamento determinístico
+﻿# Catálogo de roteamento — direcionamento determinístico
 # Mesmo motor de regras, predicado sobre o estado do case em vez de sobre facts.
 # É isto que faz o próximo passo ser decidido por dado e não por julgamento do modelo,
 # e é o que sobrevive à troca de sessão Devin <-> Claude Code e à troca de modelo.
@@ -464,6 +464,657 @@ rules:
       definição do job, e nenhum se resolve editando transformação.
 
 # Fallback: nenhuma regra casou.
+  - id: AGENT-011
+    phase_in: [diagnosis, hypothesis]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_orchestrator__"}
+    recommended_agent: sf-orchestrator
+    reason: >
+      Explicit agentic orchestration mode.
+  - id: AGENT-012
+    phase_in: [diagnosis, hypothesis]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_pyspark__"}
+    recommended_agent: sf-pyspark-specialist
+    reason: >
+      Explicit PySpark specialist mode.
+  - id: AGENT-013
+    phase_in: [diagnosis, hypothesis]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_runtime__"}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Explicit runtime specialist mode.
+  - id: AGENT-014
+    phase_in: [diagnosis, hypothesis]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_storage__"}
+    recommended_agent: sf-storage-specialist
+    reason: >
+      Explicit storage specialist mode.
+  - id: AGENT-015
+    phase_in: [verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_token_audit__"}
+    recommended_agent: sf-token-verifier
+    reason: >
+      Explicit token and quality audit mode.
+  - id: AGENT-020
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_data_architecture__"}
+    recommended_agent: sf-data-architect
+    reason: >
+      Explicit sf-data-architect mode.
+  - id: AGENT-021
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_airflow__"}
+    recommended_agent: sf-airflow-specialist
+    reason: >
+      Explicit sf-airflow-specialist mode.
+  - id: AGENT-022
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_agent_builder__"}
+    recommended_agent: sf-agent-builder
+    reason: >
+      Explicit sf-agent-builder mode.
+  - id: AGENT-023
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_iceberg__"}
+    recommended_agent: sf-iceberg-specialist
+    reason: >
+      Explicit sf-iceberg-specialist mode.
+  - id: AGENT-024
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_parquet__"}
+    recommended_agent: sf-parquet-specialist
+    reason: >
+      Explicit sf-parquet-specialist mode.
+  - id: AGENT-025
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_s3__"}
+    recommended_agent: sf-s3-specialist
+    reason: >
+      Explicit sf-s3-specialist mode.
+  - id: AGENT-026
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_terraform__"}
+    recommended_agent: sf-terraform-specialist
+    reason: >
+      Explicit sf-terraform-specialist mode.
+  - id: AGENT-027
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_graph__"}
+    recommended_agent: sf-graph-specialist
+    reason: >
+      Explicit sf-graph-specialist mode.
+  - id: AGENT-028
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_neptune__"}
+    recommended_agent: sf-neptune-specialist
+    reason: >
+      Explicit sf-neptune-specialist mode.
+  - id: AGENT-029
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_dynamodb__"}
+    recommended_agent: sf-dynamodb-specialist
+    reason: >
+      Explicit sf-dynamodb-specialist mode.
+  - id: AGENT-030
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_athena__"}
+    recommended_agent: sf-athena-specialist
+    reason: >
+      Explicit sf-athena-specialist mode.
+  - id: AGENT-016
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_analytics__"}
+    recommended_agent: sf-analytics-specialist
+    reason: >
+      Explicit sf-analytics-specialist mode.
+  - id: AGENT-017
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_functional_rules__"}
+    recommended_agent: sf-functional-rules-specialist
+    reason: >
+      Explicit sf-functional-rules-specialist mode.
+  - id: AGENT-018
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_step_functions__"}
+    recommended_agent: sf-step-functions-specialist
+    reason: >
+      Explicit sf-step-functions-specialist mode.
+  - id: AGENT-019
+    phase_in: [diagnosis, hypothesis, design]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_lambda__"}
+    recommended_agent: sf-lambda-serverless-specialist
+    reason: >
+      Explicit sf-lambda-serverless-specialist mode.
+  - id: AGENT-031
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-AGENTS, present: true}
+    recommended_agent: sf-agent-builder
+    reason: >
+      Area SF-AGENTS encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-032
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-AIRFLOW, present: true}
+    recommended_agent: sf-airflow-specialist
+    reason: >
+      Area SF-AIRFLOW encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-033
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-ANALYTICS, present: true}
+    recommended_agent: sf-analytics-specialist
+    reason: >
+      Area SF-ANALYTICS encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-034
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-API, present: true}
+    recommended_agent: sf-dynamodb-specialist
+    reason: >
+      Area SF-API encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-035
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-ARCH, present: true}
+    recommended_agent: sf-data-architect
+    reason: >
+      Area SF-ARCH encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-036
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-ATHENA, present: true}
+    recommended_agent: sf-athena-specialist
+    reason: >
+      Area SF-ATHENA encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-037
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-AWS, present: true}
+    recommended_agent: sf-neptune-specialist
+    reason: >
+      Area SF-AWS encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-038
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-CATALOG, present: true}
+    recommended_agent: sf-storage-specialist
+    reason: >
+      Area SF-CATALOG encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-039
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-CONTRACT, present: true}
+    recommended_agent: sf-data-architect
+    reason: >
+      Area SF-CONTRACT encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-040
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-COST, present: true}
+    recommended_agent: sf-athena-specialist
+    reason: >
+      Area SF-COST encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-041
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-DYNAMODB, present: true}
+    recommended_agent: sf-dynamodb-specialist
+    reason: >
+      Area SF-DYNAMODB encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-042
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-EVAL, present: true}
+    recommended_agent: sf-agent-builder
+    reason: >
+      Area SF-EVAL encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-043
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-GOVERNANCE, present: true}
+    recommended_agent: sf-data-architect
+    reason: >
+      Area SF-GOVERNANCE encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-044
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-IAC, present: true}
+    recommended_agent: sf-terraform-specialist
+    reason: >
+      Area SF-IAC encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-045
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-ICEBERG, present: true}
+    recommended_agent: sf-iceberg-specialist
+    reason: >
+      Area SF-ICEBERG encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-046
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-LAKE, present: true}
+    recommended_agent: sf-s3-specialist
+    reason: >
+      Area SF-LAKE encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-047
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-LAMBDA, present: true}
+    recommended_agent: sf-lambda-serverless-specialist
+    reason: >
+      Area SF-LAMBDA encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-048
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-MODEL, present: true}
+    recommended_agent: sf-graph-specialist
+    reason: >
+      Area SF-MODEL encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-049
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-NEPTUNE, present: true}
+    recommended_agent: sf-neptune-specialist
+    reason: >
+      Area SF-NEPTUNE encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-050
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-NOSQL, present: true}
+    recommended_agent: sf-dynamodb-specialist
+    reason: >
+      Area SF-NOSQL encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-051
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-OPS, present: true}
+    recommended_agent: sf-airflow-specialist
+    reason: >
+      Area SF-OPS encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-052
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-ORCH, present: true}
+    recommended_agent: sf-agent-builder
+    reason: >
+      Area SF-ORCH encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-053
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-PARQUET, present: true}
+    recommended_agent: sf-parquet-specialist
+    reason: >
+      Area SF-PARQUET encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-054
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-PIPELINE, present: true}
+    recommended_agent: sf-airflow-specialist
+    reason: >
+      Area SF-PIPELINE encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-055
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-REPORT, present: true}
+    recommended_agent: sf-token-verifier
+    reason: >
+      Area SF-REPORT encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-056
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-RULES, present: true}
+    recommended_agent: sf-functional-rules-specialist
+    reason: >
+      Area SF-RULES encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-057
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-S3, present: true}
+    recommended_agent: sf-s3-specialist
+    reason: >
+      Area SF-S3 encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-058
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-SECURITY, present: true}
+    recommended_agent: sf-s3-specialist
+    reason: >
+      Area SF-SECURITY encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-059
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-SERVERLESS, present: true}
+    recommended_agent: sf-lambda-serverless-specialist
+    reason: >
+      Area SF-SERVERLESS encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-060
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-SQL, present: true}
+    recommended_agent: sf-athena-specialist
+    reason: >
+      Area SF-SQL encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-061
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-STEP-FUNCTIONS, present: true}
+    recommended_agent: sf-step-functions-specialist
+    reason: >
+      Area SF-STEP-FUNCTIONS encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-062
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-STORAGE, present: true}
+    recommended_agent: sf-iceberg-specialist
+    reason: >
+      Area SF-STORAGE encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-063
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-TERRAFORM, present: true}
+    recommended_agent: sf-terraform-specialist
+    reason: >
+      Area SF-TERRAFORM encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-064
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-TRANSACTION, present: true}
+    recommended_agent: sf-iceberg-specialist
+    reason: >
+      Area SF-TRANSACTION encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-065
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-VALIDATION, present: true}
+    recommended_agent: sf-token-verifier
+    reason: >
+      Area SF-VALIDATION encaminhada ao coordenador declarado para o dominio correspondente.
+  - id: AGENT-066
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_evidence_quality__"}
+    recommended_agent: sf-evidence-verifier
+    reason: >
+      Evidence quality mode uses the local evidence coordinator.
+  - id: AGENT-067
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_agent_quality__"}
+    recommended_agent: sf-agent-evaluation-specialist
+    reason: >
+      Agent quality mode uses the evaluation coordinator.
+  - id: AGENT-068
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_context__"}
+    recommended_agent: sf-context-engineer
+    reason: >
+      Context engineering mode uses the context coordinator.
+  - id: AGENT-069
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_memory__"}
+    recommended_agent: sf-memory-engineer
+    reason: >
+      Memory engineering mode uses the memory coordinator.
+  - id: AGENT-070
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_finops__"}
+    recommended_agent: sf-cost-reviewer
+    reason: >
+      Data FinOps mode uses the cost coordinator.
+  - id: AGENT-071
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_security__"}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      Security governance mode uses the security coordinator.
+  - id: AGENT-072
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_lineage__"}
+    recommended_agent: sf-lineage-specialist
+    reason: >
+      Lineage impact mode uses the lineage coordinator.
+  - id: AGENT-073
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_schema_registry__"}
+    recommended_agent: sf-schema-registry-specialist
+    reason: >
+      Schema contract mode uses the schema coordinator.
+  - id: AGENT-074
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_streaming__"}
+    recommended_agent: sf-kinesis-specialist
+    reason: >
+      Streaming reliability mode uses the Kinesis coordinator.
+  - id: AGENT-075
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {case: scope.entrypoints, contains: "__agentic_lake_governance__"}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      Lake governance mode uses the Lake Formation coordinator.
+
+  # SF-MIG entrou na Task 7 desta fase (compatibilidade de migracao entre
+  # versoes de Glue: SDK v1 fora do classpath, EMRFS virando S3A, cast sem
+  # guarda sob ANSI mode) e o commit que ligou o coordenador (`ad176ff`) so
+  # editou `agents/sf-runtime-specialist.md` -- acrescentou SF-MIG a
+  # `rule_areas` sem escrever rota nenhuma aqui. Declarar nao e rotear, o mesmo
+  # furo que custou SF-BENCH/SF-EMRS/SF-ENV/SF-FVAL/SF-UI antes desta fase (ver
+  # cabecalho deste arquivo de teste em `tests/test_router_agents.py`): um case
+  # so com achados SF-MIG voltava de `next_step` com `recommended_agent: None`.
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-MIG em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota.
+  - id: AGENT-076
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-MIG, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Compatibilidade entre versoes de Glue numa migracao -- import de SDK
+      sobrevivendo em runtime que nao o carrega mais, configuracao exclusiva
+      do EMRFS num runtime S3A, cast sem guarda sob ANSI mode. Nenhum se
+      resolve editando transformacao de negocio; todos se decidem na fronteira
+      de runtime que a migracao cruza.
+
+  # SF-SPARK4 entrou depois de SF-MIG e ganha ENTRADA PROPRIA, nao um `any` na
+  # de cima. Declarar a area em `rule_areas` do agente NAO roteia -- e o furo
+  # que orfanou SF-BENCH/SF-EMRS/SF-ENV/SF-FVAL/SF-UI e, de novo, o proprio
+  # SF-MIG na Task 7. Entrada separada porque `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-SPARK4-001` ->
+  # `SF-SPARK4`), entao a contagem de SF-MIG nunca inclui SF-SPARK4: um case so
+  # com achados de Spark 4 voltaria de `next_step` com
+  # `recommended_agent: None` se dependesse da regra acima.
+  # `sf-runtime-specialist` e o UNICO coordenador que declara SF-SPARK4 em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota.
+  - id: AGENT-077
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    when:
+      all:
+        - {findings_area: SF-SPARK4, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      Compatibilidade do codigo com o Apache Spark 4 -- config que mudou de
+      nome e parou de ser lida, API de pandas-on-Spark removida que quebra em
+      runtime, pin de dependencia Python abaixo do piso do 4.1. A fronteira e
+      do Apache e nao do Glue, entao vale igual num EMR com Spark 4; quem
+      decide os tres e quem conhece o runtime, nao quem conhece a regra de
+      negocio.
+  # SF-LF entrou com a area de Lake Formation FGAC e ganha ENTRADA PROPRIA, pelo
+  # mesmo motivo que SF-SPARK4 ganhou a dela: declarar a area em `rule_areas` do
+  # agente NAO roteia. Esse foi o furo que orfanou SF-BENCH/SF-EMRS/SF-ENV/
+  # SF-FVAL/SF-UI, depois SF-MIG e depois SF-SPARK4, e `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-LF-001` -> `SF-LF`),
+  # entao nenhuma contagem de outra area inclui esta.
+  #
+  # `sf-lake-formation-specialist` e o UNICO coordenador que declara SF-LF em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota. Ele nao e
+  # `glue-infra-reviewer` (AGENT-002) de proposito, ainda que as duas regras
+  # leiam `aws_glue_job` do Terraform -- a decisao que o achado exige nao e de
+  # dimensionamento nem de observabilidade, e de GOVERNANCA -- escolher entre
+  # controle de acesso fino e uma dependencia do job, sabendo o que cada lado
+  # custa em permissao concedida. Um case com SF-GLUE junto continua indo para a
+  # AGENT-002, que vem antes.
+  - id: AGENT-078
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em controle de acesso fino do Lake Formation
+    when:
+      all:
+        - {findings_area: SF-LF, count_gt: 0}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      O job pede, no mesmo `aws_glue_job`, duas coisas que a AWS declara
+      incompativeis sob FGAC -- JAR adicional, que o Glue bloqueia para
+      preservar o isolamento do system driver, ou streaming, que esta na lista
+      de nao suportados. Nao existe meio-termo de configuracao -- a escolha e
+      entre FGAC e a outra metade, e ela se decide com quem responde pela
+      governanca do dado, nao com quem tuna o job.
+
+  # SF-KMS, SF-NET e SF-XACC entraram com os tres eixos da secao 32 que o
+  # contrato de migracao nomeava e ninguem preenchia, e cada uma ganha ENTRADA
+  # PROPRIA pelo mesmo motivo que SF-LF ganhou a dela: declarar a area em
+  # `rule_areas` do agente NAO roteia, e `findings_area` conta por prefixo
+  # exato do `rule_id` ate o ultimo hifen. Sem estas tres, os quatro achados
+  # novos cairiam no fallback.
+  #
+  # PRECEDENCIA, e ela e deliberada. As tres vem DEPOIS de AGENT-002
+  # (`glue-infra-reviewer`, achado dominante em infra de Glue): um case que
+  # tenha SF-GLUE junto continua indo para la, porque dimensionamento e
+  # observabilidade sao a conversa maior. Estas tres so pegam o case cujo
+  # achado dominante e do eixo delas.
+  - id: AGENT-079
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em encriptacao e rota ate o KMS
+    when:
+      all:
+        - {findings_area: SF-KMS, count_gt: 0}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      O job declara encriptacao -- security configuration, ou Iceberg com
+      server-side encryption propria -- e a documentacao da AWS exige, junto,
+      uma configuracao que o bloco do job nao mostra: rota ate o endpoint do
+      KMS, ou a configuracao de SSE da propria tabela. Quem confere isso e quem
+      responde por chave e politica, nao quem tuna o job.
+
+  - id: AGENT-080
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em conectividade de VPC
+    when:
+      all:
+        - {findings_area: SF-NET, count_gt: 0}
+    recommended_agent: sf-terraform-specialist
+    reason: >
+      Declarar `connections` coloca o job dentro da VPC e transfere para a rede
+      a responsabilidade por alcancar o S3 e por deixar os componentes do Glue
+      se falarem. As duas exigencias vivem em security group e tabela de rotas,
+      que sao recursos de Terraform -- e e no Terraform que a confirmacao
+      acontece, nao no codigo do job.
+
+  - id: AGENT-081
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em leitura de catalogo entre contas
+    when:
+      all:
+        - {findings_area: SF-XACC, count_gt: 0}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      O job aponta para o Data Catalog de outra conta, e a cadeia que sustenta
+      isso -- concessao do Lake Formation, aceitacao do convite do AWS RAM,
+      resource link na conta consumidora -- vive fora deste artefato e e
+      operada por outro time. E decisao de governanca de dado compartilhado, a
+      mesma familia de SF-LF.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

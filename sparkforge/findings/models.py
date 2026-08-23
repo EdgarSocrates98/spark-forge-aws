@@ -174,6 +174,18 @@ def sort_facts(facts: Iterable[Fact]) -> list[Fact]:
     return sorted(facts, key=lambda f: (f.kind, _subject_key(f.subject), f.id))
 
 
+def area_of(rule_id: str) -> str:
+    """Área de um `rule_id`: o prefixo até o último hífen.
+
+    `SF-GLUE-002` -> `SF-GLUE`. É o mesmo agrupamento que separa os coordenadores
+    — infra Glue, Athena, PySpark, Iceberg/layout — e o mesmo que
+    `sparkforge/migration/assessment.py` usa para dizer qual eixo do contrato um
+    achado move. Contar por área sem esta função exige uma lista de `rule_id`
+    mantida à mão, que envelhece a cada regra nova.
+    """
+    return rule_id.rsplit("-", 1)[0]
+
+
 def sort_findings(findings: Iterable[Finding]) -> list[Finding]:
     """Ordem determinística: (severidade, rule_id, subject canônico)."""
     return sorted(

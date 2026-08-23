@@ -1,6 +1,6 @@
 ---
 name: pyspark-code-reviewer
-description: Use para revisar código PySpark — PR, biblioteca ou job — correlacionando o que está escrito no fonte, o que sobreviveu ao Catalyst no plano físico, e onde o trabalho Spark é disparado na estrutura de chamadas. Cobre também job de grafo com GraphFrames, que é o mesmo `.py` lido por uma quarta ótica — checkpoint que `connectedComponents` exige e sem o qual o algoritmo levanta exceção, biblioteca importada num Spark sem artefato publicado, arestas não persistidas e algoritmo de grafo dentro de laço Python.
+description: Revisao de codigo PySpark - PR, biblioteca ou job - correlacionando fonte, plano fisico pos-Catalyst e estrutura de chamadas. Cobre job de grafo GraphFrames - checkpoint exigido por `connectedComponents`, biblioteca sem artefato publicado, arestas nao persistidas, algoritmo de grafo em laco Python.
 tools: Read, Grep, Glob, Bash, Edit, Write
 skills:
   - review-pyspark-pr

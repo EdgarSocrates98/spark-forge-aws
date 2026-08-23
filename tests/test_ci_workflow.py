@@ -50,6 +50,15 @@ class TestSteps:
     def test_runs_ruff(self):
         assert any("ruff check" in run for run in _all_step_runs())
 
+    def test_runs_vendor_integrity_check(self):
+        """`vendor/` é código de terceiro commitado.
+
+        O teste equivalente já roda dentro da suíte, mas o gate próprio no
+        workflow faz a falha nomear a causa em vez de aparecer como "um teste
+        quebrou" no meio de 4771.
+        """
+        assert any("vendor_caveman.py --check" in run for run in _all_step_runs())
+
 
 class TestTriggers:
     def test_includes_workflow_dispatch(self):
@@ -187,3 +196,14 @@ class TestReleaseWorkflow:
             for step in job.get("steps", [])
         ]
         assert any("verify_wheel.py" in run for run in runs)
+
+
+class TestOfflineBundleGate:
+    def test_runs_offline_bundle_integrity_check(self):
+        """A garantia offline é "o arquivo confere", não "o arquivo existe".
+
+        `docs/operations-guide.md` lista este gate entre os finais. Ele existia
+        como script e não rodava em lugar nenhum: manifest e disco podiam
+        divergir sem que nada acusasse.
+        """
+        assert any("verify_offline_bundle.py" in run for run in _all_step_runs())

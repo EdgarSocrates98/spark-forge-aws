@@ -1,0 +1,35 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "sparkforge-caveman",
+  "description": "Ecossistema caveman vendorizado dentro do SparkForge AWS: economia de token ligada por padrao para quem clonar o repositorio, sem instalar nada.",
+  "owner": {
+    "name": "SparkForge AWS",
+    "url": "https://github.com/EdgarSocrates98/spark-forge-aws"
+  },
+  "plugins": [
+    {
+      "name": "caveman",
+      "source": "./caveman",
+      "description": "Modo de comunicacao comprimido. Corta output do agente mantendo a substancia tecnica. Traz as skills caveman, caveman-commit, caveman-review, caveman-compress, caveman-stats, caveman-help e cavecrew, os subagentes cavecrew-* e os hooks de ativacao.",
+      "category": "productivity",
+      "license": "MIT",
+      "author": {
+        "name": "Julius Brussee",
+        "url": "https://github.com/JuliusBrussee"
+      },
+      "homepage": "https://github.com/JuliusBrussee/caveman"
+    },
+    {
+      "name": "ck",
+      "source": "./cavekit",
+      "description": "Cavekit: loop de spec-driven development comprimido sobre um SPEC.md (grill, spec, research, review, build, check, deepen) com backprop de bug para invariante.",
+      "category": "development",
+      "license": "MIT",
+      "author": {
+        "name": "Julius Brussee",
+        "url": "https://github.com/JuliusBrussee"
+      },
+      "homepage": "https://github.com/JuliusBrussee/cavekit"
+    }
+  ]
+}

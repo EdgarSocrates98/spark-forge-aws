@@ -1,0 +1,12 @@
+area: SF-LAMBDA
+rules:
+- id: SF-LAMBDA-001
+  category: agentic-platform
+  title: SF-LAMBDA coordinator area
+  requires_facts: []
+  when:
+    all: []
+  severity_default: P2
+  executable: false
+  runtime_scope: {}
+  sources: []

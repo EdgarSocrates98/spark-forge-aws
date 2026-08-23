@@ -1,0 +1,82 @@
+# Preco do AWS Glue para Apache Spark. Dado com data e regiao, nunca constante.
+#
+# POR QUE ESTE ARQUIVO EXISTE, e o que ele recusa a fazer. A secao 51 pede
+# conhecimento de preco com data e regiao. A tentacao era codificar "-30%" a
+# partir do anuncio do Glue 6.0 e chamar isso de conhecimento de custo. Duas
+# razoes para nao fazer:
+#
+#   1. Preco muda por decisao da AWS, e um numero sem `retrieved` envelhece em
+#      silencio -- e um numero de custo envelhecido nao parece errado, parece
+#      preciso.
+#   2. As duas fontes oficiais lidas nesta coleta NAO dizem a mesma coisa, e a
+#      diferenca importa. A pagina de pricing publica UM preco por DPU-hora e
+#      NAO diferencia por versao de runtime. O anuncio do Glue 6.0 afirma "30%
+#      price reduction" sem nomear a versao de comparacao, sem regiao e sem
+#      tipo de worker. Multiplicar um pelo outro produziria um preco por versao
+#      que fonte nenhuma publica.
+#
+# O QUE ISTO PERMITE DIZER, e o que nao. Permite dizer o preco publicado e a
+# data em que foi lido. Permite reportar o anuncio COMO anuncio, com a fonte.
+# NAO permite calcular o custo de um job em Glue 6.0 contra 5.1, porque a
+# reducao anunciada nao tem base de comparacao declarada. E preco menor nao e
+# performance maior: a secao 52 manda medir as duas coisas separadamente, e
+# este repositorio nao mediu performance entre runtimes -- ver
+# `sparkforge/facts/benchmark.py`, que recusa comparacao sem as duas execucoes.
+#
+# REGIAO. A pagina de pricing publica um numero e a frase "Pricing can vary by
+# AWS Region", sem a tabela por regiao no documento servido (ela e montada no
+# cliente). Entao a regiao aqui e `UNQUALIFIED`, que e o valor honesto: a fonte
+# nao qualificou. Inventar `us-east-1` porque e o default comum seria precisao
+# fabricada, e precisao fabricada sobrevive a revisao melhor que ausencia
+# declarada -- mesma razao registrada em
+# `knowledge/storage/iceberg-feature-support.yaml` para a chave `"*"`.
+#
+# `source_type` REUSA o vocabulario de `sparkforge/facts/runtime_matrix.py`,
+# importado de la e nunca redeclarado -- mesma disciplina de
+# `knowledge/storage/iceberg-feature-support.yaml`. A pagina de pricing entra
+# como OFFICIAL_TECHNICAL_DOC; inventar um `OFFICIAL_PRICING_PAGE` so para esta
+# coleta criaria vocabulario com um consumidor so.
+#
+# TIPO DE WORKER. A pagina lida nao enumera G.1X/G.2X/G.4X/G.8X nem o numero de
+# DPU de cada um. A lista fica vazia em vez de preenchida de memoria.
+schema_version: 1
+
+unit: DPU-hour
+
+prices:
+  - value: "0.44"
+    currency: USD
+    region: UNQUALIFIED
+    runtime_version: UNQUALIFIED
+    source: "https://aws.amazon.com/glue/pricing/"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-23"
+    note: >-
+      "The price of 1 DPU-hour is $0.44." A pagina NAO diferencia preco por
+      versao de runtime do Glue -- nenhuma mencao a 4.0, 5.0, 5.1 ou 6.0
+      aparece no documento -- e nao publica a tabela por regiao no HTML
+      servido, so a frase de que o preco varia por regiao.
+
+# Anuncio e anuncio: entra como afirmacao com fonte, nunca como preco
+# calculado. `baseline` fica vazio de proposito -- a fonte diz "compared to
+# previous AWS Glue versions" sem nomear qual, e escolher 5.1 por ser a
+# anterior seria inferencia com cara de citacao.
+announcements:
+  - claim: "30% price reduction"
+    runtime_version: "6.0"
+    baseline: ""
+    region: UNQUALIFIED
+    worker_type: UNQUALIFIED
+    source: "https://aws.amazon.com/about-aws/whats-new/2026/08/aws-glue-6-0-price-reduction-iceberg-v3/"
+    source_type: OFFICIAL_RELEASE_DOC
+    retrieved: "2026-08-23"
+    note: >-
+      Publicado em 2026-08-21. Sem qualificador de regiao nem de tipo de
+      worker. A pagina de pricing, lida no mesmo dia, continua publicando um
+      unico preco por DPU-hora sem recorte de versao -- as duas afirmacoes
+      convivem nesta coleta e nao se resolvem uma na outra.
+
+# Vazio porque a fonte lida nao os enumera. Celula ausente e celula
+# desconhecida sao coisas diferentes, e esta lista diz "nao foi lido", nao
+# "nao existe".
+worker_types: []

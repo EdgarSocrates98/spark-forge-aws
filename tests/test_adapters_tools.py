@@ -52,6 +52,9 @@ class TestToolSurface:
             "sparkforge_analyze_s3_listing",
             "sparkforge_analyze_consumers",
             "sparkforge_analyze_terraform_diff",
+            "sparkforge_migration_assess",
+            "sparkforge_glue_dependency_audit",
+            "sparkforge_iceberg_assess_upgrade",
             "sparkforge_benchmark",
             "sparkforge_funcval_plan",
             "sparkforge_funcval_compare",
@@ -105,13 +108,27 @@ class TestToolSurface:
             "sparkforge_collect_emr_serverless",
         }
 
-    def test_every_open_world_tool_is_still_read_only(self):
-        """openWorldHint e sobre tocar rede, nao sobre mutar estado: os
-        coletores so leem da AWS (`get_object`, `get_job`, `get_metric_data`,
-        `SELECT`/`get_work_group`), nunca escrevem do lado AWS."""
-        for name, spec in TOOLS.items():
-            if spec["annotations"]["openWorldHint"] is True:
-                assert spec["annotations"]["readOnlyHint"] is True, name
+    def test_every_open_world_tool_also_writes_locally(self):
+        """Este teste afirmava o CONTRARIO ate a Fase I3, e estava errado --
+        ele trancava a mentira em vez de pegar.
+
+        A razao antiga era "os coletores so leem da AWS, nunca escrevem do
+        lado AWS", e a parte depois da virgula e verdade. So que
+        `readOnlyHint` nao tem lado: ele afirma que a tool nao modifica o
+        ambiente dela. Os sete coletores modificam o ambiente LOCAL -- todos
+        terminam em `sparkforge.collect.aws._write_and_register`, que grava o
+        artefato e depois grava o manifesto `path` + `sha256` que
+        `sparkforge_collect_verify` confere.
+
+        A invariante real e esta, e vale a pena tranca-la nos dois sentidos:
+        toda tool que sai para a rede TAMBEM persiste o que trouxe. Um coletor
+        que tocasse a AWS sem registrar o artefato deixaria o livro-razao de
+        integridade sem a entrada correspondente, e o `verify` nao teria como
+        saber que ela deveria existir."""
+        de_rede = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
+        assert de_rede, "o corpus precisa ter ao menos uma tool de rede"
+        for name in de_rede:
+            assert TOOLS[name]["annotations"]["readOnlyHint"] is False, name
 
     def test_only_case_and_report_writers_are_not_read_only(self):
         """A quarta lista manual desta classe, e ela mudou junto com as outras
@@ -134,9 +151,41 @@ class TestToolSurface:
         mao -- de um envelope que PAGINA. A diferenca para o plano esta no
         schema, nao aqui: `out_path` do plano e `required`, o da comparacao e
         opcional, porque um plano sem arquivo nao serve para nada e uma
-        comparacao sem arquivo ainda e legivel."""
+        comparacao sem arquivo ainda e legivel.
+
+        A Fase I3 descobriu que os SETE coletores AWS tambem escrevem, e nao
+        por mudanca de capacidade: a anotacao deles dizia `readOnlyHint: True`
+        e mentia. Eles gravam o artefato e o manifesto de integridade via
+        `sparkforge.collect.aws._write_and_register` desde que existem -- ver
+        o comentario de `_WRITE_LOCAL_OPEN_WORLD` em `tools.py`.
+
+        Eles NAO entram na lista a mao, e a razao nao e economia de digitacao:
+        os sete ja estao garantidos por dois testes desta mesma classe --
+        `test_only_collect_tools_are_open_world` fixa o conjunto `openWorld`
+        EXATAMENTE nesses sete nomes, e
+        `test_every_open_world_tool_also_writes_locally` cobra
+        `readOnlyHint is False` de cada tool `openWorld`. Repetir os sete aqui
+        somaria garantia zero e cresceria a cada coletor novo. Descontar o
+        conjunto de rede e afirmar o resto preserva a garantia inteira e para
+        de crescer.
+
+        Os CINCO locais continuam a mao de proposito, e ai a lista carrega
+        garantia real: nao ha nenhuma outra propriedade declarada que separe
+        `case_open` de `analyze_pyspark` -- derivar de `TOOLS` seria escrever
+        `writers == writers` e o teste deixaria de cobrar decisao humana
+        quando uma tool trocasse de lado.
+
+        O RISCO desta forma, escrito porque ja se materializou aqui: quando um
+        pin escrito a mao falha, o conserto barato e editar a expectativa em
+        vez de consertar a anotacao. Foi exatamente o que aconteceu com
+        `test_every_open_world_tool_is_still_read_only`, que entrou em
+        `afd2c96` (2026-07-30) afirmando o CONTRARIO do que o codigo fazia e
+        trancou a mentira por centenas de commits. Um pin que falha nao e um
+        pin que protege: quem editar esta lista precisa provar que a tool
+        mudou de lado, nao so fazer o vermelho sumir."""
+        de_rede = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
-        assert writers == {
+        assert writers - de_rede == {
             "sparkforge_case_open",
             "sparkforge_case_update",
             "sparkforge_funcval_compare",
@@ -1189,6 +1238,52 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_fuse", {"facts_paths": [str(facts_path)]})
 
+    if name == "sparkforge_glue_dependency_audit":
+        # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a
+        # amostra precisa render achado, senao valida contra o schema pelo
+        # motivo errado -- lista vazia passa em qualquer schema de array.
+        job = tmp_path / "dep-audit"
+        job.mkdir()
+        (job / "job.py").write_text("import pyarrow\n", encoding="utf-8")
+        (job / "requirements.txt").write_text("pyarrow==8.0.0\n", encoding="utf-8")
+        result = call_tool(
+            "sparkforge_glue_dependency_audit", {"path": str(job), "glue": "6.0"}
+        )
+        assert result["dependencies"], "a amostra precisa observar ao menos um pin"
+        return result
+
+    if name == "sparkforge_iceberg_assess_upgrade":
+        job = tmp_path / "assess-upgrade"
+        (job / ".sparkforge").mkdir(parents=True)
+        (job / "job.py").write_text("x = 1\n", encoding="utf-8")
+        (job / ".sparkforge" / "consumers.yaml").write_text(
+            "consumers:\n  - table: db.t\n    service: athena\n", encoding="utf-8"
+        )
+        result = call_tool(
+            "sparkforge_iceberg_assess_upgrade",
+            {"path": str(job), "source": 2, "target": 3},
+        )
+        assert result["cells"], "a amostra precisa consultar ao menos uma celula"
+        return result
+
+    if name == "sparkforge_migration_assess":
+        # Um job com SDK v1 e um pin de PyArrow abaixo do piso do Spark 4.1:
+        # o primeiro faz `SF-MIG-001` nascer, o segundo faz `SF-SPARK4-003`
+        # nascer -- e o segundo so aparece porque a entrada e um DIRETORIO.
+        # Assessment vazio validaria contra o schema pelo motivo errado.
+        job = tmp_path / "job"
+        job.mkdir()
+        (job / "job.py").write_text(
+            "import com.amazonaws.services.s3.AmazonS3\n", encoding="utf-8"
+        )
+        (job / "requirements.txt").write_text("pyarrow==14.0.0\n", encoding="utf-8")
+        result = call_tool(
+            "sparkforge_migration_assess",
+            {"path": str(job), "source": "4.0", "target": "6.0"},
+        )
+        assert result["findings"], "a amostra precisa render pelo menos um finding"
+        return result
+
     if name in (
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
@@ -1316,6 +1411,18 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_graph", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
+        (
+            "sparkforge_migration_assess",
+            {"path": "<tmp>/inexistente", "source": "4.0", "target": "6.0"},
+        ),
+        (
+            "sparkforge_glue_dependency_audit",
+            {"path": "<tmp>/inexistente", "glue": "6.0"},
+        ),
+        (
+            "sparkforge_iceberg_assess_upgrade",
+            {"path": "<tmp>/inexistente", "source": 2, "target": 3},
+        ),
         (
             "sparkforge_benchmark",
             {"before_path": "<tmp>/nao-existe.json", "after_path": "<tmp>/nao-existe.json"},

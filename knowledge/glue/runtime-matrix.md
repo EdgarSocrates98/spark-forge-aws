@@ -6,6 +6,7 @@ Confirme sempre contra o runtime **efetivo** do job. Esta tabela orienta; não s
 
 | AWS Glue | Apache Spark | Python | Scala | Iceberg | Hudi | Delta Lake |
 |---|---|---|---|---|---|---|
+| 6.0 | 4.1.1 | 3.13 | 2.13.17 | 1.11.0 | a verificar | a verificar |
 | 5.1 | 3.5.6 | 3.11 | 2.12.18 | 1.10.0 | 1.0.2 | 3.3.2 |
 | 5.0 | 3.5.4 | 3.11 | 2.12 | 1.7.1 | 0.15.0 | 3.3.0 |
 | 4.0 | 3.3.0 | 3.10 | 2.12 | 1.0.0 | 0.12.1 | 2.1.0 |
@@ -24,7 +25,10 @@ O salto 1.0.0 (Glue 4.0) → 1.7.1 (5.0) → 1.10.0 (5.1) é grande. Procediment
 Capacidades novas em Iceberg 1.10.0 / Glue 5.1: Materialized View, **format version 3**, valores default de coluna, deletion vectors para tabelas merge-on-read, transforms multi-argumento, row lineage tracking.
 
 ### Python
-3.7 (Glue 3.0) → 3.10 (4.0) → 3.11 (5.x). Biblioteca própria que usa sintaxe de 3.11 não roda em Glue 4.0. `match` statement (3.10+) não roda em Glue 3.0.
+3.7 (Glue 3.0) → 3.10 (4.0) → 3.11 (5.x) → 3.13 (6.0). Biblioteca própria que usa sintaxe de 3.11 não roda em Glue 4.0. `match` statement (3.10+) não roda em Glue 3.0.
+
+### ANSI mode (fronteira Glue 6.0)
+`migrating-version-60.html` afirma, textualmente: "ANSI mode is enabled by default in Spark 4.1. Operations that previously returned NULL on overflow (for example, integer arithmetic, cast operations) now throw exceptions." Glue 5.1 roda Spark 3.5.6, onde ANSI é default OFF. A fronteira é **Glue 6.0** — antes dele, `cast(` inválido devolve `NULL`; a partir dele, lança exceção. `try_cast(` preserva o comportamento antigo em qualquer versão. No SparkForge isso é o finding `SF-MIG-003`.
 
 ## 3. Armadilha de versão mais séria: Iceberg V3 e Athena
 
@@ -59,11 +63,36 @@ Em ordem de confiabilidade:
 
 Divergência entre fontes **não** é resolvida escolhendo uma. É registrada como divergência.
 
+## 6. Divergência entre fontes, no dado e não só na prosa
+
+A frase acima existia desde a primeira versão deste documento e não tinha mecanismo. `knowledge/glue/runtime-matrix.yaml` agora aceita um componente em **forma longa**: em vez de um escalar (`spark: "4.1.1"`), um registro com `status` e uma lista de `claims`, cada uma com `value`, `source`, `source_type` e `retrieved`.
+
+`source_type` vem de um vocabulário fechado, do mais autoritativo ao menos: `OFFICIAL_TECHNICAL_DOC`, `OFFICIAL_RELEASE_DOC`, `OFFICIAL_BLOG`, `UPSTREAM_SPEC`, `UPSTREAM_RELEASE`, `PROVIDER_DOC`, `COMMUNITY`. Classificar a fonte permite dizer **por que** duas afirmações discordam — documentação técnica descreve o que o produto faz; anúncio descreve o que ele foi lançado fazendo, e os dois divergem quando um é corrigido depois da publicação e o outro não. Ranking de autoridade **não apaga** o conflito; ele só o explica.
+
+`status` aceita três valores, e o carregador enforça os dois invariantes que dão sentido ao mecanismo:
+
+| status | efeito no valor resolvido | invariante |
+|---|---|---|
+| `VERIFIED` | o valor único que as fontes confirmam | duas fontes com valores diferentes **não podem** ser `VERIFIED` — o carregador estoura |
+| `CONFLICTING` | **retido**: o componente não aparece no runtime | todas as fontes concordando **não podem** ser `CONFLICTING` — conflito inventado apaga regra em silêncio |
+| `UNRESOLVED` | **retido** | conflito investigado e não resolvido pela documentação |
+
+Valor retido é *fail-closed*: sem a chave no runtime, toda regra guardada por aquele componente é **pulada com motivo**, nunca julgada contra um número que as fontes não confirmam juntas.
+
+`STALE` e `UNVERIFIED` — os outros dois estados que a literatura de procedência costuma listar — **não** são aceitos: os dois afirmam algo sobre *frescor*, e frescor depende de um TTL por domínio que este repositório ainda não tem como dado. Vocabulário sem mecanismo que o produza é etiqueta decorativa.
+
+**O caso que motivou o mecanismo, e o que a medição achou.** A versão de Python do Glue 6.0 foi apontada como divergente entre fontes oficiais (3.12 num anúncio, 3.13 noutro). Medido em 2026-08-22 lendo as três fontes direto: Developer Guide, News Blog e What's New **dizem 3.13**, e a divergência não se reproduz. O registro ficou `VERIFIED` com as três fontes — inventar um `CONFLICTING` para exercitar o mecanismo é o que o próprio carregador recusa.
+
 ## Fontes
 
+- Migrating AWS Glue for Spark jobs to AWS Glue version 6.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html (retrieved 2026-08-22)
+- AWS Glue version release notes. https://docs.aws.amazon.com/glue/latest/dg/release-notes.html (retrieved 2026-08-21)
+- AWS Glue 6.0 now available with 30% lower price and full Apache Iceberg v3 support — AWS News Blog. https://aws.amazon.com/blogs/aws/aws-glue-6-0-now-available-with-30-lower-price-and-full-apache-iceberg-v3-support/ (retrieved 2026-08-22)
+- AWS Glue 6.0 delivers 30% price reduction and Iceberg v3 support — What's New. https://aws.amazon.com/about-aws/whats-new/2026/08/aws-glue-6-0-price-reduction-iceberg-v3/ (retrieved 2026-08-22)
 - Migrating AWS Glue for Spark jobs to AWS Glue version 5.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html (retrieved 2026-07-29)
 - Introducing AWS Glue 5.1 for Apache Spark — AWS Big Data Blog. https://aws.amazon.com/blogs/big-data/introducing-aws-glue-5-1-for-apache-spark (retrieved 2026-07-29)
 - Introducing AWS Glue 5.1 — What's New. https://aws.amazon.com/about-aws/whats-new/2025/11/aws-glue-5-1 (retrieved 2026-07-29)
 - Breaking Changes Checklist: Migrating AWS Glue Jobs to Version 5.0/5.1 — AWS re:Post. https://repost.aws/articles/ARjELjm9_jRxejMb1havX8xg/breaking-changes-checklist-migrating-aws-glue-jobs-to-version-5-0-5-1 (retrieved 2026-07-29)
 - AWS Glue Release Notes. https://docs.aws.amazon.com/glue/latest/dg/aws-glue-release-notes.rss (retrieved 2026-07-29)
 - Linhas de Glue 3.0/4.0 para Hudi e Delta não foram reconfirmadas nesta coleta. Marcar como a verificar.
+- Hudi e Delta Lake para Glue 6.0 não foram confirmados contra fonte oficial nesta coleta (Task 11) — `migrating-version-60.html` e `release-notes.html` foram lidas para Spark/Python/Scala/Java/Iceberg, não para essas duas colunas. Marcar como a verificar.

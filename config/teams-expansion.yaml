@@ -1,0 +1,23 @@
+version: 1
+mode: offline-first
+teams:
+  - name: evidence-quality
+    coordinator: sf-evidence-verifier
+    members: [sf-agent-evaluation-specialist, sf-context-engineer, sf-memory-engineer]
+    handoffs: [source-verifier, regression-judge, release-gate]
+  - name: governance-security
+    coordinator: sf-security-reviewer
+    members: [sf-lake-formation-specialist, sf-lineage-specialist, sf-schema-registry-specialist]
+    handoffs: [security-gate, schema-compatibility-checker, mutation-risk-checker]
+  - name: streaming-reliability
+    coordinator: sf-kinesis-specialist
+    members: [sf-runtime-specialist, sf-data-architect, sf-evidence-verifier]
+    handoffs: [evidence-extractor, experiment-designer, rollback-planner]
+  - name: finops-data
+    coordinator: sf-cost-reviewer
+    members: [sf-athena-specialist, sf-s3-specialist, sf-iceberg-specialist, sf-token-verifier]
+    handoffs: [cost-estimator, benchmark-comparator, release-gate]
+  - name: agent-quality
+    coordinator: sf-agent-evaluation-specialist
+    members: [sf-context-engineer, sf-memory-engineer, sf-evidence-verifier, sf-security-reviewer]
+    handoffs: [context-compressor, regression-judge, security-gate]

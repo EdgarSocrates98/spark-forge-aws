@@ -134,12 +134,16 @@ def test_um_lado_sem_log_analyzed_vira_unresolved():
     }
 
 
-def test_o_namespace_declarado_cobre_os_cinco_kinds():
+def test_o_namespace_declarado_cobre_os_seis_kinds():
+    # `bench.runtime_pair` entrou com a secao 52: e o unico fato que sustenta
+    # uma afirmacao sobre MIGRACAO, porque diz que os dois lados sao runtimes
+    # diferentes e nomeia quais.
     assert EMITTED_KINDS == {
         "bench.run_delta",
         "bench.stage_delta",
         "bench.unmatched",
         "bench.analyzed",
+        "bench.runtime_pair",
         "bench.unresolved",
     }
 
@@ -909,3 +913,57 @@ class TestSFBench003SobreOSpillQueNasce:
 
     def test_spill_que_encolhe_a_partir_de_uma_base_nao_zero_nao_dispara(self):
         assert "SF-BENCH-003" not in self._rules(self._delta(160_000_000, 1))
+
+
+class TestEixoDeRuntime:
+    """Secao 52: benchmark parametrizado por versao de runtime.
+
+    O que os rotulos acrescentam nao e uma medida -- e a unica coisa que
+    distingue "este job ficou mais rapido" de "este job ficou mais rapido AO
+    TROCAR DE RUNTIME". Sem eles, um benchmark de migracao e indistinguivel de
+    um benchmark de mudanca de codigo.
+    """
+
+    def test_sem_rotulo_nenhum_o_eixo_nao_aparece(self):
+        facts = build_benchmark([_analyzed("a.jsonl")], [_analyzed("b.jsonl")])
+        assert not by_kind(facts, "bench.runtime_pair")
+        motivos = {f.attrs["reason"] for f in by_kind(facts, "bench.unresolved")}
+        assert "missing_runtime_label" not in motivos, (
+            "responder 'falta' a uma pergunta que ninguem fez e ruido"
+        )
+
+    def test_dois_runtimes_diferentes_produzem_o_par(self):
+        facts = build_benchmark(
+            [_analyzed("a.jsonl")],
+            [_analyzed("b.jsonl")],
+            before_runtime="5.1",
+            after_runtime="6.0",
+        )
+        par = by_kind(facts, "bench.runtime_pair")
+        assert len(par) == 1
+        assert par[0].attrs == {"before_runtime": "5.1", "after_runtime": "6.0"}
+
+    def test_o_mesmo_runtime_dos_dois_lados_nao_prova_migracao(self):
+        facts = build_benchmark(
+            [_analyzed("a.jsonl")],
+            [_analyzed("b.jsonl")],
+            before_runtime="6.0",
+            after_runtime="6.0",
+        )
+        assert not by_kind(facts, "bench.runtime_pair")
+        motivos = {f.attrs["reason"] for f in by_kind(facts, "bench.unresolved")}
+        assert "same_runtime_label" in motivos
+
+    def test_um_lado_rotulado_so_nomeia_o_lado_que_falta(self):
+        facts = build_benchmark(
+            [_analyzed("a.jsonl")], [_analyzed("b.jsonl")], after_runtime="6.0"
+        )
+        faltante = next(
+            f
+            for f in by_kind(facts, "bench.unresolved")
+            if f.attrs["reason"] == "missing_runtime_label"
+        )
+        assert faltante.attrs["sides"] == ["before"]
+        # Os deltas continuam saindo: o que ficou sem lastro e o eixo de
+        # runtime, nao a comparacao inteira.
+        assert by_kind(facts, "bench.run_delta")

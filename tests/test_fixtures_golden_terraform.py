@@ -28,6 +28,14 @@ REQUIRED_FIXTURES = {
     "clean_job",
     "unresolvable_values",
     "bookmarks_with_concurrency",
+    "spark_conf_in_arguments",
+    # Os tres eixos de plataforma da secao 32 -- KMS/encriptacao, rede e
+    # cross-account -- entraram neste corpus, e nao em `infra_code/`, porque
+    # la o invariante e um achado por fixture e SF-KMS-001 e superconjunto
+    # de SF-NET-001 por construcao: quem declara security configuration E
+    # conexao declara conexao. Separar em duas fixtures nao resolveria; a
+    # sobreposicao esta na regra, nao no arquivo.
+    "plataforma_kms_rede_conta",
 }
 
 

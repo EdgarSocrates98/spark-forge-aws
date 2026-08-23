@@ -39,7 +39,7 @@ Definido por `docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md` §5.
 
 | Campo | Obrigatório | Nota |
 |---|---|---|
-| `id` | sim | Único. **Quinze** áreas: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `EMRS` (application EMR Serverless), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança), `GRAPH` (processamento de grafo com GraphFrames). **`EMR` é prefixo de `EMRS`**: quem comparar área por `startswith` sobre o `id` conta toda regra `SF-EMRS-*` como `SF-EMR`, e a fronteira entre as duas passa a ser medida ao contrário — compare pelo `area:` declarado no cabeçalho do arquivo |
+| `id` | sim | Único. **Vinte** áreas neste README — o catálogo inteiro tem mais, porque a expansão agêntica acrescentou uma área `structural` por domínio de coordenação; conte com `area_of` em vez de somar esta lista: `PY` (PySpark), `GLUE` (infra/IaC), `UI` (Spark UI), `ICE` (Iceberg), `PQ` (Parquet/S3), `ATH` (Athena), `ENV` (ambiente/versão), `PLAN` (plano físico), `CG` (grafo de chamadas), `EMR` (cluster EMR on EC2), `EMRS` (application EMR Serverless), `DQ` (validação de dados), `BENCH` (comparação entre execuções), `FVAL` (validação funcional de uma mudança), `GRAPH` (processamento de grafo com GraphFrames), `MIG` (compatibilidade de migração entre versões de runtime), `SPARK4` (compatibilidade do código com o Apache Spark 4), `KMS` (encriptação e a rota até o KMS), `NET` (conectividade de VPC) e `XACC` (leitura de catálogo entre contas). **As três últimas nasceram juntas**, para os três eixos que `sparkforge/migration/assessment.py` nomeava e ninguém preenchia — uma área única deixaria os três empatados no mesmo balde, e a separação que o contrato pede voltaria a ser decorativa. **`EMR` é prefixo de `EMRS`**: quem comparar área por `startswith` sobre o `id` conta toda regra `SF-EMRS-*` como `SF-EMR`, e a fronteira entre as duas passa a ser medida ao contrário — compare pelo `area:` declarado no cabeçalho do arquivo |
 | `category` | sim | Agrupa no relatório |
 | `title` | sim | Uma linha |
 | `requires_facts` | sim | Regra não dispara se o kind não foi extraído. Evita falso negativo silencioso |
@@ -223,6 +223,8 @@ publicou artefato para Spark 3.3, e 3.2 e 3.4 publicaram.
 | `benchmark.yaml` | `SF-BENCH-*` | Fase 4a (comparador de duas execuções, derivado de facts de event log) |
 | `funcval.yaml` | `SF-FVAL-*` | Fase 4c (plano derivado de `pyspark.write` + `catalog.table_schema`, e comparação dos dois resultados que o operador mediu) |
 | `graph.yaml` | `SF-GRAPH-*` | Fase 6a (GraphFrames no AST PySpark, mais `tf.attribute` do mesmo job) |
+| `glue-migration.yaml` | `SF-MIG-*` | Fase 6b (sinais de migração no fonte, mais `tf.attribute` do diff) |
+| `spark4.yaml` | `SF-SPARK4-*` | Fase 6b (sinais de migração no fonte e no `requirements.txt`) — guardada por versão de **Spark**, não de Glue |
 | `routing.yaml` | `ROUTE-*` | Fase 0 — predicado sobre o case, não sobre facts |
 
 ### `routing.yaml` tem schema próprio

@@ -38,6 +38,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from sparkforge.facts import runtime_matrix
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 
 DETECTOR_ID = "runtime_detect@0.1.0"
@@ -48,11 +49,27 @@ DETECTOR_ID = "runtime_detect@0.1.0"
 # `blocked_on`, em vez de aparecer como "faltou coletar".
 EMITTED_KINDS = frozenset({"env.runtime_signal", "env.platform"})
 
+# GLUE_MATRIX morava aqui como constante compilada, sem fonte nem data de
+# consulta. Versao de Glue e fato EXTERNO -- muda por decisao da AWS, nao
+# deste repositorio --, entao a Task 1 da fase SF-MIG moveu o dado para
+# `knowledge/glue/runtime-matrix.yaml`, ao lado dos demais fatos externos
+# vigiados por `knowledge/sources.lock.json`. Ver o docstring de
+# `sparkforge/facts/runtime_matrix.py` para o formato e as garantias do loader.
+#
+# `GLUE_MATRIX` continua existindo aqui como NOME, para nao quebrar os
+# consumidores que ja importam `sparkforge.facts.runtime_detect.GLUE_MATRIX`
+# (`tests/test_runtime_detect.py`, `tests/test_runtime_glue_versions.py`,
+# `tests/test_rule_scope_by_nature.py`, `tests/test_runtime_emr_matrix.py`,
+# `tests/test_runtime_inferred_from_facts.py`, `scripts/check_evals.py`) --
+# mas o VALOR e derivado do loader a cada import, nunca escrito a mao. Filtra
+# para `spark`/`python`/`iceberg` porque e a forma que este modulo sempre
+# consumiu; `sources`/`retrieved`/`scala`/`java` que o YAML carrega ficam de
+# fora daqui de proposito -- ver o comentario abaixo, no consumidor de
+# `_DERIVABLE`, sobre por que uma chave sem consumidor nao deve vazar para
+# `RuntimeContext` nem para golden.
 GLUE_MATRIX: dict[str, dict[str, str]] = {
-    "5.1": {"spark": "3.5.6", "python": "3.11", "iceberg": "1.10.0"},
-    "5.0": {"spark": "3.5.4", "python": "3.11", "iceberg": "1.7.1"},
-    "4.0": {"spark": "3.3.0", "python": "3.10", "iceberg": "1.0.0"},
-    "3.0": {"spark": "3.1.1", "python": "3.7", "iceberg": "0.13.1"},
+    versao: {chave: linha[chave] for chave in ("spark", "python", "iceberg") if chave in linha}
+    for versao, linha in runtime_matrix.load().items()
 }
 
 # Espelha knowledge/emr/runtime-matrix.md, secoes 2 e 3. Chave sem o prefixo

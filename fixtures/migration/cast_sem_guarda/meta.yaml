@@ -1,0 +1,20 @@
+name: cast_sem_guarda
+proves: >
+  `cast(` sem a forma guardada `try_cast(` -- o extrator emite `mig.ansi_risk`
+  normalmente (Task 6 ja o cobre por unidade). Ate a Task 11, SF-MIG-003 era
+  `blocked_on` (nenhuma fonte confirmava a versao do Glue em que o Spark liga
+  ANSI mode por default) e esta fixture provava esse bloqueio. A partir da
+  Task 11 a regra tem `runtime_scope: {glue: ">=6.0"}` real
+  (`rules/catalog/glue-migration.yaml`), e o Glue 5.0 desta fixture fica
+  ABAIXO da fronteira -- o NEGATIVO agora e de versao, nao de capacidade: o
+  fact existe, a regra e julgavel, mas o degrau nao cruza `>=6.0` e ela fica
+  muda mesmo assim. `cast_sem_guarda_ansi_default` e o par positivo, em Glue
+  6.0, onde a mesma fonte dispara.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - mig.ansi_risk
+expects_rules: []
