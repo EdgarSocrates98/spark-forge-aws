@@ -313,9 +313,15 @@ class TestEixosNomeados:
     A regra que governou quais entraram: gate sem produtor e gate que ninguem
     preenche, e um gate que nunca muda de valor e decoracao. `lakeformation`
     tem produtor (`SF-LF` sobre `tf.attribute`) e `consumidor` tem produtor
-    (`SF-ENV` sobre `env.consumer`). `iam_kms`, `rede` e `cross_account` nao tem
-    nenhum -- entram BLOCKED com a evidencia que os preencheria, que e diferente
-    de fingir que passaram.
+    (`SF-ENV` sobre `env.consumer`).
+
+    `iam_kms`, `rede` e `cross_account` entraram SEM produtor e ganharam um na
+    fase de eixos de plataforma (`SF-KMS`, `SF-NET`, `SF-XACC`, tambem sobre
+    `tf.attribute`). Hoje `_EIXOS_SEM_PRODUTOR` esta vazio: os tres nascem
+    BLOCKED com a evidencia que os preencheria quando o Terraform nao veio -- e
+    `test_os_tres_saem_de_blocked_quando_o_terraform_chega`, logo abaixo, prova
+    que eles SAEM quando ele vem. Nascer BLOCKED e diferente de fingir que
+    passaram, e tambem e diferente de nunca mudar de valor.
     """
 
     def test_eixo_sem_o_fact_que_o_alimenta_nasce_blocked(self, tmp_path):

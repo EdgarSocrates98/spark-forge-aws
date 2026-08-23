@@ -22,20 +22,27 @@ Você vai querer perguntar estas coisas. A resposta hoje é trabalho manual.
 - **"Posso subir esta tabela de v2 para v3?"** Não existe avaliação de upgrade de formato de
   tabela. O diagnóstico devolve o `format_version` corrente; prontidão para v3 não faz parte
   do relatório.
-- **"Algum consumidor desta tabela quebra se eu migrar?"** O inventário de consumidores
-  existe e emite `env.consumer`. **Nada cruza feature de Iceberg contra consumidor para
-  bloquear um upgrade.** A única armadilha desse tipo já judicável é a de formato v3 contra
-  Athena (`SF-ENV-002`) — as outras não têm quem as cruze.
+- **"Algum consumidor desta tabela quebra se eu migrar?"** *Respondida em parte pela fase H3.*
+  O inventário de consumidores emite `env.consumer`, e `sparkforge iceberg assess-upgrade`
+  cruza esse inventário contra a matriz de suporte antes de recomendar um upgrade de formato;
+  o eixo `consumidor` do assessment bloqueia quando um consumidor declarado não suporta o
+  formato-alvo. **O que continua sem resposta** é o cruzamento para as *outras* features de
+  Iceberg: a armadilha judicável segue sendo a de formato v3 contra Athena (`SF-ENV-002`).
 - **"Minhas dependências Python aguentam?"** O observador de dependência declarada existe, e
-  há regra sobre um piso específico. Não existe julgamento de **wheel binária, extensão
-  nativa ou risco de ABI**, e não existe auditoria de dependência como comando.
+  há regra sobre um piso específico. *A auditoria como comando chegou na fase H4*:
+  `sparkforge glue dependency-audit --glue <versão> <path>`. **O que continua sem existir** é
+  julgamento de **wheel binária, extensão nativa ou risco de ABI** — o comando audita o que
+  está declarado, não o que está compilado dentro do artefato.
 - **"Este JAR carrega no runtime novo?"** Existe a regra que acusa o sufixo de Scala no nome
   do artefato. Não existe varredura de compatibilidade binária que abra o JAR, e não existe
   vocabulário de veredito próprio ("recompilar", "bloqueado") — o resultado é um finding
   comum, com severidade.
-- **"Quanto isto vai custar, e quanto mais rápido vai ficar?"** Não existe conhecimento de
-  preço com data e região, e não existe benchmark parametrizado por versão de runtime. Ver a
-  seção 6.
+- **"Quanto isto vai custar, e quanto mais rápido vai ficar?"** *Respondida em parte pelas
+  fases H5 e H6.* `knowledge/glue/pricing.yaml` registra preço **com data de coleta**, e
+  `bench.runtime_pair` parametriza a comparação por par de runtime. **O que continua sem
+  existir** é o eixo de **região**: a fonte oficial usada não diferencia por região, e o
+  arquivo grava `region: UNQUALIFIED` em vez de fingir um número regional. Custo por região
+  segue não respondível. Ver a seção 6.
 
 ## 2. Coisas que a ferramenta não consegue **ver** no seu job
 
