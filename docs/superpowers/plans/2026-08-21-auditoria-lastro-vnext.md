@@ -44,22 +44,27 @@ Um arquivo de script só. Ele tem ~250 linhas ao fim e uma responsabilidade: diz
 ```python
 # tests/test_vnext_claims.py
 import json
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+from scripts import check_vnext_claims as gate
 
-import check_vnext_claims as gate  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestDocumentosAuditados:
-    def test_cobre_os_nove_documentos_e_os_oito_adrs(self):
+    def test_cobre_os_dois_diretorios_sem_repetir(self):
         docs = gate.audited_docs()
         nomes = {p.name for p in docs}
         assert "FINAL-REPORT.md" in nomes
         assert "ADR-001-canonical-registry.md" in nomes
-        assert len(docs) == 17
+        assert len(nomes) == len(docs), "documento contado duas vezes"
+        assert any(p.parent.name == "adrs" for p in docs)
+        assert any(p.parent.name == "vnext" for p in docs)
+
+    def test_inclui_todo_adr_do_diretorio(self):
+        no_disco = {p.name for p in (gate.VNEXT / "adrs").glob("*.md")}
+        auditados = {p.name for p in gate.audited_docs()}
+        assert no_disco <= auditados
 
     def test_o_caminho_e_relativo_a_raiz(self):
         doc = gate.audited_docs()[0]
@@ -67,15 +72,25 @@ class TestDocumentosAuditados:
         assert "\\" not in gate.rel(doc)
 ```
 
+**Convenção de import, medida na revisão da Task 1:** `scripts/__init__.py` existe para que
+testes façam `from scripts import X`, e `tests/conftest.py` já acrescenta a raiz ao `sys.path`
+com razão registrada para usar `append` e nunca `insert(0, ...)`. Todos os testes de script do
+repositório seguem isso. Nenhuma task deste plano deve escrever `sys.path.insert`.
+
+**Contagem fixa, também medida na revisão da Task 1:** nenhum teste deste plano deve afirmar
+`len(docs) == 17` ou equivalente. Contagem copiada quebra com número para bumpar no primeiro
+ADR novo — ruído, não detecção de drift, que é justamente o defeito que este gate existe para
+combater.
+
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: FAIL com `ModuleNotFoundError: No module named 'check_vnext_claims'`
+Expected: FAIL com `ImportError: cannot import name 'check_vnext_claims' from 'scripts'`
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```python
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Gate de lastro das alegações publicadas em `docs/vnext/`.
 
 Fonte da verdade: `docs/vnext/claims.lock.json`. Toda alegação dos documentos
@@ -144,7 +159,7 @@ As funções `seed`, `report` e `audit` chegam nas Tasks 6 a 8. Até lá o módu
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: PASS, 2 testes
+Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores. Confira o número contra a execução, não contra este plano: contagem copiada envelhece
 
 - [ ] **Step 5: Commit**
 
@@ -215,10 +230,15 @@ Expected: FAIL com `AttributeError: module 'check_vnext_claims' has no attribute
 ```python
 # acrescentar em scripts/check_vnext_claims.py, depois de audited_docs
 
-# Percentual, ou número com pelo menos três caracteres. O lookbehind e o
-# lookahead descartam sozinhos qualquer número colado a `-` ou a letra, o que
-# mata data ISO (`2026-08-21`) e identificador (`ADR-003`) sem precisar de regra.
-NUMBER_RE = re.compile(r"(?<![\w.-])(\d[\d.,]*\s*%|\d[\d.,]{2,})(?![\w-])")
+# Qualquer número, com percentual opcional. O grupo termina em dígito ou em `%`,
+# nunca em pontuação: `0.5.0,` tem de sair como `0.5.0`, senão a regra ancorada
+# de semver não dispara. Sem limite inferior de dígitos: medido na revisão da
+# Task 2, `{2,}` tornava invisíveis "8 coordenadores", "38 agentes", "52 regras"
+# — a forma dominante de alegação nestes documentos. Capturar demais é ruído que
+# alguém classifica uma vez; capturar de menos é alegação que escapa para sempre.
+# O lookbehind e o lookahead descartam número colado a `-` ou a letra, o que mata
+# data ISO (`2026-08-21`) e identificador (`ADR-003`) sem precisar de regra.
+NUMBER_RE = re.compile(r"(?<![\w.-])(\d(?:[\d.,]*\d)?\s*%?)(?![\w-])")
 
 # Cada padrão ignorado carrega a razão. Allowlist sem razão registrada vira
 # depósito de exceção conveniente, e ninguém consegue auditar depois por que
@@ -269,7 +289,7 @@ def extract_numbers(path: Path) -> list[dict]:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: PASS, 6 testes
+Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores. Confira o número contra a execução, não contra este plano: contagem copiada envelhece
 
 - [ ] **Step 5: Commit**
 
@@ -358,20 +378,33 @@ def extract_capabilities(root: Path = VNEXT) -> list[dict]:
                 continue
             found.append(
                 {
-                    "doc": rel(path),
+                    "doc": _display_path(path),
                     "line": lineno,
                     "text": cells[0],
                     "context": stripped[:120],
                     "type": "capability",
                 }
             )
+    found.extend(_final_report_inventory(root))
     return found
 ```
+
+`_final_report_inventory(root)` lê `FINAL-REPORT.md`, localiza a seção cujo título começa em
+`## 4.` e coleta os itens de lista até o próximo `## `. Sem ela esta task cobriria só duas das
+três fontes estruturais que a §5 do spec declara, e o inventário de arquivos criados — que é
+alegação de capacidade tanto quanto a tabela — escaparia da auditoria inteira.
+
+Se o título da seção for renomeado, a função devolve zero entradas em silêncio. Isso é
+inaceitável num gate: a implementação tem de acusar quando a âncora não é encontrada, e não
+devolver lista vazia como se o documento não afirmasse nada.
+
+**`_display_path`, não `rel`:** a Task 2 introduziu o primeiro justamente porque documento fora
+da raiz do repositório — que é o que `tmp_path` dá aos testes — faz `rel()` levantar `ValueError`.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: PASS, 9 testes
+Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores. Confira o número contra a execução, não contra este plano: contagem copiada envelhece
 
 - [ ] **Step 5: Commit**
 
@@ -628,7 +661,7 @@ def _validate_proof(entry: dict, sources: dict) -> list[str]:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: PASS, 22 testes
+Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores. Confira o número contra a execução, não contra este plano: contagem copiada envelhece
 
 - [ ] **Step 5: Commit**
 
@@ -784,7 +817,7 @@ def run_command_proofs(manifest: dict, include_slow: bool) -> list[str]:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: PASS, 29 testes
+Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores. Confira o número contra a execução, não contra este plano: contagem copiada envelhece
 
 - [ ] **Step 5: Commit**
 
@@ -905,7 +938,7 @@ def audit(include_slow: bool) -> int:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: PASS, 31 testes
+Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores. Confira o número contra a execução, não contra este plano: contagem copiada envelhece
 
 - [ ] **Step 5: Commit**
 
@@ -931,6 +964,37 @@ Expected: `Semente com N alegação(ões) em docs/vnext/claims.lock.json`, com N
 Run: `python -c "import json,io; d=json.load(io.open('docs/vnext/claims.lock.json',encoding='utf-8')); [print(c['id'], c['doc'], '::', c['text'], '::', c['context'][:60]) for c in d['claims']]"`
 
 Leia a saída inteira. Todo item que for evidentemente ruído (número de seção, contagem de coluna de tabela, numeração de lista) indica padrão faltando na allowlist. Nesse caso: acrescente o padrão em `IGNORED_TOKENS` **com a razão escrita**, acrescente um caso no `TestExtracaoNumerica` que prove o novo padrão sendo ignorado, e rode `--seed` de novo.
+
+Duas fontes de ruído já são conhecidas, medidas nas revisões das Tasks 1 e 2, e esta task é quem
+as trata:
+
+- **Versão de duas partes** (`4.0`, `5.1`, `3.3`, `2.0`). A regra de semver só pega três partes.
+  Cuidado: `Glue 5.1` numa frase sobre compatibilidade é `external_fact` legítimo, não ruído —
+  decida por contexto, e se for alegação, ela fica e ganha `proof source`.
+- **Numeração de lista ordenada** (`1.`, `2.`, `10.` no início da linha). Isso é ruído de
+  estrutura, não token: `IGNORED_TOKENS` casa token e não vê a posição na linha. Se essa for a
+  fonte dominante, acrescente um mecanismo de ignore por linha — `IGNORED_LINES`, mesma forma de
+  `(padrão, razão)` — em vez de tentar espremer o caso num padrão de token. Um teste por padrão,
+  como no resto.
+
+O regex passou a capturar número de um e dois dígitos na revisão da Task 2, pela razão registrada
+no comentário do `NUMBER_RE`. O total sobe bastante em relação aos 57 da primeira medição, e isso
+é correto: capturar demais é ruído classificável uma vez, capturar de menos é alegação que escapa
+para sempre.
+
+**Medição feita na revisão da Task 6 — esta task é a que decide se a Task 9 é viável.** Números
+reais do corpus, não estimativa:
+
+- `collect_claims()` devolve **342** entradas: 280 `number` e 62 `capability`.
+- Só **218** chaves `(doc, type, text)` são distintas. **56** chaves colidem, envolvendo **180**
+  entradas — 53% do corpus. Nove entradas são idênticas até em `line` e `context`.
+- **100 das 280** numéricas não são alegação de resultado nenhuma: 68 são ordinais de lista
+  (`3. **Foo**`) e 32 são números de título de seção (`## 3. Strengths`). Essas 100 respondem por
+  **85 das 180** entradas envolvidas em colisão.
+
+Ou seja: a regra de ignore para ordinal e título de seção não é polimento, é o que corta ~36% do
+volume que a Task 9 classificaria à mão e quase metade da dor de colisão. Faça-a primeiro, com um
+teste por padrão, e meça de novo antes de seguir.
 
 - [ ] **Step 3: Verificar que o gate acusa o estado inicial**
 
@@ -1143,7 +1207,7 @@ O passo usa o modo padrão, que não roda prova `tier: slow`. Se alguma prova `s
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_vnext_claims.py -v`
-Expected: PASS, 35 testes
+Expected: PASS — todos os testes do arquivo, incluindo os das tasks anteriores. Confira o número contra a execução, não contra este plano: contagem copiada envelhece
 
 - [ ] **Step 5: Rodar tudo**
 
