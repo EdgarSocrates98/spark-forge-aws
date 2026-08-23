@@ -32,8 +32,23 @@ serializa `f.to_dict()` em `items`), e `Fact.to_dict()` inclui `attrs` inteiro.
 É por aí que `attrs.target` (um `s3://...` escrito por um terceiro) chega ao
 modelo — pelo payload do próprio `Fact`, não pelo `Finding`.
 
-Cinco extratores produzem `subject.snippet` não vazio: `pyspark_ast`,
-`event_log`, `graph`, `spark_plan` e `terraform`. Os demais preenchem `""`.
+**4** extratores produzem `subject.snippet` não vazio: `pyspark_ast`,
+`event_log`, `graph` e `spark_plan`. Os demais preenchem `""`.
+
+Esse número foi medido errado uma vez, e a forma do erro importa. `terraform`
+entrou na lista por contagem de `"snippet"` no fonte — mas
+`sparkforge/facts/terraform.py` tem `_line_subject(path, line, snippet="")` e
+**nenhum** dos 14 call sites alimenta o parâmetro. O módulo parece produzir
+snippet para quem lê o fonte, e não produz nenhum. Por isso a contagem agora é
+derivada **executando** os extratores sobre o corpus de `fixtures/`
+(`tests/test_harness_untrusted.py::extratores_com_snippet`), e o próprio teste
+compara a medida com a lista escrita aqui.
+
+Isso não quer dizer que `terraform` não carregue texto de terceiro — carrega,
+por outro campo: `subject.symbol` (o nome do recurso, escrito por quem escreveu
+o `.tf`) e `attrs.value` (o valor lido, um caminho de S3 ou o texto de um
+`--conf`). O aviso na `description` de `sparkforge_analyze_terraform` cita esses
+campos, e não o `snippet`.
 
 ## O invariante, e por que ele não é sanitização
 
@@ -67,9 +82,11 @@ segunda existe para impedir a correção errada.
 
 ## Onde o invariante é dito ao modelo
 
-Invariante só protege quem sabe dele. A frase está na `description` das cinco
-tools `analyze_*` que devolvem `subject.snippet` não vazio, e na de
-`sparkforge_judge` — a única que devolve `Finding`, e portanto o único lugar em
+Invariante só protege quem sabe dele. A frase está na `description` das **4**
+tools `analyze_*` que devolvem `subject.snippet` não vazio, na de
+`sparkforge_analyze_terraform` — que carrega o texto de terceiro por
+`subject.symbol` e `attrs.value`, e cujo aviso cita esses campos —, e na de
+`sparkforge_judge`, a única que devolve `Finding`, e portanto o único lugar em
 que o `snippet` do artefato aparece **ao lado** do `explanation` do catálogo,
 que é exatamente a situação que o invariante descreve.
 
