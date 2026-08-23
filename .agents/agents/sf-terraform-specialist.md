@@ -3,7 +3,7 @@ name: sf-terraform-specialist
 description: Revisar ou construir Terraform para plataformas de dados.
 skills:
   - review-terraform-data-platform
-rule_areas: [SF-TERRAFORM, SF-IAC, SF-SECURITY]
+rule_areas: [SF-TERRAFORM, SF-IAC, SF-SECURITY, SF-NET]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 # Terraform Specialist

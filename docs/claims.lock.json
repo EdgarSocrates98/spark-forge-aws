@@ -2800,12 +2800,12 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 62,
-      "text": "45",
+      "text": "47",
       "context": "| **Routing L0–L4** (§11) | EXISTE PARCIAL | `sparkforge/case/router.py:next_step()` sobre `rules/catalog/routing.yaml` ",
       "type": "number",
       "id": "VNX-430",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "Remedida: as tres rotas de AGENT-079/080/081, dos eixos de plataforma, cresceram o arquivo. A prova le o tamanho em disco, entao o numero vem da medicao, nao da mao.",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'import os; print(os.path.getsize(\"rules/catalog/routing.yaml\")//1024)'",
@@ -2813,7 +2813,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 45
+          "value": 47
         }
       }
     },

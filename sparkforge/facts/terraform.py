@@ -64,7 +64,7 @@ EMITTED_KINDS = frozenset(
 
 # Atributos de raiz do bloco `resource "aws_glue_job" "x" { ... }` que as
 # regras do catalogo referenciam. Uma chave de raiz fora desta lista (ex.:
-# `description`, `tags`, `connections`) nao e um caso de parse malsucedido --
+# `description`, `tags`) nao e um caso de parse malsucedido --
 # e uma decisao deliberada de escopo, e por isso e ignorada em silencio, ao
 # contrario de uma construcao genuinamente nao suportada (que sempre vira
 # `tf.unresolved`).
@@ -79,6 +79,13 @@ _ROOT_ATTRS = frozenset(
         "execution_class",
         "role_arn",
         "name",
+        # Os dois entraram com as areas SF-KMS e SF-NET: `security_configuration`
+        # e a ponta de encriptacao que exige rota ate o KMS, e `connections` e o
+        # que coloca o job dentro da VPC. Antes deles o comentario acima citava
+        # `connections` como exemplo de chave DELIBERADAMENTE fora de escopo --
+        # e estava certo enquanto nenhuma regra a consumia. Agora duas consomem.
+        "security_configuration",
+        "connections",
     }
 )
 
@@ -217,6 +224,19 @@ def _classify_unhandled_line(text: str) -> str:
     return "function_call"
 
 
+# Lista LITERAL de strings numa linha so: `["a", "b"]`, e tambem a vazia `[]`.
+# Antes desta adicao ela caia no reason `function_call`, que e classificacao
+# ERRADA -- `["a"]` nao e chamada de funcao nenhuma. O defeito so nao aparecia
+# porque nenhuma chave de `_ROOT_ATTRS` era lista; `connections` passou a ser, e
+# um `tf.unresolved` mentindo o motivo e pior que um valor nao lido.
+#
+# Lista com interpolacao, referencia ou quebra de linha NAO casa aqui e continua
+# indo para o reason generico: este parser e linha a linha, e adivinhar o
+# conteudo de uma lista que continua na proxima linha seria inventar valor.
+_STRING_ITEM_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
+_STRING_LIST_RE = re.compile(r'^\[\s*(?:"(?:[^"\\]|\\.)*"\s*,?\s*)*\]$')
+
+
 def _classify_value(raw_value: str) -> tuple[str | None, Any, bool]:
     """Classifica o lado direito de `chave = valor`.
 
@@ -243,6 +263,16 @@ def _classify_value(raw_value: str) -> tuple[str | None, Any, bool]:
         return None, (float(value) if "." in value else int(value)), True
     if _REF_RE.match(value):
         return None, value, False
+    if _STRING_LIST_RE.match(value):
+        # Uma lista vira UM valor: os elementos juntos, separados por virgula.
+        # Nao um fact por elemento -- a pergunta que as regras fazem sobre
+        # `connections` e "o job esta dentro de uma VPC?", e essa pergunta e do
+        # job, nao de cada conexao. Lista VAZIA devolve string vazia, que e
+        # distinguivel de ausente: `attrs.present` continua True e
+        # `attrs.value == ""` diz que a chave foi declarada sem conteudo -- o
+        # mesmo par que `SF-LF-001` usa para nao acusar `--extra-jars = ""`.
+        itens = _STRING_ITEM_RE.findall(value)
+        return None, ",".join(_unescape(item) for item in itens), True
     if _FUNC_CALL_RE.match(value):
         return "function_call", None, False
     # Ternario, aritmetica, lista/mapa literal, ou qualquer outra expressao

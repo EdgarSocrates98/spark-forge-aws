@@ -1,0 +1,43 @@
+name: plataforma_kms_rede_conta
+proves: >
+  Os tres eixos de plataforma da secao 32 num arquivo so, e o que separa cada
+  regra do falso positivo dela. O job `curated_vpc_kms` declara security
+  configuration E conexao (SF-KMS-001: a documentacao da AWS exige rota ate o
+  endpoint do KMS quando as duas aparecem juntas, e essa rota nao esta no bloco
+  do job), security configuration E `--datalake-formats` iceberg (SF-KMS-002: a
+  security configuration nao cobre a server-side encryption da propria tabela
+  Iceberg), `connections` (SF-NET-001: rota ate o S3 e regra self-referencing
+  passam a ser exigidas) e um `--conf` com catalogid de outra conta
+  (SF-XACC-001: a cadeia de RAM, concessao e resource link vive fora deste
+  artefato).
+  Os dois pares negativos provam a fronteira, nao enchem o arquivo. `sem_vpc`
+  tem security configuration e NAO tem conexao: sem `same_subject` em
+  SF-KMS-001 o motor casaria a security configuration deste com o `connections`
+  do primeiro e acusaria dois jobs corretos -- a mesma armadilha que
+  `fgac_com_jar_extra` mede para SF-LF-001. `iceberg_local` usa Iceberg, nao tem
+  security configuration e le o catalogo da propria conta: prova que nem
+  Iceberg sozinho nem catalogo local sao achado.
+  Prova tambem a lista literal. `connections = ["rds-curated"]` vira
+  `tf.attribute` com `value: "rds-curated"`; antes desta area, uma lista
+  literal de strings caia em `tf.unresolved` com reason `function_call`, que e
+  classificacao errada -- `["a"]` nao e chamada de funcao nenhuma, e um
+  `unresolved` mentindo o motivo e pior que um valor nao lido.
+  Todos os tres jobs declaram observabilidade e bookmark de proposito: sem
+  isso, as regras de infra de Glue disparariam junto e a fixture deixaria de
+  isolar o eixo que ela existe para provar.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.module_analyzed
+  - tf.resource
+  - tf.attribute
+  - tf.spark_conf
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-KMS-001
+  - SF-KMS-002
+  - SF-NET-001
+  - SF-XACC-001

@@ -7,7 +7,7 @@ skills:
   - design-s3-data-lake
   - review-terraform-data-platform
   - lakeformation-fgac-guard
-rule_areas: [SF-LAKE, SF-LF, SF-GOVERNANCE, SF-SECURITY]
+rule_areas: [SF-LAKE, SF-LF, SF-GOVERNANCE, SF-SECURITY, SF-XACC]
 executors: [sf-extractor, sf-verifier]
 ---
 # sf-lake-formation-specialist

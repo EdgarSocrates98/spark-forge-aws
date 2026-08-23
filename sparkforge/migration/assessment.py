@@ -103,6 +103,15 @@ _EIXOS_COM_PRODUTOR: dict[str, tuple[str, str]] = {
     # e "sem consumidor". Ausencia de declaracao nao e declaracao de ausencia --
     # ver o docstring de `sparkforge/facts/consumers.py`.
     "consumidor": ("SF-ENV", "env.consumer"),
+    # Os tres que a fase H2 registrou como nomeados-sem-produtor. Ganharam area
+    # propria de catalogo, e por isso deixaram de ser gate que nunca muda de
+    # valor. O fact exigido e `tf.attribute` nos dois primeiros porque as
+    # condicoes sao atributos do `aws_glue_job`; em `cross_account` e
+    # `tf.spark_conf`, porque o sinal e uma propriedade Spark decomposta de um
+    # `--conf`.
+    "iam_kms": ("SF-KMS", "tf.attribute"),
+    "rede": ("SF-NET", "tf.attribute"),
+    "cross_account": ("SF-XACC", "tf.spark_conf"),
 }
 
 # Evidencia que destrava cada eixo com produtor, quando o fact dele nao veio.
@@ -118,30 +127,32 @@ _EVIDENCIA_DOS_EIXOS: dict[str, str] = {
         "inventario em `.sparkforge/consumers.yaml` (ver "
         "`sparkforge/facts/consumers.py`)"
     ),
-}
-
-# Eixos que a secao 32 nomeia e que NAO tem produtor nenhum no repositorio. Eles
-# entram BLOCKED com a evidencia que os preencheria, e nunca mudam de valor --
-# que e a diferenca entre "nao avaliei" e "passou". Quando um extrator e uma
-# area de regra existirem para um deles, ele migra para `_EIXOS_COM_PRODUTOR` e
-# passa a ser calculado como os outros.
-_EIXOS_SEM_PRODUTOR: dict[str, str] = {
     "iam_kms": (
-        "nenhuma regra do catalogo julga papel de execucao, politica de KMS ou "
-        "permissao de S3 do runtime contra o par de versoes -- o eixo exige um "
-        "extrator de IAM/KMS que nao existe"
+        "nenhum `tf.attribute` nos facts -- security configuration, papel de "
+        "execucao e a rota ate o KMS sao declarados no Terraform do job, entao "
+        "aponte a analise para o diretorio que contem os `.tf`"
     ),
     "rede": (
-        "nenhuma regra do catalogo julga VPC, subnet, security group ou "
-        "endpoint de servico contra o par de versoes -- o eixo exige um "
-        "extrator de rede que nao existe"
+        "nenhum `tf.attribute` nos facts -- a conexao que coloca o job dentro "
+        "da VPC e declarada no Terraform do job, entao aponte a analise para o "
+        "diretorio que contem os `.tf`"
     ),
     "cross_account": (
-        "nenhuma regra do catalogo julga compartilhamento entre contas contra o "
-        "par de versoes; `forge lakeformation diagnose-cross-account` diagnostica "
-        "a topologia, mas nao esta ligado a este assessment"
+        "nenhum `tf.spark_conf` nos facts -- leitura de catalogo de outra conta "
+        "aparece como propriedade Spark no `default_arguments` do job, e sem "
+        "os `.tf` do job nao ha o que ler"
     ),
 }
+
+# Eixos que a secao 32 nomeia e que NAO tem produtor nenhum no repositorio.
+#
+# VAZIO desde que `SF-KMS`, `SF-NET` e `SF-XACC` existem: os tres que moravam
+# aqui -- `iam_kms`, `rede`, `cross_account` -- migraram para
+# `_EIXOS_COM_PRODUTOR`, que era exatamente o caminho que este comentario
+# previa. O dicionario fica, e vazio, porque o mecanismo continua valendo: a
+# secao 32 pode nomear um eixo novo antes de existir regra para ele, e o lugar
+# certo de declarar isso e aqui, nao um `PASS` silencioso.
+_EIXOS_SEM_PRODUTOR: dict[str, str] = {}
 
 
 @dataclass

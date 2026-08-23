@@ -1,0 +1,91 @@
+# Catálogo de regras — o eixo `rede` da §32. Ver `glue-kms.yaml` para o
+# cabeçalho comum aos três eixos: o que estas regras afirmam (a combinação de
+# atributos exige, pela documentação da AWS, configuração que o job não declara)
+# e o que elas **não** afirmam (que a configuração falta — o motor avalia uma
+# condição contra um fact, e recurso de rede declarado em outro `.tf` não é
+# alcançável de dentro do bloco do job).
+
+area: SF-NET
+retrieved: 2026-08-23
+
+rules:
+
+  - id: SF-NET-001
+    category: vpc-connectivity
+    title: Job em VPC exige rota até o S3 e security group com regra self-referencing
+    requires_facts: [tf.attribute]
+    when:
+      all:
+        - fact: tf.attribute
+          where:
+            attrs.key: connections
+            attrs.present: true
+          expr: 'attrs.value != ""'
+    status: structural
+    severity_default: P2
+    # ESCOPO VAZIO, E DE PROPOSITO. A primeira versao declarava
+    # `{glue: ">=4.0"}`, e isso era etiqueta de servico disfarcada de guarda de
+    # versao -- o defeito que a Fase 5a nomeou e que
+    # `tests/test_rule_scope_by_nature.py` existe para pegar. Nao ha fronteira
+    # de versao aqui: a exigencia da documentacao vale igual em toda versao de
+    # Glue que aceita a combinacao, e nenhuma fonte declara um piso.
+    #
+    # Quem gateia e `requires_facts`: sem `tf.attribute` de um `aws_glue_job`,
+    # a regra nao dispara, e um `aws_glue_job` so existe onde ha Glue. Com
+    # `{glue: ">=4.0"}` a area inteira desaparecia num runtime detectado a
+    # partir de event log (que preenche `spark`, nao `glue`), e area que
+    # desaparece inteira le como "nada encontrado nesse eixo" -- o falso
+    # negativo que a guarda deveria evitar, produzido pela propria guarda.
+    runtime_scope: {}
+    explanation: >
+      Declarar `connections` coloca o job dentro da VPC da conexão, e a partir
+      dali ele perde a rota pública para o S3 -- que é de onde vêm o script, as
+      bibliotecas e, quase sempre, os dados. A documentação da AWS declara os
+      dois requisitos textualmente: "to enable AWS Glue to communicate between
+      its components, specify a security group with a self-referencing inbound
+      rule for all TCP ports", e, para a saída, "if using an Amazon S3 VPC
+      endpoint, add an HTTPS rule to allow traffic from the VPC to Amazon S3".
+      Nenhum dos dois aparece no bloco do `aws_glue_job`: o security group vive
+      na conexão e o endpoint é recurso de rede. Este achado NÃO afirma que
+      faltam -- afirma que passaram a ser exigidos e que não são visíveis daqui.
+    proposed_change:
+      - >-
+        Confirmar que o security group da conexão tem regra de entrada
+        self-referencing para todas as portas TCP, com a origem sendo o próprio
+        security group. A documentação avisa que o security group padrão da VPC
+        pode já ter essa regra -- confirmar não é o mesmo que assumir.
+      - >-
+        Confirmar a rota até o S3: endpoint de gateway na tabela de rotas da
+        subnet, ou NAT gateway. Com endpoint de gateway, a regra de saída HTTPS
+        precisa apontar para o prefix list gerenciado do S3, não para um CIDR.
+      - >-
+        Se o job também tem security configuration, ver `SF-KMS-001`: o KMS
+        precisa da própria rota, e é um endpoint diferente do S3.
+    risks:
+      - >-
+        Sem a regra self-referencing os componentes do Glue não se falam, e o
+        job falha na inicialização -- antes de qualquer linha do script rodar.
+      - >-
+        Sem rota até o S3 a falha aparece como timeout de leitura, que é fácil
+        de confundir com lentidão do dado.
+    tradeoffs:
+      - >-
+        Endpoint de gateway para S3 não tem custo por hora e mantém o tráfego na
+        rede da AWS, mas exige entrada na tabela de rotas de cada subnet; NAT
+        gateway cobre tudo de uma vez e cobra por hora e por GB.
+    validation:
+      - >-
+        `aws ec2 describe-security-groups` no security group da conexão,
+        confirmando a regra de entrada com origem igual ao próprio grupo.
+      - >-
+        `aws ec2 describe-route-tables` na subnet da conexão, procurando o
+        endpoint de gateway do S3 ou a rota para o NAT.
+      - >-
+        Uma execução do job que leia um objeto do S3 e termine sem timeout.
+    rollback: >
+      Nenhuma mudança de código está envolvida. Remover `connections` tira o job
+      da VPC e devolve a rota pública -- e junto o acesso ao banco que motivou a
+      conexão, então isso é decisão de arquitetura, não rollback.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/setup-vpc-for-glue-access.html", retrieved: 2026-08-23}
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html", retrieved: 2026-08-23}

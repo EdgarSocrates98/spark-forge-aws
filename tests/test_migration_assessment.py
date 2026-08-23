@@ -318,7 +318,10 @@ class TestEixosNomeados:
     de fingir que passaram.
     """
 
-    def test_eixo_sem_produtor_nasce_blocked_com_evidencia_nomeada(self, tmp_path):
+    def test_eixo_sem_o_fact_que_o_alimenta_nasce_blocked(self, tmp_path):
+        # So codigo Python nos facts. Os tres eixos de plataforma sao julgados
+        # sobre Terraform, entao aqui eles nao foram AVALIADOS -- que e
+        # diferente de terem passado.
         resultado = assessment.assess(_facts(tmp_path), source="4.0", target="5.1")
         for nome in ("iam_kms", "rede", "cross_account"):
             assert resultado.gates[nome] == "BLOCKED", nome
@@ -497,3 +500,69 @@ class TestConsumidorPorTabela:
             "nao acusar nao e aprovar: a tabela que vai para v3 continua sem "
             "consumidor declarado, e isso precisa aparecer"
         )
+
+
+class TestEixosDePlataformaDeixamDeSerDecorativos:
+    """Os tres que a fase H2 registrou como nomeados-sem-produtor.
+
+    O invariante que estes testes fixam nao e "o gate existe" -- ele ja existia,
+    e era exatamente esse o problema: `BLOCKED` que nunca muda de valor le como
+    "nao avaliei" na primeira leitura e como ruido na decima. O invariante e que
+    cada um dos tres MUDA quando o artefato que o alimenta chega.
+    """
+
+    @staticmethod
+    def _facts_com_tf(tmp_path, corpo_tf: str):
+        from sparkforge.migration import collect as collect_mod
+
+        (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
+        (tmp_path / "infra.tf").write_text(corpo_tf, encoding="utf-8")
+        return collect_mod.collect(tmp_path)
+
+    _JOB_TF = """resource "aws_glue_job" "j" {
+  name                   = "j"
+  glue_version           = "5.0"
+  security_configuration = "sec"
+  connections            = ["conexao"]
+  default_arguments = {
+    "--datalake-formats" = "iceberg"
+    "--conf"             = "spark.hadoop.hive.metastore.glue.catalogid=222222222222"
+  }
+}
+"""
+
+    def test_os_tres_saem_de_blocked_quando_o_terraform_chega(self, tmp_path):
+        resultado = assessment.assess(
+            self._facts_com_tf(tmp_path, self._JOB_TF), source="5.1", target="6.0"
+        )
+        for nome in ("iam_kms", "rede", "cross_account"):
+            assert resultado.gates[nome] != "BLOCKED", (
+                f"{nome} continua BLOCKED com o artefato presente -- o gate nao "
+                f"esta ligado a area dele"
+            )
+
+    def test_cada_eixo_e_movido_pela_area_dele(self, tmp_path):
+        resultado = assessment.assess(
+            self._facts_com_tf(tmp_path, self._JOB_TF), source="5.1", target="6.0"
+        )
+        por_area = {}
+        for finding in resultado.findings:
+            por_area.setdefault(finding.rule_id.rsplit("-", 1)[0], []).append(finding)
+        assert {"SF-KMS", "SF-NET", "SF-XACC"} <= set(por_area)
+        # Um achado move UM eixo: nenhum dos tres pode ter empurrado
+        # `compatibilidade`, que e o eixo residual.
+        de_plataforma = {"SF-KMS", "SF-NET", "SF-XACC"}
+        residuais = [
+            f for f in resultado.findings if f.rule_id.rsplit("-", 1)[0] not in de_plataforma
+        ]
+        assert resultado.gates["compatibilidade"] == assessment._compatibility_gate(residuais)
+
+    def test_nenhum_dos_tres_conclui_sozinho(self, tmp_path):
+        """As quatro regras sao `structural` e nenhuma passa de P2: elas mandam
+        conferir uma configuracao que o artefato nao mostra, nao concluem que
+        ela falta. Um eixo de plataforma nunca deveria, sozinho, virar NO_GO."""
+        resultado = assessment.assess(
+            self._facts_com_tf(tmp_path, self._JOB_TF), source="5.1", target="6.0"
+        )
+        for nome in ("iam_kms", "rede", "cross_account"):
+            assert resultado.gates[nome] != "FAIL", nome

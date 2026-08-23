@@ -729,6 +729,18 @@
       ],
       "rules": []
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-23"
+      ],
+      "rules": [
+        "SF-KMS-001",
+        "SF-KMS-002",
+        "SF-NET-001"
+      ]
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -814,7 +826,20 @@
       "retrieved": [
         "2026-08-22"
       ],
-      "rules": []
+      "rules": [
+        "SF-LF-001",
+        "SF-LF-002"
+      ]
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/setup-vpc-for-glue-access.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-23"
+      ],
+      "rules": [
+        "SF-NET-001"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
       "checked_at": "2026-07-31",
@@ -829,6 +854,16 @@
         "SF-GLUE-005"
       ],
       "sha256": "a587377ca988f6727e8031eeb861bcebd9322f7988b6793952f0ef7fd2a95cdb"
+    },
+    "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-23"
+      ],
+      "rules": [
+        "SF-XACC-001"
+      ]
     },
     "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction": {
       "docs": [

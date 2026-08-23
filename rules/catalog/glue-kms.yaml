@@ -1,0 +1,181 @@
+# Catálogo de regras — o eixo `iam_kms` da §32, que o contrato nomeava e ninguém
+# preenchia. Os irmãos são `glue-network.yaml` (`SF-NET`) e
+# `glue-cross-account.yaml` (`SF-XACC`); os três nasceram na mesma fase e
+# compartilham o cabeçalho abaixo.
+#
+# POR QUE ESTE ARQUIVO EXISTE. `sparkforge/migration/assessment.py` nomeia
+# `iam_kms`, `rede` e `cross_account` desde a fase H2, e os três nasciam
+# `BLOCKED` **sempre**, com a evidência que os preencheria escrita ao lado.
+# `BLOCKED` com motivo é honesto; `BLOCKED` que nunca muda de valor é decoração.
+# O `STATUS.md` registrou os três como *fase* — trabalho previsto, não dívida —
+# e esta é a fase.
+#
+# O QUE ESTAS REGRAS AFIRMAM, E O QUE ELAS NÃO AFIRMAM.
+#
+# Nenhuma delas acusa "faltou o endpoint" ou "faltou a permissão". Elas não
+# podem: o motor avalia UMA condição contra UM fact (`rules/engine.py`), e a
+# ausência de um `aws_vpc_endpoint` declarado em OUTRO arquivo `.tf` não é
+# expressável — é a mesma lacuna que o `STATUS.md` registra como dívida
+# ("falta `absent` filtrado por atributo"). O que elas afirmam é o que o
+# artefato mostra: **esta combinação de atributos exige, pela documentação da
+# AWS, uma configuração que o job não declara e este extrator não vê**. Por isso
+# as quatro são `status: structural` e nenhuma passa de P2 — a saída manda
+# conferir, não conclui.
+#
+# É a mesma postura de `missing_evidence`: dizer o que não foi avaliado vale
+# mais que calar, e vale muito mais que fingir um veredito.
+#
+# POR QUE TRÊS ÁREAS E NÃO UMA. O eixo do contrato é derivado da ÁREA do
+# `rule_id` (`sparkforge/findings/models.py:area_of`), e um achado move um eixo
+# só. Uma área única `SF-PLAT` deixaria os três eixos empatados no mesmo balde e
+# a separação que a §32 pede voltaria a ser decorativa.
+
+area: SF-KMS
+retrieved: 2026-08-23
+
+rules:
+
+  # As duas condições são atributos de RAIZ do mesmo `aws_glue_job`, e por isso
+  # `same_subject: true` é obrigatório: um `.tf` com dois jobs -- um com
+  # security configuration e outro com conexão de VPC -- satisfaz as duas
+  # condições no arquivo, e os dois jobs estão corretos. Mesma armadilha que
+  # `SF-LF-001` documenta.
+  - id: SF-KMS-001
+    category: encryption-network-route
+    title: Job com security configuration e conexão de VPC exige rota própria até o KMS
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where:
+            attrs.key: security_configuration
+            attrs.present: true
+          expr: 'attrs.value != ""'
+        - fact: tf.attribute
+          where:
+            attrs.key: connections
+            attrs.present: true
+          expr: 'attrs.value != ""'
+    status: structural
+    severity_default: P2
+    # ESCOPO VAZIO, E DE PROPOSITO. A primeira versao declarava
+    # `{glue: ">=4.0"}`, e isso era etiqueta de servico disfarcada de guarda de
+    # versao -- o defeito que a Fase 5a nomeou e que
+    # `tests/test_rule_scope_by_nature.py` existe para pegar. Nao ha fronteira
+    # de versao aqui: a exigencia da documentacao vale igual em toda versao de
+    # Glue que aceita a combinacao, e nenhuma fonte declara um piso.
+    #
+    # Quem gateia e `requires_facts`: sem `tf.attribute` de um `aws_glue_job`,
+    # a regra nao dispara, e um `aws_glue_job` so existe onde ha Glue. Com
+    # `{glue: ">=4.0"}` a area inteira desaparecia num runtime detectado a
+    # partir de event log (que preenche `spark`, nao `glue`), e area que
+    # desaparece inteira le como "nada encontrado nesse eixo" -- o falso
+    # negativo que a guarda deveria evitar, produzido pela propria guarda.
+    runtime_scope: {}
+    explanation: >
+      A documentação da AWS declara, textualmente, que "when you add a security
+      configuration to a crawler or job that accesses JDBC data stores, AWS Glue
+      must have a route to the AWS KMS endpoint", e que sem esse passo "your jobs
+      or crawlers might fail with a `kms timeout` on jobs or an `internal service
+      exception` on crawlers". Este job declara as duas pontas da condição: uma
+      security configuration (que exige KMS) e uma conexão (que o coloca dentro
+      da VPC). A rota em si -- endpoint de VPC para o KMS, ou NAT gateway -- é
+      recurso de rede que não aparece no bloco do job, então este achado NÃO
+      afirma que ela falta. Ele afirma que ela é exigida e que ninguém consegue
+      vê-la daqui.
+    proposed_change:
+      - >-
+        Confirmar que existe endpoint de VPC para o AWS KMS na subnet da conexão,
+        com "Enable Private DNS name" ligado e com o mesmo security group (de
+        regra self-referencing) que a conexão usa -- é a forma que a documentação
+        descreve passo a passo.
+      - >-
+        Ou confirmar que existe NAT gateway na rota da subnet, que é a
+        alternativa que a mesma página nomeia.
+      - >-
+        Registrar qual das duas foi escolhida junto com o job, e não só na conta:
+        o próximo a ler este Terraform tem a mesma pergunta.
+    risks:
+      - >-
+        O modo de falha é um timeout em runtime, não um erro de plano: o
+        `terraform apply` passa e o job quebra na primeira execução que toca o
+        KMS.
+    tradeoffs:
+      - >-
+        Endpoint de VPC mantém o tráfego dentro da rede da AWS e custa por hora e
+        por GB; NAT gateway é mais simples de operar e expõe a saída à internet.
+    validation:
+      - >-
+        Executar o job uma vez e confirmar que não há `kms timeout` no log.
+      - >-
+        `aws ec2 describe-vpc-endpoints` na VPC da conexão, procurando o serviço
+        de KMS da região.
+    rollback: >
+      Nenhuma mudança de código está envolvida. Se o endpoint foi criado e
+      precisa ser desfeito, remover o recurso reverte o estado -- mas o job
+      volta a ter o modo de falha descrito acima.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html", retrieved: 2026-08-23}
+
+  - id: SF-KMS-002
+    category: encryption-iceberg
+    title: Security configuration não cobre a encriptação das tabelas Iceberg
+    requires_facts: [tf.attribute]
+    when:
+      same_subject: true
+      all:
+        - fact: tf.attribute
+          where:
+            attrs.key: security_configuration
+            attrs.present: true
+          expr: 'attrs.value != ""'
+        - fact: tf.attribute
+          where:
+            attrs.key: "--datalake-formats"
+            attrs.block: default_arguments
+            attrs.present: true
+          expr: 'attrs.value != ""'
+    status: structural
+    severity_default: P2
+    # Escopo vazio pela mesma razao da regra acima: o gate e o artefato.
+    runtime_scope: {}
+    explanation: >
+      A mesma página de encriptação da AWS traz a nota, textualmente: "If you are
+      using Iceberg as your data lake framework, Iceberg tables have their own
+      mechanisms to enable server-side encryption. You should enable these
+      configuration in addition to AWS Glue's security configurations." A
+      security configuration do Glue encripta os alvos S3 do job, os logs do
+      CloudWatch e os bookmarks -- e NÃO substitui a configuração de
+      server-side encryption da própria tabela Iceberg. Um operador que vê a
+      security configuration ligada e conclui "os dados desta tabela estão
+      encriptados" está lendo metade da configuração.
+    proposed_change:
+      - >-
+        Habilitar server-side encryption na tabela Iceberg pela configuração do
+        próprio Iceberg, ao lado da security configuration -- a documentação do
+        Iceberg descreve as propriedades de S3 SSE.
+      - >-
+        Registrar as duas configurações juntas onde a tabela é declarada, para
+        que a próxima leitura não repita a mesma conclusão parcial.
+    risks:
+      - >-
+        A ausência não gera erro: os dados são escritos, e a diferença só
+        aparece numa auditoria de encriptação ou num incidente.
+    tradeoffs:
+      - >-
+        Encriptação com chave gerenciada pelo cliente acrescenta chamada de KMS
+        por objeto e custo por requisição; a alternativa é aceitar a chave
+        gerenciada pelo serviço, com menos controle sobre a política.
+    validation:
+      - >-
+        Inspecionar as propriedades de encriptação da tabela Iceberg e confirmar
+        que o modo de SSE está declarado.
+      - >-
+        `aws s3api head-object` num arquivo de dado recém-escrito, conferindo o
+        cabeçalho de encriptação server-side.
+    rollback: >
+      Desabilitar a configuração de SSE do Iceberg reverte a decisão para os
+      arquivos NOVOS. Os já escritos mantêm a encriptação com que nasceram.
+    sources:
+      - {url: "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html", retrieved: 2026-08-23}

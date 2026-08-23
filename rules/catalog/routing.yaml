@@ -1061,6 +1061,60 @@ rules:
       entre FGAC e a outra metade, e ela se decide com quem responde pela
       governanca do dado, nao com quem tuna o job.
 
+  # SF-KMS, SF-NET e SF-XACC entraram com os tres eixos da secao 32 que o
+  # contrato de migracao nomeava e ninguem preenchia, e cada uma ganha ENTRADA
+  # PROPRIA pelo mesmo motivo que SF-LF ganhou a dela: declarar a area em
+  # `rule_areas` do agente NAO roteia, e `findings_area` conta por prefixo
+  # exato do `rule_id` ate o ultimo hifen. Sem estas tres, os quatro achados
+  # novos cairiam no fallback.
+  #
+  # PRECEDENCIA, e ela e deliberada. As tres vem DEPOIS de AGENT-002
+  # (`glue-infra-reviewer`, achado dominante em infra de Glue): um case que
+  # tenha SF-GLUE junto continua indo para la, porque dimensionamento e
+  # observabilidade sao a conversa maior. Estas tres so pegam o case cujo
+  # achado dominante e do eixo delas.
+  - id: AGENT-079
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em encriptacao e rota ate o KMS
+    when:
+      all:
+        - {findings_area: SF-KMS, count_gt: 0}
+    recommended_agent: sf-security-reviewer
+    reason: >
+      O job declara encriptacao -- security configuration, ou Iceberg com
+      server-side encryption propria -- e a documentacao da AWS exige, junto,
+      uma configuracao que o bloco do job nao mostra: rota ate o endpoint do
+      KMS, ou a configuracao de SSE da propria tabela. Quem confere isso e quem
+      responde por chave e politica, nao quem tuna o job.
+
+  - id: AGENT-080
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em conectividade de VPC
+    when:
+      all:
+        - {findings_area: SF-NET, count_gt: 0}
+    recommended_agent: sf-terraform-specialist
+    reason: >
+      Declarar `connections` coloca o job dentro da VPC e transfere para a rede
+      a responsabilidade por alcancar o S3 e por deixar os componentes do Glue
+      se falarem. As duas exigencias vivem em security group e tabela de rotas,
+      que sao recursos de Terraform -- e e no Terraform que a confirmacao
+      acontece, nao no codigo do job.
+
+  - id: AGENT-081
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em leitura de catalogo entre contas
+    when:
+      all:
+        - {findings_area: SF-XACC, count_gt: 0}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      O job aponta para o Data Catalog de outra conta, e a cadeia que sustenta
+      isso -- concessao do Lake Formation, aceitacao do convite do AWS RAM,
+      resource link na conta consumidora -- vive fora deste artefato e e
+      operada por outro time. E decisao de governanca de dado compartilhado, a
+      mesma familia de SF-LF.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >
