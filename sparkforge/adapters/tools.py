@@ -921,6 +921,94 @@ _JUDGE_SCHEMA: dict[str, Any] = {
     "oneOf": [_JUDGE_SUCCESS_SCHEMA, _ERROR_SCHEMA],
 }
 
+_MIGRATION_STEP: dict[str, Any] = {
+    "type": "array",
+    "items": {"type": "string"},
+    "minItems": 2,
+    "maxItems": 2,
+    "description": "Degrau do caminho, no par [origem, alvo].",
+}
+
+_MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "source_runtime",
+        "target_runtime",
+        "steps",
+        "findings",
+        "by_step",
+        "report",
+        "gates",
+        "missing_evidence",
+        "recommendation",
+    ],
+    "properties": {
+        "source_runtime": {"type": "string"},
+        "target_runtime": {"type": "string"},
+        "steps": {
+            "type": "array",
+            "items": _MIGRATION_STEP,
+            "description": (
+                "Os degraus intermediarios do caminho. Um salto de 4.0 para 6.0 nao "
+                "e um degrau: os breaking changes se acumulam e um salto esconde os "
+                "do meio."
+            ),
+        },
+        "findings": {"type": "array", "items": _FINDING_ITEM},
+        "by_step": {
+            "type": "array",
+            "description": (
+                "Cada finding emparelhado com o degrau que o produziu, na MESMA "
+                "cardinalidade de `findings`: um breaking change cujo `runtime_scope` "
+                "cobre mais de um degrau nasce em cada um, e isso e o sinal -- ele "
+                "continua valendo depois do proximo salto."
+            ),
+            "items": {
+                "type": "object",
+                "required": ["finding", "step"],
+                "properties": {"finding": _FINDING_ITEM, "step": _MIGRATION_STEP},
+            },
+        },
+        "report": {
+            "type": "array",
+            "description": (
+                "A visao de quem LE: cada problema uma vez so, com todos os degraus "
+                "em que ele vale. Existe AO LADO de `findings`, nunca no lugar dela."
+            ),
+            "items": {
+                "type": "object",
+                "required": ["finding", "steps"],
+                "properties": {
+                    "finding": _FINDING_ITEM,
+                    "steps": {"type": "array", "items": _MIGRATION_STEP},
+                },
+            },
+        },
+        "gates": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": (
+                "`compatibilidade` sai do catalogo. Os quatro eixos que exigem "
+                "execucao real (dados, performance, custo, canary) nascem BLOCKED: "
+                "nem job real nem AWS viva existem nesta analise."
+            ),
+        },
+        "missing_evidence": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": "Por eixo BLOCKED, que evidencia o destravaria.",
+        },
+        "recommendation": {
+            "type": "string",
+            "enum": ["GO", "CONDITIONAL_GO", "NO_GO"],
+            "description": (
+                "Nunca GO nesta analise: GO exigiria todo gate em PASS, e os quatro "
+                "de execucao real nascem BLOCKED."
+            ),
+        },
+    },
+}
+
 _SEVERITY_BRANCH_ITEM: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -1848,6 +1936,39 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_migration_assess": {
+        "description": (
+            "Julga a migracao de um job Glue entre um par de versoes com o catalogo "
+            "versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`), uma vez por DEGRAU do "
+            "caminho -- 4.0 para 6.0 passa por 5.0 e 5.1, porque os breaking changes "
+            "se acumulam e um salto esconde os do meio. Entrada: o diretorio do job "
+            "(codigo, `requirements*.txt` e `.jar`) ou um arquivo `.py`; o diretorio "
+            "e o caso que interessa, porque um pin de dependencia e um binario Scala "
+            "nao tem linha de fonte Python e sobrevivem a troca de runtime. `source` "
+            "e `target` nao tem default: um par embutido responderia sobre um alvo "
+            "que ninguem declarou. Devolve `findings` (cardinalidade por degrau), "
+            "`report` (cada problema uma vez, com os degraus em que vale), `gates` e "
+            "`missing_evidence` -- os quatro eixos que exigem execucao real (dados, "
+            "performance, custo, canary) nascem BLOCKED com o motivo, nunca PASS."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "source", "target"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Diretorio do job, ou um arquivo .py.",
+                },
+                "source": {"type": "string", "description": "Versao de Glue de origem."},
+                "target": {"type": "string", "description": "Versao de Glue alvo."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _MIGRATION_ASSESS_SUCCESS_SCHEMA,
+            "Assessment do caminho, ou erro se o path nao existe ou o par e invalido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_call_graph": {
         "description": (
             "Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA "
@@ -2676,6 +2797,12 @@ def _h_analyze_terraform_diff(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_migration_assess(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.migration_assess(
+        args["path"], source=args["source"], target=args["target"]
+    )
+
+
 def _h_analyze_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_athena_workgroup(
         args["path"],
@@ -2862,6 +2989,7 @@ _HANDLERS = {
     "sparkforge_analyze_consumers": _h_analyze_consumers,
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
     "sparkforge_analyze_call_graph": _h_analyze_call_graph,
+    "sparkforge_migration_assess": _h_migration_assess,
     "sparkforge_benchmark": _h_benchmark,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,

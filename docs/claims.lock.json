@@ -2977,8 +2977,8 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "121,7",
-      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "126,8",
+      "context": "Confirmado por tamanho: `tools.py` (126,8 KB) e `_core.py` (123,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-431",
       "state": "PROVADA",
@@ -2989,15 +2989,15 @@
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "121,7"
+          "value": "126,8"
         }
       }
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "120,7",
-      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "123,2",
+      "context": "Confirmado por tamanho: `tools.py` (126,8 KB) e `_core.py` (123,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-322",
       "state": "PROVADA",
@@ -3008,7 +3008,7 @@
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "120,7"
+          "value": "123,2"
         }
       }
     },

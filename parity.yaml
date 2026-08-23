@@ -240,6 +240,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: assess a Glue version migration step by step
+    tools: [sparkforge_migration_assess]
+    cli: [migrate glue]
+    knowledge: [knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: derive a call graph and Spark work reachability from facts
     tools: [sparkforge_analyze_call_graph]
     cli: [analyze call-graph]

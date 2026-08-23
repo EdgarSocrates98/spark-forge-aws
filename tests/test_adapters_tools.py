@@ -52,6 +52,7 @@ class TestToolSurface:
             "sparkforge_analyze_s3_listing",
             "sparkforge_analyze_consumers",
             "sparkforge_analyze_terraform_diff",
+            "sparkforge_migration_assess",
             "sparkforge_benchmark",
             "sparkforge_funcval_plan",
             "sparkforge_funcval_compare",
@@ -1189,6 +1190,24 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_fuse", {"facts_paths": [str(facts_path)]})
 
+    if name == "sparkforge_migration_assess":
+        # Um job com SDK v1 e um pin de PyArrow abaixo do piso do Spark 4.1:
+        # o primeiro faz `SF-MIG-001` nascer, o segundo faz `SF-SPARK4-003`
+        # nascer -- e o segundo so aparece porque a entrada e um DIRETORIO.
+        # Assessment vazio validaria contra o schema pelo motivo errado.
+        job = tmp_path / "job"
+        job.mkdir()
+        (job / "job.py").write_text(
+            "import com.amazonaws.services.s3.AmazonS3\n", encoding="utf-8"
+        )
+        (job / "requirements.txt").write_text("pyarrow==14.0.0\n", encoding="utf-8")
+        result = call_tool(
+            "sparkforge_migration_assess",
+            {"path": str(job), "source": "4.0", "target": "6.0"},
+        )
+        assert result["findings"], "a amostra precisa render pelo menos um finding"
+        return result
+
     if name in (
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
@@ -1316,6 +1335,10 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_graph", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
+        (
+            "sparkforge_migration_assess",
+            {"path": "<tmp>/inexistente", "source": "4.0", "target": "6.0"},
+        ),
         (
             "sparkforge_benchmark",
             {"before_path": "<tmp>/nao-existe.json", "after_path": "<tmp>/nao-existe.json"},
