@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "0ab901d4953e6440ee640636cecda62fb745f650185152b8cd5f974af7309387"
+      "sha256": "133c8da9f502ca3a09d2953b5c6dfa16a38f2ff4c6ca03247234217bba5e79a9"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -102,6 +102,11 @@
       "path": "knowledge/glue/job-arguments.md",
       "title": "job-arguments",
       "sha256": "52c7109eeb424321284d54286be59d363b3f454f2d58052573f075e6d0cbcb3d"
+    },
+    {
+      "path": "knowledge/glue/lakeformation-fgac.md",
+      "title": "lakeformation-fgac",
+      "sha256": "c40621aba36113084ba4c66511e3f0fb81607148c477931812a4522df39bb2a1"
     },
     {
       "path": "knowledge/glue/observability.md",

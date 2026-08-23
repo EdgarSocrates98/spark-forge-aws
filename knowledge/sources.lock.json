@@ -806,6 +806,16 @@
       ],
       "rules": []
     },
+    "https://docs.aws.amazon.com/glue/latest/dg/security-lf-enable-considerations.html": {
+      "docs": [
+        "knowledge/glue/lakeformation-fgac.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-22"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/glue/latest/dg/worker-types.html": {
       "checked_at": "2026-07-31",
       "docs": [

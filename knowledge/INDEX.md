@@ -27,6 +27,7 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`glue/workers-and-capacity.md`](glue/workers-and-capacity.md) | Worker types G/R, DPU, disco, Auto Scaling, Flex, cálculo de capacidade |
 | [`glue/job-arguments.md`](glue/job-arguments.md) | Argumentos que afetam performance, precedência código × IaC |
 | [`glue/observability.md`](glue/observability.md) | Métricas CloudWatch exatas, 28 categorias de erro, o que cada uma prova |
+| [`glue/lakeformation-fgac.md`](glue/lakeformation-fgac.md) | Controle de acesso fino do Lake Formation — o que exige, o que bloqueia, realocação de worker, recorte de Iceberg |
 
 ### Amazon EMR
 | Arquivo | Conteúdo |
