@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "cf7c29c5c01e991da2f017019cf027760d54bb93",
+  "extracted_from": "f3a5626eadfe34646b0f38a3d59a4b98637d8e24",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3616,7 +3616,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 150,
       "text": "6.0",
-      "context": "| Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39) | NÃO EXISTE | Os goldens de hoje são por kind de fact, n",
+      "context": "| Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39) | EXISTE PARCIAL | `fixtures/scenarios/` traz cenário por",
       "type": "number",
       "id": "VNX-383",
       "state": "PROVADA",
@@ -4745,6 +4745,36 @@
         "kind": "artifact",
         "path": "fixtures/migration",
         "test": "tests/test_fixtures_golden_migration.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 150,
+      "text": "Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39)",
+      "context": "| Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39) | EXISTE PARCIAL | `fixtures/scenarios/` traz cenário por",
+      "type": "capability",
+      "id": "VNX-441",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "fixtures/scenarios",
+        "test": "tests/test_fixtures_scenarios.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 151,
+      "text": "Holdout não exposto às skills (§77)",
+      "context": "| Holdout não exposto às skills (§77) | EXISTE, com teste | `evals/holdout/` fica fora de `fixtures/` de propósito — os ",
+      "type": "capability",
+      "id": "VNX-442",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "evals/holdout",
+        "test": "tests/test_evals_holdout.py"
       }
     },
     {

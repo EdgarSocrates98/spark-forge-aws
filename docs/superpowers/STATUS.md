@@ -2307,6 +2307,59 @@ custo de pruning e shredding de VARIANT, e o alcance do "suporte inicial" a `MER
 com evolução de schema no Spark 4.1. As duas exigiriam completar de memória o que a fonte
 não diz.
 
+### Continuação — fases G4, G5 e G6 (2026-08-22)
+
+**G4 — matriz de compatibilidade de feature Iceberg por engine.**
+`knowledge/storage/iceberg-feature-support.yaml` mais `sparkforge/storage/feature_support.py`.
+A regra da §20 do prompt ficou em **código**, não em disciplina: célula com status
+afirmativo sem `source`, `source_type` e `retrieved` faz o carregador estourar. `UNKNOWN` é
+o único status que dispensa fonte, e a razão está escrita no módulo — desconhecimento não
+precisa de prova, afirmação precisa.
+
+A maioria esmagadora das células ficou `UNKNOWN`, e esse **é** o resultado honesto. O
+implementador registrou o que a tentação pedia e ele não preencheu: a linha inteira do EMR
+(a fonte sustenta só que nenhuma release listada traz Iceberg 1.11, não que o EMR não leia
+v3) e `default_values` no Glue 6.0 (a AWS não nomeia a feature nem entre suportadas nem
+entre limitações).
+
+**A auto-revisão pegou uma inferência que ele mesmo tinha feito.** Ele havia marcado
+`UNSUPPORTED` em várias features de Athena derivando de *"Athena não lê `format-version`
+3"*. Essa frase é sobre o **formato da tabela**, não sobre feature — fabricar células a
+partir dela é a mesma classe de defeito da inferência entre engines, na direção negativa.
+Reduziu para a única célula que a fonte sustenta, e escreveu teste que fixa a assimetria,
+porque ela parece bug para quem editar a matriz depois.
+
+**G5 — Lake Formation com controle de acesso fino.**
+`knowledge/glue/lakeformation-fgac.md` mais a área `SF-LF`, com duas regras em P0 sobre
+incompatibilidades que a **própria AWS declara**: sob FGAC não se fornece JAR adicional, e
+streaming não é suportado. As duas correlacionam atributos do mesmo `aws_glue_job` com
+`same_subject`, e o filtro por bloco é obrigatório — `attrs.key == "name"` existe duas vezes
+por job, no `root` como nome e no `command` como tipo, e sem o filtro um job de batch
+chamado `gluestreaming` levaria P0.
+
+Dois pontos cegos do extrator de Terraform saíram dessa auto-revisão e valem para regras
+que já existiam: `non_overridable_arguments` não produz fact nenhum, então um job que
+forneça argumento por ali é invisível também para `SF-GLUE-002` e `SF-GLUE-003`; e valor
+interpolado vira `tf.unresolved`, o que cala regra de condição conjuntiva. Os dois estão em
+`docs/gates-por-mudanca.md`, que é onde quem escreve regra nova procura o que herda sem
+perceber.
+
+**G6 — cenário por par de versões, e holdout que se prova.**
+`fixtures/scenarios/` traz cenário com mais de um artefato, medido de ponta a ponta por
+`assess()`. O do salto longo é o que paga: regras de três degraus diferentes, e a
+deduplicação do relatório medida num caso realista em vez de sintético.
+
+**O cenário achou uma fronteira da regra que esta mesma sessão escreveu.** `SF-MIG-004`
+existe para acusar mudança de `glue_version`, e **não dispara** num `.tf` sozinho: ela
+exige `attrs.changed`, que só existe em fact de diff. A regra que existe para acusar
+migração de runtime não vê a migração num estado único. Está fixado em teste, não escondido.
+
+`evals/holdout/` fica **fora** de `fixtures/` de propósito, porque os invariantes de lá
+cobram cobertura e holdout não é cobertura — é a amostra retida para não ser otimizada
+contra. A propriedade é provada por teste que varre `skills/`, `agents/`, `knowledge/` e os
+espelhos, com guarda de não-vacuidade, e foi verificada por contrafactual: citar um cenário
+numa skill reprova o gate.
+
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
 Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.
