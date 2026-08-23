@@ -2928,19 +2928,19 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "133,3",
-      "context": "Confirmado por tamanho: `tools.py` (133,3 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "135,0",
+      "context": "Confirmado por tamanho: `tools.py` (135,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-431",
       "state": "PROVADA",
-      "note": "medida de tamanho do arquivo, reexecutada -- a frase I2 acrescentada a description de sparkforge_analyze_pyspark levou tools.py de 133,0 KB para 133,3 KB, e a prova le o tamanho real do arquivo em disco, entao o numero no documento tem que acompanhar",
+      "note": "medida de tamanho do arquivo, reexecutada -- as frases I2 acrescentadas as descriptions das cinco tools analyze_* com snippet e de sparkforge_judge levaram tools.py de 133,0 KB para 135,0 KB, e a prova le o tamanho real do arquivo em disco, entao o numero no documento tem que acompanhar",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "133,3"
+          "value": "135,0"
         }
       }
     },
@@ -4394,7 +4394,7 @@
       "note": "a linha afirma que o invariante do 42 esta declarado em docs/harness/UNTRUSTED-CONTENT.md e defendido por tests/test_harness_untrusted.py nas duas direcoes. A prova roda esse teste: ele monta um job com injecao, passa por extract_tree e judge, e verifica que a injecao nao aparece em nenhum campo de catalogo do Finding e que continua visivel no subject.snippet. A prova deriva o fato executando o motor -- se alguem quebrar a separacao de campo, ou sanitizar a evidencia para esconder o vazamento, o teste falha e a prova cai junto. PARCIAL nao entra na prova porque e o que o documento declara descoberto, nao capacidade a verificar",
       "proof": {
         "kind": "command",
-        "cmd": "python -c 'import subprocess, sys; r = subprocess.run([sys.executable, \"-m\", \"pytest\", \"tests/test_harness_untrusted.py\", \"-q\"], capture_output=True); print(\"PROVA_OK\" if r.returncode == 0 else \"PROVA_FALHOU\")'",
+        "cmd": "python -c 'import subprocess, sys; r = subprocess.run([sys.executable, \"-m\", \"pytest\", \"tests/test_harness_untrusted.py\", \"-q\"], capture_output=True, text=True); print(\"PROVA_OK\" if r.returncode == 0 else \"PROVA_FALHOU\"); sys.stderr.write(\"\" if r.returncode == 0 else r.stdout[-2000:])'",
         "tier": "fast",
         "expect": {
           "kind": "contains",
