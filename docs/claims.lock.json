@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "847cc59d9afbb6fed131450c655bbcef55d92f38",
+  "extracted_from": "cf7c29c5c01e991da2f017019cf027760d54bb93",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -4471,6 +4471,21 @@
         "kind": "artifact",
         "path": "sparkforge/lakeformation/graph.py",
         "test": "tests/test_lakeformation_engine.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 103,
+      "text": "Matriz de operação por versão, FTA/FGAC e conta (§28)",
+      "context": "| Matriz de operação por versão, FTA/FGAC e conta (§28) | EXISTE PARCIAL | `knowledge/glue/lakeformation-fgac.md` regist",
+      "type": "capability",
+      "id": "VNX-440",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "rules/catalog/lakeformation.yaml",
+        "test": "tests/test_lakeformation_rules.py"
       }
     },
     {

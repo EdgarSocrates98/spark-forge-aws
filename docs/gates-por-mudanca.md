@@ -124,6 +124,21 @@ retido apaga toda regra guardada por ele — por isso
 `test_a_matriz_publicada_nao_tem_componente_em_disputa` existe: o primeiro
 componente em disputa tem que ser decisão consciente de quem editou a matriz.
 
+## Pontos cegos medidos do extrator de Terraform
+
+Registrados aqui porque uma regra nova que leia `default_arguments` herda os dois sem
+perceber, e o sintoma é silêncio.
+
+- **`non_overridable_arguments` é ignorado inteiro.** `sparkforge/facts/terraform.py` não
+  emite fact nenhum para esse bloco. Um `aws_glue_job` que forneça argumento por ali é
+  invisível para toda regra que lê `default_arguments` — hoje `SF-LF-001`, `SF-GLUE-002` e
+  `SF-GLUE-003`. Medido ao escrever `SF-LF-001`.
+- **Valor com interpolação vira `tf.unresolved`, não `tf.attribute`.** Uma regra cuja
+  condição é conjunção plana fica calada quando o atributo que ela procura foi
+  interpolado — `_evaluate_when` não aninha `any` dentro de `all`. A saída conhecida é um
+  kind de "desconhecido" no molde de `tf.observability.unknown`, que sinaliza a lacuna em
+  vez de escondê-la.
+
 ## Ler dado do disco em código de `sparkforge/`
 
 ```

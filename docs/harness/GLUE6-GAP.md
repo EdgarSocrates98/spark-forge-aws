@@ -100,7 +100,7 @@ Terraform e a avaliação de migração.
 | Inventário de consumidores (§25) | EXISTE, com teste | `sparkforge/facts/consumers.py` emite `env.consumer` com vocabulário fechado de serviço | `tests/test_facts_consumers.py`, `tests/test_fixtures_golden_consumers.py` |
 | Bloqueio por consumidor incompatível (§25) | NÃO EXISTE | O inventário existe; nada cruza feature de Iceberg contra consumidor para bloquear um upgrade | — |
 | Grafo de permissão Lake Formation | EXISTE, com teste | `sparkforge/lakeformation/graph.py:LakeFormationPermissionGraph` e `sparkforge/lakeformation/doctor.py:LakeFormationDoctor`, expostos em `forge lakeformation diagnose-cross-account` | `tests/test_lakeformation_engine.py` |
-| Matriz de operação por versão, FTA/FGAC e conta (§28) | NÃO EXISTE | — | — |
+| Matriz de operação por versão, FTA/FGAC e conta (§28) | EXISTE PARCIAL | `knowledge/glue/lakeformation-fgac.md` registra o que a AWS declara sobre FGAC — o que exige, o que bloqueia, a matemática de worker e o recorte de Iceberg — e a área `SF-LF` julga duas incompatibilidades declaradas. Não existe a matriz por **operação** (`SELECT`/`INSERT`/`MERGE`/`ALTER`) cruzada com conta: a fonte enumera limitação, não operação, e preencher célula por operação exigiria inferir | `tests/test_lakeformation_rules.py` |
 | Separação entre control plane e data plane (§30) | EXISTE PARCIAL | O grafo modela aresta de permissão com origem e destino; a distinção nominal entre permissão de catálogo, Lake Formation, IAM, S3 e KMS que a §30 exige não está declarada como tipo | `tests/test_lakeformation_engine.py` |
 
 ## 9. Contrato do harness de migração (§31 a §37)
