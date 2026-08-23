@@ -43,12 +43,16 @@ def _ancora_relativa(arquivo: Path, nivel: int, raiz: Path) -> str | None:
     caso permissivo por default no vetor que o proprio pacote mais usa seria o
     defeito, nao a simplificacao.
 
-    Devolve None quando o nivel sobe acima da raiz, que e import quebrado e
-    nao cruzamento de fronteira.
+    Devolve None quando o nivel alcanca a raiz do repositorio ou passa dela.
+    A comparacao e `>=` e nao `>` porque `subir == len(partes)` para exatamente
+    na raiz, que nao e pacote nenhum: em Python isso ja e `attempted relative
+    import beyond top-level package`, ou seja import quebrado e nao cruzamento
+    de fronteira. Com `>` a funcao devolvia ancora vazia nessa borda e deixava
+    o nome sair nu (`evals`), contrariando esta docstring.
     """
     partes = arquivo.relative_to(raiz).parts[:-1]
     subir = nivel - 1
-    if subir > len(partes):
+    if subir >= len(partes):
         return None
     if subir:
         partes = partes[:-subir]
@@ -174,6 +178,33 @@ class TestADeteccaoEnxergaImportRelativo:
             tmp_path, "sparkforge/mod.py", "from ....evals import runner\n"
         )
         assert nomes == set()
+
+    def test_a_borda_exata_do_topo_do_pacote_nao_inventa_modulo(self, tmp_path):
+        """`subir == len(partes)`: o nivel para EXATAMENTE na raiz, que nao e
+        pacote.
+
+        Precisa de teste proprio porque o caso acima usa `level=4` e passa
+        longe da borda -- e foi justamente na borda que a primeira versao
+        devolvia ancora vazia e deixava o nome sair nu (`evals`), enquanto a
+        docstring prometia None. Sem fixar a borda, ela volta na proxima
+        refatoracao.
+        """
+        nomes = self._resolver(
+            tmp_path,
+            "sparkforge/migration/assessment.py",
+            "from ...evals import runner\n",
+        )
+        assert nomes == set()
+
+    def test_o_ultimo_nivel_valido_abaixo_da_borda_ainda_resolve(self, tmp_path):
+        """O par da borda: trocar `>` por `>=` nao pode ter comido o nivel
+        legitimo imediatamente abaixo dela."""
+        nomes = self._resolver(
+            tmp_path,
+            "sparkforge/migration/assessment.py",
+            "from ..evals import runner\n",
+        )
+        assert nomes == {"sparkforge.evals"}
 
     def test_prefixo_parecido_nao_conta_como_avaliacao(self):
         assert _e_avaliacao("sparkforge.evals")
