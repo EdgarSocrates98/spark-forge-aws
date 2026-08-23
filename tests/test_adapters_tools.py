@@ -108,13 +108,27 @@ class TestToolSurface:
             "sparkforge_collect_emr_serverless",
         }
 
-    def test_every_open_world_tool_is_still_read_only(self):
-        """openWorldHint e sobre tocar rede, nao sobre mutar estado: os
-        coletores so leem da AWS (`get_object`, `get_job`, `get_metric_data`,
-        `SELECT`/`get_work_group`), nunca escrevem do lado AWS."""
-        for name, spec in TOOLS.items():
-            if spec["annotations"]["openWorldHint"] is True:
-                assert spec["annotations"]["readOnlyHint"] is True, name
+    def test_every_open_world_tool_also_writes_locally(self):
+        """Este teste afirmava o CONTRARIO ate a Fase I3, e estava errado --
+        ele trancava a mentira em vez de pegar.
+
+        A razao antiga era "os coletores so leem da AWS, nunca escrevem do
+        lado AWS", e a parte depois da virgula e verdade. So que
+        `readOnlyHint` nao tem lado: ele afirma que a tool nao modifica o
+        ambiente dela. Os sete coletores modificam o ambiente LOCAL -- todos
+        terminam em `sparkforge.collect.aws._write_and_register`, que grava o
+        artefato e depois grava o manifesto `path` + `sha256` que
+        `sparkforge_collect_verify` confere.
+
+        A invariante real e esta, e vale a pena tranca-la nos dois sentidos:
+        toda tool que sai para a rede TAMBEM persiste o que trouxe. Um coletor
+        que tocasse a AWS sem registrar o artefato deixaria o livro-razao de
+        integridade sem a entrada correspondente, e o `verify` nao teria como
+        saber que ela deveria existir."""
+        de_rede = {n for n, s in TOOLS.items() if s["annotations"]["openWorldHint"] is True}
+        assert de_rede, "o corpus precisa ter ao menos uma tool de rede"
+        for name in de_rede:
+            assert TOOLS[name]["annotations"]["readOnlyHint"] is False, name
 
     def test_only_case_and_report_writers_are_not_read_only(self):
         """A quarta lista manual desta classe, e ela mudou junto com as outras
@@ -137,7 +151,14 @@ class TestToolSurface:
         mao -- de um envelope que PAGINA. A diferenca para o plano esta no
         schema, nao aqui: `out_path` do plano e `required`, o da comparacao e
         opcional, porque um plano sem arquivo nao serve para nada e uma
-        comparacao sem arquivo ainda e legivel."""
+        comparacao sem arquivo ainda e legivel.
+
+        A Fase I3 acrescentou os SETE coletores AWS, e nao por mudanca de
+        capacidade: a anotacao deles dizia `readOnlyHint: True` e mentia. Eles
+        gravam o artefato e o manifesto de integridade via
+        `sparkforge.collect.aws._write_and_register` desde que existem. O que
+        mudou foi a anotacao passar a dizer o que o codigo faz -- ver o
+        comentario de `_WRITE_LOCAL_OPEN_WORLD` em `tools.py`."""
         writers = {n for n, s in TOOLS.items() if not s["annotations"]["readOnlyHint"]}
         assert writers == {
             "sparkforge_case_open",
@@ -145,6 +166,13 @@ class TestToolSurface:
             "sparkforge_funcval_compare",
             "sparkforge_funcval_plan",
             "sparkforge_report_sign",
+            "sparkforge_collect_event_log",
+            "sparkforge_collect_glue_job",
+            "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_iceberg_metadata",
+            "sparkforge_collect_athena_workgroup",
+            "sparkforge_collect_emr_cluster",
+            "sparkforge_collect_emr_serverless",
         }
 
     def test_every_tool_has_a_description(self):

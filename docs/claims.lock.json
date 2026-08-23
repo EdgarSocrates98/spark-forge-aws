@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "89de8ee9ebd8f1e9e3ec64bcb5792ed0a190c9e0",
+  "extracted_from": "58e0f2a9114c04a162f29187cf970dc78aa7347b",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -823,9 +823,9 @@
     },
     {
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
-      "line": 29,
+      "line": 67,
       "text": "44",
-      "context": "Medido em 2026-08-23, sobre 44 tools: nenhuma é `destructive`, e nenhuma é",
+      "context": "44 tools:",
       "type": "number",
       "id": "VNX-482",
       "state": "PROVADA",
@@ -838,6 +838,126 @@
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 44
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "line": 71,
+      "text": "32",
+      "context": "| `READ_ONLY` | 32 |",
+      "type": "number",
+      "id": "VNX-484",
+      "state": "PROVADA",
+      "note": "reexecutado -- a contagem de READ_ONLY e derivada rodando tool_class() sobre o catalogo real, nao relida da tabela do documento. A derivacao em si esta trancada por tests/test_harness_authorization.py",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 32
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "line": 72,
+      "text": "5",
+      "context": "| `LOCAL_MUTATION` | 5 |",
+      "type": "number",
+      "id": "VNX-485",
+      "state": "PROVADA",
+      "note": "reexecutado -- a contagem de LOCAL_MUTATION e derivada rodando tool_class() sobre o catalogo real, nao relida da tabela do documento. A derivacao em si esta trancada por tests/test_harness_authorization.py",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.LOCAL_MUTATION))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 5
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "line": 73,
+      "text": "7",
+      "context": "| `CLOUD_MUTATION` | 7 |",
+      "type": "number",
+      "id": "VNX-486",
+      "state": "PROVADA",
+      "note": "reexecutado -- a contagem de CLOUD_MUTATION e derivada rodando tool_class() sobre o catalogo real, nao relida da tabela do documento. A derivacao em si esta trancada por tests/test_harness_authorization.py",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.CLOUD_MUTATION))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 7
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "line": 74,
+      "text": "0",
+      "context": "| `CLOUD_READ` | 0 |",
+      "type": "number",
+      "id": "VNX-487",
+      "state": "PROVADA",
+      "note": "reexecutado -- CLOUD_READ nao tem membro no catalogo de hoje, e a prova conta executando em vez de afirmar a ausencia. O ramo que classifica CLOUD_READ tem teste proprio com catalogo sintetico em tests/test_harness_authorization.py",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.CLOUD_READ))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "line": 75,
+      "text": "0",
+      "context": "| `DESTRUCTIVE` | 0 |",
+      "type": "number",
+      "id": "VNX-488",
+      "state": "PROVADA",
+      "note": "reexecutado -- DESTRUCTIVE nao tem membro no catalogo de hoje, e a prova conta executando em vez de afirmar a ausencia. O ramo que classifica DESTRUCTIVE tem teste proprio com catalogo sintetico em tests/test_harness_authorization.py",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.DESTRUCTIVE))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "line": 137,
+      "text": "32",
+      "context": "Medido: as 32 tools `READ_ONLY` aceitam `path` arbitrário, e ler",
+      "type": "number",
+      "id": "VNX-489",
+      "state": "PROVADA",
+      "note": "reexecutado -- mesma contagem de READ_ONLY da tabela acima, citada aqui para dimensionar o limite declarado (a cadeia autoriza um NOME, nunca uma CHAMADA: nenhuma das tools READ_ONLY tem o argumento path examinado por authorize())",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 32
         }
       }
     },
@@ -2948,19 +3068,19 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "135,5",
+      "text": "136,6",
       "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-431",
       "state": "PROVADA",
-      "note": "medida de tamanho do arquivo, reexecutada -- corrigir o aviso de sparkforge_analyze_terraform (a chave snippet nem existe, nao 'fica vazia') e o de sparkforge_judge (que dizia 'os demais campos vem do catalogo', engolindo o metadado schema_version) levou tools.py para 135,5 KB. A prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
+      "note": "medida de tamanho do arquivo, reexecutada -- a Fase I3 corrigiu a anotacao dos sete coletores AWS (readOnlyHint passou a False, porque eles escrevem artefato e manifesto em disco) e escreveu a razao dessa correcao no lugar onde ela e lida, o que levou tools.py para 136,6 KB. A prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "135,5"
+          "value": "136,6"
         }
       }
     },

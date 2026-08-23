@@ -54,14 +54,34 @@ _WRITE_IDEMPOTENT = {
 
 # Os coletores AWS (`collect_*`, exceto `collect_verify`) sao as primeiras
 # ferramentas deste projeto que tocam a rede: leem de S3/Glue/CloudWatch/Athena
-# de verdade, nunca mudam estado do lado AWS (so `get_object`, `get_job`,
-# `get_metric_data`, `SELECT`/`get_work_group` -- ver docstring de
-# `sparkforge.collect.aws`), e por isso sao `readOnlyHint: True` e
-# `openWorldHint: True` ao mesmo tempo -- leem, mas de fora do sandbox local.
-# `collect_verify` fica de fora deste grupo: so le o manifesto e recalcula
-# sha256 local, nunca toca rede (`openWorldHint: False`, ver `_READ_ONLY`).
-_READ_ONLY_OPEN_WORLD = {
-    "readOnlyHint": True,
+# de verdade (so `get_object`, `get_job`, `get_metric_data`,
+# `SELECT`/`get_work_group` -- ver docstring de `sparkforge.collect.aws`) e
+# nunca mudam estado do lado AWS. Por isso `openWorldHint: True`.
+#
+# `readOnlyHint` era `True` aqui, e era MENTIRA. A razao escrita dizia "nunca
+# mudam estado", mas o antecedente era "do lado AWS" -- e `readOnlyHint` nao
+# tem lado: ele afirma que a tool nao modifica o ambiente dela, e os sete
+# coletores modificam o ambiente LOCAL. Todos passam por
+# `sparkforge.collect.aws._write_and_register`, que grava o artefato
+# (`mkdir` + `write_bytes`) e depois grava o manifesto de integridade
+# (`sparkforge.collect.base.register_artifact`, `write_text`) -- o mesmo
+# manifesto `path` + `sha256` que `sparkforge_collect_verify` confere, e cuja
+# entrada de mesmo `path` e SUBSTITUIDA a cada coleta. Medido executando
+# `_write_and_register` num diretorio vazio: zero arquivos antes, dois
+# depois.
+#
+# A anotacao errada tinha consequencia, e nao era cosmetica: a Fase I3 deriva
+# a classe de autorizacao das anotacoes, entao `readOnlyHint: True` fazia os
+# sete cairem em `CLOUD_READ` -- e aprovar leitura de nuvem passava a conceder
+# escrita local sem nenhuma aprovacao `LOCAL_MUTATION`. Com `False` eles caem
+# em `CLOUD_MUTATION`, que e o que eles sao: mutam, e de fora do sandbox.
+#
+# `collect_verify` fica de fora deste grupo e continua `readOnlyHint: True`
+# com razao conferida: `verify_all` so chama `load_manifest` e
+# `verify_artifact`, nao ha caminho de escrita nenhum, e nao toca rede
+# (`openWorldHint: False`, ver `_READ_ONLY`).
+_WRITE_LOCAL_OPEN_WORLD = {
+    "readOnlyHint": False,
     "destructiveHint": False,
     "idempotentHint": True,
     "openWorldHint": True,
@@ -2641,7 +2661,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             _COLLECT_ARTIFACT_SCHEMA,
             "Artefato coletado (ou cache hit local), ou erro de fronteira.",
         ),
-        "annotations": _READ_ONLY_OPEN_WORLD,
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
     "sparkforge_collect_glue_job": {
         "description": (
@@ -2663,7 +2683,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             _COLLECT_ARTIFACT_SCHEMA,
             "Artefato coletado (ou cache hit local), ou erro de fronteira.",
         ),
-        "annotations": _READ_ONLY_OPEN_WORLD,
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
     "sparkforge_collect_cloudwatch": {
         "description": (
@@ -2690,7 +2710,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             _COLLECT_ARTIFACT_SCHEMA,
             "Artefato coletado (ou cache hit local), ou erro de fronteira.",
         ),
-        "annotations": _READ_ONLY_OPEN_WORLD,
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
     "sparkforge_collect_iceberg_metadata": {
         "description": (
@@ -2715,7 +2735,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             _COLLECT_ARTIFACT_SCHEMA,
             "Artefato coletado (ou cache hit local), ou erro de fronteira.",
         ),
-        "annotations": _READ_ONLY_OPEN_WORLD,
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
     "sparkforge_collect_athena_workgroup": {
         "description": (
@@ -2737,7 +2757,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             _COLLECT_ARTIFACT_SCHEMA,
             "Artefato coletado (ou cache hit local), ou erro de fronteira.",
         ),
-        "annotations": _READ_ONLY_OPEN_WORLD,
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
     "sparkforge_collect_emr_cluster": {
         "description": (
@@ -2762,7 +2782,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             _COLLECT_ARTIFACT_SCHEMA,
             "Artefato coletado (ou cache hit local), ou erro de fronteira.",
         ),
-        "annotations": _READ_ONLY_OPEN_WORLD,
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
     "sparkforge_collect_emr_serverless": {
         "description": (
@@ -2790,7 +2810,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             _COLLECT_ARTIFACT_SCHEMA,
             "Artefato coletado (ou cache hit local), ou erro de fronteira.",
         ),
-        "annotations": _READ_ONLY_OPEN_WORLD,
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
     "sparkforge_collect_verify": {
         "description": (
