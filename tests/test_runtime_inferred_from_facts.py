@@ -36,6 +36,10 @@ from sparkforge.facts.runtime_detect import GLUE_MATRIX
 # mas isso e um skip por `requires_facts`, nao por `runtime_scope`, e e o
 # segundo que este arquivo mede.
 #
+# SF-LF-001 e SF-LF-002 entraram com a area de Lake Formation FGAC, com
+# `runtime_scope: {glue: ">=5.0"}` -- a MESMA fronteira de SF-MIG-001/002, que
+# `GLUE_JOB_TF` (`glue_version = "5.1"`) satisfaz. Entram nesta lista, e nao em
+# `GLUE_GUARDED_RULES_ABOVE_5_1`, exatamente por isso.
 GLUE_GUARDED_RULES = (
     "SF-ENV-002",
     "SF-ENV-003",
@@ -45,6 +49,8 @@ GLUE_GUARDED_RULES = (
     "SF-GLUE-004",
     "SF-GLUE-005",
     "SF-GLUE-006",
+    "SF-LF-001",
+    "SF-LF-002",
     "SF-MIG-001",
     "SF-MIG-002",
 )

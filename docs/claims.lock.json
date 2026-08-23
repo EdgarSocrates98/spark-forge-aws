@@ -2742,7 +2742,7 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 62,
-      "text": "43",
+      "text": "45",
       "context": "| **Routing L0–L4** (§11) | EXISTE PARCIAL | `sparkforge/case/router.py:next_step()` sobre `rules/catalog/routing.yaml` ",
       "type": "number",
       "id": "VNX-430",
@@ -2755,7 +2755,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 43
+          "value": 45
         }
       }
     },

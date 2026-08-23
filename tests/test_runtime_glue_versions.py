@@ -86,9 +86,19 @@ CURRENT = ("4.0", "5.0", "5.1")
 #             mesma razao das irmas, ainda que a FONTE dela seja da AWS
 #             (`migrating-version-60.html`): quem subiu o Scala para 2.13 foi
 #             o Apache no Spark 4, e a AWS so registrou a consequencia.
+#
+# SF-LF-001/002 `glue: ">=5.0"` -- controle de acesso fino do Lake Formation
+#             dentro de um job Spark do Glue existe a partir do 5.0. Em 4.0 o
+#             parametro `--enable-lakeformation-fine-grained-access` nao tem
+#             efeito, entao nao ha combinacao bloqueada para acusar, e as duas
+#             ficam corretamente fora de escopo -- mesma forma de SF-MIG-001/002.
+#             Em 5.0 e 5.1 elas SAO avaliadas, e por isso nao aparecem nas duas
+#             entradas de baixo.
 EXPECTED_OUT_OF_SCOPE = {
     "4.0": {
         "SF-ENV-002",
+        "SF-LF-001",
+        "SF-LF-002",
         "SF-MIG-001",
         "SF-MIG-002",
         "SF-MIG-003",
@@ -224,8 +234,16 @@ class TestRuleScopeOnTheCurrentRuntimes:
     # versao dele -- e sai sozinha, porque
     # `test_every_area_of_the_catalog_survives_the_version_guard` compara o
     # conjunto por igualdade e reprova excecao que nao se realiza.
+    #
+    # SF-LF ENTROU AQUI, e so no 4.0. As duas regras da area sao guardadas por
+    # `glue: ">=5.0"` -- FGAC em job Spark do Glue existe a partir do 5.0 --,
+    # entao no 4.0 a area some inteira, e sumir e o certo: nao ha
+    # funcionalidade para ser incompativel com nada. Nos outros dois runtimes
+    # correntes (5.0 e 5.1) a area sobrevive, e por isso a excecao nao aparece
+    # nas entradas deles -- excecao que nao se realiza reprova em
+    # `test_every_area_of_the_catalog_survives_the_version_guard`.
     AREA_FULLY_OUT_OF_SCOPE: dict[str, set[str]] = {
-        "4.0": {"SF-SPARK4"},
+        "4.0": {"SF-LF", "SF-SPARK4"},
         "5.0": {"SF-SPARK4"},
         "5.1": {"SF-SPARK4"},
     }

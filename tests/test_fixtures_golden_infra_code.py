@@ -11,6 +11,15 @@ sozinho, e ate este corpus existir nenhuma fixture as exercitava disparando:
 
 Por isso `input/` carrega `*.tf` E `*.py` do mesmo job: e a unica forma de a
 fixture representar o que a regra afirma.
+
+AS DUAS FIXTURES DE `SF-LF` SAO TF-ONLY, e de proposito. As regras de FGAC
+(`fgac_com_jar_extra`, `fgac_em_job_streaming`) correlacionam atributos do MESMO
+`aws_glue_job`, entao o `.py` nao acrescentaria evidencia -- acrescentaria facts
+de PySpark capazes de fazer outra regra disparar junto e contaminar o que a
+fixture prova. Elas moram neste corpus, e nao em `fixtures/terraform/`, porque
+este e o corpus cujo runner extrai Terraform DE ARVORE
+(`extract_terraform_tree`); `fixtures/tfdiff/` extrai de um par
+before/after, e um defeito de FGAC nao e uma mudanca -- e um estado.
 """
 import json
 from pathlib import Path
@@ -27,7 +36,12 @@ from sparkforge.rules.loader import load_catalog
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "infra_code"
 
-REQUIRED_FIXTURES = {"observability_without_glue_context", "retries_with_append_write"}
+REQUIRED_FIXTURES = {
+    "fgac_com_jar_extra",
+    "fgac_em_job_streaming",
+    "observability_without_glue_context",
+    "retries_with_append_write",
+}
 
 
 def fixture_dirs():

@@ -1031,6 +1031,36 @@ rules:
       do Apache e nao do Glue, entao vale igual num EMR com Spark 4; quem
       decide os tres e quem conhece o runtime, nao quem conhece a regra de
       negocio.
+  # SF-LF entrou com a area de Lake Formation FGAC e ganha ENTRADA PROPRIA, pelo
+  # mesmo motivo que SF-SPARK4 ganhou a dela: declarar a area em `rule_areas` do
+  # agente NAO roteia. Esse foi o furo que orfanou SF-BENCH/SF-EMRS/SF-ENV/
+  # SF-FVAL/SF-UI, depois SF-MIG e depois SF-SPARK4, e `findings_area` conta por
+  # prefixo exato do `rule_id` ate o ultimo hifen (`SF-LF-001` -> `SF-LF`),
+  # entao nenhuma contagem de outra area inclui esta.
+  #
+  # `sf-lake-formation-specialist` e o UNICO coordenador que declara SF-LF em
+  # `rule_areas`, entao nao ha pergunta de precedencia com outra rota. Ele nao e
+  # `glue-infra-reviewer` (AGENT-002) de proposito, ainda que as duas regras
+  # leiam `aws_glue_job` do Terraform -- a decisao que o achado exige nao e de
+  # dimensionamento nem de observabilidade, e de GOVERNANCA -- escolher entre
+  # controle de acesso fino e uma dependencia do job, sabendo o que cada lado
+  # custa em permissao concedida. Um case com SF-GLUE junto continua indo para a
+  # AGENT-002, que vem antes.
+  - id: AGENT-078
+    phase_in: [diagnosis, hypothesis, design, verification, documentation]
+    title: Achado dominante em controle de acesso fino do Lake Formation
+    when:
+      all:
+        - {findings_area: SF-LF, count_gt: 0}
+    recommended_agent: sf-lake-formation-specialist
+    reason: >
+      O job pede, no mesmo `aws_glue_job`, duas coisas que a AWS declara
+      incompativeis sob FGAC -- JAR adicional, que o Glue bloqueia para
+      preservar o isolamento do system driver, ou streaming, que esta na lista
+      de nao suportados. Nao existe meio-termo de configuracao -- a escolha e
+      entre FGAC e a outra metade, e ela se decide com quem responde pela
+      governanca do dado, nao com quem tuna o job.
+
 fallback:
   recommended_skill: sparkforge-diagnose
   reason: >

@@ -103,10 +103,27 @@ NON_GLUE_IDS = [nome for nome, _ in NON_GLUE_RUNTIMES]
 # sinal de codigo, e a fronteira e a versao em que o Spark liga ANSI mode por
 # default (confirmado contra migrating-version-60.html), nao a existencia de
 # infraestrutura Glue.
+#
+# SF-LF-001 e SF-LF-002 ENTRARAM aqui com a area SF-LF (Lake Formation com
+# controle de acesso fino), com `runtime_scope: {glue: ">=5.0"}`. Sao
+# GLUE_VERSIONED e nao GLUE_INFRA, e a diferenca importa: elas LEEM
+# `aws_glue_job` do Terraform como as GLUE_INFRA, mas o que as guarda nao e a
+# existencia da infraestrutura -- e uma fronteira de VERSAO, porque FGAC em job
+# Spark do Glue so existe a partir do 5.0. Num Glue 4.0 a infraestrutura Glue
+# EXISTE e a afirmacao continua sendo falsa, que e exatamente o que separa os
+# dois grupos.
+#
+# NAO sao SPARK_VERSIONED, e essa e a pergunta que a area obriga a responder:
+# quem empacota FGAC dentro do job e a AWS, nao o Apache. Nao existe "Lake
+# Formation fine-grained access" num cluster Spark on-prem, entao guardar por
+# `spark` amarraria a afirmacao a um componente que nao a produziu -- o inverso
+# exato do raciocinio que poe SF-SPARK4 no grupo de baixo.
 GLUE_VERSIONED = {
     "SF-ENV-002",
     "SF-ENV-003",
     "SF-GLUE-001",
+    "SF-LF-001",
+    "SF-LF-002",
     "SF-MIG-001",
     "SF-MIG-002",
     "SF-MIG-003",
@@ -452,8 +469,42 @@ def _spark_below_4(runtime: dict[str, str]) -> bool:
         return True
 
 
+def _glue_below_5(runtime: dict[str, str]) -> bool:
+    """Glue ausente ou abaixo de 5.0 -- a condicao em que SF-LF nao tem nada a
+    afirmar. Ausente conta como abaixo porque `in_scope` falha fechada."""
+    partes = (runtime.get("glue") or "").split(".")
+    try:
+        return (int(partes[0]), int(partes[1])) < (5, 0)
+    except (ValueError, IndexError):
+        return True
+
+
 AREA_MAY_VANISH_WHEN: dict[str, tuple] = {
     "SF-GLUE": (lambda runtime: not runtime.get("glue"), "runtime sem `glue` detectado"),
+    # SF-LF entrou aqui com a area, e o criterio escrito acima e satisfeito na
+    # leitura que ele exige: a area e sobre a EXISTENCIA de uma infraestrutura
+    # que o runtime comprovadamente nao tem. Controle de acesso fino do Lake
+    # Formation dentro de um job Spark e coisa que a AWS empacota no Glue a
+    # partir do 5.0 -- num EMR, num EMR Serverless ou num cluster on-prem ele
+    # nao existe, e num Glue 3.0/4.0 ele ainda nao existia. As duas regras
+    # afirmam "voce ligou FGAC E pediu algo que FGAC bloqueia"; onde FGAC nao
+    # existe, a primeira metade da afirmacao e vazia e calar e a resposta certa.
+    #
+    # O contraste com SF-ICE, que motivou o criterio: tabela Iceberg EXISTE num
+    # EMR, e a area sumia so porque ninguem detecta a versao de Iceberg fora do
+    # Glue -- falso negativo por deteccao, nao por escopo. Aqui `glue` e
+    # detectado pela propria fonte que produz os facts da regra (o
+    # `glue_version` do `aws_glue_job`), entao a area sobrevive em qualquer
+    # analise real de um Terraform de Glue 5.0 ou acima.
+    #
+    # O RESIDUO, declarado porque nao some: num `.tf` cujo `glue_version` vem de
+    # variavel (`literal: false`, logo versao NAO observada) a area some por
+    # falta de deteccao, nao por afirmacao falsa. E o fail-closed do
+    # `runtime_scope`, e aparece como PULADA com `reason: runtime_scope`, nunca
+    # como "revisei e esta tudo bem". A saida NAO e `runtime_scope: {}`: sem
+    # guarda as duas acusariam job de Glue 4.0, onde o parametro de FGAC nao
+    # tem efeito nenhum e a incompatibilidade nao existe.
+    "SF-LF": (_glue_below_5, "runtime com Glue abaixo de 5.0, ou sem Glue detectado"),
     # SF-SPARK4 entrou aqui com a area, e o criterio acima e satisfeito na
     # leitura que importa: a area nao e sobre uma versao que NAO FOI DETECTADA,
     # e sobre uma fronteira do Apache que este runtime comprovadamente NAO

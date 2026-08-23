@@ -5,7 +5,7 @@ skills:
   - design-data-architecture
   - design-s3-data-lake
   - review-terraform-data-platform
-rule_areas: [SF-LAKE, SF-GOVERNANCE, SF-SECURITY]
+rule_areas: [SF-LAKE, SF-LF, SF-GOVERNANCE, SF-SECURITY]
 executors: [sf-extractor, sf-verifier]
 ---
 # sf-lake-formation-specialist
