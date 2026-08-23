@@ -102,6 +102,26 @@ Se o corpus novo também tem regeneração própria, ela entra em `scripts/regen
 no mesmo commit: golden escrito à mão é golden que descreve o que alguém achou que o
 código faz.
 
+Corpus que mora **fora** de `fixtures/` (hoje só `evals/holdout/`) não entra nessa
+contagem, e a razão é o propósito dele — ver a seção seguinte.
+
+## Acrescentar ou alterar um cenário de `evals/holdout/`
+
+```
+python -m pytest tests/test_evals_holdout.py -q
+```
+
+`evals/holdout/` mede **generalização**: um cenário só vale como holdout enquanto nenhuma
+skill, agente ou documento de `knowledge/` o cita pelo nome. Essa é a propriedade que
+`tests/test_evals_holdout.py` **prova** — sem ele, "holdout" seria só um nome de pasta.
+Citar um cenário de holdout num `SKILL.md` para ilustrar um exemplo é o jeito natural de
+destruí-lo, e o teste é o que transforma esse acidente em vermelho.
+
+Ele fica fora de `fixtures/` de propósito: os invariantes de `fixtures/` existem para
+cobrar cobertura por kind e por regra, e holdout não é cobertura — é a amostra retida
+justamente para não ser otimizada contra. Mantê-lo ali o transformaria em mais um alvo do
+gate de cobertura, que é o oposto do que ele mede.
+
 ## Editar um documento em `knowledge/`
 
 ```

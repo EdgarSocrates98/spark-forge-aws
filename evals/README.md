@@ -129,3 +129,22 @@ determinísticos, então o que sobra para variar é a especificação, e é isso
 mede.
 
 **Não medido:** Devin não foi executado.
+
+---
+
+## `holdout/` — cenários retidos
+
+`evals/holdout/` guarda dois cenários de migração no formato de
+`fixtures/scenarios/` (`meta.yaml` + `input/` + `expected/assessment.json`), com
+uma regra a mais: **nenhum arquivo de `skills/`, `agents/` ou `knowledge/` cita o
+nome de um diretório desse corpus**.
+
+Ela existe para o nível de agente, não para o determinístico. O extrator e o
+motor de regras não leem skill nenhuma, então um golden citado numa skill não
+corrompe nada do que a seção anterior descreve. Um agente é outra coisa: ele é
+instruído por `skills/`, `agents/` e `knowledge/`, e um exemplo resolvido dentro
+das instruções é resposta disponível, não capacidade demonstrada.
+
+`tests/test_evals_holdout.py` **prova** a propriedade a cada execução da suíte —
+sem ele, "holdout" seria só um nome de pasta. Ver `evals/holdout/README.md` para
+o que cada cenário retém e como mexer sem estragar.

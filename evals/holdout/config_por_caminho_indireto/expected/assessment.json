@@ -1,0 +1,376 @@
+{
+  "source_runtime": "5.1",
+  "target_runtime": "6.0",
+  "steps": [
+    [
+      "5.1",
+      "6.0"
+    ]
+  ],
+  "findings": [
+    {
+      "rule_id": "SF-MIG-002",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+      "severity": "P2",
+      "confidence": "high",
+      "status": "confirmed",
+      "subject": {
+        "type": "source_location",
+        "file": "conf/spark_defaults.py",
+        "line": 10,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_676331"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "glue": ">=5.0"
+      },
+      "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+      "proposed_change": [
+        "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+        "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+      ],
+      "tradeoffs": [
+        "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+      ],
+      "validation": [
+        "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+        "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+      ],
+      "rollback": [
+        "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+      ],
+      "sources": [
+        {
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+          "retrieved": "2026-07-29"
+        }
+      ]
+    },
+    {
+      "rule_id": "SF-SPARK4-001",
+      "schema_version": 1,
+      "catalog_version": 1,
+      "title": "Configuração do Spark que mudou de nome na versão 4 sobrevivendo com o nome antigo",
+      "severity": "P2",
+      "confidence": "high",
+      "status": "structural",
+      "subject": {
+        "type": "source_location",
+        "file": "conf/spark_defaults.py",
+        "line": 13,
+        "col": 0,
+        "symbol": "",
+        "snippet": ""
+      },
+      "evidence": [
+        "f_9d21b3"
+      ],
+      "measured": {},
+      "threshold": {},
+      "runtime_scope": {
+        "spark": ">=4.0.0"
+      },
+      "explanation": "As configurações de rebase de data e hora perderam o prefixo `legacy` no Spark 4.0 -- `spark.sql.legacy.parquet.int96RebaseModeInWrite` virou `spark.sql.parquet.int96RebaseModeInWrite`, e o mesmo vale para as variantes `datetimeRebaseMode` de Parquet e Avro; o codec Parquet `lz4raw` virou `lz4_raw`. O risco não é erro, é SILÊNCIO. O Spark ignora a chave que não conhece, a submissão passa, o job roda até o fim, e quem lê o código vê uma configuração que parece ativa e não está em vigor nenhuma. É o mesmo modo de falha de `fs.s3.consistent` no Glue 5 (`SF-MIG-002`), e ele é pior que uma quebra: uma quebra aparece, um rebase de timestamp que não aconteceu aparece meses depois, dentro do dado. Ver `knowledge/spark/spark4-migration.md` §2 para a tabela completa de nomes antigos e novos.",
+      "proposed_change": [
+        "Renomear a chave para o nome novo declarado em `attrs.renamed_to`, preservando o valor -- a semântica da configuração não mudou, só o nome.",
+        "Onde a chave veio de um template ou de uma biblioteca compartilhada, corrigir na origem, para que o próximo job criado a partir dela não nasça com o nome morto.",
+        "Conferir se o valor ainda é o desejado antes de renomear -- uma chave inerte pode estar carregando um valor que ninguém revisa desde que ela parou de ter efeito."
+      ],
+      "expected_effect": "",
+      "benchmark_ref": "",
+      "risks": [
+        "Renomear a chave LIGA uma configuração que estava inerte. Se o job passou a depender do comportamento default enquanto a chave não valia, o rebase de timestamp volta a acontecer e a saída muda -- a mudança de resultado vem de a configuração passar a funcionar, não de um defeito.",
+        "Uma chave `spark.sql.legacy.*` que NÃO está na tabela de renomeadas continua válida no Spark 4 (`timeParserPolicy`, `ctePrecedencePolicy`). Renomear por analogia de prefixo desliga configuração correta."
+      ],
+      "tradeoffs": [
+        "Remover a chave em vez de renomeá-la é mais barato e assume o default do Spark 4; renomear preserva a intenção original de quem a escreveu. A escolha depende de a intenção ainda valer, e o catálogo não sabe disso.",
+        "Deixar a chave antiga no código não quebra nada hoje e custa clareza para sempre -- o próximo leitor vai assumir uma garantia que não existe."
+      ],
+      "validation": [
+        "Configuração efetiva do job no runtime alvo contém a chave NOVA com o valor esperado, lida de `spark.conf.get` ou da aba Environment da Spark UI, não do código-fonte.",
+        "Para as chaves de rebase, contagem de linhas e agregado (mín, máx) da coluna de timestamp afetada, antes e depois, sobre o mesmo lote de entrada -- divergência mostra que a chave estava inerte e passou a valer.",
+        "Contagem total de linhas e schema idênticos aos do runtime anterior."
+      ],
+      "rollback": [
+        "Reverter para o nome antigo e reaplicar. A chave volta a ser inerte no Spark 4, então o rollback restaura o comportamento observado hoje -- documentar isso no commit, para que a inércia não seja lida como configuração ativa de novo."
+      ],
+      "sources": [
+        {
+          "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
+          "retrieved": "2026-08-22"
+        }
+      ]
+    }
+  ],
+  "by_step": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "conf/spark_defaults.py",
+          "line": 10,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_676331"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-SPARK4-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração do Spark que mudou de nome na versão 4 sobrevivendo com o nome antigo",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "source_location",
+          "file": "conf/spark_defaults.py",
+          "line": 13,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9d21b3"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "spark": ">=4.0.0"
+        },
+        "explanation": "As configurações de rebase de data e hora perderam o prefixo `legacy` no Spark 4.0 -- `spark.sql.legacy.parquet.int96RebaseModeInWrite` virou `spark.sql.parquet.int96RebaseModeInWrite`, e o mesmo vale para as variantes `datetimeRebaseMode` de Parquet e Avro; o codec Parquet `lz4raw` virou `lz4_raw`. O risco não é erro, é SILÊNCIO. O Spark ignora a chave que não conhece, a submissão passa, o job roda até o fim, e quem lê o código vê uma configuração que parece ativa e não está em vigor nenhuma. É o mesmo modo de falha de `fs.s3.consistent` no Glue 5 (`SF-MIG-002`), e ele é pior que uma quebra: uma quebra aparece, um rebase de timestamp que não aconteceu aparece meses depois, dentro do dado. Ver `knowledge/spark/spark4-migration.md` §2 para a tabela completa de nomes antigos e novos.",
+        "proposed_change": [
+          "Renomear a chave para o nome novo declarado em `attrs.renamed_to`, preservando o valor -- a semântica da configuração não mudou, só o nome.",
+          "Onde a chave veio de um template ou de uma biblioteca compartilhada, corrigir na origem, para que o próximo job criado a partir dela não nasça com o nome morto.",
+          "Conferir se o valor ainda é o desejado antes de renomear -- uma chave inerte pode estar carregando um valor que ninguém revisa desde que ela parou de ter efeito."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Renomear a chave LIGA uma configuração que estava inerte. Se o job passou a depender do comportamento default enquanto a chave não valia, o rebase de timestamp volta a acontecer e a saída muda -- a mudança de resultado vem de a configuração passar a funcionar, não de um defeito.",
+          "Uma chave `spark.sql.legacy.*` que NÃO está na tabela de renomeadas continua válida no Spark 4 (`timeParserPolicy`, `ctePrecedencePolicy`). Renomear por analogia de prefixo desliga configuração correta."
+        ],
+        "tradeoffs": [
+          "Remover a chave em vez de renomeá-la é mais barato e assume o default do Spark 4; renomear preserva a intenção original de quem a escreveu. A escolha depende de a intenção ainda valer, e o catálogo não sabe disso.",
+          "Deixar a chave antiga no código não quebra nada hoje e custa clareza para sempre -- o próximo leitor vai assumir uma garantia que não existe."
+        ],
+        "validation": [
+          "Configuração efetiva do job no runtime alvo contém a chave NOVA com o valor esperado, lida de `spark.conf.get` ou da aba Environment da Spark UI, não do código-fonte.",
+          "Para as chaves de rebase, contagem de linhas e agregado (mín, máx) da coluna de timestamp afetada, antes e depois, sobre o mesmo lote de entrada -- divergência mostra que a chave estava inerte e passou a valer.",
+          "Contagem total de linhas e schema idênticos aos do runtime anterior."
+        ],
+        "rollback": [
+          "Reverter para o nome antigo e reaplicar. A chave volta a ser inerte no Spark 4, então o rollback restaura o comportamento observado hoje -- documentar isso no commit, para que a inércia não seja lida como configuração ativa de novo."
+        ],
+        "sources": [
+          {
+            "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
+            "retrieved": "2026-08-22"
+          }
+        ]
+      },
+      "step": [
+        "5.1",
+        "6.0"
+      ]
+    }
+  ],
+  "report": [
+    {
+      "finding": {
+        "rule_id": "SF-MIG-002",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração exclusiva do EMRFS sobrevivendo em runtime S3A",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "confirmed",
+        "subject": {
+          "type": "source_location",
+          "file": "conf/spark_defaults.py",
+          "line": 10,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_676331"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "glue": ">=5.0"
+        },
+        "explanation": "A partir do Glue 5.0 o sistema de arquivos S3 é o S3A do Hadoop, não o EMRFS. O S3A não reconhece chaves como `fs.s3.consistent`, `fs.s3.enableServerSideEncryption` ou `fs.s3.maxRetries` -- prefixo exclusivo do EMRFS -- e o risco não é quebra: é silêncio. O S3A ignora a chave sem erro nem aviso, o código continua rodando, e quem lê o job vê uma configuração que parece ativa (consistência forçada, SSE-S3, retries) mas não está em vigor nenhuma. É comportamento assumido que não está configurado, e a lacuna só aparece quando alguém depende dela -- uma leitura inconsistente, um objeto sem SSE-S3, um retry que não aconteceu.",
+        "proposed_change": [
+          "Remover as chaves `fs.s3.*` exclusivas do EMRFS e substituir pelo equivalente S3A quando existir, como `fs.s3a.attempts.maximum` no lugar de `fs.s3.maxRetries`.",
+          "Onde a chave dependia de uma garantia do EMRFS sem equivalente direto no S3A, como consistência forçada, revisar se a garantia ainda é necessária -- o S3A sobre S3 já é fortemente consistente desde 2020, o que cobre o caso mais comum."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Remover a chave sem verificar o equivalente S3A pode desligar de fato uma configuração de segurança (SSE) que só parecia ativa antes."
+        ],
+        "tradeoffs": [
+          "Auditar cada chave contra a documentação do S3A custa tempo; deixar a chave morta no código custa clareza para quem vier depois e assumir uma garantia (criptografia, retry) que não existe mais."
+        ],
+        "validation": [
+          "Nenhuma chave `fs.s3.*` do prefixo EMRFS presente na configuração efetiva do job.",
+          "Para SSE, objeto escrito no S3 confirmado com a criptografia esperada via `aws s3api head-object`."
+        ],
+        "rollback": [
+          "Restaurar as chaves EMRFS; sem efeito no S3A -- documentar que elas são inertes nesse runtime."
+        ],
+        "sources": [
+          {
+            "url": "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-50.html",
+            "retrieved": "2026-07-29"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    },
+    {
+      "finding": {
+        "rule_id": "SF-SPARK4-001",
+        "schema_version": 1,
+        "catalog_version": 1,
+        "title": "Configuração do Spark que mudou de nome na versão 4 sobrevivendo com o nome antigo",
+        "severity": "P2",
+        "confidence": "high",
+        "status": "structural",
+        "subject": {
+          "type": "source_location",
+          "file": "conf/spark_defaults.py",
+          "line": 13,
+          "col": 0,
+          "symbol": "",
+          "snippet": ""
+        },
+        "evidence": [
+          "f_9d21b3"
+        ],
+        "measured": {},
+        "threshold": {},
+        "runtime_scope": {
+          "spark": ">=4.0.0"
+        },
+        "explanation": "As configurações de rebase de data e hora perderam o prefixo `legacy` no Spark 4.0 -- `spark.sql.legacy.parquet.int96RebaseModeInWrite` virou `spark.sql.parquet.int96RebaseModeInWrite`, e o mesmo vale para as variantes `datetimeRebaseMode` de Parquet e Avro; o codec Parquet `lz4raw` virou `lz4_raw`. O risco não é erro, é SILÊNCIO. O Spark ignora a chave que não conhece, a submissão passa, o job roda até o fim, e quem lê o código vê uma configuração que parece ativa e não está em vigor nenhuma. É o mesmo modo de falha de `fs.s3.consistent` no Glue 5 (`SF-MIG-002`), e ele é pior que uma quebra: uma quebra aparece, um rebase de timestamp que não aconteceu aparece meses depois, dentro do dado. Ver `knowledge/spark/spark4-migration.md` §2 para a tabela completa de nomes antigos e novos.",
+        "proposed_change": [
+          "Renomear a chave para o nome novo declarado em `attrs.renamed_to`, preservando o valor -- a semântica da configuração não mudou, só o nome.",
+          "Onde a chave veio de um template ou de uma biblioteca compartilhada, corrigir na origem, para que o próximo job criado a partir dela não nasça com o nome morto.",
+          "Conferir se o valor ainda é o desejado antes de renomear -- uma chave inerte pode estar carregando um valor que ninguém revisa desde que ela parou de ter efeito."
+        ],
+        "expected_effect": "",
+        "benchmark_ref": "",
+        "risks": [
+          "Renomear a chave LIGA uma configuração que estava inerte. Se o job passou a depender do comportamento default enquanto a chave não valia, o rebase de timestamp volta a acontecer e a saída muda -- a mudança de resultado vem de a configuração passar a funcionar, não de um defeito.",
+          "Uma chave `spark.sql.legacy.*` que NÃO está na tabela de renomeadas continua válida no Spark 4 (`timeParserPolicy`, `ctePrecedencePolicy`). Renomear por analogia de prefixo desliga configuração correta."
+        ],
+        "tradeoffs": [
+          "Remover a chave em vez de renomeá-la é mais barato e assume o default do Spark 4; renomear preserva a intenção original de quem a escreveu. A escolha depende de a intenção ainda valer, e o catálogo não sabe disso.",
+          "Deixar a chave antiga no código não quebra nada hoje e custa clareza para sempre -- o próximo leitor vai assumir uma garantia que não existe."
+        ],
+        "validation": [
+          "Configuração efetiva do job no runtime alvo contém a chave NOVA com o valor esperado, lida de `spark.conf.get` ou da aba Environment da Spark UI, não do código-fonte.",
+          "Para as chaves de rebase, contagem de linhas e agregado (mín, máx) da coluna de timestamp afetada, antes e depois, sobre o mesmo lote de entrada -- divergência mostra que a chave estava inerte e passou a valer.",
+          "Contagem total de linhas e schema idênticos aos do runtime anterior."
+        ],
+        "rollback": [
+          "Reverter para o nome antigo e reaplicar. A chave volta a ser inerte no Spark 4, então o rollback restaura o comportamento observado hoje -- documentar isso no commit, para que a inércia não seja lida como configuração ativa de novo."
+        ],
+        "sources": [
+          {
+            "url": "https://spark.apache.org/docs/4.1.1/sql-migration-guide.html",
+            "retrieved": "2026-08-22"
+          }
+        ]
+      },
+      "steps": [
+        [
+          "5.1",
+          "6.0"
+        ]
+      ]
+    }
+  ],
+  "gates": {
+    "dados": "BLOCKED",
+    "performance": "BLOCKED",
+    "custo": "BLOCKED",
+    "canary": "BLOCKED",
+    "compatibilidade": "PASS_WITH_RISK"
+  },
+  "missing_evidence": {
+    "dados": "reconciliacao de dados exige rodar o job no runtime alvo e comparar a saida com o job de origem sobre a mesma entrada -- nenhuma execucao coletada nesta analise",
+    "performance": "comparacao de performance exige metricas reais (Spark UI ou event log) do job rodando nos dois runtimes -- nenhuma execucao coletada",
+    "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",
+    "canary": "canary exige execucao paralela controlada em producao, com trafego real, contra os dois runtimes -- nenhum canary executado"
+  },
+  "recommendation": "CONDITIONAL_GO"
+}
