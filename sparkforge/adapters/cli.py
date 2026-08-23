@@ -334,6 +334,40 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o assessment completo (JSON) neste arquivo."
     )
 
+    # glue / iceberg -------------------------------------------------------
+    # Verbos de TOPO por SERVICO, e nao mais um degrau sob `analyze`: os dois
+    # comandos abaixo extraem E julgam, e `analyze` para na extracao. Cada um
+    # nasce com um subcomando so; o parser fica assim para que o proximo
+    # comando do mesmo servico entre sem renomear o que ja foi publicado.
+    glue_p = sub.add_parser("glue", help="Comandos especificos do runtime AWS Glue.")
+    glue_sub = glue_p.add_subparsers(dest="glue_action", required=True)
+    dep_p = glue_sub.add_parser(
+        "dependency-audit",
+        help="Audita dependencia Python e binario Scala do job contra um runtime.",
+    )
+    dep_p.add_argument("path", help="Diretorio do job (requirements*.txt e .jar).")
+    # Sem default: risco de ABI nao existe em abstrato. Um `.jar` de Scala 2.12
+    # e correto sob Glue 5.1 e quebra sob 6.0.
+    dep_p.add_argument(
+        "--glue", required=True, dest="glue_version", help="Versao de Glue a auditar."
+    )
+
+    iceberg_p = sub.add_parser("iceberg", help="Comandos especificos de Apache Iceberg.")
+    iceberg_sub = iceberg_p.add_subparsers(dest="iceberg_action", required=True)
+    upgrade_p = iceberg_sub.add_parser(
+        "assess-upgrade",
+        help="Avalia subir o format version da tabela contra quem a consome. NAO executa.",
+    )
+    upgrade_p.add_argument(
+        "path", help="Diretorio do job, com o inventario em .sparkforge/consumers.yaml."
+    )
+    upgrade_p.add_argument(
+        "--from", dest="from_spec", type=int, required=True, help="Format version de origem."
+    )
+    upgrade_p.add_argument(
+        "--to", dest="to_spec", type=int, required=True, help="Format version alvo."
+    )
+
     # benchmark ------------------------------------------------------------
     # Verbo de TOPO, nao `analyze benchmark`: tudo sob `analyze` extrai facts de
     # um artefato, e este nao extrai nada -- compara dois conjuntos de facts ja
@@ -1040,6 +1074,18 @@ def _cmd_migrate_glue(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_glue_dependency_audit(args: argparse.Namespace) -> int:
+    _print(_core.glue_dependency_audit(args.path, glue=args.glue_version))
+    return 0
+
+
+def _cmd_iceberg_assess_upgrade(args: argparse.Namespace) -> int:
+    _print(
+        _core.iceberg_assess_upgrade(args.path, source=args.from_spec, target=args.to_spec)
+    )
+    return 0
+
+
 def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
     full = _core.analyze_athena_workgroup(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -1512,6 +1558,8 @@ _DISPATCH = {
     ("analyze", "consumers"): _cmd_analyze_consumers,
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
     ("migrate", "glue"): _cmd_migrate_glue,
+    ("glue", "dependency-audit"): _cmd_glue_dependency_audit,
+    ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
     ("benchmark", None): _cmd_benchmark,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
@@ -1552,6 +1600,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "report_action", None)
         or getattr(args, "collect_action", None)
         or getattr(args, "migrate_action", None)
+        or getattr(args, "glue_action", None)
+        or getattr(args, "iceberg_action", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))
     if handler is None:

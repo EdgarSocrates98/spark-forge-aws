@@ -105,6 +105,8 @@
     "sparkforge_funcval_compare",
     "sparkforge_funcval_plan",
     "sparkforge_fuse",
+    "sparkforge_glue_dependency_audit",
+    "sparkforge_iceberg_assess_upgrade",
     "sparkforge_judge",
     "sparkforge_knowledge_path",
     "sparkforge_migration_assess",

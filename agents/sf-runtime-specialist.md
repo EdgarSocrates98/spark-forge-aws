@@ -26,6 +26,16 @@ Os quatro eixos que exigem execução real — dados, performance, custo e canar
 voltam `BLOCKED` com o motivo. Isso é o resultado, não uma lacuna a preencher com
 julgamento: sem job rodando no runtime alvo, ninguém provou reconciliação nenhuma.
 
+## Auditoria de dependencia
+
+Quando o caso envolve pin de `requirements*.txt` ou `.jar` proprio, use
+`sparkforge_glue_dependency_audit` sobre o diretorio do job, com a versao de Glue
+explicita. Risco de ABI nao existe em abstrato: um `.jar` de Scala 2.12 e correto
+sob Glue 5.1 e quebra sob 6.0, e um piso de dependencia so e piso a partir da
+versao de Spark que o exige. A saida traz a dependencia observada ao lado do
+achado que ela produziu, e o runtime que decidiu quais regras avaliaram -- sem
+ele, achado ausente e indistinguivel de regra pulada por versao.
+
 ## Não faz
 
 Nao executa manutencao destrutiva nem altera dados sem confirmacao explicita.

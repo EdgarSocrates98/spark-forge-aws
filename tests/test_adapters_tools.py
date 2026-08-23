@@ -53,6 +53,8 @@ class TestToolSurface:
             "sparkforge_analyze_consumers",
             "sparkforge_analyze_terraform_diff",
             "sparkforge_migration_assess",
+            "sparkforge_glue_dependency_audit",
+            "sparkforge_iceberg_assess_upgrade",
             "sparkforge_benchmark",
             "sparkforge_funcval_plan",
             "sparkforge_funcval_compare",
@@ -1190,6 +1192,34 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_fuse", {"facts_paths": [str(facts_path)]})
 
+    if name == "sparkforge_glue_dependency_audit":
+        # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a
+        # amostra precisa render achado, senao valida contra o schema pelo
+        # motivo errado -- lista vazia passa em qualquer schema de array.
+        job = tmp_path / "dep-audit"
+        job.mkdir()
+        (job / "job.py").write_text("import pyarrow\n", encoding="utf-8")
+        (job / "requirements.txt").write_text("pyarrow==8.0.0\n", encoding="utf-8")
+        result = call_tool(
+            "sparkforge_glue_dependency_audit", {"path": str(job), "glue": "6.0"}
+        )
+        assert result["dependencies"], "a amostra precisa observar ao menos um pin"
+        return result
+
+    if name == "sparkforge_iceberg_assess_upgrade":
+        job = tmp_path / "assess-upgrade"
+        (job / ".sparkforge").mkdir(parents=True)
+        (job / "job.py").write_text("x = 1\n", encoding="utf-8")
+        (job / ".sparkforge" / "consumers.yaml").write_text(
+            "consumers:\n  - table: db.t\n    service: athena\n", encoding="utf-8"
+        )
+        result = call_tool(
+            "sparkforge_iceberg_assess_upgrade",
+            {"path": str(job), "source": 2, "target": 3},
+        )
+        assert result["cells"], "a amostra precisa consultar ao menos uma celula"
+        return result
+
     if name == "sparkforge_migration_assess":
         # Um job com SDK v1 e um pin de PyArrow abaixo do piso do Spark 4.1:
         # o primeiro faz `SF-MIG-001` nascer, o segundo faz `SF-SPARK4-003`
@@ -1338,6 +1368,14 @@ class TestErrorShapesValidateToo:
         (
             "sparkforge_migration_assess",
             {"path": "<tmp>/inexistente", "source": "4.0", "target": "6.0"},
+        ),
+        (
+            "sparkforge_glue_dependency_audit",
+            {"path": "<tmp>/inexistente", "glue": "6.0"},
+        ),
+        (
+            "sparkforge_iceberg_assess_upgrade",
+            {"path": "<tmp>/inexistente", "source": 2, "target": 3},
         ),
         (
             "sparkforge_benchmark",

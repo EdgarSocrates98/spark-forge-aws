@@ -1981,6 +1981,152 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_glue_dependency_audit": {
+        "description": (
+            "Lista as dependencias DECLARADAS de um job Glue -- pin de "
+            "`requirements*.txt` (`mig.python_dep`, com `major` ja separado) e "
+            "binario `.jar` (`mig.jar_binary`, com `scala_minor` ja separado) -- "
+            "ao lado do que o catalogo julga sobre elas. `glue` nao tem default e "
+            "nao e opcional: risco de ABI nao existe em abstrato, um `.jar` de "
+            "Scala 2.12 e correto sob Glue 5.1 e quebra sob 6.0, e um piso de "
+            "`pyarrow` so e piso a partir da versao de Spark que o exige. Nao "
+            "constroi julgamento novo: e o mesmo `judge` sobre o mesmo catalogo, "
+            "com a dependencia observada ao lado do achado que ela produziu."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "glue"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Diretorio do job (requirements*.txt e .jar).",
+                },
+                "glue": {"type": "string", "description": "Versao de Glue a auditar."},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["path", "runtime", "dependencies", "findings", "by_severity"],
+                "properties": {
+                    "path": {"type": "string"},
+                    "runtime": {
+                        "type": "object",
+                        "additionalProperties": True,
+                        "description": (
+                            "O runtime que decidiu quais regras avaliaram. Sem ele, "
+                            "um achado ausente e indistinguivel de uma regra pulada "
+                            "por versao."
+                        ),
+                    },
+                    "dependencies": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["kind", "name", "attrs", "artifact"],
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "enum": ["mig.python_dep", "mig.jar_binary"],
+                                },
+                                "name": {"type": "string"},
+                                "attrs": {"type": "object", "additionalProperties": True},
+                                "artifact": {"type": "string"},
+                            },
+                        },
+                    },
+                    "findings": {"type": "array", "items": _FINDING_ITEM},
+                    "by_severity": {
+                        "type": "object",
+                        "additionalProperties": {"type": "integer"},
+                    },
+                },
+            },
+            "Dependencias e achados, ou erro se o caminho nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_iceberg_assess_upgrade": {
+        "description": (
+            "Avalia subir o format version de uma tabela Iceberg CONTRA quem a "
+            "consome. Cruza o inventario declarado (`env.consumer`, na convencao "
+            "`.sparkforge/consumers.yaml`) com a matriz de suporte de feature "
+            "(`knowledge/storage/iceberg-feature-support.yaml`), uma celula por "
+            "par engine/feature, cada uma com fonte. NUNCA executa o upgrade: o "
+            "modulo por tras nao importa cliente de AWS nem Spark. Veredito em "
+            "vocabulario fechado -- BLOCKED quando ha fonte dizendo que uma "
+            "engine nao le; UNRESOLVED quando falta fonte, INCLUSIVE quando nao "
+            "ha inventario nenhum, porque ausencia de declaracao nao e "
+            "declaracao de ausencia; CONDITIONAL quando o suporte e parcial; "
+            "SAFE so quando toda celula consultada e afirmativa."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "source", "target"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Diretorio do job, com o inventario em "
+                        "`.sparkforge/consumers.yaml`."
+                    ),
+                },
+                "source": {"type": "integer", "description": "Format version de origem."},
+                "target": {"type": "integer", "description": "Format version alvo."},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": [
+                    "path",
+                    "consumers",
+                    "source_spec_version",
+                    "target_spec_version",
+                    "verdict",
+                    "cells",
+                    "unresolved",
+                ],
+                "properties": {
+                    "path": {"type": "string"},
+                    "consumers": {"type": "array", "items": {"type": "string"}},
+                    "source_spec_version": {"type": "integer"},
+                    "target_spec_version": {"type": "integer"},
+                    "verdict": {
+                        "type": "string",
+                        "enum": ["BLOCKED", "UNRESOLVED", "CONDITIONAL", "SAFE"],
+                    },
+                    "cells": {
+                        "type": "array",
+                        "description": (
+                            "As celulas CONSULTADAS, com a fonte de cada uma. Um "
+                            "veredito sem elas seria uma palavra que ninguem "
+                            "consegue conferir."
+                        ),
+                        "items": {
+                            "type": "object",
+                            "required": ["feature", "engine", "engine_version", "status"],
+                            "properties": {
+                                "feature": {"type": "string"},
+                                "engine": {"type": "string"},
+                                "engine_version": {"type": "string"},
+                                "status": {"type": "string"},
+                                "source": {"type": "string"},
+                                "note": {"type": "string"},
+                            },
+                        },
+                    },
+                    "unresolved": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "O que falta para resolver cada celula UNKNOWN.",
+                    },
+                },
+            },
+            "Veredito do upgrade, ou erro se o caminho nao existe ou o alvo nao e upgrade.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_call_graph": {
         "description": (
             "Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA "
@@ -2809,6 +2955,16 @@ def _h_analyze_terraform_diff(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_glue_dependency_audit(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.glue_dependency_audit(args["path"], glue=args["glue"])
+
+
+def _h_iceberg_assess_upgrade(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.iceberg_assess_upgrade(
+        args["path"], source=args["source"], target=args["target"]
+    )
+
+
 def _h_migration_assess(args: dict[str, Any]) -> dict[str, Any]:
     return _core.migration_assess(
         args["path"], source=args["source"], target=args["target"]
@@ -3002,6 +3158,8 @@ _HANDLERS = {
     "sparkforge_analyze_terraform_diff": _h_analyze_terraform_diff,
     "sparkforge_analyze_call_graph": _h_analyze_call_graph,
     "sparkforge_migration_assess": _h_migration_assess,
+    "sparkforge_glue_dependency_audit": _h_glue_dependency_audit,
+    "sparkforge_iceberg_assess_upgrade": _h_iceberg_assess_upgrade,
     "sparkforge_benchmark": _h_benchmark,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
