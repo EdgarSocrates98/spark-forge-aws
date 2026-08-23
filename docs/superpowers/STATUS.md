@@ -1,12 +1,16 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-21
-**Commit de referência:** `46b1187`, fechamento da auditoria de lastro do vNext
-sobre a branch `feat/fase6b-sf-cfg` — classificou as 184 alegações que
-`a5b9e96` publicou em `docs/vnext/` (48 `PROVADA`, 136 `REMOVIDA`) e removeu o
-texto sem lastro dos documentos; ver a seção *Fase vNext* abaixo.
-Fechamentos anteriores: expansão agêntica v2 (2026-08-18), vendorização do
-ecossistema caveman (2026-08-07) e `feat/preservacao-semantica` (2026-08-05).
+**Atualizado em:** 2026-08-23
+**Commit de referência:** `433598c`, fechamento do harness v0.1 (fases I1 a I3)
+sobre a branch `feat/fase6b-sf-cfg` — três invariantes escritos como teste, sem
+módulo novo; a última fase teve duas revisões independentes que a reprovaram e
+expuseram sete tools cuja anotação mentia. Ver a seção
+*Harness v0.1* abaixo.
+Fechamentos anteriores: eixo Glue, fases G1 a H6 (2026-08-23); auditoria de
+lastro do vNext em `46b1187` (2026-08-21), que classificou as 184 alegações que
+`a5b9e96` publicou em `docs/vnext/`; expansão agêntica v2 (2026-08-18);
+vendorização do ecossistema caveman (2026-08-07) e `feat/preservacao-semantica`
+(2026-08-05).
 **Nenhuma regra executável, extrator ou fact de diagnóstico mudou na expansão
 agêntica v2** — os números de detecção abaixo são os mesmos de
 `feat/preservacao-semantica`; o que mudou foi o denominador do catálogo.
@@ -37,7 +41,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **6213** passando, 5 skipped, medido em `614cf44` | `python -m pytest -q` |
+| Testes | **6361** passando, 5 skipped, medido em `433598c` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
@@ -57,7 +61,7 @@ arquivo ganha.
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
 | Fixtures golden | **194** em 23 domínios | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **139** (127 móveis, 12 fixas) — 63 citadas por regra, 130 por `knowledge/`, 58 pelas duas | `knowledge/sources.lock.json` |
+| Fontes oficiais vigiadas | **143** (131 móveis, 12 fixas) — 69 citadas por regra, 135 por `knowledge/`, 61 pelas duas | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
@@ -3068,6 +3072,152 @@ linhas sem nenhum) é o oposto do que a versão original do relatório afirmava.
 domínio tivessem cobertura e gate na mesma ordem de grandeza da
 infraestrutura que os invoca, e isso não foi medido em lugar nenhum porque não
 existe ainda.
+
+## Harness v0.1 — as três lacunas do mapa que tinham mecanismo e consumidor (2026-08-23)
+
+Plano em [`plans/2026-08-23-harness-v0-1.md`](plans/2026-08-23-harness-v0-1.md).
+O mapa que originou a fase é [`docs/harness/CURRENT-HARNESS-GAP.md`](../harness/CURRENT-HARNESS-GAP.md),
+e o achado dele decide o escopo: das quinze linhas do harness pedido, a maioria
+**já estava implementada** em três pacotes que não se conhecem
+(`sparkforge/economy`, `sparkforge/agents`, `sparkforge/case` + `sparkforge/workflows`).
+O que sobrou sem equivalente algum foram três invariantes — e as fases as
+escrevem como **teste**, não como camada nova. Nenhum módulo novo foi criado.
+
+As fases são numeradas com `I` e não com `H` de propósito: as fases `H` são do
+eixo Glue e continuam na seção acima. Um `H7` sugeriria continuidade que não existe.
+
+### I1 — a fronteira entre runtime e avaliação
+
+Documento: [`docs/harness/RUNTIME-VS-EVALUATION.md`](../harness/RUNTIME-VS-EVALUATION.md) ·
+teste: `tests/test_harness_boundary.py` (**9 testes**).
+
+O runtime nunca importa `sparkforge.evals`; a avaliação importa o runtime. O gate
+é por AST, não por texto — e a primeira versão dele era **verde por engano**:
+deixava passar import relativo, porque `from ..evals.runner import X` chega ao
+visitante como `node.module == "evals.runner"`, e `from . import evals` chega como
+`node.module is None`. A correção (`a31c989`) resolve a âncora relativa a partir
+da raiz do pacote em vez de subir enquanto houver `__init__.py` — subir deixaria
+buracos, porque `sparkforge/providers`, `evals/datasets`, `findings/schemas` e
+`migration/glue` são namespace packages sem `__init__.py`.
+
+Registrou também a **primeira recusa da fase**: `readiness_score` (§50 do harness
+pedido) não foi escrito. É o mesmo defeito de `LakeFormationDoctor.health_score`
+(`100 - fails*35 - warns*15`) — número composto que não significa nada e que
+esconde bloqueador atrás de média.
+
+Commits: `d7b2df4`, `a31c989`, `6906e57`.
+
+### I2 — conteúdo de artefato é dado, nunca instrução
+
+Documento: [`docs/harness/UNTRUSTED-CONTENT.md`](../harness/UNTRUSTED-CONTENT.md) ·
+teste: `tests/test_harness_untrusted.py` (**4 testes**).
+
+A defesa é **separação de campo**, não sanitização — e a recusa de sanitizar está
+escrita: apagar texto do artefato apagaria a evidência que o achado existe para
+mostrar. Campo controlado pelo catálogo (`rule_id`, `title`, `explanation`,
+`recommendation`, `severity`, `sources`, `threshold`, `benchmark_ref`, …) e campo
+derivado do artefato (`subject`, `measured`, `evidence`) nunca se misturam. O
+teste afirma nos dois sentidos: a marca injetada não aparece em campo de catálogo,
+e **continua visível** no campo do artefato.
+
+Três defeitos de medição foram pegos aqui, e os três são da mesma família — contar
+por `grep` e chamar de conferência:
+
+1. A contagem de extratores com `subject.snippet` era **5** por `grep` e **4** por
+   execução: `terraform` usa `subject.symbol`, não `snippet`. A alegação falsa já
+   tinha vazado para a `description` de uma tool, que é superfície que o modelo lê.
+2. O filtro `nome.startswith("extract")` pulava **5 dos 20** módulos em silêncio
+   (`build_benchmark`, `build_call_graph`, `build_plan`, `fuse`, `detect_runtime`),
+   enquanto a nota da alegação prometia cobertura de todos.
+3. Alargar o filtro revelou o terceiro: `fusion.fuse` **repassa** facts de entrada
+   (117 com snippet) sem criar nenhum. A contagem passou a descontar repasse por
+   `f.id`.
+
+O gate de lastro fechou em **0 divergências com o erro (1) dentro** — porque o
+documento tinha zero entrada no manifesto e escrevia "cinco" por extenso, e o
+extrator numérico não vê número por extenso. Desde então o documento escreve
+dígito e as contagens têm prova que **executa** os 20 módulos.
+
+Commits: `c32c4f9`, `8509047`, `33d4351`, `89de8ee`.
+
+### I3 — a cadeia de autorização, e a anotação que mentia
+
+Documento: [`docs/harness/AUTHORIZATION-CHAIN.md`](../harness/AUTHORIZATION-CHAIN.md) ·
+teste: `tests/test_harness_authorization.py` (**83 testes**) ·
+código: `sparkforge/agents/autonomy.py`.
+
+`tool_class()` deriva cinco níveis de risco (`READ_ONLY`, `LOCAL_MUTATION`,
+`CLOUD_READ`, `CLOUD_MUTATION`, `DESTRUCTIVE`) das anotações MCP que cada tool já
+declara — não de uma tabela paralela. `authorize()` devolve `AuthorizationDecision`
+com a cadeia inteira; a aprovação é por **classe**, e o perfil é **teto**.
+`authorize_tool`, a função booleana antiga, ficou intocada: é superfície pública
+e isto é adição, não migração. Ela não tem chamador de produção — só testes —, e
+o texto que afirmava o contrário foi corrigido nos três lugares onde estava.
+
+**Duas revisões independentes reprovaram a primeira entrega, e as duas achavam a
+mesma coisa por caminhos diferentes.**
+
+O teto `OFFLINE` **falhava aberto**. O código comparava `profile == "OFFLINE"`, e
+o tipo canônico do repositório é `ExecutionProfile` (`sparkforge/registry/models.py`),
+cujo valor é `"offline"` minúsculo. Por ser `str, Enum`, ele atravessa a anotação
+`profile: str` sem erro de tipo e compara falso — então o enum do próprio
+repositório desligava o teto, e a decisão gravava `reason="autorizado"`,
+indistinguível de aprovação legítima. Qualquer perfil desconhecido (`''`, `None`,
+`'NAO_EXISTE'`) significava "sem teto". O teste passava `"OFFLINE"` maiúsculo, que
+é **a única grafia que funcionava**: ele trancava o literal, não o conceito.
+Restaurado o código antigo, a classe de teste nova falha em 11 de 19.
+
+O segundo achado é maior e **não foi esta fase que o criou — foi esta fase que o
+revelou.** As sete tools `sparkforge_collect_*` declaravam `readOnlyHint: True` e
+**escrevem em disco**: o artefato coletado (`sparkforge/collect/aws.py`) e o
+manifesto de integridade `path` + `sha256` que `sparkforge_collect_verify` depois
+confere (`sparkforge/collect/base.py`). Aprovar "ler da AWS" concedia escrita no
+repositório sem nenhuma aprovação de mutação local. Derivar a classe da anotação
+foi o que expôs a mentira — e é esse o valor do mecanismo.
+
+A distribuição **remedida por execução** depois da correção:
+
+| classe | tools |
+|---|---|
+| `READ_ONLY` | 32 |
+| `CLOUD_MUTATION` | 7 |
+| `LOCAL_MUTATION` | 5 |
+| `CLOUD_READ` | 0 |
+| `DESTRUCTIVE` | 0 |
+
+Duas classes continuam vazias, **mas não as que o plano previu**. `CLOUD_READ` é
+uma delas: nenhuma tool do SparkForge toca a rede sem também gravar em disco. A
+previsão do plano estava errada porque foi feita a partir da anotação, e a
+anotação mentia.
+
+Commits: `58e0f2a`, `433598c`.
+
+### Status: PARCIAL, e a razão está na linha do mapa
+
+`Authorization chain` ficou **`EXISTE PARCIAL`** em
+[`docs/harness/CURRENT-HARNESS-GAP.md`](../harness/CURRENT-HARNESS-GAP.md), e a
+razão é específica: a cadeia **decide**, e nada a **impõe**. Não há hook
+`PreToolUse`; um agente que chame `terraform destroy` por shell nunca passa por
+`authorize()`. Nenhum dos quatro caminhos de execução do repositório
+(`adapters/mcp.py`, `adapters/tools.py`, `adapters/cli.py`, `agents/supervisor.py`)
+chama a cadeia hoje.
+
+Dois limites ficaram declarados no produto, não só aqui:
+
+- **A cadeia autoriza um NOME, nunca uma CHAMADA.** `authorize()` não recebe
+  `arguments`; `path`, `bucket` e `report_path` estão fora da decisão por
+  construção. A medição que sustenta a linha: uma tool `READ_ONLY` com `path`
+  arbitrário leu um segredo de fora do repositório sob perfil `OFFLINE`. A
+  consequência que importa para o trabalho seguinte é que **um hook `PreToolUse`
+  vê argumentos, e `authorize()` não tem onde recebê-los**.
+- **Duas classificações incomensuráveis.** `ToolManifest.mutation_class: RiskLevel`
+  (`sparkforge/registry/models.py`) é um segundo eixo de 4 níveis que
+  `tool_class()` não consulta. Não há divergência viva — `CanonicalRegistry`
+  nunca popula `self.tools` —, mas os eixos não se mapeiam: `RiskLevel` não tem
+  dimensão de nuvem, `ToolClass` não tem `reversible`/`sensitive`. Está registrado
+  na docstring de `ToolClass`, não só no mapa.
+
+---
 
 ## Dívidas abertas
 
