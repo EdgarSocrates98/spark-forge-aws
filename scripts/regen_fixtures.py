@@ -48,6 +48,7 @@ from sparkforge.facts.terraform import (  # noqa: E402
     extract_terraform_diff,
     extract_terraform_tree,
 )
+from sparkforge.migration.assessment import assess  # noqa: E402
 from sparkforge.rules.engine import judge  # noqa: E402
 from sparkforge.rules.loader import load_catalog  # noqa: E402
 
@@ -73,6 +74,10 @@ FIXTURES_BENCH = ROOT / "fixtures" / "bench"
 FIXTURES_FUNCVAL = ROOT / "fixtures" / "funcval"
 FIXTURES_GRAPH = ROOT / "fixtures" / "graph"
 FIXTURES_MIGRATION = ROOT / "fixtures" / "migration"
+FIXTURES_SCENARIOS = ROOT / "fixtures" / "scenarios"
+# Os cenarios de holdout vivem FORA de `fixtures/` de proposito -- ver
+# `evals/holdout/README.md` e `regen_scenario`.
+HOLDOUT = ROOT / "evals" / "holdout"
 
 
 def _write_expected(directory: Path, facts, findings) -> None:
@@ -375,6 +380,44 @@ def regen_migration(directory: Path) -> None:
     _write_expected(directory, facts, findings)
 
 
+def regen_scenario(directory: Path) -> None:
+    """Corpus de CENARIO: um job inteiro atravessando um PAR de versoes.
+
+    Difere de `regen_migration` em duas coisas, e as duas sao o motivo de o
+    corpus existir separado. Primeira: o golden nao e `facts`+`findings`, e o
+    `to_dict()` do `MigrationAssessment` -- porque o que um cenario prova nao e
+    "este fact vira este finding", e "este par de versoes expande nestes
+    degraus, e cada achado nasce neste degrau". Segunda: o runtime nao vem do
+    `meta.yaml`; `assess()` o deriva da matriz para o ALVO de cada degrau, entao
+    um cenario nao pode mentir sobre o runtime que julgou.
+
+    A extracao cobre os dois tipos de artefato que um job real tem no
+    repositorio -- codigo (`.py`, `.jar`, `requirements*.txt`) e infraestrutura
+    (`.tf`) -- e o `.tf` entra QUANDO EXISTE, no molde de `regen_graph`. Um
+    cenario com os dois julga a uniao, que e o que o operador tem em maos.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = list(extract_migration_tree(input_dir, repo_root=input_dir))
+    if any(input_dir.rglob("*.tf")):
+        facts.extend(extract_terraform_tree(input_dir, repo_root=input_dir))
+    resultado = assess(facts, source=str(meta["source"]), target=str(meta["target"]))
+
+    out = directory / "expected"
+    out.mkdir(exist_ok=True)
+    text = json.dumps(resultado.to_dict(), indent=2, ensure_ascii=False) + "\n"
+    # Mesma razao de `_write_expected`: `newline="\n"` para o golden nao virar
+    # diff de fim de linha quando regenerado no Windows.
+    (out / "assessment.json").write_text(text, encoding="utf-8", newline="\n")
+
+    disparadas = ", ".join(sorted({f.rule_id for f in resultado.findings})) or "nenhuma"
+    print(
+        f"{directory.name}: {len(resultado.steps)} degraus, "
+        f"{len(resultado.by_step)} por degrau, {len(resultado.report())} no relatorio "
+        f"({disparadas})"
+    )
+
+
 def regen_plan(directory: Path) -> None:
     """Como `regen_eventlog`, mas para fixtures de plano fisico: `*.txt` sob
     input/ (a saida colada de `explain("formatted")`), extraida com
@@ -553,6 +596,8 @@ def main() -> int:
                 (FIXTURES_FUNCVAL / name, regen_funcval),
                 (FIXTURES_GRAPH / name, regen_graph),
                 (FIXTURES_MIGRATION / name, regen_migration),
+                (FIXTURES_SCENARIOS / name, regen_scenario),
+                (HOLDOUT / name, regen_scenario),
             ]
             found = [(path, fn) for path, fn in matches if path.is_dir()]
             if not found:
@@ -628,6 +673,15 @@ def main() -> int:
     if FIXTURES_MIGRATION.is_dir():
         for directory in sorted(p for p in FIXTURES_MIGRATION.iterdir() if p.is_dir()):
             regen_migration(directory)
+    # Mesma guarda (D-4a-18) e, para `evals/holdout/`, uma razao a mais: o
+    # holdout mora FORA de `fixtures/` e um dia pode ser movido ou removido sem
+    # que este script seja o primeiro a saber.
+    for raiz in (FIXTURES_SCENARIOS, HOLDOUT):
+        if not raiz.is_dir():
+            continue
+        for directory in sorted(p for p in raiz.iterdir() if p.is_dir()):
+            if (directory / "meta.yaml").exists():
+                regen_scenario(directory)
     return 0
 
 

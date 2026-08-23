@@ -60,7 +60,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-GOLDEN_MODULES = sorted(p.name for p in (ROOT / "tests").glob("test_fixtures_golden*.py"))
+# `test_fixtures_*.py`, e nao `test_fixtures_golden*.py`: o corpus de cenario
+# da Fase G6 (`fixtures/scenarios/`) e exercitado por
+# `tests/test_fixtures_scenarios.py`, que nao tem "golden" no nome porque o
+# golden dele nao e `facts`+`findings` -- e o `to_dict()` de um
+# `MigrationAssessment`, produzido por `sparkforge.migration.assessment.assess`.
+# Esse e justamente um contrato que vale checar contra o PACOTE INSTALADO, e o
+# padrao antigo o deixaria de fora em silencio. O alargamento tambem traz
+# `test_fixtures_kind_coverage.py`, que passa a comparar o catalogo instalado
+# contra o corpus do repositorio -- ganho, nao efeito colateral.
+GOLDEN_MODULES = sorted(p.name for p in (ROOT / "tests").glob("test_fixtures_*.py"))
 PROVENANCE_MODULE = "test_installed_provenance.py"
 
 ARTIFACT_PATTERNS = ("*.whl", "*.tar.gz")

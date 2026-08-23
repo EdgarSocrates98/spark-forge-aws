@@ -77,6 +77,31 @@ Convenção da casa: kind, entrada nas listas `EXTRACTORS` dos dois arquivos de 
 golden entram **no mesmo commit**. `EMITTED_KINDS` declara só o que o extrator emite —
 kind declarado e nunca emitido torna inalcançável qualquer regra que dependa dele.
 
+## Acrescentar um CORPUS de fixture novo (`fixtures/<dominio>/`)
+
+```
+python -m pytest tests/test_fixtures_kind_coverage.py tests/test_verify_wheel.py -q
+```
+
+Diretório novo em `fixtures/` **não basta**. `test_fixtures_kind_coverage.py` cobra que
+todo domínio seja reivindicado por um módulo de teste que declare
+`FIXTURES = ROOT / "fixtures" / "<dominio>"`, e o módulo tem que casar o glob que
+`scripts/verify_wheel.py::GOLDEN_MODULES` usa — senão o corpus existe, parece cobertura,
+e o gate de wheel nunca o executa contra o pacote instalado.
+
+Medido na fase G6: o corpus `fixtures/scenarios/` nasceu com runner
+`tests/test_fixtures_scenarios.py`, fora do glob `test_fixtures_golden*.py` que as duas
+pontas usavam. O conserto foi alargar o glob **nos dois lugares no mesmo commit**
+(`tests/test_fixtures_kind_coverage.py::_dominios_reivindicados` e
+`scripts/verify_wheel.py`), mais o teste que espelha o glob
+(`tests/test_verify_wheel.py::test_discovers_every_golden_module_on_disk`). Alargar só um
+deixaria a promessa do invariante — *"o gate de wheel executa este domínio"* — falsa em
+silêncio.
+
+Se o corpus novo também tem regeneração própria, ela entra em `scripts/regen_fixtures.py`
+no mesmo commit: golden escrito à mão é golden que descreve o que alguém achou que o
+código faz.
+
 ## Editar um documento em `knowledge/`
 
 ```

@@ -1,0 +1,32 @@
+name: glue_40_para_60_salto_longo
+source: "4.0"
+target: "6.0"
+proves: >
+  A ACUMULACAO POR DEGRAU, que nenhum golden por kind pode provar porque todos
+  eles julgam um runtime unico. O par 4.0 -> 6.0 expande em tres degraus
+  (4.0->5.0, 5.0->5.1, 5.1->6.0) e as cinco regras que o job dispara nascem em
+  degraus DIFERENTES, cada uma no primeiro que cruza a sua fronteira:
+  SF-MIG-001 (`glue >= 5.0`, import `com.amazonaws`) e SF-MIG-002
+  (`glue >= 5.0`, chave exclusiva do EMRFS) nascem ja no primeiro degrau e
+  continuam valendo nos outros dois; SF-MIG-003 (`glue >= 6.0`, `cast` sem
+  guarda), SF-SPARK4-003 (`spark >= 4.1.0`, `pyarrow==11.0.0` abaixo do piso
+  15.0.0) e SF-SPARK4-004 (`spark >= 4.0.0`, jar `_2.12-`) so nascem no ultimo.
+  Um assessment direto de 4.0 para 6.0 que julgasse SO o runtime final
+  continuaria vendo as cinco -- o que este cenario mede e OUTRA coisa: em qual
+  degrau cada uma aparece, que e o que diz se um salto intermediario resolveria
+  parte do problema.
+  E prova a DEDUPLICACAO num caso realista, nao sintetico: `by_step` tem nove
+  entradas e `report()` tem cinco, porque SF-MIG-001 e SF-MIG-002 nascem tres
+  vezes cada -- uma por degrau cujo alvo satisfaz `glue >= 5.0`. As duas visoes
+  respondem perguntas diferentes (DECISAO 1b de `sparkforge/migration/
+  assessment.py`) e o cenario mede as duas ao mesmo tempo, sobre o mesmo job.
+  Quatro artefatos de tipos diferentes numa arvore so: `.py`, `requirements.txt`
+  e `.jar`. `pandas==2.2.0` esta no requirements ACIMA do piso e nao e acusado
+  -- e o que separa "esta regra le o piso do PyArrow" de "esta regra acusa
+  dependencia pinada".
+expects_rules:
+  - SF-MIG-001
+  - SF-MIG-002
+  - SF-MIG-003
+  - SF-SPARK4-003
+  - SF-SPARK4-004

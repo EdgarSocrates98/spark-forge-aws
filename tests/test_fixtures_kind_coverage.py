@@ -338,7 +338,18 @@ def _dominios_reivindicados() -> dict[str, str]:
     """
     padrao = re.compile(r'FIXTURES\s*=\s*ROOT\s*/\s*"fixtures"\s*/\s*"([a-z0-9_]+)"')
     reivindicados: dict[str, str] = {}
-    for modulo in sorted(_TESTS_ROOT.glob("test_fixtures_golden*.py")):
+    # `test_fixtures_*.py`, e nao `test_fixtures_golden*.py`: o corpus de
+    # cenario (`fixtures/scenarios/`, Fase G6) e exercitado por
+    # `tests/test_fixtures_scenarios.py`, que nao tem "golden" no nome porque o
+    # golden dele nao e `facts`+`findings` -- e o `to_dict()` de um
+    # `MigrationAssessment`. O padrao mais largo casa os dois, e
+    # `scripts/verify_wheel.py::GOLDEN_MODULES` foi alargado no MESMO commit,
+    # para que a promessa deste invariante ("o gate de wheel executa este
+    # dominio contra o pacote instalado") continue verdadeira. Os modulos sem
+    # dominio -- este aqui, que declara `FIXTURES = ROOT / "fixtures"` sem
+    # sufixo -- nao casam o regex e continuam de fora, sem precisar de excecao
+    # escrita a mao.
+    for modulo in sorted(_TESTS_ROOT.glob("test_fixtures_*.py")):
         for dominio in padrao.findall(modulo.read_text(encoding="utf-8")):
             reivindicados[dominio] = modulo.name
     return reivindicados
