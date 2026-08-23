@@ -33,7 +33,9 @@ serializa `f.to_dict()` em `items`), e `Fact.to_dict()` inclui `attrs` inteiro.
 modelo — pelo payload do próprio `Fact`, não pelo `Finding`.
 
 **4** extratores produzem `subject.snippet` não vazio: `pyspark_ast`,
-`event_log`, `graph` e `spark_plan`. Os demais preenchem `""`.
+`event_log`, `graph` e `spark_plan`. Nos demais a chave ou vem vazia ou nem
+existe no `subject` — em `terraform`, 214 dos 228 facts do corpus de fixtures
+não têm a chave.
 
 Esse número foi medido errado uma vez, e a forma do erro importa. `terraform`
 entrou na lista por contagem de `"snippet"` no fonte — mas

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "850904734c8709472017856203a300d2c01827ff",
+  "extracted_from": "33d43519f87a4884c5586c90ec14ff1c631748ea",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -2928,27 +2928,8 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "135,3",
-      "context": "Confirmado por tamanho: `tools.py` (135,3 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
-      "type": "number",
-      "id": "VNX-431",
-      "state": "PROVADA",
-      "note": "medida de tamanho do arquivo, reexecutada -- corrigir o aviso de sparkforge_analyze_terraform (que citava snippet, campo que esse extrator nao preenche) e o de sparkforge_judge levou tools.py de 135,0 KB para 135,3 KB, e a prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "contains",
-          "value": "135,3"
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 83,
       "text": "128,1",
-      "context": "Confirmado por tamanho: `tools.py` (135,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-322",
       "state": "PROVADA",
@@ -2967,7 +2948,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "713",
-      "context": "Confirmado por tamanho: `tools.py` (135,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-324",
       "state": "PROVADA",
@@ -2987,7 +2968,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "539",
-      "context": "Confirmado por tamanho: `tools.py` (135,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-325",
       "state": "PROVADA",
@@ -3007,7 +2988,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "227",
-      "context": "Confirmado por tamanho: `tools.py` (135,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-326",
       "state": "PROVADA",
@@ -3027,7 +3008,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "1479",
-      "context": "Confirmado por tamanho: `tools.py` (135,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-327",
       "state": "PROVADA",
@@ -4105,7 +4086,47 @@
     },
     {
       "doc": "docs/harness/UNTRUSTED-CONTENT.md",
-      "line": 41,
+      "line": 37,
+      "text": "214",
+      "context": "existe no `subject` — em `terraform`, 214 dos 228 facts do corpus de fixtures",
+      "type": "number",
+      "id": "VNX-480",
+      "state": "PROVADA",
+      "note": "mesma execucao do denominador, contando os facts em que a chave `snippet` nao existe no subject. E o numero que sustenta a correcao de 'fica vazio' para 'a chave nem existe' -- se o extrator passar a preencher subject.snippet, ou a sempre criar a chave vazia, este numero muda e a prova cai",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from pathlib import Path; from sparkforge.facts.terraform import extract_terraform_tree; d = Path(\"fixtures/terraform\"); fs = extract_terraform_tree(d, repo_root=d); print(sum(1 for f in fs if \"snippet\" not in f.subject))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 214
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/UNTRUSTED-CONTENT.md",
+      "line": 37,
+      "text": "228",
+      "context": "existe no `subject` — em `terraform`, 214 dos 228 facts do corpus de fixtures",
+      "type": "number",
+      "id": "VNX-481",
+      "state": "PROVADA",
+      "note": "contagem derivada executando o extrator de terraform sobre fixtures/terraform. Sustenta a frase de que a chave snippet nem existe na maioria dos facts desse extrator: o denominador e o total de facts que ele produz no corpus",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from pathlib import Path; from sparkforge.facts.terraform import extract_terraform_tree; d = Path(\"fixtures/terraform\"); fs = extract_terraform_tree(d, repo_root=d); print(len(fs))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 228
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/UNTRUSTED-CONTENT.md",
+      "line": 43,
       "text": "14",
       "context": "**nenhum** dos 14 call sites alimenta o parâmetro. O módulo parece produzir",
       "type": "number",
@@ -4125,16 +4146,16 @@
     },
     {
       "doc": "docs/harness/UNTRUSTED-CONTENT.md",
-      "line": 85,
+      "line": 87,
       "text": "4",
       "context": "Invariante só protege quem sabe dele. A frase está na `description` das **4**",
       "type": "number",
       "id": "VNX-478",
       "state": "PROVADA",
-      "note": "contagem derivada executando: `extratores_com_snippet()` roda cada modulo de sparkforge/facts com EMITTED_KINDS sobre o corpus de fixtures/ e conta os que devolvem subject.snippet nao vazio. A prova nao le lista escrita em lugar nenhum -- foi ler em vez de executar que pos terraform na lista por engano, e o mesmo criterio EMITTED_KINDS ja e usado por VNX-207/208. Se um extrator passar a preencher snippet, ou deixar de preencher, o numero muda e a prova cai",
+      "note": "esta linha afirma que a frase esta na description das 4 tools analyze_* que devolvem snippet, e nao quantos extratores existem -- por isso a prova nao e a mesma de VNX-476. Ela conta as descriptions que carregam a frase, lendo TOOLS em memoria: tirar o aviso de uma tool, ou acrescentar numa quinta, muda o numero e derruba a alegacao",
       "proof": {
         "kind": "command",
-        "cmd": "python -c 'import tests.test_harness_untrusted as t; print(len(t.extratores_com_snippet()))'",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; alvo = \"`subject.snippet` de cada fact carrega\"; print(sum(1 for v in TOOLS.values() if alvo in v.get(\"description\", \"\")))'",
         "tier": "fast",
         "expect": {
           "kind": "number",
@@ -5505,6 +5526,25 @@
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 22
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 83,
+      "text": "135,5",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "type": "number",
+      "id": "VNX-431",
+      "state": "PROVADA",
+      "note": "medida de tamanho do arquivo, reexecutada -- corrigir o aviso de sparkforge_analyze_terraform (a chave snippet nem existe, nao 'fica vazia') e o de sparkforge_judge (que dizia 'os demais campos vem do catalogo', engolindo o metadado schema_version) levou tools.py para 135,5 KB. A prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "135,5"
         }
       }
     },
