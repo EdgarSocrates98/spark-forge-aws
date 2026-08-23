@@ -33,9 +33,6 @@ import re
 
 REDACTED = "<redigido>"
 
-# Access key id da AWS. Formato fixo e publico; casa em qualquer valor.
-_AKIA_RE = re.compile(r"\bAKIA[0-9A-Z]{16}\b")
-
 # Senha embutida em URL: `scheme://usuario:senha@host`. Pega JDBC, S3A com
 # credencial no path e endpoint de catalogo Iceberg.
 _URL_PASSWORD_RE = re.compile(r"://[^/\s:@]+:[^/\s@]+@")
@@ -60,29 +57,76 @@ _SECRET_KEY_HINTS = (
 # evita redigir `true`, `128MB` e nome de classe.
 _HIGH_ENTROPY_RE = re.compile(r"^[A-Za-z0-9/+=_.\-]{16,}$")
 
+# Padroes que identificam credencial pelo VALOR, sem depender do nome da chave.
+# Cada um tem prefixo publicado pelo emissor, o que os torna reconheciveis sem
+# heuristica de entropia -- e entropia sozinha produz falso positivo em sha, em
+# caminho de S3 e em nome de classe Java.
+_PADROES_POR_VALOR: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # AWS: formato publico, documentado, sem ambiguidade.
+    ("aws_access_key", re.compile(r"\b(?:AKIA|ASIA|AIDA|AROA)[0-9A-Z]{16}\b")),
+    # GitHub, os dois formatos vivos. O classico tem 36 caracteres depois do
+    # prefixo; o fine-grained e mais longo e tem underscore no meio.
+    ("github_token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b")),
+    ("github_pat", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b")),
+    # JWT: tres segmentos base64url separados por ponto, comecando por um header
+    # que quase sempre serializa para `eyJ`.
+    ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b")),
+    # Chave privada PEM, qualquer variante. O cabecalho e literal e padronizado.
+    ("private_key", re.compile(r"-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----")),
+    # Slack: prefixo por tipo de token, todos com o mesmo formato segmentado.
+    ("slack_token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
+)
+
 
 def looks_like_secret(key: str, value: str) -> bool:
     """`True` quando o par chave/valor tem forma de credencial.
 
     Tres gatilhos independentes, em ordem de confianca:
 
-    1. O valor contem um access key id da AWS. Formato publico, sem ambiguidade.
+    1. O valor casa um padrao de credencial publicado -- access key da AWS,
+       token do GitHub, JWT, cabecalho de chave privada PEM, token do Slack.
+       Todos tem prefixo definido pelo emissor, entao o gatilho nao olha o nome
+       da chave: segredo chega em campo chamado `data` ou `payload` com a mesma
+       frequencia com que chega em campo chamado `password`.
     2. O valor tem senha embutida numa URL.
     3. O NOME da chave sugere segredo E o valor tem forma de material
-       criptografico. Os dois juntos: `spark.hadoop.fs.s3a.secret.key` com valor
-       `true` nao e segredo, e um hash de 40 caracteres numa chave chamada
-       `spark.sql.warehouse.dir` tambem nao.
+       criptografico. Este gatilho continua existindo porque o gatilho 1 so
+       alcanca emissor com prefixo publicado: segredo proprietario -- senha de
+       banco interno, chave de HMAC da propria casa -- nao tem prefixo nenhum, e
+       so o nome da chave denuncia. Os dois juntos:
+       `spark.hadoop.fs.s3a.secret.key` com valor `true` nao e segredo, e um
+       hash de 40 caracteres numa chave chamada `spark.sql.warehouse.dir`
+       tambem nao.
     """
     if not isinstance(key, str) or not isinstance(value, str):
         return False
-    if _AKIA_RE.search(value):
-        return True
+    for _, padrao in _PADROES_POR_VALOR:
+        if padrao.search(value):
+            return True
     if _URL_PASSWORD_RE.search(value):
         return True
     key_lower = key.lower()
     if any(hint in key_lower for hint in _SECRET_KEY_HINTS) and _HIGH_ENTROPY_RE.fullmatch(value):
         return True
     return False
+
+
+def detectores(key: str, value: str) -> tuple[str, ...]:
+    """Nomes dos detectores que dispararam, em ordem estavel.
+
+    NUNCA devolve o valor casado -- e essa a diferenca entre relatorio de
+    seguranca e vazamento. Um chamador que queira gravar "havia credencial aqui"
+    grava estes nomes; um que queira o valor nao tem como obte-lo por aqui.
+    """
+    if not isinstance(key, str) or not isinstance(value, str):
+        return ()
+    achados = [nome for nome, padrao in _PADROES_POR_VALOR if padrao.search(value)]
+    if _URL_PASSWORD_RE.search(value):
+        achados.append("url_password")
+    key_lower = key.lower()
+    if any(h in key_lower for h in _SECRET_KEY_HINTS) and _HIGH_ENTROPY_RE.fullmatch(value):
+        achados.append("nome_de_chave_com_entropia")
+    return tuple(achados)
 
 
 def redact(key: str, value: str) -> tuple[str, bool]:
