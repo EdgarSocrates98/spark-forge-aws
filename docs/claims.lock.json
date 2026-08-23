@@ -4298,11 +4298,11 @@
       "type": "capability",
       "id": "VNX-393",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "Prova reapontada na fase H1: `tests/test_migration_glue.py` cobria o analisador antigo, apagado com ele. Quem exercita a area `SF-MIG` com `runtime_scope` e `tests/test_migration_assessment.py`, degrau a degrau.",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-migration.yaml",
-        "test": "tests/test_migration_glue.py"
+        "test": "tests/test_migration_assessment.py"
       }
     },
     {
@@ -4343,11 +4343,11 @@
       "type": "capability",
       "id": "VNX-395",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "Prova reapontada na fase H1: apontava para `tests/test_migration_glue.py`, que nunca cobriu Spark 4 e foi apagado com o analisador antigo. O artefato da alegacao e o conhecimento, e quem o exercita como regra e `tests/test_spark4_rules.py`.",
       "proof": {
         "kind": "artifact",
-        "path": "rules/catalog/glue-migration.yaml",
-        "test": "tests/test_migration_glue.py"
+        "path": "knowledge/spark/spark4-migration.md",
+        "test": "tests/test_spark4_rules.py"
       }
     },
     {
@@ -5970,7 +5970,7 @@
       "type": "capability",
       "id": "VNX-123",
       "state": "REMOVIDA",
-      "note": "A linha soma dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing) num unico check por servico; nenhum artefato prova as dez juntas. Existe codigo real e teste real so para uma fatia: sparkforge/collect/aws.py:collect_glue_job (tests/test_collect_aws.py) e sparkforge/migration/glue/analyzer.py, que cobre so a migracao de versao 4.0->5.1 (tests/test_migration_glue.py). As outras dimensoes (Architecture, Security, FinOps, Performance, Testing etc.) nao tem artefato dedicado."
+      "note": "A linha soma dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing) num unico check por servico; nenhum artefato prova as dez juntas. Existe codigo real e teste real so para uma fatia: sparkforge/collect/aws.py:collect_glue_job (tests/test_collect_aws.py) e sparkforge/migration/glue/analyzer.py, que cobre so a migracao de versao 4.0->5.1 (tests/test_migration_glue.py). As outras dimensoes (Architecture, Security, FinOps, Performance, Testing etc.) nao tem artefato dedicado. ATUALIZACAO (fase H1, 2026-08-23): `sparkforge/migration/glue/analyzer.py` foi APAGADO. O que julga migracao agora e `sparkforge/migration/assessment.py`, que expande o par de versoes em degraus e julga cada um com o catalogo versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`), alcancavel por `sparkforge migrate glue` e pela tool `sparkforge_migration_assess`. A alegacao continua REMOVIDA: o motor novo cobre migracao de VERSAO de runtime, nao as dez dimensoes por servico."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",
@@ -6090,7 +6090,7 @@
       "type": "capability",
       "id": "VNX-135",
       "state": "REMOVIDA",
-      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). O unico modulo chamado 'migration' no repositorio (sparkforge/migration/glue/analyzer.py) analisa migracao de VERSAO do AWS Glue (4.0->5.1), nao o servico AWS Database Migration Service. Nenhum codigo, agente ou teste cobre DMS de verdade -- a anotacao 'CDC/Full' da coluna Migration nao tem lastro nenhum."
+      "note": "Mesma alegacao composta de dez dimensoes (Architecture, Dev/Code, Terraform, Security, FinOps, Observability, Troubleshooting, Migration, Performance, Testing). O unico modulo chamado 'migration' no repositorio (sparkforge/migration/glue/analyzer.py) analisa migracao de VERSAO do AWS Glue (4.0->5.1), nao o servico AWS Database Migration Service. Nenhum codigo, agente ou teste cobre DMS de verdade -- a anotacao 'CDC/Full' da coluna Migration nao tem lastro nenhum. ATUALIZACAO (fase H1, 2026-08-23): `sparkforge/migration/glue/analyzer.py` foi APAGADO. O que julga migracao agora e `sparkforge/migration/assessment.py`, que expande o par de versoes em degraus e julga cada um com o catalogo versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`), alcancavel por `sparkforge migrate glue` e pela tool `sparkforge_migration_assess`. A alegacao continua REMOVIDA: o motor novo cobre migracao de VERSAO de runtime, nao as dez dimensoes por servico."
     },
     {
       "doc": "docs/vnext/CAPABILITY-MATRIX.md",

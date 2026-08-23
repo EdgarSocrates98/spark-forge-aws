@@ -54,7 +54,7 @@ Terraform e a avaliação de migração.
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
 | Extrator de facts de migração | EXISTE, com teste | `sparkforge/facts/migration.py` emite kinds fechados em `EMITTED_KINDS`: `mig.sdk_import`, `mig.emrfs_config`, `mig.legacy_conf`, `mig.deprecated_api`, `mig.ansi_risk`, `mig.table_format`, `mig.jar_binary` e `mig.python_dep` | `tests/test_facts_migration.py`, `tests/test_fixtures_golden_migration.py` |
-| Área de regras de migração com `runtime_scope` | EXISTE, com teste | `rules/catalog/glue-migration.yaml` traz a área `SF-MIG`, cada regra declarando a faixa de runtime onde vale — `SF-MIG-003` só a partir de Glue 6.0, pelo ANSI ligado por padrão no Spark 4.1 | `tests/test_migration_glue.py`, `tests/test_rules_catalog_reachability.py` |
+| Área de regras de migração com `runtime_scope` | EXISTE, com teste | `rules/catalog/glue-migration.yaml` traz a área `SF-MIG`, cada regra declarando a faixa de runtime onde vale — `SF-MIG-003` só a partir de Glue 6.0, pelo ANSI ligado por padrão no Spark 4.1 | `tests/test_migration_assessment.py`, `tests/test_rules_catalog_reachability.py` |
 | Áreas `SF-SPARK4` e `SF-ICE-V3` (§43) | EXISTE PARCIAL | `SF-SPARK4` existe em `rules/catalog/spark4.yaml` com três regras, guardadas por versão de **Spark** e não de Glue — a fronteira é do Apache e vale igual num EMR. `SF-ICE-V3` continua sem existir e depende do conhecimento de Iceberg v3 como dado | `tests/test_spark4_rules.py`, `tests/test_rule_scope_by_nature.py` |
 | Roteamento explicável das regras de migração | EXISTE, com teste | `rules/catalog/routing.yaml` roteia `SF-MIG` e devolve razão, evidência e alternativas | `tests/test_case_router.py`, `tests/test_router_agents.py` |
 

@@ -53,7 +53,7 @@ Consequência: as dez regras de `SF-MIG`, `SF-SPARK4` e `SF-LF` são alcançáve
 - Delete: `sparkforge/migration/glue/analyzer.py`, `tests/test_migration_glue.py`
 - Modify: `sparkforge/migration/__init__.py`, `tests/test_migration_assessment.py`
 
-- [ ] **Step 1: medir quem consome o analisador antigo**
+- [x] **Step 1: medir quem consome o analisador antigo**
 
 Run:
 ```bash
@@ -61,7 +61,7 @@ TOKENSAVE_DISABLE_GREP_HOOK=1 grep -rn "GlueMigrationAnalyzer\|MigrationFinding\
 ```
 Expected: `sparkforge/cli/forge.py`, `sparkforge/migration/__init__.py`, `sparkforge/migration/glue/`, `tests/test_migration_glue.py`, mais as citações em `STATUS.md` e no manifesto de alegações. Anote cada uma — todas precisam ser tratadas, e as de documento viram registro histórico, não apagamento.
 
-- [ ] **Step 2: escrever o teste do comando novo, e vê-lo falhar**
+- [x] **Step 2: escrever o teste do comando novo, e vê-lo falhar**
 
 O comando passa a aceitar um **diretório** de job, não só um `.py`, e um par de versões sem default fixado no código. Teste em `tests/test_cli_migrate_glue.py`:
 
@@ -84,7 +84,7 @@ def test_o_comando_usa_o_motor_de_regras_e_nao_o_analisador_antigo(tmp_path, cap
 
 Run: `python -m pytest tests/test_cli_migrate_glue.py -v` — deve FALHAR.
 
-- [ ] **Step 3: religar o comando**
+- [x] **Step 3: religar o comando**
 
 Em `sparkforge/cli/forge.py`, trocar o import e o corpo de `cmd_migrate_glue`:
 
@@ -120,11 +120,11 @@ def cmd_migrate_glue(args: argparse.Namespace) -> int:
 
 E no parser: `mig_g.add_argument("path", help="Diretorio do job")`, mais `--from`/`--to` **sem default**, `required=True` — o default `"5.1"` fixado no código é parte da dívida que esta fase fecha.
 
-- [ ] **Step 4: rodar o teste e ver passar**
+- [x] **Step 4: rodar o teste e ver passar**
 
 Run: `python -m pytest tests/test_cli_migrate_glue.py -v` — PASS.
 
-- [ ] **Step 5: a tool MCP**
+- [x] **Step 5: a tool MCP**
 
 Acrescentar `sparkforge_migration_assess` a `sparkforge/adapters/tools.py`, com handler em `_core.py` no molde dos vizinhos (`_h_analyze_*`). Entrada: `path` (diretório), `source`, `target`. Saída: o `to_dict()` do assessment, sob `_may_fail`.
 
@@ -132,13 +132,13 @@ A §70 do prompt manda **expandir** em vez de multiplicar: esta é a única tool
 
 Gates que uma tool nova cobra: `tests/test_adapters_tools.py`, `tests/test_adapters_mcp.py`, `tests/test_agent_coverage.py` (toda tool precisa ser alcançável a partir de um coordenador) e `manifest.json`, que lista as tools.
 
-- [ ] **Step 6: apagar o analisador antigo**
+- [x] **Step 6: apagar o analisador antigo**
 
 Só depois dos passos acima verdes. Apagar `sparkforge/migration/glue/`, `tests/test_migration_glue.py`, os reexports de `sparkforge/migration/__init__.py`, e a exceção de `tests/test_migration_assessment.py::test_nenhum_par_de_versao_aparece_no_codigo_do_motor` que isentava `glue/analyzer.py`.
 
 Conferir que `docs/claims.lock.json` não tem alegação `PROVADA` apontando para `sparkforge/migration/glue/analyzer.py` — o `STATUS.md` registra que existe uma. Se existir, ela vira `REMOVIDA` com nota dizendo que o artefato foi apagado e por quê.
 
-- [ ] **Step 7: gates e commit**
+- [x] **Step 7: gates e commit**
 
 ```bash
 python -m pytest tests/test_cli_migrate_glue.py tests/test_migration_assessment.py \

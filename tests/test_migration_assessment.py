@@ -152,21 +152,15 @@ class TestParGenerico:
 
         raiz = Path(__file__).resolve().parents[1] / "sparkforge" / "migration"
         proibido = re.compile(r'"[3-9]\.\d+"')
-        # Excecao conhecida e restrita: `glue/analyzer.py` e o analisador antigo
-        # que esta fase substitui (`source_runtime: str = "4.0"`,
-        # `target_runtime: str = "5.1"`). O Task 11 decide o destino dele --
-        # ele tem consumidor declarado (`sparkforge/migration/__init__.py`
-        # reexporta `GlueMigrationAnalyzer`), entao nao e removido aqui. Este
-        # teste cobre so os modulos que esta fase construiu: `version_path.py`,
-        # `assessment.py` e qualquer irmao novo -- nao o pacote `migration`
-        # inteiro, para nao esconder uma regressao futura atras de uma
-        # excecao larga demais.
-        excecoes = {Path("glue") / "analyzer.py"}
+        # Sem excecao: `glue/analyzer.py` foi apagado na fase H1, e com ele o
+        # unico arquivo do pacote que carregava par de versao no codigo
+        # (`source_runtime: str = "4.0"`, `target_runtime: str = "5.1"`). Se um
+        # par voltar a aparecer aqui, e regressao -- versao mora no catalogo de
+        # regras e no `runtime_scope`, nunca no motor.
         ofensores = [
             str(p.relative_to(raiz))
             for p in raiz.rglob("*.py")
-            if p.relative_to(raiz) not in excecoes
-            and proibido.search(p.read_text(encoding="utf-8"))
+            if proibido.search(p.read_text(encoding="utf-8"))
         ]
         assert ofensores == [], f"par de versao embutido no motor: {ofensores}"
 

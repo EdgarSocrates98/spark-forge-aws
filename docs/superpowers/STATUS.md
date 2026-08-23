@@ -2089,6 +2089,11 @@ como o único artefato real por trás da dimensão "Migration" numa alegação
 composta), e trocar o backend de um comando publicado não é o mesmo trabalho
 que confirmar uma versão de runtime.
 
+> **FECHADA na fase H1 (2026-08-23).** `cmd_migrate_glue` passou a chamar
+> `sparkforge.migration.assessment.assess()` em `9b58855`, e o analisador antigo,
+> `tests/test_migration_glue.py`, os reexports de `sparkforge/migration/__init__.py` e a
+> exceção do teste de genericidade foram apagados. Detalhe na seção da fase H1, abaixo.
+
 ### Continuação — `SF-MIG-004`, o diff de Terraform ligado à migração (2026-08-22)
 
 `docs/harness/GLUE6-GAP.md` mediu o que `prompt_glue_harness.md` pede contra o
@@ -2404,6 +2409,49 @@ geraria centenas de alegações a classificar de uma vez. Por isso as duas linha
 saíram de `NÃO EXISTE` foram para **`EXISTE PARCIAL`**, não para `EXISTE, com teste`: o
 parcial é o que falta em volta, não o conteúdo, e o mapa continua sem dizer "testado" sem
 nome de arquivo de teste.
+
+
+### Continuação — fase H1, a porta de entrada da migração (2026-08-23)
+
+O achado que ordenou a fase: as dez regras de `SF-MIG`, `SF-SPARK4` e `SF-LF` que G1–G7
+construíram eram alcançáveis por quem chamasse `assess()` em Python ou lesse o YAML — pela
+CLI e pelo MCP, **não**. `forge migrate glue` ainda rodava `GlueMigrationAnalyzer`, e das 41
+tools MCP nenhuma era de migração: compor o resultado exigia três chamadas à mão
+(`sparkforge_judge`, `sparkforge_rules_lookup`, `sparkforge_runtime_detect`). A fase não
+construiu motor nenhum; ela ligou o que já existia.
+
+**O comando aceita diretório, não arquivo.** O analisador antigo lia um `.py` por vez, e por
+isso não conseguia ver o que sobrevive à troca de runtime sem ter linha de fonte Python: um
+pin de `requirements*.txt` e um `.jar` de Scala 2.12. `sparkforge migrate glue <dir> --from X
+--to Y` compõe os extratores sobre a árvore. `--from` e `--to` são `required=True`, sem
+default: o `"5.1"` fixado no código respondia sobre um alvo que ninguém declarou, com a mesma
+cara de qualquer outro veredito.
+
+**`migrate` é verbo de topo, não `analyze migrate`.** Tudo sob `analyze` extrai facts de um
+artefato e para ali. Este extrai **e** julga, uma vez por degrau — a mesma razão pela qual
+`judge` e `fuse` são verbos próprios.
+
+**Uma tool nova, não três.** `sparkforge_migration_assess` absorve o que
+`sparkforge_spark4_migration_scan` e `sparkforge_jar_compatibility_scan` devolveriam: as
+regras que julgam Spark 4 e binário de Scala já estão no catálogo e saem no mesmo assessment.
+Expandir em vez de multiplicar superfície — cada tool nova entra em quatro gates de paridade
+e lá fica. A saída traz `findings` (cardinalidade por degrau), `report` (cada problema uma
+vez, com os degraus em que vale), `gates` e `missing_evidence`; os quatro eixos que exigem
+execução real — dados, performance, custo e canary — nascem `BLOCKED` com o motivo, e por
+isso `recommendation` nunca é `GO` nesta análise.
+
+**O analisador antigo foi apagado, e só depois dos passos acima verdes.** Saíram
+`sparkforge/migration/glue/`, `tests/test_migration_glue.py`, os reexports de
+`sparkforge/migration/__init__.py` e a exceção de
+`tests/test_migration_assessment.py::test_nenhum_par_de_versao_aparece_no_codigo_do_motor` —
+que agora cobre o pacote `migration` inteiro, sem isenção. Nenhuma alegação `PROVADA` apontava
+para o arquivo: as quatro que o citam (`VNX-109`, `VNX-110`, `VNX-123`, `VNX-135`) já eram
+`REMOVIDA`, e as duas cujas notas o descreviam como artefato existente ganharam a atualização
+dizendo que ele foi apagado e o que ocupou o lugar.
+
+**Duas alegações remedidas, não ajustadas.** `VNX-431` e `VNX-322` afirmam o tamanho de
+`tools.py` e `_core.py` em `docs/harness/CURRENT-HARNESS-GAP.md`. A tool nova mudou os dois
+números; a prova é comando, então foi reexecutada: 121,7 KB → 126,8 KB e 120,7 KB → 123,2 KB.
 
 
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
