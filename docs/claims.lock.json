@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "33d43519f87a4884c5586c90ec14ff1c631748ea",
+  "extracted_from": "89de8ee9ebd8f1e9e3ec64bcb5792ed0a190c9e0",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -819,6 +819,26 @@
         "path": "sparkforge/observability/tracer.py",
         "test": "tests/test_observability.py",
         "symbol": "AgentOpsTracker"
+      }
+    },
+    {
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "line": 29,
+      "text": "44",
+      "context": "Medido em 2026-08-23, sobre 44 tools: nenhuma é `destructive`, e nenhuma é",
+      "type": "number",
+      "id": "VNX-482",
+      "state": "PROVADA",
+      "note": "reexecutado -- o numero de tools e derivado de len(TOOLS) no catalogo, nao relido do texto do documento; a distribuicao de anotacoes que a frase resume vem do mesmo catalogo e e trancada por tests/test_harness_authorization.py",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 44
+        }
       }
     },
     {
@@ -2564,28 +2584,8 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 42,
-      "text": "4",
-      "context": "| **ToolPolicy** | EXISTE PARCIAL | `sparkforge/registry/models.py:ToolManifest.mutation_class: RiskLevel` classifica to",
-      "type": "number",
-      "id": "VNX-301",
-      "state": "PROVADA",
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'from sparkforge.registry.models import RiskLevel; print(len(list(RiskLevel)))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 4
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 42,
       "text": "5",
-      "context": "| **ToolPolicy** | EXISTE PARCIAL | `sparkforge/registry/models.py:ToolManifest.mutation_class: RiskLevel` classifica to",
+      "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "type": "number",
       "id": "VNX-302",
       "state": "PROVADA",
@@ -2598,6 +2598,26 @@
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 5
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 42,
+      "text": "4",
+      "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
+      "type": "number",
+      "id": "VNX-301",
+      "state": "PROVADA",
+      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.registry.models import RiskLevel; print(len(list(RiskLevel)))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 4
         }
       }
     },
@@ -2922,6 +2942,25 @@
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 5
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 83,
+      "text": "135,5",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "type": "number",
+      "id": "VNX-431",
+      "state": "PROVADA",
+      "note": "medida de tamanho do arquivo, reexecutada -- corrigir o aviso de sparkforge_analyze_terraform (a chave snippet nem existe, nao 'fica vazia') e o de sparkforge_judge (que dizia 'os demais campos vem do catalogo', engolindo o metadado schema_version) levou tools.py para 135,5 KB. A prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "135,5"
         }
       }
     },
@@ -4258,7 +4297,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 42,
       "text": "**ToolPolicy**",
-      "context": "| **ToolPolicy** | EXISTE PARCIAL | `sparkforge/registry/models.py:ToolManifest.mutation_class: RiskLevel` classifica to",
+      "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "type": "capability",
       "id": "VNX-336",
       "state": "PROVADA",
@@ -4462,6 +4501,22 @@
         "kind": "artifact",
         "path": "tests/test_execution_surface.py",
         "test": "tests/test_agent_autonomy.py"
+      }
+    },
+    {
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "line": 69,
+      "text": "**Authorization chain** (§76)",
+      "context": "| **Authorization chain** (§76) | EXISTE PARCIAL | Fase I3: `sparkforge/agents/autonomy.py:authorize()` devolve `Authori",
+      "type": "capability",
+      "id": "VNX-483",
+      "state": "PROVADA",
+      "note": "linha da tabela CURRENT-HARNESS-GAP.md reclassificada para EXISTE PARCIAL na Fase I3 -- modulo e teste citados na propria linha, e o teste exercita authorize() nos dois sentidos (autoriza e recusa)",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/agents/autonomy.py",
+        "test": "tests/test_harness_authorization.py",
+        "symbol": "authorize"
       }
     },
     {
@@ -5526,25 +5581,6 @@
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 22
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "line": 83,
-      "text": "135,5",
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
-      "type": "number",
-      "id": "VNX-431",
-      "state": "PROVADA",
-      "note": "medida de tamanho do arquivo, reexecutada -- corrigir o aviso de sparkforge_analyze_terraform (a chave snippet nem existe, nao 'fica vazia') e o de sparkforge_judge (que dizia 'os demais campos vem do catalogo', engolindo o metadado schema_version) levou tools.py para 135,5 KB. A prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "contains",
-          "value": "135,5"
         }
       }
     },
