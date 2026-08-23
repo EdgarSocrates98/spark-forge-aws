@@ -3,7 +3,11 @@
 **Data:** 2026-08-21
 **Status:** **proposto**. Nada implementado nesta data.
 **Origem:** `prompt_migrations_glue.md` (fábrica de migração Glue) e
-`prompt_evo_harness.md` (camada de harness). Os dois se encontram no contrato de
+`prompt_evo_harness.md` (camada de harness). **`prompt_migrations_glue.md` é documento de
+entrada LOCAL e não é versionado neste repositório** — a nota entra aqui, em 2026-08-23,
+porque um leitor de clone limpo procuraria o arquivo e não acharia. O corpo do spec fica
+palavra por palavra, que é a convenção deste diretório; `prompt_evo_harness.md` é versionado
+e continua alcançável. Os dois se encontram no contrato de
 harness; esta fase entrega o vertical, e a §8 registra o critério para o encontro.
 **Base:** o motor existente — artefato → facts → regras → findings — com 21 extratores,
 116 regras, 171 fixtures golden e gates fail-closed com produtor declarado.

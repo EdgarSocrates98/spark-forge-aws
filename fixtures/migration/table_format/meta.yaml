@@ -2,7 +2,7 @@ name: table_format
 proves: >
   `format-version` de uma tabela Iceberg/Hudi/Delta lido de um `ALTER TABLE
   ... TBLPROPERTIES`. E a versao do FORMATO, distinta da versao da
-  BIBLIOTECA que le/escreve (`prompt_migrations_glue.md` Sec 8.8) --
+  BIBLIOTECA que le/escreve (`knowledge/storage/iceberg-v3.md`) --
   observacao pura, sem regra nenhuma no catalogo hoje. Runtime Glue 5.0 por
   consistencia com o resto do corpus -- nao ha fronteira de versao a provar
   aqui, so o vocabulario do fact.

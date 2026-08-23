@@ -32,3 +32,8 @@ node_modules/
 
 # Material de referencia sigiloso -- nunca versionar neste repositorio publico.
 *.zip
+
+# Saida de trabalho do gate de lastro (`scripts/check_vnext_claims.py --report`
+# redirecionado para arquivo). E despejo de diagnostico, nao artefato: o estado
+# auditado mora em `docs/claims.lock.json`, que E versionado.
+cm_claims_out.txt

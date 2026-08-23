@@ -238,3 +238,50 @@ Cada uma com teste de CLI no molde de H1. Commits separados.
 **Ordem.** H1 primeiro porque é o único item que não constrói nada e mesmo assim muda o que o usuário alcança. H2 depende de H1 porque a composição só tem consumidor quando a CLI existe. H3 depende de H2 porque o gate de consumidor precisa dos facts compostos.
 
 **Risco declarado.** H6 é a fase com maior superfície nova por unidade de valor: cada skill entra em quatro gates de paridade e lá fica. Se o orçamento acabar, ela é a primeira a cortar — e o corte não deixa nada quebrado, só menos apresentado.
+
+---
+
+## Desvios do plano, medidos na execução (2026-08-23)
+
+O plano foi executado inteiro, H1 a H6. Cinco pontos saíram diferente do escrito, e cada um
+tem razão medida — nenhum foi escolha de conveniência.
+
+**1. O eixo `consumidor` entrou em H2, não em H3.** O plano dizia "acrescente apenas os que têm
+produtor: `lakeformation` tem produtor, `consumidor` ganha produtor em H3". Medido: `SF-ENV-002`
+já existia em `rules/catalog/env.yaml` e `collect()` passou a compor o inventário na própria
+H2 — o produtor existia naquele momento. H3 então generalizou o bloqueio em vez de criar o eixo.
+
+**2. H3 usou a forma 2 (gate), não a forma 1 (regra do catálogo).** O plano preferia a regra e
+mandava escrever a razão caso a outra fosse escolhida. A razão: o avaliador de `expr` tem
+whitelist de nós AST sem `Call` e sem `In`, e `where` compara igualdade — não há como escrever
+"serviço que a matriz não declara suportado" numa condição. A alternativa seria uma regra por
+engine, cada uma copiando em YAML o que a matriz já diz com `source` e `retrieved`.
+
+**3. As duas CLIs de H4 foram num commit só.** O plano pedia "commits separados". As duas
+entram no mesmo `manifest.json` e no mesmo `parity.yaml`, e `tests/test_capability_parity.py`
+cobra tool MCP para todo verbo de CLI: separar deixaria o gate vermelho no commit do meio.
+
+**4. H5 e H6 também.** Mesma família de razão, agora no gate de lastro: `docs/claims.lock.json`
+é atômico, a reclassificação do mapa cobre §16, §24, §25, §51 e §52 na mesma passada, e a
+contagem de skills de `CURRENT-STATE.md` só fica verdadeira quando as skills existem na árvore.
+
+**5. Duas tools MCP a mais do que o plano previa.** H1 declarou "esta é a única tool nova da
+fase", e isso valeu para H1. H4 precisou de duas — `sparkforge_glue_dependency_audit` e
+`sparkforge_iceberg_assess_upgrade` — porque o gate de paridade recusa verbo de CLI sem tool
+correspondente, e nenhuma das duas exceções declaradas em `ALLOWED_CLI_ONLY` se aplicava.
+Total: 41 → 44 tools.
+
+## O que ficou fora, e continua fora
+
+`RuntimeChangeGraph` (§41), `CapabilityRegistry` por capacidade (§74) e TTL por domínio (§44).
+As três linhas do mapa passaram a dizer **"fora de escopo declarado"** em vez de só
+`NÃO EXISTE`, apontando para cá — `NÃO EXISTE` sozinho lê como pendência, e essas três são
+decisão.
+
+Duas tools do prompt foram **absorvidas** em vez de construídas, e o mapa registra isso:
+`sparkforge_spark4_migration_scan` (§11) e `sparkforge_jar_compatibility_scan` (§13). O
+assessment de migração e o `dependency-audit` devolvem o que elas devolveriam.
+
+A §12 pedia uma família `spark-4-*`; existe **uma** skill, `spark4-compatibility`, e a linha do
+mapa diz `EXISTE PARCIAL` por isso. O critério que sobreviveu foi "conhecimento por trás **e**
+consumidor", não "uma skill por seção do prompt".

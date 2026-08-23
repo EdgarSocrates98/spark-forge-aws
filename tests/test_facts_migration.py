@@ -217,9 +217,10 @@ class TestFormatoDeTabela:
     # Decisao pinada por este teste: o atributo se chama `format_version`, nao
     # `version` puro, para deixar explicito que e a versao do FORMATO da
     # tabela (spec Iceberg/Hudi/Delta) -- nao a versao da BIBLIOTECA que le ou
-    # escreve. Confundir as duas e o erro citado em `prompt_migrations_glue.md`
-    # Sec 8.8; um atributo generico `version` reintroduziria a mesma ambiguidade
-    # que o kind existe para evitar.
+    # escreve. As duas sao separadas como DADO em
+    # `knowledge/storage/iceberg-feature-support.yaml`, uma celula por par
+    # feature/engine; um atributo generico `version` reintroduziria aqui a
+    # ambiguidade que aquela matriz existe para nao ter.
     def test_reconhece_format_version_da_tabela(self, tmp_path):
         (tmp_path / "job.py").write_text(JOB_COM_FORMAT_VERSION, encoding="utf-8")
         facts = migration.extract_migration_tree(tmp_path, repo_root=tmp_path)

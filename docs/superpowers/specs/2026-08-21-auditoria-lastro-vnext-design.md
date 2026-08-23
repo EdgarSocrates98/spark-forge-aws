@@ -63,9 +63,9 @@ capacidade com artefato entra; julgamento sem mecanismo não entra disfarçado d
   `sparkforge/lakeformation` faz o que `ARCHITECTURE.md` diz é auditoria funcional,
   outro projeto. Aqui a pergunta é se a afirmação tem artefato apontado, não se o
   artefato está correto.
-- **Cobrir as 132 seções de `prompt_evo.md`.** Matriz de conformidade é outro projeto,
+- **Cobrir as 132 seções do prompt mestre da vNext** (documento de entrada, local, não versionado neste repositório).** Matriz de conformidade é outro projeto,
   e depende deste para não herdar números falsos.
-- **Construir qualquer capacidade nova pedida por `prompt_evo.md`.**
+- **Construir qualquer capacidade nova pedida pelo prompt mestre da vNext.**
 
 ## 3. Decisões de desenho
 

@@ -33,7 +33,7 @@ A Task 6 fecha o vocabulario planejado desta fase com quatro kinds: dois
 observados por linha de fonte Python (`mig.ansi_risk`, um `cast(` sem a forma
 guardada `try_cast(`; `mig.table_format`, a versao do FORMATO de uma tabela
 Iceberg/Hudi/Delta -- distinta da versao da biblioteca que le/escreve, ver
-`prompt_migrations_glue.md` Sec 8.8) e dois observados por ARQUIVO INTEIRO, nao
+`knowledge/storage/iceberg-v3.md`) e dois observados por ARQUIVO INTEIRO, nao
 por linha (`mig.jar_binary`, `mig.python_dep`). Os dois ultimos moram em
 `extract_migration_tree`, nao em `extract_migration_path`: um `.jar` nao tem
 linha de fonte Python para varrer, e uma linha de `requirements.txt` nao e
@@ -102,8 +102,11 @@ _DEPRECATED_SYMBOL_RES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
 _CAST_RE = re.compile(r"(?<!try_)\bcast\s*\(", re.IGNORECASE)
 
 # `format-version` e a versao do FORMATO de uma tabela Iceberg/Hudi/Delta --
-# coisa diferente da versao da BIBLIOTECA que le/escreve. Confundir as duas e
-# o erro citado explicitamente em `prompt_migrations_glue.md` Sec 8.8.
+# coisa diferente da versao da BIBLIOTECA que le/escreve. Confundir as duas
+# produz a recomendacao errada nos dois sentidos: "o Iceberg 1.11 suporta"
+# nao responde "esta tabela e v3", e vice-versa. `knowledge/storage/
+# iceberg-v3.md` separa as duas metades, e `sparkforge/storage/
+# feature_support.py` grava a separacao em codigo.
 _FORMAT_VERSION_RE = re.compile(r"format-version['\"]?\s*[=:]\s*['\"]?(\d+)")
 
 # Scala embutido no nome do jar, ex. `conector_2.12-1.4.0.jar` -> "2.12".
