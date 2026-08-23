@@ -89,7 +89,7 @@ Terraform e a avaliação de migração.
 | Versão do formato distinta da versão da biblioteca (§18) | EXISTE, com teste | `mig.table_format` separa as duas — é onde a distinção entre "spec feature" e "engine support" começa | `tests/test_facts_migration.py` |
 | Conhecimento de Iceberg 1.11 (§17) | EXISTE, com teste | `knowledge/storage/iceberg-v3.md` traz o que a release de 1.11.0 declara — remote scan planning com REST catalog, API de estatística de partição, deletion vectors em Flink e Spark, Java 11 removido, Spark 3.4 deprecado e Spark 4.1 suportado. O que a fonte não afirma fica marcado como a verificar | `tests/test_offline_expansion.py` |
 | Domínio `iceberg-v3`, Variant, deletion vectors e row lineage (§18, §21, §22, §23) | EXISTE PARCIAL | `knowledge/storage/iceberg-v3.md` separa **feature da spec** de **suporte da engine**, que é o que a §18 exige, e registra as limitações que a AWS declara para o Glue 6.0. Não existe fixture nem regra: os facts que permitiriam julgar uso de Variant, transform multi-argumento ou DynamicFrame não existem, e a única armadilha judicável hoje já é `SF-ENV-002` | `tests/test_offline_expansion.py` |
-| `IcebergFeatureCompatibilityMatrix` (§19, §20) | NÃO EXISTE | — | — |
+| `IcebergFeatureCompatibilityMatrix` (§19, §20) | EXISTE, com teste | `knowledge/storage/iceberg-feature-support.yaml` cruza feature de Iceberg com engine, uma célula por par, e `sparkforge/storage/feature_support.py` recusa a matriz inteira quando uma célula afirma suporte sem `source`, `source_type` e `retrieved` — a regra da §20 em código, não em prosa. A maioria das células é `UNKNOWN`, que é o resultado honesto de só uma engine ter documentação oficial enumerando feature de v3 por nome; o Athena tem uma única célula afirmativa, e há teste que impede a inferência de suporte entre engines | `tests/test_iceberg_feature_support.py` |
 | `forge iceberg assess-upgrade` de formato v2 para v3 (§24) | NÃO EXISTE | — | — |
 | Iceberg Doctor v2 com prontidão para v3 (§50) | EXISTE PARCIAL | O relatório existe e carrega `format_version`; prontidão para v3, uso de Variant e suporte por consumidor não existem | `tests/test_iceberg_doctor.py` |
 
@@ -177,8 +177,14 @@ diz por onde não começar:
    respondem perguntas diferentes — "quantos problemas eu tenho?" e "isto ainda vale depois
    do próximo salto?".
 
-O que este mapa recomenda **não** fazer agora: as skills das §9 e §12 e a
-`IcebergFeatureCompatibilityMatrix` da §19. As primeiras não têm consumidor enquanto o
-conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas
-células o repositório hoje não consegue provar — e célula sem evidência é exatamente o que a
-§20 proíbe.
+O que este mapa recomenda **não** fazer agora: as skills das §9 e §12. Elas não têm consumidor
+enquanto o conhecimento de Spark 4 não existir como dado.
+
+A `IcebergFeatureCompatibilityMatrix` da §19 estava nesta lista, e saiu — mas a objeção que a
+punha aqui **não foi revogada**. A objeção era "célula sem evidência é exatamente o que a §20
+proíbe", e ela continua valendo; o que mudou é onde ela mora. Antes era uma advertência neste
+parágrafo, que depende de quem lê; agora é uma invariante do carregador, que derruba a matriz
+inteira na carga quando uma célula afirmativa chega sem fonte. A consequência prática de levar
+a §20 a sério é que a maioria das células saiu `UNKNOWN` — e isso é o resultado, não a
+pendência: `UNKNOWN` distingue "não há fonte" de "não suporta", que é a distinção que uma
+matriz preenchida por inferência apagaria.

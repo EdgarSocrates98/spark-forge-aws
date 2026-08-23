@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "106066b9f6e060d12a0b62e1a49660a4aef466d2",
+  "extracted_from": "847cc59d9afbb6fed131450c655bbcef55d92f38",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -3671,9 +3671,9 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 182,
+      "line": 181,
       "text": "4",
-      "context": "conhecimento de Spark 4 e de Iceberg v3 não existir como dado; a segunda é uma matriz cujas",
+      "context": "enquanto o conhecimento de Spark 4 não existir como dado.",
       "type": "number",
       "id": "VNX-385",
       "state": "PROVADA",
@@ -4411,6 +4411,21 @@
         "kind": "artifact",
         "path": "knowledge/storage/iceberg-v3.md",
         "test": "tests/test_offline_expansion.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 92,
+      "text": "`IcebergFeatureCompatibilityMatrix` (§19, §20)",
+      "context": "| `IcebergFeatureCompatibilityMatrix` (§19, §20) | EXISTE, com teste | `knowledge/storage/iceberg-feature-support.yaml` ",
+      "type": "capability",
+      "id": "VNX-439",
+      "state": "PROVADA",
+      "note": "linha da tabela GLUE6-GAP.md classificada EXISTE -- modulo e teste citados na propria linha",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/storage/feature_support.py",
+        "test": "tests/test_iceberg_feature_support.py"
       }
     },
     {
