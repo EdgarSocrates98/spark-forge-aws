@@ -23,8 +23,15 @@ acrescente a linha.
 python -m pytest tests/test_rules_loader.py tests/test_rules_catalog_reachability.py \
   tests/test_rules_result_axis.py tests/test_rules_engine.py \
   tests/test_agent_coverage.py tests/test_router_agents.py \
-  tests/test_docs_coverage.py tests/test_fixtures_kind_coverage.py -q
+  tests/test_docs_coverage.py tests/test_fixtures_kind_coverage.py \
+  tests/test_refresh_knowledge.py -q
 ```
+
+**A seção `runtime_scope`, abaixo, NÃO é opcional.** `runtime_scope` é campo
+**obrigatório** de toda regra (ver `rules/catalog/README.md`), então *toda* regra nova cai
+lá também — inclusive a que declara `{}`. Ler o "Além dos acima" daquela seção como
+"quando eu decidir dar escopo" é o erro que esta linha existe para impedir; ele custou
+seis testes vermelhos numa fase, e depois mais um numa área nova.
 
 O que cada um cobra, medido na fase `SF-MIG`:
 
@@ -34,11 +41,13 @@ O que cada um cobra, medido na fase `SF-MIG`:
 | `test_router_agents` | a área **roteia** para um coordenador | declarar a área no agente não roteia; `rules/catalog/routing.yaml` precisa de entrada própria. Mesma lacuna já órfãou `SF-BENCH`, `SF-EMRS`, `SF-ENV`, `SF-FVAL` e `SF-UI` |
 | `test_docs_coverage` | `manifest.json` declara a contagem real | `rule_count` ficou em 116 depois de três regras novas. A docstring do teste registra que esse número já apodreceu três vezes, duas delas no `README.md` |
 | `test_fixtures_kind_coverage` | toda regra tem golden que a dispara, e todo ramo de severidade tem golden | regra sem fixture, e ramo de severidade descoberto |
+| `test_refresh_knowledge` | toda URL de `sources:` entra na watchlist, e o lock commitado bate com ela | **medido em `SF-KMS`/`SF-NET`/`SF-XACC`, 2026-08-23:** as três fontes oficiais novas ficaram fora de `knowledge/sources.lock.json` e só a suíte completa pegou. A watchlist é derivada de **duas** origens — a seção `## Fontes` dos documentos de `knowledge/` **e** o bloco `sources:` de cada regra do catálogo —, e o gate-map só nomeava a primeira. Alinhar sem rede: `python scripts/refresh_knowledge.py --update --offline` |
 | `test_rules_engine` | `blocked_on` novo é decisão consciente registrada | o teste é alarme deliberado: a docstring diz que o próximo `blocked_on` "tem que ser uma decisao consciente de quem o escreve" |
 
-## Dar `runtime_scope` a uma regra
+## Dar `runtime_scope` a uma regra — ou seja, **toda regra nova**
 
-Além dos acima:
+`runtime_scope` é campo obrigatório. Uma regra que declara `{}` está declarando escopo
+tanto quanto uma que declara `{glue: ">=5.0"}`, e as duas passam por aqui. Além dos acima:
 
 ```
 python -m pytest tests/test_rule_scope_by_nature.py \
@@ -63,6 +72,40 @@ O comentário no fim de `test_rule_scope_by_nature.py` explica por que o agregad
 medido: na Fase 3b, `SF-ICE-001..005` não estavam em lista nenhuma, caíram em
 `_AGNOSTICAS` e cinco regras sumiram juntas de um runtime. *"O furo nao estava na
 regra individual, estava no AGREGADO."*
+
+**O mesmo agregado morde a ÁREA NOVA, e por outro caminho — medido em 2026-08-23.** As
+áreas `SF-KMS`, `SF-NET` e `SF-XACC` nasceram com `runtime_scope: {glue: ">=4.0"}` em todas
+as suas regras. Nenhuma lista precisou ser editada e nenhuma exceção virou letra morta: o
+que quebrou foi que as **três áreas inteiras desapareciam** num runtime detectado a partir
+de event log, que preenche `spark` e não `glue`. Área que some inteira lê, para um agente
+autônomo, como *"nada encontrado nesse eixo"* — o falso negativo que a guarda deveria
+evitar, produzido pela própria guarda.
+
+A causa era etiqueta de serviço disfarçada de guarda de versão: não havia fronteira de
+versão nenhuma, e o que gateia de verdade é `requires_facts` (sem `tf.attribute` de um
+`aws_glue_job`, a regra não dispara, e `aws_glue_job` só existe onde há Glue). A correção
+foi `runtime_scope: {}` nas quatro, com a razão escrita ao lado — que é literalmente o que
+a mensagem de erro do teste manda fazer: *"Se o gate real e a natureza do artefato
+analisado, use `runtime_scope: {}` e deixe `requires_facts` gatear."*
+
+**A pergunta a fazer antes de escrever o escopo:** existe uma versão a partir da qual isto
+passa a valer, declarada por uma fonte? Se não existe, o escopo é `{}`. `{glue: ">=X"}`
+como forma de dizer "isto é sobre Glue" é o defeito — quem diz isso é `requires_facts`.
+
+## Acrescentar uma ÁREA nova (`area:` novo num `rules/catalog/*.yaml`)
+
+Tudo o que uma regra cobra, mais três coisas que só a área cobra:
+
+| gate | o que ele exige | como falhou de verdade |
+|---|---|---|
+| `test_router_agents` | a área **roteia** — entrada própria em `rules/catalog/routing.yaml` | `findings_area` conta por prefixo exato do `rule_id` até o último hífen, então nenhuma contagem de outra área inclui a nova. Declarar a área no `rule_areas` do coordenador **não** roteia: sem entrada `AGENT-*`, os achados caem no fallback |
+| `test_agent_coverage` | algum coordenador declara a área em `rule_areas` | as três áreas de 2026-08-23 exigiram um coordenador cada — e a escolha é de domínio, não de conveniência: `SF-KMS` foi para `sf-security-reviewer`, `SF-NET` para `sf-terraform-specialist`, `SF-XACC` para `sf-lake-formation-specialist` |
+| `test_rule_scope_by_nature` | a área não pode sumir inteira de um runtime | ver a seção de `runtime_scope` acima: é o modo de falha específico da área nova, e não aparece em nenhuma das listas mantidas à mão |
+
+E a decisão que vem antes dos gates: **uma área ou várias?** O eixo do contrato de migração
+é derivado da área (`sparkforge/findings/models.py:area_of`), e um achado move um eixo só.
+Três eixos distintos numa área só os deixaria empatados no mesmo balde — foi por isso que
+`SF-KMS`, `SF-NET` e `SF-XACC` nasceram separadas em vez de uma `SF-PLAT`.
 
 ## Acrescentar ou alterar um EXTRATOR de facts
 
@@ -143,6 +186,14 @@ Se a mudança acrescenta uma fonte à seção `## Fontes`, rode também:
 python scripts/refresh_knowledge.py --update --offline
 python -m pytest tests/test_refresh_knowledge.py -q
 ```
+
+**A watchlist tem DUAS origens, e esta seção só cobre uma.** Ela é derivada da seção
+`## Fontes` dos documentos de `knowledge/` **e** do bloco `sources:` de cada regra do
+catálogo. Quem acrescenta URL numa regra passa por aqui também — a seção de regra, no topo
+deste arquivo, agora nomeia o mesmo comando. Medido em 2026-08-23: três URLs oficiais
+entraram em regras novas, nenhuma entrou no lock, e o desalinhamento só apareceu na suíte
+completa. O gate existe para que o lock não envelheça em silêncio; o gate-map é que estava
+incompleto.
 
 ## Alterar `knowledge/glue/runtime-matrix.yaml`
 
