@@ -3,6 +3,8 @@ name: sf-runtime-specialist
 description: Analisar Glue, EMR, runtimes, capacidade, infraestrutura e compatibilidade entre versoes numa migracao.
 skills:
   - tool-specialist-routing
+  - migrate-glue-6
+  - spark4-compatibility
 rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---

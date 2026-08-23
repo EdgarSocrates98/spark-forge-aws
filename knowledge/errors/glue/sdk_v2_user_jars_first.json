@@ -1,0 +1,33 @@
+{
+  "id": "ERR-GLUE-003",
+  "signature": "NoSuchFieldError",
+  "service": "glue",
+  "versions": ["6.0"],
+  "symptoms": [
+    "Job fails only when --user-jars-first is set",
+    "Missing field, class or method from a software.amazon.awssdk package",
+    "Same JAR worked before the runtime upgrade"
+  ],
+  "likely_causes": [
+    "A custom JAR supplied with --user-jars-first bundles an AWS SDK for Java 2.x older than the 2.44.6 that AWS Glue 6.0 ships, and --user-jars-first puts the older SDK ahead of the runtime's own",
+    "The AWS Glue runtime depends on classes, fields or methods that the bundled SDK does not have"
+  ],
+  "evidence_required": ["mig.jar_binary", "tf.attribute"],
+  "diagnostic_steps": [
+    "Confirm --user-jars-first is set in the job default_arguments",
+    "List the AWS SDK version bundled inside each custom JAR and compare it against 2.44.6",
+    "Check whether the JAR needs to shade the SDK at all, or whether it can rely on the runtime's"
+  ],
+  "fixes": [
+    "Rebuild the custom JAR against AWS SDK for Java 2.x version 2.44.6 or later",
+    "Or stop bundling the SDK inside the JAR and let the runtime supply it, removing the need for --user-jars-first",
+    "Or remove --user-jars-first if it was set for an unrelated reason and is no longer needed"
+  ],
+  "unsafe_fixes": [
+    "Keeping --user-jars-first and pinning the runtime to an older Glue version to match the bundled SDK: it postpones the upgrade without recording why"
+  ],
+  "verification": "Run the job on AWS Glue 6.0 with --user-jars-first still set and the rebuilt JAR, and confirm the field resolves",
+  "rollback": "Remove --user-jars-first so the runtime's own SDK wins the classpath, then re-run",
+  "sources": ["https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"],
+  "last_verified": "2026-08-23"
+}

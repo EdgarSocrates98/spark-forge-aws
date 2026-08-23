@@ -247,6 +247,12 @@ DISPATCHABLE_SKILLS = {
     "analyze-analytics": "Especialista de dominio; despacho por coordenador",
     "analyze-functional-rules": "Especialista de dominio; despacho por coordenador",
     "analyze-graph-data": "Especialista de dominio; despacho por coordenador",
+    # As tres de Glue 6 que LEEM e julgam, sem decisao de terceiro no caminho:
+    # os artefatos (codigo, .tf, requirements, .jar) ja estao em disco, e o
+    # veredito sai do catalogo e da matriz.
+    "migrate-glue-6": "extrai a arvore do job e julga degrau a degrau; leitura fechada",
+    "spark4-compatibility": "julga o codigo e os pins contra a fronteira do Spark 4",
+    "lakeformation-fgac-guard": "correlaciona FGAC e classpath no .tf que ja esta em disco",
 }
 
 NON_DISPATCHABLE_SKILLS = {
@@ -266,6 +272,13 @@ NON_DISPATCHABLE_SKILLS = {
         "PROMPT_INICIAL_MESTRE.md; subagente nao gera subagente por default"
     ),
     # As que precisam de uma decisao que nao esta no repositorio.
+    "iceberg-v3-readiness": (
+        "subir `format-version` e decisao de IDA, e a skill exige o inventario de "
+        "consumidores -- que e conhecimento da organizacao, escrito por uma pessoa, "
+        "nao derivavel de artefato. Dentro de subagente a pergunta 'quem mais le "
+        "esta tabela?' e inalcancavel, e a resposta errada quebra o consumidor dias "
+        "depois"
+    ),
     "optimize-iceberg-table": (
         "`expire_snapshots` e `remove_orphan_files` nao tem desfazer, e a propria "
         "skill exige que a retencao venha do dono dos dados. Dentro de subagente "

@@ -392,6 +392,19 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_p.add_argument(
         "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
     )
+    # Secao 52. Opcionais os dois: comparar duas execucoes no MESMO runtime
+    # continua valendo -- e o caso de medir mudanca de codigo. Rotular um lado
+    # so devolve `missing_runtime_label` nomeando o que falta, e rotular os dois
+    # com o mesmo valor devolve `same_runtime_label`, porque comparar um runtime
+    # consigo mesmo nao prova nada sobre trocar de runtime.
+    benchmark_p.add_argument(
+        "--before-runtime", dest="before_runtime", default="",
+        help="Versao de runtime em que a execucao ANTES rodou (ex.: 5.1).",
+    )
+    benchmark_p.add_argument(
+        "--after-runtime", dest="after_runtime", default="",
+        help="Versao de runtime em que a execucao DEPOIS rodou (ex.: 6.0).",
+    )
     benchmark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     benchmark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     benchmark_p.add_argument("--cursor")
@@ -1211,7 +1224,14 @@ def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
 
 
 def _cmd_benchmark(args: argparse.Namespace) -> int:
-    full = _core.benchmark_runs(args.before, args.after, kind=args.kind, limit=None)
+    full = _core.benchmark_runs(
+        args.before,
+        args.after,
+        kind=args.kind,
+        limit=None,
+        before_runtime=args.before_runtime,
+        after_runtime=args.after_runtime,
+    )
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"

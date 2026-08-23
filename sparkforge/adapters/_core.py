@@ -1242,6 +1242,8 @@ def benchmark_runs(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    before_runtime: str = "",
+    after_runtime: str = "",
 ) -> dict[str, Any]:
     """Compara DOIS arquivos de facts de event log (`analyze event-log --out`)
     e emite os fatos `bench.*`. Funcao pura sobre Facts: nao executa Spark, nao
@@ -1259,10 +1261,21 @@ def benchmark_runs(
     que a comparacao nao se sustenta e o silencio seria indistinguivel de
     "nenhuma diferenca". O `path_hint` e `"<antes>..<depois>"` porque o fato
     afirma sobre o PAR, nao sobre um dos dois arquivos.
+
+    `before_runtime`/`after_runtime` sao os rotulos da secao 52. Opcionais: uma
+    comparacao entre duas execucoes no MESMO runtime continua valendo, e e o
+    caso de medir uma mudanca de codigo. O que eles acrescentam e o eixo que
+    distingue "ficou mais rapido" de "ficou mais rapido AO TROCAR DE RUNTIME".
     """
     before = _load_facts_file(before_path, _FACTS_FROM_EVENT_LOG, "--before")
     after = _load_facts_file(after_path, _FACTS_FROM_EVENT_LOG, "--after")
-    facts = build_benchmark(before, after, path_hint=f"{before_path}..{after_path}")
+    facts = build_benchmark(
+        before,
+        after,
+        path_hint=f"{before_path}..{after_path}",
+        before_runtime=before_runtime,
+        after_runtime=after_runtime,
+    )
     return _facts_page(facts, "bench.unresolved", kind, limit, cursor)
 
 

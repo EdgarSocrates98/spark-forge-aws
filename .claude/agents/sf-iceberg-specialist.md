@@ -4,6 +4,7 @@ description: Otimizar Apache Iceberg.
 tools: Read, Grep, Glob, Bash
 skills:
   - optimize-iceberg-tables
+  - iceberg-v3-readiness
 rule_areas: [SF-ICEBERG, SF-STORAGE, SF-TRANSACTION]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---

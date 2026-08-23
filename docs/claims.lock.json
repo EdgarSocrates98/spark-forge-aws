@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "7fd60111b2eb84901785368a565e362452496d72",
+  "extracted_from": "b01115a36bbc3d2aab1b9cb232347e4faf846b96",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -195,8 +195,8 @@
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
       "line": 53,
-      "text": "40",
-      "context": "| **Skills** | 40 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
+      "text": "44",
+      "context": "| **Skills** | 44 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
       "type": "number",
       "id": "VNX-053",
       "state": "PROVADA",
@@ -207,9 +207,10 @@
         "expect": {
           "kind": "number",
           "pattern": "(\\d+) skills",
-          "value": 40
+          "value": 44
         }
-      }
+      },
+      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao."
     },
     {
       "doc": "docs/vnext/CURRENT-STATE.md",
@@ -2977,8 +2978,8 @@
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "132,0",
-      "context": "Confirmado por tamanho: `tools.py` (132,0 KB) e `_core.py` (123,2 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "133,0",
+      "context": "Confirmado por tamanho: `tools.py` (133,0 KB) e `_core.py` (127,6 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-431",
       "state": "PROVADA",
@@ -2989,15 +2990,15 @@
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "132,0"
+          "value": "133,0"
         }
       }
     },
     {
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
-      "text": "127,6",
-      "context": "Confirmado por tamanho: `tools.py` (126,8 KB) e `_core.py` (127,6 KB) são, disparado, os dois maiores arquivos do pacote",
+      "text": "128,1",
+      "context": "Confirmado por tamanho: `tools.py` (132,0 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-322",
       "state": "PROVADA",
@@ -3008,7 +3009,7 @@
         "tier": "fast",
         "expect": {
           "kind": "contains",
-          "value": "127,6"
+          "value": "128,1"
         }
       }
     },
@@ -3016,7 +3017,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "713",
-      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (132,0 KB) e `_core.py` (127,6 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-324",
       "state": "PROVADA",
@@ -3036,7 +3037,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "539",
-      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (132,0 KB) e `_core.py` (127,6 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-325",
       "state": "PROVADA",
@@ -3056,7 +3057,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "227",
-      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (132,0 KB) e `_core.py` (127,6 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-326",
       "state": "PROVADA",
@@ -3076,7 +3077,7 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "line": 83,
       "text": "1479",
-      "context": "Confirmado por tamanho: `tools.py` (121,7 KB) e `_core.py` (120,7 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (132,0 KB) e `_core.py` (127,6 KB) são, disparado, os dois maiores arquivos do pacote",
       "type": "number",
       "id": "VNX-327",
       "state": "PROVADA",
@@ -3500,6 +3501,63 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 82,
+      "text": "2.12",
+      "context": "| `forge glue dependency-audit` (§16) | EXISTE, com teste | Fase H4: `sparkforge glue dependency-audit <dir> --glue X` l",
+      "type": "number",
+      "id": "VNX-448",
+      "state": "PROVADA",
+      "note": "A fronteira binaria citada na linha e a de Glue 5.1, cuja versao de Scala a matriz de runtime declara com fonte.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(runtime_matrix.load()[\"5.1\"][\"scala\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "2.12"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 82,
+      "text": "5.1",
+      "context": "| `forge glue dependency-audit` (§16) | EXISTE, com teste | Fase H4: `sparkforge glue dependency-audit <dir> --glue X` l",
+      "type": "number",
+      "id": "VNX-449",
+      "state": "PROVADA",
+      "note": "Versao conhecida da matriz de runtime, com fonte e data.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "5.1"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 82,
+      "text": "6.0",
+      "context": "| `forge glue dependency-audit` (§16) | EXISTE, com teste | Fase H4: `sparkforge glue dependency-audit <dir> --glue X` l",
+      "type": "number",
+      "id": "VNX-379",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 84,
       "text": "1.11",
       "context": "## 7. Iceberg 1.11 e spec v3 (§17 a §24, §47 a §50)",
@@ -3599,7 +3657,7 @@
       "text": "6.0",
       "context": "| Domínio `iceberg-v3`, Variant, deletion vectors e row lineage (§18, §21, §22, §23) | EXISTE PARCIAL | `knowledge/stora",
       "type": "number",
-      "id": "VNX-379",
+      "id": "VNX-382",
       "state": "PROVADA",
       "note": "classificacao pendente",
       "proof": {
@@ -3614,11 +3672,87 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 93,
+      "text": "2",
+      "context": "| `forge iceberg assess-upgrade` de formato v2 para v3 (§24) | EXISTE, com teste | Fase H4: `sparkforge iceberg assess-u",
+      "type": "number",
+      "id": "VNX-450",
+      "state": "PROVADA",
+      "note": "Versao de spec que a matriz de feature sabe classificar -- vocabulario fechado, validado pelo carregador.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.storage import feature_support; print(\" \".join(str(v) for v in sorted(feature_support.SPEC_VERSIONS)))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "2"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 93,
+      "text": "3",
+      "context": "| `forge iceberg assess-upgrade` de formato v2 para v3 (§24) | EXISTE, com teste | Fase H4: `sparkforge iceberg assess-u",
+      "type": "number",
+      "id": "VNX-451",
+      "state": "PROVADA",
+      "note": "Mesma origem de VNX-450: o vocabulario fechado de versao de spec.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.storage import feature_support; print(\" \".join(str(v) for v in sorted(feature_support.SPEC_VERSIONS)))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "3"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 122,
       "text": "6.0",
       "context": "| Finding de migração de runtime detectada (§64) | EXISTE, com teste | `SF-MIG-004`, em `rules/catalog/glue-migration.ya",
       "type": "number",
-      "id": "VNX-382",
+      "id": "VNX-383",
+      "state": "PROVADA",
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 131,
+      "text": "30%",
+      "context": "| Conhecimento de preço com data e região (§51) | EXISTE, com teste | Fase H5: `knowledge/glue/pricing.yaml` traz o preç",
+      "type": "number",
+      "id": "VNX-452",
+      "state": "PROVADA",
+      "note": "O numero entra COMO ANUNCIO, nunca como preco calculado: `knowledge/glue/pricing.yaml` guarda a afirmacao com fonte, `retrieved` e `baseline` vazio, porque a fonte nao nomeia a versao de comparacao.",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from sparkforge.facts import pricing; print(\" \".join(a[\"claim\"] for a in pricing.announcements()))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "30%"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 131,
+      "text": "6.0",
+      "context": "| Conhecimento de preço com data e região (§51) | EXISTE, com teste | Fase H5: `knowledge/glue/pricing.yaml` traz o preç",
+      "type": "number",
+      "id": "VNX-384",
       "state": "PROVADA",
       "note": "classificacao pendente",
       "proof": {
@@ -3675,9 +3809,9 @@
       "text": "6.0",
       "context": "| Suítes de cenário para os pares com alvo Glue 6.0 (§38, §39) | EXISTE PARCIAL | `fixtures/scenarios/` traz cenário por",
       "type": "number",
-      "id": "VNX-383",
+      "id": "VNX-421",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "O texto que continha esta alegacao foi reescrito quando a lacuna que ele descrevia foi fechada: a frase dizia que a matriz escolhia uma fonte para a versao de Python do Glue 6.0 e explicava isso num comentario de YAML onde nenhum gate le. Agora o registro esta na forma longa, com as tres fontes e status VERIFIED, e a frase nova nao repete o numero da versao de Glue. ATUALIZACAO (fase H5, 2026-08-23): a alegacao e ancorada por (documento, linha, texto), e as linhas do mapa andaram quando as lacunas de H3, H4 e H5 foram fechadas. A linha 150 passou a carregar outra ocorrencia de `6.0` -- a das suites de cenario --, que e viva e provavel pela mesma matriz de runtime das irmas VNX-379, VNX-382, VNX-383 e VNX-384. A frase que esta alegacao removeu continua removida; o que muda e que este ponto do documento agora afirma outra coisa, e afirma com lastro.",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
@@ -3694,9 +3828,9 @@
       "text": "6.0",
       "context": "| ADR de suporte a Glue 6.0 (§83) | EXISTE PARCIAL | `docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md` registra as ",
       "type": "number",
-      "id": "VNX-384",
+      "id": "VNX-453",
       "state": "PROVADA",
-      "note": "classificacao pendente",
+      "note": "Versao conhecida da matriz de runtime, com fonte e data.",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(\" \".join(runtime_matrix.known_versions()))'",
@@ -4412,6 +4546,21 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 82,
+      "text": "`forge glue dependency-audit` (§16)",
+      "context": "| `forge glue dependency-audit` (§16) | EXISTE, com teste | Fase H4: `sparkforge glue dependency-audit <dir> --glue X` l",
+      "type": "capability",
+      "id": "VNX-454",
+      "state": "PROVADA",
+      "note": "Fase H4: o verbo existe na CLI, com teste que mede a listagem do pin observado, o runtime que julgou e a recusa sem `--glue`.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/adapters/cli.py",
+        "test": "tests/test_cli_h4.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 88,
       "text": "Diagnóstico de tabela Iceberg",
       "context": "| Diagnóstico de tabela Iceberg | EXISTE, com teste | `sparkforge/iceberg/doctor.py:IcebergTableDoctor` devolve `format_",
@@ -4487,6 +4636,21 @@
     },
     {
       "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 93,
+      "text": "`forge iceberg assess-upgrade` de formato v2 para v3 (§24)",
+      "context": "| `forge iceberg assess-upgrade` de formato v2 para v3 (§24) | EXISTE, com teste | Fase H4: `sparkforge iceberg assess-u",
+      "type": "capability",
+      "id": "VNX-455",
+      "state": "PROVADA",
+      "note": "Fase H4: o verbo existe na CLI sobre `sparkforge/storage/upgrade.py`, e o teste mede os quatro vereditos mais a recusa de alvo anterior a origem.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/storage/upgrade.py",
+        "test": "tests/test_cli_h4.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
       "line": 94,
       "text": "Iceberg Doctor v2 com prontidão para v3 (§50)",
       "context": "| Iceberg Doctor v2 com prontidão para v3 (§50) | EXISTE PARCIAL | O relatório existe e carrega `format_version`; pronti",
@@ -4513,6 +4677,21 @@
         "kind": "artifact",
         "path": "sparkforge/facts/consumers.py",
         "test": "tests/test_facts_consumers.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 101,
+      "text": "Bloqueio por consumidor incompatível (§25)",
+      "context": "| Bloqueio por consumidor incompatível (§25) | EXISTE, com teste | Fase H3: `sparkforge/storage/upgrade.py` cruza o inve",
+      "type": "capability",
+      "id": "VNX-456",
+      "state": "PROVADA",
+      "note": "Fase H3: o cruzamento entre inventario declarado e matriz de suporte fecha o eixo `consumidor` de `assess()`. E gate, nao regra nova, e ha teste que mede que o caso ja coberto por SF-ENV-002 nao acusa duas vezes.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/storage/upgrade.py",
+        "test": "tests/test_storage_upgrade.py"
       }
     },
     {
@@ -4611,7 +4790,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 113,
       "text": "Pipeline nomeado da §32",
-      "context": "| Pipeline nomeado da §32 | EXISTE PARCIAL | As etapas existentes são as regras `SF-MIG` mais os gates de compatibilidad",
+      "context": "| Pipeline nomeado da §32 | EXISTE PARCIAL | Fase H2: o contrato passou a nomear os eixos que faltavam. `lakeformation` ",
       "type": "capability",
       "id": "VNX-408",
       "state": "PROVADA",
@@ -4626,7 +4805,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 114,
       "text": "Entradas opcionais da §31 (Terraform, JAR, topologia de Lake Formation, inventário de consumidores)",
-      "context": "| Entradas opcionais da §31 (Terraform, JAR, topologia de Lake Formation, inventário de consumidores) | EXISTE PARCIAL |",
+      "context": "| Entradas opcionais da §31 (Terraform, JAR, topologia de Lake Formation, inventário de consumidores) | EXISTE, com test",
       "type": "capability",
       "id": "VNX-409",
       "state": "PROVADA",
@@ -4727,6 +4906,36 @@
         "path": "sparkforge/migration/assessment.py",
         "test": "tests/test_migration_assessment.py",
         "symbol": "test_gate_sem_evidencia_e_blocked_nunca_pass"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 131,
+      "text": "Conhecimento de preço com data e região (§51)",
+      "context": "| Conhecimento de preço com data e região (§51) | EXISTE, com teste | Fase H5: `knowledge/glue/pricing.yaml` traz o preç",
+      "type": "capability",
+      "id": "VNX-457",
+      "state": "PROVADA",
+      "note": "Fase H5: preco por DPU-hora com fonte, `retrieved`, regiao e versao de runtime -- as duas ultimas como UNQUALIFIED, porque a fonte publica um numero so.",
+      "proof": {
+        "kind": "artifact",
+        "path": "knowledge/glue/pricing.yaml",
+        "test": "tests/test_glue_pricing.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 132,
+      "text": "Benchmark parametrizado por versão de runtime (§52)",
+      "context": "| Benchmark parametrizado por versão de runtime (§52) | EXISTE, com teste | Fase H5: `build_benchmark(..., before_runtim",
+      "type": "capability",
+      "id": "VNX-458",
+      "state": "PROVADA",
+      "note": "Fase H5: `bench.runtime_pair` sai quando os dois lados sao runtimes diferentes; um rotulo so devolve `missing_runtime_label` e dois iguais devolvem `same_runtime_label`.",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/benchmark.py",
+        "test": "tests/test_facts_benchmark.py"
       }
     },
     {
@@ -4951,16 +5160,6 @@
           "value": 7
         }
       }
-    },
-    {
-      "doc": "docs/harness/GLUE6-GAP.md",
-      "line": 169,
-      "text": "6.0",
-      "context": "aqui: a matriz escolheu uma fonte para a versão de Python do Glue 6.0 e explicou isso num",
-      "type": "number",
-      "id": "VNX-421",
-      "state": "REMOVIDA",
-      "note": "O texto que continha esta alegacao foi reescrito quando a lacuna que ele descrevia foi fechada: a frase dizia que a matriz escolhia uma fonte para a versao de Python do Glue 6.0 e explicava isso num comentario de YAML onde nenhum gate le. Agora o registro esta na forma longa, com as tres fontes e status VERIFIED, e a frase nova nao repete o numero da versao de Glue."
     },
     {
       "doc": "docs/harness/BASELINE.md",

@@ -3,6 +3,7 @@ name: sf-iceberg-specialist
 description: Otimizar Apache Iceberg.
 skills:
   - optimize-iceberg-tables
+  - iceberg-v3-readiness
 rule_areas: [SF-ICEBERG, SF-STORAGE, SF-TRANSACTION]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---

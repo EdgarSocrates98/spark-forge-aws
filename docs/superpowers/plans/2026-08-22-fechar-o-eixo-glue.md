@@ -183,7 +183,7 @@ Commit: `feat(migration): assessment compoe os artefatos do job e nomeia os eixo
 
 **Files:** `sparkforge/migration/assessment.py` ou regra nova, `sparkforge/storage/feature_support.py`, `rules/catalog/`
 
-- [ ] **Step 1: decidir a forma, e registrar a decisão**
+- [x] **Step 1: decidir a forma, e registrar a decisão**
 
 Duas formas possíveis, e a escolha precisa estar escrita:
 1. **Regra do catálogo** que correlaciona `env.consumer` com `iceberg.table_property` (`format-version`) — segue o padrão de `SF-ENV-002`, que já faz exatamente isso para Athena.
@@ -191,11 +191,11 @@ Duas formas possíveis, e a escolha precisa estar escrita:
 
 A forma 1 é a do repositório e não cria camada. Prefira-a, a menos que meça razão para a outra — e então escreva a razão.
 
-- [ ] **Step 2: generalizar sem duplicar `SF-ENV-002`**
+- [x] **Step 2: generalizar sem duplicar `SF-ENV-002`**
 
 `SF-ENV-002` já cobre Athena × format v3. A regra nova precisa cobrir o que ela **não** cobre, sem acusar duas vezes o mesmo caso. Meça: com um `env.consumer` de Athena e uma tabela v3, quantos achados saem? Se saírem dois, a regra nova está errada.
 
-- [ ] **Step 3: golden e gates**
+- [x] **Step 3: golden e gates**
 
 Fixture com inventário de consumidores mais tabela em v3. Gates de regra nova, os mesmos de `docs/gates-por-mudanca.md`.
 
@@ -205,8 +205,8 @@ Commit: `feat(rules): consumidor incompativel bloqueia a recomendacao`.
 
 ## H4 — as duas CLIs que faltam
 
-- [ ] **`forge glue dependency-audit` (§16).** Entrada: diretório. Lê `mig.python_dep` (que já carrega `major`) e `mig.jar_binary` (que já carrega `scala_minor`), julga com o catálogo e devolve pins, conflitos e risco de ABI. O motor existe; é composição de CLI.
-- [ ] **`forge iceberg assess-upgrade --from 2 --to 3` (§24).** Consulta `sparkforge/storage/feature_support.py` para as engines do inventário de consumidores e devolve `SAFE`/`CONDITIONAL`/`BLOCKED`/`UNRESOLVED`. **Nunca executa o upgrade** — a §94 do prompt é explícita.
+- [x] **`forge glue dependency-audit` (§16).** Entrada: diretório. Lê `mig.python_dep` (que já carrega `major`) e `mig.jar_binary` (que já carrega `scala_minor`), julga com o catálogo e devolve pins, conflitos e risco de ABI. O motor existe; é composição de CLI.
+- [x] **`forge iceberg assess-upgrade --from 2 --to 3` (§24).** Consulta `sparkforge/storage/feature_support.py` para as engines do inventário de consumidores e devolve `SAFE`/`CONDITIONAL`/`BLOCKED`/`UNRESOLVED`. **Nunca executa o upgrade** — a §94 do prompt é explícita.
 
 Cada uma com teste de CLI no molde de H1. Commits separados.
 
@@ -214,8 +214,8 @@ Cada uma com teste de CLI no molde de H1. Commits separados.
 
 ## H5 — preço e benchmark
 
-- [ ] **Preço (§51).** Pesquisar a página oficial de pricing do AWS Glue e registrar como conhecimento com `retrieved`, região e tipo de worker. **Não codificar "-30%"**: o prompt proíbe explicitamente, e preço muda. Se a fonte não separar preço por versão de runtime, diga isso em vez de inferir.
-- [ ] **Benchmark por runtime (§52).** `sparkforge/facts/benchmark.py` já compara execuções. Falta parametrizar por versão de runtime e recusar comparação sem as duas execuções — sem baseline não há prova de melhoria, e o repositório já tem gate com essa forma (`missing_evidence`).
+- [x] **Preço (§51).** Pesquisar a página oficial de pricing do AWS Glue e registrar como conhecimento com `retrieved`, região e tipo de worker. **Não codificar "-30%"**: o prompt proíbe explicitamente, e preço muda. Se a fonte não separar preço por versão de runtime, diga isso em vez de inferir.
+- [x] **Benchmark por runtime (§52).** `sparkforge/facts/benchmark.py` já compara execuções. Falta parametrizar por versão de runtime e recusar comparação sem as duas execuções — sem baseline não há prova de melhoria, e o repositório já tem gate com essa forma (`missing_evidence`).
 
 **Escreva no relatório o que a fonte não sustentar.** Preço 30% menor não é performance 30% maior, e a §52 manda medir as duas coisas separadamente.
 
@@ -223,11 +223,11 @@ Cada uma com teste de CLI no molde de H1. Commits separados.
 
 ## H6 — skills e conhecimento de erro
 
-- [ ] **Skills (§9, §72).** O mapa mandava não criar skill enquanto o conhecimento não existisse como dado. Ele existe agora (`spark4-migration.md`, `iceberg-v3.md`, `lakeformation-fgac.md`, `runtime-matrix.yaml`, `iceberg-feature-support.yaml`).
+- [x] **Skills (§9, §72).** O mapa mandava não criar skill enquanto o conhecimento não existisse como dado. Ele existe agora (`spark4-migration.md`, `iceberg-v3.md`, `lakeformation-fgac.md`, `runtime-matrix.yaml`, `iceberg-feature-support.yaml`).
 
 **Não faça as quarenta.** Faça as que têm conhecimento por trás e superfície de uso: migração para Glue 6, compatibilidade de Spark 4, Iceberg v3, FGAC. Cada uma com `SKILL.md` curto e referências sob demanda, que é o disclosure progressivo da §72. Cada skill nova cobra `scripts/sync_skills.py`, `tests/test_agents_parity.py`, `tests/test_sync_render.py`, `tests/test_skill_content.py` e `manifest.json`.
 
-- [ ] **Conhecimento de erro (§79).** `knowledge/errors/` já existe com subdiretórios por domínio. Acrescentar só erro **observado em fonte oficial** — a §79 proíbe inventar erro hipotético como conhecido. Os que esta sessão já mediu, com texto exato: `Cannot read unsupported version 3` (Athena sobre tabela v3), `NoSuchMethodError`/`ClassNotFoundException` (JAR Scala 2.12 sob Spark 4), `NoSuchFieldError` (SDK v2 antigo com `--user-jars-first`).
+- [x] **Conhecimento de erro (§79).** `knowledge/errors/` já existe com subdiretórios por domínio. Acrescentar só erro **observado em fonte oficial** — a §79 proíbe inventar erro hipotético como conhecido. Os que esta sessão já mediu, com texto exato: `Cannot read unsupported version 3` (Athena sobre tabela v3), `NoSuchMethodError`/`ClassNotFoundException` (JAR Scala 2.12 sob Spark 4), `NoSuchFieldError` (SDK v2 antigo com `--user-jars-first`).
 
 ---
 

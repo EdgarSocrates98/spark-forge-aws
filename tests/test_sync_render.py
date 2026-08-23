@@ -217,6 +217,12 @@ SKILL_DIRS = tuple(sorted(p for p in SKILLS.iterdir() if p.is_dir()))
 # relacao apareca como diff aqui, em vez de mudar `agent:` no espelho em
 # silencio.
 RELACAO_MEDIDA = {
+    # As quatro de Glue 6 entraram na fase H6, cada uma com UM coordenador so:
+    # a fronteira que cada skill cobre e a mesma que separa os coordenadores.
+    "iceberg-v3-readiness": ("sf-iceberg-specialist",),
+    "lakeformation-fgac-guard": ("sf-lake-formation-specialist",),
+    "migrate-glue-6": ("sf-runtime-specialist",),
+    "spark4-compatibility": ("sf-runtime-specialist",),
     "analyze-batch-loop": (
         "glue-incremental-performance-architect",
         "pyspark-code-reviewer",
@@ -756,6 +762,12 @@ class TestSkillsReais:
             if "agent" in front:
                 com_agent[skill.name] = front["agent"]
         assert com_agent == {
+            # As tres despachaveis de Glue 6 com coordenador unico. A quarta,
+            # `iceberg-v3-readiness`, e NAO despachavel -- exige o inventario de
+            # consumidores, que e conhecimento da organizacao.
+            "lakeformation-fgac-guard": "sf-lake-formation-specialist",
+            "migrate-glue-6": "sf-runtime-specialist",
+            "spark4-compatibility": "sf-runtime-specialist",
             "analyze-graph-data": "sf-graph-specialist",
             "review-emr-cluster": "emr-infra-reviewer",
             "verify-agent-evidence": "sf-evidence-verifier",

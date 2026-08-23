@@ -2516,6 +2516,118 @@ agrupamento para dizer qual eixo um achado move. Promovido para
 `sparkforge/findings/models.py::area_of`, com um chamador a menos do que duas cópias.
 
 
+### Continuação — fase H3, o consumidor que bloqueia (2026-08-23)
+
+O inventário de consumidores existia. A matriz de suporte de feature existia. Nada cruzava as
+duas, e por isso nada impedia recomendar Iceberg format v3 para quem tem Athena consumindo.
+
+**A forma escolhida não foi a que o plano preferia, e a razão está medida.** O plano pedia uma
+regra do catálogo — o padrão do repositório — e ela foi tentada primeiro. O avaliador de `expr`
+tem whitelist de nós AST sem `Call` e sem `In`, e `where` compara igualdade: não há como
+escrever "serviço que a matriz não declara suportado" numa condição. A alternativa seria uma
+regra por engine, cada uma repetindo em YAML o que a matriz já diz com `source`, `source_type`
+e `retrieved` — e a matriz existe precisamente porque suporte é dado com procedência e versão.
+
+**E é por isso que não duplica.** `sparkforge/storage/upgrade.py` não emite `Finding` nenhum:
+alimenta um **gate**. `SF-ENV-002` continua sendo o achado P0 do caso documentado, com o erro
+textual `Cannot read unsupported version 3`. Um caso de Athena com tabela v3 produz **um**
+achado e um gate fechado — nunca dois achados para o mesmo problema, que é exatamente o que o
+plano mandava medir.
+
+**Vocabulário fechado, com precedência escrita.** `BLOCKED` vence `UNRESOLVED` porque já existe
+fonte dizendo não, e não há o que resolver. `UNRESOLVED` vence `CONDITIONAL` e `SAFE` porque
+desconhecimento não pode ser absorvido por uma célula boa de outra engine. Inventário vazio
+devolve `UNRESOLVED`, nunca `SAFE`.
+
+**A garantia da §94 é estrutural, não textual.** O módulo não importa `boto3`, `botocore`,
+`subprocess`, `os` nem `pyspark`, e o teste mede isso pelos *imports*. A primeira versão do
+teste procurava substring na fonte e quebrava na palavra "subprocesso" dentro de uma frase
+honesta — teste que confunde prosa com chamada não mede o que diz medir.
+
+### Continuação — fase H4, as duas entradas que faltavam (2026-08-23)
+
+Nenhuma constrói julgamento novo. `sparkforge glue dependency-audit <dir> --glue X` lê
+`mig.python_dep` e `mig.jar_binary` e julga com o mesmo catálogo; o que acrescenta é a **visão**
+— a dependência observada ao lado do achado que ela produziu, e o runtime que decidiu quais
+regras avaliaram. `--glue` é obrigatório e sem default: risco de ABI não existe em abstrato.
+
+`sparkforge iceberg assess-upgrade <dir> --from 2 --to 3` devolve o veredito **com as células
+consultadas e a fonte de cada uma** — veredito sem elas seria uma palavra que ninguém consegue
+conferir. `--from` só recusa o que não é upgrade; quem decide é a matriz da versão alvo.
+
+**Os dois foram no mesmo commit, e o plano pedia separados.** A razão: `tests/test_capability_parity.py`
+cobra tool MCP para todo verbo de CLI, e as duas tools entram no mesmo `manifest.json` e no mesmo
+`parity.yaml`. Separar deixaria o gate de paridade vermelho no commit do meio — commit que não
+passa no próprio gate do repositório não é entrega menor, é entrega quebrada.
+
+Duas tools novas (44 no total), citadas em `sf-runtime-specialist` e `sf-iceberg-specialist`,
+que é o que `tests/test_agent_coverage.py` cobra de toda tool.
+
+### Continuação — fase H5, preço e benchmark por runtime (2026-08-23)
+
+**Preço.** `knowledge/glue/pricing.yaml` guarda o preço publicado por DPU-hora com `source`,
+`source_type`, `retrieved`, região e versão de runtime. As duas últimas são `UNQUALIFIED`, e
+esse é o achado da fase: a página oficial de pricing publica **um** preço e **não** diferencia
+por versão de runtime, e não serve a tabela por região no HTML. Escrever `us-east-1` porque é o
+default comum seria precisão fabricada.
+
+A redução de 30% anunciada para o Glue 6.0 entra como **anúncio com fonte**, em lista separada,
+com `baseline` vazio — a fonte diz "compared to previous AWS Glue versions" sem nomear qual.
+Não existe função que combine as duas listas, e `differentiates_by_runtime_version()` devolve
+`False` como **resultado**, não como lacuna. O prompt proíbe codificar "-30%"; o que o
+repositório faz é registrar as duas afirmações oficiais e dizer que elas não se resolvem uma na
+outra.
+
+**Benchmark.** `build_benchmark` ganhou `before_runtime`/`after_runtime`. Dois rótulos
+diferentes emitem `bench.runtime_pair` — o único fato que sustenta uma afirmação sobre
+migração. Dois rótulos iguais emitem `same_runtime_label`, porque comparar um runtime consigo
+mesmo não prova nada sobre trocar de runtime. Um rótulo só emite `missing_runtime_label`
+nomeando o lado que falta, e os deltas continuam saindo: o que fica sem lastro é o eixo, não a
+comparação. **Sem rótulo nenhum não emite nada** — responder "falta" a uma pergunta que ninguém
+fez é ruído, e essa escolha manteve os goldens existentes byte-idênticos.
+
+**Dois gates que a rodada dirigida não alcançou, e o que eles ensinaram.** A suíte completa
+acusou `bench.runtime_pair` sem fixture: `tests/test_fixtures_kind_coverage.py` cobra que todo
+kind de `EMITTED_KINDS` nasça em algum golden. A fixture nova, `fixtures/bench/migracao_entre_runtimes/`,
+reusa os event logs de `clean_improvement` de propósito — o que ela prova não é uma medida
+nova, é o **rótulo**, e mudar também os logs misturaria as duas variáveis.
+
+O segundo foi o schema: o `type` de `subject` é vocabulário **fechado**, e `runtime_pair` não
+está nele. O fato passou a usar `job_run`, que é o que os outros `bench.*` já usam e o que
+descreve a coisa — o fato afirma sobre o par de execuções. O par de runtimes entra no `symbol`
+porque `Fact.id` é sha de `(kind, subject, measures)` e `attrs` fica de fora: sem isso, dois
+pares diferentes teriam o mesmo id. Na mesma passada, `_unresolved_subject` virou
+`_job_run_subject` — o nome antigo descrevia o único chamador da época, não o que a função faz,
+e nome que descreve o chamador envelhece no segundo chamador.
+
+### Continuação — fase H6, skills e conhecimento de erro (2026-08-23)
+
+**Quatro skills, não quarenta.** `migrate-glue-6`, `spark4-compatibility`,
+`iceberg-v3-readiness` e `lakeformation-fgac-guard` — as que têm conhecimento por trás e
+superfície de uso. Cada uma é `SKILL.md` curto com referência sob demanda para `knowledge/` e
+`docs/aws/glue/6.0/`, que é o disclosure progressivo da §72.
+
+**A decisão de despacho de cada uma é declarada, não default.** Três são despacháveis: leem
+artefato que já está em disco e o veredito sai do catálogo. `iceberg-v3-readiness` é **não
+despachável**, e a razão está escrita: subir `format-version` é decisão de ida e a skill exige o
+inventário de consumidores, que é conhecimento da organização, escrito por uma pessoa, e não
+derivável de artefato. Dentro de subagente a pergunta "quem mais lê esta tabela?" é
+inalcançável, e a resposta errada quebra o consumidor dias depois.
+
+**Conhecimento de erro, só o observado.** Três entradas novas em `knowledge/errors/`, com o
+texto exato do Developer Guide de migração para o Glue 6.0: `NoSuchMethodError` /
+`ClassNotFoundException` (JAR de Scala 2.12 sob runtime 2.13), `NoSuchFieldError` (AWS SDK v2
+anterior a 2.44.6 com `--user-jars-first`) e `Cannot read unsupported version 3` (Athena sobre
+tabela Iceberg v3). A §79 proíbe inventar erro hipotético como conhecido, e o teste novo cobra
+`sources` e `last_verified` de toda entrada do diretório — inclusive das três que já existiam.
+
+**Uma alegação estava presa a uma linha que andou.** `VNX-421` era `REMOVIDA` e ancorada em
+`(documento, linha, texto)`; as linhas do mapa andaram quando H3, H4 e H5 fecharam suas lacunas,
+e a linha 150 passou a carregar outra ocorrência de `6.0`. A frase que a alegação removeu
+continua removida — o que mudou é que aquele ponto do documento agora afirma outra coisa, e
+afirma com lastro, provada pela mesma matriz de runtime das irmãs.
+
+
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
 Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.

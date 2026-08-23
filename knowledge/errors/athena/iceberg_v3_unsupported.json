@@ -1,0 +1,32 @@
+{
+  "id": "ERR-ATH-001",
+  "signature": "Cannot read unsupported version 3",
+  "service": "athena",
+  "versions": ["*"],
+  "symptoms": [
+    "Athena SQL query fails on an Iceberg table that Spark reads without any problem",
+    "The failure starts days after a Glue runtime migration, with no change to the query",
+    "Dashboards and saved queries break while the ETL job keeps reporting success"
+  ],
+  "likely_causes": [
+    "The table was created or rewritten with 'format-version'='3'; Athena SQL does not read Iceberg format version 3",
+    "A Glue 5.1 or 6.0 job wrote the table and the format version was not pinned"
+  ],
+  "evidence_required": ["iceberg.table_property", "env.consumer"],
+  "diagnostic_steps": [
+    "Read the table's format-version property from the Iceberg metadata",
+    "Check the declared consumer inventory for the table: sparkforge iceberg assess-upgrade <dir> --from 2 --to 3",
+    "Identify which job wrote the table and on which Glue version it ran"
+  ],
+  "fixes": [
+    "Pin 'format-version'='2' on the table property for cross-engine compatibility with Athena",
+    "Or keep v3 and move the Athena consumers to an engine that reads it, with the owners of those consumers agreeing to the change first"
+  ],
+  "unsafe_fixes": [
+    "Assuming the format version can be lowered in place after writes in v3: reverting is not trivially safe, and the move to v3 has to be treated as a one-way decision until the Iceberg version in use documents otherwise"
+  ],
+  "verification": "Run a smoke-test query in Athena over the table and confirm it returns rows",
+  "rollback": "There is no in-place rollback of the format version. Recreate the table at 'format-version'='2' from the source data, then repoint the consumers",
+  "sources": ["https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"],
+  "last_verified": "2026-08-23"
+}

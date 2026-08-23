@@ -2159,7 +2159,8 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "Compara DUAS execucoes a partir dos facts de event log de cada uma "
             "(`sparkforge_analyze_event_log` gravado em disco), e emite `bench.run_delta`, "
-            "`bench.stage_delta`, `bench.unmatched`, `bench.analyzed` e `bench.unresolved`. "
+            "`bench.stage_delta`, `bench.unmatched`, `bench.analyzed`, `bench.runtime_pair` "
+            "e `bench.unresolved`. "
             "Verbo de topo, nao um `analyze`: nao extrai nada de artefato, compara dois "
             "conjuntos ja extraidos. "
             "O QUE ELE RECUSA AFIRMAR, e isso importa mais que o que ele afirma: "
@@ -2194,6 +2195,22 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "Arquivo de facts da execucao DEPOIS, gerado por "
                         "`sparkforge_analyze_event_log`."
                     ),
+                },
+                "before_runtime": {
+                    "type": "string",
+                    "description": (
+                        "Versao de runtime em que a execucao ANTES rodou. Opcional: "
+                        "comparar duas execucoes no MESMO runtime continua valendo, e "
+                        "e o caso de medir mudanca de codigo. Rotular OS DOIS lados "
+                        "com valores diferentes emite `bench.runtime_pair`, que e o "
+                        "unico fato que sustenta uma afirmacao sobre MIGRACAO; rotular "
+                        "um lado so emite `missing_runtime_label`, e rotular os dois "
+                        "com o mesmo valor emite `same_runtime_label`."
+                    ),
+                },
+                "after_runtime": {
+                    "type": "string",
+                    "description": "Versao de runtime em que a execucao DEPOIS rodou.",
                 },
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
@@ -3032,6 +3049,8 @@ def _h_benchmark(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        before_runtime=args.get("before_runtime", ""),
+        after_runtime=args.get("after_runtime", ""),
     )
 
 

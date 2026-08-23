@@ -467,7 +467,17 @@ def regen_bench(directory: Path) -> None:
     input_dir = directory / "input"
     before = extract_event_log_path(input_dir / "before.jsonl", repo_root=input_dir)
     after = extract_event_log_path(input_dir / "after.jsonl", repo_root=input_dir)
-    facts = build_benchmark(before, after, path_hint=directory.name)
+    # Os rotulos de runtime sao OPCIONAIS no `meta.yaml`, e so um diretorio os
+    # declara: comparar duas execucoes no mesmo runtime continua valendo, e e o
+    # que os outros cinco medem. Passa-los sempre vazios mantem os goldens
+    # existentes byte-identicos.
+    facts = build_benchmark(
+        before,
+        after,
+        path_hint=directory.name,
+        before_runtime=str(meta.get("before_runtime", "")),
+        after_runtime=str(meta.get("after_runtime", "")),
+    )
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 

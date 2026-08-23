@@ -81,6 +81,7 @@ EMITTED_KINDS = frozenset(
         "bench.stage_delta",
         "bench.unmatched",
         "bench.analyzed",
+        "bench.runtime_pair",
         "bench.unresolved",
     }
 )
@@ -174,11 +175,15 @@ def _run_subject(path_hint: str) -> dict[str, Any]:
     return {"type": "job_run", "symbol": path_hint or "benchmark"}
 
 
-def _unresolved_subject(path_hint: str, detail: str) -> dict[str, Any]:
-    """Subject proprio por motivo. `Fact.id` e sha1 de (kind, subject,
-    measures) -- `attrs` fica FORA --, entao dois `bench.unresolved` com o mesmo
-    subject e sem measures teriam o mesmo id e seriam indistinguiveis na
-    saida."""
+def _job_run_subject(path_hint: str, detail: str) -> dict[str, Any]:
+    """Subject proprio por `detail`. `Fact.id` e sha1 de (kind, subject,
+    measures) -- `attrs` fica FORA --, entao dois facts do mesmo kind com o
+    mesmo subject e sem measures teriam o mesmo id e seriam indistinguiveis na
+    saida.
+
+    Chamava-se `_unresolved_subject` ate `bench.runtime_pair` existir. O nome
+    antigo descrevia o unico chamador da epoca, nao o que a funcao faz -- e um
+    nome que descreve o chamador envelhece no segundo chamador."""
     return {"type": "job_run", "symbol": f"{path_hint or 'benchmark'}#{detail}"}
 
 
@@ -405,8 +410,80 @@ def _nameless_subject(side: str, stage_id: str) -> dict[str, Any]:
     return {"type": "stage", "symbol": f"#{side}#{stage_id}"}
 
 
+def _runtime_pair_facts(
+    before_runtime: str,
+    after_runtime: str,
+    path_hint: str,
+    provenance: dict[str, Any],
+) -> list[Fact]:
+    """O eixo de runtime da comparacao, ou o que falta para ele existir.
+
+    Separado de `build_benchmark` porque a resposta aqui nao depende de nenhuma
+    medida: ela depende so do que foi DECLARADO sobre as duas execucoes. Manter
+    os dois juntos misturaria "o que eu medi" com "sobre o que eu fui
+    informado", e sao coisas de procedencia diferente.
+    """
+    if not before_runtime and not after_runtime:
+        # Ninguem perguntou sobre runtime. Emitir `missing_runtime_label` aqui
+        # diria que falta algo numa comparacao que nao pediu esse eixo -- e uma
+        # comparacao entre duas execucoes no MESMO runtime continua valendo,
+        # que e o caso de medir uma mudanca de codigo.
+        return []
+
+    faltando = [
+        lado
+        for lado, valor in (("before", before_runtime), ("after", after_runtime))
+        if not valor
+    ]
+    if faltando:
+        return [
+            Fact(
+                kind="bench.unresolved",
+                subject=_job_run_subject(path_hint, "missing_runtime_label"),
+                attrs={
+                    "reason": "missing_runtime_label",
+                    "sides": faltando,
+                    "measure": "",
+                },
+                provenance=provenance,
+            )
+        ]
+    if before_runtime == after_runtime:
+        return [
+            Fact(
+                kind="bench.unresolved",
+                subject=_job_run_subject(path_hint, "same_runtime_label"),
+                attrs={
+                    "reason": "same_runtime_label",
+                    "sides": ["before", "after"],
+                    "measure": "",
+                    "runtime": before_runtime,
+                },
+                provenance=provenance,
+            )
+        ]
+    return [
+        Fact(
+            kind="bench.runtime_pair",
+            # `job_run`, e nao um `type` novo: o vocabulario de subject e
+            # FECHADO pelo schema, e o fato afirma sobre o PAR de execucoes --
+            # que e o que `job_run` ja nomeia nos outros `bench.*`. O par de
+            # runtimes entra no `symbol` porque `Fact.id` e sha de (kind,
+            # subject, measures) e `attrs` fica de fora: sem ele, dois pares
+            # diferentes teriam o mesmo id.
+            subject=_job_run_subject(path_hint, f"{before_runtime}..{after_runtime}"),
+            attrs={"before_runtime": before_runtime, "after_runtime": after_runtime},
+            provenance=provenance,
+        )
+    ]
+
+
 def build_benchmark(
-    before: Sequence[Fact], after: Sequence[Fact], path_hint: str = ""
+    before: Sequence[Fact],
+    after: Sequence[Fact],
+    path_hint: str = "",
+    before_runtime: str = "",
+    after_runtime: str = "",
 ) -> list[Fact]:
     """Compara os Facts de duas execucoes e emite os fatos `bench.*`.
 
@@ -419,6 +496,27 @@ def build_benchmark(
     rodou ali, ou rodou sobre coisa que nao e event log. A saida nesse caso e um
     unico `bench.unresolved` -- e nao um delta com um lado zerado, que afirmaria
     que a execucao daquele lado nao fez trabalho nenhum.
+
+    `before_runtime` e `after_runtime` (secao 52) rotulam em QUE runtime cada
+    execucao rodou. Sao OPCIONAIS porque a comparacao entre duas execucoes no
+    mesmo runtime continua valendo -- e o caso de medir uma mudanca de codigo.
+    O que eles acrescentam e a unica coisa que transforma um benchmark em prova
+    de migracao: `bench.runtime_pair` diz que os dois lados sao runtimes
+    DIFERENTES, e nomeia quais.
+
+    Tres respostas, e as tres sao declaradas em vez de silenciosas:
+
+      - Os dois rotulos, e diferentes -> `bench.runtime_pair`. E o unico caso
+        que sustenta uma afirmacao sobre migracao.
+      - Os dois rotulos, e iguais -> `bench.unresolved` com
+        `same_runtime_label`. Comparar um runtime consigo mesmo nao prova nada
+        sobre trocar de runtime, e deixar isso passar como benchmark de
+        migracao e a forma barata de produzir um numero que ninguem pode usar.
+      - Um rotulo so -> `bench.unresolved` com `missing_runtime_label`,
+        nomeando o lado que falta. Os deltas continuam saindo: o que fica sem
+        lastro e o EIXO de runtime, nao a comparacao.
+      - Nenhum rotulo -> nada. Ninguem perguntou sobre runtime, e responder
+        "falta" a uma pergunta que nao foi feita e ruido, nao honestidade.
     """
     provenance = {
         "artifact": path_hint,
@@ -436,7 +534,7 @@ def build_benchmark(
         out.append(
             Fact(
                 kind="bench.unresolved",
-                subject=_unresolved_subject(path_hint, "missing_log_analyzed"),
+                subject=_job_run_subject(path_hint, "missing_log_analyzed"),
                 attrs={
                     "reason": "missing_log_analyzed",
                     "sides": missing,
@@ -659,11 +757,13 @@ def build_benchmark(
         out.append(
             Fact(
                 kind="bench.unresolved",
-                subject=_unresolved_subject(path_hint, detail),
+                subject=_job_run_subject(path_hint, detail),
                 attrs=attrs,
                 provenance=provenance,
             )
         )
+
+    out.extend(_runtime_pair_facts(before_runtime, after_runtime, path_hint, provenance))
 
     unknown = {f.kind for f in out} - EMITTED_KINDS
     if unknown:
