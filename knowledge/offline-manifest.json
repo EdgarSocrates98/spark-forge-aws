@@ -201,7 +201,7 @@
     {
       "path": "knowledge/storage/iceberg-v3.md",
       "title": "iceberg-v3",
-      "sha256": "afe67e88cc2ee8e4b5943362a96b410eb3afb799e79651763bbec3ab42595d25"
+      "sha256": "325f1dafdd0abe5af5861fb406738289e78cc4e6c9cad2f203b76c001c4c2ac2"
     },
     {
       "path": "knowledge/storage/parquet-layout.md",

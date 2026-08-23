@@ -1,0 +1,358 @@
+# Matriz de compatibilidade: feature de Iceberg CONTRA engine.
+#
+# POR QUE ESTE ARQUIVO EXISTE: `knowledge/storage/iceberg-v3.md` separa em
+# prosa a metade "feature da spec" da metade "suporte da engine", e diz que uma
+# nao se deduz da outra. Prosa nao e consultavel e nao tem gate. Aqui a mesma
+# separacao vira DADO, com uma regra gravada em codigo por
+# `sparkforge/storage/feature_support.py`:
+#
+#   TODA CELULA AFIRMATIVA PRECISA DE EVIDENCIA PROPRIA. Nunca se infere "o
+#   Iceberg suporta, logo o Athena suporta". Celula sem fonte da engine e
+#   `UNKNOWN`, e `UNKNOWN` e o resultado honesto -- nao uma falha.
+#
+# `UNKNOWN` NAO precisa de fonte (desconhecimento nao precisa de prova), mas
+# precisa EXISTIR: celula ausente e celula desconhecida sao coisas diferentes.
+# A ausente diz "ninguem perguntou"; a `UNKNOWN` diz "perguntamos e nao ha
+# fonte". Por isso as 51 celulas desconhecidas estao escritas, na forma curta
+# (`"6.0": UNKNOWN`), em vez de omitidas.
+#
+# VOCABULARIO DE `status` (fechado, validado pelo carregador): SUPPORTED,
+# UNSUPPORTED, PARTIAL, READ_ONLY, WRITE_ONLY, PREVIEW, UNKNOWN, CONFLICTING.
+# `source_type` reusa `sparkforge/facts/runtime_matrix.py:SOURCE_TYPES` -- o
+# mesmo vocabulario da matriz de runtime, importado de la e nunca redeclarado.
+#
+# CHAVE DE VERSAO `"*"`: a fonte nao qualifica a afirmacao por versao da
+# engine. O Glue distingue 6.0 de 5.1 por escrito, entao tem duas chaves; a
+# afirmacao sobre o Athena vale para a engine sem recorte de versao, e mentir
+# uma versao ali seria precisao inventada.
+#
+# UMA ESCOLHA DE JULGAMENTO, DECLARADA: a AWS nomeia VARIANT-com-shredding,
+# timestamp de nanossegundo e tipos geoespaciais como suportados no Glue 6.0 E
+# diz que os tipos novos da v3 so funcionam com Spark DataFrames (nao com
+# DynamicFrame, nem no Visual ETL do Glue Studio). O recorte vale para os tres.
+# `variant` esta como SUPPORTED porque e a capacidade que a fonte anuncia como
+# headline do 6.0, com o recorte registrado na propria `note`; os outros dois
+# estao como PARTIAL, que e o que o recorte descreve. Quem ler as tres celulas
+# junto ve o mesmo limite nas tres.
+#
+# Fontes, e o que cada uma sustenta:
+#   - migrating-version-60.html (OFFICIAL_TECHNICAL_DOC): o suporte declarado e
+#     as limitacoes declaradas do Glue 6.0 e 5.1, mais a nao-leitura de
+#     `format-version = 3` pelo Athena.
+#   - Iceberg-release-history.html (OFFICIAL_TECHNICAL_DOC): a versao de
+#     biblioteca por release de EMR. NAO sustenta celula de feature nenhuma --
+#     ver `engines.emr.note`.
+#   - format/spec.md da tag apache-iceberg-1.11.0 (UPSTREAM_SPEC): quais
+#     features sao da spec v3, ou seja, o campo `spec_version`. Nao sustenta
+#     celula de engine nenhuma.
+schema_version: 1
+
+# Notas por engine. Aqui mora o que se SABE sobre a engine sem que isso
+# preencha celula alguma -- a fronteira que a secao 20 protege.
+engines:
+  glue:
+    note: >-
+      Unica engine com celula afirmativa nesta matriz, porque e a unica cuja
+      documentacao oficial enumera feature de Iceberg v3 por nome.
+    source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-22"
+  athena:
+    note: >-
+      A unica afirmacao disponivel sobre o Athena vem da pagina de migracao do
+      Glue 6.0: tabela criada com 'format-version'='3' nao pode ser lida pelo
+      Athena SQL, com o erro textual "Cannot read unsupported version 3". Repare
+      no que essa frase e: uma afirmacao sobre o FORMATO DA TABELA, nao sobre
+      feature nenhuma. Estender a frase para "logo toda feature da v3 e
+      UNSUPPORTED no Athena" preencheria seis celulas a mais a partir de uma
+      unica fonte que nao fala de nenhuma delas -- fabricar celula por
+      raciocinio e a mesma classe de defeito que inferir suporte entre engines,
+      so que na direcao negativa. Uma unica celula foi preenchida (variant), com
+      a cadeia escrita na propria note; as demais ficam UNKNOWN ate haver fonte
+      do Athena que fale da feature. Esta note e onde o conhecimento mora
+      enquanto nao sustenta celula.
+    source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-22"
+  emr:
+    note: >-
+      A release mais recente listada, emr-7.13.0, traz Iceberg 1.10.0-amzn-1, e
+      NENHUMA release de EMR listada traz 1.11.0. Isso sustenta uma unica
+      afirmacao: feature que EXIGE a biblioteca 1.11 nao esta disponivel em
+      release listada de EMR. Nao sustenta que o EMR nao leia v3 -- 1.10.0 e a
+      versao que o Glue 5.1 usa para ESCREVER v3. E este repositorio nao tem
+      fonte que mapeie feature para versao minima de biblioteca, entao nao ha
+      como saber QUAIS features exigem 1.11. Resultado honesto: toda celula de
+      EMR e UNKNOWN.
+    source: "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/Iceberg-release-history.html"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-22"
+  pyiceberg:
+    note: >-
+      Nenhuma fonte de PyIceberg foi lida nesta coleta. Toda celula e UNKNOWN.
+  s3_tables:
+    note: >-
+      Nenhuma fonte de S3 Tables foi lida nesta coleta. Toda celula e UNKNOWN.
+  lakeformation:
+    note: >-
+      A unica afirmacao disponivel vem da pagina de migracao do Glue 6.0: FGAC
+      (controle de acesso fino) nao e suportado com coluna VARIANT. Nada mais
+      sobre Lake Formation foi lido nesta coleta.
+    source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-22"
+
+features:
+  variant:
+    spec_version: 3
+    engines:
+      glue:
+        "6.0":
+          status: SUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            VARIANT com shredding, nomeado como suportado no Glue 6.0. Dois
+            recortes declarados pela mesma fonte: os tipos novos da v3 so
+            funcionam com Spark DataFrames (DynamicFrame e Visual ETL do Glue
+            Studio nao os alcancam), e FGAC nao e suportado com coluna VARIANT.
+        "5.1": UNKNOWN
+      athena:
+        "*":
+          status: UNSUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            Tabela com 'format-version'='3' nao e lida pelo Athena SQL: "Cannot
+            read unsupported version 3". VARIANT e tipo exclusivo da v3, logo
+            inalcancavel via Athena. Para compatibilidade entre engines, v2.
+            Esta e a UNICA celula de Athena desta matriz: a mesma cadeia NAO foi
+            estendida as outras features da v3, porque a fonte fala do formato
+            da tabela e nao de cada feature -- ver `engines.athena.note`.
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*":
+          status: PARTIAL
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            FGAC (controle de acesso fino) nao e suportado com coluna VARIANT.
+            A escolha e entre VARIANT e granularidade de acesso, nao as duas.
+            O que o Lake Formation faz com a tabela FORA do FGAC nao foi lido.
+
+  variant_shredding:
+    # Sem `spec_version`: a lista de adicoes da v3 lida na spec 1.11.0 nomeia o
+    # TIPO variant, nao o shredding. Declarar 3 aqui seria inferir da spec o que
+    # a spec nao foi lida dizendo.
+    engines:
+      glue:
+        "6.0":
+          status: SUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            "VARIANT com shredding" e o texto da fonte. O efeito do shredding
+            sobre custo de leitura, pruning e plano fisico nao foi lido nesta
+            coleta -- ver `iceberg-v3.md`, secao Fontes.
+        "5.1": UNKNOWN
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN
+
+  deletion_vectors:
+    spec_version: 3
+    engines:
+      glue:
+        "6.0":
+          status: SUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: "Nao e novidade do 6.0: suportado desde o Glue 5.1."
+        "5.1":
+          status: SUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            Plano que justifique o salto para o Glue 6.0 por deletion vectors
+            esta pagando migracao por algo que o runtime anterior ja entregava.
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN
+
+  row_lineage:
+    spec_version: 3
+    engines:
+      glue:
+        "6.0":
+          status: SUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: "Nao e novidade do 6.0: suportado desde o Glue 5.1."
+        "5.1":
+          status: SUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: "Row lineage por `first-row-id`, ja disponivel no Glue 5.1."
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN
+
+  nanosecond_timestamp:
+    spec_version: 3
+    engines:
+      glue:
+        "6.0":
+          status: PARTIAL
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            Nomeado como suportado no Glue 6.0, mas os tipos novos da v3 so
+            funcionam com Spark DataFrames: job escrito sobre DynamicFrame nao
+            os alcanca, e o Visual ETL do Glue Studio tambem nao os suporta.
+        "5.1": UNKNOWN
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN
+
+  geospatial_types:
+    spec_version: 3
+    engines:
+      glue:
+        "6.0":
+          status: PARTIAL
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            Nomeado como suportado no Glue 6.0, mas os tipos novos da v3 so
+            funcionam com Spark DataFrames: job escrito sobre DynamicFrame nao
+            os alcanca, e o Visual ETL do Glue Studio tambem nao os suporta.
+        "5.1": UNKNOWN
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN
+
+  default_values:
+    spec_version: 3
+    engines:
+      glue:
+        # UNKNOWN deliberado. A spec v3 define default de coluna e o Glue 6.0
+        # traz Iceberg 1.11.0 com suporte a v3 -- mas migrating-version-60.html
+        # NAO nomeia default de coluna, nem entre os suportados nem entre as
+        # limitacoes. Deduzir SUPPORTED daqui e exatamente a inferencia
+        # proibida: spec suporta, logo a engine suporta.
+        "6.0": UNKNOWN
+        "5.1": UNKNOWN
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN
+
+  multi_argument_transforms:
+    spec_version: 3
+    engines:
+      glue:
+        "6.0":
+          status: UNSUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            Limitacao declarada pela AWS. A feature esta na spec v3 e NAO na
+            engine: partition spec e sort order continuam de argumento unico.
+            E o caso que mostra por que a metade "spec" nao substitui a metade
+            "engine" -- aqui a spec implica o CONTRARIO do que a engine faz.
+        "5.1": UNKNOWN
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN
+
+  native_table_encryption:
+    # Sem `spec_version`: a criptografia de manifest list e a rotacao de chave
+    # sao capacidade da BIBLIOTECA 1.11.0 (release note), nao uma adicao da spec
+    # v3 na lista lida da spec. Declarar 3 aqui seria carimbar como spec o que
+    # so foi lido como release de biblioteca.
+    engines:
+      glue:
+        "6.0":
+          status: UNSUPPORTED
+          source: "https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html"
+          source_type: OFFICIAL_TECHNICAL_DOC
+          retrieved: "2026-08-22"
+          note: >-
+            Chaves de criptografia nativa de tabela Iceberg nao suportadas no
+            Glue 6.0. A criptografia de manifest list da 1.11.0 nao esta
+            disponivel pela via nativa da tabela.
+        "5.1": UNKNOWN
+      athena:
+        "*": UNKNOWN
+      emr:
+        "*": UNKNOWN
+      pyiceberg:
+        "*": UNKNOWN
+      s3_tables:
+        "*": UNKNOWN
+      lakeformation:
+        "*": UNKNOWN

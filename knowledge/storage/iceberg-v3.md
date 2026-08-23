@@ -129,10 +129,35 @@ A armadilha do format-version 3 contra Athena, essa sim, já é judicável — e
 `SF-ENV-002`, lendo `iceberg.table_property` com `format-version = 3` junto de
 `env.consumer` com `service: athena`. Duplicá-la seria dívida, não cobertura.
 
+## 7. A mesma separação como dado consultável
+
+A separação entre as duas metades deste documento existe também como dado, em
+[`iceberg-feature-support.yaml`](iceberg-feature-support.yaml), carregado por
+`sparkforge/storage/feature_support.py`. O YAML é uma matriz de feature contra engine
+(`glue`, `athena`, `emr`, `pyiceberg`, `s3_tables`, `lakeformation`) em que **cada célula
+carrega a própria evidência** — e o carregador recusa a matriz inteira se alguma célula
+afirmar suporte sem `source`, `source_type` e `retrieved`.
+
+`UNKNOWN` é o único status que dispensa fonte, e é o status da maioria das células: **51 das
+63**. Isso não é lacuna do dado, é o resultado honesto de só existir documentação oficial
+enumerando feature de v3 por nome para uma engine. A alternativa — preencher a linha do
+Athena a partir do que o Iceberg suporta — é a inferência que a metade 1 deste documento
+proíbe, e agora há um teste que falha quando ela acontece.
+
+O Athena tem **uma única célula preenchida** (`variant`, `UNSUPPORTED`). A frase da seção 5
+fala do *formato da tabela*, não de cada feature; estendê-la para as outras seis features da
+v3 fabricaria célula por raciocínio, que é o mesmo defeito na direção negativa. O que se sabe
+e não sustenta célula mora em `engines.athena.note`, dentro do YAML.
+
+Um caso vale ser lido junto com a seção 5: `multi_argument_transforms` é `UNSUPPORTED` no
+Glue 6.0 **apesar** de estar na spec v3. É a linha em que a spec implica o contrário da
+engine.
+
 ## Fontes
 
 - Iceberg Table Spec (tag 1.11.0). https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/format/spec.md (retrieved 2026-08-22)
 - Apache Iceberg 1.11.0 release. https://github.com/apache/iceberg/releases/tag/apache-iceberg-1.11.0 (retrieved 2026-08-22)
 - Migrating AWS Glue for Spark jobs to AWS Glue version 6.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html (retrieved 2026-08-22)
+- Iceberg release history (Amazon EMR). https://docs.aws.amazon.com/emr/latest/ReleaseGuide/Iceberg-release-history.html (retrieved 2026-08-22)
 - Custo de leitura, pruning e efeito de shredding sobre o plano em colunas VARIANT não foram lidos nesta coleta. A verificar.
 - Alcance exato do suporte inicial a `MERGE INTO` com evolução de schema no Spark 4.1 não foi lido nesta coleta. A verificar.
