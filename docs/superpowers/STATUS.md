@@ -2360,6 +2360,52 @@ contra. A propriedade é provada por teste que varre `skills/`, `agents/`, `know
 espelhos, com guarda de não-vacuidade, e foi verificada por contrafactual: citar um cenário
 numa skill reprova o gate.
 
+### Continuação — fase G7, a documentação e o ADR (2026-08-22)
+
+Última fase da sequência. **Nada de capacidade nova**: tudo o que esta fase documenta já
+existia e já tinha sido medido nas seis anteriores. O que ela entrega é a porta de entrada e
+o registro de decisão.
+
+`docs/aws/glue/6.0/` com oito documentos: porta de entrada, runtime, a fronteira do Spark,
+Iceberg, Lake Formation, prova, `known-unknowns.md` e `decision-guide.md`.
+
+**A regra que governou a escrita: não repetir número.** Onde um documento quis citar uma
+contagem, uma versão ou uma medição, ele aponta para o arquivo que a sustenta em vez de
+copiá-la. Versão de runtime só existe em `knowledge/glue/runtime-matrix.yaml`; contagem de
+regra só em `rules/catalog/README.md`; contagem de célula só no cabeçalho da própria matriz
+de feature. A auditoria de lastro existiu para remover número publicado sem prova, e
+recriá-lo numa pasta que o gate **não** vigia seria a mesma dívida num lugar pior.
+
+**`known-unknowns.md` é o documento que justifica a pasta.** Ele agrupa por consequência
+para quem usa — não por seção do prompt — as linhas `NÃO EXISTE` e `EXISTE PARCIAL` do mapa,
+as notas "a verificar" de `knowledge/`, as células `UNKNOWN` da matriz e os pontos cegos dos
+extratores. A regra que o abre: silêncio da ferramenta nunca é atestado de ausência de
+risco.
+
+**O guia de decisão sustenta duas coisas que era fácil diluir.** "Ficar na versão anterior"
+é resposta legítima, com as condições em que ela é a certa — inclusive a de que deletion
+vectors e row lineage já vinham no runtime anterior, então migrar por eles é pagar por algo
+que já se tem. E a redução de preço anunciada pela AWS fica **separada** de performance, que
+este repositório não mediu: sem baseline, sem execução comparada, sem número. Onde não há
+regra que automatize a checagem, o guia diz que a checagem é manual, em vez de omiti-la.
+
+`docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md` registra as decisões da sequência:
+conhecimento externo como dado versionado com fonte; guarda por versão de **Spark** quando a
+fronteira é do Apache e por **Glue** quando é do empacotamento; célula sem evidência é
+`UNKNOWN` e o carregador recusa afirmação sem fonte; as skills que o prompt enumera **não**
+foram criadas, porque skill é apresentação sobre conhecimento e o consumidor não existia; e
+extrator novo só com consumidor — o que impediu regras de Variant, transform multi-argumento
+e DynamicFrame.
+
+**Limite declarado, e é o achado desta fase.** `docs/aws/` **não** está em `audited_roots()`
+do gate de lastro: nenhuma alegação daqueles documentos é auditada e nenhum teste cobra a
+existência deles. Trazer o diretório para o gate é decisão de outra fase — fazê-la aqui
+geraria centenas de alegações a classificar de uma vez. Por isso as duas linhas do mapa que
+saíram de `NÃO EXISTE` foram para **`EXISTE PARCIAL`**, não para `EXISTE, com teste`: o
+parcial é o que falta em volta, não o conteúdo, e o mapa continua sem dizer "testado" sem
+nome de arquivo de teste.
+
+
 ## Ferramental de agente — ecossistema caveman vendorizado (2026-08-07)
 
 Não é fase do analisador: nenhuma regra, nenhum extrator e nenhum fact mudaram.

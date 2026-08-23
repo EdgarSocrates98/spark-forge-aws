@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "f3a5626eadfe34646b0f38a3d59a4b98637d8e24",
+  "extracted_from": "7fd60111b2eb84901785368a565e362452496d72",
   "claims": [
     {
       "doc": "docs/vnext/AGENT-CATALOG.md",
@@ -465,6 +465,63 @@
           "kind": "number",
           "pattern": "(\\d+)\\.\\d+ custo",
           "value": 0
+        }
+      }
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md",
+      "line": 1,
+      "text": "6.0",
+      "context": "# ADR-009: Suporte a AWS Glue 6.0, Spark 4.1 e Iceberg v3",
+      "type": "number",
+      "id": "VNX-443",
+      "state": "PROVADA",
+      "note": "a versao de Glue existe como chave da matriz de runtime, com fonte e data por linha -- a alegacao do titulo do ADR e que este runtime e conhecido aqui, e a matriz e o unico lugar que o afirma",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import yaml, pathlib; d = yaml.safe_load(pathlib.Path(\"knowledge/glue/runtime-matrix.yaml\").read_text(encoding=\"utf-8\")); print(\"6.0\" in d[\"versions\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "True"
+        }
+      }
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md",
+      "line": 1,
+      "text": "4.1",
+      "context": "# ADR-009: Suporte a AWS Glue 6.0, Spark 4.1 e Iceberg v3",
+      "type": "number",
+      "id": "VNX-444",
+      "state": "PROVADA",
+      "note": "a versao de Spark do titulo nao e escrita neste documento como fato proprio: ela e o que a matriz de runtime resolve para a linha do Glue 6.0, com fonte e data",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import yaml, pathlib; d = yaml.safe_load(pathlib.Path(\"knowledge/glue/runtime-matrix.yaml\").read_text(encoding=\"utf-8\")); print(d[\"versions\"][\"6.0\"][\"spark\"])'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "4.1"
+        }
+      }
+    },
+    {
+      "doc": "docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md",
+      "line": 68,
+      "text": "6.0",
+      "context": "ferramenta não sabe está escrito em `docs/aws/glue/6.0/known-unknowns.md`, agrupado por",
+      "type": "number",
+      "id": "VNX-445",
+      "state": "PROVADA",
+      "note": "o numero e parte do caminho do documento citado; a alegacao e que o documento existe onde o ADR diz que existe",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; print(pathlib.Path(\"docs/aws/glue/6.0/known-unknowns.md\").is_file())'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "True"
         }
       }
     },
@@ -3635,7 +3692,7 @@
       "doc": "docs/harness/GLUE6-GAP.md",
       "line": 156,
       "text": "6.0",
-      "context": "| ADR de suporte a Glue 6.0 (§83) | NÃO EXISTE | `docs/vnext/adrs/` é o diretório onde entraria | — |",
+      "context": "| ADR de suporte a Glue 6.0 (§83) | EXISTE PARCIAL | `docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md` registra as ",
       "type": "number",
       "id": "VNX-384",
       "state": "PROVADA",
@@ -4806,6 +4863,44 @@
         "kind": "artifact",
         "path": "scripts/check_vnext_claims.py",
         "test": "tests/test_vnext_claims.py"
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 155,
+      "text": "Documentação dedicada e guia de decisão (§80, §81)",
+      "context": "| Documentação dedicada e guia de decisão (§80, §81) | EXISTE PARCIAL | A pasta dedicada em `docs/aws/` traz porta de en",
+      "type": "capability",
+      "id": "VNX-446",
+      "state": "PROVADA",
+      "note": "a linha afirma que os documentos existem, e nada mais -- o proprio texto dela declara que docs/aws/ esta fora de audited_roots() e sem teste, entao a prova e a existencia dos sete arquivos, verificada por comando, e nao um teste que nao existe",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; base = pathlib.Path(\"docs/aws/glue/6.0\"); nomes = [\"README.md\", \"runtime.md\", \"spark4.md\", \"iceberg.md\", \"lakeformation.md\", \"testing.md\", \"known-unknowns.md\", \"decision-guide.md\"]; print(all((base / n).is_file() for n in nomes))'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "True"
+        }
+      }
+    },
+    {
+      "doc": "docs/harness/GLUE6-GAP.md",
+      "line": 156,
+      "text": "ADR de suporte a Glue 6.0 (§83)",
+      "context": "| ADR de suporte a Glue 6.0 (§83) | EXISTE PARCIAL | `docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md` registra as ",
+      "type": "capability",
+      "id": "VNX-447",
+      "state": "PROVADA",
+      "note": "mesma natureza: a linha afirma que o ADR existe com as decisoes nomeadas. O documento esta sob o gate de lastro (audited_docs cobre docs/vnext/adrs/), mas nenhum teste o cita por nome, entao a prova e existencia mais presenca das secoes de decisao",
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import pathlib; t = pathlib.Path(\"docs/vnext/adrs/ADR-009-glue-6-spark-4-iceberg-v3.md\").read_text(encoding=\"utf-8\"); print(t.count(\"### \") >= 5 and \"## Decision\" in t)'",
+        "tier": "fast",
+        "expect": {
+          "kind": "contains",
+          "value": "True"
+        }
       }
     },
     {
