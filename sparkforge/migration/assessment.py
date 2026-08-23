@@ -57,6 +57,7 @@ from sparkforge.findings.models import (
 from sparkforge.migration import version_path
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
+from sparkforge.storage import upgrade as storage_upgrade
 
 # Severidades que fecham o gate de compatibilidade: breaking change confirmado
 # ou risco que a regra classificou como alto. Ver SEVERITY_ORDER em
@@ -292,6 +293,71 @@ def _eixo_de(finding: Finding) -> str:
     return "compatibilidade"
 
 
+# Ordem do pior para o melhor. Quando duas evidencias falam do mesmo eixo -- um
+# achado do catalogo e a matriz de suporte --, o eixo fica com a PIOR: um gate
+# que escolhesse a melhor esconderia a evidencia que importa.
+_ORDEM_DE_GATE = ("FAIL", "BLOCKED", "PASS_WITH_RISK", "PASS")
+
+
+def _pior(*estados: str) -> str:
+    return min(estados, key=_ORDEM_DE_GATE.index)
+
+
+def _pede_format_v3(facts: list[Fact]) -> bool:
+    """O job pede format version 3 em algum artefato composto?
+
+    Duas fontes, e as duas contam. `mig.table_format` e a observacao no CODIGO
+    do job (`tableProperty("format-version", "3")`), sem identidade de tabela --
+    o subject e a linha de fonte. `iceberg.table_property` vem do dump de
+    metadados de uma tabela real, e tem a tabela. A pergunta do gate e do JOB,
+    nao da tabela: "esta migracao vai escrever v3, e quem le isso?".
+    """
+    for fact in facts:
+        if fact.kind == "mig.table_format" and str(fact.attrs.get("format_version")) == "3":
+            return True
+        if (
+            fact.kind == "iceberg.table_property"
+            and fact.attrs.get("key") == "format-version"
+            and str(fact.attrs.get("value")) == "3"
+        ):
+            return True
+    return False
+
+
+def _gate_de_consumidor(facts: list[Fact], por_regra: str) -> tuple[str, str]:
+    """Cruza o inventario de consumidores com a matriz de suporte de feature.
+
+    Devolve `(estado, evidencia_faltante)`. A evidencia so e preenchida quando
+    o eixo fica BLOCKED -- gate BLOCKED sem dizer o que o destravaria e a mesma
+    coisa que silencio.
+
+    NAO emite `Finding`. `SF-ENV-002` continua sendo o achado do caso
+    documentado (tabela v3 lida por Athena, com o erro textual "Cannot read
+    unsupported version 3"); este cruzamento move o GATE. Um caso ja coberto
+    pela regra produz um achado e um gate fechado, nunca dois achados.
+    """
+    engines = sorted(
+        {
+            str(f.attrs.get("service", ""))
+            for f in facts
+            if f.kind == "env.consumer" and f.attrs.get("service")
+        }
+    )
+    if not _pede_format_v3(facts):
+        # Nada nesta migracao pede v3. Bloquear aqui acusaria o job pelo que
+        # ele NAO faz, e o inventario continua servindo as regras do catalogo.
+        return por_regra, ""
+
+    veredito = storage_upgrade.assess_upgrade(engines, target_spec_version=3)
+    if veredito.verdict == "BLOCKED":
+        return _pior(por_regra, "FAIL"), ""
+    if veredito.verdict == "UNRESOLVED":
+        return _pior(por_regra, "BLOCKED"), "; ".join(veredito.unresolved)
+    if veredito.verdict == "CONDITIONAL":
+        return _pior(por_regra, "PASS_WITH_RISK"), ""
+    return por_regra, ""
+
+
 def assess(facts: list[Fact], source: str, target: str) -> MigrationAssessment:
     """Julga `facts` contra o catalogo `SF-MIG`, uma vez por degrau de `source`
     ate `target`.
@@ -339,7 +405,12 @@ def assess(facts: list[Fact], source: str, target: str) -> MigrationAssessment:
             gates[eixo] = "BLOCKED"
             missing_evidence[eixo] = _EVIDENCIA_DOS_EIXOS[eixo]
             continue
-        gates[eixo] = _compatibility_gate(por_eixo.get(eixo, []))
+        estado = _compatibility_gate(por_eixo.get(eixo, []))
+        if eixo == "consumidor":
+            estado, faltante = _gate_de_consumidor(facts, estado)
+            if faltante:
+                missing_evidence[eixo] = faltante
+        gates[eixo] = estado
 
     gates.update({nome: "BLOCKED" for nome in _EIXOS_SEM_PRODUTOR})
     missing_evidence.update(_EIXOS_SEM_PRODUTOR)

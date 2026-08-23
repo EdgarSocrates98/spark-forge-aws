@@ -387,3 +387,70 @@ class TestEixoNomeadoNaoSomaDuasVezes:
         outros = [f for f in resultado.findings if not f.rule_id.startswith("SF-LF-")]
         esperado = assessment._compatibility_gate(outros)
         assert resultado.gates["compatibilidade"] == esperado
+
+
+class TestBloqueioPorConsumidorIncompativel:
+    """A secao 25: o inventario existia, a matriz existia, nada cruzava as duas.
+
+    O cruzamento e um GATE, nao uma regra nova. `SF-ENV-002` continua sendo o
+    achado P0 do caso documentado; se o cruzamento tambem emitisse achado, o
+    mesmo problema apareceria duas vezes -- e e exatamente isso que o teste
+    `test_nao_produz_um_segundo_achado_para_o_caso_ja_coberto` mede.
+    """
+
+    @staticmethod
+    def _facts_v3_com(servico: str, tmp_path):
+        from sparkforge.facts import consumers as facts_consumers
+        from sparkforge.migration import collect as collect_mod
+
+        (tmp_path / "job.py").write_text(
+            "spark.sql(\"CREATE TABLE db.t ... TBLPROPERTIES ('format-version'='3')\")\n",
+            encoding="utf-8",
+        )
+        pasta = tmp_path / ".sparkforge"
+        pasta.mkdir()
+        (pasta / "consumers.yaml").write_text(
+            f"consumers:\n  - table: db.t\n    service: {servico}\n", encoding="utf-8"
+        )
+        assert facts_consumers.EMITTED_KINDS  # o extrator usado pela convencao
+        return collect_mod.collect(tmp_path)
+
+    def test_consumidor_que_a_matriz_declara_sem_suporte_fecha_o_eixo(self, tmp_path):
+        facts = self._facts_v3_com("athena", tmp_path)
+        assert any(f.kind == "mig.table_format" for f in facts), (
+            "o cenario precisa observar format v3 no codigo do job"
+        )
+        resultado = assessment.assess(facts, source="5.1", target="6.0")
+        assert resultado.gates["consumidor"] == "FAIL"
+        assert resultado.recommendation == "NO_GO"
+
+    def test_consumidor_sem_fonte_deixa_o_eixo_bloqueado_nao_aprovado(self, tmp_path):
+        facts = self._facts_v3_com("pyiceberg", tmp_path)
+        resultado = assessment.assess(facts, source="5.1", target="6.0")
+        assert resultado.gates["consumidor"] == "BLOCKED"
+        assert "pyiceberg" in resultado.missing_evidence["consumidor"]
+
+    def test_nao_produz_um_segundo_achado_para_o_caso_ja_coberto(self, tmp_path):
+        """O caso de Athena com tabela v3 sai UMA vez, nao duas."""
+        facts = self._facts_v3_com("athena", tmp_path)
+        resultado = assessment.assess(facts, source="5.1", target="6.0")
+        de_consumidor = [
+            f for f in resultado.findings if f.rule_id.startswith("SF-ENV-")
+        ]
+        assert len(de_consumidor) == len({f.rule_id for f in de_consumidor}), (
+            "o mesmo problema de consumidor nao pode acusar duas vezes"
+        )
+
+    def test_job_que_nao_escreve_v3_nao_bloqueia_por_consumidor(self, tmp_path):
+        from sparkforge.migration import collect as collect_mod
+
+        (tmp_path / "job.py").write_text(JOB, encoding="utf-8")
+        pasta = tmp_path / ".sparkforge"
+        pasta.mkdir()
+        (pasta / "consumers.yaml").write_text(
+            "consumers:\n  - table: db.t\n    service: athena\n", encoding="utf-8"
+        )
+        resultado = assessment.assess(collect_mod.collect(tmp_path), source="5.1", target="6.0")
+        # Athena consome, mas nada neste job pede v3: bloquear aqui acusaria uma
+        # migracao pelo que ela NAO faz.
+        assert resultado.gates["consumidor"] != "FAIL"
