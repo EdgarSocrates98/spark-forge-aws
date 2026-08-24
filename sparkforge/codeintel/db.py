@@ -58,12 +58,24 @@ Ou seja, "nao levantou" nao classifica nem esse. So a releitura classifica.
 DESCARTAVEL. Perder a ultima transacao num crash custa uma reindexacao, nao um
 dado -- nada no motor deterministico depende deste arquivo para responder.
 
-POR QUE NAO HA TABELA `edges` AQUI
-----------------------------------
-Aresta exige resolucao de referencia, que e onde mora a decisao dificil: o que
-fazer com o que nao resolve. Misturar isso com a criacao do banco tornaria as
-duas indepuraveis. `unresolved_refs` ja existe porque toda referencia nao
-resolvida cai nela, e contar ponto cego e diferente de nao ter ponto cego.
+`edges` E `unresolved_refs` SAO O MESMO CONTRATO EM DUAS METADES
+---------------------------------------------------------------
+Ate J3 nao havia `edges` aqui, e a ausencia era deliberada: aresta exige
+resolucao de referencia, que e onde mora a decisao dificil -- o que fazer com o
+que nao resolve. J4 traz a resolucao, entao a tabela entra, e entra ao lado de
+`unresolved_refs` porque uma sem a outra mente. `edges` guarda o que resolveu e
+`unresolved_refs` guarda o que nao resolveu; so a soma das duas diz qual e a
+cobertura, e contar ponto cego e diferente de nao ter ponto cego.
+
+SUBIR `SCHEMA_VERSION` NAO BASTA -- ALGUEM TEM QUE AGIR SOBRE ELE
+-----------------------------------------------------------------
+`CREATE TABLE IF NOT EXISTS` acrescenta tabela nova e NAO conserta tabela
+antiga. Um banco escrito pela versao 1 sobreviveria a esta com `edges` criada e
+`unresolved_refs` ainda nas colunas velhas, e o primeiro INSERT levantaria
+`no such column` no meio de uma indexacao -- em producao, nao em teste. Por isso
+`criar_schema` compara a versao gravada e joga o banco fora quando ela nao bate.
+Jogar fora e aceitavel aqui pelo mesmo motivo que `synchronous=NORMAL` e:
+o arquivo e DESCARTAVEL, e refazer custa uma reindexacao, nao um dado.
 """
 
 from __future__ import annotations
@@ -76,7 +88,9 @@ from pathlib import Path
 
 from sparkforge import __version__
 
-SCHEMA_VERSION = 1
+# 2 desde J4: `edges` entrou e `unresolved_refs` trocou de colunas. Banco da
+# versao 1 nao e migravel para esta -- ver `_descartar_schema_de_versao_anterior`.
+SCHEMA_VERSION = 2
 
 # Onde o indice mora quando ninguem escolhe. Declarado AQUI, no modulo que abre o
 # arquivo, e nao em quem consulta: com o caminho repetido em `indexar` e em
@@ -141,19 +155,45 @@ _TABELAS = (
         normalized_signature TEXT NOT NULL DEFAULT ''
     )
     """,
-    # Existe desde ja, antes de haver `edges`, porque referencia que nao resolve
-    # e o ponto cego do indice -- e ponto cego contado e diferente de ponto cego
-    # silencioso. `reason` guarda POR QUE nao resolveu, que e o que permite
-    # decidir se vale resolver depois.
+    # CASCADE nas DUAS pontas, e nao so no alvo. Reindexar um arquivo apaga os
+    # nos dele; a aresta que CHEGAVA num no apagado tem que cair junto com a que
+    # SAIA dele, senao uma travessia segue a aresta orfa e devolve no fantasma.
+    #
+    # Sem chave primaria de proposito: `f(g(), g())` sao duas chamadas com
+    # source, target, kind e line iguais, e sao duas arestas. Chave unica ai
+    # perderia uma delas calada, e a contagem de chamadas passaria a mentir.
+    #
+    # `confidence` existe porque nem toda aresta e certeza: `df.filtrar()`
+    # resolve por nome de metodo quando o tipo de `df` e desconhecido, e uma
+    # travessia tem que poder cortar por quanto confia. Default 1.0 para que a
+    # aresta que ninguem classificou nao passe por duvidosa.
+    """
+    CREATE TABLE IF NOT EXISTS edges (
+        source_id  TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        target_id  TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        kind       TEXT NOT NULL,
+        line       INTEGER NOT NULL,
+        confidence REAL NOT NULL DEFAULT 1.0
+    )
+    """,
+    # A outra metade de `edges`: referencia que nao resolve e o ponto cego do
+    # indice, e ponto cego contado e diferente de ponto cego silencioso.
+    # `reason` guarda POR QUE nao resolveu, que e o que permite decidir se vale
+    # resolver depois.
+    #
+    # `source_id` e nulavel, e `edges.source_id` nao e: chamada no topo do
+    # modulo tem origem no MODULO, e modulo nao e no -- `extract.py` extrai
+    # classe, funcao e metodo, nao arquivo. Uma aresta so existe entre dois nos;
+    # uma referencia sem no de origem existe, e e aqui que ela cabe.
     """
     CREATE TABLE IF NOT EXISTS unresolved_refs (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        file_id      TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
-        from_node_id TEXT REFERENCES nodes(id) ON DELETE CASCADE,
-        raw_target   TEXT NOT NULL,
-        kind         TEXT NOT NULL,
-        line         INTEGER NOT NULL,
-        reason       TEXT NOT NULL
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_id      TEXT REFERENCES nodes(id) ON DELETE CASCADE,
+        reference_name TEXT NOT NULL,
+        reference_kind TEXT NOT NULL,
+        file_id        TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+        line           INTEGER NOT NULL,
+        reason         TEXT NOT NULL
     )
     """,
     # `node_id` fica UNINDEXED porque e chave de volta, nao termo de busca:
@@ -176,6 +216,30 @@ _INDICES = (
     "CREATE INDEX IF NOT EXISTS idx_nodes_file_id ON nodes(file_id)",
     "CREATE INDEX IF NOT EXISTS idx_nodes_qualified_name ON nodes(qualified_name)",
     "CREATE INDEX IF NOT EXISTS idx_unresolved_file_id ON unresolved_refs(file_id)",
+    # As tres colunas por onde a travessia entra, cada uma LIDERANDO um indice.
+    # `callees` filtra por `source_id`, `chamadores` por `target_id`, e o corte
+    # por tipo de aresta por `kind`. Coluna lider e o que decide se o planejador
+    # usa o indice -- `kind` na segunda posicao de um composto nao atende
+    # `WHERE kind = ?` sozinho, e por isso ele tem o proprio.
+    #
+    # `kind` acompanha as duas pontas no composto porque toda travessia que
+    # segue aresta escolhe o tipo dela, e assim o indice cobre o filtro inteiro
+    # sem voltar a tabela.
+    "CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id, kind)",
+    "CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id, kind)",
+    "CREATE INDEX IF NOT EXISTS idx_edges_kind ON edges(kind)",
+)
+
+# Ordem de DROP: filho antes de pai. Com `foreign_keys` efetivo -- e `abrir`
+# recusa a conexao em que ele nao pegou -- apagar `files` antes de `nodes`
+# dispararia o CASCADE em vez do descarte limpo que se pretende aqui.
+_TABELAS_PARA_DESCARTE = (
+    "symbols_fts",
+    "unresolved_refs",
+    "edges",
+    "nodes",
+    "files",
+    "metadata",
 )
 
 
@@ -223,7 +287,13 @@ def criar_schema(conexao: sqlite3.Connection, raiz: str | os.PathLike[str] | Non
 
     `raiz` so entra como IMPRESSAO -- ver `impressao_da_raiz`. O caminho em si
     nunca e gravado.
+
+    Idempotente sobre banco da versao CORRENTE. Sobre banco de outra versao ela
+    descarta primeiro -- ver `_descartar_schema_de_versao_anterior`, e a secao
+    da docstring do modulo sobre por que subir `SCHEMA_VERSION` nao basta.
     """
+    _descartar_schema_de_versao_anterior(conexao)
+
     for ddl in _TABELAS:
         conexao.execute(ddl)
     for ddl in _INDICES:
@@ -238,6 +308,38 @@ def criar_schema(conexao: sqlite3.Connection, raiz: str | os.PathLike[str] | Non
             ("root_fingerprint", impressao_da_raiz(raiz)),
         ),
     )
+
+
+def _descartar_schema_de_versao_anterior(conexao: sqlite3.Connection) -> None:
+    """Joga o banco fora quando a versao gravada nele nao e a corrente.
+
+    Nao ha migracao aqui, e a ausencia dela e escolha: o arquivo e DESCARTAVEL
+    -- nada no motor deterministico depende dele para responder --, entao
+    refazer custa uma reindexacao e escrever ALTER TABLE por versao custaria
+    para sempre. A versao 1 para a 2 ja nao seria um ALTER: `unresolved_refs`
+    trocou tres nomes de coluna.
+
+    Banco NOVO nao tem `metadata`, e essa e a diferenca que decide entre "outra
+    versao" e "ainda nao existe". Sem essa distincao a funcao levantaria
+    `no such table` na primeira indexacao de todas.
+
+    Banco da versao corrente sai daqui INTACTO, e isso tambem e afirmado em
+    teste: `indexar` chama `criar_schema` a cada execucao, e um DROP
+    incondicional refaria o indice do zero toda vez sem que nada ficasse
+    vermelho.
+    """
+    existe = conexao.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='metadata'"
+    ).fetchone()
+    if existe is None:
+        return
+    gravada = conexao.execute(
+        "SELECT value FROM metadata WHERE key = 'schema_version'"
+    ).fetchone()
+    if gravada is not None and gravada[0] == str(SCHEMA_VERSION):
+        return
+    for tabela in _TABELAS_PARA_DESCARTE:
+        conexao.execute(f"DROP TABLE IF EXISTS {tabela}")
 
 
 def impressao_da_raiz(raiz: str | os.PathLike[str] | None) -> str:

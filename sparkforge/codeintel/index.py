@@ -40,6 +40,10 @@ construi-la aqui de improviso deixaria no fantasma no banco enquanto isso.
 
 `files` cai por `DELETE`, e `nodes` e `unresolved_refs` vao junto pelo
 `ON DELETE CASCADE` -- que so acontece porque `abrir` confere `foreign_keys`.
+`edges` cai em SEGUIDA e nao junto: ela referencia `nodes`, nao `files`, entao
+so desaparece depois que o CASCADE de `files` levou os nos. E uma cadeia de dois
+saltos, e ela depende do mesmo `foreign_keys` efetivo -- se ele falhasse,
+sobrariam no orfao E aresta orfa.
 `symbols_fts` NAO cai junto: FTS5 e tabela virtual e chave estrangeira nao a
 alcanca. Ela e limpa na mao, e esquecer isso deixaria o indice respondendo busca
 com no que nao existe mais.

@@ -294,22 +294,163 @@ def test_schema_cria_as_tabelas_declaradas(tmp_path):
     assert {"metadata", "files", "nodes", "unresolved_refs", "symbols_fts"} <= tabelas
 
 
-def test_nao_ha_tabela_edges_nesta_fase(tmp_path):
-    """A ausencia e deliberada, entao ela e afirmada.
+def test_schema_tem_edges_e_unresolved(tmp_path):
+    """As duas tabelas da fase J4, e as duas juntas de proposito.
 
-    Aresta exige resolucao de referencia, que e onde mora a decisao dificil.
-    Sem este teste, alguem acrescenta `edges` vazia "para adiantar" e o indice
-    passa a ter uma tabela que ninguem sabe quando confiar. `unresolved_refs`
-    e o que existe desde ja.
+    Ate J3 este arquivo afirmava o CONTRARIO -- que `edges` nao existia --
+    porque aresta sem resolucao de referencia seria tabela que ninguem sabe
+    quando confiar. J4 traz a resolucao, entao a afirmacao inverte. As duas
+    andam juntas: `edges` guarda o que resolveu e `unresolved_refs` guarda o
+    que nao resolveu, e so as duas somadas dizem qual e a cobertura.
     """
-    conexao = abrir(tmp_path / "graph.sqlite3")
+    conexao = abrir(tmp_path / "g.sqlite3")
     criar_schema(conexao)
     tabelas = {
         linha[0] for linha in conexao.execute("SELECT name FROM sqlite_master WHERE type='table'")
     }
     conexao.close()
-    assert "edges" not in tabelas
-    assert "unresolved_refs" in tabelas
+    assert {"edges", "unresolved_refs"} <= tabelas
+
+
+def test_apagar_no_apaga_as_arestas_dele(tmp_path):
+    """CASCADE nos dois sentidos: aresta que sai e aresta que chega.
+
+    Sem isso, reindexar um arquivo deixa aresta apontando para no que nao existe
+    mais -- e uma travessia que segue essa aresta devolve resultado inventado.
+
+    As duas arestas sao o que torna o teste capaz de pegar CASCADE de um lado
+    so: apagar `n2` tem que levar a que CHEGA nele e a que SAI dele. Com o
+    CASCADE so em `target_id` sobraria `n2 -> n1`; so em `source_id` sobraria
+    `n1 -> n2`. Zero exige os dois.
+    """
+    conexao = abrir(tmp_path / "g.sqlite3")
+    criar_schema(conexao)
+    conexao.execute("INSERT INTO files (id,path,language,content_sha256,size_bytes,"
+                    "modified_ns,indexed_at) VALUES ('f1','a.py','python','x',1,1,1)")
+    for nid in ("n1", "n2"):
+        conexao.execute("INSERT INTO nodes (id,file_id,kind,name,qualified_name,"
+                        "start_line,end_line) VALUES (?,'f1','function',?,?,1,2)",
+                        (nid, nid, nid))
+    conexao.execute("INSERT INTO edges (source_id,target_id,kind,line) "
+                    "VALUES ('n1','n2','calls',5)")
+    conexao.execute("INSERT INTO edges (source_id,target_id,kind,line) "
+                    "VALUES ('n2','n1','calls',7)")
+    conexao.execute("DELETE FROM nodes WHERE id='n2'")
+    restantes = conexao.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
+    conexao.close()
+    assert restantes == 0, "aresta sobreviveu ao alvo -- travessia devolveria no fantasma"
+
+
+def test_edges_tem_indice_nas_duas_pontas_e_no_kind(tmp_path):
+    """As tres colunas por onde a travessia entra, cada uma liderando um indice.
+
+    `chamadores` filtra por `target_id`, `callees` por `source_id`, e o corte
+    por tipo de aresta por `kind`. Sem indice liderado por elas cada pergunta
+    vira varredura das ~25 mil arestas medidas nesta arvore, e a fase J3 ja
+    mediu que o indice so se paga quando responde mais rapido que `grep`.
+
+    Afirma a COLUNA LIDER e nao o nome do indice: nome e convencao, coluna
+    lider e o que decide se o planejador usa o indice.
+    """
+    conexao = abrir(tmp_path / "g.sqlite3")
+    criar_schema(conexao)
+    lideres = set()
+    for indice in conexao.execute("PRAGMA index_list('edges')").fetchall():
+        colunas = conexao.execute(f"PRAGMA index_info({indice[1]!r})").fetchall()
+        lideres.add(colunas[0][2])
+    conexao.close()
+    assert {"source_id", "target_id", "kind"} <= lideres
+
+
+def test_banco_de_versao_de_schema_anterior_e_refeito(tmp_path):
+    """`CREATE TABLE IF NOT EXISTS` acrescenta tabela nova e nao conserta velha.
+
+    Um banco da versao anterior sobreviveria com as colunas antigas de
+    `unresolved_refs`, e o primeiro INSERT da versao nova levantaria
+    `no such column` no meio de uma indexacao -- em producao, nao em teste.
+    Subir `SCHEMA_VERSION` so significa alguma coisa se alguem age sobre ele.
+    """
+    caminho = tmp_path / "g.sqlite3"
+    conexao = abrir(caminho)
+    criar_schema(conexao)
+    conexao.execute("INSERT INTO files (id,path,language,content_sha256,size_bytes,"
+                    "modified_ns,indexed_at) VALUES ('f1','a.py','python','x',1,1,1)")
+    conexao.execute("UPDATE metadata SET value='0' WHERE key='schema_version'")
+    conexao.close()
+
+    conexao = abrir(caminho)
+    criar_schema(conexao)
+    sobrou = conexao.execute("SELECT COUNT(*) FROM files").fetchone()[0]
+    versao = conexao.execute(
+        "SELECT value FROM metadata WHERE key='schema_version'"
+    ).fetchone()[0]
+    conexao.close()
+    assert sobrou == 0, "banco de versao anterior sobreviveu com o schema antigo"
+    assert versao == str(SCHEMA_VERSION)
+
+
+def test_banco_da_versao_1_de_verdade_e_refeito(tmp_path):
+    """O banco que J3 realmente escrevia, com as colunas que J4 aposentou.
+
+    O teste acima simula outra versao mexendo no `metadata`, e por isso passa
+    com qualquer valor de `SCHEMA_VERSION` -- inclusive com ele nao subido.
+    Este nao: aqui o banco DIZ 1, e se a constante tambem dissesse 1 nada seria
+    descartado, `unresolved_refs` sobreviveria com `raw_target`/`kind`, e o
+    INSERT com as colunas novas levantaria `no such column`. E o caminho de
+    upgrade real, e e o unico jeito de "subiu a versao" virar afirmacao em vez
+    de numero decorativo.
+    """
+    caminho = tmp_path / "g.sqlite3"
+    conexao = abrir(caminho)
+    conexao.execute("CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    conexao.execute(
+        "CREATE TABLE unresolved_refs ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " file_id TEXT NOT NULL,"
+        " from_node_id TEXT,"
+        " raw_target TEXT NOT NULL,"
+        " kind TEXT NOT NULL,"
+        " line INTEGER NOT NULL,"
+        " reason TEXT NOT NULL)"
+    )
+    conexao.execute("INSERT INTO metadata (key, value) VALUES ('schema_version','1')")
+    conexao.close()
+
+    conexao = abrir(caminho)
+    criar_schema(conexao)
+    conexao.execute(
+        "INSERT INTO files (id, path, language, content_sha256, size_bytes, "
+        "modified_ns, indexed_at) VALUES ('f1','a.py','python','abc',1,1,1)"
+    )
+    conexao.execute(
+        "INSERT INTO unresolved_refs "
+        "(file_id, reference_name, reference_kind, line, reason) "
+        "VALUES ('f1','spark.read','calls',3,'nome externo ao indice')"
+    )
+    quantas = conexao.execute("SELECT COUNT(*) FROM unresolved_refs").fetchone()[0]
+    conexao.close()
+    assert quantas == 1
+
+
+def test_banco_da_versao_corrente_nao_e_jogado_fora(tmp_path):
+    """O outro lado da guarda acima, e o que impede que ela apague tudo sempre.
+
+    `indexar` chama `criar_schema` a cada execucao. Se a comparacao de versao
+    estivesse invertida -- ou ausente, com o DROP incondicional -- a suite
+    inteira continuaria verde e o indice seria refeito do zero toda vez, calado.
+    """
+    caminho = tmp_path / "g.sqlite3"
+    conexao = abrir(caminho)
+    criar_schema(conexao)
+    conexao.execute("INSERT INTO files (id,path,language,content_sha256,size_bytes,"
+                    "modified_ns,indexed_at) VALUES ('f1','a.py','python','x',1,1,1)")
+    conexao.close()
+
+    conexao = abrir(caminho)
+    criar_schema(conexao)
+    sobrou = conexao.execute("SELECT COUNT(*) FROM files").fetchone()[0]
+    conexao.close()
+    assert sobrou == 1
 
 
 def test_schema_grava_a_versao_e_nao_grava_caminho_absoluto(tmp_path):
@@ -414,8 +555,9 @@ def test_apagar_arquivo_apaga_as_referencias_nao_resolvidas_dele(tmp_path):
         "modified_ns, indexed_at) VALUES ('f1','a.py','python','abc',1,1,1)"
     )
     conexao.execute(
-        "INSERT INTO unresolved_refs (file_id, raw_target, kind, line, reason) "
-        "VALUES ('f1','spark.read','call',3,'nome externo ao indice')"
+        "INSERT INTO unresolved_refs "
+        "(file_id, reference_name, reference_kind, line, reason) "
+        "VALUES ('f1','spark.read','calls',3,'nome externo ao indice')"
     )
     conexao.execute("DELETE FROM files WHERE id = 'f1'")
     restantes = conexao.execute("SELECT COUNT(*) FROM unresolved_refs").fetchone()[0]

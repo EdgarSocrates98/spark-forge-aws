@@ -210,13 +210,13 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **38
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |
+| `iter_source_files` | 1 | 197 | 428877 | 7270 | 102 |
 | `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |
 | `project_items` | 1 | 193 | 140522 | 1718 | 52 |
 | `tool_class` | 1 | 188 | 24310 | 2562 | 74 |
 | `authorize` | 4 | 897 | 24310 | 3804 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **714331**;
+Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **719852**;
 a saída do `grep` pelo nome, **17461**; a saída do `grep` pela definição, **419**.
 
 O **1940** é o único número desta seção que `scripts/check_vnext_claims.py` não audita, e vale
@@ -225,7 +225,7 @@ lista de tokens ignorados como datação, e essa contagem caiu ali. O próprio c
 já previa o custo. Ele não fica sem lastro por isso — as três razões abaixo são auditadas, e a
 prova de cada uma imprime numerador e denominador, com o **1940** entre os dois.
 
-**Contra o denominador do plano, o índice economiza 368.2 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 371.1 vezes.** Contra a saída de um `grep`
 pelo nome, **9.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.6** vezes o que aquele `grep` custaria.
 
@@ -244,7 +244,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **91582** bytes. O `grep` pela definição contendo o fragmento continua menor
+  no mesmo corpus, tem **92732** bytes. O `grep` pela definição contendo o fragmento continua menor
   (**5029** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não

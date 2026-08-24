@@ -30,7 +30,7 @@ import sqlite3
 import pytest
 
 from sparkforge.adapters.cli import main as cli_main
-from sparkforge.codeintel.db import BANCO_PADRAO
+from sparkforge.codeintel.db import BANCO_PADRAO, SCHEMA_VERSION
 from sparkforge.codeintel.index import indexar
 from sparkforge.codeintel.search import Achado, buscar, construir_consulta, resumo
 
@@ -358,7 +358,10 @@ class TestResumo:
         estado = resumo(indexado)
         assert estado["files"] == 1
         assert estado["nodes"] == 2
-        assert estado["schema_version"] == 1
+        # Contra a constante e nao contra um literal: o numero sobe a cada
+        # mudanca de schema, e o que o resumo tem que provar e que ele reporta
+        # a versao QUE O BANCO TEM -- nao a que estava escrita aqui em J3.
+        assert estado["schema_version"] == SCHEMA_VERSION
         assert estado["created_at"]
         assert estado["root_fingerprint"]
 
