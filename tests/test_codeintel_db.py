@@ -5,6 +5,14 @@ justificam a fase foram feitas em Python 3.14.6, e o `pyproject.toml` declara
 suporte a partir do 3.10 -- FTS5 e compilado opcional do SQLite, e um ambiente
 sem ele faria o indice falhar na criacao, nao na consulta. Melhor descobrir num
 teste nomeado do que num traceback de usuario.
+
+REGRA DESTE MODULO: pragma que nao levanta ainda pode nao ter pegado, e a
+unica prova e reler o valor efetivo. Tres dos cinco pragmas da abertura nao
+aplicam se chegarem depois da primeira escrita, e DOIS deles falham sem
+excecao nenhuma -- `journal_mode` devolvendo 'delete' e `foreign_keys`
+ficando em 0. Ler "nao levantou" como "funcionou" e a armadilha que este
+arquivo existe para desarmar. Todo teste daqui afirma valor efetivo, nunca
+ausencia de excecao.
 """
 
 import sqlite3
@@ -54,6 +62,12 @@ def test_fts5_casa_termo_dentro_de_nome_composto():
 
 @pytest.mark.parametrize("pragma", PRAGMAS_DE_ABERTURA)
 def test_pragma_e_aceito(pragma):
+    """So prova que o interpretador CONHECE o pragma -- nada alem disso.
+
+    Nao afirma que o pragma pegou, e em `:memory:` varios nem poderiam pegar.
+    Quem quiser a garantia de efeito tem que olhar
+    `test_pragmas_antes_da_primeira_escrita_pegam`, que rele valor efetivo.
+    """
     conexao = sqlite3.connect(":memory:")
     try:
         conexao.execute(f"PRAGMA {pragma}")
@@ -115,11 +129,90 @@ def test_wal_falha_calado_dentro_de_transacao(tmp_path):
     conexao.close()
 
 
+def test_foreign_keys_falha_calado_dentro_de_transacao(tmp_path):
+    """Depois de uma escrita, `foreign_keys=ON` NAO levanta -- e fica em 0.
+
+    A terceira falha de ordem, e a pior das tres. `journal_mode` errado custa
+    durabilidade; `foreign_keys=0` custa INTEGRIDADE, porque desliga
+    `ON DELETE CASCADE` -- veja `test_cascade_nao_acontece_com_foreign_keys_tarde`.
+    Existe separado do teste de dano para que ninguem "conserte" a ordem
+    achando que so `journal_mode` importava.
+    """
+    conexao = sqlite3.connect(tmp_path / "indice.db")
+    conexao.execute("CREATE TABLE t (a)")
+    conexao.execute("INSERT INTO t VALUES (1)")
+    assert conexao.in_transaction
+
+    assert conexao.execute("PRAGMA foreign_keys=ON").fetchall() == []
+    assert conexao.execute("PRAGMA foreign_keys").fetchone() == (0,)
+    conexao.close()
+
+
+def test_cascade_nao_acontece_com_foreign_keys_tarde(tmp_path):
+    """O dano concreto: no orfao sobrevive ao DELETE do arquivo dele.
+
+    Este teste nao e sobre pragma, e sobre a consequencia. Sem CASCADE o
+    indice acumula no orfao a cada reindexacao de arquivo alterado, calado, e
+    um indice que junta lixo em silencio e pior que um que falha. E o que a
+    Task 3 precisa pesar ao escolher entre ordem estrita e isolation_level=None.
+    """
+
+    def monta(conexao):
+        conexao.execute("CREATE TABLE files (path TEXT PRIMARY KEY)")
+        conexao.execute(
+            "CREATE TABLE nodes (node_id TEXT PRIMARY KEY, path TEXT "
+            "REFERENCES files(path) ON DELETE CASCADE)"
+        )
+        conexao.execute("INSERT INTO files VALUES ('a.py')")
+        conexao.execute("INSERT INTO nodes VALUES ('n1', 'a.py')")
+
+    def orfaos_apos_apagar(conexao):
+        conexao.execute("DELETE FROM files WHERE path = 'a.py'")
+        return conexao.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
+
+    tarde = sqlite3.connect(tmp_path / "tarde.db")
+    monta(tarde)
+    tarde.execute("PRAGMA foreign_keys=ON")  # tarde demais, fica em 0
+    assert tarde.execute("PRAGMA foreign_keys").fetchone() == (0,)
+    assert orfaos_apos_apagar(tarde) == 1  # o no sobreviveu: CASCADE nao rodou
+    tarde.close()
+
+    cedo = sqlite3.connect(tmp_path / "cedo.db")
+    cedo.execute("PRAGMA foreign_keys=ON")
+    monta(cedo)
+    assert cedo.execute("PRAGMA foreign_keys").fetchone() == (1,)
+    assert orfaos_apos_apagar(cedo) == 0
+    cedo.close()
+
+
+@pytest.mark.parametrize(
+    ("pragma", "leitura", "esperado"),
+    [("temp_store=MEMORY", "temp_store", 2), ("busy_timeout=30000", "busy_timeout", 30000)],
+)
+def test_pragma_de_conexao_pega_mesmo_dentro_de_transacao(tmp_path, pragma, leitura, esperado):
+    """Estes dois sao os unicos da lista imunes a ordem, e isso foi medido.
+
+    Sao propriedade da conexao, nao do arquivo de banco, entao transacao aberta
+    nao os bloqueia. Fica afirmado para que a Task 3 saiba exatamente quais
+    tres pragmas a ordem protege -- e nao gaste esforco protegendo os cinco.
+    """
+    conexao = sqlite3.connect(tmp_path / "indice.db")
+    conexao.execute("CREATE TABLE t (a)")
+    conexao.execute("INSERT INTO t VALUES (1)")
+    assert conexao.in_transaction
+
+    conexao.execute(f"PRAGMA {pragma}")
+    assert conexao.execute(f"PRAGMA {leitura}").fetchone() == (esperado,)
+    conexao.close()
+
+
 def test_pragmas_antes_da_primeira_escrita_pegam(tmp_path):
     """A ordem que a abertura do indice deve usar, afirmada de ponta a ponta.
 
-    Aplicar tudo antes do primeiro INSERT faz WAL e synchronous PERSISTIREM
-    depois da escrita -- que e o contrato que a Task 3 precisa honrar.
+    Aplicar tudo antes do primeiro INSERT faz os CINCO pragmas PERSISTIREM
+    depois da escrita -- que e o contrato que a Task 3 precisa honrar. Le
+    valor efetivo de todos, e nao so dos dois que ja falharam em outro teste,
+    porque contrato conferido pela metade nao e contrato.
     """
     conexao = sqlite3.connect(tmp_path / "indice.db")
     for pragma in PRAGMAS_DE_ABERTURA:
@@ -128,7 +221,10 @@ def test_pragmas_antes_da_primeira_escrita_pegam(tmp_path):
     conexao.execute("INSERT INTO t VALUES (1)")
 
     assert conexao.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+    assert conexao.execute("PRAGMA foreign_keys").fetchone() == (1,)
     assert conexao.execute("PRAGMA synchronous").fetchone() == (1,)  # 1 == NORMAL
+    assert conexao.execute("PRAGMA temp_store").fetchone() == (2,)  # 2 == MEMORY
+    assert conexao.execute("PRAGMA busy_timeout").fetchone() == (30000,)
     conexao.close()
 
 
@@ -147,5 +243,8 @@ def test_autocommit_permite_pragma_depois_da_escrita(tmp_path):
     for pragma in PRAGMAS_DE_ABERTURA:
         conexao.execute(f"PRAGMA {pragma}")
     assert conexao.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+    assert conexao.execute("PRAGMA foreign_keys").fetchone() == (1,)
     assert conexao.execute("PRAGMA synchronous").fetchone() == (1,)
+    assert conexao.execute("PRAGMA temp_store").fetchone() == (2,)
+    assert conexao.execute("PRAGMA busy_timeout").fetchone() == (30000,)
     conexao.close()
