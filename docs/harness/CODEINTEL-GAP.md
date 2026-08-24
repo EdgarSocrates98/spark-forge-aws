@@ -189,7 +189,7 @@ própria SPEC enumera.
 | Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as tools de coleta são de mundo aberto, e toda tool de mundo aberto também escreve localmente | `tests/test_adapters_tools.py` |
 | Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma usa objeto nu | `tests/test_adapters_tools.py` |
 | Entrada fechada a propriedade desconhecida | NÃO EXISTE | Nenhum dos schemas de entrada declara `additionalProperties: false`, que é uma constraint explícita da tool principal da SPEC. Argumento não previsto entra sem erro | — |
-| Controle de verbosidade na resposta | NÃO EXISTE | `detail_level` aparece em **0** das **44** tools do catálogo. Toda chamada devolve a mesma forma, no mesmo detalhe | — |
+| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
 | Projeção de campo na resposta | NÃO EXISTE | `fields` não aparece em tool nenhuma do catálogo. Não há como pedir só `kind` e `subject.file` | — |
 | Poucas tools compondo operações internamente | NÃO EXISTE | O catálogo tem o tamanho medido na linha acima, e a SPEC pede explicitamente o oposto dessa estratégia | — |
 | As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança | — |
@@ -224,6 +224,35 @@ própria SPEC enumera.
 | Gold set com símbolo e arquivo exigidos por query | NÃO EXISTE | Consequência da linha acima | — |
 | Gate de recall e de economia | NÃO EXISTE | Nenhuma medição de recuperação, e portanto nenhum piso. Vale registrar a assimetria que a SPEC escreve e que este repositório subscreveria: economia alta que omite o símbolo necessário é falha, não sucesso | — |
 | Benchmark de latência com percentil | NÃO EXISTE | `sparkforge/facts/benchmark.py` compara duas execuções de job Spark, que é outra coisa: não mede latência das próprias operações do motor | — |
+
+### Medição: procedência declarada uma vez, e `detail_level`
+
+Antes desta medição não havia nenhum controle de verbosidade: toda chamada devolvia a mesma
+forma, e a procedência era copiada uma vez por fato — o mesmo `artifact_sha256` do mesmo arquivo,
+repetido tantas vezes quantos fossem os fatos.
+
+Medido em `sparkforge analyze pyspark` sobre a fixture
+`fixtures/pyspark/clean_job/input/lib/job.py`, serializando o envelope devolvido com
+`json.dumps(..., ensure_ascii=False)`. A coluna de procedência é a soma do bloco `provenance`
+de cada item.
+
+| `detail_level` | Envelope | Procedência dentro dos itens |
+|---|---|---|
+| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |
+| `normal` | **3562 bytes** | nenhuma; declarada uma vez em `provenance` |
+| `summary` | **1475 bytes** | nenhuma; declarada uma vez em `provenance` |
+
+`normal` encolhe o envelope só por declarar cada procedência uma vez e referenciá-la por
+`provenance_ref`; `summary` encolhe mais por manter apenas `id`, `kind`, `arquivo:linha` e as
+medidas. Em nenhum dos dois a procedência sai do envelope — economia que apagasse
+rastreabilidade seria defeito, não compressão.
+
+Todos os valores são **bytes**, nunca tokens. Os estimadores de token deste repositório dividem
+o comprimento do texto por uma constante e divergem entre si no arredondamento: byte é
+observação, token seria estimativa vendida como medida.
+
+O default é `full` de propósito. Mudá-lo mudaria a saída de todo chamador existente e de todo
+golden de uma vez só, e isso é decisão de contrato — separada desta medição.
 
 ## 15. Testes de segurança
 

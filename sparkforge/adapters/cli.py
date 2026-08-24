@@ -71,6 +71,48 @@ def _load_json_list(path: str) -> list[dict[str, Any]]:
     return data
 
 
+_DETAIL_LEVEL_HELP = (
+    "Verbosidade da saida. `full` (default) devolve o fato inteiro, com a "
+    "procedencia dentro de cada item -- e o modo de reauditoria. `normal` "
+    "declara cada procedencia UMA VEZ em `provenance` e referencia por "
+    "`provenance_ref`. `summary` mantem so id, kind, arquivo:linha e medidas; "
+    "peca o fato inteiro por id quando precisar."
+)
+
+
+def _add_detail_level(parser: argparse.ArgumentParser) -> None:
+    """Acrescenta `--detail-level` a um subcomando que devolve FACTS.
+
+    Os niveis vem de `_core.NIVEIS_DE_DETALHE`, nao de uma lista literal aqui:
+    a projecao mora no `_core`, e duplicar os niveis no parser criaria duas
+    fontes para a mesma verdade -- uma delas destinada a ficar desatualizada.
+
+    So os verbos que devolvem facts recebem a flag. `judge` devolve findings e
+    `rules lookup` devolve regras: nenhum dos dois tem `provenance`, e o
+    `summary` de fato (`id`/`kind`/`measures`) nao existe nesses shapes.
+    """
+    parser.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=_DETAIL_LEVEL_HELP,
+    )
+
+
+def _apply_detail_level(payload: dict[str, Any], detail_level: str) -> dict[str, Any]:
+    """Projeta `payload["items"]` e declara a procedencia uma vez no envelope.
+
+    A CLI repagina por conta propria (`_core.analyze_*` e chamado com
+    `limit=None` para o `--out` sair completo), entao a projecao tem que ser
+    aplicada aqui tambem -- o `detail_level` que o `_core` recebe nao alcanca
+    esta pagina.
+    """
+    payload["items"], procedencias = _core.project_items(payload["items"], detail_level)
+    if procedencias:
+        payload["provenance"] = procedencias
+    return payload
+
+
 # Uma unica redacao para os tres verbos que aceitam a flag. Repetir o texto tres
 # vezes e como uma delas fica desatualizada.
 _EMR_FLAG_HELP = (
@@ -106,6 +148,7 @@ def build_parser() -> argparse.ArgumentParser:
     pyspark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     pyspark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     pyspark_p.add_argument("--cursor")
+    _add_detail_level(pyspark_p)
 
     catalog_p = analyze_sub.add_parser(
         "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
@@ -117,6 +160,7 @@ def build_parser() -> argparse.ArgumentParser:
     catalog_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     catalog_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     catalog_p.add_argument("--cursor")
+    _add_detail_level(catalog_p)
 
     event_log_analyze_p = analyze_sub.add_parser(
         "event-log", help="Extrai facts de um Spark event log (.jsonl) ja coletado."
@@ -128,6 +172,7 @@ def build_parser() -> argparse.ArgumentParser:
     event_log_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     event_log_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     event_log_analyze_p.add_argument("--cursor")
+    _add_detail_level(event_log_analyze_p)
 
     plan_p = analyze_sub.add_parser(
         "plan",
@@ -141,6 +186,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     plan_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     plan_p.add_argument("--cursor")
+    _add_detail_level(plan_p)
 
     terraform_p = analyze_sub.add_parser(
         "terraform", help="Extrai facts de blocos aws_glue_job em HCL Terraform."
@@ -152,6 +198,7 @@ def build_parser() -> argparse.ArgumentParser:
     terraform_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     terraform_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     terraform_p.add_argument("--cursor")
+    _add_detail_level(terraform_p)
 
     iceberg_p = analyze_sub.add_parser(
         "iceberg", help="Extrai facts de um dump JSON das metadata tables Iceberg."
@@ -163,6 +210,7 @@ def build_parser() -> argparse.ArgumentParser:
     iceberg_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     iceberg_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     iceberg_p.add_argument("--cursor")
+    _add_detail_level(iceberg_p)
 
     sql_p = analyze_sub.add_parser(
         "sql", help="Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark."
@@ -176,6 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
     sql_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     sql_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     sql_p.add_argument("--cursor")
+    _add_detail_level(sql_p)
 
     athena_wg_analyze_p = analyze_sub.add_parser(
         "athena-workgroup", help="Extrai facts de um dump JSON de workgroups do Athena."
@@ -189,6 +238,7 @@ def build_parser() -> argparse.ArgumentParser:
     athena_wg_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     athena_wg_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     athena_wg_analyze_p.add_argument("--cursor")
+    _add_detail_level(athena_wg_analyze_p)
 
     emr_analyze_p = analyze_sub.add_parser(
         "emr-cluster",
@@ -204,6 +254,7 @@ def build_parser() -> argparse.ArgumentParser:
     emr_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     emr_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     emr_analyze_p.add_argument("--cursor")
+    _add_detail_level(emr_analyze_p)
 
     emrs_analyze_p = analyze_sub.add_parser(
         "emr-serverless",
@@ -220,6 +271,7 @@ def build_parser() -> argparse.ArgumentParser:
     emrs_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     emrs_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     emrs_analyze_p.add_argument("--cursor")
+    _add_detail_level(emrs_analyze_p)
 
     dq_p = analyze_sub.add_parser(
         "data-quality",
@@ -234,6 +286,7 @@ def build_parser() -> argparse.ArgumentParser:
     dq_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     dq_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     dq_p.add_argument("--cursor")
+    _add_detail_level(dq_p)
 
     graph_p = analyze_sub.add_parser(
         "graph",
@@ -249,6 +302,7 @@ def build_parser() -> argparse.ArgumentParser:
     graph_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     graph_p.add_argument("--cursor")
+    _add_detail_level(graph_p)
 
     s3_p = analyze_sub.add_parser(
         "s3-listing",
@@ -262,6 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
     s3_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     s3_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     s3_p.add_argument("--cursor")
+    _add_detail_level(s3_p)
 
     consumers_p = analyze_sub.add_parser(
         "consumers",
@@ -276,6 +331,7 @@ def build_parser() -> argparse.ArgumentParser:
     consumers_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     consumers_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     consumers_p.add_argument("--cursor")
+    _add_detail_level(consumers_p)
 
     tf_diff_p = analyze_sub.add_parser(
         "terraform-diff",
@@ -287,6 +343,7 @@ def build_parser() -> argparse.ArgumentParser:
     tf_diff_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     tf_diff_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     tf_diff_p.add_argument("--cursor")
+    _add_detail_level(tf_diff_p)
 
     call_graph_p = analyze_sub.add_parser(
         "call-graph",
@@ -301,6 +358,7 @@ def build_parser() -> argparse.ArgumentParser:
     call_graph_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     call_graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     call_graph_p.add_argument("--cursor")
+    _add_detail_level(call_graph_p)
 
     # migrate --------------------------------------------------------------
     # Verbo de TOPO, nao `analyze migrate`: tudo sob `analyze` extrai facts de
@@ -408,6 +466,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     benchmark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     benchmark_p.add_argument("--cursor")
+    _add_detail_level(benchmark_p)
 
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
@@ -463,6 +522,7 @@ def build_parser() -> argparse.ArgumentParser:
     funcval_plan_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     funcval_plan_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     funcval_plan_p.add_argument("--cursor")
+    _add_detail_level(funcval_plan_p)
 
     funcval_compare_p = funcval_sub.add_parser(
         "compare",
@@ -498,6 +558,7 @@ def build_parser() -> argparse.ArgumentParser:
     funcval_compare_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     funcval_compare_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     funcval_compare_p.add_argument("--cursor")
+    _add_detail_level(funcval_compare_p)
 
     # fuse ---------------------------------------------------------------
     fuse_p = sub.add_parser(
@@ -522,6 +583,7 @@ def build_parser() -> argparse.ArgumentParser:
     fuse_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     fuse_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     fuse_p.add_argument("--cursor")
+    _add_detail_level(fuse_p)
 
     # judge ------------------------------------------------------------
     judge_p = sub.add_parser(
@@ -882,7 +944,7 @@ def _cmd_analyze_pyspark(args: argparse.Namespace) -> int:
         "by_kind": full["by_kind"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -901,7 +963,7 @@ def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
         "by_kind": full["by_kind"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -922,7 +984,7 @@ def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -943,7 +1005,7 @@ def _cmd_analyze_plan(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -964,7 +1026,7 @@ def _cmd_analyze_terraform(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -985,7 +1047,7 @@ def _cmd_analyze_iceberg(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1006,7 +1068,7 @@ def _cmd_analyze_sql(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1027,7 +1089,7 @@ def _cmd_analyze_s3_listing(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1048,7 +1110,7 @@ def _cmd_analyze_consumers(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1071,7 +1133,7 @@ def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1116,7 +1178,7 @@ def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1137,7 +1199,7 @@ def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1158,7 +1220,7 @@ def _cmd_analyze_emr_serverless(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1179,7 +1241,7 @@ def _cmd_analyze_data_quality(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1200,7 +1262,7 @@ def _cmd_analyze_graph(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1219,7 +1281,7 @@ def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
         "by_kind": full["by_kind"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1247,7 +1309,7 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1271,7 +1333,7 @@ def _cmd_funcval_plan(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1296,7 +1358,7 @@ def _cmd_funcval_compare(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1316,7 +1378,7 @@ def _cmd_fuse(args: argparse.Namespace) -> int:
         "summary": full["summary"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 

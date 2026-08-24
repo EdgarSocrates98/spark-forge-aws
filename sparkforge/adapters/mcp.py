@@ -76,11 +76,26 @@ def build_server() -> Any:
         do tool, e a validacao do SDK trocaria a mensagem acionavel do adapter
         por uma queixa de schema -- o operador perderia justamente o texto que
         diz o que fazer.
+
+        `separators=(",", ":")` porque este texto e transporte, nao leitura
+        humana: os separadores default do `json.dumps` acrescentam um espaco
+        depois de cada `,` e de cada `:` sem mudar o valor. A mensagem acionavel
+        dentro do dict continua identica -- so o envelope encolhe. A CLI segue
+        com `indent=2`: la o destino E um humano lendo o terminal.
+
+        Isto cobre SO o caminho de erro. O payload de sucesso e serializado
+        pelo SDK do MCP a partir do dict devolvido abaixo, e nao passa por
+        `json.dumps` nenhum deste modulo.
         """
         result = call_tool(name, arguments)
         if isinstance(result, dict) and "error" in result and "exit_code" in result:
             return CallToolResult(
-                content=[TextContent(type="text", text=json.dumps(result, ensure_ascii=False))],
+                content=[
+                    TextContent(
+                        type="text",
+                        text=json.dumps(result, ensure_ascii=False, separators=(",", ":")),
+                    )
+                ],
                 isError=True,
             )
         return result

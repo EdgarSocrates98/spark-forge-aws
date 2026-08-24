@@ -118,6 +118,114 @@ def paginate_items(
     return page, next_cursor
 
 
+NIVEIS_DE_DETALHE: tuple[str, ...] = ("summary", "normal", "full")
+
+# Campos que sobrevivem a `summary`. `id` esta aqui porque e ele que torna o
+# funil possivel: quem quiser o fato inteiro pede por id, e sem id o `summary`
+# seria um beco sem saida em vez de um primeiro passo.
+_CAMPOS_DE_SUMARIO: tuple[str, ...] = ("id", "kind", "measures")
+
+
+def _chave_de_procedencia(
+    prov: dict[str, Any], procedencias: dict[str, Any], por_conteudo: dict[str, str]
+) -> str:
+    """Chave estavel para `prov`, garantindo que procedencias DIFERENTES nunca
+    compartilhem chave.
+
+    A chave curta e o sha256 do artefato truncado em 12 -- legivel e suficiente
+    na esmagadora maioria dos casos. Truncar cria risco de colisao, e colisao
+    aqui seria SILENCIOSA: dois artefatos passariam a compartilhar procedencia
+    e a rastreabilidade apontaria para o arquivo errado.
+
+    Fail-closed em duas camadas, porque uma so nao basta. O prefixo pode colidir
+    entre artefatos distintos; o sha INTEIRO tambem pode "colidir" quando duas
+    procedencias tem o mesmo artefato e diferem em `extractor` -- o que acontece
+    de verdade em `fuse`, onde facts de extratores distintos sobre o mesmo
+    arquivo entram na mesma pagina. Por isso a identidade e o CONTEUDO canonico
+    da procedencia (`por_conteudo`), e a chave escala prefixo -> sha inteiro ->
+    sufixo numerado ate achar uma livre. Procedencias iguais sempre compartilham
+    chave; procedencias diferentes nunca.
+    """
+    canonico = json.dumps(prov, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    ja_vista = por_conteudo.get(canonico)
+    if ja_vista is not None:
+        return ja_vista
+
+    base = str(prov.get("artifact_sha256") or prov.get("artifact") or "") or "p"
+    chave = base[:12]
+    if chave in procedencias:
+        chave = base
+        sufixo = 2
+        while chave in procedencias:
+            chave = f"{base}#{sufixo}"
+            sufixo += 1
+
+    por_conteudo[canonico] = chave
+    procedencias[chave] = prov
+    return chave
+
+
+def project_items(
+    items: list[dict[str, Any]], detail_level: str
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """`(itens_projetados, procedencias)` para o nivel pedido.
+
+    `full` devolve exatamente o que sempre devolveu. Todo chamador (CLI, MCP,
+    as funcoes deste modulo) passa `full` por default, e isso e DE PROPOSITO:
+    outro default mudaria a saida de todo chamador existente e de todo golden
+    test de uma vez so, e isso e decisao de contrato, separada desta fase.
+    `full` tambem e o modo de reauditoria -- quem confere um finding precisa do
+    fato inteiro, nao de um resumo.
+
+    `normal` tira a procedencia de dentro de cada item e a declara UMA VEZ no
+    envelope, referenciada por `provenance_ref`. Medido na fixture
+    `clean_job`: a procedencia inline respondia por 25,1% do payload, o mesmo
+    sha256 do mesmo arquivo copiado uma vez por fato.
+
+    `summary` mantem so o que responde "onde e o que", com o `id` para pedir o
+    resto.
+
+    A procedencia NUNCA some: em `summary` ela continua no envelope. Economia
+    que apaga rastreabilidade seria o defeito que o gate de lastro recusa.
+
+    Esta projecao e definida sobre o shape de FACT (`Fact.to_dict`). Findings
+    (`judge`) e regras (`rules_lookup`) tem outro shape -- sem `provenance`,
+    e sem `id`/`kind`/`measures` no caso do finding -- e por isso nao passam
+    por aqui: aplicar `summary` a um finding devolveria um dict vazio.
+    """
+    if detail_level not in NIVEIS_DE_DETALHE:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE}",
+            exit_code=2,
+        )
+    if detail_level == "full":
+        return items, {}
+
+    procedencias: dict[str, Any] = {}
+    por_conteudo: dict[str, str] = {}
+    projetados: list[dict[str, Any]] = []
+    for item in items:
+        prov = item.get("provenance")
+        chave = ""
+        if prov:
+            chave = _chave_de_procedencia(prov, procedencias, por_conteudo)
+
+        if detail_level == "normal":
+            novo = {
+                k: v for k, v in item.items() if k not in ("provenance", "schema_version")
+            }
+        else:
+            sujeito = item.get("subject", {})
+            local = f"{sujeito.get('file', '')}:{sujeito.get('line', '')}".strip(":")
+            novo = {c: item[c] for c in _CAMPOS_DE_SUMARIO if item.get(c)}
+            if local:
+                novo["at"] = local
+        if chave:
+            novo["provenance_ref"] = chave
+        projetados.append(novo)
+    return projetados, procedencias
+
+
 # --------------------------------------------------------------------------- #
 # runtime a partir dos facts
 # --------------------------------------------------------------------------- #
@@ -453,6 +561,7 @@ def analyze_pyspark(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_facts(path)
     wanted_kinds = set(kind) if kind else None
@@ -461,6 +570,7 @@ def analyze_pyspark(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias = project_items(page, detail_level)
 
     # `unresolved` e contado sobre `facts`, nao sobre `filtered`: um filtro por
     # kind nao pode fazer o ponto cego desaparecer do relatorio. A regra 7 do
@@ -478,7 +588,7 @@ def analyze_pyspark(
         if f.kind == "pyspark.unresolved"
     ]
 
-    return {
+    resultado: dict[str, Any] = {
         "total_count": len(filtered),
         "returned_count": len(page),
         "next_cursor": next_cursor,
@@ -492,6 +602,9 @@ def analyze_pyspark(
         "unresolved_at": unresolved_at,
         "items": page,
     }
+    if procedencias:
+        resultado["provenance"] = procedencias
+    return resultado
 
 
 # --------------------------------------------------------------------------- #
@@ -520,6 +633,7 @@ def analyze_catalog_schema(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_catalog_facts(path)
     wanted_kinds = set(kind) if kind else None
@@ -528,6 +642,7 @@ def analyze_catalog_schema(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias = project_items(page, detail_level)
 
     # Mesmo raciocinio de `analyze_pyspark`: `unresolved` conta sobre `facts`,
     # nao sobre `filtered`, para um filtro por kind nao esconder o ponto cego.
@@ -538,7 +653,7 @@ def analyze_catalog_schema(
         if f.kind == "catalog.unresolved"
     ]
 
-    return {
+    resultado: dict[str, Any] = {
         "total_count": len(filtered),
         "returned_count": len(page),
         "next_cursor": next_cursor,
@@ -552,6 +667,9 @@ def analyze_catalog_schema(
         "unresolved_at": unresolved_at,
         "items": page,
     }
+    if procedencias:
+        resultado["provenance"] = procedencias
+    return resultado
 
 
 def _facts_page(
@@ -560,6 +678,7 @@ def _facts_page(
     kind: list[str] | None,
     limit: int | None,
     cursor: str | None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Pagina uma lista de Facts ja extraida, no mesmo shape de
     `analyze_pyspark`/`analyze_catalog_schema`: total/pagina/by_kind, mais
@@ -582,6 +701,7 @@ def _facts_page(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias = project_items(page, detail_level)
 
     result: dict[str, Any] = {
         "total_count": len(filtered),
@@ -595,6 +715,8 @@ def _facts_page(
         "by_kind": by_kind,
         "items": page,
     }
+    if procedencias:
+        result["provenance"] = procedencias
 
     if unresolved_kind is not None:
         # Mesmo raciocinio de `analyze_pyspark`/`analyze_catalog_schema`:
@@ -640,9 +762,10 @@ def analyze_event_log(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_event_log_facts(path)
-    return _facts_page(facts, "spark.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "spark.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -669,6 +792,7 @@ def analyze_plan(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Extrai Facts do texto de um plano fisico ja salvo em disco.
 
@@ -677,7 +801,7 @@ def analyze_plan(
     a mesma numeracao `(N)` vindos de arvores distintas.
     """
     facts = _extract_plan_facts(path)
-    return _facts_page(facts, "plan.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "plan.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -705,9 +829,10 @@ def analyze_terraform(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_terraform_facts(path)
-    return _facts_page(facts, "tf.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "tf.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -736,9 +861,10 @@ def analyze_iceberg(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_iceberg_facts(path)
-    return _facts_page(facts, "iceberg.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "iceberg.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -785,9 +911,10 @@ def analyze_sql(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_sql_facts(path, from_pyspark)
-    return _facts_page(facts, "sql.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "sql.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -816,9 +943,10 @@ def analyze_athena_workgroup(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_athena_workgroup_facts(path)
-    return _facts_page(facts, "athena.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "athena.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -847,9 +975,10 @@ def analyze_emr_cluster(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_emr_cluster_facts(path)
-    return _facts_page(facts, "emr.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "emr.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -892,9 +1021,10 @@ def analyze_emr_serverless(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_emr_serverless_facts(path)
-    return _facts_page(facts, "emrs.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "emrs.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -922,9 +1052,10 @@ def analyze_data_quality(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_data_quality_facts(path)
-    return _facts_page(facts, "dq.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "dq.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -952,9 +1083,10 @@ def analyze_graph(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_graph_facts(path)
-    return _facts_page(facts, "graph.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "graph.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -983,9 +1115,10 @@ def analyze_s3_listing(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_s3_listing_facts(path)
-    return _facts_page(facts, "s3.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "s3.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1013,9 +1146,10 @@ def analyze_consumers(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_consumers_facts(path)
-    return _facts_page(facts, "env.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "env.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1029,6 +1163,7 @@ def analyze_terraform_diff(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     before_path = Path(before)
     after_path = Path(after)
@@ -1043,7 +1178,7 @@ def analyze_terraform_diff(
                 exit_code=2,
             )
     facts = extract_terraform_diff(before_path, after_path, repo_root=after_path)
-    return _facts_page(facts, "tf.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "tf.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1056,6 +1191,7 @@ def analyze_call_graph(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Deriva Facts de grafo de chamadas a partir de um arquivo de facts ja
     extraido (tipicamente `analyze pyspark --out`). Funcao pura sobre Facts:
@@ -1065,7 +1201,7 @@ def analyze_call_graph(
     """
     fact_list = _load_facts_file(facts_path)
     derived = build_call_graph(fact_list, path_hint=facts_path)
-    return _facts_page(derived, None, kind, limit, cursor)
+    return _facts_page(derived, None, kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1244,6 +1380,7 @@ def benchmark_runs(
     cursor: str | None = None,
     before_runtime: str = "",
     after_runtime: str = "",
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Compara DOIS arquivos de facts de event log (`analyze event-log --out`)
     e emite os fatos `bench.*`. Funcao pura sobre Facts: nao executa Spark, nao
@@ -1276,7 +1413,7 @@ def benchmark_runs(
         before_runtime=before_runtime,
         after_runtime=after_runtime,
     )
-    return _facts_page(facts, "bench.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "bench.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1323,6 +1460,7 @@ def funcval_plan(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Deriva o plano de validacao funcional dos facts ja extraidos e o grava.
 
@@ -1370,7 +1508,7 @@ def funcval_plan(
         "--out",
         "sparkforge funcval plan --facts <facts.json> --out .sparkforge/plan.json",
     )
-    return _facts_page(derived, "funcval.unresolved", kind, limit, cursor)
+    return _facts_page(derived, "funcval.unresolved", kind, limit, cursor, detail_level)
 
 
 def _load_result_file(result_path: str, label: str) -> dict[str, Any]:
@@ -1482,6 +1620,7 @@ def funcval_compare(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Compara os DOIS resultados do operador contra o plano, e emite `funcval.*`.
 
@@ -1547,7 +1686,7 @@ def funcval_compare(
             "sparkforge funcval compare --plan <plano.json> --before <antes.json> "
             "--after <depois.json> --out .sparkforge/funcval.json",
         )
-    return _facts_page(facts, "funcval.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "funcval.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1560,6 +1699,7 @@ def fuse_facts(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Combina um ou mais arquivos de facts (`analyze pyspark --out`,
     `analyze catalog-schema --out`, ou qualquer outro produtor de facts) e
@@ -1592,10 +1732,11 @@ def fuse_facts(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias = project_items(page, detail_level)
 
     summary = next((f for f in fused if f.kind == "fusion.summary"), None)
 
-    return {
+    resultado: dict[str, Any] = {
         "total_count": len(filtered),
         "returned_count": len(page),
         "next_cursor": next_cursor,
@@ -1608,6 +1749,9 @@ def fuse_facts(
         "summary": summary.to_dict() if summary is not None else None,
         "items": page,
     }
+    if procedencias:
+        resultado["provenance"] = procedencias
+    return resultado
 
 
 # --------------------------------------------------------------------------- #

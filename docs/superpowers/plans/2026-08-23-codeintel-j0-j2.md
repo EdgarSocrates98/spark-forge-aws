@@ -958,6 +958,48 @@ git add sparkforge/adapters/ tests/test_adapters_detail_level.py docs/harness/CO
 git commit -m "feat(adapters): detail_level e procedencia por referencia"
 ```
 
+## Desvios medidos na execução da J1
+
+O plano acima fica como registro do que foi planejado. O que a execução mediu e teve de mudar:
+
+**Não são 7 pontos de envelope, e nem todos são de fact.** `"total_count"` aparece 7 vezes em
+`_core.py`, mas só 6 delas paginam, e só 4 devolvem facts: `analyze_pyspark`,
+`analyze_catalog_schema`, `_facts_page` (compartilhado por 17 verbos) e `fuse_facts`. Os outros
+três são `judge` (findings), `rules_lookup` (regras, sob a chave `rules`) e `collect_verify` (sem
+paginação nenhuma). Findings não têm `provenance` e não têm `id`/`kind`/`measures`: aplicar
+`_CAMPOS_DE_SUMARIO` a um finding devolveria `{}`. Por isso `judge` e `rules_lookup` ficam de
+fora, e o `detail_level` chega a 20 das 22 tools que paginam, não às 22.
+
+**A CLI monta o próprio envelope, e o `detail_level` do `_core` não a alcança.** Os 20 handlers
+de `cli.py` chamam `_core.analyze_*(limit=None)` — para o `--out` sair completo — e repaginam
+com `_core.paginate_items` sobre `full["items"]`. São 20 pontos de envelope adicionais, um por
+handler. A projeção precisou ser aplicada também ali, por `_apply_detail_level`. Sem isso, a
+flag existiria no parser e não faria nada.
+
+**A chave truncada precisava de mais do que o escalonamento para o sha inteiro.** O tratamento
+do plano cobre prefixo colidindo entre artefatos distintos, mas não cobre duas procedências com o
+MESMO `artifact_sha256` e `extractor` diferente — que é o caso real em `fuse`, onde facts de
+extratores distintos sobre o mesmo arquivo entram na mesma página. A identidade passou a ser o
+conteúdo canônico da procedência, e a chave escala prefixo → sha inteiro → sufixo numerado.
+Procedências iguais sempre compartilham chave; diferentes nunca. Coberto por
+`TestChaveDeProcedencia`.
+
+**`mcp.py:83` só serializa o caminho de ERRO.** O payload de sucesso é serializado pelo SDK do
+MCP a partir do dict devolvido por `_call_tool`, e não passa por `json.dumps` nenhum do módulo.
+Os separadores compactos foram aplicados, e encolhem o envelope de erro — não o de sucesso.
+
+**O `outputSchema` precisava mudar junto.** `_FACT_ITEM.required` exigia
+`["id", "schema_version", "kind", "subject", "measures", "attrs", "provenance"]`, que descreve
+apenas `full`. Um cliente MCP valida `structuredContent` contra esse schema, então `normal` e
+`summary` falhariam a validação. `required` passou a `["id", "kind"]` — os dois campos que
+sobrevivem aos três níveis — e `provenance_ref`, `at` e o mapa `provenance` do envelope foram
+declarados.
+
+**O gate de paridade confundia flag com subcomando.** `_leaf_cli_verbs` pegava "a primeira ação
+com `choices`" de cada subparser, e `--detail-level` tem `choices`: `benchmark` passou a ser
+lido como três verbos inexistentes. A heurística foi trocada por teste de tipo
+(`argparse._SubParsersAction`), que é o que ela sempre quis dizer.
+
 ---
 
 # Fase J2 — a cadeia vê o argumento, ou o limite fica escrito

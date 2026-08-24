@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "58e0f2a9114c04a162f29187cf970dc78aa7347b",
+  "extracted_from": "e45bcb1113fcb4a2f292cce73e52445f4af0d5a2",
   "claims": [
     {
       "context": "`sparkforge/economy/budget.py`, que define tiers de 0 a 6 (`TIER_PRICING`)",
@@ -3075,17 +3075,17 @@
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "136,6"
+          "value": "147,5"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "136,6",
+      "text": "147,5",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (137,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
@@ -3094,13 +3094,13 @@
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/_core.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "128,1"
+          "value": "137,1"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "128,1",
+      "text": "137,1",
       "type": "number"
     },
     {
@@ -3114,13 +3114,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 713
+          "value": 725
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "713",
+      "text": "725",
       "type": "number"
     },
     {
@@ -3174,13 +3174,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 1479
+          "value": 1491
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1479",
+      "text": "1491",
       "type": "number"
     },
     {
@@ -8224,8 +8224,8 @@
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 192,
-      "text": "0",
-      "context": "| Controle de verbosidade na resposta | NÃO EXISTE | `detail_level` aparece em **0** das **44** tools do catálogo. Toda ",
+      "text": "20",
+      "context": "| Controle de verbosidade na resposta | NÃO EXISTE | `detail_level` aparece em **20** das **44** tools do catálogo. Toda ",
       "type": "number",
       "id": "VNX-557",
       "state": "PROVADA",
@@ -8236,7 +8236,7 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 0
+          "value": 20
         }
       }
     },
@@ -9241,6 +9241,111 @@
         "test": "tests/test_verify_wheel.py",
         "symbol": "test_runs_every_golden_module"
       }
+    },
+    {
+      "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-624",
+      "line": 241,
+      "proof": {
+        "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
+        "expect": {
+          "kind": "contains",
+          "value": "full_bytes=4553"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "4553",
+      "type": "number"
+    },
+    {
+      "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-625",
+      "line": 241,
+      "proof": {
+        "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
+        "expect": {
+          "kind": "contains",
+          "value": "provenance_bytes=1144"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1144",
+      "type": "number"
+    },
+    {
+      "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-626",
+      "line": 241,
+      "proof": {
+        "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
+        "expect": {
+          "kind": "contains",
+          "value": "pct_provenance=25,1"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "25,1%",
+      "type": "number"
+    },
+    {
+      "context": "| `normal` | **3562 bytes** | nenhuma; declarada uma vez em `provenance` |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-627",
+      "line": 242,
+      "proof": {
+        "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
+        "expect": {
+          "kind": "contains",
+          "value": "normal_bytes=3562"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "3562",
+      "type": "number"
+    },
+    {
+      "context": "| `summary` | **1475 bytes** | nenhuma; declarada uma vez em `provenance` |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-628",
+      "line": 243,
+      "proof": {
+        "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
+        "expect": {
+          "kind": "contains",
+          "value": "summary_bytes=1475"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1475",
+      "type": "number"
+    },
+    {
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-629",
+      "line": 192,
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/adapters/_core.py",
+        "symbol": "test_as_tools_de_fact_declaram_detail_level",
+        "test": "tests/test_adapters_detail_level.py"
+      },
+      "state": "PROVADA",
+      "text": "Controle de verbosidade na resposta",
+      "type": "capability"
     }
   ]
 }

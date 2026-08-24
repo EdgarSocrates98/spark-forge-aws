@@ -94,6 +94,41 @@ _WRITE_LOCAL_OPEN_WORLD = {
 # cada funcao realmente devolve.
 # --------------------------------------------------------------------------- #
 
+# Uma unica redacao para as 20 ferramentas que aceitam a flag. Repetir o texto
+# vinte vezes e como uma delas fica desatualizada.
+_DETAIL_LEVEL_DESC = (
+    "Verbosidade da saida. `full` (default) devolve o fato inteiro, com a "
+    "procedencia dentro de cada item -- e o modo de reauditoria. `normal` "
+    "declara cada procedencia UMA VEZ no campo `provenance` do envelope e "
+    "referencia por `provenance_ref`. `summary` devolve id, kind, "
+    "arquivo:linha (`at`) e medidas; peca o fato inteiro por id quando "
+    "precisar. Em nenhum nivel a procedencia some do envelope."
+)
+
+# `provenance` so aparece quando `detail_level` e `normal` ou `summary`: e a
+# tabela que `provenance_ref` indexa. Declarada uma vez aqui e espalhada nos
+# TRES schemas de pagina de fact que existem -- `_ANALYZE_PYSPARK_SCHEMA` (que
+# `_ANALYZE_FACTS_SCHEMA`, `_BENCHMARK_SCHEMA` e `_FUNCVAL_SCHEMA` reusam por
+# identidade), `_ANALYZE_CALL_GRAPH_SCHEMA` e `_FUSE_SCHEMA`. Nao entra em
+# `_PAGE_PROPERTIES`: de la ela cairia tambem no envelope de `judge` e no de
+# `rules_lookup`, que nunca devolvem esta chave -- schema que declara campo
+# inexistente mente tanto quanto o que omite campo existente.
+_PROVENANCE_MAP: dict[str, Any] = {
+    "type": "object",
+    "description": (
+        "Procedencias declaradas uma vez, indexadas pela chave que cada item cita "
+        "em `provenance_ref`. Presente apenas quando `detail_level` nao e `full`."
+    ),
+    "additionalProperties": {
+        "type": "object",
+        "properties": {
+            "artifact": {"type": "string"},
+            "artifact_sha256": {"type": "string"},
+            "extractor": {"type": "string"},
+        },
+    },
+}
+
 _PAGE_PROPERTIES: dict[str, Any] = {
     "total_count": {
         "type": "integer",
@@ -147,8 +182,18 @@ _FACT_SUBJECT: dict[str, Any] = {
 
 _FACT_ITEM: dict[str, Any] = {
     "type": "object",
-    "description": "Observacao deterministica ancorada; nunca contem juizo nem limiar.",
-    "required": ["id", "schema_version", "kind", "subject", "measures", "attrs", "provenance"],
+    "description": (
+        "Observacao deterministica ancorada; nunca contem juizo nem limiar. "
+        "Os campos presentes dependem de `detail_level`: `full` traz todos, "
+        "`normal` troca `provenance` por `provenance_ref`, e `summary` mantem "
+        "`id`, `kind`, `measures`, `at` e `provenance_ref`."
+    ),
+    # So `id` e `kind` sao exigidos porque so eles sobrevivem aos TRES niveis
+    # de `detail_level`. Listar aqui o que existe apenas em `full` seria um
+    # schema que mente para os outros dois -- e o cliente MCP valida
+    # `structuredContent` contra ele. O que cada nivel devolve esta na
+    # `description` acima e em `_core.project_items`.
+    "required": ["id", "kind"],
     "properties": {
         "id": {
             "type": "string",
@@ -171,6 +216,21 @@ _FACT_ITEM: dict[str, Any] = {
                 "artifact_sha256": {"type": "string"},
                 "extractor": {"type": "string"},
             },
+        },
+        "provenance_ref": {
+            "type": "string",
+            "description": (
+                "Chave da procedencia deste fact no mapa `provenance` do envelope. "
+                "Presente quando `detail_level` nao e `full`. Procedencias diferentes "
+                "nunca compartilham chave -- ver `_core.project_items`."
+            ),
+        },
+        "at": {
+            "type": "string",
+            "description": (
+                "`arquivo:linha` do subject, em `detail_level: summary`. E o "
+                "`subject` condensado, nao um campo novo do fact."
+            ),
         },
     },
 }
@@ -693,6 +753,7 @@ _ANALYZE_PYSPARK_SCHEMA: dict[str, Any] = {
             },
         },
         "items": {"type": "array", "items": _FACT_ITEM},
+        "provenance": _PROVENANCE_MAP,
     },
 }
 
@@ -745,6 +806,7 @@ _ANALYZE_CALL_GRAPH_SCHEMA: dict[str, Any] = {
         },
         "by_kind": {"type": "object", "additionalProperties": {"type": "integer"}},
         "items": {"type": "array", "items": _FACT_ITEM},
+        "provenance": _PROVENANCE_MAP,
     },
 }
 
@@ -776,6 +838,7 @@ _FUSE_SCHEMA: dict[str, Any] = {
         "by_kind": {"type": "object", "additionalProperties": {"type": "integer"}},
         "summary": {"type": ["object", "null"]},
         "items": {"type": "array", "items": _FACT_ITEM},
+        "provenance": _PROVENANCE_MAP,
     },
 }
 
@@ -1507,6 +1570,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1534,6 +1602,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1562,6 +1635,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1602,6 +1680,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1634,6 +1717,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1661,6 +1749,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1694,6 +1787,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1723,6 +1821,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1761,6 +1864,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1802,6 +1910,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1847,6 +1960,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1893,6 +2011,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1923,6 +2046,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1953,6 +2081,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -1979,6 +2112,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -2190,6 +2328,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -2258,6 +2401,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -2330,6 +2478,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -2405,6 +2558,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -2441,6 +2599,11 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -2904,6 +3067,7 @@ def _h_analyze_pyspark(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -2947,6 +3111,7 @@ def _h_analyze_catalog_schema(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -2956,6 +3121,7 @@ def _h_analyze_event_log(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -2965,6 +3131,7 @@ def _h_analyze_plan(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -2974,6 +3141,7 @@ def _h_analyze_terraform(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -2983,6 +3151,7 @@ def _h_analyze_iceberg(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -2993,6 +3162,7 @@ def _h_analyze_sql(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3002,6 +3172,7 @@ def _h_analyze_s3_listing(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3011,6 +3182,7 @@ def _h_analyze_consumers(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3021,6 +3193,7 @@ def _h_analyze_terraform_diff(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3046,6 +3219,7 @@ def _h_analyze_athena_workgroup(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3055,6 +3229,7 @@ def _h_analyze_emr_cluster(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3064,6 +3239,7 @@ def _h_analyze_emr_serverless(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3073,6 +3249,7 @@ def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3082,6 +3259,7 @@ def _h_analyze_graph(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3091,6 +3269,7 @@ def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3101,6 +3280,7 @@ def _h_benchmark(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
         before_runtime=args.get("before_runtime", ""),
         after_runtime=args.get("after_runtime", ""),
     )
@@ -3114,6 +3294,7 @@ def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3126,6 +3307,7 @@ def _h_funcval_compare(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 
@@ -3135,6 +3317,7 @@ def _h_fuse(args: dict[str, Any]) -> dict[str, Any]:
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
     )
 
 

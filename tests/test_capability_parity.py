@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import yaml
@@ -140,23 +141,34 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
         ),
     }
 
+    def _subcomandos(self, parser):
+        """A acao de SUBCOMANDOS de `parser`, ou None se ele nao tem nenhum.
+
+        Testa o tipo da acao, nao a presenca de `choices`. Toda flag com
+        `choices=` (`--detail-level`, `--transport`) tambem tem `choices`
+        preenchido, e a heuristica antiga -- "a primeira acao com choices" --
+        confundia uma flag com uma lista de subcomandos: `benchmark` passou a
+        ser lido como tres verbos inexistentes (`benchmark full`, `normal`,
+        `summary`) no dia em que ganhou a flag.
+        """
+        return next(
+            (
+                a
+                for a in parser._actions  # noqa: SLF001
+                if isinstance(a, argparse._SubParsersAction)  # noqa: SLF001
+            ),
+            None,
+        )
+
     def _leaf_cli_verbs(self):
         from sparkforge.adapters.cli import build_parser
 
         parser = build_parser()
-        sub = next(
-            a for a in parser._actions if hasattr(a, "choices") and a.choices  # noqa: SLF001
-        )
+        sub = self._subcomandos(parser)
+        assert sub is not None, "o parser raiz precisa ter subcomandos"
         leaves = []
         for name, subparser in sub.choices.items():
-            nested = next(
-                (
-                    a
-                    for a in subparser._actions  # noqa: SLF001
-                    if hasattr(a, "choices") and a.choices
-                ),
-                None,
-            )
+            nested = self._subcomandos(subparser)
             if nested:
                 leaves.extend(f"{name} {leaf}" for leaf in sorted(nested.choices))
             else:
