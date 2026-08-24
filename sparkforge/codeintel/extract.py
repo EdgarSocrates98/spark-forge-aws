@@ -117,8 +117,15 @@ def extrair_nos_ou_none(fonte: str, caminho: str) -> list[No] | None:
     return coletor.nos
 
 
-class _Coletor(ast.NodeVisitor):
-    """Visitante com pilha de escopo, que e o que produz o nome qualificado.
+class VisitanteComEscopo(ast.NodeVisitor):
+    """A pilha de escopo, UMA so, para quem precisar de nome qualificado.
+
+    Publica e herdada de proposito. `refs.py` precisa exatamente desta pilha
+    para dizer de QUAL funcao sai cada chamada, e uma segunda pilha divergiria
+    da primeira em silencio -- J0 ja pagou esse preco com quatro detectores de
+    segredo que discordavam entre si. Quem quiser escopo herda daqui e
+    implementa `_ao_entrar`; quem escrever `visit_ClassDef` proprio esta
+    duplicando, e `tests/test_codeintel_refs.py` afirma que ninguem escreveu.
 
     Herda de `NodeVisitor` -- e nao percorre so `.body` de def e class -- porque
     def dentro de `if TYPE_CHECKING:` ou de `try/except ImportError` e ordinario,
@@ -127,16 +134,22 @@ class _Coletor(ast.NodeVisitor):
     A pilha guarda o TIPO de cada escopo alem do nome, porque so o tipo do
     escopo imediato decide entre `method` e `function`: uma funcao aninhada
     dentro de um metodo e `function`, mesmo tendo uma classe mais acima.
+
+    PONTO CEGO ASSUMIDO: decorador e valor de default sao AVALIADOS no escopo de
+    FORA, e chegam aqui ja dentro do escopo da funcao que decoram -- `@fabrica()`
+    sobre `def f` conta como chamada saindo de `f`. Sao expressoes do proprio no
+    de definicao, e separa-las exigiria visitar `decorator_list` e `args` antes
+    de empilhar. Nao foi feito porque a pilha e o contrato compartilhado com
+    `extract.py`, e o desvio e de uma linha por definicao decorada; fica dito
+    para nao ser descoberto como surpresa numa travessia.
     """
 
-    def __init__(self, caminho: str) -> None:
-        self.caminho = caminho
-        self.nos: list[No] = []
+    def __init__(self) -> None:
         self._nomes: list[str] = []
         self._tipos: list[str] = []
 
     def visit_ClassDef(self, no: ast.ClassDef) -> None:
-        self._registrar(no, "class", _assinatura_de_classe(no))
+        self._ao_entrar(no, "class")
         self._nomes.append(no.name)
         self._tipos.append("class")
         self.generic_visit(no)
@@ -151,12 +164,57 @@ class _Coletor(ast.NodeVisitor):
 
     def _funcao(self, no: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         kind = "method" if self._tipos and self._tipos[-1] == "class" else "function"
-        self._registrar(no, kind, _assinatura_de_funcao(no))
+        self._ao_entrar(no, kind)
         self._nomes.append(no.name)
         self._tipos.append("function")
         self.generic_visit(no)
         self._nomes.pop()
         self._tipos.pop()
+
+    def _ao_entrar(
+        self,
+        no: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
+        kind: str,
+    ) -> None:
+        """Gancho chamado ao ENTRAR numa definicao, antes de empilha-la.
+
+        Antes e nao depois porque o nome qualificado de uma definicao nao inclui
+        ela mesma duas vezes: `P.m` sai da pilha `["P"]` mais `m`.
+
+        Vazio por default: quem so quer a pilha -- `refs.py` -- nao registra nada
+        na definicao em si.
+        """
+
+    def _escopo_qualificado(self) -> str:
+        """Nome qualificado do escopo CORRENTE, ou string vazia no topo do modulo.
+
+        Mesma forma que `No.qualified_name`, e isso nao e coincidencia: e por
+        essa igualdade que `resolve.py` consegue casar a origem de uma chamada
+        com o no de onde ela sai. Se as duas divergissem, toda aresta que sai de
+        metodo cairia em `unresolved_refs` sem ninguem entender por que.
+        """
+        return ".".join(self._nomes)
+
+
+class _Coletor(VisitanteComEscopo):
+    """Escopo -> `No`. Toda a pilha vem da base; aqui so mora o que virar linha."""
+
+    def __init__(self, caminho: str) -> None:
+        super().__init__()
+        self.caminho = caminho
+        self.nos: list[No] = []
+
+    def _ao_entrar(
+        self,
+        no: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
+        kind: str,
+    ) -> None:
+        assinatura = (
+            _assinatura_de_classe(no)
+            if isinstance(no, ast.ClassDef)
+            else _assinatura_de_funcao(no)
+        )
+        self._registrar(no, kind, assinatura)
 
     def _registrar(
         self,
@@ -217,4 +275,4 @@ def _assinatura_de_classe(no: ast.ClassDef) -> str:
     return f"{no.name}({', '.join(partes)})"
 
 
-__all__ = ["No", "extrair_nos", "extrair_nos_ou_none"]
+__all__ = ["No", "VisitanteComEscopo", "extrair_nos", "extrair_nos_ou_none"]

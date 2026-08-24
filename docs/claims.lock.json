@@ -9535,7 +9535,7 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **381** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **383** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
@@ -9545,13 +9545,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 381
+          "value": 383
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "381",
+      "text": "383",
       "type": "number"
     },
     {
@@ -10212,7 +10212,7 @@
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **92732** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **92925** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 247,
@@ -10222,13 +10222,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 92732
+          "value": 92925
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "92732",
+      "text": "92925",
       "type": "number"
     },
     {

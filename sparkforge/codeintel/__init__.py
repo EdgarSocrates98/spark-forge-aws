@@ -13,15 +13,18 @@ from sparkforge.codeintel.db import BANCO_PADRAO
 from sparkforge.codeintel.extract import No, extrair_nos
 from sparkforge.codeintel.ids import node_id, normalizar_assinatura
 from sparkforge.codeintel.index import Resultado, indexar
+from sparkforge.codeintel.refs import Referencia, extrair_referencias
 from sparkforge.codeintel.search import Achado, buscar, resumo
 
 __all__ = [
     "BANCO_PADRAO",
     "Achado",
     "No",
+    "Referencia",
     "Resultado",
     "buscar",
     "extrair_nos",
+    "extrair_referencias",
     "indexar",
     "node_id",
     "normalizar_assinatura",
