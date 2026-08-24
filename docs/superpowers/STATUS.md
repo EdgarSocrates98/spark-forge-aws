@@ -2019,15 +2019,41 @@ versão nunca foi lida daí. Para configuração de tuning a distinção é meno
 grave — o valor reportado é o que o driver resolveu — mas ela não some, e vai na
 explicação da regra quando a área for escrita.
 
-**Dívida nova, com custo medido.** `sparkforge/facts/secrets.py` nasce como
-fonte única de redação de segredo em par chave/valor. `_looks_like_secret` está
-implementado em `emr_cluster.py`, `emr_serverless.py` e `terraform.py`, os dois
-primeiros anotando em comentário que repetem o terceiro. Configuração de Spark é
-onde credencial mais aparece — `spark.hadoop.fs.s3a.secret.key`, senha em URL de
-JDBC — e virar a quarta cópia seria drift em superfície de segurança. Os três
-existentes **não** foram migrados: cada um tem golden gravado, e regravar golden
-sem defeito é risco de semântica sem ganho medido. Consolidá-los é dívida, não
-esquecimento.
+**Dívida nova, com custo medido — ~~paga~~ na Task 3 da fase J0.**
+`sparkforge/facts/secrets.py` nasce como fonte única de redação de segredo em
+par chave/valor. `_looks_like_secret` estava implementado também em
+`emr_cluster.py`, `emr_serverless.py` e `terraform.py`, os dois primeiros
+anotando em comentário que repetiam o terceiro. Configuração de Spark é onde
+credencial mais aparece — `spark.hadoop.fs.s3a.secret.key`, senha em URL de
+JDBC — e virar a quarta cópia seria drift em superfície de segurança. A fase
+que criou o módulo **não** migrou os três, pelo custo estimado de regravar
+golden sem defeito.
+
+**O custo estimado não se confirmou.** As três cópias saíram e os três módulos
+passaram a importar `looks_like_secret` de `facts/secrets.py`. Medido: **0**
+golden regravado, **531** testes de `terraform`/`emr_cluster`/`emr_serverless`
+passando sem alteração de fixture, suíte inteira em **6380 passed, 5 skipped**
+(linha de base da fase: **6362 passed, 5 skipped**, mais o que a fase J0
+acrescentou, deste commit e dos concorrentes), `ruff` em **241**, o mesmo da
+linha de base. O gate contra a próxima cópia é
+estrutural, não comportamental — `test_existe_um_unico_detector_de_segredo_no_pacote`
+varre o pacote por AST e quebra quando alguém define a segunda, antes de ela
+divergir.
+
+**As cópias divergiam, e não era da forma que se supunha.** A justificativa
+escrita dizia que elas repetiam os mesmos padrões. Não repetiam: as cópias
+tinham `AKIA` sozinho (a canônica tem `AKIA|ASIA|AIDA|AROA` mais GitHub, JWT,
+PEM e Slack), piso de entropia **20** contra **16**, e — o que mais pesa — a
+dica de nome de chave `"key"` isolada, que a canônica não tem. Varrendo os
+**247019** pares chave/valor dos **489** JSON de `fixtures/`: a canônica não
+redige **nada** que a cópia não redigisse, e a cópia redigia **53** ocorrências
+(**11** distintas) que a canônica deixa passar — todas nomes de campo literais
+`key`/`Key` com valor inócuo (`--spark-event-logs-path`,
+`analytics/cliques/_SUCCESS`, `maximizeResourceAllocation`). Nenhuma é
+credencial. A varredura é aproximada — ela passa o nome do campo JSON como
+chave, e não a chave de configuração que o extrator passa — mas a direção é
+inequívoca: a consolidação não perdeu detecção, e apagou falso positivo que
+apagava evidência.
 
 **Contagem que estava errada, corrigida no caminho.** *Números correntes* dizia
 **164** fixtures golden com `graph` em 19. Medido: **171**, com `graph` em 25 —

@@ -463,7 +463,8 @@ class TestSegredo:
         return _one(facts, "emrs.configuration")
 
     def test_chave_de_acesso_e_redigida_antes_de_virar_fact(self):
-        # `_AKIA_RE` casa `AKIA` seguido de 16 alfanumericos maiusculos. O teste
+        # O padrao `aws_access_key` de `facts/secrets.py` casa `AKIA` (ou
+        # `ASIA`/`AIDA`/`AROA`) seguido de 16 alfanumericos maiusculos. O teste
         # precisa do FORMATO, nao de um valor real: montado assim, e
         # inequivocamente sintetico para leitor humano e para scanner.
         chave = "AKIA" + "X" * 16
@@ -494,7 +495,8 @@ class TestSegredo:
 
     def test_anotacao_vence_a_heuristica_de_entropia(self):
         """O nome do segredo pode casar os padroes de segredo por acidente --
-        `_AKIA_RE` usa `search`, nao `fullmatch`. Sem precedencia explicita, a
+        o padrao de access key da AWS em `facts/secrets.py` usa `search`, nao
+        `fullmatch`. Sem precedencia explicita, a
         anotacao correta seria acusada justamente quando o nome do segredo
         parece uma credencial."""
         conf = self._conf("spark.hadoop.fs.s3a.access.key", "EMR.secret@AKIAIOSFODNN7EXAMPLE")

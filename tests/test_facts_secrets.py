@@ -23,6 +23,9 @@ escrito em docs/harness/UNTRUSTED-CONTENT.md.
 # montar a string em runtime esconde do leitor humano o que o teste testa, e
 # troca legibilidade por silencio.
 
+import ast
+import pathlib
+
 import pytest
 
 from sparkforge.facts.secrets import detectores, looks_like_secret
@@ -73,3 +76,25 @@ def test_detectores_nomeia_sem_nunca_devolver_o_valor():
 
 def test_detectores_vazio_para_dado_legitimo():
     assert detectores("spark.sql.warehouse.dir", "s3://bucket/prefixo") == ()
+
+
+def test_existe_um_unico_detector_de_segredo_no_pacote():
+    """Quatro copias da mesma pergunta e como um controle de seguranca apodrece.
+
+    O gate e estrutural, nao comportamental: ele nao pergunta se as copias
+    concordam, pergunta se elas existem. Quem escrever a quinta quebra isto
+    antes de a quinta divergir -- que e o unico momento em que a divergencia
+    ainda e barata de consertar.
+    """
+    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge"
+    definidores = []
+    for arquivo in sorted(raiz.rglob("*.py")):
+        if "__pycache__" in arquivo.parts:
+            continue
+        arvore = ast.parse(arquivo.read_text(encoding="utf-8"))
+        for no in ast.walk(arvore):
+            if isinstance(no, ast.FunctionDef) and no.name.lstrip("_") == "looks_like_secret":
+                # `as_posix` e obrigatorio: sem ele o separador vem `\` no
+                # Windows e o gate falharia mesmo com uma copia so.
+                definidores.append(arquivo.relative_to(raiz).as_posix())
+    assert definidores == ["facts/secrets.py"], definidores

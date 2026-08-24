@@ -42,6 +42,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.secrets import looks_like_secret as _looks_like_secret
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "terraform@0.1.0"
@@ -102,16 +103,13 @@ _REF_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*(\.[A-Za-z_][A-Za-z0-9_-]*)+$")
 _FUNC_CALL_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\s*\(")
 _ESCAPE_RE = re.compile(r"\\(.)")
 
-# SF-GLUE-006: padroes de valor que parecem credencial. AKIA + 16
-# alfanumericos maiusculos e o formato documentado de AWS access key id.
-# URL com senha embutida (`scheme://user:pass@host`) e o segundo padrao mais
-# comum em default arguments de conexao. O terceiro (alta entropia sob chave
-# que soa a segredo) fica em `_looks_like_secret`, guardado por
-# `_SECRET_KEY_HINTS` para nao marcar qualquer string longa como segredo.
-_AKIA_RE = re.compile(r"AKIA[0-9A-Z]{16}")
-_URL_PASSWORD_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s:@/]+:[^\s@/]+@")
-_HIGH_ENTROPY_RE = re.compile(r"[A-Za-z0-9+/_=-]{20,}")
-_SECRET_KEY_HINTS = ("secret", "password", "token", "key")
+# SF-GLUE-006: os padroes de credencial NAO moram mais aqui. Este modulo tinha
+# copia privada deles, e as outras duas copias viviam em `facts/emr_cluster.py`
+# e `facts/emr_serverless.py`. Copia de controle de seguranca apodrece calada:
+# um padrao acrescentado num arquivo e esquecido nos outros vaza segredo por um
+# extrator e nao pelos demais, e nada acusa. A fonte unica e
+# `facts/secrets.py`, e `tests/test_facts_secrets.py` tem gate estrutural que
+# quebra se alguem escrever a proxima.
 
 
 def _unescape(text: str) -> str:
@@ -285,17 +283,6 @@ def _value_to_str(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
-
-
-def _looks_like_secret(key: str, value: str) -> bool:
-    if _AKIA_RE.search(value):
-        return True
-    if _URL_PASSWORD_RE.search(value):
-        return True
-    key_lower = key.lower()
-    if any(hint in key_lower for hint in _SECRET_KEY_HINTS) and _HIGH_ENTROPY_RE.fullmatch(value):
-        return True
-    return False
 
 
 def _attribute_fact(

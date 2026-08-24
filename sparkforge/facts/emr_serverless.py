@@ -198,9 +198,9 @@ Um valor anotado e um **ID de segredo, nao um segredo**: o EMR resolve pelo
 Secrets Manager na hora da execucao. Acusa-lo seria acusar exatamente a correcao
 que o achado recomenda. Entao a anotacao e testada **antes** da heuristica de
 segredo e vence: `attrs.secret_reference: True`, sem redacao e sem
-`secret_pattern_match`. A precedencia nao e cosmetica -- `_AKIA_RE` usa `search`,
-nao `fullmatch`, entao um nome de segredo que pareca uma credencial casaria a
-heuristica se ela rodasse primeiro.
+`secret_pattern_match`. A precedencia nao e cosmetica -- o padrao de access key
+da AWS em `facts/secrets.py` usa `search`, nao `fullmatch`, entao um nome de
+segredo que pareca uma credencial casaria a heuristica se ela rodasse primeiro.
 
 Isso nao existe no vocabulario de `emr_cluster.py` e e acrescimo desta area.
 
@@ -227,15 +227,18 @@ manter `secret_reference: True` (achado nenhum) e **ainda assim** redigir
 deixa de dizer QUAL segredo e referenciado, que e a parte util dela. Registrado
 em `docs/superpowers/STATUS.md`, em *Limites declarados*.
 
-## Segredo: a heuristica e duplicada, como manda a convencao do pacote
+## Segredo: a heuristica vem de `facts/secrets.py`, fonte unica
 
-`_looks_like_secret` repete os quatro padroes de `facts/terraform.py` e
-`facts/emr_cluster.py`. A duplicacao e deliberada e ja esta justificada por
-escrito em `emr_cluster.py` (secao "Segredo"): extratores sao modulos
-independentes por desenho, como `iceberg_metadata._nearest_rank` em relacao a
-`event_log`. Quando ela casa, o valor nao e escrito em `attrs` -- vira
-`<redigido>`, com `attrs.secret_pattern_match: true`. Um golden commitado com
-credencial real seria o analisador causando o dano que a regra previne.
+Este modulo ja teve copia privada da heuristica, ao lado de outras duas em
+`facts/terraform.py` e `facts/emr_cluster.py`, defendida como convencao do
+pacote: extratores sao modulos independentes por desenho. A independencia vale
+para EXTRACAO; nao vale para um controle de seguranca, onde uma copia que
+diverge vaza segredo por um extrator e nao pelos demais sem que nada acuse. As
+tres copias sairam e `tests/test_facts_secrets.py` tem gate estrutural contra a
+proxima. Quando `facts.secrets.looks_like_secret` casa, o valor nao e escrito
+em `attrs` -- vira `<redigido>`, com `attrs.secret_pattern_match: true`. Um
+golden commitado com credencial real seria o analisador causando o dano que a
+regra previne.
 
 **A heuristica so roda quando a anotacao `EMR.secret@` nao venceu antes**, e essa
 excecao esta declarada na secao anterior. Nao e "o valor NUNCA e escrito": e "o
@@ -268,6 +271,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.secrets import looks_like_secret as _looks_like_secret
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "emr_serverless@0.1.0"
@@ -317,13 +321,8 @@ _CAPACITY_AXES: tuple[tuple[str, str], ...] = (
 # segredo, nao um segredo -- ver a secao dedicada na docstring do modulo.
 SECRET_REFERENCE_PREFIX = "EMR.secret@"  # noqa: S105 -- anotacao publica, nao credencial
 
-# Mesmos padroes de `facts/terraform.py` e `facts/emr_cluster.py`. Ver docstring
-# do modulo para por que sao duplicados em vez de importados.
-_AKIA_RE = re.compile(r"AKIA[0-9A-Z]{16}")
-_URL_PASSWORD_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s:@/]+:[^\s@/]+@")
-_HIGH_ENTROPY_RE = re.compile(r"[A-Za-z0-9+/_=-]{20,}")
-_SECRET_KEY_HINTS = ("secret", "password", "token", "key")
-
+# Os padroes de credencial moram em `facts/secrets.py`, fonte unica. Ver a
+# secao "Segredo" da docstring do modulo para por que a copia local saiu.
 REDACTED = "<redigido>"
 
 
@@ -395,17 +394,6 @@ def _is_secret_reference(value: str) -> bool:
     docstring do modulo -- nao endurecer sem ler.
     """
     return value.startswith(SECRET_REFERENCE_PREFIX)
-
-
-def _looks_like_secret(key: str, value: str) -> bool:
-    if _AKIA_RE.search(value):
-        return True
-    if _URL_PASSWORD_RE.search(value):
-        return True
-    key_lower = key.lower()
-    if any(hint in key_lower for hint in _SECRET_KEY_HINTS) and _HIGH_ENTROPY_RE.fullmatch(value):
-        return True
-    return False
 
 
 def _unresolved(path: str, reason: str, provenance: dict[str, Any], **extra: Any) -> Fact:
@@ -710,7 +698,8 @@ def _configuration_facts(
         # diz "nao se aplica".
         attrs: dict[str, Any] = {"classification": classification, "key": key, "value": value}
         if _is_secret_reference(value):
-            # ANTES da heuristica, e a ordem e o teste: `_AKIA_RE` usa `search`,
+            # ANTES da heuristica, e a ordem e o teste: o padrao de access key
+            # da AWS em `facts/secrets.py` usa `search`, nao `fullmatch`,
             # entao um nome de segredo que pareca uma credencial seria acusado
             # se a heuristica rodasse primeiro -- e o achado acusaria a propria
             # correcao que recomenda.

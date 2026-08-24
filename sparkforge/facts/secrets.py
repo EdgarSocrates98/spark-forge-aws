@@ -1,26 +1,25 @@
 """Reconhecimento de segredo em par chave/valor de configuracao.
 
-POR QUE ESTE MODULO EXISTE, e por que ele nasce com tres copias vivas ao lado.
+POR QUE ESTE MODULO EXISTE: ele e a UNICA implementacao da pergunta "isto parece
+segredo?" no pacote, e um gate estrutural mantem isso verdadeiro.
 
-`_looks_like_secret` esta implementado hoje em `facts/emr_cluster.py`,
-`facts/emr_serverless.py` e `facts/terraform.py`. Os dois primeiros carregam, em
-comentario, a observacao de que repetem os padroes do terceiro. Enquanto a
-duplicacao foi de tres extratores que ja tinham golden gravado, custava menos que
-o risco de mexer neles.
+Ele nasceu ao lado de tres copias privadas -- `facts/emr_cluster.py`,
+`facts/emr_serverless.py` e `facts/terraform.py` --, que a fase de criacao
+decidiu nao migrar por medo de regravar golden sem defeito. A area SF-CFG mudou
+a conta: ela le CONFIGURACAO DE SPARK, que e onde credencial aparece com mais
+frequencia -- `spark.hadoop.fs.s3a.secret.key`, senha dentro de URL de JDBC em
+`spark.sql.catalog.*.uri`, token em `spark.kubernetes.*`. Virar a QUARTA copia
+seria criar drift numa superficie de seguranca: um padrao corrigido num arquivo
+e esquecido nos outros vaza segredo por um extrator e nao pelos demais, e nada
+acusa.
 
-A area SF-CFG muda a conta. Ela le CONFIGURACAO DE SPARK, que e onde credencial
-aparece com mais frequencia -- `spark.hadoop.fs.s3a.secret.key`, senha dentro de
-URL de JDBC em `spark.sql.catalog.*.uri`, token em `spark.kubernetes.*`. Virar a
-QUARTA copia seria criar drift numa superficie de seguranca: um padrao corrigido
-num arquivo e esquecido nos outros vaza segredo por um extrator e nao pelos
-demais, e nada acusa.
-
-Entao o modulo nasce como fonte unica para quem for escrito daqui em diante. Os
-tres existentes NAO foram migrados nesta fase de proposito: cada um tem fixtures
-golden gravadas, e mudar o caminho de redacao deles exigiria regravar golden que
-nao tem defeito -- trabalho com risco de semantica e sem ganho medido. A
-consolidacao esta registrada como divida em STATUS.md, com o custo medido, em vez
-de ficar implicita neste comentario.
+As tres copias foram removidas e o custo temido nao apareceu: nenhum golden
+precisou ser regravado. O registro do que se supunha, do que se mediu e da
+divergencia que as copias ja tinham (elas NAO repetiam os mesmos padroes) esta
+em `docs/superpowers/STATUS.md`. O gate que impede a proxima copia e
+`tests/test_facts_secrets.py::test_existe_um_unico_detector_de_segredo_no_pacote`
+-- estrutural, nao comportamental: ele quebra quando a segunda e escrita, nao
+quando ela diverge, porque divergir e o momento em que o conserto ja e caro.
 
 O contrato e deliberadamente conservador. Ele responde "isto PARECE segredo?",
 nunca "isto E segredo": um falso positivo redige um valor que o operador podia

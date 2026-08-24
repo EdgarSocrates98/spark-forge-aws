@@ -169,17 +169,21 @@ nao removida. O padrao e reaproveitavel: quando o gatilho de uma regra for a
 ausencia de uma COMBINACAO, o extrator emite o kind que representa a combinacao
 satisfeita e a regra usa `absent:` sobre ele.
 
-## Segredo: mesmo mecanismo de `terraform.py`
+## Segredo: mecanismo unico, em `facts/secrets.py`
 
-Valor de propriedade e argumento de bootstrap action passam pelo mesmo teste de
-`_looks_like_secret` que `facts/terraform.py` usa para SF-GLUE-006 -- as APIs
-Describe/List devolvem esses valores em texto claro para quem tem permissao de
-leitura. Quando casa, o valor NUNCA e escrito em `attrs`: vira `<redigido>`,
-com `attrs.secret_pattern_match: true`. Um golden commitado com credencial real
-seria o analisador causando o dano que a regra existe para prevenir. A funcao e
-duplicada, e nao importada de `terraform.py`, pela mesma razao que
-`iceberg_metadata._nearest_rank` e duplicada de `event_log`: extratores sao
-modulos independentes por desenho.
+Valor de propriedade e argumento de bootstrap action passam por
+`facts.secrets.looks_like_secret` -- as APIs Describe/List devolvem esses
+valores em texto claro para quem tem permissao de leitura. Quando casa, o valor
+NUNCA e escrito em `attrs`: vira `<redigido>`, com
+`attrs.secret_pattern_match: true`. Um golden commitado com credencial real
+seria o analisador causando o dano que a regra existe para prevenir.
+
+Este modulo ja teve copia privada da heuristica, ao lado de outras duas em
+`facts/terraform.py` e `facts/emr_serverless.py`, justificada como "extratores
+sao modulos independentes por desenho". A independencia vale para EXTRACAO;
+nao vale para um controle de seguranca, onde copia divergente vaza segredo por
+um extrator e nao pelos demais sem que nada acuse. As copias foram removidas e
+`tests/test_facts_secrets.py` tem gate estrutural contra a proxima.
 
 Como os demais extratores: puro e deterministico. Nunca aplica limiar, nunca
 atribui severidade, nunca infere o que o dump nao diz.
@@ -192,6 +196,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.secrets import looks_like_secret as _looks_like_secret
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "emr_cluster@0.1.0"
@@ -235,13 +240,8 @@ KNOWN_AM_LABELS = frozenset({"CORE", "ON_DEMAND"})
 _RELEASE_LABEL_RE = re.compile(r"^emr-(.+)$", re.IGNORECASE)
 _RELEASE_NUMBER_RE = re.compile(r"^(\d+)\.(\d+)")
 
-# Mesmos padroes de `facts/terraform.py` (SF-GLUE-006). Ver docstring do modulo
-# para por que sao duplicados em vez de importados.
-_AKIA_RE = re.compile(r"AKIA[0-9A-Z]{16}")
-_URL_PASSWORD_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s:@/]+:[^\s@/]+@")
-_HIGH_ENTROPY_RE = re.compile(r"[A-Za-z0-9+/_=-]{20,}")
-_SECRET_KEY_HINTS = ("secret", "password", "token", "key")
-
+# Os padroes de credencial moram em `facts/secrets.py`, fonte unica. Ver a
+# secao "Segredo" da docstring do modulo para por que a copia local saiu.
 REDACTED = "<redigido>"
 
 
@@ -294,17 +294,6 @@ def _value_to_str(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
-
-
-def _looks_like_secret(key: str, value: str) -> bool:
-    if _AKIA_RE.search(value):
-        return True
-    if _URL_PASSWORD_RE.search(value):
-        return True
-    key_lower = key.lower()
-    if any(hint in key_lower for hint in _SECRET_KEY_HINTS) and _HIGH_ENTROPY_RE.fullmatch(value):
-        return True
-    return False
 
 
 def _unresolved(path: str, reason: str, provenance: dict[str, Any], **extra: Any) -> Fact:
