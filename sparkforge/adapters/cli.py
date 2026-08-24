@@ -74,9 +74,11 @@ def _load_json_list(path: str) -> list[dict[str, Any]]:
 _DETAIL_LEVEL_HELP = (
     "Verbosidade da saida. `full` (default) devolve o fato inteiro, com a "
     "procedencia dentro de cada item -- e o modo de reauditoria. `normal` "
-    "declara cada procedencia UMA VEZ em `provenance` e referencia por "
-    "`provenance_ref`. `summary` mantem so id, kind, arquivo:linha e medidas; "
-    "peca o fato inteiro por id quando precisar."
+    "declara procedencia e schema_version UMA VEZ no envelope e referencia a "
+    "procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, "
+    "medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um "
+    "fato por id: para ter o fato inteiro de volta, reexecute em `full` e "
+    "pague o payload inteiro outra vez."
 )
 
 
@@ -100,17 +102,17 @@ def _add_detail_level(parser: argparse.ArgumentParser) -> None:
 
 
 def _apply_detail_level(payload: dict[str, Any], detail_level: str) -> dict[str, Any]:
-    """Projeta `payload["items"]` e declara a procedencia uma vez no envelope.
+    """Projeta `payload["items"]` e declara no envelope o que saiu dos itens.
 
     A CLI repagina por conta propria (`_core.analyze_*` e chamado com
     `limit=None` para o `--out` sair completo), entao a projecao tem que ser
     aplicada aqui tambem -- o `detail_level` que o `_core` recebe nao alcanca
     esta pagina.
     """
-    payload["items"], procedencias = _core.project_items(payload["items"], detail_level)
-    if procedencias:
-        payload["provenance"] = procedencias
-    return payload
+    payload["items"], procedencias, versao = _core.project_items(
+        payload["items"], detail_level
+    )
+    return _core.declarar_no_envelope(payload, procedencias, versao)
 
 
 # Uma unica redacao para os tres verbos que aceitam a flag. Repetir o texto tres

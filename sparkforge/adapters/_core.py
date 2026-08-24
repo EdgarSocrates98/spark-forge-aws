@@ -12,6 +12,7 @@ divirjam -- os dois chamam exatamente as mesmas funcoes deste modulo.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -120,55 +121,78 @@ def paginate_items(
 
 NIVEIS_DE_DETALHE: tuple[str, ...] = ("summary", "normal", "full")
 
-# Campos que sobrevivem a `summary`. `id` esta aqui porque e ele que torna o
-# funil possivel: quem quiser o fato inteiro pede por id, e sem id o `summary`
-# seria um beco sem saida em vez de um primeiro passo.
+# Campos do fact que sobrevivem a `summary` sem mudar de forma. `subject` NAO
+# esta aqui: ele e reduzido a `at` (arquivo:linha) e `symbol` logo abaixo.
 _CAMPOS_DE_SUMARIO: tuple[str, ...] = ("id", "kind", "measures")
 
+# Quantos hex chars do digest viram a chave de procedencia. Isto e FORMATO DE
+# FIO, nao detalhe interno: `provenance_ref` cita esta chave, e encurtar
+# aumenta a chance de duas procedencias diferentes caírem na mesma. Esta
+# constante existe para que um teste possa fixá-la.
+TAMANHO_DA_CHAVE_DE_PROCEDENCIA = 16
 
-def _chave_de_procedencia(
-    prov: dict[str, Any], procedencias: dict[str, Any], por_conteudo: dict[str, str]
-) -> str:
-    """Chave estavel para `prov`, garantindo que procedencias DIFERENTES nunca
-    compartilhem chave.
 
-    A chave curta e o sha256 do artefato truncado em 12 -- legivel e suficiente
-    na esmagadora maioria dos casos. Truncar cria risco de colisao, e colisao
-    aqui seria SILENCIOSA: dois artefatos passariam a compartilhar procedencia
-    e a rastreabilidade apontaria para o arquivo errado.
+def _canonico(valor: Any) -> str:
+    return json.dumps(valor, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
-    Fail-closed em duas camadas, porque uma so nao basta. O prefixo pode colidir
-    entre artefatos distintos; o sha INTEIRO tambem pode "colidir" quando duas
-    procedencias tem o mesmo artefato e diferem em `extractor` -- o que acontece
-    de verdade em `fuse`, onde facts de extratores distintos sobre o mesmo
-    arquivo entram na mesma pagina. Por isso a identidade e o CONTEUDO canonico
-    da procedencia (`por_conteudo`), e a chave escala prefixo -> sha inteiro ->
-    sufixo numerado ate achar uma livre. Procedencias iguais sempre compartilham
-    chave; procedencias diferentes nunca.
+
+def chave_de_procedencia(prov: dict[str, Any]) -> str:
+    """Chave de `prov`, derivada SO do conteudo de `prov`.
+
+    Ser funcao pura do conteudo e o ponto inteiro, e a versao anterior errava
+    exatamente aqui. Ela derivava a chave do `artifact_sha256` e desempatava
+    com um sufixo numerado quando duas procedencias colidiam -- mas a projecao
+    roda DEPOIS de paginar, sobre UMA pagina, entao o desempate so valia dentro
+    daquela pagina. Reproduzido com `fuse` de py+sql em paginas de 9: a chave
+    `7322f5e505a6` apontava para `pyspark_ast` na pagina 1 e para `sql_literal`
+    na pagina 2. Quem pagina pelo `next_cursor` e une os mapas -- que e o unico
+    jeito de consumir resultado paginado -- atribuia o fato ao extrator errado,
+    sem erro nenhum.
+
+    Derivando do conteudo, a mesma procedencia recebe a mesma chave em qualquer
+    pagina, em qualquer execucao e em qualquer verbo, por construcao. Nao ha
+    estado entre paginas para manter coerente, porque nao ha estado.
+
+    O digest e truncado em `TAMANHO_DA_CHAVE_DE_PROCEDENCIA` (16 hex chars, 64
+    bits) porque a chave inteira apareceria uma vez por item em
+    `provenance_ref` e comeria a economia que `normal` existe para dar. Duas
+    procedencias diferentes so colidem se os 64 primeiros bits do sha256
+    coincidirem; DENTRO de uma pagina isso e detectado e vira erro
+    (`project_items`), ENTRE paginas nao ha como detectar -- e o risco residual
+    declarado desta escolha.
+
+    sha256 aqui e content-addressing, nao uso criptografico: identifica de que
+    artefato o fato veio para que a mesma procedencia produza a mesma chave.
     """
-    canonico = json.dumps(prov, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-    ja_vista = por_conteudo.get(canonico)
-    if ja_vista is not None:
-        return ja_vista
+    digest = hashlib.sha256(_canonico(prov).encode("utf-8")).hexdigest()
+    return digest[:TAMANHO_DA_CHAVE_DE_PROCEDENCIA]
 
-    base = str(prov.get("artifact_sha256") or prov.get("artifact") or "") or "p"
-    chave = base[:12]
-    if chave in procedencias:
-        chave = base
-        sufixo = 2
-        while chave in procedencias:
-            chave = f"{base}#{sufixo}"
-            sufixo += 1
 
-    por_conteudo[canonico] = chave
-    procedencias[chave] = prov
-    return chave
+def _resumir(item: dict[str, Any]) -> dict[str, Any]:
+    """Reduz um fact ao que responde "o que" e "onde".
+
+    `symbol` e campo proprio, e nao concatenado dentro de `at`, porque os dois
+    respondem coisas diferentes e nem sempre existem juntos. Medido nas
+    fixtures: todo fact de `catalog.table_*` tem `subject.symbol` (o nome da
+    tabela) e NENHUM tem `subject.line` -- num dump com varias tabelas, tres
+    facts do mesmo kind teriam o mesmo `at` (`dump.json`) e so `symbol` os
+    distingue. Enfiar o simbolo dentro de `at` produziria `dump.json db.eventos`,
+    string sem gramatica, que o consumidor teria de adivinhar onde corta.
+    """
+    sujeito = item.get("subject") or {}
+    novo = {c: item[c] for c in _CAMPOS_DE_SUMARIO if item.get(c)}
+    local = f"{sujeito.get('file', '')}:{sujeito.get('line', '')}".strip(":")
+    if local:
+        novo["at"] = local
+    if sujeito.get("symbol"):
+        novo["symbol"] = sujeito["symbol"]
+    return novo
 
 
 def project_items(
     items: list[dict[str, Any]], detail_level: str
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """`(itens_projetados, procedencias)` para o nivel pedido.
+) -> tuple[list[dict[str, Any]], dict[str, Any], int | None]:
+    """`(itens_projetados, procedencias, schema_version)` para o nivel pedido.
 
     `full` devolve exatamente o que sempre devolveu. Todo chamador (CLI, MCP,
     as funcoes deste modulo) passa `full` por default, e isso e DE PROPOSITO:
@@ -177,16 +201,21 @@ def project_items(
     `full` tambem e o modo de reauditoria -- quem confere um finding precisa do
     fato inteiro, nao de um resumo.
 
-    `normal` tira a procedencia de dentro de cada item e a declara UMA VEZ no
-    envelope, referenciada por `provenance_ref`. Medido na fixture
-    `clean_job`: a procedencia inline respondia por 25,1% do payload, o mesmo
-    sha256 do mesmo arquivo copiado uma vez por fato.
+    `normal` tira do item o que se REPETE e declara uma vez no envelope: a
+    procedencia (referenciada por `provenance_ref`) e o `schema_version`. Os
+    dois sao repeticao pela mesma razao, e por isso saem pelo mesmo caminho --
+    tirar so um e chamar isso de "declarar a procedencia uma vez" seria
+    descrever mal a propria economia. Medido na fixture `clean_job`: a
+    procedencia inline respondia por 25,1% do payload.
 
-    `summary` mantem so o que responde "onde e o que", com o `id` para pedir o
-    resto.
+    `summary` reduz o item ao que responde "o que" e "onde" (ver `_resumir`).
 
-    A procedencia NUNCA some: em `summary` ela continua no envelope. Economia
-    que apaga rastreabilidade seria o defeito que o gate de lastro recusa.
+    Nada e apagado em silencio. A procedencia continua no envelope nos dois
+    niveis, e o `schema_version` tambem -- QUANDO todos os itens da pagina
+    concordam. Se divergirem (possivel em `fuse`, que le facts de arquivos
+    gerados em momentos diferentes), cada item mantem o proprio e o envelope
+    nao declara nenhum: um numero so no envelope estaria mentindo sobre metade
+    da pagina. Economia que apaga rastreabilidade e defeito, nao compressao.
 
     Esta projecao e definida sobre o shape de FACT (`Fact.to_dict`). Findings
     (`judge`) e regras (`rules_lookup`) tem outro shape -- sem `provenance`,
@@ -199,31 +228,58 @@ def project_items(
             exit_code=2,
         )
     if detail_level == "full":
-        return items, {}
+        return items, {}, None
+
+    versoes = {item.get("schema_version") for item in items}
+    versao_comum = versoes.pop() if len(versoes) == 1 else None
+    if not isinstance(versao_comum, int):
+        versao_comum = None
 
     procedencias: dict[str, Any] = {}
-    por_conteudo: dict[str, str] = {}
     projetados: list[dict[str, Any]] = []
     for item in items:
         prov = item.get("provenance")
         chave = ""
         if prov:
-            chave = _chave_de_procedencia(prov, procedencias, por_conteudo)
+            chave = chave_de_procedencia(prov)
+            anterior = procedencias.get(chave)
+            if anterior is not None and anterior != prov:
+                raise AdapterError(
+                    "colisao de chave de procedencia: "
+                    f"{chave!r} ja aponta para {_canonico(anterior)} e "
+                    f"tambem seria a chave de {_canonico(prov)}",
+                    exit_code=1,
+                )
+            procedencias[chave] = prov
 
         if detail_level == "normal":
-            novo = {
-                k: v for k, v in item.items() if k not in ("provenance", "schema_version")
-            }
+            descartar = {"provenance"} if versao_comum is None else {"provenance", "schema_version"}
+            novo = {k: v for k, v in item.items() if k not in descartar}
         else:
-            sujeito = item.get("subject", {})
-            local = f"{sujeito.get('file', '')}:{sujeito.get('line', '')}".strip(":")
-            novo = {c: item[c] for c in _CAMPOS_DE_SUMARIO if item.get(c)}
-            if local:
-                novo["at"] = local
+            novo = _resumir(item)
+            if versao_comum is None and item.get("schema_version") is not None:
+                novo["schema_version"] = item["schema_version"]
         if chave:
             novo["provenance_ref"] = chave
         projetados.append(novo)
-    return projetados, procedencias
+    return projetados, procedencias, versao_comum
+
+
+def declarar_no_envelope(
+    envelope: dict[str, Any], procedencias: dict[str, Any], schema_version: int | None
+) -> dict[str, Any]:
+    """Escreve no envelope o que `project_items` tirou de dentro dos itens.
+
+    Existe para que os cinco pontos de envelope (os quatro deste modulo mais o
+    da CLI) nao repitam a decisao de QUAIS chaves sobem. Acrescentar uma coisa
+    que sai do item e passar a esquecer de declara-la em um dos cinco foi
+    exatamente como o `schema_version` sumiu em silencio da primeira versao.
+    """
+    if procedencias:
+        envelope["provenance"] = procedencias
+    if schema_version is not None:
+        envelope["schema_version"] = schema_version
+    return envelope
 
 
 # --------------------------------------------------------------------------- #
@@ -570,7 +626,7 @@ def analyze_pyspark(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
-    page, procedencias = project_items(page, detail_level)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     # `unresolved` e contado sobre `facts`, nao sobre `filtered`: um filtro por
     # kind nao pode fazer o ponto cego desaparecer do relatorio. A regra 7 do
@@ -602,8 +658,7 @@ def analyze_pyspark(
         "unresolved_at": unresolved_at,
         "items": page,
     }
-    if procedencias:
-        resultado["provenance"] = procedencias
+    declarar_no_envelope(resultado, procedencias, versao_do_schema)
     return resultado
 
 
@@ -642,7 +697,7 @@ def analyze_catalog_schema(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
-    page, procedencias = project_items(page, detail_level)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     # Mesmo raciocinio de `analyze_pyspark`: `unresolved` conta sobre `facts`,
     # nao sobre `filtered`, para um filtro por kind nao esconder o ponto cego.
@@ -667,8 +722,7 @@ def analyze_catalog_schema(
         "unresolved_at": unresolved_at,
         "items": page,
     }
-    if procedencias:
-        resultado["provenance"] = procedencias
+    declarar_no_envelope(resultado, procedencias, versao_do_schema)
     return resultado
 
 
@@ -701,7 +755,7 @@ def _facts_page(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
-    page, procedencias = project_items(page, detail_level)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     result: dict[str, Any] = {
         "total_count": len(filtered),
@@ -715,8 +769,7 @@ def _facts_page(
         "by_kind": by_kind,
         "items": page,
     }
-    if procedencias:
-        result["provenance"] = procedencias
+    declarar_no_envelope(result, procedencias, versao_do_schema)
 
     if unresolved_kind is not None:
         # Mesmo raciocinio de `analyze_pyspark`/`analyze_catalog_schema`:
@@ -1732,7 +1785,7 @@ def fuse_facts(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
-    page, procedencias = project_items(page, detail_level)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     summary = next((f for f in fused if f.kind == "fusion.summary"), None)
 
@@ -1749,8 +1802,7 @@ def fuse_facts(
         "summary": summary.to_dict() if summary is not None else None,
         "items": page,
     }
-    if procedencias:
-        resultado["provenance"] = procedencias
+    declarar_no_envelope(resultado, procedencias, versao_do_schema)
     return resultado
 
 

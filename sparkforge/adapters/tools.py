@@ -99,10 +99,14 @@ _WRITE_LOCAL_OPEN_WORLD = {
 _DETAIL_LEVEL_DESC = (
     "Verbosidade da saida. `full` (default) devolve o fato inteiro, com a "
     "procedencia dentro de cada item -- e o modo de reauditoria. `normal` "
-    "declara cada procedencia UMA VEZ no campo `provenance` do envelope e "
-    "referencia por `provenance_ref`. `summary` devolve id, kind, "
-    "arquivo:linha (`at`) e medidas; peca o fato inteiro por id quando "
-    "precisar. Em nenhum nivel a procedencia some do envelope."
+    "declara procedencia e `schema_version` UMA VEZ no envelope e referencia a "
+    "procedencia por `provenance_ref`. `summary` reduz cada item a `id`, "
+    "`kind`, `measures`, `at` (arquivo:linha) e `symbol`. Nada e apagado em "
+    "silencio: o que sai do item aparece no envelope. NAO existe verbo que "
+    "busque um fato por id -- para ter o fato inteiro de volta, reexecute o "
+    "mesmo verbo em `full` e pague o payload inteiro outra vez. O `id` e "
+    "estavel entre execucoes, entao serve para casar a linha do resumo com o "
+    "mesmo fato numa execucao `full`."
 )
 
 # `provenance` so aparece quando `detail_level` e `normal` ou `summary`: e a
@@ -127,6 +131,20 @@ _PROVENANCE_MAP: dict[str, Any] = {
             "extractor": {"type": "string"},
         },
     },
+}
+
+# O outro campo que sai do item quando `detail_level` nao e `full`. Ele estava
+# saindo em silencio: valia 17% da economia de `normal` e nao era redeclarado
+# em lugar nenhum, enquanto tres textos diziam que a economia vinha so de
+# deduplicar procedencia.
+_ENVELOPE_SCHEMA_VERSION: dict[str, Any] = {
+    "type": "integer",
+    "description": (
+        "`schema_version` dos facts desta pagina, declarado uma vez. Presente "
+        "quando `detail_level` nao e `full` E todos os itens da pagina "
+        "concordam. Quando divergem (possivel em `fuse`), esta chave nao "
+        "aparece e cada item mantem o proprio `schema_version`."
+    ),
 }
 
 _PAGE_PROPERTIES: dict[str, Any] = {
@@ -184,16 +202,54 @@ _FACT_ITEM: dict[str, Any] = {
     "type": "object",
     "description": (
         "Observacao deterministica ancorada; nunca contem juizo nem limiar. "
-        "Os campos presentes dependem de `detail_level`: `full` traz todos, "
-        "`normal` troca `provenance` por `provenance_ref`, e `summary` mantem "
-        "`id`, `kind`, `measures`, `at` e `provenance_ref`."
+        "Os campos presentes dependem de `detail_level`: `full` traz todos; "
+        "`normal` tira `provenance` (vira `provenance_ref`) e `schema_version` "
+        "(sobe para o envelope); `summary` mantem `id`, `kind`, `measures`, "
+        "`provenance_ref` e troca `subject` por `at` e `symbol`."
     ),
-    # So `id` e `kind` sao exigidos porque so eles sobrevivem aos TRES niveis
-    # de `detail_level`. Listar aqui o que existe apenas em `full` seria um
-    # schema que mente para os outros dois -- e o cliente MCP valida
-    # `structuredContent` contra ele. O que cada nivel devolve esta na
-    # `description` acima e em `_core.project_items`.
+    # `required` sozinho nao consegue descrever tres formas: baixa-lo para o
+    # que os TRES niveis tem em comum (`id` e `kind`) deixa passar um item de
+    # `full` a que faltasse `subject` -- justamente a regressao que este schema
+    # pegava antes de `detail_level` existir. Um ramo por nivel devolve o
+    # contrato de `full` sem mentir sobre os outros dois.
+    #
+    # Os ramos sao mutuamente exclusivos por DOIS discriminantes, `subject` e
+    # `provenance` -- um so nao basta: com apenas `subject`, um item de `full`
+    # sem `subject` casava com o ramo `summary` e o `oneOf` passava.
+    #   full    : tem `subject` E tem `provenance`
+    #   normal  : tem `subject` e NAO tem `provenance`
+    #   summary : NAO tem `subject` e NAO tem `provenance`
+    # Por isso `oneOf` (exatamente um), nao `anyOf`. Mesmo recurso que
+    # `sparkforge_judge` ja usa.
+    #
+    # O que estes ramos NAO policiam: um item de `full` a que falte
+    # `provenance` (mas que tenha `subject`) casa com o ramo `normal`, porque
+    # `normal` nao pode exigir `provenance_ref` -- um fact de procedencia vazia
+    # e shape legal (`Fact.provenance` tem default `{}`) e nao ganha ref.
+    # Esse caso e coberto por teste, nao por schema:
+    # `test_adapters_detail_level.py::test_full_nao_mudou_de_forma`.
     "required": ["id", "kind"],
+    "oneOf": [
+        {
+            "title": "full",
+            "required": [
+                "id", "schema_version", "kind", "subject", "measures", "attrs", "provenance",
+            ],
+        },
+        {
+            "title": "normal",
+            "required": ["id", "kind", "subject"],
+            "not": {"required": ["provenance"]},
+        },
+        {
+            "title": "summary",
+            "required": ["id", "kind"],
+            "allOf": [
+                {"not": {"required": ["subject"]}},
+                {"not": {"required": ["provenance"]}},
+            ],
+        },
+    ],
     "properties": {
         "id": {
             "type": "string",
@@ -219,17 +275,32 @@ _FACT_ITEM: dict[str, Any] = {
         },
         "provenance_ref": {
             "type": "string",
+            "pattern": "^[0-9a-f]{16}$",
             "description": (
                 "Chave da procedencia deste fact no mapa `provenance` do envelope. "
-                "Presente quando `detail_level` nao e `full`. Procedencias diferentes "
-                "nunca compartilham chave -- ver `_core.project_items`."
+                "Presente quando `detail_level` nao e `full`. E funcao SO do conteudo "
+                "da procedencia (sha256 canonico, 16 hex chars), entao a mesma "
+                "procedencia recebe a mesma chave em qualquer pagina: unir os mapas "
+                "`provenance` de paginas consecutivas e seguro. Ver "
+                "`_core.chave_de_procedencia`."
             ),
         },
         "at": {
             "type": "string",
             "description": (
                 "`arquivo:linha` do subject, em `detail_level: summary`. E o "
-                "`subject` condensado, nao um campo novo do fact."
+                "`subject` condensado, nao um campo novo do fact. Sem `line` "
+                "no subject (ex.: `catalog.table_*`), vem so o arquivo -- e "
+                "ai e `symbol` que distingue os facts."
+            ),
+        },
+        "symbol": {
+            "type": "string",
+            "description": (
+                "`subject.symbol` preservado em `detail_level: summary`, quando "
+                "existe. Campo proprio e nao concatenado em `at` porque em "
+                "`catalog.table_*` ele e a identidade inteira (o nome da tabela) "
+                "e o `at` e o mesmo dump.json para todas as tabelas."
             ),
         },
     },
@@ -754,6 +825,7 @@ _ANALYZE_PYSPARK_SCHEMA: dict[str, Any] = {
         },
         "items": {"type": "array", "items": _FACT_ITEM},
         "provenance": _PROVENANCE_MAP,
+        "schema_version": _ENVELOPE_SCHEMA_VERSION,
     },
 }
 
@@ -807,6 +879,7 @@ _ANALYZE_CALL_GRAPH_SCHEMA: dict[str, Any] = {
         "by_kind": {"type": "object", "additionalProperties": {"type": "integer"}},
         "items": {"type": "array", "items": _FACT_ITEM},
         "provenance": _PROVENANCE_MAP,
+        "schema_version": _ENVELOPE_SCHEMA_VERSION,
     },
 }
 
@@ -839,6 +912,7 @@ _FUSE_SCHEMA: dict[str, Any] = {
         "summary": {"type": ["object", "null"]},
         "items": {"type": "array", "items": _FACT_ITEM},
         "provenance": _PROVENANCE_MAP,
+        "schema_version": _ENVELOPE_SCHEMA_VERSION,
     },
 }
 

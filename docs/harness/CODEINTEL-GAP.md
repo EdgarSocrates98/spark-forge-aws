@@ -239,13 +239,23 @@ de cada item.
 | `detail_level` | Envelope | Procedência dentro dos itens |
 |---|---|---|
 | `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |
-| `normal` | **3562 bytes** | nenhuma; declarada uma vez em `provenance` |
-| `summary` | **1475 bytes** | nenhuma; declarada uma vez em `provenance` |
+| `normal` | **3619 bytes** | nenhuma; declarada uma vez em `provenance` |
+| `summary` | **1664 bytes** | nenhuma; declarada uma vez em `provenance` |
 
-`normal` encolhe o envelope só por declarar cada procedência uma vez e referenciá-la por
-`provenance_ref`; `summary` encolhe mais por manter apenas `id`, `kind`, `arquivo:linha` e as
-medidas. Em nenhum dos dois a procedência sai do envelope — economia que apagasse
-rastreabilidade seria defeito, não compressão.
+`normal` encolhe o envelope tirando dos itens o que se **repete** — a procedência, referenciada
+por `provenance_ref`, e o `schema_version`. Os dois saem pelo mesmo caminho e pela mesma razão;
+tirar só um e chamar isso de "declarar a procedência uma vez" descreveria mal a própria
+economia. `summary` encolhe mais por reduzir o item ao que responde "o que" e "onde".
+
+Em nenhum dos dois a procedência sai do envelope — economia que apagasse rastreabilidade seria
+defeito, não compressão.
+
+**E preservar rastreabilidade custou bytes.** A primeira versão desta fase era menor nos dois
+níveis, e era menor pelo motivo errado: o `summary` descartava o `subject` inteiro e reconstruía
+apenas `arquivo:linha`, o que apagava a identidade de todo fato cujo subject identifica por
+`symbol` — o caso comum em Terraform, onde o recurso é o sujeito. O `schema_version` também
+sumia sem ser redeclarado. Devolver os dois encareceu o envelope, e essa é a troca certa: um
+resumo que não diz de **quem** fala não é resumo, é ruído menor.
 
 Todos os valores são **bytes**, nunca tokens. Os estimadores de token deste repositório dividem
 o comprimento do texto por uma constante e divergem entre si no arredondamento: byte é
