@@ -9,6 +9,7 @@ O banco e DESCARTAVEL. Nada no motor deterministico depende dele para
 responder; se sumir, a analise continua igual e o indice se reconstroi.
 """
 
+from sparkforge.codeintel.extract import No, extrair_nos
 from sparkforge.codeintel.ids import node_id, normalizar_assinatura
 
-__all__ = ["node_id", "normalizar_assinatura"]
+__all__ = ["No", "extrair_nos", "node_id", "normalizar_assinatura"]
