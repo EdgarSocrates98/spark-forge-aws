@@ -14,11 +14,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from sparkforge import __version__ as _pkg_fallback
 from sparkforge.adapters import _core
+from sparkforge.codeintel import db as _codeintel_db
+from sparkforge.codeintel import index as _codeintel_index
+from sparkforge.codeintel import search as _codeintel_search
 
 try:
     from importlib.metadata import PackageNotFoundError
@@ -123,6 +127,12 @@ _EMR_FLAG_HELP = (
     "`describe-cluster`, e discordar de um deles vira divergencia reportada, "
     "nunca valor substituido em silencio. Serve a quem sabe a release e nao tem "
     "o dump -- com o dump, `--facts` ja resolve sozinho."
+)
+
+_CODE_DB_HELP = (
+    "Arquivo do indice. Default: `.sparkforge/local/codeintel/graph.sqlite3` "
+    "sob --root, que esta no `.gitignore` desde 715a657. Apontar para fora "
+    "dali e escolha de quem chama, e o arquivo passa a ser candidato a commit."
 )
 
 
@@ -761,6 +771,42 @@ def build_parser() -> argparse.ArgumentParser:
             "as flags alimentam a deteccao."
         ),
     )
+
+    # code --------------------------------------------------------
+    # O PAYLOAD deste verbo nao vem de `_core`, e ele e a unica excecao do
+    # arquivo -- so o tipo de erro (`_core.AdapterError`) continua vindo de la,
+    # porque erro de CLI e tratado num lugar so em `main()`.
+    # `_core` e a casca que empacota FATO e ACHADO -- procedencia,
+    # paginacao, `detail_level`, envelope de evidencia. O indice de codigo nao
+    # produz nem fato nem achado: ele responde ONDE um simbolo esta. Fazer o
+    # payload atravessar `_core` obrigaria a inventar procedencia para uma
+    # linha que so tem caminho e numero de linha -- que e exatamente o envelope
+    # que `docs/harness/CODEINTEL-GAP.md` mede custando varias vezes o fonte.
+    # Os handlers abaixo continuam sem decisao de dominio: eles chamam
+    # `codeintel` e formatam JSON.
+    code_p = sub.add_parser(
+        "code",
+        help="Indice local de codigo: indexa, busca por simbolo e mostra o estado.",
+    )
+    code_sub = code_p.add_subparsers(dest="code_action", required=True)
+
+    code_index_p = code_sub.add_parser(
+        "index", help="(Re)constroi o indice de `*.py` sob --root."
+    )
+    code_index_p.add_argument("--root", default=".")
+    code_index_p.add_argument("--db", help=_CODE_DB_HELP)
+
+    code_search_p = code_sub.add_parser("search", help="Busca simbolo por parte do nome.")
+    code_search_p.add_argument("term")
+    code_search_p.add_argument("--root", default=".")
+    code_search_p.add_argument("--db", help=_CODE_DB_HELP)
+    code_search_p.add_argument("--limit", type=int, default=50)
+
+    code_status_p = code_sub.add_parser(
+        "status", help="O que o indice tem e quando ele foi construido."
+    )
+    code_status_p.add_argument("--root", default=".")
+    code_status_p.add_argument("--db", help=_CODE_DB_HELP)
 
     # knowledge path --------------------------------------------------------
     knowledge_p = sub.add_parser(
@@ -1624,6 +1670,77 @@ def _cmd_collect_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _caminho_do_banco(args: argparse.Namespace) -> Path:
+    """`--db` quando dado, senao o default sob `--root`.
+
+    UMA funcao para os tres subcomandos: com a resolucao repetida em cada
+    handler bastaria um deles divergir para `index` gravar num lugar e `search`
+    ler noutro, devolvendo "nenhum simbolo" em vez de erro -- falha calada, que
+    e a unica que este verbo nao pode ter.
+    """
+    if args.db:
+        return Path(args.db)
+    return Path(args.root) / _codeintel_db.BANCO_PADRAO
+
+
+def _cmd_code_index(args: argparse.Namespace) -> int:
+    banco = _caminho_do_banco(args)
+    banco.parent.mkdir(parents=True, exist_ok=True)
+    resultado = _codeintel_index.indexar(args.root, banco)
+    _print(
+        {
+            "db": banco.as_posix(),
+            "files": resultado.arquivos,
+            "nodes": resultado.nos,
+            # `unreadable` sai na resposta, e nao so no log: ponto cego contado
+            # e diferente de ponto cego silencioso, e quem le a saida precisa
+            # saber que N arquivos nao entraram antes de concluir que um
+            # simbolo nao existe.
+            "unreadable": resultado.ilegiveis,
+            "duration_s": round(resultado.duracao_s, 3),
+        }
+    )
+    return 0
+
+
+def _cmd_code_search(args: argparse.Namespace) -> int:
+    banco = _caminho_do_banco(args)
+    _exigir_indice(banco)
+    achados = _codeintel_search.buscar(banco, args.term, limite=args.limit)
+    _print(
+        {
+            "term": args.term,
+            "db": banco.as_posix(),
+            "returned_count": len(achados),
+            "results": [asdict(achado) for achado in achados],
+        }
+    )
+    return 0
+
+
+def _cmd_code_status(args: argparse.Namespace) -> int:
+    banco = _caminho_do_banco(args)
+    _exigir_indice(banco)
+    _print({"db": banco.as_posix(), **_codeintel_search.resumo(banco)})
+    return 0
+
+
+def _exigir_indice(banco: Path) -> None:
+    """Recusa antes de abrir, porque `sqlite3.connect` CRIA o que nao existe.
+
+    Sem esta guarda, buscar num banco inexistente deixaria um arquivo vazio no
+    disco e devolveria erro de tabela ausente -- mensagem que nao diz o que
+    fazer. O erro nomeia o comando que resolve, como todo erro desta CLI.
+    """
+    if _codeintel_search.existe(banco):
+        return
+    raise _core.AdapterError(
+        f"indice inexistente: {banco.as_posix()}. "
+        f"Rode `sparkforge code index --db {banco.as_posix()}` primeiro.",
+        exit_code=2,
+    )
+
+
 _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
@@ -1657,6 +1774,9 @@ _DISPATCH = {
     ("handoff", None): _cmd_handoff,
     ("playbook", None): _cmd_playbook,
     ("runtime", "detect"): _cmd_runtime_detect,
+    ("code", "index"): _cmd_code_index,
+    ("code", "search"): _cmd_code_search,
+    ("code", "status"): _cmd_code_status,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,
@@ -1679,6 +1799,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "case_action", None)
         or getattr(args, "funcval_action", None)
         or getattr(args, "runtime_action", None)
+        or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)
         or getattr(args, "rules_action", None)
         or getattr(args, "report_action", None)

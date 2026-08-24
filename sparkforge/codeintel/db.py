@@ -78,6 +78,15 @@ from sparkforge import __version__
 
 SCHEMA_VERSION = 1
 
+# Onde o indice mora quando ninguem escolhe. Declarado AQUI, no modulo que abre o
+# arquivo, e nao em quem consulta: com o caminho repetido em `indexar` e em
+# `buscar` bastaria um deles mudar para a CLI indexar num lugar e ler noutro,
+# calada. `.sparkforge/local/` esta no `.gitignore` desde 715a657, e e por isso
+# que o default aponta para la -- indice de repositorio de cliente que vira
+# candidato a commit e vazamento, nao desordem. Relativo de proposito: quem
+# chama e que sabe a raiz.
+BANCO_PADRAO = Path(".sparkforge") / "local" / "codeintel" / "graph.sqlite3"
+
 # A mesma lista que `tests/test_codeintel_db.py` afirma, e na mesma ordem.
 PRAGMAS_DE_ABERTURA = (
     "journal_mode=WAL",
@@ -253,4 +262,11 @@ def impressao_da_raiz(raiz: str | os.PathLike[str] | None) -> str:
     ).hexdigest()
 
 
-__all__ = ["PRAGMAS_DE_ABERTURA", "SCHEMA_VERSION", "abrir", "criar_schema", "impressao_da_raiz"]
+__all__ = [
+    "BANCO_PADRAO",
+    "PRAGMAS_DE_ABERTURA",
+    "SCHEMA_VERSION",
+    "abrir",
+    "criar_schema",
+    "impressao_da_raiz",
+]

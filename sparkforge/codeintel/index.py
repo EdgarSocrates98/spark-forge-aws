@@ -97,6 +97,12 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
     carga_quebrada.py`, fixture deliberada -- nao ha ilegivel por acidente, e
     nenhuma incompatibilidade de `ast` entre versoes se manifestou.
 
+    OS DOIS PRIMEIROS NUMEROS SE MOVEM COM A ARVORE, e ficam aqui datados em vez
+    de reescritos a cada commit: a Task 6 acrescentou `search.py` e o teste dele,
+    e a mesma medicao passou a dar 380 arquivos e 5799 nos. O que NAO se move e a
+    ordem de grandeza -- e e ela que decide a fase incremental. A medicao viva,
+    com prova que executa, esta em `docs/harness/CODEINTEL-GAP.md`.
+
     Onde os bytes moram, medido derrubando uma tabela por vez e comparando o
     VACUUM (3 411 968 bytes compactado):
 

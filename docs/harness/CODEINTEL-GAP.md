@@ -160,7 +160,7 @@ própria SPEC enumera.
 | Manifesto de conteúdo verificável, com detecção de adulteração | EXISTE, com teste | `knowledge/offline-manifest.json` mais `sparkforge/tools/offline.py:OfflineKnowledgeIndex.verify()` conferem SHA-256 documento a documento e separam ausência de divergência. O hash normaliza fim de linha porque o contrário fazia o gate depender da plataforma — a lição vale inteira para um índice de código | `tests/test_offline_expansion.py` |
 | Sinal de staleness por arquivo | EXISTE PARCIAL | Todo fato carrega `provenance.artifact_sha256`, então dá para saber que um fato veio de um conteúdo específico. Não existe o outro lado: nada compara o sha de hoje com o sha de quando o fato foi produzido, porque nada guarda o fato entre execuções | `tests/test_fixtures_golden.py` |
 | Git lido sem executar hook | EXISTE, com teste | A superfície de execução do repositório é uma lista fechada e auditada, e nenhum hook usa construção de execução arbitrária | `tests/test_execution_surface.py` |
-| Índice persistente, completo e incremental | NÃO EXISTE | Cada análise reparseia a árvore inteira. Não há índice para atualizar, nem noção de arquivo mudado desde a última vez | — |
+| Índice persistente, completo e incremental | EXISTE PARCIAL | Completo existe desde a fase J3: `sparkforge/codeintel/index.py:indexar()` varre pela mesma fronteira de leitura de `facts/scan.py`, extrai por `ast` e persiste em SQLite com FTS5. Incremental **não**: `indexar` apaga `files` e `symbols_fts` e recarrega tudo, de propósito — reaproveitar exigiria saber o que mudou, e construir isso de improviso deixaria nó fantasma no banco enquanto isso | `tests/test_codeintel_index.py` |
 | Strict tree, fingerprint de worktree, namespace por branch | NÃO EXISTE | Nenhuma noção de estado de árvore de trabalho | — |
 | Contexto do que mudou, e teste afetado | NÃO EXISTE | `sparkforge/facts/*` compara Terraform antes e depois (`analyze_terraform_diff`), que é diff de infraestrutura. Diff de código, símbolo alterado e teste afetado não existem | — |
 
@@ -175,10 +175,89 @@ própria SPEC enumera.
 | Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe, e existe **quatro vezes**: `sparkforge/agents/budget.py:estimate_tokens()`, `sparkforge/tools/cost.py:estimate_tokens()`, e mais duas cópias em linha dentro de `sparkforge/context/funnel.py` e `sparkforge/providers/mock.py`. As duas primeiras arredondam para cima; as duas em linha truncam. A mesma pergunta, quatro implementações, e essas **divergem** — ao contrário das quatro de segredo | `tests/test_economy_engine.py` |
 | Estimativa rotulada como estimativa | EXISTE, com teste | `sparkforge/tools/cost.py` documenta que quatro caracteres por token é heurística e devolve `is_estimate: True` em todo retorno; `sparkforge/agents/observability.py` devolve `None` quando o total é desconhecido, em vez de somar zero | `tests/test_agent_runtime.py` |
 | Paginação por cursor no envelope de saída | EXISTE, com teste | O envelope das tools traz `total_count`, `returned_count` e `next_cursor`, e o arquivo escrito carrega a comparação inteira, nunca a página. Quem extrai `items` sem conferir `next_cursor` julga a primeira página — e há teste medindo exatamente isso | `tests/test_adapters_tools.py` |
+| Busca por símbolo no índice, determinística e sem rede | EXISTE, com teste | `sparkforge/codeintel/search.py:buscar()` casa nome e nome qualificado pelo FTS5. O termo nunca chega cru ao `MATCH` — passa por `construir_consulta()`, que é o construtor de consulta que a SPEC exige em lugar de interpolar texto de terceiro. A ordem é `(rank, path, start_line, node_id)`: sem o desempate, empate de relevância deixaria a ordem por conta do SQLite e o teste de determinismo falharia de forma intermitente | `tests/test_codeintel_search.py` |
 | Expansão determinística de query por dicionário versionado | NÃO EXISTE | Nada expande "skew no join" para `broadcast`, `salting`, `AQE`. O vocabulário de domínio existe espalhado em `knowledge/` e em `rules/catalog/`, nunca como dicionário de sinônimo | — |
-| Escore composto de recuperação | NÃO EXISTE | Nome exato, qualified name, relevância FTS, proximidade no grafo, relevância de entrypoint e de lineage não existem como componente de escore, porque não existe o grafo sobre o qual medi-los | — |
+| Escore composto de recuperação | NÃO EXISTE | O escore de hoje tem dois componentes, e os dois são baratos: relevância do FTS e desempate por posição. Proximidade no grafo, relevância de entrypoint e de lineage continuam sem existir, porque não existe o grafo sobre o qual medi-los | — |
 | Objeto de contexto canônico | NÃO EXISTE | `MinimalContext` e o retorno de `pack_context` são objetos de contexto, mas nenhum dos dois carrega índice, entry point, relação, lineage, regra, runtime, unresolved e bloco de segurança na mesma estrutura | — |
 | Teto duro de token na saída, e ordem de redução declarada | NÃO EXISTE | A paginação limita **quantidade de itens**, não tamanho em token, e não há ordem escrita de o que sacrificar primeiro quando o orçamento estoura | — |
+
+### Medição: o que a busca devolve contra o que responder sem ela custaria
+
+O índice existe para uma coisa: responder "onde está X definido" sem que ninguém leia arquivo.
+Quanto isso vale, em bytes, depende inteiramente de **contra o que** se compara — por isso o
+método vem antes do número, e é para ele que quem discordar deve olhar primeiro.
+
+**Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
+`looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **380** nesta árvore.
+
+- **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
+  a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
+  chega a quem perguntou.
+- **A — ler os arquivos.** O denominador que o plano define: `grep` pelo nome, e leitura dos
+  arquivos apontados, em ordem de caminho, até encontrar a definição (`def nome` ou `class nome`).
+  O custo é a soma do tamanho dos arquivos lidos, inclusive aquele onde a definição apareceu.
+  **Não** é "ler o repositório inteiro" — isso seria construir um espantalho.
+- **B — a saída do `grep` pelo nome.** Todas as linhas que mencionam o nome, no formato
+  `caminho:linha:texto`, sem abrir arquivo nenhum. É o que "grep pelo nome" devolve literalmente.
+- **C — a saída do `grep` pela definição.** `grep -n "def <nome>|class <nome>"`: só as linhas em
+  que o nome vem logo depois de `def` ou `class`. É o piso adversarial — o denominador que menos
+  favorece o índice, e o que um agente disciplinado de fato usa.
+
+| Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
+|---|---|---|---|---|---|
+| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |
+| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |
+| `project_items` | 1 | 193 | 140522 | 1718 | 52 |
+| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |
+| `authorize` | 4 | 897 | 24310 | 3804 | 107 |
+
+Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **714331**;
+a saída do `grep` pelo nome, **17461**; a saída do `grep` pela definição, **419**.
+
+O **1940** é o único número desta seção que `scripts/check_vnext_claims.py` não audita, e vale
+dizer por quê em vez de deixar quem confira procurar: quatro dígitos entre 1900 e 2099 estão na
+lista de tokens ignorados como datação, e essa contagem caiu ali. O próprio comentário da lista
+já previa o custo. Ele não fica sem lastro por isso — as três razões abaixo são auditadas, e a
+prova de cada uma imprime numerador e denominador, com o **1940** entre os dois.
+
+**Contra o denominador do plano, o índice economiza 368.2 vezes.** Contra a saída de um `grep`
+pelo nome, **9.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
+resposta do índice custa **4.6** vezes o que aquele `grep` custaria.
+
+**Esse último número é o resultado honesto desta medição, e ele não agrada.** Medido em bytes de
+uma resposta, um `grep -n "def <nome>"` bem escrito é mais barato que consultar o índice. A causa
+não é desperdício de envelope — é que as duas coisas respondem perguntas diferentes: o `grep` pela
+definição devolve as linhas cuja definição **começa** com aquele nome, e o índice devolve todo
+símbolo cujo nome **contém** o termo, com `kind` e nome qualificado. `authorize` é o caso
+visível: o `grep` acha duas linhas, as duas em `sparkforge/agents/autonomy.py`, e o índice acha
+quatro símbolos — a função, o método `AutonomyController.authorize_tool`, a função aninhada
+`authorize.recusa` e um teste em outro arquivo. Mais recall custa mais bytes, e chamar isso de
+economia seria mentir sobre o que foi medido.
+
+**O que o byte não mede, e não é desculpa — é o resto da conta:**
+
+- **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
+  `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
+  `buscar(banco, "source")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **91582** bytes. O `grep` pela definição contendo o fragmento continua menor
+  (**5029** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+  `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
+- **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
+  token, e esta medição não o converte em byte nenhum de propósito.
+- **A saída do `grep` não tem teto.** A do índice tem: `buscar` recebe `limite`, com default 50.
+
+Todos os valores são **bytes** UTF-8, nunca tokens. Os quatro estimadores de token deste
+repositório dividem o comprimento por uma constante e divergem entre si no arredondamento: byte é
+observação, token seria estimativa vendida como medida.
+
+**A conclusão que a medição sustenta, e só ela:** o índice paga contra leitura de arquivo, que é o
+que um agente sem ferramenta de fato faz, e paga contra a saída de um `grep` pelo nome — com folga
+maior quanto mais parcial for o nome. Ele **não** paga como compressor de resposta contra um
+`grep` cirúrgico pela definição, nem quando o nome é parcial. Quem quiser reivindicar economia de token
+com este índice precisa declarar o denominador junto — e o gold set que a linha "Gate de recall e
+de economia" ainda marca como inexistente é o que faria essa reivindicação valer, porque economia
+que omite o símbolo necessário é falha, não sucesso.
 
 ## 11. Tools MCP e CLI
 
@@ -192,8 +271,9 @@ própria SPEC enumera.
 | Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
 | Projeção de campo na resposta | NÃO EXISTE | `fields` não aparece em tool nenhuma do catálogo. Não há como pedir só `kind` e `subject.file` | — |
 | Poucas tools compondo operações internamente | NÃO EXISTE | O catálogo tem o tamanho medido na linha acima, e a SPEC pede explicitamente o oposto dessa estratégia | — |
-| As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança | — |
-| Comandos `code init`, `code doctor`, `code purge` | NÃO EXISTE | Não há subcomando `code` no CLI | — |
+| As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança. A ausência agora é **decisão**, não pendência: os três verbos `code` do CLI entram em `ALLOWED_CLI_ONLY` com razão declarada, e ela é o sinal de frescor. Toda tool do catálogo hoje é sem estado — recebe um caminho, lê o artefato, responde; estas dependeriam de um índice construído antes, que envelhece sem avisar, e `code search` num índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente. Ausência lida como ausência é a pior falha possível numa tool de busca | `tests/test_capability_parity.py` |
+| Subcomando `code` no CLI | EXISTE, com teste | `sparkforge code index`, `sparkforge code search <termo>` e `sparkforge code status`, em `sparkforge/adapters/cli.py`. É a única entrada do CLI cujo payload não vem de `_core` — só o tipo de erro vem —, e a razão está escrita ao lado dela: o índice não devolve fato nem achado, e atravessar o núcleo obrigaria a inventar procedência para uma linha que só tem caminho e número de linha. O banco default é `.sparkforge/local/codeintel/graph.sqlite3`, já ignorado pelo git | `tests/test_codeintel_search.py` |
+| Comandos `code init`, `code doctor`, `code purge` | NÃO EXISTE | Nenhum dos três que a SPEC nomeia. `init` e `purge` supõem ciclo de vida que este índice não tem — ele é descartável e se reconstrói numa passada; `doctor` supõe manifesto de tool, que é a linha abaixo | — |
 | Hash canônico do catálogo de tools | NÃO EXISTE | Nenhum `tool-manifest.sha256`, e nenhum `doctor` que compare runtime com manifesto | — |
 
 ## 12. Integração com regras, case e runtime

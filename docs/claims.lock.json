@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "e45bcb1113fcb4a2f292cce73e52445f4af0d5a2",
+  "extracted_from": "db61907c009cf44d97cda52f7d35b5a90af1d47f",
   "claims": [
     {
       "context": "`sparkforge/economy/budget.py`, que define tiers de 0 a 6 (`TIER_PRICING`)",
@@ -825,7 +825,7 @@
       "context": "44 tools:",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-482",
-      "line": 67,
+      "line": 80,
       "note": "reexecutado -- o numero de tools e derivado de len(TOOLS) no catalogo, nao relido do texto do documento; a distribuicao de anotacoes que a frase resume vem do mesmo catalogo e e trancada por tests/test_harness_authorization.py",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
@@ -845,7 +845,7 @@
       "context": "| `READ_ONLY` | 32 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-484",
-      "line": 71,
+      "line": 84,
       "note": "reexecutado -- a contagem de READ_ONLY e derivada rodando tool_class() sobre o catalogo real, nao relida da tabela do documento. A derivacao em si esta trancada por tests/test_harness_authorization.py",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY))'",
@@ -865,7 +865,7 @@
       "context": "| `LOCAL_MUTATION` | 5 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-485",
-      "line": 72,
+      "line": 85,
       "note": "reexecutado -- a contagem de LOCAL_MUTATION e derivada rodando tool_class() sobre o catalogo real, nao relida da tabela do documento. A derivacao em si esta trancada por tests/test_harness_authorization.py",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.LOCAL_MUTATION))'",
@@ -885,7 +885,7 @@
       "context": "| `CLOUD_MUTATION` | 7 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-486",
-      "line": 73,
+      "line": 86,
       "note": "reexecutado -- a contagem de CLOUD_MUTATION e derivada rodando tool_class() sobre o catalogo real, nao relida da tabela do documento. A derivacao em si esta trancada por tests/test_harness_authorization.py",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.CLOUD_MUTATION))'",
@@ -905,7 +905,7 @@
       "context": "| `CLOUD_READ` | 0 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-487",
-      "line": 74,
+      "line": 87,
       "note": "reexecutado -- CLOUD_READ nao tem membro no catalogo de hoje, e a prova conta executando em vez de afirmar a ausencia. O ramo que classifica CLOUD_READ tem teste proprio com catalogo sintetico em tests/test_harness_authorization.py",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.CLOUD_READ))'",
@@ -925,7 +925,7 @@
       "context": "| `DESTRUCTIVE` | 0 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-488",
-      "line": 75,
+      "line": 88,
       "note": "reexecutado -- DESTRUCTIVE nao tem membro no catalogo de hoje, e a prova conta executando em vez de afirmar a ausencia. O ramo que classifica DESTRUCTIVE tem teste proprio com catalogo sintetico em tests/test_harness_authorization.py",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.DESTRUCTIVE))'",
@@ -942,10 +942,10 @@
       "type": "number"
     },
     {
-      "context": "Medido: **31** das tools `READ_ONLY` declaram algum argumento de caminho de",
+      "context": "| `READ_ONLY` | 31 | 1 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-490",
-      "line": 163,
+      "line": 172,
       "note": "reexecutado -- conta as tools READ_ONLY que declaram propriedade de caminho, derivando a classe com tool_class() e lendo o inputSchema real. A afirmacao anterior dizia 32 (todas), e era quantificador universal vendido como medicao: sparkforge_rules_lookup nao tem parametro de caminho nenhum",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; P={\"path\",\"repo\",\"facts_path\",\"facts_paths\",\"before\",\"after\",\"before_path\",\"after_path\",\"file\",\"report_path\",\"findings_path\"}; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY and P & set(TOOLS[n][\"inputSchema\"].get(\"properties\", {}))))'",
@@ -3066,7 +3066,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (148,0 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
@@ -3085,7 +3085,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (148,0 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
@@ -3104,7 +3104,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (148,0 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-324",
       "line": 83,
@@ -3114,17 +3114,17 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 725
+          "value": 749
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "725",
+      "text": "749",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (148,0 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-325",
       "line": 83,
@@ -3144,7 +3144,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (148,0 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-326",
       "line": 83,
@@ -3164,7 +3164,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (128,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (148,0 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-327",
       "line": 83,
@@ -3174,20 +3174,20 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 1491
+          "value": 1515
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1491",
+      "text": "1515",
       "type": "number"
     },
     {
       "context": "- **Um dataset de golden cases nomeado e completo para os 5 casos do §48** — os dados",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-328",
-      "line": 108,
+      "line": 112,
       "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
       "proof": {
         "cmd": "python -c 't=open(\"prompt_evo_harness.md\", encoding=\"utf-8\").read(); i=t.index(\"48. GOLDEN CASES\"); j=t.index(\"49. PRIMEIRO CASO\", i); section=t[i:j]; print(sum(1 for n in range(1,10) if (\"CASE \"+str(n)) in section))'",
@@ -3207,7 +3207,7 @@
       "context": "de multi-agent além do `Supervisor` de 7 fases para provar que a política precisa",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-329",
-      "line": 158,
+      "line": 162,
       "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
       "proof": {
         "cmd": "python -c 'from sparkforge.agents.supervisor import Supervisor; print(len(Supervisor.PHASES))'",
@@ -4104,61 +4104,61 @@
       "type": "number"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 40,
-      "text": "3.0",
       "context": "| Faixa de versões de Glue coberta pela matriz | EXISTE PARCIAL | A matriz vai de `3.0` a `6.0`. As versões anteriores q",
-      "type": "number",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-491",
-      "state": "PROVADA",
+      "line": 40,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
-        "kind": "command",
         "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(sorted(runtime_matrix.load())[0])'",
-        "tier": "fast",
         "expect": {
           "kind": "contains",
           "value": "3.0"
-        }
-      }
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "3.0",
+      "type": "number"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 40,
-      "text": "6.0",
       "context": "| Faixa de versões de Glue coberta pela matriz | EXISTE PARCIAL | A matriz vai de `3.0` a `6.0`. As versões anteriores q",
-      "type": "number",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-492",
-      "state": "PROVADA",
+      "line": 40,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
-        "kind": "command",
         "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(sorted(runtime_matrix.load())[-1])'",
-        "tier": "fast",
         "expect": {
           "kind": "contains",
           "value": "6.0"
-        }
-      }
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "6.0",
+      "type": "number"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 250,
-      "text": "6.0",
       "context": "- **`docs/aws/glue/6.0/known-unknowns.md` está desatualizado.** Ele afirma que não existe",
-      "type": "number",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-493",
-      "state": "PROVADA",
+      "line": 250,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
-        "kind": "command",
         "cmd": "python -c 'from sparkforge.facts import runtime_matrix; print(sorted(runtime_matrix.load())[-1])'",
-        "tier": "fast",
         "expect": {
           "kind": "contains",
           "value": "6.0"
-        }
-      }
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "6.0",
+      "type": "number"
     },
     {
       "context": "| Superfície | CLI `sparkforge analyze/judge/case/next-step/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fas",
@@ -5693,968 +5693,968 @@
       "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 39,
-      "text": "Matriz de runtime como dado, com fonte e data por versão",
       "context": "| Matriz de runtime como dado, com fonte e data por versão | EXISTE, com teste | `knowledge/glue/runtime-matrix.yaml` ca",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-494",
-      "state": "PROVADA",
+      "line": 39,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/glue/runtime-matrix.yaml",
-        "test": "tests/test_runtime_matrix.py",
-        "symbol": "test_cada_versao_declara_runtime_e_procedencia"
-      }
+        "symbol": "test_cada_versao_declara_runtime_e_procedencia",
+        "test": "tests/test_runtime_matrix.py"
+      },
+      "state": "PROVADA",
+      "text": "Matriz de runtime como dado, com fonte e data por versão",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 40,
-      "text": "Faixa de versões de Glue coberta pela matriz",
       "context": "| Faixa de versões de Glue coberta pela matriz | EXISTE PARCIAL | A matriz vai de `3.0` a `6.0`. As versões anteriores q",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-495",
-      "state": "PROVADA",
+      "line": 40,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/glue/runtime-matrix.yaml",
-        "test": "tests/test_runtime_glue_versions.py",
-        "symbol": "test_code_matrix_equals_doc_table"
-      }
+        "symbol": "test_code_matrix_equals_doc_table",
+        "test": "tests/test_runtime_glue_versions.py"
+      },
+      "state": "PROVADA",
+      "text": "Faixa de versões de Glue coberta pela matriz",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 41,
-      "text": "Eixos da matriz além de Spark, Python, Scala e Java",
       "context": "| Eixos da matriz além de Spark, Python, Scala e Java | EXISTE PARCIAL | A forma longa resolve Spark, Python, Scala, Jav",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-496",
-      "state": "PROVADA",
+      "line": 41,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/runtime_matrix.py",
-        "test": "tests/test_runtime_matrix.py",
-        "symbol": "test_carrega_as_versoes_que_o_codigo_conhecia"
-      }
+        "symbol": "test_carrega_as_versoes_que_o_codigo_conhecia",
+        "test": "tests/test_runtime_matrix.py"
+      },
+      "state": "PROVADA",
+      "text": "Eixos da matriz além de Spark, Python, Scala e Java",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 42,
-      "text": "Hudi e Delta Lake como eixo de compatibilidade",
       "context": "| Hudi e Delta Lake como eixo de compatibilidade | EXISTE PARCIAL | Existem como coluna em `knowledge/glue/runtime-matri",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-497",
-      "state": "PROVADA",
+      "line": 42,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/glue/runtime-matrix.md",
-        "test": "tests/test_runtime_glue_versions.py",
-        "symbol": "test_the_doc_table_is_parseable_at_all"
-      }
+        "symbol": "test_the_doc_table_is_parseable_at_all",
+        "test": "tests/test_runtime_glue_versions.py"
+      },
+      "state": "PROVADA",
+      "text": "Hudi e Delta Lake como eixo de compatibilidade",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 43,
-      "text": "Expansão do caminho origem-alvo em degraus",
       "context": "| Expansão do caminho origem-alvo em degraus | EXISTE, com teste | `sparkforge/migration/version_path.py:steps()` deriva",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-498",
-      "state": "PROVADA",
+      "line": 43,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/version_path.py",
-        "test": "tests/test_version_path.py",
-        "symbol": "steps"
-      }
+        "symbol": "steps",
+        "test": "tests/test_version_path.py"
+      },
+      "state": "PROVADA",
+      "text": "Expansão do caminho origem-alvo em degraus",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 44,
-      "text": "Análise cumulativa distinta do salto direto",
       "context": "| Análise cumulativa distinta do salto direto | EXISTE, com teste | `sparkforge/migration/assessment.py:assess()` julga ",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-499",
-      "state": "PROVADA",
+      "line": 44,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/assessment.py",
-        "test": "tests/test_migration_assessment.py",
-        "symbol": "assess"
-      }
+        "symbol": "assess",
+        "test": "tests/test_migration_assessment.py"
+      },
+      "state": "PROVADA",
+      "text": "Análise cumulativa distinta do salto direto",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 56,
-      "text": "`glue-migration-chief`",
       "context": "| `glue-migration-chief` | EXISTE, com teste | `agents/sf-orchestrator.md` coordena agents em fases limitadas, com rotea",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-500",
-      "state": "PROVADA",
+      "line": 56,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-orchestrator.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`glue-migration-chief`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 57,
-      "text": "`glue-version-historian`",
       "context": "| `glue-version-historian` | EXISTE, com teste | `agents/sf-runtime-specialist.md` declara compatibilidade entre versões",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-501",
-      "state": "PROVADA",
+      "line": 57,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-runtime-specialist.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`glue-version-historian`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 58,
-      "text": "`spark-runtime-migration-specialist`",
       "context": "| `spark-runtime-migration-specialist` | EXISTE PARCIAL | `agents/sf-pyspark-specialist.md` cobre plano, join, skew e me",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-502",
-      "state": "PROVADA",
+      "line": 58,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-pyspark-specialist.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`spark-runtime-migration-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 61,
-      "text": "`s3-filesystem-specialist`",
       "context": "| `s3-filesystem-specialist` | EXISTE, com teste | `agents/sf-s3-specialist.md`, com áreas de regra `SF-S3`, `SF-LAKE` e",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-503",
-      "state": "PROVADA",
+      "line": 61,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-s3-specialist.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`s3-filesystem-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 62,
-      "text": "`open-table-format-specialist`",
       "context": "| `open-table-format-specialist` | EXISTE, com teste | `agents/sf-storage-specialist.md` e `agents/sf-iceberg-specialist",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-504",
-      "state": "PROVADA",
+      "line": 62,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-storage-specialist.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`open-table-format-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 63,
-      "text": "`lake-formation-cross-account-specialist`",
       "context": "| `lake-formation-cross-account-specialist` | EXISTE, com teste | `agents/sf-lake-formation-specialist.md` | `tests/test",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-505",
-      "state": "PROVADA",
+      "line": 63,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-lake-formation-specialist.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`lake-formation-cross-account-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 64,
-      "text": "`data-quality-reconciliation-specialist`",
       "context": "| `data-quality-reconciliation-specialist` | EXISTE, com teste | `agents/data-quality-reviewer.md` e `agents/sf-function",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-506",
-      "state": "PROVADA",
+      "line": 64,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/data-quality-reviewer.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`data-quality-reconciliation-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 65,
-      "text": "`performance-scale-specialist`",
       "context": "| `performance-scale-specialist` | EXISTE, com teste | `agents/spark-performance-architect.md` e `agents/glue-incrementa",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-507",
-      "state": "PROVADA",
+      "line": 65,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/spark-performance-architect.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`performance-scale-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 66,
-      "text": "`streaming-cdc-specialist`",
       "context": "| `streaming-cdc-specialist` | EXISTE PARCIAL | `agents/sf-kinesis-specialist.md` cobre Kinesis e streaming. CDC, Debezi",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-508",
-      "state": "PROVADA",
+      "line": 66,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-kinesis-specialist.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`streaming-cdc-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 68,
-      "text": "`security-compliance-specialist`",
       "context": "| `security-compliance-specialist` | EXISTE, com teste | `agents/sf-security-reviewer.md`, sobre IAM, KMS, S3 e exfiltra",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-509",
-      "state": "PROVADA",
+      "line": 68,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-security-reviewer.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`security-compliance-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 69,
-      "text": "`observability-finops-specialist`",
       "context": "| `observability-finops-specialist` | EXISTE PARCIAL | `agents/sf-cost-reviewer.md` cobre custo e `agents/glue-infra-rev",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-510",
-      "state": "PROVADA",
+      "line": 69,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-cost-reviewer.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`observability-finops-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 70,
-      "text": "`test-harness-specialist`",
       "context": "| `test-harness-specialist` | EXISTE PARCIAL | `agents/sf-evidence-verifier.md` e `agents/sf-agent-evaluation-specialist",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-511",
-      "state": "PROVADA",
+      "line": 70,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "agents/sf-evidence-verifier.md",
-        "test": "tests/test_agents_parity.py",
-        "symbol": "test_each_agent_has_name_description_and_tools"
-      }
+        "symbol": "test_each_agent_has_name_description_and_tools",
+        "test": "tests/test_agents_parity.py"
+      },
+      "state": "PROVADA",
+      "text": "`test-harness-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 71,
-      "text": "`incident-troubleshooting-specialist`",
       "context": "| `incident-troubleshooting-specialist` | EXISTE PARCIAL | O mecanismo existe sem agent: `sparkforge/errors/matcher.py:D",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-512",
-      "state": "PROVADA",
+      "line": 71,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/errors/matcher.py",
-        "test": "tests/test_error_matcher.py",
-        "symbol": "match_log"
-      }
+        "symbol": "match_log",
+        "test": "tests/test_error_matcher.py"
+      },
+      "state": "PROVADA",
+      "text": "`incident-troubleshooting-specialist`",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 77,
-      "text": "ANSI mode (§8.1)",
       "context": "| ANSI mode (§8.1) | EXISTE, com teste | `mig.ansi_risk` observa `cast` sem guarda em `sparkforge/facts/migration.py`, e",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-513",
-      "state": "PROVADA",
+      "line": 77,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-migration.yaml",
-        "test": "tests/test_facts_migration.py",
-        "symbol": "extract_migration_path"
-      }
+        "symbol": "extract_migration_path",
+        "test": "tests/test_facts_migration.py"
+      },
+      "state": "PROVADA",
+      "text": "ANSI mode (§8.1)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 78,
-      "text": "Datas, timestamps e timezone (§8.2)",
       "context": "| Datas, timestamps e timezone (§8.2) | EXISTE PARCIAL | `SF-SPARK4-001` acusa a configuração de rebase de data e hora q",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-514",
-      "state": "PROVADA",
+      "line": 78,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/spark4.yaml",
-        "test": "tests/test_spark4_rules.py",
-        "symbol": "judge"
-      }
+        "symbol": "judge",
+        "test": "tests/test_spark4_rules.py"
+      },
+      "state": "PROVADA",
+      "text": "Datas, timestamps e timezone (§8.2)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 79,
-      "text": "EMRFS para S3A (§8.3)",
       "context": "| EMRFS para S3A (§8.3) | EXISTE, com teste | `mig.emrfs_config` observa a chave exclusiva do EMRFS e `SF-MIG-002` a jul",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-515",
-      "state": "PROVADA",
+      "line": 79,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-migration.yaml",
-        "test": "tests/test_facts_migration.py",
-        "symbol": "extract_migration_path"
-      }
+        "symbol": "extract_migration_path",
+        "test": "tests/test_facts_migration.py"
+      },
+      "state": "PROVADA",
+      "text": "EMRFS para S3A (§8.3)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 80,
-      "text": "AWS SDK v1 para v2 (§6.5, §8.4)",
       "context": "| AWS SDK v1 para v2 (§6.5, §8.4) | EXISTE, com teste | `mig.sdk_import` observa import `com.amazonaws.*` e `SF-MIG-001`",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-516",
-      "state": "PROVADA",
+      "line": 80,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/migration.py",
-        "test": "tests/test_facts_migration.py",
-        "symbol": "extract_migration_path"
-      }
+        "symbol": "extract_migration_path",
+        "test": "tests/test_facts_migration.py"
+      },
+      "state": "PROVADA",
+      "text": "AWS SDK v1 para v2 (§6.5, §8.4)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 81,
-      "text": "Java e Scala, recompilação de JAR (§8.4)",
       "context": "| Java e Scala, recompilação de JAR (§8.4) | EXISTE, com teste | `mig.jar_binary` deriva a versão de Scala do sufixo do ",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-517",
-      "state": "PROVADA",
+      "line": 81,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/cli.py",
-        "test": "tests/test_cli_h4.py",
-        "symbol": "test_lista_o_pin_observado_e_o_runtime_que_julgou"
-      }
+        "symbol": "test_lista_o_pin_observado_e_o_runtime_que_julgou",
+        "test": "tests/test_cli_h4.py"
+      },
+      "state": "PROVADA",
+      "text": "Java e Scala, recompilação de JAR (§8.4)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 82,
-      "text": "Python (§8.5)",
       "context": "| Python (§8.5) | EXISTE PARCIAL | `mig.python_dep` observa dependência declarada e `SF-SPARK4-003` julga pin de PyArrow",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-518",
-      "state": "PROVADA",
+      "line": 82,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/spark4.yaml",
-        "test": "tests/test_spark4_rules.py",
-        "symbol": "judge"
-      }
+        "symbol": "judge",
+        "test": "tests/test_spark4_rules.py"
+      },
+      "state": "PROVADA",
+      "text": "Python (§8.5)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 83,
-      "text": "APIs de Spark removidas ou alteradas (§8.6)",
       "context": "| APIs de Spark removidas ou alteradas (§8.6) | EXISTE PARCIAL | `mig.removed_api` e `mig.deprecated_api` cobrem o vocab",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-519",
-      "state": "PROVADA",
+      "line": 83,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/migration.py",
-        "test": "tests/test_facts_migration.py",
-        "symbol": "extract_migration_tree"
-      }
+        "symbol": "extract_migration_tree",
+        "test": "tests/test_facts_migration.py"
+      },
+      "state": "PROVADA",
+      "text": "APIs de Spark removidas ou alteradas (§8.6)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 84,
-      "text": "Lake Formation (§8.7)",
       "context": "| Lake Formation (§8.7) | EXISTE PARCIAL | `knowledge/glue/lakeformation-fgac.md` registra o que a AWS declara sobre FGA",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-520",
-      "state": "PROVADA",
+      "line": 84,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/glue/lakeformation-fgac.md",
-        "test": "tests/test_lakeformation_rules.py",
-        "symbol": "judge"
-      }
+        "symbol": "judge",
+        "test": "tests/test_lakeformation_rules.py"
+      },
+      "state": "PROVADA",
+      "text": "Lake Formation (§8.7)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 85,
-      "text": "Iceberg, Hudi e Delta (§8.8)",
       "context": "| Iceberg, Hudi e Delta (§8.8) | EXISTE PARCIAL | `mig.table_format` separa versão de formato de versão de biblioteca, q",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-521",
-      "state": "PROVADA",
+      "line": 85,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/migration.py",
-        "test": "tests/test_facts_migration.py",
-        "symbol": "extract_migration_path"
-      }
+        "symbol": "extract_migration_path",
+        "test": "tests/test_facts_migration.py"
+      },
+      "state": "PROVADA",
+      "text": "Iceberg, Hudi e Delta (§8.8)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 86,
-      "text": "Bookmark como risco de migração (§13)",
       "context": "| Bookmark como risco de migração (§13) | EXISTE, com teste | `SF-GLUE-003` (`rules/catalog/glue-infra.yaml`) acusa book",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-522",
-      "state": "PROVADA",
+      "line": 86,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-infra.yaml",
-        "test": "tests/test_fixtures_golden_terraform.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden_terraform.py"
+      },
+      "state": "PROVADA",
+      "text": "Bookmark como risco de migração (§13)",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 95,
-      "text": "JDBC como fábrica de DataFrame reconhecida pelo extrator",
       "context": "| JDBC como fábrica de DataFrame reconhecida pelo extrator | EXISTE, com teste | `sparkforge/facts/data_quality.py` conh",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-523",
-      "state": "PROVADA",
+      "line": 95,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/data_quality.py",
-        "test": "tests/test_facts_data_quality.py",
-        "symbol": "extract_data_quality_tree"
-      }
+        "symbol": "extract_data_quality_tree",
+        "test": "tests/test_facts_data_quality.py"
+      },
+      "state": "PROVADA",
+      "text": "JDBC como fábrica de DataFrame reconhecida pelo extrator",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 96,
-      "text": "URL de JDBC tratada como portadora de segredo",
       "context": "| URL de JDBC tratada como portadora de segredo | EXISTE, sem teste | `sparkforge/facts/secrets.py` casa senha embutida ",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-524",
-      "state": "PROVADA",
+      "line": 96,
       "note": "remedido depois da fase J0. O numero antigo descrevia a DIVIDA que a fase pagou: eram 4 implementacoes de looks_like_secret e zero teste citando o modulo canonico. Hoje e 1 e 1. O gate acusou porque o documento envelheceu por o codigo ter melhorado, que e o caso que ele existe para pegar",
       "proof": {
-        "kind": "command",
         "cmd": "python -c 'import pathlib; alvo = \"sparkforge.facts.secrets\"; print(sum(alvo in p.read_text(encoding=\"utf-8\") for p in pathlib.Path(\"tests\").glob(\"*.py\")))'",
-        "tier": "fast",
         "expect": {
           "kind": "number",
-          "value": 1,
-          "pattern": "^([0-9]+)$"
-        }
-      }
+          "pattern": "^([0-9]+)$",
+          "value": 1
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "URL de JDBC tratada como portadora de segredo",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 105,
-      "text": "Máquina de fases com gate fail-closed",
       "context": "| Máquina de fases com gate fail-closed | EXISTE, com teste | `sparkforge/case/store.py` declara `PHASES` e `GATES`, e o",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-525",
-      "state": "PROVADA",
+      "line": 105,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
-        "test": "tests/test_case_store.py",
-        "symbol": "set_phase"
-      }
+        "symbol": "set_phase",
+        "test": "tests/test_case_store.py"
+      },
+      "state": "PROVADA",
+      "text": "Máquina de fases com gate fail-closed",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 106,
-      "text": "Cobertura das fases que a §7 enumera",
       "context": "| Cobertura das fases que a §7 enumera | EXISTE PARCIAL | Intake, inventário, facts, diagnóstico, hipótese, experimento,",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-526",
-      "state": "PROVADA",
+      "line": 106,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
-        "test": "tests/test_case_store.py",
-        "symbol": "new_case"
-      }
+        "symbol": "new_case",
+        "test": "tests/test_case_store.py"
+      },
+      "state": "PROVADA",
+      "text": "Cobertura das fases que a §7 enumera",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 107,
-      "text": "Estados de gate",
       "context": "| Estados de gate | EXISTE PARCIAL | `sparkforge/migration/assessment.py` usa `FAIL`, `BLOCKED`, `PASS_WITH_RISK` e `PAS",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-527",
-      "state": "PROVADA",
+      "line": 107,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/assessment.py",
-        "test": "tests/test_migration_assessment.py",
-        "symbol": "assess"
-      }
+        "symbol": "assess",
+        "test": "tests/test_migration_assessment.py"
+      },
+      "state": "PROVADA",
+      "text": "Estados de gate",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 108,
-      "text": "Evidência auditável e reproduzível",
       "context": "| Evidência auditável e reproduzível | EXISTE, com teste | O caso versiona `case.yaml`, `facts.json`, `findings.json`, `",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-528",
-      "state": "PROVADA",
+      "line": 108,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
-        "test": "tests/test_case_store.py",
-        "symbol": "save_case"
-      }
+        "symbol": "save_case",
+        "test": "tests/test_case_store.py"
+      },
+      "state": "PROVADA",
+      "text": "Evidência auditável e reproduzível",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 109,
-      "text": "Relatório assinado, verificável depois",
       "context": "| Relatório assinado, verificável depois | EXISTE, com teste | `sparkforge report sign` e `report verify` calculam a ass",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-529",
-      "state": "PROVADA",
+      "line": 109,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/signature.py",
-        "test": "tests/test_adapters_report_signature.py",
-        "symbol": "compute_signature"
-      }
+        "symbol": "compute_signature",
+        "test": "tests/test_adapters_report_signature.py"
+      },
+      "state": "PROVADA",
+      "text": "Relatório assinado, verificável depois",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 110,
-      "text": "Artefatos nomeados da §12",
       "context": "| Artefatos nomeados da §12 | EXISTE PARCIAL | O conteúdo de boa parte deles existe sob outros nomes — matriz de versão,",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-530",
-      "state": "PROVADA",
+      "line": 110,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
-        "test": "tests/test_case_store.py",
-        "symbol": "load_case"
-      }
+        "symbol": "load_case",
+        "test": "tests/test_case_store.py"
+      },
+      "state": "PROVADA",
+      "text": "Artefatos nomeados da §12",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 117,
-      "text": "Validação funcional da saída antes de performance",
       "context": "| Validação funcional da saída antes de performance | EXISTE, com teste | `sparkforge/facts/funcval.py` monta plano e co",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-531",
-      "state": "PROVADA",
+      "line": 117,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/funcval.py",
-        "test": "tests/test_facts_funcval.py",
-        "symbol": "build_plan"
-      }
+        "symbol": "build_plan",
+        "test": "tests/test_facts_funcval.py"
+      },
+      "state": "PROVADA",
+      "text": "Validação funcional da saída antes de performance",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 118,
-      "text": "Reconciliação com o repertório que a §6.9 enumera",
       "context": "| Reconciliação com o repertório que a §6.9 enumera | EXISTE PARCIAL | Os eixos acima cobrem contagem, chave distinta, n",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-532",
-      "state": "PROVADA",
+      "line": 118,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/funcval.py",
-        "test": "tests/test_facts_funcval.py",
-        "symbol": "build_comparison"
-      }
+        "symbol": "build_comparison",
+        "test": "tests/test_facts_funcval.py"
+      },
+      "state": "PROVADA",
+      "text": "Reconciliação com o repertório que a §6.9 enumera",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 119,
-      "text": "Regra de qualidade declarada no job",
       "context": "| Regra de qualidade declarada no job | EXISTE, com teste | `sparkforge/facts/data_quality.py` reconhece suite de valida",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-533",
-      "state": "PROVADA",
+      "line": 119,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/data-quality.yaml",
-        "test": "tests/test_facts_data_quality.py",
-        "symbol": "extract_data_quality"
-      }
+        "symbol": "extract_data_quality",
+        "test": "tests/test_facts_data_quality.py"
+      },
+      "state": "PROVADA",
+      "text": "Regra de qualidade declarada no job",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 126,
-      "text": "Diagnóstico antes de configuração",
       "context": "| Diagnóstico antes de configuração | EXISTE, com teste | `sparkforge/facts/event_log.py` deriva bytes, registros, taref",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-534",
-      "state": "PROVADA",
+      "line": 126,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/event_log.py",
-        "test": "tests/test_facts_event_log.py",
-        "symbol": "extract_event_log"
-      }
+        "symbol": "extract_event_log",
+        "test": "tests/test_facts_event_log.py"
+      },
+      "state": "PROVADA",
+      "text": "Diagnóstico antes de configuração",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 127,
-      "text": "Comparação entre duas execuções",
       "context": "| Comparação entre duas execuções | EXISTE, com teste | `sparkforge/facts/benchmark.py` compara execuções por métrica re",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-535",
-      "state": "PROVADA",
+      "line": 127,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/benchmark.py",
-        "test": "tests/test_facts_benchmark.py",
-        "symbol": "build_benchmark"
-      }
+        "symbol": "build_benchmark",
+        "test": "tests/test_facts_benchmark.py"
+      },
+      "state": "PROVADA",
+      "text": "Comparação entre duas execuções",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 128,
-      "text": "Comparação parametrizada por versão de runtime",
       "context": "| Comparação parametrizada por versão de runtime | EXISTE, com teste | `build_benchmark(..., before_runtime=, after_runt",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-536",
-      "state": "PROVADA",
+      "line": 128,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/benchmark.py",
-        "test": "tests/test_facts_benchmark.py",
-        "symbol": "test_dois_runtimes_diferentes_produzem_o_par"
-      }
+        "symbol": "test_dois_runtimes_diferentes_produzem_o_par",
+        "test": "tests/test_facts_benchmark.py"
+      },
+      "state": "PROVADA",
+      "text": "Comparação parametrizada por versão de runtime",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 129,
-      "text": "Skew, spill, small files e layout",
       "context": "| Skew, spill, small files e layout | EXISTE, com teste | `rules/catalog/pyspark.yaml`, `rules/catalog/parquet.yaml` e `",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-537",
-      "state": "PROVADA",
+      "line": 129,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/pyspark.yaml",
-        "test": "tests/test_fixtures_golden_plan.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden_plan.py"
+      },
+      "state": "PROVADA",
+      "text": "Skew, spill, small files e layout",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 130,
-      "text": "Recusa de linearidade entre volume e recurso",
       "context": "| Recusa de linearidade entre volume e recurso | EXISTE PARCIAL | O catálogo não recomenda aumento de worker sem evidênc",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-538",
-      "state": "PROVADA",
+      "line": 130,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-infra.yaml",
-        "test": "tests/test_fixtures_golden_terraform.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden_terraform.py"
+      },
+      "state": "PROVADA",
+      "text": "Recusa de linearidade entre volume e recurso",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 136,
-      "text": "Grafo de permissão e diagnóstico cross-account",
       "context": "| Grafo de permissão e diagnóstico cross-account | EXISTE, com teste | `sparkforge/lakeformation/graph.py` e `sparkforge",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-539",
-      "state": "PROVADA",
+      "line": 136,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/lakeformation/graph.py",
-        "test": "tests/test_lakeformation_engine.py",
-        "symbol": "evaluate_access"
-      }
+        "symbol": "evaluate_access",
+        "test": "tests/test_lakeformation_engine.py"
+      },
+      "state": "PROVADA",
+      "text": "Grafo de permissão e diagnóstico cross-account",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 137,
-      "text": "IAM, KMS, rede e cross-account como eixo do assessment",
       "context": "| IAM, KMS, rede e cross-account como eixo do assessment | EXISTE, com teste | As áreas `SF-KMS`, `SF-NET` e `SF-XACC` d",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-540",
-      "state": "PROVADA",
+      "line": 137,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-cross-account.yaml",
-        "test": "tests/test_migration_assessment.py",
-        "symbol": "assess"
-      }
+        "symbol": "assess",
+        "test": "tests/test_migration_assessment.py"
+      },
+      "state": "PROVADA",
+      "text": "IAM, KMS, rede e cross-account como eixo do assessment",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 138,
-      "text": "Segredo em argumento de job",
       "context": "| Segredo em argumento de job | EXISTE, com teste | `SF-GLUE-006` sobre `tf.attribute`, com o valor redigido no próprio ",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-541",
-      "state": "PROVADA",
+      "line": 138,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/terraform.py",
-        "test": "tests/test_facts_terraform.py",
-        "symbol": "test_akia_pattern_is_flagged_and_redacted"
-      }
+        "symbol": "test_akia_pattern_is_flagged_and_redacted",
+        "test": "tests/test_facts_terraform.py"
+      },
+      "state": "PROVADA",
+      "text": "Segredo em argumento de job",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 139,
-      "text": "Detector de segredo unificado",
       "context": "| Detector de segredo unificado | EXISTE PARCIAL | `sparkforge/facts/secrets.py` é o módulo canônico e tem um único cons",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-542",
-      "state": "PROVADA",
+      "line": 139,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/secrets.py",
-        "test": "tests/test_facts_emr_cluster.py",
-        "symbol": "test_access_key_in_a_property_is_redacted"
-      }
+        "symbol": "test_access_key_in_a_property_is_redacted",
+        "test": "tests/test_facts_emr_cluster.py"
+      },
+      "state": "PROVADA",
+      "text": "Detector de segredo unificado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 146,
-      "text": "Observabilidade do job como regra, não como conselho",
       "context": "| Observabilidade do job como regra, não como conselho | EXISTE, com teste | `SF-GLUE-002` acusa job de produção sem obs",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-543",
-      "state": "PROVADA",
+      "line": 146,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-infra.yaml",
-        "test": "tests/test_fixtures_golden_infra_code.py",
-        "symbol": "test_observability_argument_without_glue_context_fires"
-      }
+        "symbol": "test_observability_argument_without_glue_context_fires",
+        "test": "tests/test_fixtures_golden_infra_code.py"
+      },
+      "state": "PROVADA",
+      "text": "Observabilidade do job como regra, não como conselho",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 147,
-      "text": "Preço com fonte, data e região",
       "context": "| Preço com fonte, data e região | EXISTE, com teste | `knowledge/glue/pricing.yaml` traz o preço publicado por DPU-hora",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-544",
-      "state": "PROVADA",
+      "line": 147,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/glue/pricing.yaml",
-        "test": "tests/test_glue_pricing.py",
-        "symbol": "differentiates_by_runtime_version"
-      }
+        "symbol": "differentiates_by_runtime_version",
+        "test": "tests/test_glue_pricing.py"
+      },
+      "state": "PROVADA",
+      "text": "Preço com fonte, data e região",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 155,
-      "text": "Biblioteca de erros com casamento determinístico",
       "context": "| Biblioteca de erros com casamento determinístico | EXISTE, com teste | `knowledge/errors/` guarda uma entrada por erro",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-545",
-      "state": "PROVADA",
+      "line": 155,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/errors/matcher.py",
-        "test": "tests/test_error_matcher.py",
-        "symbol": "match_log"
-      }
+        "symbol": "match_log",
+        "test": "tests/test_error_matcher.py"
+      },
+      "state": "PROVADA",
+      "text": "Biblioteca de erros com casamento determinístico",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 156,
-      "text": "Exigência de fonte oficial e data por entrada",
       "context": "| Exigência de fonte oficial e data por entrada | EXISTE, com teste | Toda entrada do diretório precisa de `sources` e `",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-546",
-      "state": "PROVADA",
+      "line": 156,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/errors/glue/scala_212_jar_under_spark4.json",
-        "test": "tests/test_error_matcher.py",
-        "symbol": "test_toda_entrada_declara_fonte_e_data"
-      }
+        "symbol": "test_toda_entrada_declara_fonte_e_data",
+        "test": "tests/test_error_matcher.py"
+      },
+      "state": "PROVADA",
+      "text": "Exigência de fonte oficial e data por entrada",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 157,
-      "text": "Campos do schema da §13",
       "context": "| Campos do schema da §13 | EXISTE PARCIAL | O schema local cobre, sob outros nomes, `error_id`, `symptom`, `exact_error",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-547",
-      "state": "PROVADA",
+      "line": 157,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/errors/glue/sdk_v2_user_jars_first.json",
-        "test": "tests/test_error_matcher.py",
-        "symbol": "test_sdk_v2_antigo_com_user_jars_first"
-      }
+        "symbol": "test_sdk_v2_antigo_com_user_jars_first",
+        "test": "tests/test_error_matcher.py"
+      },
+      "state": "PROVADA",
+      "text": "Campos do schema da §13",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 158,
-      "text": "Cobertura das categorias que a §13 enumera",
       "context": "| Cobertura das categorias que a §13 enumera | EXISTE PARCIAL | Há entrada para incompatibilidade binária de Scala, `NoS",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-548",
-      "state": "PROVADA",
+      "line": 158,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "knowledge/errors/athena/iceberg_v3_unsupported.json",
-        "test": "tests/test_error_matcher.py",
-        "symbol": "test_athena_sobre_tabela_iceberg_v3"
-      }
+        "symbol": "test_athena_sobre_tabela_iceberg_v3",
+        "test": "tests/test_error_matcher.py"
+      },
+      "state": "PROVADA",
+      "text": "Cobertura das categorias que a §13 enumera",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 164,
-      "text": "Recomendação final em vocabulário fechado",
       "context": "| Recomendação final em vocabulário fechado | EXISTE, com teste | `MigrationAssessment.recommendation` sai em `GO`, `CON",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-549",
-      "state": "PROVADA",
+      "line": 164,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json",
-        "test": "tests/test_fixtures_scenarios.py",
-        "symbol": "test_assessment_matches_golden"
-      }
+        "symbol": "test_assessment_matches_golden",
+        "test": "tests/test_fixtures_scenarios.py"
+      },
+      "state": "PROVADA",
+      "text": "Recomendação final em vocabulário fechado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 165,
-      "text": "Blocker vence score",
       "context": "| Blocker vence score | EXISTE, com teste | Gate em `FAIL` força `NO_GO`, e gate sem evidência nasce `BLOCKED` e nunca `",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-550",
-      "state": "PROVADA",
+      "line": 165,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/assessment.py",
-        "test": "tests/test_migration_assessment.py",
-        "symbol": "test_gate_sem_evidencia_e_blocked_nunca_pass"
-      }
+        "symbol": "test_gate_sem_evidencia_e_blocked_nunca_pass",
+        "test": "tests/test_migration_assessment.py"
+      },
+      "state": "PROVADA",
+      "text": "Blocker vence score",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 166,
-      "text": "Lacuna nomeada em vez de silêncio",
       "context": "| Lacuna nomeada em vez de silêncio | EXISTE, com teste | `missing_evidence` diz, por eixo, qual fact falta e qual artef",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-551",
-      "state": "PROVADA",
+      "line": 166,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/assessment.py",
-        "test": "tests/test_cli_migrate_glue.py",
-        "symbol": "test_o_eixo_que_nao_foi_avaliado_sai_nomeado"
-      }
+        "symbol": "test_o_eixo_que_nao_foi_avaliado_sai_nomeado",
+        "test": "tests/test_cli_migrate_glue.py"
+      },
+      "state": "PROVADA",
+      "text": "Lacuna nomeada em vez de silêncio",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 167,
-      "text": "Alteração proposta com risco, teste e rollback",
       "context": "| Alteração proposta com risco, teste e rollback | EXISTE PARCIAL | Toda regra de migração (`SF-MIG-*`, `SF-SPARK4-*`) d",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-552",
-      "state": "PROVADA",
+      "line": 167,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "rules/catalog/glue-migration.yaml",
-        "test": "tests/test_rules_loader.py",
-        "symbol": "load_catalog"
-      }
+        "symbol": "load_catalog",
+        "test": "tests/test_rules_loader.py"
+      },
+      "state": "PROVADA",
+      "text": "Alteração proposta com risco, teste e rollback",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
-      "line": 168,
-      "text": "Tabela de evidência com fonte e data",
       "context": "| Tabela de evidência com fonte e data | EXISTE PARCIAL | O `Finding` carrega evidência citável e trecho da fonte, e o c",
-      "type": "capability",
+      "doc": "docs/harness/MIGRATIONS-GLUE-GAP.md",
       "id": "VNX-553",
-      "state": "PROVADA",
+      "line": 168,
       "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/models.py",
-        "test": "tests/test_findings_models.py",
-        "symbol": "test_evidence_must_not_be_empty"
-      }
+        "symbol": "test_evidence_must_not_be_empty",
+        "test": "tests/test_findings_models.py"
+      },
+      "state": "PROVADA",
+      "text": "Tabela de evidência com fonte e data",
+      "type": "capability"
     },
     {
       "context": "- `ECO` (Default): Single-agent, cheap models, turns curtos, cache agressivo, 0 reflection desnecessária.",
@@ -8166,1072 +8166,1072 @@
       "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 48,
-      "text": "5.6",
       "context": "fixture `fixtures/pyspark/clean_job`, o payload de fatos é **5.6** vezes maior que o código-fonte",
-      "type": "number",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-554",
-      "state": "PROVADA",
+      "line": 48,
       "proof": {
-        "kind": "command",
         "cmd": "python -c 'import json, pathlib; d = json.loads(pathlib.Path(\"fixtures/pyspark/clean_job/expected/facts.json\").read_text(encoding=\"utf-8\")); fonte = sum(p.stat().st_size for p in pathlib.Path(\"fixtures/pyspark/clean_job/input\").rglob(\"*.py\")); print(round(len(json.dumps(d, ensure_ascii=False).encode(\"utf-8\")) / fonte, 1))'",
-        "tier": "fast",
         "expect": {
           "kind": "contains",
           "value": "5.6"
-        }
-      }
-    },
-    {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 105,
-      "text": "0",
-      "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, sem teste | `sparkforge/facts/secrets.py:looks_like_secr",
-      "type": "number",
-      "id": "VNX-555",
-      "state": "REMOVIDA",
-      "note": "retirada depois da fase J0. Ela media a divida -- ZERO testes citando sparkforge.facts.secrets -- e a fase pagou a divida, entao o numero deixou de existir no documento. A capacidade que restou na mesma linha e VNX-577; manter as duas apontando para o mesmo texto criaria alegacao duplicada"
-    },
-    {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 108,
-      "text": "Uma implementação só",
-      "context": "| Uma implementação só | NÃO EXISTE | São **4**: a canônica mais três cópias privadas `_looks_like_secret` em `sparkforg",
-      "type": "capability",
-      "id": "VNX-556",
-      "state": "PROVADA",
-      "proof": {
-        "path": "sparkforge/facts/secrets.py",
-        "test": "tests/test_facts_secrets.py",
-        "symbol": "looks_like_secret",
-        "kind": "artifact"
-      },
-      "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje"
-    },
-    {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 192,
-      "text": "20",
-      "context": "| Controle de verbosidade na resposta | NÃO EXISTE | `detail_level` aparece em **20** das **44** tools do catálogo. Toda ",
-      "type": "number",
-      "id": "VNX-557",
-      "state": "PROVADA",
-      "proof": {
+        },
         "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "5.6",
+      "type": "number"
+    },
+    {
+      "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, sem teste | `sparkforge/facts/secrets.py:looks_like_secr",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-555",
+      "line": 105,
+      "note": "retirada depois da fase J0. Ela media a divida -- ZERO testes citando sparkforge.facts.secrets -- e a fase pagou a divida, entao o numero deixou de existir no documento. A capacidade que restou na mesma linha e VNX-577; manter as duas apontando para o mesmo texto criaria alegacao duplicada",
+      "state": "REMOVIDA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "| Uma implementação só | EXISTE, com teste | **Fechado pela fase J0.** As cópias privadas `_looks_like_secret` de `spark",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-556",
+      "line": 108,
+      "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/secrets.py",
+        "symbol": "looks_like_secret",
+        "test": "tests/test_facts_secrets.py"
+      },
+      "state": "PROVADA",
+      "text": "Uma implementação só",
+      "type": "capability"
+    },
+    {
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-557",
+      "line": 271,
+      "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(sum(1 for t in TOOLS.values() if \"detail_level\" in t[\"inputSchema\"][\"properties\"]))'",
-        "tier": "fast",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 20
-        }
-      }
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "20",
+      "type": "number"
     },
     {
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 192,
-      "text": "44",
-      "context": "| Controle de verbosidade na resposta | NÃO EXISTE | `detail_level` aparece em **0** das **44** tools do catálogo. Toda ",
-      "type": "number",
       "id": "VNX-558",
-      "state": "PROVADA",
+      "line": 271,
       "proof": {
-        "kind": "command",
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
-        "tier": "fast",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 44
-        }
-      }
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "44",
+      "type": "number"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 402,
-      "text": "22",
       "context": "existem em tool nenhuma, e paginação existe em **22** — metade do catálogo devolve tudo, no mesmo",
-      "type": "number",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-559",
-      "state": "PROVADA",
+      "line": 521,
       "proof": {
-        "kind": "command",
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; campos = {\"cursor\", \"limit\", \"page\", \"offset\"}; print(sum(1 for t in TOOLS.values() if campos & set(t[\"inputSchema\"][\"properties\"])))'",
-        "tier": "fast",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
           "value": 22
-        }
-      }
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "22",
+      "type": "number"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 62,
-      "text": "Conteúdo de repositório é dado não confiável, nunca instrução",
       "context": "| Conteúdo de repositório é dado não confiável, nunca instrução | EXISTE, com teste | É literalmente o invariante da fas",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-560",
-      "state": "PROVADA",
+      "line": 62,
       "proof": {
         "kind": "artifact",
         "path": "docs/harness/UNTRUSTED-CONTENT.md",
-        "test": "tests/test_harness_untrusted.py",
-        "symbol": "extratores_com_snippet"
-      }
+        "symbol": "extratores_com_snippet",
+        "test": "tests/test_harness_untrusted.py"
+      },
+      "state": "PROVADA",
+      "text": "Conteúdo de repositório é dado não confiável, nunca instrução",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 63,
-      "text": "Fail closed em controle de segurança",
       "context": "| Fail closed em controle de segurança | EXISTE, com teste | `sparkforge/migration/assessment.py:assess()` faz eixo sem ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-561",
-      "state": "PROVADA",
+      "line": 63,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/assessment.py",
-        "test": "tests/test_migration_assessment.py",
-        "symbol": "assess"
-      }
+        "symbol": "assess",
+        "test": "tests/test_migration_assessment.py"
+      },
+      "state": "PROVADA",
+      "text": "Fail closed em controle de segurança",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 64,
-      "text": "Descrição de tool nunca derivada do projeto analisado",
       "context": "| Descrição de tool nunca derivada do projeto analisado | EXISTE, com teste | Toda descrição é literal em `sparkforge/ad",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-562",
-      "state": "PROVADA",
+      "line": 64,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_every_tool_has_a_description"
-      }
+        "symbol": "test_every_tool_has_a_description",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Descrição de tool nunca derivada do projeto analisado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 65,
-      "text": "Nenhuma tool aceita comando de shell",
       "context": "| Nenhuma tool aceita comando de shell | EXISTE, com teste | O catálogo inteiro declara `properties` explícitas, e nenhu",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-563",
-      "state": "PROVADA",
+      "line": 65,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_every_tool_declares_properties"
-      }
+        "symbol": "test_every_tool_declares_properties",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Nenhuma tool aceita comando de shell",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 66,
-      "text": "Nenhuma tool aceita SQL arbitrário para execução",
       "context": "| Nenhuma tool aceita SQL arbitrário para execução | EXISTE, com teste | Mesmo mecanismo: nenhuma propriedade do catálog",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-564",
-      "state": "PROVADA",
+      "line": 66,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/sql_literal.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_no_tool_uses_a_bare_object_schema"
-      }
+        "symbol": "test_no_tool_uses_a_bare_object_schema",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Nenhuma tool aceita SQL arbitrário para execução",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 67,
-      "text": "Nenhum código descoberto no repositório é executado",
       "context": "| Nenhum código descoberto no repositório é executado | EXISTE, com teste | A extração é `ast.parse` sobre texto, nunca ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-565",
-      "state": "PROVADA",
+      "line": 67,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
-        "test": "tests/test_fixtures_golden.py",
-        "symbol": "extract_tree"
-      }
+        "symbol": "extract_tree",
+        "test": "tests/test_fixtures_golden.py"
+      },
+      "state": "PROVADA",
+      "text": "Nenhum código descoberto no repositório é executado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 68,
-      "text": "Superfície de execução do próprio repositório fechada e auditada",
       "context": "| Superfície de execução do próprio repositório fechada e auditada | EXISTE, com teste | `tests/test_execution_surface.p",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-566",
-      "state": "PROVADA",
+      "line": 68,
       "proof": {
         "kind": "artifact",
         "path": ".mcp.json",
-        "test": "tests/test_execution_surface.py",
-        "symbol": "test_nenhum_hook_usa_construcao_de_execucao_arbitraria"
-      }
+        "symbol": "test_nenhum_hook_usa_construcao_de_execucao_arbitraria",
+        "test": "tests/test_execution_surface.py"
+      },
+      "state": "PROVADA",
+      "text": "Superfície de execução do próprio repositório fechada e auditada",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 69,
-      "text": "Source read-only",
       "context": "| Source read-only | EXISTE PARCIAL | Nenhum extrator abre arquivo do repositório analisado para escrita, e há teste med",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-567",
-      "state": "PROVADA",
+      "line": 69,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_without_out_path_nothing_is_written"
-      }
+        "symbol": "test_without_out_path_nothing_is_written",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Source read-only",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 70,
-      "text": "Zero network egress",
       "context": "| Zero network egress | EXISTE PARCIAL | `ExecutionProfile.OFFLINE` é teto, não conselho: `sparkforge/agents/autonomy.py",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-568",
-      "state": "PROVADA",
+      "line": 70,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
-        "test": "tests/test_harness_authorization.py",
-        "symbol": "test_aprovacao_nao_fura_o_teto_OFFLINE"
-      }
+        "symbol": "test_aprovacao_nao_fura_o_teto_OFFLINE",
+        "test": "tests/test_harness_authorization.py"
+      },
+      "state": "PROVADA",
+      "text": "Zero network egress",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 71,
-      "text": "Confinamento ao root autorizado",
       "context": "| Confinamento ao root autorizado | EXISTE PARCIAL | `sparkforge/rules/loader.py:safe_catalog_file()` canonicaliza e rec",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-569",
-      "state": "PROVADA",
+      "line": 71,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/loader.py",
-        "test": "tests/test_rules_loader.py",
-        "symbol": "safe_catalog_file"
-      }
+        "symbol": "safe_catalog_file",
+        "test": "tests/test_rules_loader.py"
+      },
+      "state": "PROVADA",
+      "text": "Confinamento ao root autorizado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 72,
-      "text": "Sem telemetria conversacional",
       "context": "| Sem telemetria conversacional | EXISTE PARCIAL | `sparkforge/observability/store.py:SQLiteTraceStore` grava trace da e",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-570",
-      "state": "PROVADA",
+      "line": 72,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/observability/store.py",
-        "test": "tests/test_observability.py",
-        "symbol": "SQLiteTraceStore"
-      }
+        "symbol": "SQLiteTraceStore",
+        "test": "tests/test_observability.py"
+      },
+      "state": "PROVADA",
+      "text": "Sem telemetria conversacional",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 81,
-      "text": "Perfil de execução como vocabulário canônico",
       "context": "| Perfil de execução como vocabulário canônico | EXISTE, com teste | `ExecutionProfile` em `sparkforge/registry/models.p",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-571",
-      "state": "PROVADA",
+      "line": 81,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/registry/models.py",
-        "test": "tests/test_harness_authorization.py",
-        "symbol": "test_todo_perfil_do_enum_e_reconhecido"
-      }
+        "symbol": "test_todo_perfil_do_enum_e_reconhecido",
+        "test": "tests/test_harness_authorization.py"
+      },
+      "state": "PROVADA",
+      "text": "Perfil de execução como vocabulário canônico",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 82,
-      "text": "Classe de tool derivada da anotação, não de uma lista",
       "context": "| Classe de tool derivada da anotação, não de uma lista | EXISTE, com teste | `sparkforge/agents/autonomy.py:tool_class(",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-572",
-      "state": "PROVADA",
+      "line": 82,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
-        "test": "tests/test_harness_authorization.py",
-        "symbol": "test_a_classe_vem_da_anotacao_e_nao_de_uma_lista"
-      }
+        "symbol": "test_a_classe_vem_da_anotacao_e_nao_de_uma_lista",
+        "test": "tests/test_harness_authorization.py"
+      },
+      "state": "PROVADA",
+      "text": "Classe de tool derivada da anotação, não de uma lista",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 83,
-      "text": "Aprovação por classe, e não booleano global",
       "context": "| Aprovação por classe, e não booleano global | EXISTE, com teste | Aprovar mutação local não libera tool de nuvem, e ca",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-573",
-      "state": "PROVADA",
+      "line": 83,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
-        "test": "tests/test_harness_authorization.py",
-        "symbol": "test_a_aprovacao_e_por_classe_e_nao_um_booleano_global"
-      }
+        "symbol": "test_a_aprovacao_e_por_classe_e_nao_um_booleano_global",
+        "test": "tests/test_harness_authorization.py"
+      },
+      "state": "PROVADA",
+      "text": "Aprovação por classe, e não booleano global",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 84,
-      "text": "`offline-strict` como perfil com matriz ALLOW/DENY declarada",
       "context": "| `offline-strict` como perfil com matriz ALLOW/DENY declarada | EXISTE PARCIAL | O teto existe e morde (`_teto_recusa_r",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-574",
-      "state": "PROVADA",
+      "line": 84,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
-        "test": "tests/test_harness_authorization.py",
-        "symbol": "test_OFFLINE_recusa_tool_de_rede_em_qualquer_grafia"
-      }
+        "symbol": "test_OFFLINE_recusa_tool_de_rede_em_qualquer_grafia",
+        "test": "tests/test_harness_authorization.py"
+      },
+      "state": "PROVADA",
+      "text": "`offline-strict` como perfil com matriz ALLOW/DENY declarada",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 85,
-      "text": "`aws-readonly` como perfil",
       "context": "| `aws-readonly` como perfil | EXISTE PARCIAL | `ToolClass.CLOUD_READ` existe e é distinta de `CLOUD_MUTATION`, o que é ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-575",
-      "state": "PROVADA",
+      "line": 85,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
-        "test": "tests/test_harness_authorization.py",
-        "symbol": "test_cloud_read_exige_aprovacao_propria_sob_perfil_sem_teto"
-      }
+        "symbol": "test_cloud_read_exige_aprovacao_propria_sob_perfil_sem_teto",
+        "test": "tests/test_harness_authorization.py"
+      },
+      "state": "PROVADA",
+      "text": "`aws-readonly` como perfil",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 94,
-      "text": "Algoritmo de resolução segura de caminho",
       "context": "| Algoritmo de resolução segura de caminho | EXISTE PARCIAL | `safe_catalog_file()` faz exatamente o que a SPEC descreve",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-576",
-      "state": "PROVADA",
+      "line": 94,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/loader.py",
-        "test": "tests/test_rules_loader.py",
-        "symbol": "test_traversal_out_of_the_catalog_is_refused"
-      }
-    },
-    {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 105,
-      "text": "Reconhecedor canônico de segredo em par chave/valor",
-      "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, sem teste | `sparkforge/facts/secrets.py:looks_like_secr",
-      "type": "capability",
-      "id": "VNX-577",
-      "state": "PROVADA",
-      "proof": {
-        "path": "sparkforge/facts/secrets.py",
-        "test": "tests/test_facts_secrets.py",
-        "symbol": "looks_like_secret",
-        "kind": "artifact"
+        "symbol": "test_traversal_out_of_the_catalog_is_refused",
+        "test": "tests/test_rules_loader.py"
       },
-      "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje"
+      "state": "PROVADA",
+      "text": "Algoritmo de resolução segura de caminho",
+      "type": "capability"
     },
     {
+      "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, com teste | `sparkforge/facts/secrets.py:looks_like_secr",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 106,
-      "text": "Redação registrada no próprio fato",
-      "context": "| Redação registrada no próprio fato | EXISTE, com teste | O par vira `<redigido>` e `attrs[\"redacted\"] = True`: a evidê",
-      "type": "capability",
-      "id": "VNX-578",
+      "id": "VNX-577",
+      "line": 105,
+      "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/secrets.py",
+        "symbol": "looks_like_secret",
+        "test": "tests/test_facts_secrets.py"
+      },
       "state": "PROVADA",
+      "text": "Reconhecedor canônico de segredo em par chave/valor",
+      "type": "capability"
+    },
+    {
+      "context": "| Redação registrada no próprio fato | EXISTE, com teste | O par vira `<redigido>` e `attrs[\"redacted\"] = True`: a evidê",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-578",
+      "line": 106,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/terraform.py",
-        "test": "tests/test_facts_terraform.py",
-        "symbol": "test_akia_pattern_is_flagged_and_redacted"
-      }
+        "symbol": "test_akia_pattern_is_flagged_and_redacted",
+        "test": "tests/test_facts_terraform.py"
+      },
+      "state": "PROVADA",
+      "text": "Redação registrada no próprio fato",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 107,
-      "text": "O scanner nunca registra o segredo",
       "context": "| O scanner nunca registra o segredo | EXISTE, com teste | Mesma disciplina no caminho de EMR: a propriedade sai redigid",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-579",
-      "state": "PROVADA",
+      "line": 107,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/emr_cluster.py",
-        "test": "tests/test_facts_emr_cluster.py",
-        "symbol": "test_access_key_in_a_property_is_redacted"
-      }
+        "symbol": "test_access_key_in_a_property_is_redacted",
+        "test": "tests/test_facts_emr_cluster.py"
+      },
+      "state": "PROVADA",
+      "text": "O scanner nunca registra o segredo",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 109,
-      "text": "Detectores que a SPEC enumera",
       "context": "| Detectores que a SPEC enumera | EXISTE PARCIAL | Só dois gatilhos funcionam por **valor**: access key id da AWS e senh",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-580",
-      "state": "PROVADA",
+      "line": 109,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/secrets.py",
-        "test": "tests/test_facts_emr_cluster.py",
-        "symbol": "test_access_key_in_a_property_is_redacted"
-      }
+        "symbol": "test_access_key_in_a_property_is_redacted",
+        "test": "tests/test_facts_emr_cluster.py"
+      },
+      "state": "PROVADA",
+      "text": "Detectores que a SPEC enumera",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 116,
-      "text": "Corpus de injeção exercitado ponta a ponta",
       "context": "| Corpus de injeção exercitado ponta a ponta | EXISTE PARCIAL | `tests/test_harness_untrusted.py` monta um cenário com t",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-581",
-      "state": "PROVADA",
+      "line": 116,
       "proof": {
         "kind": "artifact",
         "path": "docs/harness/UNTRUSTED-CONTENT.md",
-        "test": "tests/test_harness_untrusted.py",
-        "symbol": "_cenario_com_injecao"
-      }
+        "symbol": "_cenario_com_injecao",
+        "test": "tests/test_harness_untrusted.py"
+      },
+      "state": "PROVADA",
+      "text": "Corpus de injeção exercitado ponta a ponta",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 117,
-      "text": "Comentário e docstring fora do dado devolvido",
       "context": "| Comentário e docstring fora do dado devolvido | EXISTE PARCIAL | Na prática nenhum extrator emite comentário ou docstr",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-582",
-      "state": "PROVADA",
+      "line": 117,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
-        "test": "tests/test_harness_untrusted.py",
-        "symbol": "test_nenhum_campo_de_catalogo_carrega_texto_do_artefato"
-      }
+        "symbol": "test_nenhum_campo_de_catalogo_carrega_texto_do_artefato",
+        "test": "tests/test_harness_untrusted.py"
+      },
+      "state": "PROVADA",
+      "text": "Comentário e docstring fora do dado devolvido",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 125,
-      "text": "Diretório de estado por repositório analisado",
       "context": "| Diretório de estado por repositório analisado | EXISTE, com teste | `.sparkforge/` já é isso: `case.yaml`, `facts.json",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-583",
-      "state": "PROVADA",
+      "line": 125,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
-        "test": "tests/test_case_store.py",
-        "symbol": "save_case"
-      }
+        "symbol": "save_case",
+        "test": "tests/test_case_store.py"
+      },
+      "state": "PROVADA",
+      "text": "Diretório de estado por repositório analisado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 126,
-      "text": "Banco SQLite local já em uso",
       "context": "| Banco SQLite local já em uso | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` cria e escreve",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-584",
-      "state": "PROVADA",
+      "line": 126,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/observability/store.py",
-        "test": "tests/test_observability.py",
-        "symbol": "SQLiteTraceStore"
-      }
+        "symbol": "SQLiteTraceStore",
+        "test": "tests/test_observability.py"
+      },
+      "state": "PROVADA",
+      "text": "Banco SQLite local já em uso",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 127,
-      "text": "Separação entre o que é handoff e o que é bruto",
       "context": "| Separação entre o que é handoff e o que é bruto | EXISTE, com teste | O `.gitignore` versiona `case.yaml` e o manifest",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-585",
-      "state": "PROVADA",
+      "line": 127,
       "proof": {
         "kind": "artifact",
         "path": ".gitignore",
-        "test": "tests/test_execution_surface.py",
-        "symbol": "test_o_settings_local_esta_ignorado_pelo_repositorio"
-      }
+        "symbol": "test_o_settings_local_esta_ignorado_pelo_repositorio",
+        "test": "tests/test_execution_surface.py"
+      },
+      "state": "PROVADA",
+      "text": "Separação entre o que é handoff e o que é bruto",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 135,
-      "text": "Ponto cego como cidadão de primeira classe",
       "context": "| Ponto cego como cidadão de primeira classe | EXISTE, com teste | É lei da casa antes de ser pedido da SPEC: onze extra",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-586",
-      "state": "PROVADA",
+      "line": 135,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_analyze_reports_where_each_blind_spot_is"
-      }
+        "symbol": "test_analyze_reports_where_each_blind_spot_is",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Ponto cego como cidadão de primeira classe",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 136,
-      "text": "Id determinístico de nó, derivado de conteúdo",
       "context": "| Id determinístico de nó, derivado de conteúdo | EXISTE PARCIAL | `Fact.id` é hash estável sobre kind, subject e measur",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-587",
-      "state": "PROVADA",
+      "line": 136,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/models.py",
-        "test": "tests/test_findings_models.py",
-        "symbol": "test_id_is_stable_across_instances"
-      }
+        "symbol": "test_id_is_stable_across_instances",
+        "test": "tests/test_findings_models.py"
+      },
+      "state": "PROVADA",
+      "text": "Id determinístico de nó, derivado de conteúdo",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 137,
-      "text": "Taxonomia de aresta",
       "context": "| Taxonomia de aresta | EXISTE PARCIAL | `pyspark.callgraph_edge` (chamador → chamado) mais os quatro kinds `callgraph.*",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-588",
-      "state": "PROVADA",
+      "line": 137,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/call_graph.py",
-        "test": "tests/test_fixtures_golden_callgraph.py",
-        "symbol": "build_call_graph"
-      }
+        "symbol": "build_call_graph",
+        "test": "tests/test_fixtures_golden_callgraph.py"
+      },
+      "state": "PROVADA",
+      "text": "Taxonomia de aresta",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 146,
-      "text": "Arquitetura de extractor com identidade e versão",
       "context": "| Arquitetura de extractor com identidade e versão | EXISTE, com teste | Todo extrator declara `EXTRACTOR_ID` e o grava ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-589",
-      "state": "PROVADA",
+      "line": 146,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
-        "test": "tests/test_fixtures_golden.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden.py"
+      },
+      "state": "PROVADA",
+      "text": "Arquitetura de extractor com identidade e versão",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 147,
-      "text": "Extractor PySpark",
       "context": "| Extractor PySpark | EXISTE, com teste | `sparkforge/facts/pyspark_ast.py:extract_source()` cobre leitura, escrita, cac",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-590",
-      "state": "PROVADA",
+      "line": 147,
       "proof": {
         "kind": "artifact",
         "path": "fixtures/pyspark/clean_job/expected/facts.json",
-        "test": "tests/test_fixtures_golden.py",
-        "symbol": "test_facts_match_golden"
-      }
+        "symbol": "test_facts_match_golden",
+        "test": "tests/test_fixtures_golden.py"
+      },
+      "state": "PROVADA",
+      "text": "Extractor PySpark",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 148,
-      "text": "Grafo de dados tabela → job → tabela",
       "context": "| Grafo de dados tabela → job → tabela | EXISTE PARCIAL | `pyspark.read` e `pyspark.write` carregam o alvo literal quand",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-591",
-      "state": "PROVADA",
+      "line": 148,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/consumers.py",
-        "test": "tests/test_fixtures_golden_consumers.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden_consumers.py"
+      },
+      "state": "PROVADA",
+      "text": "Grafo de dados tabela → job → tabela",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 149,
-      "text": "Call graph com ciclo e alcançabilidade a partir de entrypoint",
       "context": "| Call graph com ciclo e alcançabilidade a partir de entrypoint | EXISTE, com teste | `sparkforge/facts/call_graph.py` d",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-592",
-      "state": "PROVADA",
+      "line": 149,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/call_graph.py",
-        "test": "tests/test_fixtures_golden_callgraph.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden_callgraph.py"
+      },
+      "state": "PROVADA",
+      "text": "Call graph com ciclo e alcançabilidade a partir de entrypoint",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 150,
-      "text": "Lineage dinâmico declarado em vez de silenciado",
       "context": "| Lineage dinâmico declarado em vez de silenciado | EXISTE, com teste | O que o extrator não resolve vira `pyspark.unres",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-593",
-      "state": "PROVADA",
+      "line": 150,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_filtering_by_kind_cannot_hide_the_blind_spot"
-      }
+        "symbol": "test_filtering_by_kind_cannot_hide_the_blind_spot",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Lineage dinâmico declarado em vez de silenciado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 151,
-      "text": "Extractor de SQL com predicado e projeção",
       "context": "| Extractor de SQL com predicado e projeção | EXISTE, com teste | `sparkforge/facts/sql_literal.py` lê SQL embutido em l",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-594",
-      "state": "PROVADA",
+      "line": 151,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/sql_literal.py",
-        "test": "tests/test_fixtures_golden_sql.py",
-        "symbol": "extract_sql_path"
-      }
+        "symbol": "extract_sql_path",
+        "test": "tests/test_fixtures_golden_sql.py"
+      },
+      "state": "PROVADA",
+      "text": "Extractor de SQL com predicado e projeção",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 152,
-      "text": "Símbolos gerais de Python",
       "context": "| Símbolos gerais de Python | EXISTE PARCIAL | `pyspark.function_def` cobre função definida, com ou sem chamada, e o ext",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-595",
-      "state": "PROVADA",
+      "line": 152,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/call_graph.py",
-        "test": "tests/test_fixtures_golden_callgraph.py",
-        "symbol": "_by_kind"
-      }
+        "symbol": "_by_kind",
+        "test": "tests/test_fixtures_golden_callgraph.py"
+      },
+      "state": "PROVADA",
+      "text": "Símbolos gerais de Python",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 160,
-      "text": "Manifesto de conteúdo verificável, com detecção de adulteração",
       "context": "| Manifesto de conteúdo verificável, com detecção de adulteração | EXISTE, com teste | `knowledge/offline-manifest.json`",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-596",
-      "state": "PROVADA",
+      "line": 160,
       "proof": {
         "kind": "artifact",
         "path": "knowledge/offline-manifest.json",
-        "test": "tests/test_offline_expansion.py",
-        "symbol": "verify"
-      }
+        "symbol": "verify",
+        "test": "tests/test_offline_expansion.py"
+      },
+      "state": "PROVADA",
+      "text": "Manifesto de conteúdo verificável, com detecção de adulteração",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 161,
-      "text": "Sinal de staleness por arquivo",
       "context": "| Sinal de staleness por arquivo | EXISTE PARCIAL | Todo fato carrega `provenance.artifact_sha256`, então dá para saber ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-597",
-      "state": "PROVADA",
+      "line": 161,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/models.py",
-        "test": "tests/test_findings_models.py",
-        "symbol": "test_id_ignores_provenance"
-      }
+        "symbol": "test_id_ignores_provenance",
+        "test": "tests/test_findings_models.py"
+      },
+      "state": "PROVADA",
+      "text": "Sinal de staleness por arquivo",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 162,
-      "text": "Git lido sem executar hook",
       "context": "| Git lido sem executar hook | EXISTE, com teste | A superfície de execução do repositório é uma lista fechada e auditad",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-598",
-      "state": "PROVADA",
+      "line": 162,
       "proof": {
         "kind": "artifact",
         "path": ".mcp.json",
-        "test": "tests/test_execution_surface.py",
-        "symbol": "test_todo_hook_esta_na_lista_fechada"
-      }
+        "symbol": "test_todo_hook_esta_na_lista_fechada",
+        "test": "tests/test_execution_surface.py"
+      },
+      "state": "PROVADA",
+      "text": "Git lido sem executar hook",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 171,
-      "text": "Busca local determinística, sem embedding e sem rede",
       "context": "| Busca local determinística, sem embedding e sem rede | EXISTE, com teste | `OfflineKnowledgeIndex.search()` é busca po",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-599",
-      "state": "PROVADA",
+      "line": 171,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/tools/offline.py",
-        "test": "tests/test_offline_expansion.py",
-        "symbol": "search"
-      }
+        "symbol": "search",
+        "test": "tests/test_offline_expansion.py"
+      },
+      "state": "PROVADA",
+      "text": "Busca local determinística, sem embedding e sem rede",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 172,
-      "text": "Seleção de contexto com escore por termo e orçamento",
       "context": "| Seleção de contexto com escore por termo e orçamento | EXISTE, com teste | `sparkforge/agents/budget.py:select_context",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-600",
-      "state": "PROVADA",
+      "line": 172,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/budget.py",
-        "test": "tests/test_agent_runtime.py",
-        "symbol": "select_context"
-      }
+        "symbol": "select_context",
+        "test": "tests/test_agent_runtime.py"
+      },
+      "state": "PROVADA",
+      "text": "Seleção de contexto com escore por termo e orçamento",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 173,
-      "text": "Empacotamento com prioridade por tipo e corte reportado",
       "context": "| Empacotamento com prioridade por tipo e corte reportado | EXISTE, com teste | `sparkforge/tools/context.py:pack_contex",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-601",
-      "state": "PROVADA",
+      "line": 173,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/tools/context.py",
-        "test": "tests/test_offline_expansion.py",
-        "symbol": "pack_context"
-      }
+        "symbol": "pack_context",
+        "test": "tests/test_offline_expansion.py"
+      },
+      "state": "PROVADA",
+      "text": "Empacotamento com prioridade por tipo e corte reportado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 174,
-      "text": "Funil de contexto com deduplicação por hash e corte por orçamento",
       "context": "| Funil de contexto com deduplicação por hash e corte por orçamento | EXISTE, com teste | `sparkforge/context/funnel.py:",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-602",
-      "state": "PROVADA",
+      "line": 174,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/context/funnel.py",
-        "test": "tests/test_context_funnel.py",
-        "symbol": "build_minimal_context"
-      }
+        "symbol": "build_minimal_context",
+        "test": "tests/test_context_funnel.py"
+      },
+      "state": "PROVADA",
+      "text": "Funil de contexto com deduplicação por hash e corte por orçamento",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 175,
-      "text": "Estimador de token local, conservador, sem download",
       "context": "| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe, e existe **quatro vezes**: `sparkforge/",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-603",
-      "state": "PROVADA",
+      "line": 175,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/economy/budget.py",
-        "test": "tests/test_economy_engine.py",
-        "symbol": "test_token_usage_cost_estimation"
-      }
+        "symbol": "test_token_usage_cost_estimation",
+        "test": "tests/test_economy_engine.py"
+      },
+      "state": "PROVADA",
+      "text": "Estimador de token local, conservador, sem download",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 176,
-      "text": "Estimativa rotulada como estimativa",
       "context": "| Estimativa rotulada como estimativa | EXISTE, com teste | `sparkforge/tools/cost.py` documenta que quatro caracteres p",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-604",
-      "state": "PROVADA",
+      "line": 176,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/observability.py",
-        "test": "tests/test_model_and_observability.py",
-        "symbol": "test_trace_view_is_hidden_by_default_and_warns_when_usage_is_partial"
-      }
+        "symbol": "test_trace_view_is_hidden_by_default_and_warns_when_usage_is_partial",
+        "test": "tests/test_model_and_observability.py"
+      },
+      "state": "PROVADA",
+      "text": "Estimativa rotulada como estimativa",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 177,
-      "text": "Paginação por cursor no envelope de saída",
       "context": "| Paginação por cursor no envelope de saída | EXISTE, com teste | O envelope das tools traz `total_count`, `returned_cou",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-605",
-      "state": "PROVADA",
+      "line": 177,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_the_file_is_the_whole_comparison_and_not_the_page"
-      }
+        "symbol": "test_the_file_is_the_whole_comparison_and_not_the_page",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Paginação por cursor no envelope de saída",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 187,
-      "text": "Núcleo comum entre CLI e MCP",
       "context": "| Núcleo comum entre CLI e MCP | EXISTE, com teste | `sparkforge/adapters/_core.py` é o núcleo; `cli.py` e `tools.py` sã",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-606",
-      "state": "PROVADA",
+      "line": 266,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_the_two_surfaces_declare_the_same_optionality"
-      }
+        "symbol": "test_the_two_surfaces_declare_the_same_optionality",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Núcleo comum entre CLI e MCP",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 188,
-      "text": "Schema de saída declarado e validado contra a saída real",
       "context": "| Schema de saída declarado e validado contra a saída real | EXISTE, com teste | Toda tool declara `outputSchema`, e há ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-607",
-      "state": "PROVADA",
+      "line": 267,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_real_output_matches_declared_schema"
-      }
+        "symbol": "test_real_output_matches_declared_schema",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Schema de saída declarado e validado contra a saída real",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 189,
-      "text": "Anotações de confiança por tool",
       "context": "| Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-608",
-      "state": "PROVADA",
+      "line": 268,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_every_tool_declares_annotations"
-      }
+        "symbol": "test_every_tool_declares_annotations",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Anotações de confiança por tool",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 190,
-      "text": "Entrada tipada, sem schema de objeto nu",
       "context": "| Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma u",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-609",
-      "state": "PROVADA",
+      "line": 269,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
-        "test": "tests/test_adapters_tools.py",
-        "symbol": "test_every_tool_declares_required_keys"
-      }
+        "symbol": "test_every_tool_declares_required_keys",
+        "test": "tests/test_adapters_tools.py"
+      },
+      "state": "PROVADA",
+      "text": "Entrada tipada, sem schema de objeto nu",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 203,
-      "text": "Motor de regras determinístico que consumiria o grafo",
       "context": "| Motor de regras determinístico que consumiria o grafo | EXISTE, com teste | `sparkforge/rules/engine.py:judge()` casa ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-610",
-      "state": "PROVADA",
+      "line": 283,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/engine.py",
-        "test": "tests/test_fixtures_golden.py",
-        "symbol": "judge"
-      }
+        "symbol": "judge",
+        "test": "tests/test_fixtures_golden.py"
+      },
+      "state": "PROVADA",
+      "text": "Motor de regras determinístico que consumiria o grafo",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 204,
-      "text": "Case como estado retomável, com gate que recusa avanço",
       "context": "| Case como estado retomável, com gate que recusa avanço | EXISTE, com teste | `sparkforge/case/store.py` declara fases ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-611",
-      "state": "PROVADA",
+      "line": 284,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
-        "test": "tests/test_case_store.py",
-        "symbol": "set_phase"
-      }
+        "symbol": "set_phase",
+        "test": "tests/test_case_store.py"
+      },
+      "state": "PROVADA",
+      "text": "Case como estado retomável, com gate que recusa avanço",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 205,
-      "text": "Contexto de runtime como dado de julgamento",
       "context": "| Contexto de runtime como dado de julgamento | EXISTE, com teste | `RuntimeContext` em `sparkforge/findings/models.py` ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-612",
-      "state": "PROVADA",
+      "line": 285,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/models.py",
-        "test": "tests/test_platform_divergence.py",
-        "symbol": "RuntimeContext"
-      }
+        "symbol": "RuntimeContext",
+        "test": "tests/test_platform_divergence.py"
+      },
+      "state": "PROVADA",
+      "text": "Contexto de runtime como dado de julgamento",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 206,
-      "text": "Gold set com resultado esperado por cenário",
       "context": "| Gold set com resultado esperado por cenário | EXISTE, com teste | `fixtures/scenarios/` guarda cenário inteiro com `ex",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-613",
-      "state": "PROVADA",
+      "line": 286,
       "proof": {
         "kind": "artifact",
         "path": "fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json",
-        "test": "tests/test_fixtures_scenarios.py",
-        "symbol": "test_assessment_matches_golden"
-      }
+        "symbol": "test_assessment_matches_golden",
+        "test": "tests/test_fixtures_scenarios.py"
+      },
+      "state": "PROVADA",
+      "text": "Gold set com resultado esperado por cenário",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 207,
-      "text": "Integração sem criar um segundo sistema de julgamento",
       "context": "| Integração sem criar um segundo sistema de julgamento | EXISTE, com teste | O catálogo de regras é o único julgador, e",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-614",
-      "state": "PROVADA",
+      "line": 287,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/loader.py",
-        "test": "tests/test_rules_loader.py",
-        "symbol": "load_catalog"
-      }
+        "symbol": "load_catalog",
+        "test": "tests/test_rules_loader.py"
+      },
+      "state": "PROVADA",
+      "text": "Integração sem criar um segundo sistema de julgamento",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 213,
-      "text": "Política estática: nada de execução de Spark para analisar",
       "context": "| Política estática: nada de execução de Spark para analisar | EXISTE, com teste | Toda a extração é `ast.parse` e leitu",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-615",
-      "state": "PROVADA",
+      "line": 293,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/spark_plan.py",
-        "test": "tests/test_fixtures_golden_plan.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden_plan.py"
+      },
+      "state": "PROVADA",
+      "text": "Política estática: nada de execução de Spark para analisar",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 214,
-      "text": "Identificador de tabela reconhecido no código",
       "context": "| Identificador de tabela reconhecido no código | EXISTE PARCIAL | `catalog.table_schema` traz o schema do catálogo, e `",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-616",
-      "state": "PROVADA",
+      "line": 294,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/catalog_schema.py",
-        "test": "tests/test_fixtures_golden_catalog.py",
-        "symbol": "run_fixture"
-      }
+        "symbol": "run_fixture",
+        "test": "tests/test_fixtures_golden_catalog.py"
+      },
+      "state": "PROVADA",
+      "text": "Identificador de tabela reconhecido no código",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 221,
-      "text": "Armazenamento local de métrica de execução",
       "context": "| Armazenamento local de métrica de execução | EXISTE, com teste | `SQLiteTraceStore` guarda trace e span com token e cu",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-617",
-      "state": "PROVADA",
+      "line": 301,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/observability/store.py",
-        "test": "tests/test_observability.py",
-        "symbol": "test_agentops_tracer_and_sqlite_store"
-      }
+        "symbol": "test_agentops_tracer_and_sqlite_store",
+        "test": "tests/test_observability.py"
+      },
+      "state": "PROVADA",
+      "text": "Armazenamento local de métrica de execução",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 222,
-      "text": "Detector de desperdício de token",
       "context": "| Detector de desperdício de token | EXISTE, com teste | `sparkforge/economy/waste_detector.py:TokenWasteDetector`, junt",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-618",
-      "state": "PROVADA",
+      "line": 302,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/economy/waste_detector.py",
-        "test": "tests/test_economy_engine.py",
-        "symbol": "test_token_waste_detector"
-      }
+        "symbol": "test_token_waste_detector",
+        "test": "tests/test_economy_engine.py"
+      },
+      "state": "PROVADA",
+      "text": "Detector de desperdício de token",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 232,
-      "text": "Teste de traversal de caminho",
       "context": "| Teste de traversal de caminho | EXISTE PARCIAL | Dois casos, nos dois lugares que hoje resolvem caminho de fora: catál",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-619",
-      "state": "PROVADA",
+      "line": 351,
       "proof": {
         "kind": "artifact",
         "path": "scripts/vendor_caveman.py",
-        "test": "tests/test_vendor_caveman.py",
-        "symbol": "test_todo_caminho_do_pins_e_recusado_se_escapar_do_vendor"
-      }
+        "symbol": "test_todo_caminho_do_pins_e_recusado_se_escapar_do_vendor",
+        "test": "tests/test_vendor_caveman.py"
+      },
+      "state": "PROVADA",
+      "text": "Teste de traversal de caminho",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 233,
-      "text": "Robustez a arquivo malformado e a encoding inválido",
       "context": "| Robustez a arquivo malformado e a encoding inválido | EXISTE, com teste | Falha por arquivo nunca é fatal: `SyntaxErro",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-620",
-      "state": "PROVADA",
+      "line": 352,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/graph.py",
-        "test": "tests/test_fixtures_golden_graph.py",
-        "symbol": "extract_graph_path"
-      }
+        "symbol": "extract_graph_path",
+        "test": "tests/test_fixtures_golden_graph.py"
+      },
+      "state": "PROVADA",
+      "text": "Robustez a arquivo malformado e a encoding inválido",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 243,
-      "text": "Dependência mínima como controle de segurança",
       "context": "| Dependência mínima como controle de segurança | EXISTE, com teste | O pacote core depende de `PyYAML` e `jsonschema`, ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-621",
-      "state": "PROVADA",
+      "line": 362,
       "proof": {
         "kind": "artifact",
         "path": "pyproject.toml",
-        "test": "tests/test_requirements_mirror.py",
-        "symbol": "test_core_dependencies_are_present"
-      }
+        "symbol": "test_core_dependencies_are_present",
+        "test": "tests/test_requirements_mirror.py"
+      },
+      "state": "PROVADA",
+      "text": "Dependência mínima como controle de segurança",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 244,
-      "text": "Integridade de artefato vendorizado",
       "context": "| Integridade de artefato vendorizado | EXISTE, com teste | `vendor/` tem manifesto com sha por projeto, licença origina",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-622",
-      "state": "PROVADA",
+      "line": 363,
       "proof": {
         "kind": "artifact",
         "path": "vendor/CREDITS.md",
-        "test": "tests/test_vendor_caveman.py",
-        "symbol": "test_arvore_confere_com_o_manifest"
-      }
+        "symbol": "test_arvore_confere_com_o_manifest",
+        "test": "tests/test_vendor_caveman.py"
+      },
+      "state": "PROVADA",
+      "text": "Integridade de artefato vendorizado",
+      "type": "capability"
     },
     {
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "line": 245,
-      "text": "Verificação do artefato instalado",
       "context": "| Verificação do artefato instalado | EXISTE, com teste | `scripts/verify_wheel.py` roda os módulos golden dentro de um ",
-      "type": "capability",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-623",
-      "state": "PROVADA",
+      "line": 364,
       "proof": {
         "kind": "artifact",
         "path": "scripts/verify_wheel.py",
-        "test": "tests/test_verify_wheel.py",
-        "symbol": "test_runs_every_golden_module"
-      }
+        "symbol": "test_runs_every_golden_module",
+        "test": "tests/test_verify_wheel.py"
+      },
+      "state": "PROVADA",
+      "text": "Verificação do artefato instalado",
+      "type": "capability"
     },
     {
       "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-624",
-      "line": 241,
+      "line": 321,
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9249,7 +9249,7 @@
       "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-625",
-      "line": 241,
+      "line": 321,
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9267,7 +9267,7 @@
       "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-626",
-      "line": 241,
+      "line": 321,
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9285,7 +9285,8 @@
       "context": "| `normal` | **3619 bytes** | nenhuma; declarada uma vez em `provenance` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-627",
-      "line": 242,
+      "line": 322,
+      "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala",
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9297,14 +9298,14 @@
       },
       "state": "PROVADA",
       "text": "3619",
-      "type": "number",
-      "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala"
+      "type": "number"
     },
     {
       "context": "| `summary` | **1664 bytes** | nenhuma; declarada uma vez em `provenance` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-628",
-      "line": 243,
+      "line": 323,
+      "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala",
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9316,14 +9317,13 @@
       },
       "state": "PROVADA",
       "text": "1664",
-      "type": "number",
-      "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala"
+      "type": "number"
     },
     {
       "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-629",
-      "line": 192,
+      "line": 271,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
@@ -9335,10 +9335,10 @@
       "type": "capability"
     },
     {
-      "context": "| `READ_ONLY` | 31 | 1 |",
+      "context": "Medido: **31** das tools `READ_ONLY` declaram algum argumento de caminho",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-630",
-      "line": 172,
+      "line": 176,
       "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY and tem(n)))'",
@@ -9495,7 +9495,7 @@
       "type": "number"
     },
     {
-      "context": "declaram parâmetro de caminho (a única sem nenhum é `sparkforge_rules_lookup`), e a verificação reusa",
+      "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-638",
       "line": 42,
@@ -9515,7 +9515,7 @@
       "type": "number"
     },
     {
-      "context": "declaram parâmetro de caminho (a única sem nenhum é `sparkforge_rules_lookup`), e a verificação reusa",
+      "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-639",
       "line": 42,
@@ -9533,6 +9533,791 @@
       "state": "PROVADA",
       "text": "44",
       "type": "number"
+    },
+    {
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **380** nesta árvore.",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-640",
+      "line": 192,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 380
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "380",
+      "type": "number"
+    },
+    {
+      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-641",
+      "line": 209,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"iter_source_files\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 1
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-642",
+      "line": 209,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 197
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "197",
+      "type": "number"
+    },
+    {
+      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-643",
+      "line": 209,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 423356
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "423356",
+      "type": "number"
+    },
+    {
+      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-644",
+      "line": 209,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 7270
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "7270",
+      "type": "number"
+    },
+    {
+      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-645",
+      "line": 209,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 102
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "102",
+      "type": "number"
+    },
+    {
+      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-646",
+      "line": 210,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"looks_like_secret\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 2
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "2",
+      "type": "number"
+    },
+    {
+      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-647",
+      "line": 210,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 465
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "465",
+      "type": "number"
+    },
+    {
+      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-648",
+      "line": 210,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 101833
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "101833",
+      "type": "number"
+    },
+    {
+      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-649",
+      "line": 210,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 2107
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "2107",
+      "type": "number"
+    },
+    {
+      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-650",
+      "line": 210,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 84
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "84",
+      "type": "number"
+    },
+    {
+      "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-651",
+      "line": 211,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"project_items\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 1
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-652",
+      "line": 211,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 193
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "193",
+      "type": "number"
+    },
+    {
+      "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-653",
+      "line": 211,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 140522
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "140522",
+      "type": "number"
+    },
+    {
+      "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-654",
+      "line": 211,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 1718
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1718",
+      "type": "number"
+    },
+    {
+      "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-655",
+      "line": 211,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 52
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "52",
+      "type": "number"
+    },
+    {
+      "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-656",
+      "line": 212,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"tool_class\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 1
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-657",
+      "line": 212,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 188
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "188",
+      "type": "number"
+    },
+    {
+      "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-658",
+      "line": 212,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 24310
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "24310",
+      "type": "number"
+    },
+    {
+      "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-659",
+      "line": 212,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 2562
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "2562",
+      "type": "number"
+    },
+    {
+      "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-660",
+      "line": 212,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 74
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "74",
+      "type": "number"
+    },
+    {
+      "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-661",
+      "line": 213,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"authorize\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 4
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "4",
+      "type": "number"
+    },
+    {
+      "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-662",
+      "line": 213,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 897
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "897",
+      "type": "number"
+    },
+    {
+      "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-663",
+      "line": 213,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 24310
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "24310",
+      "type": "number"
+    },
+    {
+      "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-664",
+      "line": 213,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 3804
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "3804",
+      "type": "number"
+    },
+    {
+      "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-665",
+      "line": 213,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 107
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "107",
+      "type": "number"
+    },
+    {
+      "context": "Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **714331**;",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-666",
+      "line": 215,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 714331
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "714331",
+      "type": "number"
+    },
+    {
+      "context": "a saída do `grep` pelo nome, **17461**; a saída do `grep` pela definição, **419**.",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-667",
+      "line": 216,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 17461
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "17461",
+      "type": "number"
+    },
+    {
+      "context": "a saída do `grep` pelo nome, **17461**; a saída do `grep` pela definição, **419**.",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-668",
+      "line": 216,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 419
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "419",
+      "type": "number"
+    },
+    {
+      "context": "**Contra o denominador do plano, o índice economiza 368.2 vezes.** Contra a saída de um `grep`",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-669",
+      "line": 224,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
+        "expect": {
+          "kind": "contains",
+          "value": "714331 / 1940 = 368.2"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "368.2",
+      "type": "number"
+    },
+    {
+      "context": "pelo nome, **9.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-670",
+      "line": 225,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
+        "expect": {
+          "kind": "contains",
+          "value": "17461 / 1940 = 9.0"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "9.0",
+      "type": "number"
+    },
+    {
+      "context": "resposta do índice custa **4.6** vezes o que aquele `grep` custaria.",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-671",
+      "line": 226,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(str(com) + \" / \" + str(total) + \" = \" + str(round(com / total, 1)))'",
+        "expect": {
+          "kind": "contains",
+          "value": "1940 / 419 = 4.6"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "4.6",
+      "type": "number"
+    },
+    {
+      "context": "`buscar(banco, \"source\")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-672",
+      "line": 242,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"source\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 25
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "25",
+      "type": "number"
+    },
+    {
+      "context": "`buscar(banco, \"source\")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-673",
+      "line": 242,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"source\")], ensure_ascii=False).encode(\"utf-8\")))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 6457
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "6457",
+      "type": "number"
+    },
+    {
+      "context": "no mesmo corpus, tem **91582** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-674",
+      "line": 243,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 91582
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "91582",
+      "type": "number"
+    },
+    {
+      "context": "(**5029** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-675",
+      "line": 244,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 5029
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "5029",
+      "type": "number"
+    },
+    {
+      "context": "- **A saída do `grep` não tem teto.** A do índice tem: `buscar` recebe `limite`, com default 50.",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-676",
+      "line": 248,
+      "note": "classificacao pendente",
+      "proof": {
+        "cmd": "python -c 'import inspect; from sparkforge.codeintel.search import buscar; print(inspect.signature(buscar).parameters[\"limite\"].default)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 50
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "50",
+      "type": "number"
+    },
+    {
+      "context": "| Índice persistente, completo e incremental | EXISTE PARCIAL | Completo existe desde a fase J3: `sparkforge/codeintel/i",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-677",
+      "line": 163,
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/codeintel/index.py",
+        "symbol": "indexar",
+        "test": "tests/test_codeintel_index.py"
+      },
+      "state": "PROVADA",
+      "text": "Índice persistente, completo e incremental",
+      "type": "capability"
+    },
+    {
+      "context": "| Busca por símbolo no índice, determinística e sem rede | EXISTE, com teste | `sparkforge/codeintel/search.py:buscar()`",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-678",
+      "line": 178,
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/codeintel/search.py",
+        "symbol": "buscar",
+        "test": "tests/test_codeintel_search.py"
+      },
+      "state": "PROVADA",
+      "text": "Busca por símbolo no índice, determinística e sem rede",
+      "type": "capability"
+    },
+    {
+      "context": "| Subcomando `code` no CLI | EXISTE, com teste | `sparkforge code index`, `sparkforge code search <termo>` e `sparkforge",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-679",
+      "line": 275,
+      "note": "classificacao pendente",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/adapters/cli.py",
+        "symbol": "cli_main",
+        "test": "tests/test_codeintel_search.py"
+      },
+      "state": "PROVADA",
+      "text": "Subcomando `code` no CLI",
+      "type": "capability"
     }
   ]
 }
