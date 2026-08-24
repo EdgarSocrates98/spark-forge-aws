@@ -3070,37 +3070,37 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
-      "note": "medida de tamanho do arquivo, reexecutada -- a Fase I3 corrigiu a anotacao dos sete coletores AWS (readOnlyHint passou a False, porque eles escrevem artefato e manifesto em disco) e escreveu a razao dessa correcao no lugar onde ela e lida, o que levou tools.py para 136,6 KB. A prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
+      "note": "remedido depois da fase J1, que acrescentou detail_level e projecao de procedencia ao envelope; a prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
       "proof": {
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "147,5"
+          "value": "147,9"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "147,5",
+      "text": "147,9",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (137,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (135,5 KB) e `_core.py` (137,2 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "remedido depois da fase J1, que acrescentou detail_level e projecao de procedencia ao envelope; a prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
       "proof": {
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/_core.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "137,1"
+          "value": "137,2"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "137,1",
+      "text": "137,2",
       "type": "number"
     },
     {
@@ -6180,14 +6180,14 @@
       "type": "capability",
       "id": "VNX-524",
       "state": "PROVADA",
-      "note": "mapa de lacuna do prompt de migracoes Glue, auditado contra o repositorio",
+      "note": "remedido depois da fase J0. O numero antigo descrevia a DIVIDA que a fase pagou: eram 4 implementacoes de looks_like_secret e zero teste citando o modulo canonico. Hoje e 1 e 1. O gate acusou porque o documento envelheceu por o codigo ter melhorado, que e o caso que ele existe para pegar",
       "proof": {
         "kind": "command",
         "cmd": "python -c 'import pathlib; alvo = \"sparkforge.facts.secrets\"; print(sum(alvo in p.read_text(encoding=\"utf-8\") for p in pathlib.Path(\"tests\").glob(\"*.py\")))'",
         "tier": "fast",
         "expect": {
           "kind": "number",
-          "value": 0,
+          "value": 1,
           "pattern": "^([0-9]+)$"
         }
       }
@@ -8190,36 +8190,24 @@
       "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, sem teste | `sparkforge/facts/secrets.py:looks_like_secr",
       "type": "number",
       "id": "VNX-555",
-      "state": "PROVADA",
-      "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib; alvo = \"sparkforge.facts.secrets\"; print(sum(alvo in p.read_text(encoding=\"utf-8\") for p in pathlib.Path(\"tests\").glob(\"*.py\")))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 0
-        }
-      }
+      "state": "REMOVIDA",
+      "note": "retirada depois da fase J0. Ela media a divida -- ZERO testes citando sparkforge.facts.secrets -- e a fase pagou a divida, entao o numero deixou de existir no documento. A capacidade que restou na mesma linha e VNX-577; manter as duas apontando para o mesmo texto criaria alegacao duplicada"
     },
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "line": 108,
-      "text": "4",
+      "text": "Uma implementação só",
       "context": "| Uma implementação só | NÃO EXISTE | São **4**: a canônica mais três cópias privadas `_looks_like_secret` em `sparkforg",
-      "type": "number",
+      "type": "capability",
       "id": "VNX-556",
       "state": "PROVADA",
       "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib, re; print(sum(len(re.findall(r\"^def _?looks_like_secret.\", p.read_text(encoding=\"utf-8\"), re.M)) for p in pathlib.Path(\"sparkforge\").rglob(\"*.py\")))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 4
-        }
-      }
+        "path": "sparkforge/facts/secrets.py",
+        "test": "tests/test_facts_secrets.py",
+        "symbol": "looks_like_secret",
+        "kind": "artifact"
+      },
+      "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje"
     },
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
@@ -8542,15 +8530,12 @@
       "id": "VNX-577",
       "state": "PROVADA",
       "proof": {
-        "kind": "command",
-        "cmd": "python -c 'import pathlib; alvo = \"sparkforge.facts.secrets\"; print(sum(alvo in p.read_text(encoding=\"utf-8\") for p in pathlib.Path(\"tests\").glob(\"*.py\")))'",
-        "tier": "fast",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 0
-        }
-      }
+        "path": "sparkforge/facts/secrets.py",
+        "test": "tests/test_facts_secrets.py",
+        "symbol": "looks_like_secret",
+        "kind": "artifact"
+      },
+      "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje"
     },
     {
       "doc": "docs/harness/CODEINTEL-GAP.md",
