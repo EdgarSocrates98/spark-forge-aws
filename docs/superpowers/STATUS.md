@@ -1,16 +1,16 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-23
-**Commit de referência:** `433598c`, fechamento do harness v0.1 (fases I1 a I3)
-sobre a branch `feat/fase6b-sf-cfg` — três invariantes escritos como teste, sem
-módulo novo; a última fase teve duas revisões independentes que a reprovaram e
-expuseram sete tools cuja anotação mentia. Ver a seção
-*Harness v0.1* abaixo.
-Fechamentos anteriores: eixo Glue, fases G1 a H6 (2026-08-23); auditoria de
-lastro do vNext em `46b1187` (2026-08-21), que classificou as 184 alegações que
-`a5b9e96` publicou em `docs/vnext/`; expansão agêntica v2 (2026-08-18);
-vendorização do ecossistema caveman (2026-08-07) e `feat/preservacao-semantica`
-(2026-08-05).
+**Atualizado em:** 2026-08-24
+**Commit de referência:** `5748893`, fechamento das fases J0 a J2 do Code
+Intelligence sobre a branch `feat/fase6b-sf-cfg` — a dívida de leitura que existia
+antes de qualquer índice: detector de segredo unificado que passa a pegar por
+valor, varredura com denylist e confinamento, envelope com `detail_level`, e a
+cadeia de autorização enxergando o argumento da chamada. Ver a seção
+*Code Intelligence* abaixo.
+Fechamentos anteriores: harness v0.1, fases I1 a I3 (2026-08-23); eixo Glue,
+fases G1 a H6 (2026-08-23); auditoria de lastro do vNext em `46b1187`
+(2026-08-21); expansão agêntica v2 (2026-08-18); vendorização do ecossistema
+caveman (2026-08-07) e `feat/preservacao-semantica` (2026-08-05).
 **Nenhuma regra executável, extrator ou fact de diagnóstico mudou na expansão
 agêntica v2** — os números de detecção abaixo são os mesmos de
 `feat/preservacao-semantica`; o que mudou foi o denominador do catálogo.
@@ -41,7 +41,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **6361** passando, 5 skipped, medido em `433598c` | `python -m pytest -q` |
+| Testes | **6598** passando, 5 skipped, medido em `5748893` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
@@ -3242,6 +3242,167 @@ Dois limites ficaram declarados no produto, não só aqui:
   nunca popula `self.tools` —, mas os eixos não se mapeiam: `RiskLevel` não tem
   dimensão de nuvem, `ToolClass` não tem `reversible`/`sensitive`. Está registrado
   na docstring de `ToolClass`, não só no mapa.
+
+---
+
+## Code Intelligence — fases J0 a J2, o que vem antes de qualquer índice (2026-08-24)
+
+Plano em [`plans/2026-08-23-codeintel-j0-j2.md`](plans/2026-08-23-codeintel-j0-j2.md).
+Mapa que originou a fase: [`docs/harness/CODEINTEL-GAP.md`](../harness/CODEINTEL-GAP.md).
+
+O mapa mediu a SPEC do SparkForge Code Intelligence — 174 seções — contra o
+repositório e concluiu que **a extração já existe**: os extratores de
+`sparkforge/facts/` já emitem `pyspark.read`/`pyspark.write` (o grafo de tabela
+da §35), `pyspark.callgraph_edge` mais os quatro kinds `callgraph.*` (§123/§124)
+e `graph.unresolved`/`sql.unresolved` (§28, e esse já era lei da casa). O que
+falta é persistência, índice incremental e recuperação.
+
+Mas o mapa mediu também que **havia dívida aberta hoje**, sem SFCI nenhum. Estas
+três fases fecham essa dívida. Nenhum módulo de índice foi escrito.
+
+As fases são numeradas com `J` porque `I` é o harness e `H` é o eixo Glue.
+
+### J0 — a fronteira de leitura
+
+Commits: `69318a1`, `8d0034d`, `75ed8a5`, `e45bcb1`, `f18f0e3`.
+
+**O detector de segredo era quatro cópias sem teste, e o canônico só pegava
+credencial quando o nome da chave ajudava.** `sparkforge/facts/secrets.py`
+tinha três gatilhos: dois por valor mas estreitos (access key da AWS, senha em
+URL) e um que exigia que o NOME da chave sugerisse segredo. Consequência
+medida: PAT do GitHub, JWT, chave privada PEM e token do Slack passavam batidos
+quando chegavam num campo de nome inocente — que é como segredo chega em
+configuração de verdade (`config_value`, `data`, `payload`).
+
+Hoje são seis padrões por valor, uma implementação só, e um gate estrutural por
+AST que quebra quando a segunda é escrita — não quando ela diverge, porque
+divergir é o momento em que o conserto já é caro. As três cópias privadas de
+`terraform.py`, `emr_cluster.py` e `emr_serverless.py` saíram, e com elas quatro
+regexes que ficaram órfãos.
+
+O teste de mutação foi o que deu valor à fase: **13 de 19 mutações passavam pelo
+corpus sem quebrar teste**. Entre elas, uma que apagava o gatilho de
+nome-da-chave-mais-entropia inteiro — o **único** caminho para segredo
+proprietário, que não tem prefixo publicado. O corpus não tinha um único
+positivo para ele.
+
+**A varredura entrava em `.venv/`, `node_modules/` e `vendor/`.** Eram catorze
+sítios de `rglob` espalhados, e só três pulavam sequer `__pycache__`. Viraram
+uma unidade — `sparkforge/facts/scan.py:iter_source_files` — com denylist,
+confinamento e teto de tamanho.
+
+Três achados durante a execução que mudaram o desenho:
+
+1. **Junction do Windows furava a poda.** `os.path.islink()` devolve `False`
+   para junction e `os.walk` desce nela; como o destino fica dentro da raiz, o
+   confinamento também aprovava. Uma junction para `.aws/`, criada **sem
+   privilégio de administrador**, reinstalava a pasta que a denylist tinha
+   removido e o token SSO era lido. Fechado por detecção de reparse point.
+2. **A denylist recusava artefato legítimo em silêncio.** `secrets_manager.tf` e
+   `credentials_provider.py` eram pulados por `startswith` — e Terraform de AWS
+   Secrets Manager é precisamente o que um revisor de segurança precisa ler.
+   Nome passou a casar por componente delimitado. `.py` e `.tf` não são
+   condenados por nome nenhum: o detector de segredo só funciona sobre arquivo
+   que chegou a ser lido.
+3. **O teto de 1 MiB cortava o domínio.** Ele veio da §41 da SPEC, que trata de
+   indexar código-fonte, e passou a valer para artefato de dados. Os dois
+   fixtures de listagem S3 acima de 1 MiB — justamente os que provam os limiares
+   P0 e P1 de small files — rendiam **zero** facts pela travessia. Virou teto por
+   tipo: 1 MiB para o que é parseado por AST, 128 MiB para dado, com a razão
+   medida por `tracemalloc` (143 bytes por objeto, pico de parse 2,6x).
+
+### J1 — o envelope barato
+
+Commits: `e8b7081`, `5748893`.
+
+Medido antes: o payload de facts era **5,9x o tamanho do código-fonte**, e 25,1%
+dele era `provenance` repetida — o mesmo sha256 do mesmo arquivo, copiado uma vez
+por fato. `detail_level` existia em **0 das 44** tools.
+
+Hoje há três níveis. `full` é byte a byte o que sempre foi — é o modo de
+reauditoria, e o default continua nele de propósito: mudar o default mudaria a
+saída de todo chamador e todo golden, e isso é decisão de contrato, separada
+desta fase.
+
+A revisão achou dois defeitos que valem mais que o ganho de bytes:
+
+- **O `summary` apagava a identidade.** Ele descartava o `subject` inteiro e
+  reconstruía só `arquivo:linha`, então fato cujo subject identifica por
+  `symbol` — o caso comum em Terraform — virava um id opaco.
+- **A promessa não existia.** "Peça o fato inteiro por id quando precisar"
+  estava no help da CLI, na `description` de vinte tools MCP e num comentário:
+  vinte e uma superfícies oferecendo uma afordância que **nenhuma das 44 tools
+  implementa**. O único `id` do catálogo é o de regra.
+- **A chave de procedência só era única dentro de uma página.** `project_items`
+  roda depois de `paginate_items`, então o desambiguador nunca via a página
+  seguinte. Em `fuse`, a mesma chave apontava para `pyspark_ast` na página 1 e
+  `sql_literal` na página 2 — e quem pagina pelo cursor atribuía o fato ao
+  extrator errado, sem erro.
+
+Corrigir **encareceu** o envelope, e essa é a troca certa: um resumo que não diz
+de quem fala não é resumo, e chave que colide em silêncio é pior que chave
+nenhuma.
+
+**Toda medição desta fase é em bytes, nunca em tokens.** Os quatro estimadores
+de token do repositório são `len/4` e divergem entre si no arredondamento; um
+tokenizador de verdade exigiria dependência nova, o que contraria a razão de o
+SFCI existir. Byte é observação; token seria estimativa vendida como medida.
+
+### J2 — a cadeia vê a chamada, não só o nome
+
+Commit: `4240035`.
+
+`authorize()` autorizava um **nome**, nunca uma **chamada**: a assinatura não
+recebia os argumentos, então `path`, `bucket` e `report_path` ficavam fora da
+decisão por construção. O efeito estava medido — uma tool `READ_ONLY` com `path`
+arbitrário leu segredo de fora do repositório, sob perfil `OFFLINE`.
+
+Ela passa a aceitar `arguments` e `root`, e a decisão ganha `checked_arguments`.
+Esse campo não é decoração: sem ele, uma decisão tomada sem argumentos seria
+indistinguível de uma que verificou e aprovou. O confinamento **reusa**
+`safe_catalog_file` em vez de reimplementar — duas implementações seriam o
+defeito que J0 acabou de fechar para detecção de segredo.
+
+### O que NÃO fechou, e por quê
+
+**Nada chama `authorize()`.** Os quatro caminhos de execução
+(`adapters/mcp.py`, `adapters/tools.py`, `adapters/cli.py`,
+`agents/supervisor.py`) executam tool sem passar pela cadeia. Ver o argumento
+não impõe nada se a cadeia não é chamada — esse é o gap do hook `PreToolUse`, e
+ele continua aberto.
+
+**Pular é silencioso.** Arquivo descartado pela varredura — por tamanho,
+symlink, confinamento, nome sensível ou poda de diretório — simplesmente não
+aparece, e quem lê a saída não distingue "não havia nada" de "havia e eu não
+li". Isso contradiz o princípio do `unresolved`, que `graph.unresolved` e
+`sql.unresolved` já aplicam. Fechar depende de a varredura devolver mais que
+caminho, e `Iterator[Path]` não comporta o sinal.
+
+**O teto de 128 MiB corta caso real, e corta calado.** Ele dá ~940 mil objetos
+num prefixo, e prefixo de produção com mais de um milhão é ordinário — é o
+cenário de small files que este motor existe para diagnosticar. O valor está
+calibrado pelo que o processo aguenta parsear de uma vez, não pelo domínio.
+
+### O que a execução ensinou sobre o método
+
+**Seis implementadores discordaram do plano, e os seis estavam certos.** O plano
+contou catorze sítios como doze; especificou um módulo que reprovava em dois dos
+testes que ele mesmo prescrevia; mandou um `os.walk(raiz_real)` que quebraria o
+`relative_to()` dos extratores; importou um teto da spec errada; disse sete
+pontos de envelope quando quatro devolvem facts; e não mencionou os vinte
+envelopes que a CLI monta por conta própria — sem os quais a fase inteira não
+funcionaria.
+
+**Teste de mutação achou o que asserção não achou.** Nas duas fases em que foi
+feito de verdade — com harness validado nas duas direções, uma mutação que deve
+morrer e uma que deve sobreviver — ele expôs testes que passavam sem provar
+nada. Sem ele, J0 teria fechado com o gatilho de segredo proprietário
+descoberto por ninguém.
+
+**Escrita concorrente na mesma árvore é risco real.** Um revisor mutou o arquivo
+vivo enquanto um implementador commitava, e as duas escritas se sobrepuseram
+três vezes. Nada se perdeu porque foi percebido a tempo, mas a lição é usar
+worktree por agente em vez de depender de disciplina de staging.
 
 ---
 
