@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "extracted_from": "db61907c009cf44d97cda52f7d35b5a90af1d47f",
+  "extracted_from": "c22634f2a4ff2b09d0e1d04207ec6ff4ef44b04f",
   "claims": [
     {
       "context": "`sparkforge/economy/budget.py`, que define tiers de 0 a 6 (`TIER_PRICING`)",
@@ -8197,7 +8197,7 @@
       "context": "| Uma implementação só | EXISTE, com teste | **Fechado pela fase J0.** As cópias privadas `_looks_like_secret` de `spark",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-556",
-      "line": 108,
+      "line": 112,
       "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje",
       "proof": {
         "kind": "artifact",
@@ -8213,7 +8213,7 @@
       "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-557",
-      "line": 271,
+      "line": 298,
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(sum(1 for t in TOOLS.values() if \"detail_level\" in t[\"inputSchema\"][\"properties\"]))'",
         "expect": {
@@ -8232,7 +8232,7 @@
       "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-558",
-      "line": 271,
+      "line": 298,
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
@@ -8248,10 +8248,10 @@
       "type": "number"
     },
     {
-      "context": "existem em tool nenhuma, e paginação existe em **22** — metade do catálogo devolve tudo, no mesmo",
+      "context": "existe em **22** delas, e os quatro estimadores de token e os três empacotadores de contexto",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-559",
-      "line": 521,
+      "line": 555,
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; campos = {\"cursor\", \"limit\", \"page\", \"offset\"}; print(sum(1 for t in TOOLS.values() if campos & set(t[\"inputSchema\"][\"properties\"])))'",
         "expect": {
@@ -8270,7 +8270,7 @@
       "context": "| Conteúdo de repositório é dado não confiável, nunca instrução | EXISTE, com teste | É literalmente o invariante da fas",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-560",
-      "line": 62,
+      "line": 66,
       "proof": {
         "kind": "artifact",
         "path": "docs/harness/UNTRUSTED-CONTENT.md",
@@ -8285,7 +8285,7 @@
       "context": "| Fail closed em controle de segurança | EXISTE, com teste | `sparkforge/migration/assessment.py:assess()` faz eixo sem ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-561",
-      "line": 63,
+      "line": 67,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/migration/assessment.py",
@@ -8300,7 +8300,7 @@
       "context": "| Descrição de tool nunca derivada do projeto analisado | EXISTE, com teste | Toda descrição é literal em `sparkforge/ad",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-562",
-      "line": 64,
+      "line": 68,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
@@ -8315,7 +8315,7 @@
       "context": "| Nenhuma tool aceita comando de shell | EXISTE, com teste | O catálogo inteiro declara `properties` explícitas, e nenhu",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-563",
-      "line": 65,
+      "line": 69,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
@@ -8330,7 +8330,7 @@
       "context": "| Nenhuma tool aceita SQL arbitrário para execução | EXISTE, com teste | Mesmo mecanismo: nenhuma propriedade do catálog",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-564",
-      "line": 66,
+      "line": 70,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/sql_literal.py",
@@ -8345,7 +8345,7 @@
       "context": "| Nenhum código descoberto no repositório é executado | EXISTE, com teste | A extração é `ast.parse` sobre texto, nunca ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-565",
-      "line": 67,
+      "line": 71,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
@@ -8360,7 +8360,7 @@
       "context": "| Superfície de execução do próprio repositório fechada e auditada | EXISTE, com teste | `tests/test_execution_surface.p",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-566",
-      "line": 68,
+      "line": 72,
       "proof": {
         "kind": "artifact",
         "path": ".mcp.json",
@@ -8375,7 +8375,7 @@
       "context": "| Source read-only | EXISTE PARCIAL | Nenhum extrator abre arquivo do repositório analisado para escrita, e há teste med",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-567",
-      "line": 69,
+      "line": 73,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
@@ -8390,7 +8390,7 @@
       "context": "| Zero network egress | EXISTE PARCIAL | `ExecutionProfile.OFFLINE` é teto, não conselho: `sparkforge/agents/autonomy.py",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-568",
-      "line": 70,
+      "line": 74,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
@@ -8402,10 +8402,10 @@
       "type": "capability"
     },
     {
-      "context": "| Confinamento ao root autorizado | EXISTE PARCIAL | `sparkforge/rules/loader.py:safe_catalog_file()` canonicaliza e rec",
+      "context": "| Confinamento ao root autorizado | EXISTE PARCIAL | O algoritmo deixou de ser cópia: `sparkforge/paths.py:resolve_withi",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-569",
-      "line": 71,
+      "line": 75,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/loader.py",
@@ -8417,10 +8417,10 @@
       "type": "capability"
     },
     {
-      "context": "| Sem telemetria conversacional | EXISTE PARCIAL | `sparkforge/observability/store.py:SQLiteTraceStore` grava trace da e",
+      "context": "| Sem telemetria conversacional | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` grava trace d",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-570",
-      "line": 72,
+      "line": 76,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/observability/store.py",
@@ -8435,7 +8435,7 @@
       "context": "| Perfil de execução como vocabulário canônico | EXISTE, com teste | `ExecutionProfile` em `sparkforge/registry/models.p",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-571",
-      "line": 81,
+      "line": 85,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/registry/models.py",
@@ -8450,7 +8450,7 @@
       "context": "| Classe de tool derivada da anotação, não de uma lista | EXISTE, com teste | `sparkforge/agents/autonomy.py:tool_class(",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-572",
-      "line": 82,
+      "line": 86,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
@@ -8465,7 +8465,7 @@
       "context": "| Aprovação por classe, e não booleano global | EXISTE, com teste | Aprovar mutação local não libera tool de nuvem, e ca",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-573",
-      "line": 83,
+      "line": 87,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
@@ -8480,7 +8480,7 @@
       "context": "| `offline-strict` como perfil com matriz ALLOW/DENY declarada | EXISTE PARCIAL | O teto existe e morde (`_teto_recusa_r",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-574",
-      "line": 84,
+      "line": 88,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
@@ -8495,7 +8495,7 @@
       "context": "| `aws-readonly` como perfil | EXISTE PARCIAL | `ToolClass.CLOUD_READ` existe e é distinta de `CLOUD_MUTATION`, o que é ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-575",
-      "line": 85,
+      "line": 89,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/autonomy.py",
@@ -8507,10 +8507,10 @@
       "type": "capability"
     },
     {
-      "context": "| Algoritmo de resolução segura de caminho | EXISTE PARCIAL | `safe_catalog_file()` faz exatamente o que a SPEC descreve",
+      "context": "| Algoritmo de resolução segura de caminho | EXISTE PARCIAL | O algoritmo mora em `sparkforge/paths.py:resolve_within()`",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-576",
-      "line": 94,
+      "line": 98,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/loader.py",
@@ -8525,7 +8525,7 @@
       "context": "| Reconhecedor canônico de segredo em par chave/valor | EXISTE, com teste | `sparkforge/facts/secrets.py:looks_like_secr",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-577",
-      "line": 105,
+      "line": 109,
       "note": "reclassificada depois da fase J0. Era alegacao NUMERICA sobre a divida (zero testes citando o modulo canonico, quatro implementacoes de looks_like_secret). A divida foi paga, entao o numero deixou de descrever o repositorio e a linha virou alegacao de CAPACIDADE: o modulo e canonico e tem teste que o exercita. Numero de mutacao e de copia antiga saiu do texto por nao ser derivavel do artefato de hoje",
       "proof": {
         "kind": "artifact",
@@ -8541,7 +8541,7 @@
       "context": "| Redação registrada no próprio fato | EXISTE, com teste | O par vira `<redigido>` e `attrs[\"redacted\"] = True`: a evidê",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-578",
-      "line": 106,
+      "line": 110,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/terraform.py",
@@ -8556,7 +8556,7 @@
       "context": "| O scanner nunca registra o segredo | EXISTE, com teste | Mesma disciplina no caminho de EMR: a propriedade sai redigid",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-579",
-      "line": 107,
+      "line": 111,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/emr_cluster.py",
@@ -8568,10 +8568,10 @@
       "type": "capability"
     },
     {
-      "context": "| Detectores que a SPEC enumera | EXISTE PARCIAL | Só dois gatilhos funcionam por **valor**: access key id da AWS e senh",
+      "context": "| Detectores que a SPEC enumera | EXISTE PARCIAL | A fase J0 acrescentou os padrões **por valor**, e eles não olham o no",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-580",
-      "line": 109,
+      "line": 113,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/secrets.py",
@@ -8586,7 +8586,7 @@
       "context": "| Corpus de injeção exercitado ponta a ponta | EXISTE PARCIAL | `tests/test_harness_untrusted.py` monta um cenário com t",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-581",
-      "line": 116,
+      "line": 120,
       "proof": {
         "kind": "artifact",
         "path": "docs/harness/UNTRUSTED-CONTENT.md",
@@ -8601,7 +8601,7 @@
       "context": "| Comentário e docstring fora do dado devolvido | EXISTE PARCIAL | Na prática nenhum extrator emite comentário ou docstr",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-582",
-      "line": 117,
+      "line": 121,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
@@ -8616,7 +8616,7 @@
       "context": "| Diretório de estado por repositório analisado | EXISTE, com teste | `.sparkforge/` já é isso: `case.yaml`, `facts.json",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-583",
-      "line": 125,
+      "line": 129,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
@@ -8631,7 +8631,7 @@
       "context": "| Banco SQLite local já em uso | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` cria e escreve",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-584",
-      "line": 126,
+      "line": 130,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/observability/store.py",
@@ -8646,7 +8646,7 @@
       "context": "| Separação entre o que é handoff e o que é bruto | EXISTE, com teste | O `.gitignore` versiona `case.yaml` e o manifest",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-585",
-      "line": 127,
+      "line": 131,
       "proof": {
         "kind": "artifact",
         "path": ".gitignore",
@@ -8661,7 +8661,7 @@
       "context": "| Ponto cego como cidadão de primeira classe | EXISTE, com teste | É lei da casa antes de ser pedido da SPEC: onze extra",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-586",
-      "line": 135,
+      "line": 139,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
@@ -8673,10 +8673,10 @@
       "type": "capability"
     },
     {
-      "context": "| Id determinístico de nó, derivado de conteúdo | EXISTE PARCIAL | `Fact.id` é hash estável sobre kind, subject e measur",
+      "context": "| Id determinístico de nó, derivado de conteúdo | EXISTE, com teste | O nó passou a existir, e o id dele também: `sparkf",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-587",
-      "line": 136,
+      "line": 140,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/models.py",
@@ -8691,7 +8691,7 @@
       "context": "| Taxonomia de aresta | EXISTE PARCIAL | `pyspark.callgraph_edge` (chamador → chamado) mais os quatro kinds `callgraph.*",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-588",
-      "line": 137,
+      "line": 141,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/call_graph.py",
@@ -8706,7 +8706,7 @@
       "context": "| Arquitetura de extractor com identidade e versão | EXISTE, com teste | Todo extrator declara `EXTRACTOR_ID` e o grava ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-589",
-      "line": 146,
+      "line": 150,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
@@ -8721,7 +8721,7 @@
       "context": "| Extractor PySpark | EXISTE, com teste | `sparkforge/facts/pyspark_ast.py:extract_source()` cobre leitura, escrita, cac",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-590",
-      "line": 147,
+      "line": 151,
       "proof": {
         "kind": "artifact",
         "path": "fixtures/pyspark/clean_job/expected/facts.json",
@@ -8736,7 +8736,7 @@
       "context": "| Grafo de dados tabela → job → tabela | EXISTE PARCIAL | `pyspark.read` e `pyspark.write` carregam o alvo literal quand",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-591",
-      "line": 148,
+      "line": 152,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/consumers.py",
@@ -8751,7 +8751,7 @@
       "context": "| Call graph com ciclo e alcançabilidade a partir de entrypoint | EXISTE, com teste | `sparkforge/facts/call_graph.py` d",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-592",
-      "line": 149,
+      "line": 153,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/call_graph.py",
@@ -8766,7 +8766,7 @@
       "context": "| Lineage dinâmico declarado em vez de silenciado | EXISTE, com teste | O que o extrator não resolve vira `pyspark.unres",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-593",
-      "line": 150,
+      "line": 154,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/pyspark_ast.py",
@@ -8781,7 +8781,7 @@
       "context": "| Extractor de SQL com predicado e projeção | EXISTE, com teste | `sparkforge/facts/sql_literal.py` lê SQL embutido em l",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-594",
-      "line": 151,
+      "line": 155,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/sql_literal.py",
@@ -8793,10 +8793,10 @@
       "type": "capability"
     },
     {
-      "context": "| Símbolos gerais de Python | EXISTE PARCIAL | `pyspark.function_def` cobre função definida, com ou sem chamada, e o ext",
+      "context": "| Símbolos gerais de Python | EXISTE PARCIAL | Duas metades dessa linha fecharam na fase J3, num extrator novo: `sparkfo",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-595",
-      "line": 152,
+      "line": 156,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/call_graph.py",
@@ -8811,7 +8811,7 @@
       "context": "| Manifesto de conteúdo verificável, com detecção de adulteração | EXISTE, com teste | `knowledge/offline-manifest.json`",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-596",
-      "line": 160,
+      "line": 164,
       "proof": {
         "kind": "artifact",
         "path": "knowledge/offline-manifest.json",
@@ -8823,10 +8823,10 @@
       "type": "capability"
     },
     {
-      "context": "| Sinal de staleness por arquivo | EXISTE PARCIAL | Todo fato carrega `provenance.artifact_sha256`, então dá para saber ",
+      "context": "| Sinal de staleness por arquivo | EXISTE PARCIAL | O material passou a estar guardado: `files` grava `content_sha256`, ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-597",
-      "line": 161,
+      "line": 165,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/models.py",
@@ -8841,7 +8841,7 @@
       "context": "| Git lido sem executar hook | EXISTE, com teste | A superfície de execução do repositório é uma lista fechada e auditad",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-598",
-      "line": 162,
+      "line": 166,
       "proof": {
         "kind": "artifact",
         "path": ".mcp.json",
@@ -8856,7 +8856,7 @@
       "context": "| Busca local determinística, sem embedding e sem rede | EXISTE, com teste | `OfflineKnowledgeIndex.search()` é busca po",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-599",
-      "line": 171,
+      "line": 175,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/tools/offline.py",
@@ -8871,7 +8871,7 @@
       "context": "| Seleção de contexto com escore por termo e orçamento | EXISTE, com teste | `sparkforge/agents/budget.py:select_context",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-600",
-      "line": 172,
+      "line": 176,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/budget.py",
@@ -8886,7 +8886,7 @@
       "context": "| Empacotamento com prioridade por tipo e corte reportado | EXISTE, com teste | `sparkforge/tools/context.py:pack_contex",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-601",
-      "line": 173,
+      "line": 177,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/tools/context.py",
@@ -8901,7 +8901,7 @@
       "context": "| Funil de contexto com deduplicação por hash e corte por orçamento | EXISTE, com teste | `sparkforge/context/funnel.py:",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-602",
-      "line": 174,
+      "line": 178,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/context/funnel.py",
@@ -8916,7 +8916,7 @@
       "context": "| Estimador de token local, conservador, sem download | EXISTE PARCIAL | Existe, e existe **quatro vezes**: `sparkforge/",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-603",
-      "line": 175,
+      "line": 179,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/economy/budget.py",
@@ -8931,7 +8931,7 @@
       "context": "| Estimativa rotulada como estimativa | EXISTE, com teste | `sparkforge/tools/cost.py` documenta que quatro caracteres p",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-604",
-      "line": 176,
+      "line": 180,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/agents/observability.py",
@@ -8946,7 +8946,7 @@
       "context": "| Paginação por cursor no envelope de saída | EXISTE, com teste | O envelope das tools traz `total_count`, `returned_cou",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-605",
-      "line": 177,
+      "line": 181,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
@@ -8961,7 +8961,7 @@
       "context": "| Núcleo comum entre CLI e MCP | EXISTE, com teste | `sparkforge/adapters/_core.py` é o núcleo; `cli.py` e `tools.py` sã",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-606",
-      "line": 266,
+      "line": 293,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
@@ -8976,7 +8976,7 @@
       "context": "| Schema de saída declarado e validado contra a saída real | EXISTE, com teste | Toda tool declara `outputSchema`, e há ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-607",
-      "line": 267,
+      "line": 294,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
@@ -8991,7 +8991,7 @@
       "context": "| Anotações de confiança por tool | EXISTE, com teste | Toda tool declara `annotations`, e o catálogo é auditado: só as ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-608",
-      "line": 268,
+      "line": 295,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
@@ -9006,7 +9006,7 @@
       "context": "| Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma u",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-609",
-      "line": 269,
+      "line": 296,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/tools.py",
@@ -9021,7 +9021,7 @@
       "context": "| Motor de regras determinístico que consumiria o grafo | EXISTE, com teste | `sparkforge/rules/engine.py:judge()` casa ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-610",
-      "line": 283,
+      "line": 310,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/engine.py",
@@ -9036,7 +9036,7 @@
       "context": "| Case como estado retomável, com gate que recusa avanço | EXISTE, com teste | `sparkforge/case/store.py` declara fases ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-611",
-      "line": 284,
+      "line": 311,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/case/store.py",
@@ -9051,7 +9051,7 @@
       "context": "| Contexto de runtime como dado de julgamento | EXISTE, com teste | `RuntimeContext` em `sparkforge/findings/models.py` ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-612",
-      "line": 285,
+      "line": 312,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/findings/models.py",
@@ -9066,7 +9066,7 @@
       "context": "| Gold set com resultado esperado por cenário | EXISTE, com teste | `fixtures/scenarios/` guarda cenário inteiro com `ex",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-613",
-      "line": 286,
+      "line": 313,
       "proof": {
         "kind": "artifact",
         "path": "fixtures/scenarios/glue_51_para_60_iceberg_ansi/expected/assessment.json",
@@ -9081,7 +9081,7 @@
       "context": "| Integração sem criar um segundo sistema de julgamento | EXISTE, com teste | O catálogo de regras é o único julgador, e",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-614",
-      "line": 287,
+      "line": 314,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/rules/loader.py",
@@ -9096,7 +9096,7 @@
       "context": "| Política estática: nada de execução de Spark para analisar | EXISTE, com teste | Toda a extração é `ast.parse` e leitu",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-615",
-      "line": 293,
+      "line": 320,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/spark_plan.py",
@@ -9111,7 +9111,7 @@
       "context": "| Identificador de tabela reconhecido no código | EXISTE PARCIAL | `catalog.table_schema` traz o schema do catálogo, e `",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-616",
-      "line": 294,
+      "line": 321,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/catalog_schema.py",
@@ -9126,7 +9126,7 @@
       "context": "| Armazenamento local de métrica de execução | EXISTE, com teste | `SQLiteTraceStore` guarda trace e span com token e cu",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-617",
-      "line": 301,
+      "line": 328,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/observability/store.py",
@@ -9141,7 +9141,7 @@
       "context": "| Detector de desperdício de token | EXISTE, com teste | `sparkforge/economy/waste_detector.py:TokenWasteDetector`, junt",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-618",
-      "line": 302,
+      "line": 329,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/economy/waste_detector.py",
@@ -9153,10 +9153,10 @@
       "type": "capability"
     },
     {
-      "context": "| Teste de traversal de caminho | EXISTE PARCIAL | Dois casos, nos dois lugares que hoje resolvem caminho de fora: catál",
+      "context": "| Teste de traversal de caminho | EXISTE PARCIAL | A matriz encheu pela metade. Cobertos hoje, cada um com teste: caminh",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-619",
-      "line": 351,
+      "line": 378,
       "proof": {
         "kind": "artifact",
         "path": "scripts/vendor_caveman.py",
@@ -9171,7 +9171,7 @@
       "context": "| Robustez a arquivo malformado e a encoding inválido | EXISTE, com teste | Falha por arquivo nunca é fatal: `SyntaxErro",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-620",
-      "line": 352,
+      "line": 379,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/facts/graph.py",
@@ -9186,7 +9186,7 @@
       "context": "| Dependência mínima como controle de segurança | EXISTE, com teste | O pacote core depende de `PyYAML` e `jsonschema`, ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-621",
-      "line": 362,
+      "line": 389,
       "proof": {
         "kind": "artifact",
         "path": "pyproject.toml",
@@ -9201,7 +9201,7 @@
       "context": "| Integridade de artefato vendorizado | EXISTE, com teste | `vendor/` tem manifesto com sha por projeto, licença origina",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-622",
-      "line": 363,
+      "line": 390,
       "proof": {
         "kind": "artifact",
         "path": "vendor/CREDITS.md",
@@ -9216,7 +9216,7 @@
       "context": "| Verificação do artefato instalado | EXISTE, com teste | `scripts/verify_wheel.py` roda os módulos golden dentro de um ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-623",
-      "line": 364,
+      "line": 391,
       "proof": {
         "kind": "artifact",
         "path": "scripts/verify_wheel.py",
@@ -9231,7 +9231,7 @@
       "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-624",
-      "line": 321,
+      "line": 348,
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9249,7 +9249,7 @@
       "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-625",
-      "line": 321,
+      "line": 348,
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9267,7 +9267,7 @@
       "context": "| `full` (default) | **4553 bytes** | **1144 bytes**, ou **25,1%** do envelope |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-626",
-      "line": 321,
+      "line": 348,
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
@@ -9285,7 +9285,7 @@
       "context": "| `normal` | **3619 bytes** | nenhuma; declarada uma vez em `provenance` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-627",
-      "line": 322,
+      "line": 349,
       "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala",
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
@@ -9304,7 +9304,7 @@
       "context": "| `summary` | **1664 bytes** | nenhuma; declarada uma vez em `provenance` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-628",
-      "line": 323,
+      "line": 350,
       "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala",
       "proof": {
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
@@ -9323,7 +9323,7 @@
       "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-629",
-      "line": 271,
+      "line": 298,
       "proof": {
         "kind": "artifact",
         "path": "sparkforge/adapters/_core.py",
@@ -9538,7 +9538,7 @@
       "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **381** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
-      "line": 192,
+      "line": 196,
       "note": "remedido: o corpus cresceu de 380 para 381 com tests/test_arvore_versionada.py, o gate que compara o que esta no disco com o que esta no git",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
@@ -9555,10 +9555,10 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-641",
-      "line": 209,
+      "line": 103,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"iter_source_files\")))'",
@@ -9575,10 +9575,10 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "context": "| `iter_source_files` | 1 | 197 | 428877 | 7270 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-642",
-      "line": 209,
+      "line": 213,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")))'",
@@ -9595,10 +9595,10 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "context": "| `iter_source_files` | 1 | 197 | 428877 | 7270 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-643",
-      "line": 209,
+      "line": 213,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
@@ -9615,10 +9615,10 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "context": "| `iter_source_files` | 1 | 197 | 428877 | 7270 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-644",
-      "line": 209,
+      "line": 213,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
@@ -9635,10 +9635,10 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 197 | 423356 | 7270 | 102 |",
+      "context": "| `iter_source_files` | 1 | 197 | 428877 | 7270 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-645",
-      "line": 209,
+      "line": 213,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
@@ -9658,7 +9658,7 @@
       "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-646",
-      "line": 210,
+      "line": 214,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"looks_like_secret\")))'",
@@ -9678,7 +9678,7 @@
       "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-647",
-      "line": 210,
+      "line": 214,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")))'",
@@ -9698,7 +9698,7 @@
       "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-648",
-      "line": 210,
+      "line": 214,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
@@ -9718,7 +9718,7 @@
       "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-649",
-      "line": 210,
+      "line": 214,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
@@ -9738,7 +9738,7 @@
       "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-650",
-      "line": 210,
+      "line": 214,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
@@ -9755,10 +9755,10 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
+      "context": "| `iter_source_files` | 1 | 197 | 428877 | 7270 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-651",
-      "line": 211,
+      "line": 213,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"project_items\")))'",
@@ -9778,7 +9778,7 @@
       "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-652",
-      "line": 211,
+      "line": 215,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")))'",
@@ -9798,7 +9798,7 @@
       "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-653",
-      "line": 211,
+      "line": 215,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
@@ -9818,7 +9818,7 @@
       "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-654",
-      "line": 211,
+      "line": 215,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
@@ -9838,7 +9838,7 @@
       "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-655",
-      "line": 211,
+      "line": 215,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
@@ -9855,10 +9855,10 @@
       "type": "number"
     },
     {
-      "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
+      "context": "| `project_items` | 1 | 193 | 140522 | 1718 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-656",
-      "line": 212,
+      "line": 215,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"tool_class\")))'",
@@ -9878,7 +9878,7 @@
       "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-657",
-      "line": 212,
+      "line": 216,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")))'",
@@ -9898,7 +9898,7 @@
       "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-658",
-      "line": 212,
+      "line": 216,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
@@ -9918,7 +9918,7 @@
       "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-659",
-      "line": 212,
+      "line": 216,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
@@ -9938,7 +9938,7 @@
       "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-660",
-      "line": 212,
+      "line": 216,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
@@ -9958,7 +9958,7 @@
       "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-661",
-      "line": 213,
+      "line": 217,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"authorize\")))'",
@@ -9978,7 +9978,7 @@
       "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-662",
-      "line": 213,
+      "line": 217,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")))'",
@@ -9998,7 +9998,7 @@
       "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-663",
-      "line": 213,
+      "line": 217,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
@@ -10018,7 +10018,7 @@
       "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-664",
-      "line": 213,
+      "line": 217,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
@@ -10038,7 +10038,7 @@
       "context": "| `authorize` | 4 | 897 | 24310 | 3804 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-665",
-      "line": 213,
+      "line": 217,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
@@ -10055,10 +10055,10 @@
       "type": "number"
     },
     {
-      "context": "Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **714331**;",
+      "context": "Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **719852**;",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-666",
-      "line": 215,
+      "line": 219,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
@@ -10078,7 +10078,7 @@
       "context": "a saída do `grep` pelo nome, **17461**; a saída do `grep` pela definição, **419**.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-667",
-      "line": 216,
+      "line": 220,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
@@ -10098,7 +10098,7 @@
       "context": "a saída do `grep` pelo nome, **17461**; a saída do `grep` pela definição, **419**.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-668",
-      "line": 216,
+      "line": 220,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
@@ -10115,10 +10115,10 @@
       "type": "number"
     },
     {
-      "context": "**Contra o denominador do plano, o índice economiza 368.2 vezes.** Contra a saída de um `grep`",
+      "context": "**Contra o denominador do plano, o índice economiza 371.1 vezes.** Contra a saída de um `grep`",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-669",
-      "line": 224,
+      "line": 228,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
@@ -10137,7 +10137,7 @@
       "context": "pelo nome, **9.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-670",
-      "line": 225,
+      "line": 229,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
@@ -10156,7 +10156,7 @@
       "context": "resposta do índice custa **4.6** vezes o que aquele `grep` custaria.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-671",
-      "line": 226,
+      "line": 230,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(str(com) + \" / \" + str(total) + \" = \" + str(round(com / total, 1)))'",
@@ -10175,7 +10175,7 @@
       "context": "`buscar(banco, \"source\")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-672",
-      "line": 242,
+      "line": 246,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"source\")))'",
@@ -10195,7 +10195,7 @@
       "context": "`buscar(banco, \"source\")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-673",
-      "line": 242,
+      "line": 246,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"source\")], ensure_ascii=False).encode(\"utf-8\")))'",
@@ -10212,10 +10212,10 @@
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **91582** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **92732** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
-      "line": 243,
+      "line": 247,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
@@ -10235,7 +10235,7 @@
       "context": "(**5029** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-675",
-      "line": 244,
+      "line": 248,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
@@ -10255,7 +10255,7 @@
       "context": "- **A saída do `grep` não tem teto.** A do índice tem: `buscar` recebe `limite`, com default 50.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-676",
-      "line": 248,
+      "line": 252,
       "note": "classificacao pendente",
       "proof": {
         "cmd": "python -c 'import inspect; from sparkforge.codeintel.search import buscar; print(inspect.signature(buscar).parameters[\"limite\"].default)'",
@@ -10275,7 +10275,7 @@
       "context": "| Índice persistente, completo e incremental | EXISTE PARCIAL | Completo existe desde a fase J3: `sparkforge/codeintel/i",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-677",
-      "line": 163,
+      "line": 167,
       "note": "classificacao pendente",
       "proof": {
         "kind": "artifact",
@@ -10291,7 +10291,7 @@
       "context": "| Busca por símbolo no índice, determinística e sem rede | EXISTE, com teste | `sparkforge/codeintel/search.py:buscar()`",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-678",
-      "line": 178,
+      "line": 182,
       "note": "classificacao pendente",
       "proof": {
         "kind": "artifact",
@@ -10307,7 +10307,7 @@
       "context": "| Subcomando `code` no CLI | EXISTE, com teste | `sparkforge code index`, `sparkforge code search <termo>` e `sparkforge",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-679",
-      "line": 275,
+      "line": 302,
       "note": "classificacao pendente",
       "proof": {
         "kind": "artifact",
@@ -10320,99 +10320,350 @@
       "type": "capability"
     },
     {
-      "id": "VNX-700",
+      "context": "`name == termo`, a resposta encolhe para **963** bytes — e continua custando **2.3** vezes o",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "text": "963",
-      "type": "number",
-      "state": "PROVADA",
-      "context": "medicao de recall e cenario estrutural da fase J3 (963)",
-      "line": 0,
+      "id": "VNX-700",
+      "line": 256,
+      "note": "so correspondencia exata nas cinco perguntas -- derivado filtrando name==termo sobre o indice do repositorio, nao relido do documento",
       "proof": {
-        "kind": "command",
         "cmd": "python -c \"import json,pathlib,tempfile;from sparkforge.codeintel.index import indexar;from sparkforge.codeintel.search import buscar;b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);t=lambda a: len(json.dumps([x.__dict__ for x in a],ensure_ascii=False));S=['iter_source_files','looks_like_secret','project_items','tool_class','authorize'];e=sum(t([a for a in buscar(b,s) if a.name==s]) for s in S);print('exato=%d' % e)\"",
-        "tier": "slow",
         "expect": {
           "kind": "contains",
           "value": "exato=963"
-        }
+        },
+        "kind": "command",
+        "tier": "slow"
       },
-      "note": "so correspondencia exata nas cinco perguntas -- derivado filtrando name==termo sobre o indice do repositorio, nao relido do documento"
+      "state": "PROVADA",
+      "text": "963",
+      "type": "number"
     },
     {
-      "id": "VNX-701",
+      "context": "`name == termo`, a resposta encolhe para **963** bytes — e continua custando **2.3** vezes o",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "text": "2.3",
-      "type": "number",
-      "state": "PROVADA",
-      "context": "medicao de recall e cenario estrutural da fase J3 (2.3)",
-      "line": 0,
+      "id": "VNX-701",
+      "line": 256,
+      "note": "razao entre a resposta so-exata e o denominador C (419 bytes, o grep pela definicao) -- os dois lados executam",
       "proof": {
-        "kind": "command",
         "cmd": "python -c \"import json,pathlib,tempfile;from sparkforge.codeintel.index import indexar;from sparkforge.codeintel.search import buscar;b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);t=lambda a: len(json.dumps([x.__dict__ for x in a],ensure_ascii=False));S=['iter_source_files','looks_like_secret','project_items','tool_class','authorize'];e=sum(t([a for a in buscar(b,s) if a.name==s]) for s in S);print('razao=%.1f' % (e/419))\"",
-        "tier": "slow",
         "expect": {
           "kind": "contains",
           "value": "razao=2.3"
-        }
+        },
+        "kind": "command",
+        "tier": "slow"
       },
-      "note": "razao entre a resposta so-exata e o denominador C (419 bytes, o grep pela definicao) -- os dois lados executam"
+      "state": "PROVADA",
+      "text": "2.3",
+      "type": "number"
     },
     {
-      "id": "VNX-702",
+      "context": "**8** símbolos, enquanto a alternativa é abrir um arquivo de **14681** bytes — **9.7** vezes a",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "text": "8",
-      "type": "number",
-      "state": "PROVADA",
-      "context": "medicao de recall e cenario estrutural da fase J3 (8)",
-      "line": 0,
+      "id": "VNX-702",
+      "line": 266,
+      "note": "simbolos de sparkforge/facts/scan.py contados no indice",
       "proof": {
-        "kind": "command",
         "cmd": "python -c \"import pathlib,sqlite3,tempfile;from sparkforge.codeintel.index import indexar;A='sparkforge/facts/scan.py';b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);c=sqlite3.connect(b);n=c.execute('SELECT COUNT(*) FROM nodes m JOIN files f ON f.id=m.file_id WHERE f.path=?',(A,)).fetchone()[0];f=pathlib.Path(A).stat().st_size;print('simbolos=%d' % n)\"",
-        "tier": "slow",
         "expect": {
           "kind": "contains",
           "value": "simbolos=8"
-        }
+        },
+        "kind": "command",
+        "tier": "slow"
       },
-      "note": "simbolos de sparkforge/facts/scan.py contados no indice"
+      "state": "PROVADA",
+      "text": "8",
+      "type": "number"
     },
     {
-      "id": "VNX-703",
+      "context": "**8** símbolos, enquanto a alternativa é abrir um arquivo de **14681** bytes — **9.7** vezes a",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "text": "14681",
-      "type": "number",
-      "state": "PROVADA",
-      "context": "medicao de recall e cenario estrutural da fase J3 (14681)",
-      "line": 0,
+      "id": "VNX-703",
+      "line": 266,
+      "note": "tamanho em disco de sparkforge/facts/scan.py, a alternativa a consultar o indice",
       "proof": {
-        "kind": "command",
         "cmd": "python -c \"import pathlib,sqlite3,tempfile;from sparkforge.codeintel.index import indexar;A='sparkforge/facts/scan.py';b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);c=sqlite3.connect(b);n=c.execute('SELECT COUNT(*) FROM nodes m JOIN files f ON f.id=m.file_id WHERE f.path=?',(A,)).fetchone()[0];f=pathlib.Path(A).stat().st_size;print('fonte=%d' % f)\"",
-        "tier": "slow",
         "expect": {
           "kind": "contains",
           "value": "fonte=14681"
-        }
+        },
+        "kind": "command",
+        "tier": "slow"
       },
-      "note": "tamanho em disco de sparkforge/facts/scan.py, a alternativa a consultar o indice"
+      "state": "PROVADA",
+      "text": "14681",
+      "type": "number"
     },
     {
-      "id": "VNX-704",
+      "context": "**8** símbolos, enquanto a alternativa é abrir um arquivo de **14681** bytes — **9.7** vezes a",
       "doc": "docs/harness/CODEINTEL-GAP.md",
-      "text": "9.7",
-      "type": "number",
-      "state": "PROVADA",
-      "context": "medicao de recall e cenario estrutural da fase J3 (9.7)",
-      "line": 0,
+      "id": "VNX-704",
+      "line": 266,
+      "note": "razao entre ler o arquivo e o metadado dos simbolos dele; 190 bytes por Achado e a media medida nas cinco perguntas",
       "proof": {
-        "kind": "command",
         "cmd": "python -c \"import pathlib,sqlite3,tempfile;from sparkforge.codeintel.index import indexar;A='sparkforge/facts/scan.py';b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);c=sqlite3.connect(b);n=c.execute('SELECT COUNT(*) FROM nodes m JOIN files f ON f.id=m.file_id WHERE f.path=?',(A,)).fetchone()[0];f=pathlib.Path(A).stat().st_size;print('razao=%.1f' % (f/(n*190)))\"",
-        "tier": "slow",
         "expect": {
           "kind": "contains",
           "value": "razao=9.7"
-        }
+        },
+        "kind": "command",
+        "tier": "slow"
       },
-      "note": "razao entre ler o arquivo e o metadado dos simbolos dele; 190 bytes por Achado e a media medida nas cinco perguntas"
+      "state": "PROVADA",
+      "text": "9.7",
+      "type": "number"
+    },
+    {
+      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão ",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-705",
+      "line": 103,
+      "note": "teto de artefato de dados da varredura, derivado da constante do modulo em MiB",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.facts.scan import TAMANHO_MAXIMO_DADOS_BYTES as t; print(t // (1024 * 1024))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)$",
+          "value": 128
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "128",
+      "type": "number"
+    },
+    {
+      "context": "| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-706",
+      "line": 216,
+      "note": "teto de codigo-fonte da varredura, derivado da constante do modulo em MiB",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.facts.scan import TAMANHO_MAXIMO_CODIGO_BYTES as t; print(t // (1024 * 1024))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)$",
+          "value": 1
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "| Política de retenção de source (corpo de função e cache) | EXISTE PARCIAL | O banco existe desde a fase J3, e a decisã",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-707",
+      "line": 78,
+      "note": "reclassificada depois da fase J3. Era NAO EXISTE por ausencia de banco; o banco existe e a decisao de retencao esta no schema (sem coluna de corpo), medida por test_corpo_da_funcao_nao_chega_ao_banco. Segue PARCIAL porque a politica nao esta escrita",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/codeintel/db.py",
+        "symbol": "indexar",
+        "test": "tests/test_codeintel_index.py"
+      },
+      "state": "PROVADA",
+      "text": "Política de retenção de source (corpo de função e cache)",
+      "type": "capability"
+    },
+    {
+      "context": "| Confinamento de caminho vindo de fora do processo | EXISTE PARCIAL | Fechado por dentro, aberto por fora. Por dentro: ",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-708",
+      "line": 99,
+      "note": "reclassificada depois das fases J0 e J2. iter_source_files confina cada arquivo sob a raiz varrida, e authorize() passou a saber recusar argumento de caminho. PARCIAL porque nenhum caminho de execucao chama a cadeia",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/scan.py",
+        "symbol": "iter_source_files",
+        "test": "tests/test_facts_scan.py"
+      },
+      "state": "PROVADA",
+      "text": "Confinamento de caminho vindo de fora do processo",
+      "type": "capability"
+    },
+    {
+      "context": "| Symlink recusado por padrão | EXISTE, com teste | `sparkforge/facts/scan.py:_e_atalho()` recusa symlink de arquivo, sy",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-709",
+      "line": 100,
+      "note": "reclassificada depois da fase J0. _e_atalho recusa symlink e reparse point, inclusive junction do Windows, e ha teste para symlink apontando para dentro da raiz",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/scan.py",
+        "symbol": "iter_source_files",
+        "test": "tests/test_facts_scan.py"
+      },
+      "state": "PROVADA",
+      "text": "Symlink recusado por padrão",
+      "type": "capability"
+    },
+    {
+      "context": "| Denylist de caminho sensível | EXISTE, com teste | Quatro listas em `sparkforge/facts/scan.py`, separadas por razão: `",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-710",
+      "line": 101,
+      "note": "reclassificada depois da fase J0. Quatro listas de denylist em scan.py, casadas por componente delimitado, com teste dos dois lados (secrets.json recusado, secrets_manager.tf nao)",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/scan.py",
+        "symbol": "iter_source_files",
+        "test": "tests/test_facts_scan.py"
+      },
+      "state": "PROVADA",
+      "text": "Denylist de caminho sensível",
+      "type": "capability"
+    },
+    {
+      "context": "| Exclusão de árvore de dependência e de artefato | EXISTE, com teste | `DIRETORIOS_IGNORADOS` em `sparkforge/facts/scan",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-711",
+      "line": 102,
+      "note": "reclassificada depois da fase J0. DIRETORIOS_IGNORADOS poda a arvore de dependencia no lugar, sobre a lista de subpastas do os.walk",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/scan.py",
+        "symbol": "iter_source_files",
+        "test": "tests/test_facts_scan.py"
+      },
+      "state": "PROVADA",
+      "text": "Exclusão de árvore de dependência e de artefato",
+      "type": "capability"
+    },
+    {
+      "context": "| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão ",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-712",
+      "line": 103,
+      "note": "reclassificada depois da fase J0. Teto por tipo de conteudo, com teste por limiar. PARCIAL porque deteccao de binario continua sem existir",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/scan.py",
+        "symbol": "iter_source_files",
+        "test": "tests/test_facts_scan.py"
+      },
+      "state": "PROVADA",
+      "text": "Limite de tamanho por arquivo e detecção de binário",
+      "type": "capability"
+    },
+    {
+      "context": "| Arquivo classificado sensível sai inteiro do índice | EXISTE PARCIAL | A decisão anterior passou a existir, e ela acon",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-713",
+      "line": 114,
+      "note": "reclassificada depois da fase J0. A recusa acontece antes da leitura, entao nenhum fato nasce do arquivo sensivel. PARCIAL porque a classificacao e por nome e a recusa e muda",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/scan.py",
+        "symbol": "iter_source_files",
+        "test": "tests/test_facts_scan.py"
+      },
+      "state": "PROVADA",
+      "text": "Arquivo classificado sensível sai inteiro do índice",
+      "type": "capability"
+    },
+    {
+      "context": "| `.sparkforge/local/` fora do git | EXISTE, sem teste | As três linhas entraram no `.gitignore` no commit `715a657`, e ",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-714",
+      "line": 132,
+      "note": "reclassificada depois da fase J0. A entrada existe no .gitignore e nenhum teste a tranca, entao a linha e EXISTE, sem teste: a prova executa git check-ignore em vez de reler o arquivo",
+      "proof": {
+        "cmd": "git check-ignore -v .sparkforge/local/codeintel/graph.sqlite3",
+        "expect": {
+          "kind": "contains",
+          "value": ".sparkforge/local/"
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "`.sparkforge/local/` fora do git",
+      "type": "capability"
+    },
+    {
+      "context": "| Banco com schema versionado, migrations e locking | EXISTE PARCIAL | `sparkforge/codeintel/db.py` cria `metadata`, `fi",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-715",
+      "line": 142,
+      "note": "reclassificada depois da fase J3. Schema versionado e tabelas existem; PARCIAL porque nada le schema_version para migrar e nao ha lock de indice",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/codeintel/db.py",
+        "symbol": "criar_schema",
+        "test": "tests/test_codeintel_db.py"
+      },
+      "state": "PROVADA",
+      "text": "Banco com schema versionado, migrations e locking",
+      "type": "capability"
+    },
+    {
+      "context": "| Índice FTS sobre símbolo e signature | EXISTE PARCIAL | A metade do símbolo existe: `symbols_fts` é FTS5 com `name` e ",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-716",
+      "line": 143,
+      "note": "reclassificada depois da fase J3. symbols_fts cobre name e qualified_name; PARCIAL porque normalized_signature nao e coluna do FTS. As colunas foram lidas do banco criado, nao da DDL",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/codeintel/db.py",
+        "symbol": "criar_schema",
+        "test": "tests/test_codeintel_db.py"
+      },
+      "state": "PROVADA",
+      "text": "Índice FTS sobre símbolo e signature",
+      "type": "capability"
+    },
+    {
+      "context": "| Sanitização de signature antes de armazenar | EXISTE, com teste | `sparkforge/codeintel/ids.py:normalizar_assinatura()",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-717",
+      "line": 144,
+      "note": "reclassificada depois da fase J3. normalizar_assinatura roda em extract.py antes de o no existir, entao nenhum valor literal de default chega ao banco",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/codeintel/ids.py",
+        "symbol": "normalizar_assinatura",
+        "test": "tests/test_codeintel_ids.py"
+      },
+      "state": "PROVADA",
+      "text": "Sanitização de signature antes de armazenar",
+      "type": "capability"
+    },
+    {
+      "context": "| Teste de vazamento do banco | EXISTE PARCIAL | O banco existe, e três testes medem o que ele **não** guarda: `test_cor",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-718",
+      "line": 381,
+      "note": "reclassificada depois da fase J3. Tres testes medem o que o banco nao guarda; PARCIAL porque falta o caso adversarial com segredo plantado",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/codeintel/db.py",
+        "symbol": "indexar",
+        "test": "tests/test_codeintel_index.py"
+      },
+      "state": "PROVADA",
+      "text": "Teste de vazamento do banco",
+      "type": "capability"
+    },
+    {
+      "context": "| Corpus de segredo | EXISTE, com teste | Fechado pela fase J0. `tests/test_facts_secrets.py` é corpus parametrizado com",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-719",
+      "line": 382,
+      "note": "reclassificada depois da fase J0. O corpus parametrizado existe e cobra que todo padrao por valor tenha positivo e que detectores e looks_like_secret nunca divirjam",
+      "proof": {
+        "kind": "artifact",
+        "path": "sparkforge/facts/secrets.py",
+        "symbol": "looks_like_secret",
+        "test": "tests/test_facts_secrets.py"
+      },
+      "state": "PROVADA",
+      "text": "Corpus de segredo",
+      "type": "capability"
     }
   ]
 }

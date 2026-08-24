@@ -49,9 +49,13 @@ fixture `fixtures/pyspark/clean_job`, o payload de fatos é **5.6** vezes maior 
 que o originou. Devolver o arquivo inteiro custaria menos que devolver a análise dele. A causa
 não é o dado útil — é o envelope repetido fato a fato.
 
-O terceiro é de segurança, e é o mais sério: **a detecção de segredo tem quatro implementações
-e nenhum teste sobre a canônica**, e as quatro falham igual contra a metade da lista que a
-própria SPEC enumera.
+O terceiro era de segurança, era o mais sério, e **foi pago**: quando este mapa foi escrito a
+detecção de segredo tinha implementação duplicada, nenhum teste sobre a canônica, e falhava
+contra metade da lista que a própria SPEC enumera. As fases J0 a J3 fecharam essa dívida e mais
+uma parte do que este documento classificava como ausente — a seção final,
+[O que a SPEC ainda pede](#o-que-a-spec-ainda-pede-depois-das-fases-j0-a-j3), separa o que
+sobrou. Um mapa que superestima o que falta erra tanto quanto um que subestima, e este errava
+por excesso até esta revisão.
 
 ---
 
@@ -68,10 +72,10 @@ própria SPEC enumera.
 | Superfície de execução do próprio repositório fechada e auditada | EXISTE, com teste | `tests/test_execution_surface.py` fixa a lista de hooks, recusa construção de execução arbitrária, e cobra que todo servidor MCP seja spawn de argv sem metacaractere de shell | `tests/test_execution_surface.py` |
 | Source read-only | EXISTE PARCIAL | Nenhum extrator abre arquivo do repositório analisado para escrita, e há teste medindo que uma tool sem `out_path` não escreve nada. Mas isso prova a **tool**, não o **invariante**: não existe checagem que varra a superfície inteira e afirme que nada escreve no source | `tests/test_adapters_tools.py` |
 | Zero network egress | EXISTE PARCIAL | `ExecutionProfile.OFFLINE` é teto, não conselho: `sparkforge/agents/autonomy.py:authorize()` recusa tool de rede sob esse perfil em qualquer grafia, e aprovação explícita **não** fura o teto. O que falta é enforcement de runtime — nenhum audit hook, nenhum bloqueio de socket, nenhuma sanitização de ambiente. O teto vale para quem passa por `authorize()`; um `import requests` dentro de um extrator não passa por lugar nenhum | `tests/test_harness_authorization.py` |
-| Confinamento ao root autorizado | EXISTE PARCIAL | `sparkforge/rules/loader.py:safe_catalog_file()` canonicaliza e recusa o que escapar do diretório — é o algoritmo que a SPEC pede, aplicado a **um** diretório (o catálogo de regras). `scripts/vendor_caveman.py` tem a mesma guarda para `vendor/`. Nenhuma das duas alcança o `path` que as tools de análise recebem | `tests/test_rules_loader.py` |
-| Sem telemetria conversacional | EXISTE PARCIAL | `sparkforge/observability/store.py:SQLiteTraceStore` grava trace da execução do próprio SparkForge, e nada no repositório lê histórico de agente de terceiro. Mas o banco fica em `.sparkforge/traces.db`, que **não** está no `.gitignore` — ver a seção de estado local | `tests/test_observability.py` |
+| Confinamento ao root autorizado | EXISTE PARCIAL | O algoritmo deixou de ser cópia: `sparkforge/paths.py:resolve_within()` é a implementação única, e `rules/loader.py`, `knowledge_ref.py` e `agents/autonomy.py` chamam ela. `authorize()` passou a receber `arguments` e `root` e recusa argumento de caminho que escape da raiz do case, inclusive `~` e lista de caminhos item a item. `facts/scan.py:iter_source_files()` confina cada arquivo visitado sob a raiz varrida. O que falta é o outro lado da mesma pergunta: nenhum dos quatro caminhos de execução chama `authorize()`, então a verificação existe e está desligada — e a **raiz** apontada de fora não é confinada por nada, porque não há raiz autorizada contra a qual compará-la | `tests/test_harness_authorization.py` |
+| Sem telemetria conversacional | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` grava trace da execução do próprio SparkForge, e nada no repositório lê histórico de agente de terceiro. A ressalva que esta linha registrava — `.sparkforge/traces.db` fora do `.gitignore` — foi fechada pela fase J0: `git check-ignore` reconhece hoje `traces.db`, `cache/` e `local/`, cada um com a razão escrita ao lado da regra | `tests/test_observability.py` |
 | Sem herança de credencial em worker de parsing | NÃO EXISTE | Não há worker de parsing, então também não há sanitização de ambiente. Hoje o extrator roda no mesmo processo, com o mesmo ambiente, e nada impede um extrator futuro de ler `AWS_SECRET_ACCESS_KEY` | — |
-| Política de retenção de source (corpo de função e cache) | NÃO EXISTE | Nada persiste source hoje porque não há índice. A ausência de banco torna o invariante verdadeiro por acidente, não por decisão — e o dia em que o banco existir, a decisão precisa estar escrita antes | — |
+| Política de retenção de source (corpo de função e cache) | EXISTE PARCIAL | O banco existe desde a fase J3, e a decisão que esta linha cobrava foi tomada **no schema**: `sparkforge/codeintel/db.py` não tem coluna de corpo, e `nodes.normalized_signature` chega já sanitizada. Dois testes medem que o corpo não passa — `test_corpo_da_funcao_nao_chega_ao_banco` e `test_nenhum_no_carrega_corpo`. O que falta é a política **escrita**: nada declara por quanto tempo o índice vale, quando ele é apagado, nem o que muda no dia em que a recuperação de trecho de código existir e o snippet passar a ser material a reter | `tests/test_codeintel_index.py` |
 | Threat model escrito, com ameaça numerada e proteção | NÃO EXISTE | Nenhum documento do repositório enumera ameaça contra repositório malicioso. [`AUTHORIZATION-CHAIN.md`](AUTHORIZATION-CHAIN.md) e [`UNTRUSTED-CONTENT.md`](UNTRUSTED-CONTENT.md) cobrem duas fronteiras, cada um a sua, e nenhum dos dois é um threat model | — |
 
 ## 2. Security profiles e runtime hardening
@@ -91,12 +95,12 @@ própria SPEC enumera.
 
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
-| Algoritmo de resolução segura de caminho | EXISTE PARCIAL | `safe_catalog_file()` faz exatamente o que a SPEC descreve — canonicaliza root e candidato, recusa quem não estiver abaixo do root — e tem teste de traversal com `../../etc/passwd`. Falta tudo o que vem depois na SPEC: arquivo regular, symlink, denylist, limite de tamanho, detecção de binário, política de segredo | `tests/test_rules_loader.py` |
-| Confinamento de caminho vindo de fora do processo | NÃO EXISTE | As tools de análise recebem `path` e o repassam direto ao extrator (`sparkforge/adapters/_core.py:analyze_pyspark`). Nada canonicaliza, nada confina. A guarda de `safe_catalog_file` protege o catálogo de regras, que é dado do próprio SparkForge, e não o alvo da análise, que é dado de terceiro | — |
-| Symlink recusado por padrão | NÃO EXISTE | `safe_catalog_file` **resolve** o symlink e confere contenção, que é uma garantia diferente de recusar: um symlink apontando para dentro do root passa. Nenhum outro caminho do repositório olha symlink | — |
-| Denylist de caminho sensível | NÃO EXISTE | Nenhuma lista de `.env`, `*.pem`, `id_rsa`, `credentials`, `.aws/`, `.ssh/`, `terraform.tfstate` ou `*.tfvars`. Os extratores que varrem `*.json` (`catalog_schema`, `emr_cluster`, `emr_serverless`, `iceberg_metadata`, `s3_listing`, `athena_workgroup`) leriam qualquer JSON de credencial que estivesse na árvore apontada | — |
-| Exclusão de árvore de dependência e de artefato | NÃO EXISTE | A varredura pula `__pycache__` em três extratores (`pyspark_ast.py`, `graph.py`, `migration.py`) e **não pula em `data_quality.py`**, que percorre `*.py` sem filtro nenhum. `.venv/`, `node_modules/`, `vendor/`, `site-packages/` e `.git/` são varridos como código do cliente. Num repositório com ambiente virtual dentro, isso é ao mesmo tempo custo e superfície | — |
-| Limite de tamanho por arquivo e detecção de binário | NÃO EXISTE | Nenhum piso, nenhum teto, nenhuma checagem de conteúdo binário antes de decodificar | — |
+| Algoritmo de resolução segura de caminho | EXISTE PARCIAL | O algoritmo mora em `sparkforge/paths.py:resolve_within()`, uma vez só, e a varredura acrescentou o que vinha depois dele na SPEC: arquivo regular, recusa de atalho, denylist, teto de tamanho por tipo e confinamento — tudo em `sparkforge/facts/scan.py:iter_source_files()`. Falta o item da SPEC que continua sem existir em lugar nenhum: **detecção de conteúdo binário** antes de decodificar. E falta o sinal: pular por denylist, por teto ou por poda é silencioso, e o próprio módulo registra essa pendência na docstring | `tests/test_facts_scan.py` |
+| Confinamento de caminho vindo de fora do processo | EXISTE PARCIAL | Fechado por dentro, aberto por fora. Por dentro: `iter_source_files()` resolve cada arquivo visitado e descarta o que cair fora da raiz varrida, mesmo com componente intermediário trocado durante a varredura. Por fora: `authorize()` sabe recusar argumento de caminho que escape da raiz do case, mas nenhum dos quatro caminhos de execução — `adapters/mcp.py`, `adapters/tools.py`, `adapters/cli.py`, `agents/supervisor.py` — chama `authorize()`, então as tools de análise continuam recebendo o `path` que quiserem passar. A raiz apontada é confinada em relação a si mesma, e a nada mais | `tests/test_facts_scan.py` |
+| Symlink recusado por padrão | EXISTE, com teste | `sparkforge/facts/scan.py:_e_atalho()` recusa symlink de arquivo, symlink de pasta e reparse point em geral — inclusive **junction do Windows**, que `os.path.islink` não vê e que `mklink /J` cria sem privilégio de administrador. Recusar é diferente de resolver e conferir contenção: symlink apontando para dentro da raiz também é pulado, e há teste para esse caso exato | `tests/test_facts_scan.py` |
+| Denylist de caminho sensível | EXISTE, com teste | Quatro listas em `sparkforge/facts/scan.py`, separadas por razão: `DIRETORIOS_SENSIVEIS` (`.aws`, `.ssh`, `.gnupg`, `.kube`, `secrets`, `cdk.out`, …), `TALOS_SENSIVEIS` (`.env`, `id_rsa`, `credentials`, `kubeconfig`, `.netrc`, …), `SUFIXOS_SENSIVEIS` (`.pem`, `.key`, `.tfstate`, `.tfvars`, …) e `SUFIXOS_SENSIVEIS_COMPOSTOS`, que pega `terraform.tfstate.json`. O casamento é por componente delimitado, nunca por prefixo: `secrets.json` é recusado e `secrets_manager.tf` não, e há teste para os dois lados | `tests/test_facts_scan.py` |
+| Exclusão de árvore de dependência e de artefato | EXISTE, com teste | `DIRETORIOS_IGNORADOS` em `sparkforge/facts/scan.py` poda `.venv`, `venv`, `site-packages`, `node_modules`, `vendor`, `build`, `dist`, `target`, `.git`, `.terraform`, `.sparkforge` e os caches de ferramenta. A poda é feita **no lugar**, sobre a lista de subpastas do `os.walk`, então a varredura nem desce nelas — filtrar no fim daria a mesma lista tendo pago para listar o `.venv` inteiro. Os catorze `rglob` soltos dos extratores passaram todos por aqui, e um gate estrutural recusa o décimo quinto | `tests/test_facts_scan.py` |
+| Limite de tamanho por arquivo e detecção de binário | EXISTE PARCIAL | O teto existe e é **por tipo**, porque a razão de cada um é diferente: código-fonte tem teto de 1 MiB, pela regra de não montar AST de arquivo gerado; artefato de dados tem teto de 128 MiB, porque o operador apontou para ele de propósito. Extensão desconhecida cai no teto de dados, e esse é o único ponto fail-open do módulo, declarado onde acontece. Falta a outra metade da linha: **detecção de binário** não existe, nem piso de tamanho | `tests/test_facts_scan.py` |
 
 ## 4. Secret firewall
 
@@ -106,8 +110,8 @@ própria SPEC enumera.
 | Redação registrada no próprio fato | EXISTE, com teste | O par vira `<redigido>` e `attrs["redacted"] = True`: a evidência mostra que havia credencial sem mostrar a credencial. É a distinção que a SPEC exige entre `{"sensitive": true}` e `{"secret": "AKIA..."}` | `tests/test_facts_terraform.py` |
 | O scanner nunca registra o segredo | EXISTE, com teste | Mesma disciplina no caminho de EMR: a propriedade sai redigida no golden, e o teste mede a redação, não a detecção | `tests/test_facts_emr_cluster.py` |
 | Uma implementação só | EXISTE, com teste | **Fechado pela fase J0.** As cópias privadas `_looks_like_secret` de `sparkforge/facts/terraform.py`, `emr_cluster.py` e `emr_serverless.py` foram removidas, e um gate estrutural por AST impede a próxima: `test_existe_um_unico_detector_de_segredo_no_pacote` quebra quando a segunda é escrita, não quando ela diverge — porque divergir é o momento em que o conserto já é caro | `tests/test_facts_secrets.py` |
-| Detectores que a SPEC enumera | EXISTE PARCIAL | Só dois gatilhos funcionam por **valor**: access key id da AWS e senha embutida em URL. Todo o resto depende do **nome da chave** conter `secret`, `password`, `token`, `credential` ou similar. Com nome de chave inocente, as quatro implementações devolvem `False` para GitHub PAT, JWT e chave privada RSA — e a SPEC pede exatamente PAT, JWT, chave privada, OAuth client secret, DSN, Bearer token e alta entropia. Chave privada é o caso mais claro: `-----BEGIN RSA PRIVATE KEY-----` não passa no piso de entropia porque tem espaço, e nenhum padrão de valor a procura | `tests/test_facts_emr_cluster.py` |
-| Arquivo classificado sensível sai inteiro do índice | NÃO EXISTE | A redação atua no par chave/valor, dentro de um fato. Não existe a decisão anterior — "este arquivo é sensível, portanto nem símbolo nem snippet nem metadado de conteúdo saem dele" | — |
+| Detectores que a SPEC enumera | EXISTE PARCIAL | A fase J0 acrescentou os padrões **por valor**, e eles não olham o nome da chave: access key da AWS, token clássico e fine-grained do GitHub, JWT, cabeçalho PEM de chave privada em qualquer variante, token do Slack — mais senha embutida em URL, que é o caso do DSN com credencial. O gatilho por nome de chave continua existindo ao lado, para segredo proprietário que não tem prefixo publicado. O que a SPEC pede e não está lá: **OAuth client secret**, **Bearer token** solto e **alta entropia como gatilho independente** — entropia hoje só dispara acompanhada de nome de chave suspeito, de propósito, porque sozinha ela redige sha, caminho de S3 e nome de classe Java | `tests/test_facts_secrets.py` |
+| Arquivo classificado sensível sai inteiro do índice | EXISTE PARCIAL | A decisão anterior passou a existir, e ela acontece **antes da leitura**: `sparkforge/facts/scan.py:_e_sensivel()` recusa o arquivo inteiro, então nem fato nem símbolo nem metadado nascem dele — nenhum extrator chega a abri-lo. Duas coisas faltam para a linha fechar. A classificação é por **nome**, nunca por conteúdo: um `config.py` com chave privada colada dentro é indexado como qualquer outro arquivo. E a recusa é muda: quem lê a saída não distingue "não havia nada" de "havia e eu recusei" | `tests/test_facts_scan.py` |
 
 ## 5. Prompt injection defense
 
@@ -125,7 +129,7 @@ própria SPEC enumera.
 | Diretório de estado por repositório analisado | EXISTE, com teste | `.sparkforge/` já é isso: `case.yaml`, `facts.json`, `findings.json`, `handoff.md` e `artifacts/manifest.json`, escritos por `sparkforge/case/store.py` | `tests/test_case_store.py` |
 | Banco SQLite local já em uso | EXISTE, com teste | `sparkforge/observability/store.py:SQLiteTraceStore` cria e escreve `.sparkforge/traces.db`. O precedente de "SparkForge tem banco local" já existe; o que não existe é a política sobre ele | `tests/test_observability.py` |
 | Separação entre o que é handoff e o que é bruto | EXISTE, com teste | O `.gitignore` versiona `case.yaml` e o manifesto e ignora `.sparkforge/artifacts/*`, com a razão escrita ali: artefato bruto pode ter dado de negócio. A disciplina de auditar o que o repositório ignora tem teste | `tests/test_execution_surface.py` |
-| `.sparkforge/local/` fora do git | NÃO EXISTE | E o buraco é maior que a linha que falta. Hoje `.sparkforge/traces.db` e `.sparkforge/cache/` **não** estão ignorados: `git check-ignore` só reconhece `.sparkforge/artifacts/*`. Um banco de índice de código de cliente colocado ali, sob a política atual, é commitável por acidente | — |
+| `.sparkforge/local/` fora do git | EXISTE, sem teste | As três linhas entraram no `.gitignore` no commit `715a657`, e `git check-ignore -v` confirma as três: `.sparkforge/traces.db`, `.sparkforge/cache/` e `.sparkforge/local/`. `sparkforge/codeintel/db.py:BANCO_PADRAO` aponta o índice para dentro de `local/`, e `tests/test_codeintel_search.py::test_o_banco_padrao_mora_sob_o_estado_local_ignorado_pelo_git` tranca **essa** metade. A metade que ninguém tranca é a regra em si: apagar a entrada `.sparkforge/local/` do `.gitignore` não quebra teste nenhum, ao contrário de `.claude/settings.local.json`, que tem gate próprio em `tests/test_execution_surface.py` | — |
 | Permissão restrita de diretório e arquivo, com umask | NÃO EXISTE | Nada no repositório define permissão de arquivo criado | — |
 
 ## 7. Banco, schema e taxonomia de grafo
@@ -133,11 +137,11 @@ própria SPEC enumera.
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
 | Ponto cego como cidadão de primeira classe | EXISTE, com teste | É lei da casa antes de ser pedido da SPEC: onze extratores emitem um kind `*.unresolved` com vocabulário fechado de razão, e o envelope das tools conta `unresolved` sobre o conjunto inteiro — filtrar por kind **não** faz o ponto cego sumir do relatório. Fonte limpa reporta zero, nunca ausência | `tests/test_adapters_tools.py` |
-| Id determinístico de nó, derivado de conteúdo | EXISTE PARCIAL | `Fact.id` é hash estável sobre kind, subject e measures, e ignora `provenance` de propósito — o mesmo conteúdo produz o mesmo id entre execuções. É a propriedade que a SPEC pede para o nó, aplicada ao fato: não há nó, então não há id de nó | `tests/test_findings_models.py` |
+| Id determinístico de nó, derivado de conteúdo | EXISTE, com teste | O nó passou a existir, e o id dele também: `sparkforge/codeintel/ids.py:node_id()` deriva BLAKE2b de caminho, kind, nome qualificado e assinatura, com separador `\x00` entre campos para que fronteira de campo não vire ambiguidade. Reindexar sem mudança produz os mesmos ids, e há teste medindo isso ponta a ponta. O nome precisa ser mesmo qualificado, e isso é contrato de quem chama: com nome simples, `adapters/platforms/targets.py` sozinho já colide quatro vezes | `tests/test_codeintel_ids.py` |
 | Taxonomia de aresta | EXISTE PARCIAL | `pyspark.callgraph_edge` (chamador → chamado) mais os quatro kinds `callgraph.*` cobrem a aresta de chamada e o que se deriva dela. `import`, `herança`, `referência de tipo` e `escrita/leitura de tabela como aresta de grafo` não existem como aresta — leitura e escrita existem como **fato**, com o alvo literal dentro | `tests/test_fixtures_golden_callgraph.py` |
-| Banco com schema versionado, migrations e locking | NÃO EXISTE | Não há banco de grafo de código, portanto não há schema, migration, `files`, `nodes`, `edges`, `unresolved_refs` nem lock de índice | — |
-| Índice FTS sobre símbolo e signature | NÃO EXISTE | Nenhuma busca por símbolo, em memória ou em disco | — |
-| Sanitização de signature antes de armazenar | NÃO EXISTE | Consequência da linha acima: não há signature armazenada | — |
+| Banco com schema versionado, migrations e locking | EXISTE PARCIAL | `sparkforge/codeintel/db.py` cria `metadata`, `files`, `nodes`, `unresolved_refs` e `symbols_fts`, grava `schema_version` em `metadata` e confere `PRAGMA foreign_keys` relendo o valor efetivo, porque esse pragma falha calado e a falha dele deixa `ON DELETE CASCADE` declarado sem acontecer. Três coisas da linha faltam. **Migration** não existe: nada lê `schema_version` para decidir o que fazer — `search.py:resumo()` só o devolve, e um banco de versão antiga é aberto e consultado como se fosse da versão de hoje. **Locking** de índice não existe: há `busy_timeout` de conexão, que é espera de escritor do SQLite, e não guarda contra duas indexações concorrentes da mesma árvore. E `edges` não existe, por decisão registrada no próprio módulo | `tests/test_codeintel_db.py` |
+| Índice FTS sobre símbolo e signature | EXISTE PARCIAL | A metade do símbolo existe: `symbols_fts` é FTS5 com `name` e `qualified_name`, e o tokenizador default é o que faz `iter_source_files` ser achável por `source`. A metade da **signature não existe**: `normalized_signature` mora em `nodes`, como coluna comum, e não é coluna do FTS — buscar por tipo de parâmetro ou por anotação de retorno não tem por onde. As colunas foram lidas do banco criado, não da DDL: `node_id`, `name`, `qualified_name` | `tests/test_codeintel_db.py` |
+| Sanitização de signature antes de armazenar | EXISTE, com teste | `sparkforge/codeintel/ids.py:normalizar_assinatura()` troca valor literal de default pelo marcador `<literal>` e preserva nome, ordem dos parâmetros e anotação de retorno. É varredor com profundidade e não substituição por expressão regular, porque default abre parêntese, aninha chamada e carrega vírgula dentro de aspas. `codeintel/extract.py` aplica antes de o nó existir, então nenhum valor literal chega ao banco por esse caminho | `tests/test_codeintel_ids.py` |
 
 ## 8. Extractors
 
@@ -149,7 +153,7 @@ própria SPEC enumera.
 | Call graph com ciclo e alcançabilidade a partir de entrypoint | EXISTE, com teste | `sparkforge/facts/call_graph.py` deriva quais funções existem, quanto trabalho Spark cada uma concentra, o que é alcançável de cada entrypoint e a que profundidade mínima, quais ciclos existem e o que ninguém referencia. É função pura sobre fatos: nunca lê arquivo, nunca reparseia | `tests/test_fixtures_golden_callgraph.py` |
 | Lineage dinâmico declarado em vez de silenciado | EXISTE, com teste | O que o extrator não resolve vira `pyspark.unresolved` com razão de vocabulário fechado, e o filtro por kind não consegue esconder isso do envelope | `tests/test_adapters_tools.py` |
 | Extractor de SQL com predicado e projeção | EXISTE, com teste | `sparkforge/facts/sql_literal.py` lê SQL embutido em literal de código e emite `sql.predicate`, `sql.projection`, `sql.predicate.partition_filter` e as formas enriquecidas | `tests/test_fixtures_golden_sql.py` |
-| Símbolos gerais de Python | EXISTE PARCIAL | `pyspark.function_def` cobre função definida, com ou sem chamada, e o extrator sabe quando o `def` está dentro de uma classe. Não existe nó de classe, nem grafo de import, nem qualified name, nem hierarquia de tipo. O que há é uma tabela de símbolo com forma de PySpark, não de Python | `tests/test_fixtures_golden.py` |
+| Símbolos gerais de Python | EXISTE PARCIAL | Duas metades dessa linha fecharam na fase J3, num extrator novo: `sparkforge/codeintel/extract.py` emite **nó de classe** e **nome qualificado** com a pilha de escopo inteira, distingue `method` de `function` pelo tipo do escopo imediato, e não perde `def` dentro de `if TYPE_CHECKING` porque herda de `NodeVisitor` em vez de percorrer só o corpo das definições. Continuam sem existir: **grafo de import** e **hierarquia de tipo** — a assinatura de classe guarda o texto das bases, e ninguém as resolve em nó. Do lado dos fatos, `pyspark.function_def` continua sendo a tabela de símbolo com forma de PySpark, e as duas visões ainda não se falam | `tests/test_codeintel_extract.py` |
 | Lineage de DataFrame variável a variável | NÃO EXISTE | O extrator entende a cadeia de método dentro de uma expressão, mas não segue o valor de uma variável para outra | — |
 | Workers de parsing isolados, autenticados, com limite | NÃO EXISTE | A extração roda no processo, sem worker, sem autenticação de worker e sem limite de memória, tempo ou tamanho | — |
 
@@ -158,10 +162,10 @@ própria SPEC enumera.
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
 | Manifesto de conteúdo verificável, com detecção de adulteração | EXISTE, com teste | `knowledge/offline-manifest.json` mais `sparkforge/tools/offline.py:OfflineKnowledgeIndex.verify()` conferem SHA-256 documento a documento e separam ausência de divergência. O hash normaliza fim de linha porque o contrário fazia o gate depender da plataforma — a lição vale inteira para um índice de código | `tests/test_offline_expansion.py` |
-| Sinal de staleness por arquivo | EXISTE PARCIAL | Todo fato carrega `provenance.artifact_sha256`, então dá para saber que um fato veio de um conteúdo específico. Não existe o outro lado: nada compara o sha de hoje com o sha de quando o fato foi produzido, porque nada guarda o fato entre execuções | `tests/test_fixtures_golden.py` |
+| Sinal de staleness por arquivo | EXISTE PARCIAL | O material passou a estar guardado: `files` grava `content_sha256`, `size_bytes`, `modified_ns` e `indexed_at` por arquivo indexado, ao lado do `provenance.artifact_sha256` que todo fato já carregava. O que continua não existindo é a **comparação**: nada relê o disco para conferir se o sha mudou, e `code status` devolve quando o índice foi feito sem dizer se ele ainda vale. Índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente | `tests/test_codeintel_index.py` |
 | Git lido sem executar hook | EXISTE, com teste | A superfície de execução do repositório é uma lista fechada e auditada, e nenhum hook usa construção de execução arbitrária | `tests/test_execution_surface.py` |
 | Índice persistente, completo e incremental | EXISTE PARCIAL | Completo existe desde a fase J3: `sparkforge/codeintel/index.py:indexar()` varre pela mesma fronteira de leitura de `facts/scan.py`, extrai por `ast` e persiste em SQLite com FTS5. Incremental **não**: `indexar` apaga `files` e `symbols_fts` e recarrega tudo, de propósito — reaproveitar exigiria saber o que mudou, e construir isso de improviso deixaria nó fantasma no banco enquanto isso | `tests/test_codeintel_index.py` |
-| Strict tree, fingerprint de worktree, namespace por branch | NÃO EXISTE | Nenhuma noção de estado de árvore de trabalho | — |
+| Strict tree, fingerprint de worktree, namespace por branch | NÃO EXISTE | `db.py:impressao_da_raiz()` guarda um digest da **raiz**, e é fácil confundir isso com o que a linha pede: ele identifica qual diretório foi indexado sem nomeá-lo, e nada mais. Não é fingerprint de estado de árvore, não vê arquivo sujo nem branch, e nem sequer é conferido na leitura — o banco de outra raiz é aberto e respondido normalmente. Namespace por branch não existe | — |
 | Contexto do que mudou, e teste afetado | NÃO EXISTE | `sparkforge/facts/*` compara Terraform antes e depois (`analyze_terraform_diff`), que é diff de infraestrutura. Diff de código, símbolo alterado e teste afetado não existem | — |
 
 ## 10. Retrieval, ranking e orçamento de token
@@ -292,7 +296,7 @@ que omite o símbolo necessário é falha, não sucesso.
 | Entrada tipada, sem schema de objeto nu | EXISTE, com teste | Toda tool declara `properties` e `required`, e nenhuma usa objeto nu | `tests/test_adapters_tools.py` |
 | Entrada fechada a propriedade desconhecida | NÃO EXISTE | Nenhum dos schemas de entrada declara `additionalProperties: false`, que é uma constraint explícita da tool principal da SPEC. Argumento não previsto entra sem erro | — |
 | Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: as que devolvem facts. As duas que paginam e ficaram de fora devolvem outro shape — `sparkforge_judge` devolve findings e `sparkforge_rules_lookup` devolve regras, e nenhum dos dois tem `provenance` nem os campos que o `summary` de fato preserva | `tests/test_adapters_detail_level.py` |
-| Projeção de campo na resposta | NÃO EXISTE | `fields` não aparece em tool nenhuma do catálogo. Não há como pedir só `kind` e `subject.file` | — |
+| Projeção de campo na resposta | NÃO EXISTE | Medido no catálogo carregado, e não por leitura: `fields` aparece em **zero** das tools. A fase J1 entregou `detail_level`, que é a linha **acima** desta e é outra coisa — ele escolhe entre três formas fixas de item, e projeção é pedir os campos que interessam. Não há como pedir só `kind` e `subject.file` | — |
 | Poucas tools compondo operações internamente | NÃO EXISTE | O catálogo tem o tamanho medido na linha acima, e a SPEC pede explicitamente o oposto dessa estratégia | — |
 | As tools `sparkforge_code_*` | NÃO EXISTE | Nenhuma das onze existe: contexto, busca, símbolo, leitura, impacto, lineage, contexto do que mudou, status, sync, métricas e status de segurança. A ausência agora é **decisão**, não pendência: os três verbos `code` do CLI entram em `ALLOWED_CLI_ONLY` com razão declarada, e ela é o sinal de frescor. Toda tool do catálogo hoje é sem estado — recebe um caminho, lê o artefato, responde; estas dependeriam de um índice construído antes, que envelhece sem avisar, e `code search` num índice velho responde "nenhum símbolo" com a mesma cara com que responde sobre símbolo inexistente. Ausência lida como ausência é a pior falha possível numa tool de busca | `tests/test_capability_parity.py` |
 | Subcomando `code` no CLI | EXISTE, com teste | `sparkforge code index`, `sparkforge code search <termo>` e `sparkforge code status`, em `sparkforge/adapters/cli.py`. É a única entrada do CLI cujo payload não vem de `_core` — só o tipo de erro vem —, e a razão está escrita ao lado dela: o índice não devolve fato nem achado, e atravessar o núcleo obrigaria a inventar procedência para uma linha que só tem caminho e número de linha. O banco default é `.sparkforge/local/codeintel/graph.sqlite3`, já ignorado pelo git | `tests/test_codeintel_search.py` |
@@ -371,11 +375,11 @@ golden de uma vez só, e isso é decisão de contrato — separada desta mediç�
 
 | Componente pedido | Classificação | Módulo(s) existente(s) | Teste |
 |---|---|---|---|
-| Teste de traversal de caminho | EXISTE PARCIAL | Dois casos, nos dois lugares que hoje resolvem caminho de fora: catálogo de regras e árvore vendorizada. A matriz que a SPEC pede — caminho absoluto, `..` encadeado, symlink, caminho UNC, byte nulo, unicode — não existe | `tests/test_vendor_caveman.py` |
+| Teste de traversal de caminho | EXISTE PARCIAL | A matriz encheu pela metade. Cobertos hoje, cada um com teste: caminho absoluto (`/etc/passwd`, `C:/Windows/x`), `..` encadeado (`a/../../fora.yaml`), symlink de arquivo e de pasta, junction do Windows, e caminho entregue de fora da raiz varrida. Continuam sem caso: **caminho UNC**, **byte nulo** e **unicode** — as três formas que dependem de como o sistema de arquivos normaliza, e que nenhum dos testes de hoje exercita | `tests/test_facts_scan.py` |
 | Robustez a arquivo malformado e a encoding inválido | EXISTE, com teste | Falha por arquivo nunca é fatal: `SyntaxError` e `UnicodeDecodeError` viram um fato `unresolved` para aquele arquivo e a varredura continua. Perder a árvore inteira por causa de um arquivo ruim seria o pior modo de falha de um analisador | `tests/test_fixtures_golden_graph.py` |
 | Verificação de ausência de egress | NÃO EXISTE | Nenhum teste observa syscall, socket ou DNS durante uma análise | — |
-| Teste de vazamento do banco | NÃO EXISTE | Não há banco de código para vazar; quando houver, o teste precisa existir antes | — |
-| Corpus de segredo | NÃO EXISTE | É a lacuna mais concreta desta seção: nenhum teste exercita o módulo canônico de segredo, e os casos que a SPEC enumera não estão cobertos por nenhuma das quatro implementações | — |
+| Teste de vazamento do banco | EXISTE PARCIAL | O banco existe, e três testes medem o que ele **não** guarda: `test_corpo_da_funcao_nao_chega_ao_banco`, `test_nenhum_no_carrega_corpo` e `test_schema_grava_a_versao_e_nao_grava_caminho_absoluto` — corpo de função, e caminho absoluto que nomearia o usuário e o diretório num arquivo copiável. O que falta é o teste adversarial: nenhum caso indexa uma árvore com segredo plantado num arquivo de nome inocente e depois procura esse segredo dentro do `.sqlite3` | `tests/test_codeintel_index.py` |
+| Corpus de segredo | EXISTE, com teste | Fechado pela fase J0. `tests/test_facts_secrets.py` é corpus parametrizado com positivo, positivo embutido no meio do valor, quase-positivo e dado legítimo, e ele cobra três invariantes que uma lista de casos sozinha não cobraria: todo padrão por valor tem positivo no corpus, `detectores()` nunca devolve o valor detectado, e `detectores()` e `looks_like_secret()` nunca divergem sobre o mesmo par | `tests/test_facts_secrets.py` |
 | Fuzzing de parser | NÃO EXISTE | Nenhuma suíte de entrada gerada, nem corpus de negação de serviço | — |
 
 ## 16. Supply chain
@@ -416,8 +420,8 @@ O que o SFCI acrescenta de verdade é curto e vale a pena:
   melhorar: um estimador conservador único, com nome único, já é ganho — e o ganho maior é
   deixar de ter quatro respostas para a mesma pergunta.
 - **Redução do custo do próprio envelope.** Ver a pré-condição de envelope, adiante.
-- **Uma superfície de tool que sabe economizar.** `detail_level` em zero e projeção de campo em
-  zero são economia disponível hoje, sem índice nenhum.
+- **Uma superfície de tool que sabe economizar.** `detail_level` deixou de ser zero na fase J1;
+  projeção de campo continua em zero, e é economia disponível hoje, sem índice nenhum.
 
 ### 2. O que já existe e deveria ser integrado, não escrito
 
@@ -435,8 +439,11 @@ A lista é longa, e é a maior parte da SPEC:
 - **Cache por hash de conteúdo**: `sparkforge/economy/cache.py:ArtifactCache`.
 - **Banco SQLite local e trace**: `sparkforge/observability/store.py`.
 - **Cadeia de autorização com classe, perfil e teto**: `sparkforge/agents/autonomy.py`.
-- **Resolução confinada de caminho**: `sparkforge/rules/loader.py:safe_catalog_file()` e a
-  guarda equivalente de `scripts/vendor_caveman.py`.
+- **Resolução confinada de caminho**: `sparkforge/paths.py:resolve_within()`, hoje a
+  implementação única que `rules/loader.py`, `knowledge_ref.py` e `agents/autonomy.py` chamam,
+  mais a guarda equivalente de `scripts/vendor_caveman.py`.
+- **Fronteira única de leitura**: `sparkforge/facts/scan.py:iter_source_files()`, com denylist,
+  poda de árvore de dependência, teto por tipo e recusa de atalho — e o índice já lê por ela.
 - **Núcleo comum CLI/MCP, envelope paginado, schema de saída validado contra a saída real**:
   `sparkforge/adapters/_core.py` e `sparkforge/adapters/tools.py`.
 - **Conteúdo de terceiro como dado não confiável**: já é invariante travado, com teste que
@@ -448,25 +455,26 @@ o erro que a duplicação de detector de segredo já cobra caro.
 
 ### 3. O que precisa vir ANTES do índice
 
-Persistir código de cliente em disco muda a natureza do risco, e três coisas passam a ser
-pré-condição, não melhoria:
+Persistir código de cliente em disco muda a natureza do risco, e três coisas eram pré-condição,
+não melhoria. **As três foram pagas antes de o primeiro byte de código ir para o disco**, e
+esta seção fica como registro da ordem, não como pendência:
 
-- **Política de git para o estado local, antes de existir estado local.** Hoje
-  `.sparkforge/traces.db` e `.sparkforge/cache/` não estão ignorados — só
-  `.sparkforge/artifacts/*` está. Um banco com símbolo e snippet de código proprietário no
-  mesmo diretório, sob essa política, é commitável por acidente num repositório que pode ser
-  público. Esta é a linha mais barata do documento inteiro e a de maior consequência.
-- **Sandbox de filesystem aplicado ao alvo da análise.** O algoritmo já está escrito em
-  `safe_catalog_file`; o que falta é aplicá-lo onde o caminho vem de fora. Junto com ele vêm a
-  denylist e a exclusão de árvore de dependência: hoje a varredura entra em `.venv/`,
-  `node_modules/` e `vendor/` e lê qualquer `*.json` que encontrar, o que é ao mesmo tempo custo
-  de token e superfície de vazamento. Sem índice isso já é ruim; com índice, vira persistência
-  de credencial.
-- **Firewall de segredo que funcione por valor.** As quatro implementações atuais só pegam
-  access key da AWS e senha em URL sem ajuda do nome da chave. Um índice que persista snippet
-  vai persistir o PAT, o JWT e a chave privada que elas não veem. Consolidar as quatro numa e
-  acrescentar os detectores por valor **precisa** vir antes de o primeiro byte de código ir para
-  o disco — e com corpus de teste, que hoje é zero.
+- **Política de git para o estado local, antes de existir estado local.** Paga na fase J0:
+  `.sparkforge/traces.db`, `.sparkforge/cache/` e `.sparkforge/local/` entraram no `.gitignore`
+  antes de existir banco de índice, e o default do banco aponta para dentro de `local/`.
+  Continua sendo a linha mais barata do documento inteiro e a de maior consequência — e a
+  regra em si ainda não tem gate próprio, ao contrário do que ela protege.
+- **Sandbox de filesystem aplicado ao alvo da análise.** Paga na fase J0: o algoritmo virou
+  `sparkforge/paths.py:resolve_within()`, a varredura virou
+  `sparkforge/facts/scan.py:iter_source_files()` com denylist, poda de árvore de dependência,
+  teto por tipo e recusa de atalho, e `sparkforge/codeintel/index.py` lê por essa mesma
+  fronteira em vez de reimplementá-la. O que sobrou não é pré-condição de índice: é detecção
+  de binário, sinal de que algo foi pulado, e o confinamento da **raiz** que a tool recebe.
+- **Firewall de segredo que funcione por valor.** Pago na fase J0: as cópias privadas foram
+  removidas, um gate estrutural por AST impede a próxima, e os padrões por valor — AWS,
+  GitHub, JWT, PEM, Slack — deixaram de depender do nome da chave. O corpus de teste, que era
+  zero, existe. Faltam da lista da SPEC OAuth client secret, Bearer token e alta entropia como
+  gatilho independente.
 
 Há uma quarta pré-condição, de contrato e não de segurança: **o custo do envelope**. Na fixture
 `clean_job`, o payload de fatos é várias vezes o tamanho do fonte, e a maior fatia disso não é dado
@@ -475,14 +483,14 @@ por fato, mais `schema_version` copiado junto. Um objeto de contexto que herde e
 nasce caro pelo mesmo motivo. A correção é estrutural e independe do índice: procedência
 declarada uma vez por artefato, referenciada por chave nos fatos.
 
-E um limite que precisa ser resolvido ou aceito por escrito: [`AUTHORIZATION-CHAIN.md`](AUTHORIZATION-CHAIN.md)
-registra que `authorize()` autoriza um **nome**, nunca uma **chamada** — a assinatura não recebe
-os argumentos da tool. As onze tools novas da SPEC recebem caminho, e é o caminho que decide se
-a chamada é legítima. A resposta da SPEC (resolução segura de caminho e denylist) resolve
-**dentro** da tool, depois que a autorização já disse sim; a cadeia continua não vendo o
-argumento. Fechar isso é mudança de assinatura de `authorize()` mais um ponto de checagem antes
-da execução — trabalho pequeno, decisão de arquitetura grande, e ele não pertence à fase de
-índice: pertence à fase de segurança, antes dela.
+E um limite que era de projeto e virou de fiação: [`AUTHORIZATION-CHAIN.md`](AUTHORIZATION-CHAIN.md)
+registrava que `authorize()` autorizava um **nome**, nunca uma **chamada**. A assinatura passou a
+receber `arguments` e `root`, e a decisão carrega `checked_arguments` para que "autorizado sem
+olhar argumento" não se confunda com "autorizado tendo olhado". O que não mudou é que **ninguém
+chama**: nenhum dos quatro caminhos de execução consulta a cadeia antes de executar, então uma
+tool continua recebendo o caminho que quiserem passar. Fechar isso deixou de ser decisão de
+arquitetura e passou a ser um ponto de checagem antes da execução — e ele continua pertencendo à
+fase de segurança, não à de índice.
 
 ### 4. O que NÃO fazer, e por quê
 
@@ -521,16 +529,17 @@ recuperação, MCP e CLI, integração, e daí em diante. A medição concorda c
 em três pontos.
 
 **Concorda com segurança antes de tudo, e por razão mais forte que a da SPEC.** A SPEC põe
-segurança antes por princípio; aqui há dívida medida. As quatro cópias de detector de segredo
-sem teste, a ausência de denylist, a varredura que entra em `.venv/` e a linha que falta no
-`.gitignore` são problemas de **hoje**, que existem sem SFCI nenhum. A fase de segurança não é
-preparação para o índice — é conserto do que já está aberto.
+segurança antes por princípio; aqui havia dívida medida — detector de segredo duplicado e sem
+teste, ausência de denylist, varredura entrando em `.venv/`, estado local fora do `.gitignore`.
+Eram problemas daquele dia, que existiam sem SFCI nenhum, e a ordem provou estar certa: a fase
+J0 foi conserto do que já estava aberto, e o índice das fases seguintes nasceu lendo pela
+fronteira que ela deixou pronta, em vez de abrir a sua.
 
-**Diverge na fase de AST.** A SPEC trata o extractor de Python e PySpark como fase inteira. Aqui ela
-é quase toda dívida já paga: o extractor existe, com golden por fixture, e o que falta (classe,
-import, qualified name) é incremento sobre uma varredura pronta. Essa fase deve encolher e
-mudar de conteúdo — de "escrever extractor" para "acrescentar os nós que faltam e ligar
-`call_graph.py` ao índice".
+**Diverge na fase de AST.** A SPEC trata o extractor de Python e PySpark como fase inteira. A
+divergência se confirmou na prática: a fase J3 acrescentou nó de classe, nome qualificado e
+assinatura normalizada em cima da varredura já existente, e não escreveu extractor nenhum do
+zero. O que resta dessa fase é o que ela deixou de propósito — import, hierarquia de tipo, e
+ligar `call_graph.py` ao índice.
 
 **Diverge na ordem entre armazenamento e conserto do envelope.** A SPEC constrói o armazenamento
 e só depois, na fase de recuperação, chega ao orçamento de token. A medição sugere o contrário:
@@ -540,26 +549,244 @@ nenhum, e é medível antes e depois — é a primeira coisa a fazer depois da s
 quarta.
 
 **Diverge por acrescentar uma fase zero que a SPEC não tem.** Antes de qualquer código de
-índice, há economia disponível sem índice: nem controle de verbosidade nem projeção de campo
-existem em tool nenhuma, e paginação existe em **22** — metade do catálogo devolve tudo, no mesmo
-detalhe. Consolidar os quatro estimadores de token e os três empacotadores de contexto entra
-aqui também. É a fase mais barata, a mais fácil de medir, e a única que dá ganho no dia em que
-for entregue.
+índice havia economia disponível sem índice. A fase J1 entregou metade dela: controle de
+verbosidade existe hoje nas tools que devolvem facts, e procedência deixou de ser copiada fato a
+fato. A outra metade continua parada — projeção de campo não existe em tool nenhuma, paginação
+existe em **22** delas, e os quatro estimadores de token e os três empacotadores de contexto
+continuam sendo quatro e três.
 
-Ordem que a medição sugere, então:
+Ordem que a medição sugeriu, com o que as fases J0 a J3 fizeram dela:
 
-1. **Consertar o que já está aberto**: unificar o detector de segredo com corpus de teste,
-   fechar a política de git do estado local, aplicar confinamento de caminho e denylist na
-   varredura, excluir árvore de dependência.
-2. **Baratear o que já é devolvido**: procedência declarada uma vez por artefato,
-   `detail_level` e projeção de campo nas tools existentes, um estimador de token só.
-3. **Decidir a cadeia de autorização**: `authorize()` passa a ver argumento, ou o limite é
-   aceito por escrito com a compensação nomeada.
-4. **Persistir**: banco, schema, índice completo e incremental, FTS — sobre a extração que já
-   existe, não sobre uma nova.
-5. **Consultar por símbolo**: recuperação, ranking e objeto de contexto, consolidando os três
-   empacotadores em vez de somar um quarto.
-6. **Só então superfície nova de tool**, e o mínimo possível dela.
+1. **Consertar o que já estava aberto** — feito. Detector de segredo unificado com corpus,
+   política de git do estado local fechada, denylist e poda de árvore de dependência na
+   varredura, confinamento aplicado dentro dela.
+2. **Baratear o que já é devolvido** — metade feita. `detail_level` e procedência por
+   referência existem; projeção de campo e o estimador único de token, não.
+3. **Decidir a cadeia de autorização** — decidido, não ligado. `authorize()` passa a ver
+   argumento; nenhum caminho de execução o consulta.
+4. **Persistir** — feito na parte completa, aberto na incremental. Banco, schema, FTS e índice
+   de árvore inteira existem; reindexação parcial não.
+5. **Consultar por símbolo** — começado. Busca por nome existe; ranking com proximidade de
+   grafo e objeto de contexto canônico, não.
+6. **Só então superfície nova de tool** — não começado, e é decisão registrada: os três verbos
+   `code` ficam no CLI enquanto o índice não souber dizer que envelheceu.
 
 O restante da ordem da SPEC — worktree, lineage de SQL, hardening, MCP 2026, linguagens
-adicionais — a medição não contesta.
+adicionais — a medição não contesta, e a seção seguinte diz o que sobrou de cada uma.
+
+---
+
+## O que a SPEC ainda pede, depois das fases J0 a J3
+
+As fases J0 a J3 fecharam parte do que este mapa classificava como ausente, e a tabela acima já
+foi reclassificada contra o repositório de hoje. Esta seção existe para a pergunta seguinte, que
+é a de planejamento: **agrupado pelas fases que a SPEC ordena, o que continua ausente ou
+parcial?** Toda linha citada aqui aparece na tabela correspondente, com módulo e teste; nada
+entra aqui que não esteja lá.
+
+Uma advertência sobre como ler: "parcial" não é meio caminho uniforme. Há parcial que é
+acabamento — falta um caso na matriz de teste — e há parcial que é a metade difícil ainda
+inteira, como indexação incremental. A diferença está escrita em cada linha da tabela, e é ela
+que decide esforço, não a palavra.
+
+### Fase de ADR e threat model
+
+Continua **inteira**, e é a única das doze em que nada foi entregue.
+
+- **Threat model escrito, com ameaça numerada e proteção** — nenhum documento do repositório
+  enumera ameaça contra repositório malicioso. `AUTHORIZATION-CHAIN.md` e `UNTRUSTED-CONTENT.md`
+  cobrem uma fronteira cada, e nenhum dos dois é um threat model.
+- **Política de retenção de source**, parcial: a decisão está tomada no schema — o banco não tem
+  coluna de corpo — e não está escrita como política. É a metade que pertence a esta fase.
+
+O custo de ela não existir já apareceu: a fase J3 tomou decisões de retenção (sem corpo, sem
+caminho absoluto, assinatura sanitizada) dentro do módulo que as implementa, uma a uma. Elas
+estão certas e estão dispersas, e não há documento contra o qual conferir a próxima.
+
+### Fase de fundação de segurança
+
+A mais avançada das doze, e o que sobra dela é de dois tipos: o que ficou parcial de propósito,
+e o que nunca foi tocado.
+
+Parcial:
+
+- **Confinamento de caminho vindo de fora do processo** — a verificação existe em `authorize()`
+  e está desligada, porque nenhum caminho de execução chama a cadeia. É a linha mais próxima de
+  fechar, e a que mais muda o risco real.
+- **Source read-only** e **Zero network egress** — os dois seguem sendo invariante sem
+  enforcement de runtime: nenhum audit hook, nenhum bloqueio de socket, nenhuma varredura que
+  afirme que nada escreve no source.
+- **Algoritmo de resolução segura de caminho** e **Limite de tamanho por arquivo** — falta o
+  mesmo item nos dois: **detecção de conteúdo binário** antes de decodificar.
+- **Arquivo classificado sensível sai inteiro do índice** — a classificação é por nome, nunca
+  por conteúdo, e a recusa é muda.
+- **Detectores que a SPEC enumera** — faltam OAuth client secret, Bearer token e alta entropia
+  como gatilho independente.
+- **`offline-strict` como perfil com matriz ALLOW/DENY declarada** e **`aws-readonly` como
+  perfil** — existe a regra, não existe a matriz como dado.
+- **`.sparkforge/local/` fora do git** — a regra existe no `.gitignore` e nenhum teste a tranca.
+
+Não tocado:
+
+- **`sanitize_environment`, `install_audit_hook`, `apply_resource_limits`,
+  `lock_security_profile`** — nenhum dos quatro.
+- **Separação: quem devolve source não tem AWS** — o mesmo processo continua fazendo as duas
+  coisas.
+- **Sem herança de credencial em worker de parsing** — não há worker, então não há sanitização
+  de ambiente.
+- **Permissão restrita de diretório e arquivo, com umask** — nada no repositório define
+  permissão de arquivo criado, e agora existe um arquivo de banco para o qual isso importa.
+- **Rótulo de confiança no objeto devolvido** e **detector de conteúdo com forma de instrução**
+  — as duas linhas de defesa contra injeção que dependem de marcar, e não de estruturar.
+
+E duas linhas de injeção que estão parciais pelo mesmo motivo — a garantia é estrutural, e a
+política que a declararia não existe:
+
+- **Corpus de injeção exercitado ponta a ponta** — há um caso, e ele prova a fronteira certa.
+  Um caso não é corpus.
+- **Comentário e docstring fora do dado devolvido** — nenhum extrator emite comentário ou
+  docstring, mas isso é consequência do que eles observam, não política: não há
+  `include_comments` para desligar, porque não existe o caminho que os ligaria.
+
+### Fase de armazenamento e índice
+
+Entregue na parte completa, aberta na incremental.
+
+- **Banco com schema versionado, migrations e locking**, parcial — o schema é versionado e
+  ninguém lê a versão para migrar; o `busy_timeout` é espera de escritor do SQLite e não guarda
+  contra duas indexações concorrentes.
+- **Taxonomia de aresta**, parcial — não há tabela `edges`, por decisão registrada: aresta exige
+  resolver referência, e o que fazer com o que não resolve é a decisão difícil.
+- **Índice FTS sobre símbolo e signature**, parcial — o FTS cobre nome e nome qualificado; a
+  assinatura está guardada e não é buscável.
+- **Índice persistente, completo e incremental**, parcial — completo existe, incremental não.
+- **Sinal de staleness por arquivo**, parcial — o sha por arquivo está gravado e nada o compara
+  com o disco.
+- **Strict tree, fingerprint de worktree, namespace por branch** — ausente. O digest de raiz que
+  existe responde outra pergunta, e nem sequer é conferido na leitura.
+
+### Fase de AST de Python e PySpark
+
+A que mais encolheu, e por isso a que mais precisa ser reescrita antes de virar plano.
+
+- **Símbolos gerais de Python**, parcial — classe, método, função aninhada e nome qualificado
+  existem; **grafo de import** e **hierarquia de tipo** não.
+- **Grafo de dados tabela → job → tabela**, parcial — os dois lados existem como fato solto e
+  nada os liga numa estrutura consultável.
+- **Identificador de tabela reconhecido no código**, parcial — não existe nó de tabela nem
+  consulta por tabela.
+- **Lineage de DataFrame variável a variável** — ausente: a cadeia de método dentro de uma
+  expressão é entendida, o valor que passa de uma variável a outra não.
+- **Workers de parsing isolados, autenticados, com limite** — ausente, e é a linha desta fase
+  que pertence tanto aqui quanto à fase de segurança.
+- **Ciclo de vida da recuperação de source** — ausente. Nó, arquivo, leitura de faixa confinada,
+  trecho temporário e resposta, com o trecho sumindo ao fim: nada disso existe, e é a linha que
+  a política de retenção da primeira fase precisa cobrir antes de alguém escrevê-la.
+
+### Fase de recuperação
+
+O eixo de consulta por símbolo abriu; o resto da fase continua fechado.
+
+- **Escore composto de recuperação** — o escore de hoje tem relevância do FTS e desempate por
+  posição. Proximidade no grafo, relevância de entrypoint e de lineage não existem porque não
+  existe o grafo sobre o qual medi-las. Depende de `edges`.
+- **Objeto de contexto canônico** — ausente, e a advertência da seção *O que NÃO fazer* vale
+  inteira: consolidar os três empacotadores existentes, nunca somar um quarto.
+- **Expansão determinística de query por dicionário versionado** — ausente.
+- **Teto duro de token na saída, e ordem de redução declarada** — a paginação limita quantidade
+  de itens, não tamanho.
+- **Estimador de token local, conservador, sem download**, parcial — continua havendo quatro, e
+  elas divergem no arredondamento.
+
+E a fase carrega o que mede se ela deu certo, que também não existe:
+
+- **Corpus de query de referência** — as perguntas que a SPEC enumera não existem como corpus.
+- **Gold set com símbolo e arquivo exigidos por query** — consequência da linha acima.
+- **Gate de recall e de economia** — nenhuma medição de recuperação, portanto nenhum piso. É a
+  linha que faria a reivindicação de economia valer, e sem ela "economizamos quase tudo" é a
+  classe de alegação que o gate de lastro deste repositório existe para recusar.
+
+### Fase de MCP e CLI
+
+Praticamente intocada, e boa parte disso é decisão, não pendência.
+
+- **As tools `sparkforge_code_*`** — nenhuma das onze, e a ausência está registrada com razão:
+  toda tool do catálogo é sem estado, e estas dependeriam de um índice que envelhece sem avisar.
+  Fechar a linha de staleness é pré-condição desta.
+- **Projeção de campo na resposta** — ausente, medido no catálogo carregado.
+- **Entrada fechada a propriedade desconhecida** — nenhum schema declara
+  `additionalProperties: false`.
+- **Controle de verbosidade na resposta**, parcial — existe nas tools que devolvem facts, não
+  nas que devolvem findings ou regras.
+- **Comandos `code init`, `code doctor`, `code purge`** e **hash canônico do catálogo de tools**
+  — ausentes; `doctor` depende do manifesto que também não existe.
+- **Poucas tools compondo operações internamente** — a SPEC pede o oposto da estratégia atual, e
+  isso é divergência de arquitetura a decidir, não trabalho a agendar.
+
+### Fase de integração com SparkForge
+
+A única em que a tabela não registra nenhuma pendência: motor de regras, case retomável,
+contexto de runtime, gold set por cenário e julgador único estão todos com teste. O que a
+integração ainda não tem é **objeto** — o índice não alimenta o motor de regras, porque o motor
+consome fato e o índice devolve símbolo. Ligar os dois pertence à fase de recuperação, não a
+esta.
+
+### Fase de worktree
+
+Inteira. **Strict tree, fingerprint de worktree, namespace por branch** e **contexto do que
+mudou, e teste afetado** são as duas linhas, e as duas estão ausentes. A segunda depende da
+primeira, e as duas dependem de indexação incremental — é a fase mais bloqueada do conjunto.
+
+### Fase de lineage de SQL e de dados
+
+Parcial em tudo, ausente em nada. O extractor de SQL entrega predicado e projeção com golden; o
+que falta é o mesmo item que falta na fase de AST — a estrutura consultável que ligue leitura,
+escrita e transformação. Enquanto `edges` não existir, esta fase não tem onde escrever.
+
+### Fase de hardening
+
+Inteira, e ela se divide em duas metades independentes.
+
+- Runtime: **modo hardened em Linux com namespace de rede isolado**, os quatro primitivos de
+  travamento de perfil, **verificação de ausência de egress** e **fuzzing de parser**.
+- Supply chain: **SBOM**, **lock reprodutível com instalação frozen no CI**, **`pip-audit` ou
+  OSV no CI** e **proibição explícita de download em runtime como regra escrita**.
+
+Dois testes desta fase estão parciais e não ausentes, e a diferença importa para orçar:
+**teste de traversal de caminho** tem a metade da matriz e falta caminho UNC, byte nulo e
+unicode; **teste de vazamento do banco** mede o que o banco não guarda e falta o caso
+adversarial com segredo plantado. Some-se **benchmark de latência com percentil**, ausente — o
+benchmark que existe compara duas execuções de job Spark, que é outra coisa.
+
+A metade de supply chain não depende de nada do índice e pode andar sozinha a qualquer momento.
+
+### Fase de MCP 2026
+
+Intocada de propósito. A SPEC a coloca por último e a medição concorda: é breaking, tem ADR
+próprio a escrever, e contaminaria a entrega do índice com um risco que não é dele.
+
+### Fase de linguagens adicionais
+
+Intocada, e sem linha própria na tabela — o extractor de hoje lê Python, e a varredura declara
+`.py` e `.tf` como as extensões que o motor existe para ler. Acrescentar linguagem é trabalho
+sobre a fronteira que já existe, e ele só faz sentido depois de `edges`, porque uma linguagem
+nova sem aresta acrescenta símbolo e não acrescenta resposta.
+
+### O que este agrupamento sugere para o próximo plano
+
+Três leituras saem daqui, e as três são de ordenação, não de conteúdo:
+
+**Uma linha destrava mais do que qualquer outra: `edges`.** Escore composto, lineage de SQL,
+grafo de dados, identificador de tabela, impacto e as tools `code` dependem dela, direta ou
+indiretamente. Ela é também a linha que a medição de bytes desta página já apontava: o índice
+não se paga contra `grep` para busca por nome, e se paga em pergunta que `grep` não responde sem
+parse — que é exatamente o que a aresta permite perguntar.
+
+**Uma linha destrava a superfície de tool: staleness.** As onze tools estão bloqueadas por uma
+razão escrita, e a razão é que índice velho responde "nenhum símbolo" com a mesma cara com que
+responde sobre símbolo inexistente. O material para resolver isso já está no banco — sha,
+tamanho e mtime por arquivo. Falta a comparação.
+
+**Uma metade de fase pode andar sozinha, hoje, sem depender de nada:** supply chain. SBOM, lock
+frozen e auditoria de dependência no CI não tocam índice, não tocam extractor e não tocam
+catálogo de tool. É a única parte do que sobrou que não espera por outra.
