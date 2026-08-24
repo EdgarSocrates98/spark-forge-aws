@@ -216,6 +216,25 @@ _INDICES = (
     "CREATE INDEX IF NOT EXISTS idx_nodes_file_id ON nodes(file_id)",
     "CREATE INDEX IF NOT EXISTS idx_nodes_qualified_name ON nodes(qualified_name)",
     "CREATE INDEX IF NOT EXISTS idx_unresolved_file_id ON unresolved_refs(file_id)",
+    # Este NAO e para consulta -- e para o CASCADE. Toda coluna que REFERENCIA
+    # outra tabela e varrida a cada DELETE no pai, e sem indice essa varredura e
+    # da tabela inteira, por linha apagada. MEDIDO neste repositorio, indexando
+    # duas vezes seguidas (a segunda apaga 6028 nos e 10781 pontos cegos):
+    #
+    #     sem idx_unresolved_source_id   10.4 s
+    #     com idx_unresolved_source_id    3.5 s
+    #
+    # 6028 nos x 10781 linhas varridas e o custo inteiro. `edges` ja escapava
+    # disso pelos dois indices de travessia -- que existem por outro motivo e
+    # cobrem este por acidente. `unresolved_refs.source_id` nao tinha nenhum, e
+    # a fatura so aparece na SEGUNDA indexacao, que e a comum.
+    #
+    # NENHUM TESTE MATA ESSA MUTACAO, pelo mesmo motivo que o `BEGIN`/`COMMIT`
+    # de `index.py`: apagar esta linha deixa a suite inteira verde, porque a
+    # propriedade que ela quebra e desempenho e teste de tempo e instavel.
+    # Medido: 15 mutacoes, 11 mortas, e esta e uma das 4 que sobreviveram. O
+    # registro aqui e o que substitui o teste que nao existe.
+    "CREATE INDEX IF NOT EXISTS idx_unresolved_source_id ON unresolved_refs(source_id)",
     # As tres colunas por onde a travessia entra, cada uma LIDERANDO um indice.
     # `callees` filtra por `source_id`, `chamadores` por `target_id`, e o corte
     # por tipo de aresta por `kind`. Coluna lider e o que decide se o planejador

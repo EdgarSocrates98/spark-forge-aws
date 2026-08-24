@@ -11,6 +11,7 @@ responder; se sumir, a analise continua igual e o indice se reconstroi.
 
 from sparkforge.codeintel.db import BANCO_PADRAO
 from sparkforge.codeintel.extract import No, extrair_nos
+from sparkforge.codeintel.graph import NoDoGrafo, chamadores, chamados, impacto
 from sparkforge.codeintel.ids import node_id, normalizar_assinatura
 from sparkforge.codeintel.index import Resultado, indexar
 from sparkforge.codeintel.refs import Referencia, extrair_referencias
@@ -20,11 +21,15 @@ __all__ = [
     "BANCO_PADRAO",
     "Achado",
     "No",
+    "NoDoGrafo",
     "Referencia",
     "Resultado",
     "buscar",
+    "chamadores",
+    "chamados",
     "extrair_nos",
     "extrair_referencias",
+    "impacto",
     "indexar",
     "node_id",
     "normalizar_assinatura",

@@ -47,6 +47,52 @@ sobrariam no orfao E aresta orfa.
 `symbols_fts` NAO cai junto: FTS5 e tabela virtual e chave estrangeira nao a
 alcanca. Ela e limpa na mao, e esquecer isso deixaria o indice respondendo busca
 com no que nao existe mais.
+
+A RESOLUCAO ACONTECE DEPOIS DO ULTIMO ARQUIVO, E NAO A CADA UM
+--------------------------------------------------------------
+`resolve.resolver` pergunta ao catalogo se um nome tem candidato UNICO, e a
+resposta so e verdadeira quando todos os nos ja estao no banco. Resolvendo
+arquivo a arquivo, `processar()` chamada no primeiro arquivo viraria
+`NO_CANDIDATE` porque a definicao dela ainda nao teria sido lida, e a mesma
+chamada no ultimo viraria aresta -- a taxa de resolucao passaria a depender da
+ORDEM da varredura, calada. Por isso as referencias sao acumuladas em memoria e
+a resolucao roda uma vez, dentro da mesma transacao.
+
+O PRECO DISSO E UMA SEGUNDA PASSAGEM DE `ast.parse`, E ELE FOI MEDIDO
+---------------------------------------------------------------------
+`extrair_nos_ou_none` e `extrair_referencias` recebem FONTE, e cada uma parseia.
+Medido sobre este repositorio, na MESMA maquina e na mesma sessao -- as duas
+versoes lado a lado, banco novo a cada rodada, tres rodadas de cada:
+
+    so nos (a versao anterior)    1.889 / 2.058 / 1.974 s
+    nos + referencias + arestas   3.651 / 3.632 / 3.515 s   (1.8x)
+
+Lado a lado de proposito: comparar com o 1.35 s que esta na docstring de
+`indexar` mediria a maquina, nao a mudanca.
+
+Nao e desperdicio invisivel: esta dito aqui porque o conserto -- parsear uma vez
+e passar a arvore para as duas -- muda a assinatura de dois modulos que J4 nao
+abriu, e fazer isso de improviso trocaria uma medicao por um refactor sem teste.
+Fica registrado como preco conhecido, nao como surpresa.
+
+A SEGUNDA INDEXACAO CUSTAVA 3x A PRIMEIRA, E O MOTIVO NAO ERA O `ast`
+----------------------------------------------------------------------
+Medido logo depois de ligar as arestas, indexando a mesma arvore quatro vezes
+seguidas no mesmo banco:
+
+    1a (banco vazio)   3.417 s
+    2a                 9.345 s
+    3a                10.444 s
+    4a                10.662 s
+
+A causa nao esta neste modulo: `unresolved_refs.source_id` referenciava
+`nodes(id)` sem indice, e o `DELETE FROM files` do inicio faz o CASCADE varrer a
+tabela inteira UMA VEZ POR NO apagado -- 6028 x 10781. Com
+`idx_unresolved_source_id` (ver `db.py`) a segunda indexacao passou a custar
+3.815 / 3.993 / 3.844 s, igual a primeira. Fica registrado aqui porque foi esta
+mudanca que criou a fatura, e porque a forma dela -- lenta so a partir da
+SEGUNDA vez -- e a que nao aparece em teste de tmpdir, onde o banco e sempre
+novo.
 """
 
 from __future__ import annotations
@@ -61,6 +107,8 @@ from pathlib import Path
 from sparkforge.codeintel.db import abrir, criar_schema
 from sparkforge.codeintel.extract import No, extrair_nos_ou_none
 from sparkforge.codeintel.ids import node_id
+from sparkforge.codeintel.refs import Referencia, extrair_referencias
+from sparkforge.codeintel.resolve import Resolucao, catalogo_do_banco, resolver
 from sparkforge.facts.scan import iter_source_files
 
 _PADRAO = "*.py"
@@ -85,17 +133,36 @@ class Resultado:
     nos: int
     ilegiveis: int
     duracao_s: float
+    # As duas metades do contrato de J4, juntas de proposito. `arestas` sozinha
+    # nao diz se a resolucao foi boa: 100 arestas sobre 120 chamadas e outra
+    # coisa que 100 sobre 3000, e so a segunda metade distingue as duas.
+    arestas: int
+    nao_resolvidas: int
 
 
 def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resultado:
     """Indexa todo `*.py` sob `raiz` no banco `banco`, e devolve o que aconteceu.
 
-    MEDIDO sobre este proprio repositorio, tres rodadas seguidas, resultado
-    identico nas tres:
+    MEDIDO sobre este proprio repositorio, quatro rodadas seguidas no mesmo
+    banco, resultado identico nas quatro:
 
-        378 arquivos, 5754 nos, 1 ilegivel
-        1.352 s / 1.349 s / 1.335 s
-        3 514 368 bytes de `.sqlite3` (3 432 KiB)
+        391 arquivos, 6029 nos, 1 ilegivel
+        8899 arestas, 10784 referencias nao resolvidas
+        3.506 / 3.687 / 3.682 / 3.462 s
+        8 437 760 bytes de `.sqlite3` (8 240 KiB)
+
+    Os pontos cegos, por motivo, na mesma medicao:
+
+        UNKNOWN_RECEIVER   9902   `df.x()` com tipo de `df` desconhecido
+        NO_CANDIDATE        626
+        AMBIGUOUS           144
+        NO_SOURCE_NODE      112   chamada no topo do modulo
+
+    Sao 54.8% das chamadas que produziram aresta OU ponto cego. Contando como
+    `Resolucao.taxa_de_resolucao` conta -- com os 4375 builtins no denominador,
+    porque `len` resolvido pelo interpretador nao e ponto cego mas tambem nao e
+    aresta -- a taxa e 37.0%. Os dois numeros ficam porque eles respondem
+    perguntas diferentes, e publicar so o maior seria escolher o mais confortavel.
 
     O unico ilegivel e `fixtures/graph/fonte_que_nao_compila/input/
     carga_quebrada.py`, fixture deliberada -- nao ha ilegivel por acidente, e
@@ -108,16 +175,25 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
     com prova que executa, esta em `docs/harness/CODEINTEL-GAP.md`.
 
     Onde os bytes moram, medido derrubando uma tabela por vez e comparando o
-    VACUUM (3 411 968 bytes compactado):
+    VACUUM (7 708 672 bytes compactado). O `nodes` que era 63% do arquivo agora
+    e 29%: as duas metades do contrato de J4 juntas custam mais que ele:
 
-        nodes         2 142 208 bytes   63%
-        symbols_fts   1 110 016 bytes   33%
-        o resto         159 744 bytes    5%
+        nodes             2 240 512 bytes   29.1%
+        unresolved_refs   2 228 224 bytes   28.9%
+        edges             1 867 776 bytes   24.2%
+        symbols_fts         802 816 bytes   10.4%
+        files               114 688 bytes    1.5%
 
-    Sao esses numeros que decidem se a fase incremental (J4) vale a pena, e
-    eles dizem que ela NAO e urgente: reindexar tudo custa 1.4 s e 3.4 MiB.
-    Incremental so se paga em arvore onde isso doa, e este repositorio nao e
-    uma.
+    `unresolved_refs` custar o mesmo que `nodes` e o preco de contar ponto cego
+    em vez de descarta-lo, e ele esta pago de proposito: 10784 linhas que dizem
+    o que o indice NAO sabe valem mais que 2 MiB economizados fingindo que ele
+    sabe tudo.
+
+    Sao esses numeros que decidem se a fase incremental vale a pena, e
+    eles dizem que ela ficou MENOS folgada: reindexar tudo custava 1.4 s e
+    3.4 MiB, e agora custa 3.5 s e 8.0 MiB. Ainda nao e urgente nesta arvore --
+    3.5 s e o tempo de um `pytest` curto --, mas o fator entre as duas medicoes
+    e o que decide quando ela passa a ser.
 
     Arquivo que nao parseia entra em `ilegiveis` e a varredura SEGUE. Um
     repositorio de cliente tem arquivo com sintaxe de outra versao, template com
@@ -130,6 +206,7 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
     arquivos = 0
     ilegiveis = 0
     total_de_nos = 0
+    referencias_por_arquivo: dict[str, list[Referencia]] = {}
 
     conexao = abrir(banco)
     try:
@@ -152,6 +229,11 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
                     continue
                 _gravar(conexao, relativo, dados, modificado_ns, nos)
                 total_de_nos += len(nos)
+                # So depois de `nos is None` ficar para tras: arquivo que nao
+                # parseia nao tem referencia para extrair, e `extrair_referencias`
+                # devolveria lista vazia sem dizer por que.
+                referencias_por_arquivo[relativo] = extrair_referencias(fonte, relativo)
+            resolucao = _gravar_arestas(conexao, referencias_por_arquivo)
             conexao.execute("COMMIT")
         except BaseException:
             # O `ROLLBACK` nao pode mascarar a causa. Se o proprio `COMMIT`
@@ -171,6 +253,8 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
         nos=total_de_nos,
         ilegiveis=ilegiveis,
         duracao_s=time.perf_counter() - inicio,
+        arestas=len(resolucao.arestas),
+        nao_resolvidas=len(resolucao.nao_resolvidas),
     )
 
 
@@ -258,6 +342,67 @@ def _gravar(
         "INSERT INTO symbols_fts (node_id, name, qualified_name) VALUES (?, ?, ?)",
         [(linha[0], linha[3], linha[4]) for linha in linhas],
     )
+
+
+def _gravar_arestas(
+    conexao: sqlite3.Connection,
+    referencias_por_arquivo: dict[str, list[Referencia]],
+) -> Resolucao:
+    """Resolve tudo de uma vez e grava as DUAS metades do contrato.
+
+    As duas, e nao so `edges`. Gravar aresta e descartar o que nao resolveu
+    deixaria o indice com uma cobertura desconhecida: uma travessia que devolve
+    lista vazia seria indistinguivel de "ninguem chama isto" e de "a resolucao
+    nao alcancou isto", e essa confusao e o defeito que `unresolved_refs` existe
+    para nao ter.
+
+    Nao ha `DELETE FROM edges` nem `DELETE FROM unresolved_refs` aqui, e a
+    ausencia e deliberada: o `DELETE FROM files` do inicio da transacao ja
+    levou os nos por CASCADE, e as arestas junto com eles no segundo salto da
+    cadeia. Um DELETE a mais aqui esconderia a dependencia em `foreign_keys`
+    efetivo -- se ele falhasse, o indice acumularia orfao e nada acusaria.
+    `test_reindexar_nao_acumula_aresta_nem_ponto_cego` e o que prende isso.
+
+    `file_id` e recalculado a partir de `NaoResolvida.caminho` em vez de
+    carregado no dataclass: `resolve.py` nao conhece o esquema de id de arquivo,
+    e faze-lo conhecer poria a mesma regra em dois modulos -- bastaria um deles
+    mudar para `unresolved_refs` apontar para `files` que nao existe, e a chave
+    estrangeira derrubaria a indexacao inteira.
+    """
+    catalogo = catalogo_do_banco(conexao)
+    resolucao = resolver(referencias_por_arquivo, catalogo)
+
+    conexao.executemany(
+        "INSERT INTO edges (source_id, target_id, kind, line, confidence)"
+        " VALUES (?, ?, ?, ?, ?)",
+        [
+            (
+                aresta.source_id,
+                aresta.target_id,
+                aresta.kind,
+                aresta.line,
+                aresta.confidence,
+            )
+            for aresta in resolucao.arestas
+        ],
+    )
+    conexao.executemany(
+        "INSERT INTO unresolved_refs"
+        " (source_id, reference_name, reference_kind, file_id, line, reason)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        [
+            (
+                nao.source_id,
+                nao.reference_name,
+                nao.reference_kind,
+                id_de_arquivo(nao.caminho),
+                nao.line,
+                nao.reason,
+            )
+            for nao in resolucao.nao_resolvidas
+        ],
+    )
+    return resolucao
 
 
 def id_de_arquivo(relativo: str) -> str:
