@@ -3075,13 +3075,13 @@
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "147,9"
+          "value": "148,0"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "147,9",
+      "text": "148,0",
       "type": "number"
     },
     {
@@ -9282,7 +9282,7 @@
       "type": "number"
     },
     {
-      "context": "| `normal` | **3562 bytes** | nenhuma; declarada uma vez em `provenance` |",
+      "context": "| `normal` | **3619 bytes** | nenhuma; declarada uma vez em `provenance` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-627",
       "line": 242,
@@ -9290,17 +9290,18 @@
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
           "kind": "contains",
-          "value": "normal_bytes=3562"
+          "value": "normal_bytes=3619"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "3562",
-      "type": "number"
+      "text": "3619",
+      "type": "number",
+      "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala"
     },
     {
-      "context": "| `summary` | **1475 bytes** | nenhuma; declarada uma vez em `provenance` |",
+      "context": "| `summary` | **1664 bytes** | nenhuma; declarada uma vez em `provenance` |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-628",
       "line": 243,
@@ -9308,14 +9309,15 @@
         "cmd": "python -c 'import json, subprocess, sys; caminho = \"fixtures/pyspark/clean_job/input/lib/job.py\"; ler = lambda nivel: json.loads(subprocess.run([sys.executable, \"-m\", \"sparkforge.adapters.cli\", \"analyze\", \"pyspark\", \"--path\", caminho, \"--detail-level\", nivel], capture_output=True, text=True).stdout); tam = lambda payload: len(json.dumps(payload, ensure_ascii=False)); env = dict((n, ler(n)) for n in (\"full\", \"normal\", \"summary\")); prov = sum(len(json.dumps(i.get(\"provenance\", {}), ensure_ascii=False)) for i in env[\"full\"][\"items\"]); print(\"full_bytes=%d provenance_bytes=%d pct_provenance=%s normal_bytes=%d summary_bytes=%d\" % (tam(env[\"full\"]), prov, str(round(prov / tam(env[\"full\"]) * 100, 1)).replace(\".\", \",\"), tam(env[\"normal\"]), tam(env[\"summary\"])))'",
         "expect": {
           "kind": "contains",
-          "value": "summary_bytes=1475"
+          "value": "summary_bytes=1664"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1475",
-      "type": "number"
+      "text": "1664",
+      "type": "number",
+      "note": "remedido depois das correcoes da revisao da J1. O numero SUBIU de proposito: o summary devolvia so arquivo:linha e apagava a identidade de fato cujo subject identifica por symbol, e o schema_version sumia sem ser redeclarado. Devolver os dois custou bytes, e esse e o preco de o resumo continuar dizendo de quem fala"
     },
     {
       "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **44** tools do catálogo: ",
@@ -9331,6 +9333,206 @@
       "state": "PROVADA",
       "text": "Controle de verbosidade na resposta",
       "type": "capability"
+    },
+    {
+      "context": "| `READ_ONLY` | 31 | 1 |",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-630",
+      "line": 172,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY and tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 31
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "31",
+      "type": "number"
+    },
+    {
+      "context": "| `READ_ONLY` | 31 | 1 |",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-631",
+      "line": 172,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY and not tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 1
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1",
+      "type": "number"
+    },
+    {
+      "context": "| `LOCAL_MUTATION` | 5 | 0 |",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-632",
+      "line": 173,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.LOCAL_MUTATION and tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 5
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "5",
+      "type": "number"
+    },
+    {
+      "context": "| `LOCAL_MUTATION` | 5 | 0 |",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-633",
+      "line": 173,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.LOCAL_MUTATION and not tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "| `CLOUD_MUTATION` | 7 | 0 |",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-634",
+      "line": 174,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.CLOUD_MUTATION and tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 7
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "7",
+      "type": "number"
+    },
+    {
+      "context": "| `CLOUD_MUTATION` | 7 | 0 |",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-635",
+      "line": 174,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.CLOUD_MUTATION and not tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "**43** de 44 — as cinco `LOCAL_MUTATION` e as sete `CLOUD_MUTATION` declaram",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-636",
+      "line": 180,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 43
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "43",
+      "type": "number"
+    },
+    {
+      "context": "**43** de 44 — as cinco `LOCAL_MUTATION` e as sete `CLOUD_MUTATION` declaram",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-637",
+      "line": 180,
+      "note": "reexecutado -- total de tools derivado de len(TOOLS), nao relido do texto",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 44
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "44",
+      "type": "number"
+    },
+    {
+      "context": "declaram parâmetro de caminho (a única sem nenhum é `sparkforge_rules_lookup`), e a verificação reusa",
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "id": "VNX-638",
+      "line": 42,
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tem(n)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 43
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "43",
+      "type": "number"
+    },
+    {
+      "context": "declaram parâmetro de caminho (a única sem nenhum é `sparkforge_rules_lookup`), e a verificação reusa",
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "id": "VNX-639",
+      "line": 42,
+      "note": "reexecutado -- total de tools derivado de len(TOOLS), nao relido do texto",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 44
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "44",
+      "type": "number"
     }
   ]
 }

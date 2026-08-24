@@ -154,29 +154,132 @@ integração quebrada. Hoje `authorize()` normaliza contra `ExecutionProfile` e
 recusa o que não nomeia perfil nenhum, e o teste exercita o enum, a grafia
 canônica e o perfil inexistente.
 
-### O que a cadeia autoriza é um NOME, nunca uma CHAMADA
+### A cadeia autorizava um NOME; agora ela vê a CHAMADA
 
-Limite de granularidade desta fase, declarado porque tem consequência:
-`authorize()` não recebe os argumentos da tool. `path`, `bucket` e `report_path`
-estão fora da decisão **por construção**.
+Até a fase J2 `authorize()` não recebia os argumentos da tool: `path`, `bucket` e
+`report_path` ficavam fora da decisão **por construção**. Ler
+`~/.aws/credentials` é read-only, e a revisão de segurança leu um segredo de
+fora do repositório sob perfil `OFFLINE` com a cadeia funcionando exatamente
+como especificada.
 
-Medido: **31** das tools `READ_ONLY` declaram algum argumento de caminho de
-sistema de arquivos (`path`, `repo`, `facts_path`, `before`/`after`, `file`,
-`report_path`, `findings_path`), e `authorize()` não examina nenhum deles. A
-única exceção é `sparkforge_rules_lookup`, que só aceita `category`, `id`,
-`limit` e `cursor` — a afirmação anterior generalizava para **todas** as
-`READ_ONLY`, e vendia um quantificador universal como se fosse medição.
+#### O tamanho do buraco, medido
 
-Ler `~/.aws/credentials` é read-only. A revisão desta fase conseguiu ler um
-segredo de fora do repositório sob perfil `OFFLINE`, com a cadeia funcionando
-exatamente como especificada. A conclusão de segurança não dependia do número —
-mas o número precisava estar certo.
+Extraindo do `inputSchema` de cada tool os parâmetros que nomeiam caminho de
+sistema de arquivos, com a classe derivada por `tool_class()`:
 
-Isto **não** é consertável dentro da assinatura atual, e não há solução inventada
-aqui. A consequência que precisa estar escrita é a direção: um hook `PreToolUse`
-vê argumentos, e `authorize()` não tem onde recebê-los. Quem fechar o §41 vai ter
-de decidir se a cadeia passa a receber `arguments` ou se o argumento é
-responsabilidade exclusiva do hook — e essa decisão é de projeto, não refactor.
+| classe | declaram caminho | não declaram |
+|---|---|---|
+| `READ_ONLY` | 31 | 1 |
+| `LOCAL_MUTATION` | 5 | 0 |
+| `CLOUD_MUTATION` | 7 | 0 |
+
+Medido: **31** das tools `READ_ONLY` declaram algum argumento de caminho
+(`path`, `repo`, `facts_path`, `before`/`after`, `file`, `report_path`,
+`findings_path`), e a única exceção é `sparkforge_rules_lookup`, que só aceita
+`category`, `id`, `limit` e `cursor`. Estendendo às outras classes, o total é
+**43** de 44 — as cinco `LOCAL_MUTATION` e as sete `CLOUD_MUTATION` declaram
+caminho sem exceção. Receber caminho é a forma normal da chamada neste
+catálogo, não um caso de borda. As onze tools que a SPEC do `SFCI` propõe
+recebem todas caminho, e é o caminho que decide se a chamada é legítima.
+
+#### A decisão
+
+`authorize()` passa a aceitar `arguments: dict | None` e `root: Path | str |
+None`, keyword-only, ambos `None` por padrão. Quando os dois vêm, todo valor
+de parâmetro que nomeia caminho — string ou lista de strings — tem de resolver
+para dentro de `root`, ou a chamada é recusada.
+
+`AuthorizationDecision` ganha `checked_arguments: bool`, e ele não é
+decoração. É `True` exatamente quando o confinamento **rodou** — não quando
+aprovou, nem quando argumentos foram passados. Sem esse campo, uma decisão
+tomada sem `arguments` seria indistinguível de uma que examinou os caminhos e
+aprovou, e a combinação que mais importa a quem audita é justamente
+`authorized=true` com `checked_arguments=false`: autorizado sem que ninguém
+tenha olhado para onde a chamada aponta.
+
+Quatro decisões de projeto, com a razão:
+
+- **A verificação é a última da ordem**, depois da aprovação. As checagens
+  anteriores respondem "esta tool, para este agente, sob este perfil"; a do
+  argumento responde "esta chamada". Perguntar se o caminho é legítimo antes de
+  saber se a tool sequer é legítima trocaria a razão da recusa pela menos
+  fundamental das duas. O preço é que uma recusa anterior sai com
+  `checked_arguments=false` mesmo tendo recebido argumentos — e isso é verdade,
+  não perda.
+- **`arguments` sem `root` recusa**, pela mesma disciplina de `tool_class()` e
+  do perfil não reconhecido: sem raiz não há confinamento, e "sem confinamento"
+  não pode ser o default de quem passou o argumento e esqueceu a raiz.
+- **A verificação só recusa, nunca concede.** Caminho perfeito não fura classe,
+  teto nem aprovação: uma tool de rede sob `OFFLINE` continua batendo no teto
+  com o argumento mais correto do mundo.
+- **`~` é recusado antes do confinamento.** O confinamento não expande `~` no
+  alvo, então `raiz / "~/.aws/credentials"` cairia dentro da raiz e passaria.
+  Nenhum adapter deste repositório expande `~` num argumento de tool hoje
+  (busca por `expanduser` em `sparkforge/`: três ocorrências, as três sobre
+  raiz de configuração), então a leitura falharia de todo jeito — mas a recusa
+  não depende de isso continuar verdade.
+
+#### O algoritmo de confinamento é um só, e agora isso é medido
+
+A verificação **não** foi reimplementada. O algoritmo — resolver o alvo debaixo
+de uma raiz já resolvida e recusar o que escapar dela — estava escrito três
+vezes quando esta fase começou: `rules/loader.py:safe_catalog_file`,
+`knowledge_ref.py:safe_knowledge_file` e, inline, dentro de
+`facts/scan.py:iter_source_files`. As duas primeiras eram cópia byte a byte uma
+da outra, com só o texto do erro mudando — e o docstring de `knowledge_ref.py`
+dizia "espelha o loader na contenção de caminho", o que era verdade e era o
+problema: espelho é mantido à mão.
+
+Copiar de novo para a cadeia de autorização seria a quarta cópia, e é a mesma
+família de defeito que a fase J0 fechou para o detector de segredo. O algoritmo
+mora em `sparkforge/paths.py:resolve_within`, e `safe_catalog_file` e
+`safe_knowledge_file` só traduzem o `None` dele na exceção do domínio delas —
+comportamento e testes de traversal preservados. `TestConfinamentoEhUmSoAlgoritmo`
+cobra que a cadeia e o catálogo recusem e aceitem exatamente os mesmos
+caminhos, então a unificação deixou de ser convenção e passou a ser coisa
+medida.
+
+A checagem inline de `iter_source_files` **não** foi absorvida, e a razão está
+escrita no módulo: ela roda dentro do laço de varredura, sobre uma raiz
+resolvida uma única vez fora do laço, e responde "pula este arquivo" em vez de
+"recusa esta chamada". Chamar `resolve_within` ali pagaria `resolve()` da raiz
+por arquivo visitado — o custo que aquele módulo mede e evita. A sobreposição é
+conceitual e está declarada; a fusão seria regressão de desempenho.
+
+#### O que esta fase NÃO fecha
+
+Ver o argumento não **impõe** nada. Nenhum dos quatro caminhos de execução —
+`sparkforge/adapters/mcp.py`, `sparkforge/adapters/tools.py`,
+`sparkforge/adapters/cli.py`, `sparkforge/agents/supervisor.py` — chama
+`authorize()`. A cadeia continua sendo uma função pura que ninguém consulta
+antes de executar, então uma tool continua recebendo o caminho que quiserem
+passar para ela, e o segredo de fora do repositório continua legível por quem
+chamar a tool direto.
+
+Isso é o gap do hook `PreToolUse` do §41, e ele **não** fecha aqui. O que
+mudou é que ele deixou de ser bloqueado por uma questão de projeto: a decisão
+de "a cadeia passa a receber `arguments` ou o argumento é responsabilidade
+exclusiva do hook" está tomada, e é a primeira. Quem escrever o hook tem para
+onde delegar.
+
+#### Medido por mutação
+
+Nove mutações aplicadas a uma cópia do repositório em diretório temporário —
+nunca no arquivo vivo — contra
+`test_harness_authorization.py`, `test_rules_loader.py` e
+`test_knowledge_ref.py`: contenção removida de `authorize()`;
+`checked_arguments` sempre `True`; `resolve_within` nunca recusando; o
+algoritmo compartilhado divergindo de `safe_catalog_file`; lista de caminhos
+não percorrida; só o parâmetro `path` verificado; `arguments` sem `root`
+passando calado; `~` deixando de ser recusado; `safe_catalog_file` deixando de
+usar a função compartilhada.
+
+A primeira rodada pegou oito. A sobrevivente foi `checked_arguments` sempre
+`True`, e ela apontou buraco real, não ruído: o ramo da aprovação é o único que
+constrói `AuthorizationDecision` direto, sem passar por `recusa()`, e herda o
+default do campo — nenhum teste cobria essa combinação, então a decisão podia
+afirmar que examinou um argumento que nunca chegou a ver. Com o teste
+acrescentado, as nove são pegas.
 
 ## Compatibilidade, declarada
 

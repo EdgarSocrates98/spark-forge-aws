@@ -15,6 +15,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from sparkforge.paths import resolve_within
+
 
 class KnowledgeError(ValueError):
     """Raiz de knowledge inexistente, ou caminho que escapa dela."""
@@ -49,11 +51,19 @@ def knowledge_dir() -> Path:
 
 
 def safe_knowledge_file(base: Path, name: str) -> Path:
-    """Resolve `name` dentro de `base` e recusa o que escapar dele."""
+    """Resolve `name` dentro de `base` e recusa o que escapar dele.
+
+    O algoritmo e `sparkforge.paths.resolve_within`, o mesmo de
+    `safe_catalog_file`. Ele estava copiado nos dois arquivos -- e o docstring
+    do modulo ja dizia "espelha o loader na contencao de caminho", o que era
+    verdade e era o problema: espelho e mantido a mao. Aqui so fica o que e
+    proprio de knowledge, que e a excecao e a exigencia de existencia.
+    """
     root = Path(base).expanduser().resolve()
-    target = (root / name).resolve()
-    if root != target and root not in target.parents:
-        raise KnowledgeError(f"caminho fora do diretorio de knowledge: {target}")
+    target = resolve_within(root, name)
+    if target is None:
+        escapou = (root / Path(name)).resolve()
+        raise KnowledgeError(f"caminho fora do diretorio de knowledge: {escapou}")
     if not target.exists():
         raise KnowledgeError(
             f"{name} nao existe em {root}. "
