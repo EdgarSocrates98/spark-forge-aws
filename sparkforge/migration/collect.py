@@ -41,6 +41,7 @@ from pathlib import Path
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
 from sparkforge.facts.iceberg_metadata import extract_iceberg_metadata_tree
 from sparkforge.facts.migration import extract_migration_path, extract_migration_tree
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.findings.models import Fact, sort_facts
 
@@ -77,8 +78,13 @@ def collect(path: Path | str, repo_root: Path | None = None) -> list[Fact]:
 
     facts: list[Fact] = list(extract_migration_tree(raiz, repo_root=base))
 
-    # `any()` sobre o gerador, nao `list()`: basta saber que existe um.
-    if any(raiz.rglob("*.tf")):
+    # A mesma varredura que `extract_terraform_tree` usa por dentro, nao
+    # `rglob`: com `rglob` a guarda enxergava um `.tf` dentro de `.venv`, dizia
+    # sim, e o extrator -- que ja passa pela denylist -- devolvia nada. Guarda e
+    # extrator tem que concordar. `any()` aqui nao economiza travessia (a
+    # varredura ja andou a arvore inteira antes de devolver), so evita
+    # materializar a lista neste ponto.
+    if any(iter_source_files(raiz, "*.tf")):
         facts.extend(extract_terraform_tree(raiz, repo_root=base))
 
     inventario = raiz / INVENTARIO_ARQUIVO

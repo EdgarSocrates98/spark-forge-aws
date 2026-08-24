@@ -42,6 +42,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.facts.secrets import looks_like_secret as _looks_like_secret
 from sparkforge.findings.models import Fact, sort_facts
 
@@ -879,7 +880,7 @@ def extract_terraform_tree(root: Path, repo_root: Path | None = None) -> list[Fa
     convencao de `pyspark_ast.extract_tree`.
     """
     facts: list[Fact] = []
-    for tf_file in sorted(root.rglob("*.tf")):
+    for tf_file in iter_source_files(root, "*.tf"):
         rel = str(tf_file.relative_to(repo_root)) if repo_root else str(tf_file)
         anchor = rel.replace("\\", "/")
         try:

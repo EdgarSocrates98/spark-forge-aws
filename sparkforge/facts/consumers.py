@@ -38,6 +38,7 @@ from typing import Any
 
 import yaml
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "consumers@0.1.0"
@@ -213,7 +214,7 @@ def extract_consumers_tree(root: Path, repo_root: Path | None = None) -> list[Fa
     facts: list[Fact] = []
     seen: set[Path] = set()
     for pattern in ("*.yaml", "*.yml"):
-        for inventory in sorted(root.rglob(pattern)):
+        for inventory in iter_source_files(root, pattern):
             if inventory in seen:
                 continue
             seen.add(inventory)

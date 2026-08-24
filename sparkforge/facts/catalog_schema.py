@@ -68,6 +68,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "catalog_schema@0.1.0"
@@ -356,7 +357,7 @@ def extract_catalog_schema_tree(root: Path, repo_root: Path | None = None) -> li
     convencao de `iceberg_metadata.extract_iceberg_metadata_tree`.
     """
     facts: list[Fact] = []
-    for json_file in sorted(root.rglob("*.json")):
+    for json_file in iter_source_files(root, "*.json"):
         rel = str(json_file.relative_to(repo_root)) if repo_root else str(json_file)
         anchor = rel.replace("\\", "/")
         try:

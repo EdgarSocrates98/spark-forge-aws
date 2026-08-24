@@ -120,6 +120,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, NamedTuple
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "data_quality@0.1.0"
@@ -1739,7 +1740,7 @@ def extract_data_quality_tree(root: Path, repo_root: Path | None = None) -> list
     `athena_workgroup.extract_athena_workgroup_tree`.
     """
     facts: list[Fact] = []
-    for py_file in sorted(root.rglob("*.py")):
+    for py_file in iter_source_files(root, "*.py"):
         rel = str(py_file.relative_to(repo_root)) if repo_root else str(py_file)
         anchor = rel.replace("\\", "/")
         try:

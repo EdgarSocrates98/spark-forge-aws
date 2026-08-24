@@ -6,6 +6,7 @@ varre o ambiente virtual inteiro -- custo, ruido, e leitura de qualquer `*.json`
 que houver dentro.
 """
 
+import ast
 import pathlib
 
 import pytest
@@ -18,6 +19,27 @@ def _criar(raiz: pathlib.Path, caminho: str, conteudo: str = "x = 1\n") -> pathl
     alvo.parent.mkdir(parents=True, exist_ok=True)
     alvo.write_text(conteudo, encoding="utf-8")
     return alvo
+
+
+def test_nenhum_extrator_varre_com_rglob_cru():
+    """`rglob` direto e a porta de entrada sem denylist.
+
+    O gate e estrutural e por AST: quem precisar varrer chama
+    `iter_source_files`, que tem teste. `scan.py` fica de fora da checagem
+    porque e o unico arquivo autorizado a implementar travessia -- hoje ele
+    usa `os.walk`, e trocar por `rglob` la dentro continuaria passando pela
+    denylist.
+    """
+    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge" / "facts"
+    infratores = []
+    for arquivo in sorted(raiz.glob("*.py")):
+        if arquivo.name == "scan.py":
+            continue
+        arvore = ast.parse(arquivo.read_text(encoding="utf-8"))
+        for no in ast.walk(arvore):
+            if isinstance(no, ast.Attribute) and no.attr == "rglob":
+                infratores.append(f"{arquivo.name}:{no.lineno}")
+    assert infratores == [], infratores
 
 
 def test_pula_arvore_de_dependencia_e_artefato_de_build(tmp_path):

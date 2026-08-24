@@ -103,6 +103,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "iceberg_metadata@0.1.0"
@@ -677,7 +678,7 @@ def extract_iceberg_metadata_tree(root: Path, repo_root: Path | None = None) -> 
     convencao de `pyspark_ast.extract_tree` / `terraform.extract_terraform_tree`.
     """
     facts: list[Fact] = []
-    for json_file in sorted(root.rglob("*.json")):
+    for json_file in iter_source_files(root, "*.json"):
         rel = str(json_file.relative_to(repo_root)) if repo_root else str(json_file)
         anchor = rel.replace("\\", "/")
         try:

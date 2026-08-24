@@ -154,6 +154,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, NamedTuple
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "graph@0.1.0"
@@ -1434,9 +1435,7 @@ def extract_graph_path(path: Path, repo_root: Path | None = None) -> list[Fact]:
 def extract_graph_tree(root: Path, repo_root: Path | None = None) -> list[Fact]:
     """Extrai de todos os `*.py` sob `root`, em ordem deterministica de path."""
     facts: list[Fact] = []
-    for py_file in sorted(root.rglob("*.py")):
-        if "__pycache__" in py_file.parts:
-            continue
+    for py_file in iter_source_files(root, "*.py"):
         rel = str(py_file.relative_to(repo_root)) if repo_root else str(py_file)
         anchor = rel.replace("\\", "/")
         try:

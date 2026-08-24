@@ -19,6 +19,7 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "pyspark_ast@0.1.0"
@@ -1124,9 +1125,7 @@ def extract_tree(root: Path, repo_root: Path | None = None) -> list[Fact]:
     pior modo de falha possivel para um analisador.
     """
     facts: list[Fact] = []
-    for py in sorted(root.rglob("*.py")):
-        if "__pycache__" in py.parts:
-            continue
+    for py in iter_source_files(root, "*.py"):
         rel = str(py.relative_to(repo_root)) if repo_root else str(py)
         anchor = rel.replace("\\", "/")
         try:

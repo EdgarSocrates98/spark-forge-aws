@@ -56,6 +56,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "s3_listing@0.1.0"
@@ -339,6 +340,6 @@ def extract_s3_listing_tree(root: Path, repo_root: Path | None = None) -> list[F
     `catalog_schema.extract_catalog_schema_tree`.
     """
     facts: list[Fact] = []
-    for listing in sorted(root.rglob("*.json")):
+    for listing in iter_source_files(root, "*.json"):
         facts.extend(extract_s3_listing_path(listing, repo_root or root))
     return sort_facts(facts)

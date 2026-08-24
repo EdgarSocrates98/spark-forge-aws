@@ -268,3 +268,28 @@ class TestPathEntryPoints:
 
         facts = extract_s3_listing_tree(tmp_path, repo_root=tmp_path)
         assert len([f for f in facts if f.kind == "s3.analyzed"]) == 3
+
+    def test_listagem_acima_do_teto_de_tamanho_some_da_travessia(self, tmp_path):
+        """LIMITACAO CONHECIDA, presa aqui para nao ser silenciosa.
+
+        `iter_source_files` recusa arquivo acima de `TAMANHO_MAXIMO_BYTES`
+        (1 MiB). Dump de listagem S3 passa desse tamanho com facilidade -- a
+        propria fixture `s3/small_files_prefix_at_p0_boundary/input/
+        listing.json` tem 14.3 MB. Pela funcao de arquivo ela rende 2 facts;
+        pela travessia rende 0, e o motor responde "nada para analisar" sobre
+        um artefato legitimo.
+
+        Os goldens nao pegam isso porque o harness de fixture chama a funcao de
+        arquivo, nunca a de travessia. Quando o teto for decidido de outro
+        jeito, este teste falha -- que e o ponto dele.
+        """
+        from sparkforge.facts.scan import TAMANHO_MAXIMO_BYTES
+
+        payload = _listing(("a/part-0.parquet", 100))
+        enchimento = " " * (TAMANHO_MAXIMO_BYTES + 1)
+        payload["Prefix"] = enchimento
+        (tmp_path / "listing.json").write_text(json.dumps(payload), encoding="utf-8")
+
+        assert (tmp_path / "listing.json").stat().st_size > TAMANHO_MAXIMO_BYTES
+        assert extract_s3_listing_path(tmp_path / "listing.json", repo_root=tmp_path)
+        assert extract_s3_listing_tree(tmp_path, repo_root=tmp_path) == []
