@@ -1,6 +1,13 @@
-"""O que o indice exige do interpretador, verificado onde o CI roda.
+"""O que o indice exige do interpretador, e o schema que ele monta em cima.
 
-Este arquivo vem antes de qualquer schema de proposito. As medicoes que
+A primeira metade deste arquivo veio ANTES de qualquer schema, de proposito: e
+ela que mede o comportamento do SQLite que o schema depois tem que honrar. A
+segunda metade -- de `test_schema_cria_as_tabelas_declaradas` em diante --
+exercita `sparkforge/codeintel/db.py`, e existe aqui e nao em arquivo proprio
+porque as duas afirmam o MESMO contrato de pragma: separa-las deixaria a
+medicao de um lado e o codigo que depende dela do outro.
+
+As medicoes que
 justificam a fase foram feitas em Python 3.14.6, e o `pyproject.toml` declara
 suporte a partir do 3.10 -- FTS5 e compilado opcional do SQLite, e um ambiente
 sem ele faria o indice falhar na criacao, nao na consulta. Melhor descobrir num
@@ -19,6 +26,14 @@ import sqlite3
 
 import pytest
 
+from sparkforge.codeintel.db import PRAGMAS_DE_ABERTURA as PRAGMAS_DO_MODULO
+from sparkforge.codeintel.db import (
+    SCHEMA_VERSION,
+    abrir,
+    criar_schema,
+    impressao_da_raiz,
+)
+
 # Ordem em que a abertura do indice pretende aplicar os pragmas. Fica no topo
 # porque tres testes abaixo dependem de ser a MESMA lista -- se um deles usasse
 # uma copia divergente, o teste de ordem aprovaria uma sequencia que o codigo
@@ -30,6 +45,16 @@ PRAGMAS_DE_ABERTURA = [
     "temp_store=MEMORY",
     "busy_timeout=30000",
 ]
+
+
+def test_a_lista_do_modulo_e_a_mesma_que_esta_medida_aqui():
+    """A lista acima so vale como medicao se for a lista que `db.abrir` usa.
+
+    Ela foi escrita antes de `db.py` existir, e uma copia que sai de sincronia
+    transforma sete testes de pragma em teatro: todos verdes sobre uma sequencia
+    que o codigo nao aplica mais.
+    """
+    assert list(PRAGMAS_DO_MODULO) == PRAGMAS_DE_ABERTURA
 
 
 def test_fts5_esta_disponivel():
@@ -247,4 +272,241 @@ def test_autocommit_permite_pragma_depois_da_escrita(tmp_path):
     assert conexao.execute("PRAGMA synchronous").fetchone() == (1,)
     assert conexao.execute("PRAGMA temp_store").fetchone() == (2,)
     assert conexao.execute("PRAGMA busy_timeout").fetchone() == (30000,)
+    conexao.close()
+
+
+# --------------------------------------------------------------------------
+# Daqui em diante: `sparkforge/codeintel/db.py`, o schema construido sobre as
+# medicoes acima.
+# --------------------------------------------------------------------------
+
+
+def test_schema_cria_as_tabelas_declaradas(tmp_path):
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    tabelas = {
+        linha[0]
+        for linha in conexao.execute(
+            "SELECT name FROM sqlite_master WHERE type IN ('table','view')"
+        )
+    }
+    conexao.close()
+    assert {"metadata", "files", "nodes", "unresolved_refs", "symbols_fts"} <= tabelas
+
+
+def test_nao_ha_tabela_edges_nesta_fase(tmp_path):
+    """A ausencia e deliberada, entao ela e afirmada.
+
+    Aresta exige resolucao de referencia, que e onde mora a decisao dificil.
+    Sem este teste, alguem acrescenta `edges` vazia "para adiantar" e o indice
+    passa a ter uma tabela que ninguem sabe quando confiar. `unresolved_refs`
+    e o que existe desde ja.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    tabelas = {
+        linha[0] for linha in conexao.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    }
+    conexao.close()
+    assert "edges" not in tabelas
+    assert "unresolved_refs" in tabelas
+
+
+def test_schema_grava_a_versao_e_nao_grava_caminho_absoluto(tmp_path):
+    """O banco nao pode carregar o caminho da maquina.
+
+    Caminho absoluto no `metadata` vazaria o nome do usuario e do diretorio num
+    artefato que pode ser copiado, e tornaria o banco preso a uma maquina.
+    """
+    caminho = tmp_path / "graph.sqlite3"
+    conexao = abrir(caminho)
+    criar_schema(conexao)
+    valores = dict(conexao.execute("SELECT key, value FROM metadata"))
+    conexao.close()
+    assert valores["schema_version"] == str(SCHEMA_VERSION)
+    for chave, valor in valores.items():
+        assert str(tmp_path) not in valor, f"{chave} carrega caminho absoluto"
+
+
+def test_metadata_tem_os_quatro_campos_obrigatorios(tmp_path):
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    valores = dict(conexao.execute("SELECT key, value FROM metadata"))
+    conexao.close()
+    assert set(valores) >= {"schema_version", "engine_version", "created_at", "root_fingerprint"}
+    assert valores["engine_version"]
+
+
+def test_metadata_com_raiz_declarada_continua_sem_o_caminho(tmp_path):
+    """O caso que o teste sem raiz nao cobre.
+
+    Sem `raiz`, a impressao e string vazia e "nao contem o caminho" passa a
+    troco de nada. Com raiz declarada e que a afirmacao vale alguma coisa.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao, raiz=tmp_path)
+    valores = dict(conexao.execute("SELECT key, value FROM metadata"))
+    conexao.close()
+    assert valores["root_fingerprint"]
+    for chave, valor in valores.items():
+        assert str(tmp_path) not in valor, f"{chave} carrega caminho absoluto"
+        assert tmp_path.name not in valor, f"{chave} carrega o nome do diretorio"
+
+
+def test_impressao_da_raiz_identifica_sem_nomear(tmp_path):
+    """Raizes diferentes dao impressoes diferentes, e a mesma raiz repete."""
+    uma = tmp_path / "uma"
+    outra = tmp_path / "outra"
+    uma.mkdir()
+    outra.mkdir()
+    assert impressao_da_raiz(uma) == impressao_da_raiz(uma)
+    assert impressao_da_raiz(uma) != impressao_da_raiz(outra)
+    assert impressao_da_raiz(None) == ""
+
+
+def test_criar_schema_e_idempotente(tmp_path):
+    """Reindexar chama `criar_schema` de novo, e isso nao pode explodir.
+
+    Tambem nao pode duplicar `metadata`: a chave e PRIMARY KEY e a escrita e
+    INSERT OR REPLACE, entao a segunda passagem atualiza em vez de somar linha.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    criar_schema(conexao)
+    (quantas,) = conexao.execute("SELECT COUNT(*) FROM metadata").fetchone()
+    conexao.close()
+    assert quantas == 4
+
+
+def test_apagar_arquivo_apaga_os_nos_dele(tmp_path):
+    """ON DELETE CASCADE, verificado de verdade.
+
+    `PRAGMA foreign_keys=ON` nao e o default do SQLite -- sem ele o CASCADE e
+    declarado e nao acontece, e o banco acumula no orfao a cada reindexacao.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    conexao.execute(
+        "INSERT INTO files (id, path, language, content_sha256, size_bytes, "
+        "modified_ns, indexed_at) VALUES ('f1','a.py','python','abc',1,1,1)"
+    )
+    conexao.execute(
+        "INSERT INTO nodes (id, file_id, kind, name, qualified_name, "
+        "start_line, end_line) VALUES ('n1','f1','function','x','a.x',1,2)"
+    )
+    conexao.execute("DELETE FROM files WHERE id = 'f1'")
+    restantes = conexao.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
+    conexao.close()
+    assert restantes == 0
+
+
+def test_apagar_arquivo_apaga_as_referencias_nao_resolvidas_dele(tmp_path):
+    """`unresolved_refs` tambem e por arquivo, e tambem tem que cair junto.
+
+    Ela e a tabela que mais cresce por reindexacao -- toda referencia que nao
+    resolve cai la. Orfao acumulado aqui inflaria a contagem de ponto cego, que
+    e justamente o numero que ela existe para tornar confiavel.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    conexao.execute(
+        "INSERT INTO files (id, path, language, content_sha256, size_bytes, "
+        "modified_ns, indexed_at) VALUES ('f1','a.py','python','abc',1,1,1)"
+    )
+    conexao.execute(
+        "INSERT INTO unresolved_refs (file_id, raw_target, kind, line, reason) "
+        "VALUES ('f1','spark.read','call',3,'nome externo ao indice')"
+    )
+    conexao.execute("DELETE FROM files WHERE id = 'f1'")
+    restantes = conexao.execute("SELECT COUNT(*) FROM unresolved_refs").fetchone()[0]
+    conexao.close()
+    assert restantes == 0
+
+
+def test_symbols_fts_acha_por_parte_de_nome_composto(tmp_path):
+    """A medicao de FTS5 la de cima, agora sobre a tabela que o schema cria.
+
+    `test_fts5_casa_termo_dentro_de_nome_composto` provou o comportamento numa
+    tabela improvisada. Este prova que `symbols_fts` foi declarada de um jeito
+    que o preserva -- um tokenizador custom no CREATE quebraria a busca por
+    parte de nome sem que aquele outro teste piscasse.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    conexao.execute(
+        "INSERT INTO symbols_fts (node_id, name, qualified_name) "
+        "VALUES ('n1','iter_source_files','scan.iter_source_files')"
+    )
+    achados = conexao.execute(
+        "SELECT node_id FROM symbols_fts WHERE symbols_fts MATCH 'source'"
+    ).fetchall()
+    conexao.close()
+    assert achados == [("n1",)]
+
+
+def test_abrir_deixa_os_cinco_pragmas_efetivos_depois_de_escrever(tmp_path):
+    """O contrato de `abrir`, conferido onde importa: DEPOIS da primeira escrita.
+
+    Ler os pragmas logo apos abrir provaria pouco -- a falha medida e que eles
+    nao SOBREVIVEM a escrita quando chegam tarde. Aqui o schema inteiro ja foi
+    criado e uma linha ja foi inserida antes da releitura.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    conexao.execute(
+        "INSERT INTO files (id, path, language, content_sha256, size_bytes, "
+        "modified_ns, indexed_at) VALUES ('f1','a.py','python','abc',1,1,1)"
+    )
+    assert conexao.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+    assert conexao.execute("PRAGMA foreign_keys").fetchone() == (1,)
+    assert conexao.execute("PRAGMA synchronous").fetchone() == (1,)
+    assert conexao.execute("PRAGMA temp_store").fetchone() == (2,)
+    assert conexao.execute("PRAGMA busy_timeout").fetchone() == (30000,)
+    conexao.close()
+
+
+def test_abrir_recusa_conexao_em_que_foreign_keys_nao_pegou(tmp_path, monkeypatch):
+    """A guarda de `abrir` tem que ser demonstravel, senao e decoracao.
+
+    Sem este teste nada distingue `abrir` com a releitura de `abrir` sem ela:
+    no caminho feliz o valor sempre da 1, e uma guarda que nunca dispara em
+    teste nenhum e indistinguivel de guarda ausente.
+
+    O gatilho e a regressao real e nao uma situacao inventada: e `abrir` sem
+    `isolation_level=None`, com uma escrita antes dos pragmas. Foi medido que
+    nesse estado `journal_mode=WAL` devolve `('delete',)` sem levantar e
+    `foreign_keys=ON` devolve `[]` sem levantar, e e a guarda -- e so ela --
+    que transforma isso em erro.
+
+    Transacao ABERTA COM `BEGIN` nao serviria: medido, ali `journal_mode=WAL`
+    levanta antes, e o teste passaria pelo motivo errado.
+    """
+    conectar_de_verdade = sqlite3.connect
+
+    def conectar_como_se_isolation_level_tivesse_sumido(*args, **kwargs):
+        kwargs.pop("isolation_level", None)
+        conexao = conectar_de_verdade(*args, **kwargs)
+        conexao.execute("CREATE TABLE _sujeira (a)")
+        conexao.execute("INSERT INTO _sujeira VALUES (1)")
+        return conexao
+
+    monkeypatch.setattr(sqlite3, "connect", conectar_como_se_isolation_level_tivesse_sumido)
+    with pytest.raises(RuntimeError, match="foreign_keys"):
+        abrir(tmp_path / "graph.sqlite3")
+
+
+def test_abrir_nao_deixa_transacao_implicita_aberta(tmp_path):
+    """A defesa que protege a PROXIMA pessoa, e nao so esta abertura.
+
+    Aplicar os pragmas cedo resolve hoje. `isolation_level=None` resolve tambem
+    para quem acrescentar um pragma depois do schema daqui a tres fases, que e
+    exatamente como o defeito medido volta.
+    """
+    conexao = abrir(tmp_path / "graph.sqlite3")
+    criar_schema(conexao)
+    conexao.execute(
+        "INSERT INTO files (id, path, language, content_sha256, size_bytes, "
+        "modified_ns, indexed_at) VALUES ('f1','a.py','python','abc',1,1,1)"
+    )
+    assert not conexao.in_transaction
     conexao.close()
