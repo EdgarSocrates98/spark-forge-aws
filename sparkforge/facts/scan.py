@@ -1,14 +1,19 @@
 """A varredura unica dos extratores, com denylist e confinamento.
 
-Catorze sitios de `rglob` faziam isto separadamente, e so tres pulavam sequer
-`__pycache__`. Consolidar aqui e o que torna a fronteira auditavel: existe UM
-lugar que decide o que o motor pode ler, e ele tem teste.
+Quinze sitios de `rglob` faziam isto separadamente -- catorze em
+`sparkforge/facts/` e um em `sparkforge/migration/collect.py` -- e so tres
+pulavam sequer `__pycache__`. Consolidar aqui e o que torna a fronteira
+auditavel: existe UM lugar que decide o que o motor pode ler, e ele tem teste.
 
-Fail-closed em toda decisao: symlink, arquivo especial, caminho de nome
-sensivel e arquivo grande demais sao PULADOS, nunca lidos "so para ver". A
-excecao e raiz inexistente, que e erro nomeado -- devolver lista vazia ali
-pareceria "nao ha nada a analisar", quando o certo e "voce apontou para o lugar
-errado".
+Fail-closed em quase toda decisao: atalho de diretorio, arquivo especial e
+caminho de nome sensivel sao PULADOS, nunca lidos "so para ver". Duas excecoes
+deliberadas, e as duas estao escritas onde acontecem:
+
+- raiz inexistente e erro nomeado, nao lista vazia. Devolver vazio pareceria
+  "nao ha nada a analisar", quando o certo e "voce apontou para o lugar errado".
+- o teto de tamanho e FAIL-OPEN: extensao desconhecida recebe o teto de dados,
+  o mais alto. Ver `_teto_para`. Pular por engano um artefato legitimo e pior
+  que ler um arquivo grande que nao interessa.
 
 As listas deste modulo sao DUAS, e acrescentar um nome a uma delas e uma
 decisao diferente de acrescentar a outra:
@@ -17,29 +22,30 @@ decisao diferente de acrescentar a outra:
   `dist`, os caches: arvore de dependencia e artefato, nao codigo do projeto
   analisado. Tirar um nome dali torna a varredura mais cara e mais barulhenta,
   e nada mais.
-- `DIRETORIOS_SENSIVEIS`, `NOMES_SENSIVEIS`, `SUFIXOS_SENSIVEIS` e
-  `PREFIXOS_SENSIVEIS` sao CREDENCIAL. `.pem`, `.key`, `credentials`, `.env`,
-  `id_rsa`, `.tfstate`, `kubeconfig`, `.aws/`, `.ssh/`. Tirar um nome dali faz
-  o motor ler segredo de cliente. Nenhuma allowlist de extensao pode reabilitar
-  o que esta aqui -- e por isso a checagem de sensivel roda DEPOIS do
-  casamento de padrao, nao antes.
+- `DIRETORIOS_SENSIVEIS`, `TALOS_SENSIVEIS`, `SUFIXOS_SENSIVEIS` e
+  `SUFIXOS_SENSIVEIS_COMPOSTOS` sao CREDENCIAL. `.pem`, `credentials`, `.env`,
+  `id_rsa`, `.tfstate`, `kubeconfig`, `.aws/`, `.ssh/`, `secrets/`. Tirar um
+  nome dali faz o motor ler segredo de cliente. Nenhuma allowlist de extensao
+  pode reabilitar o que esta aqui -- e por isso a checagem de sensivel roda
+  DEPOIS do casamento de padrao, nao antes.
 
-O teto de tamanho tambem e DOIS, pelo mesmo tipo de razao. Um teto unico de
-1 MiB ja esteve aqui e era defeito: ele vinha da regra de indexar codigo-fonte,
-e esta varredura nao le so codigo. Ver `_teto_para`.
-
-PENDENCIA REGISTRADA -- pular e silencioso. Arquivo descartado por tamanho,
-por symlink ou por confinamento simplesmente nao aparece, e quem le a saida nao
-distingue "nao havia nada" de "havia e eu nao li". Isso contraria o principio do
-`unresolved` que a casa aplica em `graph.unresolved` e `sql.unresolved`: ponto
-cego nao e ausencia de problema. Fechar depende de a varredura poder devolver
-mais que caminho -- um `Iterator[Path]` nao comporta o sinal -- e isso e decisao
-de design maior que este modulo. Nao ha gate aqui que pegue essa lacuna.
+PENDENCIA REGISTRADA -- pular e silencioso, e essa e a lacuna de fundo deste
+modulo. CINCO caminhos descartam arquivo sem deixar sinal: teto de tamanho,
+atalho de diretorio, confinamento, NOME SENSIVEL e PODA DE DIRETORIO. Os dois
+ultimos sao os de maior consequencia, porque sao os que erram por excesso: um
+repositorio onde `prod.tfvars` foi recusado por nome, ou onde uma pasta inteira
+foi podada, nao recebe sinal nenhum -- quem le a saida nao distingue "nao havia
+nada" de "havia e eu nao li". Isso contraria o principio do `unresolved` que a
+casa aplica em `graph.unresolved` e `sql.unresolved`: ponto cego nao e ausencia
+de problema. Fechar depende de a varredura poder devolver mais que caminho --
+um `Iterator[Path]` nao comporta o sinal -- e isso e decisao de design maior que
+este modulo. NAO ha gate aqui que pegue essa lacuna.
 """
 
 from __future__ import annotations
 
 import os
+import stat as _stat
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -80,20 +86,63 @@ DIRETORIOS_IGNORADOS: frozenset[str] = frozenset(
     }
 )
 
-# Cofres de credencial de ferramenta. Separados dos ignorados acima porque a
-# razao e outra: nao sao volumosos nem irrelevantes, sao proibidos. O nome do
-# arquivo la dentro nao denuncia nada (`.ssh/chave.json` e um `*.json` comum),
+# Cofres de credencial. Separados dos ignorados acima porque a razao e outra:
+# nao sao volumosos nem irrelevantes, sao proibidos. O nome do arquivo la dentro
+# nao denuncia nada (`.ssh/chave.json` e `secrets/db.json` sao `*.json` comuns),
 # entao a unica defesa e podar a pasta.
+#
+# `gcloud` entra sem ponto de propósito: o gcloud guarda
+# `application_default_credentials.json` em `~/.config/gcloud` no Linux e em
+# `%APPDATA%\gcloud` no Windows -- em nenhum sistema existe `.gcloud`, e uma
+# entrada que parece proteger e nao protege e pior que ausencia.
+#
+# `.serverless/` e `cdk.out/` sao saida de deploy, nao configuracao: o
+# `serverless-state.json` guarda variavel de ambiente JA RESOLVIDA, e todo
+# extrator de `*.json` varreria la dentro.
 DIRETORIOS_SENSIVEIS: frozenset[str] = frozenset(
-    {".aws", ".ssh", ".gnupg", ".kube", ".docker", ".azure", ".gcloud"}
+    {
+        ".aws",
+        ".ssh",
+        ".gnupg",
+        ".kube",
+        ".docker",
+        ".azure",
+        "gcloud",
+        "secrets",
+        ".secrets",
+        "credentials",
+        ".credentials",
+        ".serverless",
+        "cdk.out",
+    }
 )
 
-# Caminhos que NUNCA sao lidos, mesmo casando a extensao pedida. A allowlist de
-# extensao nao pode reabilitar arquivo de credencial -- e por isso a checagem
-# vem DEPOIS do casamento de padrao, nao antes.
-NOMES_SENSIVEIS: frozenset[str] = frozenset(
-    {"credentials", "secrets", "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "kubeconfig"}
+# Casado contra o primeiro componente delimitado por ponto (ver
+# `_talo_delimitado`) -- nunca por `startswith`. `secrets.json` e credencial;
+# `secrets_manager.tf` e o Terraform que o revisor de seguranca existe para ler,
+# e um prefixo solto recusava os dois. `secret` no singular esta aqui porque
+# `secret.yaml` de Kubernetes leva o bloco `data:` inteiro em base64.
+TALOS_SENSIVEIS: frozenset[str] = frozenset(
+    {
+        "credentials",
+        "secrets",
+        "secret",
+        "id_rsa",
+        "id_dsa",
+        "id_ecdsa",
+        "id_ed25519",
+        "kubeconfig",
+        "application_default_credentials",
+        ".env",
+        ".netrc",
+        ".npmrc",
+        ".pypirc",
+    }
 )
+
+# Casados contra o ULTIMO sufixo apenas. `.key` e `.pem` so condenam o arquivo
+# quando sao a extensao de verdade: `servidor.key` e chave, `partition.key.json`
+# e um JSON sobre chave de particao, e palavra corrente em repositorio de dados.
 SUFIXOS_SENSIVEIS: tuple[str, ...] = (
     ".pem",
     ".key",
@@ -102,10 +151,20 @@ SUFIXOS_SENSIVEIS: tuple[str, ...] = (
     ".jks",
     ".tfstate",
     ".tfvars",
-    ".npmrc",
-    ".pypirc",
 )
-PREFIXOS_SENSIVEIS: tuple[str, ...] = (".env", "credentials", "secrets", ".netrc")
+
+# Casados contra o PENULTIMO sufixo quando o ultimo e generico, para pegar
+# `terraform.tfstate.json`. So entram os sufixos que ninguem usa como palavra de
+# dominio -- `.key` e `.pem` ficam de fora justamente por serem ambiguos.
+SUFIXOS_SENSIVEIS_COMPOSTOS: tuple[str, ...] = (".tfstate", ".tfvars", ".p12", ".pfx", ".jks")
+SUFIXOS_GENERICOS: tuple[str, ...] = (".json", ".yaml", ".yml", ".txt", ".bak", ".tmp", ".orig")
+
+# Extensao que o motor existe para LER, onde o nome nao condena o arquivo.
+# `secrets.py` e um modulo sobre segredo, `secrets_manager.tf` e a declaracao do
+# cofre: recusar os dois calado e o oposto do trabalho -- e o detector de
+# segredo hardcoded so funciona sobre arquivo que chegou a ser lido. A poda de
+# diretorio continua valendo: `.aws/x.tf` nao chega aqui.
+EXTENSOES_ANALISADAS: frozenset[str] = frozenset({".py", ".tf"})
 
 # Codigo-fonte: 1 MiB. A razao e parsing. Um `.py` de 1 MiB e gerado ou
 # minificado, nao e codigo para ler, e montar AST de arquivo gigante e vetor de
@@ -116,16 +175,45 @@ EXTENSOES_CODIGO: frozenset[str] = frozenset({".py"})
 TAMANHO_MAXIMO_CODIGO_BYTES = 1024 * 1024
 
 # Artefato de dados: 128 MiB. O operador apontou para ele de proposito -- dump
-# de listagem S3, plano de Terraform, metadados de Iceberg, event log -- e o
-# teto existe para conter o patologico, nao para cortar o caso normal.
+# de listagem S3, plano de Terraform, metadados de Iceberg, event log.
 #
 # Medido neste repositorio: uma listagem S3 custa 143 bytes por objeto, estavel
-# em tres fixtures (1.5 mil, 10 mil e 100 mil objetos). A maior tem 13.64 MiB.
-# 128 MiB comporta ~940 mil objetos num prefixo, 9x a maior medida. Parsear
-# custa 2.6x o arquivo em RAM (medido com tracemalloc nas tres), entao 128 MiB
-# tem pico de ~333 MiB -- pesado e sobrevivel. Dobrar o teto dobra o pico, e e
-# ai que arquivo patologico deixa de ser lento e passa a derrubar o processo.
+# em tres fixtures (1.5 mil, 10 mil e 100 mil objetos). Parsear custa 2.6x o
+# arquivo em RAM, medido com tracemalloc nas tres, entao 128 MiB tem pico de
+# ~333 MiB -- pesado e sobrevivel.
+#
+# ESTE TETO CORTA CASO REAL, e o corte e silencioso. 128 MiB da ~940 mil
+# objetos, e prefixo de producao com mais de um milhao de objetos e ordinario --
+# e literalmente o cenario de small files que este motor existe para
+# diagnosticar. Quanto pior o prefixo, mais provavel que a varredura o recuse.
+# O numero nao esta calibrado pelo dominio; esta calibrado pelo que o processo
+# aguenta parsear de uma vez. Subi-lo sem mudar a leitura para streaming so
+# troca "recusa calada" por "processo derrubado".
 TAMANHO_MAXIMO_DADOS_BYTES = 128 * 1024 * 1024
+
+# `FILE_ATTRIBUTE_REPARSE_POINT`. Junction do Windows e reparse point mas NAO e
+# symlink para o `os.path.islink`, e `mklink /J` nao pede administrador.
+_REPARSE_POINT = getattr(_stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+def _e_atalho(caminho: Path) -> bool:
+    """Symlink OU junction OU qualquer outro reparse point.
+
+    `is_symlink()` sozinho devolve False para junction do Windows, e com isso
+    `os.walk(followlinks=False)` desce nela. Como junction da nome novo a mesma
+    pasta, `mklink /J atalho .aws` reintroduz exatamente o diretorio que a poda
+    por nome tinha removido -- e o confinamento aprova, porque o destino esta
+    mesmo dentro da raiz. Foi reproduzido sem privilegio de administrador.
+    """
+    try:
+        atributos = os.lstat(caminho).st_file_attributes
+    except (OSError, AttributeError):
+        # Sem `st_file_attributes` (nao-Windows) o symlink e a unica forma.
+        try:
+            return caminho.is_symlink()
+        except OSError:
+            return True
+    return bool(atributos & _REPARSE_POINT)
 
 
 def _teto_para(caminho: Path) -> int:
@@ -137,28 +225,68 @@ def _teto_para(caminho: Path) -> int:
     as duas fixtures que provam os limiares P0 e P1 de small files passam de
     1 MiB, e a travessia devolvia zero fact sobre elas.
 
-    Extensao desconhecida usa o teto de dados. Pular por engano um artefato
-    legitimo e pior que ler um arquivo grande que nao interessa.
+    Extensao desconhecida usa o teto de dados. Este e o unico ponto fail-OPEN
+    do modulo, de proposito: pular por engano um artefato legitimo e pior que
+    ler um arquivo grande que nao interessa.
     """
     if caminho.suffix.lower() in EXTENSOES_CODIGO:
         return TAMANHO_MAXIMO_CODIGO_BYTES
     return TAMANHO_MAXIMO_DADOS_BYTES
 
 
+def _e_pulumi_de_stack(nome: str) -> bool:
+    """`Pulumi.prod.yaml` guarda secret cifrado; `Pulumi.yaml` nao guarda nada.
+
+    A diferenca e so o componente do meio, entao nao da para decidir por talo
+    nem por sufixo -- o talo de `Pulumi.prod.yaml` e `Pulumi.prod`.
+    """
+    partes = nome.lower().split(".")
+    return len(partes) >= 3 and partes[0] == "pulumi" and partes[-1] in ("yaml", "yml")
+
+
+def _talo_delimitado(nome: str) -> str:
+    """Primeiro componente do nome, com o ponto inicial preservado.
+
+    `Path.stem` nao serve sozinho: o talo de `.env.local.json` e `.env.local`,
+    e a credencial e a familia `.env` inteira. Cortar no primeiro ponto casa
+    `.env`, `.env.json` e `.env.local.json` sem casar `.envrc` nem
+    `.environment.json` -- delimitado, nao `startswith`.
+    """
+    if nome.startswith("."):
+        return "." + nome[1:].split(".", 1)[0]
+    return nome.split(".", 1)[0]
+
+
 def _e_sensivel(caminho: Path) -> bool:
     nome = caminho.name.lower()
-    talo = caminho.stem.lower()
-    if talo in NOMES_SENSIVEIS:
+    sufixos = [s.lower() for s in caminho.suffixes]
+    ultimo = sufixos[-1] if sufixos else ""
+
+    if ultimo in EXTENSOES_ANALISADAS:
+        return False
+    if _talo_delimitado(nome) in TALOS_SENSIVEIS:
         return True
-    # Todos os sufixos, nao so o ultimo: `terraform.tfstate.json` termina em
-    # `.json` e um `endswith` sozinho o entregaria como JSON comum.
-    if any(s.lower() in SUFIXOS_SENSIVEIS for s in caminho.suffixes):
+    if ultimo in SUFIXOS_SENSIVEIS:
         return True
-    # `.npmrc` e `.pypirc` sao nome inteiro, nao sufixo: para o pathlib um
-    # arquivo que so tem ponto inicial nao tem sufixo nenhum.
-    if any(nome.endswith(s) for s in SUFIXOS_SENSIVEIS):
+    if ultimo in SUFIXOS_GENERICOS and len(sufixos) >= 2:
+        if sufixos[-2] in SUFIXOS_SENSIVEIS_COMPOSTOS:
+            return True
+    return _e_pulumi_de_stack(nome)
+
+
+def _deve_podar(base: Path, nome_pasta: str) -> bool:
+    """Poda por nome E por atalho, porque so o nome nao basta.
+
+    A poda por nome remove `.aws`; a junction `atalho_aws -> .aws` traz a mesma
+    pasta de volta com nome que nao esta em lista nenhuma. Recusar todo atalho
+    de diretorio fecha isso sem precisar resolver e reinspecionar cada pasta --
+    medido, `os.lstat` por diretorio custa menos que `resolve()` por diretorio,
+    e nao ha caminho para uma pasta reaparecer com outro nome sem reparse point.
+    """
+    minusculo = nome_pasta.lower()
+    if minusculo in DIRETORIOS_IGNORADOS or minusculo in DIRETORIOS_SENSIVEIS:
         return True
-    return any(nome.startswith(p) for p in PREFIXOS_SENSIVEIS)
+    return _e_atalho(base / nome_pasta)
 
 
 def iter_source_files(root: Path | str, pattern: str) -> Iterator[Path]:
@@ -185,28 +313,29 @@ def iter_source_files(root: Path | str, pattern: str) -> Iterator[Path]:
     raiz_real = raiz.resolve()
 
     achados: list[Path] = []
+    # `followlinks=False` e o default do os.walk e esta explicito so como
+    # declaracao. Quem de fato impede descer por atalho e `_deve_podar`, que
+    # remove a pasta antes -- inclusive junction, que `followlinks` nao ve.
+    # Nenhum teste consegue matar a mutacao `followlinks=True` por isso: com a
+    # poda no lugar, o parametro nao muda resultado nenhum.
     for pasta_atual, subpastas, arquivos in os.walk(raiz, followlinks=False):
+        base = Path(pasta_atual)
         # Poda no lugar: os.walk respeita a mutacao e nem desce nas removidas.
         # Filtrar so no fim daria a mesma lista tendo pago para listar o
         # `.venv` inteiro, que e o custo que esta varredura existe para evitar.
-        subpastas[:] = [
-            d
-            for d in subpastas
-            if d not in DIRETORIOS_IGNORADOS and d.lower() not in DIRETORIOS_SENSIVEIS
-        ]
-        base = Path(pasta_atual)
+        subpastas[:] = [d for d in subpastas if not _deve_podar(base, d)]
         for nome in arquivos:
             caminho = base / nome
             if not caminho.match(pattern):
                 continue
-            if caminho.is_symlink() or not caminho.is_file():
+            if _e_atalho(caminho) or not caminho.is_file():
                 continue
             if _e_sensivel(caminho):
                 continue
             try:
                 if caminho.stat().st_size > _teto_para(caminho):
                     continue
-                # Confinamento: mesmo com followlinks=False, um componente
+                # Confinamento: mesmo com a poda de atalho, um componente
                 # intermediario pode ter sido substituido durante a varredura.
                 real = caminho.resolve()
                 if raiz_real != real and raiz_real not in real.parents:

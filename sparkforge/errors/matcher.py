@@ -7,6 +7,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
+from sparkforge.facts.scan import iter_source_files
+
 
 @dataclass
 class ErrorMatchResult:
@@ -32,9 +34,12 @@ class DeterministicErrorMatcher:
         self._load_signatures()
 
     def _load_signatures(self) -> None:
+        # `errors_dir` vem do construtor, entao o default embarcado nao e
+        # garantia: quem instancia pode apontar para fora do `knowledge/`, e a
+        # partir dai isto e varredura de arvore de terceiro como qualquer outra.
         if not self.errors_dir.is_dir():
             return
-        for err_file in self.errors_dir.glob("**/*.json"):
+        for err_file in iter_source_files(self.errors_dir, "*.json"):
             try:
                 data = json.loads(err_file.read_text(encoding="utf-8"))
                 if "id" in data and "signature" in data:

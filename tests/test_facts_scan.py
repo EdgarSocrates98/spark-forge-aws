@@ -1,13 +1,22 @@
 """A varredura e a fronteira entre o repositorio analisado e o motor.
 
-Hoje ela nao existe como unidade: sao doze sitios de `rglob` espalhados, e so
-tres pulam sequer `__pycache__`. Apontar o motor para um repositorio com `.venv`
-varre o ambiente virtual inteiro -- custo, ruido, e leitura de qualquer `*.json`
-que houver dentro.
+Ela existe como unidade desde que os quinze sitios de `rglob` -- catorze em
+`sparkforge/facts/` e um em `sparkforge/migration/collect.py` -- passaram a
+chamar `iter_source_files`. Antes disso so tres pulavam sequer `__pycache__`, e
+apontar o motor para um repositorio com `.venv` varria o ambiente virtual
+inteiro: custo, ruido, e leitura de qualquer `*.json` que houvesse dentro.
+
+Este arquivo carrega os dois lados da fronteira, e os dois erram feio:
+
+- deixar passar credencial (`.aws/`, `secrets/`, `.env`, junction do Windows);
+- recusar artefato legitimo (`secrets_manager.tf`, `partition.key.json`, dump
+  de listagem S3 acima do teto). O segundo e silencioso, o que o torna pior.
 """
 
 import ast
 import pathlib
+import subprocess
+import sys
 
 import pytest
 
@@ -21,25 +30,60 @@ def _criar(raiz: pathlib.Path, caminho: str, conteudo: str = "x = 1\n") -> pathl
     return alvo
 
 
-def test_nenhum_extrator_varre_com_rglob_cru():
-    """`rglob` direto e a porta de entrada sem denylist.
+# Excecao ao gate anti-travessia-crua: arquivo -> razao. Lista explicita e por
+# caminho relativo, nunca por escopo estreito. Um gate que so olha uma pasta nao
+# declara excecao nenhuma -- ele deixa todo o resto passar por omissao, e foi
+# assim que `migration/collect.py` ficou de fora do gate no mesmo diff que o
+# migrou.
+# `facts/scan.py` NAO esta aqui de proposito: ele implementa a travessia com
+# `os.walk`, entao nao tem `glob` para isentar. Isenta-lo "por ser a varredura"
+# seria excecao para um problema que ele nao tem -- e se um dia ele passar a
+# usar `glob`, o gate deve obrigar a decisao, nao aprova-la de antemao.
+VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
+    "adapters/_core.py": (
+        "varre o knowledge/ embarcado no proprio wheel, 19 arquivos curados, "
+        "nao repositorio de cliente"
+    ),
+    "case/playbook.py": "varre os agents embarcados no wheel",
+    "registry/loader.py": "varre os agents embarcados no wheel",
+    "rules/loader.py": "varre o catalogo de regras embarcado no wheel",
+    "context/progressive.py": "varre as references embarcadas no wheel",
+    "economy/cache.py": "varre o cache que o proprio motor escreveu",
+}
 
-    O gate e estrutural e por AST: quem precisar varrer chama
-    `iter_source_files`, que tem teste. `scan.py` fica de fora da checagem
-    porque e o unico arquivo autorizado a implementar travessia -- hoje ele
-    usa `os.walk`, e trocar por `rglob` la dentro continuaria passando pela
-    denylist.
+
+def test_nenhum_modulo_varre_com_glob_cru():
+    """`glob` e `rglob` diretos sao a porta de entrada sem denylist.
+
+    O gate e estrutural e por AST, sobre `sparkforge/` INTEIRO -- 126 arquivos,
+    nao os 25 de `facts/`. As duas formas contam: `glob("**/*.json")` anda a
+    arvore igual a `rglob("*.json")`, e olhar so uma delas convida a evasao de
+    uma tecla.
+
+    O que e legitimo esta em `VARREDURA_CRUA_PERMITIDA` com a razao escrita, e
+    a lista e conferida contra a realidade: entrada que sobra e mentira sobre o
+    que o gate protege.
     """
-    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge" / "facts"
+    raiz = pathlib.Path(__file__).resolve().parent.parent / "sparkforge"
     infratores = []
-    for arquivo in sorted(raiz.glob("*.py")):
-        if arquivo.name == "scan.py":
-            continue
+    usadas = set()
+    for arquivo in sorted(raiz.rglob("*.py")):
+        rel = arquivo.relative_to(raiz).as_posix()
         arvore = ast.parse(arquivo.read_text(encoding="utf-8"))
-        for no in ast.walk(arvore):
-            if isinstance(no, ast.Attribute) and no.attr == "rglob":
-                infratores.append(f"{arquivo.name}:{no.lineno}")
+        cruas = [
+            no.lineno
+            for no in ast.walk(arvore)
+            if isinstance(no, ast.Attribute) and no.attr in ("glob", "rglob", "iglob")
+        ]
+        if not cruas:
+            continue
+        if rel in VARREDURA_CRUA_PERMITIDA:
+            usadas.add(rel)
+            continue
+        infratores.extend(f"{rel}:{linha}" for linha in cruas)
     assert infratores == [], infratores
+    sobrando = sorted(set(VARREDURA_CRUA_PERMITIDA) - usadas)
+    assert sobrando == [], f"excecao declarada que ja nao existe: {sobrando}"
 
 
 def test_pula_arvore_de_dependencia_e_artefato_de_build(tmp_path):
@@ -74,7 +118,41 @@ def test_pula_caminho_sensivel_mesmo_com_extensao_pedida(tmp_path):
     assert achados == ["config.json"]
 
 
-def test_symlink_nao_e_seguido(tmp_path):
+def test_junction_do_windows_nao_reintroduz_pasta_podada(tmp_path):
+    """`mklink /J` nao pede administrador, e `islink` devolve False para ela.
+
+    A poda decide pelo nome do componente, e junction da nome novo a mesma
+    pasta: `mklink /J atalho_aws .aws` traz de volta exatamente o diretorio que
+    a denylist tinha removido. O confinamento tambem aprova, porque o destino
+    esta DENTRO da raiz. Reproduzido lendo `atalho_aws/sso/cache.json`, que e
+    token SSO da AWS.
+    """
+    if not sys.platform.startswith("win"):
+        pytest.skip("junction so existe no Windows")
+    raiz = tmp_path / "repo"
+    (raiz / ".aws" / "sso").mkdir(parents=True)
+    (raiz / ".aws" / "sso" / "cache.json").write_text('{"accessToken": "x"}', encoding="utf-8")
+    _criar(raiz, "config.json", "{}")
+    proc = subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(raiz / "atalho_aws"), str(raiz / ".aws")],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        pytest.skip("junction indisponivel neste ambiente")
+    try:
+        achados = sorted(p.name for p in iter_source_files(raiz, "*.json"))
+    finally:
+        # Desfaz a junction antes da limpeza do pytest. `shutil.rmtree` ve
+        # junction como diretorio comum (`islink` e False para ela) e desceria
+        # nela para apagar o DESTINO. Aqui o destino esta dentro do tmp_path e
+        # nao haveria estrago, mas o dia em que alguem apontar para fora, havia.
+        (raiz / "atalho_aws").rmdir()
+    assert achados == ["config.json"]
+
+
+def test_symlink_de_pasta_para_fora_da_raiz_nao_e_seguido(tmp_path):
+    """Symlink de verdade. A junction tem caso proprio: `islink` nao a ve."""
     fora = tmp_path.parent / "fora_do_alvo"
     fora.mkdir(exist_ok=True)
     (fora / "segredo.py").write_text("SENHA = 'x'\n", encoding="utf-8")
@@ -126,39 +204,137 @@ def test_extensao_desconhecida_usa_o_teto_de_dados(tmp_path):
     assert [p.name for p in iter_source_files(tmp_path, "*.jar")] == ["biblioteca.jar"]
 
 
-def test_os_dois_tetos_sao_os_valores_medidos():
-    """Os numeros foram escolhidos por medicao, entao mexer neles e decisao.
+def test_teto_de_dados_existe_e_nao_e_infinito(tmp_path):
+    """O teto de dados e alto, nao ausente -- provado por comportamento.
 
-    1 MiB para codigo vem da regra de parsing: `.py` maior que isso e gerado,
-    e montar AST de arquivo gigante e vetor de DoS.
-
-    128 MiB para dado vem de medicao neste repositorio: listagem S3 custa 143
-    bytes por objeto (estavel em fixtures de 1.5 mil, 10 mil e 100 mil), a maior
-    fixture tem 13.64 MiB, e parsear custa 2.6x o arquivo em RAM. 128 MiB
-    comporta ~940 mil objetos com pico de ~333 MiB.
-
-    Sem este caso, trocar qualquer um dos dois por infinito nao quebra teste
-    nenhum -- escrever 128 MiB so para provar o teto custaria mais que vale.
+    Aqui esteve um teste que so conferia a constante, com a justificativa de
+    que "escrever 128 MiB custaria mais que vale". A justificativa estava
+    medida errada: `truncate` da `st_size` real sem gravar byte de dado, e
+    `st_size` e exatamente o que o teto le. Custa 0.19 s.
     """
-    from sparkforge.facts.scan import TAMANHO_MAXIMO_CODIGO_BYTES, TAMANHO_MAXIMO_DADOS_BYTES
+    from sparkforge.facts.scan import TAMANHO_MAXIMO_DADOS_BYTES
 
-    assert TAMANHO_MAXIMO_CODIGO_BYTES == 1024 * 1024
-    assert TAMANHO_MAXIMO_DADOS_BYTES == 128 * 1024 * 1024
-    assert TAMANHO_MAXIMO_DADOS_BYTES > TAMANHO_MAXIMO_CODIGO_BYTES
-
-
-def test_teto_de_dados_existe_e_nao_e_infinito(tmp_path, monkeypatch):
-    """O teto de dados e alto, nao ausente.
-
-    Escrever 128 MiB num teste custaria mais que o teste vale, entao o teto e
-    rebaixado aqui. O que se prova e que a comparacao usa o teto de dados de
-    verdade -- remove-lo, ou troca-lo por infinito, quebra este caso.
-    """
-    monkeypatch.setattr("sparkforge.facts.scan.TAMANHO_MAXIMO_DADOS_BYTES", 1024)
     _criar(tmp_path, "pequeno.json", "{}")
-    (tmp_path / "patologico.json").write_text("{}" + " " * 4096, encoding="utf-8")
+    with open(tmp_path / "patologico.json", "wb") as arquivo:
+        arquivo.truncate(TAMANHO_MAXIMO_DADOS_BYTES + 1)
+
+    assert (tmp_path / "patologico.json").stat().st_size == TAMANHO_MAXIMO_DADOS_BYTES + 1
     achados = sorted(p.name for p in iter_source_files(tmp_path, "*.json"))
     assert achados == ["pequeno.json"]
+
+
+def test_json_logo_abaixo_do_teto_de_dados_passa(tmp_path):
+    """O par do caso acima: o teto corta um byte adiante, nao antes.
+
+    Sem este, baixar o teto de dados para qualquer valor menor -- inclusive
+    para o teto de codigo -- continuaria passando no teste do teto.
+    """
+    from sparkforge.facts.scan import TAMANHO_MAXIMO_DADOS_BYTES
+
+    with open(tmp_path / "no_limite.json", "wb") as arquivo:
+        arquivo.truncate(TAMANHO_MAXIMO_DADOS_BYTES)
+    assert [p.name for p in iter_source_files(tmp_path, "*.json")] == ["no_limite.json"]
+
+
+@pytest.mark.parametrize(
+    "caminho",
+    [
+        "secrets/db.json",
+        ".secrets/db.json",
+        "credentials/prod.json",
+        ".credentials/prod.json",
+        ".serverless/serverless-state.json",
+        "cdk.out/manifest.json",
+        # Nome banal de proposito: se fosse
+        # `gcloud/application_default_credentials.json` o caso passaria pela
+        # regra de NOME mesmo com a pasta fora da denylist, e nao provaria a
+        # poda -- foi assim que a mutacao `.gcloud` sobreviveu na primeira volta.
+        "gcloud/configuracao.json",
+    ],
+)
+def test_cofre_de_credencial_em_pasta_e_podado(tmp_path, caminho):
+    """O nome do arquivo la dentro nao denuncia nada, entao a pasta e a defesa.
+
+    `secrets/db.json` e um `*.json` comum para qualquer regra de nome. O
+    `serverless-state.json` de `.serverless/` carrega variavel de ambiente JA
+    RESOLVIDA, e `gcloud/` guarda `application_default_credentials.json` -- em
+    nenhum sistema existe `.gcloud`, que era o que a lista trazia antes.
+    """
+    _criar(tmp_path, "config.json", "{}")
+    _criar(tmp_path, caminho, "{}")
+    achados = sorted(p.name for p in iter_source_files(tmp_path, "*.json"))
+    assert achados == ["config.json"]
+
+
+@pytest.mark.parametrize(
+    ("nome", "padrao"),
+    [
+        ("secret.yaml", "*.yaml"),
+        ("secrets.json", "*.json"),
+        ("credentials.json", "*.json"),
+        (".env.json", "*.json"),
+        (".env.local.json", "*.json"),
+        ("terraform.tfstate.json", "*.json"),
+        ("Pulumi.prod.yaml", "*.yaml"),
+        ("application_default_credentials.json", "*.json"),
+    ],
+)
+def test_nome_de_credencial_e_recusado(tmp_path, nome, padrao):
+    """`secret` no singular e Secret de Kubernetes: `data:` inteiro em base64.
+
+    `Pulumi.prod.yaml` guarda secret cifrado de stack; `.env.local.json` so casa
+    porque a checagem corta no primeiro componente, nao no talo do pathlib.
+    """
+    alvo = "inocente" + padrao.lstrip("*")
+    _criar(tmp_path, alvo, "{}")
+    _criar(tmp_path, nome, "{}")
+    achados = sorted(p.name for p in iter_source_files(tmp_path, padrao))
+    assert achados == [alvo]
+
+
+@pytest.mark.parametrize(
+    ("nome", "padrao"),
+    [
+        ("secrets_manager.tf", "*.tf"),
+        ("secretsmanager_policy.json", "*.json"),
+        ("credentials_provider.py", "*.py"),
+        ("secrets.py", "*.py"),
+        ("partition.key.json", "*.json"),
+        ("sort.key.py", "*.py"),
+        ("primary.key.tf", "*.tf"),
+        ("schema.pem.json", "*.json"),
+        ("spark.sql.warehouse.json", "*.json"),
+        ("dados.2026.01.json", "*.json"),
+        ("requirements.dev.txt", "requirements*.txt"),
+        ("job.v2.py", "*.py"),
+        ("Pulumi.yaml", "*.yaml"),
+    ],
+)
+def test_artefato_legitimo_nao_e_recusado_pela_denylist(tmp_path, nome, padrao):
+    """Falso positivo aqui e o motor dizendo "nao ha nada" sobre o que importa.
+
+    `secrets_manager.tf` e o Terraform de AWS Secrets Manager -- exatamente o
+    que o revisor de seguranca existe para olhar -- e um `startswith` solto o
+    recusava calado. `.key` e palavra corrente em repositorio de dados:
+    `partition.key.json` e um JSON sobre chave de particao, nao uma chave.
+    `Pulumi.yaml` e o arquivo de projeto, sem secret; so `Pulumi.<stack>.yaml`
+    guarda.
+    """
+    _criar(tmp_path, nome, "x = 1\n")
+    assert [p.name for p in iter_source_files(tmp_path, padrao)] == [nome]
+
+
+@pytest.mark.parametrize("pasta", ["Build", ".VENV", "Dist", "Target", "Node_Modules"])
+def test_poda_de_ruido_ignora_caixa(tmp_path, pasta):
+    """O Windows tem filesystem case-insensitive, e e onde isto roda.
+
+    A poda de cofre ja normalizava a caixa; a de ruido comparava exato, entao
+    `Build/` e `.VENV/` eram varridos inteiros enquanto `.AWS/` era podado.
+    """
+    _criar(tmp_path, "job.json", "{}")
+    _criar(tmp_path, f"{pasta}/copia.json", "{}")
+    achados = sorted(p.name for p in iter_source_files(tmp_path, "*.json"))
+    assert achados == ["job.json"]
 
 
 def test_apenas_arquivo_regular(tmp_path):
