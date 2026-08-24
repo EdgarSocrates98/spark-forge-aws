@@ -25,6 +25,20 @@ O contrato e deliberadamente conservador. Ele responde "isto PARECE segredo?",
 nunca "isto E segredo": um falso positivo redige um valor que o operador podia
 ler, e um falso negativo publica credencial num `facts.json` que vai para o
 handoff commitado. A assimetria e obvia e o codigo escolhe o lado dela.
+
+LIMITE CONHECIDO, registrado e NAO corrigido: a guarda `isinstance` e fail-open.
+`looks_like_secret` devolve `False` para `dict`, `list`, `None` e qualquer
+nao-string, e `redact` entao devolve o valor SEM redigir. Isso escolhe o lado
+oposto da assimetria que o paragrafo acima declara.
+
+Hoje o ramo e inalcancavel: `event_log.py` coage toda propriedade a texto antes
+de chamar `redact`, e `terraform.py` faz o proprio `isinstance` antes de chamar.
+Nao ha chamador vivo que passe nao-string. Nao foi corrigido porque decidir o
+que fazer com um `dict` sem nenhum chamador que passe um seria adivinhar: as
+saidas plausiveis -- redigir por precaucao, serializar e reexaminar, levantar
+excecao -- servem a chamadores diferentes, e nenhum existe para escolher. Quem
+escrever o primeiro chamador que passe nao-string decide junto com o caso de
+uso, e ate la o limite fica escrito aqui em vez de implicito no codigo.
 """
 from __future__ import annotations
 
