@@ -119,9 +119,12 @@ O corpus é o entregável, não o teste. Cada positivo tem nome de chave
 ```python
 """Corpus de segredo, por VALOR.
 
-O detector de hoje tem tres gatilhos, e dois deles dependem do NOME da chave.
-Isso deixa passar todo segredo que chega num campo de nome inocente -- que e
-exatamente como segredo chega em configuracao de verdade: `config_value`,
+O detector tinha tres gatilhos. Dois eram por valor, mas estreitos: access key
+id da AWS, e senha embutida em URL. O terceiro exigia que o NOME da chave
+sugerisse segredo -- e era ele que teria de pegar todo o resto.
+
+Por isso passava batido todo segredo que chega num campo de nome inocente, que
+e exatamente como segredo chega em configuracao de verdade: `config_value`,
 `data`, `payload`. Este arquivo fixa o comportamento por VALOR.
 
 Os negativos importam tanto quanto os positivos. Um detector que redige
