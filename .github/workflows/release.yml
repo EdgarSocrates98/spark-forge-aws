@@ -76,6 +76,25 @@ jobs:
         # yanka, "o mesmo arquivo" e melhor que "provavelmente o mesmo".
         run: python scripts/verify_wheel.py --outdir dist
 
+      - name: SBOM of the proved artifacts
+        # DEPOIS do gate, e sobre `dist/` -- nunca sobre uma reconstrucao. O
+        # SBOM carrega o sha256 do wheel e do sdist, entao ele so descreve o
+        # release se descrever exatamente os bytes que serao anexados. Gerar
+        # antes, ou a partir de outra build, produziria um documento que parece
+        # prova e fala de outros bytes.
+        #
+        # `SOURCE_DATE_EPOCH` e a MESMA variavel que torna o zip do hatchling
+        # reproduzivel. Fixa-la aqui faz o SBOM ser funcao da arvore e do
+        # artefato, e nao do instante da execucao -- caso contrario ele seria o
+        # unico arquivo nao-reproduzivel de um release que prova
+        # reprodutibilidade em todos os outros. O valor e o mesmo fallback
+        # declarado em `[tool.hatch.build]` do `pyproject.toml`.
+        env:
+          SOURCE_DATE_EPOCH: "1580601600"
+        run: |
+          python scripts/gen_sbom.py --dist dist --python-version 3.11 \
+            --output "dist/sparkforge-aws-sbom.cdx.json"
+
       - name: Draft GitHub Release with the artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -84,5 +103,5 @@ jobs:
           gh release create "$TAG" \
             --draft \
             --title "$TAG" \
-            --notes "Artefatos construidos e verificados pelo gate de paridade. Publicacao no PyPI e manual." \
-            dist/*.whl dist/*.tar.gz
+            --notes "Artefatos construidos e verificados pelo gate de paridade. SBOM CycloneDX anexado, com o sha256 do wheel e do sdist deste release. Publicacao no PyPI e manual." \
+            dist/*.whl dist/*.tar.gz dist/sparkforge-aws-sbom.cdx.json

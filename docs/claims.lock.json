@@ -9535,7 +9535,7 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **383** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **387** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
@@ -9545,13 +9545,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 383
+          "value": 387
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "383",
+      "text": "387",
       "type": "number"
     },
     {
@@ -10172,7 +10172,7 @@
       "type": "number"
     },
     {
-      "context": "`buscar(banco, \"source\")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,",
+      "context": "`buscar(banco, \"source\")` devolve **26** símbolos em **6457** bytes; a saída do `grep` pelo nome,",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-672",
       "line": 246,
@@ -10182,17 +10182,17 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 25
+          "value": 26
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "25",
+      "text": "26",
       "type": "number"
     },
     {
-      "context": "`buscar(banco, \"source\")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,",
+      "context": "`buscar(banco, \"source\")` devolve **25** símbolos em **6730** bytes; a saída do `grep` pelo nome,",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-673",
       "line": 246,
@@ -10202,17 +10202,17 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 6457
+          "value": 6730
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "6457",
+      "text": "6730",
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **92925** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **93014** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 247,
@@ -10222,17 +10222,17 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 92925
+          "value": 93014
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "92925",
+      "text": "93014",
       "type": "number"
     },
     {
-      "context": "(**5029** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
+      "context": "(**5118** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-675",
       "line": 248,
@@ -10242,13 +10242,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 5029
+          "value": 5118
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "5029",
+      "text": "5118",
       "type": "number"
     },
     {
@@ -10664,6 +10664,105 @@
       "state": "PROVADA",
       "text": "Corpus de segredo",
       "type": "capability"
+    },
+    {
+      "context": "| Lock reprodutível e instalação frozen no CI | EXISTE, com teste | `locks/py3.10.txt` e `locks/py3.11.txt`, gerados por",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-720",
+      "line": 393,
+      "proof": {
+        "kind": "artifact",
+        "path": "locks/py3.11.txt",
+        "symbol": "check",
+        "test": "tests/test_supply_chain.py"
+      },
+      "state": "PROVADA",
+      "text": "Lock reprodutível e instalação frozen no CI",
+      "type": "capability"
+    },
+    {
+      "context": "| SBOM associado ao release | EXISTE, com teste | `scripts/gen_sbom.py` produz CycloneDX **1.6** a partir do lock e do `",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-721",
+      "line": 392,
+      "proof": {
+        "kind": "artifact",
+        "path": "scripts/gen_sbom.py",
+        "symbol": "build_sbom",
+        "test": "tests/test_supply_chain.py"
+      },
+      "state": "PROVADA",
+      "text": "SBOM associado ao release",
+      "type": "capability"
+    },
+    {
+      "context": "| `pip-audit` ou OSV no CI | EXISTE, com teste | Job `audit` próprio em `.github/workflows/ci.yml`, separado do job `tes",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-722",
+      "line": 394,
+      "proof": {
+        "kind": "artifact",
+        "path": "scripts/audit_policy.py",
+        "symbol": "classify",
+        "test": "tests/test_supply_chain.py"
+      },
+      "state": "PROVADA",
+      "text": "`pip-audit` ou OSV no CI",
+      "type": "capability"
+    },
+    {
+      "context": "| SBOM associado ao release | EXISTE, com teste | `scripts/gen_sbom.py` produz CycloneDX **1.6** a partir do lock e do `",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-723",
+      "line": 392,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'from scripts.gen_sbom import SPEC_VERSION; print(SPEC_VERSION)'",
+        "expect": {
+          "kind": "contains",
+          "value": "1.6"
+        },
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "1.6",
+      "type": "number"
+    },
+    {
+      "context": "| `pip-audit` ou OSV no CI | EXISTE, com teste | Job `audit` próprio em `.github/workflows/ci.yml`, separado do job `tes",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-724",
+      "line": 394,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import re, pathlib; print(re.search(r\"PyYAML>=([0-9.]+)\", pathlib.Path(\"pyproject.toml\").read_text(encoding=\"utf-8\")).group(1))'",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        },
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "6.0",
+      "type": "number"
+    },
+    {
+      "context": "auditoria, não companheiro dela**. Auditar piso de versão não responde nada — `PyYAML>=6.0` não",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-725",
+      "line": 804,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c 'import re, pathlib; print(re.search(r\"PyYAML>=([0-9.]+)\", pathlib.Path(\"pyproject.toml\").read_text(encoding=\"utf-8\")).group(1))'",
+        "expect": {
+          "kind": "contains",
+          "value": "6.0"
+        },
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "6.0",
+      "type": "number"
     }
   ]
 }

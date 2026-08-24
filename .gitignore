@@ -50,3 +50,10 @@ node_modules/
 # redirecionado para arquivo). E despejo de diagnostico, nao artefato: o estado
 # auditado mora em `docs/claims.lock.json`, que E versionado.
 cm_claims_out.txt
+
+# Relatorio do `pip-audit`, gerado pelo job `audit` e lido por
+# `scripts/audit_policy.py`. E um retrato da base de vulnerabilidade NO INSTANTE
+# da consulta: commitar isso publicaria um "nao ha nada" com data de validade e
+# sem aviso de vencimento. O que e versionado sao os locks, que dizem o que se
+# audita, e a politica, que diz o que fazer com o achado.
+audit.json

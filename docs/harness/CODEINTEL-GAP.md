@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **383** nesta árvore.
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **387** nesta árvore.
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -243,9 +243,9 @@ economia seria mentir sobre o que foi medido.
 
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
-  `buscar(banco, "source")` devolve **25** símbolos em **6457** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **92925** bytes. O `grep` pela definição contendo o fragmento continua menor
-  (**5029** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+  `buscar(banco, "source")` devolve **26** símbolos em **6730** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **93014** bytes. O `grep` pela definição contendo o fragmento continua menor
+  (**5118** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.
@@ -389,9 +389,9 @@ golden de uma vez só, e isso é decisão de contrato — separada desta mediç�
 | Dependência mínima como controle de segurança | EXISTE, com teste | O pacote core depende de `PyYAML` e `jsonschema`, e nada mais; AWS, HTTP e SDK MCP são extras. O espelho de requisitos é conferido byte a byte contra o `pyproject.toml`, então uma dependência nova não entra por um caminho e some pelo outro | `tests/test_requirements_mirror.py` |
 | Integridade de artefato vendorizado | EXISTE, com teste | `vendor/` tem manifesto com sha por projeto, licença original preservada, e caminho que escape do diretório é recusado no código, não só no teste | `tests/test_vendor_caveman.py` |
 | Verificação do artefato instalado | EXISTE, com teste | `scripts/verify_wheel.py` roda os módulos golden dentro de um ambiente isolado, com `PYTHONPATH` vazio e o Python do ambiente virtual, não o corrente | `tests/test_verify_wheel.py` |
-| SBOM associado ao release | NÃO EXISTE | Nenhum CycloneDX, nenhum SPDX | — |
-| Lock reprodutível e instalação frozen no CI | NÃO EXISTE | Não há `uv.lock` nem equivalente; o CI instala a partir das faixas do `pyproject.toml` | — |
-| `pip-audit` ou OSV no CI | NÃO EXISTE | Nenhum dos dois nos workflows. O repositório declara piso de versão para transitiva vulnerável à mão, no `pyproject.toml`, o que é disciplina sem automação | — |
+| SBOM associado ao release | EXISTE, com teste | `scripts/gen_sbom.py` produz CycloneDX **1.6** a partir do lock e do `dist/` já aprovado pelo gate de paridade, e `.github/workflows/release.yml` o anexa ao release em rascunho ao lado do wheel e do sdist. Os cinco campos que a SPEC enumera têm cada um sua fonte declarada: pacote e versão vêm do lock resolvido, o sha256 vem do mesmo lock, a licença foi colhida da API do PyPI na geração dele, e a origem é o `purl` mais a URL do projeto no índice. O componente raiz carrega o sha256 do wheel e do sdist, então o documento descreve **um** release e não uma versão no abstrato. Só biblioteca padrão, pela mesma razão que pôs `build` no extra `dev`: ferramenta de CycloneDX ausente viraria `skip` permanente no teste | `tests/test_supply_chain.py` |
+| Lock reprodutível e instalação frozen no CI | EXISTE, com teste | `locks/py3.10.txt` e `locks/py3.11.txt`, gerados por `scripts/gen_lock.py`: versão exata mais o sha256 de cada distribuição publicada daquela versão, incluindo o backend de build. O CI instala com `pip install --require-hashes`, que trata como **erro** qualquer dependência que não esteja pinada e hasheada no arquivo — inclusive as que entram por transitividade —, de modo que o ambiente instalado é idêntico ao commitado ou a instalação falha dizendo o que faltou. O install editável usa `--no-deps --no-build-isolation`, e sem o segundo o pip baixaria hatchling do índice em tempo de CI. São dois arquivos porque a resolução diverge de verdade entre as duas entradas da matriz — `rpds-py` resolve para versões diferentes, e `tomli`, `importlib-metadata` e `zipp` só existem na linha mais antiga. Conferir é offline; regenerar exige rede e `uv`, que é ferramenta de geração e não entra em lugar nenhum do pacote | `tests/test_supply_chain.py` |
+| `pip-audit` ou OSV no CI | EXISTE, com teste | Job `audit` próprio em `.github/workflows/ci.yml`, separado do job `test` para que a consulta a uma base externa não decida a cor do gate de teste. Ele audita o **lock**, e não os pisos: `PyYAML>=6.0` não tem CVE, a versão instalada é que tem. A política está escrita em `scripts/audit_policy.py`, e tem quatro ramos: vulnerabilidade com correção publicada derruba o job; sem correção publicada só reporta, e migra sozinha para o ramo de cima no dia em que ganhar correção; base não consultada (relatório ausente, ilegível ou com todos os pacotes pulados) derruba, porque ausência não é aprovação; e relatório que **não cobre o lock** derruba, que é o único ramo que compara a saída com o alvo em vez de olhar só para dentro dela — um relatório bem formado sobre outra coisa passaria por todos os outros sem ter respondido nada. A política é função pura sobre JSON, e por isso tem gate offline com relatórios sintéticos | `tests/test_supply_chain.py` |
 | Proibição explícita de download em runtime | NÃO EXISTE como regra escrita | Na prática nada baixa nada, e `OfflineKnowledgeIndex` existe justamente para provar que o conhecimento está no disco. Mas não há gate que reprove um `pip install` acrescentado a um caminho de execução | — |
 
 ---
@@ -745,12 +745,19 @@ escrita e transformação. Enquanto `edges` não existir, esta fase não tem ond
 
 ### Fase de hardening
 
-Inteira, e ela se divide em duas metades independentes.
+Duas metades independentes, e agora elas não estão mais no mesmo estado.
 
-- Runtime: **modo hardened em Linux com namespace de rede isolado**, os quatro primitivos de
-  travamento de perfil, **verificação de ausência de egress** e **fuzzing de parser**.
-- Supply chain: **SBOM**, **lock reprodutível com instalação frozen no CI**, **`pip-audit` ou
-  OSV no CI** e **proibição explícita de download em runtime como regra escrita**.
+- Runtime, **inteira**: **modo hardened em Linux com namespace de rede isolado**, os quatro
+  primitivos de travamento de perfil, **verificação de ausência de egress** e **fuzzing de
+  parser**.
+- Supply chain, **quase fechada**: **SBOM**, **lock reprodutível com instalação frozen no CI**
+  e **`pip-audit` no CI** foram entregues, cada um com a linha correspondente reclassificada na
+  tabela acima. Sobra **proibição explícita de download em runtime como regra escrita** — na
+  prática nada baixa nada, e nenhum gate reprovaria um `pip install` acrescentado a um caminho
+  de execução. Vale registrar que a entrega andou na direção contrária dessa lacuna sem
+  fechá-la: o job `audit` roda `pip install pip-audit`, deliberadamente, num job que não
+  executa código do pacote — a regra que falta escrever precisa distinguir os dois casos em
+  vez de proibir a string.
 
 Dois testes desta fase estão parciais e não ausentes, e a diferença importa para orçar:
 **teste de traversal de caminho** tem a metade da matriz e falta caminho UNC, byte nulo e
@@ -787,6 +794,15 @@ razão escrita, e a razão é que índice velho responde "nenhum símbolo" com a
 responde sobre símbolo inexistente. O material para resolver isso já está no banco — sha,
 tamanho e mtime por arquivo. Falta a comparação.
 
-**Uma metade de fase pode andar sozinha, hoje, sem depender de nada:** supply chain. SBOM, lock
-frozen e auditoria de dependência no CI não tocam índice, não tocam extractor e não tocam
-catálogo de tool. É a única parte do que sobrou que não espera por outra.
+**Uma metade de fase podia andar sozinha, e andou:** supply chain. SBOM, lock frozen e
+auditoria de dependência no CI não tocam índice, não tocam extractor e não tocam catálogo de
+tool, e por isso foram as únicas que não esperaram por `edges` nem por staleness. As três
+linhas estão reclassificadas na tabela de supply chain; a quarta da metade — a proibição
+escrita de download em runtime — continua aberta.
+
+O que a entrega ensinou, e que vale para a ordenação do resto: **o lock foi pré-condição da
+auditoria, não companheiro dela**. Auditar piso de versão não responde nada — `PyYAML>=6.0` não
+tem CVE, a versão instalada é que tem —, então o job de auditoria só passou a significar alguma
+coisa depois de existir um arquivo que diz qual versão é. A mesma forma de dependência aparece
+duas vezes mais neste documento: as tools `code` esperam por staleness, e escore composto,
+lineage e impacto esperam por `edges`.
