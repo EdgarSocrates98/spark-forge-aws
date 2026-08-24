@@ -189,7 +189,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **380** nesta árvore.
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **381** nesta árvore.
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -246,6 +246,29 @@ economia seria mentir sobre o que foi medido.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.
 - **A saída do `grep` não tem teto.** A do índice tem: `buscar` recebe `limite`, com default 50.
+
+**Filtrar por correspondência exata não salva o número.** Metade do que o índice devolve nas
+cinco perguntas é símbolo cujo nome apenas *contém* o termo. Descartando esses e ficando só com
+`name == termo`, a resposta encolhe para **963** bytes — e continua custando **2.3** vezes o
+`grep` pela definição. O recall explica metade da diferença; a outra metade é que um `Achado`
+carrega `node_id`, `qualified_name` e `kind`, que uma linha de `grep` não carrega e que a
+pergunta "onde está X" não pediu.
+
+**Onde o índice ganha, e é outra pergunta.** Testado o cenário em que o `grep` produziria ruído
+— nome comum como `run`, `load`, `build`, `extract`, `check`, `parse` — o índice sai na frente em
+menos da metade dos casos, o que não sustenta uma recomendação. Mas a pergunta *estrutural*
+inverte tudo:
+para "quais são os símbolos de `sparkforge/facts/scan.py`", o índice responde com metadado de
+**8** símbolos, enquanto a alternativa é abrir um arquivo de **14681** bytes — **9.7** vezes a
+favor, e sem parse do lado de quem pergunta.
+
+**A conclusão que estas medições sustentam, e que reposiciona a fase:** este índice **não** se
+paga como substituto de `grep` para busca por nome. Ele se paga em pergunta que `grep` não
+responde sem parse — o que existe dentro de um arquivo, quem chama o quê, o que quebra se algo
+mudar. E essas são exatamente as capacidades que a fase J3 **não** implementou: ela entrega
+`nodes` e busca por nome, e deixa `edges`, chamadores e impacto para depois. O valor do
+subsistema está na fase seguinte, não nesta — dizer o contrário seria vender a medição que deu
+certo e esconder a que não deu.
 
 Todos os valores são **bytes** UTF-8, nunca tokens. Os quatro estimadores de token deste
 repositório dividem o comprimento por uma constante e divergem entre si no arredondamento: byte é

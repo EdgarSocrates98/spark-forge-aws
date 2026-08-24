@@ -9535,23 +9535,23 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **380** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **381** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 192,
-      "note": "classificacao pendente",
+      "note": "remedido: o corpus cresceu de 380 para 381 com tests/test_arvore_versionada.py, o gate que compara o que esta no disco com o que esta no git",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 380
+          "value": 381
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "380",
+      "text": "381",
       "type": "number"
     },
     {
@@ -10318,6 +10318,101 @@
       "state": "PROVADA",
       "text": "Subcomando `code` no CLI",
       "type": "capability"
+    },
+    {
+      "id": "VNX-700",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "text": "963",
+      "type": "number",
+      "state": "PROVADA",
+      "context": "medicao de recall e cenario estrutural da fase J3 (963)",
+      "line": 0,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import json,pathlib,tempfile;from sparkforge.codeintel.index import indexar;from sparkforge.codeintel.search import buscar;b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);t=lambda a: len(json.dumps([x.__dict__ for x in a],ensure_ascii=False));S=['iter_source_files','looks_like_secret','project_items','tool_class','authorize'];e=sum(t([a for a in buscar(b,s) if a.name==s]) for s in S);print('exato=%d' % e)\"",
+        "tier": "slow",
+        "expect": {
+          "kind": "contains",
+          "value": "exato=963"
+        }
+      },
+      "note": "so correspondencia exata nas cinco perguntas -- derivado filtrando name==termo sobre o indice do repositorio, nao relido do documento"
+    },
+    {
+      "id": "VNX-701",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "text": "2.3",
+      "type": "number",
+      "state": "PROVADA",
+      "context": "medicao de recall e cenario estrutural da fase J3 (2.3)",
+      "line": 0,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import json,pathlib,tempfile;from sparkforge.codeintel.index import indexar;from sparkforge.codeintel.search import buscar;b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);t=lambda a: len(json.dumps([x.__dict__ for x in a],ensure_ascii=False));S=['iter_source_files','looks_like_secret','project_items','tool_class','authorize'];e=sum(t([a for a in buscar(b,s) if a.name==s]) for s in S);print('razao=%.1f' % (e/419))\"",
+        "tier": "slow",
+        "expect": {
+          "kind": "contains",
+          "value": "razao=2.3"
+        }
+      },
+      "note": "razao entre a resposta so-exata e o denominador C (419 bytes, o grep pela definicao) -- os dois lados executam"
+    },
+    {
+      "id": "VNX-702",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "text": "8",
+      "type": "number",
+      "state": "PROVADA",
+      "context": "medicao de recall e cenario estrutural da fase J3 (8)",
+      "line": 0,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import pathlib,sqlite3,tempfile;from sparkforge.codeintel.index import indexar;A='sparkforge/facts/scan.py';b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);c=sqlite3.connect(b);n=c.execute('SELECT COUNT(*) FROM nodes m JOIN files f ON f.id=m.file_id WHERE f.path=?',(A,)).fetchone()[0];f=pathlib.Path(A).stat().st_size;print('simbolos=%d' % n)\"",
+        "tier": "slow",
+        "expect": {
+          "kind": "contains",
+          "value": "simbolos=8"
+        }
+      },
+      "note": "simbolos de sparkforge/facts/scan.py contados no indice"
+    },
+    {
+      "id": "VNX-703",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "text": "14681",
+      "type": "number",
+      "state": "PROVADA",
+      "context": "medicao de recall e cenario estrutural da fase J3 (14681)",
+      "line": 0,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import pathlib,sqlite3,tempfile;from sparkforge.codeintel.index import indexar;A='sparkforge/facts/scan.py';b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);c=sqlite3.connect(b);n=c.execute('SELECT COUNT(*) FROM nodes m JOIN files f ON f.id=m.file_id WHERE f.path=?',(A,)).fetchone()[0];f=pathlib.Path(A).stat().st_size;print('fonte=%d' % f)\"",
+        "tier": "slow",
+        "expect": {
+          "kind": "contains",
+          "value": "fonte=14681"
+        }
+      },
+      "note": "tamanho em disco de sparkforge/facts/scan.py, a alternativa a consultar o indice"
+    },
+    {
+      "id": "VNX-704",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "text": "9.7",
+      "type": "number",
+      "state": "PROVADA",
+      "context": "medicao de recall e cenario estrutural da fase J3 (9.7)",
+      "line": 0,
+      "proof": {
+        "kind": "command",
+        "cmd": "python -c \"import pathlib,sqlite3,tempfile;from sparkforge.codeintel.index import indexar;A='sparkforge/facts/scan.py';b=pathlib.Path(tempfile.mkdtemp())/'g.sqlite3';indexar(pathlib.Path('.'),b);c=sqlite3.connect(b);n=c.execute('SELECT COUNT(*) FROM nodes m JOIN files f ON f.id=m.file_id WHERE f.path=?',(A,)).fetchone()[0];f=pathlib.Path(A).stat().st_size;print('razao=%.1f' % (f/(n*190)))\"",
+        "tier": "slow",
+        "expect": {
+          "kind": "contains",
+          "value": "razao=9.7"
+        }
+      },
+      "note": "razao entre ler o arquivo e o metadado dos simbolos dele; 190 bytes por Achado e a media medida nas cinco perguntas"
     }
   ]
 }

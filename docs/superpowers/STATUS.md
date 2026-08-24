@@ -41,7 +41,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **6598** passando, 5 skipped, medido em `5748893` | `python -m pytest -q` |
+| Testes | **6716** passando, 5 skipped, medido em `fa3586c` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
@@ -3403,6 +3403,122 @@ descoberto por ninguém.
 vivo enquanto um implementador commitava, e as duas escritas se sobrepuseram
 três vezes. Nada se perdeu porque foi percebido a tempo, mas a lição é usar
 worktree por agente em vez de depender de disciplina de staging.
+
+---
+
+## Code Intelligence — fase J3, o índice, e a medição que não confirmou a promessa (2026-08-24)
+
+Plano em [`plans/2026-08-24-codeintel-j3-indice.md`](plans/2026-08-24-codeintel-j3-indice.md).
+
+A fase persiste o que os extratores já produzem num índice SQLite local, sobre a
+varredura que J0 construiu e o `ast` que os extratores já usavam. **Nenhum
+extrator novo, nenhuma tool MCP.** O alvo da primeira versão é o próprio
+repositório, por decisão do dono do projeto — o que dá consumidor imediato e
+mede o mecanismo onde ele é mais conferível.
+
+### O que funciona
+
+`sparkforge/codeintel/` com `ids`, `db`, `extract`, `index` e `search`.
+Indexando o próprio repositório, três rodadas idênticas:
+
+| | |
+|---|---|
+| arquivos | 378 |
+| nós | 5754 |
+| ilegíveis | 1 — `fixtures/graph/fonte_que_nao_compila/`, fixture deliberada |
+| tempo | ~1,35 s |
+| banco | 3,4 MiB |
+
+Idêntico em **3.10.20, 3.11.15 e 3.14.6**. Nenhum caminho absoluto no
+`metadata`. Das 252 assinaturas com valor default, **zero** carregam literal.
+
+### A medição, e ela não confirma a promessa da fase
+
+O índice existe para responder "onde está X definido" sem ler arquivo. Medido em
+bytes contra três denominadores, o resultado depende inteiramente de contra o
+que se compara — e o denominador mais honesto é o que menos favorece:
+
+| denominador | resultado |
+|---|---|
+| ler os arquivos até achar a definição | 368x **a favor** |
+| saída de `grep` pelo nome | 9x **a favor** |
+| saída de `grep -n "def <nome>"` | 4,6x **contra** |
+
+**Um `grep` cirúrgico pela definição é mais barato que consultar o índice.**
+Filtrar por correspondência exata reduz o payload à metade e **não** inverte o
+sinal: continua 2,3x contra. A causa não é desperdício de envelope — são
+perguntas diferentes. O `grep` devolve a linha cuja definição *começa* com o
+nome; o índice devolve todo símbolo cujo nome *contém* o termo, com `kind` e
+nome qualificado.
+
+**Onde ele ganha é em pergunta estrutural.** Para "quais são os símbolos de
+`sparkforge/facts/scan.py`", o índice responde com metadado de 8 símbolos contra
+um arquivo de 14681 bytes — 9,7x a favor, e sem parse do lado de quem pergunta.
+Testado o cenário de nome comum (`run`, `load`, `build`, `extract`, `check`,
+`parse`), o índice ganha em menos da metade dos casos: não sustenta recomendação.
+
+**A conclusão reposiciona o SFCI.** Este índice não se paga como substituto de
+`grep` para busca por nome. Ele se paga em pergunta que `grep` não responde sem
+parse — o que existe dentro de um arquivo, quem chama o quê, o que quebra se
+algo mudar. E essas são exatamente as capacidades que J3 **não** implementou:
+ela entrega `nodes` e busca por nome, e deixa `edges`, chamadores e impacto para
+a fase seguinte. **O valor do subsistema está em J4, não aqui.**
+
+Dizer o contrário seria publicar a medição que deu certo e esconder a que não
+deu. A tabela completa, com o método dos três denominadores, está em
+[`docs/harness/CODEINTEL-GAP.md`](../harness/CODEINTEL-GAP.md), escrita para que
+quem discorde possa atacar o denominador.
+
+### O defeito que dez commits e cinco gates não viram
+
+`sparkforge/paths.py` **nunca foi versionado**. O commit `4240035` acrescentou
+`from sparkforge.paths import resolve_within` a `rules/loader.py`,
+`agents/autonomy.py` e `knowledge_ref.py` sem fazer `git add` do arquivo. Todo
+commit de `4240035` até `263917a` falha ao importar os três num clone limpo —
+são dez, e três módulos centrais.
+
+Passou por dez execuções da suíte completa, por ruff, pelo gate de lastro, por
+uma revisão de conformidade e por uma de qualidade. A razão: o pacote está em
+modo editável, então `sparkforge.paths` resolve para a árvore de trabalho, onde
+o arquivo existe. **Nenhum gate olhava para o que o git tem — todos olhavam para
+o disco.**
+
+Foi encontrado por acidente, por um implementador que conferiu num worktree
+limpo enquanto media outra coisa.
+
+Fechado em `fa3586c` por `tests/test_arvore_versionada.py`, que compara as duas
+visões nos dois sentidos e foi verificado contra o defeito original: tirando
+`paths.py` do índice do git, o teste fica vermelho. Ele não substitui
+`scripts/verify_wheel.py` — aquele pega arquivo que o *build* não leva, este
+pega arquivo que o *commit* não leva.
+
+Os dez commits ficam quebrados no histórico. A branch não foi publicada, e
+reescrever histórico custaria mais do que vale.
+
+### O que a execução ensinou
+
+**Nove implementadores discordaram do plano, e os nove estavam certos.** O mais
+grave foi meu: o regex de sanitização de assinatura que escrevi **vazava
+segredo**. `def f(chave=('id','segredo'))` passava intacto, e
+`f(modo=['x','SENHA'])` vazava *parcialmente* — deixando `<literal>,'SENHA'])`,
+o que parece sanitizado. Medido sobre os 433 defaults reais do repositório: 14
+sobreviviam, 4 com string literal. Foi substituído por scanner de profundidade,
+provado por propriedade sobre 4381 assinaturas.
+
+Isso aconteceu no controle que o próprio plano marcava como crítico. Escrevi o
+regex, marquei a importância em negrito, e não testei um caso composto.
+
+**`ast.parse` levanta exceção diferente por versão.** `a = 1\x00` dá
+`ValueError` em 3.10 e `SyntaxError` em 3.11+. Capturar só `SyntaxError` — o que
+o plano dizia — derrubaria a indexação inteira na versão mais antiga do CI. Só
+apareceu porque alguém rodou nas três.
+
+**Três dos cinco pragmas do plano não aplicam se a ordem estiver errada, e dois
+não avisam.** `journal_mode=WAL` e `foreign_keys=ON` devolvem sem exceção e sem
+efeito; `synchronous` levanta. Sem `foreign_keys` efetivo, o `ON DELETE CASCADE`
+não acontece e o banco acumula nó órfão a cada reindexação. A regra ficou escrita
+no módulo: **pragma que não levanta ainda pode não ter pegado, e a única prova é
+reler o valor efetivo.**
 
 ---
 
