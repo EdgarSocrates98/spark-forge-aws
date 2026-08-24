@@ -49,6 +49,13 @@ VARREDURA_CRUA_PERMITIDA: dict[str, str] = {
     "rules/loader.py": "varre o catalogo de regras embarcado no wheel",
     "context/progressive.py": "varre as references embarcadas no wheel",
     "economy/cache.py": "varre o cache que o proprio motor escreveu",
+    "codeintel/security.py": (
+        "gate estatico de import de rede da seccao 7 da SPEC: varre o proprio "
+        "pacote, embarcado no wheel, e precisa ver TODO .py dele. Passar por "
+        "iter_source_files tornaria o gate fail-open -- arquivo acima do teto "
+        "de tamanho sairia da varredura e o import escaparia por padding, que e "
+        "evasao de uma tecla. INV-015 manda o contrario"
+    ),
 }
 
 
