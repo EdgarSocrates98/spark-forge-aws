@@ -23,6 +23,18 @@ decisao diferente de acrescentar a outra:
   o motor ler segredo de cliente. Nenhuma allowlist de extensao pode reabilitar
   o que esta aqui -- e por isso a checagem de sensivel roda DEPOIS do
   casamento de padrao, nao antes.
+
+O teto de tamanho tambem e DOIS, pelo mesmo tipo de razao. Um teto unico de
+1 MiB ja esteve aqui e era defeito: ele vinha da regra de indexar codigo-fonte,
+e esta varredura nao le so codigo. Ver `_teto_para`.
+
+PENDENCIA REGISTRADA -- pular e silencioso. Arquivo descartado por tamanho,
+por symlink ou por confinamento simplesmente nao aparece, e quem le a saida nao
+distingue "nao havia nada" de "havia e eu nao li". Isso contraria o principio do
+`unresolved` que a casa aplica em `graph.unresolved` e `sql.unresolved`: ponto
+cego nao e ausencia de problema. Fechar depende de a varredura poder devolver
+mais que caminho -- um `Iterator[Path]` nao comporta o sinal -- e isso e decisao
+de design maior que este modulo. Nao ha gate aqui que pegue essa lacuna.
 """
 
 from __future__ import annotations
@@ -95,7 +107,42 @@ SUFIXOS_SENSIVEIS: tuple[str, ...] = (
 )
 PREFIXOS_SENSIVEIS: tuple[str, ...] = (".env", "credentials", "secrets", ".netrc")
 
-TAMANHO_MAXIMO_BYTES = 1024 * 1024
+# Codigo-fonte: 1 MiB. A razao e parsing. Um `.py` de 1 MiB e gerado ou
+# minificado, nao e codigo para ler, e montar AST de arquivo gigante e vetor de
+# DoS. So entra aqui extensao que algum extrator realmente parseia por AST --
+# hoje so `.py`. Conjunto minimo de proposito: extensao que ninguem parseia cair
+# no teto de dados e o erro barato; artefato legitimo pulado e o caro.
+EXTENSOES_CODIGO: frozenset[str] = frozenset({".py"})
+TAMANHO_MAXIMO_CODIGO_BYTES = 1024 * 1024
+
+# Artefato de dados: 128 MiB. O operador apontou para ele de proposito -- dump
+# de listagem S3, plano de Terraform, metadados de Iceberg, event log -- e o
+# teto existe para conter o patologico, nao para cortar o caso normal.
+#
+# Medido neste repositorio: uma listagem S3 custa 143 bytes por objeto, estavel
+# em tres fixtures (1.5 mil, 10 mil e 100 mil objetos). A maior tem 13.64 MiB.
+# 128 MiB comporta ~940 mil objetos num prefixo, 9x a maior medida. Parsear
+# custa 2.6x o arquivo em RAM (medido com tracemalloc nas tres), entao 128 MiB
+# tem pico de ~333 MiB -- pesado e sobrevivel. Dobrar o teto dobra o pico, e e
+# ai que arquivo patologico deixa de ser lento e passa a derrubar o processo.
+TAMANHO_MAXIMO_DADOS_BYTES = 128 * 1024 * 1024
+
+
+def _teto_para(caminho: Path) -> int:
+    """Teto por tipo de conteudo, porque a razao de cada um e diferente.
+
+    Um teto unico de 1 MiB esteve aqui e era defeito: ele vinha da regra de
+    indexar codigo-fonte, onde e protecao legitima contra parsear AST de
+    arquivo gigante. Aplicado a artefato de dados, cortava o caso normal --
+    as duas fixtures que provam os limiares P0 e P1 de small files passam de
+    1 MiB, e a travessia devolvia zero fact sobre elas.
+
+    Extensao desconhecida usa o teto de dados. Pular por engano um artefato
+    legitimo e pior que ler um arquivo grande que nao interessa.
+    """
+    if caminho.suffix.lower() in EXTENSOES_CODIGO:
+        return TAMANHO_MAXIMO_CODIGO_BYTES
+    return TAMANHO_MAXIMO_DADOS_BYTES
 
 
 def _e_sensivel(caminho: Path) -> bool:
@@ -157,7 +204,7 @@ def iter_source_files(root: Path | str, pattern: str) -> Iterator[Path]:
             if _e_sensivel(caminho):
                 continue
             try:
-                if caminho.stat().st_size > TAMANHO_MAXIMO_BYTES:
+                if caminho.stat().st_size > _teto_para(caminho):
                     continue
                 # Confinamento: mesmo com followlinks=False, um componente
                 # intermediario pode ter sido substituido durante a varredura.

@@ -17,6 +17,7 @@ uma contagem plausivel, nao um erro visivel. Por isso a fixture de truncamento
 e o teste abaixo existem os dois.
 """
 import json
+import pathlib
 
 import pytest
 
@@ -269,27 +270,29 @@ class TestPathEntryPoints:
         facts = extract_s3_listing_tree(tmp_path, repo_root=tmp_path)
         assert len([f for f in facts if f.kind == "s3.analyzed"]) == 3
 
-    def test_listagem_acima_do_teto_de_tamanho_some_da_travessia(self, tmp_path):
-        """LIMITACAO CONHECIDA, presa aqui para nao ser silenciosa.
+    def test_travessia_le_a_listagem_grande_igual_a_leitura_por_arquivo(self):
+        """A fixture real de 13.6 MiB, que ja foi apagada por teto errado.
 
-        `iter_source_files` recusa arquivo acima de `TAMANHO_MAXIMO_BYTES`
-        (1 MiB). Dump de listagem S3 passa desse tamanho com facilidade -- a
-        propria fixture `s3/small_files_prefix_at_p0_boundary/input/
-        listing.json` tem 14.3 MB. Pela funcao de arquivo ela rende 2 facts;
-        pela travessia rende 0, e o motor responde "nada para analisar" sobre
-        um artefato legitimo.
+        Um teto unico de 1 MiB -- herdado da regra de indexar codigo-fonte --
+        fazia a travessia devolver zero fact aqui, enquanto a leitura por
+        arquivo devolvia os dois. E justo esta fixture que prova o limiar P0 de
+        small files: o motor responderia "nada para analisar" sobre o artefato
+        mais importante da area.
 
-        Os goldens nao pegam isso porque o harness de fixture chama a funcao de
-        arquivo, nunca a de travessia. Quando o teto for decidido de outro
-        jeito, este teste falha -- que e o ponto dele.
+        Os goldens nao pegam porque o harness de fixture chama a funcao de
+        arquivo, nunca a de travessia. Este caso e o unico que compara as duas.
         """
-        from sparkforge.facts.scan import TAMANHO_MAXIMO_BYTES
+        entrada = (
+            pathlib.Path(__file__).resolve().parent.parent
+            / "fixtures"
+            / "s3"
+            / "small_files_prefix_at_p0_boundary"
+            / "input"
+        )
+        arquivo = entrada / "listing.json"
+        assert arquivo.stat().st_size > 8 * 1024 * 1024, "fixture encolheu, o caso perdeu o sentido"
 
-        payload = _listing(("a/part-0.parquet", 100))
-        enchimento = " " * (TAMANHO_MAXIMO_BYTES + 1)
-        payload["Prefix"] = enchimento
-        (tmp_path / "listing.json").write_text(json.dumps(payload), encoding="utf-8")
-
-        assert (tmp_path / "listing.json").stat().st_size > TAMANHO_MAXIMO_BYTES
-        assert extract_s3_listing_path(tmp_path / "listing.json", repo_root=tmp_path)
-        assert extract_s3_listing_tree(tmp_path, repo_root=tmp_path) == []
+        por_arquivo = extract_s3_listing_path(arquivo, repo_root=entrada)
+        por_arvore = extract_s3_listing_tree(entrada, repo_root=entrada)
+        assert por_arquivo
+        assert por_arvore == por_arquivo

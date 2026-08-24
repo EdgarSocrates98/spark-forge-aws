@@ -101,6 +101,66 @@ def test_arquivo_grande_demais_e_pulado_sem_derrubar_a_varredura(tmp_path):
     assert achados == ["pequeno.py"]
 
 
+def test_json_de_dois_mib_passa_porque_o_teto_de_codigo_nao_vale_para_dado(tmp_path):
+    """O par do teste acima, e a razao de o teto ser dois e nao um.
+
+    O mesmo tamanho que reprova um `.py` -- onde a razao e nao montar AST de
+    arquivo gigante -- aprova um `.json`, que o operador apontou de proposito
+    e que nao passa por parser de codigo nenhum.
+    """
+    _criar(tmp_path, "pequeno.json", "{}")
+    dump = '{"x": "' + "a" * (2 * 1024 * 1024) + '"}'
+    (tmp_path / "dump.json").write_text(dump, encoding="utf-8")
+    achados = sorted(p.name for p in iter_source_files(tmp_path, "*.json"))
+    assert achados == ["dump.json", "pequeno.json"]
+
+
+def test_extensao_desconhecida_usa_o_teto_de_dados(tmp_path):
+    """Fail-open no tamanho, ao contrario do resto do modulo.
+
+    Pular por engano um artefato legitimo e pior que ler um arquivo grande que
+    nao interessa: o primeiro faz o motor dizer "nada para analisar" sobre algo
+    que existe, o segundo so gasta tempo.
+    """
+    (tmp_path / "biblioteca.jar").write_bytes(b"x" * (2 * 1024 * 1024))
+    assert [p.name for p in iter_source_files(tmp_path, "*.jar")] == ["biblioteca.jar"]
+
+
+def test_os_dois_tetos_sao_os_valores_medidos():
+    """Os numeros foram escolhidos por medicao, entao mexer neles e decisao.
+
+    1 MiB para codigo vem da regra de parsing: `.py` maior que isso e gerado,
+    e montar AST de arquivo gigante e vetor de DoS.
+
+    128 MiB para dado vem de medicao neste repositorio: listagem S3 custa 143
+    bytes por objeto (estavel em fixtures de 1.5 mil, 10 mil e 100 mil), a maior
+    fixture tem 13.64 MiB, e parsear custa 2.6x o arquivo em RAM. 128 MiB
+    comporta ~940 mil objetos com pico de ~333 MiB.
+
+    Sem este caso, trocar qualquer um dos dois por infinito nao quebra teste
+    nenhum -- escrever 128 MiB so para provar o teto custaria mais que vale.
+    """
+    from sparkforge.facts.scan import TAMANHO_MAXIMO_CODIGO_BYTES, TAMANHO_MAXIMO_DADOS_BYTES
+
+    assert TAMANHO_MAXIMO_CODIGO_BYTES == 1024 * 1024
+    assert TAMANHO_MAXIMO_DADOS_BYTES == 128 * 1024 * 1024
+    assert TAMANHO_MAXIMO_DADOS_BYTES > TAMANHO_MAXIMO_CODIGO_BYTES
+
+
+def test_teto_de_dados_existe_e_nao_e_infinito(tmp_path, monkeypatch):
+    """O teto de dados e alto, nao ausente.
+
+    Escrever 128 MiB num teste custaria mais que o teste vale, entao o teto e
+    rebaixado aqui. O que se prova e que a comparacao usa o teto de dados de
+    verdade -- remove-lo, ou troca-lo por infinito, quebra este caso.
+    """
+    monkeypatch.setattr("sparkforge.facts.scan.TAMANHO_MAXIMO_DADOS_BYTES", 1024)
+    _criar(tmp_path, "pequeno.json", "{}")
+    (tmp_path / "patologico.json").write_text("{}" + " " * 4096, encoding="utf-8")
+    achados = sorted(p.name for p in iter_source_files(tmp_path, "*.json"))
+    assert achados == ["pequeno.json"]
+
+
 def test_apenas_arquivo_regular(tmp_path):
     _criar(tmp_path, "job.py")
     achados = list(iter_source_files(tmp_path, "*.py"))
@@ -150,10 +210,10 @@ def test_arquivo_no_limite_de_tamanho_ainda_entra(tmp_path):
     Sem este caso, trocar o limite por `>=` -- ou por qualquer teto menor --
     passaria despercebido.
     """
-    from sparkforge.facts.scan import TAMANHO_MAXIMO_BYTES
+    from sparkforge.facts.scan import TAMANHO_MAXIMO_CODIGO_BYTES
 
-    (tmp_path / "no_limite.py").write_bytes(b"#" * TAMANHO_MAXIMO_BYTES)
-    (tmp_path / "um_a_mais.py").write_bytes(b"#" * (TAMANHO_MAXIMO_BYTES + 1))
+    (tmp_path / "no_limite.py").write_bytes(b"#" * TAMANHO_MAXIMO_CODIGO_BYTES)
+    (tmp_path / "um_a_mais.py").write_bytes(b"#" * (TAMANHO_MAXIMO_CODIGO_BYTES + 1))
     achados = sorted(p.name for p in iter_source_files(tmp_path, "*.py"))
     assert achados == ["no_limite.py"]
 
