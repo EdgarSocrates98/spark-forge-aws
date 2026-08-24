@@ -139,7 +139,7 @@ por excesso até esta revisão.
 | Ponto cego como cidadão de primeira classe | EXISTE, com teste | É lei da casa antes de ser pedido da SPEC: onze extratores emitem um kind `*.unresolved` com vocabulário fechado de razão, e o envelope das tools conta `unresolved` sobre o conjunto inteiro — filtrar por kind **não** faz o ponto cego sumir do relatório. Fonte limpa reporta zero, nunca ausência | `tests/test_adapters_tools.py` |
 | Id determinístico de nó, derivado de conteúdo | EXISTE, com teste | O nó passou a existir, e o id dele também: `sparkforge/codeintel/ids.py:node_id()` deriva BLAKE2b de caminho, kind, nome qualificado e assinatura, com separador `\x00` entre campos para que fronteira de campo não vire ambiguidade. Reindexar sem mudança produz os mesmos ids, e há teste medindo isso ponta a ponta. O nome precisa ser mesmo qualificado, e isso é contrato de quem chama: com nome simples, `adapters/platforms/targets.py` sozinho já colide quatro vezes | `tests/test_codeintel_ids.py` |
 | Taxonomia de aresta | EXISTE PARCIAL | `pyspark.callgraph_edge` (chamador → chamado) mais os quatro kinds `callgraph.*` cobrem a aresta de chamada e o que se deriva dela. `import`, `herança`, `referência de tipo` e `escrita/leitura de tabela como aresta de grafo` não existem como aresta — leitura e escrita existem como **fato**, com o alvo literal dentro | `tests/test_fixtures_golden_callgraph.py` |
-| Banco com schema versionado, migrations e locking | EXISTE PARCIAL | `sparkforge/codeintel/db.py` cria `metadata`, `files`, `nodes`, `unresolved_refs` e `symbols_fts`, grava `schema_version` em `metadata` e confere `PRAGMA foreign_keys` relendo o valor efetivo, porque esse pragma falha calado e a falha dele deixa `ON DELETE CASCADE` declarado sem acontecer. Três coisas da linha faltam. **Migration** não existe: nada lê `schema_version` para decidir o que fazer — `search.py:resumo()` só o devolve, e um banco de versão antiga é aberto e consultado como se fosse da versão de hoje. **Locking** de índice não existe: há `busy_timeout` de conexão, que é espera de escritor do SQLite, e não guarda contra duas indexações concorrentes da mesma árvore. E `edges` não existe, por decisão registrada no próprio módulo | `tests/test_codeintel_db.py` |
+| Banco com schema versionado, migrations e locking | EXISTE PARCIAL | `sparkforge/codeintel/db.py` cria `metadata`, `files`, `nodes`, `edges`, `unresolved_refs` e `symbols_fts`, grava `schema_version` em `metadata` e confere `PRAGMA foreign_keys` relendo o valor efetivo, porque esse pragma falha calado e a falha dele deixa `ON DELETE CASCADE` declarado sem acontecer. Das três coisas que faltavam nesta linha, duas mudaram de estado. **Migration** existe na forma que o módulo escolheu, e a escolha está registrada: `criar_schema()` lê `schema_version` do `metadata` e, quando ela não é a corrente, **descarta e refaz** o schema em vez de migrar — o arquivo é descartável, nada no motor determinístico depende dele para responder, e banco da versão corrente sai intacto. **`edges`** entrou no schema ao lado de `unresolved_refs`, com CASCADE nas duas pontas, e as duas são gravadas por `index.py` na mesma transação. O que continua faltando é **locking** de índice: há `busy_timeout` de conexão, que é espera de escritor do SQLite, e não guarda contra duas indexações concorrentes da mesma árvore | `tests/test_codeintel_db.py` |
 | Índice FTS sobre símbolo e signature | EXISTE PARCIAL | A metade do símbolo existe: `symbols_fts` é FTS5 com `name` e `qualified_name`, e o tokenizador default é o que faz `iter_source_files` ser achável por `source`. A metade da **signature não existe**: `normalized_signature` mora em `nodes`, como coluna comum, e não é coluna do FTS — buscar por tipo de parâmetro ou por anotação de retorno não tem por onde. As colunas foram lidas do banco criado, não da DDL: `node_id`, `name`, `qualified_name` | `tests/test_codeintel_db.py` |
 | Sanitização de signature antes de armazenar | EXISTE, com teste | `sparkforge/codeintel/ids.py:normalizar_assinatura()` troca valor literal de default pelo marcador `<literal>` e preserva nome, ordem dos parâmetros e anotação de retorno. É varredor com profundidade e não substituição por expressão regular, porque default abre parêntese, aninha chamada e carrega vírgula dentro de aspas. `codeintel/extract.py` aplica antes de o nó existir, então nenhum valor literal chega ao banco por esse caminho | `tests/test_codeintel_ids.py` |
 
@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **389** nesta árvore.
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **391** nesta árvore.
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -210,14 +210,14 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **38
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 1 | 197 | 428877 | 7270 | 102 |
+| `iter_source_files` | 1 | 197 | 437151 | 7271 | 102 |
 | `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |
 | `project_items` | 1 | 193 | 140522 | 1718 | 52 |
 | `tool_class` | 1 | 188 | 24310 | 2562 | 74 |
 | `authorize` | 4 | 897 | 24310 | 3804 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **719852**;
-a saída do `grep` pelo nome, **17461**; a saída do `grep` pela definição, **419**.
+Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **728126**;
+a saída do `grep` pelo nome, **17462**; a saída do `grep` pela definição, **419**.
 
 O **1940** é o único número desta seção que `scripts/check_vnext_claims.py` não audita, e vale
 dizer por quê em vez de deixar quem confira procurar: quatro dígitos entre 1900 e 2099 estão na
@@ -225,7 +225,7 @@ lista de tokens ignorados como datação, e essa contagem caiu ali. O próprio c
 já previa o custo. Ele não fica sem lastro por isso — as três razões abaixo são auditadas, e a
 prova de cada uma imprime numerador e denominador, com o **1940** entre os dois.
 
-**Contra o denominador do plano, o índice economiza 371.1 vezes.** Contra a saída de um `grep`
+**Contra o denominador do plano, o índice economiza 375.3 vezes.** Contra a saída de um `grep`
 pelo nome, **9.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **4.6** vezes o que aquele `grep` custaria.
 
@@ -244,7 +244,7 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **26** símbolos em **6730** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **94195** bytes. O `grep` pela definição contendo o fragmento continua menor
+  no mesmo corpus, tem **95305** bytes. O `grep` pela definição contendo o fragmento continua menor
   (**5118** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
@@ -273,6 +273,12 @@ mudar. E essas são exatamente as capacidades que a fase J3 **não** implementou
 `nodes` e busca por nome, e deixa `edges`, chamadores e impacto para depois. O valor do
 subsistema está na fase seguinte, não nesta — dizer o contrário seria vender a medição que deu
 certo e esconder a que não deu.
+
+Foi esta medição que reordenou o trabalho, e a decisão está registrada em
+[`ADR-010`](../vnext/adrs/ADR-010-code-intelligence-indice-local.md): `edges` veio **antes** de
+qualquer melhoria de recuperação, contra a ordem em que a SPEC lista as fases. A fase J4 entregou
+a tabela e a resolução que a alimenta; o que esta seção mede continua sendo o eixo de busca por
+nome, que é o que ela media quando foi escrita.
 
 Todos os valores são **bytes** UTF-8, nunca tokens. Os quatro estimadores de token deste
 repositório dividem o comprimento por uma constante e divergem entre si no arredondamento: byte é
@@ -591,17 +597,23 @@ que decide esforço, não a palavra.
 
 ### Fase de ADR e threat model
 
-Continua **inteira**, e é a única das doze em que nada foi entregue.
+Entregue, e as duas metades dela têm arquivo.
 
-- **Threat model escrito, com ameaça numerada e proteção** — nenhum documento do repositório
-  enumera ameaça contra repositório malicioso. `AUTHORIZATION-CHAIN.md` e `UNTRUSTED-CONTENT.md`
-  cobrem uma fronteira cada, e nenhum dos dois é um threat model.
-- **Política de retenção de source**, parcial: a decisão está tomada no schema — o banco não tem
-  coluna de corpo — e não está escrita como política. É a metade que pertence a esta fase.
+- **Threat model escrito, com ameaça numerada e proteção** — [`THREAT-MODEL.md`](THREAT-MODEL.md)
+  percorre a §9 da SPEC ameaça a ameaça e classifica cada uma como fechada com teste, parcial ou
+  aberta, com caminho de arquivo em toda linha que afirma proteção. `AUTHORIZATION-CHAIN.md` e
+  `UNTRUSTED-CONTENT.md` continuam cobrindo uma fronteira cada, e agora são citados de dentro dele
+  em vez de fazerem o papel que não é o deles.
+- **Política de retenção de source** — a decisão que estava só no schema virou decisão escrita em
+  [`ADR-010`](../vnext/adrs/ADR-010-code-intelligence-indice-local.md): banco sem corpo de função,
+  sem cache de trecho e com literal de default apagado da assinatura antes de existir nó, com o
+  teste que exercita cada metade nomeado ali.
 
-O custo de ela não existir já apareceu: a fase J3 tomou decisões de retenção (sem corpo, sem
-caminho absoluto, assinatura sanitizada) dentro do módulo que as implementa, uma a uma. Elas
-estão certas e estão dispersas, e não há documento contra o qual conferir a próxima.
+O custo de ela não existir já havia aparecido, e é por isso que a lacuna estava escrita: a fase J3
+tomou decisões de retenção (sem corpo, sem caminho absoluto, assinatura sanitizada) dentro do
+módulo que as implementa, uma a uma. Elas estavam certas e estavam dispersas, e não havia
+documento contra o qual conferir a próxima. O que o ADR não faz é inventar decisão nova: ele
+registra o que J0 a J4 executaram, e o que ficou fora está na seção de limite declarado dele.
 
 ### Fase de fundação de segurança
 
@@ -652,11 +664,14 @@ política que a declararia não existe:
 
 Entregue na parte completa, aberta na incremental.
 
-- **Banco com schema versionado, migrations e locking**, parcial — o schema é versionado e
-  ninguém lê a versão para migrar; o `busy_timeout` é espera de escritor do SQLite e não guarda
-  contra duas indexações concorrentes.
-- **Taxonomia de aresta**, parcial — não há tabela `edges`, por decisão registrada: aresta exige
-  resolver referência, e o que fazer com o que não resolve é a decisão difícil.
+- **Banco com schema versionado, migrations e locking**, parcial — a versão é lida e agida sobre:
+  banco de versão anterior é descartado e refeito, e banco da versão corrente sai intacto. O que
+  falta é locking: o `busy_timeout` é espera de escritor do SQLite e não guarda contra duas
+  indexações concorrentes.
+- **Taxonomia de aresta**, parcial — `edges` existe, com `kind`, `line` e `confidence`, e é
+  gravada ao lado de `unresolved_refs`. O que continua parcial é a taxonomia: a aresta de chamada
+  é a que a resolução produz; `import`, herança, referência de tipo e leitura/escrita de tabela
+  não viram aresta.
 - **Índice FTS sobre símbolo e signature**, parcial — o FTS cobre nome e nome qualificado; a
   assinatura está guardada e não é buscável.
 - **Índice persistente, completo e incremental**, parcial — completo existe, incremental não.
@@ -688,8 +703,8 @@ A que mais encolheu, e por isso a que mais precisa ser reescrita antes de virar 
 O eixo de consulta por símbolo abriu; o resto da fase continua fechado.
 
 - **Escore composto de recuperação** — o escore de hoje tem relevância do FTS e desempate por
-  posição. Proximidade no grafo, relevância de entrypoint e de lineage não existem porque não
-  existe o grafo sobre o qual medi-las. Depende de `edges`.
+  posição. Proximidade no grafo, relevância de entrypoint e de lineage não existem: o grafo sobre
+  o qual medi-las passou a ser gravado, e nada em `search.py` o consulta ainda.
 - **Objeto de contexto canônico** — ausente, e a advertência da seção *O que NÃO fazer* vale
   inteira: consolidar os três empacotadores existentes, nunca somar um quarto.
 - **Expansão determinística de query por dicionário versionado** — ausente.
@@ -741,7 +756,9 @@ primeira, e as duas dependem de indexação incremental — é a fase mais bloqu
 
 Parcial em tudo, ausente em nada. O extractor de SQL entrega predicado e projeção com golden; o
 que falta é o mesmo item que falta na fase de AST — a estrutura consultável que ligue leitura,
-escrita e transformação. Enquanto `edges` não existir, esta fase não tem onde escrever.
+escrita e transformação. `edges` agora é escrita, e o que ela grava é aresta de **chamada**: não
+há nó de tabela para ser ponta de aresta, então esta fase ganhou onde escrever e continua sem o
+que escrever ali.
 
 ### Fase de hardening
 
@@ -776,18 +793,23 @@ próprio a escrever, e contaminaria a entrega do índice com um risco que não �
 
 Intocada, e sem linha própria na tabela — o extractor de hoje lê Python, e a varredura declara
 `.py` e `.tf` como as extensões que o motor existe para ler. Acrescentar linguagem é trabalho
-sobre a fronteira que já existe, e ele só faz sentido depois de `edges`, porque uma linguagem
-nova sem aresta acrescenta símbolo e não acrescenta resposta.
+sobre a fronteira que já existe, e ele só fazia sentido depois de `edges`, porque uma linguagem
+nova sem aresta acrescenta símbolo e não acrescenta resposta. Essa precondição caiu: a aresta
+existe para Python, e a pergunta agora é se o extrator da linguagem nova consegue produzir
+referência resolvível, não se há tabela onde gravá-la.
 
 ### O que este agrupamento sugere para o próximo plano
 
 Três leituras saem daqui, e as três são de ordenação, não de conteúdo:
 
-**Uma linha destrava mais do que qualquer outra: `edges`.** Escore composto, lineage de SQL,
-grafo de dados, identificador de tabela, impacto e as tools `code` dependem dela, direta ou
-indiretamente. Ela é também a linha que a medição de bytes desta página já apontava: o índice
-não se paga contra `grep` para busca por nome, e se paga em pergunta que `grep` não responde sem
-parse — que é exatamente o que a aresta permite perguntar.
+**Uma linha destravava mais do que qualquer outra, e foi feita primeiro: `edges`.** Escore
+composto, lineage de SQL, grafo de dados, identificador de tabela, impacto e as tools `code`
+dependem dela, direta ou indiretamente. Ela é também a linha que a medição de bytes desta página
+já apontava: o índice não se paga contra `grep` para busca por nome, e se paga em pergunta que
+`grep` não responde sem parse — que é exatamente o que a aresta permite perguntar. Foi essa
+medição que a colocou antes de tudo o mais, contra a ordem da SPEC, e a decisão está registrada em
+[`ADR-010`](../vnext/adrs/ADR-010-code-intelligence-indice-local.md). O que ela destrava continua
+sendo trabalho: a tabela é gravada, e nada em `search.py` a lê.
 
 **Uma linha destrava a superfície de tool: staleness.** As onze tools estão bloqueadas por uma
 razão escrita, e a razão é que índice velho responde "nenhum símbolo" com a mesma cara com que
@@ -796,7 +818,7 @@ tamanho e mtime por arquivo. Falta a comparação.
 
 **Uma metade de fase podia andar sozinha, e andou:** supply chain. SBOM, lock frozen e
 auditoria de dependência no CI não tocam índice, não tocam extractor e não tocam catálogo de
-tool, e por isso foram as únicas que não esperaram por `edges` nem por staleness. As três
+tool, e por isso foram as únicas que puderam andar sem esperar por `edges` nem por staleness. As três
 linhas estão reclassificadas na tabela de supply chain; a quarta da metade — a proibição
 escrita de download em runtime — continua aberta.
 
@@ -805,4 +827,5 @@ auditoria, não companheiro dela**. Auditar piso de versão não responde nada �
 tem CVE, a versão instalada é que tem —, então o job de auditoria só passou a significar alguma
 coisa depois de existir um arquivo que diz qual versão é. A mesma forma de dependência aparece
 duas vezes mais neste documento: as tools `code` esperam por staleness, e escore composto,
-lineage e impacto esperam por `edges`.
+lineage e impacto esperam por **quem leia** `edges` — a tabela deixou de ser a pré-condição, e o
+consumidor dela passou a ser.
