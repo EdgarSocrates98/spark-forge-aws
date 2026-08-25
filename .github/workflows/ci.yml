@@ -49,10 +49,17 @@ jobs:
           python -m pip install -e . --no-deps --no-build-isolation
       - name: Lint
         run: python -m ruff check sparkforge scripts tests
-      - name: Test suite
-        run: python -m pytest -q
+      # `Mirror sync` ANTES de `Test suite`, e a ordem e semantica: a suite
+      # roda `sync_skills.py` em modo ESCRITA (test_sync_check_passes_after_sync)
+      # e conserta o disco do runner. Rodando depois, o `--check` media a arvore
+      # ja reparada e dizia OK sobre um commit divergente -- foi exatamente o que
+      # aconteceu em c82a45e. `tests/test_arvore_versionada.py` fecha o buraco de
+      # dentro do pytest olhando HEAD via `git archive`; esta ordem impede que o
+      # passo dedicado continue mentindo para quem le o log do CI.
       - name: Mirror sync
         run: python scripts/sync_skills.py --check
+      - name: Test suite
+        run: python -m pytest -q
       - name: Requirements mirror
         run: python scripts/gen_requirements.py --check
       - name: Lock integrity
