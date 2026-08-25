@@ -413,15 +413,27 @@ class TestCli:
         assert cli_main(["code", "status", "--root", str(raiz)]) == 0
         estado = json.loads(capsys.readouterr().out)
         assert estado["files"] == 1
-        assert estado["nodes"] == 1
+        # `symbols` e nao `nodes`: a chave mudou quando `code status` passou a
+        # sair por `_core.code_status`, que responde no vocabulario da SPEC 64
+        # (`files`, `symbols`, `edges`, `unresolved`). O numero e o mesmo -- o
+        # que mudou foi o nome do campo no contrato, e ele agora e o mesmo que
+        # `sparkforge_code_status` devolve pelo MCP.
+        assert estado["symbols"] == 1
         assert estado["created_at"]
+        assert estado["initialized"] is True
+        assert estado["fresh"] is True
 
     def test_search_sem_indice_recusa_e_nao_cria_banco_vazio(self, tmp_path, capsys):
         """`sqlite3.connect` cria o arquivo -- perguntar nao pode deixar rastro."""
         banco = tmp_path / "nao_existe.sqlite3"
         assert cli_main(["code", "search", "x", "--db", str(banco)]) == 2
         erro = capsys.readouterr().err
-        assert "code index" in erro
+        # A recusa passou a vir de `staleness.garantir_frescor`, que nomeia
+        # `sparkforge code sync` (a constante `ACAO_DE_SYNC`) em vez de
+        # `code index`. A GARANTIA e a mesma e por isso o teste continua: a
+        # recusa acontece ANTES de abrir o banco, o erro nomeia o comando que
+        # resolve, e nenhum arquivo vazio fica no disco.
+        assert "sparkforge code sync" in erro
         # O erro tem que nomear o banco QUE FOI PEDIDO. `--db` ignorado em favor
         # do default sob `--root` daria o mesmo codigo de saida e a mesma frase,
         # e o operador procuraria o defeito no arquivo errado.

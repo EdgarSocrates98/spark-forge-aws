@@ -814,8 +814,11 @@ class TestConfinamentoEhUmSoAlgoritmo:
 class TestOCatalogoContinuaCabendoNaVerificacao:
     """O gate que impede a medicao do Passo 1 de envelhecer em silencio.
 
-    Medido: 43 das 44 tools declaram parametro de caminho, e a unica sem
+    Medido: 49 das 50 tools declaram parametro de caminho, e a unica sem
     nenhum e `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`).
+    Eram 43 de 44 ate a superficie de Code Intelligence entrar: as SEIS tools
+    de `sparkforge_code_*` declaram `repo`, que e a raiz fora da qual nada e
+    lido (INV-002), entao todas as seis caem do lado certo do predicado.
     Se uma tool nova entrar com um caminho batizado de outro jeito
     (`caminho`, `origem`, `destino`), a contagem muda e este teste cai -- que e
     o ponto. O predicado nao adivinha; ele reconhece nomes, e nome novo tem de
@@ -836,4 +839,4 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        assert len(TOOLS) - len(sem_caminho) == 43
+        assert len(TOOLS) - len(sem_caminho) == 49
