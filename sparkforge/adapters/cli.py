@@ -14,15 +14,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from sparkforge import __version__ as _pkg_fallback
 from sparkforge.adapters import _core
-from sparkforge.codeintel import db as _codeintel_db
-from sparkforge.codeintel import index as _codeintel_index
-from sparkforge.codeintel import search as _codeintel_search
 
 try:
     from importlib.metadata import PackageNotFoundError
@@ -773,40 +769,150 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # code --------------------------------------------------------
-    # O PAYLOAD deste verbo nao vem de `_core`, e ele e a unica excecao do
-    # arquivo -- so o tipo de erro (`_core.AdapterError`) continua vindo de la,
-    # porque erro de CLI e tratado num lugar so em `main()`.
-    # `_core` e a casca que empacota FATO e ACHADO -- procedencia,
-    # paginacao, `detail_level`, envelope de evidencia. O indice de codigo nao
-    # produz nem fato nem achado: ele responde ONDE um simbolo esta. Fazer o
-    # payload atravessar `_core` obrigaria a inventar procedencia para uma
-    # linha que so tem caminho e numero de linha -- que e exatamente o envelope
-    # que `docs/harness/CODEINTEL-GAP.md` mede custando varias vezes o fonte.
-    # Os handlers abaixo continuam sem decisao de dominio: eles chamam
-    # `codeintel` e formatam JSON.
+    # O PAYLOAD deste verbo agora VEM de `_core`, como o de todos os outros --
+    # a excecao que existia aqui caiu com a fase da superficie MCP (SPEC 56-77).
+    # A razao dela nao era errada e continua registrada: o indice responde ONDE
+    # um simbolo esta, e nao produz fato nem achado, entao ele nao atravessa o
+    # envelope de FACT (`project_items`, `provenance_ref`, paginacao). O que
+    # mudou e o motivo de estar fora: enquanto nao havia tool MCP, ter o payload
+    # aqui custava uma duplicacao so; com as seis tools de `sparkforge_code_*`,
+    # cada linha de payload que nascesse aqui seria uma linha que a CLI e o MCP
+    # poderiam divergir -- que e exatamente o que `parity.yaml` existe para
+    # pegar. `_core` recebeu as funcoes; ele nao ganhou envelope de fato por
+    # causa disso.
     code_p = sub.add_parser(
         "code",
-        help="Indice local de codigo: indexa, busca por simbolo e mostra o estado.",
+        help=(
+            "Indice local de codigo: prepara, sincroniza, busca simbolo, monta "
+            "contexto e diagnostica."
+        ),
     )
     code_sub = code_p.add_subparsers(dest="code_action", required=True)
 
-    code_index_p = code_sub.add_parser(
-        "index", help="(Re)constroi o indice de `*.py` sob --root."
-    )
-    code_index_p.add_argument("--root", default=".")
-    code_index_p.add_argument("--db", help=_CODE_DB_HELP)
+    def _code_comum(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+        """`--root` e `--db` nos nove subcomandos, de um lugar so.
 
-    code_search_p = code_sub.add_parser("search", help="Busca simbolo por parte do nome.")
+        Repetidos em cada um, bastaria um divergir para `init` gravar num lugar
+        e `search` ler noutro -- e o sintoma seria "nenhum simbolo", nao um
+        erro. Falha calada e a unica que este verbo nao pode ter.
+        """
+        parser.add_argument("--root", default=".")
+        parser.add_argument("--db", help=_CODE_DB_HELP)
+        return parser
+
+    _code_comum(
+        code_sub.add_parser(
+            "init",
+            aliases=["index"],
+            help=(
+                "Prepara o indice sob --root: preflight de seguranca, diretorio, "
+                "conferencia do .gitignore, banco, indexacao e integridade. "
+                "`index` e o nome antigo do mesmo comando."
+            ),
+        )
+    )
+
+    _code_comum(
+        code_sub.add_parser(
+            "sync", help="Poe o indice em dia com a arvore. Unica escrita do verbo."
+        )
+    )
+
+    code_status_p = _code_comum(
+        code_sub.add_parser(
+            "status",
+            help="Estado do indice: frescor, contagens, seguranca e o que mudou na arvore.",
+        )
+    )
+    code_status_p.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=(
+            "Mesmos niveis das tools de fact, conteudo proprio deste verbo: "
+            "`full` acrescenta o bloco de seguranca (SPEC 67) e o de mudancas "
+            "(SPEC 63); `normal` e `summary` param no estado do indice."
+        ),
+    )
+
+    code_search_p = _code_comum(
+        code_sub.add_parser("search", help="Busca simbolo por parte do nome.")
+    )
     code_search_p.add_argument("term")
-    code_search_p.add_argument("--root", default=".")
-    code_search_p.add_argument("--db", help=_CODE_DB_HELP)
-    code_search_p.add_argument("--limit", type=int, default=50)
+    code_search_p.add_argument("--kind", help="Filtra por tipo de no: function, class, method.")
+    code_search_p.add_argument("--path-prefix", help="Filtra por prefixo do caminho relativo.")
+    code_search_p.add_argument("--limit", type=int, default=_core.CODE_SEARCH_DEFAULT_LIMIT)
 
-    code_status_p = code_sub.add_parser(
-        "status", help="O que o indice tem e quando ele foi construido."
+    code_symbol_p = _code_comum(
+        code_sub.add_parser(
+            "symbol",
+            help="Metadado, vizinhanca e raio de impacto de um simbolo. Nunca o corpo.",
+        )
     )
-    code_status_p.add_argument("--root", default=".")
-    code_status_p.add_argument("--db", help=_CODE_DB_HELP)
+    code_symbol_p.add_argument("node_id")
+    code_symbol_p.add_argument("--depth", type=int, default=1)
+    code_symbol_p.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=(
+            "`summary` para no metadado; `normal` acrescenta vizinhanca direta; "
+            "`full` acrescenta o raio de impacto e os testes nele."
+        ),
+    )
+
+    code_read_p = _code_comum(
+        code_sub.add_parser(
+            "read",
+            help=(
+                "Le um trecho do repositorio, por --node-id OU por --file com faixa. "
+                "Tetos duros: 250 linhas, 32 KiB, 4096 tokens."
+            ),
+        )
+    )
+    code_read_p.add_argument("--node-id")
+    code_read_p.add_argument("--file", help="Caminho RELATIVO a --root.")
+    code_read_p.add_argument("--start-line", type=int)
+    code_read_p.add_argument("--end-line", type=int)
+    code_read_p.add_argument("--context-lines", type=int, default=3)
+    code_read_p.add_argument(
+        "--max-tokens", type=int, default=_core.CODE_READ_DEFAULT_TOKENS
+    )
+
+    code_context_p = _code_comum(
+        code_sub.add_parser(
+            "context",
+            help="Monta o ContextPack de uma tarefa a partir do indice, dentro do orcamento.",
+        )
+    )
+    code_context_p.add_argument("task")
+    code_context_p.add_argument("--max-tokens", type=int)
+    code_context_p.add_argument(
+        "--include",
+        action="append",
+        choices=list(_core.CODE_CONTEXT_INCLUDE),
+        help="Repetivel. Omitido, todas as secoes que este motor sabe preencher.",
+    )
+
+    _code_comum(
+        code_sub.add_parser(
+            "doctor",
+            help=(
+                "Diagnostico local do indice e da superficie. Sai 1 quando alguma "
+                "checagem falha. Nao testa conectividade de internet."
+            ),
+        )
+    )
+
+    _code_comum(
+        code_sub.add_parser(
+            "purge",
+            help=(
+                "Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro "
+                "diretorio e recusado."
+            ),
+        )
+    )
 
     # knowledge path --------------------------------------------------------
     knowledge_p = sub.add_parser(
@@ -1670,75 +1776,89 @@ def _cmd_collect_verify(args: argparse.Namespace) -> int:
     return 0
 
 
-def _caminho_do_banco(args: argparse.Namespace) -> Path:
-    """`--db` quando dado, senao o default sob `--root`.
-
-    UMA funcao para os tres subcomandos: com a resolucao repetida em cada
-    handler bastaria um deles divergir para `index` gravar num lugar e `search`
-    ler noutro, devolvendo "nenhum simbolo" em vez de erro -- falha calada, que
-    e a unica que este verbo nao pode ter.
-    """
-    if args.db:
-        return Path(args.db)
-    return Path(args.root) / _codeintel_db.BANCO_PADRAO
-
-
-def _cmd_code_index(args: argparse.Namespace) -> int:
-    banco = _caminho_do_banco(args)
-    banco.parent.mkdir(parents=True, exist_ok=True)
-    resultado = _codeintel_index.indexar(args.root, banco)
-    _print(
-        {
-            "db": banco.as_posix(),
-            "files": resultado.arquivos,
-            "nodes": resultado.nos,
-            # `unreadable` sai na resposta, e nao so no log: ponto cego contado
-            # e diferente de ponto cego silencioso, e quem le a saida precisa
-            # saber que N arquivos nao entraram antes de concluir que um
-            # simbolo nao existe.
-            "unreadable": resultado.ilegiveis,
-            "duration_s": round(resultado.duracao_s, 3),
-        }
-    )
+def _cmd_code_init(args: argparse.Namespace) -> int:
+    _print(_core.code_init(args.root, db=args.db))
     return 0
 
 
-def _cmd_code_search(args: argparse.Namespace) -> int:
-    banco = _caminho_do_banco(args)
-    _exigir_indice(banco)
-    achados = _codeintel_search.buscar(banco, args.term, limite=args.limit)
-    _print(
-        {
-            "term": args.term,
-            "db": banco.as_posix(),
-            "returned_count": len(achados),
-            "results": [asdict(achado) for achado in achados],
-        }
-    )
+def _cmd_code_sync(args: argparse.Namespace) -> int:
+    _print(_core.code_sync(args.root, db=args.db))
     return 0
 
 
 def _cmd_code_status(args: argparse.Namespace) -> int:
-    banco = _caminho_do_banco(args)
-    _exigir_indice(banco)
-    _print({"db": banco.as_posix(), **_codeintel_search.resumo(banco)})
+    _print(_core.code_status(args.root, detail_level=args.detail_level, db=args.db))
     return 0
 
 
-def _exigir_indice(banco: Path) -> None:
-    """Recusa antes de abrir, porque `sqlite3.connect` CRIA o que nao existe.
-
-    Sem esta guarda, buscar num banco inexistente deixaria um arquivo vazio no
-    disco e devolveria erro de tabela ausente -- mensagem que nao diz o que
-    fazer. O erro nomeia o comando que resolve, como todo erro desta CLI.
-    """
-    if _codeintel_search.existe(banco):
-        return
-    raise _core.AdapterError(
-        f"indice inexistente: {banco.as_posix()}. "
-        f"Rode `sparkforge code index --db {banco.as_posix()}` primeiro.",
-        exit_code=2,
+def _cmd_code_search(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_search(
+            args.root,
+            query=args.term,
+            kind=args.kind,
+            path_prefix=args.path_prefix,
+            limit=args.limit,
+            db=args.db,
+        )
     )
+    return 0
+
+
+def _cmd_code_symbol(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_symbol(
+            args.root,
+            node_id=args.node_id,
+            depth=args.depth,
+            detail_level=args.detail_level,
+            db=args.db,
+        )
+    )
+    return 0
+
+
+def _cmd_code_read(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_read(
+            args.root,
+            node_id=args.node_id,
+            file=args.file,
+            start_line=args.start_line,
+            end_line=args.end_line,
+            context_lines=args.context_lines,
+            max_tokens=args.max_tokens,
+            db=args.db,
+        )
+    )
+    return 0
+
+
+def _cmd_code_context(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_context(
+            args.root,
+            task=args.task,
+            max_tokens=args.max_tokens,
+            include=args.include,
+            db=args.db,
+        )
+    )
+    return 0
+
+
+def _cmd_code_doctor(args: argparse.Namespace) -> int:
+    relatorio = _core.code_doctor(args.root, db=args.db)
+    _print(relatorio)
+    # Exit code 1 quando alguma checagem falhou, e nao 0 com o relatorio bonito:
+    # doctor que sempre sai 0 nao serve num gate de CI -- ninguem le o JSON,
+    # todo mundo le o codigo de saida.
+    return 0 if relatorio["ok"] else 1
+
+
+def _cmd_code_purge(args: argparse.Namespace) -> int:
+    _print(_core.code_purge(args.root, db=args.db))
+    return 0
 
 
 _DISPATCH = {
@@ -1774,9 +1894,19 @@ _DISPATCH = {
     ("handoff", None): _cmd_handoff,
     ("playbook", None): _cmd_playbook,
     ("runtime", "detect"): _cmd_runtime_detect,
-    ("code", "index"): _cmd_code_index,
-    ("code", "search"): _cmd_code_search,
+    # `index` e alias historico de `init` (argparse `aliases=`): mesmo parser,
+    # mesmo handler. Duas entradas porque `args.code_action` guarda o nome
+    # DIGITADO, nao o canonico.
+    ("code", "init"): _cmd_code_init,
+    ("code", "index"): _cmd_code_init,
+    ("code", "sync"): _cmd_code_sync,
     ("code", "status"): _cmd_code_status,
+    ("code", "search"): _cmd_code_search,
+    ("code", "symbol"): _cmd_code_symbol,
+    ("code", "read"): _cmd_code_read,
+    ("code", "context"): _cmd_code_context,
+    ("code", "doctor"): _cmd_code_doctor,
+    ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,

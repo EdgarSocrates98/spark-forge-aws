@@ -139,29 +139,41 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "mesma _core.validate_output que sparkforge_validate_output, so que "
             "sobre arquivo."
         ),
-        # Os tres do verbo `code` sao a fase J3. A ausencia de tool MCP e
-        # DECISAO, e a razao e a mesma para os tres: toda tool do catalogo hoje
-        # e sem estado -- recebe um caminho, le o artefato, responde. Estas
-        # dependem de um indice CONSTRUIDO antes, e o indice envelhece sem
-        # avisar: nada compara o sha de hoje com o sha de quando o arquivo foi
-        # indexado. `code search` num indice velho responde "nenhum simbolo" com
-        # a mesma cara com que responde sobre um simbolo que de fato nao existe,
-        # e essa e a pior falha possivel numa tool de busca -- ausencia lida
-        # como ausencia. O sinal de frescor e a fase J4; a tool vem depois dele,
-        # nao antes. `docs/harness/CODEINTEL-GAP.md` ja recusa por escrito somar
-        # tool antes do que ela consultaria, e a mesma disciplina vale para o
-        # frescor do que ela consultaria.
+        # DESVIO REGISTRADO SOBRE O PARAGRAFO QUE ESTAVA AQUI (fase da
+        # superficie MCP, SPEC 56-77). O paragrafo antigo recusava tool MCP
+        # para `code index`, `code search` e `code status` porque o indice
+        # envelhecia sem sinal: "indice velho responde 'nenhum simbolo' com a
+        # mesma cara com que responde sobre um simbolo que de fato nao existe".
+        # A recusa estava CERTA e a condicao dela FECHOU: `codeintel/staleness`
+        # confere a arvore contra o indice em toda query, sincroniza o que cabe
+        # no caminho da resposta e RECUSA o resto com `STALE_INDEX`. Com isso,
+        # `code search` e `code status` ganharam tool MCP e sairam desta lista.
+        #
+        # O que continua aqui sao os quatro verbos de CICLO DE VIDA do estado
+        # local, e a ausencia de tool para eles nao e a mesma coisa: a SPEC os
+        # coloca em 73/74/75/76, FORA da lista de tools de 57 a 67, e a razao e
+        # a mesma para os quatro -- eles operam sobre a maquina de quem chama,
+        # antes ou depois de haver o que consultar, e nao sobre o grafo.
+        "code init": (
+            "preparo de estado local (SPEC 74): preflight, diretorio, "
+            ".gitignore, banco. `sparkforge_code_sync` ja constroi o indice "
+            "para um cliente MCP -- init acrescenta so o que e do disco de quem "
+            "chama."
+        ),
         "code index": (
-            "constroi estado local em .sparkforge/local/; tool MCP so depois do "
-            "sinal de frescor da fase J4."
+            "alias historico de `code init`, mesmo parser e mesmo handler; "
+            "mantido para nao quebrar quem ja o chama."
         ),
-        "code search": (
-            "consulta indice que envelhece sem sinal; indice velho responderia "
-            "'nenhum simbolo' igual a simbolo inexistente."
+        "code doctor": (
+            "diagnostico da instalacao (SPEC 75): permissao de filesystem, "
+            ".gitignore, registro das tools. Um cliente MCP que precisasse dele "
+            "ja estaria com o servidor de pe -- o diagnostico e para quem esta "
+            "montando o servidor, nao para quem o consome."
         ),
-        "code status": (
-            "diz o que o indice local tem; sem uso para um cliente MCP enquanto "
-            "nao houver tool que consulte esse indice."
+        "code purge": (
+            "apaga o diretorio de estado local (SPEC 76). Tool MCP de apagar "
+            "disco seria a unica destrutiva do catalogo, e nenhuma capacidade "
+            "de investigacao precisa dela: reconstruir e `code sync`."
         ),
     }
 

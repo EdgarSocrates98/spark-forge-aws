@@ -312,7 +312,20 @@ class TestSuperficieMCP:
         # `judge` devolve findings e `rules_lookup` devolve regras: nenhum dos
         # dois tem `provenance`, e o `summary` de fato (`id`/`kind`/`measures`)
         # nao existe nesses shapes.
-        assert sem_flag == {"sparkforge_judge", "sparkforge_rules_lookup"}
+        #
+        # `code_search` entrou pela MESMA razao, um dominio adiante: ele devolve
+        # REFERENCIA DE SIMBOLO (`node_id`, nome, caminho, linha), que ja e o
+        # minimo para alguem ir ao codigo -- nao ha o que um `summary` tirasse
+        # sem quebrar exatamente isso. O `limit` dele nao e paginacao de fato: e
+        # o teto do numero de simbolos da SPEC 58, e nao ha cursor. As outras
+        # duas tools de codigo que TEM `detail_level` (`code_symbol` e
+        # `code_status`) usam o mesmo mecanismo desta flag, e por isso nao
+        # aparecem aqui -- elas nao declaram `limit`.
+        assert sem_flag == {
+            "sparkforge_judge",
+            "sparkforge_rules_lookup",
+            "sparkforge_code_search",
+        }
 
     def test_nenhuma_superficie_promete_buscar_fato_por_id(self):
         """A primeira versao dizia "peca o fato inteiro por id quando precisar"

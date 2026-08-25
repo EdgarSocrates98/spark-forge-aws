@@ -37,15 +37,57 @@ _INSTALL_HINT = (
 )
 
 
-def build_server() -> Any:
+# SPEC 71. As tools que devolvem CORPO DE FONTE do repositorio analisado.
+#
+# Lista literal, e nao derivacao de anotacao: nenhuma propriedade declarada
+# separa "devolve trecho" de "devolve metadado", e inventar uma so para esta
+# porta seria criar um segundo lugar onde a verdade pode divergir do codigo.
+# `tests/test_adapters_mcp.py` cobra que a lista bate com quem de fato tem
+# `snippet` no `outputSchema`.
+TOOLS_COM_FONTE = ("sparkforge_code_read",)
+
+
+def tools_do_transporte(transport: str) -> dict[str, dict[str, Any]]:
+    """O catalogo servido por `transport`. Em HTTP, sem as tools de fonte.
+
+    SPEC 71: o Code Intelligence e `stdio-first`, e sob `transport=http` com o
+    perfil `offline-strict` as tools que devolvem fonte ficam DESABILITADAS. A
+    razao e de superficie, nao de confianca no cliente: stdio fala com um
+    processo filho na mesma maquina; HTTP abre uma porta, e uma porta que
+    devolve trecho arbitrario do repositorio e exfiltracao de codigo com
+    autenticacao nenhuma -- a SPEC so cogita liberar isso atras de bind em
+    127.0.0.1, validacao de Host e Origin, token efemero e rate limit, nada do
+    que existe hoje.
+
+    `offline-strict` NAO e parametro aqui porque nao existe outro perfil
+    implementado neste repositorio: `_core.code_status` DERIVA o perfil da
+    varredura de imports de rede, e ele so sai `offline-strict` ou `violated`.
+    Aceitar um parametro de perfil seria uma manopla que hoje so tem um valor
+    valido -- e uma manopla assim vira, no primeiro dia de pressa, o jeito de
+    desligar a porta.
+    """
+    if transport != "http":
+        return TOOLS
+    return {n: s for n, s in TOOLS.items() if n not in TOOLS_COM_FONTE}
+
+
+def build_server(transport: str = "stdio") -> Any:
     """Constroi um `mcp.server.Server` registrando `TOOLS`. Falha com mensagem
-    acionavel (SystemExit) se o SDK nao estiver instalado."""
+    acionavel (SystemExit) se o SDK nao estiver instalado.
+
+    `transport` NAO liga o servidor -- quem faz isso e `main()`. Ele entra aqui
+    porque o CATALOGO depende dele (SPEC 71): filtrar depois, na hora de
+    atender, deixaria a tool visivel em `tools/list` e recusando em
+    `tools/call`, que e a pior das duas formas -- o cliente escolheria a tool,
+    montaria o pedido e so entao descobriria.
+    """
     try:
         from mcp.server import Server
         from mcp.types import CallToolResult, TextContent, Tool
     except ImportError as exc:
         raise SystemExit(_INSTALL_HINT) from exc
 
+    catalogo = tools_do_transporte(transport)
     server = Server("sparkforge")
 
     @server.list_tools()
@@ -57,7 +99,7 @@ def build_server() -> Any:
                 inputSchema=spec["inputSchema"],
                 outputSchema=spec["outputSchema"],
             )
-            for name, spec in TOOLS.items()
+            for name, spec in catalogo.items()
         ]
 
     @server.call_tool()
@@ -87,6 +129,29 @@ def build_server() -> Any:
         pelo SDK do MCP a partir do dict devolvido abaixo, e nao passa por
         `json.dumps` nenhum deste modulo.
         """
+        if name not in catalogo:
+            # Nome fora do catalogo DESTE transporte. Sem esta porta, uma tool
+            # escondida de `tools/list` continuaria atendendo `tools/call` para
+            # quem soubesse o nome -- e "escondida" nao e "desabilitada".
+            return CallToolResult(
+                content=[
+                    TextContent(
+                        type="text",
+                        text=json.dumps(
+                            {
+                                "error": (
+                                    f"ferramenta indisponivel no transporte "
+                                    f"{transport!r}: {name}. Use --transport stdio."
+                                ),
+                                "exit_code": 2,
+                            },
+                            ensure_ascii=False,
+                            separators=(",", ":"),
+                        ),
+                    )
+                ],
+                isError=True,
+            )
         result = call_tool(name, arguments)
         if isinstance(result, dict) and "error" in result and "exit_code" in result:
             return CallToolResult(
@@ -200,7 +265,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover -- exige o S
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args(argv)
 
-    server = build_server()
+    server = build_server(args.transport)
 
     if args.transport == "stdio":
         _run_stdio(server)

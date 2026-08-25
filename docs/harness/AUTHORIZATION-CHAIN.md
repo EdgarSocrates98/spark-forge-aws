@@ -19,7 +19,7 @@ allowed_tools, mutating, approval)` — uma checagem de um nível, com um boolea
 | `CLOUD_MUTATION` | ¬`readOnlyHint` ∧ `openWorldHint` |
 | `LOCAL_MUTATION` | ¬`readOnlyHint` ∧ ¬`openWorldHint` |
 
-Uma segunda tabela mantida à mão seria a família de defeito que a Fase 5c achou
+Uma segunda tabela mantida à mão seria a família de defeito que a Fase 11c achou
 nos dois `EXTRACTORS` paralelos: uma cresce, a outra não, e o desacordo é mudo.
 `tests/test_harness_authorization.py` tranca a derivação — um teste troca a
 anotação da mesma tool sintética nas quatro combinações e cobra que a classe
@@ -47,7 +47,7 @@ chamam `get_object`, `get_job`, `get_metric_data`, `SELECT`/`get_work_group`. Ma
 `readOnlyHint` **não tem lado**: ele afirma que a tool não modifica o ambiente
 dela, e os sete modificam o ambiente **local**. Todos terminam em
 `sparkforge.collect.aws._write_and_register`, que grava o artefato e depois grava
-o manifesto `path` + `sha256` que `sparkforge_collect_verify` confere — e cuja
+o manifesto `path` + `sha2116` que `sparkforge_collect_verify` confere — e cuja
 entrada de mesmo `path` é substituída a cada coleta. Medido executando
 `_write_and_register` num diretório vazio: **zero arquivos antes, dois depois**.
 
@@ -77,12 +77,12 @@ confirmação, não menos —, e nenhuma capacidade foi removida.
 ## Duas classes ficam sem membro, e não são as esperadas
 
 Distribuição depois da correção, derivada executando `tool_class()` sobre as
-44 tools:
+50 tools:
 
 | classe | tools |
 |---|---|
 | `READ_ONLY` | 32 |
-| `LOCAL_MUTATION` | 5 |
+| `LOCAL_MUTATION` | 11 |
 | `CLOUD_MUTATION` | 7 |
 | `CLOUD_READ` | 0 |
 | `DESTRUCTIVE` | 0 |
@@ -170,14 +170,14 @@ sistema de arquivos, com a classe derivada por `tool_class()`:
 | classe | declaram caminho | não declaram |
 |---|---|---|
 | `READ_ONLY` | 31 | 1 |
-| `LOCAL_MUTATION` | 5 | 0 |
+| `LOCAL_MUTATION` | 11 | 0 |
 | `CLOUD_MUTATION` | 7 | 0 |
 
 Medido: **31** das tools `READ_ONLY` declaram algum argumento de caminho
 (`path`, `repo`, `facts_path`, `before`/`after`, `file`, `report_path`,
 `findings_path`), e a única exceção é `sparkforge_rules_lookup`, que só aceita
 `category`, `id`, `limit` e `cursor`. Estendendo às outras classes, o total é
-**43** de 44 — as cinco `LOCAL_MUTATION` e as sete `CLOUD_MUTATION` declaram
+**49** de 50 — as cinco `LOCAL_MUTATION` e as sete `CLOUD_MUTATION` declaram
 caminho sem exceção. Receber caminho é a forma normal da chamada neste
 catálogo, não um caso de borda. As onze tools que a SPEC do `SFCI` propõe
 recebem todas caminho, e é o caminho que decide se a chamada é legítima.
