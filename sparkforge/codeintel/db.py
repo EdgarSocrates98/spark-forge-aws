@@ -67,6 +67,18 @@ que nao resolve. J4 traz a resolucao, entao a tabela entra, e entra ao lado de
 `unresolved_refs` guarda o que nao resolveu; so a soma das duas diz qual e a
 cobertura, e contar ponto cego e diferente de nao ter ponto cego.
 
+E `data_flow` REPETE O PAR, PARA OUTRA PERGUNTA
+-----------------------------------------------
+`edges` responde "quem chama quem". Nenhuma linha dela responde "de que tabela
+veio esta tabela": as pontas do fluxo de dado sao dataset e DataFrame, e nenhum
+dos dois tem simbolo em `nodes`. Por isso `data_flow` e tabela propria, e por
+isso ela entra acompanhada de `data_flow_blind_spots` -- `spark.table(f"{db}.{t}")`
+e uma leitura que EXISTE e nao tem nome, e um schema que so guardasse o que
+resolveu faria um job inteiro de nomes dinamicos passar por job sem leitura.
+A doutrina e a mesma do par acima: contar ponto cego e diferente de nao ter.
+
+O PRECO DAS DUAS ESTA MEDIDO em `index.indexar`, e nao e pequeno.
+
 SUBIR `SCHEMA_VERSION` NAO BASTA -- ALGUEM TEM QUE AGIR SOBRE ELE
 -----------------------------------------------------------------
 `CREATE TABLE IF NOT EXISTS` acrescenta tabela nova e NAO conserta tabela
@@ -88,9 +100,13 @@ from pathlib import Path
 
 from sparkforge import __version__
 
-# 2 desde J4: `edges` entrou e `unresolved_refs` trocou de colunas. Banco da
-# versao 1 nao e migravel para esta -- ver `_descartar_schema_de_versao_anterior`.
-SCHEMA_VERSION = 2
+# 3 desde o fluxo de dados: `data_flow` e `data_flow_blind_spots` entraram. Banco
+# de versao anterior nao e migravel para esta -- ver
+# `_descartar_schema_de_versao_anterior`. Subir aqui e o que faz um indice antigo
+# ser REFEITO em vez de responder linhagem vazia sobre um schema que nao a tinha:
+# sem o bump, `CREATE TABLE IF NOT EXISTS` criaria as duas tabelas vazias e o
+# pacote diria "zero fluxo medido" sobre uma arvore que nunca foi lida para isso.
+SCHEMA_VERSION = 3
 
 # Onde o indice mora quando ninguem escolhe. Declarado AQUI, no modulo que abre o
 # arquivo, e nao em quem consulta: com o caminho repetido em `indexar` e em
@@ -196,6 +212,66 @@ _TABELAS = (
         reason         TEXT NOT NULL
     )
     """,
+    # O fluxo de dado, que `edges` nao sabe guardar: `edges` liga CHAMADA a
+    # chamada, e nenhuma linha dela diz que `gold.vendas` descende de
+    # `bronze.vendas`. As pontas aqui nao sao `nodes` -- sao dataset e DataFrame,
+    # que nao tem simbolo no indice --, e por isso a tabela e propria e nao uma
+    # `kind` nova em `edges`: uma chave estrangeira para `nodes(id)` nao teria
+    # para onde apontar, e afrouxa-la para aceitar id de fora derrubaria a
+    # garantia que faz `edges` nao ter no fantasma.
+    #
+    # As pontas saem DESNORMALIZADAS -- nome, kind e resolucao gravados na
+    # propria linha em vez de uma tabela de nos ao lado. A travessia entre
+    # arquivos (`montante`, `jusante`, `linhagem_de_tabela`) continua sendo do
+    # grafo em memoria de `lineage.py`, que e onde ela ja esta escrita e testada;
+    # o que se consulta daqui e "que fluxo existe NESTES arquivos", que e uma
+    # varredura por `file_id` e nao uma travessia. Guardar nos so para reconstruir
+    # em SQL uma travessia que ja existe em Python seria uma segunda
+    # implementacao da mesma pergunta, e a divergencia entre as duas nao
+    # levantaria nada.
+    #
+    # `source_resolved` e `target_resolved` sao coluna e nao `name = '<dynamic>'`
+    # pelo mesmo motivo que em `lineage.NoDeDados`: um dia um nome pode ser
+    # conhecido e a resolucao continuar duvidosa, e nesse dia os dois campos
+    # precisam poder discordar.
+    """
+    CREATE TABLE IF NOT EXISTS data_flow (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        file_id         TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+        source_name     TEXT NOT NULL,
+        source_kind     TEXT NOT NULL,
+        source_resolved INTEGER NOT NULL,
+        target_name     TEXT NOT NULL,
+        target_kind     TEXT NOT NULL,
+        target_resolved INTEGER NOT NULL,
+        operation       TEXT NOT NULL,
+        scope           TEXT NOT NULL,
+        line            INTEGER NOT NULL,
+        confidence      REAL NOT NULL DEFAULT 1.0
+    )
+    """,
+    # A outra metade de `data_flow`, e ela entra JUNTO pela mesma razao que
+    # `unresolved_refs` entrou junto com `edges`: uma sem a outra mente.
+    # `spark.table(f"{db}.{tbl}")` e uma leitura que existe e nao tem nome, e
+    # descartar a linha faria um job inteiro de nomes dinamicos passar por job
+    # sem leitura. `template` guarda a forma com os buracos preservados e
+    # `variables` os nomes lidos da expressao -- e o que permite a um humano ir
+    # ver de onde o nome vem sem que o motor tenha adivinhado.
+    #
+    # `variables` e JSON numa coluna TEXT e nao tabela filha: a lista e lida
+    # inteira ou nao e lida, ninguem consulta por variavel, e uma terceira
+    # tabela custaria mais um CASCADE para atravessar a cada reindexacao.
+    """
+    CREATE TABLE IF NOT EXISTS data_flow_blind_spots (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        file_id   TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+        reason    TEXT NOT NULL,
+        template  TEXT NOT NULL,
+        variables TEXT NOT NULL,
+        operation TEXT NOT NULL,
+        line      INTEGER NOT NULL
+    )
+    """,
     # `node_id` fica UNINDEXED porque e chave de volta, nao termo de busca:
     # indexado, os 32 hex dele passariam a casar em MATCH. Sem tokenizador
     # custom porque e o default que quebra em nao-alfanumerico, e e isso que faz
@@ -247,6 +323,15 @@ _INDICES = (
     "CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id, kind)",
     "CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id, kind)",
     "CREATE INDEX IF NOT EXISTS idx_edges_kind ON edges(kind)",
+    # Os dois servem A MESMA coluna por dois motivos que valem sozinhos: a
+    # consulta do `ContextPack` filtra fluxo por arquivo selecionado, e o
+    # `DELETE FROM files` de toda reindexacao dispara o CASCADE por `file_id`.
+    # A fatura do segundo motivo ja foi paga uma vez neste banco -- ver
+    # `idx_unresolved_source_id` acima, onde a falta do indice custou 10.4 s
+    # contra 3.5 s na SEGUNDA indexacao. Nao ha razao para descobrir de novo.
+    "CREATE INDEX IF NOT EXISTS idx_data_flow_file_id ON data_flow(file_id)",
+    "CREATE INDEX IF NOT EXISTS idx_data_flow_blind_file_id"
+    " ON data_flow_blind_spots(file_id)",
 )
 
 # Ordem de DROP: filho antes de pai. Com `foreign_keys` efetivo -- e `abrir`
@@ -254,6 +339,13 @@ _INDICES = (
 # dispararia o CASCADE em vez do descarte limpo que se pretende aqui.
 _TABELAS_PARA_DESCARTE = (
     "symbols_fts",
+    # As duas do fluxo de dado referenciam `files`, entao entram ANTES dela --
+    # e a mesma regra de filho antes de pai que vale para o resto da lista.
+    # Esquece-las aqui e o ponto cego que a docstring de `lineage.py` prevê:
+    # tabela que nao esta nesta lista sobrevive a um bump de `SCHEMA_VERSION`
+    # carregando linhas do schema velho, e nada acusa.
+    "data_flow_blind_spots",
+    "data_flow",
     "unresolved_refs",
     "edges",
     "nodes",

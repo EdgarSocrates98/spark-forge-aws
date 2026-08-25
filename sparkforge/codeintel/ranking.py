@@ -31,13 +31,21 @@ Dois NAO sao, e eles aparecem em `Escore` com valor zero em vez de sumir:
   por isso nao esta escrito aqui; `Resultado.nao_resolvidas` de `indexar` o
   devolve medido. Um peso construido sobre essa inferencia ordenaria por
   acidente.
-- `lineage`: nao existe no de tabela no schema. `edges` grava chamada; leitura,
-  escrita e transformacao de dado nao tem onde ser ponta de aresta. Nao ha o que
-  medir.
+- `lineage`: a razao MUDOU, e o valor nao. Ate `data_flow` entrar em `db.py`
+  nao havia no de dado no schema e nao havia o que medir. Agora ha: a tabela
+  grava leitura, escrita e transformacao, e a coluna `scope` dela carrega o
+  MESMO nome qualificado que `nodes.qualified_name` -- entao "este simbolo move
+  dado" e uma pergunta que o indice hoje responde. O peso continua zero porque
+  liga-lo muda a ORDEM de todo pacote que este modulo produz, e trocar a ordem
+  de recuperacao e mudanca que precisa de medicao propria: sem ela, o unico
+  jeito de saber se o ranking melhorou seria achar que melhorou. Zero aqui e
+  "medivel e ainda nao medido", que e diferente do que era e continua diferente
+  de inventado.
 
 Ficam como campo de valor zero, e nao como componente ausente, porque a
 diferenca importa para quem le a saida: zero declarado diz "a SPEC pede, o
-indice ainda nao sustenta". Campo ausente diria "ninguem pensou nisso".
+indice ainda nao sustenta" -- ou, no caso de `lineage`, "sustenta e ninguem
+mediu o efeito". Campo ausente diria "ninguem pensou nisso".
 `test_componentes_sem_lastro_sao_zero_declarado` prende os dois onde estao.
 
 O QUE ESTE MODULO NAO PROMETE

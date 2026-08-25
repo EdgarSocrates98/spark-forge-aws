@@ -5,9 +5,12 @@ AS CINCO AFIRMACOES QUE ESTE ARQUIVO EXISTE PARA PRENDER
 1. O PACOTE CABE, E CABER E MEDIDO EM BYTE. Estimativa de token nao serve de
    teto -- ver `test_codeintel_budget.py`. Aqui a asserção e sobre o tamanho do
    que sai serializado.
-2. O QUE O INDICE NAO SABE, O PACOTE NAO AFIRMA. `index.fresh` sai `None`,
-   `lineage` e `snippets` saem vazios. `true` num campo que ninguem mede e a
-   classe de alegacao que o gate de lastro deste repositorio recusa.
+2. O QUE O INDICE NAO SABE, O PACOTE NAO AFIRMA. `index.fresh` sai `None` e
+   `snippets` sai vazio. `true` num campo que ninguem mede e a classe de
+   alegacao que o gate de lastro deste repositorio recusa. `lineage` estava
+   nesta lista e saiu dela: hoje ele e MEDIDO, e o que nao se pode nomear sai
+   como recusa com template e variaveis -- nunca como palpite e nunca como
+   lista vazia calada.
 3. O AVISO DE NAO RESOLVIDO SOBREVIVE AO CORTE. A lista pode encolher; o TOTAL
    nao. A maioria das referencias deste indice nao resolve, e um pacote que
    mostrasse vinte linhas sem o total pareceria ter vinte pontos cegos. O numero
@@ -43,6 +46,7 @@ from sparkforge.codeintel.context import (
     ContextPack,
     _candidatos,
     _fixar_metricas_do_posfixo,
+    _redutores,
     montar,
 )
 from sparkforge.codeintel.index import indexar
@@ -74,6 +78,37 @@ class SkewPlanner:
     def plan(self, df):
         return skew_helper(df)
 '''
+
+# O arquivo que da lastro a secao `lineage`. Tem os TRES casos de proposito, e
+# nao so o feliz: uma tabela lida com nome literal, uma escrita com nome
+# literal, e um `spark.table(f"{db}.{tbl}")` cujo nome so existe em execucao.
+# Sem o terceiro, um teste de linhagem provaria que o pacote sabe responder e
+# nao provaria nada sobre o que ele faz quando NAO sabe -- que e a metade do
+# contrato que este subsistema existe para sustentar.
+CARGA_PYSPARK = '''
+def carga_de_vendas(spark, db, tbl):
+    bruto = spark.table("bronze.vendas")
+    limpo = bruto.filter("valor > 0").withColumn("dia", 1)
+    limpo.write.saveAsTable("gold.vendas")
+    incerto = spark.table(f"{db}.{tbl}")
+    return incerto
+'''
+
+# Uma cadeia longa de proposito: o corte por byte da secao 53 e a reducao da
+# secao 54 so tem o que provar quando a linhagem NAO cabe. Com as cinco arestas
+# de `CARGA_PYSPARK` a fatia de 15% nunca aperta, e os dois testes de teto
+# passariam sem que nenhum corte tivesse acontecido.
+CARGA_LONGA = "\n".join(
+    [
+        "def carga_larga(spark):",
+        '    df = spark.table("bronze.pedidos")',
+    ]
+    + [f'    df = df.withColumn("c{i}", {i})' for i in range(40)]
+    + [
+        '    df.write.saveAsTable("gold.pedidos")',
+        '    return spark.table(f"{a}.{b}")',
+    ]
+)
 
 
 # Doze simbolos que casam termos de clusters diferentes. Com dois ou tres, TODA
@@ -116,7 +151,18 @@ def banco(tmp_path):
     (raiz / "pipeline").mkdir(parents=True)
     (raiz / "pipeline" / "join_tuning.py").write_text(ANINHADAS, encoding="utf-8")
     (raiz / "pipeline" / "skew_tuning.py").write_text(OUTRO_ARQUIVO, encoding="utf-8")
+    (raiz / "pipeline" / "carga_vendas.py").write_text(CARGA_PYSPARK, encoding="utf-8")
     alvo = tmp_path / "idx.sqlite3"
+    indexar(raiz, alvo)
+    return alvo
+
+
+@pytest.fixture
+def banco_longo(tmp_path):
+    raiz = tmp_path / "longa"
+    raiz.mkdir()
+    (raiz / "carga_larga.py").write_text(CARGA_LONGA, encoding="utf-8")
+    alvo = tmp_path / "longo.sqlite3"
     indexar(raiz, alvo)
     return alvo
 
@@ -184,16 +230,17 @@ def test_a_procedencia_do_indice_sai_sem_nomear_a_maquina(banco):
     assert "arvore" not in str(indice)
 
 
-def test_lineage_e_snippets_saem_vazios_e_isso_e_a_afirmacao(banco):
-    """Os dois campos existem e ficam vazios por razao registrada.
+def test_snippets_sai_vazio_e_isso_e_a_afirmacao(banco):
+    """O campo existe e fica vazio por razao registrada.
 
-    `lineage` porque nao ha no de tabela no schema -- `edges` grava chamada.
-    `snippets` porque o ciclo de vida de recuperacao de source nao existe e a
-    INV-010 proibe corpo de fonte persistido. No dia em que existir, `snippets`
-    deve consumir `ContextFunnel`, e nao um empacotador de trecho novo.
+    O ciclo de vida de recuperacao de source nao existe e a INV-010 proibe
+    corpo de fonte persistido. No dia em que existir, `snippets` deve consumir
+    `ContextFunnel`, e nao um empacotador de trecho novo.
+
+    `lineage` SAIA junto com ele ate o fluxo de dados ser persistido no indice.
+    Deixou de sair -- ver o bloco de testes de linhagem abaixo.
     """
     saida = montar(banco, "join").para_dicionario()
-    assert saida["lineage"] == []
     assert saida["snippets"] == []
 
 
@@ -286,6 +333,172 @@ def test_duas_montagens_iguais_dao_os_mesmos_bytes(banco):
     primeira = budget.serializar(montar(banco, "join skew").para_dicionario())
     segunda = budget.serializar(montar(banco, "join skew").para_dicionario())
     assert primeira == segunda
+
+
+# ------------------------------------------------------------ linhagem
+
+
+def test_a_linhagem_liga_a_tabela_lida_a_tabela_escrita(banco):
+    """O caso feliz, e ele e o MENOS importante dos tres deste bloco.
+
+    `edges` grava chamada e nao sabe que `gold.vendas` descende de
+    `bronze.vendas`. Quem sabe e `codeintel.lineage`, e o que este teste prende
+    e que o pacote de fato o CONSULTA -- antes desta fase ele devolvia lista
+    vazia sem nunca ter perguntado, que e indistinguivel de "nao ha fluxo".
+    """
+    saida = montar(banco, "carga_de_vendas").para_dicionario()
+    fluxos = [item for item in saida["lineage"] if item["kind"] == "flow"]
+    assert fluxos, saida["lineage"]
+
+    leituras = {
+        item["source"] for item in fluxos if item["operation"] == "READ"
+    }
+    escritas = {item["target"] for item in fluxos if item["operation"] == "WRITE"}
+    assert "bronze.vendas" in leituras
+    assert "gold.vendas" in escritas
+
+
+def test_nome_de_tabela_montado_em_execucao_sai_como_recusa_e_nunca_como_palpite(banco):
+    """A regra que define o subsistema, e a metade do contrato que importa mais.
+
+    `spark.table(f"{db}.{tbl}")` nao produz tabela nenhuma. Produz uma recusa
+    com o template de buracos preservados e os nomes das variaveis -- o que
+    permite a um humano ir ver de onde o nome vem sem que o motor tenha
+    adivinhado. Um palpite com cara de fato faz alguem investigar a tabela
+    errada, e nada acusa.
+
+    As duas asserções negativas nao sao redundancia: a primeira prende que a
+    recusa APARECE, e a segunda que nenhum nome foi inventado no lugar dela.
+    """
+    saida = montar(banco, "carga_de_vendas").para_dicionario()
+    recusas = [item for item in saida["lineage"] if item["kind"] == "blind_spot"]
+    assert [item["reason"] for item in recusas] == ["DYNAMIC_TABLE_IDENTIFIER"]
+    assert recusas[0]["template"] == "{db}.{tbl}"
+    assert recusas[0]["variables"] == ["db", "tbl"]
+
+    nomes = {item["source"] for item in saida["lineage"] if item["kind"] == "flow"}
+    nomes |= {item["target"] for item in saida["lineage"] if item["kind"] == "flow"}
+    assert not any(nome in ("db.tbl", "{db}.{tbl}", "db", "tbl") for nome in nomes)
+
+
+def test_o_dataset_sem_nome_entra_no_fluxo_marcado_e_nao_batizado(banco):
+    """A leitura ACONTECEU, e esconde-la seria mentir por omissao.
+
+    O que nao se sabe e o NOME, nao a existencia da leitura. A aresta sai com o
+    marcador `<dynamic>` e `source_resolved` falso, que e o par que faz quem le
+    tropecar em vez de confundir o marcador com um identificador do catalogo.
+
+    Orcamento folgado de proposito: MEDIDO, a fatia de 15% sobre o padrao de
+    5400 da 810 bytes, e a recusa mais os dois primeiros fluxos primarios ja
+    custam 647 -- o terceiro, que e justamente este, nao cabe nos 163 que
+    sobram. Cortar e o comportamento certo e a recusa da MESMA linha sobrevive
+    (`test_nome_de_tabela_montado_em_execucao_...`); o que se prende aqui e a
+    FORMA da aresta, e mede-la num pacote onde ela nao cabe mediria o corte.
+    """
+    saida = montar(banco, "carga_de_vendas", max_bytes=12000).para_dicionario()
+    dinamicos = [
+        item
+        for item in saida["lineage"]
+        if item["kind"] == "flow" and not item["source_resolved"]
+    ]
+    assert dinamicos
+    assert all(item["source"] == "<dynamic>" for item in dinamicos)
+
+
+def test_arquivo_sem_pyspark_devolve_linhagem_medida_e_igual_a_zero(banco):
+    """Zero MEDIDO e zero NAO PERGUNTADO se leem igual sem as metricas.
+
+    A lista vazia sozinha nao distingue "este arquivo nao move dado" de "o
+    pacote nao consultou linhagem" -- que era exatamente o estado anterior. Os
+    dois totais em `metrics` sao o que separa os dois casos, e por isso eles
+    saem SEMPRE, inclusive quando valem zero.
+    """
+    saida = montar(banco, "aaa_aninhada").para_dicionario()
+    assert saida["lineage"] == []
+    assert saida["metrics"]["lineage_flows_total"] == 0
+    assert saida["metrics"]["lineage_blind_spots_total"] == 0
+
+
+def test_a_alocacao_da_secao_53_limita_a_linhagem(banco_longo):
+    """A secao 53 reserva 15% para linhagem, e a fatia so tem efeito se cortar.
+
+    Sem o corte por categoria, uma cadeia de quarenta transformacoes comeria a
+    fatia de simbolo e de relacao, e a reducao da secao 54 chegaria depois de o
+    estrago estar feito -- o mesmo defeito que a lista de nao resolvidas ja
+    tinha.
+    """
+    saida = montar(banco_longo, "carga_larga", max_bytes=5400).para_dicionario()
+    fatias = budget.alocar(5400)
+    assert budget.tamanho_em_bytes({"l": saida["lineage"]}) <= fatias["lineage"] + 20
+
+
+def test_linhagem_que_nao_cabe_e_cortada_com_o_total_preservado(banco_longo):
+    """O teto e duro, e o corte e declarado -- nunca silencioso.
+
+    A lista encolhe; os DOIS totais nao. Um pacote que mostrasse tres fluxos sem
+    dizer que havia quarenta e cinco pareceria descrever o job inteiro, e e essa
+    leitura errada que os totais impedem.
+    """
+    folgado = montar(banco_longo, "carga_larga", max_bytes=12000).para_dicionario()
+    apertado = montar(banco_longo, "carga_larga", max_bytes=2400).para_dicionario()
+
+    assert len(apertado["lineage"]) < len(folgado["lineage"])
+    assert (
+        apertado["metrics"]["lineage_flows_total"]
+        == folgado["metrics"]["lineage_flows_total"]
+    )
+    assert apertado["metrics"]["lineage_flows_total"] > len(
+        [item for item in apertado["lineage"] if item["kind"] == "flow"]
+    )
+
+
+def test_a_recusa_de_linhagem_sobrevive_ao_fluxo_secundario(banco_longo):
+    """`secondary_lineage` sacrifica o salto entre DataFrames, e nao a recusa.
+
+    Os quarenta `withColumn` sao detalhe do caminho; a tabela que nao se soube
+    nomear e ponto cego. A secao 54 manda cortar o secundario, e um redutor que
+    esvaziasse a secao inteira jogaria fora o aviso junto com o detalhe -- o
+    mesmo erro que `_ultimo_recurso` evita ao trocar a lista de nao resolvidas
+    pela contagem em vez de apagar as duas.
+    """
+    apertado = montar(banco_longo, "carga_larga", max_bytes=2400).para_dicionario()
+    tipos = [item["kind"] for item in apertado["lineage"]]
+    assert "blind_spot" in tipos, apertado["lineage"]
+    assert apertado["metrics"]["lineage_blind_spots_total"] >= 1
+
+
+def test_secondary_lineage_sacrifica_o_caminho_antes_das_pontas_e_nunca_a_recusa():
+    """A ordem de sacrificio do passo, exercitada direto no redutor.
+
+    Direto e nao por `montar` pela mesma razao de
+    `test_a_escrita_das_metricas_do_posfixo_precisa_de_mais_de_uma_passada`: a
+    propriedade e do redutor, e chegar nele por `montar` exige esgotar os seis
+    passos anteriores da `ORDEM_DE_REDUCAO` -- `secondary_lineage` e o ultimo.
+    Um teste que dependesse disso mediria os outros seis.
+
+    `secondary_lineage` era o unico passo da secao 54 registrado em `_redutores`
+    como "nao ha o que reduzir", com a razao "lineage sai vazio". A razao deixou
+    de valer, e o que este teste prende e a ordem inversa de valor: primeiro o
+    salto entre DataFrames, depois a leitura e a escrita, e a recusa NUNCA.
+    """
+    passo = _redutores(set())["secondary_lineage"]
+    pacote = {
+        "lineage": [
+            {"kind": "blind_spot", "reason": "DYNAMIC_TABLE_IDENTIFIER"},
+            {"kind": "flow", "source_kind": "dataset", "target_kind": "dataframe"},
+            {"kind": "flow", "source_kind": "dataframe", "target_kind": "dataframe"},
+        ]
+    }
+    assert passo(pacote) is True
+    assert [item["kind"] for item in pacote["lineage"]] == ["blind_spot", "flow"]
+    assert pacote["lineage"][1]["source_kind"] == "dataset"
+
+    assert passo(pacote) is True
+    assert [item["kind"] for item in pacote["lineage"]] == ["blind_spot"]
+
+    # So restam recusas: o passo desiste em vez de apagar evidencia para caber.
+    assert passo(pacote) is False
+    assert pacote["lineage"] == [{"kind": "blind_spot", "reason": "DYNAMIC_TABLE_IDENTIFIER"}]
 
 
 # ------------------------------------------------------------ orcamento

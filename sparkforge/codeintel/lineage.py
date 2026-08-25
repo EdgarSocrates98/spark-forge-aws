@@ -108,15 +108,43 @@ producao e escrito. E exatamente por isso que a SPEC 38 e a regra que define
 esta fase -- se nome dinamico virasse palpite, a maioria do grafo seria
 invencao.
 
-POR QUE NADA DISTO E PERSISTIDO EM `db.py`
--------------------------------------------
-O grafo e construido em memoria e devolvido; nao ha tabela nova no SQLite. O
-schema de `db.py` e derrubado e refeito por `_descartar_schema_de_versao_anterior`
-a partir de uma lista FIXA de tabelas (`_TABELAS_PARA_DESCARTE`). Uma tabela
-criada daqui nao estaria nessa lista, e sobreviveria a um bump de
-`SCHEMA_VERSION` carregando linhas do schema velho -- ponto cego silencioso do
-tipo exato que este modulo existe para nao ter. Persistir e decisao de `db.py`,
-e cabe a quem for editar `db.py`.
+O QUE E PERSISTIDO, E O QUE CONTINUA SO EM MEMORIA
+---------------------------------------------------
+Este modulo continua sem escrever no SQLite: ele constroi o grafo e devolve. A
+condicao que esta docstring exigia para que alguem o persistisse foi cumprida em
+`db.py`, e nao aqui -- `data_flow` e `data_flow_blind_spots` sao tabelas de la, e
+as duas entraram em `_TABELAS_PARA_DESCARTE` no mesmo commit. Sem isso elas
+sobreviveriam a um bump de `SCHEMA_VERSION` carregando linhas do schema velho, o
+ponto cego silencioso do tipo exato que este modulo existe para nao ter.
+
+O que `index._gravar` persiste sao as ARESTAS e os PONTOS CEGOS de um arquivo,
+com as pontas desnormalizadas. O que NAO e persistido, e continua vivendo so
+aqui, e a TRAVESSIA: `mesclar`, `linhagem_de_tabela`, `montante` e `jusante`
+atravessam arquivo, e o que permite isso e o identificador de dataset resolvido
+nao carregar caminho -- uma propriedade do grafo em memoria, nao das linhas.
+Reconstruir a travessia em SQL daria uma segunda implementacao da mesma
+pergunta, e a divergencia entre as duas nao levantaria nada.
+
+O PRECO DE CONSTRUIR ESTE GRAFO SOBRE UMA ARVORE INTEIRA, MEDIDO
+------------------------------------------------------------------
+Sobre este repositorio, 404 arquivos, tres rodadas:
+
+    `construir` em toda a arvore   2.766 / 2.834 / 2.962 s
+      dos quais `ast.parse`          0.586 / 0.608 / 0.635 s
+      e a travessia do AST           1.908 / 2.038 / 2.672 s
+
+A travessia domina, e nao o parse -- quem for otimizar isto tem que olhar para
+`_Construtor` e para `_ColetorDeEscopos`, e nao para uma arvore compartilhada
+com os outros dois extratores. Rendimento na mesma medicao: 336 nos, 228
+arestas e 173 pontos cegos, em 132 dos 404 arquivos. Os pontos cegos por motivo:
+`UNKNOWN_RECEIVER` 151, `DYNAMIC_TABLE_IDENTIFIER` 20, `SQL_NOT_PARSED` 2 --
+que e a mesma proporcao que a secao da taxa de resolucao acima descreve, medida
+agora sobre a arvore inteira e nao so sobre as fixtures.
+
+MEDIDO E DESCARTADO: pular arquivo que nao mencione nenhum dos 63 metodos-gatilho
+nao paga. 376 dos 404 arquivos passam num filtro assim -- `read`, `write`,
+`table`, `path`, `sort`, `limit` e `sample` aparecem em quase todo Python -- e o
+tempo com filtro (2.721 / 2.785 / 3.828 s) e o mesmo sem ele.
 """
 
 from __future__ import annotations

@@ -1063,9 +1063,16 @@ def _indexar_um(
         # preco e que `files` fica com uma linha a mais que a reconstrucao
         # completa produziria, ate a sincronizacao seguinte. Converge em uma
         # rodada, e a alternativa nao converge nunca.
+        # `fonte` NAO entra aqui de proposito: o arquivo nao parseou, e
+        # `lineage.construir` sobre ele devolveria grafo vazio de qualquer
+        # forma. Passa-la faria parecer que o fluxo de dado foi medido.
         _gravar(conexao, relativo, dados, modificado_ns, [])
         return None
-    _gravar(conexao, relativo, dados, modificado_ns, nos)
+    # `fonte` entra para que `data_flow` seja reescrita junto com `nodes`. Sem
+    # isso o incremental deixaria a linhagem do arquivo alterado com o conteudo
+    # da versao anterior -- e linhagem velha com cara de medida e pior que
+    # linhagem ausente.
+    _gravar(conexao, relativo, dados, modificado_ns, nos, fonte)
     referencias[relativo] = extrair_referencias(fonte, relativo)
     return len(nos)
 

@@ -101,6 +101,7 @@ novo.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import sqlite3
 import time
@@ -110,6 +111,8 @@ from pathlib import Path
 from sparkforge.codeintel.db import abrir, criar_schema
 from sparkforge.codeintel.extract import No, extrair_nos_ou_none
 from sparkforge.codeintel.ids import node_id
+from sparkforge.codeintel.lineage import GrafoDeDados
+from sparkforge.codeintel.lineage import construir as construir_fluxo
 from sparkforge.codeintel.refs import Referencia, extrair_referencias
 from sparkforge.codeintel.resolve import Resolucao, catalogo_do_banco, resolver
 from sparkforge.facts.scan import iter_source_files
@@ -141,6 +144,12 @@ class Resultado:
     # coisa que 100 sobre 3000, e so a segunda metade distingue as duas.
     arestas: int
     nao_resolvidas: int
+    # O mesmo par, uma pergunta adiante: `fluxos` conta aresta de dado ligada e
+    # `fluxos_sem_nome` conta a leitura ou escrita que existe e cujo dataset nao
+    # se pode nomear. Publicar so o primeiro faria um repositorio inteiro de
+    # `spark.table(f"{db}.{t}")` parecer um repositorio sem linhagem.
+    fluxos: int = 0
+    fluxos_sem_nome: int = 0
 
 
 def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resultado:
@@ -192,6 +201,52 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
     o que o indice NAO sabe valem mais que 2 MiB economizados fingindo que ele
     sabe tudo.
 
+    O FLUXO DE DADO CUSTA POUCO BYTE E MUITO SEGUNDO, E O SEGUNDO E O PRECO
+    ------------------------------------------------------------------------
+    `data_flow` e `data_flow_blind_spots` entraram depois da medicao acima.
+    MEDIDO nesta arvore, quatro rodadas seguidas no mesmo banco, resultado
+    identico nas quatro:
+
+        404 arquivos, 6624 nos, 1 ilegivel
+        9805 arestas, 11842 referencias nao resolvidas
+        228 fluxos de dado, 175 fluxos sem nome
+        5.389 / 5.694 / 6.020 / 6.130 s
+        8 507 392 bytes de `.sqlite3` apos VACUUM
+
+    Os bytes das duas, medidos derrubando as duas e comparando o VACUUM:
+
+        data_flow + data_flow_blind_spots     86 016 bytes   1.0%
+
+    E o TEMPO, que e a fatura de verdade: a mesma arvore custava 3.167 / 3.725 /
+    3.859 s antes desta fase. `lineage.construir` acrescenta ~2.8 s -- 0.6 s de
+    um TERCEIRO `ast.parse` e ~2.0 s de travessia do AST --, e a indexacao ficou
+    ~70% mais cara para produzir 403 linhas. A medicao esta na docstring de
+    `lineage.py`, junto com a repartição entre parse e travessia, porque e la
+    que mora o codigo que se otimizaria.
+
+    O NUMERO E RUIM E A ESCOLHA FOI FEITA COM ELE NA MAO. A alternativa medida
+    era derivar linhagem na hora da consulta: ~350 ms por `ContextPack` (dos
+    quais 240 ms so de varredura de arvore), multiplicados pelo numero de
+    perguntas de agente, e ainda exigindo uma raiz por parametro que `db.py`
+    recusa gravar. 2.8 s uma vez perdem para 350 ms uma vez e ganham de 350 ms
+    cem vezes. A conta inteira esta na docstring de `context.py`.
+
+    Nao ha degradacao a partir da segunda rodada: 5.389 -> 6.130 s e deriva, e
+    nao o padrao de 3x que `unresolved_refs.source_id` sem indice produzia. Os
+    dois `idx_*_file_id` de `db.py` sao o que compra isso, e eles existem por
+    causa daquela fatura.
+
+    Os pontos cegos de fluxo, por motivo, na mesma medicao:
+
+        UNKNOWN_RECEIVER            153   `df.x()` com tipo de `df` desconhecido
+        DYNAMIC_TABLE_IDENTIFIER     20   `spark.table(f"{db}.{tbl}")`
+        SQL_NOT_PARSED                2
+
+    175 pontos cegos contra 228 fluxos ligados e a proporcao esperada e nao
+    defeito: e o retrato de como job PySpark de producao e escrito, e a razao de
+    a recusa nomeada ser o contrato central deste subsistema. Publicar so os 228
+    seria escolher o numero confortavel.
+
     Sao esses numeros que decidem se a fase incremental vale a pena, e
     eles dizem que ela ficou MENOS folgada: reindexar tudo custava 1.4 s e
     3.4 MiB, e agora custa 3.5 s e 8.0 MiB. Ainda nao e urgente nesta arvore --
@@ -230,13 +285,23 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
                 if nos is None:
                     ilegiveis += 1
                     continue
-                _gravar(conexao, relativo, dados, modificado_ns, nos)
+                _gravar(conexao, relativo, dados, modificado_ns, nos, fonte)
                 total_de_nos += len(nos)
                 # So depois de `nos is None` ficar para tras: arquivo que nao
                 # parseia nao tem referencia para extrair, e `extrair_referencias`
                 # devolveria lista vazia sem dizer por que.
                 referencias_por_arquivo[relativo] = extrair_referencias(fonte, relativo)
             resolucao = _gravar_arestas(conexao, referencias_por_arquivo)
+            # Contado do BANCO e nao somado em memoria durante o laco: e a
+            # gravacao que decide quantas linhas existem, e um contador
+            # incrementado ao lado dela passaria a mentir no dia em que uma
+            # linha fosse recusada por chave estrangeira. Duas contagens sobre
+            # tabela com indice de `file_id`, dentro da transacao que ja esta
+            # aberta -- ver a medicao na docstring de `indexar`.
+            (fluxos,) = conexao.execute("SELECT COUNT(*) FROM data_flow").fetchone()
+            (sem_nome,) = conexao.execute(
+                "SELECT COUNT(*) FROM data_flow_blind_spots"
+            ).fetchone()
             conexao.execute("COMMIT")
         except BaseException:
             # O `ROLLBACK` nao pode mascarar a causa. Se o proprio `COMMIT`
@@ -258,6 +323,8 @@ def indexar(raiz: str | os.PathLike[str], banco: str | os.PathLike[str]) -> Resu
         duracao_s=time.perf_counter() - inicio,
         arestas=len(resolucao.arestas),
         nao_resolvidas=len(resolucao.nao_resolvidas),
+        fluxos=int(fluxos),
+        fluxos_sem_nome=int(sem_nome),
     )
 
 
@@ -292,8 +359,22 @@ def _gravar(
     dados: bytes,
     modificado_ns: int,
     nos: list[No],
+    fonte: str = "",
 ) -> None:
-    """Uma linha em `files`, uma por no em `nodes`, e o espelho em `symbols_fts`."""
+    """Uma linha em `files`, uma por no em `nodes`, o espelho em `symbols_fts`, e o fluxo de dado.
+
+    `fonte` entra AQUI e nao num gravador de fluxo separado porque esta funcao e
+    o unico lugar que decide como um arquivo vira linha -- `staleness.py` a
+    importa justamente para nao ter um segundo. Um gravador de fluxo chamado so
+    por `indexar` deixaria `data_flow` desatualizada em todo arquivo que
+    chegasse pela sincronizacao incremental, e a forma desse defeito e a pior
+    que existe aqui: o pacote responderia linhagem VELHA com cara de medida.
+
+    Default `""` para que um chamador que so queira a linha de `files` -- o
+    arquivo ilegivel de `staleness._inserir`, que passa `nos=[]` -- nao precise
+    inventar uma fonte. Fonte vazia produz grafo vazio, que e a verdade sobre
+    um arquivo que nao parseou.
+    """
     file_id = id_de_arquivo(relativo)
     agora = time.time_ns()
     conexao.execute(
@@ -344,6 +425,71 @@ def _gravar(
     conexao.executemany(
         "INSERT INTO symbols_fts (node_id, name, qualified_name) VALUES (?, ?, ?)",
         [(linha[0], linha[3], linha[4]) for linha in linhas],
+    )
+    _gravar_fluxo_de_dados(conexao, file_id, construir_fluxo(fonte, relativo))
+
+
+def _gravar_fluxo_de_dados(
+    conexao: sqlite3.Connection, file_id: str, grafo: GrafoDeDados
+) -> None:
+    """As duas metades do fluxo de dado do arquivo, e nunca so a que deu certo.
+
+    As pontas da aresta saem DESNORMALIZADAS -- nome, kind e resolucao na
+    propria linha -- porque `data_flow` nao tem tabela de nos ao lado; a razao
+    esta na definicao dela em `db.py`. O que a resolucao custa aqui e um
+    dicionario por arquivo, e ele e montado do proprio grafo em vez de reusar
+    `lineage._indice_de_nos` porque aquele e privado do modulo de linhagem e
+    importa-lo amarraria a gravacao a uma funcao que existe para a travessia.
+
+    Uma aresta cuja ponta nao esta em `nos` e DESCARTADA em silencio? Nao: ela
+    nao existe. `_registrar_no` roda antes de toda aresta em `_Construtor`, e um
+    `KeyError` aqui seria defeito de construcao do grafo, nao dado faltando --
+    por isso o acesso e direto e nao `.get(...)` com default inventado.
+    """
+    indice = {no.identificador: no for no in grafo.nos}
+    conexao.executemany(
+        "INSERT INTO data_flow"
+        " (file_id, source_name, source_kind, source_resolved,"
+        "  target_name, target_kind, target_resolved, operation, scope, line,"
+        "  confidence)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+            (
+                file_id,
+                indice[aresta.origem].nome,
+                indice[aresta.origem].kind,
+                int(indice[aresta.origem].resolvido),
+                indice[aresta.destino].nome,
+                indice[aresta.destino].kind,
+                int(indice[aresta.destino].resolvido),
+                aresta.operacao,
+                # O escopo de QUALQUER uma das pontas que tenha um: dataset nao
+                # carrega escopo (a mesma tabela e vista de varias funcoes), e
+                # DataFrame carrega. Preferir a origem e arbitrario e nao
+                # importa -- as duas pontas de uma aresta estao sempre no mesmo
+                # escopo, porque o construtor so liga o que viu no mesmo corpo.
+                indice[aresta.origem].escopo or indice[aresta.destino].escopo,
+                aresta.linha,
+                aresta.confianca,
+            )
+            for aresta in grafo.arestas
+        ],
+    )
+    conexao.executemany(
+        "INSERT INTO data_flow_blind_spots"
+        " (file_id, reason, template, variables, operation, line)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        [
+            (
+                file_id,
+                cego.reason,
+                cego.template,
+                json.dumps(list(cego.variaveis), ensure_ascii=False),
+                cego.operacao,
+                cego.linha,
+            )
+            for cego in grafo.nao_resolvidos
+        ],
     )
 
 

@@ -3364,21 +3364,27 @@ CODE_CLUSTER_PARA_CATEGORIA: dict[str, str] = {
     "catalogo": "cross-account-catalog",
 }
 
-# SPEC 57. As secoes do ContextPack que este motor sabe PREENCHER. `lineage` e
-# `snippets` ficam de fora de proposito e a recusa e explicita em vez de uma
-# lista vazia silenciosa: `context.montar` devolve `lineage: []` sempre -- ele
-# nao consulta `codeintel.lineage`, e o DataGraph daquele modulo e construido
-# a partir do FONTE por arquivo, nunca persistido no indice --, e trecho de
-# fonte sai por `sparkforge_code_read`, que tem os tetos duros da secao 60.
-# Aceitar o valor e devolver vazio ensinaria o chamador que a arvore nao tem
-# linhagem, que e afirmacao diferente de "este pacote ainda nao a carrega".
-CODE_CONTEXT_INCLUDE = ("symbols", "relationships", "rules", "unresolved")
+# SPEC 57. As secoes do ContextPack que este motor sabe PREENCHER.
+#
+# `lineage` ESTAVA na lista de recusadas, com a razao "`context.montar` nao
+# consulta `codeintel.lineage`, e o DataGraph daquele modulo e construido do
+# FONTE por arquivo, nunca persistido no indice". A razao deixou de valer:
+# `data_flow` e `data_flow_blind_spots` entraram em `db.py`, a indexacao as
+# grava e `montar` as consulta. A recusa sai daqui porque manter uma recusa
+# cuja razao e falsa e pior que nao ter recusa nenhuma -- ela ensina o chamador
+# a nao pedir uma secao que ja existe.
+#
+# O QUE NAO MUDA: dentro da secao, o que o indice nao soube nomear continua
+# saindo como recusa nomeada (`DYNAMIC_TABLE_IDENTIFIER` e as irmas), com o
+# template de buracos preservados. A recusa mudou de NIVEL -- era da secao
+# inteira, agora e do item --, e nao desapareceu.
+#
+# `snippets` continua recusado: trecho de fonte sai por `sparkforge_code_read`,
+# que tem os tetos duros da secao 60. Aceitar o valor e devolver vazio ensinaria
+# o chamador que a arvore nao tem trecho, que e afirmacao diferente de "este
+# pacote nao o carrega".
+CODE_CONTEXT_INCLUDE = ("symbols", "relationships", "lineage", "rules", "unresolved")
 CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO = {
-    "lineage": (
-        "o ContextPack nao carrega linhagem: `codeintel.context.montar` nao "
-        "consulta `codeintel.lineage`, e o DataGraph dele nao esta no indice. "
-        "O pacote nunca inventa a secao"
-    ),
     "snippets": (
         "trecho de fonte sai por `sparkforge_code_read`, que aplica os tetos "
         "duros de 250 linhas / 32 KiB / 4096 tokens"
@@ -4198,8 +4204,9 @@ def code_context(
     Quem quer profundidade tem `sparkforge_code_symbol` com `depth`.
 
     `include` seleciona entre as secoes que este motor sabe PREENCHER
-    (`CODE_CONTEXT_INCLUDE`). `lineage` e `snippets` sao RECUSADOS com a razao
-    em vez de devolvidos vazios -- ver `CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO`.
+    (`CODE_CONTEXT_INCLUDE`), `lineage` agora entre elas. So `snippets` continua
+    RECUSADO com a razao em vez de devolvido vazio -- ver
+    `CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO`.
 
     `rules` e a secao 77: os ids relevantes ao vocabulario de dominio da
     consulta, com a razao de cada um. Nunca julgamento -- julgar e `judge`, e
