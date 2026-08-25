@@ -139,26 +139,41 @@ class TestQuantasToolsEPorQue:
         assert "sparkforge_code_lineage" not in TOOLS
         assert "sparkforge_code_metrics" not in TOOLS
 
-    def test_o_contextpack_declara_lineage_vazio_em_vez_de_omiti_lo(self, arvore):
-        """Campo vazio DECLARADO e diferente de campo ausente e de tool que mente.
+    def test_o_contextpack_serve_lineage_e_a_recusa_desceu_de_nivel(self, arvore):
+        """A secao deixou de ser recusada inteira; a recusa passou a ser do ITEM.
 
-        A chave existe no pacote porque a secao 55 a exige; ela sai vazia porque
-        `codeintel/lineage.py` EXISTE, mas `context.montar` nao o consulta: o
-        DataGraph dele e construido do FONTE por arquivo e nunca chega ao
-        indice. Quem consome ve a ausencia; quem pede `include: ["lineage"]`
-        e RECUSADO com a razao, em vez de receber `[]` e concluir que a arvore
-        nao tem linhagem.
+        `include: ["lineage"]` era RECUSADO com a razao "`context.montar` nao
+        consulta `codeintel.lineage`". A razao deixou de valer quando `data_flow`
+        entrou no schema, e uma recusa cuja razao e falsa e pior que nenhuma:
+        ela ensina o chamador a nao pedir uma secao que ja existe.
+
+        O que nao mudou e o que importa: `_JOB` faz `df.repartition(200)` com
+        `df` vindo de parametro, e o tipo de `df` e desconhecido. Isso nao vira
+        aresta com desconto nem tabela adivinhada -- vira `UNKNOWN_RECEIVER`
+        dentro da secao. E a mesma doutrina, um nivel abaixo.
         """
         pacote = call_tool(
-            "sparkforge_code_context", {"repo": str(arvore), "task": "carregar particao"}
-        )
-        assert pacote["lineage"] == []
-        recusa = call_tool(
             "sparkforge_code_context",
             {"repo": str(arvore), "task": "carregar particao", "include": ["lineage"]},
         )
+        assert "error" not in pacote, pacote
+        recusas = [item for item in pacote["lineage"] if item["kind"] == "blind_spot"]
+        assert [item["reason"] for item in recusas] == ["UNKNOWN_RECEIVER"], pacote["lineage"]
+        assert pacote["metrics"]["lineage_blind_spots_total"] == 1
+
+    def test_snippets_continua_recusado_com_a_razao(self, arvore):
+        """A outra secao da lista, e a razao dela nao mudou.
+
+        Trecho de fonte sai por `sparkforge_code_read`, que tem os tetos duros
+        da secao 60. Aceitar o valor e devolver `[]` ensinaria o chamador que a
+        arvore nao tem trecho.
+        """
+        recusa = call_tool(
+            "sparkforge_code_context",
+            {"repo": str(arvore), "task": "carregar particao", "include": ["snippets"]},
+        )
         assert "error" in recusa
-        assert "codeintel.lineage" in recusa["error"]
+        assert "sparkforge_code_read" in recusa["error"]
 
 
 class TestEntradaFechadaAPropriedadeDesconhecida:

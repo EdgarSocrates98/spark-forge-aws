@@ -840,3 +840,192 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
         }
         assert sem_caminho == self.SEM_CAMINHO
         assert len(TOOLS) - len(sem_caminho) == 49
+
+
+class TestAImposicaoNoDespacho:
+    """A cadeia deixa de so decidir e passa a IMPOR, no despacho unico.
+
+    Ate aqui `authorize()` era funcao pura que nenhum caminho de execucao
+    consultava: a decisao existia, ninguem a lia, e uma tool recebia o caminho
+    que quisessem passar para ela. `call_tool` e onde isso fecha porque e por
+    onde TODAS as tools passam -- o servidor MCP (`adapters/mcp.py`) e qualquer
+    outro chamador entram por ela, entao fechar aqui fecha para todos de uma
+    vez, em vez de uma vez por fronteira.
+
+    O que estes testes cobram nao e que a funcao existe -- as classes acima ja
+    cobram isso. E que a recusa ACONTECE: o handler nao roda.
+    """
+
+    def espiao(self, monkeypatch, nome):
+        """Troca o handler de `nome` por um que registra que foi chamado.
+
+        Recusa nao e "devolveu erro": e "o handler nao rodou". Sem o espiao um
+        teste nao consegue distinguir uma tool recusada de uma tool que rodou e
+        falhou por conta propria -- e a segunda ja teria lido o arquivo.
+        """
+        from sparkforge.adapters import tools as modulo
+
+        chamadas = []
+
+        def handler(args):
+            chamadas.append(args)
+            return {"rodou": True}
+
+        monkeypatch.setitem(modulo._HANDLERS, nome, handler)
+        return chamadas
+
+    def test_sem_politica_a_chamada_continua_exatamente_como_hoje(self, monkeypatch):
+        """O contrato de nao-regressao, e ele vem primeiro de proposito.
+
+        Nenhum chamador de hoje declara politica. Se a imposicao tivesse um
+        default, o catalogo inteiro passaria a recusar -- e imposicao que
+        quebra tudo nao e imposicao, e regressao.
+        """
+        from sparkforge.adapters.tools import call_tool
+
+        chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
+        resultado = call_tool(UMA_LEITURA_LOCAL, {"path": "../../etc/passwd"})
+        assert resultado == {"rodou": True}
+        assert chamadas == [{"path": "../../etc/passwd"}]
+
+    def test_politica_que_recusa_impede_o_handler_de_rodar(self, monkeypatch, tmp_path):
+        """O teste que prova a imposicao. Se ele passar sem o gate no despacho,
+        e porque o gate nao existe."""
+        from sparkforge.adapters.tools import call_tool
+        from sparkforge.agents.autonomy import CallPolicy
+
+        chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
+        politica = CallPolicy(
+            agent="sf-runtime-specialist",
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        resultado = call_tool(
+            UMA_LEITURA_LOCAL, {"path": "../../etc/passwd"}, policy=politica
+        )
+        assert chamadas == [], "o handler rodou: a cadeia decidiu e nada impos"
+        assert "fora da raiz" in resultado["error"]
+
+    def test_a_recusa_sai_no_envelope_do_repositorio(self, monkeypatch, tmp_path):
+        """Recusa por autorizacao nao pode ser excecao crua nem recusa muda: o
+        cliente tem de receber o mesmo `{"error", "exit_code"}` de qualquer
+        outro erro de fronteira, com a RAZAO da cadeia dentro."""
+        from sparkforge.adapters.tools import call_tool
+        from sparkforge.agents.autonomy import CallPolicy
+
+        self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
+        politica = CallPolicy(
+            agent="a",
+            allowed_tools=["outra_tool"],
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        resultado = call_tool(UMA_LEITURA_LOCAL, {"path": "job.py"}, policy=politica)
+        assert set(resultado) >= {"error", "exit_code"}
+        assert resultado["exit_code"] == 2
+        assert "allowlist" in resultado["error"]
+        assert resultado["error_code"] == "UNAUTHORIZED"
+
+    def test_a_recusa_por_aprovacao_diz_qual_classe_falta(self, monkeypatch, tmp_path):
+        """Recusa acionavel: quem chamou precisa saber o que pedir. A cadeia ja
+        carrega `required_approval`, e joga-lo fora no envelope transformaria
+        uma decisao auditavel num "nao"."""
+        from sparkforge.adapters.tools import call_tool
+        from sparkforge.agents.autonomy import CallPolicy
+
+        chamadas = self.espiao(monkeypatch, UMA_MUTACAO_LOCAL)
+        politica = CallPolicy(
+            agent="a",
+            allowed_tools=[UMA_MUTACAO_LOCAL],
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        resultado = call_tool(
+            UMA_MUTACAO_LOCAL, {"repo": str(tmp_path)}, policy=politica
+        )
+        assert chamadas == []
+        assert resultado["required_approval"] == ToolClass.LOCAL_MUTATION.value
+
+    def test_politica_que_autoriza_deixa_a_chamada_passar(self, monkeypatch, tmp_path):
+        """Imposicao que so recusa e indistinguivel de tool quebrada. O caminho
+        autorizado tem de chegar ao handler com os argumentos INTACTOS."""
+        from sparkforge.adapters.tools import call_tool
+        from sparkforge.agents.autonomy import CallPolicy
+
+        chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
+        alvo = tmp_path / "job.py"
+        alvo.write_text("x = 1\n", encoding="utf-8")
+        politica = CallPolicy(
+            agent="a",
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        resultado = call_tool(UMA_LEITURA_LOCAL, {"path": str(alvo)}, policy=politica)
+        assert resultado == {"rodou": True}
+        assert chamadas == [{"path": str(alvo)}]
+
+    def test_a_politica_sai_do_manifesto_do_agente(self, monkeypatch, tmp_path):
+        """A allowlist e a denylist nao sao fonte nova: `AgentManifest` ja as
+        declara e ja as valida por schema. `from_manifest()` e o que impede o
+        despacho de inventar uma segunda lista ao lado daquela."""
+        from sparkforge.adapters.tools import call_tool
+        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge.registry.models import AgentManifest
+
+        chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
+        manifesto = AgentManifest(
+            id="sf-runtime-specialist",
+            name="sf-runtime-specialist",
+            version="1.0.0",
+            description="d",
+            purpose="p",
+            role="specialist",
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            denied_tools=[UMA_LEITURA_LOCAL],
+        )
+        politica = CallPolicy.from_manifest(
+            manifesto, profile=ExecutionProfile.ECO, root=tmp_path
+        )
+        resultado = call_tool(UMA_LEITURA_LOCAL, {"path": "job.py"}, policy=politica)
+        assert chamadas == [], "deny tem de vencer allow tambem no despacho"
+        assert "denylist" in resultado["error"]
+
+    def test_a_politica_e_reusavel_entre_chamadas(self, monkeypatch, tmp_path):
+        """Uma politica vive mais que uma chamada -- um agente a carrega pela
+        sessao inteira. Se as listas ficassem guardadas como iteravel qualquer,
+        um gerador autorizaria a primeira chamada e recusaria todas as
+        seguintes, que e a forma de defeito de autorizacao mais dificil de
+        enxergar: intermitente, e do lado que fecha."""
+        from sparkforge.adapters.tools import call_tool
+        from sparkforge.agents.autonomy import CallPolicy
+
+        chamadas = self.espiao(monkeypatch, UMA_LEITURA_LOCAL)
+        politica = CallPolicy(
+            agent="a",
+            allowed_tools=(n for n in [UMA_LEITURA_LOCAL]),
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        for _ in range(3):
+            call_tool(UMA_LEITURA_LOCAL, {"path": "job.py"}, policy=politica)
+        assert len(chamadas) == 3
+
+    def test_nome_fora_do_catalogo_continua_estourando(self, tmp_path):
+        """O `KeyError` de nome desconhecido e contrato de CATALOGO, e nao de
+        permissao: ele responde "esta tool nao existe", com a lista das que
+        existem. Se a politica o transformasse em recusa, o mesmo defeito de
+        chamador passaria a se apresentar de duas formas conforme houvesse
+        politica declarada ou nao -- e quem depura veria o sintoma errado."""
+        from sparkforge.adapters.tools import call_tool
+        from sparkforge.agents.autonomy import CallPolicy
+
+        politica = CallPolicy(
+            agent="a",
+            allowed_tools=["sparkforge_tool_que_nao_existe"],
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        with pytest.raises(KeyError):
+            call_tool("sparkforge_tool_que_nao_existe", {}, policy=politica)

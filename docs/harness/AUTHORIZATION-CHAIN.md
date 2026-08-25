@@ -256,6 +256,12 @@ antes de executar, então uma tool continua recebendo o caminho que quiserem
 passar para ela, e o segredo de fora do repositório continua legível por quem
 chamar a tool direto.
 
+> **Superado em `5cc065d`.** O parágrafo acima registra o que a fase J2 não
+> fechou e fica como está — é o registro dela. O que mudou depois:
+> `sparkforge/adapters/tools.py:call_tool` passou a chamar a cadeia via
+> `CallPolicy.decide`, e o despacho é único para as 50 tools, então fechar ali
+> cobre `adapters/mcp.py` junto. Ver *A imposição no despacho* abaixo.
+
 Isso é o gap do hook `PreToolUse` do §41, e ele **não** fecha aqui. O que
 mudou é que ele deixou de ser bloqueado por uma questão de projeto: a decisão
 de "a cadeia passa a receber `arguments` ou o argumento é responsabilidade
@@ -296,10 +302,35 @@ isso era falso. Busca exaustiva: os únicos chamadores são
 produção**. A decisão de não quebrar continua certa pelo argumento de API
 pública; a afirmação de fato que a acompanhava não era verdade e foi corrigida.
 
+## A imposição no despacho
+
+`sparkforge/adapters/tools.py:call_tool(name, arguments, *, policy=None)` chama
+a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 50
+tools passam por ele, e `adapters/mcp.py` o usa, então fechar ali cobre os dois
+de uma vez em vez de uma checagem por porta.
+
+A fonte da política é `sparkforge/agents/autonomy.py:CallPolicy`, e
+`CallPolicy.from_manifest` tira allowlist e denylist de `AgentManifest`, que já
+as declara e valida por schema — nenhuma fonte nova, um carregador para a que
+existe.
+
+O nome **não** é `ToolPolicy` porque `CURRENT-HARNESS-GAP.md` já usa esse rótulo
+para a classificação do §40, que classifica a *tool*; isto autoriza a *chamada*.
+
+Sem política declarada, o comportamento é o de antes, byte a byte — é a
+não-regressão, e ela tem teste próprio. A recusa sai no envelope do repositório
+(`error` + `exit_code`), com `error_code: UNAUTHORIZED` e, quando a recusa foi
+por classe, `required_approval` ao lado: a frase acionável em `error`, o campo
+maquinável separado, como em `CodeIndexError`.
+
+O teste que sustenta isto é `test_politica_que_recusa_impede_o_handler_de_rodar`,
+e ele não verifica que veio erro — verifica com espião no `_HANDLERS` que o
+handler **não rodou**. Recusa que devolve erro depois de executar não é recusa.
+
 ## O que falta, declarado
 
-O hook `PreToolUse` do §41 **não** existe. A cadeia decide; nada a *impõe* fora
-do processo Python. Um agente que chame `terraform destroy` por `Bash` não passa
-por `authorize()`. O hook é a fase seguinte, e depende desta: hook sem classe de
-tool seria uma lista de comandos mantida à mão — a segunda tabela que esta fase
-existe para não criar.
+O hook `PreToolUse` do §41 **não** existe, e a imposição acima não o substitui:
+ela vale dentro do processo Python. Um agente que chame `terraform destroy` por
+`Bash` continua sem passar por `authorize()`. O hook depende desta cadeia — hook
+sem classe de tool seria uma lista de comandos mantida à mão, a segunda tabela
+que esta fase existe para não criar.

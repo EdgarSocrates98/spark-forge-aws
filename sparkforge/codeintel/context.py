@@ -33,6 +33,55 @@ Fica dito antes de acontecer porque e assim que a duplicacao entra: alguem
 precisa de trecho, o campo existe vazio, e escrever quinze linhas parece mais
 barato que ler o modulo que ja faz isso.
 
+`lineage` DEIXOU DE SAIR VAZIO, E O PRECO DISSO FOI MEDIDO ANTES
+-----------------------------------------------------------------
+Ate esta fase `lineage` saia vazio ao lado de `snippets`, com a razao "nao
+existe no de tabela no schema". A razao era verdadeira e a lacuna era real:
+`codeintel.lineage` sabia ligar `bronze.vendas` a `gold.vendas` e o pacote nunca
+lhe perguntava nada -- respondia lista vazia, que se le igual a "este job nao
+move dado".
+
+O caminho para fechar a lacuna nao era obvio, e a escolha saiu de medicao e nao
+de gosto. `montar` recebe BANCO e nao raiz -- e `db.py` recusa gravar a raiz de
+proposito, porque o caminho absoluto nomeia a maquina num artefato que pode ser
+copiado. Entao havia duas saidas:
+
+- DERIVAR na hora da consulta, lendo a fonte dos arquivos selecionados. Medido
+  sobre este repositorio, para os 3 arquivos de um pacote tipico, passando pela
+  MESMA fronteira de leitura que o indexador usa (`iter_source_files`, que e o
+  unico lugar autorizado a decidir o que o motor le):
+
+      varredura de `iter_source_files` sozinha   234 / 241 / 242 / 265 ms
+      derivar linhagem de 3 arquivos             343 / 350 / 358 / 448 ms
+
+  ~350 ms POR PACOTE, dominados pela varredura de arvore -- que se paga inteira
+  para ler tres arquivos. E ainda exigiria uma raiz por parametro, o que faria
+  a secao ficar sem resposta exatamente quando `montar` e chamado como esta
+  desenhado, so com o banco.
+
+- PERSISTIR na indexacao. Medido sobre este repositorio, tres rodadas:
+
+      indexar antes desta fase          3.167 / 3.725 / 3.859 s
+      `lineage.construir` na arvore     2.766 / 2.834 / 2.962 s
+        dos quais `ast.parse`             0.586 / 0.608 / 0.635 s
+        e a travessia                     1.908 / 2.038 / 2.672 s
+
+  ~+2.8 s de UMA vez, e a consulta do pacote passa a ser um `SELECT` por
+  `file_id` indexado.
+
+Persistir ganhou porque o pacote e OBJETO DE CONSULTA: ele e montado uma vez por
+pergunta de agente, e a indexacao uma vez por arvore. 350 ms multiplicados pelo
+numero de perguntas contra 2.8 s multiplicados por um. O preco esta publicado na
+docstring de `index.indexar`, e ele nao e pequeno -- e quase o dobro da
+indexacao anterior.
+
+MEDIDO E DESCARTADO: um pre-filtro por substring, que so construiria linhagem em
+arquivo que mencione algum dos 63 metodos-gatilho, nao paga. 376 dos 404
+arquivos desta arvore passam no filtro -- `read`, `write`, `table`, `path`,
+`sort`, `limit` e `sample` aparecem em quase todo Python -- e o tempo com filtro
+(2.721 / 2.785 / 3.828 s) e o mesmo sem ele. Fica registrado para que a ideia
+nao volte como sugestao.
+
 O QUE ESTE PACOTE NAO SABE DIZER
 ---------------------------------
 `index.fresh` sai `None`, e nao `true`. O indice deste repositorio nao sabe
@@ -45,6 +94,7 @@ existe para recusar. `None` diz "nao medido", que e a verdade.
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from typing import Any
@@ -129,6 +179,50 @@ _SQL_UNRESOLVED_TOTAL = (
     "  JOIN files ON files.id = unresolved_refs.file_id"
     " WHERE files.path IN ({marcadores})"
 )
+
+# As duas metades do fluxo de dado dos arquivos selecionados. Ordem TOTAL nas
+# duas, e nao so por linha: dois fluxos podem partilhar arquivo e linha (uma
+# cadeia com dois elos escritos na mesma linha e o caso comum), e sem o
+# desempate a ordem passaria a ser a que o SQLite achou mais barata -- um teste
+# de assinatura de bytes falharia de forma INTERMITENTE.
+_SQL_DATA_FLOW = (
+    "SELECT files.path, data_flow.source_name, data_flow.source_kind,"
+    "       data_flow.source_resolved, data_flow.target_name,"
+    "       data_flow.target_kind, data_flow.target_resolved,"
+    "       data_flow.operation, data_flow.scope, data_flow.line,"
+    "       data_flow.confidence"
+    "  FROM data_flow"
+    "  JOIN files ON files.id = data_flow.file_id"
+    " WHERE files.path IN ({marcadores})"
+    " ORDER BY files.path, data_flow.line, data_flow.source_name,"
+    "          data_flow.target_name, data_flow.id"
+)
+
+_SQL_DATA_FLOW_BLIND = (
+    "SELECT files.path, data_flow_blind_spots.reason,"
+    "       data_flow_blind_spots.template, data_flow_blind_spots.variables,"
+    "       data_flow_blind_spots.operation, data_flow_blind_spots.line"
+    "  FROM data_flow_blind_spots"
+    "  JOIN files ON files.id = data_flow_blind_spots.file_id"
+    " WHERE files.path IN ({marcadores})"
+    " ORDER BY files.path, data_flow_blind_spots.line,"
+    "          data_flow_blind_spots.reason, data_flow_blind_spots.id"
+)
+
+# Os dois discriminadores da secao `lineage`. Uma lista so, com o tipo na
+# propria entrada, e nao dois campos irmaos: o que o pacote sabe do fluxo e o
+# que ele se recusou a adivinhar sobre o MESMO fluxo tem que chegar juntos a
+# quem le. Separados, uma secao `lineage` cheia ao lado de uma
+# `lineage_blind_spots` que ninguem olhou se le como linhagem completa -- e e
+# exatamente por isso que `GrafoDeDados` guarda `nao_resolvidos` como campo do
+# grafo em vez de lista jogada fora.
+_FLUXO = "flow"
+_RECUSA = "blind_spot"
+
+# Fluxo cuja ponta e um dataset -- a leitura e a escrita, "de que tabela veio
+# esta tabela". Fluxo entre dois DataFrames e o CAMINHO entre as duas, e e ele
+# que `secondary_lineage` sacrifica primeiro. Ver `_redutores`.
+_KIND_DATASET = "dataset"
 
 
 @dataclass(frozen=True)
@@ -341,23 +435,121 @@ def _nao_resolvidos(
     return amostra, int(total)
 
 
+def _linhagem(
+    banco: str | os.PathLike[str],
+    caminhos: list[str],
+) -> tuple[list[dict[str, Any]], int, int]:
+    """O fluxo de dado dos arquivos selecionados, e o que nele nao tem nome.
+
+    Devolve `(entradas, total de fluxos, total de recusas)`. Os dois totais sao
+    devolvidos separados da lista pela mesma razao que em `_nao_resolvidos`: a
+    lista cabe no orcamento e o total e o aviso. Um pacote que mostrasse tres
+    fluxos de um job de quarenta e cinco pareceria descrever o job inteiro.
+
+    A ORDEM DA LISTA E A PRIORIDADE DO CORTE, porque `cortar_por_bytes` corta
+    por PREFIXO. Ela e, nesta ordem:
+
+    1. RECUSA -- o nome que se tentou resolver e nao deu;
+    2. fluxo que toca dataset -- a leitura e a escrita, que e a pergunta
+       ("de que tabela veio esta tabela") que a secao 37 desenha;
+    3. fluxo entre dois DataFrames -- o caminho, que e detalhe.
+
+    A recusa vir PRIMEIRO nao e simetria com nada; e conserto de um defeito
+    medido. Com ela em segundo lugar, a fatia de 15% da secao 53 -- 810 bytes
+    sobre o orcamento padrao de 5400 -- cortava exatamente ela: os tres fluxos
+    primarios de uma carga simples custam 245 + 244 + 242 = 731 bytes, e a
+    recusa de 158 bytes nao cabia nos 79 que sobravam. O pacote saia com tres
+    fluxos e nenhum aviso de que uma quarta tabela existe e nao tem nome, que e
+    a leitura errada que este subsistema inteiro existe para impedir.
+
+    E ela e a entrada mais BARATA das tres (158 bytes contra ~245), entao
+    poe-la na frente custa menos fluxo do que qualquer outra ordem custaria de
+    aviso.
+
+    NAO HA TRAVESSIA AQUI, e a ausencia e escolha. `montante`, `jusante` e
+    `linhagem_de_tabela` atravessam ARQUIVO, e para isso precisam do grafo
+    inteiro em memoria -- que e onde eles ja estao escritos e testados.
+    Reconstruir a travessia em SQL para o pacote daria uma segunda
+    implementacao da mesma pergunta, e a divergencia entre as duas nao
+    levantaria nada. O que se consulta daqui e "que fluxo existe NESTES
+    arquivos", que e varredura por `file_id` e nao travessia.
+
+    Caminho entra por marcador `?`, nunca interpolado -- e `path` do proprio
+    indice, mas a regra da secao 30 nao tem excecao por procedencia.
+    """
+    if not caminhos:
+        return [], 0, 0
+    marcadores = ",".join("?" * len(caminhos))
+    conexao = abrir(banco)
+    try:
+        fluxos = conexao.execute(
+            _SQL_DATA_FLOW.format(marcadores=marcadores), tuple(caminhos)
+        ).fetchall()
+        recusas = conexao.execute(
+            _SQL_DATA_FLOW_BLIND.format(marcadores=marcadores), tuple(caminhos)
+        ).fetchall()
+    finally:
+        conexao.close()
+
+    primarios: list[dict[str, Any]] = []
+    secundarios: list[dict[str, Any]] = []
+    for linha in fluxos:
+        entrada = {
+            "kind": _FLUXO,
+            "source": linha[1],
+            "source_kind": linha[2],
+            "source_resolved": bool(linha[3]),
+            "target": linha[4],
+            "target_kind": linha[5],
+            "target_resolved": bool(linha[6]),
+            "operation": linha[7],
+            "scope": linha[8],
+            "path": linha[0],
+            "line": linha[9],
+            "confidence": linha[10],
+        }
+        if _KIND_DATASET in (linha[2], linha[5]):
+            primarios.append(entrada)
+        else:
+            secundarios.append(entrada)
+
+    cegos = [
+        {
+            "kind": _RECUSA,
+            "reason": linha[1],
+            "template": linha[2],
+            # `variables` volta a ser lista aqui e nao fica como o JSON gravado:
+            # quem consome o pacote leria uma string onde a secao 55 promete
+            # estrutura, e precisaria desserializar de novo para usar.
+            "variables": json.loads(linha[3]),
+            "operation": linha[4],
+            "path": linha[0],
+            "line": linha[5],
+        }
+        for linha in recusas
+    ]
+    return [*cegos, *primarios, *secundarios], len(fluxos), len(cegos)
+
+
 def _redutores(protegidas: set[tuple[str, str]]) -> dict[str, Any]:
     """Os redutores da secao 54 que este pacote sabe aplicar, por nome do passo.
 
-    Tres dos sete passos da `ORDEM_DE_REDUCAO` NAO tem redutor aqui, e a
-    ausencia e o registro:
+    Tres dos sete passos da `ORDEM_DE_REDUCAO` tinham redutor aqui; agora sao
+    quatro, e os tres que continuam de fora seguem registrados:
 
     - `comments` e `docstrings`: o pacote nao carrega corpo de codigo. A INV-010
       proibe corpo de fonte persistido, e `snippets` sai vazio (ver a docstring
       do modulo). Nao ha comentario nem docstring no que sai daqui para cortar.
     - `snippet_context_lines`: mesma razao, uma camada acima -- sem trecho, nao
       ha linha de contexto de trecho.
-    - `secondary_lineage`: `lineage` sai vazio porque nao existe no de tabela no
-      schema; `edges` grava chamada. Nao ha lineage secundario para sacrificar.
 
     Registrar um redutor que devolvesse sempre `False` para esses tres teria o
     mesmo efeito em execucao e o efeito oposto na leitura: pareceria que a
     reducao tentou e nao rendeu, quando na verdade nao ha o que reduzir.
+
+    `secondary_lineage` ESTAVA nessa lista, com a razao "nao existe no de tabela
+    no schema". A razao deixou de valer quando `data_flow` entrou em `db.py`, e
+    o passo passou a ter trabalho -- ver `_sacrificar_fluxo_secundario`.
 
     `protegidas` sao as arestas que tocam o ponto de entrada principal.
     `low_score_edges` para nelas e `graph_depth` e quem as leva -- e por isso
@@ -404,10 +596,48 @@ def _redutores(protegidas: set[tuple[str, str]]) -> dict[str, Any]:
         pacote["relationships"] = []
         return True
 
+    def sacrificar_fluxo_secundario(pacote: dict[str, Any]) -> bool:
+        """Larga o CAMINHO do dado antes das pontas, e a recusa por ultimo.
+
+        A ordem de sacrificio e o inverso da ordem de valor, e ela e:
+
+        1. fluxo entre dois DataFrames -- os quarenta `withColumn` no meio de
+           uma carga sao detalhe do caminho, e as pontas ja o descrevem;
+        2. fluxo que toca dataset -- a leitura e a escrita, de tras para a
+           frente, que e como `low_score_nodes` ja corta;
+        3. nada. A RECUSA NAO CAI AQUI.
+
+        A recusa nao cair e o ponto inteiro deste passo. `spark.table(f"{db}.{t}")`
+        e uma leitura que existe e cujo nome nao se pode saber, e um redutor que
+        esvaziasse a secao jogaria fora o aviso junto com o detalhe -- o mesmo
+        erro que `_ultimo_recurso` evita ao trocar a lista de nao resolvidas
+        pela contagem em vez de apagar as duas. Quando so restam recusas este
+        passo devolve `False` e a reducao segue para o proximo, que e o
+        comportamento correto: nao ha mais lineage secundario, e insistir aqui
+        seria apagar evidencia para caber.
+
+        `metrics.lineage_flows_total` e `metrics.lineage_blind_spots_total`
+        sobrevivem a tudo isto, e sao eles que dizem quanto foi cortado.
+        """
+        linhagem = pacote["lineage"]
+        for indice in range(len(linhagem) - 1, -1, -1):
+            if linhagem[indice]["kind"] != _FLUXO:
+                continue
+            if linhagem[indice]["source_kind"] != _KIND_DATASET:
+                if linhagem[indice]["target_kind"] != _KIND_DATASET:
+                    linhagem.pop(indice)
+                    return True
+        for indice in range(len(linhagem) - 1, -1, -1):
+            if linhagem[indice]["kind"] == _FLUXO:
+                linhagem.pop(indice)
+                return True
+        return False
+
     return {
         "low_score_nodes": tirar_no_de_menor_escore,
         "low_score_edges": tirar_aresta_de_menor_escore,
         "graph_depth": colapsar_profundidade,
+        "secondary_lineage": sacrificar_fluxo_secundario,
     }
 
 
@@ -483,9 +713,15 @@ def montar(
 
     O pipeline e o da secao 50, com os degraus que este repositorio sustenta:
     normalizar, expandir pelo dicionario, recuperar candidatos do FTS, reordenar
-    pelo escore composto, ancorar no grafo, e caber no orcamento. Os degraus que
-    ele nao sustenta -- lineage e carregamento seguro de trecho -- saem como
-    campo vazio, nunca como campo inventado.
+    pelo escore composto, ancorar no grafo, ler o fluxo de dado dos arquivos
+    selecionados, e caber no orcamento. O degrau que ele ainda nao sustenta --
+    carregamento seguro de trecho -- sai como campo vazio, nunca como campo
+    inventado.
+
+    `lineage` sai com as duas metades juntas: o fluxo que o indice ligou e a
+    recusa do que ele nao pode nomear. Nome de tabela montado em execucao
+    continua sendo `DYNAMIC_TABLE_IDENTIFIER` com o template de buracos
+    preservados, e nunca um palpite -- ver `_linhagem`.
 
     `regras` e `runtime` entram por parametro e nao sao descobertos aqui: o
     motor de regras deste repositorio consome FATO e o indice devolve SIMBOLO, e
@@ -557,6 +793,14 @@ def montar(
     # estar feito.
     nao_resolvidas = budget.cortar_por_bytes(nao_resolvidas, fatias["provenance"])
 
+    # Os MESMOS caminhos das nao resolvidas, e nao os de `symbols`: a pergunta
+    # aqui e "o que estes arquivos fazem com dado", e o arquivo do ponto de
+    # entrada e o que a resposta descreve. Ampliar para todo simbolo entregue
+    # traria o fluxo de arquivos que entraram no pacote por parentesco de nome,
+    # e a secao encheria de linhagem que ninguem perguntou.
+    linhagem, total_fluxos, total_recusas = _linhagem(banco, caminhos)
+    linhagem = budget.cortar_por_bytes(linhagem, fatias["lineage"])
+
     indice = resumo(banco)
     corpo: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -584,7 +828,7 @@ def montar(
         "entry_points": entradas,
         "symbols": restantes,
         "relationships": relacoes,
-        "lineage": [],
+        "lineage": linhagem,
         "rules": [dict(r) for r in regras],
         "runtime": dict(runtime or {}),
         "snippets": [],
@@ -595,6 +839,12 @@ def montar(
             "selected_files": len({item["path"] for item in simbolos}),
             "selected_symbols": len(simbolos),
             "unresolved_total": total_nao_resolvidas,
+            # Os dois saem SEMPRE, inclusive valendo zero, e e isso que separa
+            # "estes arquivos nao movem dado" de "ninguem perguntou". A lista
+            # vazia sozinha nao distingue os dois casos -- era exatamente o
+            # estado do campo `lineage` antes de `data_flow` existir.
+            "lineage_flows_total": total_fluxos,
+            "lineage_blind_spots_total": total_recusas,
             "estimated_tokens": 0,
             "over_budget_bytes": 0,
         },

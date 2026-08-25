@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     # So para a anotacao: em tempo de execucao o import continua LOCAL, dentro
     # das funcoes que precisam dele, para `import sparkforge.agents` nao passar
     # a arrastar o pacote `registry` inteiro por causa de um enum.
-    from sparkforge.registry.models import ExecutionProfile
+    from sparkforge.registry.models import AgentManifest, ExecutionProfile
 
 
 @dataclass(frozen=True)
@@ -538,3 +538,100 @@ def authorize(
         granted_by=classe if classe in _EXIGEM_APROVACAO else None,
         checked_arguments=arguments is not None and root is not None,
     )
+
+
+@dataclass(frozen=True)
+class CallPolicy:
+    """A politica declarada que UMA fronteira de execucao impoe a cada chamada.
+
+    Nao e fonte de politica nova, e a distincao importa: os campos sao
+    exatamente os que `authorize()` ja exigia, e `from_manifest()` os tira de
+    `AgentManifest`, que e onde a allowlist e a denylist ja vivem declaradas e
+    validadas por schema. Uma segunda lista mantida ao lado daquela seria a
+    familia de defeito que a derivacao de `ToolClass` existe para nao repetir.
+
+    O que ela acrescenta e poder ATRAVESSAR uma fronteira. `call_tool` recebe
+    um objeto e nao seis argumentos soltos, entao a politica e montada uma vez
+    por sessao, no lugar que sabe qual agente esta rodando, em vez de remontada
+    a cada despacho por quem so sabe o nome da tool.
+
+    Ela e OPCIONAL em `call_tool` de proposito, e e isso que preserva a
+    semantica: sem politica declarada nao ha o que impor, e inventar um default
+    faria o catalogo inteiro passar a recusar hoje o que ele autoriza. Uma
+    imposicao que quebra tudo nao e imposicao, e regressao.
+
+    O nome nao e `ToolPolicy` porque esse ja esta ocupado: e o rotulo com que
+    `docs/harness/CURRENT-HARNESS-GAP.md` chama a classificacao da secao 40, que
+    e outra coisa -- aquilo classifica a TOOL, isto autoriza a CHAMADA. Duas
+    coisas com o mesmo nome numa fronteira de seguranca e como um revisor le a
+    linha errada e conclui que a checagem existe.
+    """
+
+    agent: str
+    allowed_tools: tuple[str, ...]
+    profile: object
+    root: Path | str
+    approvals: tuple[ToolClass, ...] = ()
+    denied_tools: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        """Congela as listas em tuplas.
+
+        Nao e purismo de imutabilidade: uma politica vive MAIS que uma chamada
+        -- um agente a carrega pela sessao inteira --, e `authorize()` consome
+        `allowed_tools` com `set()` a cada chamada. Guardar o iteravel cru
+        deixaria um gerador autorizar a primeira chamada e recusar todas as
+        seguintes, que e a forma de defeito de autorizacao mais dificil de
+        enxergar: intermitente, e do lado que fecha.
+
+        `object.__setattr__` porque o dataclass e frozen -- e o frozen fica
+        para que ninguem edite a allowlist de uma politica ja em uso.
+        """
+        object.__setattr__(self, "allowed_tools", tuple(self.allowed_tools))
+        object.__setattr__(self, "denied_tools", tuple(self.denied_tools))
+        object.__setattr__(self, "approvals", tuple(self.approvals))
+
+    @classmethod
+    def from_manifest(
+        cls,
+        manifest: AgentManifest,
+        *,
+        profile: object,
+        root: Path | str,
+        approvals: Iterable[ToolClass] = (),
+    ) -> CallPolicy:
+        """A politica de um agente, tirada do manifesto dele.
+
+        `profile`, `root` e `approvals` NAO saem do manifesto porque nao estao
+        la: o manifesto declara o que o agente pode usar, e nao sob que perfil,
+        em que case nem com que aprovacao do operador. Inventar um default para
+        os tres aqui seria decidir em nome de quem opera, no lugar mais escondido
+        possivel.
+        """
+        return cls(
+            agent=manifest.id,
+            allowed_tools=tuple(manifest.allowed_tools),
+            profile=profile,
+            root=root,
+            approvals=tuple(approvals),
+            denied_tools=tuple(manifest.denied_tools),
+        )
+
+    def decide(self, tool: str, arguments: dict[str, Any]) -> AuthorizationDecision:
+        """A decisao da cadeia para esta chamada.
+
+        Existe para que a fronteira nao precise saber a ordem dos oito
+        parametros de `authorize()`: um segundo ponto de imposicao que montasse
+        a chamada do proprio jeito poderia esquecer `denied_tools` e a denylist
+        sumiria em silencio naquela fronteira so.
+        """
+        return authorize(
+            agent=self.agent,
+            tool=tool,
+            allowed_tools=self.allowed_tools,
+            profile=self.profile,
+            approvals=self.approvals,
+            denied_tools=self.denied_tools,
+            arguments=arguments,
+            root=self.root,
+        )

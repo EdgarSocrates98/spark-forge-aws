@@ -154,3 +154,102 @@ def test_indexa_o_proprio_repositorio(tmp_path):
     assert resultado.ilegiveis < resultado.arquivos // 10, (
         f"{resultado.ilegiveis} arquivos nao parsearam -- investigue antes de aceitar"
     )
+
+
+# O arquivo com os dois lados do contrato de fluxo de dado: duas tabelas com
+# nome literal e uma cujo nome so existe em execucao. Sem a terceira, um teste
+# de persistencia provaria metade do contrato.
+CARGA = '''
+def carga(spark, db, tbl):
+    bruto = spark.table("bronze.vendas")
+    bruto.filter("v > 0").write.saveAsTable("gold.vendas")
+    return spark.table(f"{db}.{tbl}")
+'''
+
+
+# SQL literal por nome, e nao `f"... FROM {tabela}"`: a regra da secao 30 nao
+# tem excecao por o argumento vir de dentro do proprio teste.
+_CONTAGENS = {
+    "data_flow": "SELECT COUNT(*) FROM data_flow",
+    "data_flow_blind_spots": "SELECT COUNT(*) FROM data_flow_blind_spots",
+}
+
+
+def _linhas(banco, tabela):
+    conexao = sqlite3.connect(banco)
+    try:
+        return conexao.execute(_CONTAGENS[tabela]).fetchone()[0]
+    finally:
+        conexao.close()
+
+
+def test_o_fluxo_de_dado_e_gravado_com_as_duas_metades(tmp_path):
+    """`edges` nao sabe que `gold.vendas` descende de `bronze.vendas`.
+
+    As pontas do fluxo sao dataset e DataFrame, e nenhum dos dois tem simbolo em
+    `nodes` -- por isso `data_flow` e tabela propria. E ela nao entra sozinha:
+    `spark.table(f"{db}.{tbl}")` e uma leitura que EXISTE e nao tem nome, e um
+    schema que so guardasse o que resolveu faria um job inteiro de nomes
+    dinamicos passar por job sem leitura.
+    """
+    banco = tmp_path / "graph.sqlite3"
+    (tmp_path / "carga.py").write_text(CARGA, encoding="utf-8")
+    resultado = indexar(tmp_path, banco)
+
+    assert resultado.fluxos > 0
+    assert resultado.fluxos_sem_nome == 1
+
+    conexao = sqlite3.connect(banco)
+    try:
+        pontas = set(
+            conexao.execute(
+                "SELECT source_name, target_name FROM data_flow"
+            ).fetchall()
+        )
+        cegos = conexao.execute(
+            "SELECT reason, template, variables FROM data_flow_blind_spots"
+        ).fetchall()
+    finally:
+        conexao.close()
+
+    nomes = {nome for par in pontas for nome in par}
+    assert "bronze.vendas" in nomes
+    assert "gold.vendas" in nomes
+    assert cegos == [("DYNAMIC_TABLE_IDENTIFIER", "{db}.{tbl}", '["db", "tbl"]')]
+    # A recusa nao virou nome, nem aqui nem em lugar nenhum.
+    assert "db.tbl" not in nomes
+
+
+def test_reindexar_nao_acumula_fluxo_de_dado(tmp_path):
+    """O `DELETE FROM files` leva as duas tabelas por CASCADE, e nada a mais.
+
+    Nao ha `DELETE FROM data_flow` em `_gravar`, pela mesma razao que nao ha
+    para `edges`: um DELETE explicito esconderia a dependencia em
+    `foreign_keys` efetivo, e se ele falhasse o indice acumularia orfao sem que
+    nada acusasse.
+    """
+    banco = tmp_path / "graph.sqlite3"
+    (tmp_path / "carga.py").write_text(CARGA, encoding="utf-8")
+    primeira = indexar(tmp_path, banco)
+    segunda = indexar(tmp_path, banco)
+
+    assert primeira.fluxos == segunda.fluxos
+    assert primeira.fluxos_sem_nome == segunda.fluxos_sem_nome
+    assert _linhas(banco, "data_flow") == primeira.fluxos
+    assert _linhas(banco, "data_flow_blind_spots") == primeira.fluxos_sem_nome
+
+
+def test_arquivo_apagado_leva_o_fluxo_de_dado_dele_junto(tmp_path):
+    """Fluxo orfao responderia linhagem sobre arquivo que nao existe mais."""
+    banco = tmp_path / "graph.sqlite3"
+    (tmp_path / "carga.py").write_text(CARGA, encoding="utf-8")
+    indexar(tmp_path, banco)
+    assert _linhas(banco, "data_flow") > 0
+
+    (tmp_path / "carga.py").unlink()
+    (tmp_path / "vazio.py").write_text("def f():\n    pass\n", encoding="utf-8")
+    resultado = indexar(tmp_path, banco)
+
+    assert resultado.fluxos == 0
+    assert _linhas(banco, "data_flow") == 0
+    assert _linhas(banco, "data_flow_blind_spots") == 0

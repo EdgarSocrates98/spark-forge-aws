@@ -3618,20 +3618,154 @@ no disco com o que está no git.
 
 ### O que continua aberto, com razão escrita
 
+> **Três dos cinco itens abaixo foram fechados** na seção seguinte
+> (*As três pendências do SFCI*, `5cc065d`, `48f6bac`, `a7ac178`). A lista fica
+> como está por ser o registro do que a fase da SPEC entregou e do que ela
+> declarou dever — reescrevê-la apagaria a dívida que foi honrada. Os dois que
+> seguem abertos são `setrlimit` no Windows e Tier 1/2 de linguagens.
+
 - **`authorize()` não é chamada por caminho de execução nenhum.** A cadeia
-  decide e nada a impõe; falta o hook `PreToolUse`.
+  decide e nada a impõe; falta o hook `PreToolUse`. — *fechado em `5cc065d`
+  dentro do processo Python; o hook `PreToolUse` segue aberto.*
 - **Pular arquivo na varredura é silencioso** — por tamanho, symlink,
   confinamento, nome sensível ou poda. Contradiz o princípio do `unresolved` que
   o próprio repositório aplica, e fechar depende de a varredura devolver mais
-  que caminho.
+  que caminho. — *fechado em `48f6bac`: `varrer_source_files` devolve os pulos
+  com nove razões nomeadas.*
 - **`context.montar` não consulta `codeintel.lineage`.** O DataGraph é
   construído do fonte por arquivo e não chega ao índice; pedir `lineage` no
   `ContextPack` é **recusado com a razão**, nunca respondido com lista vazia.
+  — *fechado em `a7ac178`: a seção responde do índice e a recusa desceu para o
+  item.*
 - **`resource`/`setrlimit` não existe no Windows.** A função declara
   `disponivel=False` com a plataforma no motivo em vez de fingir portabilidade.
 - **Tier 1 e 2 de linguagens** seguem fora, como a SPEC condiciona.
 
 ---
+
+## As três pendências do SFCI, e o gate que faltava (2026-08-24)
+
+Fechadas as três lacunas que a seção anterior declarou em aberto, mais uma
+quarta que só apareceu ao fechá-las. Cada uma tem teste; nenhuma foi fechada
+por reescrita de texto.
+
+### A cadeia de autorização passou a impor — `5cc065d`
+
+`authorize()` decidia e nada a impunha. Agora `adapters/tools.py:call_tool`
+consulta a cadeia por `agents/autonomy.py:CallPolicy` antes de despachar. O
+ponto foi escolhido por ser **único**: as 50 tools passam por ele e
+`adapters/mcp.py` o usa, então fechar ali cobre os dois de uma vez.
+
+O teste que sustenta isso não verifica que veio erro — verifica com espião no
+`_HANDLERS` que **o handler não rodou**. Recusa que executa e depois devolve
+erro não é recusa.
+
+A classe chama `CallPolicy` e não `ToolPolicy` porque este segundo rótulo já
+designa a classificação do §40 em `CURRENT-HARNESS-GAP.md`: aquilo classifica a
+*tool*, isto autoriza a *chamada*.
+
+Continua fora, declarado: a imposição vale **dentro do processo Python**.
+`terraform destroy` por `Bash` não passa por ela, e é o hook `PreToolUse` do
+§41. E ela só morde onde há política declarada — sem `policy`, o comportamento
+é o de antes, por não-regressão deliberada e testada.
+
+### A varredura devolve o que não leu — `48f6bac`
+
+`iter_source_files` pulava arquivo em silêncio, o que contradizia o princípio do
+`unresolved` que o resto do repositório aplica. `varrer_source_files` devolve
+agora arquivos **e** pulos, com nove razões nomeadas — três só para diretório,
+porque a separação entre ignorar por custo e ignorar por credencial tinha de
+sobreviver até a saída.
+
+`iter_source_files` continua idêntica, com teste comparando as duas saídas item
+a item.
+
+O caso delicado era o pulo por nome sensível, e a decisão está escrita no
+código: registra-se **caminho relativo à raiz**, nunca o absoluto (prefixo
+absoluto é ambiente — usuário, cliente, layout de máquina — e não muda decisão
+nenhuma), nunca conteúdo, nunca tamanho. A ordem virou semântica: a checagem de
+nome sensível roda **antes** de qualquer `stat`, então o arquivo recusado não é
+tocado nem para preencher o próprio registro, e há teste que derruba
+`read_bytes` durante a varredura para provar.
+
+O risco residual ficou escrito em vez de resolvido a martelo: o nome do arquivo
+pode ser o próprio segredo. A saída é classificar na origem (`e_sensivel`), para
+quem renderiza redigir por classe — não por substring de caminho, que foi como
+esta sessão já vazou antes.
+
+Não casar o `pattern` **não** vira pulo, e isso está no código: é o filtro que
+quem chamou pediu, e registrá-lo afogaria as razões que importam.
+
+### `context.montar` lê linhagem do índice — `a7ac178`
+
+A seção `lineage` era recusada inteira. Agora responde, e **a recusa desceu de
+nível**: `spark.table(f"{db}.{tbl}")` sai como `DYNAMIC_TABLE_IDENTIFIER` com o
+template e as variáveis, dentro da seção. Nome de tabela montado em execução
+continua sem virar palpite.
+
+A escolha entre persistir e derivar saiu de medição, não de gosto. Derivar na
+consulta custava 343–448 ms por pacote, dos quais ~240 ms eram a varredura da
+árvore inteira para ler três arquivos. Persistir custa ~2,8 s uma vez por
+indexação. Pacote é objeto de consulta, indexação é uma por árvore: persistir
+ganhou.
+
+**O preço está publicado e é ruim num eixo**: indexar esta árvore subiu de
+~3,2 s para ~5,4–6,1 s, cerca de **70%**, por 86 016 bytes de tabela. A
+alternativa medida ficou ao lado para que a escolha possa ser revista com dados
+se o perfil de uso mudar.
+
+Um defeito apareceu durante a implementação e vale mais que o recurso: com a
+recusa em segundo lugar na lista, a fatia de 15% da §53 **cortava exatamente
+ela** — três fluxos primários custavam 731 B e a recusa de 158 B não cabia nos
+79 restantes. O pacote saía com três fluxos e nenhum aviso de que uma quarta
+tabela existe sem nome. A recusa passou a vir primeiro, e é também a entrada
+mais barata.
+
+`PESO_LINEAGE` continua **0**, agora com a justificativa certa: antes dizia "não
+há o que medir", o que virou falso. A razão real é que ligá-lo reordena todo
+pacote e a medição que diria quanto ele vale não foi feita. Medível e não
+medido, com teste travando as duas metades.
+
+### O gate que faltava não era o que eu diagnostiquei — `af9da15`, `947b64c`
+
+Os espelhos de agente ficaram para trás do commit duas vezes seguidas. Diagnostiquei
+"falta gate". Era **gate que se conserta antes de olhar**, em duas camadas:
+
+- `test_sync_check_passes_after_sync` roda `sync_skills.py` em modo **escrita** e
+  só então `--check`. É estruturalmente incapaz de falhar: um teste de
+  idempotência com nome de gate.
+- `ci.yml` rodava `Test suite` **antes** de `Mirror sync`, e a suíte reparava o
+  disco do runner. O passo dedicado sempre achava tudo em ordem.
+
+Sobre o commit realmente quebrado, `--check` acusava os três espelhos e saía com
+`exit=1`; a suíte passava **93 testes verdes sobre a árvore quebrada** e
+reescrevia os três arquivos; o `--check` seguinte dizia OK.
+
+O gate novo lê **HEAD via `git archive`**, incluindo o renderizador commitado —
+objetos do git é o que `sync()` não consegue reescrever.
+
+E a relação entre espelhos não era cópia byte a byte: `.agents/` legitimamente
+perde o campo `tools:` do frontmatter, porque o mapeamento de valores de tool do
+Devin não é documentado e chutar em campo de permissão erra nos dois sentidos. O
+gate compara contra o render por plataforma. Um teste exigindo igualdade byte a
+byte teria sido desligado no primeiro falso positivo.
+
+### O que a rodada ensinou
+
+**Quatro implementadores, e os quatro contradisseram alguma parte do plano com
+razão.** O nome `ToolPolicy` que eu mandei usar colidia com um rótulo existente;
+a causa raiz dos espelhos não era falta de gate; o custo de indexação subiu 70% e
+o número foi publicado em vez de escondido; e o pré-filtro por substring que
+pareceria óbvio foi medido e descartado — 376 dos 404 arquivos passam nele.
+
+**Um alerta de scanner apontou para o defeito errado e acertou o alvo.** O
+`extractall` do gate novo foi marcado como TarSlip. Como risco era falso
+positivo: `filter="data"` é a mitigação do PEP 706 e a fonte é `git archive` do
+próprio repositório. Mas `pyproject.toml` promete `>=3.10` e o parâmetro `filter`
+só existe a partir de 3.10.12 — em 3.10.0 aquilo é `TypeError` e o gate inteiro
+para de rodar. Agora são duas camadas, e o teste de compatibilidade carrega um
+espião no `extractall`, porque sem ele passaria mesmo com `filter=` incondicional
+neste interpretador.
 
 ## Dívidas abertas
 

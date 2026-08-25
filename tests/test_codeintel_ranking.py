@@ -343,3 +343,29 @@ def test_expansao_e_congelada():
     assert isinstance(saida, Expansao)
     with pytest.raises(AttributeError):
         saida.literais = ("outro",)
+
+
+def test_peso_de_lineage_e_zero_declarado_e_nao_omitido():
+    """Zero e a posicao honesta enquanto a medicao nao existe.
+
+    O insumo passou a existir: `context.montar` le linhagem do indice, e
+    `data_flow.scope` carrega o mesmo `qualified_name` que `nodes`. Entao a
+    justificativa antiga -- "nao ha o que medir" -- morreu, e a que vale agora e
+    outra: ligar o peso REORDENA todo pacote, e nao existe medicao que diga
+    quanto ele vale. Um peso arbitrario mudaria a resposta de toda consulta sem
+    numero que o sustente.
+
+    O teste trava as duas metades. `PESO_LINEAGE` tem que continuar existindo
+    como constante -- omiti-la esconderia a decisao -- e tem que continuar valendo
+    zero ate que alguem meca. Quem medir troca o valor E este teste, de proposito:
+    a mudanca fica visivel no diff em vez de passar como ajuste de constante.
+    """
+    from sparkforge.codeintel import ranking
+
+    assert ranking.PESO_LINEAGE == 0
+    assert ranking.PESO_ENTRYPOINT == 0
+    # O componente sai no escore mesmo valendo zero: campo declarado e a
+    # diferenca entre "medimos e deu zero" e "ninguem olhou".
+    medido = escore(_achado(name="ler_tabela"), expandir("tabela"))
+    assert medido.lineage == 0
+    assert "lineage" in medido.__dataclass_fields__

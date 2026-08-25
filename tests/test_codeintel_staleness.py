@@ -779,3 +779,72 @@ def test_veredito_fresco_e_carimbado_com_a_hora(tmp_path):
         conexao.close()
     assert gravado["freshness_verdict"] == "fresh"
     assert int(gravado["freshness_checked_ns"]) >= antes
+
+
+def test_o_incremental_reescreve_o_fluxo_de_dado_do_arquivo_alterado(tmp_path):
+    """Linhagem VELHA com cara de medida e pior que linhagem ausente.
+
+    O incremental grava por `index._gravar`, que e o unico lugar que decide como
+    um arquivo vira linha. Se `data_flow` fosse escrita fora dele -- num
+    gravador chamado so por `indexar` --, todo arquivo que chegasse por esta via
+    responderia o fluxo da versao anterior, e nada acusaria: as contagens
+    continuariam plausiveis e os nomes de tabela seriam os do commit passado.
+    """
+    banco = tmp_path / "graph.sqlite3"
+    _escrever(
+        tmp_path / "carga.py",
+        'def carga(spark):\n    spark.table("bronze.antiga").write.saveAsTable("gold.x")\n',
+    )
+    sincronizar(tmp_path, banco)
+
+    def tabelas():
+        conexao = sqlite3.connect(banco)
+        try:
+            linhas = conexao.execute(
+                "SELECT source_name, target_name FROM data_flow"
+            ).fetchall()
+        finally:
+            conexao.close()
+        return {nome for par in linhas for nome in par}
+
+    assert "bronze.antiga" in tabelas()
+
+    _escrever(
+        tmp_path / "carga.py",
+        'def carga(spark):\n    spark.table("bronze.nova").write.saveAsTable("gold.x")\n',
+    )
+    sincronizar(tmp_path, banco)
+
+    atuais = tabelas()
+    assert "bronze.nova" in atuais
+    assert "bronze.antiga" not in atuais
+
+
+def test_o_incremental_nao_acumula_fluxo_de_dado(tmp_path):
+    """Duas sincronizacoes sem mudanca deixam as duas tabelas onde estavam."""
+    banco = tmp_path / "graph.sqlite3"
+    _escrever(
+        tmp_path / "carga.py",
+        'def carga(spark, db):\n'
+        '    spark.table("bronze.v").write.saveAsTable("gold.v")\n'
+        '    return spark.table(f"{db}.x")\n',
+    )
+    sincronizar(tmp_path, banco)
+
+    def contagens():
+        conexao = sqlite3.connect(banco)
+        try:
+            return (
+                conexao.execute("SELECT COUNT(*) FROM data_flow").fetchone()[0],
+                conexao.execute(
+                    "SELECT COUNT(*) FROM data_flow_blind_spots"
+                ).fetchone()[0],
+            )
+        finally:
+            conexao.close()
+
+    antes = contagens()
+    assert antes[0] > 0 and antes[1] == 1
+    _escrever(tmp_path / "carga.py", (tmp_path / "carga.py").read_text(encoding="utf-8"))
+    sincronizar(tmp_path, banco)
+    assert contagens() == antes

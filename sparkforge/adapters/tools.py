@@ -27,9 +27,17 @@ outras sao read-only. A lista literal correspondente vive em
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sparkforge.adapters import _core
+
+if TYPE_CHECKING:
+    # So para a anotacao. Em tempo de execucao o import de `CallPolicy`
+    # continua LOCAL, dentro de `call_tool` e so quando ha politica, para
+    # `import sparkforge.adapters.tools` nao passar a arrastar o pacote
+    # `sparkforge.agents` inteiro -- que importa `supervisor` e `room` --
+    # por causa de um parametro que quase ninguem passa.
+    from sparkforge.agents.autonomy import CallPolicy
 
 _READ_ONLY = {
     "readOnlyHint": True,
@@ -1403,13 +1411,12 @@ _REPORT_VERIFY_SCHEMA: dict[str, Any] = {
 #
 # O que NAO entrou, e a razao e ausencia de implementacao, nunca economia:
 #
-#   62 `code_lineage`  -- `context.montar` devolve `lineage: []` porque
-#       `sparkforge/codeintel/lineage.py` nao existe. Uma tool que devolve
-#       sempre lista vazia ensina que a arvore nao tem linhagem, que e
-#       afirmacao diferente de "este motor ainda nao a calcula". Quando o
-#       modulo existir, a linhagem entra como `include: ["lineage"]` do
-#       `code_context` -- a propria secao 57 ja lista o valor --, e nao como
-#       tool nova.
+#   62 `code_lineage`  -- entrou, e NAO como tool nova: a linhagem e
+#       `include: ["lineage"]` do `code_context`, como a propria secao 57
+#       lista. A razao de nao virar tool continua sendo a secao 56: toda tool
+#       nova entra nos gates de paridade para sempre. O que mudou e que
+#       `sparkforge/codeintel/lineage.py` existe e o campo deixou de sair
+#       vazio.
 #   66 `code_metrics`  -- exige o armazenamento de metricas de query da secao
 #       85, que nao existe. Devolver zeros seria pior que a ausencia: zero
 #       afirma que foi medido.
@@ -1602,8 +1609,10 @@ _CODE_CONTEXT_SUCCESS_SCHEMA: dict[str, Any] = {
             "type": "array",
             "items": {"type": "object"},
             "description": (
-                "SEMPRE vazio hoje: `sparkforge/codeintel/lineage.py` nao "
-                "existe. Campo vazio declarado, nunca campo inventado."
+                "Fluxo de dado por arquivo, lido do indice. Nome de tabela "
+                "montado em tempo de execucao NAO vira palpite: sai como "
+                "recusa com o template e as variaveis. Campo recusado, "
+                "nunca campo inventado."
             ),
         },
         "rules": {
@@ -3544,8 +3553,9 @@ TOOLS: dict[str, dict[str, Any]] = {
             "relevantes ao vocabulario da consulta -- tudo dentro de um orcamento de "
             "tokens. Substitui varrer o repositorio arquivo a arquivo. O texto de `task` "
             "NAO volta na resposta: o que volta e a expansao dele pelo dicionario "
-            "versionado. `lineage` e `snippets` saem SEMPRE vazios -- linhagem de dado "
-            "ainda nao e calculada e trecho de fonte sai por `sparkforge_code_read`. "
+            "versionado. `lineage` sai do indice, com o que nao se sabe nomear marcado "
+            "como recusa em vez de adivinhado; `snippets` sai SEMPRE vazio -- trecho "
+            "de fonte sai por `sparkforge_code_read`. "
             "Recusa em vez de responder quando o indice esta atras da arvore."
         ),
         "inputSchema": {
@@ -3569,8 +3579,9 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "array",
                     "items": {"type": "string", "enum": list(_core.CODE_CONTEXT_INCLUDE)},
                     "description": (
-                        "Secoes a preencher. `lineage` e `snippets` sao RECUSADOS com a "
-                        "razao em vez de devolvidos vazios."
+                        "Secoes a preencher. `snippets` e RECUSADO com a razao em vez de "
+                        "devolvido vazio. Em `lineage` a recusa desceu de nivel: a "
+                        "secao responde, e o ITEM que nao se pode nomear sai marcado."
                     ),
                 },
                 "db": _CODE_DB_PROP,
@@ -4278,20 +4289,72 @@ _HANDLERS = {
 }
 
 
-def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+def call_tool(
+    name: str, arguments: dict[str, Any], *, policy: CallPolicy | None = None
+) -> dict[str, Any]:
     """Despacha para o handler de `name`. Nome desconhecido: KeyError com as validas.
 
     Erros de fronteira (`_core.AdapterError`) nunca propagam como excecao: viram
     `{"error": ..., "exit_code": ...}`, para que um cliente MCP sempre receba um
     resultado estruturado, mesmo em falha.
+
+    `policy` e onde a cadeia de autorizacao passa a MORDER. Ate aqui
+    `sparkforge/agents/autonomy.py:authorize()` era funcao pura que nenhum
+    caminho de execucao consultava: a cadeia decidia e nada impunha, entao uma
+    tool `READ_ONLY` continuava lendo `~/.aws/credentials` sob perfil `OFFLINE`
+    com a decisao funcionando exatamente como especificada. Este e o ponto que
+    fecha isso para todas as tools de uma vez, porque e o despacho unico --
+    `adapters/mcp.py` e qualquer outro chamador entram por aqui.
+
+    Ela e OPCIONAL, e o default `None` nao e frouxidao: sem politica declarada
+    nao ha o que impor, e nenhum chamador de hoje declara uma. Impor um default
+    faria o catalogo inteiro passar a recusar o que hoje autoriza -- imposicao
+    que quebra tudo nao e imposicao, e regressao. Quem quiser a imposicao monta
+    a politica a partir do `AgentManifest` do agente (`CallPolicy.from_manifest`)
+    e a passa aqui.
+
+    A recusa sai no MESMO envelope `{"error", "exit_code"}` dos outros erros de
+    fronteira, e nunca como excecao crua: um cliente que so sabe ler o envelope
+    nao pode descobrir a autorizacao por um traceback. A frase carrega a RAZAO
+    que `AuthorizationDecision` registrou -- allowlist, denylist, teto do
+    perfil, aprovacao que falta ou caminho fora da raiz --, porque recusa muda
+    nao diz ao operador o que corrigir. Ao lado dela vao dois campos
+    maquinaveis, na mesma disciplina de `CodeIndexError`: `error_code`
+    (`UNAUTHORIZED`, para o cliente distinguir "voce nao pode" de "quebrou") e
+    `required_approval` quando a recusa foi por falta de aprovacao de classe,
+    que e o que o chamador precisa pedir.
+
+    A ordem importa: o `KeyError` de nome desconhecido vem ANTES da politica de
+    proposito. Ele e contrato de CATALOGO -- "esta tool nao existe, e aqui estao
+    as que existem" --, e nao de permissao; transformando-o em recusa quando ha
+    politica, o mesmo defeito de chamador se apresentaria de duas formas
+    conforme houvesse politica declarada, e quem depura veria o sintoma errado.
+
+    A politica ve `arguments or {}`, o MESMO objeto que o handler recebe, e nao
+    o `arguments` cru. Autorizar uma coisa e executar outra e como uma
+    verificacao de caminho vira teatro.
     """
     handler = _HANDLERS.get(name)
     if handler is None:
         valid = ", ".join(sorted(TOOLS))
         raise KeyError(f"ferramenta desconhecida: {name!r}. Validas: {valid}")
 
+    argumentos = arguments or {}
+
+    if policy is not None:
+        decisao = policy.decide(name, argumentos)
+        if not decisao.authorized:
+            recusa: dict[str, Any] = {
+                "error": f"chamada recusada pela cadeia de autorizacao: {decisao.reason}",
+                "exit_code": 2,
+                "error_code": "UNAUTHORIZED",
+            }
+            if decisao.required_approval is not None:
+                recusa["required_approval"] = decisao.required_approval.value
+            return recusa
+
     try:
-        return handler(arguments or {})
+        return handler(argumentos)
     except _core.CodeIndexError as exc:
         # SPEC 43 exige um corpo MAQUINAVEL na recusa por indice velho --
         # `STALE_INDEX`, `changed_files`, `action`. O envelope uniforme deste

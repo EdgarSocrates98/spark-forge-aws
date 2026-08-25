@@ -181,7 +181,7 @@ por excesso até esta revisão.
 | Paginação por cursor no envelope de saída | EXISTE, com teste | O envelope das tools traz `total_count`, `returned_count` e `next_cursor`, e o arquivo escrito carrega a comparação inteira, nunca a página. Quem extrai `items` sem conferir `next_cursor` julga a primeira página — e há teste medindo exatamente isso | `tests/test_adapters_tools.py` |
 | Busca por símbolo no índice, determinística e sem rede | EXISTE, com teste | `sparkforge/codeintel/search.py:buscar()` casa nome e nome qualificado pelo FTS5. O termo nunca chega cru ao `MATCH` — passa por `construir_consulta()`, que é o construtor de consulta que a SPEC exige em lugar de interpolar texto de terceiro. A ordem é `(rank, path, start_line, node_id)`: sem o desempate, empate de relevância deixaria a ordem por conta do SQLite e o teste de determinismo falharia de forma intermitente | `tests/test_codeintel_search.py` |
 | Expansão determinística de query por dicionário versionado | NÃO EXISTE | Nada expande "skew no join" para `broadcast`, `salting`, `AQE`. O vocabulário de domínio existe espalhado em `knowledge/` e em `rules/catalog/`, nunca como dicionário de sinônimo | — |
-| Escore composto de recuperação | NÃO EXISTE | O escore de hoje tem dois componentes, e os dois são baratos: relevância do FTS e desempate por posição. Proximidade no grafo, relevância de entrypoint e de lineage continuam sem existir, porque não existe o grafo sobre o qual medi-los | — |
+| Escore composto de recuperação | PARCIAL | O escore de hoje tem dois componentes baratos: relevância do FTS e desempate por posição. O grafo sobre o qual medir os outros passou a existir — `edges` é gravada e a linhagem também —, e `ranking.PESO_LINEAGE` está declarado com valor **0**. Zero é a posição honesta: ligá-lo reordena todo pacote e a medição que justificaria o peso ainda não foi feita. Medível e não medido, e não "inexistente" | `tests/test_codeintel_ranking.py` |
 | Objeto de contexto canônico | NÃO EXISTE | `MinimalContext` e o retorno de `pack_context` são objetos de contexto, mas nenhum dos dois carrega índice, entry point, relação, lineage, regra, runtime, unresolved e bloco de segurança na mesma estrutura | — |
 | Teto duro de token na saída, e ordem de redução declarada | NÃO EXISTE | A paginação limita **quantidade de itens**, não tamanho em token, e não há ordem escrita de o que sacrificar primeiro quando o orçamento estoura | — |
 
@@ -210,24 +210,25 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **40
 
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
-| `iter_source_files` | 1 | 197 | 494158 | 7560 | 102 |
+| `iter_source_files` | 1 | 466 | 555617 | 8185 | 102 |
 | `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |
-| `project_items` | 1 | 193 | 186375 | 1826 | 52 |
-| `tool_class` | 1 | 188 | 24310 | 2562 | 74 |
-| `authorize` | 4 | 897 | 24310 | 3804 | 107 |
+| `project_items` | 1 | 193 | 186682 | 1826 | 52 |
+| `tool_class` | 1 | 188 | 28525 | 2563 | 74 |
+| `authorize` | 4 | 897 | 215402 | 4426 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **1940** bytes; ler os arquivos custaria **830986**;
-a saída do `grep` pelo nome, **17859**; a saída do `grep` pela definição, **419**.
+Somadas as cinco perguntas: o índice devolve **2209** bytes; ler os arquivos custaria **1088059**;
+a saída do `grep` pelo nome, **19107**; a saída do `grep` pela definição, **419**.
 
-O **1940** é o único número desta seção que `scripts/check_vnext_claims.py` não audita, e vale
-dizer por quê em vez de deixar quem confira procurar: quatro dígitos entre 1900 e 2099 estão na
-lista de tokens ignorados como datação, e essa contagem caiu ali. O próprio comentário da lista
-já previa o custo. Ele não fica sem lastro por isso — as três razões abaixo são auditadas, e a
-prova de cada uma imprime numerador e denominador, com o **1940** entre os dois.
+Esta contagem já foi **1940**, e nessa forma era o único número da seção que
+`scripts/check_vnext_claims.py` não auditava: quatro dígitos entre 1900 e 2099 estão na lista de
+tokens ignorados como datação, e ela caía ali. Ao crescer para **2209** saiu da zona cega e passou
+a ter entrada própria no manifesto — o ponto cego era do intervalo, não do número, e some sozinho
+quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
+contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 428.3 vezes.** Contra a saída de um `grep`
-pelo nome, **9.2** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
-resposta do índice custa **4.6** vezes o que aquele `grep` custaria.
+**Contra o denominador do plano, o índice economiza 492.6 vezes.** Contra a saída de um `grep`
+pelo nome, **8.6** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
+resposta do índice custa **5.3** vezes o que aquele `grep` custaria.
 
 **Esse último número é o resultado honesto desta medição, e ele não agrada.** Medido em bytes de
 uma resposta, um `grep -n "def <nome>"` bem escrito é mais barato que consultar o índice. A causa
@@ -243,9 +244,9 @@ economia seria mentir sobre o que foi medido.
 
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
-  `buscar(banco, "source")` devolve **26** símbolos em **6730** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **102928** bytes. O `grep` pela definição contendo o fragmento continua menor
-  (**5852** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+  `buscar(banco, "source")` devolve **29** símbolos em **7393** bytes; a saída do `grep` pelo nome,
+  no mesmo corpus, tem **109045** bytes. O `grep` pela definição contendo o fragmento continua menor
+  (**6049** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.
@@ -703,8 +704,10 @@ A que mais encolheu, e por isso a que mais precisa ser reescrita antes de virar 
 O eixo de consulta por símbolo abriu; o resto da fase continua fechado.
 
 - **Escore composto de recuperação** — o escore de hoje tem relevância do FTS e desempate por
-  posição. Proximidade no grafo, relevância de entrypoint e de lineage não existem: o grafo sobre
-  o qual medi-las passou a ser gravado, e nada em `search.py` o consulta ainda.
+  posição. O grafo passou a ser gravado e a linhagem com ele, então o insumo existe; o que não
+  existe é a medição que diria quanto pesar. `ranking.PESO_LINEAGE` fica em **0** de propósito,
+  declarado como medível e ainda não medido — pôr um peso arbitrário mudaria a ordem de todo
+  pacote sem número que a sustente.
 - **Objeto de contexto canônico** — ausente, e a advertência da seção *O que NÃO fazer* vale
   inteira: consolidar os três empacotadores existentes, nunca somar um quarto.
 - **Expansão determinística de query por dicionário versionado** — ausente.
@@ -829,3 +832,15 @@ coisa depois de existir um arquivo que diz qual versão é. A mesma forma de dep
 duas vezes mais neste documento: as tools `code` esperam por staleness, e escore composto,
 lineage e impacto esperam por **quem leia** `edges` — a tabela deixou de ser a pré-condição, e o
 consumidor dela passou a ser.
+
+Dos três, lineage encontrou seu consumidor: `context.montar` lê a linhagem do índice. A escolha
+entre persistir e derivar saiu de medição, não de gosto — derivar na consulta paga a varredura da
+árvore inteira a cada pacote, e a maior parte do custo era isso, não o cálculo; persistir paga uma
+vez por indexação. Pacote é objeto de consulta e indexação é uma por árvore, então persistir ganhou.
+
+O preço é desfavorável num eixo e não está escondido: indexar ficou sensivelmente mais caro, em
+troca de uma tabela pequena diante do arquivo. Os tempos medidos estão nas docstrings de
+`sparkforge/codeintel/index.py` e no registro datado do STATUS, e não aqui, porque tempo de parede
+é da máquina que mediu e este documento é auditado por lastro derivável.
+
+Escore composto e impacto seguem esperando consumidor.
