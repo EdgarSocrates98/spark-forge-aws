@@ -7,7 +7,10 @@ Quem decide o que pode ser lido e `iter_source_files` da fase J0 -- com poda de
 confinamento contra junction. Varrer por conta propria daria um SEGUNDO lugar
 que decide o que o motor le, e a auditabilidade dessa fronteira e o motivo de
 ela existir num lugar so. A pendencia registrada la -- pular e silencioso --
-segue valendo e nao e fechada aqui.
+JA FOI FECHADA no modulo de varredura: `varrer_source_files` devolve os pulos
+com a razao nomeada. Este indexador ainda chama `iter_source_files` e portanto
+nao consome esse sinal -- o ponto cego que resta e daqui, nao mais de la, e
+fecha-lo e decidir onde o indice guardaria "arquivo que existe e nao foi lido".
 
 A TRANSACAO EXPLICITA NAO E OTIMIZACAO PREMATURA, E PRECO JA MEDIDO
 -------------------------------------------------------------------

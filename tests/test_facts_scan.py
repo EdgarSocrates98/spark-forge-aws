@@ -522,3 +522,244 @@ def test_nome_sensivel_e_pulado_com_padrao_curinga(tmp_path, nome):
     _criar(tmp_path, nome, "conteudo")
     achados = sorted(p.name for p in iter_source_files(tmp_path, "*"))
     assert achados == ["job.py"]
+
+
+# --------------------------------------------------------------------------
+# Pulo visivel. Ate a fase anterior a varredura devolvia SO caminho, e as seis
+# formas de descartar arquivo -- teto, atalho, nao-regular, nome sensivel,
+# confinamento e erro de sistema -- mais a poda de diretorio saiam sem sinal
+# nenhum. Quem lia a saida nao distinguia "nao havia nada" de "havia e eu nao
+# li", que e o mesmo defeito que `graph.unresolved` e `sql.unresolved` existem
+# para nao ter. Cada razao tem caso proprio aqui de proposito: um teste que so
+# cobre "grande demais" deixa as outras oito sem prova.
+# --------------------------------------------------------------------------
+
+
+def _pulos_por_razao(pulos, razao):
+    return sorted(p.relativo for p in pulos if p.razao == razao)
+
+
+def test_iter_source_files_continua_devolvendo_so_caminho(tmp_path):
+    """A API antiga nao muda: sequencia de caminhos, mesma ordem, mesmo conteudo.
+
+    Ha golden de extrator gravado sob a ordenacao global por caminho, e catorze
+    modulos de `facts/` iterando isto. A visibilidade do pulo entra AO LADO,
+    nunca no lugar.
+    """
+    from sparkforge.facts.scan import varrer_source_files
+
+    _criar(tmp_path, "a/b.py")
+    _criar(tmp_path, "z.py")
+    _criar(tmp_path, ".venv/lib/x.py")
+    assert list(iter_source_files(tmp_path, "*.py")) == list(
+        varrer_source_files(tmp_path, "*.py").arquivos
+    )
+    assert list(iter_source_files(tmp_path, "*.py")) == sorted(
+        p for p in tmp_path.rglob("*.py") if ".venv" not in p.parts
+    )
+
+
+def test_pulo_por_teto_de_tamanho_e_visivel(tmp_path):
+    from sparkforge.facts.scan import SIZE_ABOVE_LIMIT, varrer_source_files
+
+    _criar(tmp_path, "pequeno.py")
+    (tmp_path / "gigante.py").write_text("#" * (2 * 1024 * 1024), encoding="utf-8")
+    varredura = varrer_source_files(tmp_path, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["pequeno.py"]
+    assert _pulos_por_razao(varredura.pulos, SIZE_ABOVE_LIMIT) == ["gigante.py"]
+
+
+def test_pulo_por_atalho_de_arquivo_e_visivel(tmp_path):
+    from sparkforge.facts.scan import REPARSE_POINT, varrer_source_files
+
+    _criar(tmp_path, "job.py")
+    try:
+        (tmp_path / "copia.py").symlink_to(tmp_path / "job.py")
+    except (OSError, NotImplementedError):
+        pytest.skip("symlink indisponivel neste ambiente")
+    varredura = varrer_source_files(tmp_path, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["job.py"]
+    assert _pulos_por_razao(varredura.pulos, REPARSE_POINT) == ["copia.py"]
+
+
+def test_pulo_por_nao_ser_arquivo_regular_e_visivel(tmp_path, monkeypatch):
+    """Corrida real: a travessia lista o nome, o arquivo some antes da leitura.
+
+    Encenada com um espiao no `os.walk` porque FIFO e device nao existem no
+    Windows, que e onde isto roda -- e sem o caso, `NOT_A_REGULAR_FILE` seria
+    razao declarada sem prova.
+    """
+    import os as _os
+
+    from sparkforge.facts.scan import NOT_A_REGULAR_FILE, varrer_source_files
+
+    _criar(tmp_path, "job.py")
+    walk_original = _os.walk
+
+    def walk_com_fantasma(*args, **kwargs):
+        for pasta, subpastas, arquivos in walk_original(*args, **kwargs):
+            yield pasta, subpastas, [*arquivos, "sumiu.py"]
+
+    monkeypatch.setattr("sparkforge.facts.scan.os.walk", walk_com_fantasma)
+    varredura = varrer_source_files(tmp_path, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["job.py"]
+    assert _pulos_por_razao(varredura.pulos, NOT_A_REGULAR_FILE) == ["sumiu.py"]
+
+
+def test_pulo_por_nome_sensivel_e_visivel_sem_ler_o_arquivo(tmp_path, monkeypatch):
+    """O caso delicado: registrar o pulo NAO pode virar vazamento.
+
+    O que entra no registro e caminho RELATIVO a raiz e a razao. Nao entra
+    conteudo e nao entra tamanho -- o arquivo nao chega a ser aberto, provado
+    aqui derrubando `read_bytes` e `read_text` antes de varrer.
+    """
+    from sparkforge.facts.scan import SENSITIVE_NAME, varrer_source_files
+
+    _criar(tmp_path, "config.json", "{}")
+    _criar(tmp_path, "infra/prod.tfvars", 'senha = "nao-me-leia"\n')
+
+    def leitura_proibida(self, *args, **kwargs):
+        raise AssertionError("arquivo sensivel nao pode ser lido")
+
+    monkeypatch.setattr(pathlib.Path, "read_bytes", leitura_proibida)
+    monkeypatch.setattr(pathlib.Path, "read_text", leitura_proibida)
+    varredura = varrer_source_files(tmp_path, "*")
+    assert sorted(p.name for p in varredura.arquivos) == ["config.json"]
+    sensiveis = [p for p in varredura.pulos if p.razao == SENSITIVE_NAME]
+    assert [p.relativo for p in sensiveis] == ["infra/prod.tfvars"]
+    assert all(p.e_sensivel for p in sensiveis)
+    assert "nao-me-leia" not in repr(varredura)
+
+
+def test_pulo_nunca_carrega_o_caminho_absoluto(tmp_path):
+    """Relativo a raiz, sempre -- o prefixo absoluto e ambiente, nao evidencia.
+
+    O absoluto carrega nome de usuario, de cliente e layout da maquina para
+    dentro de qualquer relatorio que renderize o pulo, e nao acrescenta nada a
+    decisao de quem le "ha um `.env` em `infra/` que eu nao li".
+    """
+    from sparkforge.facts.scan import varrer_source_files
+
+    _criar(tmp_path, "infra/.env", "TOKEN=x")
+    varredura = varrer_source_files(tmp_path, "*")
+    assert varredura.pulos
+    for pulo in varredura.pulos:
+        assert not pathlib.Path(pulo.relativo).is_absolute()
+        assert str(tmp_path) not in pulo.relativo
+
+
+def test_pulo_por_confinamento_e_visivel(tmp_path, monkeypatch):
+    """O intruso vem de fora da raiz, e nem por isso o absoluto dele vaza."""
+    import os as _os
+
+    from sparkforge.facts.scan import OUTSIDE_ROOT, varrer_source_files
+
+    fora = tmp_path.parent / "fora_do_confinamento"
+    fora.mkdir(exist_ok=True)
+    (fora / "segredo.py").write_text("SENHA = 'x'\n", encoding="utf-8")
+    alvo = tmp_path / "alvo"
+    alvo.mkdir()
+    _criar(alvo, "job.py")
+    walk_original = _os.walk
+
+    def walk_com_intruso(*args, **kwargs):
+        yield from walk_original(*args, **kwargs)
+        yield str(fora), [], ["segredo.py"]
+
+    monkeypatch.setattr("sparkforge.facts.scan.os.walk", walk_com_intruso)
+    varredura = varrer_source_files(alvo, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["job.py"]
+    fugitivos = [p for p in varredura.pulos if p.razao == OUTSIDE_ROOT]
+    assert len(fugitivos) == 1
+    assert not pathlib.Path(fugitivos[0].relativo).is_absolute()
+
+
+def test_pulo_por_erro_de_sistema_e_visivel(tmp_path, monkeypatch):
+    """Arquivo ilegivel some da saida hoje. Sumir sem razao e o defeito."""
+    from sparkforge.facts.scan import OS_ERROR, varrer_source_files
+
+    _criar(tmp_path, "job.py")
+    _criar(tmp_path, "trancado.py")
+    stat_original = pathlib.Path.stat
+
+    def stat_que_falha(self, *args, **kwargs):
+        if self.name == "trancado.py":
+            raise PermissionError("sem permissao")
+        return stat_original(self, *args, **kwargs)
+
+    monkeypatch.setattr(pathlib.Path, "stat", stat_que_falha)
+    varredura = varrer_source_files(tmp_path, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["job.py"]
+    assert _pulos_por_razao(varredura.pulos, OS_ERROR) == ["trancado.py"]
+
+
+def test_poda_de_ruido_e_de_cofre_sao_razoes_diferentes(tmp_path):
+    """Custo e credencial nao sao a mesma coisa, e o registro nao pode fundir.
+
+    `.venv` podado e economia; `secrets/` podado e recusa de credencial. Quem
+    le a saida decide coisas diferentes com cada um, e um unico
+    `DIRECTORY_PRUNED` obrigaria a adivinhar qual foi.
+    """
+    from sparkforge.facts.scan import (
+        DIRECTORY_IGNORED,
+        DIRECTORY_SENSITIVE,
+        varrer_source_files,
+    )
+
+    _criar(tmp_path, "job.py")
+    _criar(tmp_path, ".venv/lib/x.py")
+    _criar(tmp_path, "secrets/db.py")
+    varredura = varrer_source_files(tmp_path, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["job.py"]
+    assert _pulos_por_razao(varredura.pulos, DIRECTORY_IGNORED) == [".venv"]
+    assert _pulos_por_razao(varredura.pulos, DIRECTORY_SENSITIVE) == ["secrets"]
+    assert [p.razao for p in varredura.pulos if p.e_sensivel] == [DIRECTORY_SENSITIVE]
+
+
+def test_pulo_por_atalho_de_pasta_e_visivel(tmp_path):
+    """A poda por atalho e a que fecha a junction, e era a mais calada de todas."""
+    from sparkforge.facts.scan import DIRECTORY_REPARSE_POINT, varrer_source_files
+
+    _criar(tmp_path, "pkg/job.py")
+    try:
+        (tmp_path / "atalho").symlink_to(tmp_path / "pkg", target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlink indisponivel neste ambiente")
+    varredura = varrer_source_files(tmp_path, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["job.py"]
+    assert _pulos_por_razao(varredura.pulos, DIRECTORY_REPARSE_POINT) == ["atalho"]
+
+
+def test_arquivo_fora_do_padrao_nao_vira_pulo(tmp_path):
+    """Nao casar o padrao NAO e ponto cego -- e o filtro que quem chama pediu.
+
+    Registrar `*.json` como pulo de uma varredura de `*.py` encheria a saida de
+    ruido e afogaria as razoes que importam, que e como um sinal de ponto cego
+    morre na pratica.
+    """
+    from sparkforge.facts.scan import varrer_source_files
+
+    _criar(tmp_path, "job.py")
+    _criar(tmp_path, "dados.json", "{}")
+    varredura = varrer_source_files(tmp_path, "*.py")
+    assert [p.name for p in varredura.arquivos] == ["job.py"]
+    assert varredura.pulos == ()
+
+
+def test_pulos_vem_em_ordem_estavel(tmp_path):
+    """Mesma razao da ordem dos arquivos: saida comparavel entre execucoes."""
+    from sparkforge.facts.scan import varrer_source_files
+
+    _criar(tmp_path, "job.py")
+    for ruido in ("z_pkg/__pycache__/x.py", "a_pkg/__pycache__/y.py", "build/c.py"):
+        _criar(tmp_path, ruido)
+    pulos = varrer_source_files(tmp_path, "*.py").pulos
+    assert [p.relativo for p in pulos] == sorted(p.relativo for p in pulos)
+    assert len(pulos) == 3
+
+
+def test_raiz_inexistente_continua_sendo_erro_na_api_nova(tmp_path):
+    from sparkforge.facts.scan import varrer_source_files
+
+    with pytest.raises(ScanError):
+        varrer_source_files(tmp_path / "nao_existe", "*.py")
