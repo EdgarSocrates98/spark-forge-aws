@@ -1411,13 +1411,12 @@ _REPORT_VERIFY_SCHEMA: dict[str, Any] = {
 #
 # O que NAO entrou, e a razao e ausencia de implementacao, nunca economia:
 #
-#   62 `code_lineage`  -- `context.montar` devolve `lineage: []` porque
-#       `sparkforge/codeintel/lineage.py` nao existe. Uma tool que devolve
-#       sempre lista vazia ensina que a arvore nao tem linhagem, que e
-#       afirmacao diferente de "este motor ainda nao a calcula". Quando o
-#       modulo existir, a linhagem entra como `include: ["lineage"]` do
-#       `code_context` -- a propria secao 57 ja lista o valor --, e nao como
-#       tool nova.
+#   62 `code_lineage`  -- entrou, e NAO como tool nova: a linhagem e
+#       `include: ["lineage"]` do `code_context`, como a propria secao 57
+#       lista. A razao de nao virar tool continua sendo a secao 56: toda tool
+#       nova entra nos gates de paridade para sempre. O que mudou e que
+#       `sparkforge/codeintel/lineage.py` existe e o campo deixou de sair
+#       vazio.
 #   66 `code_metrics`  -- exige o armazenamento de metricas de query da secao
 #       85, que nao existe. Devolver zeros seria pior que a ausencia: zero
 #       afirma que foi medido.
@@ -1610,8 +1609,10 @@ _CODE_CONTEXT_SUCCESS_SCHEMA: dict[str, Any] = {
             "type": "array",
             "items": {"type": "object"},
             "description": (
-                "SEMPRE vazio hoje: `sparkforge/codeintel/lineage.py` nao "
-                "existe. Campo vazio declarado, nunca campo inventado."
+                "Fluxo de dado por arquivo, lido do indice. Nome de tabela "
+                "montado em tempo de execucao NAO vira palpite: sai como "
+                "recusa com o template e as variaveis. Campo recusado, "
+                "nunca campo inventado."
             ),
         },
         "rules": {
@@ -3552,8 +3553,9 @@ TOOLS: dict[str, dict[str, Any]] = {
             "relevantes ao vocabulario da consulta -- tudo dentro de um orcamento de "
             "tokens. Substitui varrer o repositorio arquivo a arquivo. O texto de `task` "
             "NAO volta na resposta: o que volta e a expansao dele pelo dicionario "
-            "versionado. `lineage` e `snippets` saem SEMPRE vazios -- linhagem de dado "
-            "ainda nao e calculada e trecho de fonte sai por `sparkforge_code_read`. "
+            "versionado. `lineage` sai do indice, com o que nao se sabe nomear marcado "
+            "como recusa em vez de adivinhado; `snippets` sai SEMPRE vazio -- trecho "
+            "de fonte sai por `sparkforge_code_read`. "
             "Recusa em vez de responder quando o indice esta atras da arvore."
         ),
         "inputSchema": {
@@ -3577,8 +3579,9 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "array",
                     "items": {"type": "string", "enum": list(_core.CODE_CONTEXT_INCLUDE)},
                     "description": (
-                        "Secoes a preencher. `lineage` e `snippets` sao RECUSADOS com a "
-                        "razao em vez de devolvidos vazios."
+                        "Secoes a preencher. `snippets` e RECUSADO com a razao em vez de "
+                        "devolvido vazio. Em `lineage` a recusa desceu de nivel: a "
+                        "secao responde, e o ITEM que nao se pode nomear sai marcado."
                     ),
                 },
                 "db": _CODE_DB_PROP,

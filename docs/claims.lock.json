@@ -3075,13 +3075,13 @@
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "183,3"
+          "value": "186,8"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "183,3",
+      "text": "186,8",
       "type": "number"
     },
     {
@@ -3094,13 +3094,13 @@
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/_core.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "186,3"
+          "value": "186,6"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "186,3",
+      "text": "186,6",
       "type": "number"
     },
     {
@@ -9562,12 +9562,12 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-641",
       "line": 103,
-      "note": "classificacao pendente",
+      "note": "prova trocada: a anterior media `len(buscar(indice, \"iter_source_files\"))`, que nao tem relacao com o texto da linha -- o `1` aqui e o teto de 1 MiB de codigo-fonte. O descasamento era anterior a esta rodada e so apareceu quando a busca passou a devolver 2 simbolos; a prova agora le TAMANHO_MAXIMO_CODIGO_BYTES, que e o que a frase afirma",
       "proof": {
-        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"iter_source_files\")))'",
+        "cmd": "python -c 'from sparkforge.facts.scan import TAMANHO_MAXIMO_CODIGO_BYTES as T; print(T // (1024 * 1024))'",
         "expect": {
           "kind": "number",
-          "pattern": "^(-?[0-9]+)",
+          "pattern": "^(\\d+)",
           "value": 1
         },
         "kind": "command",
@@ -9588,13 +9588,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 197
+          "value": 466
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "197",
+      "text": "466",
       "type": "number"
     },
     {
@@ -9608,13 +9608,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 494158
+          "value": 555617
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "494158",
+      "text": "555617",
       "type": "number"
     },
     {
@@ -9628,13 +9628,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 7560
+          "value": 8185
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "7560",
+      "text": "8185",
       "type": "number"
     },
     {
@@ -9808,13 +9808,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 186375
+          "value": 186682
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "186375",
+      "text": "186682",
       "type": "number"
     },
     {
@@ -9908,13 +9908,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 24310
+          "value": 28525
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "24310",
+      "text": "28525",
       "type": "number"
     },
     {
@@ -9928,13 +9928,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 2562
+          "value": 2563
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "2562",
+      "text": "2563",
       "type": "number"
     },
     {
@@ -10008,13 +10008,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 24310
+          "value": 215402
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "24310",
+      "text": "215402",
       "type": "number"
     },
     {
@@ -10028,13 +10028,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 3804
+          "value": 4426
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "3804",
+      "text": "4426",
       "type": "number"
     },
     {
@@ -10068,13 +10068,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 830986
+          "value": 1088059
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "830986",
+      "text": "1088059",
       "type": "number"
     },
     {
@@ -10088,13 +10088,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 17859
+          "value": 19107
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "17859",
+      "text": "19107",
       "type": "number"
     },
     {
@@ -10127,13 +10127,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "830986 / 1940 = 428.3"
+          "value": "1088059 / 2209 = 492.6"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "428.3",
+      "text": "492.6",
       "type": "number"
     },
     {
@@ -10146,13 +10146,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "17859 / 1940 = 9.2"
+          "value": "19107 / 2209 = 8.6"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "9.2",
+      "text": "8.6",
       "type": "number"
     },
     {
@@ -10165,13 +10165,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(str(com) + \" / \" + str(total) + \" = \" + str(round(com / total, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "1940 / 419 = 4.6"
+          "value": "2209 / 419 = 5.3"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "4.6",
+      "text": "5.3",
       "type": "number"
     },
     {
@@ -10185,13 +10185,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 26
+          "value": 29
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "26",
+      "text": "29",
       "type": "number"
     },
     {
@@ -10205,13 +10205,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 6730
+          "value": 7393
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "6730",
+      "text": "7393",
       "type": "number"
     },
     {
@@ -10225,13 +10225,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 102928
+          "value": 109045
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "102928",
+      "text": "109045",
       "type": "number"
     },
     {
@@ -10245,13 +10245,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 5852
+          "value": 6049
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "5852",
+      "text": "6049",
       "type": "number"
     },
     {
@@ -10879,6 +10879,146 @@
       },
       "state": "PROVADA",
       "text": "3",
+      "type": "number"
+    },
+    {
+      "context": "o despacho unico por onde as 50 tools passam e onde a cadeia agora impoe",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-732",
+      "line": 262,
+      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 50
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "50",
+      "type": "number"
+    },
+    {
+      "context": "as 50 tools cobertas pela imposicao em call_tool",
+      "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
+      "id": "VNX-733",
+      "line": 308,
+      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 50
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "50",
+      "type": "number"
+    },
+    {
+      "context": "call_tool cobre as 50 tools num ponto so",
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "id": "VNX-734",
+      "line": 107,
+      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 50
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "50",
+      "type": "number"
+    },
+    {
+      "context": "PESO_LINEAGE em zero: o insumo existe, a medicao que diria quanto pesar nao",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-735",
+      "line": 184,
+      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.codeintel.ranking import PESO_LINEAGE; print(PESO_LINEAGE)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "PESO_LINEAGE em zero, declarado e nao omitido",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-736",
+      "line": 707,
+      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "proof": {
+        "cmd": "python -c 'from sparkforge.codeintel.ranking import PESO_LINEAGE; print(PESO_LINEAGE)'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(\\d+)",
+          "value": 0
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "0",
+      "type": "number"
+    },
+    {
+      "context": "Somadas as cinco perguntas: o indice devolve 2209 bytes",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-737",
+      "line": 219,
+      "note": "a contagem saiu da faixa 1900-2099 ao crescer e deixou de cair na lista de tokens ignorados como datacao, entao ganhou lastro proprio; a prova e a mesma das razoes, lendo o denominador que elas ja imprimem",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "/ (\\d+) =",
+          "value": 2209
+        },
+        "kind": "command",
+        "tier": "slow"
+      },
+      "state": "PROVADA",
+      "text": "2209",
+      "type": "number"
+    },
+    {
+      "context": "Ao crescer para 2209 saiu da zona cega e passou a ter entrada propria no manifesto",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-738",
+      "line": 224,
+      "note": "a contagem saiu da faixa 1900-2099 ao crescer e deixou de cair na lista de tokens ignorados como datacao, entao ganhou lastro proprio; a prova e a mesma das razoes, lendo o denominador que elas ja imprimem",
+      "proof": {
+        "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "/ (\\d+) =",
+          "value": 2209
+        },
+        "kind": "command",
+        "tier": "slow"
+      },
+      "state": "PROVADA",
+      "text": "2209",
       "type": "number"
     }
   ]
