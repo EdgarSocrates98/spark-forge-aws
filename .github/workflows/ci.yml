@@ -24,8 +24,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install
-        run: python -m pip install -e ".[dev]" --quiet
+      - name: Install (frozen)
+        # Instalacao CONGELADA: nada e resolvido aqui dentro.
+        #
+        # `--require-hashes` poe o pip em modo hash-checking: todo requisito
+        # -- inclusive o que entra por transitividade -- precisa estar pinado
+        # com `==` e com hash NESTE arquivo, ou o install falha. Nao e que o
+        # pip deixe de olhar dependencia; e que qualquer coisa que ele
+        # descubra e que nao esteja na lista vira erro em vez de virar uma
+        # versao escolhida na hora. Por isso `locks/py<versao>.txt` carrega o
+        # fecho inteiro do ambiente, backend de build incluso -- e por isso o
+        # conjunto instalado nao pode divergir do commitado.
+        #
+        # `--no-build-isolation` no install editavel e o que fecha a ultima
+        # brecha: com isolamento, o pip criaria um ambiente proprio e BAIXARIA
+        # hatchling do indice em tempo de CI. Como o lock ja instalou hatchling
+        # e o que ele exige, o build usa o que esta ali.
+        #
+        # `--no-deps` no install editavel porque as dependencias ja vieram do
+        # lock; sem ele o pip resolveria os pisos de `pyproject.toml` de novo e
+        # poderia trocar uma versao pinada.
+        run: |
+          python -m pip install --require-hashes -r "locks/py${{ matrix.python-version }}.txt"
+          python -m pip install -e . --no-deps --no-build-isolation
       - name: Lint
         run: python -m ruff check sparkforge scripts tests
       - name: Test suite
@@ -34,6 +55,12 @@ jobs:
         run: python scripts/sync_skills.py --check
       - name: Requirements mirror
         run: python scripts/gen_requirements.py --check
+      - name: Lock integrity
+        # Offline de proposito: confere forma, cobertura e consistencia dos
+        # locks commitados. Regenerar exige rede e nao acontece aqui -- um gate
+        # que precisa do indice do PyPI para dizer "ok" fica vermelho quando o
+        # indice cai, sem defeito nenhum no repositorio.
+        run: python scripts/gen_lock.py --check
       - name: Vendored third-party integrity
         run: python scripts/vendor_caveman.py --check
       - name: Offline knowledge bundle integrity
@@ -77,3 +104,57 @@ jobs:
         run: python -m pip install --quiet build
       - name: Artifact parity gate
         run: python scripts/verify_wheel.py
+
+  audit:
+    # Job PROPRIO, e a separacao e o desenho, nao arrumacao.
+    #
+    # Auditoria de vulnerabilidade consulta base de dados externa por natureza:
+    # ela nao pode viver dentro do job `test`, que precisa rodar offline e cuja
+    # cor precisa significar "o codigo esta certo". Aqui, uma indisponibilidade
+    # da base pinta ESTE job de vermelho e deixa `test` intacto -- as duas
+    # perguntas ficam legiveis separadamente.
+    #
+    # Consequencia a declarar: se a protecao de branch exigir checks, o check a
+    # exigir e `test`. Exigir `audit` deixa merge dependendo de servico de
+    # terceiro estar de pe.
+    #
+    # A politica de o que derruba e o que so reporta esta escrita, inteira, na
+    # docstring de `scripts/audit_policy.py`, e `tests/test_supply_chain.py` a
+    # exercita offline com relatorios sinteticos -- inclusive o caso "base nao
+    # consultada", que e o que nunca pode ser lido como aprovacao.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pip-audit
+        # Fora do lock de proposito: `pip-audit` e a ferramenta que AUDITA o
+        # ambiente, e nao parte dele. Instala-lo no mesmo lock faria a arvore
+        # dele entrar no que se audita, e um achado numa dependencia do
+        # auditor apareceria como achado nosso.
+        run: python -m pip install --quiet pip-audit
+      - name: Audit the locked environment
+        # `--require-hashes` diz que o arquivo ja e um fecho pinado, e
+        # `--disable-pip` e o que faz o pip-audit CONFIAR nisso: sem ele, o
+        # pip-audit cria um virtualenv e INSTALA o lock inteiro so para
+        # enumerar o que instalou. Os dois juntos fazem ele ler o arquivo e
+        # consultar a base -- que e a unica coisa que se quer daqui.
+        #
+        # Auditar `requirements.txt` seria auditar PISOS: `PyYAML>=6.0` nao tem
+        # CVE, a versao instalada e que tem.
+        #
+        # `|| true` para que o codigo de saida do pip-audit nao decida sozinho:
+        # quem decide e a politica, no passo seguinte, que sabe distinguir
+        # achado com correcao, achado sem correcao e base nao consultada. Sem
+        # isso, `set -e` do runner mataria o passo antes de a politica ler o
+        # relatorio -- e um achado sem correcao publicada derrubaria o job.
+        run: |
+          pip-audit --require-hashes --disable-pip -r locks/py3.11.txt \
+            --format json --output audit.json || true
+      - name: Apply the audit policy
+        # `--lock` e a unica checagem que compara o relatorio com o ALVO em vez
+        # de olhar so para dentro dele: um relatorio bem formado sobre outra
+        # coisa -- caminho errado, arquivo velho de uma execucao anterior --
+        # passaria por tudo o mais sem ter respondido nada sobre o lock.
+        run: python scripts/audit_policy.py audit.json --lock locks/py3.11.txt

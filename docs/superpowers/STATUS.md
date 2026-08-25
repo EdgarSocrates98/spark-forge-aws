@@ -1,16 +1,16 @@
 # SparkForge AWS — estado por fase
 
-**Atualizado em:** 2026-08-23
-**Commit de referência:** `433598c`, fechamento do harness v0.1 (fases I1 a I3)
-sobre a branch `feat/fase6b-sf-cfg` — três invariantes escritos como teste, sem
-módulo novo; a última fase teve duas revisões independentes que a reprovaram e
-expuseram sete tools cuja anotação mentia. Ver a seção
-*Harness v0.1* abaixo.
-Fechamentos anteriores: eixo Glue, fases G1 a H6 (2026-08-23); auditoria de
-lastro do vNext em `46b1187` (2026-08-21), que classificou as 184 alegações que
-`a5b9e96` publicou em `docs/vnext/`; expansão agêntica v2 (2026-08-18);
-vendorização do ecossistema caveman (2026-08-07) e `feat/preservacao-semantica`
-(2026-08-05).
+**Atualizado em:** 2026-08-24
+**Commit de referência:** `5748893`, fechamento das fases J0 a J2 do Code
+Intelligence sobre a branch `feat/fase6b-sf-cfg` — a dívida de leitura que existia
+antes de qualquer índice: detector de segredo unificado que passa a pegar por
+valor, varredura com denylist e confinamento, envelope com `detail_level`, e a
+cadeia de autorização enxergando o argumento da chamada. Ver a seção
+*Code Intelligence* abaixo.
+Fechamentos anteriores: harness v0.1, fases I1 a I3 (2026-08-23); eixo Glue,
+fases G1 a H6 (2026-08-23); auditoria de lastro do vNext em `46b1187`
+(2026-08-21); expansão agêntica v2 (2026-08-18); vendorização do ecossistema
+caveman (2026-08-07) e `feat/preservacao-semantica` (2026-08-05).
 **Nenhuma regra executável, extrator ou fact de diagnóstico mudou na expansão
 agêntica v2** — os números de detecção abaixo são os mesmos de
 `feat/preservacao-semantica`; o que mudou foi o denominador do catálogo.
@@ -41,7 +41,7 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **6361** passando, 5 skipped, medido em `433598c` | `python -m pytest -q` |
+| Testes | **6716** passando, 5 skipped, medido em `fa3586c` | `python -m pytest -q` |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
@@ -51,7 +51,7 @@ arquivo ganha.
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
-| Tools MCP | **44** | `sparkforge.adapters.tools.TOOLS` |
+| Tools MCP | **50** | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **44 de 44** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
@@ -2019,15 +2019,41 @@ versão nunca foi lida daí. Para configuração de tuning a distinção é meno
 grave — o valor reportado é o que o driver resolveu — mas ela não some, e vai na
 explicação da regra quando a área for escrita.
 
-**Dívida nova, com custo medido.** `sparkforge/facts/secrets.py` nasce como
-fonte única de redação de segredo em par chave/valor. `_looks_like_secret` está
-implementado em `emr_cluster.py`, `emr_serverless.py` e `terraform.py`, os dois
-primeiros anotando em comentário que repetem o terceiro. Configuração de Spark é
-onde credencial mais aparece — `spark.hadoop.fs.s3a.secret.key`, senha em URL de
-JDBC — e virar a quarta cópia seria drift em superfície de segurança. Os três
-existentes **não** foram migrados: cada um tem golden gravado, e regravar golden
-sem defeito é risco de semântica sem ganho medido. Consolidá-los é dívida, não
-esquecimento.
+**Dívida nova, com custo medido — ~~paga~~ na Task 3 da fase J0.**
+`sparkforge/facts/secrets.py` nasce como fonte única de redação de segredo em
+par chave/valor. `_looks_like_secret` estava implementado também em
+`emr_cluster.py`, `emr_serverless.py` e `terraform.py`, os dois primeiros
+anotando em comentário que repetiam o terceiro. Configuração de Spark é onde
+credencial mais aparece — `spark.hadoop.fs.s3a.secret.key`, senha em URL de
+JDBC — e virar a quarta cópia seria drift em superfície de segurança. A fase
+que criou o módulo **não** migrou os três, pelo custo estimado de regravar
+golden sem defeito.
+
+**O custo estimado não se confirmou.** As três cópias saíram e os três módulos
+passaram a importar `looks_like_secret` de `facts/secrets.py`. Medido: **0**
+golden regravado, **531** testes de `terraform`/`emr_cluster`/`emr_serverless`
+passando sem alteração de fixture, suíte inteira em **6380 passed, 5 skipped**
+(linha de base da fase: **6362 passed, 5 skipped**, mais o que a fase J0
+acrescentou, deste commit e dos concorrentes), `ruff` em **241**, o mesmo da
+linha de base. O gate contra a próxima cópia é
+estrutural, não comportamental — `test_existe_um_unico_detector_de_segredo_no_pacote`
+varre o pacote por AST e quebra quando alguém define a segunda, antes de ela
+divergir.
+
+**As cópias divergiam, e não era da forma que se supunha.** A justificativa
+escrita dizia que elas repetiam os mesmos padrões. Não repetiam: as cópias
+tinham `AKIA` sozinho (a canônica tem `AKIA|ASIA|AIDA|AROA` mais GitHub, JWT,
+PEM e Slack), piso de entropia **20** contra **16**, e — o que mais pesa — a
+dica de nome de chave `"key"` isolada, que a canônica não tem. Varrendo os
+**247019** pares chave/valor dos **489** JSON de `fixtures/`: a canônica não
+redige **nada** que a cópia não redigisse, e a cópia redigia **53** ocorrências
+(**11** distintas) que a canônica deixa passar — todas nomes de campo literais
+`key`/`Key` com valor inócuo (`--spark-event-logs-path`,
+`analytics/cliques/_SUCCESS`, `maximizeResourceAllocation`). Nenhuma é
+credencial. A varredura é aproximada — ela passa o nome do campo JSON como
+chave, e não a chave de configuração que o extrator passa — mas a direção é
+inequívoca: a consolidação não perdeu detecção, e apagou falso positivo que
+apagava evidência.
 
 **Contagem que estava errada, corrigida no caminho.** *Números correntes* dizia
 **164** fixtures golden com `graph` em 19. Medido: **171**, com `graph` em 25 —
@@ -3216,6 +3242,394 @@ Dois limites ficaram declarados no produto, não só aqui:
   nunca popula `self.tools` —, mas os eixos não se mapeiam: `RiskLevel` não tem
   dimensão de nuvem, `ToolClass` não tem `reversible`/`sensitive`. Está registrado
   na docstring de `ToolClass`, não só no mapa.
+
+---
+
+## Code Intelligence — fases J0 a J2, o que vem antes de qualquer índice (2026-08-24)
+
+Plano em [`plans/2026-08-23-codeintel-j0-j2.md`](plans/2026-08-23-codeintel-j0-j2.md).
+Mapa que originou a fase: [`docs/harness/CODEINTEL-GAP.md`](../harness/CODEINTEL-GAP.md).
+
+O mapa mediu a SPEC do SparkForge Code Intelligence — 174 seções — contra o
+repositório e concluiu que **a extração já existe**: os extratores de
+`sparkforge/facts/` já emitem `pyspark.read`/`pyspark.write` (o grafo de tabela
+da §35), `pyspark.callgraph_edge` mais os quatro kinds `callgraph.*` (§123/§124)
+e `graph.unresolved`/`sql.unresolved` (§28, e esse já era lei da casa). O que
+falta é persistência, índice incremental e recuperação.
+
+Mas o mapa mediu também que **havia dívida aberta hoje**, sem SFCI nenhum. Estas
+três fases fecham essa dívida. Nenhum módulo de índice foi escrito.
+
+As fases são numeradas com `J` porque `I` é o harness e `H` é o eixo Glue.
+
+### J0 — a fronteira de leitura
+
+Commits: `69318a1`, `8d0034d`, `75ed8a5`, `e45bcb1`, `f18f0e3`.
+
+**O detector de segredo era quatro cópias sem teste, e o canônico só pegava
+credencial quando o nome da chave ajudava.** `sparkforge/facts/secrets.py`
+tinha três gatilhos: dois por valor mas estreitos (access key da AWS, senha em
+URL) e um que exigia que o NOME da chave sugerisse segredo. Consequência
+medida: PAT do GitHub, JWT, chave privada PEM e token do Slack passavam batidos
+quando chegavam num campo de nome inocente — que é como segredo chega em
+configuração de verdade (`config_value`, `data`, `payload`).
+
+Hoje são seis padrões por valor, uma implementação só, e um gate estrutural por
+AST que quebra quando a segunda é escrita — não quando ela diverge, porque
+divergir é o momento em que o conserto já é caro. As três cópias privadas de
+`terraform.py`, `emr_cluster.py` e `emr_serverless.py` saíram, e com elas quatro
+regexes que ficaram órfãos.
+
+O teste de mutação foi o que deu valor à fase: **13 de 19 mutações passavam pelo
+corpus sem quebrar teste**. Entre elas, uma que apagava o gatilho de
+nome-da-chave-mais-entropia inteiro — o **único** caminho para segredo
+proprietário, que não tem prefixo publicado. O corpus não tinha um único
+positivo para ele.
+
+**A varredura entrava em `.venv/`, `node_modules/` e `vendor/`.** Eram catorze
+sítios de `rglob` espalhados, e só três pulavam sequer `__pycache__`. Viraram
+uma unidade — `sparkforge/facts/scan.py:iter_source_files` — com denylist,
+confinamento e teto de tamanho.
+
+Três achados durante a execução que mudaram o desenho:
+
+1. **Junction do Windows furava a poda.** `os.path.islink()` devolve `False`
+   para junction e `os.walk` desce nela; como o destino fica dentro da raiz, o
+   confinamento também aprovava. Uma junction para `.aws/`, criada **sem
+   privilégio de administrador**, reinstalava a pasta que a denylist tinha
+   removido e o token SSO era lido. Fechado por detecção de reparse point.
+2. **A denylist recusava artefato legítimo em silêncio.** `secrets_manager.tf` e
+   `credentials_provider.py` eram pulados por `startswith` — e Terraform de AWS
+   Secrets Manager é precisamente o que um revisor de segurança precisa ler.
+   Nome passou a casar por componente delimitado. `.py` e `.tf` não são
+   condenados por nome nenhum: o detector de segredo só funciona sobre arquivo
+   que chegou a ser lido.
+3. **O teto de 1 MiB cortava o domínio.** Ele veio da §41 da SPEC, que trata de
+   indexar código-fonte, e passou a valer para artefato de dados. Os dois
+   fixtures de listagem S3 acima de 1 MiB — justamente os que provam os limiares
+   P0 e P1 de small files — rendiam **zero** facts pela travessia. Virou teto por
+   tipo: 1 MiB para o que é parseado por AST, 128 MiB para dado, com a razão
+   medida por `tracemalloc` (143 bytes por objeto, pico de parse 2,6x).
+
+### J1 — o envelope barato
+
+Commits: `e8b7081`, `5748893`.
+
+Medido antes: o payload de facts era **5,9x o tamanho do código-fonte**, e 25,1%
+dele era `provenance` repetida — o mesmo sha256 do mesmo arquivo, copiado uma vez
+por fato. `detail_level` existia em **0 das 44** tools.
+
+Hoje há três níveis. `full` é byte a byte o que sempre foi — é o modo de
+reauditoria, e o default continua nele de propósito: mudar o default mudaria a
+saída de todo chamador e todo golden, e isso é decisão de contrato, separada
+desta fase.
+
+A revisão achou dois defeitos que valem mais que o ganho de bytes:
+
+- **O `summary` apagava a identidade.** Ele descartava o `subject` inteiro e
+  reconstruía só `arquivo:linha`, então fato cujo subject identifica por
+  `symbol` — o caso comum em Terraform — virava um id opaco.
+- **A promessa não existia.** "Peça o fato inteiro por id quando precisar"
+  estava no help da CLI, na `description` de vinte tools MCP e num comentário:
+  vinte e uma superfícies oferecendo uma afordância que **nenhuma das 44 tools
+  implementa**. O único `id` do catálogo é o de regra.
+- **A chave de procedência só era única dentro de uma página.** `project_items`
+  roda depois de `paginate_items`, então o desambiguador nunca via a página
+  seguinte. Em `fuse`, a mesma chave apontava para `pyspark_ast` na página 1 e
+  `sql_literal` na página 2 — e quem pagina pelo cursor atribuía o fato ao
+  extrator errado, sem erro.
+
+Corrigir **encareceu** o envelope, e essa é a troca certa: um resumo que não diz
+de quem fala não é resumo, e chave que colide em silêncio é pior que chave
+nenhuma.
+
+**Toda medição desta fase é em bytes, nunca em tokens.** Os quatro estimadores
+de token do repositório são `len/4` e divergem entre si no arredondamento; um
+tokenizador de verdade exigiria dependência nova, o que contraria a razão de o
+SFCI existir. Byte é observação; token seria estimativa vendida como medida.
+
+### J2 — a cadeia vê a chamada, não só o nome
+
+Commit: `4240035`.
+
+`authorize()` autorizava um **nome**, nunca uma **chamada**: a assinatura não
+recebia os argumentos, então `path`, `bucket` e `report_path` ficavam fora da
+decisão por construção. O efeito estava medido — uma tool `READ_ONLY` com `path`
+arbitrário leu segredo de fora do repositório, sob perfil `OFFLINE`.
+
+Ela passa a aceitar `arguments` e `root`, e a decisão ganha `checked_arguments`.
+Esse campo não é decoração: sem ele, uma decisão tomada sem argumentos seria
+indistinguível de uma que verificou e aprovou. O confinamento **reusa**
+`safe_catalog_file` em vez de reimplementar — duas implementações seriam o
+defeito que J0 acabou de fechar para detecção de segredo.
+
+### O que NÃO fechou, e por quê
+
+**Nada chama `authorize()`.** Os quatro caminhos de execução
+(`adapters/mcp.py`, `adapters/tools.py`, `adapters/cli.py`,
+`agents/supervisor.py`) executam tool sem passar pela cadeia. Ver o argumento
+não impõe nada se a cadeia não é chamada — esse é o gap do hook `PreToolUse`, e
+ele continua aberto.
+
+**Pular é silencioso.** Arquivo descartado pela varredura — por tamanho,
+symlink, confinamento, nome sensível ou poda de diretório — simplesmente não
+aparece, e quem lê a saída não distingue "não havia nada" de "havia e eu não
+li". Isso contradiz o princípio do `unresolved`, que `graph.unresolved` e
+`sql.unresolved` já aplicam. Fechar depende de a varredura devolver mais que
+caminho, e `Iterator[Path]` não comporta o sinal.
+
+**O teto de 128 MiB corta caso real, e corta calado.** Ele dá ~940 mil objetos
+num prefixo, e prefixo de produção com mais de um milhão é ordinário — é o
+cenário de small files que este motor existe para diagnosticar. O valor está
+calibrado pelo que o processo aguenta parsear de uma vez, não pelo domínio.
+
+### O que a execução ensinou sobre o método
+
+**Seis implementadores discordaram do plano, e os seis estavam certos.** O plano
+contou catorze sítios como doze; especificou um módulo que reprovava em dois dos
+testes que ele mesmo prescrevia; mandou um `os.walk(raiz_real)` que quebraria o
+`relative_to()` dos extratores; importou um teto da spec errada; disse sete
+pontos de envelope quando quatro devolvem facts; e não mencionou os vinte
+envelopes que a CLI monta por conta própria — sem os quais a fase inteira não
+funcionaria.
+
+**Teste de mutação achou o que asserção não achou.** Nas duas fases em que foi
+feito de verdade — com harness validado nas duas direções, uma mutação que deve
+morrer e uma que deve sobreviver — ele expôs testes que passavam sem provar
+nada. Sem ele, J0 teria fechado com o gatilho de segredo proprietário
+descoberto por ninguém.
+
+**Escrita concorrente na mesma árvore é risco real.** Um revisor mutou o arquivo
+vivo enquanto um implementador commitava, e as duas escritas se sobrepuseram
+três vezes. Nada se perdeu porque foi percebido a tempo, mas a lição é usar
+worktree por agente em vez de depender de disciplina de staging.
+
+---
+
+## Code Intelligence — fase J3, o índice, e a medição que não confirmou a promessa (2026-08-24)
+
+Plano em [`plans/2026-08-24-codeintel-j3-indice.md`](plans/2026-08-24-codeintel-j3-indice.md).
+
+A fase persiste o que os extratores já produzem num índice SQLite local, sobre a
+varredura que J0 construiu e o `ast` que os extratores já usavam. **Nenhum
+extrator novo, nenhuma tool MCP.** O alvo da primeira versão é o próprio
+repositório, por decisão do dono do projeto — o que dá consumidor imediato e
+mede o mecanismo onde ele é mais conferível.
+
+### O que funciona
+
+`sparkforge/codeintel/` com `ids`, `db`, `extract`, `index` e `search`.
+Indexando o próprio repositório, três rodadas idênticas:
+
+| | |
+|---|---|
+| arquivos | 378 |
+| nós | 5754 |
+| ilegíveis | 1 — `fixtures/graph/fonte_que_nao_compila/`, fixture deliberada |
+| tempo | ~1,35 s |
+| banco | 3,4 MiB |
+
+Idêntico em **3.10.20, 3.11.15 e 3.14.6**. Nenhum caminho absoluto no
+`metadata`. Das 252 assinaturas com valor default, **zero** carregam literal.
+
+### A medição, e ela não confirma a promessa da fase
+
+O índice existe para responder "onde está X definido" sem ler arquivo. Medido em
+bytes contra três denominadores, o resultado depende inteiramente de contra o
+que se compara — e o denominador mais honesto é o que menos favorece:
+
+| denominador | resultado |
+|---|---|
+| ler os arquivos até achar a definição | 368x **a favor** |
+| saída de `grep` pelo nome | 9x **a favor** |
+| saída de `grep -n "def <nome>"` | 4,6x **contra** |
+
+**Um `grep` cirúrgico pela definição é mais barato que consultar o índice.**
+Filtrar por correspondência exata reduz o payload à metade e **não** inverte o
+sinal: continua 2,3x contra. A causa não é desperdício de envelope — são
+perguntas diferentes. O `grep` devolve a linha cuja definição *começa* com o
+nome; o índice devolve todo símbolo cujo nome *contém* o termo, com `kind` e
+nome qualificado.
+
+**Onde ele ganha é em pergunta estrutural.** Para "quais são os símbolos de
+`sparkforge/facts/scan.py`", o índice responde com metadado de 8 símbolos contra
+um arquivo de 14681 bytes — 9,7x a favor, e sem parse do lado de quem pergunta.
+Testado o cenário de nome comum (`run`, `load`, `build`, `extract`, `check`,
+`parse`), o índice ganha em menos da metade dos casos: não sustenta recomendação.
+
+**A conclusão reposiciona o SFCI.** Este índice não se paga como substituto de
+`grep` para busca por nome. Ele se paga em pergunta que `grep` não responde sem
+parse — o que existe dentro de um arquivo, quem chama o quê, o que quebra se
+algo mudar. E essas são exatamente as capacidades que J3 **não** implementou:
+ela entrega `nodes` e busca por nome, e deixa `edges`, chamadores e impacto para
+a fase seguinte. **O valor do subsistema está em J4, não aqui.**
+
+Dizer o contrário seria publicar a medição que deu certo e esconder a que não
+deu. A tabela completa, com o método dos três denominadores, está em
+[`docs/harness/CODEINTEL-GAP.md`](../harness/CODEINTEL-GAP.md), escrita para que
+quem discorde possa atacar o denominador.
+
+### O defeito que dez commits e cinco gates não viram
+
+`sparkforge/paths.py` **nunca foi versionado**. O commit `4240035` acrescentou
+`from sparkforge.paths import resolve_within` a `rules/loader.py`,
+`agents/autonomy.py` e `knowledge_ref.py` sem fazer `git add` do arquivo. Todo
+commit de `4240035` até `263917a` falha ao importar os três num clone limpo —
+são dez, e três módulos centrais.
+
+Passou por dez execuções da suíte completa, por ruff, pelo gate de lastro, por
+uma revisão de conformidade e por uma de qualidade. A razão: o pacote está em
+modo editável, então `sparkforge.paths` resolve para a árvore de trabalho, onde
+o arquivo existe. **Nenhum gate olhava para o que o git tem — todos olhavam para
+o disco.**
+
+Foi encontrado por acidente, por um implementador que conferiu num worktree
+limpo enquanto media outra coisa.
+
+Fechado em `fa3586c` por `tests/test_arvore_versionada.py`, que compara as duas
+visões nos dois sentidos e foi verificado contra o defeito original: tirando
+`paths.py` do índice do git, o teste fica vermelho. Ele não substitui
+`scripts/verify_wheel.py` — aquele pega arquivo que o *build* não leva, este
+pega arquivo que o *commit* não leva.
+
+Os dez commits ficam quebrados no histórico. A branch não foi publicada, e
+reescrever histórico custaria mais do que vale.
+
+### O que a execução ensinou
+
+**Nove implementadores discordaram do plano, e os nove estavam certos.** O mais
+grave foi meu: o regex de sanitização de assinatura que escrevi **vazava
+segredo**. `def f(chave=('id','segredo'))` passava intacto, e
+`f(modo=['x','SENHA'])` vazava *parcialmente* — deixando `<literal>,'SENHA'])`,
+o que parece sanitizado. Medido sobre os 433 defaults reais do repositório: 14
+sobreviviam, 4 com string literal. Foi substituído por scanner de profundidade,
+provado por propriedade sobre 4381 assinaturas.
+
+Isso aconteceu no controle que o próprio plano marcava como crítico. Escrevi o
+regex, marquei a importância em negrito, e não testei um caso composto.
+
+**`ast.parse` levanta exceção diferente por versão.** `a = 1\x00` dá
+`ValueError` em 3.10 e `SyntaxError` em 3.11+. Capturar só `SyntaxError` — o que
+o plano dizia — derrubaria a indexação inteira na versão mais antiga do CI. Só
+apareceu porque alguém rodou nas três.
+
+**Três dos cinco pragmas do plano não aplicam se a ordem estiver errada, e dois
+não avisam.** `journal_mode=WAL` e `foreign_keys=ON` devolvem sem exceção e sem
+efeito; `synchronous` levanta. Sem `foreign_keys` efetivo, o `ON DELETE CASCADE`
+não acontece e o banco acumula nó órfão a cada reindexação. A regra ficou escrita
+no módulo: **pragma que não levanta ainda pode não ter pegado, e a única prova é
+reler o valor efetivo.**
+
+---
+
+## SFCI — as doze fases da SPEC, e o que a execução ensinou (2026-08-24)
+
+Mapa: [`docs/harness/CODEINTEL-GAP.md`](../harness/CODEINTEL-GAP.md) ·
+ADR: [`docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md`](../../vnext/adrs/ADR-010-code-intelligence-indice-local.md) ·
+threat model: [`docs/harness/THREAT-MODEL.md`](../harness/THREAT-MODEL.md).
+
+O subsistema existe: **15 módulos** em `sparkforge/codeintel/`, **14 arquivos de
+teste**, **6 tools MCP** novas (o catálogo foi de 44 para 50). Zero dependência
+nova — só `ast`, `sqlite3`, `hashlib` e `pathlib` da biblioteca padrão, medido em
+3.10.20, 3.11.15 e 3.14.6.
+
+### As doze fases
+
+| fase da SPEC | onde fechou |
+|---|---|
+| ADR e threat model | `1c9993e` |
+| Fundação de segurança | fase J0 |
+| Armazenamento e índice | fase J3 |
+| AST de Python e PySpark | J3, `8f6d657` |
+| Recuperação | `3367776` |
+| MCP e CLI | `8a6e2ac` |
+| Integração com SparkForge | `4240035` |
+| Worktree, incremental, freshness | `5ca8a76` |
+| Lineage de SQL e de dados | `b9039c9` |
+| Hardening | `a0ebf4c` |
+| Supply chain | `f02caa9` |
+| Linguagens adicionais | Tier 0 entregue; Tier 1 e 2 a própria SPEC condiciona a benchmark e justificativa |
+
+### A medição que reordenou tudo, e que não agrada
+
+A fase J3 mediu o índice contra três denominadores. Contra ler os arquivos até
+achar a definição, ele economiza muito. Contra a saída de um `grep` pelo nome,
+economiza. **Contra `grep -n "def X"`, ele perde** — e filtrar por
+correspondência exata reduz o payload pela metade sem inverter o sinal.
+
+A causa não é desperdício de envelope: são perguntas diferentes. O `grep`
+devolve a linha cuja definição *começa* com o nome; o índice devolve todo
+símbolo cujo nome *contém* o termo, com tipo e nome qualificado.
+
+Onde ele ganha é em pergunta **estrutural** — "quais são os símbolos deste
+arquivo", "quem chama isto", "o que quebra se eu mudar". Foi essa medição que
+pôs `edges` antes de recuperação, contra a ordem da própria SPEC, e ela está
+registrada no ADR porque foi ela que decidiu a sequência.
+
+### Três recusas que definem o subsistema
+
+**Aresta ambígua não vira aresta.** O AST vê `foo(x)` e não sabe qual `foo`.
+Escolher entre candidatos seria inventar, e quem seguisse a aresta investigaria
+o arquivo errado sem nada acusar. Vira `unresolved_refs` com razão. Cerca de um
+terço das referências resolve; o motivo dominante de não resolver é
+`UNKNOWN_RECEIVER` — `df.filtrar()` sem saber o que `df` é. Inferir tipo por
+nome de variável resolveria o número e estragaria a resposta.
+
+**Nome de tabela não se inventa.** `spark.table(f"{db}.{tbl}")` registra
+`DYNAMIC_TABLE_IDENTIFIER`, não um palpite. Mesma doutrina.
+
+**Seis tools, não onze.** A SPEC lista onze candidatas e, na mesma seção, manda
+evitar explosão de tool. Toda tool nova entra nos três gates de paridade para
+sempre; onze finas custariam mais gates sem responder nada que as seis não
+respondam.
+
+### Um defeito da própria SPEC, encontrado ao implementá-la
+
+O mínimo da faixa de orçamento da §51 é **inalcançável**: o piso irredutível do
+`ContextPack` — um entry point, procedência, segurança, métricas e a query — não
+cabe nos 256 tokens que a §51 declara pela razão de bytes por token da §52. Não
+foi escondido: sai em `metrics.over_budget_bytes`, com teste que o exige maior
+que zero nesse caso. O teto duro é o único limite real, e é respeitado.
+
+### O que a execução ensinou sobre método
+
+**Quinze implementadores discordaram do plano, e os quinze estavam certos.** O
+pior erro foi meu: o regex de sanitização de assinatura que escrevi **vazava
+segredo** — `def f(chave=('id','segredo'))` passava intacto, e
+`f(modo=['x','SENHA'])` vazava *parcialmente*, deixando um marcador que fazia a
+saída parecer sanitizada. No controle que o próprio plano marcava como crítico.
+
+**Teste de mutação achou o que asserção não achou, em toda fase em que foi
+feito.** `SCHEMA_VERSION` era decoração — subir a constante não fazia nada,
+porque `CREATE TABLE IF NOT EXISTS` não conserta tabela velha. Quatro mutações
+de ordem sobreviveram porque a *fixture* estava ordenada e a coincidência
+escondia o defeito. E um gate escrito à mão trancou uma anotação mentirosa por
+405 commits.
+
+**Escala revela o que tmpdir esconde.** `unresolved_refs.source_id` sem índice
+fazia o CASCADE varrer a tabela inteira: a primeira indexação levava três
+segundos e a quarta, dez. Teste de banco novo nunca veria.
+
+**Dez commits quebrariam num clone limpo** porque `sparkforge/paths.py` nunca
+entrou no git, e o *editable install* resolvia o import para a árvore de
+trabalho. Passou por dez execuções da suíte, ruff, gate de lastro e duas
+revisões. Fechado por `tests/test_arvore_versionada.py`, que compara o que está
+no disco com o que está no git.
+
+### O que continua aberto, com razão escrita
+
+- **`authorize()` não é chamada por caminho de execução nenhum.** A cadeia
+  decide e nada a impõe; falta o hook `PreToolUse`.
+- **Pular arquivo na varredura é silencioso** — por tamanho, symlink,
+  confinamento, nome sensível ou poda. Contradiz o princípio do `unresolved` que
+  o próprio repositório aplica, e fechar depende de a varredura devolver mais
+  que caminho.
+- **`context.montar` não consulta `codeintel.lineage`.** O DataGraph é
+  construído do fonte por arquivo e não chega ao índice; pedir `lineage` no
+  `ContextPack` é **recusado com a razão**, nunca respondido com lista vazia.
+- **`resource`/`setrlimit` não existe no Windows.** A função declara
+  `disponivel=False` com a plataforma no motivo em vez de fingir portabilidade.
+- **Tier 1 e 2 de linguagens** seguem fora, como a SPEC condiciona.
 
 ---
 

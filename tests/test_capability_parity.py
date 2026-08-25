@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import yaml
@@ -138,25 +139,72 @@ class TestNoCliVerbIsAnUndeclaredMcpGap:
             "mesma _core.validate_output que sparkforge_validate_output, so que "
             "sobre arquivo."
         ),
+        # DESVIO REGISTRADO SOBRE O PARAGRAFO QUE ESTAVA AQUI (fase da
+        # superficie MCP, SPEC 56-77). O paragrafo antigo recusava tool MCP
+        # para `code index`, `code search` e `code status` porque o indice
+        # envelhecia sem sinal: "indice velho responde 'nenhum simbolo' com a
+        # mesma cara com que responde sobre um simbolo que de fato nao existe".
+        # A recusa estava CERTA e a condicao dela FECHOU: `codeintel/staleness`
+        # confere a arvore contra o indice em toda query, sincroniza o que cabe
+        # no caminho da resposta e RECUSA o resto com `STALE_INDEX`. Com isso,
+        # `code search` e `code status` ganharam tool MCP e sairam desta lista.
+        #
+        # O que continua aqui sao os quatro verbos de CICLO DE VIDA do estado
+        # local, e a ausencia de tool para eles nao e a mesma coisa: a SPEC os
+        # coloca em 73/74/75/76, FORA da lista de tools de 57 a 67, e a razao e
+        # a mesma para os quatro -- eles operam sobre a maquina de quem chama,
+        # antes ou depois de haver o que consultar, e nao sobre o grafo.
+        "code init": (
+            "preparo de estado local (SPEC 74): preflight, diretorio, "
+            ".gitignore, banco. `sparkforge_code_sync` ja constroi o indice "
+            "para um cliente MCP -- init acrescenta so o que e do disco de quem "
+            "chama."
+        ),
+        "code index": (
+            "alias historico de `code init`, mesmo parser e mesmo handler; "
+            "mantido para nao quebrar quem ja o chama."
+        ),
+        "code doctor": (
+            "diagnostico da instalacao (SPEC 75): permissao de filesystem, "
+            ".gitignore, registro das tools. Um cliente MCP que precisasse dele "
+            "ja estaria com o servidor de pe -- o diagnostico e para quem esta "
+            "montando o servidor, nao para quem o consome."
+        ),
+        "code purge": (
+            "apaga o diretorio de estado local (SPEC 76). Tool MCP de apagar "
+            "disco seria a unica destrutiva do catalogo, e nenhuma capacidade "
+            "de investigacao precisa dela: reconstruir e `code sync`."
+        ),
     }
+
+    def _subcomandos(self, parser):
+        """A acao de SUBCOMANDOS de `parser`, ou None se ele nao tem nenhum.
+
+        Testa o tipo da acao, nao a presenca de `choices`. Toda flag com
+        `choices=` (`--detail-level`, `--transport`) tambem tem `choices`
+        preenchido, e a heuristica antiga -- "a primeira acao com choices" --
+        confundia uma flag com uma lista de subcomandos: `benchmark` passou a
+        ser lido como tres verbos inexistentes (`benchmark full`, `normal`,
+        `summary`) no dia em que ganhou a flag.
+        """
+        return next(
+            (
+                a
+                for a in parser._actions  # noqa: SLF001
+                if isinstance(a, argparse._SubParsersAction)  # noqa: SLF001
+            ),
+            None,
+        )
 
     def _leaf_cli_verbs(self):
         from sparkforge.adapters.cli import build_parser
 
         parser = build_parser()
-        sub = next(
-            a for a in parser._actions if hasattr(a, "choices") and a.choices  # noqa: SLF001
-        )
+        sub = self._subcomandos(parser)
+        assert sub is not None, "o parser raiz precisa ter subcomandos"
         leaves = []
         for name, subparser in sub.choices.items():
-            nested = next(
-                (
-                    a
-                    for a in subparser._actions  # noqa: SLF001
-                    if hasattr(a, "choices") and a.choices
-                ),
-                None,
-            )
+            nested = self._subcomandos(subparser)
             if nested:
                 leaves.extend(f"{name} {leaf}" for leaf in sorted(nested.choices))
             else:

@@ -71,6 +71,50 @@ def _load_json_list(path: str) -> list[dict[str, Any]]:
     return data
 
 
+_DETAIL_LEVEL_HELP = (
+    "Verbosidade da saida. `full` (default) devolve o fato inteiro, com a "
+    "procedencia dentro de cada item -- e o modo de reauditoria. `normal` "
+    "declara procedencia e schema_version UMA VEZ no envelope e referencia a "
+    "procedencia por `provenance_ref`. `summary` reduz cada item a id, kind, "
+    "medidas, arquivo:linha e simbolo. NAO existe subcomando que busque um "
+    "fato por id: para ter o fato inteiro de volta, reexecute em `full` e "
+    "pague o payload inteiro outra vez."
+)
+
+
+def _add_detail_level(parser: argparse.ArgumentParser) -> None:
+    """Acrescenta `--detail-level` a um subcomando que devolve FACTS.
+
+    Os niveis vem de `_core.NIVEIS_DE_DETALHE`, nao de uma lista literal aqui:
+    a projecao mora no `_core`, e duplicar os niveis no parser criaria duas
+    fontes para a mesma verdade -- uma delas destinada a ficar desatualizada.
+
+    So os verbos que devolvem facts recebem a flag. `judge` devolve findings e
+    `rules lookup` devolve regras: nenhum dos dois tem `provenance`, e o
+    `summary` de fato (`id`/`kind`/`measures`) nao existe nesses shapes.
+    """
+    parser.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=_DETAIL_LEVEL_HELP,
+    )
+
+
+def _apply_detail_level(payload: dict[str, Any], detail_level: str) -> dict[str, Any]:
+    """Projeta `payload["items"]` e declara no envelope o que saiu dos itens.
+
+    A CLI repagina por conta propria (`_core.analyze_*` e chamado com
+    `limit=None` para o `--out` sair completo), entao a projecao tem que ser
+    aplicada aqui tambem -- o `detail_level` que o `_core` recebe nao alcanca
+    esta pagina.
+    """
+    payload["items"], procedencias, versao = _core.project_items(
+        payload["items"], detail_level
+    )
+    return _core.declarar_no_envelope(payload, procedencias, versao)
+
+
 # Uma unica redacao para os tres verbos que aceitam a flag. Repetir o texto tres
 # vezes e como uma delas fica desatualizada.
 _EMR_FLAG_HELP = (
@@ -79,6 +123,12 @@ _EMR_FLAG_HELP = (
     "`describe-cluster`, e discordar de um deles vira divergencia reportada, "
     "nunca valor substituido em silencio. Serve a quem sabe a release e nao tem "
     "o dump -- com o dump, `--facts` ja resolve sozinho."
+)
+
+_CODE_DB_HELP = (
+    "Arquivo do indice. Default: `.sparkforge/local/codeintel/graph.sqlite3` "
+    "sob --root, que esta no `.gitignore` desde 715a657. Apontar para fora "
+    "dali e escolha de quem chama, e o arquivo passa a ser candidato a commit."
 )
 
 
@@ -106,6 +156,7 @@ def build_parser() -> argparse.ArgumentParser:
     pyspark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     pyspark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     pyspark_p.add_argument("--cursor")
+    _add_detail_level(pyspark_p)
 
     catalog_p = analyze_sub.add_parser(
         "catalog-schema", help="Extrai facts de um dump JSON do Glue Data Catalog."
@@ -117,6 +168,7 @@ def build_parser() -> argparse.ArgumentParser:
     catalog_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     catalog_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     catalog_p.add_argument("--cursor")
+    _add_detail_level(catalog_p)
 
     event_log_analyze_p = analyze_sub.add_parser(
         "event-log", help="Extrai facts de um Spark event log (.jsonl) ja coletado."
@@ -128,6 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
     event_log_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     event_log_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     event_log_analyze_p.add_argument("--cursor")
+    _add_detail_level(event_log_analyze_p)
 
     plan_p = analyze_sub.add_parser(
         "plan",
@@ -141,6 +194,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     plan_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     plan_p.add_argument("--cursor")
+    _add_detail_level(plan_p)
 
     terraform_p = analyze_sub.add_parser(
         "terraform", help="Extrai facts de blocos aws_glue_job em HCL Terraform."
@@ -152,6 +206,7 @@ def build_parser() -> argparse.ArgumentParser:
     terraform_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     terraform_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     terraform_p.add_argument("--cursor")
+    _add_detail_level(terraform_p)
 
     iceberg_p = analyze_sub.add_parser(
         "iceberg", help="Extrai facts de um dump JSON das metadata tables Iceberg."
@@ -163,6 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
     iceberg_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     iceberg_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     iceberg_p.add_argument("--cursor")
+    _add_detail_level(iceberg_p)
 
     sql_p = analyze_sub.add_parser(
         "sql", help="Extrai facts de texto SQL: arquivo .sql ou literal spark.sql(...) em PySpark."
@@ -176,6 +232,7 @@ def build_parser() -> argparse.ArgumentParser:
     sql_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     sql_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     sql_p.add_argument("--cursor")
+    _add_detail_level(sql_p)
 
     athena_wg_analyze_p = analyze_sub.add_parser(
         "athena-workgroup", help="Extrai facts de um dump JSON de workgroups do Athena."
@@ -189,6 +246,7 @@ def build_parser() -> argparse.ArgumentParser:
     athena_wg_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     athena_wg_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     athena_wg_analyze_p.add_argument("--cursor")
+    _add_detail_level(athena_wg_analyze_p)
 
     emr_analyze_p = analyze_sub.add_parser(
         "emr-cluster",
@@ -204,6 +262,7 @@ def build_parser() -> argparse.ArgumentParser:
     emr_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     emr_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     emr_analyze_p.add_argument("--cursor")
+    _add_detail_level(emr_analyze_p)
 
     emrs_analyze_p = analyze_sub.add_parser(
         "emr-serverless",
@@ -220,6 +279,7 @@ def build_parser() -> argparse.ArgumentParser:
     emrs_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     emrs_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     emrs_analyze_p.add_argument("--cursor")
+    _add_detail_level(emrs_analyze_p)
 
     dq_p = analyze_sub.add_parser(
         "data-quality",
@@ -234,6 +294,7 @@ def build_parser() -> argparse.ArgumentParser:
     dq_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     dq_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     dq_p.add_argument("--cursor")
+    _add_detail_level(dq_p)
 
     graph_p = analyze_sub.add_parser(
         "graph",
@@ -249,6 +310,7 @@ def build_parser() -> argparse.ArgumentParser:
     graph_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     graph_p.add_argument("--cursor")
+    _add_detail_level(graph_p)
 
     s3_p = analyze_sub.add_parser(
         "s3-listing",
@@ -262,6 +324,7 @@ def build_parser() -> argparse.ArgumentParser:
     s3_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     s3_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     s3_p.add_argument("--cursor")
+    _add_detail_level(s3_p)
 
     consumers_p = analyze_sub.add_parser(
         "consumers",
@@ -276,6 +339,7 @@ def build_parser() -> argparse.ArgumentParser:
     consumers_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     consumers_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     consumers_p.add_argument("--cursor")
+    _add_detail_level(consumers_p)
 
     tf_diff_p = analyze_sub.add_parser(
         "terraform-diff",
@@ -287,6 +351,7 @@ def build_parser() -> argparse.ArgumentParser:
     tf_diff_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     tf_diff_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     tf_diff_p.add_argument("--cursor")
+    _add_detail_level(tf_diff_p)
 
     call_graph_p = analyze_sub.add_parser(
         "call-graph",
@@ -301,6 +366,7 @@ def build_parser() -> argparse.ArgumentParser:
     call_graph_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     call_graph_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     call_graph_p.add_argument("--cursor")
+    _add_detail_level(call_graph_p)
 
     # migrate --------------------------------------------------------------
     # Verbo de TOPO, nao `analyze migrate`: tudo sob `analyze` extrai facts de
@@ -408,6 +474,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     benchmark_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     benchmark_p.add_argument("--cursor")
+    _add_detail_level(benchmark_p)
 
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
@@ -463,6 +530,7 @@ def build_parser() -> argparse.ArgumentParser:
     funcval_plan_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     funcval_plan_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     funcval_plan_p.add_argument("--cursor")
+    _add_detail_level(funcval_plan_p)
 
     funcval_compare_p = funcval_sub.add_parser(
         "compare",
@@ -498,6 +566,7 @@ def build_parser() -> argparse.ArgumentParser:
     funcval_compare_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     funcval_compare_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     funcval_compare_p.add_argument("--cursor")
+    _add_detail_level(funcval_compare_p)
 
     # fuse ---------------------------------------------------------------
     fuse_p = sub.add_parser(
@@ -522,6 +591,7 @@ def build_parser() -> argparse.ArgumentParser:
     fuse_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
     fuse_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
     fuse_p.add_argument("--cursor")
+    _add_detail_level(fuse_p)
 
     # judge ------------------------------------------------------------
     judge_p = sub.add_parser(
@@ -696,6 +766,152 @@ def build_parser() -> argparse.ArgumentParser:
             "`spark.runtime_version`) entra como fonte propria -- sem isto, so "
             "as flags alimentam a deteccao."
         ),
+    )
+
+    # code --------------------------------------------------------
+    # O PAYLOAD deste verbo agora VEM de `_core`, como o de todos os outros --
+    # a excecao que existia aqui caiu com a fase da superficie MCP (SPEC 56-77).
+    # A razao dela nao era errada e continua registrada: o indice responde ONDE
+    # um simbolo esta, e nao produz fato nem achado, entao ele nao atravessa o
+    # envelope de FACT (`project_items`, `provenance_ref`, paginacao). O que
+    # mudou e o motivo de estar fora: enquanto nao havia tool MCP, ter o payload
+    # aqui custava uma duplicacao so; com as seis tools de `sparkforge_code_*`,
+    # cada linha de payload que nascesse aqui seria uma linha que a CLI e o MCP
+    # poderiam divergir -- que e exatamente o que `parity.yaml` existe para
+    # pegar. `_core` recebeu as funcoes; ele nao ganhou envelope de fato por
+    # causa disso.
+    code_p = sub.add_parser(
+        "code",
+        help=(
+            "Indice local de codigo: prepara, sincroniza, busca simbolo, monta "
+            "contexto e diagnostica."
+        ),
+    )
+    code_sub = code_p.add_subparsers(dest="code_action", required=True)
+
+    def _code_comum(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+        """`--root` e `--db` nos nove subcomandos, de um lugar so.
+
+        Repetidos em cada um, bastaria um divergir para `init` gravar num lugar
+        e `search` ler noutro -- e o sintoma seria "nenhum simbolo", nao um
+        erro. Falha calada e a unica que este verbo nao pode ter.
+        """
+        parser.add_argument("--root", default=".")
+        parser.add_argument("--db", help=_CODE_DB_HELP)
+        return parser
+
+    _code_comum(
+        code_sub.add_parser(
+            "init",
+            aliases=["index"],
+            help=(
+                "Prepara o indice sob --root: preflight de seguranca, diretorio, "
+                "conferencia do .gitignore, banco, indexacao e integridade. "
+                "`index` e o nome antigo do mesmo comando."
+            ),
+        )
+    )
+
+    _code_comum(
+        code_sub.add_parser(
+            "sync", help="Poe o indice em dia com a arvore. Unica escrita do verbo."
+        )
+    )
+
+    code_status_p = _code_comum(
+        code_sub.add_parser(
+            "status",
+            help="Estado do indice: frescor, contagens, seguranca e o que mudou na arvore.",
+        )
+    )
+    code_status_p.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=(
+            "Mesmos niveis das tools de fact, conteudo proprio deste verbo: "
+            "`full` acrescenta o bloco de seguranca (SPEC 67) e o de mudancas "
+            "(SPEC 63); `normal` e `summary` param no estado do indice."
+        ),
+    )
+
+    code_search_p = _code_comum(
+        code_sub.add_parser("search", help="Busca simbolo por parte do nome.")
+    )
+    code_search_p.add_argument("term")
+    code_search_p.add_argument("--kind", help="Filtra por tipo de no: function, class, method.")
+    code_search_p.add_argument("--path-prefix", help="Filtra por prefixo do caminho relativo.")
+    code_search_p.add_argument("--limit", type=int, default=_core.CODE_SEARCH_DEFAULT_LIMIT)
+
+    code_symbol_p = _code_comum(
+        code_sub.add_parser(
+            "symbol",
+            help="Metadado, vizinhanca e raio de impacto de um simbolo. Nunca o corpo.",
+        )
+    )
+    code_symbol_p.add_argument("node_id")
+    code_symbol_p.add_argument("--depth", type=int, default=1)
+    code_symbol_p.add_argument(
+        "--detail-level",
+        choices=_core.NIVEIS_DE_DETALHE,
+        default="full",
+        help=(
+            "`summary` para no metadado; `normal` acrescenta vizinhanca direta; "
+            "`full` acrescenta o raio de impacto e os testes nele."
+        ),
+    )
+
+    code_read_p = _code_comum(
+        code_sub.add_parser(
+            "read",
+            help=(
+                "Le um trecho do repositorio, por --node-id OU por --file com faixa. "
+                "Tetos duros: 250 linhas, 32 KiB, 4096 tokens."
+            ),
+        )
+    )
+    code_read_p.add_argument("--node-id")
+    code_read_p.add_argument("--file", help="Caminho RELATIVO a --root.")
+    code_read_p.add_argument("--start-line", type=int)
+    code_read_p.add_argument("--end-line", type=int)
+    code_read_p.add_argument("--context-lines", type=int, default=3)
+    code_read_p.add_argument(
+        "--max-tokens", type=int, default=_core.CODE_READ_DEFAULT_TOKENS
+    )
+
+    code_context_p = _code_comum(
+        code_sub.add_parser(
+            "context",
+            help="Monta o ContextPack de uma tarefa a partir do indice, dentro do orcamento.",
+        )
+    )
+    code_context_p.add_argument("task")
+    code_context_p.add_argument("--max-tokens", type=int)
+    code_context_p.add_argument(
+        "--include",
+        action="append",
+        choices=list(_core.CODE_CONTEXT_INCLUDE),
+        help="Repetivel. Omitido, todas as secoes que este motor sabe preencher.",
+    )
+
+    _code_comum(
+        code_sub.add_parser(
+            "doctor",
+            help=(
+                "Diagnostico local do indice e da superficie. Sai 1 quando alguma "
+                "checagem falha. Nao testa conectividade de internet."
+            ),
+        )
+    )
+
+    _code_comum(
+        code_sub.add_parser(
+            "purge",
+            help=(
+                "Apaga SOMENTE .sparkforge/local/codeintel/. Qualquer outro "
+                "diretorio e recusado."
+            ),
+        )
     )
 
     # knowledge path --------------------------------------------------------
@@ -882,7 +1098,7 @@ def _cmd_analyze_pyspark(args: argparse.Namespace) -> int:
         "by_kind": full["by_kind"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -901,7 +1117,7 @@ def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
         "by_kind": full["by_kind"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -922,7 +1138,7 @@ def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -943,7 +1159,7 @@ def _cmd_analyze_plan(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -964,7 +1180,7 @@ def _cmd_analyze_terraform(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -985,7 +1201,7 @@ def _cmd_analyze_iceberg(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1006,7 +1222,7 @@ def _cmd_analyze_sql(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1027,7 +1243,7 @@ def _cmd_analyze_s3_listing(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1048,7 +1264,7 @@ def _cmd_analyze_consumers(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1071,7 +1287,7 @@ def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1116,7 +1332,7 @@ def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1137,7 +1353,7 @@ def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1158,7 +1374,7 @@ def _cmd_analyze_emr_serverless(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1179,7 +1395,7 @@ def _cmd_analyze_data_quality(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1200,7 +1416,7 @@ def _cmd_analyze_graph(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1219,7 +1435,7 @@ def _cmd_analyze_call_graph(args: argparse.Namespace) -> int:
         "by_kind": full["by_kind"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1247,7 +1463,7 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1271,7 +1487,7 @@ def _cmd_funcval_plan(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1296,7 +1512,7 @@ def _cmd_funcval_compare(args: argparse.Namespace) -> int:
         "unresolved_at": full["unresolved_at"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1316,7 +1532,7 @@ def _cmd_fuse(args: argparse.Namespace) -> int:
         "summary": full["summary"],
         "items": page,
     }
-    _print(payload)
+    _print(_apply_detail_level(payload, args.detail_level))
     return 0
 
 
@@ -1560,6 +1776,91 @@ def _cmd_collect_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_code_init(args: argparse.Namespace) -> int:
+    _print(_core.code_init(args.root, db=args.db))
+    return 0
+
+
+def _cmd_code_sync(args: argparse.Namespace) -> int:
+    _print(_core.code_sync(args.root, db=args.db))
+    return 0
+
+
+def _cmd_code_status(args: argparse.Namespace) -> int:
+    _print(_core.code_status(args.root, detail_level=args.detail_level, db=args.db))
+    return 0
+
+
+def _cmd_code_search(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_search(
+            args.root,
+            query=args.term,
+            kind=args.kind,
+            path_prefix=args.path_prefix,
+            limit=args.limit,
+            db=args.db,
+        )
+    )
+    return 0
+
+
+def _cmd_code_symbol(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_symbol(
+            args.root,
+            node_id=args.node_id,
+            depth=args.depth,
+            detail_level=args.detail_level,
+            db=args.db,
+        )
+    )
+    return 0
+
+
+def _cmd_code_read(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_read(
+            args.root,
+            node_id=args.node_id,
+            file=args.file,
+            start_line=args.start_line,
+            end_line=args.end_line,
+            context_lines=args.context_lines,
+            max_tokens=args.max_tokens,
+            db=args.db,
+        )
+    )
+    return 0
+
+
+def _cmd_code_context(args: argparse.Namespace) -> int:
+    _print(
+        _core.code_context(
+            args.root,
+            task=args.task,
+            max_tokens=args.max_tokens,
+            include=args.include,
+            db=args.db,
+        )
+    )
+    return 0
+
+
+def _cmd_code_doctor(args: argparse.Namespace) -> int:
+    relatorio = _core.code_doctor(args.root, db=args.db)
+    _print(relatorio)
+    # Exit code 1 quando alguma checagem falhou, e nao 0 com o relatorio bonito:
+    # doctor que sempre sai 0 nao serve num gate de CI -- ninguem le o JSON,
+    # todo mundo le o codigo de saida.
+    return 0 if relatorio["ok"] else 1
+
+
+def _cmd_code_purge(args: argparse.Namespace) -> int:
+    _print(_core.code_purge(args.root, db=args.db))
+    return 0
+
+
 _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
@@ -1593,6 +1894,19 @@ _DISPATCH = {
     ("handoff", None): _cmd_handoff,
     ("playbook", None): _cmd_playbook,
     ("runtime", "detect"): _cmd_runtime_detect,
+    # `index` e alias historico de `init` (argparse `aliases=`): mesmo parser,
+    # mesmo handler. Duas entradas porque `args.code_action` guarda o nome
+    # DIGITADO, nao o canonico.
+    ("code", "init"): _cmd_code_init,
+    ("code", "index"): _cmd_code_init,
+    ("code", "sync"): _cmd_code_sync,
+    ("code", "status"): _cmd_code_status,
+    ("code", "search"): _cmd_code_search,
+    ("code", "symbol"): _cmd_code_symbol,
+    ("code", "read"): _cmd_code_read,
+    ("code", "context"): _cmd_code_context,
+    ("code", "doctor"): _cmd_code_doctor,
+    ("code", "purge"): _cmd_code_purge,
     ("knowledge", "path"): _cmd_knowledge_path,
     ("rules", "lookup"): _cmd_rules_lookup,
     ("validate", None): _cmd_validate,
@@ -1615,6 +1929,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "case_action", None)
         or getattr(args, "funcval_action", None)
         or getattr(args, "runtime_action", None)
+        or getattr(args, "code_action", None)
         or getattr(args, "knowledge_action", None)
         or getattr(args, "rules_action", None)
         or getattr(args, "report_action", None)

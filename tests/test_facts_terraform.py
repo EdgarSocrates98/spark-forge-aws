@@ -396,14 +396,35 @@ class TestPathAndTree:
     def test_extract_terraform_tree_is_resilient_to_one_bad_file(self, tmp_path):
         good = tmp_path / "good.tf"
         good.write_text(job_with_args(), encoding="utf-8")
-        bad_dir = tmp_path / "bad.tf"
-        bad_dir.mkdir()  # diretorio com extensao .tf: read_text falha com IsADirectoryError
+        # Bytes que nao decodificam em utf-8: UnicodeDecodeError e ValueError,
+        # escapa da guarda estreita de `extract_terraform_path` e cai na larga
+        # da travessia. Antes este caso era encenado com um DIRETORIO chamado
+        # `bad.tf`, que `rglob` devolvia junto com os arquivos; a varredura so
+        # devolve arquivo regular, entao diretorio nao chega mais aqui.
+        bad = tmp_path / "bad.tf"
+        bad.write_bytes(b"resource \xff\xfe invalido\n")
 
         facts = extract_terraform_tree(tmp_path, repo_root=tmp_path)
         assert facts_of("tf.resource", facts)
         assert any(
             f.kind == "tf.unresolved" and f.attrs.get("reason") == "read_error" for f in facts
         )
+
+    def test_diretorio_com_extensao_de_arquivo_nao_vira_read_error(self, tmp_path):
+        """Diretorio chamado `x.tf` nao e arquivo `.tf` ilegivel: nao e nada.
+
+        `rglob` devolvia diretorio junto com arquivo, e a leitura falhava com
+        IsADirectoryError virando um `tf.unresolved` fantasma. A varredura
+        filtra por arquivo regular, entao o fato desaparece -- que e o certo:
+        nao havia terraform ali para nao ser lido.
+        """
+        good = tmp_path / "good.tf"
+        good.write_text(job_with_args(), encoding="utf-8")
+        (tmp_path / "modulo.tf").mkdir()
+
+        facts = extract_terraform_tree(tmp_path, repo_root=tmp_path)
+        assert facts_of("tf.resource", facts)
+        assert not [f for f in facts if f.kind == "tf.unresolved"]
 
     def test_extraction_is_deterministic(self, tmp_path):
         tf_file = tmp_path / "main.tf"

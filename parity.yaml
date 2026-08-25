@@ -488,3 +488,59 @@ capabilities:
       devin_cli: [files]
       codex: [files]
       copilot_ci: [files]
+
+  # Code Intelligence (SPEC 56-77). QUATRO capacidades para SEIS tools, e nao
+  # uma capacidade por tool: capacidade e o que o operador quer fazer, tool e
+  # como. `symbol` e `read` sao a mesma pergunta -- "me mostre este simbolo" --
+  # com e sem o corpo, e separa-las no manifesto faria o gate cobrar paridade
+  # de uma divisao que existe por seguranca, nao por capacidade.
+  #
+  # `code init`, `code index`, `code doctor` e `code purge` NAO aparecem em
+  # `cli:` de nenhuma delas, e a ausencia esta declarada em
+  # `TestNoCliVerbIsAnUndeclaredMcpGap.ALLOWED_CLI_ONLY` com a razao de cada
+  # uma. As quatro sao ciclo de vida de estado local da maquina de quem chama,
+  # e a SPEC as coloca em `73/74/75/76` -- fora da lista de tools de `57` a
+  # `67`.
+  - name: montar contexto de codigo dentro de um orcamento de tokens
+    tools: [sparkforge_code_context]
+    cli: [code context]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: localizar simbolo no indice local de codigo
+    tools: [sparkforge_code_search]
+    cli: [code search]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: inspecionar simbolo, vizinhanca e raio de impacto
+    tools: [sparkforge_code_symbol, sparkforge_code_read]
+    cli: [code symbol, code read]
+    knowledge: [docs/harness/UNTRUSTED-CONTENT.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: conferir e sincronizar o frescor do indice de codigo
+    tools: [sparkforge_code_status, sparkforge_code_sync]
+    cli: [code status, code sync]
+    knowledge: [docs/harness/CODEINTEL-GAP.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]

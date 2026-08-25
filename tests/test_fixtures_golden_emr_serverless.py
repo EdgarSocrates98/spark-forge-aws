@@ -451,7 +451,8 @@ class TestAdversarial:
         `segredo_em_runtime_config` recomenda.
 
         A segunda propriedade da fixture testa a PRECEDENCIA, que nao e
-        cosmetica: o nome do segredo casa `_AKIA_RE`, e como o padrao usa
+        cosmetica: o nome do segredo casa o padrao de access key da AWS em
+        `facts/secrets.py`, e como o padrao usa
         `search` e nao `fullmatch`, a heuristica acusaria o valor anotado se
         rodasse primeiro.
 

@@ -72,6 +72,18 @@ class TestToolSurface:
             "sparkforge_collect_emr_cluster",
             "sparkforge_collect_emr_serverless",
             "sparkforge_collect_verify",
+            # SPEC 56-77: SEIS tools de Code Intelligence, e nao as onze que as
+            # secoes 57 a 67 listam. A justificativa por nome esta no comentario
+            # de bloco de `tools.py` -- resumo: 59+61 colapsam (mesma entrada,
+            # profundidade diferente), 63+64+67 colapsam (mesma medicao do estado
+            # do indice), 62 e 66 NAO entram porque a implementacao nao existe, e
+            # 60 fica separada de proposito por ser a unica que devolve fonte.
+            "sparkforge_code_context",
+            "sparkforge_code_search",
+            "sparkforge_code_symbol",
+            "sparkforge_code_read",
+            "sparkforge_code_status",
+            "sparkforge_code_sync",
         }
 
     def test_every_tool_declares_an_output_schema(self):
@@ -191,6 +203,28 @@ class TestToolSurface:
             "sparkforge_funcval_compare",
             "sparkforge_funcval_plan",
             "sparkforge_report_sign",
+            # AS SEIS DE CODIGO, e nao so `sparkforge_code_sync`.
+            #
+            # A SPEC 65 chama `sync` de "a unica tool de mutacao do Code
+            # Intelligence" e a SPEC 57 anota `code_context` como
+            # `readOnlyHint: true`. As duas afirmacoes caem pelo mesmo
+            # contraexemplo MEDIDO: toda consulta atravessa
+            # `staleness.garantir_frescor`, que grava `freshness_checked_ns` e
+            # `freshness_verdict` em `metadata` a cada conferencia, e que ate
+            # `max_auto_sync_files` roda uma sincronizacao incremental inteira
+            # dentro da chamada. Medicao: `mtime_ns` do `.sqlite3` antes e
+            # depois de um `sparkforge_code_search`, sem nenhum arquivo de
+            # fonte alterado -- DIFERENTES.
+            #
+            # `readOnlyHint` nao tem lado. O que nunca muda e o FONTE
+            # (INV-004), e isso esta trancado em
+            # `tests/test_adapters_code_surface.py`, nao aqui.
+            "sparkforge_code_context",
+            "sparkforge_code_read",
+            "sparkforge_code_search",
+            "sparkforge_code_status",
+            "sparkforge_code_symbol",
+            "sparkforge_code_sync",
         }
 
     def test_every_tool_has_a_description(self):
@@ -1047,6 +1081,93 @@ def _fake_collect_boto3(monkeypatch):
     monkeypatch.setattr(collect_aws, "require_boto3", lambda: _FakeBoto3ForCollect())
 
 
+_CODE_JOB = (
+    "def carregar_particao(df):\n"
+    '    """Repartition explicito para o teste ter o que ranquear."""\n'
+    "    return df.repartition(200)\n"
+    "\n"
+    "\n"
+    "def principal():\n"
+    "    return carregar_particao(None)\n"
+)
+
+
+def _code_tree(tmp_path):
+    """Arvore minima COM aresta e COM termo de dominio.
+
+    As duas propriedades sao exigidas e nao decorativas: sem `principal`
+    chamando `carregar_particao` nao ha aresta, e `callers`/`impact` sairiam
+    vazios -- lista vazia valida contra qualquer schema de array, e o teste
+    passaria pelo motivo errado. Sem `repartition` no nome e no corpo, a
+    expansao de `code_context` nao casaria nenhum cluster de dominio e a secao
+    `rules` da SPEC 77 sairia vazia pela mesma razao.
+    """
+    raiz = tmp_path / "arvore"
+    (raiz / "jobs").mkdir(parents=True)
+    (raiz / "jobs" / "etl.py").write_text(_CODE_JOB, encoding="utf-8")
+    (raiz / ".gitignore").write_text(".sparkforge/local\n", encoding="utf-8")
+    call_tool("sparkforge_code_sync", {"repo": str(raiz)})
+    return raiz
+
+
+def _real_code_output_for(name, tmp_path):
+    """Saida REAL das seis tools de Code Intelligence, sobre uma arvore de verdade.
+
+    Cada uma passa pela porta de frescor da SPEC 43 antes de responder, entao
+    construir o indice com `sparkforge_code_sync` aqui nao e conveniencia: e o
+    unico caminho que existe. Uma chamada sem indice devolveria o ramo de ERRO
+    do `oneOf`, e o teste validaria o schema pelo motivo errado -- por isso as
+    asercoes abaixo travam o ramo de sucesso.
+    """
+    if name == "sparkforge_code_sync":
+        raiz = tmp_path / "arvore"
+        (raiz / "jobs").mkdir(parents=True)
+        (raiz / "jobs" / "etl.py").write_text(_CODE_JOB, encoding="utf-8")
+        resultado = call_tool("sparkforge_code_sync", {"repo": str(raiz)})
+        assert resultado["nodes"] == 2, "a amostra precisa render dois simbolos"
+        return resultado
+
+    raiz = _code_tree(tmp_path)
+
+    if name == "sparkforge_code_status":
+        resultado = call_tool("sparkforge_code_status", {"repo": str(raiz)})
+        assert resultado["initialized"] is True
+        assert resultado["security"]["not_measured"], (
+            "o bloco de seguranca precisa declarar o que NAO foi medido"
+        )
+        return resultado
+
+    if name == "sparkforge_code_context":
+        resultado = call_tool(
+            "sparkforge_code_context",
+            {"repo": str(raiz), "task": "otimizar o repartition da carga por particao"},
+        )
+        assert resultado["entry_points"], "a amostra precisa render pelo menos um ponto de entrada"
+        assert resultado["rules"], (
+            "a SPEC 77 so esta exercida se a consulta casar cluster de dominio"
+        )
+        return resultado
+
+    achados = call_tool(
+        "sparkforge_code_search", {"repo": str(raiz), "query": "carregar_particao"}
+    )
+    assert achados["results"], "a busca precisa achar o simbolo da amostra"
+    if name == "sparkforge_code_search":
+        return achados
+
+    node_id = achados["results"][0]["node_id"]
+    if name == "sparkforge_code_symbol":
+        resultado = call_tool(
+            "sparkforge_code_symbol", {"repo": str(raiz), "node_id": node_id}
+        )
+        assert resultado["callers"], "a amostra precisa ter um chamador resolvido"
+        return resultado
+
+    resultado = call_tool("sparkforge_code_read", {"repo": str(raiz), "node_id": node_id})
+    assert resultado["snippet"]["code"], "o trecho nao pode sair vazio"
+    return resultado
+
+
 def _real_output_for(name, tmp_path, monkeypatch=None):
     """Chama `name` com argumentos realistas, criando qualquer estado
     (case, facts) de que a ferramenta dependa, e devolve o dict cru que um
@@ -1365,6 +1486,16 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
 
     if name == "sparkforge_collect_verify":
         return call_tool("sparkforge_collect_verify", {"repo": str(tmp_path)})
+
+    if name in (
+        "sparkforge_code_context",
+        "sparkforge_code_search",
+        "sparkforge_code_symbol",
+        "sparkforge_code_read",
+        "sparkforge_code_status",
+        "sparkforge_code_sync",
+    ):
+        return _real_code_output_for(name, tmp_path)
 
     raise AssertionError(f"sem construtor de argumentos reais para {name}")
 

@@ -28,6 +28,19 @@ node_modules/
 # Ver docs/superpowers/specs/2026-07-29-sparkforge-fase0-design.md §8.1
 .sparkforge/artifacts/*
 !.sparkforge/artifacts/manifest.json
+
+# Estado local de execucao: NUNCA commitado, e a regra e allowlist, nao denylist.
+# A politica default de .sparkforge/ e "derivado pequeno pode ser commitado" -- o
+# que e certo para case.yaml e facts.json, e errado para tudo que ACUMULA. Estes
+# tres acumulam: traces.db guarda spans com metadata que pode carregar conteudo de
+# artefato de cliente (observability/store.py grava em cwd/.sparkforge/traces.db
+# por default); cache/ guarda saida de tool endereçada por hash
+# (economy/cache.py, cwd/.sparkforge/cache); e local/ e onde o indice de codigo
+# vai morar. Um banco desses num repositorio com remote publico e vazamento, nao
+# desordem.
+.sparkforge/traces.db
+.sparkforge/cache/
+.sparkforge/local/
 .tokensave
 
 # Material de referencia sigiloso -- nunca versionar neste repositorio publico.
@@ -37,3 +50,10 @@ node_modules/
 # redirecionado para arquivo). E despejo de diagnostico, nao artefato: o estado
 # auditado mora em `docs/claims.lock.json`, que E versionado.
 cm_claims_out.txt
+
+# Relatorio do `pip-audit`, gerado pelo job `audit` e lido por
+# `scripts/audit_policy.py`. E um retrato da base de vulnerabilidade NO INSTANTE
+# da consulta: commitar isso publicaria um "nao ha nada" com data de validade e
+# sem aviso de vencimento. O que e versionado sao os locks, que dizem o que se
+# audita, e a politica, que diz o que fazer com o achado.
+audit.json

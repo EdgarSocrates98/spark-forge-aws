@@ -482,3 +482,361 @@ class TestCompatibilidade:
             agent="a", tool="t", allowed_tools=["t"], mutating=False, approval=False
         )
         assert ok is True and razao == "authorized"
+
+
+class TestArgumentoEntraNaDecisao:
+    """A cadeia autorizava um NOME; agora ela ve a CHAMADA.
+
+    O limite estava declarado em `docs/harness/AUTHORIZATION-CHAIN.md` com
+    medicao: uma tool `READ_ONLY` com `path` arbitrario leu um segredo de fora
+    do repositorio sob perfil `OFFLINE`, com a cadeia funcionando exatamente
+    como especificada. A classe da tool nao muda -- ler continua sendo
+    `READ_ONLY`. O que muda e que o argumento entra na decisao.
+
+    Medido no catalogo de hoje: 43 das 44 tools declaram algum parametro de
+    caminho de sistema de arquivos. Nao e caso de borda; e a forma da chamada.
+    """
+
+    def test_recusa_caminho_fora_da_raiz(self, tmp_path):
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": "../../../etc/passwd"},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "fora da raiz" in decisao.reason
+        assert decisao.checked_arguments is True
+
+    def test_recusa_caminho_absoluto_de_fora_da_raiz(self, tmp_path):
+        """Traversal por `..` e a forma obvia; caminho absoluto e a barata.
+
+        `Path.__truediv__` descarta o lado esquerdo quando o direito e
+        absoluto, entao um confinamento escrito como concatenacao de texto
+        aprovaria isto sem piscar.
+        """
+        fora = tmp_path.parent / "segredo.txt"
+        fora.write_text("x\n", encoding="utf-8")
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": str(fora)},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "fora da raiz" in decisao.reason
+
+    def test_recusa_til_porque_a_cadeia_nao_expande_home(self, tmp_path):
+        """`~/.aws/credentials` nao e expandido pelo confinamento.
+
+        Sem expansao, `raiz / "~/.aws/credentials"` cai DENTRO da raiz e
+        passaria. Hoje nenhum adapter deste repositorio chama `expanduser()`
+        num argumento de tool (conferido por busca), entao a leitura falharia
+        de todo jeito -- mas a recusa nao depende de isso continuar verdade, e
+        e barata.
+        """
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": "~/.aws/credentials"},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "fora da raiz" in decisao.reason
+
+    def test_aceita_caminho_dentro_da_raiz(self, tmp_path):
+        (tmp_path / "job.py").write_text("x = 1\n", encoding="utf-8")
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": str(tmp_path / "job.py")},
+            root=tmp_path,
+        )
+        assert decisao.authorized is True
+        assert decisao.checked_arguments is True
+
+    def test_aceita_caminho_relativo_dentro_da_raiz(self, tmp_path):
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "job.py").write_text("x = 1\n", encoding="utf-8")
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": "src/job.py"},
+            root=tmp_path,
+        )
+        assert decisao.authorized is True
+
+    @pytest.mark.parametrize(
+        "chave", ["path", "repo", "file", "before", "after", "facts_path", "report_path"]
+    )
+    def test_a_verificacao_nao_e_so_do_parametro_chamado_path(self, tmp_path, chave):
+        """As 43 tools nomeiam o caminho de sete jeitos diferentes.
+
+        Verificar so `path` deixaria `sparkforge_report_verify` (`report_path`,
+        `findings_path`) e `sparkforge_analyze_terraform_diff` (`before`,
+        `after`) inteiramente de fora -- e as duas leem arquivo.
+        """
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={chave: "../fora.json"},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "fora da raiz" in decisao.reason
+        assert chave in decisao.reason
+
+    def test_lista_de_caminhos_e_verificada_item_a_item(self, tmp_path):
+        """`facts_paths` de `sparkforge_fuse` e lista, nao string.
+
+        Verificar so `isinstance(valor, str)` deixaria a lista inteira passar
+        sem checagem nenhuma -- e ela e o argumento principal daquela tool.
+        """
+        (tmp_path / "a.json").write_text("{}\n", encoding="utf-8")
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"facts_paths": [str(tmp_path / "a.json"), "../../fora.json"]},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "facts_paths" in decisao.reason
+
+    def test_argumento_que_nao_e_caminho_nao_vira_caminho(self, tmp_path):
+        """`case_id` e `limit` nao sao caminho, e tratar tudo como caminho
+        transformaria a cadeia num gerador de falso negativo de
+        disponibilidade."""
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"case_id": "../../nao-e-caminho", "limit": 10},
+            root=tmp_path,
+        )
+        assert decisao.authorized is True
+        assert decisao.checked_arguments is True
+
+    def test_arguments_vazio_conta_como_verificado(self, tmp_path):
+        """Dicionario vazio e uma chamada SEM argumento de caminho, e isso foi
+        examinado. Nao passar `arguments` e nao ter olhado. Os dois nao podem
+        colapsar no mesmo valor."""
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={},
+            root=tmp_path,
+        )
+        assert decisao.authorized is True
+        assert decisao.checked_arguments is True
+
+    def test_arguments_sem_raiz_recusa(self, tmp_path):
+        """Mesma disciplina de `tool_class()` e do perfil: sem raiz nao ha
+        confinamento, e "sem confinamento" nao pode ser o default de quem
+        passou o argumento e esqueceu a raiz."""
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": "job.py"},
+        )
+        assert decisao.authorized is False
+        assert "raiz" in decisao.reason
+        assert decisao.checked_arguments is False
+
+    def test_o_argumento_nao_fura_a_classe_nem_o_teto(self, tmp_path):
+        """Caminho legitimo nao promove nada: a tool de rede continua batendo
+        no teto `OFFLINE` com argumento perfeito."""
+        decisao = authorize(
+            agent="a",
+            tool=UMA_DE_REDE,
+            allowed_tools=[UMA_DE_REDE],
+            profile=ExecutionProfile.OFFLINE,
+            arguments={"repo": str(tmp_path)},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "OFFLINE" in decisao.reason
+        assert decisao.checked_arguments is False
+
+    def test_caminho_fora_da_raiz_nao_e_salvo_por_aprovacao(self, tmp_path):
+        """Aprovacao e por CLASSE, e classe nao diz nada sobre argumento.
+
+        Se aprovar `LOCAL_MUTATION` liberasse qualquer caminho, a fase teria
+        trocado um buraco por outro.
+        """
+        decisao = authorize(
+            agent="a",
+            tool=UMA_MUTACAO_LOCAL,
+            allowed_tools=[UMA_MUTACAO_LOCAL],
+            profile=ExecutionProfile.ECO,
+            approvals=(ToolClass.LOCAL_MUTATION,),
+            arguments={"repo": "../../outro-repo"},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "fora da raiz" in decisao.reason
+
+
+class TestCompatibilidadeDoArgumento:
+    def test_sem_arguments_a_decisao_continua_como_antes(self):
+        """Quem nao passa `arguments` nao muda de comportamento.
+
+        `checked_arguments` e o que torna isso AUDITAVEL em vez de so
+        compativel: sem o campo, uma decisao tomada sem olhar argumento nenhum
+        seria indistinguivel de uma que olhou e aprovou.
+        """
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+        )
+        assert decisao.authorized is True
+        assert decisao.checked_arguments is False
+
+    def test_root_sozinho_nao_liga_a_verificacao(self, tmp_path):
+        """Passar `root` sem `arguments` nao inventa uma verificacao que nao
+        aconteceu -- nao ha argumento para verificar."""
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        assert decisao.authorized is True
+        assert decisao.checked_arguments is False
+
+    def test_recusa_por_falta_de_aprovacao_declara_que_nao_olhou(self, tmp_path):
+        """O ramo da aprovacao e o UNICO que constroi `AuthorizationDecision`
+        direto, sem passar por `recusa()` -- ele herda o default do campo.
+
+        Sem este teste o default e codigo morto do ponto de vista da suite:
+        teste de mutacao trocando `checked_arguments: bool = False` por `True`
+        sobreviveu, e a decisao passava a afirmar que examinou um argumento que
+        nunca chegou a ver.
+        """
+        decisao = authorize(
+            agent="a",
+            tool=UMA_MUTACAO_LOCAL,
+            allowed_tools=[UMA_MUTACAO_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"repo": str(tmp_path)},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert decisao.required_approval is ToolClass.LOCAL_MUTATION
+        assert decisao.checked_arguments is False
+
+    def test_recusa_anterior_ao_argumento_declara_que_nao_olhou(self, tmp_path):
+        """A allowlist decide ANTES, e a decisao nao pode dizer que examinou o
+        argumento quando nao chegou la."""
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=["outra_tool"],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": "../../../etc/passwd"},
+            root=tmp_path,
+        )
+        assert decisao.authorized is False
+        assert "allowlist" in decisao.reason
+        assert decisao.checked_arguments is False
+
+
+class TestConfinamentoEhUmSoAlgoritmo:
+    """A cadeia e o catalogo de regras precisam recusar as MESMAS coisas.
+
+    Duas implementacoes de confinamento nao divergem alto: divergem no dia em
+    que alguem corrige uma e nao a outra. Este teste amarra os dois consumidores
+    ao mesmo comportamento observavel, entao extrair o algoritmo para
+    `sparkforge/paths.py` e mante-lo la deixa de ser convencao e passa a ser
+    coisa medida.
+    """
+
+    ESCAPAM = ("../fora.yaml", "a/../../fora.yaml", "../../etc/passwd")
+    FICAM = ("dentro.yaml", "sub/dentro.yaml", "./dentro.yaml")
+
+    @pytest.mark.parametrize("nome", ESCAPAM)
+    def test_os_dois_recusam_o_mesmo(self, tmp_path, nome):
+        from sparkforge.rules.loader import CatalogError, safe_catalog_file
+
+        raiz = tmp_path / "raiz"
+        raiz.mkdir()
+        with pytest.raises(CatalogError):
+            safe_catalog_file(raiz, nome)
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": nome},
+            root=raiz,
+        )
+        assert decisao.authorized is False
+
+    @pytest.mark.parametrize("nome", FICAM)
+    def test_os_dois_aceitam_o_mesmo(self, tmp_path, nome):
+        from sparkforge.rules.loader import safe_catalog_file
+
+        raiz = tmp_path / "raiz"
+        raiz.mkdir()
+        assert safe_catalog_file(raiz, nome)
+        decisao = authorize(
+            agent="a",
+            tool=UMA_LEITURA_LOCAL,
+            allowed_tools=[UMA_LEITURA_LOCAL],
+            profile=ExecutionProfile.ECO,
+            arguments={"path": nome},
+            root=raiz,
+        )
+        assert decisao.authorized is True
+
+
+class TestOCatalogoContinuaCabendoNaVerificacao:
+    """O gate que impede a medicao do Passo 1 de envelhecer em silencio.
+
+    Medido: 49 das 50 tools declaram parametro de caminho, e a unica sem
+    nenhum e `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`).
+    Eram 43 de 44 ate a superficie de Code Intelligence entrar: as SEIS tools
+    de `sparkforge_code_*` declaram `repo`, que e a raiz fora da qual nada e
+    lido (INV-002), entao todas as seis caem do lado certo do predicado.
+    Se uma tool nova entrar com um caminho batizado de outro jeito
+    (`caminho`, `origem`, `destino`), a contagem muda e este teste cai -- que e
+    o ponto. O predicado nao adivinha; ele reconhece nomes, e nome novo tem de
+    passar por decisao de alguem, nao por default silencioso.
+    """
+
+    SEM_CAMINHO = frozenset({"sparkforge_rules_lookup"})
+
+    def test_toda_tool_menos_uma_declara_caminho(self):
+        from sparkforge.agents.autonomy import _e_chave_de_caminho
+
+        sem_caminho = {
+            nome
+            for nome in TOOLS
+            if not any(
+                _e_chave_de_caminho(p)
+                for p in (TOOLS[nome].get("inputSchema") or {}).get("properties") or {}
+            )
+        }
+        assert sem_caminho == self.SEM_CAMINHO
+        assert len(TOOLS) - len(sem_caminho) == 49

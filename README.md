@@ -555,6 +555,17 @@ manifesto silencioso é pior que erro barulhento:
 O terceiro não existe em disco: nasce no build e é verificado pelo gate de paridade, que
 constrói o artefato, instala num venv limpo e reproduz as 164 fixtures golden byte a byte.
 
+`locks/py3.10.txt` e `locks/py3.11.txt` **não** entram nessa tabela, e a diferença importa.
+Espelho é projeção: sai do `pyproject.toml` sozinho, offline, e por isso `--check` pode
+regenerá-lo e comparar. Lock é **resolução**: ele diz qual versão de cada pacote — diretos e
+transitivos — o ambiente instala, e produzir isso exige consultar o índice do PyPI. Por isso
+`python scripts/gen_lock.py` precisa de rede e de `uv`, enquanto
+`python scripts/gen_lock.py --check`, o que roda no CI, é offline e confere forma, cobertura
+e consistência. O CI instala com `pip install --require-hashes`, modo em que qualquer
+dependência fora do arquivo vira erro em vez de virar versão escolhida na hora — e é isso
+que dá sentido ao job `audit`: auditar piso não responde nada, porque `PyYAML>=6.0` não tem
+CVE, a versão instalada é que tem.
+
 Os testes (`pytest`) validam frontmatter, seções padronizadas, referências e — desde a fase
 de perfis de subagente do Devin — um invariante mais forte que "as cópias são iguais": **o
 espelho é exatamente o que o tradutor produz para aquela plataforma**. Igualdade nunca

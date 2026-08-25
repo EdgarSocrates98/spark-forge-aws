@@ -250,6 +250,40 @@ para achar `knowledge/`, o que aponta um nível acima de onde o pacote a empacot
 Existe resolvedor pronto para isso desde a Fase 3a: `sparkforge/knowledge_ref.py`, com
 teste do fallback para o diretório do pacote. **Procure antes de escrever.**
 
+## Alterar dependência: `pyproject.toml`, `requirements.txt`, `locks/` ou os workflows
+
+```
+python scripts/gen_requirements.py --check
+python scripts/gen_lock.py --check
+python -m pytest tests/test_supply_chain.py tests/test_requirements_mirror.py \
+  tests/test_ci_workflow.py -q
+```
+
+Três artefatos derivam de `pyproject.toml` e cada um tem seu `--check`, porque cada um
+serve a uma ferramenta diferente: `requirements.txt` é o espelho de **pisos** que um SCA
+consegue ler, e `locks/py<versão>.txt` é o fecho **resolvido** que o CI instala com
+`pip install --require-hashes` — modo em que qualquer dependência não pinada no arquivo
+vira erro em vez de virar versão escolhida na hora. Confundir os dois é o erro caro: auditar pisos não
+responde nada -- `PyYAML>=6.0` não tem CVE, a versão instalada é que tem.
+
+Dependência nova no `pyproject.toml` exige regenerar os **dois**, e o lock precisa de
+rede e de `uv` (`pip install uv && python scripts/gen_lock.py`). `--check` é offline nos
+dois casos, de propósito: gate que precisa do índice do PyPI para dizer "ok" fica
+vermelho quando o índice cai, sem defeito nenhum no repositório.
+
+Há um lock por entrada da matriz do CI, e eles **não** são cópias: `rpds-py` resolve para
+versões diferentes nas duas linhas, e `tomli`, `importlib-metadata` e `zipp` só existem
+na mais antiga. Acrescentar uma versão de Python à matriz sem gerar o lock dela quebra
+`tests/test_supply_chain.py`, que lê a matriz do workflow em vez de uma lista à mão.
+
+A política da auditoria de vulnerabilidade mora inteira na docstring de
+`scripts/audit_policy.py`, e ela é função pura sobre JSON justamente para ter gate
+offline. Os dois casos que mais importam não regredir: **base não consultada derruba**,
+porque "não consegui perguntar" nunca pode ser lido como "não há nada"; e **relatório que
+não cobre o lock derruba**, porque um JSON bem formado sobre outra coisa passa por todas as
+outras checagens sem ter respondido nada. Mudar a versão de Python auditada no workflow
+exige mudar o `--lock` junto — o teste que cobra isso lê a linha do `run`.
+
 ## Alterar agent, skill ou seus espelhos
 
 `agents/`, `skills/`

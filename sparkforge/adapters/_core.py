@@ -12,8 +12,11 @@ divirjam -- os dois chamam exatamente as mesmas funcoes deste modulo.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +24,14 @@ from sparkforge.case import router, store
 from sparkforge.case.playbook import build_playbook
 from sparkforge.case.resume import render_handoff
 from sparkforge.case.resume import resume as run_resume
+from sparkforge.codeintel import budget as _codeintel_budget
+from sparkforge.codeintel import context as _codeintel_context
+from sparkforge.codeintel import db as _codeintel_db
+from sparkforge.codeintel import graph as _codeintel_graph
+from sparkforge.codeintel import ranking as _codeintel_ranking
+from sparkforge.codeintel import search as _codeintel_search
+from sparkforge.codeintel import security as _codeintel_security
+from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect.base import CollectorUnavailable, verify_all
 from sparkforge.facts.athena_workgroup import (
@@ -116,6 +127,169 @@ def paginate_items(
     page = items[start:end]
     next_cursor = str(end) if end < len(items) else None
     return page, next_cursor
+
+
+NIVEIS_DE_DETALHE: tuple[str, ...] = ("summary", "normal", "full")
+
+# Campos do fact que sobrevivem a `summary` sem mudar de forma. `subject` NAO
+# esta aqui: ele e reduzido a `at` (arquivo:linha) e `symbol` logo abaixo.
+_CAMPOS_DE_SUMARIO: tuple[str, ...] = ("id", "kind", "measures")
+
+# Quantos hex chars do digest viram a chave de procedencia. Isto e FORMATO DE
+# FIO, nao detalhe interno: `provenance_ref` cita esta chave, e encurtar
+# aumenta a chance de duas procedencias diferentes caírem na mesma. Esta
+# constante existe para que um teste possa fixá-la.
+TAMANHO_DA_CHAVE_DE_PROCEDENCIA = 16
+
+
+def _canonico(valor: Any) -> str:
+    return json.dumps(valor, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def chave_de_procedencia(prov: dict[str, Any]) -> str:
+    """Chave de `prov`, derivada SO do conteudo de `prov`.
+
+    Ser funcao pura do conteudo e o ponto inteiro, e a versao anterior errava
+    exatamente aqui. Ela derivava a chave do `artifact_sha256` e desempatava
+    com um sufixo numerado quando duas procedencias colidiam -- mas a projecao
+    roda DEPOIS de paginar, sobre UMA pagina, entao o desempate so valia dentro
+    daquela pagina. Reproduzido com `fuse` de py+sql em paginas de 9: a chave
+    `7322f5e505a6` apontava para `pyspark_ast` na pagina 1 e para `sql_literal`
+    na pagina 2. Quem pagina pelo `next_cursor` e une os mapas -- que e o unico
+    jeito de consumir resultado paginado -- atribuia o fato ao extrator errado,
+    sem erro nenhum.
+
+    Derivando do conteudo, a mesma procedencia recebe a mesma chave em qualquer
+    pagina, em qualquer execucao e em qualquer verbo, por construcao. Nao ha
+    estado entre paginas para manter coerente, porque nao ha estado.
+
+    O digest e truncado em `TAMANHO_DA_CHAVE_DE_PROCEDENCIA` (16 hex chars, 64
+    bits) porque a chave inteira apareceria uma vez por item em
+    `provenance_ref` e comeria a economia que `normal` existe para dar. Duas
+    procedencias diferentes so colidem se os 64 primeiros bits do sha256
+    coincidirem; DENTRO de uma pagina isso e detectado e vira erro
+    (`project_items`), ENTRE paginas nao ha como detectar -- e o risco residual
+    declarado desta escolha.
+
+    sha256 aqui e content-addressing, nao uso criptografico: identifica de que
+    artefato o fato veio para que a mesma procedencia produza a mesma chave.
+    """
+    digest = hashlib.sha256(_canonico(prov).encode("utf-8")).hexdigest()
+    return digest[:TAMANHO_DA_CHAVE_DE_PROCEDENCIA]
+
+
+def _resumir(item: dict[str, Any]) -> dict[str, Any]:
+    """Reduz um fact ao que responde "o que" e "onde".
+
+    `symbol` e campo proprio, e nao concatenado dentro de `at`, porque os dois
+    respondem coisas diferentes e nem sempre existem juntos. Medido nas
+    fixtures: todo fact de `catalog.table_*` tem `subject.symbol` (o nome da
+    tabela) e NENHUM tem `subject.line` -- num dump com varias tabelas, tres
+    facts do mesmo kind teriam o mesmo `at` (`dump.json`) e so `symbol` os
+    distingue. Enfiar o simbolo dentro de `at` produziria `dump.json db.eventos`,
+    string sem gramatica, que o consumidor teria de adivinhar onde corta.
+    """
+    sujeito = item.get("subject") or {}
+    novo = {c: item[c] for c in _CAMPOS_DE_SUMARIO if item.get(c)}
+    local = f"{sujeito.get('file', '')}:{sujeito.get('line', '')}".strip(":")
+    if local:
+        novo["at"] = local
+    if sujeito.get("symbol"):
+        novo["symbol"] = sujeito["symbol"]
+    return novo
+
+
+def project_items(
+    items: list[dict[str, Any]], detail_level: str
+) -> tuple[list[dict[str, Any]], dict[str, Any], int | None]:
+    """`(itens_projetados, procedencias, schema_version)` para o nivel pedido.
+
+    `full` devolve exatamente o que sempre devolveu. Todo chamador (CLI, MCP,
+    as funcoes deste modulo) passa `full` por default, e isso e DE PROPOSITO:
+    outro default mudaria a saida de todo chamador existente e de todo golden
+    test de uma vez so, e isso e decisao de contrato, separada desta fase.
+    `full` tambem e o modo de reauditoria -- quem confere um finding precisa do
+    fato inteiro, nao de um resumo.
+
+    `normal` tira do item o que se REPETE e declara uma vez no envelope: a
+    procedencia (referenciada por `provenance_ref`) e o `schema_version`. Os
+    dois sao repeticao pela mesma razao, e por isso saem pelo mesmo caminho --
+    tirar so um e chamar isso de "declarar a procedencia uma vez" seria
+    descrever mal a propria economia. Medido na fixture `clean_job`: a
+    procedencia inline respondia por 25,1% do payload.
+
+    `summary` reduz o item ao que responde "o que" e "onde" (ver `_resumir`).
+
+    Nada e apagado em silencio. A procedencia continua no envelope nos dois
+    niveis, e o `schema_version` tambem -- QUANDO todos os itens da pagina
+    concordam. Se divergirem (possivel em `fuse`, que le facts de arquivos
+    gerados em momentos diferentes), cada item mantem o proprio e o envelope
+    nao declara nenhum: um numero so no envelope estaria mentindo sobre metade
+    da pagina. Economia que apaga rastreabilidade e defeito, nao compressao.
+
+    Esta projecao e definida sobre o shape de FACT (`Fact.to_dict`). Findings
+    (`judge`) e regras (`rules_lookup`) tem outro shape -- sem `provenance`,
+    e sem `id`/`kind`/`measures` no caso do finding -- e por isso nao passam
+    por aqui: aplicar `summary` a um finding devolveria um dict vazio.
+    """
+    if detail_level not in NIVEIS_DE_DETALHE:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE}",
+            exit_code=2,
+        )
+    if detail_level == "full":
+        return items, {}, None
+
+    versoes = {item.get("schema_version") for item in items}
+    versao_comum = versoes.pop() if len(versoes) == 1 else None
+    if not isinstance(versao_comum, int):
+        versao_comum = None
+
+    procedencias: dict[str, Any] = {}
+    projetados: list[dict[str, Any]] = []
+    for item in items:
+        prov = item.get("provenance")
+        chave = ""
+        if prov:
+            chave = chave_de_procedencia(prov)
+            anterior = procedencias.get(chave)
+            if anterior is not None and anterior != prov:
+                raise AdapterError(
+                    "colisao de chave de procedencia: "
+                    f"{chave!r} ja aponta para {_canonico(anterior)} e "
+                    f"tambem seria a chave de {_canonico(prov)}",
+                    exit_code=1,
+                )
+            procedencias[chave] = prov
+
+        if detail_level == "normal":
+            descartar = {"provenance"} if versao_comum is None else {"provenance", "schema_version"}
+            novo = {k: v for k, v in item.items() if k not in descartar}
+        else:
+            novo = _resumir(item)
+            if versao_comum is None and item.get("schema_version") is not None:
+                novo["schema_version"] = item["schema_version"]
+        if chave:
+            novo["provenance_ref"] = chave
+        projetados.append(novo)
+    return projetados, procedencias, versao_comum
+
+
+def declarar_no_envelope(
+    envelope: dict[str, Any], procedencias: dict[str, Any], schema_version: int | None
+) -> dict[str, Any]:
+    """Escreve no envelope o que `project_items` tirou de dentro dos itens.
+
+    Existe para que os cinco pontos de envelope (os quatro deste modulo mais o
+    da CLI) nao repitam a decisao de QUAIS chaves sobem. Acrescentar uma coisa
+    que sai do item e passar a esquecer de declara-la em um dos cinco foi
+    exatamente como o `schema_version` sumiu em silencio da primeira versao.
+    """
+    if procedencias:
+        envelope["provenance"] = procedencias
+    if schema_version is not None:
+        envelope["schema_version"] = schema_version
+    return envelope
 
 
 # --------------------------------------------------------------------------- #
@@ -453,6 +627,7 @@ def analyze_pyspark(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_facts(path)
     wanted_kinds = set(kind) if kind else None
@@ -461,6 +636,7 @@ def analyze_pyspark(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     # `unresolved` e contado sobre `facts`, nao sobre `filtered`: um filtro por
     # kind nao pode fazer o ponto cego desaparecer do relatorio. A regra 7 do
@@ -478,7 +654,7 @@ def analyze_pyspark(
         if f.kind == "pyspark.unresolved"
     ]
 
-    return {
+    resultado: dict[str, Any] = {
         "total_count": len(filtered),
         "returned_count": len(page),
         "next_cursor": next_cursor,
@@ -492,6 +668,8 @@ def analyze_pyspark(
         "unresolved_at": unresolved_at,
         "items": page,
     }
+    declarar_no_envelope(resultado, procedencias, versao_do_schema)
+    return resultado
 
 
 # --------------------------------------------------------------------------- #
@@ -520,6 +698,7 @@ def analyze_catalog_schema(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_catalog_facts(path)
     wanted_kinds = set(kind) if kind else None
@@ -528,6 +707,7 @@ def analyze_catalog_schema(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     # Mesmo raciocinio de `analyze_pyspark`: `unresolved` conta sobre `facts`,
     # nao sobre `filtered`, para um filtro por kind nao esconder o ponto cego.
@@ -538,7 +718,7 @@ def analyze_catalog_schema(
         if f.kind == "catalog.unresolved"
     ]
 
-    return {
+    resultado: dict[str, Any] = {
         "total_count": len(filtered),
         "returned_count": len(page),
         "next_cursor": next_cursor,
@@ -552,6 +732,8 @@ def analyze_catalog_schema(
         "unresolved_at": unresolved_at,
         "items": page,
     }
+    declarar_no_envelope(resultado, procedencias, versao_do_schema)
+    return resultado
 
 
 def _facts_page(
@@ -560,6 +742,7 @@ def _facts_page(
     kind: list[str] | None,
     limit: int | None,
     cursor: str | None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Pagina uma lista de Facts ja extraida, no mesmo shape de
     `analyze_pyspark`/`analyze_catalog_schema`: total/pagina/by_kind, mais
@@ -582,6 +765,7 @@ def _facts_page(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     result: dict[str, Any] = {
         "total_count": len(filtered),
@@ -595,6 +779,7 @@ def _facts_page(
         "by_kind": by_kind,
         "items": page,
     }
+    declarar_no_envelope(result, procedencias, versao_do_schema)
 
     if unresolved_kind is not None:
         # Mesmo raciocinio de `analyze_pyspark`/`analyze_catalog_schema`:
@@ -640,9 +825,10 @@ def analyze_event_log(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_event_log_facts(path)
-    return _facts_page(facts, "spark.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "spark.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -669,6 +855,7 @@ def analyze_plan(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Extrai Facts do texto de um plano fisico ja salvo em disco.
 
@@ -677,7 +864,7 @@ def analyze_plan(
     a mesma numeracao `(N)` vindos de arvores distintas.
     """
     facts = _extract_plan_facts(path)
-    return _facts_page(facts, "plan.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "plan.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -705,9 +892,10 @@ def analyze_terraform(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_terraform_facts(path)
-    return _facts_page(facts, "tf.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "tf.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -736,9 +924,10 @@ def analyze_iceberg(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_iceberg_facts(path)
-    return _facts_page(facts, "iceberg.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "iceberg.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -785,9 +974,10 @@ def analyze_sql(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_sql_facts(path, from_pyspark)
-    return _facts_page(facts, "sql.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "sql.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -816,9 +1006,10 @@ def analyze_athena_workgroup(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_athena_workgroup_facts(path)
-    return _facts_page(facts, "athena.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "athena.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -847,9 +1038,10 @@ def analyze_emr_cluster(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_emr_cluster_facts(path)
-    return _facts_page(facts, "emr.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "emr.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -892,9 +1084,10 @@ def analyze_emr_serverless(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_emr_serverless_facts(path)
-    return _facts_page(facts, "emrs.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "emrs.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -922,9 +1115,10 @@ def analyze_data_quality(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_data_quality_facts(path)
-    return _facts_page(facts, "dq.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "dq.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -952,9 +1146,10 @@ def analyze_graph(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_graph_facts(path)
-    return _facts_page(facts, "graph.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "graph.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -983,9 +1178,10 @@ def analyze_s3_listing(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_s3_listing_facts(path)
-    return _facts_page(facts, "s3.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "s3.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1013,9 +1209,10 @@ def analyze_consumers(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     facts = _extract_consumers_facts(path)
-    return _facts_page(facts, "env.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "env.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1029,6 +1226,7 @@ def analyze_terraform_diff(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     before_path = Path(before)
     after_path = Path(after)
@@ -1043,7 +1241,7 @@ def analyze_terraform_diff(
                 exit_code=2,
             )
     facts = extract_terraform_diff(before_path, after_path, repo_root=after_path)
-    return _facts_page(facts, "tf.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "tf.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1056,6 +1254,7 @@ def analyze_call_graph(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Deriva Facts de grafo de chamadas a partir de um arquivo de facts ja
     extraido (tipicamente `analyze pyspark --out`). Funcao pura sobre Facts:
@@ -1065,7 +1264,7 @@ def analyze_call_graph(
     """
     fact_list = _load_facts_file(facts_path)
     derived = build_call_graph(fact_list, path_hint=facts_path)
-    return _facts_page(derived, None, kind, limit, cursor)
+    return _facts_page(derived, None, kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1244,6 +1443,7 @@ def benchmark_runs(
     cursor: str | None = None,
     before_runtime: str = "",
     after_runtime: str = "",
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Compara DOIS arquivos de facts de event log (`analyze event-log --out`)
     e emite os fatos `bench.*`. Funcao pura sobre Facts: nao executa Spark, nao
@@ -1276,7 +1476,7 @@ def benchmark_runs(
         before_runtime=before_runtime,
         after_runtime=after_runtime,
     )
-    return _facts_page(facts, "bench.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "bench.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1323,6 +1523,7 @@ def funcval_plan(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Deriva o plano de validacao funcional dos facts ja extraidos e o grava.
 
@@ -1370,7 +1571,7 @@ def funcval_plan(
         "--out",
         "sparkforge funcval plan --facts <facts.json> --out .sparkforge/plan.json",
     )
-    return _facts_page(derived, "funcval.unresolved", kind, limit, cursor)
+    return _facts_page(derived, "funcval.unresolved", kind, limit, cursor, detail_level)
 
 
 def _load_result_file(result_path: str, label: str) -> dict[str, Any]:
@@ -1482,6 +1683,7 @@ def funcval_compare(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Compara os DOIS resultados do operador contra o plano, e emite `funcval.*`.
 
@@ -1547,7 +1749,7 @@ def funcval_compare(
             "sparkforge funcval compare --plan <plano.json> --before <antes.json> "
             "--after <depois.json> --out .sparkforge/funcval.json",
         )
-    return _facts_page(facts, "funcval.unresolved", kind, limit, cursor)
+    return _facts_page(facts, "funcval.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1560,6 +1762,7 @@ def fuse_facts(
     kind: list[str] | None = None,
     limit: int | None = DEFAULT_LIMIT,
     cursor: str | None = None,
+    detail_level: str = "full",
 ) -> dict[str, Any]:
     """Combina um ou mais arquivos de facts (`analyze pyspark --out`,
     `analyze catalog-schema --out`, ou qualquer outro produtor de facts) e
@@ -1592,10 +1795,11 @@ def fuse_facts(
     by_kind = _count_by(filtered, lambda f: f.kind)
     items = [f.to_dict() for f in filtered]
     page, next_cursor = paginate_items(items, limit, cursor)
+    page, procedencias, versao_do_schema = project_items(page, detail_level)
 
     summary = next((f for f in fused if f.kind == "fusion.summary"), None)
 
-    return {
+    resultado: dict[str, Any] = {
         "total_count": len(filtered),
         "returned_count": len(page),
         "next_cursor": next_cursor,
@@ -1608,6 +1812,8 @@ def fuse_facts(
         "summary": summary.to_dict() if summary is not None else None,
         "items": page,
     }
+    declarar_no_envelope(resultado, procedencias, versao_do_schema)
+    return resultado
 
 
 # --------------------------------------------------------------------------- #
@@ -3069,4 +3275,1133 @@ def collect_verify(repo: str) -> dict[str, Any]:
         "missing_count": len(missing),
         "mismatched_count": len(mismatched),
         "artifacts": results,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Code Intelligence -- SPEC 56 a 77                                            #
+# --------------------------------------------------------------------------- #
+#
+# ESTE MODULO E A IMPLEMENTACAO DE DOMINIO DA SUPERFICIE, E `tools.py` SO
+# COMPOE O CONTRATO. A SPEC secao 72 pede o modulo em
+# `sparkforge/codeintel/tools.py`; ele mora AQUI, e o desvio esta registrado
+# em vez de escondido: a fase que escreveu esta superficie nao e dona do
+# pacote `sparkforge/codeintel/` (outro agente trabalhava dentro dele no mesmo
+# commit), e criar um arquivo novo la seria escrever num pacote que a fase nao
+# pode reverificar. A propriedade que a secao 72 protege -- `adapters/tools.py`
+# sem SQLite, sem AST, sem grafo, sem seguranca -- fica INTEIRA: nada disso
+# atravessa para la, e a cadeia continua MCP -> tools.py -> _core.py ->
+# codeintel. Mover as funcoes abaixo para `codeintel/tools.py` depois e um
+# recorte mecanico, e nenhum contrato de tool muda com ele.
+
+# SPEC 16.3 e INV-014. O rotulo e CONSTANTE deste codigo -- INV-013 proibe
+# derivar descricao ou rotulo de arquivo do repositorio analisado -- e ele
+# acompanha TODO trecho de fonte que sai daqui, dentro de objeto estruturado.
+# Nunca ha prosa com codigo embutido: quem le recebe `{"trust": ..., "code":
+# ...}` e sabe, pelo campo, que aquilo e amostra e nao instrucao.
+CODE_TRUST = "untrusted_repository_content"
+
+# SPEC 60. Tetos DUROS da leitura de fonte. Eles nao sao configuraveis por
+# argumento: `max_tokens` do chamador so consegue APERTAR (ver `code_read`).
+# Um teto que o chamador pudesse afrouxar seria o mesmo que nao ter teto --
+# "leia o repositorio inteiro" e exatamente o pedido que a secao 60 proibe.
+CODE_READ_MAX_LINES = 250
+CODE_READ_MAX_BYTES = 32 * 1024
+CODE_READ_MAX_TOKENS = 4096
+CODE_READ_DEFAULT_TOKENS = 1200
+CODE_READ_MAX_CONTEXT_LINES = 20
+
+# SPEC 58. Teto do numero de simbolos por busca.
+CODE_SEARCH_MAX_LIMIT = 200
+CODE_SEARCH_DEFAULT_LIMIT = 20
+
+# SPEC 61. Profundidade maxima do raio de impacto.
+CODE_MAX_DEPTH = 5
+
+# SPEC 63. Teto de arquivos alterados que viram simbolo + chamador na resposta
+# de `code_status`. Acima disto a resposta diz `changes_truncated: true` em vez
+# de crescer sem limite -- uma arvore com 400 arquivos mexidos produziria um
+# payload maior que o proprio diff.
+CODE_CHANGED_MAX_FILES = 25
+
+# SPEC 16.4. Detector de padrao com cara de instrucao. Ele NUNCA torna o
+# conteudo confiavel e NUNCA apaga nada: acrescenta um booleano ao lado do
+# trecho, para aumentar a cautela de quem le. Apagar do trecho o que parece
+# instrucao apagaria a evidencia, e evidencia apagada e defeito, nao seguranca
+# -- e a mesma regra que `docs/harness/UNTRUSTED-CONTENT.md` ja fixa para
+# `subject.snippet`.
+_PADROES_DE_INSTRUCAO = (
+    "ignore previous",
+    "ignore all previous",
+    "system prompt",
+    "new instructions",
+    "important instructions",
+    "send this",
+    "exfiltrate",
+    "read credentials",
+)
+
+# SPEC 77. A ponte entre o vocabulario de dominio da consulta (os clusters de
+# `codeintel/domain_terms.yaml`) e as categorias do catalogo de regras. E LISTA
+# LITERAL, e nao derivacao de nome: `parquet` casaria por acaso e
+# `parquet-layout` nao, `udf` nunca casaria com `pyspark-code`, e uma heuristica
+# de nome faria a relevancia depender de como alguem batizou um arquivo YAML.
+# Cluster sem categoria mapeada NAO produz regra -- ausencia declarada, nunca
+# palpite.
+CODE_CLUSTER_PARA_CATEGORIA: dict[str, str] = {
+    "iceberg": "iceberg",
+    "parquet": "parquet-layout",
+    "small_files": "parquet-layout",
+    "glue": "glue-infra",
+    "athena": "athena",
+    "udf": "pyspark-code",
+    "skew": "pyspark-code",
+    "join": "pyspark-code",
+    "shuffle": "pyspark-code",
+    "particionamento": "pyspark-code",
+    "memoria": "pyspark-code",
+    "cache": "pyspark-code",
+    "catalogo": "cross-account-catalog",
+}
+
+# SPEC 57. As secoes do ContextPack que este motor sabe PREENCHER. `lineage` e
+# `snippets` ficam de fora de proposito e a recusa e explicita em vez de uma
+# lista vazia silenciosa: `context.montar` devolve `lineage: []` sempre -- ele
+# nao consulta `codeintel.lineage`, e o DataGraph daquele modulo e construido
+# a partir do FONTE por arquivo, nunca persistido no indice --, e trecho de
+# fonte sai por `sparkforge_code_read`, que tem os tetos duros da secao 60.
+# Aceitar o valor e devolver vazio ensinaria o chamador que a arvore nao tem
+# linhagem, que e afirmacao diferente de "este pacote ainda nao a carrega".
+CODE_CONTEXT_INCLUDE = ("symbols", "relationships", "rules", "unresolved")
+CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO = {
+    "lineage": (
+        "o ContextPack nao carrega linhagem: `codeintel.context.montar` nao "
+        "consulta `codeintel.lineage`, e o DataGraph dele nao esta no indice. "
+        "O pacote nunca inventa a secao"
+    ),
+    "snippets": (
+        "trecho de fonte sai por `sparkforge_code_read`, que aplica os tetos "
+        "duros de 250 linhas / 32 KiB / 4096 tokens"
+    ),
+}
+
+
+class CodeIndexError(AdapterError):
+    """Recusa do indice de codigo, com o payload da SPEC 43 junto da mensagem.
+
+    Existe porque a SPEC 43 exige um corpo de erro MAQUINAVEL -- `STALE_INDEX`,
+    `changed_files`, `action` -- e este repositorio ja tem um envelope de erro
+    uniforme (`{"error", "exit_code"}`) que a CLI e o MCP compartilham. Herdar
+    de `AdapterError` mantem o envelope; `detalhes` acrescenta os campos da SPEC
+    ao lado dele, sem sobrescrever a mensagem acionavel -- por isso o codigo sai
+    em `error_code` e nao em `error`. Um cliente que so le `error` continua
+    recebendo a frase que diz o que fazer; um que le `error_code` decide sozinho.
+    """
+
+    def __init__(self, message: str, detalhes: dict[str, Any], exit_code: int = 2) -> None:
+        super().__init__(message, exit_code)
+        self.detalhes = dict(detalhes)
+
+
+def _code_raiz(repo: str) -> Path:
+    """A raiz resolvida, ou recusa. Nenhuma leitura acontece fora dela (INV-002)."""
+    base = Path(repo).expanduser()
+    try:
+        resolvida = base.resolve()
+    except OSError as exc:  # pragma: no cover -- caminho invalido no SO
+        raise AdapterError(f"raiz invalida: {repo!r} ({exc})", exit_code=2) from exc
+    if not resolvida.is_dir():
+        raise AdapterError(
+            f"raiz inexistente ou nao e diretorio: {resolvida.as_posix()}", exit_code=2
+        )
+    return resolvida
+
+
+def _code_banco(raiz: Path, db: str | None) -> Path:
+    """O caminho do indice. Sem `db`, o default versionado sob a raiz.
+
+    O default vem de `codeintel.db.BANCO_PADRAO` e nao de um literal repetido
+    aqui: o dia em que ele mudar, dois lugares diriam coisas diferentes e o
+    operador procuraria o arquivo errado.
+    """
+    return Path(db) if db else raiz / _codeintel_db.BANCO_PADRAO
+
+
+def _code_erro_de_frescor(exc: _codeintel_staleness.NegadoPorFrescor) -> CodeIndexError:
+    """Traduz a recusa fail-closed em erro de fronteira, preservando o payload.
+
+    `payload` da excecao ja tem a forma da SPEC 43 (`error`, `action`, e o que o
+    caso exigir). Aqui `error` vira `error_code` para nao competir com a
+    mensagem acionavel, e o resto passa inteiro.
+    """
+    detalhes = dict(exc.payload)
+    detalhes["error_code"] = detalhes.pop("error", exc.codigo)
+    return CodeIndexError(str(exc), detalhes)
+
+
+def _code_frescor(raiz: Path, banco: Path, *, auto_sync: bool = True) -> dict[str, Any]:
+    """SPEC 43: confere staleness ANTES de responder, e recusa quando nao cabe.
+
+    Toda query passa por aqui. Nao ha caminho que consulte o grafo sem esta
+    porta, e essa e a exigencia literal da ultima linha da secao 43 -- "nunca
+    responder silenciosamente com grafo antigo". Devolve o bloco `index` que
+    entra na resposta, para que a resposta DIGA se conferiu, se sincronizou, e
+    de que arvore o indice e.
+    """
+    try:
+        frescor = _codeintel_staleness.garantir_frescor(raiz, banco, auto_sync=auto_sync)
+    except _codeintel_staleness.NegadoPorFrescor as exc:
+        raise _code_erro_de_frescor(exc) from exc
+    estado = _codeintel_staleness.estado_da_arvore(raiz)
+    return {
+        "fresh": True,
+        "checked": frescor.verificou,
+        "synced": frescor.sincronizou,
+        "changed_files": frescor.mudancas.quantidade if frescor.mudancas else 0,
+        # `identidade` e digest, nunca caminho: o arquivo de indice pode ser
+        # copiado e nao deve nomear a maquina de quem o construiu.
+        "worktree": estado.identidade,
+        "head": estado.head,
+        "ref": estado.ref,
+    }
+
+
+def _code_contagens(banco: Path) -> dict[str, int]:
+    """`edges` e `unresolved_refs` contados no banco.
+
+    As duas metades andam juntas de proposito: 100 arestas sobre 120 chamadas e
+    outra coisa que 100 sobre 3000, e so a segunda metade distingue as duas.
+    `search.resumo` nao as devolve, e por isso a contagem acontece aqui.
+    """
+    conexao = _codeintel_db.abrir(banco)
+    try:
+        (arestas,) = conexao.execute("SELECT COUNT(*) FROM edges").fetchone()
+        (nao_resolvidas,) = conexao.execute(
+            "SELECT COUNT(*) FROM unresolved_refs"
+        ).fetchone()
+    finally:
+        conexao.close()
+    return {"edges": int(arestas), "unresolved": int(nao_resolvidas)}
+
+
+def _code_no(banco: Path, node_id: str) -> dict[str, Any]:
+    """O no de `node_id`, ou recusa nomeando a busca que o encontraria.
+
+    Recusa em vez de devolver vazio porque `node_id` nao e texto de busca: ele
+    ou existe no indice ou o chamador esta usando um id de antes de reindexar, e
+    os dois casos precisam de acao diferente da que uma lista vazia sugere.
+    """
+    conexao = _codeintel_db.abrir(banco)
+    try:
+        linha = conexao.execute(
+            "SELECT nodes.id, nodes.kind, nodes.name, nodes.qualified_name,"
+            " nodes.start_line, nodes.end_line, nodes.normalized_signature,"
+            " files.path, files.language"
+            " FROM nodes JOIN files ON files.id = nodes.file_id"
+            " WHERE nodes.id = ?",
+            (node_id,),
+        ).fetchone()
+    finally:
+        conexao.close()
+    if linha is None:
+        raise AdapterError(
+            f"node_id inexistente no indice: {node_id!r}. "
+            "Use `sparkforge_code_search` para obter um id atual.",
+            exit_code=2,
+        )
+    return {
+        "node_id": linha[0],
+        "kind": linha[1],
+        "name": linha[2],
+        "qualified_name": linha[3],
+        "start_line": linha[4],
+        "end_line": linha[5],
+        "signature": linha[6],
+        "path": linha[7],
+        "language": linha[8],
+    }
+
+
+def _code_nos_do_arquivo(banco: Path, caminho: str) -> list[dict[str, Any]]:
+    """Os simbolos declarados em `caminho`, em ordem estavel."""
+    conexao = _codeintel_db.abrir(banco)
+    try:
+        linhas = conexao.execute(
+            "SELECT nodes.id, nodes.kind, nodes.name, nodes.qualified_name,"
+            " nodes.start_line"
+            " FROM nodes JOIN files ON files.id = nodes.file_id"
+            " WHERE files.path = ?"
+            " ORDER BY nodes.start_line, nodes.id",
+            (caminho,),
+        ).fetchall()
+    finally:
+        conexao.close()
+    return [
+        {
+            "node_id": linha[0],
+            "kind": linha[1],
+            "name": linha[2],
+            "qualified_name": linha[3],
+            "path": caminho,
+            "start_line": linha[4],
+        }
+        for linha in linhas
+    ]
+
+
+def _code_vizinho(no: Any) -> dict[str, Any]:
+    """Um `NoDoGrafo` na forma que sai na resposta."""
+    return {
+        "node_id": no.node_id,
+        "name": no.name,
+        "qualified_name": no.qualified_name,
+        "kind": no.kind,
+        "path": no.path,
+        "start_line": no.start_line,
+        "depth": no.depth,
+    }
+
+
+def _code_parece_instrucao(texto: str) -> bool:
+    """SPEC 16.4. Verdadeiro quando o trecho tem padrao com cara de instrucao.
+
+    Isto NUNCA torna o conteudo confiavel -- o rotulo `trust` continua o mesmo
+    -- e nunca muda o trecho. E um sinal a mais, e so.
+    """
+    baixo = texto.lower()
+    return any(padrao in baixo for padrao in _PADROES_DE_INSTRUCAO)
+
+
+def _code_arquivo_confinado(raiz: Path, relativo: str) -> Path:
+    """Resolve `relativo` DENTRO de `raiz`, ou recusa (INV-002, SPEC 12/13).
+
+    Tres portas, e a ordem importa: caminho absoluto e recusado antes de
+    resolver, o resultado da resolucao tem que continuar sob a raiz (pega
+    `../` e junction), e symlink e recusado depois disso (pega o link que
+    aponta para dentro hoje e para fora amanha). Fail-closed em todas.
+    """
+    candidato = Path(relativo)
+    if candidato.is_absolute() or ".." in candidato.parts:
+        raise AdapterError(
+            f"caminho fora da raiz indexada: {relativo!r}; use caminho relativo a raiz.",
+            exit_code=2,
+        )
+    alvo = (raiz / candidato).resolve()
+    try:
+        alvo.relative_to(raiz)
+    except ValueError as exc:
+        raise AdapterError(
+            f"caminho fora da raiz indexada: {relativo!r}.", exit_code=2
+        ) from exc
+    if not alvo.is_file():
+        raise AdapterError(f"arquivo inexistente sob a raiz: {relativo!r}.", exit_code=2)
+    if alvo.is_symlink() or (raiz / candidato).is_symlink():
+        raise AdapterError(
+            f"symlink recusado: {relativo!r}; o indice le somente arquivo real.",
+            exit_code=2,
+        )
+    return alvo
+
+
+def _code_trecho(
+    raiz: Path,
+    relativo: str,
+    inicio: int,
+    fim: int,
+    *,
+    max_tokens: int,
+    language: str = "python",
+) -> dict[str, Any]:
+    """O objeto estruturado da SPEC 16.3, ja dentro dos tetos duros da secao 60.
+
+    Devolve SEMPRE objeto, nunca prosa com codigo dentro: `trust`, `language`,
+    `file`, `start_line`, `end_line`, `code`. `truncated_by` diz qual teto
+    cortou -- linhas, bytes ou tokens -- porque um trecho cortado em silencio
+    faria o leitor concluir que a funcao acaba onde o corte aconteceu.
+    """
+    alvo = _code_arquivo_confinado(raiz, relativo)
+    try:
+        linhas = alvo.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as exc:
+        raise AdapterError(f"arquivo ilegivel: {relativo!r} ({exc})", exit_code=2) from exc
+
+    total = len(linhas)
+    inicio = max(1, min(inicio, max(total, 1)))
+    fim = max(inicio, min(fim, total))
+
+    cortes: list[str] = []
+    if fim - inicio + 1 > CODE_READ_MAX_LINES:
+        fim = inicio + CODE_READ_MAX_LINES - 1
+        cortes.append("lines")
+
+    corpo = "\n".join(linhas[inicio - 1 : fim])
+    if len(corpo.encode("utf-8")) > CODE_READ_MAX_BYTES:
+        corpo = corpo.encode("utf-8")[:CODE_READ_MAX_BYTES].decode("utf-8", "ignore")
+        cortes.append("bytes")
+
+    teto_tokens = max(1, min(int(max_tokens), CODE_READ_MAX_TOKENS))
+    while _codeintel_budget.estimar_tokens(corpo) > teto_tokens and "\n" in corpo:
+        corpo = corpo[: corpo.rfind("\n")]
+        if "tokens" not in cortes:
+            cortes.append("tokens")
+
+    fim_real = inicio + max(0, corpo.count("\n"))
+    return {
+        "trust": CODE_TRUST,
+        "language": language,
+        "file": relativo,
+        "start_line": inicio,
+        "end_line": fim_real,
+        "code": corpo,
+        "estimated_tokens": _codeintel_budget.estimar_tokens(corpo),
+        "truncated_by": cortes,
+        "instruction_like_content_detected": _code_parece_instrucao(corpo),
+    }
+
+
+def _code_regras_relevantes(clusters: tuple[str, ...]) -> list[dict[str, str]]:
+    """SPEC 77: so os IDs relevantes, com a razao. Nenhum julgamento.
+
+    A razao acompanha cada id porque uma lista de regras sem procedencia obriga
+    quem le a adivinhar por que aquela regra apareceu -- e adivinhacao aqui vira
+    recomendacao sem evidencia, que e o defeito que este repositorio inteiro
+    existe para nao cometer.
+    """
+    categorias = [
+        (cluster, CODE_CLUSTER_PARA_CATEGORIA[cluster])
+        for cluster in clusters
+        if cluster in CODE_CLUSTER_PARA_CATEGORIA
+    ]
+    if not categorias:
+        return []
+    try:
+        catalogo = load_catalog()
+    except CatalogError:
+        # Catalogo ausente nao derruba a consulta de codigo: a regra e enfeite
+        # de contexto aqui, e a pergunta era sobre simbolo.
+        return []
+    vistos: set[str] = set()
+    relevantes: list[dict[str, str]] = []
+    for cluster, categoria in categorias:
+        for regra in catalogo:
+            if regra.get("category") != categoria or regra["id"] in vistos:
+                continue
+            vistos.add(regra["id"])
+            relevantes.append(
+                {"rule_id": regra["id"], "reason": f"cluster de dominio `{cluster}` na consulta"}
+            )
+    return relevantes
+
+
+def _code_gitignorado(raiz: Path) -> bool:
+    """Se `.gitignore` da raiz cobre o diretorio de estado local.
+
+    Confere o TEXTO e nao chama `git check-ignore`: a SPEC 45 proibe executar
+    git, e o que interessa aqui e se alguem declarou a linha, nao o veredito de
+    um subprocesso que este motor nao pode rodar.
+    """
+    arquivo = raiz / ".gitignore"
+    if not arquivo.is_file():
+        return False
+    try:
+        texto = arquivo.read_text(encoding="utf-8", errors="replace")
+    except OSError:  # pragma: no cover -- .gitignore ilegivel
+        return False
+    alvos = (".sparkforge/local", ".sparkforge/local/", ".sparkforge/")
+    return any(linha.strip() in alvos for linha in texto.splitlines())
+
+
+def _code_integridade(banco: Path) -> str:
+    """`PRAGMA integrity_check` do indice recem-construido, lido de volta.
+
+    "Nao levantou" nao e medicao: um banco truncado abre sem erro e so denuncia
+    na primeira consulta. A validacao da secao 74 e esta.
+    """
+    conexao = _codeintel_db.abrir(banco)
+    try:
+        (veredito,) = conexao.execute("PRAGMA integrity_check").fetchone()
+    finally:
+        conexao.close()
+    return str(veredito)
+
+
+def _code_seguranca(raiz: Path, banco: Path) -> dict[str, Any]:
+    """SPEC 67. So o que este processo consegue MEDIR, e a lista do que nao.
+
+    `sensitive_files_skipped`, `symlinks_skipped` e `oversized_files_skipped`
+    saem em `not_measured` e nao como zero: `facts/scan.py` PULA os tres casos
+    (`_e_sensivel`, `_e_atalho`, teto de tamanho) e nao CONTA nenhum deles.
+    Publicar zero seria afirmar que nada foi pulado, que e o oposto do que se
+    sabe. Contador zerado e a pior das tres saidas possiveis -- pior que a
+    ausencia, porque ausencia nao mente.
+    """
+    violacoes = _codeintel_security.imports_proibidos()
+    ambiente = dict(os.environ)
+    removidas = _codeintel_security.sanitize_environment(ambiente)
+    return {
+        # `offline-strict` e afirmacao DERIVADA da varredura, nao rotulo fixo:
+        # o perfil so e estrito enquanto nenhum modulo do motor importa rede.
+        "network_policy": "offline-strict" if not violacoes else "violated",
+        "forbidden_imports": len(violacoes),
+        "audit_hook_installed": _codeintel_security.hook_instalado(),
+        "secret_policy": "environment_sanitized",
+        "secret_variables_stripped": len(removidas),
+        # Impressao, nunca a raiz: ver `db.impressao_da_raiz`.
+        "source_root": _codeintel_db.impressao_da_raiz(raiz),
+        "db": banco.as_posix(),
+        "not_measured": [
+            "sensitive_files_skipped",
+            "symlinks_skipped",
+            "oversized_files_skipped",
+        ],
+    }
+
+
+def code_init(repo: str, *, db: str | None = None) -> dict[str, Any]:
+    """SPEC 74. Prepara o indice local e relata o que ficou de pe.
+
+    A ordem das oito etapas e o contrato, e cada uma existe porque a ausencia
+    dela ja seria defeito: raiz resolvida (nada e lido fora dela), preflight de
+    seguranca (INV-001 antes de qualquer varredura), diretorio, conferencia do
+    `.gitignore`, banco, indexacao, `PRAGMA integrity_check` e relatorio.
+
+    Nao instala hook, nao acessa rede, nao muda o fonte e nao le fora da raiz.
+    A conferencia do `.gitignore` REPORTA e nao corrige: escrever no
+    `.gitignore` de quem chamou seria mudar arquivo versionado do repositorio
+    analisado a partir de um verbo de leitura.
+
+    A indexacao passa por `staleness.sincronizar` e nao por `index.indexar`
+    porque a primeira grava o `EstadoDaArvore` -- sem ele, a proxima query
+    conferiria a arvore contra um estado inexistente e sincronizaria de novo,
+    para sempre.
+    """
+    raiz = _code_raiz(repo)
+    violacoes = _codeintel_security.imports_proibidos()
+    if violacoes:
+        # INV-015: na duvida entre permitir e bloquear, bloquear. Um motor que
+        # importa rede nao indexa nada ate alguem olhar.
+        nomes = ", ".join(sorted({v.modulo for v in violacoes}))
+        raise AdapterError(
+            f"preflight de seguranca recusou: import de rede no motor ({nomes}).",
+            exit_code=1,
+        )
+
+    banco = _code_banco(raiz, db)
+    banco.parent.mkdir(parents=True, exist_ok=True)
+    resultado = _codeintel_staleness.sincronizar(raiz, banco)
+    integridade = _code_integridade(banco)
+    if integridade != "ok":
+        raise AdapterError(
+            f"indice construido mas integrity_check devolveu {integridade!r}: "
+            f"{banco.as_posix()}",
+            exit_code=1,
+        )
+    return {
+        "db": banco.as_posix(),
+        "files": resultado.arquivos,
+        "nodes": resultado.nos,
+        "unreadable": resultado.ilegiveis,
+        "edges": resultado.arestas,
+        "unresolved": resultado.nao_resolvidas,
+        "duration_s": round(resultado.duracao_s, 3),
+        "full_rebuild": resultado.completa,
+        "gitignored": _code_gitignorado(raiz),
+        "integrity": integridade,
+        "security": _code_seguranca(raiz, banco),
+    }
+
+
+def code_sync(repo: str, *, db: str | None = None) -> dict[str, Any]:
+    """SPEC 65. A UNICA tool de mutacao do Code Intelligence.
+
+    Escreve somente em `.sparkforge/local/codeintel/**`. Nunca toca o fonte do
+    repositorio analisado -- a indexacao le, e o que ela escreve e banco.
+
+    `reresolvidos` sai na resposta porque e o custo escondido do incremental:
+    arquivos INALTERADOS que precisaram de um parse novo so porque a resolucao
+    deles podia ter mudado. Somar esses arquivos aos alterados esconderia
+    exatamente o numero que decide se o incremental se paga nesta arvore.
+    """
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    banco.parent.mkdir(parents=True, exist_ok=True)
+    resultado = _codeintel_staleness.sincronizar(raiz, banco)
+    mudancas = resultado.mudancas
+    return {
+        "db": banco.as_posix(),
+        "full_rebuild": resultado.completa,
+        "changed_files": mudancas.quantidade,
+        "added": list(mudancas.novos),
+        "modified": list(mudancas.alterados),
+        "removed": list(mudancas.removidos),
+        "rereresolved_count": len(resultado.reresolvidos),
+        "files": resultado.arquivos,
+        "nodes": resultado.nos,
+        "unreadable": resultado.ilegiveis,
+        "edges": resultado.arestas,
+        "unresolved": resultado.nao_resolvidas,
+        "duration_s": round(resultado.duracao_s, 3),
+    }
+
+
+def _code_mudancas_no_grafo(raiz: Path, banco: Path) -> dict[str, Any]:
+    """SPEC 63: o que mudou na arvore, lido como simbolo e como chamador.
+
+    Isto NAO e uma tool propria, e a razao e de medida e nao de economia:
+    `code_status` ja tem que conferir a arvore contra o indice para responder
+    `fresh` e `changed_files` (secoes 43 e 64). "Quais simbolos moram nesses
+    arquivos, e quem os chama" e a MESMA medicao um salto adiante -- nao uma
+    capacidade nova. Uma tool separada duplicaria a conferencia de frescor e
+    somaria um contrato ao catalogo para sempre.
+
+    Nunca gera commit nem altera Git: le `.git/HEAD` e faz `stat`, e so.
+    """
+    conexao = _codeintel_db.abrir(banco)
+    try:
+        mudancas = _codeintel_staleness.detectar(raiz, conexao)
+    finally:
+        conexao.close()
+
+    tocados = sorted(set(mudancas.alterados) | set(mudancas.novos))
+    truncado = len(tocados) > CODE_CHANGED_MAX_FILES
+    tocados = tocados[:CODE_CHANGED_MAX_FILES]
+
+    simbolos: list[dict[str, Any]] = []
+    for caminho in tocados:
+        simbolos.extend(_code_nos_do_arquivo(banco, caminho))
+
+    chamadores: list[dict[str, Any]] = []
+    vistos = {s["node_id"] for s in simbolos}
+    for simbolo in simbolos:
+        for vizinho in _codeintel_graph.chamadores(banco, simbolo["node_id"]):
+            if vizinho.node_id in vistos:
+                continue
+            vistos.add(vizinho.node_id)
+            chamadores.append(_code_vizinho(vizinho))
+
+    return {
+        "changed_files": list(tocados),
+        "removed_files": list(mudancas.removidos),
+        "changed_symbols": simbolos,
+        "affected_callers": chamadores,
+        # Testes sao os chamadores cujo caminho e de teste -- derivado dos
+        # mesmos chamadores, nunca de uma varredura propria: uma segunda
+        # varredura poderia discordar da primeira sobre o mesmo arquivo.
+        "affected_tests": [c for c in chamadores if _code_e_teste(c["path"])],
+        "truncated": truncado,
+    }
+
+
+def _code_e_teste(caminho: str) -> bool:
+    """Heuristica de caminho de teste, dita em vez de escondida numa condicao."""
+    nome = Path(caminho).name
+    return nome.startswith("test_") or nome.endswith("_test.py") or "/tests/" in caminho
+
+
+def code_status(
+    repo: str, *, db: str | None = None, detail_level: str = "full"
+) -> dict[str, Any]:
+    """SPEC 64 + 67 + 63. O estado do indice, e nenhum fonte.
+
+    Esta e a UNICA consulta que NAO recusa quando o indice esta velho ou
+    ausente, e isso nao contradiz a secao 43: ela nao responde COM o grafo, ela
+    responde SOBRE o grafo. Recusar aqui deixaria o operador sem o unico verbo
+    que diz por que as outras recusaram. Por isso ela roda com
+    `auto_sync=False` (perguntar o estado nao pode escrever no indice) e
+    converte a recusa em campo -- `fresh: false` com `stale_reason`.
+
+    `detail_level` e o mesmo mecanismo das outras 20 tools deste catalogo:
+    `full` acrescenta o bloco de seguranca da secao 67 e o de mudancas da secao
+    63; `normal` e `summary` param no estado do indice. Nada e apagado em
+    silencio -- o que `summary` nao traz, `full` traz com o mesmo nome.
+    """
+    if detail_level not in NIVEIS_DE_DETALHE:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE}",
+            exit_code=2,
+        )
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+
+    if not banco.is_file():
+        return {
+            "db": banco.as_posix(),
+            "initialized": False,
+            "fresh": False,
+            "stale_reason": "INDEX_MISSING",
+            "action": _codeintel_staleness.ACAO_DE_SYNC,
+            "files": 0,
+            "symbols": 0,
+            "edges": 0,
+            "unresolved": 0,
+            "schema_version": 0,
+            "engine_version": "",
+            "created_at": "",
+            "root_fingerprint": "",
+            "worktree": "",
+        }
+
+    fresco = True
+    motivo = ""
+    mudou = 0
+    try:
+        # `cooldown_s=0` DESLIGA a porta de 30 s da SPEC 43, e so aqui. O
+        # cooldown existe para manter a varredura de disco fora do caminho de
+        # uma RESPOSTA; neste verbo a varredura E a resposta. Honra-lo faria
+        # `code status` dizer "fresco" por 30 s depois de um `git checkout` --
+        # exatamente a pergunta que alguem faz o `status` para responder.
+        _codeintel_staleness.garantir_frescor(
+            raiz, banco, auto_sync=False, cooldown_s=0
+        )
+    except _codeintel_staleness.NegadoPorFrescor as exc:
+        fresco = False
+        motivo = exc.codigo
+        mudou = int(exc.payload.get("changed_files", 0) or 0)
+
+    indice = _codeintel_search.resumo(banco)
+    estado = _codeintel_staleness.estado_da_arvore(raiz)
+    corpo: dict[str, Any] = {
+        "db": banco.as_posix(),
+        "initialized": True,
+        "fresh": fresco,
+        "stale_reason": motivo,
+        "action": "" if fresco else _codeintel_staleness.ACAO_DE_SYNC,
+        "changed_files": mudou,
+        "files": indice["files"],
+        "symbols": indice["nodes"],
+        **_code_contagens(banco),
+        "schema_version": indice["schema_version"],
+        "engine_version": indice["engine_version"],
+        # A secao 64 pede `last_sync`, e o motor NAO grava esse carimbo: ele
+        # grava `created_at` (nascimento do schema) e o veredito de frescor.
+        # Sair com os dois medidos e melhor que sair com um inventado.
+        "created_at": indice["created_at"],
+        "root_fingerprint": indice["root_fingerprint"],
+        "db_bytes": banco.stat().st_size,
+        "worktree": estado.identidade,
+        "head": estado.head,
+        "ref": estado.ref,
+    }
+    if detail_level == "full":
+        corpo["security"] = _code_seguranca(raiz, banco)
+        corpo["changes"] = _code_mudancas_no_grafo(raiz, banco)
+    return corpo
+
+
+def code_search(
+    repo: str,
+    *,
+    query: str,
+    kind: str | None = None,
+    path_prefix: str | None = None,
+    limit: int = CODE_SEARCH_DEFAULT_LIMIT,
+    db: str | None = None,
+) -> dict[str, Any]:
+    """SPEC 58. Busca simbolo por nome. Nenhum regex, nenhum SQL do chamador.
+
+    O termo NUNCA vira MATCH direto: passa por `search.construir_consulta`, que
+    tokeniza e escapa (SPEC 30, INV-008). Operador de FTS digitado pelo
+    chamador vira texto literal em vez de mudar a consulta.
+
+    `kind` e `path_prefix` sao filtrados AQUI e nao no SQL, e isso e desvio
+    registrado: `search.buscar` nao aceita os dois, e esta fase nao e dona de
+    `sparkforge/codeintel/`. O custo esta medido no teto: busca-se ate
+    `CODE_SEARCH_MAX_LIMIT` linhas para filtrar depois, entao um filtro muito
+    seletivo pode devolver menos que `limit` mesmo havendo mais no indice --
+    e `filtered_from` sai na resposta para que isso seja legivel, nunca
+    silencioso.
+    """
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    indice = _code_frescor(raiz, banco)
+
+    pedido = max(1, min(int(limit), CODE_SEARCH_MAX_LIMIT))
+    bruto = _codeintel_search.buscar(banco, query, limite=CODE_SEARCH_MAX_LIMIT)
+    filtrados = [
+        achado
+        for achado in bruto
+        if (kind is None or achado.kind == kind)
+        and (path_prefix is None or achado.path.startswith(path_prefix))
+    ]
+    pagina = filtrados[:pedido]
+    return {
+        "index": indice,
+        "returned_count": len(pagina),
+        "filtered_from": len(bruto),
+        "results": [
+            {
+                "node_id": a.node_id,
+                "name": a.name,
+                "qualified_name": a.qualified_name,
+                "kind": a.kind,
+                "path": a.path,
+                "start_line": a.start_line,
+            }
+            for a in pagina
+        ],
+    }
+
+
+def code_symbol(
+    repo: str,
+    *,
+    node_id: str,
+    depth: int = 1,
+    detail_level: str = "full",
+    db: str | None = None,
+) -> dict[str, Any]:
+    """SPEC 59 + 61. Metadado, vizinhanca e raio de impacto de um simbolo.
+
+    UMA tool para as duas secoes porque a entrada e a mesma (`node_id`) e a
+    diferenca e de PROFUNDIDADE, nao de pergunta: `chamadores` e o raio de
+    impacto com `depth=1`. Duas tools cobrariam o mesmo contrato duas vezes nos
+    gates de paridade, para sempre.
+
+    CORPO DE FONTE NUNCA SAI DAQUI, em nenhum `detail_level` -- a secao 59 e
+    literal ("Source body nao vem por default") e este modulo le isso como
+    "nao vem, ponto": fonte sai por `sparkforge_code_read`, que e a unica
+    superficie com os tetos duros da secao 60 e com o objeto de confianca da
+    16.3. Fonte atras de uma flag de verbosidade seria conteudo nao confiavel
+    chegando por um caminho que nao carrega o rotulo.
+
+    `detail_level` e o mesmo mecanismo das outras 20 tools: `summary` para no
+    metadado, `normal` acrescenta chamadores e chamados diretos, `full`
+    acrescenta o raio de impacto ate `depth`.
+    """
+    if detail_level not in NIVEIS_DE_DETALHE:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE}",
+            exit_code=2,
+        )
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    indice = _code_frescor(raiz, banco)
+
+    profundidade = max(0, min(int(depth), CODE_MAX_DEPTH))
+    corpo: dict[str, Any] = {
+        "index": indice,
+        "symbol": _code_no(banco, node_id),
+        "callers": [],
+        "callees": [],
+        "impact": [],
+        # A lista vazia de `callees` significa "nenhuma chamada RESOLVIDA", nao
+        # "nenhuma chamada": `df.filtrar()` com tipo desconhecido vira
+        # `unresolved_refs` e nao aresta. Sem este campo, um simbolo cheio de
+        # chamadas dinamicas pareceria uma folha.
+        "unresolved_note": (
+            "callees traz somente chamadas resolvidas pelo indice; chamada com "
+            "receptor de tipo desconhecido vive em unresolved_refs"
+        ),
+    }
+    if detail_level in ("normal", "full"):
+        corpo["callers"] = [
+            _code_vizinho(n) for n in _codeintel_graph.chamadores(banco, node_id)
+        ]
+        corpo["callees"] = [
+            _code_vizinho(n) for n in _codeintel_graph.chamados(banco, node_id)
+        ]
+    if detail_level == "full":
+        corpo["impact"] = [
+            _code_vizinho(n)
+            for n in _codeintel_graph.impacto(banco, node_id, profundidade)
+        ]
+        corpo["tests"] = [item for item in corpo["impact"] if _code_e_teste(item["path"])]
+    return corpo
+
+
+def code_read(
+    repo: str,
+    *,
+    node_id: str | None = None,
+    file: str | None = None,
+    start_line: int | None = None,
+    end_line: int | None = None,
+    context_lines: int = 3,
+    max_tokens: int = CODE_READ_DEFAULT_TOKENS,
+    db: str | None = None,
+) -> dict[str, Any]:
+    """SPEC 60. Leitura de fonte, limitada e SEMPRE dentro de objeto de confianca.
+
+    Duas formas de entrada, e exatamente uma por chamada: `node_id` (o motor
+    resolve arquivo e linhas) ou `file` + `start_line` + `end_line`. As duas
+    juntas seriam duas fontes de verdade para a mesma resposta, e a ausencia das
+    duas nao tem resposta -- ler o repositorio inteiro e o pedido que a secao 60
+    proibe por escrito.
+
+    Os tetos sao DUROS: 250 linhas, 32 KiB, 4096 tokens estimados. `max_tokens`
+    do chamador so aperta. O que foi cortado sai em `truncated_by`.
+
+    INV-014: o trecho vem em objeto com `trust`, nunca em prosa. INV-013: o
+    rotulo e constante deste codigo, nao lido do repositorio analisado.
+    """
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    indice = _code_frescor(raiz, banco)
+
+    por_no = node_id is not None
+    por_arquivo = file is not None
+    if por_no == por_arquivo:
+        raise AdapterError(
+            "informe `node_id` OU `file` com `start_line`/`end_line`, nunca os dois "
+            "nem nenhum: sem alvo, ler seria varrer o repositorio inteiro.",
+            exit_code=2,
+        )
+
+    janela = max(0, min(int(context_lines), CODE_READ_MAX_CONTEXT_LINES))
+    if por_no:
+        no = _code_no(banco, node_id or "")
+        inicio = max(1, int(no["start_line"]) - janela)
+        fim = int(no["end_line"]) + janela
+        relativo = no["path"]
+        linguagem = no["language"] or "python"
+        alvo = {"node_id": no["node_id"], "qualified_name": no["qualified_name"]}
+    else:
+        if start_line is None or end_line is None:
+            raise AdapterError(
+                "`file` exige `start_line` e `end_line`; faixa aberta seria o "
+                "arquivo inteiro.",
+                exit_code=2,
+            )
+        inicio, fim = int(start_line), int(end_line)
+        if inicio < 1 or fim < inicio:
+            raise AdapterError(
+                f"faixa invalida: {inicio}..{fim}; start_line >= 1 e end_line >= start_line.",
+                exit_code=2,
+            )
+        relativo = file or ""
+        linguagem = "python"
+        alvo = {"node_id": "", "qualified_name": ""}
+
+    trecho = _code_trecho(raiz, relativo, inicio, fim, max_tokens=max_tokens, language=linguagem)
+    return {"index": indice, "target": alvo, "snippet": trecho}
+
+
+def code_context(
+    repo: str,
+    *,
+    task: str,
+    max_tokens: int | None = None,
+    include: list[str] | None = None,
+    db: str | None = None,
+) -> dict[str, Any]:
+    """SPEC 57. A tool principal: o `ContextPack` da secao 55 para uma tarefa.
+
+    `task` NAO e ecoado de volta. Ele e a unica string do pacote que veio de
+    fora sem normalizacao, e devolve-la seria carregar conteudo nao sanitizado
+    num objeto que outro agente vai ler. O que sai e a EXPANSAO dela, derivada
+    do dicionario versionado e auditavel.
+
+    `graph_depth` da secao 57 NAO e aceito, e a ausencia e decisao: o
+    `context.montar` deste repositorio nao tem manopla de profundidade -- ele
+    ancora em sementes e usa a distancia como componente de escore. Aceitar o
+    parametro e ignora-lo seria uma superficie que mente sobre o que controla.
+    Quem quer profundidade tem `sparkforge_code_symbol` com `depth`.
+
+    `include` seleciona entre as secoes que este motor sabe PREENCHER
+    (`CODE_CONTEXT_INCLUDE`). `lineage` e `snippets` sao RECUSADOS com a razao
+    em vez de devolvidos vazios -- ver `CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO`.
+
+    `rules` e a secao 77: os ids relevantes ao vocabulario de dominio da
+    consulta, com a razao de cada um. Nunca julgamento -- julgar e `judge`, e
+    ele come FATO, nao simbolo.
+    """
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    indice = _code_frescor(raiz, banco)
+
+    pedidas = list(include) if include is not None else list(CODE_CONTEXT_INCLUDE)
+    for secao in pedidas:
+        if secao in CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO:
+            raise AdapterError(
+                f"include {secao!r} recusado: "
+                f"{CODE_CONTEXT_INCLUDE_NAO_IMPLEMENTADO[secao]}.",
+                exit_code=2,
+            )
+        if secao not in CODE_CONTEXT_INCLUDE:
+            raise AdapterError(
+                f"include invalido: {secao!r}; use um de {list(CODE_CONTEXT_INCLUDE)}",
+                exit_code=2,
+            )
+
+    if not task.strip():
+        raise AdapterError("`task` vazia: nao ha o que expandir nem o que buscar.", exit_code=2)
+
+    orcamento = None if max_tokens is None else int(max_tokens) * _codeintel_budget.BYTES_POR_TOKEN
+    expansao = _codeintel_ranking.expandir(task)
+    regras = (
+        tuple(_code_regras_relevantes(expansao.clusters)) if "rules" in pedidas else ()
+    )
+    try:
+        pacote = _codeintel_context.montar(banco, task, max_bytes=orcamento, regras=regras)
+    except _codeintel_budget.OrcamentoImpossivel as exc:
+        raise AdapterError(
+            f"orcamento impossivel para esta consulta: {exc}", exit_code=2
+        ) from exc
+
+    corpo = pacote.para_dicionario()
+    # O bloco `index` do pacote nasce com `fresh: None` porque `montar` nao
+    # confere frescor -- quem confere e a fronteira. Preencher aqui e o que
+    # torna `fresh: true` uma AFIRMACAO MEDIDA e nao um default otimista.
+    corpo["index"].update(indice)
+    omitidas = [s for s in CODE_CONTEXT_INCLUDE if s not in pedidas]
+    for secao in omitidas:
+        corpo[secao] = []
+    corpo["omitted"] = omitidas
+    return corpo
+
+
+def code_doctor(repo: str, *, db: str | None = None) -> dict[str, Any]:
+    """SPEC 75. Diagnostico local. Nao testa conectividade de internet.
+
+    Cada verificacao devolve `(ok, detalhe)` e NENHUMA delas e derivada de
+    outra: um doctor que concluisse "schema ok porque o banco abriu" estaria
+    afirmando duas coisas com uma medicao so.
+
+    `mcp_registration` e `tool_manifest` conferem a superficie desta CLI contra
+    o catalogo declarado -- e o gate de drift da secao 69, que existe para que
+    uma tool trocada de contrato nao passe despercebida.
+    """
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    checagens: list[dict[str, Any]] = []
+
+    def anotar(nome: str, ok: bool, detalhe: str) -> None:
+        checagens.append({"check": nome, "ok": ok, "detail": detalhe})
+
+    existe = banco.is_file()
+    anotar("db_present", existe, banco.as_posix())
+    if existe:
+        integridade = _code_integridade(banco)
+        anotar("db_integrity", integridade == "ok", integridade)
+        indice = _codeintel_search.resumo(banco)
+        anotar(
+            "schema_version",
+            indice["schema_version"] == _codeintel_db.SCHEMA_VERSION,
+            f"indice={indice['schema_version']} motor={_codeintel_db.SCHEMA_VERSION}",
+        )
+        try:
+            _codeintel_staleness.garantir_frescor(raiz, banco, auto_sync=False)
+            anotar("staleness", True, "fresco")
+        except _codeintel_staleness.NegadoPorFrescor as exc:
+            anotar("staleness", False, f"{exc.codigo}: {exc}")
+    else:
+        anotar("db_integrity", False, "indice ausente")
+        anotar("schema_version", False, "indice ausente")
+        anotar("staleness", False, "INDEX_MISSING")
+
+    anotar(
+        "filesystem_writable",
+        os.access(banco.parent if banco.parent.exists() else raiz, os.W_OK),
+        (banco.parent if banco.parent.exists() else raiz).as_posix(),
+    )
+    anotar("gitignore", _code_gitignorado(raiz), ".sparkforge/local sob .gitignore")
+
+    violacoes = _codeintel_security.imports_proibidos()
+    anotar(
+        "network_guard",
+        not violacoes,
+        "nenhum import de rede no motor"
+        if not violacoes
+        else ", ".join(sorted({v.modulo for v in violacoes})),
+    )
+    anotar("security_profile", True, "offline-strict")
+    anotar("source_root", True, _codeintel_db.impressao_da_raiz(raiz))
+
+    from sparkforge.adapters import tools as _tools
+
+    faltando = [n for n in CODE_TOOLS if n not in _tools.TOOLS]
+    anotar(
+        "mcp_registration",
+        not faltando,
+        "todas as tools de codigo no catalogo"
+        if not faltando
+        else "ausentes: " + ", ".join(faltando),
+    )
+    manifesto = tool_manifest()
+    anotar(
+        "tool_manifest",
+        manifesto["tool_count"] == len(_tools.TOOLS),
+        f"{manifesto['tool_count']} tools, digest {manifesto['catalog_digest']}",
+    )
+
+    falhas = [c for c in checagens if not c["ok"]]
+    return {
+        "db": banco.as_posix(),
+        "ok": not falhas,
+        "failed_count": len(falhas),
+        "checks": checagens,
+    }
+
+
+def code_purge(repo: str, *, db: str | None = None) -> dict[str, Any]:
+    """SPEC 76. Apaga SOMENTE `.sparkforge/local/codeintel/`.
+
+    O alvo e resolvido e comparado com o esperado ANTES de qualquer remocao, e
+    qualquer outro diretorio e recusado. Sem essa porta, um `--db` apontando
+    para o home apagaria o home: a diferenca entre um verbo de limpeza e um
+    `rm -rf` com nome bonito e exatamente esta comparacao.
+    """
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    alvo = banco.parent.resolve()
+    esperado = (raiz / _codeintel_db.BANCO_PADRAO).parent.resolve()
+    if alvo != esperado:
+        raise AdapterError(
+            f"purge recusado: {alvo.as_posix()} nao e o diretorio de codeintel "
+            f"esperado ({esperado.as_posix()}).",
+            exit_code=2,
+        )
+    if not alvo.is_dir():
+        return {"purged": False, "path": alvo.as_posix(), "removed_files": 0}
+    arquivos = [p for p in alvo.rglob("*") if p.is_file()]
+    shutil.rmtree(alvo)
+    return {"purged": True, "path": alvo.as_posix(), "removed_files": len(arquivos)}
+
+
+# Os nomes das tools de Code Intelligence, num lugar so. `doctor` confere o
+# catalogo contra esta lista, e ela e literal de proposito: derivar por prefixo
+# faria o gate afirmar `sparkforge_code_* == sparkforge_code_*`.
+CODE_TOOLS = (
+    "sparkforge_code_context",
+    "sparkforge_code_search",
+    "sparkforge_code_symbol",
+    "sparkforge_code_read",
+    "sparkforge_code_status",
+    "sparkforge_code_sync",
+)
+
+
+def tool_manifest() -> dict[str, Any]:
+    """SPEC 69. Nome, hash de schema e hash de descricao, em ordem deterministica.
+
+    O manifesto e DERIVADO do catalogo vivo, e nao um arquivo escrito a mao: um
+    arquivo a mao registra o que alguem lembrou de atualizar, e o que a secao 69
+    quer detectar e justamente a divergencia entre o que o catalogo diz e o que
+    o servidor entrega. Quem quiser um gate de drift compara dois manifestos
+    derivados em dois commits.
+
+    A ordem e `sorted(TOOLS)` e nao a ordem de insercao do dict: catalogo de
+    tool cacheavel exige ordem estavel, e ordem de insercao muda com edicao de
+    arquivo sem que nenhum contrato tenha mudado.
+    """
+    from sparkforge.adapters import tools as _tools
+
+    def _digest(valor: Any) -> str:
+        texto = json.dumps(valor, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(texto.encode("utf-8")).hexdigest()[:16]
+
+    entradas = [
+        {
+            "name": nome,
+            "input_schema_sha256": _digest(_tools.TOOLS[nome]["inputSchema"]),
+            "output_schema_sha256": _digest(_tools.TOOLS[nome]["outputSchema"]),
+            "description_sha256": _digest(_tools.TOOLS[nome]["description"]),
+        }
+        for nome in sorted(_tools.TOOLS)
+    ]
+    return {
+        "schema_version": 1,
+        "tool_count": len(entradas),
+        "catalog_digest": _digest(entradas),
+        "tools": entradas,
     }

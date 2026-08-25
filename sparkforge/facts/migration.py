@@ -48,6 +48,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "migration@0.1.0"
@@ -539,18 +540,16 @@ def extract_migration_tree(root: Path, repo_root: Path | None = None) -> list[Fa
     """
     base = repo_root or root
     facts: list[Fact] = []
-    for py in sorted(root.rglob("*.py")):
-        if "__pycache__" in py.parts:
-            continue
+    for py in iter_source_files(root, "*.py"):
         facts.extend(extract_migration_path(py, base))
 
-    for jar in sorted(root.rglob("*.jar")):
+    for jar in iter_source_files(root, "*.jar"):
         anchor = str(jar.relative_to(base)).replace("\\", "/")
         sha = hashlib.sha256(jar.read_bytes()).hexdigest()
         provenance = {"artifact": anchor, "artifact_sha256": sha, "extractor": EXTRACTOR_ID}
         facts.extend(_jar_facts(jar, anchor, provenance))
 
-    for req in sorted(root.rglob("requirements*.txt")):
+    for req in iter_source_files(root, "requirements*.txt"):
         anchor = str(req.relative_to(base)).replace("\\", "/")
         text = req.read_text(encoding="utf-8-sig")
         sha = hashlib.sha256(text.encode("utf-8")).hexdigest()

@@ -1,10 +1,13 @@
 """Bounded autonomy and policy-driven routing for SparkForge agents."""
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from sparkforge.paths import resolve_within
 
 if TYPE_CHECKING:
     # So para a anotacao: em tempo de execucao o import continua LOCAL, dentro
@@ -218,6 +221,75 @@ def tool_class(tool: str) -> ToolClass:
     return ToolClass.CLOUD_MUTATION if de_nuvem else ToolClass.LOCAL_MUTATION
 
 
+# Nomes de parametro que SAO caminho de sistema de arquivos, medidos sobre o
+# `inputSchema` das 44 tools e nao imaginados: 43 delas declaram pelo menos um,
+# e as sete grafias usadas hoje sao `path`, `repo`, `file`, `before`, `after`,
+# `*_path` e `*_paths`. `_dir`, `_files` e `_root` entram por antecipacao de
+# grafia, nao por medicao -- nenhuma tool de hoje usa.
+#
+# Isto E uma lista mantida a mao, e vale dizer por que aqui a derivacao nao
+# serviu, ao contrario de `tool_class()`. La existe declaracao estruturada
+# (`readOnlyHint` e as outras duas) da qual derivar; aqui nao existe campo
+# nenhum no schema dizendo "isto e caminho" -- so o nome e a prosa da
+# descricao. Derivar de prosa e heuristica, e heuristica que erra para o lado
+# de "nao e caminho" falha ABERTO, que e o modo de falha que esta fase existe
+# para fechar. A lista fica, e `TestOCatalogoContinuaCabendoNaVerificacao` e o
+# gate que impede ela de envelhecer calada: se uma tool entrar com caminho
+# batizado de outro jeito, a contagem de 43 muda e o teste cai.
+_NOMES_DE_CAMINHO = frozenset({"path", "repo", "file", "before", "after"})
+_SUFIXOS_DE_CAMINHO = ("_path", "_paths", "_file", "_files", "_dir", "_root")
+
+
+def _e_chave_de_caminho(nome: str) -> bool:
+    """`True` quando o nome do parametro nomeia um caminho de filesystem."""
+    return nome in _NOMES_DE_CAMINHO or nome.endswith(_SUFIXOS_DE_CAMINHO)
+
+
+def _caminhos_declarados(arguments: dict[str, Any]) -> Iterator[tuple[str, str]]:
+    """Os pares (parametro, valor) que a decisao precisa confinar.
+
+    Lista e percorrida item a item porque `facts_paths` de `sparkforge_fuse` e
+    `sparkforge_funcval_plan` E uma lista -- verificar so `isinstance(valor,
+    str)` deixaria o argumento principal daquelas duas passar sem checagem
+    nenhuma.
+
+    Valor que nao e texto (numero, booleano, `None`, mapa aninhado) e ignorado
+    de proposito: nao ha caminho que este catalogo declare nessas formas, e
+    inventar travessia de estrutura arbitraria seria superficie sem caso.
+    """
+    for chave, valor in arguments.items():
+        if not _e_chave_de_caminho(chave):
+            continue
+        if isinstance(valor, str):
+            yield chave, valor
+        elif isinstance(valor, (list, tuple)):
+            for item in valor:
+                if isinstance(item, str):
+                    yield chave, item
+
+
+def _argumento_fora_da_raiz(arguments: dict[str, Any], root: Path | str) -> str | None:
+    """O motivo da recusa, ou `None` quando todo caminho declarado cabe na raiz.
+
+    `~` e recusado ANTES do confinamento, e nao por descuido: `resolve_within`
+    nao expande `~` no alvo, entao `raiz / "~/.aws/credentials"` cai dentro da
+    raiz e passaria. Nenhum adapter deste repositorio expande `~` num argumento
+    de tool hoje (busca por `expanduser` em `sparkforge/`: tres ocorrencias, as
+    tres sobre raiz de configuracao, nenhuma sobre argumento), entao a leitura
+    falharia de todo jeito -- mas a recusa nao depende de isso continuar
+    verdade.
+    """
+    for chave, valor in _caminhos_declarados(arguments):
+        if valor.startswith("~"):
+            return (
+                f"argumento `{chave}` fora da raiz do case: `~` nomeia o home "
+                f"do usuario e o confinamento nao o expande"
+            )
+        if resolve_within(root, valor) is None:
+            return f"argumento `{chave}` aponta para fora da raiz do case: {valor!r}"
+    return None
+
+
 def _perfil_canonico(profile: object) -> ExecutionProfile | None:
     """O `ExecutionProfile` que `profile` nomeia, ou `None` se nao nomeia
     nenhum.
@@ -292,6 +364,20 @@ class AuthorizationDecision:
     o `ExecutionProfile` canonico quando o perfil foi reconhecido, e o valor
     cru recebido quando nao foi -- quem audita precisa ver o que chegou, nao o
     que gostariamos que tivesse chegado.
+
+    `checked_arguments` nao e decoracao. Ele e `True` exatamente quando o
+    confinamento dos argumentos RODOU -- e nao quando ele aprovou, nem quando
+    argumentos foram passados. Sem esse campo, uma decisao tomada sem
+    `arguments` seria indistinguivel de uma que examinou os caminhos e
+    aprovou, e a combinacao que mais importa a quem audita e justamente
+    `authorized=True` com `checked_arguments=False`: autorizado sem que
+    ninguem tenha olhado para onde a chamada aponta.
+
+    Ele fica `False` tambem nas recusas que acontecem ANTES do argumento
+    (denylist, allowlist, classe, perfil, teto, aprovacao) e na recusa por
+    `arguments` sem `root`. Nesses casos `authorized` ja e `False`, entao nao
+    ha ambiguidade: a decisao diz "recusei, e nao cheguei a olhar o
+    argumento", que e a verdade.
     """
 
     agent: str
@@ -302,6 +388,7 @@ class AuthorizationDecision:
     reason: str
     required_approval: ToolClass | None = None
     granted_by: ToolClass | None = None
+    checked_arguments: bool = False
 
 
 def authorize(
@@ -312,6 +399,8 @@ def authorize(
     profile: object,
     approvals: Iterable[ToolClass] = (),
     denied_tools: Iterable[str] = (),
+    arguments: dict[str, Any] | None = None,
+    root: Path | str | None = None,
 ) -> AuthorizationDecision:
     """Autoriza uma chamada de tool, com a cadeia registrada na decisao.
 
@@ -339,16 +428,46 @@ def authorize(
     `tool_class()`: sem perfil nao ha teto, e "sem teto" nao pode ser o
     default de quem escreveu o nome errado.
 
-    LIMITE, declarado porque tem consequencia: isto autoriza um NOME, nunca
-    uma CHAMADA. A assinatura nao recebe os argumentos da tool, entao `path`,
-    `bucket` e `report_path` estao fora da decisao por construcao -- ler
-    `~/.aws/credentials` e READ_ONLY e passa sob qualquer perfil. Fechar isso
-    e o hook `PreToolUse` da secao 41, que ve argumentos; esta funcao nao tem
-    onde recebe-los. Ver `docs/harness/AUTHORIZATION-CHAIN.md`.
+    `arguments` e `root` fecham metade do limite que esta funcao declarava:
+    ela autorizava um NOME, nunca uma CHAMADA. Um revisor de seguranca leu um
+    segredo de fora do repositorio com uma tool `READ_ONLY` sob perfil
+    `OFFLINE`, com a cadeia funcionando exatamente como especificada, porque
+    o `path` nao entrava na decisao. Medido no catalogo de hoje: 43 das 44
+    tools declaram parametro de caminho, entao isso e a forma normal da
+    chamada e nao um caso de borda. Com `arguments` e `root`, todo caminho
+    declarado tem de cair dentro da raiz do case.
+
+    A verificacao do argumento e a ULTIMA da ordem, depois da aprovacao, e a
+    razao e o que a decisao passa a significar: as checagens anteriores
+    respondem "esta tool, para este agente, sob este perfil"; a do argumento
+    responde "esta chamada". Perguntar se o caminho e legitimo antes de saber
+    se a tool sequer e legitima trocaria a razao da recusa pela menos
+    fundamental das duas. O preco disso e que uma recusa anterior sai com
+    `checked_arguments=False` mesmo tendo recebido argumentos -- e isso e
+    verdade, nao perda: a verificacao nao rodou.
+
+    `arguments` sem `root` RECUSA, pela terceira aplicacao da mesma
+    disciplina: sem raiz nao ha confinamento, e "sem confinamento" nao pode
+    ser o default de quem passou o argumento e esqueceu a raiz. O par
+    completo tambem nao promove nada -- caminho perfeito nao fura classe,
+    teto nem aprovacao, porque a verificacao so RECUSA, nunca concede.
+
+    LIMITE que CONTINUA de pe, e e o maior dos dois: ver o argumento nao
+    IMPOE nada. Nenhum dos quatro caminhos de execucao (`adapters/mcp.py`,
+    `adapters/tools.py`, `adapters/cli.py`, `agents/supervisor.py`) chama
+    `authorize()`, entao uma tool continua recebendo o caminho que quiserem
+    passar para ela. Esse e o gap do hook `PreToolUse` da secao 41, e ele nao
+    fecha aqui. Ver `docs/harness/AUTHORIZATION-CHAIN.md`.
     """
     aprovadas = frozenset(approvals)
 
-    def recusa(motivo: str, classe: ToolClass | None, perfil: object) -> AuthorizationDecision:
+    def recusa(
+        motivo: str,
+        classe: ToolClass | None,
+        perfil: object,
+        *,
+        checou_argumentos: bool = False,
+    ) -> AuthorizationDecision:
         return AuthorizationDecision(
             agent=agent,
             tool=tool,
@@ -356,6 +475,7 @@ def authorize(
             profile=perfil,
             authorized=False,
             reason=motivo,
+            checked_arguments=checou_argumentos,
         )
 
     if tool in set(denied_tools):
@@ -396,6 +516,18 @@ def authorize(
             required_approval=classe,
         )
 
+    if arguments is not None:
+        if root is None:
+            return recusa(
+                "argumentos recebidos sem raiz do case: sem raiz nao ha "
+                "confinamento, e sem confinamento nao ha o que verificar",
+                classe,
+                perfil,
+            )
+        motivo = _argumento_fora_da_raiz(arguments, root)
+        if motivo is not None:
+            return recusa(motivo, classe, perfil, checou_argumentos=True)
+
     return AuthorizationDecision(
         agent=agent,
         tool=tool,
@@ -404,4 +536,5 @@ def authorize(
         authorized=True,
         reason="autorizado",
         granted_by=classe if classe in _EXIGEM_APROVACAO else None,
+        checked_arguments=arguments is not None and root is not None,
     )

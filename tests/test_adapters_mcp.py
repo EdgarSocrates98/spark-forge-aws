@@ -120,7 +120,15 @@ class TestCallTool:
     """
 
     def test_a_successful_call_returns_structured_content(self, server):
-        result = _call(server, "sparkforge_runtime_detect", {"repo": ROOT})
+        # `{"repo": ROOT}` ate a fase da superficie de codigo, e era ARGUMENTO
+        # INVENTADO: `sparkforge_runtime_detect` nunca declarou `repo` no
+        # `inputSchema` e `_h_runtime_detect` nunca o leu -- ele era descartado
+        # em silencio e o teste passava por acaso, exercitando a tool com zero
+        # entrada. Fechar o schema (SPEC 68, `additionalProperties: false`) fez
+        # o SDK recusar, que e o gate funcionando: o argumento errado agora
+        # aparece em vez de sumir. `glue` e declarado, e lido, e deriva a versao
+        # de Spark que a asercao abaixo confere.
+        result = _call(server, "sparkforge_runtime_detect", {"glue": "5.0"})
         assert result.isError is not True
         assert result.structuredContent is not None
         assert "spark" in result.structuredContent
@@ -135,7 +143,7 @@ class TestCallTool:
     def test_text_content_still_carries_the_json(self, server):
         """O cliente que so le texto nao pode regredir: o JSON continua em
         `content`, alem de `structuredContent`."""
-        result = _call(server, "sparkforge_runtime_detect", {"repo": ROOT})
+        result = _call(server, "sparkforge_runtime_detect", {"glue": "5.0"})
         assert result.content
         assert '"spark"' in result.content[0].text
 
@@ -181,3 +189,57 @@ class TestBuildHttpApp:
     def test_json_response_mode_also_serves(self, server):
         app = build_http_app(server, json_response=True)
         assert _status(app, "/mcp") != 404
+
+
+class TestSpec71OTransporteHttpNaoServeFonte:
+    """SPEC 71: `stdio-first`. Sob HTTP, tool que devolve fonte fica de fora.
+
+    A porta e de SUPERFICIE e nao de confianca no cliente: stdio fala com um
+    processo filho na mesma maquina, HTTP abre uma porta. Uma porta que devolve
+    trecho arbitrario do repositorio e exfiltracao de codigo sem autenticacao
+    nenhuma -- e a SPEC so cogita liberar isso atras de bind em 127.0.0.1,
+    validacao de Host e Origin, token efemero e rate limit, nada do que existe
+    hoje.
+    """
+
+    def test_stdio_serve_o_catalogo_inteiro(self):
+        from sparkforge.adapters.mcp import tools_do_transporte
+
+        assert tools_do_transporte("stdio") == TOOLS
+
+    def test_http_nao_serve_a_tool_de_leitura_de_fonte(self):
+        from sparkforge.adapters.mcp import TOOLS_COM_FONTE, tools_do_transporte
+
+        servidas = tools_do_transporte("http")
+        assert set(TOOLS) - set(servidas) == set(TOOLS_COM_FONTE)
+        assert "sparkforge_code_read" not in servidas
+
+    def test_a_lista_literal_bate_com_quem_declara_snippet(self):
+        """A metade que impede a lista de envelhecer.
+
+        `TOOLS_COM_FONTE` e literal porque nenhuma anotacao declarada separa
+        "devolve trecho" de "devolve metadado". Uma tool nova que passasse a
+        devolver `snippet` sem entrar na lista continuaria servindo fonte por
+        HTTP, em silencio -- e e isso que este teste pega, derivando a mesma
+        resposta pelo outputSchema.
+        """
+        from sparkforge.adapters.mcp import TOOLS_COM_FONTE
+
+        def _tem_snippet(schema):
+            if "oneOf" in schema:
+                return any(_tem_snippet(ramo) for ramo in schema["oneOf"])
+            return "snippet" in (schema.get("properties") or {})
+
+        derivada = {n for n, s in TOOLS.items() if _tem_snippet(s["outputSchema"])}
+        assert derivada == set(TOOLS_COM_FONTE)
+
+    def test_a_tool_escondida_tambem_recusa_a_chamada(self):
+        """Escondida de `tools/list` nao e desabilitada.
+
+        Sem a porta no `call_tool`, quem soubesse o nome continuaria sendo
+        atendido -- e saber o nome e trivial: ele esta na documentacao.
+        """
+        servidor = build_server("http")
+        resultado = _call(servidor, "sparkforge_code_read", {"repo": "."})
+        assert resultado.isError is True
+        assert "--transport stdio" in resultado.content[0].text

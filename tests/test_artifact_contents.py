@@ -55,6 +55,18 @@ class TestWheelCarriesTheKnowledgeLayer:
         secao 5.2 da Fase 0 diz que finding sem schema nao e recusado."""
         assert _names(wheel, "sparkforge/findings/schemas/")
 
+    def test_o_dicionario_de_dominio_entra_no_wheel(self, wheel):
+        """`domain_terms.yaml` e o unico dado nao-Python DENTRO de `sparkforge/`.
+
+        Ele nao passa por `force-include` como `rules/catalog` e `knowledge` --
+        chega pelo `packages = ["sparkforge"]`, que e outro caminho do hatchling
+        e pode se comportar de outro jeito num upgrade. Se ele sumir,
+        `codeintel.ranking.expandir` levanta no pacote instalado e fica verde na
+        arvore de trabalho, que e a forma de falha que a classe inteira existe
+        para pegar.
+        """
+        assert "sparkforge/codeintel/domain_terms.yaml" in wheel.namelist()
+
     def test_the_counts_are_not_zero(self, wheel):
         """Asserção de contagem: `force-include` sumindo num upgrade do
         hatchling nao quebraria import nenhum -- so devolveria catalogo

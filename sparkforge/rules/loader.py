@@ -16,6 +16,7 @@ from typing import Any
 
 import yaml
 
+from sparkforge.paths import resolve_within
 from sparkforge.rules.expr import ExprError, evaluate
 
 ROUTING_FILE = "routing.yaml"
@@ -70,11 +71,20 @@ def safe_catalog_file(base: Path, name: str) -> Path:
     variavel de ambiente. Verificar a contencao aqui torna a leitura segura mesmo
     que `base` contenha `..`, um symlink apontando para fora, ou que um chamador
     futuro passe um nome vindo de fora.
+
+    O ALGORITMO nao mora aqui desde a fase J2: ele e `sparkforge.paths.
+    resolve_within`, e esta funcao so traduz o `None` dele em `CatalogError`.
+    Antes disso, a mesma sequencia de quatro linhas estava copiada aqui, em
+    `knowledge_ref.py` e (em outra forma) em `facts/scan.py` -- e a cadeia de
+    autorizacao ia copiar a quarta. Duas implementacoes de confinamento nao
+    divergem alto; divergem em silencio.
     """
-    root = Path(base).expanduser().resolve()
-    target = (root / name).resolve()
-    if root != target and root not in target.parents:
-        raise CatalogError(f"caminho fora do diretorio do catalogo: {target}")
+    target = resolve_within(base, name)
+    if target is None:
+        # O caminho recusado ainda e resolvido para a mensagem: quem le o erro
+        # precisa ver ONDE aquilo ia parar, nao o texto que entrou.
+        escapou = (Path(base).expanduser().resolve() / Path(name)).resolve()
+        raise CatalogError(f"caminho fora do diretorio do catalogo: {escapou}")
     return target
 
 
