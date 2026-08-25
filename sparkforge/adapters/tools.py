@@ -27,9 +27,17 @@ outras sao read-only. A lista literal correspondente vive em
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sparkforge.adapters import _core
+
+if TYPE_CHECKING:
+    # So para a anotacao. Em tempo de execucao o import de `CallPolicy`
+    # continua LOCAL, dentro de `call_tool` e so quando ha politica, para
+    # `import sparkforge.adapters.tools` nao passar a arrastar o pacote
+    # `sparkforge.agents` inteiro -- que importa `supervisor` e `room` --
+    # por causa de um parametro que quase ninguem passa.
+    from sparkforge.agents.autonomy import CallPolicy
 
 _READ_ONLY = {
     "readOnlyHint": True,
@@ -4278,20 +4286,72 @@ _HANDLERS = {
 }
 
 
-def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+def call_tool(
+    name: str, arguments: dict[str, Any], *, policy: CallPolicy | None = None
+) -> dict[str, Any]:
     """Despacha para o handler de `name`. Nome desconhecido: KeyError com as validas.
 
     Erros de fronteira (`_core.AdapterError`) nunca propagam como excecao: viram
     `{"error": ..., "exit_code": ...}`, para que um cliente MCP sempre receba um
     resultado estruturado, mesmo em falha.
+
+    `policy` e onde a cadeia de autorizacao passa a MORDER. Ate aqui
+    `sparkforge/agents/autonomy.py:authorize()` era funcao pura que nenhum
+    caminho de execucao consultava: a cadeia decidia e nada impunha, entao uma
+    tool `READ_ONLY` continuava lendo `~/.aws/credentials` sob perfil `OFFLINE`
+    com a decisao funcionando exatamente como especificada. Este e o ponto que
+    fecha isso para todas as tools de uma vez, porque e o despacho unico --
+    `adapters/mcp.py` e qualquer outro chamador entram por aqui.
+
+    Ela e OPCIONAL, e o default `None` nao e frouxidao: sem politica declarada
+    nao ha o que impor, e nenhum chamador de hoje declara uma. Impor um default
+    faria o catalogo inteiro passar a recusar o que hoje autoriza -- imposicao
+    que quebra tudo nao e imposicao, e regressao. Quem quiser a imposicao monta
+    a politica a partir do `AgentManifest` do agente (`CallPolicy.from_manifest`)
+    e a passa aqui.
+
+    A recusa sai no MESMO envelope `{"error", "exit_code"}` dos outros erros de
+    fronteira, e nunca como excecao crua: um cliente que so sabe ler o envelope
+    nao pode descobrir a autorizacao por um traceback. A frase carrega a RAZAO
+    que `AuthorizationDecision` registrou -- allowlist, denylist, teto do
+    perfil, aprovacao que falta ou caminho fora da raiz --, porque recusa muda
+    nao diz ao operador o que corrigir. Ao lado dela vao dois campos
+    maquinaveis, na mesma disciplina de `CodeIndexError`: `error_code`
+    (`UNAUTHORIZED`, para o cliente distinguir "voce nao pode" de "quebrou") e
+    `required_approval` quando a recusa foi por falta de aprovacao de classe,
+    que e o que o chamador precisa pedir.
+
+    A ordem importa: o `KeyError` de nome desconhecido vem ANTES da politica de
+    proposito. Ele e contrato de CATALOGO -- "esta tool nao existe, e aqui estao
+    as que existem" --, e nao de permissao; transformando-o em recusa quando ha
+    politica, o mesmo defeito de chamador se apresentaria de duas formas
+    conforme houvesse politica declarada, e quem depura veria o sintoma errado.
+
+    A politica ve `arguments or {}`, o MESMO objeto que o handler recebe, e nao
+    o `arguments` cru. Autorizar uma coisa e executar outra e como uma
+    verificacao de caminho vira teatro.
     """
     handler = _HANDLERS.get(name)
     if handler is None:
         valid = ", ".join(sorted(TOOLS))
         raise KeyError(f"ferramenta desconhecida: {name!r}. Validas: {valid}")
 
+    argumentos = arguments or {}
+
+    if policy is not None:
+        decisao = policy.decide(name, argumentos)
+        if not decisao.authorized:
+            recusa: dict[str, Any] = {
+                "error": f"chamada recusada pela cadeia de autorizacao: {decisao.reason}",
+                "exit_code": 2,
+                "error_code": "UNAUTHORIZED",
+            }
+            if decisao.required_approval is not None:
+                recusa["required_approval"] = decisao.required_approval.value
+            return recusa
+
     try:
-        return handler(arguments or {})
+        return handler(argumentos)
     except _core.CodeIndexError as exc:
         # SPEC 43 exige um corpo MAQUINAVEL na recusa por indice velho --
         # `STALE_INDEX`, `changed_files`, `action`. O envelope uniforme deste
