@@ -51,7 +51,7 @@ arquivo ganha.
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
-| Tools MCP | **44** | `sparkforge.adapters.tools.TOOLS` |
+| Tools MCP | **50** | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **44 de 44** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
@@ -3519,6 +3519,117 @@ efeito; `synchronous` levanta. Sem `foreign_keys` efetivo, o `ON DELETE CASCADE`
 não acontece e o banco acumula nó órfão a cada reindexação. A regra ficou escrita
 no módulo: **pragma que não levanta ainda pode não ter pegado, e a única prova é
 reler o valor efetivo.**
+
+---
+
+## SFCI — as doze fases da SPEC, e o que a execução ensinou (2026-08-24)
+
+Mapa: [`docs/harness/CODEINTEL-GAP.md`](../harness/CODEINTEL-GAP.md) ·
+ADR: [`docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md`](../../vnext/adrs/ADR-010-code-intelligence-indice-local.md) ·
+threat model: [`docs/harness/THREAT-MODEL.md`](../harness/THREAT-MODEL.md).
+
+O subsistema existe: **15 módulos** em `sparkforge/codeintel/`, **14 arquivos de
+teste**, **6 tools MCP** novas (o catálogo foi de 44 para 50). Zero dependência
+nova — só `ast`, `sqlite3`, `hashlib` e `pathlib` da biblioteca padrão, medido em
+3.10.20, 3.11.15 e 3.14.6.
+
+### As doze fases
+
+| fase da SPEC | onde fechou |
+|---|---|
+| ADR e threat model | `1c9993e` |
+| Fundação de segurança | fase J0 |
+| Armazenamento e índice | fase J3 |
+| AST de Python e PySpark | J3, `8f6d657` |
+| Recuperação | `3367776` |
+| MCP e CLI | `8a6e2ac` |
+| Integração com SparkForge | `4240035` |
+| Worktree, incremental, freshness | `5ca8a76` |
+| Lineage de SQL e de dados | `b9039c9` |
+| Hardening | `a0ebf4c` |
+| Supply chain | `f02caa9` |
+| Linguagens adicionais | Tier 0 entregue; Tier 1 e 2 a própria SPEC condiciona a benchmark e justificativa |
+
+### A medição que reordenou tudo, e que não agrada
+
+A fase J3 mediu o índice contra três denominadores. Contra ler os arquivos até
+achar a definição, ele economiza muito. Contra a saída de um `grep` pelo nome,
+economiza. **Contra `grep -n "def X"`, ele perde** — e filtrar por
+correspondência exata reduz o payload pela metade sem inverter o sinal.
+
+A causa não é desperdício de envelope: são perguntas diferentes. O `grep`
+devolve a linha cuja definição *começa* com o nome; o índice devolve todo
+símbolo cujo nome *contém* o termo, com tipo e nome qualificado.
+
+Onde ele ganha é em pergunta **estrutural** — "quais são os símbolos deste
+arquivo", "quem chama isto", "o que quebra se eu mudar". Foi essa medição que
+pôs `edges` antes de recuperação, contra a ordem da própria SPEC, e ela está
+registrada no ADR porque foi ela que decidiu a sequência.
+
+### Três recusas que definem o subsistema
+
+**Aresta ambígua não vira aresta.** O AST vê `foo(x)` e não sabe qual `foo`.
+Escolher entre candidatos seria inventar, e quem seguisse a aresta investigaria
+o arquivo errado sem nada acusar. Vira `unresolved_refs` com razão. Cerca de um
+terço das referências resolve; o motivo dominante de não resolver é
+`UNKNOWN_RECEIVER` — `df.filtrar()` sem saber o que `df` é. Inferir tipo por
+nome de variável resolveria o número e estragaria a resposta.
+
+**Nome de tabela não se inventa.** `spark.table(f"{db}.{tbl}")` registra
+`DYNAMIC_TABLE_IDENTIFIER`, não um palpite. Mesma doutrina.
+
+**Seis tools, não onze.** A SPEC lista onze candidatas e, na mesma seção, manda
+evitar explosão de tool. Toda tool nova entra nos três gates de paridade para
+sempre; onze finas custariam mais gates sem responder nada que as seis não
+respondam.
+
+### Um defeito da própria SPEC, encontrado ao implementá-la
+
+O mínimo da faixa de orçamento da §51 é **inalcançável**: o piso irredutível do
+`ContextPack` — um entry point, procedência, segurança, métricas e a query — não
+cabe nos 256 tokens que a §51 declara pela razão de bytes por token da §52. Não
+foi escondido: sai em `metrics.over_budget_bytes`, com teste que o exige maior
+que zero nesse caso. O teto duro é o único limite real, e é respeitado.
+
+### O que a execução ensinou sobre método
+
+**Quinze implementadores discordaram do plano, e os quinze estavam certos.** O
+pior erro foi meu: o regex de sanitização de assinatura que escrevi **vazava
+segredo** — `def f(chave=('id','segredo'))` passava intacto, e
+`f(modo=['x','SENHA'])` vazava *parcialmente*, deixando um marcador que fazia a
+saída parecer sanitizada. No controle que o próprio plano marcava como crítico.
+
+**Teste de mutação achou o que asserção não achou, em toda fase em que foi
+feito.** `SCHEMA_VERSION` era decoração — subir a constante não fazia nada,
+porque `CREATE TABLE IF NOT EXISTS` não conserta tabela velha. Quatro mutações
+de ordem sobreviveram porque a *fixture* estava ordenada e a coincidência
+escondia o defeito. E um gate escrito à mão trancou uma anotação mentirosa por
+405 commits.
+
+**Escala revela o que tmpdir esconde.** `unresolved_refs.source_id` sem índice
+fazia o CASCADE varrer a tabela inteira: a primeira indexação levava três
+segundos e a quarta, dez. Teste de banco novo nunca veria.
+
+**Dez commits quebrariam num clone limpo** porque `sparkforge/paths.py` nunca
+entrou no git, e o *editable install* resolvia o import para a árvore de
+trabalho. Passou por dez execuções da suíte, ruff, gate de lastro e duas
+revisões. Fechado por `tests/test_arvore_versionada.py`, que compara o que está
+no disco com o que está no git.
+
+### O que continua aberto, com razão escrita
+
+- **`authorize()` não é chamada por caminho de execução nenhum.** A cadeia
+  decide e nada a impõe; falta o hook `PreToolUse`.
+- **Pular arquivo na varredura é silencioso** — por tamanho, symlink,
+  confinamento, nome sensível ou poda. Contradiz o princípio do `unresolved` que
+  o próprio repositório aplica, e fechar depende de a varredura devolver mais
+  que caminho.
+- **`context.montar` não consulta `codeintel.lineage`.** O DataGraph é
+  construído do fonte por arquivo e não chega ao índice; pedir `lineage` no
+  `ContextPack` é **recusado com a razão**, nunca respondido com lista vazia.
+- **`resource`/`setrlimit` não existe no Windows.** A função declara
+  `disponivel=False` com a plataforma no motivo em vez de fingir portabilidade.
+- **Tier 1 e 2 de linguagens** seguem fora, como a SPEC condiciona.
 
 ---
 
