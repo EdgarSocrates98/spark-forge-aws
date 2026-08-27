@@ -1,7 +1,12 @@
 import pytest
 
 from sparkforge.facts.pyspark_ast import extract_source
-from sparkforge.findings.validate import ValidationFailed, validate_fact, validate_finding
+from sparkforge.findings.validate import (
+    ValidationFailed,
+    validate_business_rule,
+    validate_fact,
+    validate_finding,
+)
 
 
 def good_finding(**over):
@@ -189,6 +194,48 @@ class TestBenchmarkRefCitesAFactId:
                 benchmark_ref="bench/2026-07-29-coalesce.json",
             )
         )
+
+
+def good_business_rule(**over):
+    base = {
+        "rule_id": "BR-DQ-001",
+        "schema_version": 1,
+        "statement": "Linha com chave nula vai para quarentena, nao para a tabela final.",
+        "status": "declared",
+        "source": [{"origin": "spec/requisitos.md#dq"}],
+    }
+    base.update(over)
+    return base
+
+
+class TestBusinessRuleSchema:
+    """sf-functional-rules-specialist: regra do sistema analisado, nao achado do motor."""
+
+    def test_good_business_rule_validates(self):
+        validate_business_rule(good_business_rule())
+
+    def test_empty_source_rejected(self):
+        with pytest.raises(ValidationFailed, match="source"):
+            validate_business_rule(good_business_rule(source=[]))
+
+    def test_unknown_status_rejected(self):
+        with pytest.raises(ValidationFailed):
+            validate_business_rule(good_business_rule(status="confirmed"))
+
+    def test_undecided_without_owner_is_accepted(self):
+        """status=undecided e exatamente 'decisao ainda sem dono' -- owner ausente
+        nao pode ser o que barra esse estado, senao o schema nao consegue
+        representar a propria situacao que o nomeia."""
+        validate_business_rule(good_business_rule(status="undecided"))
+
+    def test_rule_id_out_of_namespace_rejected(self):
+        """BR- e SF- sao namespaces distintos -- regra de negocio nao e finding."""
+        with pytest.raises(ValidationFailed):
+            validate_business_rule(good_business_rule(rule_id="SF-DQ-001"))
+
+    def test_evidence_must_be_a_fact_id(self):
+        with pytest.raises(ValidationFailed):
+            validate_business_rule(good_business_rule(evidence=["nota-livre"]))
 
 
 class TestJsonSerializable:

@@ -140,6 +140,7 @@
   "schemas": {
     "fact": "sparkforge/findings/schemas/fact.schema.json",
     "finding": "sparkforge/findings/schemas/finding.schema.json",
+    "business_rule": "sparkforge/findings/schemas/business_rule.schema.json",
     "case": ".sparkforge/case.yaml"
   },
   "agent_tooling": {

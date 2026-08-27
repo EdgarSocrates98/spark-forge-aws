@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparkforge.dev/schemas/business_rule.schema.json",
+  "title": "Business Rule",
+  "description": "Regra atomica extraida por sf-functional-rules-specialist (skill analyze-functional-rules). Nao e um Finding: descreve comportamento do sistema analisado, nao um achado do motor sparkforge sobre codigo ou infraestrutura.",
+  "type": "object",
+  "required": ["rule_id", "schema_version", "statement", "status", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "rule_id": {
+      "type": "string",
+      "description": "BR-<AREA>-<NNN>. Namespace proprio, distinto de SF-<AREA>-<NNN> (rule_id de finding.schema.json), porque descreve regra do sistema analisado, nao do catalogo do motor.",
+      "pattern": "^BR-[A-Z][A-Z0-9]*-[0-9]{3}$"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A regra em uma frase, na linguagem do dominio."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["declared", "observed", "undecided"],
+      "description": "declared: escrita em requisito/spec/contrato. observed: inferida de codigo, dado ou log, sem fonte declarada. undecided: comportamento identificado mas sem decisao de dono -- red flag se persistir."
+    },
+    "preconditions": {"type": "array", "items": {"type": "string"}},
+    "postconditions": {"type": "array", "items": {"type": "string"}},
+    "inputs": {"type": "array", "items": {"type": "string"}},
+    "outputs": {"type": "array", "items": {"type": "string"}},
+    "states": {"type": "array", "items": {"type": "string"}},
+    "exceptions": {"type": "array", "items": {"type": "string"}},
+    "severity": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3", "P4"],
+      "description": "Impacto de violar a regra, na mesma escala de finding.schema.json."
+    },
+    "owner": {
+      "type": "string",
+      "description": "Quem decide a regra quando ambigua. Ausente e permitido so com status=undecided."
+    },
+    "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+    "source": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Regra sem fonte e regra sem lastro -- red flag nomeado na skill analyze-functional-rules.",
+      "items": {
+        "type": "object",
+        "anyOf": [
+          {"required": ["url"]},
+          {"required": ["origin"]}
+        ],
+        "properties": {
+          "url": {"type": "string"},
+          "origin": {"type": "string"},
+          "title": {"type": "string"},
+          "note": {"type": "string"},
+          "retrieved": {"type": "string", "description": "ISO 8601."}
+        }
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Caminho ou id do teste que trava a regra. Regra sem teste e red flag."
+    },
+    "evidence": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^f_[0-9a-f]{6}$"},
+      "description": "fact_id opcional, quando a regra foi confirmada contra codigo/log/dado extraido pelo motor."
+    },
+    "implementation_locations": {"type": "array", "items": {"type": "string"}},
+    "conflicts_with": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^BR-[A-Z][A-Z0-9]*-[0-9]{3}$"},
+      "description": "Outros rule_id em conflito documentado, per a matriz regra-fonte-teste-evidencia."
+    }
+  }
+}
