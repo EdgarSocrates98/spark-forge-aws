@@ -1,0 +1,30 @@
+# Retencao de dados de metrica do CloudWatch, por granularidade do ponto.
+#
+# POR QUE ESTE ARQUIVO EXISTE. `collect_cloudwatch` consultava com
+# `Period: 30` fixo. Ponto de granularidade sub-minuto sobrevive poucas
+# horas; a mesma query sobre um run de vinte dias atras devolve serie
+# vazia -- e vazio se parece com "observabilidade desligada no job", que e
+# causa diferente e remedio diferente. Derivar o periodo da idade do run
+# exige a tabela, e a tabela precisa de fonte com data.
+#
+# Numero de retencao codificado em Python seria o defeito que
+# `sparkforge/facts/pricing.py` existe para nao repetir.
+
+schema_version: 1
+
+retention:
+  - period_seconds: 60
+    retention_days: 15
+    source: "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-26"
+  - period_seconds: 300
+    retention_days: 63
+    source: "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-26"
+  - period_seconds: 3600
+    retention_days: 455
+    source: "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html"
+    source_type: OFFICIAL_TECHNICAL_DOC
+    retrieved: "2026-08-26"

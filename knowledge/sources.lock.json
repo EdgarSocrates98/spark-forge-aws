@@ -204,6 +204,19 @@
         "SF-EMRS-005"
       ]
     },
+    "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html": {
+      "checked_at": "2026-08-26",
+      "docs": [
+        "knowledge/glue/observability.md",
+        "knowledge/glue/observability.yaml"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-26"
+      ],
+      "rules": [],
+      "sha256": "670ca2f90816d11fa1f96b83c3a33f02813ac7e9bb282a6c5b631e237f6a662a"
+    },
     "https://docs.aws.amazon.com/athena/latest/ug/partitions.html": {
       "checked_at": "2026-07-31",
       "docs": [
