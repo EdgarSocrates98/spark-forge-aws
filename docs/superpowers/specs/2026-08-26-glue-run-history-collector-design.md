@@ -58,9 +58,14 @@ run de vinte dias atrás devolve série vazia. Vazio que se parece com "observab
 habilitada no job", que é uma causa completamente diferente.
 
 **Este documento não fixa os valores de retenção.** Eles entram em
-`knowledge/glue/observability.md` lidos da documentação da AWS com data de consulta, no
-formato das demais fontes do repositório, e são a base do cálculo do período. Se a
-documentação contradisser o parágrafo acima, a documentação vence e o desenho se ajusta a ela.
+`knowledge/glue/observability.yaml`, legível por máquina, com carregador fail-closed no molde
+de `knowledge/glue/pricing.yaml` mais `sparkforge/facts/pricing.py` — a mesma dupla que o
+projeto já usa para conhecimento que vira número. A seção correspondente em
+`knowledge/glue/observability.md` aponta para o YAML em vez de repetir a tabela, e a fonte é
+registrada em `knowledge/sources.lock.json` com URL, data de consulta e sha256, como as outras
+131. Retenção codificada direto no Python seria o defeito que `facts/pricing.py` existe para
+não repetir. Se a documentação da AWS contradisser o parágrafo acima, a documentação vence e o
+desenho se ajusta a ela.
 
 ### 1.3 Um achado que pertence a A, não a B
 
@@ -238,9 +243,15 @@ measures: {n, runtime_min_s, runtime_p50_s, runtime_p95_s, runtime_p99_s, runtim
 attrs:    {window_first, window_last, dpu_source}
 ```
 
-Percentis por `_nearest_rank`, a mesma função que `sparkforge/facts/event_log.py:220` usa para
-`spark.stage.task_duration` — mesmo método, mesma leitura, sem uma segunda definição de
-percentil no projeto.
+Percentis por nearest-rank sem interpolação, a mesma fórmula que
+`sparkforge/facts/event_log.py:120` usa para `spark.stage.task_duration`.
+
+A fórmula é **reescrita neste extrator, não importada** — o que parece duplicação e é
+convenção declarada: `sparkforge/facts/iceberg_metadata.py:128` já tomou essa decisão por
+escrito, porque os extratores são módulos independentes por desenho e a fórmula é pequena
+demais para acoplá-los. Consolidar as três seria refatoração de dois módulos que esta entrega
+não toca. O que garante que continuam iguais é teste, não import: um caso que roda as
+implementações sobre a mesma entrada e exige o mesmo resultado.
 
 `attrs.dpu_source` vale `observed`, `derived` ou `mixed`. Um grupo que agrega os dois tipos sai
 marcado `mixed`, nunca fundido em silêncio.
@@ -368,7 +379,8 @@ Os desta entrega:
 7. `dpu_source` sai `observed` no run com Auto Scaling e `derived` no de capacidade estática.
 8. Grupo que agrega os dois sai `mixed`.
 9. Auto Scaling sem `DPUSeconds` não emite número — vai para `unresolved`.
-10. Percentis conferem contra `_nearest_rank`, a mesma função de `spark.stage.task_duration`.
+10. Percentis conferem contra `event_log._nearest_rank` e `iceberg_metadata._nearest_rank`
+    sobre a mesma entrada, com resultado idêntico nos três.
 11. Grupo com `n = 1` declara `n: 1` e não apresenta p95 como se tivesse amostra.
 12. Distribuição nunca mistura `worker_type` ou `number_of_workers` diferentes no mesmo grupo.
 13. Período derivado da idade do run, e run fora da retenção produz `unresolved` com razão
@@ -382,8 +394,12 @@ explicitamente, e a §40 dele lista as classes de cenário sintético a cobrir.
 
 ## 8. Documentação
 
-- `knowledge/glue/observability.md`: tabela de retenção do CloudWatch por período, lida da
-  documentação da AWS com data de consulta, no formato das demais fontes.
+- `knowledge/glue/observability.yaml`: tabela de retenção do CloudWatch por período, legível
+  por máquina, no molde de `knowledge/glue/pricing.yaml`.
+- `knowledge/glue/observability.md`: seção nova apontando para o YAML, e a fonte na lista de
+  fontes do arquivo.
+- `knowledge/sources.lock.json`: a URL da documentação de retenção, com `retrieved`,
+  `checked_at` e `sha256`.
 - `README.md`: os três comandos novos.
 - `docs/superpowers/STATUS.md`: a fase e o que ela entregou.
 - Número novo que entrar em documentação passa por `scripts/check_vnext_claims.py` e
@@ -402,11 +418,12 @@ A entrega está pronta quando:
    preservando nome e estatística de cada uma.
 4. `analyze glue-job-runs` emite `glue.job_run` por run, `glue.job_run.distribution` por grupo
    de capacidade e estado, e `glue.job_run.outcome` por grupo de capacidade.
-5. Percentis usam `_nearest_rank`, sem segunda definição de percentil no projeto.
+5. Percentis usam a fórmula nearest-rank dos extratores irmãos, com teste que compara as
+   implementações sobre a mesma entrada e exige resultado idêntico.
 6. `dpu_source` distingue observado de derivado, e o grupo misto sai `mixed`.
 7. Auto Scaling sem `DPUSeconds` recusa em vez de estimar.
 8. O período da query CloudWatch é derivado da idade do run, com a retenção vinda de
-   `knowledge/`.
+   `knowledge/glue/observability.yaml` por carregador fail-closed, nunca de constante Python.
 9. Métrica expirada e observabilidade desligada produzem razões distintas.
 10. As três tools aparecem em `manifest.json`, em `parity.yaml` e nos espelhos, com os gates
     existentes passando.
