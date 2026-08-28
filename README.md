@@ -164,7 +164,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 23 extratores emitem 144 kinds distintos de fact, e todos são offline: leem
+Os 24 extratores emitem 148 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -193,6 +193,7 @@ tool MCP de mesmo nome.
 | **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
 | **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
+| Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a

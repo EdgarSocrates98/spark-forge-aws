@@ -3917,6 +3917,101 @@ própria, não desta.
 escrita antes de ele existir seria julgamento sem lastro, a mesma disciplina
 já registrada na entrega de histórico de runs Glue.
 
+## WorkloadFingerprint — o perfil por eixos, não por volume de entrada (2026-08-28)
+
+Documentos: [spec](specs/2026-08-28-workload-fingerprint-design.md) ·
+[plan](plans/2026-08-28-workload-fingerprint.md).
+
+A tese: **volume do batch ≠ trabalho físico do DAG.** Um job pode ter entrada
+`SMALL` e varredura `EXTREME`, e o perfil por número de registros de entrada
+classifica os dois igual. `WorkloadFingerprint` substitui esse perfil por
+eixos independentes — `scan_intensity`, `shuffle_intensity`,
+`memory_pressure`, `skew_risk`, `file_pressure`, `join_intensity`,
+`sla_class`, `primary_input_class` —, cada um carregando valor, confiança
+(`measured`/`declared`/`unknown`), base e evidência.
+
+`spark.stage.shuffle` entra em `facts/event_log.py`: volume de shuffle por
+stage — bytes e registros lidos e escritos, leitura remota separada de
+local, tempo de espera de fetch. Os números estavam dentro do
+`SparkListenerTaskEnd` que o módulo já lia desde a Fase 1; medido em
+2026-08-28, zero ocorrências da palavra `Shuffle` no módulo antes desta
+entrega. `sparkforge/facts/workload.py` é o segundo extrator novo: o
+inventário declarado (`workload.declared`, `workload.unresolved`,
+`workload.declared_analyzed`), lendo `workload.yaml` versionado no molde de
+`analyze consumers`. `sparkforge/workload/` (`axis.py`, `fingerprint.py`) é
+o pacote do fingerprint — **não é extrator**: extrator emite fact e fact
+nunca aplica limiar, e dizer que `scan` é `extreme` é exatamente aplicar
+limiar. É mecanismo próprio de julgamento, no molde de `MigrationAssessment`
+e do `benchmark`.
+
+Superfície: `sparkforge workload --facts <facts.json> --job-name <job>
+--job-run <id> [--history <dir>] [--out F]` — verbo de topo, não `analyze
+workload`, pela regra que `_core.benchmark_runs` já escreve: verbo sob
+`analyze` extrai facts de artefato, e este não extrai nada, classifica o
+que outros já extraíram. Tool MCP `sparkforge_workload`, read-only local.
+`fixtures/workload/` traz seis cenários sintéticos, com módulo golden
+próprio (`tests/test_fixtures_golden_workload.py`). Um extrator novo
+(**24** no total agora) e quatro kinds novos (**148** no total agora):
+`spark.stage.shuffle`, `workload.declared`, `workload.unresolved`,
+`workload.declared_analyzed`. Uma tool nova (**55** no total agora).
+**74 testes** novos, medidos por coleta (`pytest --collect-only`), entre
+`tests/test_facts_event_log.py::TestShuffleMetrics` (4),
+`tests/test_facts_workload.py` (9), `tests/test_workload_axis.py` (8),
+`tests/test_workload_fingerprint.py` (12),
+`tests/test_fixtures_golden_workload.py` (34) e as classes `workload` de
+`tests/test_adapters_cli.py` (2) e `tests/test_adapters_tools.py` (5).
+
+Faixa de commits: `12a2415` … `61c3fae`.
+
+### Três decisões
+
+**A escala vem do histórico do próprio job.** `extreme` é o run acima do
+p99 dos runs anteriores, não um limiar universal: não existe fonte da AWS
+ou do Spark dizendo que 1 TB de varredura é `extreme`, e um limiar absoluto
+seria `field-heuristic` com número inventado, aplicado igual a um job de
+dez minutos e a um de dez horas. Custo aceito e declarado: job sem
+histórico não classifica os eixos de volume — eles saem `unknown` com o
+comando que resolve —, e os eixos que são razões internas (`skew_risk`,
+`file_pressure`, `memory_pressure`) saem preenchidos assim mesmo, no
+primeiro run, porque já são razões e não volumes.
+
+**`declared` nunca se confunde com `measured`.** `sla_class` e
+`primary_input_class` não são mensuráveis a partir de artefato nenhum;
+entram por `workload.yaml`, versionado, e `confidence` é campo de primeira
+classe do eixo, imposto na construção do `Axis` — um eixo `measured` sem
+`basis`/`evidence`, ou um eixo `declared` marcado `measured`, não chega a
+existir. É a fronteira de que o subprojeto D depende, porque ele vai
+escolher capacidade em cima deste perfil.
+
+**O histórico de volume NÃO vem de `glue.job_run.distribution`.** Medido
+nesta entrega: aquele fact carrega `runtime_*` e `dpu_seconds_*` e nenhum
+byte, porque `glue.get_job_runs` não publica volume lido. O histórico vem
+da mesma medição repetida — `--history` é um diretório com um arquivo de
+facts por run anterior, e a separação por arquivo é o que identifica cada
+run, já que `execution_id` é por aplicação e dois event logs colidem nele.
+Menos de três runs recusa afirmar p99 (`history_too_short`, com o `n`
+observado).
+
+### O que ficou de fora, e por quê
+
+**Os eixos `cpu_pressure` e `metadata_pressure`.** Evidência parcial hoje:
+`spark.cluster.cores` não separa CPU saturada de ociosa, e pressão de
+metadados exigiria correlacionar `iceberg.manifests_summary` com tempo de
+planejamento, que nada mede. Emiti-los com lastro parcial seria vender
+palpite como eixo — eles entram quando a medição entrar.
+
+**Recomendação de capacidade.** É o subprojeto D: descrever o workload e
+escolher worker são decisões diferentes, com custos de errar diferentes.
+
+**Custo em dinheiro.** É o subprojeto E; `facts/pricing.py` continua
+recusando combinar preço com região não qualificada.
+
+**Grafo de joins.** O terceiro recorte do subprojeto C, independente deste.
+
+**Nenhuma regra nova no catálogo.** O fingerprint é o mecanismo de
+julgamento; regra que o consuma é fase seguinte, e escrevê-la agora seria
+limiar sobre um contrato ainda sem uso.
+
 ## Dívidas abertas
 
 A tabela era uma só e misturava **três naturezas**, e a mistura fazia o
