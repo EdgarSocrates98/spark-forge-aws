@@ -216,3 +216,70 @@ class TestOutcome:
         ][0]
 
         assert not any("rate" in k or "ratio" in k for k in outcome.measures)
+
+
+def _write_cloudwatch(root: Path, run_id: str, value: float) -> Path:
+    payload = {
+        "job_name": "my-job",
+        "job_run_id": run_id,
+        "start": "2026-08-01T10:00:00Z",
+        "end": "2026-08-01T10:20:00Z",
+        "period_seconds": 60,
+        "metric_data_results": [
+            {
+                "Id": "m0",
+                "Label": "glue.driver.workerUtilization",
+                "Timestamps": ["t1"],
+                "Values": [value],
+            }
+        ],
+    }
+    root.mkdir(parents=True, exist_ok=True)
+    target = root / f"my-job_{run_id}.json"
+    target.write_text(json.dumps(payload), encoding="utf-8")
+    return target
+
+
+class TestCorrelation:
+    def test_metric_facts_are_emitted_for_runs_with_artifacts(self, tmp_path):
+        runs_dir = tmp_path / "runs"
+        cw_dir = tmp_path / "cw"
+        _write_run(runs_dir, "jr_1")
+        _write_cloudwatch(cw_dir, "jr_1", 0.42)
+
+        facts = extract_glue_job_runs_path(runs_dir, "my-job", cloudwatch_dir=cw_dir)
+        metrics = [f for f in facts if f.kind == "glue.metric"]
+
+        assert len(metrics) == 1
+        assert metrics[0].subject["job_run_id"] == "jr_1"
+        assert metrics[0].measures["p50"] == 0.42
+
+    def test_run_without_metrics_names_the_command_that_fixes_it(self, tmp_path):
+        runs_dir = tmp_path / "runs"
+        cw_dir = tmp_path / "cw"
+        cw_dir.mkdir(parents=True)
+        _write_run(runs_dir, "jr_1")
+
+        facts = extract_glue_job_runs_path(runs_dir, "my-job", cloudwatch_dir=cw_dir)
+        missing = [
+            f
+            for f in facts
+            if f.kind == "glue.job_run.unresolved"
+            and f.attrs["reason"] == "cloudwatch_artifact_missing"
+        ]
+
+        assert len(missing) == 1
+        assert "sparkforge collect cloudwatch" in missing[0].attrs["collect_command"]
+        assert "--job-run jr_1" in missing[0].attrs["collect_command"]
+
+    def test_without_the_directory_correlation_is_declared_not_silent(self, tmp_path):
+        runs_dir = tmp_path / "runs"
+        _write_run(runs_dir, "jr_1")
+
+        facts = extract_glue_job_runs_path(runs_dir, "my-job")
+        assert not [f for f in facts if f.kind == "glue.metric"]
+        assert any(
+            f.attrs["reason"] == "cloudwatch_not_requested"
+            for f in facts
+            if f.kind == "glue.job_run.unresolved"
+        )

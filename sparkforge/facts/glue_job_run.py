@@ -2,9 +2,10 @@
 
 Le o diretorio de artefatos `glue_job_run` -- um JSON por run terminal, escrito
 por `sparkforge.collect.aws.collect_glue_job_runs` -- e emite o fact por run,
-a distribuicao por capacidade x estado terminal e a contagem de desfecho por
-capacidade. Correlacao com facts de CloudWatch e camada futura deste mesmo
-modulo, ainda nao implementada aqui.
+a distribuicao por capacidade x estado terminal, a contagem de desfecho por
+capacidade e a correlacao com os facts de CloudWatch ja coletados, casada por
+`job_run_id`. Correlacao e opcional (`cloudwatch_dir=None`): sem ela, os facts
+de distribuicao saem completos e a correlacao inteira vai para `unresolved`.
 
 O QUE ESTE MODULO RECUSA. Nao emite custo em dinheiro: `facts/pricing.py`
 recusa deliberadamente combinar preco com regiao `UNQUALIFIED`, e furar essa
@@ -22,6 +23,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from sparkforge.facts.cloudwatch import extract_cloudwatch_path
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "glue_job_run@0.1.0"
@@ -358,8 +360,58 @@ def _outcome_facts(job_name: str, rows: list[dict[str, Any]], path: str) -> list
     return facts
 
 
-def extract_glue_job_runs_path(directory: Path, job_name: str) -> list[Fact]:
-    """Extrai Facts do diretorio de artefatos de run de um job."""
+def _cloudwatch_artifact(job_name: str, run_id: str, cloudwatch_dir: Path | None) -> Path | None:
+    if cloudwatch_dir is None:
+        return None
+    candidate = Path(cloudwatch_dir) / f"{job_name}_{run_id}.json"
+    return candidate if candidate.is_file() else None
+
+
+def _correlate(job_name: str, run_id: str, cloudwatch_dir: Path | None) -> list[Fact]:
+    """Junta por `job_run_id` os facts de metrica ja coletados.
+
+    Run sem metrica nao e erro: e lacuna com nome, razao e o comando exato que a
+    resolve -- a mesma convencao que o manifesto usa para nao deixar `resume()`
+    cego.
+    """
+    if cloudwatch_dir is None:
+        return [
+            _unresolved(
+                job_name,
+                run_id,
+                "cloudwatch_not_requested",
+                "Correlacao com CloudWatch nao pedida nesta analise. Para incluir, passe "
+                "--cloudwatch <diretorio de artefatos cloudwatch>.",
+            )
+        ]
+
+    artifact = _cloudwatch_artifact(job_name, run_id, cloudwatch_dir)
+    if artifact is None:
+        return [
+            _unresolved(
+                job_name,
+                run_id,
+                "cloudwatch_artifact_missing",
+                "Nenhum artefato de metrica para este run no diretorio informado.",
+                collect_command=(
+                    f"sparkforge collect cloudwatch --repo . --job-name {job_name} "
+                    f"--job-run {run_id} --start <ISO8601> --end <ISO8601> --now <ISO8601>"
+                ),
+            )
+        ]
+
+    return list(extract_cloudwatch_path(artifact))
+
+
+def extract_glue_job_runs_path(
+    directory: Path, job_name: str, cloudwatch_dir: Path | None = None
+) -> list[Fact]:
+    """Extrai Facts do diretorio de artefatos de run de um job.
+
+    `cloudwatch_dir` e opcional. Ausente, os facts de distribuicao saem
+    completos e a correlacao inteira vai para `unresolved` -- correlacao que
+    nao aconteceu e dita, nunca omitida.
+    """
     facts: list[Fact] = []
     rows: list[dict[str, Any]] = []
     runs = _load_runs(directory, job_name)
@@ -378,6 +430,7 @@ def extract_glue_job_runs_path(directory: Path, job_name: str) -> list[Fact]:
                 "dpu_source": fact.attrs.get("dpu_source", ""),
             }
         )
+        facts.extend(_correlate(job_name, run.get("Id") or "", cloudwatch_dir))
 
     facts.extend(_distribution_facts(job_name, rows, str(directory)))
     facts.extend(_outcome_facts(job_name, rows, str(directory)))
@@ -385,7 +438,14 @@ def extract_glue_job_runs_path(directory: Path, job_name: str) -> list[Fact]:
         Fact(
             kind="glue.job_run.analyzed",
             subject={"job_name": job_name},
-            measures={"runs_analyzed": len(runs)},
+            measures={
+                "runs_analyzed": len(runs),
+                "runs_with_metrics": sum(
+                    1
+                    for run, _ in runs
+                    if _cloudwatch_artifact(job_name, run.get("Id") or "", cloudwatch_dir)
+                ),
+            },
             provenance={"extractor": EXTRACTOR_ID, "artifact": str(directory)},
         )
     )
