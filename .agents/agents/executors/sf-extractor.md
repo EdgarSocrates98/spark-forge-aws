@@ -43,6 +43,12 @@ própria `confidence` (`measured`/`declared`/`unknown`) e nunca aplica limiar un
 sem `--history` do próprio job, os eixos de escala saem `unknown` de propósito, em vez
 de um default inventado.
 
+Sobre capacidade — worker type e número de workers —, `sparkforge_capacity` é o par de
+`sparkforge_workload` e não outro extrator: o perfil DESCREVE o job por eixo, esta tool
+ESCOLHE, entre as capacidades que o job JÁ RODOU, a mais barata que cumpre o SLA. A
+escolha sai sempre `safety: "REVIEW"` — nada aqui aplica a mudança, e worker count
+continua decisão de quem pode ser perguntado.
+
 **`sparkforge_analyze_sql_metrics` não é o mesmo dado que `sparkforge_analyze_event_log`
 sobre o mesmo arquivo.** O event log agrega tudo que cai num stage — se duas fontes
 compartilham stage, o custo delas soma num número só, e não há como separar a fonte cara da

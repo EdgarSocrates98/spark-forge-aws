@@ -1924,6 +1924,137 @@ _WORKLOAD_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+# `Candidate.to_dict()` (`sparkforge/capacity/plan.py`). `safety` e SEMPRE
+# `REVIEW`: nenhum candidato nasce de outro jeito, e nada neste modulo aplica a
+# mudanca -- a mesma disciplina que a secao 34 do documento de origem exige.
+_CAPACITY_CANDIDATE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "glue_version",
+        "worker_type",
+        "number_of_workers",
+        "autoscaling",
+        "runs_total",
+        "runs_comparable",
+        "runs_within_sla",
+        "reliability",
+        "resolution",
+        "dpu_seconds_p95",
+        "meets_sla",
+        "safety",
+    ],
+    "properties": {
+        "glue_version": {"type": "string"},
+        "worker_type": {"type": "string"},
+        "number_of_workers": {"type": "integer"},
+        "autoscaling": {"type": "boolean"},
+        "runs_total": {"type": "integer"},
+        "runs_comparable": {
+            "type": "integer",
+            "description": "Runs dentro da tolerancia de volume do run corrente.",
+        },
+        "runs_within_sla": {"type": "integer"},
+        "reliability": {
+            "type": "number",
+            "description": "`runs_within_sla / runs_comparable`.",
+        },
+        "resolution": {
+            "type": "number",
+            "description": "`1 / runs_comparable` -- a menor diferenca observavel.",
+        },
+        "dpu_seconds_p95": {"type": "number"},
+        "meets_sla": {"type": "boolean"},
+        "safety": {
+            "type": "string",
+            "enum": ["REVIEW"],
+            "description": "Sempre `REVIEW`. Nenhum caminho deste modulo aplica a mudanca.",
+        },
+    },
+}
+
+# Forma variavel por `reason` (`sparkforge/capacity/plan.py`): `sla_not_declared`
+# so tem `detail`, os outros tres tambem carregam `capacity`, e
+# `resolution_too_coarse` acrescenta `runs_needed`. `additionalProperties: True`
+# no mesmo molde do `runtime` de `sparkforge_glue_dependency_audit`.
+_CAPACITY_REFUSED_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["reason", "detail"],
+    "properties": {
+        "reason": {
+            "type": "string",
+            "enum": [
+                "sla_not_declared",
+                "no_comparable_runs",
+                "cost_unobservable",
+                "resolution_too_coarse",
+            ],
+        },
+        "detail": {"type": "string"},
+        "capacity": {"type": "string"},
+        "runs_total": {"type": "integer"},
+        "runs_comparable": {"type": "integer"},
+        "runs_needed": {"type": "integer"},
+    },
+    "additionalProperties": True,
+}
+
+_CAPACITY_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "job_name",
+        "job_run_id",
+        "sla_minutes",
+        "reliability_target",
+        "volume_tolerance",
+        "current_volume_bytes",
+        "candidates",
+        "chosen",
+        "refused",
+        "discarded_runs",
+        "only_one_capacity_observed",
+    ],
+    "properties": {
+        "job_name": {"type": "string"},
+        "job_run_id": {"type": "string"},
+        "sla_minutes": {
+            "type": ["number", "null"],
+            "description": (
+                "`null` quando `workload.declared` nao tem `sla_minutes` para este "
+                "job -- sem SLA nao ha restricao a cumprir, e `refused` carrega "
+                "`sla_not_declared`."
+            ),
+        },
+        "reliability_target": {"type": ["number", "null"]},
+        "volume_tolerance": {"type": ["number", "null"]},
+        "current_volume_bytes": {
+            "type": ["integer", "null"],
+            "description": (
+                "Bytes varridos pelo run corrente, somando os `spark.sql.scan` de "
+                "`facts_path`. `null` quando nenhum scan publicou `bytes_read`."
+            ),
+        },
+        "candidates": {
+            "type": "array",
+            "items": _CAPACITY_CANDIDATE_SCHEMA,
+            "description": "Ordenados por `dpu_seconds_p95` -- a mais barata primeiro.",
+        },
+        "chosen": {
+            "oneOf": [_CAPACITY_CANDIDATE_SCHEMA, {"type": "null"}],
+            "description": (
+                "A capacidade mais barata que cumpre o SLA, ou `null` se nenhuma "
+                "cumpre."
+            ),
+        },
+        "refused": {"type": "array", "items": _CAPACITY_REFUSED_ITEM},
+        "discarded_runs": {
+            "type": "object",
+            "additionalProperties": {"type": "integer"},
+            "description": "Motivo de descarte -> quantos arquivos de historico cairam nele.",
+        },
+        "only_one_capacity_observed": {"type": "boolean"},
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -3186,6 +3317,61 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_capacity": {
+        "description": (
+            "Escolhe, entre as capacidades que o job JA RODOU, a mais BARATA que "
+            "cumpre o SLA -- nunca a mais rapida. `sparkforge_workload` DESCREVE o "
+            "job por eixo; esta tool ESCOLHE a capacidade, e a escolha e SEMPRE "
+            "`safety: \"REVIEW\"` -- nada aqui aplica a mudanca. Verbo de topo, nao "
+            "um `analyze`: nao extrai nada de artefato, decide sobre o que outros "
+            "verbos ja extrairam -- mesma razao de `benchmark`, `fuse` e `workload`. "
+            "TRES RECUSAS SUSTENTAM O RESULTADO: (1) so capacidade OBSERVADA entra "
+            "-- extrapolar para uma nunca rodada exigiria uma lei de escala que "
+            "fonte nenhuma publica; (2) so run COMPARAVEL conta -- fora da "
+            "tolerancia de volume do run corrente, o historico cai em "
+            "`discarded_runs`/`refused`, nunca some em silencio; (3) a RESOLUCAO e "
+            "declarada -- com `n` runs comparaveis a estimativa nao distingue nada "
+            "mais fino que `1/n`, e alvo mais fino que isso e recusa "
+            "(`resolution_too_coarse`), nao aprovacao."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "job_name", "job_run_id"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) do run CORRENTE -- precisa conter "
+                        "`workload.declared` (o SLA) e os `spark.sql.scan` que dao o "
+                        "volume de hoje, tipicamente `sparkforge_analyze_sql_metrics "
+                        "--out`."
+                    ),
+                },
+                "job_name": {"type": "string"},
+                "job_run_id": {
+                    "type": "string",
+                    "description": "Id do run que este plano descreve.",
+                },
+                "history_path": {
+                    "type": "string",
+                    "description": (
+                        "Diretorio com um arquivo de facts por run ANTERIOR "
+                        "(`sparkforge_analyze_glue_job_runs --out`, um por run), a "
+                        "fonte das capacidades observadas. Sem ele, `candidates` sai "
+                        "vazio -- nenhuma capacidade foi observada."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _CAPACITY_SUCCESS_SCHEMA,
+            (
+                "Plano de capacidade, ou erro se `facts_path` nao existe ou "
+                "`history_path` nao e um diretorio."
+            ),
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_funcval_plan": {
         "description": (
             "Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA "
@@ -4371,6 +4557,15 @@ def _h_workload(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_capacity(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.capacity_plan(
+        args["facts_path"],
+        job_name=args["job_name"],
+        job_run_id=args["job_run_id"],
+        history_path=args.get("history_path") or "",
+    )
+
+
 def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
     return _core.funcval_plan(
         args.get("facts_paths"),
@@ -4569,6 +4764,7 @@ _HANDLERS = {
     "sparkforge_iceberg_assess_upgrade": _h_iceberg_assess_upgrade,
     "sparkforge_benchmark": _h_benchmark,
     "sparkforge_workload": _h_workload,
+    "sparkforge_capacity": _h_capacity,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,

@@ -63,6 +63,7 @@ class TestToolSurface:
             "sparkforge_funcval_compare",
             "sparkforge_fuse",
             "sparkforge_workload",
+            "sparkforge_capacity",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
@@ -786,6 +787,77 @@ def _write_workload_facts_file(tmp_path):
     return path
 
 
+def _capacity_fact(kind, subject, measures=None, attrs=None):
+    return {
+        "id": "0" * 16,
+        "schema_version": 1,
+        "kind": kind,
+        "subject": subject,
+        "measures": measures or {},
+        "attrs": attrs or {},
+        "provenance": {},
+    }
+
+
+def _capacity_scan(bytes_read):
+    return _capacity_fact(
+        "spark.sql.scan",
+        {
+            "type": "plan_node",
+            "node_id": 1,
+            "operator": "Scan parquet",
+            "relation": "db.pedidos",
+            "symbol": "0:1",
+            "execution_id": 0,
+        },
+        {"bytes_read": bytes_read},
+        {"format": "parquet", "scan_api": "v1", "node_name": "Scan parquet"},
+    )
+
+
+def _capacity_run(run_id, segundos, workers, dpu):
+    return _capacity_fact(
+        "glue.job_run",
+        {"type": "job_run", "job_name": "etl", "job_run_id": run_id, "symbol": run_id},
+        {"execution_time_s": segundos, "number_of_workers": workers, "dpu_seconds": dpu},
+        {
+            "state": "SUCCEEDED",
+            "worker_type": "G.2X",
+            "glue_version": "5.0",
+            "autoscaling": False,
+            "dpu_source": "derived",
+        },
+    )
+
+
+def _write_capacity_facts_files(tmp_path):
+    """Facts do run corrente (SLA declarado + scan) e um diretorio de historico
+    com runs suficientes para `candidates`/`chosen` sairem preenchidos -- a
+    resolucao de 6 runs comparaveis sustenta o alvo padrao de 0.8."""
+    facts_path = tmp_path / "capacity_facts.json"
+    facts_path.write_text(
+        json.dumps(
+            [
+                _capacity_fact(
+                    "workload.declared",
+                    {"type": "job_run", "symbol": "etl"},
+                    {"sla_minutes": 10, "reliability_target": 0.8},
+                ),
+                _capacity_scan(1000),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    history_dir = tmp_path / "capacity_history"
+    history_dir.mkdir()
+    for i in range(6):
+        (history_dir / f"barato{i}.json").write_text(
+            json.dumps([_capacity_run(f"b{i}", 500, 10, 1000.0), _capacity_scan(1000)]),
+            encoding="utf-8",
+        )
+    return facts_path, history_dir
+
+
 _FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
 
 
@@ -1507,6 +1579,20 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             {"facts_path": str(facts_path), "job_name": "etl", "job_run_id": "jr_1"},
         )
 
+    if name == "sparkforge_capacity":
+        facts_path, history_dir = _write_capacity_facts_files(tmp_path)
+        result = call_tool(
+            "sparkforge_capacity",
+            {
+                "facts_path": str(facts_path),
+                "job_name": "etl",
+                "job_run_id": "jr_hoje",
+                "history_path": str(history_dir),
+            },
+        )
+        assert result["chosen"], "a amostra precisa render uma capacidade escolhida"
+        return result
+
     if name == "sparkforge_glue_dependency_audit":
         # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a
         # amostra precisa render achado, senao valida contra o schema pelo
@@ -1829,3 +1915,11 @@ class TestWorkloadTool:
         root = Path(__file__).resolve().parents[1]
         manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
         assert "sparkforge_workload" in set(manifest["tools"])
+
+
+class TestCapacityTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_capacity" in tools.TOOLS
+        assert "sparkforge_capacity" in tools._HANDLERS

@@ -541,6 +541,34 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o fingerprint completo (JSON) neste arquivo."
     )
 
+    # capacity -----------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `benchmark`, `fuse` e `workload`: nao
+    # extrai de artefato -- decide sobre o que outros verbos ja extrairam.
+    capacity_p = sub.add_parser(
+        "capacity",
+        help=(
+            "Escolhe a capacidade mais barata que cumpre o SLA, entre as capacidades "
+            "que o job JA rodou. Nunca aplica a mudanca."
+        ),
+    )
+    capacity_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
+    )
+    capacity_p.add_argument("--job-name", required=True)
+    capacity_p.add_argument(
+        "--job-run", required=True, help="Id do run que este plano descreve."
+    )
+    capacity_p.add_argument(
+        "--history",
+        help=(
+            "Diretorio com um arquivo de facts por run anterior "
+            "(`analyze glue-job-runs --out`), para as capacidades observadas."
+        ),
+    )
+    capacity_p.add_argument(
+        "--out", help="Escreve o plano completo (JSON) neste arquivo."
+    )
+
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
     # `plan` deriva de facts ja extraidos, `compare` le o resultado que o
@@ -1630,6 +1658,21 @@ def _cmd_workload(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_capacity(args: argparse.Namespace) -> int:
+    payload = _core.capacity_plan(
+        args.facts,
+        job_name=args.job_name,
+        job_run_id=args.job_run,
+        history_path=args.history or "",
+    )
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_funcval_plan(args: argparse.Namespace) -> int:
     """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
 
@@ -2057,6 +2100,7 @@ _DISPATCH = {
     ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
     ("benchmark", None): _cmd_benchmark,
     ("workload", None): _cmd_workload,
+    ("capacity", None): _cmd_capacity,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

@@ -2239,3 +2239,134 @@ class TestWorkloadCommand:
         payload = json.loads(capsys.readouterr().out)
 
         assert "scan_intensity" in payload["unknown_axes"]
+
+
+class TestCapacityCommand:
+    def _fact(self, kind, subject, measures=None, attrs=None):
+        return {
+            "id": "0" * 16,
+            "schema_version": 1,
+            "kind": kind,
+            "subject": subject,
+            "measures": measures or {},
+            "attrs": attrs or {},
+            "provenance": {},
+        }
+
+    def _scan(self, bytes_read):
+        return self._fact(
+            "spark.sql.scan",
+            {
+                "type": "plan_node",
+                "node_id": 1,
+                "operator": "Scan parquet",
+                "relation": "db.pedidos",
+                "symbol": "0:1",
+                "execution_id": 0,
+            },
+            {"bytes_read": bytes_read},
+            {"format": "parquet", "scan_api": "v1", "node_name": "Scan parquet"},
+        )
+
+    def _run(self, run_id, segundos, workers, dpu):
+        return self._fact(
+            "glue.job_run",
+            {
+                "type": "job_run",
+                "job_name": "etl",
+                "job_run_id": run_id,
+                "symbol": run_id,
+            },
+            {
+                "execution_time_s": segundos,
+                "number_of_workers": workers,
+                "dpu_seconds": dpu,
+            },
+            {
+                "state": "SUCCEEDED",
+                "worker_type": "G.2X",
+                "glue_version": "5.0",
+                "autoscaling": False,
+                "dpu_source": "derived",
+            },
+        )
+
+    def _monta(self, tmp_path):
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    self._fact(
+                        "workload.declared",
+                        {"type": "job_run", "symbol": "etl"},
+                        {"sla_minutes": 10, "reliability_target": 0.8},
+                    ),
+                    self._scan(1000),
+                ]
+            ),
+            encoding="utf-8",
+        )
+        historico = tmp_path / "history"
+        historico.mkdir()
+        for i in range(6):
+            (historico / f"barato{i}.json").write_text(
+                json.dumps([self._run(f"b{i}", 500, 10, 1000.0), self._scan(1000)]),
+                encoding="utf-8",
+            )
+        for i in range(6):
+            (historico / f"caro{i}.json").write_text(
+                json.dumps([self._run(f"c{i}", 200, 20, 2000.0), self._scan(1000)]),
+                encoding="utf-8",
+            )
+        return facts, historico
+
+    def test_capacity_is_a_top_level_verb(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts, historico = self._monta(tmp_path)
+        code = main(
+            [
+                "capacity",
+                "--facts",
+                str(facts),
+                "--job-name",
+                "etl",
+                "--job-run",
+                "jr_hoje",
+                "--history",
+                str(historico),
+            ]
+        )
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert len(payload["candidates"]) == 2
+        # As duas cabem no SLA de 10 min; a escolha e a mais barata.
+        assert payload["chosen"]["number_of_workers"] == 10
+        assert payload["chosen"]["safety"] == "REVIEW"
+
+    def test_out_file_carries_the_whole_plan(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts, historico = self._monta(tmp_path)
+        out = tmp_path / "plan.json"
+        code = main(
+            [
+                "capacity",
+                "--facts",
+                str(facts),
+                "--job-name",
+                "etl",
+                "--job-run",
+                "jr_hoje",
+                "--history",
+                str(historico),
+                "--out",
+                str(out),
+            ]
+        )
+
+        assert code == 0
+        plano = json.loads(out.read_text(encoding="utf-8"))
+        assert plano["job_run_id"] == "jr_hoje"
+        assert plano["reliability_target"] == 0.8

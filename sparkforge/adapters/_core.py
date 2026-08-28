@@ -20,6 +20,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from sparkforge.capacity import build_capacity_plan
 from sparkforge.case import router, store
 from sparkforge.case.playbook import build_playbook
 from sparkforge.case.resume import render_handoff
@@ -1601,23 +1602,44 @@ def workload_fingerprint(
     facts = _load_facts_file(facts_path, _FACTS_FROM_SQL_METRICS, "--facts")
     history: list[list[Fact]] = []
     if history_path:
-        hist_dir = Path(history_path)
-        if not hist_dir.is_dir():
-            raise AdapterError(
-                f"Diretorio de historico nao encontrado: {history_path}\n"
-                f"  Rode o verbo que produz os facts de cada run e grave um "
-                f"arquivo por run neste diretorio:\n"
-                f"    {_FACTS_FROM_GLUE_JOB_RUNS.format(path='<um-arquivo-por-run>.json')}",
-                exit_code=2,
-            )
-        for run_file in sorted(hist_dir.glob("*.json")):
-            history.append(
-                _load_facts_file(str(run_file), _FACTS_FROM_GLUE_JOB_RUNS, "--history")
-            )
+        history = _load_facts_dir(history_path, _FACTS_FROM_GLUE_JOB_RUNS, "--history")
     fingerprint = build_fingerprint(
         facts, job_name=job_name, job_run_id=job_run_id, history=history
     )
     return fingerprint.to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# capacity
+# --------------------------------------------------------------------------- #
+
+_FACTS_FROM_RUN_AND_SCAN = (
+    "por run anterior: sparkforge analyze glue-job-runs --path <dir> --job-name <job> "
+    "--out {path}\n"
+    "    e sparkforge analyze sql-metrics --path <event-log-do-run>.jsonl --out {path}"
+)
+
+
+def capacity_plan(
+    facts_path: str,
+    job_name: str,
+    job_run_id: str,
+    history_path: str = "",
+) -> dict[str, Any]:
+    """Escolhe a capacidade mais barata que cumpre o SLA, entre as observadas.
+
+    Verbo de TOPO, e nao `analyze capacity`, pela mesma razao de `benchmark`,
+    `fuse` e `workload`: nao extrai nada de artefato -- decide sobre o que
+    outros verbos ja extrairam.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
+    historico: list[list[Fact]] = []
+    if history_path:
+        historico = _load_facts_dir(history_path, _FACTS_FROM_RUN_AND_SCAN, "--history")
+    plano = build_capacity_plan(
+        facts, job_name=job_name, job_run_id=job_run_id, history=historico
+    )
+    return plano.to_dict()
 
 
 # --------------------------------------------------------------------------- #
@@ -2024,6 +2046,36 @@ def _load_facts_file(
     except json.JSONDecodeError as exc:
         raise AdapterError(f"{facts_path}: JSON invalido: {exc}", exit_code=2) from exc
     return _facts_from_dicts(raw)
+
+
+def _load_facts_dir(
+    dir_path: str,
+    producer: str = _FACTS_FROM_GLUE_JOB_RUNS,
+    label: str = "--history",
+) -> list[list[Fact]]:
+    """Carrega um DIRETORIO de historico: um arquivo de facts por run anterior.
+
+    Compartilhado por `workload_fingerprint` e `capacity_plan` -- os dois
+    esperam a mesma forma de historico (uma sequencia de conjuntos de facts,
+    um por run) e a mesma razao de separar por ARQUIVO: `execution_id` e por
+    aplicacao, e dois event logs diferentes colidem nele, entao uniar tudo
+    num conjunto so apagaria a fronteira entre runs que a escala do historico
+    precisa. Cada `*.json` do diretorio vira UM elemento da sequencia
+    devolvida, nunca um unico conjunto fundido.
+    """
+    hist_dir = Path(dir_path)
+    if not hist_dir.is_dir():
+        raise AdapterError(
+            f"Diretorio de historico nao encontrado: {dir_path}\n"
+            f"  Rode o verbo que produz os facts de cada run e grave um "
+            f"arquivo por run neste diretorio:\n"
+            f"    {producer.format(path='<um-arquivo-por-run>.json')}",
+            exit_code=2,
+        )
+    return [
+        _load_facts_file(str(run_file), producer, label)
+        for run_file in sorted(hist_dir.glob("*.json"))
+    ]
 
 
 def _merge_facts_files(
