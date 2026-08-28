@@ -27,6 +27,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterable, Iterator
+from pathlib import Path
 from typing import Any
 
 from sparkforge.facts.secrets import redact
@@ -46,6 +47,7 @@ EMITTED_KINDS = frozenset(
 
 _SQL_START = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart"
 _SQL_AQE = "org.apache.spark.sql.execution.ui.SparkListenerSQLAdaptiveExecutionUpdate"
+_SQL_END = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd"
 _DRIVER_ACCUM = "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates"
 _TASK_END = "SparkListenerTaskEnd"
 
@@ -109,6 +111,7 @@ class _Execution:
         self.accum: dict[int, tuple[int, str]] = {}
         self.reassigned: set[int] = set()
         self.values: dict[int, float] = {}
+        self.ended = False
 
     def add_value(self, accum_id: int, valor: float) -> bool:
         """Soma um valor a um acumulador conhecido. Devolve se ele foi atribuido."""
@@ -217,6 +220,7 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
     provenance = {"artifact": path, "artifact_sha256": "", "extractor": EXTRACTOR_ID}
     execucoes: dict[int, _Execution] = {}
     nao_atribuidos = 0
+    malformadas = 0
 
     for linha in lines:
         texto = linha.strip()
@@ -225,6 +229,7 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
         try:
             evento = json.loads(texto)
         except (ValueError, TypeError):
+            malformadas += 1
             continue
         if not isinstance(evento, dict):
             continue
@@ -274,6 +279,11 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                 atribuido = any(e.add_value(accum_id, numero) for e in execucoes.values())
                 if not atribuido:
                     nao_atribuidos += 1
+
+        elif nome == _SQL_END:
+            execucao = execucoes.get(evento.get("executionId"))
+            if execucao is not None:
+                execucao.ended = True
 
     facts: list[Fact] = []
     for execucao in sorted(execucoes.values(), key=lambda e: e.execution_id):
@@ -333,6 +343,57 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
             )
         )
 
+    for execucao in sorted(execucoes.values(), key=lambda e: e.execution_id):
+        for accum_id in sorted(execucao.reassigned):
+            facts.append(
+                Fact(
+                    kind="spark.sql.unresolved",
+                    subject=_plan_node_subject(execucao.execution_id, 0, "execution", ""),
+                    attrs={
+                        "reason": "accumulator_reassigned",
+                        "accumulator_id": accum_id,
+                        "detail": (
+                            "O mesmo accumulatorId aparece em dois nos do plano. Nenhum "
+                            "dos dois recebe o valor: escolher um poria bytes no no "
+                            "errado, e o relatorio ficaria plausivel e falso."
+                        ),
+                    },
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
+        if not execucao.ended:
+            facts.append(
+                Fact(
+                    kind="spark.sql.unresolved",
+                    subject=_plan_node_subject(execucao.execution_id, 0, "execution", ""),
+                    attrs={
+                        "reason": "incomplete_execution",
+                        "detail": (
+                            "Nenhum SparkListenerSQLExecutionEnd para esta execucao. O log "
+                            "foi cortado antes do fim, e as measures sao parciais."
+                        ),
+                    },
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
+
+    if not execucoes:
+        facts.append(
+            Fact(
+                kind="spark.sql.unresolved",
+                subject=_file_subject(path),
+                attrs={
+                    "reason": "no_sql_events",
+                    "detail": (
+                        "Nenhum evento do namespace org.apache.spark.sql.execution.ui neste "
+                        "log. Job que usa so RDD nao publica metrica de plano SQL -- e outra "
+                        "coisa, nao um defeito."
+                    ),
+                },
+                provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+            )
+        )
+
     facts.append(
         Fact(
             kind="spark.sql.analyzed",
@@ -341,6 +402,7 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                 "executions": len(execucoes),
                 "scan_nodes": sum(len(e.nodes) for e in execucoes.values()),
                 "unattributed_accumulators": nao_atribuidos,
+                "malformed_lines": malformadas,
             },
             provenance=provenance,
         )
@@ -351,3 +413,26 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
         raise AssertionError(f"kind fora do namespace declarado: {sorted(unknown)}")
 
     return sort_facts(facts)
+
+
+def extract_sql_metrics_path(path: Path, repo_root: Path | None = None) -> list[Fact]:
+    """Le o event log do disco em streaming e delega para `extract_sql_metrics`.
+
+    Falha ao abrir vira um unico `spark.sql.unresolved` com razao `read_error`,
+    nunca uma excecao que derruba quem chamou -- mesma convencao de
+    `event_log.extract_event_log_path`.
+    """
+    rel = str(path.relative_to(repo_root)) if repo_root else str(path)
+    anchor = rel.replace("\\", "/")
+    try:
+        with path.open(encoding="utf-8-sig") as handle:
+            return extract_sql_metrics(handle, anchor)
+    except OSError as exc:
+        return [
+            Fact(
+                kind="spark.sql.unresolved",
+                subject=_file_subject(anchor),
+                attrs={"reason": "read_error", "detail": str(exc)},
+                provenance={"extractor": EXTRACTOR_ID, "artifact": anchor},
+            )
+        ]

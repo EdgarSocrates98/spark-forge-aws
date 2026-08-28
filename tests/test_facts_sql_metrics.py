@@ -145,6 +145,149 @@ def _accumulable(accumulator_id, name, update, value):
     }
 
 
+SQL_AQE = "org.apache.spark.sql.execution.ui.SparkListenerSQLAdaptiveExecutionUpdate"
+SQL_END = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd"
+
+
+def _aqe(execution_id, plan):
+    return json.dumps(
+        {
+            "Event": SQL_AQE,
+            "executionId": execution_id,
+            "physicalPlanDescription": "== Physical Plan ==",
+            "sparkPlanInfo": plan,
+        }
+    )
+
+
+def _end(execution_id):
+    return json.dumps(
+        {"Event": SQL_END, "executionId": execution_id, "time": 1600000000001}
+    )
+
+
+class TestAQE:
+    def test_replanned_execution_declares_the_final_source(self):
+        inicial = _scan_node(metrics=[_metric("number of files read", 11)])
+        final = _scan_node(
+            simple="FileScan parquet db.clientes[id#1]",
+            metrics=[_metric("number of files read", 21)],
+        )
+        facts = extract_sql_metrics(
+            [_start(plan=inicial), _aqe(0, final), _driver_update(0, [[21, 4]]), _end(0)],
+            "log.jsonl",
+        )
+        execucao = [f for f in facts if f.kind == "spark.sql.execution"][0]
+        scan = [f for f in facts if f.kind == "spark.sql.scan"][0]
+
+        assert execucao.attrs["plan_source"] == "final_aqe"
+        assert scan.measures["files_read"] == 4
+
+    def test_same_accumulator_in_two_nodes_refuses_to_attribute(self):
+        plano = {
+            "nodeName": "Union",
+            "simpleString": "Union",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(metrics=[_metric("number of files read", 11)]),
+                _scan_node(
+                    simple="FileScan parquet db.pedidos[id#2]",
+                    metrics=[_metric("number of files read", 11)],
+                ),
+            ],
+        }
+        facts = extract_sql_metrics(
+            [_start(plan=plano), _driver_update(0, [[11, 9]]), _end(0)], "log.jsonl"
+        )
+        scans = [f for f in facts if f.kind == "spark.sql.scan"]
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.unresolved"
+            and f.attrs["reason"] == "accumulator_reassigned"
+        ]
+
+        assert all("files_read" not in s.measures for s in scans)
+        assert len(lacunas) == 1
+
+
+class TestRefusals:
+    def test_log_without_sql_events_says_so_instead_of_looking_broken(self):
+        facts = extract_sql_metrics(
+            [json.dumps({"Event": "SparkListenerApplicationStart", "App Name": "x"})],
+            "log.jsonl",
+        )
+        sentinela = [f for f in facts if f.kind == "spark.sql.analyzed"][0]
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.unresolved" and f.attrs["reason"] == "no_sql_events"
+        ]
+
+        assert sentinela.measures["executions"] == 0
+        assert len(lacunas) == 1
+        assert not [f for f in facts if f.kind == "spark.sql.scan"]
+
+    def test_malformed_line_is_counted_and_the_pass_continues(self):
+        facts = extract_sql_metrics(
+            ["{nao e json", _start(plan=_scan_node()), _end(0)], "log.jsonl"
+        )
+        sentinela = [f for f in facts if f.kind == "spark.sql.analyzed"][0]
+
+        assert sentinela.measures["malformed_lines"] == 1
+        assert len([f for f in facts if f.kind == "spark.sql.scan"]) == 1
+
+    def test_execution_without_an_end_event_is_declared_incomplete(self):
+        facts = extract_sql_metrics([_start(plan=_scan_node())], "log.jsonl")
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.unresolved"
+            and f.attrs["reason"] == "incomplete_execution"
+        ]
+
+        assert len(lacunas) == 1
+
+    def test_missing_file_becomes_a_fact_never_an_exception(self, tmp_path):
+        from sparkforge.facts.sql_metrics import extract_sql_metrics_path
+
+        facts = extract_sql_metrics_path(tmp_path / "nao-existe.jsonl")
+        assert [f.attrs["reason"] for f in facts] == ["read_error"]
+
+
+class TestSchema:
+    def test_every_emitted_fact_validates(self):
+        from sparkforge.findings.validate import validate_fact
+
+        plano = {
+            "nodeName": "Union",
+            "simpleString": "Union",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(metrics=[_metric("number of files read", 11)]),
+                _scan_node(
+                    simple="BatchScan db.eventos[id#2]",
+                    metrics=[_metric("metrica que nao existe", 12)],
+                ),
+            ],
+        }
+        facts = extract_sql_metrics(
+            [_start(plan=plano), _driver_update(0, [[11, 2], [12, 3]])], "log.jsonl"
+        )
+
+        assert facts
+        for fact in facts:
+            validate_fact(fact.to_dict())
+
+    def test_every_emitted_kind_is_declared(self):
+        from sparkforge.facts.sql_metrics import EMITTED_KINDS
+
+        facts = extract_sql_metrics([_start(plan=_scan_node())], "log.jsonl")
+        assert {f.kind for f in facts} <= EMITTED_KINDS
+
+
 class TestValues:
     def test_driver_metric_becomes_a_measure(self):
         plano = _scan_node(metrics=[_metric("number of files read", 11)])
