@@ -92,7 +92,12 @@ class TestSemLastro:
 
         assert eixo.value == "unknown"
         assert eixo.missing
+        # As DUAS metades importam. `collect glue-job-runs` so diz quais runs
+        # existem; quem produz o historico de VOLUME e o `analyze sql-metrics`
+        # sobre o event log de cada um. Cobrar so a primeira deixaria passar um
+        # comando que manda o operador a um caminho que nao fecha a lacuna.
         assert "collect glue-job-runs" in eixo.collect_command
+        assert "analyze sql-metrics" in eixo.collect_command
 
     def test_axes_that_do_not_need_history_stay_filled(self):
         fp = build_fingerprint(
