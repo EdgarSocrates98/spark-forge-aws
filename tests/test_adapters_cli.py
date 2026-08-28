@@ -2133,3 +2133,63 @@ class TestGlueJobRunsCommands:
         kinds = {f["kind"] for f in json.loads(out.read_text(encoding="utf-8"))}
         assert "glue.job_run" in kinds
         assert "glue.job_run.distribution" in kinds
+
+
+class TestSqlMetricsCommand:
+    def _log(self, tmp_path):
+        alvo = tmp_path / "eventlog.jsonl"
+        alvo.write_text(
+            json.dumps(
+                {
+                    "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart",
+                    "executionId": 0,
+                    "description": "save",
+                    "physicalPlanDescription": "== Physical Plan ==",
+                    "sparkPlanInfo": {
+                        "nodeName": "Scan parquet ",
+                        "simpleString": "FileScan parquet db.clientes[id#1]",
+                        "children": [],
+                        "metadata": {"Format": "Parquet"},
+                        "metrics": [
+                            {
+                                "name": "number of files read",
+                                "accumulatorId": 11,
+                                "metricType": "sum",
+                            }
+                        ],
+                    },
+                    "time": 1,
+                }
+            )
+            + "\n"
+            + json.dumps(
+                {
+                    "Event": "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates",
+                    "executionId": 0,
+                    "accumUpdates": [[11, 6]],
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return alvo
+
+    def test_analyze_sql_metrics_prints_scan_facts(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        assert main(["analyze", "sql-metrics", "--path", str(self._log(tmp_path))]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_kind"]["spark.sql.scan"] == 1
+
+    def test_out_file_carries_the_measured_bytes(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        out = tmp_path / "facts.json"
+        code = main(
+            ["analyze", "sql-metrics", "--path", str(self._log(tmp_path)), "--out", str(out)]
+        )
+
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        scan = [f for f in facts if f["kind"] == "spark.sql.scan"][0]
+        assert scan["measures"]["files_read"] == 6

@@ -69,6 +69,7 @@ from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
+from sparkforge.facts.sql_metrics import extract_sql_metrics_path
 from sparkforge.facts.terraform import (
     extract_terraform_diff,
     extract_terraform_path,
@@ -831,6 +832,31 @@ def analyze_event_log(
 ) -> dict[str, Any]:
     facts = _extract_event_log_facts(path)
     return _facts_page(facts, "spark.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze sql-metrics
+# --------------------------------------------------------------------------- #
+
+
+def analyze_sql_metrics(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    target = Path(path)
+    if not target.is_file():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um Spark event log (JSON Lines):\n"
+            f"    sparkforge analyze sql-metrics "
+            f"--path .sparkforge/artifacts/eventlog/app.jsonl",
+            exit_code=2,
+        )
+    facts = extract_sql_metrics_path(target)
+    return _facts_page(facts, "spark.sql.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #

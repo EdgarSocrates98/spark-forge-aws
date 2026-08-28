@@ -182,6 +182,17 @@ def build_parser() -> argparse.ArgumentParser:
     event_log_analyze_p.add_argument("--cursor")
     _add_detail_level(event_log_analyze_p)
 
+    sqlm_p = analyze_sub.add_parser(
+        "sql-metrics",
+        help="Extrai metrica por no do plano de um Spark event log ja coletado.",
+    )
+    sqlm_p.add_argument("--path", required=True, help="Event log em JSON Lines.")
+    sqlm_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    sqlm_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    sqlm_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    sqlm_p.add_argument("--cursor")
+    _add_detail_level(sqlm_p)
+
     cw_analyze_p = analyze_sub.add_parser(
         "cloudwatch",
         help="Extrai facts de um artefato de metricas do CloudWatch ja coletado.",
@@ -1185,6 +1196,27 @@ def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze_sql_metrics(args: argparse.Namespace) -> int:
+    full = _core.analyze_sql_metrics(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
 def _cmd_analyze_cloudwatch(args: argparse.Namespace) -> int:
     full = _core.analyze_cloudwatch(args.path, kind=args.kind, limit=None)
     if args.out:
@@ -1964,6 +1996,7 @@ _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
+    ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,
     ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
     ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
     ("analyze", "plan"): _cmd_analyze_plan,
