@@ -3801,18 +3801,39 @@ fixtures sintéticas em `fixtures/glue_job_run/`, com módulo golden próprio
 
 Faixa de commits: `7c7d35d` … `6a0bb6d`.
 
-### Dois desvios do plano
+### Dois desvios do plano — e o primeiro deles era defeito, não desvio
 
-**As duas tools de análise não reusam `_ANALYZE_FACTS_SCHEMA`.** `_FACT_SUBJECT`
-exige `subject.type` de um enum fechado de sete valores (`source_location`,
-`stage`, `task`, `tf_resource`, `table`, `job_run`, `plan_node`), um por
-extrator ancorado em código, plano ou tabela. Os extratores de CloudWatch e
-histórico de run Glue ancoram em outra coisa — `job_name`+`job_run_id`, ou a
-tupla de capacidade inteira em `glue.job_run.distribution`/`.outcome` — e não
-cabem nesse enum. Fingir que cabiam teria inventado um tipo que o extrator
-nunca emite; `_ANALYZE_GLUE_FACTS_SCHEMA`, novo em
-`sparkforge/adapters/tools.py`, usa `subject` genérico, com a razão escrita no
-comentário ao lado.
+**~~As duas tools de análise não reusam `_ANALYZE_FACTS_SCHEMA`.~~ Corrigido em
+2026-08-28, commits `6cd50ee` e `152ece7`.** O texto original desta linha dizia
+que `_FACT_SUBJECT` exige `subject.type` de um enum fechado de sete valores, que
+os subjects desta entrega — `job_name`+`job_run_id`, ou a tupla de capacidade em
+`glue.job_run.distribution`/`.outcome` — não cabiam nele, e que
+`_ANALYZE_GLUE_FACTS_SCHEMA`, com `subject` genérico, era a saída honesta.
+
+**Estava errado, e o erro foi medido ao abrir o subprojeto C.** `subject.type`
+não é exigência do schema de *tool*: é exigência do schema de *Fact*
+(`sparkforge/findings/schemas/fact.schema.json`), que vale para todo fact do
+projeto. Os oito kinds desta entrega reprovavam em `validate_fact` — não havia
+enum apertado demais, havia oito facts inválidos. O schema genérico na fronteira
+MCP não era uma adaptação ao enum; era o defeito atravessando a fronteira sem
+ser visto.
+
+Passou porque `tests/test_fixtures_golden_glue_job_run.py` não chamava
+`validate_fact`, e todos os módulos golden irmãos chamam. O gate existia; o
+módulo novo não o exercia.
+
+Consertado emitindo o que o contrato sempre exigiu: `type: "job_run"` em todos
+os oito kinds, com `symbol` derivado do `job_run_id` para os facts por run e de
+uma assinatura JSON posicional para os agregados — precedente de
+`spark.job.spill_summary` (`event_log.py:646`), que também é agregado e também
+usa `job_run`. Ganho além do schema: `same_subject` agrupa por `subject.symbol`,
+e sem símbolo nenhuma regra futura correlacionaria esses facts.
+`_ANALYZE_GLUE_FACTS_SCHEMA` saiu de `sparkforge/adapters/tools.py`, e as duas
+tools voltaram ao `_ANALYZE_FACTS_SCHEMA` de todas as outras.
+
+**A lição que fica registrada:** módulo golden novo que não chama
+`validate_fact` desliga o gate para o domínio inteiro, e a suíte fica verde
+sobre facts inválidos.
 
 **As fixtures de `fixtures/glue_job_run/` não têm `expected/facts.json`
 byte-exato**, ao contrário dos goldens de Athena e EMR. Nenhuma regra do
