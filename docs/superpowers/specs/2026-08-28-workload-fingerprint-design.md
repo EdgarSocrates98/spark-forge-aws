@@ -236,14 +236,20 @@ campo.
 ## 5. Superfície
 
 ```
-sparkforge analyze workload --path <diretorio de facts> --job-name <job> [--history <dir>] [--out F]
+sparkforge workload --facts <facts.json> --job-name <job> [--history <facts.json>] [--out F]
 ```
 
-Consome **facts já extraídos**, não artefatos brutos — no molde de `benchmark` e de
-`funcval compare`, que também operam sobre a saída de outros verbos. Isso mantém o fingerprint
-fora do negócio de ler artefato, que é dos extratores.
+**Verbo de topo, e não `analyze workload`.** A razão está escrita no código, em
+`_core.benchmark_runs`: *"os verbos sob `analyze` extraem facts de um artefato, e este não
+extrai nada — ele compara dois conjuntos já extraídos. Mesma razão pela qual `fuse` é verbo
+próprio."* O fingerprint consome facts já extraídos e não lê artefato nenhum, então cai
+exatamente nessa regra, ao lado de `benchmark`, `fuse` e `funcval`.
 
-Tool MCP `sparkforge_analyze_workload`, read-only local. O subject do resultado é
+`--facts` e `--history` são arquivos de `--out` de outros verbos, carregados por
+`_load_facts_file` com o `producer` que diz qual comando produz cada lado — o mesmo mecanismo
+que já orienta quem chama `benchmark` sem os dois arquivos.
+
+Tool MCP `sparkforge_workload`, read-only local. O subject do resultado é
 `{type: "job_run", symbol: <job_run_id>}` — a entidade é um run visto no contexto do seu
 histórico, e `job_run` já está no enum fechado de `subject.type`.
 
