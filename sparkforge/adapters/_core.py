@@ -44,6 +44,7 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
 )
+from sparkforge.facts.cloudwatch import extract_cloudwatch_path
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
 from sparkforge.facts.data_quality import (
     extract_data_quality_path,
@@ -57,6 +58,7 @@ from sparkforge.facts.emr_serverless import (
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
+from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
 from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
 from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
@@ -829,6 +831,63 @@ def analyze_event_log(
 ) -> dict[str, Any]:
     facts = _extract_event_log_facts(path)
     return _facts_page(facts, "spark.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze cloudwatch / glue-job-runs
+# --------------------------------------------------------------------------- #
+
+
+def _extract_cloudwatch_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.is_file():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um artefato gravado por `sparkforge collect cloudwatch`:\n"
+            f"    sparkforge analyze cloudwatch "
+            f"--path .sparkforge/artifacts/cloudwatch/<job>_<run>.json",
+            exit_code=2,
+        )
+    return extract_cloudwatch_path(target)
+
+
+def analyze_cloudwatch(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_cloudwatch_facts(path)
+    return _facts_page(facts, "glue.metric.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_glue_job_runs(
+    path: str,
+    job_name: str,
+    cloudwatch: str | None = None,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    target = Path(path)
+    if not target.is_dir():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o DIRETORIO de artefatos de run, nao para um arquivo:\n"
+            f"    sparkforge analyze glue-job-runs "
+            f"--path .sparkforge/artifacts/glue_job_run/ --job-name <job>",
+            exit_code=2,
+        )
+    cw_dir = Path(cloudwatch) if cloudwatch else None
+    if cw_dir is not None and not cw_dir.is_dir():
+        raise AdapterError(
+            f"--cloudwatch aponta para {cloudwatch}, que nao e um diretorio existente.",
+            exit_code=2,
+        )
+    facts = extract_glue_job_runs_path(target, job_name, cloudwatch_dir=cw_dir)
+    return _facts_page(facts, "glue.job_run.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -3222,6 +3281,19 @@ def collect_cloudwatch(
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
+
+
+def collect_glue_job_runs(
+    repo: str, *, job_name: str, max_runs: int, now: str
+) -> dict[str, Any]:
+    try:
+        return collect_aws.collect_glue_job_runs(
+            job_name, Path(repo), max_runs=max_runs, now=now
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(
+            exc, repo, collect_aws.glue_job_run_path(job_name, "<run-id>")
+        ) from exc
 
 
 def collect_iceberg_metadata(

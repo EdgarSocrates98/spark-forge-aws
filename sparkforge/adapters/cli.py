@@ -182,6 +182,35 @@ def build_parser() -> argparse.ArgumentParser:
     event_log_analyze_p.add_argument("--cursor")
     _add_detail_level(event_log_analyze_p)
 
+    cw_analyze_p = analyze_sub.add_parser(
+        "cloudwatch",
+        help="Extrai facts de um artefato de metricas do CloudWatch ja coletado.",
+    )
+    cw_analyze_p.add_argument("--path", required=True, help="Artefato JSON do CloudWatch.")
+    cw_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    cw_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    cw_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    cw_analyze_p.add_argument("--cursor")
+    _add_detail_level(cw_analyze_p)
+
+    runs_analyze_p = analyze_sub.add_parser(
+        "glue-job-runs",
+        help="Extrai facts de historico do diretorio de artefatos de run Glue.",
+    )
+    runs_analyze_p.add_argument(
+        "--path", required=True, help="DIRETORIO de artefatos glue_job_run."
+    )
+    runs_analyze_p.add_argument("--job-name", required=True)
+    runs_analyze_p.add_argument(
+        "--cloudwatch",
+        help="Diretorio de artefatos cloudwatch, para correlacionar por job_run_id.",
+    )
+    runs_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    runs_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    runs_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    runs_analyze_p.add_argument("--cursor")
+    _add_detail_level(runs_analyze_p)
+
     plan_p = analyze_sub.add_parser(
         "plan",
         help=(
@@ -1030,6 +1059,20 @@ def build_parser() -> argparse.ArgumentParser:
     cloudwatch_p.add_argument("--end", required=True, help="Fim ISO 8601.")
     cloudwatch_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    job_runs_p = collect_sub.add_parser(
+        "glue-job-runs",
+        help="Baixa o historico de execucoes de um job, um artefato por run terminal.",
+    )
+    job_runs_p.add_argument("--repo", required=True)
+    job_runs_p.add_argument("--job-name", required=True)
+    job_runs_p.add_argument(
+        "--max-runs",
+        type=int,
+        default=30,
+        help="Teto de paginacao. A API devolve do mais recente para tras.",
+    )
+    job_runs_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     iceberg_p = collect_sub.add_parser(
         "iceberg-metadata", help="Consulta metadata tables Iceberg de uma tabela via Athena."
     )
@@ -1123,6 +1166,54 @@ def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
     full = _core.analyze_event_log(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_cloudwatch(args: argparse.Namespace) -> int:
+    full = _core.analyze_cloudwatch(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_glue_job_runs(args: argparse.Namespace) -> int:
+    full = _core.analyze_glue_job_runs(
+        args.path,
+        job_name=args.job_name,
+        cloudwatch=args.cloudwatch,
+        kind=args.kind,
+        limit=None,
+    )
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -1739,6 +1830,14 @@ def _cmd_collect_cloudwatch(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_glue_job_runs(args: argparse.Namespace) -> int:
+    payload = _core.collect_glue_job_runs(
+        args.repo, job_name=args.job_name, max_runs=args.max_runs, now=args.now
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_iceberg_metadata(args: argparse.Namespace) -> int:
     payload = _core.collect_iceberg_metadata(
         args.repo,
@@ -1865,6 +1964,8 @@ _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
+    ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
+    ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
     ("analyze", "plan"): _cmd_analyze_plan,
     ("analyze", "terraform"): _cmd_analyze_terraform,
     ("analyze", "iceberg"): _cmd_analyze_iceberg,
@@ -1915,6 +2016,7 @@ _DISPATCH = {
     ("collect", "event-log"): _cmd_collect_event_log,
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
+    ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,

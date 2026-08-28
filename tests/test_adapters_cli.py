@@ -2061,3 +2061,75 @@ class TestEmrFlag:
     def test_cli_and_mcp_agree(self, capsys):
         _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
         assert json.loads(output) == call_tool("sparkforge_runtime_detect", {"emr": "emr-7.5.0"})
+
+
+class TestGlueJobRunsCommands:
+    def test_analyze_cloudwatch_prints_metric_facts(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        artifact = tmp_path / "cw.json"
+        artifact.write_text(
+            json.dumps(
+                {
+                    "job_name": "my-job",
+                    "job_run_id": "jr_1",
+                    "start": "2026-08-01T10:00:00Z",
+                    "end": "2026-08-01T10:20:00Z",
+                    "period_seconds": 60,
+                    "metric_data_results": [
+                        {
+                            "Id": "m0",
+                            "Label": "glue.driver.workerUtilization",
+                            "Timestamps": ["t"],
+                            "Values": [0.5],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        assert main(["analyze", "cloudwatch", "--path", str(artifact)]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_kind"]["glue.metric"] == 1
+
+    def test_analyze_glue_job_runs_writes_out_file(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        runs_dir = tmp_path / "runs"
+        runs_dir.mkdir()
+        (runs_dir / "my-job_jr_1.json").write_text(
+            json.dumps(
+                {
+                    "Id": "jr_1",
+                    "JobName": "my-job",
+                    "JobRunState": "SUCCEEDED",
+                    "StartedOn": "2026-08-01T10:00:00+00:00",
+                    "CompletedOn": "2026-08-01T10:20:00+00:00",
+                    "ExecutionTime": 1200,
+                    "GlueVersion": "5.0",
+                    "WorkerType": "G.1X",
+                    "NumberOfWorkers": 10,
+                }
+            ),
+            encoding="utf-8",
+        )
+        out = tmp_path / "facts.json"
+
+        code = main(
+            [
+                "analyze",
+                "glue-job-runs",
+                "--path",
+                str(runs_dir),
+                "--job-name",
+                "my-job",
+                "--out",
+                str(out),
+            ]
+        )
+
+        assert code == 0
+        kinds = {f["kind"] for f in json.loads(out.read_text(encoding="utf-8"))}
+        assert "glue.job_run" in kinds
+        assert "glue.job_run.distribution" in kinds
