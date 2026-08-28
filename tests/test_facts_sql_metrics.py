@@ -109,3 +109,104 @@ class TestNoLeak:
 
         assert "s3://bucket/x" not in blob
         assert "InMemoryFileIndex" not in blob
+
+
+DRIVER_ACCUM = "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates"
+
+
+def _metric(name, accumulator_id, metric_type="sum"):
+    return {"name": name, "accumulatorId": accumulator_id, "metricType": metric_type}
+
+
+def _driver_update(execution_id, pares):
+    return json.dumps(
+        {"Event": DRIVER_ACCUM, "executionId": execution_id, "accumUpdates": pares}
+    )
+
+
+def _task_end(accumulables):
+    return json.dumps(
+        {
+            "Event": "SparkListenerTaskEnd",
+            "Stage ID": 1,
+            "Task Info": {"Accumulables": accumulables},
+        }
+    )
+
+
+def _accumulable(accumulator_id, name, update, value):
+    return {
+        "ID": accumulator_id,
+        "Name": name,
+        "Update": str(update),
+        "Value": str(value),
+        "Internal": False,
+        "Count Failed Values": True,
+    }
+
+
+class TestValues:
+    def test_driver_metric_becomes_a_measure(self):
+        plano = _scan_node(metrics=[_metric("number of files read", 11)])
+        facts = extract_sql_metrics(
+            [_start(plan=plano), _driver_update(0, [[11, 7]])], "log.jsonl"
+        )
+        scan = [f for f in facts if f.kind == "spark.sql.scan"][0]
+
+        assert scan.measures["files_read"] == 7
+
+    def test_task_metric_sums_the_updates_not_the_running_value(self):
+        plano = _scan_node(metrics=[_metric("size of files read", 12, "size")])
+        facts = extract_sql_metrics(
+            [
+                _start(plan=plano),
+                _task_end([_accumulable(12, "size of files read", 1000, 1000)]),
+                _task_end([_accumulable(12, "size of files read", 500, 1500)]),
+            ],
+            "log.jsonl",
+        )
+        scan = [f for f in facts if f.kind == "spark.sql.scan"][0]
+
+        # 1000 + 500. Somar `Value` daria 2500, que conta o total duas vezes.
+        assert scan.measures["bytes_read"] == 1500
+
+    def test_metric_the_execution_never_published_is_absent_not_zero(self):
+        plano = _scan_node(metrics=[_metric("number of files read", 11)])
+        facts = extract_sql_metrics(
+            [_start(plan=plano), _driver_update(0, [[11, 3]])], "log.jsonl"
+        )
+        scan = [f for f in facts if f.kind == "spark.sql.scan"][0]
+
+        assert scan.measures["files_read"] == 3
+        assert "bytes_read" not in scan.measures
+        assert "rows_output" not in scan.measures
+
+    def test_unknown_metric_name_becomes_unresolved_never_a_guess(self):
+        plano = _scan_node(metrics=[_metric("bytes of shuffle write", 13)])
+        facts = extract_sql_metrics(
+            [_start(plan=plano), _driver_update(0, [[13, 999]])], "log.jsonl"
+        )
+        scan = [f for f in facts if f.kind == "spark.sql.scan"][0]
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.unresolved"
+            and f.attrs["reason"] == "unknown_metric_name"
+        ]
+
+        assert scan.measures == {}
+        assert len(lacunas) == 1
+        assert lacunas[0].attrs["metric_name"] == "bytes of shuffle write"
+
+    def test_accumulator_of_no_sql_node_is_counted_not_discarded(self):
+        plano = _scan_node(metrics=[_metric("number of files read", 11)])
+        facts = extract_sql_metrics(
+            [
+                _start(plan=plano),
+                _task_end([_accumulable(9999, "internal.metrics.executorRunTime", 5, 5)]),
+            ],
+            "log.jsonl",
+        )
+        sentinela = [f for f in facts if f.kind == "spark.sql.analyzed"][0]
+
+        assert sentinela.measures["unattributed_accumulators"] == 1

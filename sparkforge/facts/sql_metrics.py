@@ -8,9 +8,12 @@ Modulo separado pelo precedente que o repositorio ja tem: `data_quality` e
 O que liga os dois lados ja esta dentro do arquivo, e ninguem lia:
 `SparkListenerSQLExecutionStart` carrega `sparkPlanInfo`, a arvore do plano com
 os `accumulatorId` de cada metrica; os valores chegam depois, em
-`SparkListenerDriverAccumUpdates` e nos `Accumulables` de `SparkListenerTaskEnd`.
-Esta Task (3 de 9) so constroi a arvore e o mapa de acumuladores -- NENHUM
-valor de metrica ainda. Valores sao a Task 4; recusas e AQE, a Task 5.
+`SparkListenerDriverAccumUpdates` (driver) e nos `Accumulables` de
+`SparkListenerTaskEnd` (tarefa, somando `Update`, nunca o `Value` corrente).
+Esta Task (4 de 9) atribui esses valores ao no que os publicou. Acumulador de
+no reatribuido ou sem no continua fora de qualquer measure -- ele so soma em
+`unattributed_accumulators`, no fact `spark.sql.analyzed`. AQE e as recusas
+estruturadas sao a Task 5.
 
 Streaming, uma passada, como `extract_event_log`: o insumo pode ter centenas de
 MB, e uma unica linha de `SQLExecutionStart` carrega o
@@ -27,6 +30,7 @@ from collections.abc import Iterable, Iterator
 from typing import Any
 
 from sparkforge.facts.secrets import redact
+from sparkforge.facts.sql_metric_names import measure_for
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "sql_metrics@0.1.0"
@@ -42,6 +46,8 @@ EMITTED_KINDS = frozenset(
 
 _SQL_START = "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart"
 _SQL_AQE = "org.apache.spark.sql.execution.ui.SparkListenerSQLAdaptiveExecutionUpdate"
+_DRIVER_ACCUM = "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates"
+_TASK_END = "SparkListenerTaskEnd"
 
 # Mesma distincao que `spark_plan.py` faz sobre o texto do `explain`, aplicada
 # aqui sobre `simpleString`. Reescrita em vez de importada pela razao ja
@@ -102,6 +108,34 @@ class _Execution:
         # accumulatorId -> (node_id, nome publicado da metrica)
         self.accum: dict[int, tuple[int, str]] = {}
         self.reassigned: set[int] = set()
+        self.values: dict[int, float] = {}
+
+    def add_value(self, accum_id: int, valor: float) -> bool:
+        """Soma um valor a um acumulador conhecido. Devolve se ele foi atribuido."""
+        if accum_id in self.reassigned or accum_id not in self.accum:
+            return False
+        self.values[accum_id] = self.values.get(accum_id, 0.0) + valor
+        return True
+
+    def measures_by_node(self) -> tuple[dict[int, dict[str, Any]], list[tuple[int, str]]]:
+        """`{node_id: {measure: valor}}` e a lista de nomes fora do mapa."""
+        por_no: dict[int, dict[str, Any]] = {}
+        desconhecidos: list[tuple[int, str]] = []
+        for accum_id, (node_id, nome) in sorted(self.accum.items()):
+            if node_id not in self.nodes:
+                continue
+            measure = measure_for(nome)
+            if measure is None:
+                desconhecidos.append((node_id, nome))
+                continue
+            if accum_id not in self.values:
+                # Metrica declarada no plano e nunca publicada. Ausencia, nao zero.
+                continue
+            valor = self.values[accum_id]
+            por_no.setdefault(node_id, {})[measure] = (
+                int(valor) if float(valor).is_integer() else valor
+            )
+        return por_no, desconhecidos
 
     def absorb_plan(self, plano: dict[str, Any], source: str) -> None:
         self.plan_source = source
@@ -171,13 +205,18 @@ def _file_subject(path: str) -> dict[str, Any]:
 def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
     """Extrai Facts de um Spark event log dado como `Iterable[str]`.
 
-    Le apenas `SparkListenerSQLExecutionStart` (e a atualizacao de AQE, cujo
+    Le `SparkListenerSQLExecutionStart` (e a atualizacao de AQE, cujo
     tratamento pleno e Task 5) para montar a arvore do plano por execucao e o
-    mapa de acumuladores. Nenhum valor de `SparkListenerDriverAccumUpdates`
-    nem de `SparkListenerTaskEnd` e lido aqui -- essa e a Task 4.
+    mapa de acumuladores, depois `SparkListenerDriverAccumUpdates` e os
+    `Accumulables` de `SparkListenerTaskEnd` para atribuir os valores a esse
+    mapa. Um `TaskEnd` cujo acumulador nao esta em `accum` (nao veio do plano
+    SQL, ou foi reatribuido) engorda `unattributed_accumulators` em vez de
+    ser descartado em silencio -- o fact `spark.sql.analyzed` fica com o
+    tamanho do que este extrator nao pode explicar.
     """
     provenance = {"artifact": path, "artifact_sha256": "", "extractor": EXTRACTOR_ID}
     execucoes: dict[int, _Execution] = {}
+    nao_atribuidos = 0
 
     for linha in lines:
         texto = linha.strip()
@@ -202,8 +241,43 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                 execucoes[execution_id] = execucao
             execucao.absorb_plan(plano, "final_aqe" if nome == _SQL_AQE else "initial")
 
+        elif nome == _DRIVER_ACCUM:
+            execucao = execucoes.get(evento.get("executionId"))
+            if execucao is None:
+                continue
+            for par in evento.get("accumUpdates") or []:
+                if not isinstance(par, (list, tuple)) or len(par) != 2:
+                    continue
+                accum_id, valor = par
+                if not isinstance(accum_id, int):
+                    continue
+                try:
+                    numero = float(valor)
+                except (TypeError, ValueError):
+                    continue
+                if not execucao.add_value(accum_id, numero):
+                    nao_atribuidos += 1
+
+        elif nome == _TASK_END:
+            acumulaveis = ((evento.get("Task Info") or {}).get("Accumulables")) or []
+            for acumulavel in acumulaveis:
+                accum_id = acumulavel.get("ID")
+                if not isinstance(accum_id, int):
+                    continue
+                try:
+                    # `Update` e a contribuicao DESTA task; `Value` e o total
+                    # corrente do acumulador. Somar `Value` contaria o total uma
+                    # vez por task.
+                    numero = float(acumulavel.get("Update"))
+                except (TypeError, ValueError):
+                    continue
+                atribuido = any(e.add_value(accum_id, numero) for e in execucoes.values())
+                if not atribuido:
+                    nao_atribuidos += 1
+
     facts: list[Fact] = []
     for execucao in sorted(execucoes.values(), key=lambda e: e.execution_id):
+        por_no, desconhecidos = execucao.measures_by_node()
         for node_id, node in sorted(execucao.nodes.items()):
             facts.append(
                 Fact(
@@ -211,12 +285,35 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                     subject=_plan_node_subject(
                         execucao.execution_id, node_id, node["node_name"], node["relation"]
                     ),
+                    measures=por_no.get(node_id, {}),
                     attrs={
                         "format": node["format"],
                         "scan_api": node["scan_api"],
                         "node_name": node["node_name"],
                     },
-                    provenance=provenance,
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
+        for node_id, metric_name in desconhecidos:
+            facts.append(
+                Fact(
+                    kind="spark.sql.unresolved",
+                    subject=_plan_node_subject(
+                        execucao.execution_id,
+                        node_id,
+                        execucao.nodes[node_id]["node_name"],
+                        execucao.nodes[node_id]["relation"],
+                    ),
+                    attrs={
+                        "reason": "unknown_metric_name",
+                        "metric_name": metric_name,
+                        "detail": (
+                            "Nome de metrica fora de knowledge/spark/sql-metrics.yaml. "
+                            "Casar por substring produziria numero com aparencia de "
+                            "medido; o nome cru fica aqui para quem for atualizar o mapa."
+                        ),
+                    },
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
                 )
             )
         facts.append(
@@ -243,6 +340,7 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
             measures={
                 "executions": len(execucoes),
                 "scan_nodes": sum(len(e.nodes) for e in execucoes.values()),
+                "unattributed_accumulators": nao_atribuidos,
             },
             provenance=provenance,
         )
