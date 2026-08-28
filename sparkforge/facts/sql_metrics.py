@@ -42,6 +42,8 @@ EMITTED_KINDS = frozenset(
         "spark.sql.execution",
         "spark.sql.unresolved",
         "spark.sql.analyzed",
+        "spark.sql.join",
+        "spark.sql.join_input",
     }
 )
 
@@ -194,6 +196,25 @@ def _fontes_abaixo(plano: dict[str, Any], alvo: int) -> list[dict[str, Any]]:
     return encontrados
 
 
+def _fonte_do_proprio_no(plano: dict[str, Any], alvo: int) -> list[dict[str, Any]]:
+    """A fonte do PROPRIO no, quando o filho do join ja e um scan.
+
+    `_fontes_abaixo` olha estritamente abaixo do alvo, porque `via_joins` conta
+    o que ha ENTRE o scan e o join. O caso mais comum de todos -- join cujo
+    filho e um scan direto -- cai fora daquela varredura, e sem este auxiliar
+    sairia como lado sem fonte.
+    """
+    for node_id, node in _walk(plano, [0]):
+        if node_id != alvo:
+            continue
+        scan = _scan_of(node)
+        if scan is None:
+            return []
+        _, relation, _ = scan
+        return [{"node_id": node_id, "relation": relation, "via_joins": 0}]
+    return []
+
+
 class _Execution:
     """Estado acumulado de uma execucao SQL durante a passada.
 
@@ -218,6 +239,11 @@ class _Execution:
         # que ja foi declarado antes, para que um valor medido sob o plano
         # inicial nao evapore quando o AQE repoe a arvore.
         self.accum_historico: dict[int, tuple[int, str]] = {}
+        self.joins: dict[int, dict[str, Any]] = {}
+        self.arestas: list[dict[str, Any]] = []
+        self.lados_sem_fonte: list[dict[str, Any]] = []
+        self.profundidade = 0
+        self.plano_profundo_demais = False
 
     def add_value(self, accum_id: int, valor: float) -> bool:
         """Soma um valor a um acumulador conhecido. Devolve se ele foi atribuido."""
@@ -305,6 +331,80 @@ class _Execution:
                     self.reassigned.add(accum_id)
                     continue
                 self.accum[accum_id] = (node_id, nome)
+
+        self.joins = {}
+        self.arestas = []
+        self.lados_sem_fonte = []
+        filhos, self.profundidade = _estrutura(plano)
+        self.plano_profundo_demais = self.profundidade > _TETO_DE_PROFUNDIDADE
+        if self.plano_profundo_demais:
+            return
+
+        for node_id, node in _walk(plano, [0]):
+            join = _join_of(node)
+            if join is None:
+                continue
+            strategy, join_type, build_side = join
+            meus_filhos = filhos.get(node_id) or []
+            filhos_nos = node.get("children") or []
+            if not meus_filhos:
+                self.lados_sem_fonte.append(
+                    {"node_id": node_id, "position": "", "reason": "join_without_children"}
+                )
+                continue
+
+            # `children` vem em ordem: o primeiro e o lado esquerdo. `position`
+            # e observacao; `side` e derivacao do token BuildLeft/BuildRight, e
+            # so existe quando o operador o publica.
+            contagem = {"left": 0, "right": 0}
+            for indice, (filho_id, filho_no) in enumerate(
+                zip(meus_filhos[:2], filhos_nos[:2], strict=True)
+            ):
+                position = "left" if indice == 0 else "right"
+                if build_side:
+                    side = "build" if position == build_side else "stream"
+                else:
+                    side = "unknown"
+                fontes = _fontes_abaixo(plano, filho_id)
+                if _join_of(filho_no) is not None:
+                    # `_fontes_abaixo(plano, filho_id)` nao conta o proprio
+                    # `filho_id` como join, porque ele E o alvo daquela
+                    # chamada. Mas do ponto de vista DESTE join (o pai), o
+                    # filho que e join tambem fica ENTRE o pai e cada fonte
+                    # -- por isso soma 1 aqui, uma vez, em vez de la dentro.
+                    fontes = [dict(f, via_joins=f["via_joins"] + 1) for f in fontes]
+                # O proprio filho pode ser o scan, e `_fontes_abaixo` so olha
+                # ABAIXO do alvo -- entao o alvo e conferido a parte.
+                fontes = fontes + _fonte_do_proprio_no(plano, filho_id)
+                if not fontes:
+                    self.lados_sem_fonte.append(
+                        {
+                            "node_id": node_id,
+                            "position": position,
+                            "reason": "join_side_without_source",
+                        }
+                    )
+                    continue
+                contagem[position] = len(fontes)
+                for fonte in fontes:
+                    self.arestas.append(
+                        {
+                            "join_node_id": node_id,
+                            "strategy": strategy,
+                            "relation": fonte["relation"],
+                            "position": position,
+                            "side": side,
+                            "via_joins": fonte["via_joins"],
+                        }
+                    )
+
+            self.joins[node_id] = {
+                "strategy": strategy,
+                "join_type": join_type,
+                "build_side": build_side,
+                "inputs_left": contagem["left"],
+                "inputs_right": contagem["right"],
+            }
 
 
 def _plan_node_subject(
@@ -476,6 +576,81 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                 provenance=provenance,
             )
         )
+        for node_id, join in sorted(execucao.joins.items()):
+            facts.append(
+                Fact(
+                    kind="spark.sql.join",
+                    subject=_plan_node_subject(
+                        execucao.execution_id, node_id, join["strategy"], ""
+                    ),
+                    attrs={
+                        "strategy": join["strategy"],
+                        "join_type": join["join_type"],
+                        "build_side": join["build_side"],
+                    },
+                    measures={
+                        "inputs_left": join["inputs_left"],
+                        "inputs_right": join["inputs_right"],
+                    },
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
+        for aresta in execucao.arestas:
+            facts.append(
+                Fact(
+                    kind="spark.sql.join_input",
+                    subject=_plan_node_subject(
+                        execucao.execution_id,
+                        aresta["join_node_id"],
+                        aresta["strategy"],
+                        "",
+                    ),
+                    attrs={
+                        "relation": aresta["relation"],
+                        "position": aresta["position"],
+                        "side": aresta["side"],
+                        "strategy": aresta["strategy"],
+                    },
+                    measures={"via_joins": aresta["via_joins"]},
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
+        for lado in execucao.lados_sem_fonte:
+            facts.append(
+                Fact(
+                    kind="spark.sql.unresolved",
+                    subject=_plan_node_subject(
+                        execucao.execution_id, lado["node_id"], "join", ""
+                    ),
+                    attrs={
+                        "reason": lado["reason"],
+                        "position": lado["position"],
+                        "detail": (
+                            "Lado do join sem nenhum scan nomeavel abaixo. Subquery, "
+                            "relacao em cache e `Scan ExistingRDD` nao sao fonte que se "
+                            "possa nomear, e inventar um nome seria pior que a lacuna."
+                        ),
+                    },
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
+        if execucao.plano_profundo_demais:
+            facts.append(
+                Fact(
+                    kind="spark.sql.unresolved",
+                    subject=_plan_node_subject(execucao.execution_id, 0, "execution", ""),
+                    attrs={
+                        "reason": "plan_too_deep",
+                        "detail": (
+                            f"Arvore com profundidade {execucao.profundidade}, acima do teto "
+                            f"de {_TETO_DE_PROFUNDIDADE}. O grafo nao e montado: percorrer "
+                            f"recursivamente ate o fim estouraria a pilha no meio de uma "
+                            f"extracao que ja produziu facts validos."
+                        ),
+                    },
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
 
     for execucao in sorted(execucoes.values(), key=lambda e: e.execution_id):
         for accum_id in orfaos_por_execucao[execucao.execution_id]:

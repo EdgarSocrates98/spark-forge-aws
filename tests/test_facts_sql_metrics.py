@@ -490,3 +490,147 @@ class TestEstruturaDaArvore:
         }
 
         assert _fontes_abaixo(arvore, 0) == []
+
+
+class TestGrafoDeJoins:
+    def _broadcast(self):
+        return {
+            "nodeName": "BroadcastHashJoin",
+            "simpleString": "BroadcastHashJoin [id#1], [id#2], Inner, BuildRight, false",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(simple="FileScan parquet db.pedidos[id#1]"),
+                _scan_node(simple="FileScan parquet db.clientes[id#2]"),
+            ],
+        }
+
+    def test_join_node_becomes_a_fact(self):
+        facts = extract_sql_metrics([_start(plan=self._broadcast())], "log.jsonl")
+        join = [f for f in facts if f.kind == "spark.sql.join"][0]
+
+        assert join.attrs["strategy"] == "BroadcastHashJoin"
+        assert join.attrs["join_type"] == "Inner"
+        assert join.attrs["build_side"] == "right"
+        assert join.measures == {"inputs_left": 1, "inputs_right": 1}
+
+    def test_each_source_becomes_an_edge_with_its_side(self):
+        facts = extract_sql_metrics([_start(plan=self._broadcast())], "log.jsonl")
+        arestas = {
+            f.attrs["relation"]: f.attrs for f in facts if f.kind == "spark.sql.join_input"
+        }
+
+        assert arestas["db.clientes"]["side"] == "build"
+        assert arestas["db.clientes"]["position"] == "right"
+        assert arestas["db.pedidos"]["side"] == "stream"
+        assert arestas["db.pedidos"]["position"] == "left"
+
+    def test_edges_are_anchored_on_the_join_not_on_the_scan(self):
+        facts = extract_sql_metrics([_start(plan=self._broadcast())], "log.jsonl")
+        join = [f for f in facts if f.kind == "spark.sql.join"][0]
+        arestas = [f for f in facts if f.kind == "spark.sql.join_input"]
+
+        assert all(a.subject["node_id"] == join.subject["node_id"] for a in arestas)
+
+    def test_sort_merge_join_has_no_build_side_and_says_so(self):
+        plano = {
+            "nodeName": "SortMergeJoin",
+            "simpleString": "SortMergeJoin [id#1], [id#2], Inner",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(simple="FileScan parquet db.pedidos[id#1]"),
+                _scan_node(simple="FileScan parquet db.clientes[id#2]"),
+            ],
+        }
+        facts = extract_sql_metrics([_start(plan=plano)], "log.jsonl")
+        arestas = [f for f in facts if f.kind == "spark.sql.join_input"]
+
+        assert len(arestas) == 2
+        assert {a.attrs["side"] for a in arestas} == {"unknown"}
+        assert {a.attrs["position"] for a in arestas} == {"left", "right"}
+
+    def test_nested_join_carries_the_distance(self):
+        interno = {
+            "nodeName": "BroadcastHashJoin",
+            "simpleString": "BroadcastHashJoin [id#1], [id#2], Inner, BuildRight, false",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(simple="FileScan parquet db.a[id#1]"),
+                _scan_node(simple="FileScan parquet db.b[id#2]"),
+            ],
+        }
+        plano = {
+            "nodeName": "SortMergeJoin",
+            "simpleString": "SortMergeJoin [id#1], [id#3], Inner",
+            "metadata": {},
+            "metrics": [],
+            "children": [interno, _scan_node(simple="FileScan parquet db.c[id#3]")],
+        }
+        facts = extract_sql_metrics([_start(plan=plano)], "log.jsonl")
+        externo = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.join" and f.attrs["strategy"] == "SortMergeJoin"
+        ][0]
+        do_externo = {
+            f.attrs["relation"]: f.measures["via_joins"]
+            for f in facts
+            if f.kind == "spark.sql.join_input"
+            and f.subject["node_id"] == externo.subject["node_id"]
+        }
+
+        assert do_externo == {"db.a": 1, "db.b": 1, "db.c": 0}
+
+    def test_side_without_a_named_source_is_a_gap_and_the_other_side_survives(self):
+        plano = {
+            "nodeName": "BroadcastHashJoin",
+            "simpleString": "BroadcastHashJoin [id#1], [id#2], Inner, BuildRight, false",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                {
+                    "nodeName": "Scan ExistingRDD",
+                    "simpleString": "Scan ExistingRDD[id#1]",
+                    "metadata": {},
+                    "metrics": [],
+                    "children": [],
+                },
+                _scan_node(simple="FileScan parquet db.clientes[id#2]"),
+            ],
+        }
+        facts = extract_sql_metrics([_start(plan=plano)], "log.jsonl")
+        arestas = [f for f in facts if f.kind == "spark.sql.join_input"]
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.unresolved"
+            and f.attrs["reason"] == "join_side_without_source"
+        ]
+
+        assert [a.attrs["relation"] for a in arestas] == ["db.clientes"]
+        assert len(lacunas) == 1
+        assert lacunas[0].attrs["position"] == "left"
+
+    def test_a_plan_deeper_than_the_ceiling_is_a_named_gap(self):
+        from sparkforge.facts.sql_metrics import _TETO_DE_PROFUNDIDADE
+
+        no = _scan_node()
+        for _ in range(_TETO_DE_PROFUNDIDADE + 5):
+            no = {
+                "nodeName": "Project",
+                "simpleString": "Project",
+                "metadata": {},
+                "metrics": [],
+                "children": [no],
+            }
+        facts = extract_sql_metrics([_start(plan=no)], "log.jsonl")
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.unresolved" and f.attrs["reason"] == "plan_too_deep"
+        ]
+
+        assert len(lacunas) == 1
+        assert not [f for f in facts if f.kind == "spark.sql.join_input"]
