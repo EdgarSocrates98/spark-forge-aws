@@ -203,10 +203,16 @@ severidade, nunca toca a rede.
 Um por nó de leitura, por execução.
 
 ```
-subject   {execution_id, node_id}
-attrs     {relation, format, scan_api, node_name}
+subject   {type: plan_node, node_id, operator, relation, symbol, execution_id}
+attrs     {format, scan_api, node_name}
 measures  {bytes_read, files_read, rows_output, partitions_read}
 ```
+
+`type: plan_node` é o que o schema de Fact exige, e `spark_plan.py:330` já usa a mesma
+forma — os dois falam da mesma entidade vista por artefatos diferentes. `symbol` é a chave
+de agrupamento de `same_subject`, e precisa distinguir o mesmo nó em **execuções
+diferentes**: duas execuções do mesmo plano têm o mesmo `node_id` e não podem cair no
+mesmo grupo.
 
 Só as measures que a execução publicou (§3.3). `scan_api` distingue v1 de v2, no mesmo
 vocabulário que `plan.file_scan` já usa.
@@ -216,10 +222,12 @@ vocabulário que `plan.file_scan` já usa.
 Um por `executionId`.
 
 ```
-subject   {execution_id}
+subject   {type: plan_node, node_id: 0, operator, symbol, execution_id}
 attrs     {plan_source: initial | final_aqe, description, redacted}
 measures  {scan_nodes, nodes_total}
 ```
+
+Ancorado na raiz da árvore (`node_id: 0`), que é o nó que representa a execução inteira.
 
 ### 4.3 `spark.sql.unresolved`
 
@@ -232,9 +240,12 @@ Lacuna com nome, razão e — quando existe — o que a resolve. Razões previst
 Sentinela da varredura.
 
 ```
-subject   {artifact}
+subject   {type: source_location, file, line: 0, col: 0, symbol: "", snippet: ""}
 measures  {executions, scan_nodes, unattributed_accumulators, malformed_lines}
 ```
+
+Sentinela de arquivo, na mesma forma que `spark.log_analyzed` e as outras `*_analyzed`
+usam: `line: 0` marca "isto fala do arquivo, não de um ponto dentro dele".
 
 `unattributed_accumulators` é o número de §3.7. Ele não é defeito; ele é o que separa
 "não havia o que atribuir" de "a atribuição quebrou".
@@ -256,14 +267,16 @@ Mesma forma de `analyze event-log`: página de facts, `--out` grava a lista comp
 `sparkforge_analyze_sql_metrics`, read-only local, mesmo `outputSchema` de página de facts
 que as outras tools de análise usam.
 
-**A entrega anterior abriu uma exceção que este documento não repete.** Os facts de
-`glue.job_run.*` não couberam no enum fechado de `subject.type` de
-`_ANALYZE_FACTS_SCHEMA`, e as duas tools novas ganharam `_ANALYZE_GLUE_FACTS_SCHEMA`, com
-subject genérico. Aqui a decisão é a outra: o subject declara
-`type: "sql_node"`, o valor entra no enum, e a tool reusa `_ANALYZE_FACTS_SCHEMA` como os
-catorze extratores que já emitem `subject.type`. Um nó de plano **é** uma entidade
-nomeável, ao contrário de uma tupla de capacidade agregada — a exceção anterior existiu
-porque `distribution` e `outcome` falam de um grupo, não de uma coisa.
+**Nenhum schema novo, e nenhuma exceção.** A entrega anterior criou
+`_ANALYZE_GLUE_FACTS_SCHEMA` com subject genérico porque os facts de `glue.job_run.*` não
+declaravam `subject.type`. Medido em 2026-08-28: aquilo não era uma limitação do enum, era
+defeito — `sparkforge/findings/schemas/fact.schema.json` **exige** `subject.type` de todo
+fact, e os oito kinds daquela entrega reprovavam em `validate_fact`. O módulo golden novo
+não chamava `validate_fact`, e por isso o gate não mordeu. Consertado em separado.
+
+Aqui não há nada a decidir: `plan_node` **já está no enum**, com `node_id`, `operator` e
+`relation` entre as propriedades declaradas — é a entidade exata deste documento, e
+`spark_plan.py:330` já a emite. A tool reusa `_ANALYZE_FACTS_SCHEMA` como todas as outras.
 
 ### 5.3 Nenhum artefato novo
 
