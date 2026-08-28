@@ -29,6 +29,10 @@ REQUIRED_FIXTURES = {
     "unknown_metric",
     "no_sql_events",
     "truncated_log",
+    "join_broadcast_build_side",
+    "join_nested_via_joins",
+    "join_sort_merge_without_build",
+    "join_side_without_source",
 }
 
 
@@ -129,3 +133,29 @@ class TestOQueOCorpusInteiroGarante:
                     continue
                 disponiveis = publicadas.get(fact.subject["execution_id"], set())
                 assert set(fact.measures) <= disponiveis, (directory.name, fact.measures)
+
+    def test_every_edge_points_at_a_real_join_and_a_real_relation(self):
+        """Aresta que aponta para o nada e pior que aresta ausente.
+
+        Ela parece grafo. Verificada sobre o corpus INTEIRO: um erro de indice
+        na numeracao de preorder passaria em cada cenario isolado e quebraria
+        aqui, porque so um corpus com arvores de formatos diferentes cobre as
+        duas numeracoes ao mesmo tempo.
+        """
+        for directory in fixture_dirs():
+            facts = _extract(directory)
+            joins = {
+                (f.subject["execution_id"], f.subject["node_id"])
+                for f in facts
+                if f.kind == "spark.sql.join"
+            }
+            relacoes = {
+                (f.subject["execution_id"], f.subject["relation"])
+                for f in facts
+                if f.kind == "spark.sql.scan"
+            }
+            for aresta in (f for f in facts if f.kind == "spark.sql.join_input"):
+                chave = (aresta.subject["execution_id"], aresta.subject["node_id"])
+                assert chave in joins, (directory.name, chave)
+                relacao = (aresta.subject["execution_id"], aresta.attrs["relation"])
+                assert relacao in relacoes, (directory.name, relacao)
