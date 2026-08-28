@@ -409,6 +409,81 @@ class TestCollectCloudwatch:
         assert {"Name": "JobRunId", "Value": "jr_9"} in dims
 
 
+class TestCloudWatchPeriod:
+    def test_recent_run_uses_the_finest_period(self, tmp_path, monkeypatch):
+        cw = FakeCloudWatchClient()
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(cloudwatch=cw))
+
+        aws.collect_cloudwatch(
+            "my-job",
+            "jr_1",
+            tmp_path,
+            now="2026-08-26T00:00:00Z",
+            start="2026-08-26T10:00:00Z",
+            end="2026-08-26T10:20:00Z",
+        )
+
+        periods = {
+            q["MetricStat"]["Period"]
+            for _, kwargs in cw.calls
+            for q in kwargs["MetricDataQueries"]
+        }
+        assert periods == {60}
+
+    def test_old_run_escalates_the_period(self, tmp_path, monkeypatch):
+        cw = FakeCloudWatchClient()
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(cloudwatch=cw))
+
+        aws.collect_cloudwatch(
+            "my-job",
+            "jr_old",
+            tmp_path,
+            now="2026-08-26T00:00:00Z",
+            start="2026-08-01T10:00:00Z",
+            end="2026-08-01T10:20:00Z",
+        )
+
+        periods = {
+            q["MetricStat"]["Period"]
+            for _, kwargs in cw.calls
+            for q in kwargs["MetricDataQueries"]
+        }
+        assert periods == {300}
+
+    def test_expired_run_fails_instead_of_querying(self, tmp_path, monkeypatch):
+        cw = FakeCloudWatchClient()
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(cloudwatch=cw))
+
+        with pytest.raises(aws.CollectionFailed, match="expirad"):
+            aws.collect_cloudwatch(
+                "my-job",
+                "jr_ancient",
+                tmp_path,
+                now="2026-08-26T00:00:00Z",
+                start="2020-01-01T10:00:00Z",
+                end="2020-01-01T10:20:00Z",
+            )
+        assert cw.calls == []
+
+    def test_period_is_recorded_in_the_artifact(self, tmp_path, monkeypatch):
+        cw = FakeCloudWatchClient()
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(cloudwatch=cw))
+
+        aws.collect_cloudwatch(
+            "my-job",
+            "jr_1",
+            tmp_path,
+            now="2026-08-26T00:00:00Z",
+            start="2026-08-26T10:00:00Z",
+            end="2026-08-26T10:20:00Z",
+        )
+
+        payload = json.loads(
+            (tmp_path / aws.cloudwatch_path("my-job", "jr_1")).read_text(encoding="utf-8")
+        )
+        assert payload["period_seconds"] == 60
+
+
 class TestCollectIcebergMetadata:
     def test_queries_all_five_sections_with_dollar_syntax(self, tmp_path, monkeypatch):
         rows_by_query = {

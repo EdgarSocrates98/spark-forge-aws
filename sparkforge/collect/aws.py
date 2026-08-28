@@ -37,6 +37,7 @@ from sparkforge.collect.base import (
     require_boto3,
     verify_artifact,
 )
+from sparkforge.facts.cloudwatch_retention import period_for_age_days
 
 # Segundos entre tentativas de poll de uma query Athena ainda em execucao.
 # So importa quando a query realmente demora -- um cliente de teste que
@@ -479,6 +480,22 @@ def collect_cloudwatch(
 
     start_dt = _parse_iso(start)
     end_dt = _parse_iso(end)
+
+    # O periodo vem da idade do run, nunca fixo. Ponto de granularidade fina
+    # expira; consultar um run antigo com periodo curto devolve serie vazia, e
+    # vazio se parece com "observabilidade desligada no job" -- causa diferente
+    # e remedio diferente. A tabela de retencao esta em
+    # `knowledge/glue/observability.yaml`, com fonte e data.
+    age_days = (_parse_iso(now) - end_dt).total_seconds() / 86400.0
+    period = period_for_age_days(max(age_days, 0.0))
+    if period is None:
+        raise CollectionFailed(
+            f"Metrica de {job_name}/{job_run_id} expirada: o run terminou em {end}, "
+            f"fora da janela de retencao de toda granularidade publicada em "
+            f"knowledge/glue/observability.yaml. Consultar assim mesmo devolveria "
+            f"serie vazia, indistinguivel de observabilidade desligada no job."
+        )
+
     dimensions = [
         {"Name": "JobName", "Value": job_name},
         {"Name": "JobRunId", "Value": job_run_id},
@@ -488,7 +505,7 @@ def collect_cloudwatch(
             "Id": f"m{index}",
             "MetricStat": {
                 "Metric": {"Namespace": "Glue", "MetricName": metric, "Dimensions": dimensions},
-                "Period": 30,
+                "Period": period,
                 "Stat": stat,
             },
             "Label": metric,
@@ -505,6 +522,7 @@ def collect_cloudwatch(
         "job_run_id": job_run_id,
         "start": start,
         "end": end,
+        "period_seconds": period,
         "metric_data_results": response.get("MetricDataResults") or [],
     }
     content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
