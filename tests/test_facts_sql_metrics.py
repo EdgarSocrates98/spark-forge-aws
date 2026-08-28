@@ -1,6 +1,7 @@
 """Testes do extrator de metricas SQL por no do plano."""
 from __future__ import annotations
 
+import itertools
 import json
 
 from sparkforge.facts.sql_metrics import extract_sql_metrics
@@ -634,3 +635,90 @@ class TestGrafoDeJoins:
 
         assert len(lacunas) == 1
         assert not [f for f in facts if f.kind == "spark.sql.join_input"]
+
+
+class TestCustoDaMontagemDoGrafo:
+    """Trava que montar o grafo de joins nao repete a arvore inteira por lado.
+
+    `_fontes_abaixo` e `_fonte_do_proprio_no` fazem uma passada pela arvore
+    INTEIRA por chamada. A implementacao antiga de `absorb_plan` chamava as
+    duas uma vez por lado de CADA join -- quadratico em plano bushy (medido:
+    33s numa arvore de 8191 nos). Um teste de tempo em CI compartilhado e
+    fragil (maquina lenta, runner ocupado, falso negativo aleatorio); a
+    propriedade que realmente importa -- o numero de passadas completas pela
+    arvore nao cresce com o numero de joins -- da para travar contando
+    chamadas, sem depender de relogio. Por isso a escolha aqui e contagem, nao
+    tempo.
+    """
+
+    def _bushy(self, level):
+        """Arvore binaria completa de joins com `level` niveis de join.
+
+        level=0 -> um scan isolado. Cada nivel dobra a largura: level=5 tem 15
+        joins e 16 scans (31 nos); level=10 tem 1023 joins e 1024 scans (2047
+        nos) -- ~68x mais joins que a arvore pequena, para expor com clareza
+        se a contagem de passadas cresce junto.
+        """
+        contador = itertools.count()
+
+        def scan():
+            n = next(contador)
+            return {
+                "nodeName": "Scan parquet ",
+                "simpleString": f"FileScan parquet db.t{n}[id#{n}]",
+                "children": [],
+                "metadata": {"Format": "Parquet"},
+                "metrics": [],
+            }
+
+        def join(esquerda, direita):
+            return {
+                "nodeName": "SortMergeJoin",
+                "simpleString": "SortMergeJoin [id#1], [id#2], Inner",
+                "children": [esquerda, direita],
+                "metadata": {},
+                "metrics": [],
+            }
+
+        def construir(nivel):
+            if nivel == 0:
+                return scan()
+            return join(construir(nivel - 1), construir(nivel - 1))
+
+        return construir(level)
+
+    def test_full_tree_passes_do_not_scale_with_join_count(self, monkeypatch):
+        import sparkforge.facts.sql_metrics as sql_metrics
+
+        contagem = {"fontes_abaixo": 0, "fonte_do_proprio_no": 0}
+        original_fontes_abaixo = sql_metrics._fontes_abaixo
+        original_fonte_do_proprio_no = sql_metrics._fonte_do_proprio_no
+
+        def _contando_fontes_abaixo(plano, alvo):
+            contagem["fontes_abaixo"] += 1
+            return original_fontes_abaixo(plano, alvo)
+
+        def _contando_fonte_do_proprio_no(plano, alvo):
+            contagem["fonte_do_proprio_no"] += 1
+            return original_fonte_do_proprio_no(plano, alvo)
+
+        monkeypatch.setattr(sql_metrics, "_fontes_abaixo", _contando_fontes_abaixo)
+        monkeypatch.setattr(
+            sql_metrics, "_fonte_do_proprio_no", _contando_fonte_do_proprio_no
+        )
+
+        extract_sql_metrics([_start(plan=self._bushy(5))], "log.jsonl")
+        chamadas_pequena = sum(contagem.values())
+
+        contagem["fontes_abaixo"] = 0
+        contagem["fonte_do_proprio_no"] = 0
+
+        extract_sql_metrics([_start(plan=self._bushy(10))], "log.jsonl")
+        chamadas_grande = sum(contagem.values())
+
+        # Se a montagem do grafo ainda chamasse uma dessas por lado de join,
+        # a arvore grande (1023 joins) dispararia ~68x mais chamadas que a
+        # pequena (15 joins). A folga de 20 acomoda uma implementacao futura
+        # que faca um numero fixo e pequeno de chamadas por arvore, sem
+        # reabrir a porta para uma chamada por lado.
+        assert chamadas_grande <= chamadas_pequena + 20

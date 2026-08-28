@@ -160,40 +160,61 @@ def _estrutura(plano: dict[str, Any]) -> tuple[dict[int, list[int]], int]:
     return filhos, profundidade_maxima[0]
 
 
+def _fontes_por_no(plano: dict[str, Any]) -> dict[int, list[dict[str, Any]]]:
+    """`{node_id: fontes abaixo dele}` para a arvore INTEIRA, numa unica passada.
+
+    Mesma pergunta que `_fontes_abaixo` responde no a no, mas para todos os
+    nos de uma vez: uma passada pos-ordem, em vez de uma passada da arvore
+    inteira por no consultado. `absorb_plan` monta o grafo de joins chamando
+    esta funcao UMA VEZ por arvore e consultando o dicionario por lado de
+    join, em vez de chamar `_fontes_abaixo` (e `_fonte_do_proprio_no`) a cada
+    lado -- e isso que tira a extracao de O(nos^2) para O(nos) em plano largo.
+
+    A regra de `via_joins` e a mesma de `_fontes_abaixo`: conta os joins
+    ESTRITAMENTE entre o scan e o no. Subindo da folha para a raiz, cada vez
+    que o no do meio e ele mesmo um join, soma-se 1 a tudo que vem de baixo
+    dele -- porque aquele no fica NO CAMINHO entre o scan e quem esta acima.
+    Numeracao identica a de `_walk`/`_estrutura`: preorder, raiz = 0.
+    """
+    por_no: dict[int, list[dict[str, Any]]] = {}
+    proximo = [0]
+
+    def visita(node: dict[str, Any]) -> int:
+        meu = proximo[0]
+        proximo[0] += 1
+        fontes: list[dict[str, Any]] = []
+        for filho in node.get("children") or []:
+            filho_id = visita(filho)
+            scan = _scan_of(filho)
+            if scan is not None:
+                _, relation, _ = scan
+                fontes.append({"node_id": filho_id, "relation": relation, "via_joins": 0})
+                continue
+            incremento = 1 if _join_of(filho) is not None else 0
+            fontes.extend(
+                dict(f, via_joins=f["via_joins"] + incremento) for f in por_no[filho_id]
+            )
+        por_no[meu] = fontes
+        return meu
+
+    visita(plano)
+    return por_no
+
+
 def _fontes_abaixo(plano: dict[str, Any], alvo: int) -> list[dict[str, Any]]:
     """As fontes alcancaveis abaixo de `alvo`, cada uma com `via_joins`.
 
     `via_joins` e quantos joins existem ENTRE o scan e `alvo`. Fonte que entra
     direto tem zero. Nao perde informacao e nao mente: quem quiser so o direto
     filtra por zero, quem quiser a arvore inteira soma tudo.
+
+    Consulta fina sobre `_fontes_por_no`: mesma resposta de antes, mesma
+    assinatura. Quem precisar da resposta para varios `alvo` na MESMA arvore
+    -- como `absorb_plan` precisa, um por lado de join -- deve chamar
+    `_fontes_por_no` uma vez e consultar o dicionario, nunca repetir esta
+    chamada em loop: cada chamada aqui refaz a passada pela arvore inteira.
     """
-    encontrados: list[dict[str, Any]] = []
-    achou_alvo = [False]
-    proximo = [0]
-
-    def visita(node: dict[str, Any], dentro: bool, joins: int) -> None:
-        meu = proximo[0]
-        proximo[0] += 1
-        aqui = dentro or meu == alvo
-        if meu == alvo:
-            achou_alvo[0] = True
-        if aqui and meu != alvo:
-            scan = _scan_of(node)
-            if scan is not None:
-                _, relation, _ = scan
-                encontrados.append(
-                    {"node_id": meu, "relation": relation, "via_joins": joins}
-                )
-        adiante = joins
-        if aqui and meu != alvo and _join_of(node) is not None:
-            adiante = joins + 1
-        for filho in node.get("children") or []:
-            visita(filho, aqui, adiante)
-
-    visita(plano, False, 0)
-    if not achou_alvo[0]:
-        return []
-    return encontrados
+    return _fontes_por_no(plano).get(alvo, [])
 
 
 def _fonte_do_proprio_no(plano: dict[str, Any], alvo: int) -> list[dict[str, Any]]:
@@ -340,6 +361,14 @@ class _Execution:
         if self.plano_profundo_demais:
             return
 
+        # Uma passada pela arvore inteira, consultada por lado de join
+        # abaixo -- em vez de uma passada inteira por lado (o que fazia a
+        # montagem do grafo O(nos^2) em plano largo). `self.nodes` (populado
+        # acima) ja responde "este node_id e um scan, e qual e a relation?"
+        # em O(1), o mesmo papel que `_fonte_do_proprio_no` cumpria por
+        # chamada.
+        fontes_por_no = _fontes_por_no(plano)
+
         for node_id, node in _walk(plano, [0]):
             join = _join_of(node)
             if join is None:
@@ -365,17 +394,27 @@ class _Execution:
                     side = "build" if position == build_side else "stream"
                 else:
                     side = "unknown"
-                fontes = _fontes_abaixo(plano, filho_id)
+                fontes = fontes_por_no.get(filho_id, [])
                 if _join_of(filho_no) is not None:
-                    # `_fontes_abaixo(plano, filho_id)` nao conta o proprio
-                    # `filho_id` como join, porque ele E o alvo daquela
-                    # chamada. Mas do ponto de vista DESTE join (o pai), o
-                    # filho que e join tambem fica ENTRE o pai e cada fonte
-                    # -- por isso soma 1 aqui, uma vez, em vez de la dentro.
+                    # `fontes_por_no[filho_id]` nao conta o proprio `filho_id`
+                    # como join, porque ele E o no cujas fontes abaixo estao
+                    # ali. Mas do ponto de vista DESTE join (o pai), o filho
+                    # que e join tambem fica ENTRE o pai e cada fonte -- por
+                    # isso soma 1 aqui, uma vez, em vez de la dentro.
                     fontes = [dict(f, via_joins=f["via_joins"] + 1) for f in fontes]
-                # O proprio filho pode ser o scan, e `_fontes_abaixo` so olha
-                # ABAIXO do alvo -- entao o alvo e conferido a parte.
-                fontes = fontes + _fonte_do_proprio_no(plano, filho_id)
+                # O proprio filho pode ser o scan, e `fontes_por_no[filho_id]`
+                # so guarda o que esta ABAIXO dele -- entao o proprio filho e
+                # conferido a parte, em `self.nodes` (que ja mapeia todo
+                # node_id de scan para a relation, populado acima).
+                no_proprio = self.nodes.get(filho_id)
+                if no_proprio is not None:
+                    fontes = fontes + [
+                        {
+                            "node_id": filho_id,
+                            "relation": no_proprio["relation"],
+                            "via_joins": 0,
+                        }
+                    ]
                 if not fontes:
                     self.lados_sem_fonte.append(
                         {
