@@ -847,31 +847,6 @@ _ANALYZE_PYSPARK_SCHEMA: dict[str, Any] = {
 # de cada tool contra este schema compartilhado.
 _ANALYZE_FACTS_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
 
-# `analyze_cloudwatch`/`analyze_glue_job_runs` NAO reusam `_ANALYZE_FACTS_SCHEMA`
-# por identidade: `_FACT_SUBJECT` exige `subject.type` de um enum FECHADO de
-# sete valores (source_location, stage, task, tf_resource, table, job_run,
-# plan_node), um por extractor ancorado em codigo/plano/tabela. Os extratores
-# de CloudWatch e historico de run Glue (`sparkforge/facts/cloudwatch.py`,
-# `sparkforge/facts/glue_job_run.py`) ancoram em outra coisa -- job_name e
-# job_run_id, ou a tupla de capacidade inteira em `glue.job_run.distribution`/
-# `.outcome` -- e nunca escrevem `subject["type"]`. Fingir que cabe no enum
-# inventaria um tipo que o extrator nunca emite; um `subject` generico e a
-# forma REAL, medida chamando as duas tools e validando contra o schema
-# (`TestRealOutputValidatesAgainstItsOwnSchema`) -- foi assim que a
-# divergencia apareceu.
-_GLUE_FACT_ITEM: dict[str, Any] = {
-    **_FACT_ITEM,
-    "properties": {**_FACT_ITEM["properties"], "subject": {"type": "object"}},
-}
-
-_ANALYZE_GLUE_FACTS_SCHEMA: dict[str, Any] = {
-    **_ANALYZE_PYSPARK_SCHEMA,
-    "properties": {
-        **_ANALYZE_PYSPARK_SCHEMA["properties"],
-        "items": {"type": "array", "items": _GLUE_FACT_ITEM},
-    },
-}
-
 # `benchmark_runs` tambem devolve o envelope com ponto cego, e por isso reusa o
 # mesmo schema: `bench.unresolved` e ponto cego de verdade -- lado sem
 # `spark.log_analyzed`, medida ausente ou parcial num lado, simbolo casado que
@@ -2253,7 +2228,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             },
         },
         "outputSchema": _may_fail(
-            _ANALYZE_GLUE_FACTS_SCHEMA,
+            _ANALYZE_FACTS_SCHEMA,
             "Facts extraidos, ou erro se o path nao existe.",
         ),
         "annotations": _READ_ONLY,
@@ -2291,7 +2266,7 @@ TOOLS: dict[str, dict[str, Any]] = {
             },
         },
         "outputSchema": _may_fail(
-            _ANALYZE_GLUE_FACTS_SCHEMA,
+            _ANALYZE_FACTS_SCHEMA,
             "Facts extraidos, ou erro se o path nao existe.",
         ),
         "annotations": _READ_ONLY,
