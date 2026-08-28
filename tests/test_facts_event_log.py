@@ -401,3 +401,88 @@ class TestStreaming:
         # acumuladores (poucos MB), muito abaixo do que materializar o
         # arquivo inteiro como string ou lista de linhas custaria.
         assert peak < 20 * 1024 * 1024, f"pico de {peak / 1024 / 1024:.1f}MB, esperado < 20MB"
+
+
+class TestShuffleMetrics:
+    def _task_end(self, stage_id, read_bytes=None, write_bytes=None):
+        metrics = {
+            "Executor Run Time": 1000,
+            "JVM GC Time": 10,
+            "Memory Bytes Spilled": 0,
+            "Disk Bytes Spilled": 0,
+            "Input Metrics": {"Bytes Read": 100},
+        }
+        if read_bytes is not None:
+            metrics["Shuffle Read Metrics"] = {
+                "Remote Bytes Read": read_bytes,
+                "Local Bytes Read": 0,
+                "Total Records Read": 7,
+                "Fetch Wait Time": 3,
+            }
+        if write_bytes is not None:
+            metrics["Shuffle Write Metrics"] = {
+                "Shuffle Bytes Written": write_bytes,
+                "Shuffle Records Written": 5,
+                "Shuffle Write Time": 2_000_000,
+            }
+        return json.dumps(
+            {
+                "Event": "SparkListenerTaskEnd",
+                "Stage ID": stage_id,
+                "Task Info": {"Launch Time": 0, "Finish Time": 500, "Failed": False},
+                "Task Metrics": metrics,
+            }
+        )
+
+    def _stage_completed(self, stage_id):
+        return json.dumps(
+            {
+                "Event": "SparkListenerStageCompleted",
+                "Stage Info": {
+                    "Stage ID": stage_id,
+                    "Stage Name": "stage-x",
+                    "Number of Tasks": 1,
+                },
+            }
+        )
+
+    def test_stage_that_moved_data_gets_a_shuffle_fact(self):
+        facts = extract_event_log(
+            [self._task_end(1, read_bytes=4096, write_bytes=8192), self._stage_completed(1)],
+            "log.jsonl",
+        )
+        shuffle = [f for f in facts if f.kind == "spark.stage.shuffle"]
+
+        assert len(shuffle) == 1
+        assert shuffle[0].subject["type"] == "stage"
+        assert shuffle[0].measures["read_bytes"] == 4096
+        assert shuffle[0].measures["write_bytes"] == 8192
+        assert shuffle[0].measures["read_records"] == 7
+        assert shuffle[0].measures["write_records"] == 5
+
+    def test_stage_without_shuffle_produces_no_fact(self):
+        facts = extract_event_log([self._task_end(1), self._stage_completed(1)], "log.jsonl")
+
+        assert not [f for f in facts if f.kind == "spark.stage.shuffle"]
+
+    def test_bytes_are_summed_across_tasks(self):
+        facts = extract_event_log(
+            [
+                self._task_end(1, write_bytes=1000),
+                self._task_end(1, write_bytes=500),
+                self._stage_completed(1),
+            ],
+            "log.jsonl",
+        )
+        shuffle = [f for f in facts if f.kind == "spark.stage.shuffle"][0]
+
+        assert shuffle.measures["write_bytes"] == 1500
+
+    def test_read_only_stage_omits_the_write_measures(self):
+        facts = extract_event_log(
+            [self._task_end(1, read_bytes=2048), self._stage_completed(1)], "log.jsonl"
+        )
+        shuffle = [f for f in facts if f.kind == "spark.stage.shuffle"][0]
+
+        assert shuffle.measures["read_bytes"] == 2048
+        assert "write_bytes" not in shuffle.measures

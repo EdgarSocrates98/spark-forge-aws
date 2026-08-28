@@ -38,6 +38,7 @@ EMITTED_KINDS = frozenset(
         "spark.stage.task_duration",
         "spark.stage.task_input",
         "spark.stage.spill",
+        "spark.stage.shuffle",
         "spark.stage.gc",
         "spark.stage.task_count",
         "spark.cluster.cores",
@@ -152,6 +153,15 @@ class _StageAccumulator:
         "executor_run_ms",
         "task_seen",
         "failed_seen",
+        "shuffle_read_records",
+        "shuffle_remote_bytes",
+        "shuffle_local_bytes",
+        "shuffle_fetch_wait_ms",
+        "shuffle_write_bytes",
+        "shuffle_write_records",
+        "shuffle_write_time_ns",
+        "shuffle_read_seen",
+        "shuffle_write_seen",
     )
 
     def __init__(self) -> None:
@@ -163,6 +173,15 @@ class _StageAccumulator:
         self.executor_run_ms = 0
         self.task_seen = 0
         self.failed_seen = 0
+        self.shuffle_read_records = 0
+        self.shuffle_remote_bytes = 0
+        self.shuffle_local_bytes = 0
+        self.shuffle_fetch_wait_ms = 0
+        self.shuffle_write_bytes = 0
+        self.shuffle_write_records = 0
+        self.shuffle_write_time_ns = 0
+        self.shuffle_read_seen = False
+        self.shuffle_write_seen = False
 
     def add(self, task_info: dict[str, Any], metrics: dict[str, Any]) -> None:
         if task_info.get("Failed"):
@@ -184,6 +203,26 @@ class _StageAccumulator:
         self.disk_spill_bytes += int(metrics.get("Disk Bytes Spilled") or 0)
         self.gc_ms += int(metrics.get("JVM GC Time") or 0)
         self.executor_run_ms += int(metrics.get("Executor Run Time") or 0)
+
+        # `Shuffle Read Metrics` e `Shuffle Write Metrics` estao dentro do
+        # MESMO `Task Metrics` que este acumulador ja le para input e spill.
+        # A presenca de cada bloco e o que distingue "stage sem shuffle" de
+        # "shuffle de zero byte": o primeiro nao produz fact nenhum, o segundo
+        # produz um fact com zero medido.
+        leitura = metrics.get("Shuffle Read Metrics")
+        if isinstance(leitura, dict):
+            self.shuffle_read_seen = True
+            self.shuffle_remote_bytes += int(leitura.get("Remote Bytes Read") or 0)
+            self.shuffle_local_bytes += int(leitura.get("Local Bytes Read") or 0)
+            self.shuffle_read_records += int(leitura.get("Total Records Read") or 0)
+            self.shuffle_fetch_wait_ms += int(leitura.get("Fetch Wait Time") or 0)
+
+        escrita = metrics.get("Shuffle Write Metrics")
+        if isinstance(escrita, dict):
+            self.shuffle_write_seen = True
+            self.shuffle_write_bytes += int(escrita.get("Shuffle Bytes Written") or 0)
+            self.shuffle_write_records += int(escrita.get("Shuffle Records Written") or 0)
+            self.shuffle_write_time_ns += int(escrita.get("Shuffle Write Time") or 0)
 
 
 def _line_subject(path: str, line_no: int, snippet: str) -> dict[str, Any]:
@@ -269,6 +308,39 @@ def _stage_facts(
                     "gc_ms": acc.gc_ms,
                     "executor_run_ms": acc.executor_run_ms,
                 },
+                provenance=provenance,
+            )
+        )
+
+    if acc.shuffle_read_seen or acc.shuffle_write_seen:
+        medidas: dict[str, Any] = {}
+        if acc.shuffle_read_seen:
+            medidas.update(
+                {
+                    "read_bytes": acc.shuffle_remote_bytes + acc.shuffle_local_bytes,
+                    "remote_read_bytes": acc.shuffle_remote_bytes,
+                    "local_read_bytes": acc.shuffle_local_bytes,
+                    "read_records": acc.shuffle_read_records,
+                    "fetch_wait_ms": acc.shuffle_fetch_wait_ms,
+                }
+            )
+        if acc.shuffle_write_seen:
+            medidas.update(
+                {
+                    "write_bytes": acc.shuffle_write_bytes,
+                    "write_records": acc.shuffle_write_records,
+                    # `Shuffle Write Time` vem em NANOSSEGUNDOS no event log,
+                    # ao contrario de `Fetch Wait Time`, que vem em ms.
+                    # Converter aqui e o que impede um consumidor de comparar os
+                    # dois como se fossem a mesma unidade.
+                    "write_time_ms": acc.shuffle_write_time_ns // 1_000_000,
+                }
+            )
+        facts.append(
+            Fact(
+                kind="spark.stage.shuffle",
+                subject=subject,
+                measures=medidas,
                 provenance=provenance,
             )
         )

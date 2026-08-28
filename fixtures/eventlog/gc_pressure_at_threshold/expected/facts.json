@@ -253,6 +253,58 @@
     }
   },
   {
+    "id": "f_53ce9a",
+    "schema_version": 1,
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_gc_at_threshold",
+      "stage_id": 0
+    },
+    "measures": {
+      "read_bytes": 32000000,
+      "remote_read_bytes": 32000000,
+      "local_read_bytes": 0,
+      "read_records": 0,
+      "fetch_wait_ms": 0,
+      "write_bytes": 32000000,
+      "write_records": 0,
+      "write_time_ms": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_c96532",
+    "schema_version": 1,
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_gc_below_threshold",
+      "stage_id": 1
+    },
+    "measures": {
+      "read_bytes": 32000000,
+      "remote_read_bytes": 32000000,
+      "local_read_bytes": 0,
+      "read_records": 0,
+      "fetch_wait_ms": 0,
+      "write_bytes": 32000000,
+      "write_records": 0,
+      "write_time_ms": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_338e06",
     "schema_version": 1,
     "kind": "spark.stage.spill",

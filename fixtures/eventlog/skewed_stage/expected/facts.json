@@ -272,6 +272,58 @@
     }
   },
   {
+    "id": "f_324f0d",
+    "schema_version": 1,
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_healthy_read",
+      "stage_id": 0
+    },
+    "measures": {
+      "read_bytes": 0,
+      "remote_read_bytes": 0,
+      "local_read_bytes": 0,
+      "read_records": 0,
+      "fetch_wait_ms": 0,
+      "write_bytes": 0,
+      "write_records": 0,
+      "write_time_ms": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
+    "id": "f_f9f8c1",
+    "schema_version": 1,
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage_skewed_join",
+      "stage_id": 1
+    },
+    "measures": {
+      "read_bytes": 0,
+      "remote_read_bytes": 0,
+      "local_read_bytes": 0,
+      "read_records": 0,
+      "fetch_wait_ms": 0,
+      "write_bytes": 48000000,
+      "write_records": 0,
+      "write_time_ms": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_22f46d",
     "schema_version": 1,
     "kind": "spark.stage.spill",

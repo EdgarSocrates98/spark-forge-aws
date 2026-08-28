@@ -30,6 +30,7 @@ expects_kinds:
   - spark.stage.task_duration
   - spark.stage.task_input
   - spark.stage.spill
+  - spark.stage.shuffle
   - spark.stage.gc
   - spark.stage.task_count
   - spark.cluster.cores
