@@ -1,0 +1,7 @@
+name: single_capacity_observed
+job_name: etl_pedidos_diario
+job_run_id: jr_hoje_006
+proves: 'O job so rodou numa unica capacidade (G.2X x10) nos 10 runs do historico, todos dentro
+  do SLA. Ela e aprovada e escolhida por nao ter concorrente -- mas o plano marca `only_one_capacity_observed:
+  true`, deixando explicito que nao houve comparacao nenhuma: a escolha e a UNICA capacidade
+  que este job ja rodou, nao a vencedora de um confronto contra alternativas.'

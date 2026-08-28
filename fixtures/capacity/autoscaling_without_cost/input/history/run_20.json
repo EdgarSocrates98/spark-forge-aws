@@ -1,0 +1,53 @@
+[
+  {
+    "kind": "glue.job_run",
+    "subject": {
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_auto_09",
+      "type": "job_run",
+      "symbol": "jr_auto_09"
+    },
+    "measures": {
+      "execution_time_s": 100.0,
+      "number_of_workers": 10
+    },
+    "attrs": {
+      "state": "SUCCEEDED",
+      "worker_type": "G.2X",
+      "glue_version": "5.0",
+      "execution_class": "STANDARD",
+      "autoscaling": true,
+      "started_on": "2026-08-01T03:00:00+00:00",
+      "completed_on": "2026-08-01T03:15:00+00:00",
+      "dpu_source": "unavailable"
+    },
+    "provenance": {
+      "extractor": "glue_job_run@0.1.0",
+      "artifact": "glue_job_run.json"
+    }
+  },
+  {
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "db.pedidos",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {
+      "bytes_read": 2000000000,
+      "files_read": 4
+    },
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "event_log.jsonl"
+    }
+  }
+]
