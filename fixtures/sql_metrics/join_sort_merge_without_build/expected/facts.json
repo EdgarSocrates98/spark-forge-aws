@@ -78,16 +78,17 @@
     }
   },
   {
-    "id": "f_4c6d89",
+    "id": "f_681a4b",
     "schema_version": 1,
     "kind": "spark.sql.join_input",
     "subject": {
       "type": "plan_node",
       "node_id": 0,
       "operator": "SortMergeJoin",
-      "relation": "",
+      "relation": "db.pedidos",
       "symbol": "0:0",
-      "execution_id": 0
+      "execution_id": 0,
+      "position": "left"
     },
     "measures": {
       "via_joins": 0
@@ -104,16 +105,17 @@
     }
   },
   {
-    "id": "f_4c6d89",
+    "id": "f_062ae2",
     "schema_version": 1,
     "kind": "spark.sql.join_input",
     "subject": {
       "type": "plan_node",
       "node_id": 0,
       "operator": "SortMergeJoin",
-      "relation": "",
+      "relation": "db.eventos",
       "symbol": "0:0",
-      "execution_id": 0
+      "execution_id": 0,
+      "position": "right"
     },
     "measures": {
       "via_joins": 0

@@ -635,15 +635,31 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                 )
             )
         for aresta in execucao.arestas:
+            subject = _plan_node_subject(
+                execucao.execution_id,
+                aresta["join_node_id"],
+                aresta["strategy"],
+                "",
+            )
+            # `symbol` continua `<execution_id>:<join_node_id>` -- ele que
+            # `same_subject` usa para agrupar por junção
+            # (`rules/engine.py::_subject_group_key`), e nao pode mudar. Mas
+            # `Fact.id` e hash de `kind + subject + measures`, sem `attrs`
+            # (`findings/models.py::Fact.id`): duas arestas do MESMO join com o
+            # mesmo `via_joins` tem subject e measures identicos e so
+            # diferem em `attrs["relation"]`/`position`/`side`, que nao entra
+            # no id. `relation` ja e propriedade declarada do subject
+            # (`findings/schemas/fact.schema.json`); `position` nao e, mas o
+            # schema nao fecha `subject` com `additionalProperties: false`, e
+            # cobre o caso do self-join -- `db.a` dos dois lados do mesmo join
+            # tem a mesma `relation`, e sem `position` as duas arestas
+            # colidiriam de novo.
+            subject["relation"] = aresta["relation"]
+            subject["position"] = aresta["position"]
             facts.append(
                 Fact(
                     kind="spark.sql.join_input",
-                    subject=_plan_node_subject(
-                        execucao.execution_id,
-                        aresta["join_node_id"],
-                        aresta["strategy"],
-                        "",
-                    ),
+                    subject=subject,
                     attrs={
                         "relation": aresta["relation"],
                         "position": aresta["position"],

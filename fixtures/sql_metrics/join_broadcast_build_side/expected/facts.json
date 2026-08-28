@@ -78,16 +78,17 @@
     }
   },
   {
-    "id": "f_f5fbdb",
+    "id": "f_9511fb",
     "schema_version": 1,
     "kind": "spark.sql.join_input",
     "subject": {
       "type": "plan_node",
       "node_id": 0,
       "operator": "BroadcastHashJoin",
-      "relation": "",
+      "relation": "db.pedidos",
       "symbol": "0:0",
-      "execution_id": 0
+      "execution_id": 0,
+      "position": "left"
     },
     "measures": {
       "via_joins": 0
@@ -104,16 +105,17 @@
     }
   },
   {
-    "id": "f_f5fbdb",
+    "id": "f_1a0005",
     "schema_version": 1,
     "kind": "spark.sql.join_input",
     "subject": {
       "type": "plan_node",
       "node_id": 0,
       "operator": "BroadcastHashJoin",
-      "relation": "",
+      "relation": "db.clientes",
       "symbol": "0:0",
-      "execution_id": 0
+      "execution_id": 0,
+      "position": "right"
     },
     "measures": {
       "via_joins": 0

@@ -533,6 +533,54 @@ class TestGrafoDeJoins:
 
         assert all(a.subject["node_id"] == join.subject["node_id"] for a in arestas)
 
+    def test_every_edge_of_an_execution_has_a_distinct_id(self):
+        """`id` e identidade. Duas arestas do mesmo join tem subject e measures
+        iguais quando o subject so carrega o `node_id` do join -- `attrs`, que e
+        onde `relation`/`position`/`side` moram, nao entra no calculo do `id`
+        (`Fact.id`, `findings/models.py`). Sem `relation`/`position` no subject,
+        as duas arestas de `self._broadcast()` colidem no mesmo id.
+        """
+        facts = extract_sql_metrics([_start(plan=self._broadcast())], "log.jsonl")
+        arestas = [f for f in facts if f.kind == "spark.sql.join_input"]
+
+        assert len(arestas) == 2
+        assert len({a.id for a in arestas}) == len(arestas)
+
+    def test_self_join_edges_have_distinct_ids(self):
+        """`db.a` dos dois lados do mesmo join: mesma `relation`, ambas
+        `via_joins=0`. Sem `position` no subject as duas arestas colidiriam de
+        novo, porque `relation` sozinha nao distingue os dois lados.
+        """
+        plano = {
+            "nodeName": "SortMergeJoin",
+            "simpleString": "SortMergeJoin [id#1], [id#2], Inner",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(simple="FileScan parquet db.a[id#1]"),
+                _scan_node(simple="FileScan parquet db.a[id#2]"),
+            ],
+        }
+        facts = extract_sql_metrics([_start(plan=plano)], "log.jsonl")
+        arestas = [f for f in facts if f.kind == "spark.sql.join_input"]
+
+        assert len(arestas) == 2
+        assert {a.attrs["relation"] for a in arestas} == {"db.a"}
+        assert len({a.id for a in arestas}) == 2
+
+    def test_edges_of_the_same_join_still_share_the_grouping_symbol(self):
+        """A correcao de identidade nao pode quebrar `same_subject`
+        (`rules/engine.py::_subject_group_key`), que agrupa por
+        `subject["symbol"]`. Duas arestas do mesmo join continuam com o mesmo
+        `symbol` mesmo com `relation`/`position` diferentes no subject.
+        """
+        facts = extract_sql_metrics([_start(plan=self._broadcast())], "log.jsonl")
+        join = [f for f in facts if f.kind == "spark.sql.join"][0]
+        arestas = [f for f in facts if f.kind == "spark.sql.join_input"]
+
+        assert len(arestas) == 2
+        assert {a.subject["symbol"] for a in arestas} == {join.subject["symbol"]}
+
     def test_sort_merge_join_has_no_build_side_and_says_so(self):
         plano = {
             "nodeName": "SortMergeJoin",
