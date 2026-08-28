@@ -33,6 +33,16 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 Depois, `sparkforge_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
 disparam sobre facts fundidos.
 
+Depois de facts sobre scan, shuffle, spill e join, `sparkforge_workload` — perfila o
+job por eixo (`scan_intensity`, `shuffle_intensity`, `skew_risk`, `memory_pressure`,
+`join_intensity`, ...) a partir de facts JÁ extraídos: não é outro extrator da tabela
+acima, é o único mecanismo que classifica o que eles já mediram. Existe porque volume de
+entrada sozinho não separa workload — dois jobs do mesmo tamanho de entrada podem ser um
+scan-bound e outro shuffle-bound, e o volume não distingue os dois. Cada eixo carrega a
+própria `confidence` (`measured`/`declared`/`unknown`) e nunca aplica limiar universal:
+sem `--history` do próprio job, os eixos de escala saem `unknown` de propósito, em vez
+de um default inventado.
+
 **`sparkforge_analyze_sql_metrics` não é o mesmo dado que `sparkforge_analyze_event_log`
 sobre o mesmo arquivo.** O event log agrega tudo que cai num stage — se duas fontes
 compartilham stage, o custo delas soma num número só, e não há como separar a fonte cara da

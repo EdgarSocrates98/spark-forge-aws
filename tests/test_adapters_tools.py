@@ -62,6 +62,7 @@ class TestToolSurface:
             "sparkforge_funcval_plan",
             "sparkforge_funcval_compare",
             "sparkforge_fuse",
+            "sparkforge_workload",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
@@ -759,6 +760,29 @@ def _write_facts_file(tmp_path):
     facts = call_tool("sparkforge_analyze_pyspark", {"path": str(lib)})
     path = tmp_path / "facts.json"
     path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def _write_workload_facts_file(tmp_path):
+    """Um fact `spark.stage.task_duration`, o suficiente para `skew_risk` sair
+    `measured` -- os demais eixos saem `unknown` de proposito, sem `history_path`."""
+    path = tmp_path / "workload_facts.json"
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "a" * 16,
+                    "schema_version": 1,
+                    "kind": "spark.stage.task_duration",
+                    "subject": {"type": "stage", "symbol": "stage-1", "stage_id": 1},
+                    "measures": {"p50_ms": 100, "p95_ms": 1000, "task_count": 20},
+                    "attrs": {},
+                    "provenance": {},
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
     return path
 
 
@@ -1476,6 +1500,13 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_fuse", {"facts_paths": [str(facts_path)]})
 
+    if name == "sparkforge_workload":
+        facts_path = _write_workload_facts_file(tmp_path)
+        return call_tool(
+            "sparkforge_workload",
+            {"facts_path": str(facts_path), "job_name": "etl", "job_run_id": "jr_1"},
+        )
+
     if name == "sparkforge_glue_dependency_audit":
         # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a
         # amostra precisa render achado, senao valida contra o schema pelo
@@ -1694,6 +1725,14 @@ class TestErrorShapesValidateToo:
             },
         ),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
+        (
+            "sparkforge_workload",
+            {
+                "facts_path": "<tmp>/nao-existe.json",
+                "job_name": "etl",
+                "job_run_id": "jr_1",
+            },
+        ),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),
         (
             "sparkforge_report_sign",
@@ -1774,3 +1813,19 @@ class TestSqlMetricsTool:
         root = Path(__file__).resolve().parents[1]
         manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
         assert "sparkforge_analyze_sql_metrics" in set(manifest["tools"])
+
+
+class TestWorkloadTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_workload" in tools.TOOLS
+        assert "sparkforge_workload" in tools._HANDLERS
+
+    def test_the_tool_is_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        assert "sparkforge_workload" in set(manifest["tools"])

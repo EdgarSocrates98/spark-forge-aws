@@ -303,6 +303,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: profile a workload by independent axis from already-extracted facts
+    tools: [sparkforge_workload]
+    cli: [workload]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: derive what to measure on both sides of a change
     tools: [sparkforge_funcval_plan]
     cli: [funcval plan]

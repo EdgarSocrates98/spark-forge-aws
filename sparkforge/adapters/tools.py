@@ -1857,6 +1857,73 @@ _CODE_DB_PROP: dict[str, Any] = {
 # aqui sai da raiz.
 _CODE_WRITES_INDEX = _WRITE_IDEMPOTENT
 
+# O eixo de `sparkforge.workload.axis.Axis.to_dict()`. `missing` e
+# `collect_command` so aparecem quando `value` e `unknown` -- por isso nao
+# entram em `required`, no mesmo molde de `_ERROR_SCHEMA` nao entrar no ramo
+# de sucesso de `_may_fail`.
+_WORKLOAD_AXIS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["value", "confidence", "basis", "evidence"],
+    "properties": {
+        "value": {
+            "type": "string",
+            "enum": ["extreme", "high", "medium", "low", "critical", "unknown"],
+        },
+        "confidence": {
+            "type": "string",
+            "enum": ["measured", "declared", "unknown"],
+            "description": (
+                "`measured` sai de artefato ja extraido. `declared` sai do "
+                "inventario versionado e NUNCA e promovido a `measured`. "
+                "`unknown` carrega `missing` e, quando existe, `collect_command`."
+            ),
+        },
+        "basis": {"type": "string"},
+        "evidence": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Ids dos facts que sustentam o valor. Vazio quando `unknown`.",
+        },
+        "missing": {
+            "type": "string",
+            "description": "O fact que faltou, quando `value` e `unknown`.",
+        },
+        "collect_command": {
+            "type": "string",
+            "description": "O comando que fecha a lacuna, quando existe.",
+        },
+    },
+}
+
+_WORKLOAD_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["job_name", "job_run_id", "source_count", "axes", "unknown_axes"],
+    "properties": {
+        "job_name": {"type": "string"},
+        "job_run_id": {"type": "string"},
+        "source_count": {
+            "type": "integer",
+            "description": "Quantos facts `spark.sql.scan` sustentam o perfil.",
+        },
+        "axes": {
+            "type": "object",
+            "additionalProperties": _WORKLOAD_AXIS_SCHEMA,
+            "description": (
+                "Um eixo por chave: `scan_intensity`, `file_pressure`, "
+                "`shuffle_intensity`, `skew_risk`, `memory_pressure`, "
+                "`join_intensity`, `sla_class` e `primary_input_class`."
+            ),
+        },
+        "unknown_axes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Nomes dos eixos cujo `value` e `unknown`, para ler sem varrer `axes`."
+            ),
+        },
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -3066,6 +3133,59 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_workload": {
+        "description": (
+            "Perfil de workload por eixos independentes -- scan, shuffle, memoria, skew, "
+            "arquivos, join, SLA e classe de entrada -- a partir de facts JA extraidos. "
+            "Cada eixo carrega o valor, a BASE que o produziu e a CONFIANCA: `measured` "
+            "sai de artefato, `declared` sai do inventario versionado e nunca e "
+            "promovido, e `unknown` carrega o fact que falta e, quando existe, o comando "
+            "que fecha a lacuna. Verbo de topo, nao um `analyze`: nao extrai nada de "
+            "artefato, classifica o que outros verbos ja extrairam -- mesma razao pela "
+            "qual `benchmark` e `fuse` sao verbos proprios. "
+            "A escala vem do HISTORICO DO PROPRIO JOB, nunca de limiar universal: sem "
+            "`history_path`, os eixos de volume (`scan_intensity`, `shuffle_intensity`) "
+            "saem `unknown` de proposito, em vez de comparar contra um limiar inventado "
+            "que valeria para um job e mentiria para outro."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "job_name", "job_run_id"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) gerado por `analyze`, tipicamente "
+                        "`sparkforge_analyze_sql_metrics --out`."
+                    ),
+                },
+                "job_name": {"type": "string"},
+                "job_run_id": {
+                    "type": "string",
+                    "description": "Id do run que este perfil descreve.",
+                },
+                "history_path": {
+                    "type": "string",
+                    "description": (
+                        "Diretorio com um arquivo de facts por run ANTERIOR "
+                        "(`sparkforge_analyze_glue_job_runs --out`), um arquivo por run. "
+                        "A separacao por arquivo e o que identifica cada run: "
+                        "`execution_id` e por aplicacao, e dois event logs diferentes "
+                        "colidem nele. Sem este parametro, os eixos que precisam de "
+                        "escala saem `unknown`."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _WORKLOAD_SUCCESS_SCHEMA,
+            (
+                "Fingerprint do workload, ou erro se `facts_path` nao existe ou "
+                "`history_path` nao e um diretorio."
+            ),
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_funcval_plan": {
         "description": (
             "Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA "
@@ -4242,6 +4362,15 @@ def _h_benchmark(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_workload(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.workload_fingerprint(
+        args["facts_path"],
+        job_name=args["job_name"],
+        job_run_id=args["job_run_id"],
+        history_path=args.get("history_path") or "",
+    )
+
+
 def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
     return _core.funcval_plan(
         args.get("facts_paths"),
@@ -4439,6 +4568,7 @@ _HANDLERS = {
     "sparkforge_glue_dependency_audit": _h_glue_dependency_audit,
     "sparkforge_iceberg_assess_upgrade": _h_iceberg_assess_upgrade,
     "sparkforge_benchmark": _h_benchmark,
+    "sparkforge_workload": _h_workload,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,

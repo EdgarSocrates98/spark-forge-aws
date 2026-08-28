@@ -131,7 +131,8 @@
     "sparkforge_resume",
     "sparkforge_rules_lookup",
     "sparkforge_runtime_detect",
-    "sparkforge_validate_output"
+    "sparkforge_validate_output",
+    "sparkforge_workload"
   ],
   "mcp": {
     "config": ".mcp.json",

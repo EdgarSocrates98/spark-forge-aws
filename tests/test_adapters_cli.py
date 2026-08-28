@@ -2193,3 +2193,49 @@ class TestSqlMetricsCommand:
         facts = json.loads(out.read_text(encoding="utf-8"))
         scan = [f for f in facts if f["kind"] == "spark.sql.scan"][0]
         assert scan["measures"]["files_read"] == 6
+
+
+class TestWorkloadCommand:
+    def _facts(self, tmp_path):
+        alvo = tmp_path / "facts.json"
+        alvo.write_text(
+            json.dumps(
+                [
+                    {
+                        "id": "a" * 16,
+                        "schema_version": 1,
+                        "kind": "spark.stage.task_duration",
+                        "subject": {"type": "stage", "symbol": "stage-1", "stage_id": 1},
+                        "measures": {"p50_ms": 100, "p95_ms": 1000, "task_count": 20},
+                        "attrs": {},
+                        "provenance": {},
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return alvo
+
+    def test_workload_is_a_top_level_verb(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        code = main(
+            ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
+             "--job-run", "jr_1"]
+        )
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["job_name"] == "etl"
+        assert payload["axes"]["skew_risk"]["confidence"] == "measured"
+
+    def test_axes_without_evidence_are_listed_as_unknown(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        main(
+            ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
+             "--job-run", "jr_1"]
+        )
+        payload = json.loads(capsys.readouterr().out)
+
+        assert "scan_intensity" in payload["unknown_axes"]

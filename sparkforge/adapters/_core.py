@@ -85,6 +85,7 @@ from sparkforge.migration.collect import collect as collect_migration
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
+from sparkforge.workload import build_fingerprint
 
 DEFAULT_LIMIT = 50
 
@@ -1562,6 +1563,61 @@ def benchmark_runs(
         after_runtime=after_runtime,
     )
     return _facts_page(facts, "bench.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# workload
+# --------------------------------------------------------------------------- #
+
+_FACTS_FROM_SQL_METRICS = (
+    "sparkforge analyze sql-metrics --path <event-log.jsonl> --out {path}"
+)
+_FACTS_FROM_GLUE_JOB_RUNS = (
+    "sparkforge analyze glue-job-runs --path <dir> --job-name <job> --out {path}"
+)
+
+
+def workload_fingerprint(
+    facts_path: str,
+    job_name: str,
+    job_run_id: str,
+    history_path: str = "",
+) -> dict[str, Any]:
+    """Monta o WorkloadFingerprint a partir de facts ja extraidos.
+
+    Verbo de TOPO, e nao `analyze workload`, pela mesma razao de `benchmark` e
+    `fuse`: os verbos sob `analyze` extraem facts de um artefato, e este nao
+    extrai nada -- ele classifica o que outros verbos ja extrairam.
+
+    `history_path` e um DIRETORIO, e nao um arquivo: um arquivo de facts por
+    run anterior. A separacao por ARQUIVO e o que identifica cada run --
+    `execution_id` e por aplicacao, e dois event logs diferentes colidem
+    nele, entao uniar tudo num conjunto so apagaria a fronteira entre runs
+    que a escala do historico precisa. Cada `*.json` do diretorio vira UM
+    elemento da sequencia `history` que `build_fingerprint` espera (uma
+    sequencia de conjuntos de facts, um por run anterior) -- nunca um unico
+    conjunto fundido.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_SQL_METRICS, "--facts")
+    history: list[list[Fact]] = []
+    if history_path:
+        hist_dir = Path(history_path)
+        if not hist_dir.is_dir():
+            raise AdapterError(
+                f"Diretorio de historico nao encontrado: {history_path}\n"
+                f"  Rode o verbo que produz os facts de cada run e grave um "
+                f"arquivo por run neste diretorio:\n"
+                f"    {_FACTS_FROM_GLUE_JOB_RUNS.format(path='<um-arquivo-por-run>.json')}",
+                exit_code=2,
+            )
+        for run_file in sorted(hist_dir.glob("*.json")):
+            history.append(
+                _load_facts_file(str(run_file), _FACTS_FROM_GLUE_JOB_RUNS, "--history")
+            )
+    fingerprint = build_fingerprint(
+        facts, job_name=job_name, job_run_id=job_run_id, history=history
+    )
+    return fingerprint.to_dict()
 
 
 # --------------------------------------------------------------------------- #
