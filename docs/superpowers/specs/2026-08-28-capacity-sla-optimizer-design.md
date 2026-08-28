@@ -71,7 +71,7 @@ D ordena as capacidades observadas no histórico e escolhe entre elas. Capacidad
 
 ### 3.2 O custo é DPU-segundos, não moeda
 
-`glue.job_run.distribution` carrega `dpu_seconds_p50` e `dpu_seconds_p95`, medidos quando a API os publica e derivados quando a capacidade é estática.
+`glue.job_run` carrega `dpu_seconds` **por run**, medido quando a API o publica e derivado quando a capacidade é estática. D calcula o p95 **sobre os runs comparáveis**, e não lê o `dpu_seconds_p95` de `glue.job_run.distribution`: aquele agrega todos os runs da capacidade, inclusive os que o filtro de volume de §3.4 acabou de excluir. Usar o agregado depois de filtrar seria comparar um custo de uma população com uma confiabilidade de outra.
 
 Dentro da mesma região, a ordem por DPU-segundos **é** a ordem por dinheiro: o preço por DPU-hora é fator constante e não muda quem vence. Então D decide sem preço nenhum, e E depois converte sem mudar a escolha.
 
@@ -153,7 +153,8 @@ Candidate(
     runs_within_sla,
     reliability,           # runs_within_sla / runs_comparable
     resolution,            # 1 / runs_comparable
-    dpu_seconds_p95,
+    dpu_seconds_p95,       # p95 sobre os runs COMPARAVEIS, recomputado aqui
+    runs_without_cost,     # comparaveis sem `dpu_seconds` medido
     meets_sla,             # bool
     safety = "REVIEW",
 )
@@ -190,7 +191,7 @@ Tool MCP `sparkforge_capacity`, read-only local. Parâmetros de caminho terminam
 | Situação | Saída |
 |---|---|
 | `1/n > 1 − alvo` depois do filtro de volume | `resolution_too_coarse`, com o `n` comparável e quantos runs faltam |
-| Auto Scaling sem `DPUSeconds` | `cost_unobservable`, apontando a recusa de B |
+| Nenhum run comparável com `dpu_seconds` | `cost_unobservable`, apontando a recusa de B: sob Auto Scaling sem `DPUSeconds`, `number_of_workers` é teto e não uso |
 | Sem `workload.declared` para o job | plano `unknown`: sem SLA não há restrição a satisfazer |
 | Nenhuma capacidade cumpre o SLA | `chosen: None`, todas as candidatas listadas com o quanto cada uma erra. Não escolhe a menos pior |
 | Uma única capacidade observada | ela é avaliada, e o plano declara que não há alternativa a comparar |
