@@ -46,6 +46,45 @@ class FakeGlueClient:
         return {"Job": self._job}
 
 
+class FakeGlueRunsClient:
+    """`get_job_runs` paginado. Cada item de `pages` e uma resposta completa."""
+
+    def __init__(self, pages: list[dict]):
+        self.calls: list[tuple[str, dict]] = []
+        self._pages = pages
+
+    def get_job_runs(self, **kwargs):
+        self.calls.append(("get_job_runs", kwargs))
+        index = 0 if "NextToken" not in kwargs else int(kwargs["NextToken"])
+        return self._pages[index]
+
+
+class EntityNotFoundException(Exception):
+    """Reproduz o nome da excecao que botocore levanta para job inexistente."""
+
+
+class MissingJobGlueClient:
+    def get_job_runs(self, **kwargs):
+        raise EntityNotFoundException("Job with name: nope not found")
+
+
+def _run(run_id: str, state: str = "SUCCEEDED", **extra) -> dict:
+    base = {
+        "Id": run_id,
+        "JobName": "my-job",
+        "JobRunState": state,
+        "StartedOn": "2026-08-01T10:00:00+00:00",
+        "CompletedOn": "2026-08-01T10:20:00+00:00",
+        "ExecutionTime": 1200,
+        "GlueVersion": "5.0",
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 10,
+        "Timeout": 60,
+    }
+    base.update(extra)
+    return base
+
+
 class FakeCloudWatchClient:
     def __init__(self):
         self.calls: list[tuple[str, dict]] = []
@@ -222,6 +261,128 @@ class TestCollectGlueJob:
 
         aws.collect_glue_job("j", tmp_path, now="2026-07-30T01:00:00Z")
         assert len(glue.calls) == 1  # sem segunda chamada
+
+
+class TestCollectGlueJobRuns:
+    def test_writes_one_artifact_per_terminal_run(self, tmp_path, monkeypatch):
+        glue = FakeGlueRunsClient([{"JobRuns": [_run("jr_1"), _run("jr_2")]}])
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=glue))
+
+        result = aws.collect_glue_job_runs(
+            "my-job", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z"
+        )
+
+        assert len(result["artifacts"]) == 2
+        assert (tmp_path / aws.glue_job_run_path("my-job", "jr_1")).is_file()
+        assert (tmp_path / aws.glue_job_run_path("my-job", "jr_2")).is_file()
+        kinds = {e["kind"] for e in load_manifest(tmp_path)}
+        assert kinds == {"glue_job_run"}
+
+    def test_non_terminal_run_is_skipped_not_written(self, tmp_path, monkeypatch):
+        glue = FakeGlueRunsClient(
+            [{"JobRuns": [_run("jr_1"), _run("jr_2", state="RUNNING")]}]
+        )
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=glue))
+
+        result = aws.collect_glue_job_runs(
+            "my-job", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z"
+        )
+
+        assert len(result["artifacts"]) == 1
+        assert result["skipped"] == [{"job_run_id": "jr_2", "state": "RUNNING"}]
+        assert not (tmp_path / aws.glue_job_run_path("my-job", "jr_2")).exists()
+
+    def test_second_collection_only_writes_the_new_runs(self, tmp_path, monkeypatch):
+        first = FakeGlueRunsClient([{"JobRuns": [_run("jr_1"), _run("jr_2")]}])
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=first))
+        aws.collect_glue_job_runs("my-job", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z")
+
+        second = FakeGlueRunsClient(
+            [{"JobRuns": [_run("jr_3"), _run("jr_1"), _run("jr_2")]}]
+        )
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=second))
+        result = aws.collect_glue_job_runs(
+            "my-job", tmp_path, max_runs=30, now="2026-08-27T00:00:00Z"
+        )
+
+        cache_hits = [a for a in result["artifacts"] if a["cache_hit"]]
+        fresh = [a for a in result["artifacts"] if not a["cache_hit"]]
+        assert len(cache_hits) == 2
+        assert len(fresh) == 1
+        assert fresh[0]["path"] == aws.glue_job_run_path("my-job", "jr_3")
+
+    def test_recollects_when_local_file_is_corrupted(self, tmp_path, monkeypatch):
+        glue = FakeGlueRunsClient([{"JobRuns": [_run("jr_1")]}])
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=glue))
+        aws.collect_glue_job_runs("my-job", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z")
+
+        target = tmp_path / aws.glue_job_run_path("my-job", "jr_1")
+        target.write_text("corrompido", encoding="utf-8")
+
+        result = aws.collect_glue_job_runs(
+            "my-job", tmp_path, max_runs=30, now="2026-08-27T00:00:00Z"
+        )
+
+        assert result["artifacts"][0]["cache_hit"] is False
+        assert json.loads(target.read_text(encoding="utf-8"))["Id"] == "jr_1"
+        assert all(v["hash_matches"] for v in verify_all(tmp_path))
+
+    def test_follows_pagination_until_max_runs(self, tmp_path, monkeypatch):
+        glue = FakeGlueRunsClient(
+            [
+                {"JobRuns": [_run("jr_1")], "NextToken": "1"},
+                {"JobRuns": [_run("jr_2")]},
+            ]
+        )
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=glue))
+
+        result = aws.collect_glue_job_runs(
+            "my-job", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z"
+        )
+
+        assert len(result["artifacts"]) == 2
+        assert len(glue.calls) == 2
+
+    def test_stops_at_max_runs_without_extra_calls(self, tmp_path, monkeypatch):
+        glue = FakeGlueRunsClient([{"JobRuns": [_run("jr_1")], "NextToken": "1"}])
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=glue))
+
+        result = aws.collect_glue_job_runs(
+            "my-job", tmp_path, max_runs=1, now="2026-08-26T00:00:00Z"
+        )
+
+        assert result["runs_listed"] == 1
+        assert len(glue.calls) == 1
+
+    def test_job_without_runs_succeeds_with_nothing_collected(self, tmp_path, monkeypatch):
+        glue = FakeGlueRunsClient([{"JobRuns": []}])
+        monkeypatch.setattr(aws, "require_boto3", lambda: FakeBoto3(glue=glue))
+
+        result = aws.collect_glue_job_runs(
+            "my-job", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z"
+        )
+
+        assert result["artifacts"] == []
+        assert result["skipped"] == []
+
+    def test_missing_job_raises_collection_failed(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            aws, "require_boto3", lambda: FakeBoto3(glue=MissingJobGlueClient())
+        )
+        with pytest.raises(aws.CollectionFailed, match="nao existe"):
+            aws.collect_glue_job_runs(
+                "nope", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z"
+            )
+
+    def test_raises_collector_unavailable_when_boto3_absent(self, tmp_path, monkeypatch):
+        def boom():
+            raise CollectorUnavailable("boto3 nao disponivel")
+
+        monkeypatch.setattr(aws, "require_boto3", boom)
+        with pytest.raises(CollectorUnavailable, match="boto3"):
+            aws.collect_glue_job_runs(
+                "my-job", tmp_path, max_runs=30, now="2026-08-26T00:00:00Z"
+            )
 
 
 class TestCollectCloudwatch:
