@@ -10179,19 +10179,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-672",
       "line": 246,
-      "note": "remedido na fase do WorkloadFingerprint (2026-08-28): sparkforge/facts/workload.py, sparkforge/workload/__init__.py, axis.py e fingerprint.py sao quatro arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"source\")))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 36
+          "value": 38
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "36",
+      "text": "38",
       "type": "number"
     },
     {
@@ -10199,19 +10199,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-673",
       "line": 246,
-      "note": "remedido na fase do WorkloadFingerprint (2026-08-28): sparkforge/facts/workload.py, sparkforge/workload/__init__.py, axis.py e fingerprint.py sao quatro arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"source\")], ensure_ascii=False).encode(\"utf-8\")))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 9240
+          "value": 9840
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "9240",
+      "text": "9840",
       "type": "number"
     },
     {
@@ -10219,19 +10219,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 247,
-      "note": "remedido na fase do WorkloadFingerprint (2026-08-28): sparkforge/facts/workload.py, sparkforge/workload/__init__.py, axis.py e fingerprint.py sao quatro arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 115601
+          "value": 116206
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "115601",
+      "text": "116206",
       "type": "number"
     },
     {
@@ -10239,19 +10239,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-675",
       "line": 248,
-      "note": "remedido na fase do WorkloadFingerprint (2026-08-28): sparkforge/facts/workload.py, sparkforge/workload/__init__.py, axis.py e fingerprint.py sao quatro arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na fase do grafo de joins (2026-08-28): spark.sql.join e spark.sql.join_input, mais os testes e fixtures novos, sao codigo novo varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 6742
+          "value": 7068
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "6742",
+      "text": "7068",
       "type": "number"
     },
     {

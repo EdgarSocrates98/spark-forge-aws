@@ -45,8 +45,8 @@ arquivo ganha.
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
-| Extratores de facts | **23** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 30 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento (`sql_metric_names.py`, novo nesta fase, é o mapa canônico de métrica SQL), `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
-| Fact kinds distintos emitidos | **144** | união de `EMITTED_KINDS`; os quatro kinds novos são da fase de métricas de scan por nó do plano — ver a seção própria abaixo |
+| Extratores de facts | **24** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 31 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator. `workload.py` (fase WorkloadFingerprint) é o vigésimo quarto |
+| Fact kinds distintos emitidos | **150** | união de `EMITTED_KINDS`; esta linha estava desatualizada desde a fase WorkloadFingerprint (quatro kinds novos, não refletidos aqui) — os dois kinds novos desta fase, do grafo de joins, ver a seção própria abaixo |
 | Regras de diagnóstico | **130**, sendo **58 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
@@ -4011,6 +4011,92 @@ recusando combinar preço com região não qualificada.
 **Nenhuma regra nova no catálogo.** O fingerprint é o mecanismo de
 julgamento; regra que o consuma é fase seguinte, e escrevê-la agora seria
 limiar sobre um contrato ainda sem uso.
+
+## Grafo de joins — qual fonte entra em qual join, e de que lado (2026-08-28)
+
+Documentos: [spec](specs/2026-08-28-sql-join-graph-design.md) ·
+[plan](plans/2026-08-28-sql-join-graph.md).
+
+`plan.join` carrega `build_side` desde a Fase 1 — diz que o lado de build é o
+**esquerdo**. Nada dizia **o que** está do lado esquerdo; é a diferença entre
+"o build side é o esquerdo" e "a tabela de 40 GB está no build side", e só a
+segunda é acionável. Dois kinds novos em `sparkforge/facts/sql_metrics.py`:
+`spark.sql.join` (por nó de join — `strategy`, `join_type`, `build_side`,
+`inputs_left`, `inputs_right`) e `spark.sql.join_input` (uma aresta por
+`(join, fonte, lado)` — `relation`, `position`, `side`, `via_joins`). A
+árvore vem do `sparkPlanInfo` do event log, não do plano colado:
+`spark_plan.py` descarta a estrutura de propósito (o docstring de `_Node` diz
+"já separado do desenho de árvore"), e o `sparkPlanInfo` é da execução que
+produziu os números. `position` é observação (ordem de `children`); `side` é
+derivação (token `BuildLeft`/`BuildRight`) e sai `unknown` quando o operador
+não publica lado de build — `SortMergeJoin` ordena e mescla os dois lados, e
+atribuir um seria afirmar o que o plano não diz. Razões novas de
+`unresolved`: `join_side_without_source`, `join_without_children`,
+`plan_too_deep`, `value_orphaned_by_replan`. Quatro cenários novos em
+`fixtures/sql_metrics/`, e a garantia sobre o corpus inteiro: toda
+`spark.sql.join_input` aponta para um join real e uma relação observada na
+mesma execução — verificada sobre o corpus, não por cenário isolado.
+
+Nenhum extrator novo: as arestas saem do mesmo `sql_metrics.py` que já emitia
+os quatro kinds da fase de métricas de scan. Dois kinds novos (**150** no
+total agora, **24** extratores). Nenhuma tool nova, nenhuma entrada nova em
+`manifest.json` ou `parity.yaml` — consequência de o grafo morar no extrator
+existente que `analyze sql-metrics` já executa e que
+`sparkforge_analyze_sql_metrics` já expõe.
+
+Faixa de commits: `097f38c` … `e47374c`. **38 testes** novos, medidos por
+coleta (`pytest --collect-only`, comparando a árvore antes de `095090b` com
+`e47374c`): `TestEstruturaDaArvore` (4), `TestGrafoDeJoins` (10),
+`TestCustoDaMontagemDoGrafo` (1) e mais dois em `TestAQE` (de 2 para 4), em
+`tests/test_facts_sql_metrics.py`; e **21** em
+`tests/test_fixtures_golden_sql_metrics.py`.
+
+### Três consertos que a construção forçou
+
+**`value_orphaned_by_replan`.** Defeito herdado de C1: `absorb_plan`
+resetava `accum` a cada árvore enquanto `values` persistia, então um valor
+publicado antes da reposta do AQE ficava órfão e sumia sem sinal —
+contrariando a própria spec de C1 (§3.5). Agora o valor sobrevive se o nó
+ainda existe, e vira lacuna nomeada (`value_orphaned_by_replan`) se o nó
+sumiu.
+
+**Custo.** A montagem original era quadrática: cada lado de cada join
+percorria a árvore inteira. Medido antes do conserto, numa árvore sintética
+bushy de profundidade 12 (8191 nós): **33,3s**. Uma passada pós-ordem
+(`_fontes_por_no`) baixou isso para **0,95s**. Travado por teste que conta
+chamadas (`TestCustoDaMontagemDoGrafo`), não por relógio — relógio em CI
+compartilhado é frágil.
+
+**Identidade da aresta.** `Fact.id` é hash de `kind + subject + measures` e
+não inclui `attrs`. Como a aresta era ancorada só no nó do join, duas
+arestas irmãs com o mesmo `via_joins` colidiam no id — visível nos goldens
+de três dos quatro cenários novos. `relation` e `position` entraram no
+`subject`; `symbol` continua sendo `<execution_id>:<join_node_id>`, então
+`same_subject` segue agrupando por junção. O caso do self-join prova que
+`relation` sozinha não bastava: as duas arestas do mesmo join, mesma
+relação, só se distinguem por `position`.
+
+### O que ficou de fora, e por quê
+
+**Volume propagado até o join.** Exigiria decidir o que acontece quando há
+agregação no meio do ramo, e o plano não publica a cardinalidade de saída de
+um `HashAggregate`. Um número propagado através de um filtro desconhecido
+seria estimativa vestida de medição.
+
+**Ordem dos joins como julgamento.** A sequência é observável; dizer que
+está errada exige cardinalidade das fontes, que nem o plano nem o event log
+publicam de forma confiável.
+
+**`reuse_count` por fonte.** Recorte irmão e independente — a mesma relação
+lida três vezes é desperdício que nenhum eixo enxerga hoje, e merece o seu
+próprio documento.
+
+**Nenhuma regra nova no catálogo.** As arestas são o insumo; julgar "a fonte
+grande está no build side" precisa do tamanho da fonte cruzado com a aresta,
+e isso é a fase seguinte.
+
+**Nenhum eixo novo no fingerprint.** `join_intensity` continua estrutural em
+C2. Enriquecê-lo com o grafo é decisão de quem consumir estas arestas.
 
 ## Dívidas abertas
 
