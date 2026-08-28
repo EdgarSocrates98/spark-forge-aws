@@ -1,0 +1,18 @@
+name: unknown_metric
+proves: >
+  FileSourceScanExec sobre db.clientes cuja unica metrica publicada
+  (`bytes of shuffle write`) esta fora de `knowledge/spark/sql-metrics.yaml`.
+  O scan sai sem measure nenhuma -- nada inventado -- e o nome cru vira
+  `spark.sql.unresolved` com razao `unknown_metric_name`, para quem for
+  atualizar o mapa.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.scan
+  - spark.sql.execution
+  - spark.sql.unresolved
+  - spark.sql.analyzed
+expects_rules: []

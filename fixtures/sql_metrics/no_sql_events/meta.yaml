@@ -1,0 +1,17 @@
+name: no_sql_events
+proves: >
+  Event log sem nenhum evento do namespace
+  `org.apache.spark.sql.execution.ui` -- so `SparkListenerStageSubmitted` e
+  `SparkListenerTaskEnd` com `Accumulables` vazio. `spark.sql.analyzed` sai
+  com `executions: 0` e `unattributed_accumulators: 0`: job sem plano SQL
+  publicado nao e defeito, e o extrator nao inventa um falso ponto cego para
+  provar isso.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.unresolved
+  - spark.sql.analyzed
+expects_rules: []

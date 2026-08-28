@@ -41,6 +41,7 @@ from sparkforge.facts import (
     s3_listing,
     spark_plan,
     sql_literal,
+    sql_metrics,
     terraform,
 )
 
@@ -99,6 +100,12 @@ EXTRACTORS = {
     "s3_listing": s3_listing,
     "spark_plan": spark_plan,
     "sql_literal": sql_literal,
+    # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/
+    # sql_metrics/`), depois de o extrator e o mapa canonico ja existirem
+    # (Tasks 1-7). Sem ele aqui os quatro kinds `spark.sql.*` caem no lado
+    # errado de `test_no_golden_carries_a_kind_that_no_extractor_declares`:
+    # golden com kind que nenhum extrator declara, em vez de kind coberto.
+    "sql_metrics": sql_metrics,
     "terraform": terraform,
 }
 

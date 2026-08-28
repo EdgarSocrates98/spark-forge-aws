@@ -1,0 +1,16 @@
+name: scan_parquet_measured
+proves: >
+  FileSourceScanExec sobre db.clientes, formato Parquet, com as duas metricas
+  do mapa canonico publicadas pelo driver: numero de arquivos lidos e bytes
+  lidos. Caso base do extrator -- scan medido, nao inferido, sem AQE e sem
+  execucao truncada.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.scan
+  - spark.sql.execution
+  - spark.sql.analyzed
+expects_rules: []
