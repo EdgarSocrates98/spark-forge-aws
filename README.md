@@ -164,7 +164,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 22 extratores emitem 140 kinds distintos de fact, e todos são offline: leem
+Os 23 extratores emitem 144 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -173,6 +173,7 @@ tool MCP de mesmo nome.
 | Código PySpark | `analyze pyspark` | árvore `*.py`, por AST — nunca importa o código |
 | Plano físico | `analyze plan` | saída colada de `explain("formatted")` |
 | Event log do Spark | `analyze event-log` | `*.jsonl` de uma execução |
+| Métricas SQL do plano | `analyze sql-metrics` | o mesmo event log, pela ótica de quanto cada fonte custou |
 | Metadata Iceberg | `analyze iceberg` | dump das metadata tables |
 | Glue Data Catalog | `analyze catalog-schema` | dump de `GetTables`/`GetTable` |
 | Terraform do Glue | `analyze terraform` | HCL com `aws_glue_job` |

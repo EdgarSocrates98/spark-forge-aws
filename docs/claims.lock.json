@@ -826,19 +826,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-482",
       "line": 80,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 53
+          "value": 54
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "53",
+      "text": "54",
       "type": "number"
     },
     {
@@ -846,19 +846,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-484",
       "line": 84,
-      "note": "reexecutado -- a contagem de READ_ONLY e derivada rodando tool_class() sobre o catalogo real, nao relida da tabela do documento. A derivacao em si esta trancada por tests/test_harness_authorization.py",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 34
+          "value": 35
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "34",
+      "text": "35",
       "type": "number"
     },
     {
@@ -946,19 +946,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-490",
       "line": 172,
-      "note": "reexecutado -- conta as tools READ_ONLY que declaram propriedade de caminho, derivando a classe com tool_class() e lendo o inputSchema real. A afirmacao anterior dizia 32 (todas), e era quantificador universal vendido como medicao: sparkforge_rules_lookup nao tem parametro de caminho nenhum",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; P={\"path\",\"repo\",\"facts_path\",\"facts_paths\",\"before\",\"after\",\"before_path\",\"after_path\",\"file\",\"report_path\",\"findings_path\"}; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY and P & set(TOOLS[n][\"inputSchema\"].get(\"properties\", {}))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 33
+          "value": 34
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "33",
+      "text": "34",
       "type": "number"
     },
     {
@@ -2992,19 +2992,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-357",
       "line": 75,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): tests/test_fixtures_golden_sql_metrics.py entrou na suite; a prova conta os arquivos em disco",
       "proof": {
         "cmd": "python -c 'import pathlib; print(len(list(pathlib.Path(\"tests\").glob(\"test_fixtures_golden*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 23
+          "value": 24
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "23",
+      "text": "24",
       "type": "number"
     },
     {
@@ -3070,18 +3070,18 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
-      "note": "remedido depois da fase J1, que acrescentou detail_level e projecao de procedencia ao envelope; a prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): tools.py e _core.py cresceram com o handler e o nucleo de analyze_sql_metrics; a prova le o tamanho real do arquivo em disco",
       "proof": {
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "193,7"
+          "value": "194,2"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "193,7",
+      "text": "194,2",
       "type": "number"
     },
     {
@@ -3089,18 +3089,18 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
-      "note": "remedido depois da fase J1, que acrescentou detail_level e projecao de procedencia ao envelope; a prova le o tamanho real do arquivo em disco, entao o numero no documento acompanha",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): tools.py e _core.py cresceram com o handler e o nucleo de analyze_sql_metrics; a prova le o tamanho real do arquivo em disco",
       "proof": {
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/_core.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "189,3"
+          "value": "190,2"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "189,3",
+      "text": "190,2",
       "type": "number"
     },
     {
@@ -4165,19 +4165,19 @@
       "doc": "docs/harness/RUNTIME-VS-EVALUATION.md",
       "id": "VNX-469",
       "line": 15,
-      "note": "Os 23 corpora de fixtures/ sao contados em disco, nao copiados: a prova enumera os subdiretorios. A tabela de RUNTIME-VS-EVALUATION.md usa esse numero para dizer o tamanho da superficie de avaliacao.",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): fixtures/sql_metrics/ entrou em fixtures/; a prova enumera os subdiretorios em disco",
       "proof": {
         "cmd": "python -c 'import pathlib; print(sum(1 for p in pathlib.Path(\"fixtures\").iterdir() if p.is_dir()))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 24
+          "value": 25
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "24",
+      "text": "25",
       "type": "number"
     },
     {
@@ -6720,19 +6720,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-358",
       "line": 75,
-      "note": "reexecutado -- CURRENT-HARNESS-GAP.md descreve estado atual, nao medicao historica",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): tests/test_fixtures_golden_sql_metrics.py entrou na suite; a prova conta os arquivos em disco",
       "proof": {
         "cmd": "python -c 'import pathlib; print(len(list(pathlib.Path(\"tests\").glob(\"test_fixtures_golden*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 23
+          "value": 24
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "23",
+      "text": "24",
       "type": "number"
     },
     {
@@ -8219,15 +8219,15 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 24
+          "value": 25
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "24",
+      "text": "25",
       "type": "number",
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real"
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real"
     },
     {
       "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **20** das **50** tools do catálogo: ",
@@ -8239,15 +8239,15 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 53
+          "value": 54
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "53",
+      "text": "54",
       "type": "number",
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real"
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real"
     },
     {
       "context": "existe em **23** delas, e os quatro estimadores de token e os três empacotadores de contexto",
@@ -8259,15 +8259,15 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 25
+          "value": 26
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "25",
+      "text": "26",
       "type": "number",
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real"
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real"
     },
     {
       "context": "| Conteúdo de repositório é dado não confiável, nunca instrução | EXISTE, com teste | É literalmente o invariante da fas",
@@ -9342,19 +9342,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-630",
       "line": 176,
-      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY and tem(n)))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 33
+          "value": 34
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "33",
+      "text": "34",
       "type": "number"
     },
     {
@@ -9462,19 +9462,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-636",
       "line": 180,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tem(n)))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 52
+          "value": 53
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "52",
+      "text": "53",
       "type": "number"
     },
     {
@@ -9482,19 +9482,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-637",
       "line": 180,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 53
+          "value": 54
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "53",
+      "text": "54",
       "type": "number"
     },
     {
@@ -9502,29 +9502,9 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-638",
       "line": 42,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tem(n)))'",
-        "expect": {
-          "kind": "number",
-          "pattern": "^(\\d+)",
-          "value": 52
-        },
-        "kind": "command",
-        "tier": "fast"
-      },
-      "state": "PROVADA",
-      "text": "52",
-      "type": "number"
-    },
-    {
-      "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
-      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
-      "id": "VNX-639",
-      "line": 42,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
-      "proof": {
-        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
@@ -9538,23 +9518,43 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **389** nesta árvore.",
-      "doc": "docs/harness/CODEINTEL-GAP.md",
-      "id": "VNX-640",
-      "line": 196,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "context": "| **ToolPolicy** | EXISTE, com teste | Fase I3: `sparkforge/agents/autonomy.py:tool_class()` deriva os 5 níveis do §40 (",
+      "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
+      "id": "VNX-639",
+      "line": 42,
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
-        "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
+        "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
-          "pattern": "^(-?[0-9]+)",
-          "value": 411
+          "pattern": "^(\\d+)",
+          "value": 54
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "411",
+      "text": "54",
+      "type": "number"
+    },
+    {
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **389** nesta árvore.",
+      "doc": "docs/harness/CODEINTEL-GAP.md",
+      "id": "VNX-640",
+      "line": 196,
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
+      "proof": {
+        "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
+        "expect": {
+          "kind": "number",
+          "pattern": "^(-?[0-9]+)",
+          "value": 416
+        },
+        "kind": "command",
+        "tier": "fast"
+      },
+      "state": "PROVADA",
+      "text": "416",
       "type": "number"
     },
     {
@@ -9602,19 +9602,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-643",
       "line": 213,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 572032
+          "value": 574109
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "572032",
+      "text": "574109",
       "type": "number"
     },
     {
@@ -9802,19 +9802,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-653",
       "line": 215,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 189345
+          "value": 190285
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "189345",
+      "text": "190285",
       "type": "number"
     },
     {
@@ -10002,19 +10002,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-663",
       "line": 217,
-      "note": "classificacao pendente",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 222334
+          "value": 222847
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "222334",
+      "text": "222847",
       "type": "number"
     },
     {
@@ -10062,19 +10062,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-666",
       "line": 219,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1114069
+          "value": 1117599
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1114069",
+      "text": "1117599",
       "type": "number"
     },
     {
@@ -10122,18 +10122,18 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-669",
       "line": 228,
-      "note": "remedido: o corpus cresceu com sparkforge/codeintel/graph.py e o teste dele, que sao dois arquivos .py novos varridos por iter_source_files",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "1114069 / 2209 = 504.3"
+          "value": "1117599 / 2209 = 505.9"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "504.3",
+      "text": "505.9",
       "type": "number"
     },
     {
@@ -10179,19 +10179,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-672",
       "line": 246,
-      "note": "classificacao pendente",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(buscar(d, \"source\")))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 32
+          "value": 33
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "32",
+      "text": "33",
       "type": "number"
     },
     {
@@ -10199,19 +10199,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-673",
       "line": 246,
-      "note": "classificacao pendente",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); print(len(json.dumps([asdict(a) for a in buscar(d, \"source\")], ensure_ascii=False).encode(\"utf-8\")))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 8117
+          "value": 8393
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "8117",
+      "text": "8393",
       "type": "number"
     },
     {
@@ -10219,19 +10219,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 247,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 112344
+          "value": 112942
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "112344",
+      "text": "112942",
       "type": "number"
     },
     {
@@ -10239,19 +10239,19 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-675",
       "line": 248,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sql_metrics.py e sql_metric_names.py sao dois arquivos .py novos varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 6321
+          "value": 6423
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "6321",
+      "text": "6423",
       "type": "number"
     },
     {
@@ -10886,19 +10886,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-732",
       "line": 262,
-      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 53
+          "value": 54
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "53",
+      "text": "54",
       "type": "number"
     },
     {
@@ -10906,19 +10906,19 @@
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-733",
       "line": 308,
-      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 53
+          "value": 54
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "53",
+      "text": "54",
       "type": "number"
     },
     {
@@ -10926,19 +10926,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-734",
       "line": 107,
-      "note": "acrescentado ao fechar as tres pendencias do SFCI; a prova le o artefato real",
+      "note": "remedido na fase de metricas de scan por no do plano (2026-08-28): sparkforge_analyze_sql_metrics entrou no catalogo de tools; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 53
+          "value": 54
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "53",
+      "text": "54",
       "type": "number"
     },
     {

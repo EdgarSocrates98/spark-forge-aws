@@ -45,8 +45,8 @@ arquivo ganha.
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
-| Extratores de facts | **22** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 28 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py` e `__init__.py` nao emitem kind — os tres primeiros sao carregadores de conhecimento (o terceiro, novo nesta fase, é a tabela de retenção do CloudWatch), `scan.py` é a varredura única compartilhada, nenhum dos seis é extrator |
-| Fact kinds distintos emitidos | **140** | união de `EMITTED_KINDS`; os oito kinds novos são da fase de histórico de runs Glue — ver a seção própria abaixo |
+| Extratores de facts | **23** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 30 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento (`sql_metric_names.py`, novo nesta fase, é o mapa canônico de métrica SQL), `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
+| Fact kinds distintos emitidos | **144** | união de `EMITTED_KINDS`; os quatro kinds novos são da fase de métricas de scan por nó do plano — ver a seção própria abaixo |
 | Regras de diagnóstico | **130**, sendo **58 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
@@ -3853,6 +3853,69 @@ furá-la produziria um número que fonte nenhuma publica.
 
 **`SF-GLUE-001` continua errado**, à espera do subprojeto A — fora do escopo
 desta entrega.
+
+## Métricas de scan por nó do plano — o dado que já estava no event log (2026-08-28)
+
+Documentos: [spec](specs/2026-08-28-spark-sql-scan-metrics-design.md) ·
+[plan](plans/2026-08-28-spark-sql-scan-metrics.md).
+
+Verbo novo. `sparkforge analyze sql-metrics` lê o **mesmo** artefato de event
+log que `analyze event-log` já lia, com outra pergunta: aquele mede por
+**stage**, e stage agrega toda leitura que cai nele; este mede por **nó de
+leitura do plano** — quantos bytes e quantos arquivos cada fonte custou. O
+dado sempre esteve no arquivo: `SparkListenerSQLExecutionStart` carrega
+`sparkPlanInfo` com o `accumulatorId` de cada métrica, e os valores chegam em
+`SparkListenerDriverAccumUpdates` e nos `Accumulables` de
+`SparkListenerTaskEnd`. Ninguém lia.
+
+Extrator novo, `sparkforge/facts/sql_metrics.py`, emite quatro kinds:
+`spark.sql.scan`, `spark.sql.execution`, `spark.sql.unresolved`,
+`spark.sql.analyzed`. `sparkforge/facts/sql_metric_names.py` é o carregador
+fail-closed do mapa canônico `knowledge/spark/sql-metrics.yaml`, cuja fonte
+foi conferida em cinco versões de Spark (3.1.1 a 4.1.1) e registrada em
+`knowledge/sources.lock.json`. Tool MCP nova, `sparkforge_analyze_sql_metrics`,
+com manifesto e `parity.yaml` fechados, e citada em
+`agents/executors/sf-extractor.md`. `fixtures/sql_metrics/` traz seis
+cenários sintéticos, com módulo golden próprio
+(`tests/test_fixtures_golden_sql_metrics.py`). **58 testes** novos, entre
+`tests/test_facts_sql_metrics.py`, `tests/test_sql_metric_names.py` e
+`tests/test_fixtures_golden_sql_metrics.py`.
+
+Faixa de commits: `a094919` … `098f03d`.
+
+### Três decisões
+
+**Measure ausente é ausência, nunca zero.** Métrica que a execução não
+publicou não vira `0` — zero é um valor, ausência é um estado, e uma regra
+que dividisse por um zero inventado produziria amplificação infinita a
+partir de uma lacuna.
+
+**Nome de métrica fora do mapa vira `spark.sql.unresolved` com o nome cru**,
+nunca palpite. Casar por substring acertaria `size of files read` e erraria
+`bytes of shuffle write`, e o erro sairia com aparência de medição.
+
+**A fonte é o event log, não o plano colado.** Casar a árvore do event log
+com o artefato de `analyze plan` (texto colado por humano, possivelmente de
+outra execução) introduziria erro silencioso: os nós casariam e os bytes
+estariam errados. A correlação com `plan.file_scan` fica possível depois,
+porque `spark.sql.scan` carrega `relation`.
+
+### O que ficou de fora, e por quê
+
+**Métrica de shuffle e de join por nó.** O mesmo mecanismo — mesmo
+`sparkPlanInfo`, mesmo `accumulatorId` — alcança essas métricas, mas não há
+consumidor ainda; extrair sem consumidor seria extração especulativa.
+
+**O objeto `WorkloadFingerprint`.** É o recorte seguinte do subprojeto C —
+esta entrega produz os facts que o alimentam, não o próprio objeto.
+
+**A correlação com `plan.file_scan`.** Adiada de propósito: `spark.sql.scan`
+já carrega `relation`, mas casar os dois artefatos é trabalho de uma fase
+própria, não desta.
+
+**Nenhuma regra nova no catálogo.** Julgar exige o fingerprint — regra
+escrita antes de ele existir seria julgamento sem lastro, a mesma disciplina
+já registrada na entrega de histórico de runs Glue.
 
 ## Dívidas abertas
 
