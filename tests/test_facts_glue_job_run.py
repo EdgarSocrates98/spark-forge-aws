@@ -117,3 +117,102 @@ class TestPercentileParity:
         values = [1, 2, 3, 10, 20, 1000]
         for pct in (50, 95, 99, 100):
             assert run_rank(values, pct) == event_log_rank(values, pct) == iceberg_rank(values, pct)
+
+
+class TestDistribution:
+    def test_groups_by_capacity_and_terminal_state(self, tmp_path):
+        _write_run(tmp_path, "jr_1", ExecutionTime=100)
+        _write_run(tmp_path, "jr_2", ExecutionTime=300)
+        _write_run(tmp_path, "jr_3", ExecutionTime=999, JobRunState="FAILED")
+        _write_run(tmp_path, "jr_4", ExecutionTime=200, NumberOfWorkers=20)
+
+        dists = [
+            f
+            for f in extract_glue_job_runs_path(tmp_path, "my-job")
+            if f.kind == "glue.job_run.distribution"
+        ]
+
+        keys = {(f.subject["number_of_workers"], f.subject["state"]) for f in dists}
+        assert keys == {(10, "SUCCEEDED"), (10, "FAILED"), (20, "SUCCEEDED")}
+
+        ten_ok = [
+            f
+            for f in dists
+            if f.subject["number_of_workers"] == 10 and f.subject["state"] == "SUCCEEDED"
+        ][0]
+        assert ten_ok.measures["n"] == 2
+        assert ten_ok.measures["runtime_min_s"] == 100
+        assert ten_ok.measures["runtime_max_s"] == 300
+        assert ten_ok.measures["runtime_p50_s"] == 100
+
+    def test_single_run_group_declares_n_of_one(self, tmp_path):
+        _write_run(tmp_path, "jr_1", ExecutionTime=100)
+
+        dist = [
+            f
+            for f in extract_glue_job_runs_path(tmp_path, "my-job")
+            if f.kind == "glue.job_run.distribution"
+        ][0]
+
+        assert dist.measures["n"] == 1
+        assert dist.measures["runtime_p95_s"] == 100
+
+    def test_mixed_dpu_source_is_marked_not_merged(self, tmp_path):
+        _write_run(tmp_path, "jr_1", ExecutionTime=100)
+        _write_run(tmp_path, "jr_2", ExecutionTime=200, DPUSeconds=50.0)
+
+        dist = [
+            f
+            for f in extract_glue_job_runs_path(tmp_path, "my-job")
+            if f.kind == "glue.job_run.distribution"
+        ][0]
+
+        assert dist.attrs["dpu_source"] == "mixed"
+
+    def test_window_bounds_come_from_the_runs(self, tmp_path):
+        _write_run(tmp_path, "jr_1", StartedOn="2026-08-01T10:00:00+00:00")
+        _write_run(tmp_path, "jr_2", StartedOn="2026-08-09T10:00:00+00:00")
+
+        dist = [
+            f
+            for f in extract_glue_job_runs_path(tmp_path, "my-job")
+            if f.kind == "glue.job_run.distribution"
+        ][0]
+
+        assert dist.attrs["window_first"] == "2026-08-01T10:00:00+00:00"
+        assert dist.attrs["window_last"] == "2026-08-09T10:00:00+00:00"
+
+
+class TestOutcome:
+    def test_counts_states_within_one_capacity(self, tmp_path):
+        _write_run(tmp_path, "jr_1")
+        _write_run(tmp_path, "jr_2")
+        _write_run(tmp_path, "jr_3", JobRunState="FAILED")
+        _write_run(tmp_path, "jr_4", JobRunState="TIMEOUT")
+
+        outcomes = [
+            f
+            for f in extract_glue_job_runs_path(tmp_path, "my-job")
+            if f.kind == "glue.job_run.outcome"
+        ]
+
+        assert len(outcomes) == 1
+        assert outcomes[0].measures == {
+            "n_total": 4,
+            "n_succeeded": 2,
+            "n_failed": 1,
+            "n_timeout": 1,
+            "n_stopped": 0,
+        }
+
+    def test_outcome_carries_counts_not_a_rate(self, tmp_path):
+        _write_run(tmp_path, "jr_1")
+        _write_run(tmp_path, "jr_2", JobRunState="FAILED")
+
+        outcome = [
+            f
+            for f in extract_glue_job_runs_path(tmp_path, "my-job")
+            if f.kind == "glue.job_run.outcome"
+        ][0]
+
+        assert not any("rate" in k or "ratio" in k for k in outcome.measures)

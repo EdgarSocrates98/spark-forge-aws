@@ -1,9 +1,10 @@
 """Extrator do historico de runs Glue em Facts.
 
 Le o diretorio de artefatos `glue_job_run` -- um JSON por run terminal, escrito
-por `sparkforge.collect.aws.collect_glue_job_runs` -- e emite o fact por run.
-Distribuicao/outcome por capacidade e correlacao com facts de CloudWatch sao
-camadas futuras deste mesmo modulo, ainda nao implementadas aqui.
+por `sparkforge.collect.aws.collect_glue_job_runs` -- e emite o fact por run,
+a distribuicao por capacidade x estado terminal e a contagem de desfecho por
+capacidade. Correlacao com facts de CloudWatch e camada futura deste mesmo
+modulo, ainda nao implementada aqui.
 
 O QUE ESTE MODULO RECUSA. Nao emite custo em dinheiro: `facts/pricing.py`
 recusa deliberadamente combinar preco com regiao `UNQUALIFIED`, e furar essa
@@ -17,6 +18,7 @@ Puro e deterministico: nunca aplica limiar, nunca toca a rede.
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -219,16 +221,166 @@ def _load_runs(directory: Path, job_name: str) -> list[tuple[dict[str, Any], str
     return loaded
 
 
+def _group_key(job_name: str, run: dict[str, Any]) -> tuple[Any, ...]:
+    subject = _capacity_subject(job_name, run)
+    return (
+        subject["glue_version"],
+        subject["worker_type"],
+        subject["number_of_workers"],
+        subject["autoscaling"],
+    )
+
+
+def _dpu_source_of_group(sources: set[str]) -> str:
+    """`mixed` quando o grupo agrega observado e derivado.
+
+    Fundir os dois em silencio produziria um p95 de DPU cuja metade foi medida
+    e metade calculada, sem o leitor saber qual. `mixed` e o aviso.
+    """
+    if len(sources) == 1:
+        return next(iter(sources))
+    if not sources:
+        return "none"
+    return "mixed"
+
+
+_STATE_TO_COUNTER = {
+    "SUCCEEDED": "n_succeeded",
+    "FAILED": "n_failed",
+    "TIMEOUT": "n_timeout",
+    "STOPPED": "n_stopped",
+}
+
+
+def _distribution_facts(job_name: str, rows: list[dict[str, Any]], path: str) -> list[Fact]:
+    """Uma distribuicao por (capacidade, estado terminal)."""
+    grupos: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grupos[_group_key(job_name, row["run"]) + (row["state"],)].append(row)
+
+    facts: list[Fact] = []
+    for chave, membros in sorted(grupos.items(), key=lambda item: str(item[0])):
+        glue_version, worker_type, workers, autoscaling, state = chave
+        runtimes = sorted(
+            float(m["execution_time_s"]) for m in membros if m["execution_time_s"] is not None
+        )
+        dpus = sorted(float(m["dpu_seconds"]) for m in membros if m["dpu_seconds"] is not None)
+        starts = sorted(m["started_on"] for m in membros if m["started_on"])
+
+        measures: dict[str, Any] = {"n": len(membros)}
+        if runtimes:
+            measures.update(
+                {
+                    "runtime_min_s": runtimes[0],
+                    "runtime_p50_s": _nearest_rank(runtimes, 50),
+                    "runtime_p95_s": _nearest_rank(runtimes, 95),
+                    "runtime_p99_s": _nearest_rank(runtimes, 99),
+                    "runtime_max_s": runtimes[-1],
+                }
+            )
+        if dpus:
+            measures.update(
+                {
+                    "dpu_seconds_p50": _nearest_rank(dpus, 50),
+                    "dpu_seconds_p95": _nearest_rank(dpus, 95),
+                }
+            )
+
+        facts.append(
+            Fact(
+                kind="glue.job_run.distribution",
+                subject={
+                    "job_name": job_name,
+                    "glue_version": glue_version,
+                    "worker_type": worker_type,
+                    "number_of_workers": workers,
+                    "autoscaling": autoscaling,
+                    "state": state,
+                },
+                measures=measures,
+                attrs={
+                    "window_first": starts[0] if starts else "",
+                    "window_last": starts[-1] if starts else "",
+                    "dpu_source": _dpu_source_of_group(
+                        {m["dpu_source"] for m in membros if m["dpu_source"]}
+                    ),
+                },
+                provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+            )
+        )
+    return facts
+
+
+def _outcome_facts(job_name: str, rows: list[dict[str, Any]], path: str) -> list[Fact]:
+    """Uma contagem de desfecho por capacidade, atravessando os estados.
+
+    Contagens, nao taxa: a divisao e juizo e pertence a fase seguinte. O fact
+    carrega numerador e denominador.
+    """
+    grupos: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grupos[_group_key(job_name, row["run"])].append(row)
+
+    facts: list[Fact] = []
+    for chave, membros in sorted(grupos.items(), key=lambda item: str(item[0])):
+        glue_version, worker_type, workers, autoscaling = chave
+        measures = {
+            "n_total": len(membros),
+            "n_succeeded": 0,
+            "n_failed": 0,
+            "n_timeout": 0,
+            "n_stopped": 0,
+        }
+        for membro in membros:
+            counter = _STATE_TO_COUNTER.get(membro["state"])
+            if counter:
+                measures[counter] += 1
+        starts = sorted(m["started_on"] for m in membros if m["started_on"])
+
+        facts.append(
+            Fact(
+                kind="glue.job_run.outcome",
+                subject={
+                    "job_name": job_name,
+                    "glue_version": glue_version,
+                    "worker_type": worker_type,
+                    "number_of_workers": workers,
+                    "autoscaling": autoscaling,
+                },
+                measures=measures,
+                attrs={
+                    "window_first": starts[0] if starts else "",
+                    "window_last": starts[-1] if starts else "",
+                },
+                provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+            )
+        )
+    return facts
+
+
 def extract_glue_job_runs_path(directory: Path, job_name: str) -> list[Fact]:
     """Extrai Facts do diretorio de artefatos de run de um job."""
     facts: list[Fact] = []
+    rows: list[dict[str, Any]] = []
     runs = _load_runs(directory, job_name)
 
     for run, path in runs:
         fact, extras = _run_fact(job_name, run, path)
         facts.append(fact)
         facts.extend(extras)
+        rows.append(
+            {
+                "run": run,
+                "state": fact.attrs["state"],
+                "started_on": fact.attrs["started_on"],
+                "execution_time_s": fact.measures.get("execution_time_s"),
+                "dpu_seconds": fact.measures.get("dpu_seconds"),
+                "dpu_source": fact.attrs.get("dpu_source", ""),
+            }
+        )
 
+    facts.extend(_distribution_facts(job_name, rows, str(directory)))
+    facts.extend(_outcome_facts(job_name, rows, str(directory)))
     facts.append(
         Fact(
             kind="glue.job_run.analyzed",
