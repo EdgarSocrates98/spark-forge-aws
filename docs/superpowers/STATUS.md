@@ -4098,6 +4098,116 @@ e isso é a fase seguinte.
 **Nenhum eixo novo no fingerprint.** `join_intensity` continua estrutural em
 C2. Enriquecê-lo com o grafo é decisão de quem consumir estas arestas.
 
+## Capacity optimizer — a mais barata que cabe no SLA, entre as que rodaram (2026-08-28)
+
+Documentos: [spec](specs/2026-08-28-capacity-sla-optimizer-design.md) ·
+[plan](plans/2026-08-28-capacity-sla-optimizer.md).
+
+O subprojeto D do roadmap (`prompt_tunning_foco_spark.md`, §17, §18, §29 e
+§34) e a primeira peça do projeto que **recomenda** em vez de descrever:
+`MINIMIZE dpu_seconds sujeito a P(runtime <= SLA) >= reliability_target`,
+escolhendo — entre as capacidades que o job **realmente rodou** — a mais
+barata que cumpre o SLA, nunca a mais rápida. `sparkforge/capacity/`
+(`plan.py`) é o pacote: `CapacityPlan`, `Candidate` e o predicado público
+`resolution_supports`. Não é extrator e nada aqui vira Fact — escolher
+capacidade é juízo, mesmo molde do `WorkloadFingerprint`.
+
+`workload.yaml` ganha dois campos opcionais em `facts/workload.py`:
+`reliability_target` (fração entre 0 e 1; fora da faixa vira
+`workload.unresolved` com razão `reliability_target_out_of_range` — um
+`reliability_target: 95` quase certamente quis dizer `0.95`, e aceitar
+produziria um alvo que capacidade nenhuma cumpre) e `volume_tolerance`
+(fração não negativa; negativa vira `volume_tolerance_out_of_range`). Campo
+ausente fica ausente nos `measures`, nunca com default silencioso — o
+default é decisão de quem consome a declaração, não do extrator.
+
+Verbo de topo `sparkforge capacity` (`--facts`, `--job-name`, `--job-run`,
+`--history`, `--out`) e a tool MCP `sparkforge_capacity`, pela mesma regra
+de `benchmark`, `fuse` e `workload`: não extrai nada de artefato, decide
+sobre o que outros verbos já extraíram. `fixtures/capacity/` traz **seis**
+cenários (`cheapest_that_fits`, `none_fits`, `resolution_too_coarse`,
+`volume_filter_changes_the_answer`, `autoscaling_without_cost`,
+`single_capacity_observed`), com módulo golden próprio
+(`tests/test_fixtures_golden_capacity.py`). Nenhum extrator novo, nenhum
+kind novo — os dois campos do inventário entram em `workload.declared`, que
+já existia. **53 testes** novos, medidos por coleta
+(`pytest --collect-only`): `tests/test_capacity_plan.py` (17),
+`tests/test_fixtures_golden_capacity.py` (29), a classe
+`TestCapacityCommand` de `tests/test_adapters_cli.py` (2), a classe
+`TestCapacityTool` de `tests/test_adapters_tools.py` (1) e a classe
+`TestAlvoETolerancia` de `tests/test_facts_workload.py` (4).
+
+Faixa de commits: `497227f` … `3b0432f`.
+
+### Quatro decisões
+
+**Só capacidades observadas.** Extrapolar para uma nunca rodada exigiria
+uma lei de escala que fonte nenhuma publica — o fator de eficiência varia
+com o shape do DAG, skew e contenção de I/O —, e desta vez o número
+inventado escolheria quanto alguém gasta. Custo aceito e declarado: um job
+que sempre rodou numa capacidade só não recebe recomendação, recebe a
+constatação de que não há alternativa observada (`only_one_capacity_observed`).
+
+**Custo em DPU-segundos, não em moeda.** Dentro da mesma região a ordem por
+DPU-segundos é a mesma ordem por dinheiro — o preço por DPU-hora é fator
+constante —, então D decide sem preço nenhum e E converte depois sem mudar
+a escolha. O p95 é recomputado **sobre os runs comparáveis**: ler
+`dpu_seconds_p95` de `glue.job_run.distribution` agregaria runs que o filtro
+de volume do §3.4 acabou de excluir, comparando custo de uma população com
+confiabilidade de outra.
+
+**A resolução é declarada, não só a confiabilidade.** Com `n` runs
+comparáveis a estimativa não distingue nada mais fino que `1/n`; alvo de
+99% com 28 runs vira recusa nomeada (`resolution_too_coarse`, com quantos
+runs faltam), não um "sim" frágil. `resolution_supports` é o predicado
+único que decide isso — ver a seção de consertos abaixo.
+
+**Só runs comparáveis contam.** Entram na conta os runs cujo volume varrido
+está dentro da tolerância declarada (`volume_tolerance`) do volume do run
+corrente; fora da faixa, `discarded_runs`/`refused` nomeiam o descarte, nunca
+some em silêncio. O `n` cai e a resolução piora, e isso é o desenho
+funcionando: a evidência que sobra é a única que se aplica ao dia de hoje.
+
+**Nenhum caminho do código aplica a mudança.** §34 do documento de origem
+classifica `worker change` como `REVIEW`, e o documento diz explicitamente
+para nunca aplicar automaticamente mudanças `REVIEW`/`EXPERIMENTAL` em
+produção. Todo `Candidate` nasce com `safety: "REVIEW"` — campo do
+candidato, não nota de rodapé —, e não há função em `sparkforge/capacity/`
+que execute, grave ou proponha a troca em nenhum sistema externo. D
+escreve um plano; aplicar é decisão de gente.
+
+### Dois consertos que a construção forçou
+
+**Float na fronteira.** `1.0 - 0.9` dá `0.09999999999999998` em ponto
+flutuante, e uma comparação ingênua recusava `n=10` com alvo `0.9` — o caso
+exato que o plano dava como aprovado (critério 3 do §9 da spec). A
+comparação usa tolerância `1e-9`.
+
+**Uma escrita só da regra.** O teste de corpus comparava
+`resolution <= 1 - alvo` sem tolerância e a implementação comparava com
+`1e-9`; duas escritas da mesma regra divergiam exatamente na fronteira, que
+é onde ela importa. A fixture tinha sido afastada da fronteira para
+contornar o desacordo, o que deixou a tolerância sem teste nenhum. Agora
+`resolution_supports` é público e é a ÚNICA escrita da regra — teste e
+implementação chamam a mesma função —, e
+`tests/test_capacity_plan.py::TestFronteiraDaResolucao` tem quatro casos
+que exercitam a fronteira exata e o run imediatamente aquém dela.
+
+### O que ficou de fora, e por quê
+
+**Custo em moeda.** É o subprojeto E; `facts/pricing.py` continua recusando
+combinar preço com região não qualificada.
+
+**Capacidade nunca observada.** Ver a primeira decisão acima — recomendar o
+que nunca rodou exigiria uma lei de escala sem fonte publicada.
+
+**Recomendação de configuração do Spark.** `spark.sql.shuffle.partitions` e
+vizinhos são outro problema (§36 do documento de origem, sobre configuração
+mínima com proveniência). D recomenda **capacidade**, não configuração.
+
+**Canary.** Comparar o antes e o depois de uma troca é o §35 do documento de
+origem, e o `benchmark` do projeto já é metade disso.
+
 ## Dívidas abertas
 
 A tabela era uma só e misturava **três naturezas**, e a mistura fazia o

@@ -194,6 +194,7 @@ tool MCP de mesmo nome.
 | **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
+| Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
