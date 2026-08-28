@@ -19,6 +19,7 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 | grafo de chamadas | `sparkforge_analyze_call_graph` |
 | plano físico | `sparkforge_analyze_plan` |
 | Spark event log | `sparkforge_analyze_event_log` |
+| Spark event log, custo por FONTE | `sparkforge_analyze_sql_metrics` |
 | Terraform | `sparkforge_analyze_terraform` |
 | diff de Terraform (PR) | `sparkforge_analyze_terraform_diff` |
 | metadata Iceberg | `sparkforge_analyze_iceberg` |
@@ -32,6 +33,14 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 
 Depois, `sparkforge_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
 disparam sobre facts fundidos.
+
+**`sparkforge_analyze_sql_metrics` não é o mesmo dado que `sparkforge_analyze_event_log`
+sobre o mesmo arquivo.** O event log agrega tudo que cai num stage — se duas fontes
+compartilham stage, o custo delas soma num número só, e não há como separar a fonte cara da
+barata. `sparkforge_analyze_sql_metrics` atribui bytes e arquivos ao NÓ DO PLANO que os
+leu, medido pelo próprio Spark (`SparkListenerSQLExecutionStart`/
+`SparkListenerDriverAccumUpdates`), não por stage. Use-o quando a pergunta for "qual fonte
+custou" e `analyze event-log` só responder "qual stage custou".
 
 **Um limite que só existe na linha do EMR Serverless.** `get-application` descreve o
 **padrão da application**, e a AWS declara que as configurações passadas em `StartJobRun`

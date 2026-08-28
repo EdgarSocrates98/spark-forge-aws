@@ -39,6 +39,7 @@ class TestToolSurface:
             "sparkforge_analyze_pyspark",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
+            "sparkforge_analyze_sql_metrics",
             "sparkforge_analyze_cloudwatch",
             "sparkforge_analyze_glue_job_runs",
             "sparkforge_analyze_plan",
@@ -615,6 +616,39 @@ CATALOG_DUMP = json.dumps(
 )
 
 _EVENT_LOG_LINE = json.dumps({"Event": "SparkListenerApplicationStart"}) + "\n"
+
+# Event log minimo COM metrica de plano SQL: um no `FileScan parquet
+# db.clientes[id#1]` que publica `number of files read` (mapeado para
+# `files_read` em knowledge/spark/sql-metrics.yaml), atribuido via
+# SparkListenerDriverAccumUpdates. Sem os dois eventos, `extract_sql_metrics`
+# so renderiza o fact `spark.sql.unresolved` de `no_sql_events`, e o teste de
+# schema validaria o ramo errado -- o de ausencia, nao o de `spark.sql.scan`.
+_SQL_METRICS_EVENT_LOG_LINES = "".join(
+    json.dumps(e) + "\n"
+    for e in [
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart",
+            "executionId": 0,
+            "description": "select * from db.clientes",
+            "sparkPlanInfo": {
+                "nodeName": "FileScan parquet",
+                "simpleString": "FileScan parquet db.clientes[id#1]",
+                "children": [],
+                "metadata": {"Format": "parquet"},
+                "metrics": [{"name": "number of files read", "accumulatorId": 1}],
+            },
+        },
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates",
+            "executionId": 0,
+            "accumUpdates": [[1, 3]],
+        },
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd",
+            "executionId": 0,
+        },
+    ]
+)
 
 # Artefato de metricas do CloudWatch no shape que `sparkforge collect cloudwatch`
 # grava -- ver `_artifact()` de `tests/test_facts_cloudwatch.py`. Com valores nao
@@ -1315,6 +1349,15 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         log_path.write_text(_EVENT_LOG_LINE, encoding="utf-8")
         return call_tool("sparkforge_analyze_event_log", {"path": str(log_path)})
 
+    if name == "sparkforge_analyze_sql_metrics":
+        log_path = tmp_path / "sql_metrics_log.jsonl"
+        log_path.write_text(_SQL_METRICS_EVENT_LOG_LINES, encoding="utf-8")
+        resultado = call_tool("sparkforge_analyze_sql_metrics", {"path": str(log_path)})
+        assert any(item["kind"] == "spark.sql.scan" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos um fact spark.sql.scan"
+        )
+        return resultado
+
     if name == "sparkforge_analyze_cloudwatch":
         cw_path = tmp_path / "cw.json"
         cw_path.write_text(_CLOUDWATCH_ARTIFACT, encoding="utf-8")
@@ -1715,3 +1758,19 @@ class TestGlueJobRunTools:
             "sparkforge_analyze_glue_job_runs",
             "sparkforge_collect_glue_job_runs",
         } <= listadas
+
+
+class TestSqlMetricsTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_analyze_sql_metrics" in tools.TOOLS
+        assert "sparkforge_analyze_sql_metrics" in tools._HANDLERS
+
+    def test_the_tool_is_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        assert "sparkforge_analyze_sql_metrics" in set(manifest["tools"])

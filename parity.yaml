@@ -102,11 +102,13 @@ capabilities:
       - sparkforge_analyze_event_log
       - sparkforge_analyze_cloudwatch
       - sparkforge_analyze_glue_job_runs
+      - sparkforge_analyze_sql_metrics
     cli:
       - analyze event-log
       - analyze cloudwatch
       - analyze glue-job-runs
-    knowledge: [knowledge/spark/memory-and-oom.md]
+      - analyze sql-metrics
+    knowledge: [knowledge/spark/memory-and-oom.md, knowledge/spark/sql-metrics.yaml]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

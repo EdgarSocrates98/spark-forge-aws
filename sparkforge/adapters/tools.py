@@ -2202,6 +2202,35 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_sql_metrics": {
+        "description": (
+            "Extrai metrica por NO DO PLANO de um Spark event log ja coletado: quantos "
+            "bytes e quantos arquivos cada fonte custou, medidos pelo proprio Spark. "
+            "Responde o que `analyze event-log` nao responde -- aquele mede por stage, e "
+            "stage agrega todas as leituras que caem nele. Metrica que a execucao nao "
+            "publicou fica AUSENTE, nunca zero; nome de metrica fora do mapa canonico "
+            "vira `spark.sql.unresolved` com o nome cru, nunca palpite."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo de event log (.jsonl)."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA, "Pagina de facts, ou erro de fronteira."
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_cloudwatch": {
         "description": (
             "Extrai facts `glue.metric` de um artefato de metricas do CloudWatch ja "
@@ -4020,6 +4049,16 @@ def _h_analyze_event_log(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_sql_metrics(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_sql_metrics(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_cloudwatch(
         args["path"],
@@ -4380,6 +4419,7 @@ _HANDLERS = {
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
+    "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,
     "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
     "sparkforge_analyze_glue_job_runs": _h_analyze_glue_job_runs,
     "sparkforge_analyze_plan": _h_analyze_plan,
