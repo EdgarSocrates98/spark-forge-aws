@@ -164,7 +164,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 19 extratores emitem 118 kinds distintos de fact, e todos são offline: leem
+Os 22 extratores emitem 140 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -186,6 +186,8 @@ tool MCP de mesmo nome.
 | Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
 | Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
+| Métricas do CloudWatch | `analyze cloudwatch` | artefato de `collect cloudwatch` já em disco |
+| Histórico de runs Glue | `analyze glue-job-runs` | diretório de artefatos de run, um JSON por run terminal |
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
 | **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
 | **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
@@ -194,8 +196,12 @@ tool MCP de mesmo nome.
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
 AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
-essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
-o que falta para uma regra disparar é sempre coleta, nunca código.
+essa etapa inteira. `collect glue-job-runs` grava um artefato por run em
+estado terminal em `.sparkforge/artifacts/glue_job_run/`; run já em disco com
+hash íntegro é no-op (coleta incremental de graça), e `--max-runs` é teto de
+paginação, não filtro de data. `rules/catalog/` não tem nenhuma regra com
+`blocked_on` — o que falta para uma regra disparar é sempre coleta, nunca
+código.
 
 Sete desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —

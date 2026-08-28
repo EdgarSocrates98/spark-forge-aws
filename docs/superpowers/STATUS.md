@@ -45,8 +45,8 @@ arquivo ganha.
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
-| Extratores de facts | **20** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 24 `.py`, e `runtime_matrix.py`, `pricing.py`, `secrets.py` e `__init__.py` nao emitem kind — os dois primeiros sao carregadores de conhecimento, nao extratores |
-| Fact kinds distintos emitidos | **132** | união de `EMITTED_KINDS`; o kind novo é `bench.runtime_pair`, da fase H5 |
+| Extratores de facts | **22** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 28 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py` e `__init__.py` nao emitem kind — os tres primeiros sao carregadores de conhecimento (o terceiro, novo nesta fase, é a tabela de retenção do CloudWatch), `scan.py` é a varredura única compartilhada, nenhum dos seis é extrator |
+| Fact kinds distintos emitidos | **140** | união de `EMITTED_KINDS`; os oito kinds novos são da fase de histórico de runs Glue — ver a seção própria abaixo |
 | Regras de diagnóstico | **130**, sendo **58 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
@@ -3766,6 +3766,72 @@ só existe a partir de 3.10.12 — em 3.10.0 aquilo é `TypeError` e o gate inte
 para de rodar. Agora são duas camadas, e o teste de compatibilidade carrega um
 espião no `extractall`, porque sem ele passaria mesmo com `filter=` incondicional
 neste interpretador.
+
+## Histórico de runs Glue — coletor, dois extratores, e o que ficou de fora (2026-08-28)
+
+Documentos: [spec](specs/2026-08-26-glue-run-history-collector-design.md) ·
+[plan](plans/2026-08-26-glue-run-history-collector.md).
+
+Três comandos novos. `sparkforge collect glue-job-runs` baixa o histórico via
+`glue.get_job_runs` e grava um artefato por run em estado terminal em
+`.sparkforge/artifacts/glue_job_run/<job>_<run_id>.json` — run que já está em
+disco com hash íntegro é no-op (coleta incremental de graça), e `--max-runs` é
+teto de paginação, não filtro de data. `sparkforge analyze cloudwatch` extrai
+facts `glue.metric` do artefato de métricas do CloudWatch que já era coletado
+e que nenhum consumidor lia — série vazia vira `glue.metric.unresolved` com a
+razão, nunca zero. `sparkforge analyze glue-job-runs` produz um fact por run,
+distribuição por capacidade × estado terminal, contagem de desfecho por
+capacidade, e correlação por `job_run_id` com os facts de CloudWatch.
+
+Dois extratores novos (`sparkforge/facts/cloudwatch.py`,
+`sparkforge/facts/glue_job_run.py`) emitem oito kinds novos: `glue.metric`,
+`glue.metric.unresolved`, `glue.metric.analyzed`, `glue.job_run`,
+`glue.job_run.distribution`, `glue.job_run.outcome`, `glue.job_run.unresolved`,
+`glue.job_run.analyzed`. O período do CloudWatch passou a ser derivado da
+idade do run por uma tabela de retenção em `knowledge/glue/observability.yaml`,
+carregada fail-closed por `sparkforge/facts/cloudwatch_retention.py`: run fora
+de toda janela de retenção falha a coleta em vez de devolver série vazia.
+
+Três tools MCP (`sparkforge_collect_glue_job_runs`, `sparkforge_analyze_cloudwatch`,
+`sparkforge_analyze_glue_job_runs`), manifesto e `parity.yaml` fechados. Seis
+fixtures sintéticas em `fixtures/glue_job_run/`, com módulo golden próprio
+(`tests/test_fixtures_golden_glue_job_run.py`). **45 testes** novos, entre
+`tests/test_facts_glue_job_run.py`, `tests/test_facts_cloudwatch.py`,
+`tests/test_cloudwatch_retention.py` e `tests/test_fixtures_golden_glue_job_run.py`.
+
+Faixa de commits: `7c7d35d` … `6a0bb6d`.
+
+### Dois desvios do plano
+
+**As duas tools de análise não reusam `_ANALYZE_FACTS_SCHEMA`.** `_FACT_SUBJECT`
+exige `subject.type` de um enum fechado de sete valores (`source_location`,
+`stage`, `task`, `tf_resource`, `table`, `job_run`, `plan_node`), um por
+extrator ancorado em código, plano ou tabela. Os extratores de CloudWatch e
+histórico de run Glue ancoram em outra coisa — `job_name`+`job_run_id`, ou a
+tupla de capacidade inteira em `glue.job_run.distribution`/`.outcome` — e não
+cabem nesse enum. Fingir que cabiam teria inventado um tipo que o extrator
+nunca emite; `_ANALYZE_GLUE_FACTS_SCHEMA`, novo em
+`sparkforge/adapters/tools.py`, usa `subject` genérico, com a razão escrita no
+comentário ao lado.
+
+**As fixtures de `fixtures/glue_job_run/` não têm `expected/facts.json`
+byte-exato**, ao contrário dos goldens de Athena e EMR. Nenhuma regra do
+catálogo consome `glue.job_run.*` ou `glue.metric*` ainda — não há
+`expects_rules` para escrever hoje.
+
+### O que ficou de fora, e por quê
+
+**Nenhuma regra nova.** Esta entrega é extração e correlação; julgar o
+histórico — o que conta como padrão saudável de capacidade, o que conta como
+degradação — é a fase seguinte, e regra escrita antes de o histórico ter
+consumidor seria julgamento sem lastro.
+
+**Nenhum custo em dinheiro.** `sparkforge/facts/pricing.py` recusa combinar
+preço com região não qualificada; nada nesta entrega furou essa recusa, porque
+furá-la produziria um número que fonte nenhuma publica.
+
+**`SF-GLUE-001` continua errado**, à espera do subprojeto A — fora do escopo
+desta entrega.
 
 ## Dívidas abertas
 
