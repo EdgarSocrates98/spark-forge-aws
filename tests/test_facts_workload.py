@@ -128,3 +128,73 @@ class TestSchema:
         assert facts
         for fact in facts:
             validate_fact(fact.to_dict())
+
+
+class TestAlvoETolerancia:
+    def test_declares_reliability_target_and_volume_tolerance(self, tmp_path):
+        alvo = _inventario(
+            tmp_path,
+            {
+                "jobs": [
+                    {
+                        "name": "etl-pedidos",
+                        "sla_minutes": 45,
+                        "reliability_target": 0.95,
+                        "volume_tolerance": 0.25,
+                    }
+                ]
+            },
+        )
+
+        declarado = [
+            f for f in extract_workload_path(alvo) if f.kind == "workload.declared"
+        ][0]
+
+        assert declarado.measures["reliability_target"] == 0.95
+        assert declarado.measures["volume_tolerance"] == 0.25
+
+    def test_absent_fields_are_absent_not_defaulted(self, tmp_path):
+        alvo = _inventario(tmp_path, {"jobs": [{"name": "etl", "sla_minutes": 45}]})
+
+        declarado = [
+            f for f in extract_workload_path(alvo) if f.kind == "workload.declared"
+        ][0]
+
+        # O default e decisao de quem CONSOME a declaracao, nao do extrator.
+        # Um fact que inventa 0.95 nao distingue "o operador escolheu 95%" de
+        # "ninguem escolheu nada".
+        assert "reliability_target" not in declarado.measures
+        assert "volume_tolerance" not in declarado.measures
+
+    def test_target_outside_zero_to_one_is_unresolved(self, tmp_path):
+        alvo = _inventario(
+            tmp_path,
+            {"jobs": [{"name": "etl", "sla_minutes": 45, "reliability_target": 95}]},
+        )
+        facts = extract_workload_path(alvo)
+
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "workload.unresolved"
+            and f.attrs["reason"] == "reliability_target_out_of_range"
+        ]
+        declarado = [f for f in facts if f.kind == "workload.declared"][0]
+
+        # 95 quase certamente quis dizer 0,95. Aceitar produziria um alvo que
+        # nenhuma capacidade cumpre, e a recusa nomeia o engano.
+        assert len(lacunas) == 1
+        assert "reliability_target" not in declarado.measures
+
+    def test_negative_tolerance_is_unresolved(self, tmp_path):
+        alvo = _inventario(
+            tmp_path,
+            {"jobs": [{"name": "etl", "sla_minutes": 45, "volume_tolerance": -0.1}]},
+        )
+        facts = extract_workload_path(alvo)
+
+        assert [
+            f.attrs["reason"]
+            for f in facts
+            if f.kind == "workload.unresolved"
+        ] == ["volume_tolerance_out_of_range"]

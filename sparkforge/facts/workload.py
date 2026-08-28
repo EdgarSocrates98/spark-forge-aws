@@ -113,6 +113,53 @@ def extract_workload(payload: Any, path: str) -> list[Fact]:
         if isinstance(sla, int | float) and not isinstance(sla, bool):
             measures["sla_minutes"] = sla
 
+        alvo_confiabilidade = entrada.get("reliability_target")
+        if alvo_confiabilidade is not None:
+            if isinstance(alvo_confiabilidade, bool) or not isinstance(
+                alvo_confiabilidade, int | float
+            ):
+                facts.append(
+                    _unresolved(
+                        path,
+                        "reliability_target_out_of_range",
+                        "`reliability_target` precisa ser numero entre 0 e 1; veio "
+                        f"{alvo_confiabilidade!r}.",
+                        job_name=nome,
+                    )
+                )
+            elif not 0 < alvo_confiabilidade <= 1:
+                facts.append(
+                    _unresolved(
+                        path,
+                        "reliability_target_out_of_range",
+                        f"`reliability_target` veio {alvo_confiabilidade}. E fracao entre 0 e "
+                        "1 -- 95 quase certamente quis dizer 0.95, e aceitar produziria um "
+                        "alvo que capacidade nenhuma cumpre.",
+                        job_name=nome,
+                    )
+                )
+            else:
+                measures["reliability_target"] = alvo_confiabilidade
+
+        tolerancia_volume = entrada.get("volume_tolerance")
+        if tolerancia_volume is not None:
+            if (
+                isinstance(tolerancia_volume, bool)
+                or not isinstance(tolerancia_volume, int | float)
+                or tolerancia_volume < 0
+            ):
+                facts.append(
+                    _unresolved(
+                        path,
+                        "volume_tolerance_out_of_range",
+                        "`volume_tolerance` precisa ser fracao nao negativa; veio "
+                        f"{tolerancia_volume!r}.",
+                        job_name=nome,
+                    )
+                )
+            else:
+                measures["volume_tolerance"] = tolerancia_volume
+
         attrs: dict[str, Any] = {}
         fonte = entrada.get("primary_source")
         if isinstance(fonte, str) and fonte:
