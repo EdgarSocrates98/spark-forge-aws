@@ -279,3 +279,52 @@ class TestSeguranca:
 
         assert all(c.safety == "REVIEW" for c in plano.candidates)
         assert not hasattr(plano, "apply")
+
+
+class TestFronteiraDaResolucao:
+    """A fronteira exata, que e onde a tolerancia numerica importa.
+
+    `1.0 - 0.9` da 0.09999999999999998 em Python. Com n=10 a resolucao e
+    exatamente 0.1, e uma comparacao ingenua recusaria por artefato de
+    representacao em vez de pela regra. Estes casos existem porque a fixture
+    do corpus foi deliberadamente afastada da fronteira, e sem eles a
+    tolerancia ficaria sem teste nenhum.
+    """
+
+    def test_resolution_exactly_at_the_boundary_is_supported(self):
+        from sparkforge.capacity.plan import resolution_supports
+
+        # 1/10 contra 1 - 0.9. Iguais na matematica, diferentes no float.
+        assert resolution_supports(1 / 10, 0.9) is True
+
+    def test_resolution_one_run_coarser_is_not_supported(self):
+        from sparkforge.capacity.plan import resolution_supports
+
+        assert resolution_supports(1 / 9, 0.9) is False
+
+    def test_a_capacity_exactly_at_the_boundary_is_chosen(self):
+        historico = [[_run(f"b{i}", 100, dpu=1000.0), _scan(1000)] for i in range(10)]
+        plano = build_capacity_plan(
+            [_declarado(alvo=0.9), _scan(1000)],
+            history=historico,
+            job_name="etl",
+            job_run_id="jr_hoje",
+        )
+
+        # 10 runs, todos dentro do SLA: confiabilidade 100%, resolucao 10%,
+        # alvo 90%. Cabe exatamente, e recusar seria erro de float.
+        assert plano.chosen is not None
+        assert plano.chosen.resolution == 0.1
+        assert not [r for r in plano.refused if r["reason"] == "resolution_too_coarse"]
+
+    def test_one_run_short_of_the_boundary_is_refused(self):
+        historico = [[_run(f"b{i}", 100, dpu=1000.0), _scan(1000)] for i in range(9)]
+        plano = build_capacity_plan(
+            [_declarado(alvo=0.9), _scan(1000)],
+            history=historico,
+            job_name="etl",
+            job_run_id="jr_hoje",
+        )
+
+        assert plano.chosen is None
+        assert [r["reason"] for r in plano.refused] == ["resolution_too_coarse"]

@@ -36,6 +36,7 @@ import pytest
 import yaml
 
 from sparkforge.capacity import build_capacity_plan
+from sparkforge.capacity.plan import resolution_supports
 from sparkforge.findings.models import Fact
 from sparkforge.findings.validate import validate_fact
 
@@ -208,7 +209,10 @@ class TestOQueOCorpusInteiroGarante:
                 continue
             for candidato in plano["candidates"]:
                 if candidato["meets_sla"]:
-                    assert candidato["resolution"] <= 1 - alvo, (
+                    # A MESMA funcao que a implementacao usa. Reescrever a
+                    # regra aqui a faria divergir na fronteira, que e
+                    # exatamente onde ela importa.
+                    assert resolution_supports(candidato["resolution"], alvo), (
                         directory.name,
                         candidato,
                     )

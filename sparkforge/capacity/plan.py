@@ -108,6 +108,24 @@ class CapacityPlan:
         }
 
 
+# Erro de ponto flutuante em `1.0 - alvo` e real: 1.0 - 0.9 da
+# 0.09999999999999998, e uma comparacao ingenua recusaria um `n` que esta
+# exatamente no limite -- por artefato de representacao, nao pela regra.
+_TOLERANCIA_NUMERICA = 1e-9
+
+
+def resolution_supports(resolution: float, target: float) -> bool:
+    """A resolucao sustenta uma afirmacao no nivel de `target`?
+
+    Publico de proposito: esta e a regra que separa "medimos que cabe" de
+    "nao temos como saber", e o teste que a cobra sobre o corpus inteiro usa
+    ESTA funcao. Duas escritas da mesma regra divergem na fronteira -- foi o
+    que aconteceu quando o teste comparava sem tolerancia e a implementacao
+    comparava com ela.
+    """
+    return resolution <= (1.0 - target) + _TOLERANCIA_NUMERICA
+
+
 def _volume_de(facts: Sequence[Fact]) -> int | None:
     """Bytes varridos, somando os scans. `None` quando nenhum scan os publicou."""
     total = 0
@@ -257,11 +275,7 @@ def build_capacity_plan(
         resolucao = 1.0 / n
 
         cabe = confiabilidade >= float(alvo)
-        # Epsilon absorve o erro de ponto flutuante de `1.0 - alvo` (ex.:
-        # 1.0 - 0.9 == 0.09999999999999998): sem ele, um `n` exatamente no
-        # limite da resolucao seria recusado por artefato de representacao,
-        # nao pela regra.
-        if cabe and resolucao > (1.0 - float(alvo)) + 1e-9:
+        if cabe and not resolution_supports(resolucao, float(alvo)):
             # A contagem diz que cabe, e a contagem nao tem resolucao para
             # sustentar a afirmacao. Recusa, nao aprovacao.
             cabe = False
