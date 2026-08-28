@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.facts.cloudwatch import extract_cloudwatch_path
+from sparkforge.facts.scan import iter_source_files
 from sparkforge.findings.models import Fact, sort_facts
 
 EXTRACTOR_ID = "glue_job_run@0.1.0"
@@ -215,7 +216,7 @@ def _run_fact(job_name: str, run: dict[str, Any], path: str) -> tuple[Fact, list
 def _load_runs(directory: Path, job_name: str) -> list[tuple[dict[str, Any], str]]:
     """Carrega os artefatos de run do diretorio, filtrados pelo job."""
     loaded: list[tuple[dict[str, Any], str]] = []
-    for target in sorted(Path(directory).glob("*.json")):
+    for target in iter_source_files(directory, "*.json"):
         run = json.loads(target.read_text(encoding="utf-8"))
         if (run.get("JobName") or "") != job_name:
             continue
