@@ -53,6 +53,38 @@ _DPU_FORMULA = "number_of_workers * DPU(worker_type) * execution_time_s"
 _DPU_SOURCE_DOC = "knowledge/glue/workers-and-capacity.md:79"
 
 
+def _capacity_symbol(
+    job_name: str,
+    glue_version: str,
+    worker_type: str,
+    workers: Any,
+    autoscaling: bool,
+    state: str | None = None,
+) -> str:
+    """Assinatura estavel e legivel de um grupo de capacidade, para `subject.symbol`.
+
+    `glue.job_run.distribution` e `glue.job_run.outcome` agregam VARIOS runs
+    sob um unico fact; nenhum `job_run_id` isolado os identifica. `subject.type`
+    continua `"job_run"` mesmo assim -- mesmo precedente de
+    `spark.job.spill_summary` em `sparkforge/facts/event_log.py:646`, que
+    agrega o job inteiro sob `type: "job_run"` porque o enum fechado do schema
+    (`sparkforge/findings/schemas/fact.schema.json`) nao tem um tipo "grupo"
+    proprio, e o run e a entidade mais proxima do que o grupo realmente e.
+
+    Serializado via `json.dumps` de uma lista posicional, e nao por
+    f-string concatenada: e injetivo por construcao (cada campo entra
+    delimitado por aspas e virgula do proprio JSON), entao dois grupos
+    diferentes nunca colidem no mesmo simbolo -- nem quando um campo poderia,
+    em tese, conter o separador. `state=None` (outcome, que atravessa todos os
+    estados) e `state="FAILED"` (distribution) produzem listas de tamanho
+    diferente, o que ja as separa.
+    """
+    campos: list[Any] = [job_name, glue_version, worker_type, workers, autoscaling]
+    if state is not None:
+        campos.append(state)
+    return json.dumps(campos, separators=(",", ":"))
+
+
 def _nearest_rank(sorted_values: list[float], pct: int) -> float:
     """Percentil por nearest-rank, sem interpolacao: rank = ceil(pct/100 * n).
 
@@ -95,7 +127,12 @@ def _unresolved(
         attrs["collect_command"] = collect_command
     return Fact(
         kind="glue.job_run.unresolved",
-        subject={"job_name": job_name, "job_run_id": run_id},
+        subject={
+            "job_name": job_name,
+            "job_run_id": run_id,
+            "type": "job_run",
+            "symbol": run_id,
+        },
         attrs=attrs,
         provenance={"extractor": EXTRACTOR_ID},
     )
@@ -205,7 +242,12 @@ def _run_fact(job_name: str, run: dict[str, Any], path: str) -> tuple[Fact, list
 
     fact = Fact(
         kind="glue.job_run",
-        subject={"job_name": job_name, "job_run_id": run_id},
+        subject={
+            "job_name": job_name,
+            "job_run_id": run_id,
+            "type": "job_run",
+            "symbol": run_id,
+        },
         measures=measures,
         attrs=attrs,
         provenance=provenance,
@@ -299,6 +341,10 @@ def _distribution_facts(job_name: str, rows: list[dict[str, Any]], path: str) ->
                     "number_of_workers": workers,
                     "autoscaling": autoscaling,
                     "state": state,
+                    "type": "job_run",
+                    "symbol": _capacity_symbol(
+                        job_name, glue_version, worker_type, workers, autoscaling, state
+                    ),
                 },
                 measures=measures,
                 attrs={
@@ -349,6 +395,10 @@ def _outcome_facts(job_name: str, rows: list[dict[str, Any]], path: str) -> list
                     "worker_type": worker_type,
                     "number_of_workers": workers,
                     "autoscaling": autoscaling,
+                    "type": "job_run",
+                    "symbol": _capacity_symbol(
+                        job_name, glue_version, worker_type, workers, autoscaling
+                    ),
                 },
                 measures=measures,
                 attrs={
@@ -438,7 +488,7 @@ def extract_glue_job_runs_path(
     facts.append(
         Fact(
             kind="glue.job_run.analyzed",
-            subject={"job_name": job_name},
+            subject={"job_name": job_name, "type": "job_run", "symbol": job_name},
             measures={
                 "runs_analyzed": len(runs),
                 "runs_with_metrics": sum(

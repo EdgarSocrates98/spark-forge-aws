@@ -17,10 +17,33 @@ classificacao de tamanho de workload, que e a fase seguinte.
 import json
 from pathlib import Path
 
+import pytest
+
 from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
+from sparkforge.findings.validate import validate_fact
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "glue_job_run"
+
+
+def fixture_dirs():
+    return sorted(p for p in FIXTURES.iterdir() if p.is_dir())
+
+
+@pytest.mark.parametrize("directory", fixture_dirs(), ids=lambda p: p.name)
+def test_everything_validates_against_schema(directory):
+    """O gate que faltava neste modulo golden: irmaos como
+    `test_fixtures_golden_s3.py::TestGolden::test_everything_validates_against_schema`
+    ja chamavam `validate_fact` em cada cenario; este arquivo nao chamava, e o
+    defeito de `subject.type` ausente passou sem que nenhum teste percebesse."""
+    cloudwatch_dir = directory / "cloudwatch"
+    facts = extract_glue_job_runs_path(
+        directory / "runs",
+        "synthetic-job",
+        cloudwatch_dir=cloudwatch_dir if cloudwatch_dir.is_dir() else None,
+    )
+    for fact in facts:
+        validate_fact(fact.to_dict())
 
 
 class TestGoldenScenarios:

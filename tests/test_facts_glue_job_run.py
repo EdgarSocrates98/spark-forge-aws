@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
+from sparkforge.facts.glue_job_run import EMITTED_KINDS, extract_glue_job_runs_path
+from sparkforge.findings.validate import validate_fact
 
 
 def _write_run(root: Path, run_id: str, **extra) -> Path:
@@ -238,6 +239,25 @@ def _write_cloudwatch(root: Path, run_id: str, value: float) -> Path:
     target = root / f"my-job_{run_id}.json"
     target.write_text(json.dumps(payload), encoding="utf-8")
     return target
+
+
+class TestSchemaValidation:
+    """O gate que faltava: nenhum dos cinco kinds deste modulo emitia
+    `subject.type`, e `sparkforge.findings.validate.validate_fact` reprovava
+    com "'type' is a required property" em `subject`. `tests/test_fixtures_
+    golden_s3.py::TestGolden::test_everything_validates_against_schema` ja
+    cobre este gate para os extratores irmaos; este modulo golden nao existia
+    ainda quando o defeito entrou."""
+
+    def test_all_emitted_kinds_validate_against_the_fact_schema(self, tmp_path):
+        _write_run(tmp_path, "jr_1", ExecutionTime=100)
+        _write_run(tmp_path, "jr_2", ExecutionTime=200, JobRunState="FAILED")
+
+        facts = extract_glue_job_runs_path(tmp_path, "my-job")
+
+        assert EMITTED_KINDS == {f.kind for f in facts}
+        for fact in facts:
+            validate_fact(fact.to_dict())
 
 
 class TestCorrelation:

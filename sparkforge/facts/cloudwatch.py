@@ -62,7 +62,19 @@ def extract_cloudwatch(payload: dict[str, Any], path: str) -> list[Fact]:
     job_name = payload.get("job_name") or ""
     job_run_id = payload.get("job_run_id") or ""
     period = payload.get("period_seconds")
-    subject = {"job_name": job_name, "job_run_id": job_run_id}
+    # `type: "job_run"` pelo mesmo precedente de `spark.job.spill_summary`
+    # (`sparkforge/facts/event_log.py:646`): o enum fechado de `subject.type`
+    # nao tem um tipo "metrica de run" proprio, e o job_run_id e a entidade
+    # ancorada mais proxima. `symbol` = job_run_id: unico por run, e os tres
+    # kinds deste modulo (`glue.metric`, `.unresolved`, `.analyzed`) sao todos
+    # por-run, sem agregacao entre runs -- ao contrario de
+    # `glue.job_run.distribution`/`.outcome` em `glue_job_run.py`.
+    subject = {
+        "job_name": job_name,
+        "job_run_id": job_run_id,
+        "type": "job_run",
+        "symbol": job_run_id,
+    }
 
     facts: list[Fact] = []
     with_data = 0

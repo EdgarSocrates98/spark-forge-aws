@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sparkforge.facts.cloudwatch import extract_cloudwatch_path
+from sparkforge.facts.cloudwatch import EMITTED_KINDS, extract_cloudwatch_path
+from sparkforge.findings.validate import validate_fact
 
 
 def _artifact(tmp_path: Path, results: list[dict], period: int = 60) -> Path:
@@ -39,7 +40,12 @@ class TestExtract:
         metric = [f for f in facts if f.kind == "glue.metric"]
 
         assert len(metric) == 1
-        assert metric[0].subject == {"job_name": "my-job", "job_run_id": "jr_1"}
+        assert metric[0].subject == {
+            "job_name": "my-job",
+            "job_run_id": "jr_1",
+            "type": "job_run",
+            "symbol": "jr_1",
+        }
         assert metric[0].attrs["name"] == "glue.driver.workerUtilization"
         assert metric[0].attrs["period_s"] == 60
         assert metric[0].measures["min"] == 0.3
@@ -92,3 +98,28 @@ class TestExtract:
         analyzed = [f for f in extract_cloudwatch_path(target) if f.kind == "glue.metric.analyzed"]
         assert len(analyzed) == 1
         assert analyzed[0].measures == {"metrics_with_data": 1, "metrics_empty": 1}
+
+
+class TestSchemaValidation:
+    """Mesmo gate ausente de `test_facts_glue_job_run.py`: os tres kinds deste
+    modulo tambem nao emitiam `subject.type` e reprovavam `validate_fact`."""
+
+    def test_all_emitted_kinds_validate_against_the_fact_schema(self, tmp_path):
+        target = _artifact(
+            tmp_path,
+            [
+                {"Id": "m0", "Label": "glue.error.ALL", "Timestamps": ["t"], "Values": [1.0]},
+                {
+                    "Id": "m1",
+                    "Label": "glue.driver.workerUtilization",
+                    "Timestamps": [],
+                    "Values": [],
+                },
+            ],
+        )
+
+        facts = extract_cloudwatch_path(target)
+
+        assert EMITTED_KINDS == {f.kind for f in facts}
+        for fact in facts:
+            validate_fact(fact.to_dict())
