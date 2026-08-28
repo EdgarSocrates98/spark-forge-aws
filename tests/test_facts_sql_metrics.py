@@ -211,6 +211,65 @@ class TestAQE:
         assert all("files_read" not in s.measures for s in scans)
         assert len(lacunas) == 1
 
+    def test_value_published_before_the_replan_is_not_lost(self):
+        inicial = _scan_node(metrics=[_metric("number of files read", 11)])
+        final = _scan_node(
+            simple="FileScan parquet db.clientes[id#1]",
+            metrics=[_metric("number of files read", 21)],
+        )
+        facts = extract_sql_metrics(
+            [
+                _start(plan=inicial),
+                _driver_update(0, [[11, 3]]),  # publicado ANTES da reposta
+                _aqe(0, final),
+                _end(0),
+            ],
+            "log.jsonl",
+        )
+        scan = [f for f in facts if f.kind == "spark.sql.scan"][0]
+
+        # O valor foi medido sob o plano inicial, e o no continua sendo o mesmo
+        # scan. Descarta-lo faria a extracao devolver menos bytes do que o
+        # Spark publicou, sem dizer que descartou.
+        assert scan.measures["files_read"] == 3
+
+    def test_value_lost_to_a_replan_is_never_silent(self):
+        """Se o no do acumulador antigo sumiu do plano novo, e lacuna.
+
+        Nao ha nó a que atribuir, e o silencio faria a soma sair menor sem
+        nenhum sinal.
+        """
+        inicial = {
+            "nodeName": "Union",
+            "simpleString": "Union",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(metrics=[_metric("number of files read", 11)]),
+                _scan_node(
+                    simple="FileScan parquet db.some[id#9]",
+                    metrics=[_metric("number of files read", 12)],
+                ),
+            ],
+        }
+        final = _scan_node(
+            simple="FileScan parquet db.clientes[id#1]",
+            metrics=[_metric("number of files read", 21)],
+        )
+        facts = extract_sql_metrics(
+            [_start(plan=inicial), _driver_update(0, [[12, 5]]), _aqe(0, final), _end(0)],
+            "log.jsonl",
+        )
+        lacunas = [
+            f
+            for f in facts
+            if f.kind == "spark.sql.unresolved"
+            and f.attrs["reason"] == "value_orphaned_by_replan"
+        ]
+
+        assert len(lacunas) == 1
+        assert lacunas[0].attrs["accumulator_id"] == 12
+
 
 class TestRefusals:
     def test_log_without_sql_events_says_so_instead_of_looking_broken(self):

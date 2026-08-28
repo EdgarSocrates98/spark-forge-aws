@@ -112,35 +112,65 @@ class _Execution:
         self.reassigned: set[int] = set()
         self.values: dict[int, float] = {}
         self.ended = False
+        # Mapa acumulado de TODAS as arvores desta execucao. `accum` guarda a
+        # arvore corrente, que e quem define identidade de no; este guarda o
+        # que ja foi declarado antes, para que um valor medido sob o plano
+        # inicial nao evapore quando o AQE repoe a arvore.
+        self.accum_historico: dict[int, tuple[int, str]] = {}
 
     def add_value(self, accum_id: int, valor: float) -> bool:
         """Soma um valor a um acumulador conhecido. Devolve se ele foi atribuido."""
-        if accum_id in self.reassigned or accum_id not in self.accum:
+        if accum_id in self.reassigned:
+            return False
+        if accum_id not in self.accum and accum_id not in self.accum_historico:
             return False
         self.values[accum_id] = self.values.get(accum_id, 0.0) + valor
         return True
 
-    def measures_by_node(self) -> tuple[dict[int, dict[str, Any]], list[tuple[int, str]]]:
-        """`{node_id: {measure: valor}}` e a lista de nomes fora do mapa."""
+    def measures_by_node(
+        self,
+    ) -> tuple[dict[int, dict[str, Any]], list[tuple[int, str]], list[int]]:
+        """`{node_id: {measure: valor}}`, os nomes fora do mapa, e os orfaos.
+
+        Um acumulador declarado numa arvore anterior continua valendo se o
+        `node_id` dele ainda existe no plano corrente: o valor foi medido, e o
+        no e o mesmo. Se o no sumiu, o valor nao tem onde pousar -- e isso vira
+        lacuna nomeada, nunca silencio.
+        """
+        conhecidos: dict[int, tuple[int, str]] = dict(self.accum_historico)
+        conhecidos.update(self.accum)
+
         por_no: dict[int, dict[str, Any]] = {}
         desconhecidos: list[tuple[int, str]] = []
-        for accum_id, (node_id, nome) in sorted(self.accum.items()):
+        orfaos: list[int] = []
+        for accum_id, (node_id, nome) in sorted(conhecidos.items()):
+            if accum_id not in self.values:
+                # Metrica declarada no plano e nunca publicada. Ausencia, nao zero.
+                continue
             if node_id not in self.nodes:
+                orfaos.append(accum_id)
                 continue
             measure = measure_for(nome)
             if measure is None:
                 desconhecidos.append((node_id, nome))
                 continue
-            if accum_id not in self.values:
-                # Metrica declarada no plano e nunca publicada. Ausencia, nao zero.
-                continue
             valor = self.values[accum_id]
             por_no.setdefault(node_id, {})[measure] = (
                 int(valor) if float(valor).is_integer() else valor
             )
-        return por_no, desconhecidos
+        return por_no, desconhecidos, orfaos
 
     def absorb_plan(self, plano: dict[str, Any], source: str) -> None:
+        """Substitui a arvore corrente por `plano`, preservando o que veio antes.
+
+        Sob AQE isto e chamado mais de uma vez para a mesma execucao. `nodes` e
+        `accum` sao reconstruidos do zero porque descrevem a arvore CORRENTE --
+        identidade de no e por indice de preorder, e o indice muda quando a
+        arvore muda. Mas um valor ja publicado contra a arvore anterior foi
+        medido sob aquele plano e continua valendo: por isso `accum` de antes
+        de resetar entra em `accum_historico`, que `measures_by_node` tambem
+        consulta.
+        """
         self.plan_source = source
         self.nodes = {}
         self.nodes_total = 0
@@ -157,6 +187,7 @@ class _Execution:
                 "format": formato,
             }
 
+        self.accum_historico.update(self.accum)
         self.accum = {}
         self.reassigned = set()
         for node_id, node in _walk(plano, [0]):
@@ -286,8 +317,10 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
                 execucao.ended = True
 
     facts: list[Fact] = []
+    orfaos_por_execucao: dict[int, list[int]] = {}
     for execucao in sorted(execucoes.values(), key=lambda e: e.execution_id):
-        por_no, desconhecidos = execucao.measures_by_node()
+        por_no, desconhecidos, orfaos = execucao.measures_by_node()
+        orfaos_por_execucao[execucao.execution_id] = orfaos
         for node_id, node in sorted(execucao.nodes.items()):
             facts.append(
                 Fact(
@@ -344,6 +377,24 @@ def extract_sql_metrics(lines: Iterable[str], path: str) -> list[Fact]:
         )
 
     for execucao in sorted(execucoes.values(), key=lambda e: e.execution_id):
+        for accum_id in orfaos_por_execucao[execucao.execution_id]:
+            facts.append(
+                Fact(
+                    kind="spark.sql.unresolved",
+                    subject=_plan_node_subject(execucao.execution_id, 0, "execution", ""),
+                    attrs={
+                        "reason": "value_orphaned_by_replan",
+                        "accumulator_id": accum_id,
+                        "detail": (
+                            "Valor publicado contra um no que sumiu do plano corrente, "
+                            "provavelmente numa reposta de AQE. O numero foi medido, mas "
+                            "nao ha no a que atribui-lo; soma-lo a outro no poria bytes no "
+                            "lugar errado."
+                        ),
+                    },
+                    provenance={"extractor": EXTRACTOR_ID, "artifact": path},
+                )
+            )
         for accum_id in sorted(execucao.reassigned):
             facts.append(
                 Fact(
