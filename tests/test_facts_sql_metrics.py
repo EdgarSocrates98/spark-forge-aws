@@ -412,3 +412,81 @@ class TestValues:
         sentinela = [f for f in facts if f.kind == "spark.sql.analyzed"][0]
 
         assert sentinela.measures["unattributed_accumulators"] == 1
+
+
+class TestEstruturaDaArvore:
+    def _tres_niveis(self):
+        """(A join B) join C, com A/B/C sendo scans."""
+        interno = {
+            "nodeName": "BroadcastHashJoin",
+            "simpleString": "BroadcastHashJoin [id#1], [id#2], Inner, BuildRight, false",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                _scan_node(simple="FileScan parquet db.a[id#1]"),
+                _scan_node(simple="FileScan parquet db.b[id#2]"),
+            ],
+        }
+        return {
+            "nodeName": "SortMergeJoin",
+            "simpleString": "SortMergeJoin [id#1], [id#3], Inner",
+            "metadata": {},
+            "metrics": [],
+            "children": [interno, _scan_node(simple="FileScan parquet db.c[id#3]")],
+        }
+
+    def test_children_of_each_node_are_recorded(self):
+        from sparkforge.facts.sql_metrics import _estrutura
+
+        filhos, profundidade = _estrutura(self._tres_niveis())
+
+        # preorder: 0 SortMergeJoin, 1 BroadcastHashJoin, 2 db.a, 3 db.b, 4 db.c
+        assert filhos[0] == [1, 4]
+        assert filhos[1] == [2, 3]
+        assert filhos[2] == []
+        assert profundidade == 3
+
+    def test_sources_below_a_node_carry_their_distance_in_joins(self):
+        from sparkforge.facts.sql_metrics import _fontes_abaixo
+
+        arvore = self._tres_niveis()
+        # a partir do filho esquerdo da raiz (o join interno, node_id 1)
+        fontes = _fontes_abaixo(arvore, 1)
+
+        assert sorted((f["relation"], f["via_joins"]) for f in fontes) == [
+            ("db.a", 0),
+            ("db.b", 0),
+        ]
+
+    def test_distance_counts_the_joins_in_between(self):
+        from sparkforge.facts.sql_metrics import _fontes_abaixo
+
+        arvore = self._tres_niveis()
+        fontes = _fontes_abaixo(arvore, 0)
+
+        assert sorted((f["relation"], f["via_joins"]) for f in fontes) == [
+            ("db.a", 1),
+            ("db.b", 1),
+            ("db.c", 0),
+        ]
+
+    def test_a_node_without_any_scan_below_reports_none(self):
+        from sparkforge.facts.sql_metrics import _fontes_abaixo
+
+        arvore = {
+            "nodeName": "Project",
+            "simpleString": "Project",
+            "metadata": {},
+            "metrics": [],
+            "children": [
+                {
+                    "nodeName": "Scan ExistingRDD",
+                    "simpleString": "Scan ExistingRDD[id#1]",
+                    "metadata": {},
+                    "metrics": [],
+                    "children": [],
+                }
+            ],
+        }
+
+        assert _fontes_abaixo(arvore, 0) == []

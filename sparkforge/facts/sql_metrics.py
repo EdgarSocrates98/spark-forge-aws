@@ -93,6 +93,107 @@ def _walk(node: dict[str, Any], proximo: list[int]) -> Iterator[tuple[int, dict[
         yield from _walk(filho, proximo)
 
 
+# Teto de profundidade da arvore. `_walk` e recursivo, e um `sparkPlanInfo`
+# suficientemente profundo estoura a pilha do Python antes de qualquer
+# verificacao -- o extrator morreria com `RecursionError` no meio de uma
+# extracao que ja produziu facts validos. Falha com nome e diagnostico; falha
+# por estouro de pilha e acidente.
+_TETO_DE_PROFUNDIDADE = 200
+
+_JOIN_OPERADORES = frozenset(
+    {
+        "BroadcastHashJoin",
+        "SortMergeJoin",
+        "ShuffledHashJoin",
+        "BroadcastNestedLoopJoin",
+        "CartesianProduct",
+    }
+)
+
+_BUILD_RE = re.compile(r"\bBuild(Left|Right)\b")
+
+
+def _join_of(node: dict[str, Any]) -> tuple[str, str, str] | None:
+    """Devolve `(strategy, join_type, build_side)` se o no e join, senao `None`.
+
+    `build_side` sai `""` quando o operador nao publica lado de build --
+    `SortMergeJoin` ordena e mescla os dois lados, e atribuir um lado a ele
+    seria afirmar o que o plano nao diz.
+    """
+    operador = str(node.get("nodeName") or "").strip()
+    if operador not in _JOIN_OPERADORES:
+        return None
+    texto = str(node.get("simpleString") or "")
+    join_type = ""
+    for candidato in ("Inner", "LeftOuter", "RightOuter", "FullOuter", "LeftSemi", "LeftAnti"):
+        if re.search(rf"\b{candidato}\b", texto):
+            join_type = candidato
+            break
+    build = _BUILD_RE.search(texto)
+    return operador, join_type, build.group(1).lower() if build else ""
+
+
+def _estrutura(plano: dict[str, Any]) -> tuple[dict[int, list[int]], int]:
+    """`{node_id: [ids dos filhos]}` e a profundidade maxima da arvore.
+
+    Numeracao identica a de `_walk`: preorder, raiz = 0. Os dois precisam
+    concordar, porque o `node_id` de um fact de scan e o de uma aresta tem que
+    apontar para o mesmo no -- e e teste que garante isso, nao import.
+    """
+    filhos: dict[int, list[int]] = {}
+    proximo = [0]
+    profundidade_maxima = [0]
+
+    def visita(node: dict[str, Any], nivel: int) -> int:
+        meu = proximo[0]
+        proximo[0] += 1
+        profundidade_maxima[0] = max(profundidade_maxima[0], nivel + 1)
+        meus_filhos: list[int] = []
+        for filho in node.get("children") or []:
+            meus_filhos.append(visita(filho, nivel + 1))
+        filhos[meu] = meus_filhos
+        return meu
+
+    visita(plano, 0)
+    return filhos, profundidade_maxima[0]
+
+
+def _fontes_abaixo(plano: dict[str, Any], alvo: int) -> list[dict[str, Any]]:
+    """As fontes alcancaveis abaixo de `alvo`, cada uma com `via_joins`.
+
+    `via_joins` e quantos joins existem ENTRE o scan e `alvo`. Fonte que entra
+    direto tem zero. Nao perde informacao e nao mente: quem quiser so o direto
+    filtra por zero, quem quiser a arvore inteira soma tudo.
+    """
+    encontrados: list[dict[str, Any]] = []
+    achou_alvo = [False]
+    proximo = [0]
+
+    def visita(node: dict[str, Any], dentro: bool, joins: int) -> None:
+        meu = proximo[0]
+        proximo[0] += 1
+        aqui = dentro or meu == alvo
+        if meu == alvo:
+            achou_alvo[0] = True
+        if aqui and meu != alvo:
+            scan = _scan_of(node)
+            if scan is not None:
+                _, relation, _ = scan
+                encontrados.append(
+                    {"node_id": meu, "relation": relation, "via_joins": joins}
+                )
+        adiante = joins
+        if aqui and meu != alvo and _join_of(node) is not None:
+            adiante = joins + 1
+        for filho in node.get("children") or []:
+            visita(filho, aqui, adiante)
+
+    visita(plano, False, 0)
+    if not achou_alvo[0]:
+        return []
+    return encontrados
+
+
 class _Execution:
     """Estado acumulado de uma execucao SQL durante a passada.
 
