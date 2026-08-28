@@ -98,8 +98,14 @@ capabilities:
       copilot_ci: [cli, files]
 
   - name: extract facts from a Spark event log
-    tools: [sparkforge_analyze_event_log]
-    cli: [analyze event-log]
+    tools:
+      - sparkforge_analyze_event_log
+      - sparkforge_analyze_cloudwatch
+      - sparkforge_analyze_glue_job_runs
+    cli:
+      - analyze event-log
+      - analyze cloudwatch
+      - analyze glue-job-runs
     knowledge: [knowledge/spark/memory-and-oom.md]
     platforms:
       claude_code: [mcp, cli, files]
@@ -440,6 +446,7 @@ capabilities:
       - sparkforge_collect_event_log
       - sparkforge_collect_glue_job
       - sparkforge_collect_cloudwatch
+      - sparkforge_collect_glue_job_runs
       - sparkforge_collect_iceberg_metadata
       - sparkforge_collect_athena_workgroup
       - sparkforge_collect_emr_cluster
@@ -449,12 +456,13 @@ capabilities:
       - collect event-log
       - collect glue-job
       - collect cloudwatch
+      - collect glue-job-runs
       - collect iceberg-metadata
       - collect athena-workgroup
       - collect emr-cluster
       - collect emr-serverless
       - collect verify
-    knowledge: [knowledge/glue/observability.md]
+    knowledge: [knowledge/glue/observability.md, knowledge/glue/observability.yaml]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

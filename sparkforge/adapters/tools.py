@@ -847,6 +847,31 @@ _ANALYZE_PYSPARK_SCHEMA: dict[str, Any] = {
 # de cada tool contra este schema compartilhado.
 _ANALYZE_FACTS_SCHEMA = _ANALYZE_PYSPARK_SCHEMA
 
+# `analyze_cloudwatch`/`analyze_glue_job_runs` NAO reusam `_ANALYZE_FACTS_SCHEMA`
+# por identidade: `_FACT_SUBJECT` exige `subject.type` de um enum FECHADO de
+# sete valores (source_location, stage, task, tf_resource, table, job_run,
+# plan_node), um por extractor ancorado em codigo/plano/tabela. Os extratores
+# de CloudWatch e historico de run Glue (`sparkforge/facts/cloudwatch.py`,
+# `sparkforge/facts/glue_job_run.py`) ancoram em outra coisa -- job_name e
+# job_run_id, ou a tupla de capacidade inteira em `glue.job_run.distribution`/
+# `.outcome` -- e nunca escrevem `subject["type"]`. Fingir que cabe no enum
+# inventaria um tipo que o extrator nunca emite; um `subject` generico e a
+# forma REAL, medida chamando as duas tools e validando contra o schema
+# (`TestRealOutputValidatesAgainstItsOwnSchema`) -- foi assim que a
+# divergencia apareceu.
+_GLUE_FACT_ITEM: dict[str, Any] = {
+    **_FACT_ITEM,
+    "properties": {**_FACT_ITEM["properties"], "subject": {"type": "object"}},
+}
+
+_ANALYZE_GLUE_FACTS_SCHEMA: dict[str, Any] = {
+    **_ANALYZE_PYSPARK_SCHEMA,
+    "properties": {
+        **_ANALYZE_PYSPARK_SCHEMA["properties"],
+        "items": {"type": "array", "items": _GLUE_FACT_ITEM},
+    },
+}
+
 # `benchmark_runs` tambem devolve o envelope com ponto cego, e por isso reusa o
 # mesmo schema: `bench.unresolved` e ponto cego de verdade -- lado sem
 # `spark.log_analyzed`, medida ausente ou parcial num lado, simbolo casado que
@@ -2202,6 +2227,75 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_cloudwatch": {
+        "description": (
+            "Extrai facts `glue.metric` de um artefato de metricas do CloudWatch ja "
+            "coletado. Serie sem pontos vira `glue.metric.unresolved` com a razao, nunca "
+            "um zero: vazio por observabilidade desligada no job e vazio por janela sem "
+            "dado sao causas diferentes."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Artefato gravado por `sparkforge collect cloudwatch`.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_GLUE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_glue_job_runs": {
+        "description": (
+            "Extrai facts de historico do DIRETORIO de artefatos de run Glue: um "
+            "`glue.job_run` por run, `glue.job_run.distribution` por capacidade e estado "
+            "terminal, e `glue.job_run.outcome` por capacidade. DPU e observado quando a "
+            "API o traz, derivado quando a capacidade e estatica, e recusado sob Auto "
+            "Scaling sem DPUSeconds. Com `cloudwatch`, correlaciona por job_run_id; sem "
+            "ele, a correlacao vai para unresolved com o comando que a resolve."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "job_name"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "DIRETORIO de artefatos gravados por `collect glue-job-runs`.",
+                },
+                "job_name": {"type": "string"},
+                "cloudwatch": {
+                    "type": "string",
+                    "description": "Diretorio de artefatos gravados por `collect cloudwatch`.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_GLUE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_plan": {
         "description": (
             "Extrai facts do TEXTO de um plano fisico ja salvo em disco: a saida de "
@@ -3429,6 +3523,39 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_glue_job_runs": {
+        "description": (
+            "Baixa o historico de execucoes de um job via `glue.get_job_runs` e grava UM "
+            "artefato por run em estado terminal. Run ainda em execucao nao vira artefato: "
+            "seu conteudo mudaria depois e o sha256 do manifesto divergiria. Coleta "
+            "incremental de graca -- run ja em disco com hash integro e no-op. `max_runs` e "
+            "teto de paginacao, nao filtro de data: a API devolve do mais recente para tras."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "job_name", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "job_name": {"type": "string"},
+                "max_runs": {"type": "integer", "minimum": 1, "default": 30},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["job_name", "artifacts", "skipped", "runs_listed"],
+                "properties": {
+                    "job_name": {"type": "string"},
+                    "artifacts": {"type": "array", "items": _COLLECT_ARTIFACT_SCHEMA},
+                    "skipped": {"type": "array", "items": {"type": "object"}},
+                    "runs_listed": {"type": "integer"},
+                },
+            },
+            "Artefatos coletados e runs pulados, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_iceberg_metadata": {
         "description": (
             "Consulta as cinco metadata tables Iceberg de uma tabela via Athena "
@@ -3918,6 +4045,28 @@ def _h_analyze_event_log(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_cloudwatch(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_glue_job_runs(
+        args["path"],
+        job_name=args["job_name"],
+        cloudwatch=args.get("cloudwatch"),
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_plan(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_plan(
         args["path"],
@@ -4147,6 +4296,15 @@ def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_glue_job_runs(
+        args["repo"],
+        job_name=args["job_name"],
+        max_runs=args.get("max_runs", 30),
+        now=args["now"],
+    )
+
+
 def _h_collect_iceberg_metadata(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_iceberg_metadata(
         args["repo"],
@@ -4247,6 +4405,8 @@ _HANDLERS = {
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
+    "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
+    "sparkforge_analyze_glue_job_runs": _h_analyze_glue_job_runs,
     "sparkforge_analyze_plan": _h_analyze_plan,
     "sparkforge_analyze_terraform": _h_analyze_terraform,
     "sparkforge_analyze_iceberg": _h_analyze_iceberg,
@@ -4275,6 +4435,7 @@ _HANDLERS = {
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
+    "sparkforge_collect_glue_job_runs": _h_collect_glue_job_runs,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
     "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,

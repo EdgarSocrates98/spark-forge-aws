@@ -39,6 +39,8 @@ class TestToolSurface:
             "sparkforge_analyze_pyspark",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
+            "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_glue_job_runs",
             "sparkforge_analyze_plan",
             "sparkforge_analyze_terraform",
             "sparkforge_analyze_iceberg",
@@ -67,6 +69,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
@@ -114,6 +117,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
@@ -612,6 +616,44 @@ CATALOG_DUMP = json.dumps(
 
 _EVENT_LOG_LINE = json.dumps({"Event": "SparkListenerApplicationStart"}) + "\n"
 
+# Artefato de metricas do CloudWatch no shape que `sparkforge collect cloudwatch`
+# grava -- ver `_artifact()` de `tests/test_facts_cloudwatch.py`. Com valores nao
+# vazios: uma serie vazia validaria `sparkforge_analyze_cloudwatch` contra o
+# schema pelo motivo errado (`glue.metric.unresolved`, nao `glue.metric`).
+_CLOUDWATCH_ARTIFACT = json.dumps(
+    {
+        "job_name": "etl-job",
+        "job_run_id": "jr_1",
+        "start": "2026-08-26T10:00:00Z",
+        "end": "2026-08-26T10:20:00Z",
+        "period_seconds": 60,
+        "metric_data_results": [
+            {
+                "Id": "m0",
+                "Label": "glue.driver.workerUtilization",
+                "Timestamps": ["t1", "t2", "t3"],
+                "Values": [0.3, 0.9, 0.6],
+            }
+        ],
+    }
+)
+
+# Artefato de UM run Glue no shape que `sparkforge collect glue-job-runs` grava
+# -- um JSON por run terminal, nomeado `<job>_<run_id>.json`.
+_GLUE_JOB_RUN_ARTIFACT = json.dumps(
+    {
+        "JobName": "etl-job",
+        "Id": "jr_1",
+        "JobRunState": "SUCCEEDED",
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 2,
+        "GlueVersion": "5.0",
+        "ExecutionTime": 120,
+        "StartedOn": "2026-08-26T10:00:00Z",
+        "CompletedOn": "2026-08-26T10:02:00Z",
+    }
+)
+
 _PLAN_TEXT = (
     "== Physical Plan ==\n"
     "* Project (2)\n"
@@ -841,6 +883,24 @@ class _FakeS3Client:
 class _FakeGlueClient:
     def get_job(self, **kwargs):
         return {"Job": {"Name": kwargs.get("JobName", "job"), "GlueVersion": "5.0"}}
+
+    def get_job_runs(self, **kwargs):
+        job_name = kwargs.get("JobName", "job")
+        return {
+            "JobRuns": [
+                {
+                    "Id": "jr_1",
+                    "JobName": job_name,
+                    "JobRunState": "SUCCEEDED",
+                    "WorkerType": "G.1X",
+                    "NumberOfWorkers": 2,
+                    "GlueVersion": "5.0",
+                    "ExecutionTime": 120,
+                    "StartedOn": "2026-08-26T10:00:00Z",
+                    "CompletedOn": "2026-08-26T10:02:00Z",
+                }
+            ]
+        }
 
 
 class _FakeCloudWatchClient:
@@ -1255,6 +1315,20 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         log_path.write_text(_EVENT_LOG_LINE, encoding="utf-8")
         return call_tool("sparkforge_analyze_event_log", {"path": str(log_path)})
 
+    if name == "sparkforge_analyze_cloudwatch":
+        cw_path = tmp_path / "cw.json"
+        cw_path.write_text(_CLOUDWATCH_ARTIFACT, encoding="utf-8")
+        return call_tool("sparkforge_analyze_cloudwatch", {"path": str(cw_path)})
+
+    if name == "sparkforge_analyze_glue_job_runs":
+        runs_dir = tmp_path / "glue_job_run"
+        runs_dir.mkdir()
+        (runs_dir / "etl-job_jr_1.json").write_text(_GLUE_JOB_RUN_ARTIFACT, encoding="utf-8")
+        return call_tool(
+            "sparkforge_analyze_glue_job_runs",
+            {"path": str(runs_dir), "job_name": "etl-job"},
+        )
+
     if name == "sparkforge_analyze_plan":
         plan_path = tmp_path / "plan.txt"
         plan_path.write_text(_PLAN_TEXT, encoding="utf-8")
@@ -1409,6 +1483,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
         "sparkforge_collect_cloudwatch",
+        "sparkforge_collect_glue_job_runs",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
         "sparkforge_collect_emr_cluster",
@@ -1435,6 +1510,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "job_run_id": "jr_1",
                 "start": "2026-07-29T00:00:00Z",
                 "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_glue_job_runs": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
                 "now": "2026-07-30T00:00:00Z",
             },
             "sparkforge_collect_iceberg_metadata": {
@@ -1609,3 +1689,29 @@ class TestErrorShapesValidateToo:
     def test_every_failable_tool_declares_both_shapes(self):
         for name, _ in self.FAILABLE:
             assert "oneOf" in TOOLS[name]["outputSchema"], name
+
+
+class TestGlueJobRunTools:
+    def test_the_three_new_tools_are_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        novas = {
+            "sparkforge_collect_glue_job_runs",
+            "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_glue_job_runs",
+        }
+        assert novas <= set(tools.TOOLS)
+        assert novas <= set(tools._HANDLERS)
+
+    def test_the_three_new_tools_are_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        listadas = set(manifest["tools"])
+        assert {
+            "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_glue_job_runs",
+            "sparkforge_collect_glue_job_runs",
+        } <= listadas
