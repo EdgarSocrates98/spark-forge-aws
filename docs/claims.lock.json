@@ -4301,7 +4301,7 @@
       "type": "number"
     },
     {
-      "context": "existe no `subject` — em `terraform`, 214 dos 228 facts do corpus de fixtures",
+      "context": "existe no `subject` — em `terraform`, 232 dos 247 facts do corpus de fixtures",
       "doc": "docs/harness/UNTRUSTED-CONTENT.md",
       "id": "VNX-480",
       "line": 37,
@@ -4311,17 +4311,17 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 214
+          "value": 232
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "214",
+      "text": "232",
       "type": "number"
     },
     {
-      "context": "existe no `subject` — em `terraform`, 214 dos 228 facts do corpus de fixtures",
+      "context": "existe no `subject` — em `terraform`, 232 dos 247 facts do corpus de fixtures",
       "doc": "docs/harness/UNTRUSTED-CONTENT.md",
       "id": "VNX-481",
       "line": 37,
@@ -4331,13 +4331,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 228
+          "value": 247
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "228",
+      "text": "247",
       "type": "number"
     },
     {

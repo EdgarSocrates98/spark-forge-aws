@@ -261,6 +261,8 @@ errado. Medido e corrigido antes de sair da branch.
 **gatilho** da regra genuinamente varia com a versão **e** essa versão vem do
 runtime, não de um fact que a própria regra já lê. Restaram 8 de 48, todas
 sobre Glue: `SF-ENV-002`, `SF-ENV-003`, `SF-GLUE-001` e as 5 `SF-GLUE-002..006`.
+(`SF-GLUE-001` foi **aposentada** em 2026-08-28 — ver a fase do subprojeto A. A
+contagem acima é a do dia em que foi medida, e fica.)
 
 **`SF-GLUE-002` reancorada.** Seu `requires_facts` era `tf.module_analyzed`,
 sentinela de "algum `.tf` foi lido". Num repositório sem `aws_glue_job` ela
@@ -3851,8 +3853,9 @@ consumidor seria julgamento sem lastro.
 preço com região não qualificada; nada nesta entrega furou essa recusa, porque
 furá-la produziria um número que fonte nenhuma publica.
 
-**`SF-GLUE-001` continua errado**, à espera do subprojeto A — fora do escopo
-desta entrega.
+**~~`SF-GLUE-001` continua errado~~, à espera do subprojeto A — fora do escopo
+desta entrega.** Fechado em 2026-08-28: a regra foi **aposentada**, não
+corrigida, e o conflito real virou `SF-GLUE-007`. Ver a fase do subprojeto A.
 
 ## Métricas de scan por nó do plano — o dado que já estava no event log (2026-08-28)
 
@@ -4207,6 +4210,61 @@ mínima com proveniência). D recomenda **capacidade**, não configuração.
 
 **Canary.** Comparar o antes e o depois de uma troca é o §35 do documento de
 origem, e o `benchmark` do projeto já é metade disso.
+
+## Subprojeto A — a regra que acusava a configuração certa (2026-08-28)
+
+Documento de origem do achado:
+[spec do coletor de histórico](specs/2026-08-26-glue-run-history-collector-design.md),
+§1.3 — onde ele foi registrado ao ser encontrado, meses antes de ser consertado.
+
+`SF-GLUE-001` afirmava, com `status: confirmed` e `severity_default: P1`, que
+habilitar Auto Scaling junto com `number_of_workers` era contraditório, e
+propunha *"Remover number_of_workers e definir MinCapacity e MaxCapacity"*.
+
+**A fonte que desmente é a que a própria regra citava.** Em
+`docs.aws.amazon.com/glue/latest/dg/auto-scaling.html`, verificada em
+2026-08-28, o exemplo de CLI traz literalmente:
+
+```
+"NumberOfWorkers": 20, // represents Maximum number of workers
+```
+
+`MinCapacity` e `MaxCapacity` não aparecem em lugar nenhum daquela página. A
+regra disparava P1 sobre a configuração **correta**, e a mudança que ela
+propunha piorava o job.
+
+**O conflito real é o oposto**, e está em `webapi/API_Job.html`, no campo
+`MaxCapacity`: *"For Glue version 2.0 or later jobs, you cannot specify a
+`Maximum capacity`. Instead, you should specify a `Worker type` and the `Number
+of workers`."* e *"Do not set `MaxCapacity` if using `WorkerType` and
+`NumberOfWorkers`."*
+
+### O que a entrega fez
+
+- **`SF-GLUE-001` aposentada, e o id nunca é reaproveitado.** Sai do catálogo e
+  deixa no lugar um comentário permanente com o que ela afirmava, por que estava
+  errada, a citação exata e a data. Nenhuma regra deste catálogo tinha sido
+  aposentada antes — o comentário é o molde para a próxima. Reaproveitar o id
+  faria um relatório antigo que diz "SF-GLUE-001" virar ambíguo entre o achado
+  errado que foi e a regra nova que passaria a ser.
+- **`SF-GLUE-007`**: `max_capacity` junto de `worker_type` em Glue >= 2.0,
+  `same_subject`, `runtime_scope: {glue: ">=2.0"}`, com a fonte da API.
+- **A fixture virou a prova da regressão.** `fixtures/terraform/autoscaling_conflict`
+  provava que a regra antiga disparava; renomeada para `autoscaling_with_max_workers`,
+  com `expects_rules: []`. O cenário agora existe para travar o falso positivo:
+  aquela configuração é correta e não pode voltar a gerar achado.
+- **Fixture nova** `max_capacity_conflict` para a regra nova.
+- **As quatro skills que citavam a regra** foram reescritas para o conhecimento
+  correto, não só renumeradas. Uma delas, `optimize-variable-volume-job`,
+  carregava uma leitura equivocada: tratava `SF-GLUE-001` como se ela cobrasse
+  Auto Scaling em job de volume variável, quando a regra checava o oposto.
+
+### O que ficou de fora
+
+Nenhuma regra nova além da `SF-GLUE-007`. O eixo de "quando Auto Scaling
+compensa" continua sendo julgamento de quem opera, e o subprojeto D é quem
+passou a responder a pergunta vizinha — qual capacidade cabe no SLA — com
+evidência em vez de regra.
 
 ## Dívidas abertas
 
