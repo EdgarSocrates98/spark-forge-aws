@@ -199,6 +199,11 @@
       "sha256": "1c086749a2a97d9909df261f67cabb5f9d7088099312ad4f3787a4ebbf2c0feb"
     },
     {
+      "path": "knowledge/spark/sql-metrics.md",
+      "title": "sql-metrics",
+      "sha256": "c6230ba233c1ebfc6415c4c4dc343d38add1d7123c6286bc2d4c286492b00526"
+    },
+    {
       "path": "knowledge/storage/iceberg-performance.md",
       "title": "iceberg-performance",
       "sha256": "0d9f187c76a2800ccbb0e5ba8b8ddd8fe052c13da1b3ce040c8d6d054f2205b5"

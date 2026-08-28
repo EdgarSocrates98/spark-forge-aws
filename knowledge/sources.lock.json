@@ -207,8 +207,7 @@
     "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html": {
       "checked_at": "2026-08-26",
       "docs": [
-        "knowledge/glue/observability.md",
-        "knowledge/glue/observability.yaml"
+        "knowledge/glue/observability.md"
       ],
       "pinned": false,
       "retrieved": [
@@ -1395,6 +1394,66 @@
       "pinned": true,
       "retrieved": [
         "2026-08-22"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.1.1/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/metric/SQLMetrics.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.6/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v4.1.1/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
       ],
       "rules": []
     },
