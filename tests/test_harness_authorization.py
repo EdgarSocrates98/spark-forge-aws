@@ -839,7 +839,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        assert len(TOOLS) - len(sem_caminho) == 49
+        assert len(TOOLS) - len(sem_caminho) == 52
 
 
 class TestAImposicaoNoDespacho:
