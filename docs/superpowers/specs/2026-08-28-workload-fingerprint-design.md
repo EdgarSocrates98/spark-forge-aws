@@ -40,9 +40,11 @@ que é juízo.
 
 ### 1.2 As três decisões que este documento fixa
 
-**A escala vem do histórico do próprio job.** `extreme` é o run acima do p99 daquele job
-naquela capacidade, não um limiar universal. B entregou `glue.job_run.distribution` exatamente
-para isso.
+**A escala vem do histórico do próprio job.** `extreme` é o run acima do p99 dos runs
+anteriores daquele job, não um limiar universal. Para os eixos de volume esse histórico é a
+mesma medição repetida — facts dos event logs anteriores —, e **não** o
+`glue.job_run.distribution` que B entrega: aquele fact carrega duração e DPU, nunca bytes,
+porque `glue.get_job_runs` não publica volume lido. A razão está em §3.2.
 
 **Declarado nunca se confunde com medido.** `sla_class` e `primary_input_class` não são
 mensuráveis a partir de artefato nenhum: um é decisão de negócio, o outro exige alguém dizer
@@ -65,7 +67,7 @@ métrica de shuffle que estão dentro dele. Medido em 2026-08-28: zero ocorrênc
 - Extrator do inventário declarado, `facts/workload.py`, lendo `workload.yaml`.
 - `sparkforge/workload/`: o objeto `WorkloadFingerprint` e o `Axis`, com valor, confiança,
   base e evidência por eixo.
-- Superfície: `analyze workload` na CLI e a tool MCP correspondente.
+- Superfície: `sparkforge workload` — verbo de topo, ver §5 — e a tool MCP correspondente.
 - Domínio de fixture próprio, com módulo golden.
 
 **Não entra, e a razão de cada um:**
@@ -105,16 +107,31 @@ catálogo precisaria de um limiar por eixo sem fonte que o publique. A segunda �
 
 ### 3.2 A escala vem do histórico do job, não de um limiar universal
 
-Um eixo de volume é classificado comparando o run corrente com a distribuição dos runs
-anteriores **do mesmo job, na mesma capacidade** — `glue.job_run.distribution`, que B entrega
-agrupado por `(glue_version, worker_type, number_of_workers, autoscaling)` e estado terminal.
+Um eixo de volume é classificado comparando o run corrente com os **mesmos números medidos
+em runs anteriores do mesmo job**.
 
 ```
-scan = extreme   bytes_read do run  ≥  p99 do historico daquela capacidade
+scan = extreme   bytes_read do run  ≥  p99 dos runs anteriores
 scan = high      ≥ p95
 scan = medium    ≥ p50
 scan = low       < p50
 ```
+
+**De onde vem esse histórico, e de onde NÃO vem.** Medido em 2026-08-28:
+`glue.job_run.distribution`, que B entrega, carrega `runtime_min_s`, `runtime_p50_s`,
+`runtime_p95_s`, `runtime_p99_s`, `runtime_max_s`, `dpu_seconds_p50`, `dpu_seconds_p95` e `n`
+— **e nenhum byte**. Não é omissão do extrator: `glue.get_job_runs` não publica volume lido.
+Ancorar `scan_intensity` naquele fact seria ler um campo que não existe.
+
+O histórico de uma métrica de volume só pode vir da **mesma medição repetida**: os facts de
+`analyze sql-metrics` e `analyze event-log` dos runs anteriores. `--history` aponta para um
+diretório com **um arquivo de facts por run anterior**, que é como o operador os produz. O
+fingerprint soma cada arquivo, obtém um total por run, e calcula os percentis sobre esses
+totais.
+
+`glue.job_run.distribution` continua útil e continua sendo lido — ele é a evidência de que os
+runs anteriores existem e de quantos são, e é o que dá o `collect_command` quando o diretório
+está ausente. O que ele não faz é fornecer o número de volume.
 
 **Alternativa recusada:** tabela de limiares absolutos em `knowledge/`. Não existe fonte da AWS
 ou do Spark dizendo que 1 TB de varredura é `extreme`; a tabela seria `field-heuristic` com
@@ -211,18 +228,20 @@ Eixos deste recorte:
 
 | Eixo | Base | Evidência |
 |---|---|---|
-| `scan_intensity` | histórico | `spark.sql.scan.bytes_read` × `glue.job_run.distribution` |
-| `shuffle_intensity` | histórico | `spark.stage.shuffle` × histórico |
-| `memory_pressure` | histórico | `spark.stage.spill`, `spark.stage.gc` |
+| `scan_intensity` | histórico | `spark.sql.scan.bytes_read` do run × o mesmo nos runs anteriores |
+| `shuffle_intensity` | histórico | `spark.stage.shuffle.write_bytes` × o mesmo nos anteriores |
+| `memory_pressure` | interna | `spark.stage.spill` sobre `input_bytes` do mesmo stage |
 | `skew_risk` | interna | `spark.stage.task_duration` p95/p50 |
 | `file_pressure` | interna | `spark.sql.scan.files_read`, `s3.prefix_summary` |
 | `join_intensity` | estrutural | `plan.join` — estratégia e contagem |
 | `sla_class` | declarada | `workload.declared` |
 | `primary_input_class` | declarada | `workload.declared` |
 
-`skew_risk` e `file_pressure` usam razão interna ao run, e não o histórico, porque as duas já
-são razões: p95/p50 de tarefa é dispersão, e arquivos por byte lido é densidade. Comparar uma
-razão com o histórico dela seria uma segunda derivada sem consumidor.
+`skew_risk`, `file_pressure` e `memory_pressure` usam razão interna ao run, e não o
+histórico, porque as três já são razões: p95/p50 de tarefa é dispersão, arquivos por byte lido
+é densidade, e spill sobre input é pressão. Comparar uma razão com o histórico dela seria uma
+segunda derivada sem consumidor — e, ao contrário dos eixos de volume, essas três respondem
+**no primeiro run**, sem histórico nenhum.
 
 `join_intensity` é estrutural e o `basis` diz isso: `CartesianProduct` e
 `BroadcastNestedLoopJoin` são fatos do plano, não volume.
@@ -236,7 +255,7 @@ campo.
 ## 5. Superfície
 
 ```
-sparkforge workload --facts <facts.json> --job-name <job> [--history <facts.json>] [--out F]
+sparkforge workload --facts <facts.json> --job-name <job> --job-run <id> [--history <dir>] [--out F]
 ```
 
 **Verbo de topo, e não `analyze workload`.** A razão está escrita no código, em
@@ -245,9 +264,11 @@ extrai nada — ele compara dois conjuntos já extraídos. Mesma razão pela qua
 próprio."* O fingerprint consome facts já extraídos e não lê artefato nenhum, então cai
 exatamente nessa regra, ao lado de `benchmark`, `fuse` e `funcval`.
 
-`--facts` e `--history` são arquivos de `--out` de outros verbos, carregados por
-`_load_facts_file` com o `producer` que diz qual comando produz cada lado — o mesmo mecanismo
-que já orienta quem chama `benchmark` sem os dois arquivos.
+`--facts` é o `--out` de outro verbo, carregado por `_load_facts_file` com o `producer` que diz
+qual comando o produz — o mesmo mecanismo que já orienta quem chama `benchmark` sem os
+arquivos. `--history` é um **diretório**, com um arquivo de facts por run anterior: é essa
+separação por arquivo que identifica cada run, porque `execution_id` é por aplicação e dois
+event logs diferentes colidem nele.
 
 Tool MCP `sparkforge_workload`, read-only local. O subject do resultado é
 `{type: "job_run", symbol: <job_run_id>}` — a entidade é um run visto no contexto do seu
@@ -259,8 +280,8 @@ histórico, e `job_run` já está no enum fechado de `subject.type`.
 
 | Situação | Saída |
 |---|---|
-| Sem `glue.job_run.distribution` para a capacidade do run | eixos de volume `unknown`, `missing` nomeado, `collect_command` = `sparkforge collect glue-job-runs …` |
-| Histórico existe mas com `n` pequeno demais para p99 | eixo `unknown`, razão `history_too_short`, com o `n` observado |
+| `--history` ausente | eixos de volume `unknown`, `missing` nomeado, `collect_command` dizendo como produzir os facts dos runs anteriores |
+| `--history` com menos de 3 runs | eixo `unknown`, razão `history_too_short`, com o `n` observado. Anunciar p99 sobre dois pontos é teatro de precisão |
 | `workload.yaml` ausente | não é erro; os dois eixos declarados saem `unknown` |
 | `workload.yaml` malformado | `workload.unresolved` por entrada, com a razão; as entradas válidas seguem |
 | Nenhum `spark.sql.scan` nos facts | `scan_intensity` e `file_pressure` `unknown`, `collect_command` = `sparkforge analyze sql-metrics …` |
