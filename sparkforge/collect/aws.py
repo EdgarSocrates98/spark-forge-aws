@@ -127,6 +127,10 @@ def cloudwatch_path(job_name: str, job_run_id: str) -> str:
     return f".sparkforge/artifacts/cloudwatch/{job_name}_{job_run_id}.json"
 
 
+def glue_job_run_path(job_name: str, job_run_id: str) -> str:
+    return f".sparkforge/artifacts/glue_job_run/{job_name}_{job_run_id}.json"
+
+
 def iceberg_metadata_path(table: str) -> str:
     return f".sparkforge/artifacts/iceberg/{table.replace('.', '_')}.json"
 

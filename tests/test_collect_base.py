@@ -193,6 +193,29 @@ class TestVerifyAll:
         assert all(r["present"] is False for r in results)
 
 
+class TestGlueJobRunKind:
+    def test_glue_job_run_is_an_accepted_kind(self):
+        from sparkforge.collect.base import ArtifactEntry
+
+        entry = ArtifactEntry(
+            kind="glue_job_run",
+            path=".sparkforge/artifacts/glue_job_run/job_jr_1.json",
+            sha256="a" * 64,
+            source="glue:get_job_runs:job",
+            collect_command="sparkforge collect glue-job-runs --job-name job",
+            collected_at="2026-08-26T00:00:00Z",
+        )
+        assert entry.kind == "glue_job_run"
+
+    def test_path_helper_separates_job_from_run(self):
+        from sparkforge.collect import aws
+
+        assert (
+            aws.glue_job_run_path("my-job", "jr_abc")
+            == ".sparkforge/artifacts/glue_job_run/my-job_jr_abc.json"
+        )
+
+
 class TestRequireBoto3WithoutBoto3Installed:
     def test_module_imports_cleanly_when_boto3_is_poisoned(self):
         # sys.modules["boto3"] = None simula boto3 ausente: qualquer
