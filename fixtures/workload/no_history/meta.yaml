@@ -1,0 +1,10 @@
+name: no_history
+job_name: etl_pedidos_diario
+job_run_id: jr_002
+proves: >
+  Sem `--history`, os eixos de VOLUME (`scan_intensity`, `shuffle_intensity`)
+  saem `unknown` com o comando que fecha a lacuna -- as duas metades,
+  `collect glue-job-runs` e `analyze sql-metrics`. Os eixos que nao dependem
+  de historico -- `skew_risk` (razao p95/p50 dentro do proprio run) e
+  `file_pressure` (arquivos por MiB do proprio run) -- saem preenchidos assim
+  mesmo, porque nao precisam de nenhum run anterior para responder.

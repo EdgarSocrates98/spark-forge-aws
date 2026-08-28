@@ -43,6 +43,7 @@ from sparkforge.facts import (
     sql_literal,
     sql_metrics,
     terraform,
+    workload,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,6 +108,11 @@ EXTRACTORS = {
     # golden com kind que nenhum extrator declara, em vez de kind coberto.
     "sql_metrics": sql_metrics,
     "terraform": terraform,
+    # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado.
+    "workload": workload,
 }
 
 EMITTABLE: frozenset[str] = frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS.values()))

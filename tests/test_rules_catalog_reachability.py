@@ -47,6 +47,7 @@ from sparkforge.facts import (
     sql_literal,
     sql_metrics,
     terraform,
+    workload,
 )
 from sparkforge.rules.loader import catalog_dir, load_catalog
 
@@ -107,6 +108,13 @@ EXTRACTORS = (
     sql_literal,
     sql_metrics,
     terraform,
+    # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*`
+    # (`workload.declared`, `workload.unresolved`, `workload.declared_analyzed`)
+    # contam como orfaos, e a primeira regra que os consumir seria forcada a
+    # `blocked_on` sobre um extrator que ja esta no repositorio desde
+    # `sparkforge/facts/workload.py`.
+    workload,
 )
 
 EMITTABLE: frozenset[str] = frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS))

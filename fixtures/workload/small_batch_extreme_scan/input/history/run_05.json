@@ -1,0 +1,26 @@
+[
+  {
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet",
+      "relation": "db.pedidos",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {
+      "bytes_read": 70000000,
+      "files_read": 8
+    },
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "event_log.jsonl"
+    }
+  }
+]
