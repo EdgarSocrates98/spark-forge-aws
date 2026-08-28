@@ -704,9 +704,7 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": [
-        "SF-GLUE-001"
-      ],
+      "rules": [],
       "sha256": "710eb1d3d6a14435bb7a85e24b1f525378f0678622f0fec510b5e17db696470e"
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html": {
@@ -866,6 +864,16 @@
         "SF-GLUE-005"
       ],
       "sha256": "a587377ca988f6727e8031eeb861bcebd9322f7988b6793952f0ef7fd2a95cdb"
+    },
+    "https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": [
+        "SF-GLUE-007"
+      ]
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html": {
       "docs": [],

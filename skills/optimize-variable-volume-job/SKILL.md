@@ -13,7 +13,7 @@ O catálogo julga cada execução isoladamente contra o mesmo limiar. `SF-UI-006
 2. Para cada perfil relevante, colete e extraia separadamente: `sparkforge collect event-log --repo . --job-run <id> --bucket <bucket> --prefix <prefix> --now <ISO8601>` → `sparkforge analyze event-log --path .sparkforge/artifacts/eventlog/<id>.jsonl --out .sparkforge/facts_<perfil>.json`.
 3. `sparkforge analyze pyspark --path <lib> --out .sparkforge/code_facts.json` extrai os facts estruturais (join, partitioning, hint de broadcast, loop) que não mudam entre execuções — são decisões congeladas no código, não no volume do dia.
 4. `sparkforge judge --facts .sparkforge/facts_<perfil>.json --show-skipped` **em cada perfil separadamente**. Não julgue um `facts.json` que misture execuções de perfis diferentes — a mesma regra significa coisas opostas em cada um. Sem flag de versão: cada facts de event log já declara a versão do Spark observada naquele run (`spark.runtime_version`), e `judge` a usa sozinho — leia o campo `runtime` de cada saída, com `detected_from: ["event_log"]`. **É a checagem que esta skill mais precisa e a mais fácil de esquecer:** comparar perfis só faz sentido entre runs do mesmo runtime, e um `runtime.spark` diferente entre dois perfis significa que a diferença de findings pode ser de versão, não de volume. Para conferir os dois de uma vez sem abrir cada saída: `sparkforge runtime detect --facts .sparkforge/facts_<perfil_a>.json --facts .sparkforge/facts_<perfil_b>.json` — `divergences` vazio é o aceite.
-   O event log preenche `spark`, não `glue` (a matriz de compatibilidade deriva numa direção só), então `SF-GLUE-001` — que é justamente a regra estrutural desta classe de job — fica em `--show-skipped` com `reason: runtime_scope`. Para cobri-la, junte os facts do Terraform na mesma chamada (`--facts` é repetível) em vez de digitar a versão; `--glue 5.1` só quando você a souber de fonte confiável.
+   O event log preenche `spark`, não `glue` (a matriz de compatibilidade deriva numa direção só), então as seis regras `SF-GLUE-*` de infraestrutura — inclusive `SF-GLUE-007`, que acusa `max_capacity` definido junto de `worker_type`/`number_of_workers` — ficam em `--show-skipped` com `reason: runtime_scope`. Para cobri-las, junte os facts do Terraform na mesma chamada (`--facts` é repetível) em vez de digitar a versão; `--glue 5.1` só quando você a souber de fonte confiável.
 5. Compare os findings entre perfis: o que dispara só no `empty`/`micro` é custo fixo (cold start, planejamento); o que dispara em todos os perfis, incluindo `full`, é estrutural no código, não do volume do dia.
 6. Duração e DPU-hours por run não vêm de um extrator de facts — leia do job run do Glue (`sparkforge collect glue-job` traz a definição, não o histórico de runs) ou do CloudWatch bruto (`sparkforge collect cloudwatch`), manualmente, para separar custo fixo de custo proporcional ao volume.
 
@@ -21,7 +21,7 @@ O catálogo julga cada execução isoladamente contra o mesmo limiar. `SF-UI-006
 
 - **`SF-UI-006` no perfil `empty`/`micro`**: esperado, não é achado — poucas tasks porque há pouco dado, não subparalelismo real. No perfil `full`: real, e custa DPU-hours pagas e ociosas.
 - **`SF-PY-009` (hint de broadcast fixo)**: decisão de código que não se adapta ao volume. O lado "pequeno" no perfil `full` pode não ser mais pequeno, e o hint não vai avisar.
-- **`SF-GLUE-001` (Auto Scaling em conflito com `number_of_workers` fixo)**: um job de volume variável quase sempre deveria ter Auto Scaling; capacidade fixa dimensionada para o `full` paga o mesmo custo fixo em toda execução `empty`.
+- **Capacidade fixa dimensionada para o pior caso**: um job de volume variável quase sempre deveria usar Auto Scaling (`--enable-auto-scaling` com `number_of_workers` como teto — combinação CORRETA, não um achado; ver o comentário de aposentadoria de `SF-GLUE-001` em `rules/catalog/glue-infra.yaml`, 2026-08-28). Capacidade fixa dimensionada para o perfil `full` paga o mesmo custo fixo em toda execução `empty`. Nenhuma regra do catálogo verifica isso automaticamente — é leitura sua a partir da comparação entre perfis, não um finding do `judge`.
 - **`SF-PY-004` (action/write em loop)**: o custo domina nos perfis `large`/`full`, onde o loop de batches de fato itera muitas vezes; num perfil `micro` pode nem chegar a rodar mais de uma iteração.
 
 ## Referência rápida
@@ -30,7 +30,6 @@ O catálogo julga cada execução isoladamente contra o mesmo limiar. `SF-UI-006
 |---|---|---|
 | `SF-UI-006` | `spark.stage.task_count`, `spark.cluster.cores` | Tasks abaixo dos cores disponíveis — real no `full`, esperado no `empty`/`micro` |
 | `SF-PY-009` | `pyspark.join` (hint de broadcast) | Estratégia de join congelada no código, nunca reavaliada por volume |
-| `SF-GLUE-001` | `tf.attribute` | Capacidade fixa onde o volume varia é o sintoma estrutural mais comum desta classe de job |
 | `SF-PY-004` | `pyspark.loop` | Custo de loop que só aparece — e domina — nos perfis grandes |
 
 Limiares e severidade vêm de `sparkforge rules lookup --id <ID>`, nunca de memória.

@@ -21,7 +21,15 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures" / "terraform"
 
 REQUIRED_FIXTURES = {
-    "autoscaling_conflict",
+    # SF-GLUE-001 foi aposentada em 2026-08-28 (ver rules/catalog/glue-infra.yaml):
+    # a combinacao que este cenario descreve -- Auto Scaling com number_of_workers --
+    # e configuracao CORRETA, nao um conflito. O nome antigo ("autoscaling_conflict")
+    # mentia sobre o que o cenario prova; renomeado para travar a regressao do falso
+    # positivo, com `expects_rules: []`.
+    "autoscaling_with_max_workers",
+    # SF-GLUE-007 substitui SF-GLUE-001 como o conflito real de capacidade:
+    # max_capacity junto de worker_type/number_of_workers em Glue >= 2.0.
+    "max_capacity_conflict",
     "no_observability",
     "no_observability_multi_job",
     "secret_in_arguments",
@@ -142,10 +150,19 @@ class TestAdversarial:
         assert not [f for f in facts if f.kind == "tf.observability.spark_ui"]
         assert [f for f in facts if f.kind == "tf.module_analyzed"]
 
-    def test_autoscaling_conflict_evidence_covers_both_conditions(self):
-        _, facts, findings, _ = run_fixture(FIXTURES / "autoscaling_conflict")
-        finding = next(f for f in findings if f.rule_id == "SF-GLUE-001")
+    def test_autoscaling_with_max_workers_produces_zero_findings(self):
+        """Trava a regressao do falso positivo de SF-GLUE-001 (aposentada em
+        2026-08-28): Auto Scaling com number_of_workers e configuracao
+        CORRETA -- ver o comentario de aposentadoria em
+        rules/catalog/glue-infra.yaml. Nenhuma regra do catalogo pode voltar
+        a acusar esta combinacao."""
+        _, _, findings, _ = run_fixture(FIXTURES / "autoscaling_with_max_workers")
+        assert findings == []
+
+    def test_max_capacity_conflict_evidence_covers_both_conditions(self):
+        _, facts, findings, _ = run_fixture(FIXTURES / "max_capacity_conflict")
+        finding = next(f for f in findings if f.rule_id == "SF-GLUE-007")
         evidence_facts = [f for f in facts if f.id in finding.evidence]
         keys = {f.attrs.get("key") for f in evidence_facts}
-        assert "--enable-auto-scaling" in keys
-        assert "number_of_workers" in keys
+        assert "max_capacity" in keys
+        assert "worker_type" in keys

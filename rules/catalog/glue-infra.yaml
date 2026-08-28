@@ -8,36 +8,102 @@ retrieved: 2026-07-29
 
 rules:
 
-  - id: SF-GLUE-001
+  # REGRA APOSENTADA -- SF-GLUE-001, aposentada em 2026-08-28.
+  #
+  # Nenhuma regra deste catálogo tinha sido aposentada antes desta. Este
+  # comentário é o molde para a próxima: id aposentado, o que a regra
+  # afirmava, por que estava errada com a citação exata da fonte, e a data.
+  # O id NUNCA é reaproveitado por uma regra nova -- quem rastreou um achado
+  # antigo por `SF-GLUE-001` num relatório precisa continuar encontrando esta
+  # nota, não uma regra diferente vestindo o mesmo número.
+  #
+  # O QUE ELA AFIRMAVA: título "Auto Scaling habilitado junto com
+  # NumberOfWorkers", status confirmed, severity_default P1. O `when` casava
+  # `--enable-auto-scaling = "true"` com `number_of_workers` presente no
+  # mesmo recurso, e o `proposed_change` dizia "Remover number_of_workers e
+  # definir MinCapacity e MaxCapacity."
+  #
+  # POR QUE ESTAVA ERRADA: a própria fonte que a regra citava --
+  # https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html, a mesma URL
+  # de `sources[].url` que esteve aqui -- diz o oposto do que a regra
+  # afirmava. O exemplo de CLI daquela página traz literalmente
+  # `"NumberOfWorkers": 20, // represents Maximum number of workers`, e a
+  # interface descreve: "Set the Maximum number of workers to define the
+  # maximum number of workers that can be vended to the job run." `MinCapacity`
+  # e `MaxCapacity` NÃO aparecem em lugar nenhum daquela página. A regra
+  # disparava P1 sobre a configuração CORRETA -- Auto Scaling com
+  # `number_of_workers` como teto -- e a mudança que ela propunha (removê-lo
+  # em favor de campos que a própria fonte citada não menciona) pioraria o
+  # job, não o corrigiria.
+  #
+  # O conflito real é o oposto, e está em SF-GLUE-007 logo abaixo: quem não
+  # coexiste com `worker_type`/`number_of_workers` é `max_capacity` -- a API
+  # antiga de capacidade --, não Auto Scaling. Fonte:
+  # https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html, campo
+  # `MaxCapacity`: "For Glue version 2.0 or later jobs, you cannot specify a
+  # Maximum capacity. Instead, you should specify a Worker type and the
+  # Number of workers." e "Do not set MaxCapacity if using WorkerType and
+  # NumberOfWorkers."
+
+  # `max_capacity` e `worker_type` são as duas APIs de capacidade do Glue, e
+  # não coexistem: a API antiga (`MaxCapacity` sozinho, sem `WorkerType`) e a
+  # API >= 2.0 (`WorkerType` + `NumberOfWorkers`). A fonte é a definição do
+  # campo `MaxCapacity` na API do Job
+  # (https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html): "For Glue
+  # version 2.0 or later jobs, you cannot specify a Maximum capacity.
+  # Instead, you should specify a Worker type and the Number of workers." e
+  # "Do not set MaxCapacity if using WorkerType and NumberOfWorkers." É o
+  # conflito que SF-GLUE-001 (aposentada acima) errou: aquela regra acusava
+  # Auto Scaling com `number_of_workers` -- configuração correta, onde
+  # `number_of_workers` é exatamente o teto que a API >= 2.0 espera.
+  #
+  # `same_subject: true` porque a afirmação é sobre UM job: `max_capacity` de
+  # um recurso combinado com `worker_type` de outro recurso, no mesmo
+  # arquivo, não é o achado -- mesmo raciocínio de SF-GLUE-001/003.
+  #
+  # `runtime_scope: {glue: ">=2.0"}` porque é exatamente a partir dessa versão
+  # que a API rejeita `max_capacity` junto de `worker_type`; abaixo de 2.0,
+  # `max_capacity` é a ÚNICA forma de declarar capacidade (não havia
+  # `worker_type`/`number_of_workers` para conflitar com ele), e a combinação
+  # que esta regra acusa não existe.
+  #
+  # A condição ancora em `worker_type`, não em `number_of_workers`: o
+  # provider Terraform exige os dois juntos quando a API >= 2.0 é usada (não
+  # há forma válida de declarar só `number_of_workers` sem `worker_type`), e
+  # `worker_type` é o campo que a fonte citada nomeia primeiro como par de
+  # `MaxCapacity`.
+  - id: SF-GLUE-007
     category: glue-infra
-    title: Auto Scaling habilitado junto com NumberOfWorkers
+    title: max_capacity definido junto com worker_type (API antiga e nova de capacidade)
     requires_facts: [tf.attribute]
     when:
       same_subject: true
       all:
         - fact: tf.attribute
-          where: {attrs.key: "--enable-auto-scaling", attrs.value: "true"}
+          where: {attrs.key: "max_capacity", attrs.present: true}
         - fact: tf.attribute
-          where: {attrs.key: "number_of_workers", attrs.present: true}
+          where: {attrs.key: "worker_type", attrs.present: true}
     status: confirmed
     severity_default: P1
-    runtime_scope: {glue: ">=3.0"}
+    runtime_scope: {glue: ">=2.0"}
     explanation: >
-      Com Auto Scaling habilitado, a capacidade é controlada por MinCapacity e
-      MaxCapacity. Definir NumberOfWorkers junto é contraditório e é o erro de IaC mais
-      comum nesta área. O resultado é que o comportamento efetivo de escala fica ambíguo
-      para quem lê o código, e o diagnóstico de superprovisão fica sem baseline claro.
+      Para jobs Glue 2.0 ou superior, a API do Job documenta que max_capacity não pode
+      ser especificado -- a forma correta de declarar capacidade é worker_type e
+      number_of_workers. Definir os dois ao mesmo tempo não é redundância inofensiva: é
+      o par de campos que a própria fonte descreve como incompatível, e o comportamento
+      efetivo -- qual dos dois a API aplica, ou se a criação do job falha -- fica fora
+      do que a documentação garante.
     proposed_change:
-      - Remover number_of_workers e definir MinCapacity e MaxCapacity.
-      - Dimensionar MaxCapacity a partir do volume de pico observado, não de um número arbitrário.
-    risks: [MaxCapacity muito alto permite gasto inesperado em run anômalo.]
-    tradeoffs: [Auto Scaling não compensa em jobs abaixo de cerca de três minutos, onde o overhead não se paga.]
+      - Remover max_capacity e manter worker_type e number_of_workers.
+      - Se o job depende de max_capacity por alguma razão de compatibilidade, remover worker_type e number_of_workers em vez do inverso -- nunca manter os dois.
+    risks: [O job pode estar rodando hoje sob um dos dois campos sendo ignorado silenciosamente pela API; remover o errado sem confirmar qual prevalece muda a capacidade em produção sem aviso.]
+    tradeoffs: [Nenhum. Os dois campos não coexistem na API para esta versão; a única decisão real é qual dos dois manter.]
     validation:
-      - glue.driver.workerUtilization antes e depois.
+      - Definição do job pela API (get-job), não só o Terraform declarado, confirma qual dos dois campos ficou efetivamente aplicado.
       - Runtime e DPU-hours antes e depois, em runs de volume comparável.
-    rollback: [Reverter a definição do job para capacidade fixa.]
+    rollback: [Reverter para a combinação de campos anterior; nenhum efeito sobre o resultado do job.]
     sources:
-      - {url: "https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html", retrieved: 2026-07-29}
+      - {url: "https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html", retrieved: 2026-08-28}
 
   # A âncora é `tf.resource` (um por bloco `aws_glue_job`), não `tf.module_analyzed`.
   # `absent:` sob `same_subject` é avaliado dentro do grupo do subject, e observabilidade

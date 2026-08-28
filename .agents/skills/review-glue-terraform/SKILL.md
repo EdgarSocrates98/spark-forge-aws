@@ -1,6 +1,6 @@
 ---
 name: review-glue-terraform
-description: Use quando revisar o Terraform/IaC de jobs Glue (worker type, Auto Scaling junto com number_of_workers, execution class, timeout, max_concurrent_runs com bookmarks, max_retries com escrita não idempotente, default arguments, Spark UI/event logs, segredo em argumento) em busca de configuração contraditória, observabilidade ausente ou incompatível com o runtime. Use também quando a pergunta for "esse .tf tá certo", "por que a config que eu mudei no Terraform não fez efeito" ou "tem credencial exposta nesse job", mesmo que ninguém fale em regra. Se você está prestes a ler o .tf linha por linha comparando contra a doc do Glue, rode `sparkforge analyze terraform` e `sparkforge judge` em vez disso — o extrator lê os blocos aws_glue_job deterministicamente e o catálogo aplica as regras SF-GLUE por recurso.
+description: Use quando revisar o Terraform/IaC de jobs Glue (worker type, max_capacity junto com worker_type/number_of_workers, execution class, timeout, max_concurrent_runs com bookmarks, max_retries com escrita não idempotente, default arguments, Spark UI/event logs, segredo em argumento) em busca de configuração contraditória, observabilidade ausente ou incompatível com o runtime. Use também quando a pergunta for "esse .tf tá certo", "por que a config que eu mudei no Terraform não fez efeito" ou "tem credencial exposta nesse job", mesmo que ninguém fale em regra. Se você está prestes a ler o .tf linha por linha comparando contra a doc do Glue, rode `sparkforge analyze terraform` e `sparkforge judge` em vez disso — o extrator lê os blocos aws_glue_job deterministicamente e o catálogo aplica as regras SF-GLUE por recurso.
 subagent: true
 ---
 
@@ -63,7 +63,7 @@ Dois casos em que o `.tf` **não** alimenta a detecção, e nos dois `runtime.gl
 - `glue_version = var.glue_version` (ou `local.`, ou interpolação): o extrator guarda o texto da referência, não a versão, e a leitura é descartada em vez de gravar `"var.glue_version"` como se fosse versão — é o mesmo `tf.unresolved` do passo 1.
 - `glue_version` dentro de `default_arguments`: chave homônima que é argumento de job, não a versão do runtime.
 
-Nesses casos, e só neles, declare você: `--glue 5.1`, com a versão vinda de onde ela realmente está (o `tfvars`, o módulo chamador, o console). A flag é declaração de quem sabe, não campo a preencher por obrigação. Sem versão nenhuma, `SF-GLUE-001..006` são puladas com `reason: runtime_scope`, visível em `--show-skipped` — o eixo fica descoberto, mas você **sabe** que ficou. Chutar a versão é pior: julga as seis contra o limiar errado sem nada na saída denunciando isso.
+Nesses casos, e só neles, declare você: `--glue 5.1`, com a versão vinda de onde ela realmente está (o `tfvars`, o módulo chamador, o console). A flag é declaração de quem sabe, não campo a preencher por obrigação. Sem versão nenhuma, `SF-GLUE-002..007` são puladas com `reason: runtime_scope`, visível em `--show-skipped` — o eixo fica descoberto, mas você **sabe** que ficou. Chutar a versão é pior: julga as seis contra o limiar errado sem nada na saída denunciando isso.
 
 Se dois módulos declararem `glue_version` diferentes, nenhum vence em silêncio — `runtime.divergences` lista os dois valores com o arquivo de cada um, e a discordância é achado próprio (`SF-ENV-001`), não detalhe de configuração.
 
@@ -71,7 +71,7 @@ Se dois módulos declararem `glue_version` diferentes, nenhum vence em silêncio
 
 ## Por que o motor não combina recursos por acidente — e onde ainda pode
 
-`SF-GLUE-001` (Auto Scaling junto com `number_of_workers`), `SF-GLUE-002` (observabilidade ausente) e `SF-GLUE-003` (`max_concurrent_runs` > 1 com bookmarks) declaram `same_subject: true` no catálogo. Isso obriga todas as condições da regra a serem satisfeitas pelo **mesmo** recurso (`aws_glue_job.<nome>`, não o arquivo inteiro). Sem essa guarda, um arquivo com dois blocos `aws_glue_job`, cada um correto isoladamente, poderia disparar a regra combinando um atributo do primeiro com um atributo do segundo — acusar configuração correta destrói a confiança no resto do relatório. `judge` já garante isso; sua parte é **nunca** escrever "o arquivo X tem o problema Y" quando X tem mais de um recurso — escreva "o recurso `aws_glue_job.foo` tem Y", ancorado em `finding.subject.symbol`.
+`SF-GLUE-002` (observabilidade ausente), `SF-GLUE-003` (`max_concurrent_runs` > 1 com bookmarks) e `SF-GLUE-007` (`max_capacity` junto com `worker_type`) declaram `same_subject: true` no catálogo. Isso obriga todas as condições da regra a serem satisfeitas pelo **mesmo** recurso (`aws_glue_job.<nome>`, não o arquivo inteiro). Sem essa guarda, um arquivo com dois blocos `aws_glue_job`, cada um correto isoladamente, poderia disparar a regra combinando um atributo do primeiro com um atributo do segundo — acusar configuração correta destrói a confiança no resto do relatório. `judge` já garante isso; sua parte é **nunca** escrever "o arquivo X tem o problema Y" quando X tem mais de um recurso — escreva "o recurso `aws_glue_job.foo` tem Y", ancorado em `finding.subject.symbol`.
 
 Uma regra `same_subject` emite **um finding por recurso** que casa, cada um com a evidência só daquele recurso. Quatro jobs sem observabilidade são quatro achados de `SF-GLUE-002`, não um: a contagem que você reportar é a contagem de recursos afetados, e conferir `subject.symbol` de cada finding é o que separa "um job para corrigir" de "quatro".
 
@@ -85,12 +85,12 @@ Regras desta área, e o fact que cada uma consome. Os limiares e severidades **n
 
 | Regra | Fact que consome | O que acusa |
 |---|---|---|
-| `SF-GLUE-001` | `tf.attribute` (`same_subject`) | Auto Scaling habilitado junto com `number_of_workers` no mesmo recurso |
 | `SF-GLUE-002` | `tf.resource` (`same_subject`) + ausência de `tf.observability.spark_ui` | Sem `--enable-spark-ui` e `--spark-event-logs-path` naquele recurso — um achado por job afetado |
 | `SF-GLUE-003` | `tf.attribute` (`same_subject`) | `max_concurrent_runs` > 1 com bookmarks habilitados no mesmo recurso |
 | `SF-GLUE-004` | `tf.attribute` + `pyspark.write` | `max_retries` > 0 com escrita `append` — exige unir facts de Terraform e de código |
 | `SF-GLUE-005` | `tf.attribute` com `changed: true` (via `analyze terraform-diff`) + `spark.job.spill_summary` + `spark.executor.memory_usage` | `worker_type` aumentado no PR sem spill no run que motivou a mudança — exige os dois estados do módulo e um event log real |
 | `SF-GLUE-006` | `tf.attribute` (`attrs.secret_pattern_match`) | Segredo (padrão AKIA, URL com senha, alta entropia sob chave suspeita) em default argument |
+| `SF-GLUE-007` | `tf.attribute` (`same_subject`) | `max_capacity` definido junto com `worker_type` no mesmo recurso — API antiga e API >= 2.0 de capacidade não coexistem |
 
 ## Quando NÃO usar
 

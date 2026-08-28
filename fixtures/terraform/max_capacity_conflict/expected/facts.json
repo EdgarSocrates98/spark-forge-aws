@@ -1,13 +1,13 @@
 [
   {
-    "id": "f_934a46",
+    "id": "f_8f0643",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 10,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -19,19 +19,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_1c5012",
+    "id": "f_91fc45",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 11,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {
       "value": 10
@@ -45,19 +45,45 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_c8f013",
+    "id": "f_f4f427",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 12,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
+    },
+    "measures": {
+      "value": 20
+    },
+    "attrs": {
+      "key": "max_capacity",
+      "value": "20",
+      "present": true,
+      "literal": true,
+      "block": "root"
+    },
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
+    "id": "f_24a113",
+    "schema_version": 1,
+    "kind": "tf.attribute",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 13,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {
       "value": 0
@@ -71,19 +97,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_5b128b",
+    "id": "f_77918f",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 13,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 14,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {
       "value": 2880
@@ -97,19 +123,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_b8a3ec",
+    "id": "f_fec56f",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 16,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 17,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -121,19 +147,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_d17cce",
+    "id": "f_dc32fd",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 17,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 18,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -145,19 +171,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_b7d7ba",
+    "id": "f_116491",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 18,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 19,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -169,43 +195,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_0377a0",
+    "id": "f_3c6c09",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 23,
-      "symbol": "aws_glue_job.etl_autoscaling"
-    },
-    "measures": {},
-    "attrs": {
-      "key": "--enable-auto-scaling",
-      "value": "true",
-      "present": true,
-      "literal": true,
-      "block": "default_arguments"
-    },
-    "provenance": {
-      "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
-      "extractor": "terraform@0.1.0"
-    }
-  },
-  {
-    "id": "f_96ac93",
-    "schema_version": 1,
-    "kind": "tf.attribute",
-    "subject": {
-      "type": "tf_resource",
-      "file": "main.tf",
-      "line": 24,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 28,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -217,19 +219,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_b6e035",
+    "id": "f_20b03a",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 25,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 29,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -241,19 +243,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_c416c4",
+    "id": "f_d48406",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 26,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 30,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -265,19 +267,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_135c74",
+    "id": "f_2e5894",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 27,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 31,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -289,19 +291,19 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_09f2aa",
+    "id": "f_fb06ba",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
-      "line": 31,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "line": 35,
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {
       "value": 1
@@ -315,43 +317,43 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_b5e295",
+    "id": "f_bc7838",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 7,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
       "key": "name",
-      "value": "etl-autoscaling-conflict",
+      "value": "etl-max-capacity-conflict",
       "present": true,
       "literal": true,
       "block": "root"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_6d36cc",
+    "id": "f_e0926c",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 8,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
@@ -363,31 +365,31 @@
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_880c30",
+    "id": "f_162e59",
     "schema_version": 1,
     "kind": "tf.attribute",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 9,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {
       "key": "glue_version",
-      "value": "5.0",
+      "value": "4.0",
       "present": true,
       "literal": true,
       "block": "root"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
@@ -411,48 +413,48 @@
     "attrs": {},
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_21d89b",
+    "id": "f_f6f7b1",
     "schema_version": 1,
     "kind": "tf.observability.spark_ui",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 6,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {},
     "attrs": {},
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   },
   {
-    "id": "f_75242b",
+    "id": "f_dfd74c",
     "schema_version": 1,
     "kind": "tf.resource",
     "subject": {
       "type": "tf_resource",
       "file": "main.tf",
       "line": 6,
-      "symbol": "aws_glue_job.etl_autoscaling"
+      "symbol": "aws_glue_job.etl_max_capacity"
     },
     "measures": {
       "attribute_count": 16
     },
     "attrs": {
       "resource_type": "aws_glue_job",
-      "resource_name": "etl_autoscaling"
+      "resource_name": "etl_max_capacity"
     },
     "provenance": {
       "artifact": "main.tf",
-      "artifact_sha256": "3407fda639252e2e5d1e74fd6d7a472750490eb1711edbad9410eb770723f058",
+      "artifact_sha256": "0572a3157d20ba8f7d8b3921d96cbeff5f94f8dd9987ff4a5ff0e7918ab0b3d4",
       "extractor": "terraform@0.1.0"
     }
   }

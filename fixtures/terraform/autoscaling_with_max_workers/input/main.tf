@@ -4,7 +4,7 @@ resource "aws_iam_role" "glue_role" {
 }
 
 resource "aws_glue_job" "etl_autoscaling" {
-  name              = "etl-autoscaling-conflict"
+  name              = "etl-autoscaling-with-max-workers"
   role_arn          = aws_iam_role.glue_role.arn
   glue_version      = "5.0"
   worker_type       = "G.2X"
@@ -18,7 +18,12 @@ resource "aws_glue_job" "etl_autoscaling" {
     python_version  = "3"
   }
 
-  # Auto Scaling ligado E number_of_workers definido: contraditorio -- SF-GLUE-001.
+  # Auto Scaling ligado E number_of_workers definido: configuracao CORRETA.
+  # number_of_workers e o teto que a API espera junto de Auto Scaling
+  # (docs.aws.amazon.com/glue/latest/dg/auto-scaling.html). SF-GLUE-001
+  # acusava esta combinacao em P1 e foi aposentada por isso em 2026-08-28 --
+  # ver rules/catalog/glue-infra.yaml. Este cenario existe para travar a
+  # regressao: nenhuma regra pode voltar a acusar isto.
   default_arguments = {
     "--enable-auto-scaling"   = "true"
     "--enable-spark-ui"       = "true"
