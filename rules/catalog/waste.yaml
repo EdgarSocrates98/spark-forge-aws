@@ -1,0 +1,139 @@
+# Catálogo de regras — desperdício de capacidade, e a correlação que separa
+# "superdimensionado" de "ocioso por skew".
+#
+# A seção 37 do documento de origem pede as duas regras juntas, e avisa por que:
+# utilização baixa parece desperdício e às vezes é sintoma. Noventa por cento
+# dos executores podem estar ociosos porque uma task ficou catorze minutos numa
+# partição torta — e reduzir workers ali não toca a causa.
+#
+# O que estas regras afirmam: que há folga medida (SF-WASTE-001), ou que a
+# ociosidade tem outra explicação medida ao lado (SF-WASTE-002).
+#
+# O que elas NÃO afirmam: quanto se economizaria. Isso exige o custo do run que
+# NÃO aconteceu, e o subprojeto E recusou esse contrafactual por escrito.
+catalog_version: 1
+schema_version: 1
+area: SF-WASTE
+retrieved: 2026-08-29
+rules:
+  - id: SF-WASTE-001
+    category: capacity-waste
+    title: Folga medida em worker, memória e disco, sem skew que a explique
+    requires_facts:
+      - glue.utilization.summary
+    when:
+      all:
+        - fact: glue.utilization.summary
+          expr: measures.worker_utilization_p50 <= threshold.utilization
+        - fact: glue.utilization.summary
+          expr: measures.memory_used_pct_p95 <= threshold.memory_pct
+        - fact: glue.utilization.summary
+          expr: measures.disk_used_pct_p95 <= threshold.disk_pct
+        - fact: glue.utilization.summary
+          expr: measures.skew_p95_over_p50 < threshold.skew_ratio
+    threshold:
+      utilization: 0.5
+      memory_pct: 50.0
+      disk_pct: 50.0
+      skew_ratio: 3.0
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      As quatro medidas apontam na mesma direção: o worker fica ocioso metade do
+      tempo ou mais, memória e disco não passam da metade, e não há skew que
+      explique a ociosidade. A capacidade tem folga — e a pergunta de quanto
+      reduzir tem resposta com evidência em `sparkforge capacity`, que compara
+      as capacidades que o job JÁ rodou contra o SLA declarado.
+
+
+      Esta regra NÃO diz quanto se economizaria. Atribuir economia exigiria o
+      custo do run que não aconteceu, e nenhuma fonte mede contrafactual. O que
+      ela faz é dizer que a pergunta de capacidade tem base para ser feita.
+
+
+      As quatro condições são um `all` de propósito: três delas sozinhas já
+      apareceram juntas num job saudável com pico de memória alto, e a quarta —
+      a ausência de skew — é a que separa esta regra da `SF-WASTE-002`.
+    proposed_change:
+      - Rodar `sparkforge capacity` com o SLA declarado, e ler a capacidade mais barata que o cumpre entre as observadas.
+      - Conferir se o job já rodou em capacidade menor; se nunca rodou, a redução é experimento e não escolha — o `capacity` recusa extrapolar de propósito.
+      - Reavaliar depois de qualquer mudança de layout ou de código, porque folga medida hoje é sobre o trabalho de hoje.
+    risks:
+      - Reduzir capacidade sem histórico na capacidade menor troca custo por risco de SLA, e o risco não aparece até o dia de volume maior.
+      - Utilização média esconde pico: o `p50` diz o dia normal, e o run que estoura é o outro.
+    tradeoffs:
+      - Capacidade menor custa menos por run e deixa menos margem para variação de volume.
+    validation:
+      - Utilização de worker do run seguinte, na capacidade nova.
+      - Duração p50 e p95 contra `glue.job_run.distribution`, antes e depois.
+      - Confiabilidade contra o SLA declarado, com runs suficientes para sustentar o alvo.
+    rollback:
+      - Voltar a capacidade anterior no Terraform ou na definição do job. Nenhuma escrita de dado é envolvida.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html
+        retrieved: 2026-08-29
+        note: >
+          A observabilidade do Glue publica `glue.driver.workerUtilization`,
+          memória e disco por run, que são as quatro medidas desta regra.
+      - origin: field-heuristic
+        note: >
+          Os limiares 0.5 de utilização e 50% de memória e disco são heurística
+          de campo. O limiar de skew 3.0 é o mesmo de `SF-UI-001`, e é
+          deliberado: a fronteira entre folga e ociosidade por skew precisa ser
+          a mesma que o resto do catálogo usa para chamar skew de skew.
+
+  - id: SF-WASTE-002
+    category: capacity-waste
+    title: Worker ocioso com skew extremo — reduzir capacidade não toca a causa
+    requires_facts:
+      - glue.utilization.summary
+    when:
+      all:
+        - fact: glue.utilization.summary
+          expr: measures.worker_utilization_p50 <= threshold.utilization
+        - fact: glue.utilization.summary
+          expr: measures.skew_p95_over_p50 >= threshold.skew_ratio
+    threshold:
+      utilization: 0.5
+      skew_ratio: 3.0
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A utilização está baixa e o skew é alto ao mesmo tempo. A ociosidade tem
+      explicação medida: o stage termina quando a última task termina, e a
+      maior parte do cluster está esperando por um número pequeno de tasks
+      longas.
+
+
+      Reduzir workers aqui reduz o custo por run e deixa a causa intacta — o
+      stage continua preso na mesma task, e a duração sobe. É o par negativo da
+      `SF-WASTE-001`, e as duas nunca disparam juntas: a ausência de skew é
+      condição daquela, e a presença é condição desta.
+    proposed_change:
+      - Tratar o skew antes de tocar em capacidade — `SF-UI-001` e `SF-UI-002` classificam o tipo, e o tratamento difere.
+      - Depois do skew tratado, medir a utilização de novo; a folga que sobrar aí é a folga real.
+    risks:
+      - Reduzir capacidade com skew presente aumenta a duração e pode estourar o SLA, trocando custo por atraso.
+      - Tratar skew mexendo na chave de join pode alterar o resultado, por duplicação ou por descarte de nulls — a mesma ressalva de `SF-UI-001`.
+    tradeoffs:
+      - Investigar skew custa tempo de análise; reduzir capacidade dá economia imediata e um problema maior depois.
+    validation:
+      - Nova razão p95/p50 de duração de task no stage que disparou.
+      - Utilização de worker do run seguinte, depois do skew tratado.
+      - Contagem total e agregados de controle, se a correção mexeu na chave.
+    rollback:
+      - Reverter o commit. Se houve escrita, usar time travel em Iceberg.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html
+        retrieved: 2026-08-29
+        note: >
+          A AWS recomenda `workerUtilization` junto de métricas de executor e de
+          skew para avaliar capacidade — e é a leitura conjunta, e não a
+          isolada, que esta regra impõe.
+      - origin: field-heuristic
+        note: >
+          O limiar de skew 3.0 é o mesmo de `SF-UI-001` e o mesmo da
+          `SF-WASTE-001`, pela razão registrada lá: a fronteira precisa ser
+          única no catálogo.

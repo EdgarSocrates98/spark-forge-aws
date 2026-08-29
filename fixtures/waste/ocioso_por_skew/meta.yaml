@@ -1,0 +1,9 @@
+name: ocioso_por_skew
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'A MESMA utilizacao de 31%, com razao de skew 11.4. `SF-WASTE-002` dispara e `SF-WASTE-001`
+  nao: a ociosidade tem explicacao medida, e reduzir worker aqui deixaria a causa intacta.
+  E o par negativo, e as duas nunca disparam juntas.'

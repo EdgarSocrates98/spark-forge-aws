@@ -1,0 +1,86 @@
+[
+  {
+    "kind": "glue.metric",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "measures": {
+      "min": 0.0,
+      "max": 100.0,
+      "datapoints": 12.0,
+      "p50": 0.82
+    },
+    "attrs": {
+      "name": "glue.driver.workerUtilization",
+      "stat": "Average",
+      "period_s": 60
+    },
+    "provenance": {
+      "extractor": "cloudwatch@0.1.0",
+      "artifact": "cloudwatch.json"
+    }
+  },
+  {
+    "kind": "glue.metric",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "measures": {
+      "min": 0.0,
+      "max": 100.0,
+      "datapoints": 12.0,
+      "p95": 71.0
+    },
+    "attrs": {
+      "name": "glue.ALL.memory.total.used.percentage",
+      "stat": "Maximum",
+      "period_s": 60
+    },
+    "provenance": {
+      "extractor": "cloudwatch@0.1.0",
+      "artifact": "cloudwatch.json"
+    }
+  },
+  {
+    "kind": "glue.metric",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "measures": {
+      "min": 0.0,
+      "max": 100.0,
+      "datapoints": 12.0,
+      "p95": 44.0
+    },
+    "attrs": {
+      "name": "glue.driver.disk.used.percentage",
+      "stat": "Maximum",
+      "period_s": 60
+    },
+    "provenance": {
+      "extractor": "cloudwatch@0.1.0",
+      "artifact": "cloudwatch.json"
+    }
+  },
+  {
+    "kind": "spark.stage.task_duration",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-4",
+      "stage_id": 4
+    },
+    "measures": {
+      "p50_ms": 100.0,
+      "p95_ms": 130.0,
+      "task_count": 20.0
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "cloudwatch@0.1.0",
+      "artifact": "cloudwatch.json"
+    }
+  }
+]

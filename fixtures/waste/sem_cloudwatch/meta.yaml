@@ -1,0 +1,9 @@
+name: sem_cloudwatch
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'Sem `glue.driver.workerUtilization` nao ha o que resumir: utilizacao e o eixo da
+  pergunta. Sai `utilization_not_observed`, com o comando que a preencheria, e nenhuma regra
+  dispara.'

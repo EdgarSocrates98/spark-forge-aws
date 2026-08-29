@@ -1,0 +1,8 @@
+name: memoria_alta_com_worker_ocioso
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: 'Worker ocioso e memoria em 88%. `SF-WASTE-001` NAO dispara, e e por isso que as quatro
+  condicoes sao um `all`: reduzir capacidade com pico de memoria alto troca custo por OOM.'

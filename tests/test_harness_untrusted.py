@@ -92,6 +92,7 @@ def _derivados_de_facts(pool):
         run_cost,
         runtime_detect,
         timeout_diagnosis,
+        utilization,
     )
 
     yield "call_graph", call_graph.build_call_graph(pool)
@@ -108,6 +109,7 @@ def _derivados_de_facts(pool):
     # sao os facts de `glue.job_run`, `spark.executor.lost`,
     # `spark.stage.failure` e `spark.conf_effective` ja extraidos.
     yield "timeout_diagnosis", timeout_diagnosis.extract_timeout_diagnosis(pool, "<pool>")
+    yield "utilization", utilization.extract_utilization(pool, "<pool>")
 
 
 def extratores_com_snippet() -> set[str]:

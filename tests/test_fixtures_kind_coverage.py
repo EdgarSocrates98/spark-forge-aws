@@ -45,6 +45,7 @@ from sparkforge.facts import (
     sql_metrics,
     terraform,
     timeout_diagnosis,
+    utilization,
     workload,
 )
 
@@ -122,6 +123,10 @@ EXTRACTORS = {
     # -- todo kind de `EMITTED_KINDS` em algum golden -- passa sem ser
     # avaliado, que e pior do que falhar.
     "timeout_diagnosis": timeout_diagnosis,
+    # `utilization` entra nas DUAS listas no mesmo commit do subprojeto H:
+    # sem ele aqui, os dois kinds `glue.utilization.*` nao sao verificados por
+    # ninguem e o criterio de golden passa sem ser avaliado.
+    "utilization": utilization,
     # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*` nao sao
     # verificados por ninguem e o criterio de golden -- todo kind de

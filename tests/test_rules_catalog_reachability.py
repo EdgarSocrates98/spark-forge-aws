@@ -49,6 +49,7 @@ from sparkforge.facts import (
     sql_metrics,
     terraform,
     timeout_diagnosis,
+    utilization,
     workload,
 )
 from sparkforge.rules.loader import catalog_dir, load_catalog
@@ -121,6 +122,11 @@ EXTRACTORS = (
     # `SF-TIMEOUT-002` seriam forcadas a `blocked_on` sobre um extrator que ja
     # esta no repositorio.
     timeout_diagnosis,
+    # `utilization` entra nas DUAS listas no mesmo commit do subprojeto H:
+    # sem ele aqui, os dois kinds `glue.utilization.*` contam como orfaos e
+    # `SF-WASTE-001` e `SF-WASTE-002` seriam forcadas a `blocked_on` sobre um
+    # extrator que ja esta no repositorio.
+    utilization,
     # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*`
     # (`workload.declared`, `workload.unresolved`, `workload.declared_analyzed`)
