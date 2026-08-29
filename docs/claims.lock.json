@@ -536,13 +536,13 @@
         "cmd": "python -c \"import collections, pathlib, tempfile\nfrom sparkforge.codeintel.db import abrir\nfrom sparkforge.codeintel.index import indexar\nfrom sparkforge.codeintel.refs import extrair_referencias\nfrom sparkforge.codeintel.resolve import catalogo_do_banco, resolver\nfrom sparkforge.facts.scan import iter_source_files\nR = pathlib.Path('.').resolve()\nb = pathlib.Path(tempfile.mkdtemp()) / 'g.sqlite3'\nindexar(R, b)\ncat = catalogo_do_banco(abrir(b))\nrefs = {}\nfor p in iter_source_files(R, '*.py'):\n    rel = p.resolve().relative_to(R).as_posix()\n    try:\n        refs[rel] = extrair_referencias(p.read_text(encoding='utf-8'), rel)\n    except (OSError, UnicodeDecodeError, SyntaxError):\n        continue\nr = resolver(refs, cat)\nu = collections.Counter(n.reason for n in r.nao_resolvidas)['UNKNOWN_RECEIVER']\nprint('unknownreceiver=%s%%' % str(round(100 * u / len(r.nao_resolvidas), 1)).replace('.', ','))\"\n",
         "expect": {
           "kind": "contains",
-          "value": "unknownreceiver=91,9%"
+          "value": "unknownreceiver=91,8%"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "91,9%",
+      "text": "91,8%",
       "type": "number"
     },
     {
@@ -3117,13 +3117,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 197253
+          "value": 199043
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "197253",
+      "text": "199043",
       "type": "number"
     },
     {
@@ -3317,13 +3317,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 251454
+          "value": 253873
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "251454",
+      "text": "253873",
       "type": "number"
     },
     {
@@ -3397,13 +3397,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1153174
+          "value": 1157383
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1153174",
+      "text": "1157383",
       "type": "number"
     },
     {
@@ -3476,13 +3476,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "1153174 / 2209 = 522.0"
+          "value": "1157383 / 2209 = 523.9"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "522.0",
+      "text": "523.9",
       "type": "number"
     },
     {
@@ -4055,13 +4055,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 667
+          "value": 729
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "667",
+      "text": "729",
       "type": "number"
     },
     {
@@ -9433,13 +9433,13 @@
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "217,7"
+          "value": "220,1"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "217,7",
+      "text": "220,1",
       "type": "number"
     },
     {
@@ -9452,13 +9452,13 @@
         "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/_core.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
         "expect": {
           "kind": "contains",
-          "value": "192,6"
+          "value": "194,4"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "192,6",
+      "text": "194,4",
       "type": "number"
     },
     {
