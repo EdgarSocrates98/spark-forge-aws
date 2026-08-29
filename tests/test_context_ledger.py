@@ -141,3 +141,20 @@ class TestMigracaoDeBancoAntigo:
         retrieved = store.get_trace(trace.run_id)
         assert retrieved is not None
         assert retrieved["spans"][0]["payload_bytes"] == 42
+
+    def test_pragma_table_info_de_tabela_inexistente_e_o_caminho_do_banco_novo(self, tmp_path):
+        """Trava o caminho que a checagem por `PRAGMA` precisa acertar sem
+        engolir excecao nenhuma: tabela que ainda nao existe devolve lista
+        vazia de `PRAGMA table_info`, e essa lista vazia -- nao um erro --
+        e o sinal de "nada a migrar" que deixa a criacao do zero para o
+        `CREATE TABLE IF NOT EXISTS` seguinte."""
+        db_path = tmp_path / "novo.db"
+        with sqlite3.connect(db_path) as conn:
+            assert conn.execute("PRAGMA table_info(spans)").fetchall() == []
+
+        store = SQLiteTraceStore(db_path=db_path)  # nao pode levantar
+
+        with sqlite3.connect(store.db_path) as conn:
+            colunas = {linha[1] for linha in conn.execute("PRAGMA table_info(spans)").fetchall()}
+        assert "payload_bytes" in colunas
+        assert "cost_basis" in colunas

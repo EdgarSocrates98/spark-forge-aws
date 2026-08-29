@@ -93,27 +93,37 @@ class SQLiteTraceStore:
     def _migrar_colunas_novas_de_spans(self, conn: sqlite3.Connection) -> None:
         """Adiciona as colunas novas de `spans` numa tabela ja existente.
 
-        Roda ANTES do `CREATE TABLE IF NOT EXISTS spans`. Nos tres casos
-        possiveis o `ALTER TABLE` cai em `OperationalError` e o except
-        engole, entao a ordem em si nao importa -- fica antes por deixar
-        claro que a migracao trata de banco de ONTEM, e a criacao do zero
-        e responsabilidade da instrucao seguinte:
+        Roda ANTES do `CREATE TABLE IF NOT EXISTS spans`, entao a criacao do
+        zero fica por conta da instrucao seguinte quando a tabela ainda nao
+        existe.
 
-        - banco novo: `spans` ainda nao existe -> "no such table: spans";
-        - banco antigo (o caso que este metodo existe para consertar):
-          `ALTER TABLE` funciona, a coluna e adicionada, e o `CREATE TABLE
-          IF NOT EXISTS` seguinte fica sem efeito porque a tabela ja existe;
-        - banco ja migrado (chamadas seguintes de `_init_db`): a coluna ja
-          existe -> "duplicate column name".
+        A checagem e por `PRAGMA table_info(spans)`, e nao por tentar o
+        `ALTER TABLE` e engolir `OperationalError`. `duplicate column name` e
+        `OperationalError`, mas `database is locked` e `disk I/O error`
+        tambem sao -- e o caso ruim e o lock TRANSITORIO: presente durante
+        este `ALTER TABLE`, liberado a tempo do `CREATE TABLE IF NOT EXISTS`
+        seguinte. Engolindo por tipo de excecao, a migracao falharia de
+        verdade, a tabela ficaria sem a coluna, nada acusaria aqui, e o erro
+        so apareceria depois em `save_trace` -- parecendo o bug original
+        voltando, sem pista de que a causa foi um lock passageiro no
+        `_init_db`. Perguntar ao catalogo da tabela ANTES de agir nao
+        precisa de except nenhum: as colunas que faltam foram calculadas por
+        um SELECT, entao qualquer `OperationalError` que sobrar de um ALTER
+        e falha de verdade e deve propagar.
 
-        SQLite nao tem `ADD COLUMN IF NOT EXISTS`, entao o try/except por
-        coluna E a checagem de idempotencia.
+        `PRAGMA table_info` de tabela que ainda nao existe devolve lista
+        vazia (nao levanta), e lista vazia aqui significa "nada a migrar" --
+        o `CREATE TABLE IF NOT EXISTS` seguinte cria a tabela nova ja com as
+        seis colunas.
         """
+        colunas_existentes = {
+            linha[1] for linha in conn.execute("PRAGMA table_info(spans)").fetchall()
+        }
+        if not colunas_existentes:
+            return
         for nome, tipo in self._COLUNAS_NOVAS_DE_SPANS:
-            try:
+            if nome not in colunas_existentes:
                 conn.execute(f"ALTER TABLE spans ADD COLUMN {nome} {tipo}")
-            except sqlite3.OperationalError:
-                pass
 
     def save_trace(self, trace: ExecutionTrace) -> None:
         with sqlite3.connect(self.db_path) as conn:
