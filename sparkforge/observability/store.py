@@ -13,8 +13,15 @@ from sparkforge.observability.tracer import ExecutionTrace
 class SQLiteTraceStore:
     """Local SQLite backend for persistent observability traces."""
 
-    def __init__(self, db_path: Path | None = None) -> None:
-        self.db_path = db_path or (Path.cwd() / ".sparkforge" / "traces.db")
+    def __init__(self, db_path: Path | str | None = None) -> None:
+        # `Path(db_path)` normaliza `str` -- sem isto, um chamador que passa
+        # `str` (por exemplo `ContextLedger(db_path=os.environ.get(...))`)
+        # faz `self.db_path.parent` abaixo devolver `AttributeError` em vez de
+        # `Path`, porque `str` nao tem `.parent`. Achado do revisor: esse
+        # `AttributeError` escapava para dentro do `except Exception` de quem
+        # chama, e como o buffer ja tinha sido esvaziado ANTES do `try`
+        # naquele ponto, todos os spans do processo sumiam de uma vez.
+        self.db_path = Path(db_path) if db_path else (Path.cwd() / ".sparkforge" / "traces.db")
         self._init_db()
 
     # Colunas que a Task 1 acrescentou a `spans`, com o tipo de cada uma. Usado

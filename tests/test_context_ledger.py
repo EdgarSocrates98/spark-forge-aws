@@ -410,7 +410,7 @@ class TestBufferEFlush:
         assert not (tmp_path / "traces.db").exists()
         assert len(ledger.spans_of("run_teste")) == 1
 
-    def test_apos_flush_a_linha_de_traces_tem_o_start_time_do_primeiro_span(
+    def test_apos_flush_final_a_linha_de_traces_tem_o_start_time_do_primeiro_span(
         self, tmp_path
     ):
         import sqlite3
@@ -436,7 +436,7 @@ class TestBufferEFlush:
             start_time=time.time(),
         )
 
-        ledger.flush()
+        ledger.flush(final=True)
 
         with sqlite3.connect(tmp_path / "traces.db") as conn:
             linha = conn.execute(
@@ -450,3 +450,159 @@ class TestBufferEFlush:
         assert end_time is not None
         assert status == "completed"
         assert len(ledger.spans_of("run_teste")) == 2
+
+    def test_dois_flush_no_mesmo_processo_mantem_o_start_time_do_primeiro_span(
+        self, tmp_path
+    ):
+        """Achado do revisor: `flush("a") -> flush() -> record("b") ->
+        flush()` deixava a linha de `traces` com o `start_time` do span
+        `"b"`, porque cada `flush()` usava o inicio do PROPRIO lote. Agora
+        `_run_start` e fixado uma vez, no primeiro `record()`, e sobrevive a
+        quantos `flush()` vierem depois."""
+        import sqlite3
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+
+        primeiro = time.time()
+        ledger.record(
+            name="a", resultado={"ok": True}, detail_level="", outcome="ok",
+            start_time=primeiro,
+        )
+        ledger.flush()
+
+        time.sleep(0.01)
+        ledger.record(
+            name="b", resultado={"ok": True}, detail_level="", outcome="ok",
+            start_time=time.time(),
+        )
+        ledger.flush()
+
+        with sqlite3.connect(tmp_path / "traces.db") as conn:
+            (start_time,) = conn.execute(
+                "SELECT start_time FROM traces WHERE run_id = ?", ("run_teste",)
+            ).fetchone()
+
+        assert start_time == primeiro
+        assert len(ledger.spans_of("run_teste")) == 2
+
+    def test_flush_intermediario_grava_running_e_o_final_grava_completed(
+        self, tmp_path
+    ):
+        import sqlite3
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+
+        ledger.record(
+            name="a", resultado={"ok": True}, detail_level="", outcome="ok",
+            start_time=time.time(),
+        )
+        ledger.flush()  # checkpoint intermediario -- final=False por default
+
+        with sqlite3.connect(tmp_path / "traces.db") as conn:
+            (status,) = conn.execute(
+                "SELECT status FROM traces WHERE run_id = ?", ("run_teste",)
+            ).fetchone()
+        assert status == "running"
+
+        ledger.record(
+            name="b", resultado={"ok": True}, detail_level="", outcome="ok",
+            start_time=time.time(),
+        )
+        ledger.flush(final=True)  # o atexit chama assim
+
+        with sqlite3.connect(tmp_path / "traces.db") as conn:
+            (status,) = conn.execute(
+                "SELECT status FROM traces WHERE run_id = ?", ("run_teste",)
+            ).fetchone()
+        assert status == "completed"
+
+    def test_db_path_como_str_funciona(self, tmp_path):
+        """Achado do revisor: `SQLiteTraceStore.__init__` fazia
+        `db_path.parent.mkdir(...)` sem normalizar para `Path`. Passando
+        `str`, isso levantava `AttributeError` dentro do `except Exception`
+        de `flush()` -- e como o buffer ja tinha sido esvaziado antes do
+        `try` (na versao antiga), TODOS os spans do processo sumiam de uma
+        vez em silencio."""
+        import sqlite3
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=str(tmp_path / "traces.db"), run_id="run_teste")
+        ledger.record(
+            name="a", resultado={"ok": True}, detail_level="", outcome="ok",
+            start_time=time.time(),
+        )
+
+        ledger.flush(final=True)  # nao pode levantar, nao pode perder o span
+
+        with sqlite3.connect(tmp_path / "traces.db") as conn:
+            linhas = conn.execute(
+                "SELECT span_id FROM spans WHERE run_id = ?", ("run_teste",)
+            ).fetchall()
+        assert len(linhas) == 1
+
+    def test_escrita_que_falha_nao_esvazia_o_buffer(self, tmp_path, monkeypatch):
+        """O buffer so pode esvaziar DEPOIS da escrita dar certo. Forcando
+        `save_trace` a falhar, o span tem que continuar disponivel para o
+        proximo `flush()` tentar de novo -- nunca sumir numa excecao
+        engolida."""
+        import sqlite3
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability.store import SQLiteTraceStore
+
+        def _save_trace_que_falha(self, trace):
+            raise sqlite3.OperationalError("disco cheio (simulado)")
+
+        monkeypatch.setattr(SQLiteTraceStore, "save_trace", _save_trace_que_falha)
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        ledger.record(
+            name="a", resultado={"ok": True}, detail_level="", outcome="ok",
+            start_time=time.time(),
+        )
+
+        ledger.flush()  # a escrita falha, e nao pode levantar aqui
+
+        # o span continua no buffer -- `spans_of` ainda o enxerga.
+        assert len(ledger.spans_of("run_teste")) == 1
+
+
+class TestSuiteNaoEscreveNoRepositorioReal:
+    """A fixture autouse em `tests/conftest.py` aponta `tools._LEDGER` para
+    um caminho temporario durante toda a sessao de teste -- entao mesmo uma
+    chamada de `call_tool` que NAO monkeypatcha o ledger (a maioria dos
+    testes de `test_adapters_tools.py`) nao pode tocar o `.sparkforge/
+    traces.db` real do repositorio."""
+
+    def test_chamar_call_tool_sem_monkeypatch_nao_toca_o_traces_db_do_repo(
+        self, tmp_path
+    ):
+        from pathlib import Path
+
+        from sparkforge.adapters import tools
+
+        raiz_do_repo = Path(__file__).resolve().parents[1]
+        traces_do_repo = raiz_do_repo / ".sparkforge" / "traces.db"
+        existia_antes = traces_do_repo.exists()
+        tamanho_antes = traces_do_repo.stat().st_size if existia_antes else None
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+        # forca o descarregamento que so aconteceria no fim da sessao, para
+        # o teste nao depender do atexit rodar antes de checar o resultado.
+        tools._LEDGER.flush()
+
+        assert traces_do_repo.exists() == existia_antes
+        if existia_antes:
+            assert traces_do_repo.stat().st_size == tamanho_antes

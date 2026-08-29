@@ -26,6 +26,41 @@ jeitos diverge em silêncio — é o defeito que a D-4c-22 recusou escrever à m
 import sys
 from pathlib import Path
 
+import pytest
+
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.append(str(_ROOT))
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
+    """Isola o ledger de contexto de `call_tool` do `.sparkforge/traces.db`
+    real do repositorio durante toda a sessao de teste.
+
+    POR QUE AQUI, E NAO NO PRODUTO. `sparkforge.adapters.tools._ledger()`
+    materializa `_LEDGER` na primeira chamada de `call_tool` que nao
+    monkeypatcha o proprio ledger -- e o default e `.sparkforge/traces.db`
+    relativo ao `cwd`, que ao rodar a suite E o repositorio. Achado do
+    revisor, medido: rodar so `tests/test_adapters_tools.py` (99 chamadas de
+    `call_tool`, nenhuma monkeypatchando `_LEDGER`) gravou 188 spans no banco
+    real numa unica execucao. Isolamento e responsabilidade de quem TESTA,
+    nao do produto -- nenhuma flag ou variavel de ambiente entra no codigo de
+    producao so para o teste "saber" que esta sob teste. Um autouse de sessao
+    aqui, substituindo `tools._LEDGER` por um ledger apontado para um
+    diretorio temporario, resolve sem tocar `context_ledger.py` nem
+    `adapters/tools.py`.
+
+    Testes que monkeypatcham `tools._LEDGER` sozinhos (a maioria de
+    `tests/test_context_ledger.py`) continuam funcionando: o `monkeypatch`
+    de escopo de funcao deles substitui este valor durante o teste e o
+    `pytest` restaura o valor DESTA fixture ao fim -- nunca o `None`
+    original, porque a substituicao aconteceu depois desta fixture rodar.
+    """
+    from sparkforge.adapters import tools
+    from sparkforge.observability.context_ledger import ContextLedger
+
+    db_path = tmp_path_factory.mktemp("observability") / "traces.db"
+    tools._LEDGER = ContextLedger(db_path=db_path, run_id="run_suite_de_teste")
+    yield
+    tools._LEDGER.flush(final=True)
