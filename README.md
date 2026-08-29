@@ -197,6 +197,7 @@ tool MCP de mesmo nome.
 | Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
 | Custo por run, e capacidade contra código | `finops` | `glue.job_run`/`glue.run_cost` de `analyze glue-job-runs`, `workload.declared` para o SLA, e os sintomas de `analyze event-log`/`analyze sql-metrics` quando a alavanca é código |
 | Configuração Spark derivada da medida | `tune` | `spark.stage.shuffle` de `analyze event-log` para o shuffle medido, `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` para a procedência de cada propriedade |
+| Contexto que a execução consumiu | `economy report` | os spans do ledger que `call_tool` alimenta, mais a superfície em repouso e o transcript do host quando houver |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a

@@ -51,8 +51,8 @@ arquivo ganha.
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
-| Tools MCP | **50** | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **44 de 44** | `tests/test_agent_coverage.py` |
+| Tools MCP | **59** — corrigido ao fechar o subprojeto J; `sparkforge_economy_report` é a quinquagésima nona | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **59 de 59** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
@@ -4778,6 +4778,130 @@ global de recomendações atravessaria a fronteira que o case existe para
 desenhar, e nenhuma pergunta deste documento pede isso — a §19, que fala em
 "trinta últimos runs", é sobre histórico de **execução**, e essa está entregue
 em B, C2 e D.
+
+## Contabilidade de contexto — o byte que o SparkForge de fato controla (2026-08-29)
+
+Documentos: [spec](specs/2026-08-29-context-accounting-design.md) ·
+[plan](plans/2026-08-29-context-accounting.md).
+
+Subprojeto J. O pedido de origem era "instrumentar a chamada real de modelo".
+Medido antes de escrever qualquer coisa: `sparkforge/` não importa `anthropic`,
+`openai`, `bedrock` nem `litellm` em lugar nenhum — existe só um
+`sparkforge/providers/mock.py`, e `sparkforge/economy/router.py` devolve
+`estimated_cost_usd: float = 0.001` cravado. **O SparkForge nunca chama um
+provider.** Quem gasta token é o host executando os agents, e "instrumentar a
+chamada de modelo" pedia instrumentar algo sem produtor neste repositório. O
+subprojeto foi reformulado para medir o que o projeto de fato controla: o byte
+que ele põe na janela de contexto de quem o chama.
+
+`sparkforge/observability/context_ledger.py` já existia, e vazio.
+`sparkforge/observability/tracer.py:TraceSpan` ganhou `payload_bytes`,
+`payload_basis`, `detail_level` e `item_count`, e dois campos que já existiam
+— `estimated_cost_usd` e `input_tokens` — pararam de mentir num span de tool:
+antes desta fase carregavam zero como se tivessem sido medidos, quando o
+correto era não se aplicar. `call_tool` (`sparkforge/adapters/tools.py`) é o
+único ponto de instrumentação, nos quatro caminhos de retorno — sucesso, erro
+de fronteira, recusa de autorização e exceção não tratada —, porque é o
+despacho único que a cadeia de autorização já morde. `sparkforge/
+observability/surface.py` mede tools, skills e knowledge em repouso, sem
+executar nada, e `scripts/check_surface_lock.py` trava o total de hoje contra
+`docs/surface.lock.json`. `sparkforge/collect/host_usage.py` lê o usage que o
+transcript do host já carrega, quando existe. `sparkforge/economy/report.py`
+compõe os três — spans do ledger, superfície em repouso, usage do host — sem
+ler artefato e sem medir nada por conta própria; o verbo é `economy report`,
+a tool é `sparkforge_economy_report`, a quinquagésima nona do catálogo.
+
+Medido ao fechar a fase: **59 tools**, superfície de schema **306.845 bytes**
+(eram 58 tools e 304.319 bytes antes de `sparkforge_economy_report` entrar no
+catálogo — a tool nova pesa exatos **2.526 bytes**, e a soma bate);
+**44 skills**, **278.218 bytes**; **47 documentos de knowledge**,
+**350.557 bytes**. O efeito de `detail_level`, medido pela primeira vez em vez
+de afirmado: na fixture que a suíte usa para isto, `sparkforge_analyze_pyspark`
+gravou **1.599 bytes** em `full` contra **849** em `summary` — a mesma chamada,
+dois pedidos diferentes de nível. O custo de `record()` caiu de escrita
+síncrona por chamada — medido de novo agora, **~6,0 ms** em média (30 chamadas
+de `save_trace`, faixa 5,2–9,6 ms), dominado pelo fsync do commit SQLite — para
+o buffer em memória — **~0,006 a 0,014 ms** por chamada (mediana de cinco lotes
+de 300 chamadas cada) —, algo entre **400 e 900 vezes** mais rápido nesta
+máquina; a ordem de grandeza é a mesma publicada em `AGENTS.md`, só que mais
+favorável. `measure_surface()` continua dependente de disco: em 20 medições, a
+primeira — com o cache de disco frio — levou **245,8 ms**, e as 19 seguintes
+ficaram entre **20,2 e 22,0 ms**. **62 testes** novos, medidos por diff contra
+o commit anterior ao subprojeto: 27 em `tests/test_context_ledger.py`, 10 em
+`tests/test_collect_host_usage.py`, 8 em `tests/test_economy_report.py`, 7 em
+`tests/test_observability_surface.py`, 6 em `tests/test_surface_lock.py`, 3 em
+`tests/test_adapters_cli.py` e 1 em `tests/test_harness_authorization.py`.
+
+### Seis decisões
+
+**Byte sempre; token só com fonte.** `payload_bytes` existe em todo span de
+tool. Token de provider só aparece com transcript do host — sem fonte sai
+`tokens_unresolved`, nunca um `len(conteúdo) // 4` vestido de token.
+
+**Isto não é Fact.** Um `Fact` é observação ancorada no artefato analisado; a
+telemetria do próprio SparkForge poluiria o barramento de `--out` que serve de
+handoff entre sessões. O relatório de contexto vive fora do motor de regras,
+de propósito.
+
+**Reusar o ledger que existia vazio, em vez de criar o segundo.** E corrigir os
+dois campos que mentiam num span de tool — `estimated_cost_usd` e
+`input_tokens` — em vez de deixá-los carregando zero.
+
+**Buffer em memória, com descarga no fim do processo.** Pagar fsync por
+chamada custava ~6 ms no caminho quente. A troca declarada: processo morto por
+`SIGKILL` perde os spans que ainda estavam no buffer — aceitável para
+telemetria, e escrito na docstring do módulo, não implícito.
+
+**Lock, não limiar.** Não existe "20% é demais" publicado por fonte nenhuma.
+`docs/surface.lock.json` trava o número de hoje e obriga a **declarar** o
+crescimento, nunca a proibi-lo. Ele inclui um `by_name_sha256` que pega troca
+compensada — provado movendo 10 bytes de um `SKILL.md` para outro: os totais
+ficam idênticos, o hash diverge.
+
+**Custo em dólar só com `cost_basis` nomeando a fonte do preço.** Preço sem
+fonte é número inventado, e chamada de tool local não tem tabela de preço
+publicada.
+
+### Quatro defeitos que a construção encontrou
+
+**Banco pré-existente quebrava.** `CREATE TABLE IF NOT EXISTS` não acrescenta
+coluna a uma tabela que já existe, então um `traces.db` gravado antes desta
+fase quebrava `save_trace` com `OperationalError: table spans has no column
+named payload_bytes`. Resolvido com migração aditiva por `PRAGMA table_info`, e
+não com `DROP`: um span registra uma chamada que já aconteceu, e não há
+reindexação que a reponha.
+
+**`spans_of()` nunca lia o disco numa instância que não tivesse escrito antes.**
+Isso deixava o verbo `economy report` inoperante em todo uso real — um
+processo que só lê (o CLI, numa segunda invocação) nunca via o que um processo
+anterior tinha gravado. O achado só apareceu quando o verbo foi de fato ligado,
+porque **todos os testes até então usavam um `run_id` inexistente**, onde a
+recusa (lista vazia) é a resposta certa por acidente, não por ter exercitado o
+caminho de leitura entre processos.
+
+**`message` não-dicionário no transcript do host abortava a leitura inteira.**
+Um único item malformado no transcript derrubava `host_usage()` para o
+transcript todo, em vez de contar aquele item como não lido e seguir para os
+demais — a mesma disciplina de "recusa não é queda" que `call_tool` já aplica.
+
+**Um só ledger por processo, também dentro dele.** Achado ao ligar o verbo de
+verdade: `call_tool` gravava no singleton de `tools.py`, mas
+`economy_report()` (em `adapters/_core.py`) construía a sua própria
+`ContextLedger()` — as duas instâncias só se encontravam pelo disco, depois de
+um `flush()`. Isso resolvia o caso **entre** processos, mas não **dentro** do
+mesmo processo: um span ainda no buffer de uma instância era invisível para a
+outra, e numa sessão MCP de vida longa isso deixava `economy report` sempre
+vazio até o processo terminar — o oposto de "consulte durante a
+investigação". `shared_ledger()` unifica os dois consumidores numa única
+instância por processo.
+
+### O que ficou fora
+
+- **Gate por execução** (`tests/token_golden/` com tolerância por fixture):
+  calibrar tolerância exige histórico, e hoje a amostra seria de um.
+- **Tokenizer embarcado**: preciso e errado entre fornecedores.
+- **Custo em dólar por chamada de tool**: sem tabela de preço publicada para
+  chamada local, seria número inventado.
 
 ## Dívidas abertas
 
