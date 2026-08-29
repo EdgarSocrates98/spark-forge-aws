@@ -93,8 +93,28 @@ class TestRecusas:
         assert {"reason": "tokens_unresolved", "count": 1} in relatorio["unresolved"]
 
     def test_nothing_reports_a_dollar_cost(self, tmp_path, monkeypatch):
-        ledger = _ledger_com_chamadas(tmp_path, monkeypatch)
-        blob = str(build_context_report(ledger, run_id="run_teste")).lower()
+        """A invariante e "nenhum campo NUMERICO deste relatorio e valor em
+        dolar" -- nao "a palavra custo nao aparece em lugar nenhum".
 
+        Por isso a varredura fica restrita ao que o MODULO produz por conta
+        propria: `by_tool`, `detail_level_effect` e `host_usage`. `surface`
+        fica de fora de proposito: `by_name` dentro dela e nomenclatura
+        EXTERNA (nome de tool, de skill, de documento de knowledge) que este
+        modulo so repassa sem medir. Descricoes reais ja tem "cost"/"custo"
+        (`sparkforge_finops`, `sparkforge_capacity`, entre outras) sem que
+        isso seja numero em dolar reportado -- varrer `surface` faria este
+        teste quebrar por uma mudanca de nomenclatura alheia ao relatorio, e
+        nao por uma regressao real na invariante que ele protege.
+        """
+        ledger = _ledger_com_chamadas(tmp_path, monkeypatch)
+        relatorio = build_context_report(ledger, run_id="run_teste")
+
+        blob = str(
+            (
+                relatorio["by_tool"],
+                relatorio["detail_level_effect"],
+                relatorio["host_usage"],
+            )
+        ).lower()
         for palavra in ("usd", "cost", "custo"):
             assert palavra not in blob

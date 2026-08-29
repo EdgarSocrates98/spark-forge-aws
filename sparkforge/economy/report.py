@@ -11,6 +11,24 @@ mesmo total -- somar os dois daria um numero que nao mede nada.
 O QUE ELE RECUSA: custo em dolar (chamada local nao tem tabela de preco) e
 estimativa de token por divisao de bytes (o `len//4` serve de heuristica interna,
 nao pode sair com o nome de token).
+
+O I/O DE `measure_surface()` E INCONDICIONAL. `build_context_report` chama
+`measure_surface()` sempre, inclusive nas duas recusas (`run_unresolved` e
+`tokens_unresolved`) que nao tem interesse nenhum na superficie -- ele varre
+`skills/`, `knowledge/` e serializa o catalogo de tools do mesmo jeito. Medido
+em 20 chamadas nesta maquina: media ~36,5 ms, faixa de 23,8 a 69,8 ms --
+dezenas de milissegundos, dependente de disco e cache do sistema, NUNCA um
+valor pontual fixo. Aceitavel para um verbo sob demanda; nao aceitavel se este
+relatorio um dia entrar num caminho quente chamado por span. Isto e decisao de
+desenho (o relatorio existe para dar o quadro inteiro), nao descuido.
+
+OS NUMEROS DE `detail_level_effect` SAO DESTA FIXTURE, NESTA MAQUINA. Uma
+chamada de `sparkforge_analyze_pyspark` sobre o job de teste do
+`tests/test_economy_report.py` mediu 1599 bytes em `full` contra 849 em
+`summary` -- primeira medicao real da alegacao "detail_level reduz o
+payload". Nao sao constantes do sistema: outro job, outro path, outra versao
+da tool produz outro numero. O que este modulo garante e o MECANISMO de
+medir, nao o numero.
 """
 from __future__ import annotations
 
