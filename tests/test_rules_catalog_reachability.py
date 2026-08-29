@@ -41,6 +41,7 @@ from sparkforge.facts import (
     iceberg_metadata,
     migration,
     pyspark_ast,
+    run_cost,
     runtime_detect,
     s3_listing,
     spark_plan,
@@ -102,6 +103,11 @@ EXTRACTORS = (
     # essa fixture e trabalho da Task 9, nao desta.
     migration,
     pyspark_ast,
+    # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` contam
+    # como orfaos, e a primeira regra que os consumir seria forcada a
+    # `blocked_on` sobre um extrator que ja esta no repositorio.
+    run_cost,
     runtime_detect,
     s3_listing,
     spark_plan,

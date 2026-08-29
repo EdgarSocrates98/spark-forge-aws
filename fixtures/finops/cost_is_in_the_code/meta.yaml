@@ -1,0 +1,5 @@
+name: cost_is_in_the_code
+job_name: etl_pedidos_diario
+proves: Dois achados de codigo (SF-PY-004, SF-PQ-002) aparecem sob a alavanca `code`,
+  nunca sob `capacity` -- a evidencia diz que o job varre ou processa demais, e trocar
+  worker nao muda isso em nenhuma capacidade. A alavanca aqui nao e recurso, e o codigo.

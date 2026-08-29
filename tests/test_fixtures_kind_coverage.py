@@ -37,6 +37,7 @@ from sparkforge.facts import (
     iceberg_metadata,
     migration,
     pyspark_ast,
+    run_cost,
     runtime_detect,
     s3_listing,
     spark_plan,
@@ -97,6 +98,12 @@ EXTRACTORS = {
     # `blocked_on`.
     "migration": migration,
     "pyspark_ast": pyspark_ast,
+    # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar.
+    "run_cost": run_cost,
     "runtime_detect": runtime_detect,
     "s3_listing": s3_listing,
     "spark_plan": spark_plan,
