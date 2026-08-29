@@ -527,7 +527,7 @@
       "type": "number"
     },
     {
-      "context": "O motivo dominante é o que diz onde está o limite. **91,8%** das não resolvidas são",
+      "context": "O motivo dominante é o que diz onde está o limite. **91,9%** das não resolvidas são",
       "doc": "docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md",
       "id": "VNX-726",
       "line": 90,

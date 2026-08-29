@@ -1,6 +1,6 @@
 """O span de uma chamada de tool: quantos bytes ela poe na janela de contexto.
 
-POR QUE AQUI. `adapters/tools.py:call_tool` e o despacho unico -- as 58 tools
+POR QUE AQUI. `adapters/tools.py:call_tool` e o despacho unico -- as 59 tools
 passam por ele, `adapters/mcp.py` entra por ele, e e onde a cadeia de
 autorizacao ja morde. Um ponto de instrumentacao, e nao um por handler.
 

@@ -388,9 +388,16 @@ side and never in a common total.
 **Measurement never breaks the call.** Ledger unavailable, disk full, a span
 that fails to build: the tool returns its result unchanged. Instrumentation that
 takes the product down is a defect, not observability. Spans buffer in memory
-and flush once at process exit — that took a tool call from ~6.0 ms of
-measurement overhead down to ~0.05 ms, and what it costs is spans lost on
-`SIGKILL`, which is written down rather than implied.
+and flush once at process exit. Remeasured on this machine, because the
+first number published here (~0.05 ms) was never reproduced: writing per call
+costs **5.5 to 7.0 ms** (mean of 30, flat across payload size — it is the
+SQLite commit's fsync, not the payload), while a buffered `record()` costs
+**0.0067 ms on a 63-byte payload and 0.0204 ms on a 1,004-byte one** (median of
+five batches of 300 each). The buffered cost tracks payload size because
+`record()` serializes the result to count its bytes, so the speedup is **1,045×
+at the small end and 273× at the large one** — a range, not one number, and
+saying "about 100×" hid that. What it costs is spans lost on `SIGKILL`, which
+is written down rather than implied.
 
 **The surface lock is a lock, not a threshold.** No source publishes "20% growth
 is too much". `docs/surface.lock.json` holds today's measurement plus a hash of

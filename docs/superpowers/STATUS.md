@@ -51,7 +51,7 @@ arquivo ganha.
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
-| Tools MCP | **59** — corrigido ao fechar o subprojeto J; `sparkforge_economy_report` é a quinquagésima nona | `sparkforge.adapters.tools.TOOLS` |
+| Tools MCP | **59** — corrigido ao fechar o subprojeto J; `sparkforge_economy_report` foi a que levou a contagem de 58 para 59 | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **59 de 59** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
@@ -4794,7 +4794,9 @@ chamada de modelo" pedia instrumentar algo sem produtor neste repositório. O
 subprojeto foi reformulado para medir o que o projeto de fato controla: o byte
 que ele põe na janela de contexto de quem o chama.
 
-`sparkforge/observability/context_ledger.py` já existia, e vazio.
+`sparkforge/observability/store.py:SQLiteTraceStore` já existia, e vazio — nenhum
+produtor gravava nele. Foi ele que o subprojeto reusou em vez de criar o
+segundo; `context_ledger.py` é arquivo novo, criado em `8bb71c1`.
 `sparkforge/observability/tracer.py:TraceSpan` ganhou `payload_bytes`,
 `payload_basis`, `detail_level` e `item_count`, e dois campos que já existiam
 — `estimated_cost_usd` e `input_tokens` — pararam de mentir num span de tool:
@@ -4809,7 +4811,8 @@ executar nada, e `scripts/check_surface_lock.py` trava o total de hoje contra
 transcript do host já carrega, quando existe. `sparkforge/economy/report.py`
 compõe os três — spans do ledger, superfície em repouso, usage do host — sem
 ler artefato e sem medir nada por conta própria; o verbo é `economy report`,
-a tool é `sparkforge_economy_report`, a quinquagésima nona do catálogo.
+a tool é `sparkforge_economy_report`, a que levou o catálogo de 58 para 59
+— é a 35ª entrada de `TOOLS`, e não a última.
 
 Medido ao fechar a fase: **59 tools**, superfície de schema **306.845 bytes**
 (eram 58 tools e 304.319 bytes antes de `sparkforge_economy_report` entrar no
@@ -4817,14 +4820,22 @@ catálogo — a tool nova pesa exatos **2.526 bytes**, e a soma bate);
 **44 skills**, **278.218 bytes**; **47 documentos de knowledge**,
 **350.557 bytes**. O efeito de `detail_level`, medido pela primeira vez em vez
 de afirmado: na fixture que a suíte usa para isto, `sparkforge_analyze_pyspark`
-gravou **1.599 bytes** em `full` contra **849** em `summary` — a mesma chamada,
-dois pedidos diferentes de nível. O custo de `record()` caiu de escrita
-síncrona por chamada — medido de novo agora, **~6,0 ms** em média (30 chamadas
-de `save_trace`, faixa 5,2–9,6 ms), dominado pelo fsync do commit SQLite — para
-o buffer em memória — **~0,006 a 0,014 ms** por chamada (mediana de cinco lotes
-de 300 chamadas cada) —, algo entre **400 e 900 vezes** mais rápido nesta
-máquina; a ordem de grandeza é a mesma publicada em `AGENTS.md`, só que mais
-favorável. `measure_surface()` continua dependente de disco: em 20 medições, a
+gravou **1.599 bytes** contra **849** em `summary`. Os dois lados não são dois
+pedidos diferentes de nível: a chamada de 1.599 bytes **não pede nível nenhum**,
+e o relatório a chaveia como `''`. `full` é o default (`adapters/_core.py`), e
+por isso o payload medido é o payload full — mas nível não pedido e nível
+pedido não são a mesma coisa num repositório cuja regra é distinguir estados.
+O custo de `record()` foi medido de novo ao fechar a fase, porque duas medições
+desta mesma sessão não fechavam entre si e o `AGENTS.md` chegou a publicar um
+`~0,05 ms` que ninguém reproduziu. Escrita síncrona por chamada: **5,5 a
+7,0 ms** de média (n=30 por tamanho de payload), dominada pelo fsync do commit
+SQLite e **plana no tamanho do payload** — é o fsync, não o conteúdo. Buffer em
+memória: **0,0067 ms** num payload de 63 bytes e **0,0204 ms** num de 1.004
+bytes (mediana de cinco lotes de 300 chamadas cada). O custo do buffer
+**acompanha o payload**, porque `record()` serializa o resultado para contar os
+bytes — e por isso o ganho não é um número só: **1.045×** na ponta pequena e
+**273×** na grande. Era exatamente essa dependência que um "~100×" solto
+escondia. `measure_surface()` continua dependente de disco: em 20 medições, a
 primeira — com o cache de disco frio — levou **245,8 ms**, e as 19 seguintes
 ficaram entre **20,2 e 22,0 ms**. **62 testes** novos, medidos por diff contra
 o commit anterior ao subprojeto: 27 em `tests/test_context_ledger.py`, 10 em
@@ -4861,6 +4872,15 @@ ficam idênticos, o hash diverge.
 **Custo em dólar só com `cost_basis` nomeando a fonte do preço.** Preço sem
 fonte é número inventado, e chamada de tool local não tem tabela de preço
 publicada.
+
+Esta última é **desvio consciente do spec**, e o desvio fica registrado aqui. A
+§4.1 do spec listava `estimated_cost_usd` como **removido do span** ("número
+inventado; custo volta só com fonte"). A construção manteve o campo e o
+condicionou: `TraceSpan` o conserva, ganha `cost_basis` ao lado, e `end_span`
+levanta `ValueError` diante de custo sem base. A razão de não remover: um span
+de **modelo** — o nível que o host preencheria, e não a chamada de tool local —
+tem caso legítimo de custo com fonte, e apagar o campo fecharia essa porta para
+ganhar nada que a obrigatoriedade de `cost_basis` já não garanta.
 
 ### Quatro defeitos que a construção encontrou
 
