@@ -690,6 +690,7 @@ def test_pulo_por_erro_de_sistema_e_visivel(tmp_path, monkeypatch):
     _criar(tmp_path, "trancado.py")
     stat_original = pathlib.Path.stat
     is_file_original = pathlib.Path.is_file
+    is_symlink_original = pathlib.Path.is_symlink
 
     def stat_que_falha(self, *args, **kwargs):
         if self.name == "trancado.py":
@@ -697,22 +698,38 @@ def test_pulo_por_erro_de_sistema_e_visivel(tmp_path, monkeypatch):
         return stat_original(self, *args, **kwargs)
 
     def is_file_que_responde(self, *args, **kwargs):
-        # `is_file()` PRECISA continuar dizendo "e arquivo".
-        #
-        # Sem isto o teste media a versao do interpretador, e nao o scanner.
-        # No CPython 3.11 `Path.is_file()` chama `self.stat()`, engole o
-        # `OSError` e devolve False -- o scanner entao pula por "nao e
-        # arquivo", ANTES de chegar ao `stat()` que este teste quer exercitar,
-        # e o arquivo some sem razao registrada. No 3.14 `is_file()` nao passa
-        # pelo `stat` remendado, devolve True, e o teste passa. Era isso, e nao
-        # o scanner, que separava verde de vermelho entre a maquina de quem
-        # escreveu (3.14) e o CI (3.10 e 3.11).
         if self.name == "trancado.py":
             return True
         return is_file_original(self, *args, **kwargs)
 
+    def is_symlink_que_responde(self, *args, **kwargs):
+        if self.name == "trancado.py":
+            return False
+        return is_symlink_original(self, *args, **kwargs)
+
+    # OS TRES JUNTOS DESCREVEM O CENARIO, E NENHUM SOBRA.
+    #
+    # O cenario e "e arquivo comum, nao e link, e o `stat` falha". Remendar so
+    # o `stat` nao dizia isso -- dizia "o `stat` falha", e deixava as outras
+    # duas perguntas serem respondidas POR ACIDENTE, de um jeito em cada
+    # interpretador e em cada sistema operacional. Medido:
+    #
+    # No CPython 3.11, `Path.lstat()` E `self.stat(follow_symlinks=False)` e
+    # `Path.is_file()` chama `self.stat()` -- os dois passam pelo remendo.
+    # `is_symlink()` engole `OSError` so quando ele e "nao existe"
+    # (`_ignore_error`); `PermissionError` nao e, entao ele RELEVANTA, e o
+    # `except OSError: return True` de `_e_atalho` classifica o arquivo como
+    # REPARSE_POINT -- pulado com a razao errada, antes de chegar ao `stat()`
+    # que este teste quer exercitar. No 3.14 o `pathlib` foi reescrito e
+    # nenhum dos dois passa pelo remendo, e o teste passava.
+    #
+    # No WINDOWS nada disso aparece em versao nenhuma: `_e_atalho` decide por
+    # `os.lstat().st_file_attributes`, que o remendo nao toca, e nunca chega a
+    # `is_symlink()`. Por isso o defeito so existia no CI -- e por isso ele
+    # sobreviveu a uma correcao que so remendou `is_file`.
     monkeypatch.setattr(pathlib.Path, "stat", stat_que_falha)
     monkeypatch.setattr(pathlib.Path, "is_file", is_file_que_responde)
+    monkeypatch.setattr(pathlib.Path, "is_symlink", is_symlink_que_responde)
     varredura = varrer_source_files(tmp_path, "*.py")
     assert [p.name for p in varredura.arquivos] == ["job.py"]
     assert _pulos_por_razao(varredura.pulos, OS_ERROR) == ["trancado.py"]
