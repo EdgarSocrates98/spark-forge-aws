@@ -46,17 +46,17 @@ def _task_end(stage_id, task_id, launch, finish, *, failed=False, executor_id="1
     )
 
 
-def _stage_completed(stage_id, name, num_tasks):
-    return _line(
-        "SparkListenerStageCompleted",
-        **{
-            "Stage Info": {
-                "Stage ID": stage_id,
-                "Stage Name": name,
-                "Number of Tasks": num_tasks,
-            }
-        },
-    )
+def _stage_completed(stage_id, name, num_tasks, failure_reason=None):
+    stage_info = {
+        "Stage ID": stage_id,
+        "Stage Name": name,
+        "Number of Tasks": num_tasks,
+    }
+    # A chave ausente e a chave vazia sao casos DIFERENTES, e os dois tem
+    # teste: o Spark escreve `Failure Reason` so quando a stage falhou.
+    if failure_reason is not None:
+        stage_info["Failure Reason"] = failure_reason
+    return _line("SparkListenerStageCompleted", **{"Stage Info": stage_info})
 
 
 class TestNearestRank:
@@ -486,3 +486,70 @@ class TestShuffleMetrics:
 
         assert shuffle.measures["read_bytes"] == 2048
         assert "write_bytes" not in shuffle.measures
+
+
+class TestStageFailureReason:
+    """A razao da stage que falhou -- a fonte que o diagnostico de timeout usa.
+
+    Duas das quatro categorias de timeout (broadcast e network) nao tem outra
+    fonte no event log: a frase que as separa e escrita em
+    `Stage Info["Failure Reason"]`, e o handler descartava aquela chave.
+    """
+
+    def test_a_failed_stage_carries_the_literal_reason(self):
+        linhas = [
+            _task_end(1, 1, 0, 1000),
+            _stage_completed(
+                1,
+                "stage-1",
+                1,
+                failure_reason="Could not execute broadcast in 300 secs.",
+            ),
+        ]
+        falhas = facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+        assert len(falhas) == 1
+        assert falhas[0].attrs["reason"] == "Could not execute broadcast in 300 secs."
+        assert falhas[0].subject["stage_id"] == 1
+        assert falhas[0].subject["type"] == "stage"
+
+    def test_a_stage_without_a_failure_reason_produces_nothing(self):
+        """Ausencia de falha nao e falha vazia."""
+        linhas = [_task_end(1, 1, 0, 1000), _stage_completed(1, "stage-1", 1)]
+
+        assert not facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+    def test_an_empty_failure_reason_produces_nothing(self):
+        linhas = [_task_end(1, 1, 0, 1000), _stage_completed(1, "stage-1", 1, failure_reason="")]
+
+        assert not facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+    def test_a_credential_inside_the_reason_is_redacted(self):
+        """`facts.json` e commitado como barramento de handoff.
+
+        Razao de falha carrega URL de JDBC com senha dentro com a mesma
+        facilidade que configuracao carrega, e passa pelo mesmo `redact`.
+        """
+        segredo = (
+            "Job aborted: connection to jdbc:postgresql://usuario:s3nh4_secreta@host/db failed"
+        )
+        linhas = [
+            _task_end(1, 1, 0, 1000),
+            _stage_completed(1, "stage-1", 1, failure_reason=segredo),
+        ]
+        falhas = facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+        assert len(falhas) == 1
+        assert "s3nh4_secreta" not in falhas[0].attrs["reason"]
+        assert falhas[0].attrs["redacted"] is True
+
+    def test_the_kind_is_declared_and_validates(self):
+        linhas = [
+            _task_end(1, 1, 0, 1000),
+            _stage_completed(1, "stage-1", 1, failure_reason="Futures timed out after [120 s]"),
+        ]
+        facts = extract_event_log(linhas, "log.json")
+
+        assert "spark.stage.failure" in EMITTED_KINDS
+        for fact in facts:
+            validate_fact(fact.to_dict())

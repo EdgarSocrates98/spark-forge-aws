@@ -41,6 +41,7 @@ EMITTED_KINDS = frozenset(
         "spark.stage.shuffle",
         "spark.stage.gc",
         "spark.stage.task_count",
+        "spark.stage.failure",
         "spark.cluster.cores",
         "spark.executor.lost",
         "spark.executor.memory_usage",
@@ -585,6 +586,39 @@ def extract_event_log(lines: Iterable[str], path: str) -> list[Fact]:
                 if isinstance(num_tasks, int | float):
                     declared_task_counts[stage_id] = int(num_tasks)
                 completed_stage_ids.add(stage_id)
+
+                # A razao da falha, quando houve falha. E a UNICA fonte no
+                # event log que separa timeout de broadcast de timeout de rede:
+                # as duas frases -- "Could not execute broadcast in N secs" e
+                # "Futures timed out after [N seconds]" -- sao escritas aqui, e
+                # em lugar nenhum mais. `spark.executor.lost` cobre heartbeat,
+                # e o estado do `glue.job_run` cobre o relogio de parede.
+                #
+                # Chave ausente e chave vazia sao o mesmo caso para o produtor
+                # (nao houve falha) e o fact nao e emitido em nenhum dos dois:
+                # fact de falha com razao vazia seria uma falha que ninguem
+                # relatou.
+                #
+                # Redigido pelo mesmo caminho de `spark.conf_effective`: razao
+                # de falha carrega URL de JDBC com senha dentro com a mesma
+                # facilidade que configuracao carrega, e `facts.json` e
+                # commitado como barramento de handoff.
+                failure_reason = str(stage_info.get("Failure Reason") or "")
+                if failure_reason:
+                    reason_value, reason_redacted = redact("Failure Reason", failure_reason)
+                    failure_attrs = {"reason": reason_value}
+                    if reason_redacted:
+                        failure_attrs["redacted"] = True
+                    facts.append(
+                        Fact(
+                            kind="spark.stage.failure",
+                            subject=_stage_subject(
+                                stage_id, str(stage_info.get("Stage Name") or "")
+                            ),
+                            attrs=failure_attrs,
+                            provenance=provenance,
+                        )
+                    )
 
             elif event == "SparkListenerEnvironmentUpdate":
                 # A configuracao EFETIVA do run: o que o motor de fato aplicou,
