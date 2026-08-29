@@ -121,7 +121,10 @@ NON_GLUE_IDS = [nome for nome, _ in NON_GLUE_RUNTIMES]
 GLUE_VERSIONED = {
     "SF-ENV-002",
     "SF-ENV-003",
-    "SF-GLUE-001",
+    # SF-GLUE-001 foi aposentada em 2026-08-28 (acusava a configuracao
+    # correta); SF-GLUE-007 ocupa a mesma natureza -- infraestrutura Glue
+    # guardada por versao -- e o id antigo NAO e reaproveitado.
+    "SF-GLUE-007",
     "SF-LF-001",
     "SF-LF-002",
     "SF-MIG-001",
