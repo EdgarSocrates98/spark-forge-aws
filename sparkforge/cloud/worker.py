@@ -1,9 +1,10 @@
 """Optional Cloud Remote Worker Abstraction."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -36,7 +37,10 @@ class LocalFallbackWorkerBackend(BaseRemoteWorkerBackend):
         return RemoteWorkerResult(
             task_id=task.task_id,
             status="completed",
-            output_data={"message": "Executed via local scale-to-zero engine", "payload": task.payload},
+            output_data={
+                "message": "Executed via local scale-to-zero engine",
+                "payload": task.payload,
+            },
             execution_time_seconds=0.1,
             cost_usd=0.0,
         )

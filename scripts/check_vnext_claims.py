@@ -717,8 +717,8 @@ def _commit_exists(commit: str) -> bool:
     `_validate_proof` reporta isso como divergencia legivel apontando o id,
     igual a qualquer outro erro de manifesto."""
     try:
-        completed = subprocess.run(
-            ["git", "cat-file", "-t", commit],  # noqa: S603,S607 -- argv fixo, sem shell
+        completed = subprocess.run(  # noqa: S603 -- argv fixo, sem shell
+            ["git", "cat-file", "-t", commit],  # noqa: S607 -- git resolvido pelo PATH
             cwd=ROOT,
             capture_output=True,
             text=True,

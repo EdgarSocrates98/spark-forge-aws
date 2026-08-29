@@ -1,13 +1,14 @@
 """Evaluation Runner for Router and Economy Accuracy."""
+
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from sparkforge.economy.router import CapabilityModelRouter
-from sparkforge.registry.models import ExecutionProfile, ModelTier, RiskLevel
+from sparkforge.registry.models import ExecutionProfile, RiskLevel
 
 
 @dataclass
@@ -20,7 +21,7 @@ class EvalResult:
 
 
 class EvaluationRunner:
-    def __init__(self, router: Optional[CapabilityModelRouter] = None) -> None:
+    def __init__(self, router: CapabilityModelRouter | None = None) -> None:
         self.router = router or CapabilityModelRouter()
 
     def run_router_eval(self, dataset_path: Path) -> EvalResult:
@@ -36,7 +37,11 @@ class EvaluationRunner:
             risk_str = case.get("risk_level", "read_only")
             is_det = case.get("is_deterministic_available", False)
 
-            profile = ExecutionProfile(profile_str) if isinstance(profile_str, str) else ExecutionProfile.ECO
+            profile = (
+                ExecutionProfile(profile_str)
+                if isinstance(profile_str, str)
+                else ExecutionProfile.ECO
+            )
             risk = RiskLevel(risk_str) if isinstance(risk_str, str) else RiskLevel.READ_ONLY
 
             decision = self.router.route_task(
@@ -56,14 +61,16 @@ class EvaluationRunner:
                 passed += 1
             else:
                 failed += 1
-                failures.append({
-                    "case_id": case_id,
-                    "task": task,
-                    "expected_tier": expected_tier,
-                    "actual_tier": decision.tier.value,
-                    "expected_skills": expected_skills,
-                    "actual_skills": decision.selected_skills,
-                })
+                failures.append(
+                    {
+                        "case_id": case_id,
+                        "task": task,
+                        "expected_tier": expected_tier,
+                        "actual_tier": decision.tier.value,
+                        "expected_skills": expected_skills,
+                        "actual_skills": decision.selected_skills,
+                    }
+                )
 
         total = len(data)
         rate = (passed / total) if total > 0 else 1.0

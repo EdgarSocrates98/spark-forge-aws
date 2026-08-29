@@ -1,8 +1,9 @@
 """Data Platform Reliability Engineering and Root Cause Analysis (RCA) Engine."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -12,7 +13,7 @@ class TimelineEvent:
     event: str
     resource: str
     severity: str  # critical, error, warning, info
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
 
 
 @dataclass
@@ -63,16 +64,25 @@ class ReliabilityAnalyzer:
         if critical_events:
             first_err = critical_events[0]
             if "oom" in first_err.event.lower() or "memory" in first_err.event.lower():
-                primary = f"Out of Memory (OOM) on resource {first_err.resource} caused by memory partition skew."
+                primary = (
+                    f"Out of Memory (OOM) on resource {first_err.resource} "
+                    f"caused by memory partition "
+                    f"skew."
+                )
                 mitigations.append("Increase worker memory or scale DPU temporarily.")
                 preventatives.append("Implement key salting and broadcast join thresholds.")
-            elif "throttl" in first_err.event.lower() or "provisionedthroughput" in first_err.event.lower():
+            elif (
+                "throttl" in first_err.event.lower()
+                or "provisionedthroughput" in first_err.event.lower()
+            ):
                 primary = f"Downstream database throttling on {first_err.resource}."
                 mitigations.append("Enable exponential retry backoff and rate-limiting.")
                 preventatives.append("Switch table to On-Demand billing or scale provisioned WCU.")
             else:
                 primary = f"Failure trigger: {first_err.event} on {first_err.resource}"
-                mitigations.append("Inspect component logs and restart failed step with checkpoint.")
+                mitigations.append(
+                    "Inspect component logs and restart failed step with checkpoint."
+                )
 
         return RCAReport(
             incident_id=incident_id,

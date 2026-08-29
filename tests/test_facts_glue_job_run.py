@@ -4,8 +4,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from sparkforge.facts.glue_job_run import EMITTED_KINDS, extract_glue_job_runs_path
 from sparkforge.findings.validate import validate_fact
 

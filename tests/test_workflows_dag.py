@@ -2,7 +2,7 @@
 import pytest
 
 from sparkforge.registry.models import RiskLevel
-from sparkforge.workflows import DAGNode, ExecutionDAG, StructuredHandoff, TaskSpec
+from sparkforge.workflows import ExecutionDAG, StructuredHandoff, TaskSpec
 
 
 def test_task_spec_serialization():

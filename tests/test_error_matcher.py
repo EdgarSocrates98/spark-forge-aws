@@ -1,12 +1,15 @@
 """Tests for Deterministic Error Matcher and Reliability RCA."""
-import pytest
+
 from sparkforge.errors.matcher import DeterministicErrorMatcher
 from sparkforge.reliability.rca import ReliabilityAnalyzer
 
 
 def test_error_matcher_oom():
     matcher = DeterministicErrorMatcher()
-    log = "ERROR YarnClusterScheduler: Container killed by YARN for exceeding memory limits. 5.5 GB of 5.0 GB physical memory used."
+    log = (
+        "ERROR YarnClusterScheduler: Container killed by YARN for exceeding memory limits. 5.5 "
+        "GB of 5.0 GB physical memory used."
+    )
     matches = matcher.match_log(log)
     assert len(matches) > 0
     assert matches[0].error_id == "ERR-GLUE-001"
@@ -17,8 +20,20 @@ def test_error_matcher_oom():
 def test_reliability_rca():
     analyzer = ReliabilityAnalyzer()
     events = [
-        {"timestamp": "2026-08-20T10:00:00Z", "source": "cloudwatch", "event": "Task failure", "resource": "glue_job_1", "severity": "info"},
-        {"timestamp": "2026-08-20T10:05:00Z", "source": "spark_eventlog", "event": "Container killed for exceeding memory limits (OOM)", "resource": "executor-2", "severity": "critical"},
+        {
+            "timestamp": "2026-08-20T10:00:00Z",
+            "source": "cloudwatch",
+            "event": "Task failure",
+            "resource": "glue_job_1",
+            "severity": "info",
+        },
+        {
+            "timestamp": "2026-08-20T10:05:00Z",
+            "source": "spark_eventlog",
+            "event": "Container killed for exceeding memory limits (OOM)",
+            "resource": "executor-2",
+            "severity": "critical",
+        },
     ]
     report = analyzer.analyze_incident("INC-001", events)
     assert "Out of Memory" in report.primary_root_cause
@@ -37,23 +52,17 @@ class TestConhecimentoDeErroDeGlue6:
 
     def test_jar_de_scala_212_sob_spark_4(self):
         matcher = DeterministicErrorMatcher()
-        achados = matcher.match_log(
-            "java.lang.NoSuchMethodError: scala.Predef$.refArrayOps(...)"
-        )
+        achados = matcher.match_log("java.lang.NoSuchMethodError: scala.Predef$.refArrayOps(...)")
         assert "ERR-GLUE-002" in {a.error_id for a in achados}
 
     def test_sdk_v2_antigo_com_user_jars_first(self):
         matcher = DeterministicErrorMatcher()
-        achados = matcher.match_log(
-            "Caused by: java.lang.NoSuchFieldError: SDK_VERSION"
-        )
+        achados = matcher.match_log("Caused by: java.lang.NoSuchFieldError: SDK_VERSION")
         assert "ERR-GLUE-003" in {a.error_id for a in achados}
 
     def test_athena_sobre_tabela_iceberg_v3(self):
         matcher = DeterministicErrorMatcher()
-        achados = matcher.match_log(
-            "GENERIC_USER_ERROR: Cannot read unsupported version 3"
-        )
+        achados = matcher.match_log("GENERIC_USER_ERROR: Cannot read unsupported version 3")
         achado = next(a for a in achados if a.error_id == "ERR-ATH-001")
         assert achado.service == "athena"
         assert achado.fixes, "erro sem correcao nomeada nao ajuda ninguem"

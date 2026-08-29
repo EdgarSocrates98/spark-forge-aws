@@ -1,8 +1,9 @@
 """Apache Kafka and Amazon MSK Diagnostic Engine."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -32,19 +33,28 @@ class KafkaMSKSpecialist:
         lags = list(partition_lags.values())
         max_lag = max(lags) if lags else 0
         min_lag = min(lags) if lags else 0
-        avg_lag = (sum(lags) / len(lags)) if lags else 0
 
         high_lag = max_lag > 50000
         imbalance = (max_lag - min_lag) > 20000 if len(lags) > 1 else False
 
         if high_lag:
-            recs.append(f"High consumer lag detected (max: {max_lag} records). Scale consumer group instances or optimize downstream sink.")
+            recs.append(
+                f"High consumer lag detected (max: {max_lag} records). "
+                f"Scale consumer group instances "
+                f"or optimize downstream sink."
+            )
 
         if imbalance:
-            recs.append(f"Partition lag imbalance detected ({min_lag} to {max_lag}). Verify partition key distribution and hash randomness.")
+            recs.append(
+                f"Partition lag imbalance detected ({min_lag} to {max_lag}). Verify partition "
+                f"key distribution and hash randomness."
+            )
 
         if under_replicated_count > 0:
-            recs.append(f"{under_replicated_count} under-replicated partitions found. Check MSK broker disk/network health.")
+            recs.append(
+                f"{under_replicated_count} under-replicated partitions found. Check MSK broker "
+                f"disk/network health."
+            )
 
         return KafkaDiagnosticReport(
             topic_name=topic_name,

@@ -1,8 +1,9 @@
 """DynamoDB Specialization and Access Pattern Diagnostic Engine."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -34,7 +35,11 @@ class DynamoDBSpecialist:
         # Hot partition check (e.g. low-cardinality PK like 'status' or 'country')
         if pk.lower() in ("status", "type", "category", "country", "date", "created_date"):
             hot_partition = True
-            recs.append(f"Low-cardinality partition key ('{pk}') creates hot partition risks. Add a high-cardinality prefix/suffix or synthetic key.")
+            recs.append(
+                f"Low-cardinality partition key ('{pk}') creates hot partition risks. "
+                f"Add a high-cardinality "
+                f"prefix/suffix or synthetic key."
+            )
 
         gsis = config.get("GlobalSecondaryIndexes", [])
         if billing == "PROVISIONED":
@@ -44,14 +49,22 @@ class DynamoDBSpecialist:
                 gsi_wcu = gsi.get("ProvisionedThroughput", {}).get("WriteCapacityUnits", 5)
                 if gsi_wcu < table_wcu:
                     gsi_throttling = True
-                    recs.append(f"GSI '{gsi.get('IndexName')}' has lower WCU ({gsi_wcu}) than main table ({table_wcu}), causing main table writes to throttle.")
+                    recs.append(
+                        f"GSI '{gsi.get('IndexName')}' has lower WCU ({gsi_wcu}) than main table "
+                        f"({table_wcu}), causing main table writes to throttle."
+                    )
 
         stream_spec = config.get("StreamSpecification", {})
         streams_enabled = stream_spec.get("StreamEnabled", False)
-        ttl_enabled = config.get("TimeToLiveDescription", {}).get("TimeToLiveStatus", "") == "ENABLED"
+        ttl_enabled = (
+            config.get("TimeToLiveDescription", {}).get("TimeToLiveStatus", "") == "ENABLED"
+        )
 
         if not ttl_enabled:
-            recs.append("TTL is not configured. Consider enabling TTL for automatic data expiration to optimize storage costs.")
+            recs.append(
+                "TTL is not configured. Consider enabling TTL for automatic data expiration to "
+                "optimize storage costs."
+            )
 
         return DynamoDBHealthReport(
             table_name=table_name,

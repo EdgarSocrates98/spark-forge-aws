@@ -1,8 +1,9 @@
 """Iceberg Maintenance Planning Engine with Dry-Run Safety."""
+
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from dataclasses import asdict, dataclass
+from typing import Any
 
 
 @dataclass
@@ -42,9 +43,16 @@ class IcebergMaintenancePlanner:
             actions.append(
                 MaintenanceAction(
                     action_type="rewrite_data_files",
-                    sql_command=f"CALL glue_catalog.system.rewrite_data_files(table => '{table_name}', strategy => 'binpack', options => map('target-file-size-bytes','536870912'))",
+                    sql_command=(
+                        f"CALL glue_catalog.system.rewrite_data_files(table => '{table_name}', "
+                        f"strategy => 'binpack', options => "
+                        f"map('target-file-size-bytes','536870912'))"
+                    ),
                     target_table=table_name,
-                    estimated_impact=f"Compact {small_files_count} data files and purge {delete_files_count} positional delete files.",
+                    estimated_impact=(
+                        f"Compact {small_files_count} data files and purge {delete_files_count} "
+                        f"positional delete files."
+                    ),
                     risk_level="reversible",
                 )
             )
@@ -53,9 +61,16 @@ class IcebergMaintenancePlanner:
             actions.append(
                 MaintenanceAction(
                     action_type="expire_snapshots",
-                    sql_command=f"CALL glue_catalog.system.expire_snapshots(table => '{table_name}', older_than => TIMESTAMP 'current_timestamp - INTERVAL {retention_days} DAYS')",
+                    sql_command=(
+                        f"CALL glue_catalog.system.expire_snapshots("
+                        f"table => '{table_name}', older_than "
+                        f"=> TIMESTAMP 'current_timestamp - INTERVAL {retention_days} DAYS')"
+                    ),
                     target_table=table_name,
-                    estimated_impact=f"Expire snapshots older than {retention_days} days to reduce manifest size.",
+                    estimated_impact=(
+                        f"Expire snapshots older than {retention_days} days to reduce manifest "
+                        f"size."
+                    ),
                     risk_level="reversible",
                 )
             )
@@ -65,7 +80,9 @@ class IcebergMaintenancePlanner:
                 action_type="rewrite_manifests",
                 sql_command=f"CALL glue_catalog.system.rewrite_manifests(table => '{table_name}')",
                 target_table=table_name,
-                estimated_impact="Re-cluster manifest entries to optimize Athena and Spark planning time.",
+                estimated_impact=(
+                    "Re-cluster manifest entries to optimize Athena and Spark planning time."
+                ),
                 risk_level="reversible",
             )
         )

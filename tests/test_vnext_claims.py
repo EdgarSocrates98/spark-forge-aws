@@ -119,18 +119,14 @@ class TestExtracaoNumerica:
         assert "-81.8%" in textos
         assert "45.00" in textos
 
-    def test_hifen_de_identificador_continua_bloqueado_com_sinal_negativo_no_regex(
-        self, tmp_path
-    ):
+    def test_hifen_de_identificador_continua_bloqueado_com_sinal_negativo_no_regex(self, tmp_path):
         # Guarda de nao-regressao: o novo ramo que aceita `-` de negativo nao
         # pode reabrir a porta que o lookbehind original fechava para
         # identificador (`ADR-003`) e data ISO (`2026-08-21`) -- nos dois
         # casos o hifen esta colado a letra/digito, entao nao e sinal de
         # negativo solto.
         doc = tmp_path / "IDENTIFICADOR.md"
-        doc.write_text(
-            "Registrado em 2026-08-21 conforme ADR-003.\n", encoding="utf-8"
-        )
+        doc.write_text("Registrado em 2026-08-21 conforme ADR-003.\n", encoding="utf-8")
         assert gate.extract_numbers(doc) == []
 
     def test_numero_negativo_precedido_de_espaco_tambem_vira_alegacao(self, tmp_path):
@@ -139,9 +135,7 @@ class TestExtracaoNumerica:
         textos = [i["text"] for i in gate.extract_numbers(doc)]
         assert textos == ["-5"]
 
-    def test_marcador_de_lista_com_hifen_seguido_de_espaco_nao_vira_negativo(
-        self, tmp_path
-    ):
+    def test_marcador_de_lista_com_hifen_seguido_de_espaco_nao_vira_negativo(self, tmp_path):
         # Marcador de lista Markdown ("- item") usa hifen seguido de ESPACO,
         # nunca colado direto no digito -- o novo ramo exige `-\d` sem espaco
         # entre os dois, entao um item de lista comecando com numero
@@ -234,9 +228,7 @@ class TestExtracaoNumerica:
 
     def test_numero_de_fase_nao_apaga_numero_real_no_resto_do_titulo(self, tmp_path):
         doc = tmp_path / "TITULO.md"
-        doc.write_text(
-            "# Catalogo com 38 agentes permanentes (Phase 4)\n", encoding="utf-8"
-        )
+        doc.write_text("# Catalogo com 38 agentes permanentes (Phase 4)\n", encoding="utf-8")
         textos = [i["text"] for i in gate.extract_numbers(doc)]
         assert textos == ["38"]
 
@@ -270,9 +262,7 @@ class TestExtracaoNumerica:
         # "titulo H1 terminado em (Phase N)". Fase no meio do titulo, com
         # texto depois, nao bate o formato real do corpus e fica de fora.
         doc = tmp_path / "TITULO.md"
-        doc.write_text(
-            "# Relatorio (Phase 3) com revisao adicional\n", encoding="utf-8"
-        )
+        doc.write_text("# Relatorio (Phase 3) com revisao adicional\n", encoding="utf-8")
         textos = [i["text"] for i in gate.extract_numbers(doc)]
         assert textos == ["3"]
 
@@ -291,9 +281,7 @@ class TestExtracaoNumerica:
         doc.write_text("### 4.5.2 Sub-subsecao\n", encoding="utf-8")
         assert gate.extract_numbers(doc) == []
 
-    def test_titulo_pontuado_com_ponto_final_continua_mascarado_por_inteiro(
-        self, tmp_path
-    ):
+    def test_titulo_pontuado_com_ponto_final_continua_mascarado_por_inteiro(self, tmp_path):
         # Forma equivalente com ponto final apos o ultimo segmento -- o
         # `\.?` opcional no fim do padrao cobre esse caso sem duplicar regra.
         doc = tmp_path / "TITULO.md"
@@ -314,9 +302,7 @@ class TestExtracaoNumerica:
 
     def test_rotulo_wave_e_demo_sao_pruned(self, tmp_path):
         doc = tmp_path / "ROTULO.md"
-        doc.write_text(
-            "- `Wave 0`: Discovery.\n## Demo 2: Pipeline CDC\n", encoding="utf-8"
-        )
+        doc.write_text("- `Wave 0`: Discovery.\n## Demo 2: Pipeline CDC\n", encoding="utf-8")
         assert gate.extract_numbers(doc) == []
 
     def test_quantidade_digito_antes_do_substantivo_continua_alegacao(self, tmp_path):
@@ -337,9 +323,7 @@ class TestExtracaoNumerica:
         textos = [i["text"] for i in gate.extract_numbers(doc)]
         assert textos == ["40"]
 
-    def test_todas_as_ocorrencias_de_rotulo_na_mesma_linha_sao_mascaradas(
-        self, tmp_path
-    ):
+    def test_todas_as_ocorrencias_de_rotulo_na_mesma_linha_sao_mascaradas(self, tmp_path):
         # Regressao: caso real de KNOWLEDGE-MAP.md:30 encadeia "Tier
         # 0 ... Tier 1 ... Tier 6" sete vezes na MESMA linha. Um mecanismo
         # de mascaramento que so trata a primeira ocorrencia por padrao
@@ -541,9 +525,7 @@ class TestExtracaoDeCapacidadeRespeitaBlocoCercado:
     # cercados hoje) virava alegacao real por acidente. Reusa a mesma cerca
     # em vez de reimplementar a varredura de linha pela terceira vez.
     def test_linha_de_tabela_dentro_de_cerca_nao_vira_capacidade(self, tmp_path):
-        (tmp_path / "CAPABILITY-MATRIX.md").write_text(
-            MATRIZ_COM_TABELA_CERCADA, encoding="utf-8"
-        )
+        (tmp_path / "CAPABILITY-MATRIX.md").write_text(MATRIZ_COM_TABELA_CERCADA, encoding="utf-8")
         textos = [c["text"] for c in gate.extract_capabilities(tmp_path)]
         assert textos == ["Compilador real"]
 
@@ -565,9 +547,7 @@ RELATORIO_SECAO_4_COM_LISTA_NUMERADA = """# Relatorio
 
 
 class TestSecao4ComAncoraMasSemItemEstouraAlto:
-    def test_lista_numerada_nao_reconhecida_estoura_value_error_nomeando_arquivo(
-        self, tmp_path
-    ):
+    def test_lista_numerada_nao_reconhecida_estoura_value_error_nomeando_arquivo(self, tmp_path):
         # Ancora "## 4." e encontrada, mas o extrator so reconhece marcador
         # "- ". Lista reescrita como "1. "/"2. " passa pela deteccao de
         # ancora sem erro e devolveria lista vazia -- o mesmo miss silencioso
@@ -641,8 +621,11 @@ class TestValidacaoDoManifesto:
 
 class TestValidacaoDaProva:
     def test_artifact_nao_prova_numero(self):
-        prova = {"kind": "artifact", "path": "scripts/check_vnext_claims.py",
-                 "test": "tests/test_vnext_claims.py"}
+        prova = {
+            "kind": "artifact",
+            "path": "scripts/check_vnext_claims.py",
+            "test": "tests/test_vnext_claims.py",
+        }
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
         )
@@ -661,8 +644,7 @@ class TestValidacaoDaProva:
         assert erros == []
 
     def test_artifact_com_path_inexistente_falha(self):
-        prova = {"kind": "artifact", "path": "nao/existe.py",
-                 "test": "tests/test_vnext_claims.py"}
+        prova = {"kind": "artifact", "path": "nao/existe.py", "test": "tests/test_vnext_claims.py"}
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="capability")]), {}
         )
@@ -689,16 +671,24 @@ class TestValidacaoDaProva:
         assert any("fora de knowledge/sources.lock.json" in e for e in erros)
 
     def test_external_fact_so_aceita_source(self):
-        prova = {"kind": "command", "cmd": 'python -c "print(1)"', "tier": "fast",
-                 "expect": {"kind": "contains", "value": "1"}}
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(1)"',
+            "tier": "fast",
+            "expect": {"kind": "contains", "value": "1"},
+        }
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="external_fact")]), {}
         )
         assert any("external_fact exige proof source" in e for e in erros)
 
     def test_command_exige_tier_valido(self):
-        prova = {"kind": "command", "cmd": 'python -c "print(1)"', "tier": "medio",
-                 "expect": {"kind": "contains", "value": "1"}}
+        prova = {
+            "kind": "command",
+            "cmd": 'python -c "print(1)"',
+            "tier": "medio",
+            "expect": {"kind": "contains", "value": "1"},
+        }
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
         )
@@ -827,7 +817,11 @@ class TestProvaHistorica:
         # `docs/harness/BASELINE.md` cita como medido) -- teste de integracao
         # deliberado, nao mockado, porque a garantia central de `historical`
         # e justamente que o commit e VERIFICAVEL contra o git real.
-        prova = {"kind": "historical", "cmd": "python -m pytest -q -p no:randomly", "commit": "6a76b7a"}
+        prova = {
+            "kind": "historical",
+            "cmd": "python -m pytest -q -p no:randomly",
+            "commit": "6a76b7a",
+        }
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
         )
@@ -865,7 +859,11 @@ class TestProvaHistorica:
         # Ao contrario de `command`, `historical` nao tem `expect` nenhum --
         # nao ha saida nenhuma para comparar, porque nada e executado. Uma
         # prova so com `cmd`+`commit`, sem `expect`, precisa passar.
-        prova = {"kind": "historical", "cmd": "python -m pytest -q -p no:randomly", "commit": "6a76b7a"}
+        prova = {
+            "kind": "historical",
+            "cmd": "python -m pytest -q -p no:randomly",
+            "commit": "6a76b7a",
+        }
         assert "expect" not in prova
         erros = gate.validate_manifest(
             manifesto([entrada(state="PROVADA", proof=prova, type="number")]), {}
@@ -981,14 +979,14 @@ class TestProvasCommand:
 
     def test_prova_que_reproduz_passa(self):
         m = self._com_prova(
-            'python -c "print(41, \'tools\')"',
+            "python -c \"print(41, 'tools')\"",
             {"kind": "number", "pattern": r"(\d+) tools", "value": 41},
         )
         assert gate.run_command_proofs(m, include_slow=False) == []
 
     def test_prova_que_nao_reproduz_falha_com_os_dois_valores(self):
         m = self._com_prova(
-            'python -c "print(5447, \'tests\')"',
+            "python -c \"print(5447, 'tests')\"",
             {"kind": "number", "pattern": r"(\d+) tests", "value": 5485},
         )
         erros = gate.run_command_proofs(m, include_slow=False)
@@ -1001,8 +999,7 @@ class TestProvasCommand:
         # sem nenhum stream, sozinho, ter escrito "41 tools". A alegacao so
         # pode contar como provada se UM stream, isolado, satisfaz `expect`.
         m = self._com_prova(
-            "python -c \"import sys; print('4', end=''); "
-            "sys.stderr.write('1 tools')\"",
+            "python -c \"import sys; print('4', end=''); sys.stderr.write('1 tools')\"",
             {"kind": "number", "pattern": r"(\d+) tools", "value": 41},
         )
         erros = gate.run_command_proofs(m, include_slow=False)
@@ -1017,7 +1014,7 @@ class TestProvasCommand:
         # provar a alegacao, mesmo a mensagem de erro nao sendo a fonte da
         # verdade da prova.
         m = self._com_prova(
-            'python -c "import sys; print(\'50 tests\'); '
+            "python -c \"import sys; print('50 tests'); "
             "sys.stderr.write('unexpected error, expected around 100 tests to run')\"",
             {"kind": "number", "pattern": r"(\d+) tests", "value": 100},
         )
@@ -1029,7 +1026,7 @@ class TestProvasCommand:
         # aponta explicitamente para onde a prova deve olhar -- o gate
         # confere SO esse stream, e o valor que ele carrega e aceito.
         m = self._com_prova(
-            'python -c "import sys; print(\'50 tests\'); '
+            "python -c \"import sys; print('50 tests'); "
             "sys.stderr.write('unexpected error, expected around 100 tests to run')\"",
             {"kind": "number", "pattern": r"(\d+) tests", "value": 100, "stream": "stderr"},
         )
@@ -1046,14 +1043,14 @@ class TestProvasCommand:
 
     def test_prova_contains_que_passa(self):
         m = self._com_prova(
-            'python -c "print(\'ola mundo\')"',
+            "python -c \"print('ola mundo')\"",
             {"kind": "contains", "value": "ola mundo"},
         )
         assert gate.run_command_proofs(m, include_slow=False) == []
 
     def test_prova_contains_que_falha(self):
         m = self._com_prova(
-            'python -c "print(\'ola mundo\')"',
+            "python -c \"print('ola mundo')\"",
             {"kind": "contains", "value": "nao esta aqui"},
         )
         erros = gate.run_command_proofs(m, include_slow=False)
@@ -1076,7 +1073,7 @@ class TestProvasCommand:
         # captura texto nao numerico precisa virar erro de auditoria legivel,
         # nao ValueError cru subindo do `int()`.
         m = self._com_prova(
-            'python -c "print(\'quarenta e um tools\')"',
+            "python -c \"print('quarenta e um tools')\"",
             {"kind": "number", "pattern": r"(\w+) tools", "value": 41},
         )
         erros = gate.run_command_proofs(m, include_slow=False)
@@ -1185,9 +1182,7 @@ class TestSeedMerge:
         assert por_texto2["7"]["id"] == "VNX-003"
         assert por_texto2["7"]["state"] == "SEM_LASTRO"
 
-    def test_alegacao_sumida_do_documento_e_retida_e_reportada(
-        self, tmp_path, monkeypatch, capsys
-    ):
+    def test_alegacao_sumida_do_documento_e_retida_e_reportada(self, tmp_path, monkeypatch, capsys):
         destino = self._doc(tmp_path, monkeypatch, "Sao 38 agentes no catalogo.\n")
         assert gate.seed() == 0
         dados = json.loads(destino.read_text(encoding="utf-8"))
@@ -1378,9 +1373,7 @@ class TestSeedMerge:
         assert "git checkout" in saida
         assert destino.read_bytes() == malformado
 
-    def test_manifesto_top_level_lista_recusa_sem_traceback(
-        self, tmp_path, monkeypatch, capsys
-    ):
+    def test_manifesto_top_level_lista_recusa_sem_traceback(self, tmp_path, monkeypatch, capsys):
         # Outro vizinho mapeado pelo reviewer: JSON top-level e uma lista,
         # nao um objeto -- crashava com `AttributeError` cru (`'list' object
         # has no attribute 'get'`) antes desta correcao. Mesma recusa
@@ -1574,8 +1567,7 @@ class TestAuditoria:
         achados = gate.collect_claims(gate.VNEXT)
         assert len(achados) >= 2
         claims = [
-            {**item, "id": "VNX-001", "state": "SEM_LASTRO", "note": "pendente"}
-            for item in achados
+            {**item, "id": "VNX-001", "state": "SEM_LASTRO", "note": "pendente"} for item in achados
         ]  # todas com o mesmo id -> "id repetido"
         destino.write_text(json.dumps(manifesto(claims)), encoding="utf-8")
 
@@ -1673,9 +1665,7 @@ class TestRelatorioColunas:
         }
         destino = tmp_path / "claims.lock.json"
         destino.write_text(
-            json.dumps(
-                manifesto([entrada(state="PROVADA", proof=prova, type="capability")])
-            ),
+            json.dumps(manifesto([entrada(state="PROVADA", proof=prova, type="capability")])),
             encoding="utf-8",
         )
         monkeypatch.setattr(gate, "MANIFEST", destino)
@@ -1691,9 +1681,7 @@ class TestRelatorioColunas:
         }
         destino = tmp_path / "claims.lock.json"
         destino.write_text(
-            json.dumps(
-                manifesto([entrada(state="PROVADA", proof=prova, type="external_fact")])
-            ),
+            json.dumps(manifesto([entrada(state="PROVADA", proof=prova, type="external_fact")])),
             encoding="utf-8",
         )
         monkeypatch.setattr(gate, "MANIFEST", destino)
@@ -1757,9 +1745,7 @@ class TestHeadCommit:
         assert gate._head_commit() == "abc123def"
         assert capsys.readouterr().err == ""
 
-    def test_git_indisponivel_cai_para_desconhecido_com_aviso_no_stderr(
-        self, monkeypatch, capsys
-    ):
+    def test_git_indisponivel_cai_para_desconhecido_com_aviso_no_stderr(self, monkeypatch, capsys):
         def fake_run(*args, **kwargs):
             raise FileNotFoundError("git nao encontrado")
 
@@ -1829,7 +1815,8 @@ class TestGateReal:
             # audita desde a generalizacao para `audited_roots()`) -- uma
             # entrada REMOVIDA de `docs/harness/` nao tem copia para
             # reintroduzir o texto nela.
-            if c["state"] == "REMOVIDA" and c["type"] == "number"
+            if c["state"] == "REMOVIDA"
+            and c["type"] == "number"
             and c["doc"].startswith("docs/vnext/")
         )
 

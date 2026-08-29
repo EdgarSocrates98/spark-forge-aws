@@ -1,7 +1,6 @@
 """Cursor IDE Platform Exporter."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from sparkforge.adapters.platforms.base import GENERATED_HEADER, BasePlatformExporter

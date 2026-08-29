@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from sparkforge.facts.sql_metric_names import MetricMapError, measure_for, load_map
+from sparkforge.facts.sql_metric_names import MetricMapError, load_map, measure_for
 
 
 class TestLoad:

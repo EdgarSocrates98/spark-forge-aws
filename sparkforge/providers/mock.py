@@ -1,7 +1,7 @@
 """Deterministic Mock LLM Provider for Testing and CI."""
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 class MockModelProvider:

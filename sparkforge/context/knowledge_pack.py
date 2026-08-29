@@ -1,11 +1,11 @@
 """Structured Knowledge Packs and Stale Detection for SparkForge."""
+
 from __future__ import annotations
 
 import datetime
 import hashlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
 
 
 @dataclass
@@ -18,13 +18,13 @@ class KnowledgePack:
     last_verified: str = ""
     source_hash: str = ""
     is_stale: bool = False
-    stale_reason: Optional[str] = None
+    stale_reason: str | None = None
 
 
 class KnowledgePackLoader:
     """Loads modular knowledge packs with stale detection."""
 
-    def __init__(self, root_dir: Optional[Path] = None, max_age_days: int = 90) -> None:
+    def __init__(self, root_dir: Path | None = None, max_age_days: int = 90) -> None:
         self.root_dir = root_dir or Path.cwd()
         self.max_age_days = max_age_days
 
@@ -35,19 +35,32 @@ class KnowledgePackLoader:
         anti_patterns_file = pack_dir / "anti-patterns.md"
         meta_file = pack_dir / "metadata.json"
 
-        concise_text = concise_file.read_text(encoding="utf-8", errors="ignore") if concise_file.is_file() else ""
-        patterns_text = patterns_file.read_text(encoding="utf-8", errors="ignore") if patterns_file.is_file() else ""
-        anti_patterns_text = anti_patterns_file.read_text(encoding="utf-8", errors="ignore") if anti_patterns_file.is_file() else ""
+        concise_text = (
+            concise_file.read_text(encoding="utf-8", errors="ignore")
+            if concise_file.is_file()
+            else ""
+        )
+        patterns_text = (
+            patterns_file.read_text(encoding="utf-8", errors="ignore")
+            if patterns_file.is_file()
+            else ""
+        )
+        anti_patterns_text = (
+            anti_patterns_file.read_text(encoding="utf-8", errors="ignore")
+            if anti_patterns_file.is_file()
+            else ""
+        )
 
         title = domain.replace("-", " ").title()
         last_verified = ""
         if meta_file.is_file():
             try:
                 import json
+
                 meta = json.loads(meta_file.read_text(encoding="utf-8"))
                 title = meta.get("title", title)
                 last_verified = meta.get("last_verified", "")
-            except Exception:
+            except Exception:  # noqa: S110 -- metadado opcional: sem ele valem os defaults acima
                 pass
 
         # Check staleness
@@ -59,8 +72,12 @@ class KnowledgePackLoader:
                 age_days = (datetime.date.today() - verified_date).days
                 if age_days > self.max_age_days:
                     is_stale = True
-                    stale_reason = f"Knowledge pack verified {age_days} days ago (threshold: {self.max_age_days} days)."
-            except Exception:
+                    stale_reason = (
+                        f"Knowledge pack verified {age_days} days ago "
+                        f"(threshold: {self.max_age_days} "
+                        f"days)."
+                    )
+            except Exception:  # noqa: S110 -- metadado opcional: sem ele valem os defaults acima
                 pass
 
         content_for_hash = f"{concise_text}{patterns_text}{anti_patterns_text}"

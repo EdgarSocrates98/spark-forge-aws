@@ -2,22 +2,12 @@
 
 Validates manifests using JSON Schema and model constraints.
 """
+
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 import jsonschema
-
-from sparkforge.registry.models import (
-    AgentManifest,
-    EvalManifest,
-    KnowledgeManifest,
-    PolicyManifest,
-    SkillManifest,
-    TeamManifest,
-    ToolManifest,
-    WorkflowManifest,
-)
 
 AGENT_SCHEMA = {
     "type": "object",
@@ -36,7 +26,10 @@ AGENT_SCHEMA = {
         "allowed_tools": {"type": "array", "items": {"type": "string"}},
         "denied_tools": {"type": "array", "items": {"type": "string"}},
         "knowledge_refs": {"type": "array", "items": {"type": "string"}},
-        "risk_level": {"type": "string", "enum": ["read_only", "reversible", "sensitive", "destructive"]},
+        "risk_level": {
+            "type": "string",
+            "enum": ["read_only", "reversible", "sensitive", "destructive"],
+        },
     },
 }
 
@@ -53,7 +46,10 @@ SKILL_SCHEMA = {
         "procedure_path": {"type": "string"},
         "references": {"type": "array", "items": {"type": "string"}},
         "required_tools": {"type": "array", "items": {"type": "string"}},
-        "risk_level": {"type": "string", "enum": ["read_only", "reversible", "sensitive", "destructive"]},
+        "risk_level": {
+            "type": "string",
+            "enum": ["read_only", "reversible", "sensitive", "destructive"],
+        },
     },
 }
 
@@ -67,7 +63,10 @@ TOOL_SCHEMA = {
         "description": {"type": "string"},
         "input_schema": {"type": "object"},
         "output_schema": {"type": "object"},
-        "mutation_class": {"type": "string", "enum": ["read_only", "reversible", "sensitive", "destructive"]},
+        "mutation_class": {
+            "type": "string",
+            "enum": ["read_only", "reversible", "sensitive", "destructive"],
+        },
         "deterministic": {"type": "boolean"},
         "cacheable": {"type": "boolean"},
     },
@@ -82,18 +81,24 @@ def validate_agent_dict(data: dict[str, Any]) -> None:
     try:
         jsonschema.validate(instance=data, schema=AGENT_SCHEMA)
     except jsonschema.ValidationError as e:
-        raise ValidationError(f"Agent validation error for '{data.get('id', 'unknown')}': {e.message}") from e
+        raise ValidationError(
+            f"Agent validation error for '{data.get('id', 'unknown')}': {e.message}"
+        ) from e
 
 
 def validate_skill_dict(data: dict[str, Any]) -> None:
     try:
         jsonschema.validate(instance=data, schema=SKILL_SCHEMA)
     except jsonschema.ValidationError as e:
-        raise ValidationError(f"Skill validation error for '{data.get('id', 'unknown')}': {e.message}") from e
+        raise ValidationError(
+            f"Skill validation error for '{data.get('id', 'unknown')}': {e.message}"
+        ) from e
 
 
 def validate_tool_dict(data: dict[str, Any]) -> None:
     try:
         jsonschema.validate(instance=data, schema=TOOL_SCHEMA)
     except jsonschema.ValidationError as e:
-        raise ValidationError(f"Tool validation error for '{data.get('id', 'unknown')}': {e.message}") from e
+        raise ValidationError(
+            f"Tool validation error for '{data.get('id', 'unknown')}': {e.message}"
+        ) from e

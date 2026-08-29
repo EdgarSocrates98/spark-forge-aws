@@ -1,8 +1,9 @@
 """Lake Formation Cross-Account Doctor and Access Model Advisor."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -42,7 +43,9 @@ class LakeFormationDoctor:
             passes.append("Glue Resource Link exists in consumer account")
         else:
             fails.append("Glue Resource Link missing in consumer account")
-            recs.append("Create Resource Link in consumer Data Catalog pointing to shared database/table.")
+            recs.append(
+                "Create Resource Link in consumer Data Catalog pointing to shared database/table."
+            )
 
         kms_shared = config_dump.get("kms_key_policy_includes_consumer", None)
         if kms_shared is True:
@@ -83,7 +86,10 @@ class LakeFormationDoctor:
         return {
             "model": "FTA",
             "title": "Full Table Access (FTA) Recommended",
-            "reason": "No row/column filters required; bulk ETL leverages direct S3 vectorized reads.",
+            "reason": (
+                "No row/column filters required; bulk ETL leverages direct S3 "
+                "vectorized reads."
+            ),
             "overhead_estimate": "Minimal (Zero filter proxy overhead)",
             "glue_worker_recommendation": "Standard G.1X / G.2X with native Spark DataFrames.",
         }

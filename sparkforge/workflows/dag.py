@@ -1,9 +1,10 @@
 """Execution DAG and Waves Engine for SparkForge Workflows."""
+
 from __future__ import annotations
 
-from collections import defaultdict, deque
+from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -18,10 +19,14 @@ class ExecutionDAG:
 
     def __init__(self) -> None:
         self.nodes: dict[str, DAGNode] = {}
-        self.dependencies: dict[str, set[str]] = defaultdict(set)  # node_id -> dependencies (must run before)
+        self.dependencies: dict[str, set[str]] = defaultdict(
+            set
+        )  # node_id -> dependencies (must run before)
         self.dependents: dict[str, set[str]] = defaultdict(set)  # node_id -> dependent nodes
 
-    def add_node(self, node_id: str, node_type: str = "task", payload: Optional[dict[str, Any]] = None) -> DAGNode:
+    def add_node(
+        self, node_id: str, node_type: str = "task", payload: dict[str, Any] | None = None
+    ) -> DAGNode:
         node = DAGNode(id=node_id, node_type=node_type, payload=payload or {})
         self.nodes[node_id] = node
         return node
