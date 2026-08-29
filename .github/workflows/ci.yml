@@ -76,6 +76,8 @@ jobs:
         run: python scripts/check_evals.py
       - name: vNext claims lastro
         run: python scripts/check_vnext_claims.py
+      - name: Surface lock
+        run: python scripts/check_surface_lock.py
       - name: Catalog loads with expression validation
         run: |
           python -c "from sparkforge.rules.loader import load_catalog; \

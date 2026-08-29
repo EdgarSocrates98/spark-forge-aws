@@ -117,6 +117,7 @@
     "sparkforge_collect_glue_job_runs",
     "sparkforge_collect_iceberg_metadata",
     "sparkforge_collect_verify",
+    "sparkforge_economy_report",
     "sparkforge_finops",
     "sparkforge_funcval_compare",
     "sparkforge_funcval_plan",

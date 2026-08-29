@@ -35,6 +35,7 @@ from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect.base import CollectorUnavailable, verify_all
+from sparkforge.economy.report import build_context_report
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
     extract_athena_workgroup_tree,
@@ -84,6 +85,7 @@ from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
+from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -1699,6 +1701,37 @@ def tune_conf(facts_path: str) -> dict[str, Any]:
     facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
     runtime = build_runtime_context(facts=facts).to_dict()
     return build_conf_advice(facts, runtime=runtime)
+
+
+# --------------------------------------------------------------------------- #
+# economy
+# --------------------------------------------------------------------------- #
+
+
+def economy_report(run_id: str, host_transcript: str = "") -> dict[str, Any]:
+    """O que esta execucao poe na janela de contexto.
+
+    Verbo de TOPO pela mesma razao de `capacity`, `finops` e `tune`: compoe
+    sobre o ledger e nao le artefato nenhum.
+
+    `host_transcript` e opcional porque o token de provider e do HOST: sem ele,
+    o relatorio traz byte medido e `tokens_unresolved` -- nunca uma estimativa
+    com nome de token.
+
+    `shared_ledger()`, E NAO UM `ContextLedger()` PROPRIO. Achado do revisor:
+    uma instancia independente aqui so enxergava o que ja tinha ido para o
+    disco -- e dentro do MESMO processo que `adapters/tools.py:call_tool`
+    acabou de gravar, nada tinha ido para o disco ainda (o unico gatilho
+    automatico e o `atexit`, que so dispara quando o processo morre). Numa
+    sessao MCP de vida longa isso deixava este relatorio sempre vazio ATE o
+    processo terminar. Compartilhar a instancia com `call_tool` faz este
+    verbo enxergar o buffer em memoria tambem, sem esperar flush nenhum.
+    """
+    return build_context_report(
+        shared_ledger(),
+        run_id=run_id,
+        host_transcript=host_transcript or None,
+    )
 
 
 # --------------------------------------------------------------------------- #

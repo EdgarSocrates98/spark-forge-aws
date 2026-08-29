@@ -161,9 +161,21 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 
 ### What can be extracted
 
-Nineteen extractors, all offline — they read artifacts already on disk and never
-call AWS. Each has a CLI verb and an MCP tool with the same name, and together
-they emit 118 distinct fact kinds:
+Twenty-seven extractors, all offline — they read artifacts already on disk and
+never call AWS. Each has a CLI verb and an MCP tool with the same name, and
+together they emit 158 distinct fact kinds. The catalogue that judges them has
+134 rules across 58 areas, and the MCP surface is 59 tools.
+
+Those last numbers are no longer estimates. `sparkforge economy report` measures
+the surface at rest in bytes: **59 tool schemas = 306,845 bytes**, **44 skills =
+278,218 bytes**, **47 knowledge documents = 350,557 bytes**. Everything a client
+loads before asking a single question has a number now, and `docs/surface.lock.json`
+holds it.
+
+The table splits on a boundary that matters: an `analyze *` verb **extracts**
+from an artifact, and a top-level verb **composes** over facts other verbs
+already extracted. A composing verb never reads an artifact, and that is why it
+is not an `analyze`.
 
 | Artifact | CLI verb | Reads |
 |---|---|---|
@@ -183,9 +195,22 @@ they emit 118 distinct fact kinds:
 | S3 object listing | `analyze s3-listing` | `s3api list-objects-v2` dump |
 | Table consumers | `analyze consumers` | declared inventory, versioned in the repo |
 | Terraform change | `analyze terraform-diff` | two states of the same module |
+| Per-node plan metrics | `analyze sql-metrics` | the same event log, read per plan node instead of per stage |
+| CloudWatch metrics | `analyze cloudwatch` | `get-metric-data` dump of a run |
+| Glue run history | `analyze glue-job-runs` | `GetJobRuns` dump, with `DPUSeconds` when the API gave it |
+
+And the verbs that **compose** over facts, never over artifacts:
+
+| Question | Top-level verb | Consumes |
+|---|---|---|
 | Two runs compared | `benchmark` | two sets of event-log facts, before and after |
 | Functional validation plan | `funcval plan` | PySpark and catalog-schema facts, plus the business key **you** declare |
 | Before against after, by result | `funcval compare` | the plan and the two results **you** measured |
+| Workload profile by axis | `workload` | scan, shuffle, spill and plan facts, plus `--history` of previous runs |
+| Cheapest capacity that meets the SLA | `capacity` | `glue.job_run` facts and the SLA declared in `workload.yaml` |
+| Cost per run, and where the lever is | `finops` | `glue.job_run`/`glue.run_cost`, the declared SLA, and the symptoms beside it |
+| Spark configuration derived from measurement | `tune` | `spark.stage.shuffle` measured, plus `spark.conf_effective`, `pyspark.conf_set` and `tf.spark_conf` for provenance |
+| What this run put in the context window | `economy report` | the spans `call_tool` writes per call, the surface at rest, and the host transcript when there is one |
 | Runtime | `runtime detect` | every source above, cross-checked |
 | Correlation | `fuse` | facts from several extractors at once |
 
@@ -231,6 +256,162 @@ declarer's call, not the engine's.
 Collection of the raw artifacts (`collect *`) requires boto3 and credentials
 and is the only part that touches AWS. The core never imports boto3 or the MCP
 SDK, so the CLI and the file-only path work without either.
+
+### Money, capacity, timeout and configuration
+
+Five subprojects added questions the engine could not answer before. Each keeps
+the same split the rest of the codebase keeps — arithmetic over a measurement is
+a `Fact`, a threshold over it is a rule, and a proposed value is neither, so it
+lives in a composing verb.
+
+**Cost per run — `finops`.** `glue.run_cost` is cost in currency, derived from
+`dpu_seconds` already measured and the published price. It is a `Fact` because
+there is no threshold and no judgment in it. Two caveats travel **inside** the
+fact and not in the report: `region` and `runtime_version` are `UNQUALIFIED`
+because the price source was read and qualified neither axis — a first-class
+value, distinct from an absent field, which would say nobody looked. A run
+without `dpu_seconds` (Auto Scaling with no `DPUSeconds`, where
+`number_of_workers` is a ceiling and not usage) produces
+`glue.run_cost.unresolved`, never a cost of zero.
+
+The report puts the observed capacities side by side and **never interpolates
+between them**: DPU-seconds is not invariant in the trade between more resource
+and more time, so a curve would lie exactly between the points, which is where
+someone would look. It also refuses to attribute cost to a cause — "you wasted X
+on spill" needs the cost of the run that did **not** happen — and refuses a
+threshold for "expensive", because no source publishes one.
+
+**Which timeout — `SF-TIMEOUT`.** Four mechanisms wear the same name, and the
+evidence for each lives in a different place: the `TIMEOUT` state of
+`glue.job_run` (wall clock, which is the AWS definition and not a hint), the
+reason an executor was removed (`spark.executor.lost`), and the reason a stage
+failed (`spark.stage.failure`). `spark.timeout.diagnosis` names the category —
+`wall_clock`, `broadcast`, `network`, `heartbeat` — by reading the phrase the
+runtime wrote, in the precedent of `heap_oom_in_log`.
+
+Precedence is declared, heartbeat → network → broadcast → wall_clock, because
+the generic one is a **consequence** of the specific one whenever both appear:
+the run blew the Glue clock *because* the executor died. What precedence did not
+choose stays readable in `attrs.also_seen` — choosing silently would be choosing
+for the operator.
+
+`SF-TIMEOUT-001` does not fire because there is a timeout; it fires because
+there is a timeout **with a measured symptom beside it** (skew, spill, GC, lost
+executor). With no symptom it stays quiet, and raising the limit may be exactly
+the right call. `SF-TIMEOUT-002` checks the **relation** between
+`spark.executor.heartbeatInterval` and `spark.network.timeout`, never the value:
+`120s` is neither right nor wrong on its own, but a heartbeat slower than the
+driver's wait breaks the mechanism that detects a dead executor.
+
+**Configuration derived from measurement — `tune`.** `spark.sql.shuffle.partitions`
+is derived from measured shuffle write bytes over the partition-size target — the
+documented AQE default of 64 MiB, or the run's own
+`spark.sql.adaptive.advisoryPartitionSizeInBytes` when it declares one. The
+formula and the basis travel inside the answer.
+
+This is **not** a `Fact`, and the reason is written in the module: cost and
+timeout category are arithmetic over a measurement with no choice in them, while
+a *proposed* configuration value is a choice, because a target exists and a
+target is a decision. Emitting it as a fact would make the rules engine judge a
+number the project itself proposed.
+
+The version changes the **meaning** and not the number: with AQE on by default
+(Spark 3.2+, so Glue 4.0 and 5.x) it is the initial parallelism floor the engine
+coalesces down; without AQE (Glue 3.0, Spark 3.1.1) it is the final partition
+count. Provenance answers **who asked** and not who won — `code`, `terraform`,
+`runtime_or_cluster`, `spark_default_explicit`, `unset` — and the fourth is the
+symptom worth hunting: configuration someone wrote with the default's own value,
+which nobody understands any more and which changes nothing.
+
+Every other property the operator expects to see — broadcast threshold, memory
+overhead, speculation, `maxPartitionBytes`, the two timeouts — comes back in
+`refused`, **with the measurement that would unlock it**. Listing the refusal is
+the difference between "I don't know" and "I didn't ask". The two timeouts carry
+an extra reason: proposing a new number for them would contradict
+`SF-TIMEOUT-001`.
+
+**Waste, and the idleness that is a symptom — `SF-WASTE`.** Low worker
+utilisation *looks* like waste and sometimes is a symptom: ninety per cent of the
+executors can be idle because one task spent fourteen minutes on a skewed
+partition, and cutting workers there leaves the cause untouched and makes the run
+longer. `glue.utilization.summary` puts utilisation (CloudWatch) and skew (event
+log) in one fact, because the catalogue's DSL matches one fact per clause.
+
+`SF-WASTE-001` needs all four measurements pointing the same way — idle worker,
+memory and disk with headroom, and **no** skew — and points at `capacity`.
+`SF-WASTE-002` is the opposite: low utilisation **with** high skew. They never
+fire together, and neither says how much you would save: that needs the cost of
+the run that did not happen.
+
+**The hypothesis loop — `case update`.** A hypothesis is a recommendation with a
+prediction: `--hypothesis`, `--prediction` and `--experiment` are required
+together, because a claim with no prediction is not testable and a prediction
+with no experiment does not say who tests it. `--close-hypothesis` with
+`--hypothesis-outcome` closes it as `confirmed`, `refuted` or `abandoned` — the
+third exists because the third thing that really happens is the experiment never
+running. Closing is **addition**: the original claim, prediction and experiment
+stay where they are, because rewriting the claim to match the result is the bias
+that writing it down exists to prevent. `resume` lists only open hypotheses, so
+a loop that never closes turns that section into an inventory of questions nobody
+can mark as answered.
+
+### Context accounting, and the provider this project never calls
+
+The engine measures what **it** puts in the context window. That framing is not
+modesty, it is a measurement: `sparkforge/` imports no `anthropic`, no `openai`,
+no `bedrock`, no `litellm` — there is a `providers/mock.py` and a hardcoded
+`estimated_cost_usd = 0.001` in the router, and nothing else. **This project
+never calls a model.** The tokens are spent by the host running these agents, so
+"instrument the model call" has no producer here. What the project controls is
+the bytes it hands over, and that is what it counts.
+
+**One span per tool call.** `call_tool` — the single dispatch the authorization
+chain already bites — records `payload_bytes` for every one of the four return
+paths, refusals included, because a refusal costs context too and an
+investigation full of them would otherwise look cheap. The number is
+`len(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))`, and the formula
+travels in the span as `payload_basis`. It is **not** "what the model saw": the
+host re-serializes with its own spacing, and claiming those are the same number
+would be this phase's comfortable lie.
+
+**Bytes always; tokens only with a source.** A tool response has bytes. Provider
+tokens belong to the host, and a local call has no price table, so
+`input_tokens` and `estimated_cost_usd` stay empty on a tool span — empty here
+means "does not apply", not "measured zero". Ask for tokens with no transcript
+and you get `tokens_unresolved`, never a `len // 4` wearing the name of a token.
+Cost in dollars requires `cost_basis` naming where the price came from.
+
+**Bytes and tokens never sum.** They are different units — one is what this
+project produced, the other what the host spent. The report puts them side by
+side and never in a common total.
+
+**Measurement never breaks the call.** Ledger unavailable, disk full, a span
+that fails to build: the tool returns its result unchanged. Instrumentation that
+takes the product down is a defect, not observability. Spans buffer in memory
+and flush once at process exit. Remeasured on this machine, because the
+first number published here (~0.05 ms) was never reproduced: writing per call
+costs **5.5 to 7.0 ms** (mean of 30, flat across payload size — it is the
+SQLite commit's fsync, not the payload), while a buffered `record()` costs
+**0.0067 ms on a 63-byte payload and 0.0204 ms on a 1,004-byte one** (median of
+five batches of 300 each). The buffered cost tracks payload size because
+`record()` serializes the result to count its bytes, so the speedup is **1,045×
+at the small end and 273× at the large one** — a range, not one number, and
+saying "about 100×" hid that. What it costs is spans lost on `SIGKILL`, which
+is written down rather than implied.
+
+**The surface lock is a lock, not a threshold.** No source publishes "20% growth
+is too much". `docs/surface.lock.json` holds today's measurement plus a hash of
+the composition, so growth is not forbidden — it is required to be **declared**.
+The hash catches the compensated swap the totals would miss: moving ten bytes
+from one `SKILL.md` to another leaves both totals identical and the hash
+different. It measures without executing anything, which is why it fits a CI
+that cannot currently run the full suite.
+
+**And one claim that finally has a number.** "`detail_level` reduces the payload"
+was published for a long time and never measured. `detail_level_effect` now
+reports the bytes per requested level, per tool — in one fixture, 1,599 bytes at
+`full` against 849 at `summary`. The report states both and concludes nothing;
+the reader concludes.
 
 ### Three states, never two
 

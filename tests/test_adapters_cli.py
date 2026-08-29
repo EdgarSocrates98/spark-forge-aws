@@ -2612,3 +2612,67 @@ class TestCaseHypothesisSurface:
         payload = json.loads(capsys.readouterr().out)
 
         assert payload["open_hypotheses"] == []
+
+
+class TestEconomyReportCommand:
+    """`economy report` e verbo de TOPO: compoe sobre o ledger, nao le artefato.
+
+    `_core.economy_report` chama `shared_ledger()` -- a MESMA fonte que
+    `adapters/tools.py:call_tool` alimenta -- por isso a fixture de sessao em
+    `tests/conftest.py` so precisa substituir um nome
+    (`context_ledger._SHARED_LEDGER`) para isolar esta chamada do
+    `.sparkforge/traces.db` real do repositorio."""
+
+    def test_an_unknown_run_refuses_by_name(self, capsys):
+        from sparkforge.adapters.cli import main
+
+        code = main(["economy", "report", "--run-id", "run_inexistente"])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_tool"] == {}
+        assert {"reason": "run_unresolved", "count": 1} in payload["unresolved"]
+
+    def test_the_surface_at_rest_comes_in_the_payload(self, capsys):
+        from sparkforge.adapters.cli import main
+
+        main(["economy", "report", "--run-id", "run_inexistente"])
+        payload = json.loads(capsys.readouterr().out)
+
+        assert payload["surface"]["tools"]["tool_count"] > 0
+
+    def test_by_tool_is_populated_in_the_same_process_without_an_explicit_flush(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """Critico achado ao ligar o verbo: `economy_report()` construia o
+        SEU PROPRIO `ContextLedger()`, independente do singleton que
+        `call_tool` alimentava -- e nada alem do `atexit` (que so roda quando
+        o processo MORRE) descarregava o buffer. Numa sessao MCP de vida
+        longa, isso deixava o relatorio vazio ate o processo terminar. Este
+        e o caso que estava quebrado: SEM `flush()` nenhum, no MESMO
+        processo, `call_tool` grava e `economy report` tem que enxergar."""
+        from sparkforge.adapters import tools
+        from sparkforge.adapters.cli import main
+        from sparkforge.observability import context_ledger
+
+        run_id = "run_mesmo_processo"
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id=run_id
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+
+        # nenhum flush aqui -- o span segue so no buffer em memoria.
+        code = main(["economy", "report", "--run-id", run_id])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_tool"] != {}
+        assert payload["by_tool"]["sparkforge_analyze_pyspark"]["calls"] == 1
+        assert not any(
+            item.get("reason") == "run_unresolved" for item in payload["unresolved"]
+        )

@@ -336,6 +336,17 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: measure what the run puts in the context window
+    tools: [sparkforge_economy_report]
+    cli: [economy report]
+    knowledge: []
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: derive what to measure on both sides of a change
     tools: [sparkforge_funcval_plan]
     cli: [funcval plan]
