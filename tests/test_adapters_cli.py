@@ -2612,3 +2612,25 @@ class TestCaseHypothesisSurface:
         payload = json.loads(capsys.readouterr().out)
 
         assert payload["open_hypotheses"] == []
+
+
+class TestEconomyReportCommand:
+    """`economy report` e verbo de TOPO: compoe sobre o ledger, nao le artefato."""
+
+    def test_an_unknown_run_refuses_by_name(self, capsys):
+        from sparkforge.adapters.cli import main
+
+        code = main(["economy", "report", "--run-id", "run_inexistente"])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_tool"] == {}
+        assert {"reason": "run_unresolved", "count": 1} in payload["unresolved"]
+
+    def test_the_surface_at_rest_comes_in_the_payload(self, capsys):
+        from sparkforge.adapters.cli import main
+
+        main(["economy", "report", "--run-id", "run_inexistente"])
+        payload = json.loads(capsys.readouterr().out)
+
+        assert payload["surface"]["tools"]["tool_count"] > 0

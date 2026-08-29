@@ -2340,6 +2340,34 @@ _TUNE_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+_ECONOMY_REPORT_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["run_id", "by_tool", "detail_level_effect", "surface", "unresolved"],
+    "properties": {
+        "run_id": {"type": "string"},
+        "by_tool": {
+            "type": "object",
+            "description": "Por tool: chamadas, bytes de payload e desfechos.",
+        },
+        "detail_level_effect": {
+            "type": "object",
+            "description": (
+                "Bytes por nivel pedido, por tool. O relatorio NAO afirma qual e "
+                "menor -- mostra os dois, e quem le conclui."
+            ),
+        },
+        "surface": {
+            "type": "object",
+            "description": "O catalogo em repouso: tools, skills e knowledge em bytes.",
+        },
+        "host_usage": {
+            "type": ["object", "null"],
+            "description": "Token do provider, quando houve transcript. `null` quando nao.",
+        },
+        "unresolved": {"type": "array", "items": {"type": "object"}},
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -3788,6 +3816,48 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_economy_report": {
+        "description": (
+            "O que a execucao poe na janela de contexto: bytes MEDIDOS por tool, o "
+            "efeito medido do `detail_level`, o peso do catalogo em repouso e -- "
+            "quando houver transcript do host -- o token de provider AO LADO, nunca "
+            "somado ao byte. Verbo de topo, nao um `analyze`: compoe sobre o ledger "
+            "que `call_tool` alimenta e nao le artefato nenhum. "
+            "O QUE ELE RECUSA: (1) custo em dolar -- chamada de tool local nao tem "
+            "tabela de preco publicada; (2) estimativa de token por divisao de bytes "
+            "-- `len//4` e heuristica interna e nao pode sair com o nome de token, "
+            "entao sem transcript sai `tokens_unresolved`; (3) somar byte com token, "
+            "que sao unidades diferentes. `payload_bytes` e a serializacao canonica "
+            "da resposta do despacho, e NAO 'o que o modelo viu': o host reserializa "
+            "com espacamento proprio."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["run_id"],
+            "properties": {
+                "run_id": {
+                    "type": "string",
+                    "description": (
+                        "O run cujos spans agregar. Sem spans correlacionados sai "
+                        "`run_unresolved` -- agregar spans de outra investigacao "
+                        "seria pior que numero nenhum."
+                    ),
+                },
+                "host_transcript": {
+                    "type": "string",
+                    "description": (
+                        "Caminho do transcript JSONL do host, quando houver. E a "
+                        "unica fonte de token de provider que existe aqui."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ECONOMY_REPORT_SUCCESS_SCHEMA,
+            "Relatorio de contexto, ou erro se o ledger nao puder ser lido.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_funcval_plan": {
         "description": (
             "Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA "
@@ -4996,6 +5066,12 @@ def _h_tune(args: dict[str, Any]) -> dict[str, Any]:
     return _core.tune_conf(args["facts_path"])
 
 
+def _h_economy_report(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.economy_report(
+        args["run_id"], host_transcript=args.get("host_transcript", "")
+    )
+
+
 def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
     return _core.funcval_plan(
         args.get("facts_paths"),
@@ -5197,6 +5273,7 @@ _HANDLERS = {
     "sparkforge_capacity": _h_capacity,
     "sparkforge_finops": _h_finops,
     "sparkforge_tune": _h_tune,
+    "sparkforge_economy_report": _h_economy_report,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,

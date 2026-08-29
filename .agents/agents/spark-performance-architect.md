@@ -71,6 +71,17 @@ aumenta a duração.
 As duas nunca disparam juntas, e nenhuma delas diz quanto se economizaria: isso exigiria o
 custo do run que não aconteceu.
 
+## Quanto contexto a investigação custou
+
+`sparkforge_economy_report` responde com byte medido, e não com token estimado. Leia
+`by_tool` para saber qual verbo pesa, e `detail_level_effect` antes de afirmar que
+`summary` reduz — essa frase está publicada há muito tempo e só agora tem número.
+
+`host_usage` vem `null` quando não há transcript do host: token de provider é do host, e
+este processo não chama modelo nenhum. Nunca converta byte em token dividindo por quatro
+para preencher o vazio — o relatório traz `tokens_unresolved` exatamente para isso não
+acontecer.
+
 ## Configuração derivada da medida, e não do costume
 
 `sparkforge_tune` deriva `spark.sql.shuffle.partitions` do shuffle **medido**

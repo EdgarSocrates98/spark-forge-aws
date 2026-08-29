@@ -66,6 +66,7 @@ class TestToolSurface:
             "sparkforge_capacity",
             "sparkforge_finops",
             "sparkforge_tune",
+            "sparkforge_economy_report",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
@@ -1659,6 +1660,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         facts_path = _write_tune_facts_file(tmp_path)
         result = call_tool("sparkforge_tune", {"facts_path": str(facts_path)})
         assert result["properties"], "a amostra precisa render ao menos uma proposta"
+        return result
+
+    if name == "sparkforge_economy_report":
+        result = call_tool("sparkforge_economy_report", {"run_id": "run_inexistente"})
+        assert result["unresolved"], "a amostra precisa render ao menos uma lacuna"
         return result
 
     if name == "sparkforge_glue_dependency_audit":

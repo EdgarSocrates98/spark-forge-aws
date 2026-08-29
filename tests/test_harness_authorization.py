@@ -814,8 +814,10 @@ class TestConfinamentoEhUmSoAlgoritmo:
 class TestOCatalogoContinuaCabendoNaVerificacao:
     """O gate que impede a medicao do Passo 1 de envelhecer em silencio.
 
-    Medido: 56 das 57 tools declaram parametro de caminho, e a unica sem
-    nenhum e `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`).
+    Medido: 57 das 59 tools declaram parametro de caminho, e as duas sem
+    nenhum sao `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`)
+    e `sparkforge_economy_report` (`run_id`, `host_transcript`) -- nenhum dos
+    dois nomeia arquivo, diretorio ou repo, entao nenhum casa com o predicado.
     Eram 43 de 44 ate a superficie de Code Intelligence entrar: as SEIS tools
     de `sparkforge_code_*` declaram `repo`, que e a raiz fora da qual nada e
     lido (INV-002), entao todas as seis caem do lado certo do predicado.
@@ -831,9 +833,9 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     por decisao de alguem, nao por default silencioso.
     """
 
-    SEM_CAMINHO = frozenset({"sparkforge_rules_lookup"})
+    SEM_CAMINHO = frozenset({"sparkforge_rules_lookup", "sparkforge_economy_report"})
 
-    def test_toda_tool_menos_uma_declara_caminho(self):
+    def test_toda_tool_menos_duas_declara_caminho(self):
         from sparkforge.agents.autonomy import _e_chave_de_caminho
 
         sem_caminho = {

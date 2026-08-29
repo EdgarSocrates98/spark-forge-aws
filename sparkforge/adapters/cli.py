@@ -607,6 +607,28 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
     )
 
+    # economy ------------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `capacity`, `finops` e `tune`: compoe
+    # sobre o ledger e nao le artefato nenhum.
+    economy_p = sub.add_parser(
+        "economy",
+        help="O que a execucao poe na janela de contexto: byte medido, nunca token estimado.",
+    )
+    economy_sub = economy_p.add_subparsers(dest="subcommand", required=True)
+    economy_report_p = economy_sub.add_parser(
+        "report", help="Agrupa os spans de um run e poe a superficie ao lado."
+    )
+    economy_report_p.add_argument("--run-id", required=True)
+    economy_report_p.add_argument(
+        "--host-transcript",
+        default="",
+        help=(
+            "Transcript JSONL do host, quando houver. Sem ele o relatorio traz "
+            "`tokens_unresolved` -- token de provider e do host, nao deste processo."
+        ),
+    )
+    economy_report_p.add_argument("--out", help="Escreve o relatorio (JSON) neste arquivo.")
+
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
     # `plan` deriva de facts ja extraidos, `compare` le o resultado que o
@@ -1761,6 +1783,16 @@ def _cmd_tune(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_economy_report(args: argparse.Namespace) -> int:
+    payload = _core.economy_report(args.run_id, host_transcript=args.host_transcript)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_funcval_plan(args: argparse.Namespace) -> int:
     """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
 
@@ -2197,6 +2229,7 @@ _DISPATCH = {
     ("capacity", None): _cmd_capacity,
     ("finops", None): _cmd_finops,
     ("tune", None): _cmd_tune,
+    ("economy", "report"): _cmd_economy_report,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,
@@ -2253,6 +2286,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "migrate_action", None)
         or getattr(args, "glue_action", None)
         or getattr(args, "iceberg_action", None)
+        or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))
     if handler is None:
