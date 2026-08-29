@@ -1,0 +1,136 @@
+# Catálogo de regras — timeout, e a diferença entre os quatro mecanismos que o
+# operador chama pelo mesmo nome. A classificação é fact
+# (`sparkforge/facts/timeout_diagnosis.py`); aqui mora o julgamento, que é
+# outro assunto: o que fazer, e o que NÃO fazer, diante da categoria.
+#
+# O que estas regras afirmam: que há sintoma medido ao lado do timeout
+# (SF-TIMEOUT-001), e que a relação entre duas propriedades de configuração
+# está invertida (SF-TIMEOUT-002).
+#
+# O que elas NÃO afirmam: qual valor de timeout usar. Derivar valor de
+# configuração é o critério 17 do documento de origem, e entra com a
+# procedência por propriedade que o §36 pede — ou não entra.
+catalog_version: 1
+schema_version: 1
+area: SF-TIMEOUT
+retrieved: 2026-08-29
+rules:
+  - id: SF-TIMEOUT-001
+    category: timeout
+    title: Timeout com sintoma medido ao lado — aumentar o limite mascara a causa
+    requires_facts:
+      - spark.timeout.diagnosis
+    when:
+      any:
+        - fact: spark.timeout.diagnosis
+          expr: measures.skew_p95_over_p50 >= threshold.skew_ratio
+        - fact: spark.timeout.diagnosis
+          expr: measures.spill_over_input >= threshold.spill_ratio
+        - fact: spark.timeout.diagnosis
+          expr: measures.gc_ratio >= threshold.gc_ratio
+        - fact: spark.timeout.diagnosis
+          expr: measures.executor_lost_count >= threshold.executor_lost_min
+    threshold:
+      skew_ratio: 3.0
+      spill_ratio: 0.1
+      gc_ratio: 0.1
+      executor_lost_min: 1
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O run bateu num timeout e há sintoma medido ao lado: skew de duração de
+      task, spill sobre o input lido, tempo de GC sobre tempo de task, ou
+      executor removido. Aumentar o limite faz o run durar mais e falhar
+      depois, pelo mesmo motivo, com a conta maior.
+
+
+      Esta regra NÃO diz que o limite atual está certo. Ela diz que a evidência
+      ao lado aponta para outra causa, e que a ordem de investigação começa por
+      ela. Sem sintoma nenhum, a regra não dispara — e aí subir o timeout pode
+      ser exatamente a decisão certa, quando o runtime esperado é legítimo e o
+      SLA permite.
+
+
+      A categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e
+      muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC
+      ou partição grande demais; `broadcast` aponta para um lado grande demais
+      para broadcast; `wall_clock` é o relógio do Glue, que é consequência e não
+      causa.
+    proposed_change:
+      - Ler `attrs.category` e `attrs.also_seen` antes de qualquer mudança de configuração — a categoria decide qual investigação vale.
+      - Investigar o sintoma medido que disparou esta regra, na ordem em que as measures aparecem no fact.
+      - Só depois de descartar os sintomas, avaliar se o limite é pequeno para o trabalho legítimo do job.
+    risks:
+      - Subir o timeout com skew ou spill presente troca uma falha rápida por uma falha cara — o run consome recurso por mais tempo e termina no mesmo lugar.
+      - Reduzir o timeout para "falhar rápido" pode matar run legítimo em dia de volume maior.
+    tradeoffs:
+      - Investigar a causa custa tempo de análise; subir o limite custa dinheiro por run, todo run, até alguém revisitar.
+    validation:
+      - Nova razão p95/p50 de duração de task nos stages do job, depois da mudança.
+      - Spill sobre input lido, no mesmo stage que disparou.
+      - Contagem de executores removidos no run seguinte.
+      - Duração p50 e p95 do run, contra o histórico de `glue.job_run.distribution`.
+    rollback:
+      - Reverter a mudança de configuração. Nenhuma das ações propostas altera dado, então não há escrita a desfazer.
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html
+        retrieved: 2026-08-29
+        note: >
+          `Timeout` do JobRun é o tempo máximo que a execução pode consumir
+          recursos antes de entrar em `TIMEOUT` — relógio de parede, e não causa.
+      - origin: field-heuristic
+        note: >
+          Os limiares 3.0 (skew), 0.1 (spill sobre input) e 0.1 (GC sobre tempo
+          de task) são heurística de campo, na mesma faixa que `SF-UI-001` já
+          usa para skew. O limiar de executor removido é 1 porque a ocorrência
+          é o sinal: um executor perdido já muda a ordem de investigação.
+
+  - id: SF-TIMEOUT-002
+    category: timeout
+    title: heartbeatInterval maior ou igual a network.timeout quebra a detecção de executor morto
+    requires_facts:
+      - spark.timeout.relation
+    when:
+      all:
+        - fact: spark.timeout.relation
+          expr: measures.heartbeat_s >= measures.network_timeout_s
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      O Spark documenta que `spark.executor.heartbeatInterval` deve ser
+      significativamente menor que `spark.network.timeout`: o heartbeat é o
+      pulso que o executor manda, e o network timeout é quanto o driver espera
+      antes de considerá-lo morto. Com o intervalo maior ou igual à espera, o
+      driver desiste antes do próximo pulso chegar, e passa a declarar morto
+      executor vivo.
+
+
+      A regra confere a RELAÇÃO, e não o valor: `spark.network.timeout = 120s`
+      não é certo nem errado sozinho. Ela só existe quando as duas chaves foram
+      observadas em `spark.conf_effective` do mesmo run — sem as duas, o fact
+      `spark.timeout.relation` não é emitido, e sai
+      `spark.timeout.unresolved.conf_not_observed` no lugar.
+    proposed_change:
+      - Restaurar a folga entre as duas — o heartbeat precisa caber várias vezes dentro da espera do driver.
+      - Se a intenção era tolerar rede lenta, mexer em `spark.network.timeout`, e não no intervalo de heartbeat.
+      - Conferir se alguma das duas veio de configuração de cluster ou de `--conf` sem quem a explique — as duas são propriedades que raramente precisam sair do default.
+    risks:
+      - Executor vivo declarado morto faz o Spark recomputar trabalho já feito, e o run fica mais lento e mais caro sem erro visível.
+      - Aumentar `network.timeout` sem olhar a causa mascara pressão de memória e GC, que é o que a `SF-TIMEOUT-001` recusa.
+    tradeoffs:
+      - Heartbeat mais frequente custa um pouco de tráfego de controle; detecção tardia de executor morto custa recomputação.
+    validation:
+      - Os dois valores efetivos no run seguinte, lidos de `spark.conf_effective`.
+      - Contagem de `spark.executor.lost` com razão de heartbeat, antes e depois.
+      - Duração p50 e p95 do run, contra o histórico.
+    rollback:
+      - Reverter a configuração. Nenhuma escrita de dado é envolvida.
+    sources:
+      - url: https://spark.apache.org/docs/latest/configuration.html
+        retrieved: 2026-08-29
+        note: >
+          A documentação do Spark declara que `spark.executor.heartbeatInterval`
+          deve ser significativamente menor que `spark.network.timeout`, e
+          documenta os defaults das duas.

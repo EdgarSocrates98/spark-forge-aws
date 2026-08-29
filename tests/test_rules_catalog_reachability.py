@@ -48,6 +48,7 @@ from sparkforge.facts import (
     sql_literal,
     sql_metrics,
     terraform,
+    timeout_diagnosis,
     workload,
 )
 from sparkforge.rules.loader import catalog_dir, load_catalog
@@ -114,6 +115,12 @@ EXTRACTORS = (
     sql_literal,
     sql_metrics,
     terraform,
+    # `timeout_diagnosis` entra nas DUAS listas no mesmo commit da Task 4 do
+    # plano `timeout-intelligence.md`: sem ele aqui, os tres kinds
+    # `spark.timeout.*` contam como orfaos, e `SF-TIMEOUT-001` e
+    # `SF-TIMEOUT-002` seriam forcadas a `blocked_on` sobre um extrator que ja
+    # esta no repositorio.
+    timeout_diagnosis,
     # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*`
     # (`workload.declared`, `workload.unresolved`, `workload.declared_analyzed`)
