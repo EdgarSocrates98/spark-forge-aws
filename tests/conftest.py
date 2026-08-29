@@ -87,3 +87,48 @@ def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
         "codigo construiu ContextLedger() por fora de shared_ledger() e de "
         "qualquer db_path isolado de teste."
     )
+
+
+@pytest.fixture(autouse=True)
+def _nenhum_teste_aperta_o_rlimit_do_pytest(request):
+    """Nenhum teste pode deixar um `setrlimit` aplicado no processo do pytest.
+
+    O DEFEITO QUE ISTO IMPEDE, MEDIDO. `sparkforge.codeintel.security.
+    apply_resource_limits()` aperta `RLIMIT_AS` e `RLIMIT_CPU` do processo
+    CORRENTE, e `TETO_CPU_SEGUNDOS` e 300. Um teste que a chamasse em processo
+    dava 300 s de CPU para a suite INTEIRA terminar: o `pytest` morria com
+    SIGXCPU -- `exit 152`, "CPU time limit exceeded (core dumped)" -- por volta
+    dos 45%, e o log nao dizia qual teste tinha apertado o limite. O CI ficou
+    vermelho por isso, e a leitura obvia ("o runner nao aguenta a suite")
+    estava errada: nao era limite do runner, era limite que a propria suite se
+    impunha. No Windows nunca aparecia, porque `import resource` levanta
+    `ModuleNotFoundError` e a funcao volta antes de aplicar rlimit nenhum.
+
+    ESCOPO DE FUNCAO DE PROPOSITO. Um guarda de sessao diria que a suite
+    vazou, e nao QUEM vazou. Este falha no teste que apertou, com o nome dele
+    na mensagem. Custa dois `getrlimit` por teste.
+
+    NAO RESTAURA. Restaurar aqui esconderia o vazamento em vez de acusa-lo --
+    quem aperta e quem devolve, e o teste que precisa apertar faz isso no
+    proprio try/finally.
+    """
+    try:
+        import resource
+    except ImportError:
+        yield  # Windows: nao existe rlimit a apertar, nada a vigiar.
+        return
+
+    recursos = ("RLIMIT_AS", "RLIMIT_CPU")
+    antes = {n: resource.getrlimit(getattr(resource, n)) for n in recursos}
+
+    yield
+
+    depois = {n: resource.getrlimit(getattr(resource, n)) for n in recursos}
+    mudados = {n: (antes[n], depois[n]) for n in recursos if antes[n] != depois[n]}
+    assert not mudados, (
+        f"{request.node.nodeid} deixou rlimit apertado no processo do pytest: "
+        f"{mudados}. Um RLIMIT_CPU aqui mata a suite inteira com SIGXCPU mais "
+        "adiante, num teste que nao tem nada a ver com o vazamento. Aperte "
+        "dentro de um try/finally que devolva o limite herdado, ou num "
+        "subprocesso."
+    )
