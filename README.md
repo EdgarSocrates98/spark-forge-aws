@@ -164,7 +164,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 24 extratores emitem 150 kinds distintos de fact, e todos são offline: leem
+Os 25 extratores emitem 152 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -195,6 +195,7 @@ tool MCP de mesmo nome.
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
 | Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
 | Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
+| Custo por run, e capacidade contra código | `finops` | `glue.job_run`/`glue.run_cost` de `analyze glue-job-runs`, `workload.declared` para o SLA, e os sintomas de `analyze event-log`/`analyze sql-metrics` quando a alavanca é código |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
@@ -264,7 +265,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 150 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 152 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

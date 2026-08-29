@@ -45,8 +45,8 @@ arquivo ganha.
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
-| Extratores de facts | **24** | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 31 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator. `workload.py` (fase WorkloadFingerprint) é o vigésimo quarto |
-| Fact kinds distintos emitidos | **150** | união de `EMITTED_KINDS`; esta linha estava desatualizada desde a fase WorkloadFingerprint (quatro kinds novos, não refletidos aqui) — os dois kinds novos desta fase, do grafo de joins, ver a seção própria abaixo |
+| Extratores de facts | **25** — corrigido ao fechar o subprojeto E, `run_cost.py` é o vigésimo quinto | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 32 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
+| Fact kinds distintos emitidos | **152** — corrigido ao fechar o subprojeto E; os dois novos são `glue.run_cost` e `glue.run_cost.unresolved` | união de `EMITTED_KINDS` sobre os 25 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (sem overlap entre módulos) |
 | Regras de diagnóstico | **130**, sendo **58 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
@@ -4265,6 +4265,151 @@ Nenhuma regra nova além da `SF-GLUE-007`. O eixo de "quando Auto Scaling
 compensa" continua sendo julgamento de quem opera, e o subprojeto D é quem
 passou a responder a pergunta vizinha — qual capacidade cabe no SLA — com
 evidência em vez de regra.
+
+## FinOps — custo por run, a fronteira recurso-tempo, e a alavanca (2026-08-28)
+
+Documentos: [spec](specs/2026-08-28-finops-run-cost-design.md) ·
+[plan](plans/2026-08-28-finops-run-cost.md).
+
+O subprojeto E do roadmap e o verbo que reúne tudo o que é financeiro num só
+lugar, respondendo a pergunta que o operador realmente faz: vale mais pagar
+mais recurso por menos tempo, ou menos recurso por mais tempo? Fecha o
+roadmap de cinco subprojetos — ver a seção abaixo.
+
+**`glue.run_cost`** (`sparkforge/facts/run_cost.py`) é o fact de custo por
+run, no precedente do DPU derivado que o subprojeto B estabeleceu para
+`glue.job_run`: não há limiar e não há juízo, é aritmética sobre um número
+medido (`dpu_seconds`, já em `glue.job_run`) e uma constante com fonte
+(`facts/pricing.py`, que continua recusando combinar preço com o anúncio de
+redução do Glue 6.0). A fórmula é a que a própria página de preço da AWS
+publica, e o teste cita a conta: `6 DPU * 0.25 hora * $0,44 = $0,66`
+(`tests/test_facts_run_cost.py::test_the_formula_is_the_one_aws_publishes`).
+Sem `dpu_seconds` — Auto Scaling sem `DPUSeconds`, onde `number_of_workers` é
+teto e não uso — o run sai como `glue.run_cost.unresolved`, nunca custo zero.
+
+**As duas ressalvas viajam dentro do fact.** `region` e `runtime_version`
+saem `UNQUALIFIED` (valor de primeira classe em `pricing.py`, não ausência)
+porque a fonte foi lida e não qualificou nenhum dos dois eixos. Deixá-las só
+no relatório seria perdê-las no primeiro salto: o fact vai para `--out`, para
+a tool MCP, para o contexto de um agente — `sparkforge/finops/report.py` as
+lê de volta do fact, nunca as recalcula.
+
+Verbo de topo `sparkforge finops` (`--facts`, `--job-name`, `--out`) e tool
+MCP `sparkforge_finops`, pela mesma razão de `benchmark`, `fuse`, `workload`
+e `capacity`: não extrai de artefato, reúne o que outros verbos já
+extraíram. `fixtures/finops/` traz **nove** cenários
+(`cheap_but_misses_sla`, `cost_from_derived_dpu`, `cost_from_observed_dpu`,
+`cost_is_in_the_code`, `more_resource_costs_less`, `more_resource_costs_more`,
+`no_cloudwatch`, `no_dpu_no_cost`, `no_lever_found`), com módulo golden
+próprio (`tests/test_fixtures_golden_finops.py`). **75 testes** novos,
+medidos por coleta (`pytest --collect-only`): `tests/test_facts_run_cost.py`
+(9), `tests/test_finops_report.py` (14), `tests/test_fixtures_golden_finops.py`
+(50), a classe `TestFinopsCommand` de `tests/test_adapters_cli.py` (1) e a
+classe `TestFinopsTool` de `tests/test_adapters_tools.py` (1). Nenhuma regra
+nova: `manifest.json` e `parity.yaml` ganharam o verbo e a tool, não o
+catálogo.
+
+Faixa de commits: `f2367e8` … `e8a0fc4`.
+
+### Quatro decisões
+
+**A fronteira custo-versus-tempo não interpola.** DPU-segundos não é
+invariante na troca entre mais recurso e mais tempo — dobrar workers
+raramente divide o tempo por dois, e às vezes divide por mais —, então
+`_frontier` em `report.py` compara as capacidades **observadas** lado a
+lado (custo por run no p95, tempo no p50/p95) e nunca desenha uma curva
+entre elas: interpolar mentiria exatamente entre os pontos, que é onde
+alguém olharia.
+
+**Curto e longo prazo são perguntas diferentes.** `_per_sla_outcome` divide o
+custo total pelos runs que **serviram** — ficaram dentro do
+`sla_minutes`/`reliability_target` declarados em `workload.yaml` —, e o run
+que estourou entra no numerador porque ele custou sem entregar. Sem SLA
+declarado o bloco recusa nomeado (`sla_not_declared`), nunca zero
+silencioso; com poucos runs comparáveis, recusa por resolução
+(`resolution_too_coarse`, o mesmo predicado `resolution_supports` que o
+subprojeto D deixou público).
+
+**A alavanca separa capacidade de código, e nunca atribui quanto.**
+`_levers` agrupa os achados do `judge` cujo `rule_id` cai nas oito áreas de
+código (`SF-PY`, `SF-PQ`, `SF-PLAN`, `SF-UI`, `SF-SQL`, `SF-CG`, `SF-GRAPH`,
+`SF-DQ`) — nenhum destes muda trocando worker, e um job que varre dez vezes o
+que precisa é caro em qualquer capacidade. Sem achado de código, aponta para
+`sparkforge capacity`. Não há campo de economia estimada em lugar nenhum do
+relatório: atribuir custo a um achado exigiria o custo do run que não
+aconteceu.
+
+**Sintomas ficam ao lado do custo, nunca subtraídos dele.** `_symptoms` lê
+skew (`p95/p50` de `spark.stage.task_duration`), spill sobre input, bytes
+lidos e utilização de worker do CloudWatch — nomeados, sem tentar decompor o
+custo entre eles.
+
+### Um conserto que a construção forçou
+
+**A medida de snippet do harness não sabia chamar `run_cost`.** O gate é
+fail-closed de propósito: módulo com `EMITTED_KINDS` que a medida não sabe
+invocar não pode entrar na conta como "sem snippet" por omissão.
+`run_cost.py` deriva fact a partir de fact (`glue.job_run`), não de caminho
+de artefato, e por isso pertence a `_derivados_de_facts` em
+`tests/test_harness_untrusted.py`, onde a chamada de cada módulo fica
+escrita uma a uma — adivinhar a forma mediria o que a adivinhação acertou,
+não o módulo.
+
+### O que este verbo recusa, e por quê
+
+**Atribuir custo a causa.** "Você desperdiçou X com spill" exige o custo do
+run que **não** aconteceu — contrafactual que fonte nenhuma mede.
+
+**Interpolar entre capacidades observadas.** Ver a primeira decisão acima.
+
+**Ordenar achado por economia estimada.** Cada número desses é o mesmo
+contrafactual disfarçado de prioridade — a ordem que `_levers` preserva é a
+que o `judge` devolveu.
+
+**Limiar de "caro".** Fonte nenhuma diz que 2,32 USD por run é muito; o
+relatório nomeia o número e o compara contra outras capacidades observadas,
+nunca contra um corte.
+
+### O que ficou de fora
+
+**Custo de EMR, Athena e S3.** Exige outra fonte de preço e outro coletor;
+`glue.run_cost` cobre só o que `glue.job_run` mede.
+
+**Preço por região ou por versão de runtime.** `facts/pricing.py` não
+publica nenhum dos dois eixos — é exatamente por isso que os dois saem
+`UNQUALIFIED` em vez de um valor inventado.
+
+**Os sete módulos do §22 do documento de origem.** Metade já existe em outro
+lugar: `optimizer.py` é o subprojeto D em `sparkforge/capacity/`,
+`pricing.py` já é `sparkforge/facts/pricing.py`, e `dpu.py` é o
+`dpu_seconds` que o subprojeto B emite em `glue.job_run`. Reproduzir a
+árvore do documento de origem criaria módulos vazios com nome de promessa.
+
+## Roadmap fechado — os cinco subprojetos, A a E (2026-08-28)
+
+`prompt_tunning_foco_spark.md` propunha cinco frentes. As sete entregas que
+as cobrem — A, B, C1, C2, C3, D e E — estão todas commitadas nesta branch.
+Nenhuma ficou pela metade: cada uma declarou por escrito o que recusou fazer,
+e a recusa é tão parte da entrega quanto o código.
+
+| Subprojeto | O que entregou | Onde ler |
+|---|---|---|
+| **A** — a regra que acusava a configuração certa | `SF-GLUE-001` aposentada (nunca reaproveita o id), `SF-GLUE-007` no conflito real, quatro skills corrigidas | seção *Subprojeto A* acima |
+| **B** — histórico de runs Glue | Dois extratores (`cloudwatch.py`, `glue_job_run.py`), oito kinds, coleta incremental por hash, retenção fail-closed | seção *Histórico de runs Glue* |
+| **C1** — métricas de scan por nó do plano | O dado que já estava no event log, correlacionado por nó | seção *Métricas de scan por nó do plano* |
+| **C2** — `WorkloadFingerprint` | Perfil por eixos declarados/medidos, não por volume de entrada | seção *WorkloadFingerprint* |
+| **C3** — grafo de joins | Qual fonte entra em qual join, de que lado e a que distância | seção *Grafo de joins* |
+| **D** — capacity optimizer | A capacidade mais barata que cumpre o SLA, só entre as que rodaram — nunca extrapolada | seção *Capacity optimizer* |
+| **E** — FinOps, custo por run | `glue.run_cost`, a fronteira custo-versus-tempo, e a alavanca capacidade-ou-código | esta seção |
+
+**O que as sete recusam em comum, e por quê.** Nenhuma extrapola para uma
+capacidade nunca observada (exigiria uma lei de escala que fonte nenhuma
+publica). Nenhuma atribui custo ou ganho a uma causa isolada (exigiria o
+contrafactual do que não aconteceu). Nenhuma ordena achado por economia
+estimada. Nenhuma inventa limiar onde a fonte é muda. A disciplina é a mesma
+em todas as sete porque é a mesma pergunta de fundo — decisão sobre dinheiro
+e capacidade só entra com evidência que se sustenta sozinha, nunca com um
+número que parece evidência e é estimativa.
 
 ## Dívidas abertas
 
