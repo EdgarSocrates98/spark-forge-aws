@@ -1,5 +1,6 @@
 import json
 import shutil
+import tempfile
 import types
 from pathlib import Path
 
@@ -698,9 +699,19 @@ class TestValidacaoDaProva:
         # `ROOT / valor` descarta ROOT quando `valor` ja e absoluto -- sem
         # esta checagem um path absoluto validaria com zero erros, mesmo
         # apontando para fora do repositorio inteiro.
+        #
+        # O ABSOLUTO PRECISA SER ABSOLUTO NESTA PLATAFORMA. Antes daqui este
+        # teste fixava `"C:/Windows/System32/drivers/etc/hosts"`, que so e
+        # absoluto no Windows: no Linux `PurePosixPath` o le como RELATIVO,
+        # `ROOT / valor` devolve um caminho DENTRO do repositorio, o gate nao
+        # tem o que recusar, e a asercao cai sem que nada no gate esteja
+        # errado. O diretorio temporario do sistema e absoluto nos dois
+        # sistemas operacionais e fica fora do repositorio nos dois.
+        fora = Path(tempfile.gettempdir()).resolve() / "fora-do-repo.txt"
+        assert fora.is_absolute()
         prova = {
             "kind": "artifact",
-            "path": "C:/Windows/System32/drivers/etc/hosts",
+            "path": fora.as_posix(),
             "test": "tests/test_vnext_claims.py",
         }
         erros = gate.validate_manifest(

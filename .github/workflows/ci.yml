@@ -21,6 +21,18 @@ jobs:
         python-version: ["3.10", "3.11"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # HISTORICO INTEIRO, e nao o clone raso do default.
+          #
+          # `actions/checkout` traz `fetch-depth: 1` por padrao: so o commit
+          # sendo testado. As provas `historical` do manifesto de lastro citam
+          # commits ANTIGOS -- `docs/harness/BASELINE.md` cita `6a76b7a` -- e
+          # `check_vnext_claims.py` as confere com `git cat-file -t`. Num clone
+          # raso esse commit nao existe, e o gate recusa por
+          # "proof.commit nao existe neste repositorio": um falso vermelho
+          # sobre uma alegacao que esta certa. Este job e o unico que precisa
+          # do historico; `wheel` e `audit` seguem rasos.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}

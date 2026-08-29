@@ -21,6 +21,7 @@ O QUE ESTE MODULO RECUSA:
 """
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from typing import Any
 
@@ -220,7 +221,16 @@ def _per_sla_outcome(
                 }
             )
             continue
-        custo_total = sum(
+        # `math.fsum`, e nao `sum`: a soma ingenua de float depende da ORDEM
+        # das parcelas e da VERSAO do interpretador. CPython 3.12 passou a
+        # compensar a soma de float em `sum()` (Neumaier); 3.10 e 3.11 nao.
+        # Medido nestes mesmos custos: a soma ingenua da 11.880000000000006 ou
+        # 11.880000000000003 conforme a ordem, e `sum()` do 3.12+ da 11.88 --
+        # que dividido por 6 e a diferenca entre `1.980000000000001` e
+        # `1.9800000000000002`. Foi assim que um golden gravado no 3.14 passou
+        # a reprovar no CI, que roda 3.10 e 3.11. `fsum` e exatamente
+        # arredondada: um valor so, em qualquer ordem e em qualquer versao.
+        custo_total = math.fsum(
             custo_por_run[str(m.subject.get("job_run_id"))] for m in com_custo
         )
         linhas.append(

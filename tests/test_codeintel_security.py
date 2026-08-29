@@ -558,21 +558,58 @@ def _limites_com_resource_falso(tmp_path, modo, **estado):
     )
 
 
+def _rlimits_correntes() -> dict[str, tuple[int, int]]:
+    """`(soft, hard)` de `RLIMIT_AS` e `RLIMIT_CPU`, ou vazio sem `resource`."""
+    try:
+        import resource
+    except ImportError:
+        return {}
+    return {
+        nome: resource.getrlimit(getattr(resource, nome))
+        for nome in ("RLIMIT_AS", "RLIMIT_CPU")
+    }
+
+
+def _restaurar_rlimits(herdados: dict[str, tuple[int, int]]) -> None:
+    """Devolve o que `apply_resource_limits` apertou no processo do pytest."""
+    if not herdados:
+        return
+    import resource
+
+    for nome, (soft, hard) in herdados.items():
+        resource.setrlimit(getattr(resource, nome), (soft, hard))
+
+
 class TestApplyResourceLimits:
     def test_recursao_e_o_unico_limite_que_vale_em_toda_plataforma(self):
         """`sys.setrecursionlimit` e do interpretador, nao do sistema operacional.
 
-        Chamado EM PROCESSO de proposito, e seguro porque a funcao usa
-        `min(pedido, teto, corrente)`: ela nunca sobe o limite, e como o default
-        do CPython e 1000 e o teto deste modulo tambem, o valor efetivo nao se
-        move. O teste le de volta em vez de confiar nisso.
+        Chamado EM PROCESSO de proposito, e seguro para a RECURSAO porque a
+        funcao usa `min(pedido, teto, corrente)`: ela nunca sobe o limite, e
+        como o default do CPython e 1000 e o teto deste modulo tambem, o valor
+        efetivo nao se move. O teste le de volta em vez de confiar nisso.
+
+        MAS A RECURSAO NAO E A UNICA COISA QUE ESTA CHAMADA APERTA. No POSIX a
+        mesma funcao aplica `RLIMIT_AS` e `RLIMIT_CPU` AO PROCESSO CORRENTE --
+        que aqui e o proprio pytest. Com `TETO_CPU_SEGUNDOS = 300`, a suite
+        inteira passava a ter 300 s de CPU para terminar, e morria com SIGXCPU
+        (`exit 152`, "CPU time limit exceeded") por volta dos 45%. No Windows
+        isso nunca aparecia: `import resource` levanta `ModuleNotFoundError` e
+        a funcao volta antes de aplicar qualquer rlimit -- por isso o defeito
+        so existia no CI. Por isso o try/finally: o limite herdado e devolvido
+        antes de sair. Devolver e permitido porque a funcao preserva o limite
+        HARD e so aperta o SOFT.
         """
         antes = sys.getrecursionlimit()
-        limites = security.apply_resource_limits()
-        nomes = {nome for nome, _, _ in limites.aplicados}
-        assert "RECURSAO" in nomes
-        assert sys.getrecursionlimit() <= antes
-        assert sys.getrecursionlimit() <= security.TETO_RECURSAO
+        herdados = _rlimits_correntes()
+        try:
+            limites = security.apply_resource_limits()
+            nomes = {nome for nome, _, _ in limites.aplicados}
+            assert "RECURSAO" in nomes
+            assert sys.getrecursionlimit() <= antes
+            assert sys.getrecursionlimit() <= security.TETO_RECURSAO
+        finally:
+            _restaurar_rlimits(herdados)
 
     @pytest.mark.skipif(E_POSIX, reason="mede a ausencia de `resource`, que so ocorre no Windows")
     def test_no_windows_a_funcao_diz_que_nao_da_e_nomeia_a_plataforma(self):

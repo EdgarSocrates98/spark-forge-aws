@@ -2927,7 +2927,7 @@
       "type": "number"
     },
     {
-      "context": "| `iter_source_files` | 1 | 466 | 574109 | 8368 | 102 |",
+      "context": "| `iter_source_files` | 1 | 466 | 574180 | 8476 | 102 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-644",
       "line": 213,
@@ -2937,13 +2937,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 8368
+          "value": 8476
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "8368",
+      "text": "8476",
       "type": "number"
     },
     {
@@ -3407,7 +3407,7 @@
       "type": "number"
     },
     {
-      "context": "a saída do `grep` pelo nome, **19290**; a saída do `grep` pela definição, **419**.",
+      "context": "a saída do `grep` pelo nome, **19398**; a saída do `grep` pela definição, **419**.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-667",
       "line": 220,
@@ -3417,13 +3417,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 19290
+          "value": 19398
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "19290",
+      "text": "19398",
       "type": "number"
     },
     {
@@ -3486,7 +3486,7 @@
       "type": "number"
     },
     {
-      "context": "pelo nome, **8.7** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a",
+      "context": "pelo nome, **8.8** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-670",
       "line": 230,
@@ -3495,13 +3495,13 @@
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "19290 / 2209 = 8.7"
+          "value": "19398 / 2209 = 8.8"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "8.7",
+      "text": "8.8",
       "type": "number"
     },
     {
@@ -3564,7 +3564,7 @@
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **119332** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **121337** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
@@ -3574,13 +3574,13 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 120125
+          "value": 121337
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "120125",
+      "text": "121337",
       "type": "number"
     },
     {
@@ -9424,41 +9424,41 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (216,2 KB) e `_core.py` (196,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (224,0 KB) e `_core.py` (200,5 KB) são, disparado, os dois maiores arquivos do pacote determinístico — maiores que todo `sparkforge/economy`, `sparkforge/context`, `sparkforge/registry`, `sparkforge/case`, `sparkforge/agents` e `sparkforge/workflows` somados. O gate de paridade é real e pesado: `tests/test_capability_parity.py` (761 linhas), `tests/test_agents_parity.py` (539 linhas) e `tests/test_platform_divergence.py` (227 linhas) — 1527 linhas de teste só para paridade entre adapters/plataformas. O histórico de commits confirma que esse gate já pegou regressão real (`2cc7d27 fix(ci): o gate de paridade do artefato nao alcancava scripts/, e estava vermelho desde 9474aa8`).",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
       "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco",
       "proof": {
-        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/tools.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
+        "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/tools.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "229,2"
+          "value": "224,0"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "229,2",
+      "text": "224,0",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (216,2 KB) e `_core.py` (196,1 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (224,0 KB) e `_core.py` (195,8 KB) são, disparado, os dois maiores arquivos do pacote determinístico — maiores que todo `sparkforge/economy`, `sparkforge/context`, `sparkforge/registry`, `sparkforge/case`, `sparkforge/agents` e `sparkforge/workflows` somados. O gate de paridade é real e pesado: `tests/test_capability_parity.py` (761 linhas), `tests/test_agents_parity.py` (539 linhas) e `tests/test_platform_divergence.py` (227 linhas) — 1527 linhas de teste só para paridade entre adapters/plataformas. O histórico de commits confirma que esse gate já pegou regressão real (`2cc7d27 fix(ci): o gate de paridade do artefato nao alcancava scripts/, e estava vermelho desde 9474aa8`).",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
       "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco",
       "proof": {
-        "cmd": "python -c 'import os; kb=os.path.getsize(\"sparkforge/adapters/_core.py\")/1024; print(str(round(kb,1)).replace(\".\", \",\"))'",
+        "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "200,5"
+          "value": "195,8"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "200,5",
+      "text": "195,8",
       "type": "number"
     },
     {
