@@ -1,4 +1,4 @@
-# SparkForge AWS — FinOps: mais recurso e menos tempo custa menos?
+# SparkForge AWS — FinOps: o custo, a troca recurso-tempo, e onde a alavanca está
 
 **Data:** 2026-08-28
 **Status:** **proposto**. Nada implementado nesta data.
@@ -68,8 +68,10 @@ qualificou", que é diferente de "ninguém leu".
 **Entra:**
 
 - `sparkforge/facts/run_cost.py`: o fact `glue.run_cost`, e o `glue.run_cost.unresolved`.
-- Verbo de topo `sparkforge finops` e a tool MCP: **a fronteira custo-versus-tempo** entre as
-  capacidades observadas (§3.5), o custo por desfecho de SLA (§3.6), e os sintomas ao lado.
+- Verbo de topo `sparkforge finops` e a tool MCP, reunindo **tudo o que é financeiro**: o custo
+  por run (§3.1), a fronteira custo-versus-tempo entre as capacidades observadas (§3.5), o
+  custo por desfecho de SLA (§3.6), os sintomas ao lado (§3.3), e **onde a alavanca está** —
+  capacidade ou código (§3.7).
 - Domínio de fixture próprio, com módulo golden.
 
 **Não entra, e a razão de cada um:**
@@ -207,6 +209,53 @@ sustenta o alvo sai da comparação de longo prazo com a razão nomeada, e conti
 Daria um custo mensal, e o número extra não muda a comparação entre capacidades — a frequência
 é a mesma para todas, então ela escala todas igualmente e não informa a escolha.
 
+### 3.7 Onde a alavanca está: capacidade ou código
+
+**As duas falhas que E existe para evitar**, e elas são simétricas:
+
+- **Projeto caro desnecessariamente.** Capacidade acima do que o SLA exige, pagando por tempo
+  que ninguém precisava economizar.
+- **Projeto barato que demora demais.** Capacidade abaixo do que o trabalho pede, estourando o
+  SLA para poupar centavos.
+
+E existe uma terceira, que é a mais cara das três e não aparece em nenhum eixo de capacidade:
+**o custo que está no código**. Um job que varre dez vezes o que precisa, que derrama para
+disco, ou que roda uma UDF Python por linha é caro em qualquer capacidade — e trocar o worker
+para consertar isso é comprar saída de um defeito. O custo cai um pouco, o defeito continua, e
+a conta volta maior quando o volume crescer.
+
+**E não atribui quanto do custo é de cada lado** — isso exigiria o contrafactual que §3.3
+recusa. Ele diz **qual alavanca se aplica**, nomeando a evidência:
+
+```
+etl-pedidos, run jr_0042   custo 2,32 USD (region UNQUALIFIED)
+
+  ALAVANCA DE CAPACIDADE
+    ver `sparkforge capacity` -- ele responde com a distribuicao medida.
+
+  ALAVANCA DE CODIGO -- 4 achados, e nenhum deles muda trocando worker:
+    SF-PQ-002  scan sem filtro de particao        plan.file_scan
+    SF-PY-004  action dentro de laco              pyspark.loop
+    SF-UI-006  subparalelismo                     spark.stage.task_count
+    SF-PLAN-00x  UDF Python no plano              plan.python_udf
+
+  NAO HA achado de codigo para: skew observado (11,4x).
+    O catalogo nao tem regra que explique este skew, e a leitura fica
+    declarada como lacuna em vez de silencio.
+```
+
+O insumo já existe inteiro: `judge` produz achados a partir do catálogo, e as áreas que tocam
+custo por código são as de PySpark, Parquet/S3, plano físico e Spark UI. E **não escreve regra
+nova** — ele agrupa os achados que o motor já produz sob o eixo financeiro, que é a leitura que
+falta hoje.
+
+**A recusa que dá sentido ao resto:** quando não há achado de código e a capacidade está
+dimensionada para o SLA, E diz que **não encontrou alavanca** — e isso é uma resposta, não uma
+falha. Um job pode simplesmente custar o que custa.
+
+**Alternativa recusada:** ranquear os achados por "economia estimada". Cada número desses seria
+um contrafactual disfarçado de prioridade, e a ordem sairia com aparência de medição.
+
 ### 3.4 A única coisa que E afirma é a correlação do §37
 
 O documento de origem traz a distinção que separa um especialista de um verificador de regras:
@@ -305,6 +354,8 @@ fact não exija verbo próprio só para existir.
 | `more_resource_costs_less` | o caso que motivou E: o dobro de workers custando menos |
 | `more_resource_costs_more` | o mesmo eixo no sentido oposto, para que o corpus não prove só um lado |
 | `cheap_but_misses_sla` | mais barata por run e mais cara por desfecho dentro do SLA |
+| `cost_is_in_the_code` | achados de código presentes: a alavanca não é worker |
+| `no_lever_found` | sem achado e com capacidade dimensionada: o job custa o que custa |
 
 ### 7.2 As três garantias sobre o corpus inteiro
 
@@ -314,6 +365,10 @@ custo sem ressalva é um número que parece preciso.
 
 **Nenhum fact de custo existe sem `dpu_seconds`.** Custo sobre DPU ausente seria zero
 disfarçado, e zero de custo é a mentira mais confortável que este projeto poderia contar.
+
+**Nenhum achado de código aparece sob a alavanca de capacidade.** As duas listas nunca se
+misturam: sugerir troca de worker para um `SF-PY` seria exatamente a compra de saída de um
+defeito que §3.7 recusa.
 
 **Nenhuma saída de E contém a palavra "desperdício" atribuída a uma causa.** Verificada sobre
 o corpus: o relatório põe custo e sintoma lado a lado e não os subtrai. É a garantia de §3.3, e
@@ -346,5 +401,10 @@ sem ela a próxima pessoa a mexer aqui vai achar que atribuir é o objetivo.
    e **menor** custo por run — e o golden traz os dois eixos que provam por quê.
 8. Capacidade cuja resolução não sustenta o alvo sai da comparação de longo prazo com razão
    nomeada, e permanece na de curto prazo.
+9. Um run com achados de código lista os `rule_id` sob a alavanca de código, e **não** sugere
+   troca de capacidade para nenhum deles.
+10. Um run sem achado de código e com capacidade dimensionada produz "nenhuma alavanca
+    encontrada" — uma resposta, não uma omissão.
+11. Nenhuma saída ordena achados por economia estimada.
 7. Suíte completa verde, gate de números verde, gate de tool órfã verde, gate de domínio de
    fixture verde, bundle offline verde.
