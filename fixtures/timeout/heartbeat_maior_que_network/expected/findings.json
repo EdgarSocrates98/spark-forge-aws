@@ -1,0 +1,56 @@
+[
+  {
+    "rule_id": "SF-TIMEOUT-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "heartbeatInterval maior ou igual a network.timeout quebra a detecção de executor morto",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_0001",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_0001"
+    },
+    "evidence": [
+      "f_849526"
+    ],
+    "measured": {
+      "heartbeat_s": 130.0,
+      "network_timeout_s": 120.0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "O Spark documenta que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`: o heartbeat é o pulso que o executor manda, e o network timeout é quanto o driver espera antes de considerá-lo morto. Com o intervalo maior ou igual à espera, o driver desiste antes do próximo pulso chegar, e passa a declarar morto executor vivo.\n\nA regra confere a RELAÇÃO, e não o valor: `spark.network.timeout = 120s` não é certo nem errado sozinho. Ela só existe quando as duas chaves foram observadas em `spark.conf_effective` do mesmo run — sem as duas, o fact `spark.timeout.relation` não é emitido, e sai `spark.timeout.unresolved.conf_not_observed` no lugar.",
+    "proposed_change": [
+      "Restaurar a folga entre as duas — o heartbeat precisa caber várias vezes dentro da espera do driver.",
+      "Se a intenção era tolerar rede lenta, mexer em `spark.network.timeout`, e não no intervalo de heartbeat.",
+      "Conferir se alguma das duas veio de configuração de cluster ou de `--conf` sem quem a explique — as duas são propriedades que raramente precisam sair do default."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Executor vivo declarado morto faz o Spark recomputar trabalho já feito, e o run fica mais lento e mais caro sem erro visível.",
+      "Aumentar `network.timeout` sem olhar a causa mascara pressão de memória e GC, que é o que a `SF-TIMEOUT-001` recusa."
+    ],
+    "tradeoffs": [
+      "Heartbeat mais frequente custa um pouco de tráfego de controle; detecção tardia de executor morto custa recomputação."
+    ],
+    "validation": [
+      "Os dois valores efetivos no run seguinte, lidos de `spark.conf_effective`.",
+      "Contagem de `spark.executor.lost` com razão de heartbeat, antes e depois.",
+      "Duração p50 e p95 do run, contra o histórico."
+    ],
+    "rollback": [
+      "Reverter a configuração. Nenhuma escrita de dado é envolvida."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/latest/configuration.html",
+        "retrieved": "2026-08-29",
+        "note": "A documentação do Spark declara que `spark.executor.heartbeatInterval` deve ser significativamente menor que `spark.network.timeout`, e documenta os defaults das duas.\n"
+      }
+    ]
+  }
+]

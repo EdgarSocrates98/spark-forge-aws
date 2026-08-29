@@ -1,0 +1,11 @@
+name: timeout_sem_evidencia
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: Run saudavel, log lido, nenhum sinal de timeout em fonte nenhuma. A resposta e `no_timeout_evidence`
+  -- uma so lacuna, nomeada -- e nenhuma regra dispara. Sem este cenario, `SF-TIMEOUT-001`
+  poderia passar a disparar por haver timeout, em vez de por haver sintoma ao lado, com a
+  suite inteira verde.

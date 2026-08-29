@@ -91,6 +91,7 @@ def _derivados_de_facts(pool):
         fusion,
         run_cost,
         runtime_detect,
+        timeout_diagnosis,
     )
 
     yield "call_graph", call_graph.build_call_graph(pool)
@@ -103,6 +104,10 @@ def _derivados_de_facts(pool):
     # ainda conta como exercitado -- o que a medida precisa saber e que o
     # modulo RODOU, nao que produziu.
     yield "run_cost", run_cost.extract_run_cost(pool, "<pool>")
+    # `timeout_diagnosis` tambem deriva de fact, e nao de caminho: a entrada
+    # sao os facts de `glue.job_run`, `spark.executor.lost`,
+    # `spark.stage.failure` e `spark.conf_effective` ja extraidos.
+    yield "timeout_diagnosis", timeout_diagnosis.extract_timeout_diagnosis(pool, "<pool>")
 
 
 def extratores_com_snippet() -> set[str]:

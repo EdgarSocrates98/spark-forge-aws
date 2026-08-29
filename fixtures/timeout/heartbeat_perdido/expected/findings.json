@@ -1,0 +1,116 @@
+[
+  {
+    "rule_id": "SF-UI-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Executor removido sem OOM registrado no log",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "3"
+    },
+    "evidence": [
+      "f_c77ad7"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Executor desaparecendo sem OOM de heap no log aponta para estouro de memória do container, fora do heap: Python worker, buffers Arrow, buffers de rede, metaspace. A correção é spark.executor.memoryOverhead, não spark.executor.memory. É o OOM mais mal diagnosticado que existe, e a assinatura de que foi mal diagnosticado é \"aumentei a memória e continuou\". Ver knowledge/spark/memory-and-oom.md secao 2, classe container/overhead.",
+    "proposed_change": [
+      "Aumentar spark.executor.memoryOverhead, não spark.executor.memory.",
+      "Reduzir o tamanho de batch de pandas_udf, se houver.",
+      "Eliminar UDF Python, que é a fonte mais comum de consumo fora do heap.",
+      "Cruzar com glue.ALL.memory.non-heap.used.percentage para confirmar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Aumentar overhead reduz a memória disponível para o heap dentro do mesmo container.",
+      "Duas das quatro ações propostas mudam o resultado, e nenhuma delas falha ao mudá-lo. Eliminar UDF Python troca nulo, precisão, fuso e borda pela semântica da função nativa. E reduzir o tamanho de batch de pandas_udf muda o resultado de toda UDF vetorizada que NÃO seja linha a linha — normalização, ranking, preenchimento por vizinho e qualquer coisa que olhe o batch inteiro devolvem outro valor com outro tamanho de batch. Nada no plano físico nem no event log acusa isso: o nó continua sendo ArrowEvalPython."
+    ],
+    "tradeoffs": [
+      "Em algum ponto",
+      "worker maior é mais simples do que rebalancear heap e overhead."
+    ],
+    "validation": [
+      "Ausência de executores removidos no run seguinte.",
+      "glue.ALL.memory.non-heap.used.percentage abaixo do nível anterior.",
+      "Categoria de erro do Glue Observability sem OUT_OF_MEMORY_ERROR.",
+      "Se a ação foi eliminar UDF Python: resultado comparado linha a linha numa amostra que inclua nulls e valores de borda, mais contagem total e contagem de nulls da coluna resultado idênticas — a mesma validação que SF-PY-001 e SF-PLAN-001 exigem para a mesma troca.",
+      "Se a ação foi reduzir o batch de pandas_udf: a coluna produzida pela UDF comparada VALOR A VALOR entre o batch antigo e o novo, sobre a mesma entrada. Contagem e schema são iguais por construção nos dois, então os eixos baratos não dizem nada aqui; é o valor que responde se a UDF era linha a linha ou não.",
+      "Se a ação foi só memoryOverhead: nenhum eixo de dado é exigido, e declarar isso é parte da validação — é a única das quatro que mexe em capacidade e não em semântica."
+    ],
+    "rollback": [
+      "Reverter o valor de memoryOverhead."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-TIMEOUT-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Timeout com sintoma medido ao lado — aumentar o limite mascara a causa",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "3"
+    },
+    "evidence": [
+      "f_10cce7"
+    ],
+    "measured": {
+      "executor_lost_count": 1.0
+    },
+    "threshold": {
+      "skew_ratio": 3.0,
+      "spill_ratio": 0.1,
+      "gc_ratio": 0.1,
+      "executor_lost_min": 1
+    },
+    "runtime_scope": {},
+    "explanation": "O run bateu num timeout e há sintoma medido ao lado: skew de duração de task, spill sobre o input lido, tempo de GC sobre tempo de task, ou executor removido. Aumentar o limite faz o run durar mais e falhar depois, pelo mesmo motivo, com a conta maior.\n\nEsta regra NÃO diz que o limite atual está certo. Ela diz que a evidência ao lado aponta para outra causa, e que a ordem de investigação começa por ela. Sem sintoma nenhum, a regra não dispara — e aí subir o timeout pode ser exatamente a decisão certa, quando o runtime esperado é legítimo e o SLA permite.\n\nA categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC ou partição grande demais; `broadcast` aponta para um lado grande demais para broadcast; `wall_clock` é o relógio do Glue, que é consequência e não causa.",
+    "proposed_change": [
+      "Ler `attrs.category` e `attrs.also_seen` antes de qualquer mudança de configuração — a categoria decide qual investigação vale.",
+      "Investigar o sintoma medido que disparou esta regra, na ordem em que as measures aparecem no fact.",
+      "Só depois de descartar os sintomas, avaliar se o limite é pequeno para o trabalho legítimo do job."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir o timeout com skew ou spill presente troca uma falha rápida por uma falha cara — o run consome recurso por mais tempo e termina no mesmo lugar.",
+      "Reduzir o timeout para \"falhar rápido\" pode matar run legítimo em dia de volume maior."
+    ],
+    "tradeoffs": [
+      "Investigar a causa custa tempo de análise; subir o limite custa dinheiro por run, todo run, até alguém revisitar."
+    ],
+    "validation": [
+      "Nova razão p95/p50 de duração de task nos stages do job, depois da mudança.",
+      "Spill sobre input lido, no mesmo stage que disparou.",
+      "Contagem de executores removidos no run seguinte.",
+      "Duração p50 e p95 do run, contra o histórico de `glue.job_run.distribution`."
+    ],
+    "rollback": [
+      "Reverter a mudança de configuração. Nenhuma das ações propostas altera dado, então não há escrita a desfazer."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html",
+        "retrieved": "2026-08-29",
+        "note": "`Timeout` do JobRun é o tempo máximo que a execução pode consumir recursos antes de entrar em `TIMEOUT` — relógio de parede, e não causa.\n"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "Os limiares 3.0 (skew), 0.1 (spill sobre input) e 0.1 (GC sobre tempo de task) são heurística de campo, na mesma faixa que `SF-UI-001` já usa para skew. O limiar de executor removido é 1 porque a ocorrência é o sinal: um executor perdido já muda a ordem de investigação.\n"
+      }
+    ]
+  }
+]

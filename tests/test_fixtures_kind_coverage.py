@@ -44,6 +44,7 @@ from sparkforge.facts import (
     sql_literal,
     sql_metrics,
     terraform,
+    timeout_diagnosis,
     workload,
 )
 
@@ -115,6 +116,12 @@ EXTRACTORS = {
     # golden com kind que nenhum extrator declara, em vez de kind coberto.
     "sql_metrics": sql_metrics,
     "terraform": terraform,
+    # `timeout_diagnosis` entra nas DUAS listas no mesmo commit da Task 5 do
+    # plano `timeout-intelligence.md`: sem ele aqui, os tres kinds
+    # `spark.timeout.*` nao sao verificados por ninguem e o criterio de golden
+    # -- todo kind de `EMITTED_KINDS` em algum golden -- passa sem ser
+    # avaliado, que e pior do que falhar.
+    "timeout_diagnosis": timeout_diagnosis,
     # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
     # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*` nao sao
     # verificados por ninguem e o criterio de golden -- todo kind de
