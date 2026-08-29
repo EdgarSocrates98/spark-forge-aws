@@ -317,3 +317,136 @@ class TestLedgerQuebradoNaoQuebraATool:
 
         assert "items" in resultado
         assert "error" not in resultado
+
+    def test_flush_para_diretorio_impossivel_nao_levanta(self, tmp_path):
+        """O buffer aceita o span (a MONTAGEM funcionou), so o `flush()` -- que
+        tenta construir o store -- e que bate no diretorio impossivel. Nem
+        assim pode propagar."""
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        impossivel = tmp_path / "arquivo_no_lugar_do_diretorio"
+        impossivel.write_text("nao sou diretorio", encoding="utf-8")
+        ledger = ContextLedger(db_path=impossivel / "traces.db", run_id="run_teste")
+
+        ledger.record(
+            name="sparkforge_case_get",
+            resultado={"ok": True},
+            detail_level="",
+            outcome="ok",
+            start_time=time.time(),
+        )
+
+        ledger.flush()  # nao pode levantar
+
+
+class TestPayloadNaoSerializavelNaoDerrubaAChamada:
+    """Achado do revisor: `payload_bytes` sem `default=str` pode levantar
+    `TypeError` sobre um `resultado` com valor nao serializavel -- e esse
+    `TypeError` tem que morrer dentro do ledger, nunca escapar para quem
+    chamou `record()`."""
+
+    def test_um_resultado_nao_serializavel_nao_derruba_o_record_nem_grava_span(
+        self, tmp_path
+    ):
+        import datetime
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+
+        ledger.record(
+            name="sparkforge_qualquer",
+            resultado={"quando": datetime.datetime.now()},
+            detail_level="",
+            outcome="ok",
+            start_time=time.time(),
+        )  # nao pode levantar TypeError
+
+        assert ledger.spans_of("run_teste") == []
+
+
+class TestImportarToolsNaoTocaDisco:
+    """Achado do revisor: `_LEDGER = ContextLedger()` no corpo do modulo fazia
+    `import sparkforge.adapters.tools` sozinho criar `.sparkforge/traces.db`
+    onde quer que o processo estivesse rodando."""
+
+    def test_importar_tools_nao_cria_arquivo_nenhum(self, tmp_path):
+        import subprocess
+        import sys
+
+        resultado = subprocess.run(
+            [sys.executable, "-c", "import sparkforge.adapters.tools"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+
+        assert resultado.returncode == 0, resultado.stderr
+        assert not (tmp_path / ".sparkforge").exists()
+
+
+class TestBufferEFlush:
+    """A decisao de desenho: `record()` so acumula em memoria: `flush()` grava
+    tudo de uma vez, numa transacao so, e e quem realmente toca o disco."""
+
+    def test_spans_of_enxerga_span_ainda_no_buffer(self, tmp_path):
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        ledger.record(
+            name="sparkforge_case_get",
+            resultado={"ok": True},
+            detail_level="",
+            outcome="ok",
+            start_time=time.time(),
+        )
+
+        # `record()` nao grava -- so `flush()` toca disco.
+        assert not (tmp_path / "traces.db").exists()
+        assert len(ledger.spans_of("run_teste")) == 1
+
+    def test_apos_flush_a_linha_de_traces_tem_o_start_time_do_primeiro_span(
+        self, tmp_path
+    ):
+        import sqlite3
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        primeiro = time.time()
+        ledger.record(
+            name="a",
+            resultado={"ok": True},
+            detail_level="",
+            outcome="ok",
+            start_time=primeiro,
+        )
+        time.sleep(0.01)
+        ledger.record(
+            name="b",
+            resultado={"ok": True},
+            detail_level="",
+            outcome="ok",
+            start_time=time.time(),
+        )
+
+        ledger.flush()
+
+        with sqlite3.connect(tmp_path / "traces.db") as conn:
+            linha = conn.execute(
+                "SELECT start_time, end_time, status FROM traces WHERE run_id = ?",
+                ("run_teste",),
+            ).fetchone()
+
+        assert linha is not None
+        start_time, end_time, status = linha
+        assert start_time == primeiro
+        assert end_time is not None
+        assert status == "completed"
+        assert len(ledger.spans_of("run_teste")) == 2

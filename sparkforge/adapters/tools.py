@@ -5225,8 +5225,32 @@ _HANDLERS = {
 # Um ledger por processo. E modulo-level de proposito: `call_tool` e chamado de
 # lugares que nao tem como carregar estado (a CLI, o servidor MCP, um teste), e
 # passar o ledger por parametro obrigaria todos eles a saber que ele existe.
-# Teste que queira inspecionar substitui este nome.
-_LEDGER = ContextLedger()
+# Teste que queira inspecionar substitui este nome (por um `ContextLedger` de
+# verdade, nao por `None` -- ver `_ledger()` abaixo).
+#
+# `None` ATE O PRIMEIRO USO, DE PROPOSITO. `ContextLedger.__init__` nao toca
+# disco (o store e preguicoso -- ver `context_ledger.py:_ensure_store`), mas
+# CONSTRUIR o objeto aqui, no corpo do modulo, faria `import
+# sparkforge.adapters.tools` sozinho custar um `ContextLedger` -- e mais grave,
+# faria TODO processo que importa este modulo (a CLI, o servidor MCP, e cada
+# um dos varios arquivos de teste que importam `tools` sem nunca chamar
+# `call_tool`) registrar seu PROPRIO `atexit` de flush contra o MESMO
+# `.sparkforge/traces.db` do repositorio. Medido: rodar so
+# `tests/test_adapters_tools.py` (99 chamadas de `call_tool`) e mais os
+# imports de outros arquivos de teste no mesmo processo encheu aquele banco
+# real com centenas de spans de teste numa unica execucao, porque nenhuma
+# daquelas 99 chamadas substituia o singleton -- todas escreviam no ledger
+# default. Import nao pode ter efeito colateral em disco; so a PRIMEIRA
+# chamada de verdade materializa o ledger.
+_LEDGER: ContextLedger | None = None
+
+
+def _ledger() -> ContextLedger:
+    """Materializa `_LEDGER` no primeiro uso, nunca na importacao do modulo."""
+    global _LEDGER
+    if _LEDGER is None:
+        _LEDGER = ContextLedger()
+    return _LEDGER
 
 
 def call_tool(
@@ -5293,7 +5317,7 @@ def call_tool(
             }
             if decisao.required_approval is not None:
                 recusa["required_approval"] = decisao.required_approval.value
-            _LEDGER.record(
+            _ledger().record(
                 name=name,
                 resultado=recusa,
                 detail_level=detail_level,
@@ -5318,7 +5342,7 @@ def call_tool(
         resultado = {"error": exc.message, "exit_code": exc.exit_code}
         desfecho = "error"
 
-    _LEDGER.record(
+    _ledger().record(
         name=name,
         resultado=resultado,
         detail_level=detail_level,
