@@ -113,3 +113,52 @@ class TestRecusas:
 
         assert leitura["input_tokens"] == 7
         assert {"reason": "malformed_line", "count": 1} in leitura["unresolved"]
+
+    def test_a_message_that_is_a_list_does_not_abort_the_read(self, tmp_path):
+        """message com forma errada e lacuna nomeada, nao AttributeError fatal."""
+        caminho = _transcript(
+            tmp_path,
+            [
+                {"type": "assistant", "message": ["not", "a", "dict"]},
+                {"type": "assistant", "message": {"usage": {"input_tokens": 5}}},
+            ],
+        )
+        leitura = read_host_usage(caminho)
+
+        assert leitura["input_tokens"] == 5
+        assert {"reason": "message_field_not_object", "count": 1} in leitura["unresolved"]
+
+    def test_a_message_that_is_a_string_does_not_abort_the_read(self, tmp_path):
+        caminho = _transcript(
+            tmp_path,
+            [
+                {"type": "assistant", "message": "oops"},
+                {"type": "assistant", "message": {"usage": {"input_tokens": 5}}},
+            ],
+        )
+        leitura = read_host_usage(caminho)
+
+        assert leitura["input_tokens"] == 5
+        assert {"reason": "message_field_not_object", "count": 1} in leitura["unresolved"]
+
+    def test_a_negative_token_count_is_refused_as_impossible(self, tmp_path):
+        """Contagem de token negativa nao existe -- nao pode entrar na soma."""
+        caminho = _transcript(
+            tmp_path,
+            [{"type": "assistant", "message": {"usage": {"input_tokens": -50}}}],
+        )
+        leitura = read_host_usage(caminho)
+
+        assert leitura["input_tokens"] == 0
+        assert leitura["unresolved"] == [{"reason": "usage_value_negative", "count": 1}]
+
+    def test_a_fractional_token_count_is_refused_as_impossible(self, tmp_path):
+        """Contagem de token fracionaria nao existe -- truncar seria adivinhar."""
+        caminho = _transcript(
+            tmp_path,
+            [{"type": "assistant", "message": {"usage": {"input_tokens": 12.7}}}],
+        )
+        leitura = read_host_usage(caminho)
+
+        assert leitura["input_tokens"] == 0
+        assert leitura["unresolved"] == [{"reason": "usage_value_fractional", "count": 1}]
