@@ -2498,3 +2498,117 @@ class TestTuneCommand:
 
         assert code == 0
         assert json.loads(destino.read_text(encoding="utf-8"))["properties"]
+
+
+class TestCaseHypothesisSurface:
+    """`add_hypothesis` existia no store e nao tinha superficie nenhuma.
+
+    A funcao estava la desde a Fase 0, alcancavel so por Python: nenhum verbo e
+    nenhuma tool a chamavam, e nada fechava uma hipotese. Como `resume` filtra
+    por `status == "open"`, a secao "Hipoteses abertas" so crescia.
+    """
+
+    def _case(self, tmp_path):
+        from sparkforge.adapters.cli import main
+
+        main(
+            [
+                "case",
+                "open",
+                "--repo",
+                str(tmp_path),
+                "--case-id",
+                "c1",
+                "--now",
+                "2026-08-29T00:00:00Z",
+                "--glue",
+                "5.0",
+            ]
+        )
+        return tmp_path
+
+    def test_the_three_parts_are_required_together(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        capsys.readouterr()
+        code = main(["case", "update", "--repo", str(repo), "--hypothesis", "so a afirmacao"])
+
+        assert code == 2
+        assert "prediction" in capsys.readouterr().err
+
+    def test_a_hypothesis_is_recorded_with_its_experiment(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        capsys.readouterr()
+        code = main(
+            [
+                "case",
+                "update",
+                "--repo",
+                str(repo),
+                "--hypothesis",
+                "spill vem de particao grande demais",
+                "--prediction",
+                "spill cai abaixo de 10% do input",
+                "--experiment",
+                "dobrar shuffle partitions e remedir",
+            ]
+        )
+
+        assert code == 0
+        case = json.loads(capsys.readouterr().out)
+        assert case["hypotheses"][0]["id"] == "h1"
+        assert case["hypotheses"][0]["status"] == "open"
+
+    def test_closing_needs_an_outcome(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        capsys.readouterr()
+        code = main(["case", "update", "--repo", str(repo), "--close-hypothesis", "h1"])
+
+        assert code == 2
+        assert "hypothesis-outcome" in capsys.readouterr().err
+
+    def test_the_loop_closes_and_resume_stops_showing_it(self, tmp_path, capsys):
+        """O ciclo inteiro: abre, fecha, e `resume` para de listar."""
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        main(
+            [
+                "case",
+                "update",
+                "--repo",
+                str(repo),
+                "--hypothesis",
+                "spill vem de particao grande demais",
+                "--prediction",
+                "spill cai abaixo de 10%",
+                "--experiment",
+                "dobrar shuffle partitions",
+            ]
+        )
+        main(
+            [
+                "case",
+                "update",
+                "--repo",
+                str(repo),
+                "--close-hypothesis",
+                "h1",
+                "--hypothesis-outcome",
+                "confirmed",
+                "--now",
+                "2026-08-29T01:00:00Z",
+                "--evidence",
+                "stage 8 do run jr_002",
+            ]
+        )
+        capsys.readouterr()
+        main(["resume", "--repo", str(repo)])
+        payload = json.loads(capsys.readouterr().out)
+
+        assert payload["open_hypotheses"] == []

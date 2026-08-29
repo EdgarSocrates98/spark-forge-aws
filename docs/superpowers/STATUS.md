@@ -4467,8 +4467,10 @@ e `SF-BENCH-002` acusa regressão; o plano mais barato conhecido e seguro é D. 
 `_classe_por_historico` classifica scan e shuffle contra os percentis do próprio
 histórico do job, então um eixo que sai `extreme` **é** o sinal de deriva — o que
 não existe é uma linha que diga a palavra. Canary (§35) exige **executar** o job,
-e o projeto inteiro recusa executar. Fica aberto o **histórico de recomendação**:
-os findings vivem por case, e nada os acumula entre cases.
+e o projeto inteiro recusa executar. O **histórico de recomendação** entrou no
+subprojeto I — e o diagnóstico mudou ao ser medido: a estrutura já existia em
+`case.hypotheses`, o que faltava era superfície para criar e um desfecho para
+fechar.
 
 ### As seções que não viram critério de aceite
 
@@ -4713,6 +4715,69 @@ feita, e apontar para o verbo que a responde com evidência.
 `glue.driver.workerUtilization` não há resumo: sai
 `glue.utilization.unresolved` com o comando que a preencheria. Utilização é o
 eixo da pergunta, e as outras medidas sozinhas não a substituem.
+
+## Histórico de recomendação — a hipótese ganha superfície e desfecho (2026-08-29)
+
+Subprojeto I. Fecha o **último** item aberto do `prompt_tunning_foco_spark.md`:
+"recommendation history", da onda P3.
+
+A auditoria tinha registrado esta linha como aberta com a frase "os findings
+vivem por case, e nada os acumula entre cases". Medido antes de construir
+qualquer coisa, o diagnóstico era outro — e melhor:
+
+- `case.hypotheses` **já existia** desde a Fase 0, com `statement`, `prediction`
+  e `experiment`, e `add_hypothesis` atribui id sequencial;
+- `record_skill_use` tem superfície em `_core.py`;
+- **`add_hypothesis` não tinha nenhuma.** Nem verbo, nem tool: alcançável só de
+  dentro do Python, e o único chamador fora do store era um teste;
+- **nada fechava uma hipótese.** O `status` nascia `open` e não havia função que
+  o movesse.
+
+A segunda ausência é a que fazia diferença todo dia: `case/resume.py` filtra por
+`status == "open"`, então a seção *Hipóteses abertas* do payload de reidratação
+**só crescia**. Um operador que confirmasse uma hipótese na sessão seguinte não
+tinha como dizer isso ao case, e a lista virava um inventário de perguntas que
+ninguém podia marcar como respondidas.
+
+Portanto o trabalho não foi construir um histórico: foi **expor e fechar** o que
+já existia. `store.close_hypothesis` e as flags
+`--hypothesis`/`--prediction`/`--experiment` e
+`--close-hypothesis`/`--hypothesis-outcome`/`--evidence` em `case update`, com
+os mesmos parâmetros na tool `sparkforge_case_update`. **11 testes** novos,
+medidos por coleta: 7 em `tests/test_case_store.py` e 4 em
+`tests/test_adapters_cli.py`.
+
+### Três decisões
+
+**O fechamento é acréscimo, nunca reescrita.** `status` deixa de ser `open` e
+ganha `outcome`, `closed_at` e `evidence` **ao lado** de `statement`,
+`prediction` e `experiment` originais. Reescrever a afirmação para casar com o
+resultado é exatamente o viés que registrar uma hipótese por escrito existe para
+impedir, e o teste `test_closing_records_the_outcome_without_erasing_the_claim`
+trava isso.
+
+**Três desfechos, e o terceiro não é decoração.** `confirmed` e `refuted` são os
+dois lados do experimento; `abandoned` existe porque a terceira coisa que
+acontece de verdade é o experimento nunca rodar — job descontinuado, ambiente
+que sumiu, prioridade que mudou. Sem ela a hipótese fica `open` para sempre, que
+é o defeito que esta fase conserta.
+
+**As três partes são obrigatórias juntas.** Afirmação sem previsão não é
+testável, e previsão sem experimento não diz quem a testa. Gravar só uma delas
+registraria um palpite com cara de hipótese, e a recusa é `exit_code=2` com a
+mensagem dizendo qual falta.
+
+### O que este subprojeto recusa
+
+**Reabrir hipótese fechada.** Refechar apagaria o desfecho anterior; se a
+pergunta voltou, ela é outra hipótese, com id próprio. A recusa nomeia o
+desfecho e a data que já estavam lá.
+
+**Acumular entre cases.** O histórico é do case, e continua sendo. Um store
+global de recomendações atravessaria a fronteira que o case existe para
+desenhar, e nenhuma pergunta deste documento pede isso — a §19, que fala em
+"trinta últimos runs", é sobre histórico de **execução**, e essa está entregue
+em B, C2 e D.
 
 ## Dívidas abertas
 

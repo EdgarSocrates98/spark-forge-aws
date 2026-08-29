@@ -3299,12 +3299,41 @@ def case_update(
     override_gate: str | None = None,
     reason: str | None = None,
     facts_path: str | list[str] | None = None,
+    hypothesis: str | None = None,
+    prediction: str | None = None,
+    experiment: str | None = None,
+    close_hypothesis: str | None = None,
+    hypothesis_outcome: str | None = None,
+    evidence: str | None = None,
 ) -> dict[str, Any]:
     if reason is not None and override_gate is None:
         raise AdapterError(
             "`--reason` so faz sentido com `--override-gate`: sem o gate, o "
             "motivo nao tem sujeito e nao seria gravado em lugar nenhum. Rode "
             "`sparkforge case update --override-gate <gate> --reason \"<motivo>\"`.",
+            exit_code=2,
+        )
+    partes = [hypothesis, prediction, experiment]
+    if any(partes) and not all(partes):
+        raise AdapterError(
+            "hipotese exige as TRES partes: `--hypothesis`, `--prediction` e "
+            "`--experiment`. Afirmacao sem previsao nao e testavel, e previsao "
+            "sem experimento nao diz quem a testa -- gravar so uma delas "
+            "registraria um palpite com cara de hipotese.",
+            exit_code=2,
+        )
+    if hypothesis_outcome is not None and close_hypothesis is None:
+        raise AdapterError(
+            "`--hypothesis-outcome` so faz sentido com `--close-hypothesis`: "
+            "sem o id, o desfecho nao tem sujeito. Rode `sparkforge case update "
+            "--close-hypothesis h1 --hypothesis-outcome confirmed`.",
+            exit_code=2,
+        )
+    if close_hypothesis is not None and hypothesis_outcome is None:
+        raise AdapterError(
+            "fechar hipotese exige `--hypothesis-outcome`: um de "
+            f"{', '.join(store.HYPOTHESIS_OUTCOMES)}. Fechar sem desfecho "
+            "apagaria a pergunta sem responder nenhuma.",
             exit_code=2,
         )
     fact_kinds = _fact_kinds_for_gates(facts_path)
@@ -3324,6 +3353,18 @@ def case_update(
             case = store.set_gate(case, gate, bool(gate_value))
         if skill is not None:
             case = store.record_skill_use(case, skill, now or "", outcome or "")
+        if hypothesis is not None:
+            case = store.add_hypothesis(
+                case, hypothesis, prediction or "", experiment or ""
+            )
+        if close_hypothesis is not None:
+            case = store.close_hypothesis(
+                case,
+                close_hypothesis,
+                hypothesis_outcome or "",
+                at=now or "",
+                evidence=evidence or "",
+            )
         store.save_case(case, root=repo)
         return case
     except store.CaseError as exc:

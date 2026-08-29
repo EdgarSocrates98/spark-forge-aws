@@ -812,6 +812,36 @@ def build_parser() -> argparse.ArgumentParser:
     update_p.add_argument("--now")
     update_p.add_argument("--outcome")
     update_p.add_argument(
+        "--hypothesis",
+        help=(
+            "Afirmacao testavel a registrar no case. Exige `--prediction` e "
+            "`--experiment`: afirmacao sem previsao nao e testavel, e previsao "
+            "sem experimento nao diz quem a testa."
+        ),
+    )
+    update_p.add_argument("--prediction", help="O que muda no numero se a hipotese valer.")
+    update_p.add_argument("--experiment", help="Como medir a previsao.")
+    update_p.add_argument(
+        "--close-hypothesis",
+        metavar="ID",
+        help=(
+            "Fecha a hipotese com este id. Exige `--hypothesis-outcome`. O "
+            "registro e acrescimo: a afirmacao original fica onde esta."
+        ),
+    )
+    update_p.add_argument(
+        "--hypothesis-outcome",
+        choices=list(_core.store.HYPOTHESIS_OUTCOMES),
+        help=(
+            "Desfecho do experimento. `abandoned` existe porque a terceira "
+            "coisa que acontece de verdade e o experimento nunca rodar."
+        ),
+    )
+    update_p.add_argument(
+        "--evidence",
+        help="Onde ler o que fechou a hipotese (stage, run, arquivo de facts).",
+    )
+    update_p.add_argument(
         "--override-gate",
         help=(
             "Passa por cima de um gate num case estrito, quando o dado "
@@ -1873,6 +1903,12 @@ def _cmd_case_update(args: argparse.Namespace) -> int:
         override_gate=args.override_gate,
         reason=args.reason,
         facts_path=args.facts,
+        hypothesis=args.hypothesis,
+        prediction=args.prediction,
+        experiment=args.experiment,
+        close_hypothesis=args.close_hypothesis,
+        hypothesis_outcome=args.hypothesis_outcome,
+        evidence=args.evidence,
     )
     _print(case)
     return 0

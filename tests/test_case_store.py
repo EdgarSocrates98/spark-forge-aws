@@ -8,9 +8,11 @@ import yaml
 from sparkforge.case.router import load_gate_contract
 from sparkforge.case.store import (
     GATES,
+    HYPOTHESIS_OUTCOMES,
     PHASES,
     CaseError,
     add_hypothesis,
+    close_hypothesis,
     load_case,
     new_case,
     override_gate,
@@ -665,3 +667,63 @@ class TestSemRigorNadaMuda:
         """Prova por ausencia: catalogo vazio quebraria a leitura, e nao quebra."""
         monkeypatch.setenv("SPARKFORGE_CATALOG", str(tmp_path))
         assert set_phase(self._case(), PHASE_GUARDADA)["phase"] == PHASE_GUARDADA
+
+
+class TestFechamentoDeHipotese:
+    """A hipotese nascia `open` e nada a movia.
+
+    `resume` filtra por `status == "open"`, entao a secao "Hipoteses abertas"
+    so crescia: uma lista de perguntas que ninguem podia marcar como
+    respondidas.
+    """
+
+    def _com_hipotese(self):
+        return add_hypothesis(
+            new_case("c", "2026-08-29T00:00:00Z", RUNTIME),
+            "spill vem de particao grande demais",
+            "spill cai abaixo de 10% do input",
+            "dobrar shuffle partitions e remedir",
+        )
+
+    def test_closing_records_the_outcome_without_erasing_the_claim(self):
+        """Reescrever a afirmacao para casar com o resultado e o vies que uma
+        hipotese registrada por escrito existe para impedir."""
+        case = close_hypothesis(
+            self._com_hipotese(), "h1", "confirmed", "2026-08-29T01:00:00Z", "stage 8"
+        )
+        hyp = case["hypotheses"][0]
+
+        assert hyp["status"] == "confirmed"
+        assert hyp["closed_at"] == "2026-08-29T01:00:00Z"
+        assert hyp["evidence"] == "stage 8"
+        assert hyp["statement"] == "spill vem de particao grande demais"
+        assert hyp["prediction"] == "spill cai abaixo de 10% do input"
+
+    def test_the_three_outcomes_are_accepted(self):
+        for desfecho in HYPOTHESIS_OUTCOMES:
+            case = close_hypothesis(self._com_hipotese(), "h1", desfecho, "2026-08-29T01:00:00Z")
+            assert case["hypotheses"][0]["status"] == desfecho
+
+    def test_abandoned_exists_because_experiments_stop_being_run(self):
+        """Job descontinuado, ambiente que sumiu, prioridade que mudou."""
+        assert "abandoned" in HYPOTHESIS_OUTCOMES
+
+    def test_an_unknown_outcome_is_refused(self):
+        with pytest.raises(CaseError, match="desfecho"):
+            close_hypothesis(self._com_hipotese(), "h1", "talvez", "2026-08-29T01:00:00Z")
+
+    def test_an_unknown_id_is_refused_and_names_what_exists(self):
+        with pytest.raises(CaseError, match="h9"):
+            close_hypothesis(self._com_hipotese(), "h9", "confirmed", "2026-08-29T01:00:00Z")
+
+    def test_closing_twice_is_refused(self):
+        """Reabrir apagaria o desfecho anterior."""
+        case = close_hypothesis(self._com_hipotese(), "h1", "refuted", "2026-08-29T01:00:00Z")
+        with pytest.raises(CaseError, match="ja foi fechada"):
+            close_hypothesis(case, "h1", "confirmed", "2026-08-29T02:00:00Z")
+
+    def test_the_original_case_is_not_mutated(self):
+        original = self._com_hipotese()
+        close_hypothesis(original, "h1", "confirmed", "2026-08-29T01:00:00Z")
+
+        assert original["hypotheses"][0]["status"] == "open"

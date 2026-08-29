@@ -2427,6 +2427,48 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "skill": {"type": "string"},
                 "now": {"type": "string"},
                 "outcome": {"type": "string"},
+                "hypothesis": {
+                    "type": "string",
+                    "description": (
+                        "Afirmacao testavel a registrar. Exige `prediction` e "
+                        "`experiment`: afirmacao sem previsao nao e testavel, e "
+                        "previsao sem experimento nao diz quem a testa. As tres "
+                        "juntas viram uma entrada em `hypotheses`, com id "
+                        "sequencial e status `open`."
+                    ),
+                },
+                "prediction": {
+                    "type": "string",
+                    "description": "O que muda no numero se a hipotese valer.",
+                },
+                "experiment": {"type": "string", "description": "Como medir a previsao."},
+                "close_hypothesis": {
+                    "type": "string",
+                    "description": (
+                        "Id da hipotese a fechar (`h1`, `h2`, ...). Exige "
+                        "`hypothesis_outcome`. O registro e ACRESCIMO: a "
+                        "afirmacao, a previsao e o experimento originais ficam "
+                        "onde estao, e reescreve-los para casar com o resultado "
+                        "e o vies que a hipotese escrita existe para impedir."
+                    ),
+                },
+                "hypothesis_outcome": {
+                    "type": "string",
+                    "enum": list(_core.store.HYPOTHESIS_OUTCOMES),
+                    "description": (
+                        "Desfecho do experimento. `confirmed` e `refuted` sao os "
+                        "dois lados dele; `abandoned` existe porque a terceira "
+                        "coisa que acontece de verdade e o experimento nunca "
+                        "rodar -- job descontinuado, ambiente que sumiu."
+                    ),
+                },
+                "evidence": {
+                    "type": "string",
+                    "description": (
+                        "Onde ler o que fechou a hipotese (stage, run, arquivo "
+                        "de facts)."
+                    ),
+                },
                 "override_gate": {
                     "type": "string",
                     "enum": list(_GATE_NAMES),
@@ -4629,6 +4671,12 @@ def _h_case_update(args: dict[str, Any]) -> dict[str, Any]:
         override_gate=args.get("override_gate"),
         reason=args.get("reason"),
         facts_path=args.get("facts_path"),
+        hypothesis=args.get("hypothesis"),
+        prediction=args.get("prediction"),
+        experiment=args.get("experiment"),
+        close_hypothesis=args.get("close_hypothesis"),
+        hypothesis_outcome=args.get("hypothesis_outcome"),
+        evidence=args.get("evidence"),
     )
 
 
