@@ -84,13 +84,25 @@ def _derivados_de_facts(pool):
     medida pulava 5 dos 20 modulos em silencio -- `alvos` ficava vazio, `any([])`
     dava False, e o modulo entrava como "sem snippet" por nao ter rodado nada.
     """
-    from sparkforge.facts import benchmark, call_graph, funcval, fusion, runtime_detect
+    from sparkforge.facts import (
+        benchmark,
+        call_graph,
+        funcval,
+        fusion,
+        run_cost,
+        runtime_detect,
+    )
 
     yield "call_graph", call_graph.build_call_graph(pool)
     yield "fusion", fusion.fuse(pool)
     yield "funcval", funcval.build_plan(pool)
     yield "benchmark", benchmark.build_benchmark(pool, pool)
     yield "runtime_detect", runtime_detect.detect_runtime({})[1]
+    # `run_cost` deriva custo a partir de `glue.job_run`, e nao de caminho.
+    # O pool pode nao ter run nenhum: a chamada devolve lista vazia, e isso
+    # ainda conta como exercitado -- o que a medida precisa saber e que o
+    # modulo RODOU, nao que produziu.
+    yield "run_cost", run_cost.extract_run_cost(pool, "<pool>")
 
 
 def extratores_com_snippet() -> set[str]:
