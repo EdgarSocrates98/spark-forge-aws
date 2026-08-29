@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -39,7 +38,7 @@ class SparkEventLogAnalyzer:
                 continue
             try:
                 event = json.loads(line)
-            except Exception:
+            except Exception:  # noqa: S112 -- linha malformada e pulada, como no extrator canonico
                 continue
 
             event_type = event.get("Event", "")
@@ -83,7 +82,10 @@ class SparkEventLogAnalyzer:
                 max_d = durations[-1]
                 if median > 0 and (max_d / median) > 3.0:
                     metrics.has_skew = True
-                    metrics.bottlenecks.append(f"Task duration skew in Stage {stage_id}: max {max_d}ms vs median {median}ms.")
+                    metrics.bottlenecks.append(
+                        f"Task duration skew in Stage {stage_id}: max {max_d}ms vs "
+                        f"median {median}ms."
+                    )
 
         if metrics.total_spill_disk_bytes > 0:
             metrics.has_spill = True

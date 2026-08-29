@@ -1,5 +1,4 @@
 """Tests for Lake Formation Permission Graph and Doctor."""
-import pytest
 from sparkforge.lakeformation.doctor import LakeFormationDoctor
 from sparkforge.lakeformation.graph import LakeFormationPermissionGraph
 

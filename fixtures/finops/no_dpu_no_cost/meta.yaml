@@ -1,0 +1,7 @@
+name: no_dpu_no_cost
+job_name: etl_pedidos_diario
+proves: 'Tres runs sob Auto Scaling sem `DPUSeconds`: o coletor recusou derivar (numero
+  de workers e teto, nao uso) e `dpu_source` fica vazio. O extrator de custo emite
+  `glue.run_cost.unresolved` -- uma LACUNA nomeada -- e nao um `glue.run_cost` de
+  valor zero. O frontier fica sem linha para esta capacidade, e `refused` mostra `cost_unobservable`
+  em vez de silencio.'

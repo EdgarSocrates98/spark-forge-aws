@@ -1,0 +1,79 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "job_run_id": "jr_004",
+  "source_count": 0,
+  "axes": {
+    "scan_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.sql.scan",
+      "collect_command": "sparkforge analyze sql-metrics --path <event-log.jsonl> --out <facts.json>"
+    },
+    "file_pressure": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.sql.scan",
+      "collect_command": "sparkforge analyze sql-metrics --path <event-log.jsonl> --out <facts.json>"
+    },
+    "shuffle_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.shuffle",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "skew_risk": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.task_duration",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "memory_pressure": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.spill",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "join_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "plan.join",
+      "collect_command": "sparkforge analyze plan --path <explain.txt> --out <facts.json>"
+    },
+    "sla_class": {
+      "value": "critical",
+      "confidence": "declared",
+      "basis": "declared",
+      "evidence": [
+        "f_2e2b7f"
+      ]
+    },
+    "primary_input_class": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "declared_source_not_observed"
+    }
+  },
+  "unknown_axes": [
+    "file_pressure",
+    "join_intensity",
+    "memory_pressure",
+    "primary_input_class",
+    "scan_intensity",
+    "shuffle_intensity",
+    "skew_risk"
+  ]
+}

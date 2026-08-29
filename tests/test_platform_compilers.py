@@ -2,7 +2,6 @@
 import pytest
 
 from sparkforge.adapters.platforms import (
-    GENERATED_HEADER,
     PlatformCompiler,
 )
 from sparkforge.registry.loader import get_default_registry

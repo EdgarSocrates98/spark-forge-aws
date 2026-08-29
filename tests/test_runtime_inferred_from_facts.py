@@ -43,7 +43,10 @@ from sparkforge.facts.runtime_detect import GLUE_MATRIX
 GLUE_GUARDED_RULES = (
     "SF-ENV-002",
     "SF-ENV-003",
-    "SF-GLUE-001",
+    # SF-GLUE-001 foi aposentada em 2026-08-28 (acusava a configuracao
+    # correta); SF-GLUE-007 ocupa a mesma natureza -- infraestrutura Glue
+    # guardada por versao -- e o id antigo NAO e reaproveitado.
+    "SF-GLUE-007",
     "SF-GLUE-002",
     "SF-GLUE-003",
     "SF-GLUE-004",

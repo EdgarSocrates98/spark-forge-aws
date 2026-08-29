@@ -1,18 +1,19 @@
 """Local SQLite Storage for AgentOps Traces and Spans."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from sparkforge.observability.tracer import ExecutionTrace, TraceSpan
+from sparkforge.observability.tracer import ExecutionTrace
 
 
 class SQLiteTraceStore:
     """Local SQLite backend for persistent observability traces."""
 
-    def __init__(self, db_path: Optional[Path] = None) -> None:
+    def __init__(self, db_path: Path | None = None) -> None:
         self.db_path = db_path or (Path.cwd() / ".sparkforge" / "traces.db")
         self._init_db()
 
@@ -59,7 +60,8 @@ class SQLiteTraceStore:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO traces (
-                    run_id, task_description, start_time, end_time, profile, status, total_tokens, total_cost_usd
+                    run_id, task_description, start_time, end_time, profile, status,
+                    total_tokens, total_cost_usd
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
@@ -102,7 +104,7 @@ class SQLiteTraceStore:
                 )
             conn.commit()
 
-    def get_trace(self, run_id: str) -> Optional[dict[str, Any]]:
+    def get_trace(self, run_id: str) -> dict[str, Any] | None:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()

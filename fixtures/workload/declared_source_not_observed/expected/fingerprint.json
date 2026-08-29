@@ -1,0 +1,78 @@
+{
+  "job_name": "etl_pedidos_diario",
+  "job_run_id": "jr_005",
+  "source_count": 1,
+  "axes": {
+    "scan_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "history_absent",
+      "collect_command": "sparkforge collect glue-job-runs --job-name <job>; depois, para cada run anterior: sparkforge analyze sql-metrics --path <event-log-do-run>.jsonl --out <dir-de-historico>/<run>.json"
+    },
+    "file_pressure": {
+      "value": "medium",
+      "confidence": "measured",
+      "basis": "files_per_mib",
+      "evidence": [
+        "f_51c361"
+      ]
+    },
+    "shuffle_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.shuffle",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "skew_risk": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.task_duration",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "memory_pressure": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "spark.stage.spill",
+      "collect_command": "sparkforge analyze event-log --path <event-log.jsonl> --out <facts.json>"
+    },
+    "join_intensity": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "plan.join",
+      "collect_command": "sparkforge analyze plan --path <explain.txt> --out <facts.json>"
+    },
+    "sla_class": {
+      "value": "critical",
+      "confidence": "declared",
+      "basis": "declared",
+      "evidence": [
+        "f_03c84a"
+      ]
+    },
+    "primary_input_class": {
+      "value": "unknown",
+      "confidence": "unknown",
+      "basis": "",
+      "evidence": [],
+      "missing": "declared_source_not_observed"
+    }
+  },
+  "unknown_axes": [
+    "join_intensity",
+    "memory_pressure",
+    "primary_input_class",
+    "scan_intensity",
+    "shuffle_intensity",
+    "skew_risk"
+  ]
+}

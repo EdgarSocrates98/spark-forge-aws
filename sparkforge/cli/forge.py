@@ -1,4 +1,5 @@
 """Unified CLI for SparkForge AWS Data Platform Engineering Agent Factory."""
+
 from __future__ import annotations
 
 import argparse
@@ -8,17 +9,11 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.adapters import _core
-from sparkforge.databases.dynamodb import DynamoDBSpecialist
-from sparkforge.databases.neptune import NeptuneSpecialist
 from sparkforge.errors.matcher import DeterministicErrorMatcher
 from sparkforge.iceberg.doctor import IcebergTableDoctor
 from sparkforge.lakeformation.doctor import LakeFormationDoctor
-from sparkforge.lakeformation.graph import LakeFormationPermissionGraph
 from sparkforge.registry.loader import CanonicalRegistry
 from sparkforge.spark.eventlog_analyzer import SparkEventLogAnalyzer
-from sparkforge.spark.plan_profiler import SparkPlanProfiler
-from sparkforge.streaming.kafka import KafkaMSKSpecialist
-from sparkforge.streaming.kinesis import KinesisSpecialist
 from sparkforge.terraform.plan_analyzer import TerraformPlanAnalyzer
 
 
@@ -34,7 +29,15 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "skills_count": 0,
         "agents_count": 0,
         "error_signatures_count": 0,
-        "platforms_supported": ["antigravity", "cursor", "claude", "devin", "windsurf", "copilot", "generic"],
+        "platforms_supported": [
+            "antigravity",
+            "cursor",
+            "claude",
+            "devin",
+            "windsurf",
+            "copilot",
+            "generic",
+        ],
         "status": "PASS",
     }
 
@@ -174,7 +177,9 @@ def cmd_spark_eventlog(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="forge", description="SparkForge AWS Data Platform Engineering CLI")
+    parser = argparse.ArgumentParser(
+        prog="forge", description="SparkForge AWS Data Platform Engineering CLI"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     # forge doctor

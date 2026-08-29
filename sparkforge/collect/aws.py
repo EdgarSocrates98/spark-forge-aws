@@ -37,6 +37,7 @@ from sparkforge.collect.base import (
     require_boto3,
     verify_artifact,
 )
+from sparkforge.facts.cloudwatch_retention import period_for_age_days
 
 # Segundos entre tentativas de poll de uma query Athena ainda em execucao.
 # So importa quando a query realmente demora -- um cliente de teste que
@@ -104,6 +105,18 @@ ICEBERG_METADATA_SECTIONS: tuple[str, ...] = (
 )
 
 
+# Estados em que um job run nao muda mais. So estes viram artefato: gravar um
+# run ainda em execucao produziria um arquivo cujo conteudo muda depois, e a
+# proxima coleta veria o sha256 divergir -- o cache offline-first viraria um
+# falso negativo permanente para aquele run.
+TERMINAL_JOB_RUN_STATES: frozenset[str] = frozenset(
+    {"SUCCEEDED", "FAILED", "TIMEOUT", "STOPPED", "ERROR"}
+)
+
+# Teto por pagina que a API aceita. `max_runs` do chamador ainda limita o total.
+_GET_JOB_RUNS_PAGE_SIZE = 200
+
+
 class CollectionFailed(RuntimeError):
     """A chamada AWS se conectou, mas a coleta nao pode ser concluida --
     query Athena terminou em FAILED/CANCELLED, listagem S3 vazia, etc.
@@ -125,6 +138,10 @@ def glue_job_path(job_name: str) -> str:
 
 def cloudwatch_path(job_name: str, job_run_id: str) -> str:
     return f".sparkforge/artifacts/cloudwatch/{job_name}_{job_run_id}.json"
+
+
+def glue_job_run_path(job_name: str, job_run_id: str) -> str:
+    return f".sparkforge/artifacts/glue_job_run/{job_name}_{job_run_id}.json"
 
 
 def iceberg_metadata_path(table: str) -> str:
@@ -328,6 +345,109 @@ def collect_glue_job(job_name: str, root: Path, *, now: str) -> ArtifactEntry:
     )
 
 
+def collect_glue_job_runs(
+    job_name: str, root: Path, *, max_runs: int, now: str
+) -> dict[str, Any]:
+    """Baixa o historico de execucoes de um job via `glue.get_job_runs`.
+
+    Um arquivo por run TERMINAL, e nao um arquivo por janela: `GetJobRuns`
+    devolve uma janela movel, e o manifesto assume artefato imutavel verificado
+    por sha256. Um run por arquivo reconcilia os dois -- e da coleta incremental
+    de graca, porque `_offline_hit` reconhece o que ja esta em disco.
+
+    Diferenca dos coletores de artefato unico: a listagem SEMPRE toca a rede.
+    Nao ha como saber quais runs existem sem perguntar. O que o cache evita e
+    reescrever e reregistrar o que ja esta integro no disco, e e isso que
+    `cache_hit` por run informa.
+
+    `max_runs` e teto de paginacao, nao filtro de data: a API devolve do mais
+    recente para tras e nao aceita janela temporal. Expor `--start`/`--end` seria
+    filtro do lado do cliente disfarcado de parametro de API.
+    """
+    if max_runs < 1:
+        raise ValueError(f"max_runs precisa ser >= 1, veio {max_runs}")
+
+    boto3 = require_boto3()
+    client = boto3.client("glue")
+
+    artifacts: list[dict[str, Any]] = []
+    skipped: list[dict[str, str]] = []
+    seen = 0
+    token: str | None = None
+
+    while seen < max_runs:
+        kwargs: dict[str, Any] = {
+            "JobName": job_name,
+            "MaxResults": min(_GET_JOB_RUNS_PAGE_SIZE, max_runs - seen),
+        }
+        if token:
+            kwargs["NextToken"] = token
+        try:
+            page = client.get_job_runs(**kwargs)
+        except Exception as exc:  # noqa: BLE001 -- botocore nao e importavel aqui
+            # `botocore` gera as classes de excecao em tempo de execucao a
+            # partir do modelo do servico, e este modulo nunca importa boto3 no
+            # topo. Casar pelo NOME da classe e o unico jeito de distinguir
+            # "job nao existe" de uma falha de rede sem acoplar ao botocore.
+            if type(exc).__name__ == "EntityNotFoundException":
+                raise CollectionFailed(
+                    f"Job {job_name!r} nao existe na conta/regiao correntes. "
+                    f"Confira o nome com `aws glue list-jobs`."
+                ) from exc
+            raise
+
+        runs = page.get("JobRuns") or []
+        for run in runs:
+            seen += 1
+            state = run.get("JobRunState") or ""
+            run_id = run.get("Id") or ""
+            if state not in TERMINAL_JOB_RUN_STATES:
+                skipped.append({"job_run_id": run_id, "state": state})
+                continue
+            artifacts.append(_write_job_run(job_name, run_id, run, root, now=now))
+
+        token = page.get("NextToken")
+        if not token:
+            break
+
+    return {
+        "job_name": job_name,
+        "artifacts": artifacts,
+        "skipped": skipped,
+        "runs_listed": seen,
+    }
+
+
+def _write_job_run(
+    job_name: str, run_id: str, run: dict[str, Any], root: Path, *, now: str
+) -> dict[str, Any]:
+    rel_path = glue_job_run_path(job_name, run_id)
+    collect_command = (
+        f"sparkforge collect glue-job-runs --job-name {job_name} --max-runs 30"
+    )
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        payload = hit.to_dict()
+        payload["cache_hit"] = True
+        return payload
+
+    content = json.dumps(
+        run, indent=2, sort_keys=True, default=str, ensure_ascii=False
+    ).encode("utf-8")
+    entry = _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="glue_job_run",
+        source=f"glue:get_job_runs:{job_name}/{run_id}",
+        collect_command=collect_command,
+        now=now,
+    )
+    payload = entry.to_dict()
+    payload["cache_hit"] = False
+    return payload
+
+
 # --------------------------------------------------------------------------- #
 # metricas de observabilidade (CloudWatch)
 # --------------------------------------------------------------------------- #
@@ -360,6 +480,22 @@ def collect_cloudwatch(
 
     start_dt = _parse_iso(start)
     end_dt = _parse_iso(end)
+
+    # O periodo vem da idade do run, nunca fixo. Ponto de granularidade fina
+    # expira; consultar um run antigo com periodo curto devolve serie vazia, e
+    # vazio se parece com "observabilidade desligada no job" -- causa diferente
+    # e remedio diferente. A tabela de retencao esta em
+    # `knowledge/glue/observability.yaml`, com fonte e data.
+    age_days = (_parse_iso(now) - end_dt).total_seconds() / 86400.0
+    period = period_for_age_days(max(age_days, 0.0))
+    if period is None:
+        raise CollectionFailed(
+            f"Metrica de {job_name}/{job_run_id} expirada: o run terminou em {end}, "
+            f"fora da janela de retencao de toda granularidade publicada em "
+            f"knowledge/glue/observability.yaml. Consultar assim mesmo devolveria "
+            f"serie vazia, indistinguivel de observabilidade desligada no job."
+        )
+
     dimensions = [
         {"Name": "JobName", "Value": job_name},
         {"Name": "JobRunId", "Value": job_run_id},
@@ -369,7 +505,7 @@ def collect_cloudwatch(
             "Id": f"m{index}",
             "MetricStat": {
                 "Metric": {"Namespace": "Glue", "MetricName": metric, "Dimensions": dimensions},
-                "Period": 30,
+                "Period": period,
                 "Stat": stat,
             },
             "Label": metric,
@@ -386,6 +522,7 @@ def collect_cloudwatch(
         "job_run_id": job_run_id,
         "start": start,
         "end": end,
+        "period_seconds": period,
         "metric_data_results": response.get("MetricDataResults") or [],
     }
     content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(

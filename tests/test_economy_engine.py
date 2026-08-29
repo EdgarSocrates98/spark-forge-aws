@@ -1,12 +1,10 @@
 """Tests for SparkForge Token Economy Engine (Phase 3)."""
-import pytest
 
 from sparkforge.economy import (
     ArtifactCache,
     CapabilityModelRouter,
     ExecutionProfile,
     ModelTier,
-    RiskLevel,
     TaskBudgetGuardrail,
     TokenUsage,
     TokenWasteDetector,
@@ -74,9 +72,24 @@ def test_capability_router_specialist_skill():
 def test_token_waste_detector():
     detector = TokenWasteDetector()
     events = [
-        {"type": "tool_call", "name": "sparkforge_analyze_pyspark", "args": {"path": "job.py"}, "tokens": 500},
-        {"type": "tool_call", "name": "sparkforge_analyze_pyspark", "args": {"path": "job.py"}, "tokens": 500},
-        {"type": "tool_call", "name": "sparkforge_analyze_pyspark", "args": {"path": "job.py"}, "tokens": 500},
+        {
+            "type": "tool_call",
+            "name": "sparkforge_analyze_pyspark",
+            "args": {"path": "job.py"},
+            "tokens": 500,
+        },
+        {
+            "type": "tool_call",
+            "name": "sparkforge_analyze_pyspark",
+            "args": {"path": "job.py"},
+            "tokens": 500,
+        },
+        {
+            "type": "tool_call",
+            "name": "sparkforge_analyze_pyspark",
+            "args": {"path": "job.py"},
+            "tokens": 500,
+        },
         {"type": "model_call", "tier": "tier_5_premium", "task_complexity": "low", "tokens": 2000},
     ]
     findings = detector.analyze_trace(events)

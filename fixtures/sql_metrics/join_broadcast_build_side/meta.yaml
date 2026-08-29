@@ -1,0 +1,19 @@
+name: join_broadcast_build_side
+proves: >
+  BroadcastHashJoin entre db.pedidos e db.clientes, Inner, BuildRight. O lado
+  direito (db.clientes) e quem o operador manda para o broadcast: a aresta
+  `spark.sql.join_input` dele sai com `side: build`, e a do esquerdo
+  (db.pedidos) com `side: stream`. Caso base do grafo de join -- um join, dois
+  scans diretos, build_side publicado pelo operador.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.execution
+  - spark.sql.scan
+  - spark.sql.join
+  - spark.sql.join_input
+  - spark.sql.analyzed
+expects_rules: []

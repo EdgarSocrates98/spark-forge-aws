@@ -1,5 +1,5 @@
 """Tests for Database and Streaming Specialists."""
-import pytest
+
 from sparkforge.databases.dynamodb import DynamoDBSpecialist
 from sparkforge.databases.neptune import NeptuneSpecialist
 from sparkforge.streaming.kafka import KafkaMSKSpecialist
@@ -32,7 +32,9 @@ def test_neptune_full_scan():
 def test_kafka_msk_consumer_lag():
     specialist = KafkaMSKSpecialist()
     lags = {0: 100, 1: 200, 2: 80000}
-    rep = specialist.diagnose_consumer_lag("events.clickstream", "analytics-group", lags, under_replicated_count=1)
+    rep = specialist.diagnose_consumer_lag(
+        "events.clickstream", "analytics-group", lags, under_replicated_count=1
+    )
     assert rep.has_high_lag is True
     assert rep.has_partition_imbalance is True
     assert rep.under_replicated_partitions == 1

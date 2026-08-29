@@ -28,6 +28,7 @@ from sparkforge.facts import (
     benchmark,
     call_graph,
     catalog_schema,
+    cloudwatch,
     consumers,
     data_quality,
     emr_cluster,
@@ -35,15 +36,21 @@ from sparkforge.facts import (
     event_log,
     funcval,
     fusion,
+    glue_job_run,
     graph,
     iceberg_metadata,
     migration,
     pyspark_ast,
+    run_cost,
     runtime_detect,
     s3_listing,
     spark_plan,
     sql_literal,
+    sql_metrics,
     terraform,
+    timeout_diagnosis,
+    utilization,
+    workload,
 )
 from sparkforge.rules.loader import catalog_dir, load_catalog
 
@@ -52,6 +59,13 @@ EXTRACTORS = (
     benchmark,
     call_graph,
     catalog_schema,
+    # Os TRES abaixo entraram atrasados, e a omissao tinha o custo que os
+    # comentarios vizinhos ja descrevem: kind emitido por extrator que existe,
+    # mas ausente desta lista, conta como orfao, e a primeira regra que o
+    # consumir e forcada a `blocked_on` sobre um modulo que ja esta no
+    # repositorio. `cloudwatch` e `glue_job_run` chegaram com o coletor de
+    # historico de runs Glue; `sql_metrics`, com a metrica por no do plano.
+    cloudwatch,
     consumers,
     # Esta lista e manual e duplicada em `tests/test_fixtures_kind_coverage.py`:
     # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
@@ -73,6 +87,7 @@ EXTRACTORS = (
     # esta no repositorio.
     funcval,
     fusion,
+    glue_job_run,
     # `graph` pela mesma razao, uma fase depois: sem ele aqui, os seis kinds
     # `graph.*` contam como orfaos e as regras SF-GRAPH da Task 5 seriam
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
@@ -90,11 +105,35 @@ EXTRACTORS = (
     # essa fixture e trabalho da Task 9, nao desta.
     migration,
     pyspark_ast,
+    # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` contam
+    # como orfaos, e a primeira regra que os consumir seria forcada a
+    # `blocked_on` sobre um extrator que ja esta no repositorio.
+    run_cost,
     runtime_detect,
     s3_listing,
     spark_plan,
     sql_literal,
+    sql_metrics,
     terraform,
+    # `timeout_diagnosis` entra nas DUAS listas no mesmo commit da Task 4 do
+    # plano `timeout-intelligence.md`: sem ele aqui, os tres kinds
+    # `spark.timeout.*` contam como orfaos, e `SF-TIMEOUT-001` e
+    # `SF-TIMEOUT-002` seriam forcadas a `blocked_on` sobre um extrator que ja
+    # esta no repositorio.
+    timeout_diagnosis,
+    # `utilization` entra nas DUAS listas no mesmo commit do subprojeto H:
+    # sem ele aqui, os dois kinds `glue.utilization.*` contam como orfaos e
+    # `SF-WASTE-001` e `SF-WASTE-002` seriam forcadas a `blocked_on` sobre um
+    # extrator que ja esta no repositorio.
+    utilization,
+    # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*`
+    # (`workload.declared`, `workload.unresolved`, `workload.declared_analyzed`)
+    # contam como orfaos, e a primeira regra que os consumir seria forcada a
+    # `blocked_on` sobre um extrator que ja esta no repositorio desde
+    # `sparkforge/facts/workload.py`.
+    workload,
 )
 
 EMITTABLE: frozenset[str] = frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS))

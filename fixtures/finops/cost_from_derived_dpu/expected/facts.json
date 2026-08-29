@@ -1,0 +1,92 @@
+[
+  {
+    "id": "f_e1f246",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_derivado_0",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_derivado_0"
+    },
+    "measures": {
+      "dpu_seconds": 3600.0,
+      "dpu_hours": 1.0,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.44
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_13546d",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_derivado_1",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_derivado_1"
+    },
+    "measures": {
+      "dpu_seconds": 3600.0,
+      "dpu_hours": 1.0,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.44
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  },
+  {
+    "id": "f_4f1d17",
+    "schema_version": 1,
+    "kind": "glue.run_cost",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_derivado_2",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_derivado_2"
+    },
+    "measures": {
+      "dpu_seconds": 3600.0,
+      "dpu_hours": 1.0,
+      "price_per_dpu_hour": 0.44,
+      "cost": 0.44
+    },
+    "attrs": {
+      "region": "UNQUALIFIED",
+      "runtime_version": "UNQUALIFIED",
+      "currency": "USD",
+      "price_source": "https://aws.amazon.com/glue/pricing/",
+      "price_retrieved": "2026-08-23",
+      "dpu_source": "derived"
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>",
+      "formula": "dpu_hours * price_per_dpu_hour, dpu_hours = dpu_seconds / 3600"
+    }
+  }
+]

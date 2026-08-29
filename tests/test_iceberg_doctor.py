@@ -1,5 +1,4 @@
 """Tests for Iceberg Table Doctor and Maintenance Planner."""
-import pytest
 from sparkforge.iceberg.doctor import IcebergTableDoctor
 from sparkforge.iceberg.maintenance import IcebergMaintenancePlanner
 

@@ -1,0 +1,32 @@
+[
+  {
+    "rule_id": "SF-PY-004",
+    "title": "achado SF-PY-004",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "etl_pedidos.py",
+      "line": 88
+    },
+    "evidence": [
+      "f_abc123"
+    ]
+  },
+  {
+    "rule_id": "SF-PQ-002",
+    "title": "achado SF-PQ-002",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "etl_pedidos.py",
+      "line": 120
+    },
+    "evidence": [
+      "f_abc123"
+    ]
+  }
+]

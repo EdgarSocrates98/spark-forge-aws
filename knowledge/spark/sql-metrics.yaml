@@ -1,0 +1,36 @@
+# Mapa canonico de nome de metrica SQL do Spark para a measure que o extrator
+# emite. LISTA FECHADA de proposito: nome fora daqui vira
+# `spark.sql.unresolved` com razao `unknown_metric_name`, nunca palpite.
+#
+# Casar por substring seria o defeito que este arquivo existe para evitar:
+# "bytes" casaria `size of files read` certo e `bytes of shuffle write` errado,
+# e o erro sairia com aparencia de medicao.
+#
+# `verified_in` e a lista de versoes de Spark em que o nome foi conferido
+# direto no fonte (`DataSourceScanExec.scala`, classe `FileSourceScanLike`).
+# Nome de metrica do Spark nao e constante universal. As cinco versoes abaixo
+# sao exatamente as que `knowledge/glue/runtime-matrix.yaml` mapeia para as
+# versoes de Glue 3.0 a 6.0 -- a mesma versao de Spark, conferida uma vez,
+# cobre todo Glue que a declara.
+#
+# `metric_type` vem de `SQLMetrics.scala`: `createMetric` -> sum,
+# `createSizeMetric` -> size. Nenhuma das quatro metricas abaixo usa timing
+# ou average.
+version: 1
+metrics:
+  - published: "number of files read"
+    measure: files_read
+    metric_type: sum
+    verified_in: ["3.1.1", "3.3.0", "3.5.4", "3.5.6", "4.1.1"]
+  - published: "size of files read"
+    measure: bytes_read
+    metric_type: size
+    verified_in: ["3.1.1", "3.3.0", "3.5.4", "3.5.6", "4.1.1"]
+  - published: "number of output rows"
+    measure: rows_output
+    metric_type: sum
+    verified_in: ["3.1.1", "3.3.0", "3.5.4", "3.5.6", "4.1.1"]
+  - published: "number of partitions read"
+    measure: partitions_read
+    metric_type: sum
+    verified_in: ["3.1.1", "3.3.0", "3.5.4", "3.5.6", "4.1.1"]

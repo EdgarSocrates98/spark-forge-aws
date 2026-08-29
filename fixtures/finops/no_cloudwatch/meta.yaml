@@ -1,0 +1,7 @@
+name: no_cloudwatch
+job_name: etl_pedidos_diario
+proves: O custo sai normalmente (a partir de `dpu_seconds` do historico de runs, que
+  nao depende de CloudWatch) e o sintoma de bytes lidos (do event log) tambem aparece
+  -- mas `worker_utilization_p50` fica AUSENTE de `symptoms`, porque nenhum `glue.metric`
+  de CloudWatch foi coletado. Custo e sintoma tem fontes diferentes, e a falta de
+  uma nao trava a outra.

@@ -1,8 +1,9 @@
 """Lake Formation Deterministic Permission Graph Engine."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -30,7 +31,8 @@ class PermissionGraphAnalysis:
 
 
 class LakeFormationPermissionGraph:
-    """Traces access path: Principal -> IAM -> LF -> Catalog -> Resource Link -> RAM -> S3 -> KMS."""
+    """Traces access path: Principal -> IAM -> LF -> Catalog -> Resource Link
+    -> RAM -> S3 -> KMS."""
 
     def evaluate_access(
         self,
@@ -63,7 +65,9 @@ class LakeFormationPermissionGraph:
                 evidence=f"No SELECT grant found on {target_table}",
             )
             missing.append(edge)
-            recommendations.append(f"Grant SELECT permission on Lake Formation table {target_table}")
+            recommendations.append(
+                f"Grant SELECT permission on Lake Formation table {target_table}"
+            )
 
         # If cross-account, check RAM and Resource Link
         if is_cross_account:
@@ -81,7 +85,10 @@ class LakeFormationPermissionGraph:
                         evidence="RAM resource share not accepted in consumer account",
                     )
                 )
-                recommendations.append("Accept AWS RAM resource share in consumer account and create Glue resource link.")
+                recommendations.append(
+                    "Accept AWS RAM resource share in consumer account and create Glue resource "
+                    "link."
+                )
 
         # Check KMS access
         has_kms = any(k.get("allows_principal", False) for k in kms_keys) if kms_keys else True
@@ -97,7 +104,9 @@ class LakeFormationPermissionGraph:
                     evidence="Principal missing in KMS Key Policy",
                 )
             )
-            recommendations.append("Add principal role ARN to KMS Key Policy `kms:Decrypt` statement.")
+            recommendations.append(
+                "Add principal role ARN to KMS Key Policy `kms:Decrypt` statement."
+            )
 
         is_accessible = len(missing) == 0
 

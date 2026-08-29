@@ -1857,6 +1857,487 @@ _CODE_DB_PROP: dict[str, Any] = {
 # aqui sai da raiz.
 _CODE_WRITES_INDEX = _WRITE_IDEMPOTENT
 
+# O eixo de `sparkforge.workload.axis.Axis.to_dict()`. `missing` e
+# `collect_command` so aparecem quando `value` e `unknown` -- por isso nao
+# entram em `required`, no mesmo molde de `_ERROR_SCHEMA` nao entrar no ramo
+# de sucesso de `_may_fail`.
+_WORKLOAD_AXIS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["value", "confidence", "basis", "evidence"],
+    "properties": {
+        "value": {
+            "type": "string",
+            "enum": ["extreme", "high", "medium", "low", "critical", "unknown"],
+        },
+        "confidence": {
+            "type": "string",
+            "enum": ["measured", "declared", "unknown"],
+            "description": (
+                "`measured` sai de artefato ja extraido. `declared` sai do "
+                "inventario versionado e NUNCA e promovido a `measured`. "
+                "`unknown` carrega `missing` e, quando existe, `collect_command`."
+            ),
+        },
+        "basis": {"type": "string"},
+        "evidence": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Ids dos facts que sustentam o valor. Vazio quando `unknown`.",
+        },
+        "missing": {
+            "type": "string",
+            "description": "O fact que faltou, quando `value` e `unknown`.",
+        },
+        "collect_command": {
+            "type": "string",
+            "description": "O comando que fecha a lacuna, quando existe.",
+        },
+    },
+}
+
+_WORKLOAD_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["job_name", "job_run_id", "source_count", "axes", "unknown_axes"],
+    "properties": {
+        "job_name": {"type": "string"},
+        "job_run_id": {"type": "string"},
+        "source_count": {
+            "type": "integer",
+            "description": "Quantos facts `spark.sql.scan` sustentam o perfil.",
+        },
+        "axes": {
+            "type": "object",
+            "additionalProperties": _WORKLOAD_AXIS_SCHEMA,
+            "description": (
+                "Um eixo por chave: `scan_intensity`, `file_pressure`, "
+                "`shuffle_intensity`, `skew_risk`, `memory_pressure`, "
+                "`join_intensity`, `sla_class` e `primary_input_class`."
+            ),
+        },
+        "unknown_axes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Nomes dos eixos cujo `value` e `unknown`, para ler sem varrer `axes`."
+            ),
+        },
+    },
+}
+
+# `Candidate.to_dict()` (`sparkforge/capacity/plan.py`). `safety` e SEMPRE
+# `REVIEW`: nenhum candidato nasce de outro jeito, e nada neste modulo aplica a
+# mudanca -- a mesma disciplina que a secao 34 do documento de origem exige.
+_CAPACITY_CANDIDATE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "glue_version",
+        "worker_type",
+        "number_of_workers",
+        "autoscaling",
+        "runs_total",
+        "runs_comparable",
+        "runs_within_sla",
+        "reliability",
+        "resolution",
+        "dpu_seconds_p95",
+        "meets_sla",
+        "safety",
+    ],
+    "properties": {
+        "glue_version": {"type": "string"},
+        "worker_type": {"type": "string"},
+        "number_of_workers": {"type": "integer"},
+        "autoscaling": {"type": "boolean"},
+        "runs_total": {"type": "integer"},
+        "runs_comparable": {
+            "type": "integer",
+            "description": "Runs dentro da tolerancia de volume do run corrente.",
+        },
+        "runs_within_sla": {"type": "integer"},
+        "reliability": {
+            "type": "number",
+            "description": "`runs_within_sla / runs_comparable`.",
+        },
+        "resolution": {
+            "type": "number",
+            "description": "`1 / runs_comparable` -- a menor diferenca observavel.",
+        },
+        "dpu_seconds_p95": {"type": "number"},
+        "meets_sla": {"type": "boolean"},
+        "safety": {
+            "type": "string",
+            "enum": ["REVIEW"],
+            "description": "Sempre `REVIEW`. Nenhum caminho deste modulo aplica a mudanca.",
+        },
+    },
+}
+
+# Forma variavel por `reason` (`sparkforge/capacity/plan.py`): `sla_not_declared`
+# so tem `detail`, os outros tres tambem carregam `capacity`, e
+# `resolution_too_coarse` acrescenta `runs_needed`. `additionalProperties: True`
+# no mesmo molde do `runtime` de `sparkforge_glue_dependency_audit`.
+_CAPACITY_REFUSED_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["reason", "detail"],
+    "properties": {
+        "reason": {
+            "type": "string",
+            "enum": [
+                "sla_not_declared",
+                "no_comparable_runs",
+                "cost_unobservable",
+                "resolution_too_coarse",
+            ],
+        },
+        "detail": {"type": "string"},
+        "capacity": {"type": "string"},
+        "runs_total": {"type": "integer"},
+        "runs_comparable": {"type": "integer"},
+        "runs_needed": {"type": "integer"},
+    },
+    "additionalProperties": True,
+}
+
+_CAPACITY_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "job_name",
+        "job_run_id",
+        "sla_minutes",
+        "reliability_target",
+        "volume_tolerance",
+        "current_volume_bytes",
+        "candidates",
+        "chosen",
+        "refused",
+        "discarded_runs",
+        "only_one_capacity_observed",
+    ],
+    "properties": {
+        "job_name": {"type": "string"},
+        "job_run_id": {"type": "string"},
+        "sla_minutes": {
+            "type": ["number", "null"],
+            "description": (
+                "`null` quando `workload.declared` nao tem `sla_minutes` para este "
+                "job -- sem SLA nao ha restricao a cumprir, e `refused` carrega "
+                "`sla_not_declared`."
+            ),
+        },
+        "reliability_target": {"type": ["number", "null"]},
+        "volume_tolerance": {"type": ["number", "null"]},
+        "current_volume_bytes": {
+            "type": ["integer", "null"],
+            "description": (
+                "Bytes varridos pelo run corrente, somando os `spark.sql.scan` de "
+                "`facts_path`. `null` quando nenhum scan publicou `bytes_read`."
+            ),
+        },
+        "candidates": {
+            "type": "array",
+            "items": _CAPACITY_CANDIDATE_SCHEMA,
+            "description": "Ordenados por `dpu_seconds_p95` -- a mais barata primeiro.",
+        },
+        "chosen": {
+            "oneOf": [_CAPACITY_CANDIDATE_SCHEMA, {"type": "null"}],
+            "description": (
+                "A capacidade mais barata que cumpre o SLA, ou `null` se nenhuma "
+                "cumpre."
+            ),
+        },
+        "refused": {"type": "array", "items": _CAPACITY_REFUSED_ITEM},
+        "discarded_runs": {
+            "type": "object",
+            "additionalProperties": {"type": "integer"},
+            "description": "Motivo de descarte -> quantos arquivos de historico cairam nele.",
+        },
+        "only_one_capacity_observed": {"type": "boolean"},
+    },
+}
+
+# `build_finops_report` (`sparkforge/finops/report.py`). Uma linha por
+# capacidade OBSERVADA, ordenada por `cost_per_run_p95` -- a mais barata
+# primeiro, que e o membro `cost_relative: 1.0`. `runtime_p50_s`/`runtime_p95_s`
+# saem `null` quando nenhum membro do grupo publicou `execution_time_s`, e
+# `cost_relative` sai `null` no caso degenerado de a capacidade mais barata
+# custar zero -- divisao por zero vira recusa silenciosa, nao excecao.
+_FINOPS_FRONTIER_LINE: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "glue_version",
+        "worker_type",
+        "number_of_workers",
+        "autoscaling",
+        "runs",
+        "runtime_p50_s",
+        "runtime_p95_s",
+        "cost_per_run_p95",
+        "cost_relative",
+    ],
+    "properties": {
+        "glue_version": {"type": "string"},
+        "worker_type": {"type": "string"},
+        "number_of_workers": {"type": "integer"},
+        "autoscaling": {"type": "boolean"},
+        "runs": {"type": "integer"},
+        "runtime_p50_s": {"type": ["number", "null"]},
+        "runtime_p95_s": {"type": ["number", "null"]},
+        "cost_per_run_p95": {"type": "number"},
+        "cost_relative": {
+            "type": ["number", "null"],
+            "description": "`cost_per_run_p95` dividido pelo da linha mais barata.",
+        },
+    },
+}
+
+# Uma linha por capacidade cujo `resolution_supports` aprovou o alvo de
+# confiabilidade declarado -- capacidade reprovada cai em `refused`, nunca
+# aqui com numero inventado. `cost_per_sla_success` e `null` quando NENHUM run
+# da capacidade ficou dentro do SLA: o denominador seria zero.
+_FINOPS_SLA_OUTCOME_LINE: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "glue_version",
+        "worker_type",
+        "number_of_workers",
+        "autoscaling",
+        "runs",
+        "runs_within_sla",
+        "reliability",
+        "cost_per_sla_success",
+    ],
+    "properties": {
+        "glue_version": {"type": "string"},
+        "worker_type": {"type": "string"},
+        "number_of_workers": {"type": "integer"},
+        "autoscaling": {"type": "boolean"},
+        "runs": {"type": "integer"},
+        "runs_within_sla": {"type": "integer"},
+        "reliability": {"type": "number"},
+        "cost_per_sla_success": {"type": ["number", "null"]},
+    },
+}
+
+# Forma variavel por `reason`: `sla_not_declared` so tem `detail`,
+# `cost_unobservable` e `resolution_too_coarse` tambem carregam `capacity` e
+# `runs`. `additionalProperties: True` no mesmo molde de `_CAPACITY_REFUSED_ITEM`.
+_FINOPS_REFUSED_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["reason", "detail"],
+    "properties": {
+        "reason": {
+            "type": "string",
+            "enum": ["sla_not_declared", "cost_unobservable", "resolution_too_coarse"],
+        },
+        "detail": {"type": "string"},
+        "capacity": {"type": "string"},
+        "runs": {"type": "integer"},
+    },
+    "additionalProperties": True,
+}
+
+# `_levers` (`sparkforge/finops/report.py`) nomeia QUAL alavanca se aplica,
+# nunca QUANTO do custo e de cada lado -- atribuir o quanto exigiria o custo do
+# run que nao aconteceu. `findings` traz so os quatro campos que orientam
+# (`rule_id`, `title`, `severity`, `subject`), nao o Finding inteiro.
+_FINOPS_LEVERS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["code", "capacity", "none_found"],
+    "properties": {
+        "code": {
+            "type": "object",
+            "required": ["findings", "detail"],
+            "properties": {
+                "findings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["rule_id", "title", "severity", "subject"],
+                        "properties": {
+                            "rule_id": {"type": "string"},
+                            "title": {"type": "string"},
+                            "severity": {"type": "string"},
+                            "subject": {"type": "object"},
+                        },
+                    },
+                },
+                "detail": {"type": "string"},
+            },
+        },
+        "capacity": {
+            "type": "object",
+            "required": ["detail"],
+            "properties": {"detail": {"type": "string"}},
+        },
+        "none_found": {
+            "type": "boolean",
+            "description": "Verdadeiro quando `code.findings` esta vazio.",
+        },
+    },
+}
+
+# `_symptoms` (`sparkforge/finops/report.py`): cada chave so aparece quando o
+# fact que a sustenta existe -- sem default de zero para sintoma nao medido.
+_FINOPS_SYMPTOMS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "skew_p95_over_p50": {"type": "number"},
+        "spill_over_input": {"type": "number"},
+        "bytes_read": {"type": "integer"},
+        "worker_utilization_p50": {"type": "number"},
+    },
+    "additionalProperties": False,
+}
+
+_FINOPS_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "job_name",
+        "currency",
+        "region",
+        "runtime_version",
+        "frontier",
+        "per_sla_outcome",
+        "symptoms",
+        "levers",
+        "refused",
+    ],
+    "properties": {
+        "job_name": {"type": "string"},
+        "currency": {
+            "type": "string",
+            "description": "Vazio quando nenhum run tem custo resolvido.",
+        },
+        "region": {
+            "type": "string",
+            "description": (
+                "`UNQUALIFIED` quando a fonte de preco nao qualifica regiao -- "
+                "distinto de vazio, que diria que nenhum custo resolveu."
+            ),
+        },
+        "runtime_version": {
+            "type": "string",
+            "description": "Mesma ressalva de `region`: `UNQUALIFIED` e valor de primeira classe.",
+        },
+        "frontier": {
+            "type": "array",
+            "items": _FINOPS_FRONTIER_LINE,
+            "description": "Capacidades observadas, ordenadas da mais barata para a mais cara.",
+        },
+        "per_sla_outcome": {"type": "array", "items": _FINOPS_SLA_OUTCOME_LINE},
+        "symptoms": _FINOPS_SYMPTOMS_SCHEMA,
+        "levers": _FINOPS_LEVERS_SCHEMA,
+        "refused": {"type": "array", "items": _FINOPS_REFUSED_ITEM},
+    },
+}
+
+_TUNE_PROPERTY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["key", "current", "derived", "safety", "supported_in_runtime", "explanation"],
+    "properties": {
+        "key": {"type": "string"},
+        "current": {
+            "type": "object",
+            "required": ["value", "provenance", "evidence"],
+            "properties": {
+                "value": {
+                    "type": "string",
+                    "description": "Vazio quando ninguem definiu a chave.",
+                },
+                "provenance": {
+                    "type": "string",
+                    "enum": [
+                        "code",
+                        "terraform",
+                        "runtime_or_cluster",
+                        "spark_default_explicit",
+                        "unset",
+                    ],
+                    "description": (
+                        "Quem PEDIU o valor, e nao quem venceu. `runtime_or_cluster` "
+                        "significa que o motor aplicou e ninguem no repositorio pediu; "
+                        "`spark_default_explicit` e configuracao escrita a mao com o "
+                        "valor do proprio default, que nao muda nada."
+                    ),
+                },
+                "evidence": {"type": "array", "items": {"type": "string"}},
+            },
+        },
+        "derived": {
+            "type": "object",
+            "required": ["value", "formula", "basis"],
+            "properties": {
+                "value": {"type": "integer"},
+                "formula": {"type": "string"},
+                "basis": {
+                    "type": "object",
+                    "description": (
+                        "A medida e o alvo que sustentam o numero. `target_source` diz "
+                        "se o alvo veio do default documentado do Spark ou de "
+                        "`spark.sql.adaptive.advisoryPartitionSizeInBytes` declarado."
+                    ),
+                },
+            },
+        },
+        "safety": {
+            "type": "string",
+            "enum": ["SAFE", "REVIEW", "EXPERIMENTAL"],
+            "description": (
+                "Nivel do 34 do documento de origem. Nada e aplicado automaticamente."
+            ),
+        },
+        "supported_in_runtime": {"type": "boolean"},
+        "explanation": {
+            "type": "string",
+            "description": (
+                "Muda com AQE: com AQE default o numero e piso inicial que o motor "
+                "coalesce; sem AQE e o numero final de particoes."
+            ),
+        },
+    },
+}
+
+_TUNE_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["runtime", "properties", "refused"],
+    "properties": {
+        "runtime": {
+            "type": "object",
+            "required": ["glue_version", "spark_version", "aqe_default"],
+            "properties": {
+                "glue_version": {"type": "string"},
+                "spark_version": {"type": "string"},
+                "aqe_default": {"type": "boolean"},
+            },
+        },
+        "properties": {"type": "array", "items": _TUNE_PROPERTY_SCHEMA},
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["reason", "property", "detail"],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "enum": [
+                            "no_shuffle_measured",
+                            "runtime_unknown",
+                            "no_measured_basis",
+                        ],
+                    },
+                    "property": {"type": "string"},
+                    "detail": {"type": "string"},
+                },
+            },
+            "description": (
+                "Toda propriedade que o documento pede e que nenhuma fonte sustenta "
+                "aparece aqui com a medida que a destravaria. Listar a recusa e a "
+                "diferenca entre nao sei e nao perguntei."
+            ),
+        },
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -1946,6 +2427,48 @@ TOOLS: dict[str, dict[str, Any]] = {
                 "skill": {"type": "string"},
                 "now": {"type": "string"},
                 "outcome": {"type": "string"},
+                "hypothesis": {
+                    "type": "string",
+                    "description": (
+                        "Afirmacao testavel a registrar. Exige `prediction` e "
+                        "`experiment`: afirmacao sem previsao nao e testavel, e "
+                        "previsao sem experimento nao diz quem a testa. As tres "
+                        "juntas viram uma entrada em `hypotheses`, com id "
+                        "sequencial e status `open`."
+                    ),
+                },
+                "prediction": {
+                    "type": "string",
+                    "description": "O que muda no numero se a hipotese valer.",
+                },
+                "experiment": {"type": "string", "description": "Como medir a previsao."},
+                "close_hypothesis": {
+                    "type": "string",
+                    "description": (
+                        "Id da hipotese a fechar (`h1`, `h2`, ...). Exige "
+                        "`hypothesis_outcome`. O registro e ACRESCIMO: a "
+                        "afirmacao, a previsao e o experimento originais ficam "
+                        "onde estao, e reescreve-los para casar com o resultado "
+                        "e o vies que a hipotese escrita existe para impedir."
+                    ),
+                },
+                "hypothesis_outcome": {
+                    "type": "string",
+                    "enum": list(_core.store.HYPOTHESIS_OUTCOMES),
+                    "description": (
+                        "Desfecho do experimento. `confirmed` e `refuted` sao os "
+                        "dois lados dele; `abandoned` existe porque a terceira "
+                        "coisa que acontece de verdade e o experimento nunca "
+                        "rodar -- job descontinuado, ambiente que sumiu."
+                    ),
+                },
+                "evidence": {
+                    "type": "string",
+                    "description": (
+                        "Onde ler o que fechou a hipotese (stage, run, arquivo "
+                        "de facts)."
+                    ),
+                },
                 "override_gate": {
                     "type": "string",
                     "enum": list(_GATE_NAMES),
@@ -2186,6 +2709,104 @@ TOOLS: dict[str, dict[str, Any]] = {
             "required": ["path"],
             "properties": {
                 "path": {"type": "string", "description": "Arquivo de event log (.jsonl)."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_sql_metrics": {
+        "description": (
+            "Extrai metrica por NO DO PLANO de um Spark event log ja coletado: quantos "
+            "bytes e quantos arquivos cada fonte custou, medidos pelo proprio Spark. "
+            "Responde o que `analyze event-log` nao responde -- aquele mede por stage, e "
+            "stage agrega todas as leituras que caem nele. Metrica que a execucao nao "
+            "publicou fica AUSENTE, nunca zero; nome de metrica fora do mapa canonico "
+            "vira `spark.sql.unresolved` com o nome cru, nunca palpite."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {"type": "string", "description": "Arquivo de event log (.jsonl)."},
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA, "Pagina de facts, ou erro de fronteira."
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_cloudwatch": {
+        "description": (
+            "Extrai facts `glue.metric` de um artefato de metricas do CloudWatch ja "
+            "coletado. Serie sem pontos vira `glue.metric.unresolved` com a razao, nunca "
+            "um zero: vazio por observabilidade desligada no job e vazio por janela sem "
+            "dado sao causas diferentes."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Artefato gravado por `sparkforge collect cloudwatch`.",
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_analyze_glue_job_runs": {
+        "description": (
+            "Extrai facts de historico do DIRETORIO de artefatos de run Glue: um "
+            "`glue.job_run` por run, `glue.job_run.distribution` por capacidade e estado "
+            "terminal, e `glue.job_run.outcome` por capacidade. DPU e observado quando a "
+            "API o traz, derivado quando a capacidade e estatica, e recusado sob Auto "
+            "Scaling sem DPUSeconds. Com `cloudwatch`, correlaciona por job_run_id; sem "
+            "ele, a correlacao vai para unresolved com o comando que a resolve."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path", "job_name"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "DIRETORIO de artefatos gravados por `collect glue-job-runs`.",
+                },
+                "job_name": {"type": "string"},
+                "cloudwatch": {
+                    "type": "string",
+                    "description": "Diretorio de artefatos gravados por `collect cloudwatch`.",
+                },
                 "kind": {"type": "array", "items": {"type": "string"}},
                 "limit": {"type": "integer"},
                 "cursor": {"type": "string"},
@@ -2968,6 +3589,203 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_workload": {
+        "description": (
+            "Perfil de workload por eixos independentes -- scan, shuffle, memoria, skew, "
+            "arquivos, join, SLA e classe de entrada -- a partir de facts JA extraidos. "
+            "Cada eixo carrega o valor, a BASE que o produziu e a CONFIANCA: `measured` "
+            "sai de artefato, `declared` sai do inventario versionado e nunca e "
+            "promovido, e `unknown` carrega o fact que falta e, quando existe, o comando "
+            "que fecha a lacuna. Verbo de topo, nao um `analyze`: nao extrai nada de "
+            "artefato, classifica o que outros verbos ja extrairam -- mesma razao pela "
+            "qual `benchmark` e `fuse` sao verbos proprios. "
+            "A escala vem do HISTORICO DO PROPRIO JOB, nunca de limiar universal: sem "
+            "`history_path`, os eixos de volume (`scan_intensity`, `shuffle_intensity`) "
+            "saem `unknown` de proposito, em vez de comparar contra um limiar inventado "
+            "que valeria para um job e mentiria para outro."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "job_name", "job_run_id"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) gerado por `analyze`, tipicamente "
+                        "`sparkforge_analyze_sql_metrics --out`."
+                    ),
+                },
+                "job_name": {"type": "string"},
+                "job_run_id": {
+                    "type": "string",
+                    "description": "Id do run que este perfil descreve.",
+                },
+                "history_path": {
+                    "type": "string",
+                    "description": (
+                        "Diretorio com um arquivo de facts por run ANTERIOR "
+                        "(`sparkforge_analyze_glue_job_runs --out`), um arquivo por run. "
+                        "A separacao por arquivo e o que identifica cada run: "
+                        "`execution_id` e por aplicacao, e dois event logs diferentes "
+                        "colidem nele. Sem este parametro, os eixos que precisam de "
+                        "escala saem `unknown`."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _WORKLOAD_SUCCESS_SCHEMA,
+            (
+                "Fingerprint do workload, ou erro se `facts_path` nao existe ou "
+                "`history_path` nao e um diretorio."
+            ),
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_capacity": {
+        "description": (
+            "Escolhe, entre as capacidades que o job JA RODOU, a mais BARATA que "
+            "cumpre o SLA -- nunca a mais rapida. `sparkforge_workload` DESCREVE o "
+            "job por eixo; esta tool ESCOLHE a capacidade, e a escolha e SEMPRE "
+            "`safety: \"REVIEW\"` -- nada aqui aplica a mudanca. Verbo de topo, nao "
+            "um `analyze`: nao extrai nada de artefato, decide sobre o que outros "
+            "verbos ja extrairam -- mesma razao de `benchmark`, `fuse` e `workload`. "
+            "TRES RECUSAS SUSTENTAM O RESULTADO: (1) so capacidade OBSERVADA entra "
+            "-- extrapolar para uma nunca rodada exigiria uma lei de escala que "
+            "fonte nenhuma publica; (2) so run COMPARAVEL conta -- fora da "
+            "tolerancia de volume do run corrente, o historico cai em "
+            "`discarded_runs`/`refused`, nunca some em silencio; (3) a RESOLUCAO e "
+            "declarada -- com `n` runs comparaveis a estimativa nao distingue nada "
+            "mais fino que `1/n`, e alvo mais fino que isso e recusa "
+            "(`resolution_too_coarse`), nao aprovacao."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "job_name", "job_run_id"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) do run CORRENTE -- precisa conter "
+                        "`workload.declared` (o SLA) e os `spark.sql.scan` que dao o "
+                        "volume de hoje, tipicamente `sparkforge_analyze_sql_metrics "
+                        "--out`."
+                    ),
+                },
+                "job_name": {"type": "string"},
+                "job_run_id": {
+                    "type": "string",
+                    "description": "Id do run que este plano descreve.",
+                },
+                "history_path": {
+                    "type": "string",
+                    "description": (
+                        "Diretorio com um arquivo de facts por run ANTERIOR "
+                        "(`sparkforge_analyze_glue_job_runs --out`, um por run), a "
+                        "fonte das capacidades observadas. Sem ele, `candidates` sai "
+                        "vazio -- nenhuma capacidade foi observada."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _CAPACITY_SUCCESS_SCHEMA,
+            (
+                "Plano de capacidade, ou erro se `facts_path` nao existe ou "
+                "`history_path` nao e um diretorio."
+            ),
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_finops": {
+        "description": (
+            "O relatorio financeiro: custo, a troca recurso-tempo, e onde a "
+            "alavanca esta -- capacidade ou codigo. Verbo de topo, nao um "
+            "`analyze`: nao extrai nada de artefato, consome facts JA "
+            "extraidos -- mesma razao de `benchmark`, `fuse`, `sparkforge_workload` "
+            "e `sparkforge_capacity`. Os achados vem do `judge` sobre os MESMOS "
+            "facts -- esta tool nao escreve regra nenhuma, so agrupa o que o "
+            "motor ja produz sob o eixo financeiro, separando achado que aponta "
+            "para CODIGO (`levers.code`) de achado que aponta para CAPACIDADE "
+            "(`levers.capacity`, que aponta para `sparkforge_capacity`) -- a "
+            "conta sozinha nao diz qual alavanca e a certa. "
+            "O QUE ESTE RELATORIO RECUSA: (1) atribuir custo a causa -- "
+            "'voce desperdicou X com spill' exigiria o custo do run que NAO "
+            "aconteceu; (2) interpolar entre capacidades observadas -- a curva "
+            "seria bonita e mentiria exatamente entre os pontos; (3) ordenar "
+            "achado por economia estimada -- cada numero desses e um "
+            "contrafactual disfarcado de prioridade; (4) limiar de 'caro' -- "
+            "fonte nenhuma diz que um preco por run e muito. `region` e "
+            "`runtime_version` valem `UNQUALIFIED` quando a fonte de preco foi "
+            "lida e nao qualificou o eixo -- distinto de vazio, que diria que "
+            "nenhum custo resolveu."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "job_name"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) com `glue.job_run` do job e, quando "
+                        "houver, `workload.declared` (o SLA) -- tipicamente "
+                        "`sparkforge_analyze_glue_job_runs --out`."
+                    ),
+                },
+                "job_name": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _FINOPS_SUCCESS_SCHEMA,
+            "Relatorio financeiro, ou erro se `facts_path` nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_tune": {
+        "description": (
+            "Configuracao Spark DERIVADA da medida, com a procedencia de cada "
+            "propriedade. Verbo de topo, nao um `analyze`: nao extrai nada de "
+            "artefato, consome facts JA extraidos -- mesma razao de `benchmark`, "
+            "`fuse`, `sparkforge_workload`, `sparkforge_capacity` e "
+            "`sparkforge_finops`. "
+            "Deriva UMA propriedade, `spark.sql.shuffle.partitions`, a partir de "
+            "`spark.stage.shuffle.write_bytes` medido sobre o alvo de tamanho de "
+            "particao -- o default documentado do AQE, ou "
+            "`spark.sql.adaptive.advisoryPartitionSizeInBytes` quando o run declara "
+            "um. A formula e a base viajam dentro da resposta. "
+            "A VERSAO MUDA O SIGNIFICADO: com AQE default (Spark 3.2+, portanto Glue "
+            "4.0 e 5.x) o numero e o PISO de paralelismo inicial que o motor "
+            "coalesce; sem AQE (Glue 3.0, Spark 3.1.1) e o numero FINAL de "
+            "particoes. "
+            "O QUE ESTA TOOL RECUSA: (1) aplicar -- nenhum caminho do codigo escreve "
+            "configuracao, e cada proposta carrega o nivel de seguranca do 34 "
+            "(`REVIEW` para paralelismo); (2) derivar sem base medida -- as outras "
+            "propriedades do 11 saem em `refused` com a medida que as destravaria, "
+            "nunca omitidas; (3) um valor magico global, que e trocar um numero sem "
+            "razao por outro com aparencia de calculo; (4) ordenar proposta por ganho "
+            "estimado, o mesmo contrafactual que `sparkforge_finops` recusa."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) com `spark.stage.shuffle` do run e, "
+                        "quando houver, `spark.conf_effective`, `pyspark.conf_set` e "
+                        "`tf.spark_conf` -- tipicamente o `--out` de "
+                        "`sparkforge_analyze_event_log`, fundido com os outros."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _TUNE_SUCCESS_SCHEMA,
+            "Relatorio de configuracao derivada, ou erro se `facts_path` nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_funcval_plan": {
         "description": (
             "Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA "
@@ -3429,6 +4247,39 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_glue_job_runs": {
+        "description": (
+            "Baixa o historico de execucoes de um job via `glue.get_job_runs` e grava UM "
+            "artefato por run em estado terminal. Run ainda em execucao nao vira artefato: "
+            "seu conteudo mudaria depois e o sha256 do manifesto divergiria. Coleta "
+            "incremental de graca -- run ja em disco com hash integro e no-op. `max_runs` e "
+            "teto de paginacao, nao filtro de data: a API devolve do mais recente para tras."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "job_name", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "job_name": {"type": "string"},
+                "max_runs": {"type": "integer", "minimum": 1, "default": 30},
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            {
+                "type": "object",
+                "required": ["job_name", "artifacts", "skipped", "runs_listed"],
+                "properties": {
+                    "job_name": {"type": "string"},
+                    "artifacts": {"type": "array", "items": _COLLECT_ARTIFACT_SCHEMA},
+                    "skipped": {"type": "array", "items": {"type": "object"}},
+                    "runs_listed": {"type": "integer"},
+                },
+            },
+            "Artefatos coletados e runs pulados, ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_iceberg_metadata": {
         "description": (
             "Consulta as cinco metadata tables Iceberg de uma tabela via Athena "
@@ -3820,6 +4671,12 @@ def _h_case_update(args: dict[str, Any]) -> dict[str, Any]:
         override_gate=args.get("override_gate"),
         reason=args.get("reason"),
         facts_path=args.get("facts_path"),
+        hypothesis=args.get("hypothesis"),
+        prediction=args.get("prediction"),
+        experiment=args.get("experiment"),
+        close_hypothesis=args.get("close_hypothesis"),
+        hypothesis_outcome=args.get("hypothesis_outcome"),
+        evidence=args.get("evidence"),
     )
 
 
@@ -3911,6 +4768,38 @@ def _h_analyze_catalog_schema(args: dict[str, Any]) -> dict[str, Any]:
 def _h_analyze_event_log(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_event_log(
         args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_sql_metrics(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_sql_metrics(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_cloudwatch(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_analyze_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_glue_job_runs(
+        args["path"],
+        job_name=args["job_name"],
+        cloudwatch=args.get("cloudwatch"),
         kind=args.get("kind"),
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
@@ -4079,6 +4968,32 @@ def _h_benchmark(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_workload(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.workload_fingerprint(
+        args["facts_path"],
+        job_name=args["job_name"],
+        job_run_id=args["job_run_id"],
+        history_path=args.get("history_path") or "",
+    )
+
+
+def _h_capacity(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.capacity_plan(
+        args["facts_path"],
+        job_name=args["job_name"],
+        job_run_id=args["job_run_id"],
+        history_path=args.get("history_path") or "",
+    )
+
+
+def _h_finops(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.finops_report(args["facts_path"], job_name=args["job_name"])
+
+
+def _h_tune(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.tune_conf(args["facts_path"])
+
+
 def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
     return _core.funcval_plan(
         args.get("facts_paths"),
@@ -4143,6 +5058,15 @@ def _h_collect_cloudwatch(args: dict[str, Any]) -> dict[str, Any]:
         job_run_id=args["job_run_id"],
         start=args["start"],
         end=args["end"],
+        now=args["now"],
+    )
+
+
+def _h_collect_glue_job_runs(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_glue_job_runs(
+        args["repo"],
+        job_name=args["job_name"],
+        max_runs=args.get("max_runs", 30),
         now=args["now"],
     )
 
@@ -4247,6 +5171,9 @@ _HANDLERS = {
     "sparkforge_analyze_pyspark": _h_analyze_pyspark,
     "sparkforge_analyze_catalog_schema": _h_analyze_catalog_schema,
     "sparkforge_analyze_event_log": _h_analyze_event_log,
+    "sparkforge_analyze_sql_metrics": _h_analyze_sql_metrics,
+    "sparkforge_analyze_cloudwatch": _h_analyze_cloudwatch,
+    "sparkforge_analyze_glue_job_runs": _h_analyze_glue_job_runs,
     "sparkforge_analyze_plan": _h_analyze_plan,
     "sparkforge_analyze_terraform": _h_analyze_terraform,
     "sparkforge_analyze_iceberg": _h_analyze_iceberg,
@@ -4264,6 +5191,10 @@ _HANDLERS = {
     "sparkforge_glue_dependency_audit": _h_glue_dependency_audit,
     "sparkforge_iceberg_assess_upgrade": _h_iceberg_assess_upgrade,
     "sparkforge_benchmark": _h_benchmark,
+    "sparkforge_workload": _h_workload,
+    "sparkforge_capacity": _h_capacity,
+    "sparkforge_finops": _h_finops,
+    "sparkforge_tune": _h_tune,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,
@@ -4275,6 +5206,7 @@ _HANDLERS = {
     "sparkforge_collect_event_log": _h_collect_event_log,
     "sparkforge_collect_glue_job": _h_collect_glue_job,
     "sparkforge_collect_cloudwatch": _h_collect_cloudwatch,
+    "sparkforge_collect_glue_job_runs": _h_collect_glue_job_runs,
     "sparkforge_collect_iceberg_metadata": _h_collect_iceberg_metadata,
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
     "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "f_b493f8",
+    "schema_version": 1,
+    "kind": "glue.run_cost.unresolved",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_autoscaling_0",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_autoscaling_0"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "dpu_seconds_unavailable",
+      "detail": "O run nao tem `dpu_seconds`. Sob Auto Scaling sem DPUSeconds o coletor recusou derivar, porque `number_of_workers` e teto e nao uso -- e sem DPU nao ha custo. Custo zero seria a mentira mais confortavel possivel aqui."
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>"
+    }
+  },
+  {
+    "id": "f_d42010",
+    "schema_version": 1,
+    "kind": "glue.run_cost.unresolved",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_autoscaling_1",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_autoscaling_1"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "dpu_seconds_unavailable",
+      "detail": "O run nao tem `dpu_seconds`. Sob Auto Scaling sem DPUSeconds o coletor recusou derivar, porque `number_of_workers` e teto e nao uso -- e sem DPU nao ha custo. Custo zero seria a mentira mais confortavel possivel aqui."
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>"
+    }
+  },
+  {
+    "id": "f_f6ec93",
+    "schema_version": 1,
+    "kind": "glue.run_cost.unresolved",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_autoscaling_2",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_autoscaling_2"
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "dpu_seconds_unavailable",
+      "detail": "O run nao tem `dpu_seconds`. Sob Auto Scaling sem DPUSeconds o coletor recusou derivar, porque `number_of_workers` e teto e nao uso -- e sem DPU nao ha custo. Custo zero seria a mentira mais confortavel possivel aqui."
+    },
+    "provenance": {
+      "extractor": "run_cost@0.1.0",
+      "artifact": "<facts>"
+    }
+  }
+]

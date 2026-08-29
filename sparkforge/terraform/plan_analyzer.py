@@ -1,10 +1,10 @@
 """Terraform Plan Risk Scanner and Action Classifier."""
+
 from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -31,18 +31,21 @@ class TerraformPlanReport:
 
 
 class TerraformPlanAnalyzer:
-    """Parses `terraform show -json tfplan` outputs to evaluate destruction, replacement, and IAM risk."""
+    """Parses `terraform show -json tfplan` outputs to evaluate destruction,
+    replacement, and IAM risk."""
 
-    STATEFUL_RESOURCES = frozenset({
-        "aws_s3_bucket",
-        "aws_dynamodb_table",
-        "aws_msk_cluster",
-        "aws_neptune_cluster",
-        "aws_glue_catalog_database",
-        "aws_glue_catalog_table",
-        "aws_rds_cluster",
-        "aws_redshift_cluster",
-    })
+    STATEFUL_RESOURCES = frozenset(
+        {
+            "aws_s3_bucket",
+            "aws_dynamodb_table",
+            "aws_msk_cluster",
+            "aws_neptune_cluster",
+            "aws_glue_catalog_database",
+            "aws_glue_catalog_table",
+            "aws_rds_cluster",
+            "aws_redshift_cluster",
+        }
+    )
 
     def analyze_plan_json(self, plan_data: dict[str, Any]) -> TerraformPlanReport:
         creates = 0
@@ -77,7 +80,9 @@ class TerraformPlanAnalyzer:
                 if rtype in self.STATEFUL_RESOURCES:
                     risk_level = "block"
                     has_data_loss = True
-                    reasons.append(f"Destruction of stateful resource {rtype} will cause permanent data loss.")
+                    reasons.append(
+                        f"Destruction of stateful resource {rtype} will cause permanent data loss."
+                    )
                 else:
                     risk_level = "high_risk"
                     reasons.append(f"Resource deletion: {address}")
@@ -87,7 +92,9 @@ class TerraformPlanAnalyzer:
                 if rtype in self.STATEFUL_RESOURCES:
                     risk_level = "block"
                     has_data_loss = True
-                    reasons.append(f"Replacement (destroy + recreate) of stateful resource {rtype}.")
+                    reasons.append(
+                        f"Replacement (destroy + recreate) of stateful resource {rtype}."
+                    )
                 else:
                     risk_level = "high_risk"
                     reasons.append(f"Resource replacement: {address}")

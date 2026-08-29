@@ -2,12 +2,11 @@
 
 Filters, extracts, deduplicates, and condenses context to achieve minimal token footprints.
 """
+
 from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Optional
 
 
 @dataclass
@@ -34,12 +33,16 @@ class MinimalContext:
     def to_prompt_text(self) -> str:
         blocks = []
         for c in self.chunks:
-            blocks.append(f"### File: {c.source_file} (Lines {c.start_line}-{c.end_line})\n```\n{c.content}\n```")
+            blocks.append(
+                f"### File: {c.source_file} (Lines {c.start_line}-{c.end_line})\n```\n{c.content}\n"
+                f"```"
+            )
         return "\n\n".join(blocks)
 
 
 class ContextFunnel:
-    """Implements repository -> candidate files -> relevant chunks -> deduplicated evidence -> minimal context."""
+    """Implements repository -> candidate files -> relevant chunks -> deduplicated
+    evidence -> minimal context."""
 
     def __init__(self, max_tokens_budget: int = 4000) -> None:
         self.max_tokens_budget = max_tokens_budget
@@ -85,7 +88,10 @@ class ContextFunnel:
             else:
                 break
 
-        summary = f"Packed {len(fitted_chunks)} chunks (~{total_tokens} tokens), dropped {dropped} duplicates."
+        summary = (
+            f"Packed {len(fitted_chunks)} chunks (~{total_tokens} tokens), dropped "
+            f"{dropped} duplicates."
+        )
         return MinimalContext(
             total_tokens_estimate=total_tokens,
             chunks=fitted_chunks,

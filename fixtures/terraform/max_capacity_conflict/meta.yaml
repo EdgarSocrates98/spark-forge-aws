@@ -1,0 +1,23 @@
+name: max_capacity_conflict
+proves: >
+  aws_glue_job com max_capacity definido ao mesmo tempo que worker_type (e
+  number_of_workers), em glue_version = "4.0" (>= 2.0) -- o conflito real que
+  SF-GLUE-001 deveria ter acusado e nao acusava. A API do Job
+  (webapi/API_Job.html, campo MaxCapacity) documenta: "For Glue version 2.0 or
+  later jobs, you cannot specify a Maximum capacity. Instead, you should
+  specify a Worker type and the Number of workers." e "Do not set MaxCapacity
+  if using WorkerType and NumberOfWorkers." Job pelo resto configurado
+  corretamente (spark-ui + event-logs-path presentes, bookmark desligado, sem
+  segredo), para isolar SF-GLUE-007 das outras regras da area.
+runtime:
+  glue: "4.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - tf.attribute
+  - tf.resource
+  - tf.module_analyzed
+  - tf.observability.spark_ui
+expects_rules:
+  - SF-GLUE-007

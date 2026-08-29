@@ -2,27 +2,21 @@
 
 Loads, parses, and validates canonical manifests for agents, skills, tools, teams, and workflows.
 """
+
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from typing import Any, Optional
 
 import yaml
 
 from sparkforge.registry.models import (
     AgentManifest,
     EvalManifest,
-    ExecutionProfile,
     KnowledgeManifest,
-    ModelPolicy,
-    ModelTier,
-    PlatformTarget,
     PolicyManifest,
     RiskLevel,
     SkillManifest,
     TeamManifest,
-    TokenBudget,
     ToolManifest,
     WorkflowManifest,
 )
@@ -33,7 +27,7 @@ class RegistryError(Exception):
 
 
 class CanonicalRegistry:
-    def __init__(self, root_dir: Optional[Path] = None) -> None:
+    def __init__(self, root_dir: Path | None = None) -> None:
         self.root_dir = root_dir or Path.cwd()
         self.agents: dict[str, AgentManifest] = {}
         self.skills: dict[str, SkillManifest] = {}
@@ -59,19 +53,19 @@ class CanonicalRegistry:
     def register_workflow(self, workflow: WorkflowManifest) -> None:
         self.workflows[workflow.id] = workflow
 
-    def get_agent(self, agent_id: str) -> Optional[AgentManifest]:
+    def get_agent(self, agent_id: str) -> AgentManifest | None:
         return self.agents.get(agent_id)
 
-    def get_skill(self, skill_id: str) -> Optional[SkillManifest]:
+    def get_skill(self, skill_id: str) -> SkillManifest | None:
         return self.skills.get(skill_id)
 
-    def get_tool(self, tool_id: str) -> Optional[ToolManifest]:
+    def get_tool(self, tool_id: str) -> ToolManifest | None:
         return self.tools.get(tool_id)
 
-    def get_team(self, team_id: str) -> Optional[TeamManifest]:
+    def get_team(self, team_id: str) -> TeamManifest | None:
         return self.teams.get(team_id)
 
-    def get_workflow(self, workflow_id: str) -> Optional[WorkflowManifest]:
+    def get_workflow(self, workflow_id: str) -> WorkflowManifest | None:
         return self.workflows.get(workflow_id)
 
     def load_from_configs(self) -> None:
@@ -150,7 +144,11 @@ class CanonicalRegistry:
                     if skill_file.is_file():
                         # Extract first paragraph as description
                         content = skill_file.read_text(encoding="utf-8", errors="ignore")
-                        lines = [ln.strip() for ln in content.splitlines() if ln.strip() and not ln.startswith("#")]
+                        lines = [
+                            ln.strip()
+                            for ln in content.splitlines()
+                            if ln.strip() and not ln.startswith("#")
+                        ]
                         if lines:
                             desc = lines[0][:150]
                     manifest = SkillManifest(
@@ -158,15 +156,17 @@ class CanonicalRegistry:
                         name=skill_id,
                         version="1.0.0",
                         description=desc,
-                        procedure_path=str(skill_file.relative_to(self.root_dir)) if skill_file.is_file() else "",
+                        procedure_path=str(skill_file.relative_to(self.root_dir))
+                        if skill_file.is_file()
+                        else "",
                     )
                     self.register_skill(manifest)
 
 
-_DEFAULT_REGISTRY: Optional[CanonicalRegistry] = None
+_DEFAULT_REGISTRY: CanonicalRegistry | None = None
 
 
-def get_default_registry(root_dir: Optional[Path] = None) -> CanonicalRegistry:
+def get_default_registry(root_dir: Path | None = None) -> CanonicalRegistry:
     global _DEFAULT_REGISTRY
     if _DEFAULT_REGISTRY is None:
         reg = CanonicalRegistry(root_dir=root_dir)

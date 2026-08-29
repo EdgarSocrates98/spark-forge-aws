@@ -1,0 +1,37 @@
+[
+  {
+    "kind": "spark.stage.shuffle",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-4",
+      "stage_id": 4
+    },
+    "measures": {
+      "read_bytes": 0.0,
+      "write_bytes": 671088640.0,
+      "write_records": 10000.0
+    },
+    "attrs": {},
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "kind": "spark.runtime_version",
+    "subject": {
+      "type": "job_run",
+      "symbol": "application_1699000000000_0044"
+    },
+    "measures": {},
+    "attrs": {
+      "component": "spark",
+      "version": "3.1.1",
+      "source_event": "SparkListenerLogStart"
+    },
+    "provenance": {
+      "extractor": "event_log@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]

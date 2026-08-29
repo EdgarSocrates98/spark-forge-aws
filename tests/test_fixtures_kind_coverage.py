@@ -37,11 +37,16 @@ from sparkforge.facts import (
     iceberg_metadata,
     migration,
     pyspark_ast,
+    run_cost,
     runtime_detect,
     s3_listing,
     spark_plan,
     sql_literal,
+    sql_metrics,
     terraform,
+    timeout_diagnosis,
+    utilization,
+    workload,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -95,11 +100,38 @@ EXTRACTORS = {
     # `blocked_on`.
     "migration": migration,
     "pyspark_ast": pyspark_ast,
+    # `run_cost` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `finops-run-cost.md`: sem ele aqui, os dois kinds `glue.run_cost*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar.
+    "run_cost": run_cost,
     "runtime_detect": runtime_detect,
     "s3_listing": s3_listing,
     "spark_plan": spark_plan,
     "sql_literal": sql_literal,
+    # `sql_metrics` entra nas DUAS listas no mesmo commit da Task 8 (`fixtures/
+    # sql_metrics/`), depois de o extrator e o mapa canonico ja existirem
+    # (Tasks 1-7). Sem ele aqui os quatro kinds `spark.sql.*` caem no lado
+    # errado de `test_no_golden_carries_a_kind_that_no_extractor_declares`:
+    # golden com kind que nenhum extrator declara, em vez de kind coberto.
+    "sql_metrics": sql_metrics,
     "terraform": terraform,
+    # `timeout_diagnosis` entra nas DUAS listas no mesmo commit da Task 5 do
+    # plano `timeout-intelligence.md`: sem ele aqui, os tres kinds
+    # `spark.timeout.*` nao sao verificados por ninguem e o criterio de golden
+    # -- todo kind de `EMITTED_KINDS` em algum golden -- passa sem ser
+    # avaliado, que e pior do que falhar.
+    "timeout_diagnosis": timeout_diagnosis,
+    # `utilization` entra nas DUAS listas no mesmo commit do subprojeto H:
+    # sem ele aqui, os dois kinds `glue.utilization.*` nao sao verificados por
+    # ninguem e o criterio de golden passa sem ser avaliado.
+    "utilization": utilization,
+    # `workload` entra nas DUAS listas no mesmo commit da Task 6 do plano
+    # `workload-fingerprint`: sem ele aqui, os tres kinds `workload.*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado.
+    "workload": workload,
 }
 
 EMITTABLE: frozenset[str] = frozenset().union(*(m.EMITTED_KINDS for m in EXTRACTORS.values()))

@@ -21,6 +21,13 @@ consertar.
 Cruze com execução: `sparkforge_collect_glue_job` para os argumentos reais do job, e
 `sparkforge_collect_cloudwatch` para as métricas do Glue.
 
+Capacidade declarada não é capacidade exercida. `sparkforge_analyze_glue_job_runs`
+lê o histórico já coletado e devolve a distribuição de duração por capacidade e estado
+terminal, mais a contagem de desfecho — é o que distingue worker mal dimensionado de
+job que sempre foi assim. `sparkforge_analyze_cloudwatch` faz a ponte para as métricas
+do mesmo run: série vazia vira lacuna declarada, nunca zero, porque observabilidade
+desligada e janela sem dado são causas diferentes.
+
 ## Três armadilhas que a infraestrutura esconde
 
 **Observabilidade ligada sem `GlueContext`.** As métricas do Glue são publicadas pelo

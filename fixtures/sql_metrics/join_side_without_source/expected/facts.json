@@ -1,0 +1,153 @@
+[
+  {
+    "id": "f_64d822",
+    "schema_version": 1,
+    "kind": "spark.sql.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "eventlog.jsonl",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "executions": 1,
+      "scan_nodes": 1,
+      "unattributed_accumulators": 0,
+      "malformed_lines": 0
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "sql_metrics@0.1.0"
+    }
+  },
+  {
+    "id": "f_ada0e2",
+    "schema_version": 1,
+    "kind": "spark.sql.execution",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "execution",
+      "relation": "",
+      "symbol": "0:0",
+      "execution_id": 0
+    },
+    "measures": {
+      "scan_nodes": 1,
+      "nodes_total": 3
+    },
+    "attrs": {
+      "plan_source": "initial",
+      "description": "select at Query.scala:40",
+      "redacted": false
+    },
+    "provenance": {
+      "artifact": "eventlog.jsonl",
+      "artifact_sha256": "",
+      "extractor": "sql_metrics@0.1.0"
+    }
+  },
+  {
+    "id": "f_f3f77e",
+    "schema_version": 1,
+    "kind": "spark.sql.join",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "BroadcastHashJoin",
+      "relation": "",
+      "symbol": "0:0",
+      "execution_id": 0
+    },
+    "measures": {
+      "inputs_left": 1,
+      "inputs_right": 0
+    },
+    "attrs": {
+      "strategy": "BroadcastHashJoin",
+      "join_type": "Inner",
+      "build_side": "left"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_9511fb",
+    "schema_version": 1,
+    "kind": "spark.sql.join_input",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "BroadcastHashJoin",
+      "relation": "db.pedidos",
+      "symbol": "0:0",
+      "execution_id": 0,
+      "position": "left"
+    },
+    "measures": {
+      "via_joins": 0
+    },
+    "attrs": {
+      "relation": "db.pedidos",
+      "position": "left",
+      "side": "build",
+      "strategy": "BroadcastHashJoin"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_7f33a0",
+    "schema_version": 1,
+    "kind": "spark.sql.scan",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 1,
+      "operator": "Scan parquet db.pedidos",
+      "relation": "db.pedidos",
+      "symbol": "0:1",
+      "execution_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "format": "parquet",
+      "scan_api": "v1",
+      "node_name": "Scan parquet db.pedidos"
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  },
+  {
+    "id": "f_476095",
+    "schema_version": 1,
+    "kind": "spark.sql.unresolved",
+    "subject": {
+      "type": "plan_node",
+      "node_id": 0,
+      "operator": "join",
+      "relation": "",
+      "symbol": "0:0",
+      "execution_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "join_side_without_source",
+      "position": "right",
+      "detail": "Lado do join sem nenhum scan nomeavel abaixo. Subquery, relacao em cache e `Scan ExistingRDD` nao sao fonte que se possa nomear, e inventar um nome seria pior que a lacuna."
+    },
+    "provenance": {
+      "extractor": "sql_metrics@0.1.0",
+      "artifact": "eventlog.jsonl"
+    }
+  }
+]

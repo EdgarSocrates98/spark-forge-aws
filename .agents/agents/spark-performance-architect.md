@@ -12,7 +12,7 @@ skills:
   - optimize-iceberg-table
   - benchmark-pyspark-job
   - review-pyspark-pr
-rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL]
+rule_areas: [SF-PY, SF-UI, SF-PLAN, SF-BENCH, SF-FVAL, SF-TIMEOUT, SF-WASTE]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -54,6 +54,56 @@ Leia `SF-BENCH-001` (volumes de entrada divergentes) e `SF-BENCH-004` (stages qu
 **antes** de acreditar nos totais: as duas afirmam que a medição não sustenta conclusão sobre a
 mudança, e nenhuma delas cala as outras. E `total_task_ms` é tempo de task somado — trabalho,
 não relógio. A skill `benchmark-pyspark-job` tem o procedimento completo.
+
+## Worker ocioso não é sinônimo de capacidade sobrando
+
+`SF-WASTE` é o par que a seção 37 do documento de origem pede junto, e a razão de estarem
+juntas é a armadilha: utilização baixa parece desperdício e às vezes é sintoma. Noventa por
+cento dos executores podem estar ociosos porque uma task ficou catorze minutos numa partição
+torta.
+
+`SF-WASTE-001` só dispara com as quatro medidas apontando na mesma direção — worker ocioso,
+memória e disco com folga, e **sem** skew que explique a ociosidade — e aponta para
+`sparkforge capacity`, que compara as capacidades que o job já rodou. `SF-WASTE-002` é o
+oposto: utilização baixa **com** skew alto, e ali reduzir worker deixa a causa intacta e
+aumenta a duração.
+
+As duas nunca disparam juntas, e nenhuma delas diz quanto se economizaria: isso exigiria o
+custo do run que não aconteceu.
+
+## Configuração derivada da medida, e não do costume
+
+`sparkforge_tune` deriva `spark.sql.shuffle.partitions` do shuffle **medido**
+(`spark.stage.shuffle.write_bytes`) sobre o alvo de tamanho de partição, e traz a fórmula e a
+base dentro da resposta. Use-o em vez de citar um número de memória: 200 e 1000 são números
+de costume, e nenhum dos dois conhece o job.
+
+Leia três campos antes de propor: `runtime.aqe_default` (com AQE o número é piso inicial, sem
+AQE é o número final), `current.provenance` (quem pediu o valor de hoje — `runtime_or_cluster`
+significa que ninguém no repositório pediu, e `spark_default_explicit` é configuração escrita
+à mão que não muda nada) e `safety`, que é `REVIEW` para paralelismo e nunca entra em produção
+sem alguém olhar.
+
+O bloco `refused` é a parte honesta: toda propriedade que o operador espera ver — limiar de
+broadcast, overhead de memória, speculation — sai listada com a medida que a destravaria.
+Nenhuma delas tem base hoje, e propor valor para elas seria trocar um número mágico por outro
+com aparência de cálculo.
+
+## "Timeout" é quatro coisas, e a categoria muda a investigação
+
+`SF-TIMEOUT` cobre a área que o operador chama por um nome só. `spark.timeout.diagnosis`
+nomeia a categoria — `wall_clock`, `broadcast`, `network` ou `heartbeat` — lendo a frase que o
+runtime escreveu, e `attrs.also_seen` guarda o que a precedência não escolheu. Leia os dois
+antes de tocar em configuração: o relógio do Glue é consequência, e o que estourou primeiro
+é o que decide onde olhar.
+
+`SF-TIMEOUT-001` não acusa o timeout; acusa o timeout **com sintoma medido ao lado** — skew,
+spill, GC ou executor perdido. Sem sintoma ela não dispara, e aí subir o limite pode ser a
+decisão certa. `SF-TIMEOUT-002` confere a relação entre `spark.executor.heartbeatInterval` e
+`spark.network.timeout`, e não o valor de nenhuma das duas.
+
+Nenhuma das duas recomenda um valor novo de timeout, e você também não deve: derivar
+configuração a partir de medida ainda não existe neste projeto.
 
 ## "Preserve correção funcional" deixou de ser frase e virou artefato
 

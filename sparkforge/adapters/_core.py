@@ -20,6 +20,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from sparkforge.capacity import build_capacity_plan
 from sparkforge.case import router, store
 from sparkforge.case.playbook import build_playbook
 from sparkforge.case.resume import render_handoff
@@ -44,6 +45,7 @@ from sparkforge.facts.catalog_schema import (
     extract_catalog_schema_path,
     extract_catalog_schema_tree,
 )
+from sparkforge.facts.cloudwatch import extract_cloudwatch_path
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
 from sparkforge.facts.data_quality import (
     extract_data_quality_path,
@@ -57,6 +59,7 @@ from sparkforge.facts.emr_serverless import (
 from sparkforge.facts.event_log import extract_event_log_path
 from sparkforge.facts.funcval import build_comparison, build_plan
 from sparkforge.facts.fusion import fuse as run_fuse
+from sparkforge.facts.glue_job_run import extract_glue_job_runs_path
 from sparkforge.facts.graph import extract_graph_path, extract_graph_tree
 from sparkforge.facts.iceberg_metadata import (
     extract_iceberg_metadata_path,
@@ -67,6 +70,7 @@ from sparkforge.facts.runtime_detect import detect_runtime
 from sparkforge.facts.s3_listing import extract_s3_listing_path, extract_s3_listing_tree
 from sparkforge.facts.spark_plan import extract_plan_path
 from sparkforge.facts.sql_literal import extract_sql_from_pyspark, extract_sql_path
+from sparkforge.facts.sql_metrics import extract_sql_metrics_path
 from sparkforge.facts.terraform import (
     extract_terraform_diff,
     extract_terraform_path,
@@ -76,12 +80,15 @@ from sparkforge.findings import signature as _signature
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
+from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
+from sparkforge.tuning import build_conf_advice
+from sparkforge.workload import build_fingerprint
 
 DEFAULT_LIMIT = 50
 
@@ -832,6 +839,88 @@ def analyze_event_log(
 
 
 # --------------------------------------------------------------------------- #
+# analyze sql-metrics
+# --------------------------------------------------------------------------- #
+
+
+def analyze_sql_metrics(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    target = Path(path)
+    if not target.is_file():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um Spark event log (JSON Lines):\n"
+            f"    sparkforge analyze sql-metrics "
+            f"--path .sparkforge/artifacts/eventlog/app.jsonl",
+            exit_code=2,
+        )
+    facts = extract_sql_metrics_path(target)
+    return _facts_page(facts, "spark.sql.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze cloudwatch / glue-job-runs
+# --------------------------------------------------------------------------- #
+
+
+def _extract_cloudwatch_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.is_file():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para um artefato gravado por `sparkforge collect cloudwatch`:\n"
+            f"    sparkforge analyze cloudwatch "
+            f"--path .sparkforge/artifacts/cloudwatch/<job>_<run>.json",
+            exit_code=2,
+        )
+    return extract_cloudwatch_path(target)
+
+
+def analyze_cloudwatch(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_cloudwatch_facts(path)
+    return _facts_page(facts, "glue.metric.unresolved", kind, limit, cursor, detail_level)
+
+
+def analyze_glue_job_runs(
+    path: str,
+    job_name: str,
+    cloudwatch: str | None = None,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    target = Path(path)
+    if not target.is_dir():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o DIRETORIO de artefatos de run, nao para um arquivo:\n"
+            f"    sparkforge analyze glue-job-runs "
+            f"--path .sparkforge/artifacts/glue_job_run/ --job-name <job>",
+            exit_code=2,
+        )
+    cw_dir = Path(cloudwatch) if cloudwatch else None
+    if cw_dir is not None and not cw_dir.is_dir():
+        raise AdapterError(
+            f"--cloudwatch aponta para {cloudwatch}, que nao e um diretorio existente.",
+            exit_code=2,
+        )
+    facts = extract_glue_job_runs_path(target, job_name, cloudwatch_dir=cw_dir)
+    return _facts_page(facts, "glue.job_run.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
 # analyze plan
 # --------------------------------------------------------------------------- #
 
@@ -1480,6 +1569,139 @@ def benchmark_runs(
 
 
 # --------------------------------------------------------------------------- #
+# workload
+# --------------------------------------------------------------------------- #
+
+_FACTS_FROM_SQL_METRICS = (
+    "sparkforge analyze sql-metrics --path <event-log.jsonl> --out {path}"
+)
+_FACTS_FROM_GLUE_JOB_RUNS = (
+    "sparkforge analyze glue-job-runs --path <dir> --job-name <job> --out {path}"
+)
+
+
+def workload_fingerprint(
+    facts_path: str,
+    job_name: str,
+    job_run_id: str,
+    history_path: str = "",
+) -> dict[str, Any]:
+    """Monta o WorkloadFingerprint a partir de facts ja extraidos.
+
+    Verbo de TOPO, e nao `analyze workload`, pela mesma razao de `benchmark` e
+    `fuse`: os verbos sob `analyze` extraem facts de um artefato, e este nao
+    extrai nada -- ele classifica o que outros verbos ja extrairam.
+
+    `history_path` e um DIRETORIO, e nao um arquivo: um arquivo de facts por
+    run anterior. A separacao por ARQUIVO e o que identifica cada run --
+    `execution_id` e por aplicacao, e dois event logs diferentes colidem
+    nele, entao uniar tudo num conjunto so apagaria a fronteira entre runs
+    que a escala do historico precisa. Cada `*.json` do diretorio vira UM
+    elemento da sequencia `history` que `build_fingerprint` espera (uma
+    sequencia de conjuntos de facts, um por run anterior) -- nunca um unico
+    conjunto fundido.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_SQL_METRICS, "--facts")
+    history: list[list[Fact]] = []
+    if history_path:
+        history = _load_facts_dir(history_path, _FACTS_FROM_GLUE_JOB_RUNS, "--history")
+    fingerprint = build_fingerprint(
+        facts, job_name=job_name, job_run_id=job_run_id, history=history
+    )
+    return fingerprint.to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# capacity
+# --------------------------------------------------------------------------- #
+
+_FACTS_FROM_RUN_AND_SCAN = (
+    "por run anterior: sparkforge analyze glue-job-runs --path <dir> --job-name <job> "
+    "--out {path}\n"
+    "    e sparkforge analyze sql-metrics --path <event-log-do-run>.jsonl --out {path}"
+)
+
+
+def capacity_plan(
+    facts_path: str,
+    job_name: str,
+    job_run_id: str,
+    history_path: str = "",
+) -> dict[str, Any]:
+    """Escolhe a capacidade mais barata que cumpre o SLA, entre as observadas.
+
+    Verbo de TOPO, e nao `analyze capacity`, pela mesma razao de `benchmark`,
+    `fuse` e `workload`: nao extrai nada de artefato -- decide sobre o que
+    outros verbos ja extrairam.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
+    historico: list[list[Fact]] = []
+    if history_path:
+        historico = _load_facts_dir(history_path, _FACTS_FROM_RUN_AND_SCAN, "--history")
+    plano = build_capacity_plan(
+        facts, job_name=job_name, job_run_id=job_run_id, history=historico
+    )
+    return plano.to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# finops
+# --------------------------------------------------------------------------- #
+
+
+def finops_report(facts_path: str, job_name: str) -> dict[str, Any]:
+    """Reune o financeiro: custo, a troca recurso-tempo, e onde a alavanca esta.
+
+    Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload` e
+    `capacity`: consome facts ja extraidos e nao le artefato nenhum.
+
+    Os achados vem do `judge` sobre os MESMOS facts -- `build_finops_report`
+    nao escreve regra nenhuma, so agrupa o que o motor ja produz sob o eixo
+    financeiro.
+
+    O runtime para o `judge` e montado exatamente como em `judge_findings`:
+    `build_runtime_context` com as flags de versao ausentes e `facts=facts`,
+    para que um `env.runtime_signal` ja extraido baste. Este verbo nao expoe
+    flag de runtime propria -- a superficie que o Step 1 cobre e so
+    `--facts`/`--job-name` -- entao "so opcional" aqui significa "so vem dos
+    facts", a mesma forma que `judge_findings` usa quando quem chama nao
+    informa nenhuma flag.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
+    try:
+        rules = load_catalog()
+    except CatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    runtime = build_runtime_context(facts=facts).to_dict()
+    findings, _skipped = run_judge(facts, rules, runtime, return_skipped=True)
+    return build_finops_report(facts, job_name=job_name, findings=findings)
+
+
+# --------------------------------------------------------------------------- #
+# tune
+# --------------------------------------------------------------------------- #
+
+
+def tune_conf(facts_path: str) -> dict[str, Any]:
+    """Deriva configuracao Spark do que foi medido, com procedencia por chave.
+
+    Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload`,
+    `capacity` e `finops`: consome facts ja extraidos e nao le artefato nenhum.
+
+    O runtime e montado como em `finops_report` -- `build_runtime_context` com
+    `facts=facts` --, porque a versao decide o SIGNIFICADO do numero derivado:
+    com AQE default, `spark.sql.shuffle.partitions` e piso inicial; sem AQE, e
+    o numero final de particoes.
+
+    Nada aqui aplica configuracao. O relatorio nomeia o nivel de seguranca de
+    cada proposta, e `REVIEW` significa que alguem olha antes.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
+    runtime = build_runtime_context(facts=facts).to_dict()
+    return build_conf_advice(facts, runtime=runtime)
+
+
+# --------------------------------------------------------------------------- #
 # funcval
 # --------------------------------------------------------------------------- #
 
@@ -1883,6 +2105,36 @@ def _load_facts_file(
     except json.JSONDecodeError as exc:
         raise AdapterError(f"{facts_path}: JSON invalido: {exc}", exit_code=2) from exc
     return _facts_from_dicts(raw)
+
+
+def _load_facts_dir(
+    dir_path: str,
+    producer: str = _FACTS_FROM_GLUE_JOB_RUNS,
+    label: str = "--history",
+) -> list[list[Fact]]:
+    """Carrega um DIRETORIO de historico: um arquivo de facts por run anterior.
+
+    Compartilhado por `workload_fingerprint` e `capacity_plan` -- os dois
+    esperam a mesma forma de historico (uma sequencia de conjuntos de facts,
+    um por run) e a mesma razao de separar por ARQUIVO: `execution_id` e por
+    aplicacao, e dois event logs diferentes colidem nele, entao uniar tudo
+    num conjunto so apagaria a fronteira entre runs que a escala do historico
+    precisa. Cada `*.json` do diretorio vira UM elemento da sequencia
+    devolvida, nunca um unico conjunto fundido.
+    """
+    hist_dir = Path(dir_path)
+    if not hist_dir.is_dir():
+        raise AdapterError(
+            f"Diretorio de historico nao encontrado: {dir_path}\n"
+            f"  Rode o verbo que produz os facts de cada run e grave um "
+            f"arquivo por run neste diretorio:\n"
+            f"    {producer.format(path='<um-arquivo-por-run>.json')}",
+            exit_code=2,
+        )
+    return [
+        _load_facts_file(str(run_file), producer, label)
+        for run_file in sorted(hist_dir.glob("*.json"))
+    ]
 
 
 def _merge_facts_files(
@@ -3047,12 +3299,41 @@ def case_update(
     override_gate: str | None = None,
     reason: str | None = None,
     facts_path: str | list[str] | None = None,
+    hypothesis: str | None = None,
+    prediction: str | None = None,
+    experiment: str | None = None,
+    close_hypothesis: str | None = None,
+    hypothesis_outcome: str | None = None,
+    evidence: str | None = None,
 ) -> dict[str, Any]:
     if reason is not None and override_gate is None:
         raise AdapterError(
             "`--reason` so faz sentido com `--override-gate`: sem o gate, o "
             "motivo nao tem sujeito e nao seria gravado em lugar nenhum. Rode "
             "`sparkforge case update --override-gate <gate> --reason \"<motivo>\"`.",
+            exit_code=2,
+        )
+    partes = [hypothesis, prediction, experiment]
+    if any(partes) and not all(partes):
+        raise AdapterError(
+            "hipotese exige as TRES partes: `--hypothesis`, `--prediction` e "
+            "`--experiment`. Afirmacao sem previsao nao e testavel, e previsao "
+            "sem experimento nao diz quem a testa -- gravar so uma delas "
+            "registraria um palpite com cara de hipotese.",
+            exit_code=2,
+        )
+    if hypothesis_outcome is not None and close_hypothesis is None:
+        raise AdapterError(
+            "`--hypothesis-outcome` so faz sentido com `--close-hypothesis`: "
+            "sem o id, o desfecho nao tem sujeito. Rode `sparkforge case update "
+            "--close-hypothesis h1 --hypothesis-outcome confirmed`.",
+            exit_code=2,
+        )
+    if close_hypothesis is not None and hypothesis_outcome is None:
+        raise AdapterError(
+            "fechar hipotese exige `--hypothesis-outcome`: um de "
+            f"{', '.join(store.HYPOTHESIS_OUTCOMES)}. Fechar sem desfecho "
+            "apagaria a pergunta sem responder nenhuma.",
             exit_code=2,
         )
     fact_kinds = _fact_kinds_for_gates(facts_path)
@@ -3072,6 +3353,18 @@ def case_update(
             case = store.set_gate(case, gate, bool(gate_value))
         if skill is not None:
             case = store.record_skill_use(case, skill, now or "", outcome or "")
+        if hypothesis is not None:
+            case = store.add_hypothesis(
+                case, hypothesis, prediction or "", experiment or ""
+            )
+        if close_hypothesis is not None:
+            case = store.close_hypothesis(
+                case,
+                close_hypothesis,
+                hypothesis_outcome or "",
+                at=now or "",
+                evidence=evidence or "",
+            )
         store.save_case(case, root=repo)
         return case
     except store.CaseError as exc:
@@ -3222,6 +3515,19 @@ def collect_cloudwatch(
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)
+
+
+def collect_glue_job_runs(
+    repo: str, *, job_name: str, max_runs: int, now: str
+) -> dict[str, Any]:
+    try:
+        return collect_aws.collect_glue_job_runs(
+            job_name, Path(repo), max_runs=max_runs, now=now
+        )
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(
+            exc, repo, collect_aws.glue_job_run_path(job_name, "<run-id>")
+        ) from exc
 
 
 def collect_iceberg_metadata(

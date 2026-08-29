@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -33,9 +33,15 @@ class NeptuneSpecialist:
         if is_cypher:
             if "match (n)" in q_lower or "match (a)-[" in q_lower:
                 full_scan = True
-                recs.append("Unlabeled node pattern (`MATCH (n)`) triggers a full graph vertex scan. Add specific node labels (`MATCH (n:Person)`).")
+                recs.append(
+                    "Unlabeled node pattern (`MATCH (n)`) triggers a full graph vertex scan. "
+                    "Add specific node labels (`MATCH (n:Person)`)."
+                )
             if "where" not in q_lower and "limit" not in q_lower:
-                recs.append("Query lacks WHERE filter and LIMIT clause, risking memory exhaustion on large graphs.")
+                recs.append(
+                    "Query lacks WHERE filter and LIMIT clause, risking memory exhaustion on "
+                    "large graphs."
+                )
 
         # Gremlin full scan
         if is_gremlin:

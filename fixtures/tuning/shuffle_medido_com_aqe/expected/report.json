@@ -1,0 +1,61 @@
+{
+  "runtime": {
+    "glue_version": "5.0",
+    "spark_version": "3.5.4",
+    "aqe_default": true
+  },
+  "properties": [
+    {
+      "key": "spark.sql.shuffle.partitions",
+      "current": {
+        "value": "",
+        "provenance": "unset",
+        "evidence": []
+      },
+      "derived": {
+        "value": 10,
+        "formula": "ceil(shuffle_write_bytes / target_partition_bytes)",
+        "basis": {
+          "shuffle_write_bytes": 671088640.0,
+          "target_partition_bytes": 67108864.0,
+          "target_source": "spark_default"
+        }
+      },
+      "safety": "REVIEW",
+      "supported_in_runtime": true,
+      "explanation": "Com AQE ligado por default nesta versao, este numero e o PISO de paralelismo inicial: o motor coalesce as particoes pos-shuffle com estatistica real e chega perto do alvo sozinho. Derivar o piso alto demais custa tarefas curtas; derivar baixo demais o AQE nao conserta, porque ele so junta particao, nunca divide."
+    }
+  ],
+  "refused": [
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.executor.memoryOverhead",
+      "detail": "Exigiria o pico de memoria fora do heap por executor. `spark.executor.memory_usage` traz o pico de heap, e overhead e a outra metade -- propor sobre a metade errada e propor sobre nada."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.network.timeout",
+      "detail": "Mesma razao de `spark.sql.broadcastTimeout`. A relacao com `spark.executor.heartbeatInterval` e conferida por `SF-TIMEOUT-002`, que julga a RELACAO e nao o valor."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.speculation",
+      "detail": "O documento de origem recusa explicitamente a inferencia `skew detectado -> speculation=true`: speculation duplica trabalho e aumenta I/O e custo. A decisao exige saber se a lentidao e do NO ou da PARTICAO, e nenhuma fonte de hoje separa os dois."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.sql.autoBroadcastJoinThreshold",
+      "detail": "Exigiria o tamanho SERIALIZADO do lado pequeno do join, que nem `plan.join` nem `spark.sql.join_input` medem hoje -- os dois dao tamanho de entrada, e broadcast falha pelo tamanho em memoria do executor."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.sql.broadcastTimeout",
+      "detail": "Subir timeout nao e conserto de performance -- e a `SF-TIMEOUT-001`, do subprojeto F. O diagnostico de timeout nomeia a categoria; propor um numero novo aqui contradiria a regra."
+    },
+    {
+      "reason": "no_measured_basis",
+      "property": "spark.sql.files.maxPartitionBytes",
+      "detail": "Exigiria distribuicao de tamanho de arquivo por fonte lida. `spark.sql.scan` traz bytes e arquivos lidos no total, e um valor derivado da media esconderia exatamente o caso que importa, que e a fonte com arquivo grande demais."
+    }
+  ]
+}

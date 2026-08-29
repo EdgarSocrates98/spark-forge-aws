@@ -1,8 +1,9 @@
 """Capability-Based Model Router for SparkForge Economy Engine."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from sparkforge.registry.models import ExecutionProfile, ModelTier, RiskLevel
 
@@ -73,14 +74,19 @@ class CapabilityModelRouter:
         # Profile: STRICT / QUALITY with high risk or complex multi-aspect tasks
         if profile in (ExecutionProfile.QUALITY, ExecutionProfile.STRICT) and (
             risk_level in (RiskLevel.SENSITIVE, RiskLevel.DESTRUCTIVE)
-            or any(kw in task_lower for kw in ["incident", "outage", "security breach", "data loss"])
+            or any(
+                kw in task_lower for kw in ["incident", "outage", "security breach", "data loss"]
+            )
         ):
             return RoutingDecision(
                 tier=ModelTier.TIER_5_PREMIUM,
                 profile=profile,
                 max_tokens=8000,
                 estimated_cost_usd=0.05,
-                reason="High-risk / high-criticality task in strict/quality profile warrants Tier 5 reasoning.",
+                reason=(
+                    "High-risk / high-criticality task in strict/quality profile warrants Tier "
+                    "5 reasoning."
+                ),
                 multi_agent_allowed=(profile == ExecutionProfile.STRICT),
             )
 
@@ -112,7 +118,10 @@ class CapabilityModelRouter:
                 selected_skills=matched_skills,
                 max_tokens=4000,
                 estimated_cost_usd=0.005,
-                reason=f"Specialist domain detected with matched skills: {', '.join(matched_skills)}",
+                reason=(
+                    f"Specialist domain detected with matched skills: "
+                    f"{', '.join(matched_skills)}"
+                ),
                 multi_agent_allowed=False,
             )
 

@@ -1,0 +1,9 @@
+name: network_futures_timeout
+job_name: etl_pedidos_diario
+runtime:
+  glue: '5.0'
+  spark: 3.5.4
+  python: '3.11'
+  iceberg: 1.7.1
+proves: '`Futures timed out after [120 seconds]` decide `network`. O par com `broadcast_estourado`
+  e o que importa: as duas frases vem da MESMA fonte e do MESMO kind, e so o texto as separa.'

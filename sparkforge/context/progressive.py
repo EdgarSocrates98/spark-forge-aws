@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
 
 
 @dataclass(frozen=True)
@@ -40,7 +39,7 @@ class KnowledgeLevelC:
 class ProgressiveDisclosureManager:
     """Manages lazy-loading of knowledge layers."""
 
-    def __init__(self, root_dir: Optional[Path] = None) -> None:
+    def __init__(self, root_dir: Path | None = None) -> None:
         self.root_dir = root_dir or Path.cwd()
 
     def get_level_a(self, skill_id: str, description: str, triggers: list[str]) -> KnowledgeLevelA:

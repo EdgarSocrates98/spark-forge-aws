@@ -4,18 +4,18 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class TraceSpan:
     span_id: str
     run_id: str
-    parent_span_id: Optional[str]
+    parent_span_id: str | None
     name: str
     component_type: str  # task, routing, context, agent, model, tool, eval, gate
     start_time: float
-    end_time: Optional[float] = None
+    end_time: float | None = None
     input_tokens: int = 0
     output_tokens: int = 0
     cached_tokens: int = 0
@@ -39,7 +39,7 @@ class ExecutionTrace:
     run_id: str
     task_description: str
     start_time: float
-    end_time: Optional[float] = None
+    end_time: float | None = None
     profile: str = "eco"
     status: str = "running"
     spans: list[TraceSpan] = field(default_factory=list)
@@ -75,8 +75,8 @@ class AgentOpsTracker:
         trace: ExecutionTrace,
         name: str,
         component_type: str,
-        parent_span_id: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_span_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> TraceSpan:
         span = TraceSpan(
             span_id=f"span_{uuid.uuid4().hex[:8]}",

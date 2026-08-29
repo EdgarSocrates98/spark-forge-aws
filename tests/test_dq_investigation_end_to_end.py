@@ -61,7 +61,10 @@ def publicar(data_ref):
 
 # Os mesmos seis guardas de infraestrutura Glue que a prova da Fase 5b vigia.
 GLUE_INFRA = {
-    "SF-GLUE-001",
+    # SF-GLUE-001 foi aposentada em 2026-08-28 (acusava a configuracao
+    # correta); SF-GLUE-007 ocupa a mesma natureza -- infraestrutura Glue
+    # guardada por versao -- e o id antigo NAO e reaproveitado.
+    "SF-GLUE-007",
     "SF-GLUE-002",
     "SF-GLUE-003",
     "SF-GLUE-004",

@@ -1,11 +1,12 @@
 """Deterministic Error Signature Matcher for SparkForge."""
+
 from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from sparkforge.facts.scan import iter_source_files
 
@@ -28,8 +29,10 @@ class ErrorMatchResult:
 class DeterministicErrorMatcher:
     """Matches stacktraces and logs against local Error KB signatures with zero LLM calls."""
 
-    def __init__(self, errors_dir: Optional[Path] = None) -> None:
-        self.errors_dir = errors_dir or (Path(__file__).parent.parent.parent / "knowledge" / "errors")
+    def __init__(self, errors_dir: Path | None = None) -> None:
+        self.errors_dir = errors_dir or (
+            Path(__file__).parent.parent.parent / "knowledge" / "errors"
+        )
         self.signatures: list[dict[str, Any]] = []
         self._load_signatures()
 
@@ -44,7 +47,7 @@ class DeterministicErrorMatcher:
                 data = json.loads(err_file.read_text(encoding="utf-8"))
                 if "id" in data and "signature" in data:
                     self.signatures.append(data)
-            except Exception:
+            except Exception:  # noqa: S110 -- assinatura invalida nao derruba o catalogo inteiro
                 pass
 
     def match_log(self, log_content: str) -> list[ErrorMatchResult]:

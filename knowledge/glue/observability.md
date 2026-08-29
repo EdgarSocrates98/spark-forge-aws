@@ -120,8 +120,20 @@ O valor real dessas métricas não é o run isolado — é a série. Com `JobRun
 
 Um job que falha por OOM "depois de horas" (`../spark/memory-and-oom.md` §3) só se diagnostica assim: heap do driver **ao longo** do run, não o pico.
 
+## 6. Retenção de métrica por período
+
+A granularidade do ponto decide por quanto tempo o CloudWatch o guarda. A tabela está em
+[`observability.yaml`](observability.yaml), legível por máquina e carregada por
+`sparkforge/facts/cloudwatch_retention.py` — não é repetida aqui de propósito: duas cópias do
+mesmo número divergem, e a que o código lê é a do YAML.
+
+Consequência prática: consultar um run antigo com período curto devolve série vazia. Vazio por
+expiração e vazio por observabilidade desligada no job têm remédios opostos, e a saída precisa
+dizer qual dos dois é.
+
 ## Fontes
 
 - Monitoring with AWS Glue Observability metrics — todos os nomes de métrica, dimensões, unidades, limitações e as 28 categorias de erro. https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html (retrieved 2026-07-29)
 - Enhance monitoring and debugging for AWS Glue jobs using new job observability metrics. https://aws.amazon.com/blogs/big-data/enhance-monitoring-and-debugging-for-aws-glue-jobs-using-new-job-observability-metrics/ (retrieved 2026-07-29)
+- Amazon CloudWatch concepts — retenção de dados de métrica por granularidade. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html (retrieved 2026-08-26)
 - Seção 5 é prática de campo, não documentação.

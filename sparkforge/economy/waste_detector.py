@@ -1,8 +1,8 @@
 """Token Waste Detector for SparkForge Economy Engine."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -65,8 +65,14 @@ class TokenWasteDetector:
                         severity="P1",
                         estimated_wasted_tokens=wasted,
                         estimated_wasted_cost_usd=round((wasted / 1_000_000.0) * 0.80, 4),
-                        description=f"Tool call '{key[:60]}...' executed {count} times with identical arguments.",
-                        recommendation="Enable Tier 1 ArtifactCache to avoid repeated identical tool runs.",
+                        description=(
+                            f"Tool call '{key[:60]}...' executed {count} times with identical "
+                            f"arguments."
+                        ),
+                        recommendation=(
+                            "Enable Tier 1 ArtifactCache to avoid repeated identical "
+                            "tool runs."
+                        ),
                     )
                 )
 
@@ -80,7 +86,10 @@ class TokenWasteDetector:
                     severity="P1",
                     estimated_wasted_tokens=wasted,
                     estimated_wasted_cost_usd=round((wasted / 1_000_000.0) * 15.0, 4),
-                    description=f"Detected {premium_calls_on_simple_tasks} Tier 5 calls on low complexity tasks.",
+                    description=(
+                        f"Detected {premium_calls_on_simple_tasks} Tier 5 calls on low complexity "
+                        f"tasks."
+                    ),
                     recommendation="Route to Tier 3 cheap model or Tier 0 deterministic tool.",
                 )
             )

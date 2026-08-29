@@ -76,6 +76,16 @@ def validate_fact(payload: dict[str, Any]) -> None:
     _check(payload, "fact.schema.json")
 
 
+def validate_business_rule(payload: dict[str, Any]) -> None:
+    """Valida regra funcional (sf-functional-rules-specialist) contra o schema.
+
+    Distinto de `validate_finding`: nao ha `_reject_unbacked_gain` aqui porque
+    regra funcional nao carrega `expected_effect` nem `benchmark_ref` -- ela
+    descreve comportamento do sistema analisado, nao um achado de performance.
+    """
+    _check(payload, "business_rule.schema.json")
+
+
 def _reject_unbacked_gain(
     payload: dict[str, Any], fact_ids: set[str] | None = None
 ) -> None:

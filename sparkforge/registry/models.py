@@ -5,11 +5,9 @@ Designed to be serializable to/from JSON and YAML with strict schema validation.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class RiskLevel(str, Enum):
@@ -68,7 +66,7 @@ class ModelPolicy:
     temperature: float = 0.0
     structured_output: bool = True
     streaming: bool = False
-    fallback_tier: Optional[ModelTier] = ModelTier.TIER_0_DETERMINISTIC
+    fallback_tier: ModelTier | None = ModelTier.TIER_0_DETERMINISTIC
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -200,9 +198,9 @@ class KnowledgeManifest:
     domain: str
     title: str
     concise_path: str
-    patterns_path: Optional[str] = None
-    anti_patterns_path: Optional[str] = None
-    references_path: Optional[str] = None
+    patterns_path: str | None = None
+    anti_patterns_path: str | None = None
+    references_path: str | None = None
     last_verified: str = ""
     source_hash: str = ""
 

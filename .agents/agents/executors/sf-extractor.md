@@ -18,6 +18,7 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 | grafo de chamadas | `sparkforge_analyze_call_graph` |
 | plano físico | `sparkforge_analyze_plan` |
 | Spark event log | `sparkforge_analyze_event_log` |
+| Spark event log, custo por FONTE | `sparkforge_analyze_sql_metrics` |
 | Terraform | `sparkforge_analyze_terraform` |
 | diff de Terraform (PR) | `sparkforge_analyze_terraform_diff` |
 | metadata Iceberg | `sparkforge_analyze_iceberg` |
@@ -31,6 +32,40 @@ Produz facts ancorados, rodando o extrator certo para cada artefato:
 
 Depois, `sparkforge_fuse` — regras que cruzam SQL com schema do catálogo (SF-ATH) só
 disparam sobre facts fundidos.
+
+Depois de facts sobre scan, shuffle, spill e join, `sparkforge_workload` — perfila o
+job por eixo (`scan_intensity`, `shuffle_intensity`, `skew_risk`, `memory_pressure`,
+`join_intensity`, ...) a partir de facts JÁ extraídos: não é outro extrator da tabela
+acima, é o único mecanismo que classifica o que eles já mediram. Existe porque volume de
+entrada sozinho não separa workload — dois jobs do mesmo tamanho de entrada podem ser um
+scan-bound e outro shuffle-bound, e o volume não distingue os dois. Cada eixo carrega a
+própria `confidence` (`measured`/`declared`/`unknown`) e nunca aplica limiar universal:
+sem `--history` do próprio job, os eixos de escala saem `unknown` de propósito, em vez
+de um default inventado.
+
+Sobre capacidade — worker type e número de workers —, `sparkforge_capacity` é o par de
+`sparkforge_workload` e não outro extrator: o perfil DESCREVE o job por eixo, esta tool
+ESCOLHE, entre as capacidades que o job JÁ RODOU, a mais barata que cumpre o SLA. A
+escolha sai sempre `safety: "REVIEW"` — nada aqui aplica a mudança, e worker count
+continua decisão de quem pode ser perguntado.
+
+`sparkforge_finops` consome os MESMOS facts que `sparkforge_capacity` e reúne o
+relatório financeiro inteiro — custo por capacidade observada, custo por
+desfecho dentro do SLA, e os achados do `judge` agrupados sob o eixo
+financeiro (`levers.code` vs. `levers.capacity`). Ele existe ao lado de
+`sparkforge_capacity`, não no lugar dela, porque capacidade e código são
+alavancas DIFERENTES e a conta sozinha não diz qual delas é a certa: um job
+caro por variar worker count tem solução em `sparkforge_capacity`; um job caro
+porque varre dez vezes o que precisa continua caro em qualquer capacidade, e
+essa distinção é exatamente o que `levers` separa.
+
+**`sparkforge_analyze_sql_metrics` não é o mesmo dado que `sparkforge_analyze_event_log`
+sobre o mesmo arquivo.** O event log agrega tudo que cai num stage — se duas fontes
+compartilham stage, o custo delas soma num número só, e não há como separar a fonte cara da
+barata. `sparkforge_analyze_sql_metrics` atribui bytes e arquivos ao NÓ DO PLANO que os
+leu, medido pelo próprio Spark (`SparkListenerSQLExecutionStart`/
+`SparkListenerDriverAccumUpdates`), não por stage. Use-o quando a pergunta for "qual fonte
+custou" e `analyze event-log` só responder "qual stage custou".
 
 **Um limite que só existe na linha do EMR Serverless.** `get-application` descreve o
 **padrão da application**, e a AWS declara que as configurações passadas em `StartJobRun`

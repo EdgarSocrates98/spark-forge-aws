@@ -1,0 +1,38 @@
+name: broadcast_timeout_stage_failure
+proves: >
+  A razão da stage que falhou entra no barramento como `spark.stage.failure`, e
+  é a única fonte no event log que separa timeout de broadcast de timeout de
+  rede. O handler de `SparkListenerStageCompleted` lia `Stage ID`, `Stage Name`
+  e `Number of Tasks`, e descartava `Failure Reason` — com ela descartada, duas
+  das quatro categorias de `spark.timeout.diagnosis` não teriam evidência
+  nenhuma.
+  A frase aqui é a que o Spark escreve: "Could not execute broadcast in 300
+  secs.", com o texto completo preservado no fact, e não uma paráfrase — quem
+  lê o diagnóstico precisa da frase que o produziu.
+  O log é magro de propósito: as oito tasks duram o mesmo (1000 ms cada), o
+  input é idêntico entre elas, não há spill, o GC é 20 ms sobre 1000, e nenhum
+  executor é removido. Nada da área `SF-UI` dispara, então o golden isola o
+  fact novo em vez de misturá-lo com achado de skew ou de memória.
+  As duas propriedades da relação estão presentes e na ordem certa (10s de
+  heartbeat dentro de 120s de espera): `SF-TIMEOUT-002` NÃO dispara aqui, e o
+  lado positivo dela é provado por `heartbeat_maior_que_network`, no corpus de
+  timeout.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.stage.task_duration
+  - spark.stage.task_input
+  - spark.stage.spill
+  - spark.stage.gc
+  - spark.stage.task_count
+  - spark.stage.failure
+  - spark.cluster.cores
+  - spark.job.spill_summary
+  - spark.runtime_version
+  - spark.log_analyzed
+  - spark.conf_effective
+  - spark.conf_excluded
+expects_rules: []

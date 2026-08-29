@@ -39,6 +39,9 @@ class TestToolSurface:
             "sparkforge_analyze_pyspark",
             "sparkforge_analyze_catalog_schema",
             "sparkforge_analyze_event_log",
+            "sparkforge_analyze_sql_metrics",
+            "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_glue_job_runs",
             "sparkforge_analyze_plan",
             "sparkforge_analyze_terraform",
             "sparkforge_analyze_iceberg",
@@ -59,6 +62,10 @@ class TestToolSurface:
             "sparkforge_funcval_plan",
             "sparkforge_funcval_compare",
             "sparkforge_fuse",
+            "sparkforge_workload",
+            "sparkforge_capacity",
+            "sparkforge_finops",
+            "sparkforge_tune",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
@@ -67,6 +74,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
@@ -114,6 +122,7 @@ class TestToolSurface:
             "sparkforge_collect_event_log",
             "sparkforge_collect_glue_job",
             "sparkforge_collect_cloudwatch",
+            "sparkforge_collect_glue_job_runs",
             "sparkforge_collect_iceberg_metadata",
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
@@ -612,6 +621,77 @@ CATALOG_DUMP = json.dumps(
 
 _EVENT_LOG_LINE = json.dumps({"Event": "SparkListenerApplicationStart"}) + "\n"
 
+# Event log minimo COM metrica de plano SQL: um no `FileScan parquet
+# db.clientes[id#1]` que publica `number of files read` (mapeado para
+# `files_read` em knowledge/spark/sql-metrics.yaml), atribuido via
+# SparkListenerDriverAccumUpdates. Sem os dois eventos, `extract_sql_metrics`
+# so renderiza o fact `spark.sql.unresolved` de `no_sql_events`, e o teste de
+# schema validaria o ramo errado -- o de ausencia, nao o de `spark.sql.scan`.
+_SQL_METRICS_EVENT_LOG_LINES = "".join(
+    json.dumps(e) + "\n"
+    for e in [
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart",
+            "executionId": 0,
+            "description": "select * from db.clientes",
+            "sparkPlanInfo": {
+                "nodeName": "FileScan parquet",
+                "simpleString": "FileScan parquet db.clientes[id#1]",
+                "children": [],
+                "metadata": {"Format": "parquet"},
+                "metrics": [{"name": "number of files read", "accumulatorId": 1}],
+            },
+        },
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates",
+            "executionId": 0,
+            "accumUpdates": [[1, 3]],
+        },
+        {
+            "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd",
+            "executionId": 0,
+        },
+    ]
+)
+
+# Artefato de metricas do CloudWatch no shape que `sparkforge collect cloudwatch`
+# grava -- ver `_artifact()` de `tests/test_facts_cloudwatch.py`. Com valores nao
+# vazios: uma serie vazia validaria `sparkforge_analyze_cloudwatch` contra o
+# schema pelo motivo errado (`glue.metric.unresolved`, nao `glue.metric`).
+_CLOUDWATCH_ARTIFACT = json.dumps(
+    {
+        "job_name": "etl-job",
+        "job_run_id": "jr_1",
+        "start": "2026-08-26T10:00:00Z",
+        "end": "2026-08-26T10:20:00Z",
+        "period_seconds": 60,
+        "metric_data_results": [
+            {
+                "Id": "m0",
+                "Label": "glue.driver.workerUtilization",
+                "Timestamps": ["t1", "t2", "t3"],
+                "Values": [0.3, 0.9, 0.6],
+            }
+        ],
+    }
+)
+
+# Artefato de UM run Glue no shape que `sparkforge collect glue-job-runs` grava
+# -- um JSON por run terminal, nomeado `<job>_<run_id>.json`.
+_GLUE_JOB_RUN_ARTIFACT = json.dumps(
+    {
+        "JobName": "etl-job",
+        "Id": "jr_1",
+        "JobRunState": "SUCCEEDED",
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 2,
+        "GlueVersion": "5.0",
+        "ExecutionTime": 120,
+        "StartedOn": "2026-08-26T10:00:00Z",
+        "CompletedOn": "2026-08-26T10:02:00Z",
+    }
+)
+
 _PLAN_TEXT = (
     "== Physical Plan ==\n"
     "* Project (2)\n"
@@ -684,6 +764,152 @@ def _write_facts_file(tmp_path):
     path = tmp_path / "facts.json"
     path.write_text(json.dumps(facts["items"], ensure_ascii=False), encoding="utf-8")
     return path
+
+
+def _write_workload_facts_file(tmp_path):
+    """Um fact `spark.stage.task_duration`, o suficiente para `skew_risk` sair
+    `measured` -- os demais eixos saem `unknown` de proposito, sem `history_path`."""
+    path = tmp_path / "workload_facts.json"
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "a" * 16,
+                    "schema_version": 1,
+                    "kind": "spark.stage.task_duration",
+                    "subject": {"type": "stage", "symbol": "stage-1", "stage_id": 1},
+                    "measures": {"p50_ms": 100, "p95_ms": 1000, "task_count": 20},
+                    "attrs": {},
+                    "provenance": {},
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _capacity_fact(kind, subject, measures=None, attrs=None):
+    return {
+        "id": "0" * 16,
+        "schema_version": 1,
+        "kind": kind,
+        "subject": subject,
+        "measures": measures or {},
+        "attrs": attrs or {},
+        "provenance": {},
+    }
+
+
+def _capacity_scan(bytes_read):
+    return _capacity_fact(
+        "spark.sql.scan",
+        {
+            "type": "plan_node",
+            "node_id": 1,
+            "operator": "Scan parquet",
+            "relation": "db.pedidos",
+            "symbol": "0:1",
+            "execution_id": 0,
+        },
+        {"bytes_read": bytes_read},
+        {"format": "parquet", "scan_api": "v1", "node_name": "Scan parquet"},
+    )
+
+
+def _capacity_run(run_id, segundos, workers, dpu):
+    return _capacity_fact(
+        "glue.job_run",
+        {"type": "job_run", "job_name": "etl", "job_run_id": run_id, "symbol": run_id},
+        {"execution_time_s": segundos, "number_of_workers": workers, "dpu_seconds": dpu},
+        {
+            "state": "SUCCEEDED",
+            "worker_type": "G.2X",
+            "glue_version": "5.0",
+            "autoscaling": False,
+            "dpu_source": "derived",
+        },
+    )
+
+
+def _write_capacity_facts_files(tmp_path):
+    """Facts do run corrente (SLA declarado + scan) e um diretorio de historico
+    com runs suficientes para `candidates`/`chosen` sairem preenchidos -- a
+    resolucao de 6 runs comparaveis sustenta o alvo padrao de 0.8."""
+    facts_path = tmp_path / "capacity_facts.json"
+    facts_path.write_text(
+        json.dumps(
+            [
+                _capacity_fact(
+                    "workload.declared",
+                    {"type": "job_run", "symbol": "etl"},
+                    {"sla_minutes": 10, "reliability_target": 0.8},
+                ),
+                _capacity_scan(1000),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    history_dir = tmp_path / "capacity_history"
+    history_dir.mkdir()
+    for i in range(6):
+        (history_dir / f"barato{i}.json").write_text(
+            json.dumps([_capacity_run(f"b{i}", 500, 10, 1000.0), _capacity_scan(1000)]),
+            encoding="utf-8",
+        )
+    return facts_path, history_dir
+
+
+def _write_finops_facts_file(tmp_path):
+    """Seis `glue.job_run` de DUAS capacidades e um `workload.declared`, para
+    `frontier` sair com duas linhas e `per_sla_outcome` render (a resolucao de
+    seis runs comparaveis sustenta o alvo padrao de 0.8, mesma amostra de
+    `_write_capacity_facts_files`)."""
+    facts_path = tmp_path / "finops_facts.json"
+    runs = [_capacity_run(f"b{i}", 500, 10, 1000.0) for i in range(6)]
+    facts_path.write_text(
+        json.dumps(
+            runs
+            + [
+                _capacity_fact(
+                    "workload.declared",
+                    {"type": "job_run", "symbol": "etl"},
+                    {"sla_minutes": 10, "reliability_target": 0.8},
+                )
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return facts_path
+
+
+def _write_tune_facts_file(tmp_path):
+    """Shuffle medido mais a versao, que e o par minimo que sustenta derivacao.
+
+    Sem `spark.runtime_version` o relatorio recusa por `runtime_unknown` e
+    `properties` sai vazio -- e lista vazia valida contra qualquer schema de
+    array, que e validar pelo motivo errado.
+    """
+    facts_path = tmp_path / "tune_facts.json"
+    facts_path.write_text(
+        json.dumps(
+            [
+                _capacity_fact(
+                    "spark.stage.shuffle",
+                    {"type": "stage", "symbol": "stage-4", "stage_id": 4},
+                    {"write_bytes": 640 * 1024 * 1024, "read_bytes": 0},
+                ),
+                _capacity_fact(
+                    "spark.runtime_version",
+                    {"type": "job_run", "symbol": "app-1"},
+                    {},
+                    {"component": "spark", "version": "3.5.4"},
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return facts_path
 
 
 _FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
@@ -841,6 +1067,24 @@ class _FakeS3Client:
 class _FakeGlueClient:
     def get_job(self, **kwargs):
         return {"Job": {"Name": kwargs.get("JobName", "job"), "GlueVersion": "5.0"}}
+
+    def get_job_runs(self, **kwargs):
+        job_name = kwargs.get("JobName", "job")
+        return {
+            "JobRuns": [
+                {
+                    "Id": "jr_1",
+                    "JobName": job_name,
+                    "JobRunState": "SUCCEEDED",
+                    "WorkerType": "G.1X",
+                    "NumberOfWorkers": 2,
+                    "GlueVersion": "5.0",
+                    "ExecutionTime": 120,
+                    "StartedOn": "2026-08-26T10:00:00Z",
+                    "CompletedOn": "2026-08-26T10:02:00Z",
+                }
+            ]
+        }
 
 
 class _FakeCloudWatchClient:
@@ -1255,6 +1499,29 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         log_path.write_text(_EVENT_LOG_LINE, encoding="utf-8")
         return call_tool("sparkforge_analyze_event_log", {"path": str(log_path)})
 
+    if name == "sparkforge_analyze_sql_metrics":
+        log_path = tmp_path / "sql_metrics_log.jsonl"
+        log_path.write_text(_SQL_METRICS_EVENT_LOG_LINES, encoding="utf-8")
+        resultado = call_tool("sparkforge_analyze_sql_metrics", {"path": str(log_path)})
+        assert any(item["kind"] == "spark.sql.scan" for item in resultado["items"]), (
+            "a amostra precisa render pelo menos um fact spark.sql.scan"
+        )
+        return resultado
+
+    if name == "sparkforge_analyze_cloudwatch":
+        cw_path = tmp_path / "cw.json"
+        cw_path.write_text(_CLOUDWATCH_ARTIFACT, encoding="utf-8")
+        return call_tool("sparkforge_analyze_cloudwatch", {"path": str(cw_path)})
+
+    if name == "sparkforge_analyze_glue_job_runs":
+        runs_dir = tmp_path / "glue_job_run"
+        runs_dir.mkdir()
+        (runs_dir / "etl-job_jr_1.json").write_text(_GLUE_JOB_RUN_ARTIFACT, encoding="utf-8")
+        return call_tool(
+            "sparkforge_analyze_glue_job_runs",
+            {"path": str(runs_dir), "job_name": "etl-job"},
+        )
+
     if name == "sparkforge_analyze_plan":
         plan_path = tmp_path / "plan.txt"
         plan_path.write_text(_PLAN_TEXT, encoding="utf-8")
@@ -1359,6 +1626,41 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         facts_path = _write_facts_file(tmp_path)
         return call_tool("sparkforge_fuse", {"facts_paths": [str(facts_path)]})
 
+    if name == "sparkforge_workload":
+        facts_path = _write_workload_facts_file(tmp_path)
+        return call_tool(
+            "sparkforge_workload",
+            {"facts_path": str(facts_path), "job_name": "etl", "job_run_id": "jr_1"},
+        )
+
+    if name == "sparkforge_capacity":
+        facts_path, history_dir = _write_capacity_facts_files(tmp_path)
+        result = call_tool(
+            "sparkforge_capacity",
+            {
+                "facts_path": str(facts_path),
+                "job_name": "etl",
+                "job_run_id": "jr_hoje",
+                "history_path": str(history_dir),
+            },
+        )
+        assert result["chosen"], "a amostra precisa render uma capacidade escolhida"
+        return result
+
+    if name == "sparkforge_finops":
+        facts_path = _write_finops_facts_file(tmp_path)
+        result = call_tool(
+            "sparkforge_finops", {"facts_path": str(facts_path), "job_name": "etl"}
+        )
+        assert result["frontier"], "a amostra precisa render ao menos uma capacidade"
+        return result
+
+    if name == "sparkforge_tune":
+        facts_path = _write_tune_facts_file(tmp_path)
+        result = call_tool("sparkforge_tune", {"facts_path": str(facts_path)})
+        assert result["properties"], "a amostra precisa render ao menos uma proposta"
+        return result
+
     if name == "sparkforge_glue_dependency_audit":
         # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a
         # amostra precisa render achado, senao valida contra o schema pelo
@@ -1409,6 +1711,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_event_log",
         "sparkforge_collect_glue_job",
         "sparkforge_collect_cloudwatch",
+        "sparkforge_collect_glue_job_runs",
         "sparkforge_collect_iceberg_metadata",
         "sparkforge_collect_athena_workgroup",
         "sparkforge_collect_emr_cluster",
@@ -1435,6 +1738,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
                 "job_run_id": "jr_1",
                 "start": "2026-07-29T00:00:00Z",
                 "end": "2026-07-30T00:00:00Z",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            "sparkforge_collect_glue_job_runs": {
+                "repo": str(tmp_path),
+                "job_name": "etl-job",
                 "now": "2026-07-30T00:00:00Z",
             },
             "sparkforge_collect_iceberg_metadata": {
@@ -1571,6 +1879,14 @@ class TestErrorShapesValidateToo:
             },
         ),
         ("sparkforge_fuse", {"facts_paths": ["<tmp>/nao-existe.json"]}),
+        (
+            "sparkforge_workload",
+            {
+                "facts_path": "<tmp>/nao-existe.json",
+                "job_name": "etl",
+                "job_run_id": "jr_1",
+            },
+        ),
         ("sparkforge_judge", {"facts_path": "<tmp>/nao-existe.json"}),
         (
             "sparkforge_report_sign",
@@ -1609,3 +1925,77 @@ class TestErrorShapesValidateToo:
     def test_every_failable_tool_declares_both_shapes(self):
         for name, _ in self.FAILABLE:
             assert "oneOf" in TOOLS[name]["outputSchema"], name
+
+
+class TestGlueJobRunTools:
+    def test_the_three_new_tools_are_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        novas = {
+            "sparkforge_collect_glue_job_runs",
+            "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_glue_job_runs",
+        }
+        assert novas <= set(tools.TOOLS)
+        assert novas <= set(tools._HANDLERS)
+
+    def test_the_three_new_tools_are_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        listadas = set(manifest["tools"])
+        assert {
+            "sparkforge_analyze_cloudwatch",
+            "sparkforge_analyze_glue_job_runs",
+            "sparkforge_collect_glue_job_runs",
+        } <= listadas
+
+
+class TestSqlMetricsTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_analyze_sql_metrics" in tools.TOOLS
+        assert "sparkforge_analyze_sql_metrics" in tools._HANDLERS
+
+    def test_the_tool_is_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        assert "sparkforge_analyze_sql_metrics" in set(manifest["tools"])
+
+
+class TestWorkloadTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_workload" in tools.TOOLS
+        assert "sparkforge_workload" in tools._HANDLERS
+
+    def test_the_tool_is_listed_in_the_manifest(self):
+        import json
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[1]
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        assert "sparkforge_workload" in set(manifest["tools"])
+
+
+class TestCapacityTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_capacity" in tools.TOOLS
+        assert "sparkforge_capacity" in tools._HANDLERS
+
+
+class TestFinopsTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_finops" in tools.TOOLS
+        assert "sparkforge_finops" in tools._HANDLERS

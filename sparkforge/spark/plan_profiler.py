@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -44,7 +44,10 @@ class SparkPlanProfiler:
                     severity="critical",
                     operator="CartesianProduct",
                     title="Cartesian Product detected in physical plan",
-                    description="O(M*N) row explosion causing extreme memory allocation and execution time.",
+                    description=(
+                        "O(M*N) row explosion causing extreme memory allocation and execution "
+                        "time."
+                    ),
                     recommendation="Add explicit join condition or rewrite logic.",
                 )
             )
@@ -55,7 +58,10 @@ class SparkPlanProfiler:
                     severity="critical",
                     operator="BroadcastNestedLoopJoin",
                     title="BroadcastNestedLoopJoin detected",
-                    description="Inefficient join operator chosen due to missing equi-join condition.",
+                    description=(
+                        "Inefficient join operator chosen due to missing equi-join "
+                        "condition."
+                    ),
                     recommendation="Ensure equi-join condition on keys (`df1.id == df2.id`).",
                 )
             )
@@ -66,8 +72,14 @@ class SparkPlanProfiler:
                     severity="medium",
                     operator="Exchange",
                     title=f"High shuffle exchange count ({exchanges} Exchanges)",
-                    description="Multiple shuffles indicate repeated repartitioning or successive joins on different keys.",
-                    recommendation="Reorganize join order or use bucketed / partition-aligned data layout.",
+                    description=(
+                        "Multiple shuffles indicate repeated repartitioning or successive joins "
+                        "on different keys."
+                    ),
+                    recommendation=(
+                        "Reorganize join order or use bucketed / partition-aligned "
+                        "data layout."
+                    ),
                 )
             )
 

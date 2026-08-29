@@ -31,6 +31,7 @@ ARTIFACT_KINDS = (
     "terraform",
     "explain",
     "cloudwatch",
+    "glue_job_run",
     "iceberg_metadata",
     "athena_workgroup",
     "emr_cluster",

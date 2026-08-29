@@ -1,0 +1,21 @@
+name: join_nested_via_joins
+proves: >
+  `(db.a join db.b) join db.c`, dois SortMergeJoin encadeados. No join interno
+  (db.a join db.b) as duas fontes entram direto, `via_joins: 0`. No join
+  externo, a mesma fonte db.a e db.b chega atraves do join interno --
+  `via_joins: 1` -- enquanto db.c entra direto no externo, `via_joins: 0`.
+  Prova que a contagem de `_fontes_por_no` incrementa exatamente uma vez por
+  join estritamente entre o scan e o no consultado, nos dois niveis da
+  arvore.
+runtime:
+  glue: "5.0"
+  spark: "3.5.4"
+  python: "3.11"
+  iceberg: "1.7.1"
+expects_kinds:
+  - spark.sql.execution
+  - spark.sql.scan
+  - spark.sql.join
+  - spark.sql.join_input
+  - spark.sql.analyzed
+expects_rules: []

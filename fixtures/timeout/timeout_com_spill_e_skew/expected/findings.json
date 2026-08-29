@@ -1,0 +1,130 @@
+[
+  {
+    "rule_id": "SF-UI-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Skew de duração de task no stage",
+    "severity": "P0",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "stage",
+      "symbol": "stage-4",
+      "stage_id": 4
+    },
+    "evidence": [
+      "f_9d7e4d"
+    ],
+    "measured": {
+      "p50_ms": 100.0,
+      "p95_ms": 1140.0,
+      "max_ms": 1140.0,
+      "task_count": 20.0
+    },
+    "threshold": {
+      "ratio": 3.0
+    },
+    "runtime_scope": {},
+    "explanation": "O stage termina quando a última task termina. Uma task muito mais longa que a mediana significa que a maior parte do cluster está ociosa esperando por ela. Este achado sozinho não distingue skew de dados de skew de computação: cruzar com SF-UI-002 para separá-los, porque o tratamento é diferente. Ver knowledge/spark/shuffle-join-skew.md secao 3.",
+    "proposed_change": [
+      "Cruzar com a razão de input bytes (SF-UI-002) para classificar o tipo de skew.",
+      "Identificar a chave responsável, medindo a distribuição das top-N chaves e a contagem de nulls.",
+      "Aplicar o tratamento adequado ao tipo, na ordem de custo crescente da tabela de tratamentos."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Tratar skew mexendo na chave de join pode alterar o resultado, por duplicação ou por descarte de nulls."
+    ],
+    "tradeoffs": [
+      "Salting adiciona complexidade permanente ao código e deve ser a última tentativa, não a primeira."
+    ],
+    "validation": [
+      "Contagem total antes e depois.",
+      "Contagem de linhas com chave nula.",
+      "Contagem distinta da chave primária do resultado, para detectar duplicação.",
+      "Agregados de controle por dimensão de negócio.",
+      "Nova razão max/p50 do stage após a mudança."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita",
+      "usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-07-29"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "Limiares 3 e 10 são heurística de campo. O fator default do Glue para skewness é 5, o que é consistente com a faixa."
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-TIMEOUT-001",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Timeout com sintoma medido ao lado — aumentar o limite mascara a causa",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "jr_0001",
+      "job_name": "etl_pedidos_diario",
+      "job_run_id": "jr_0001"
+    },
+    "evidence": [
+      "f_ae2f65",
+      "f_ae2f65"
+    ],
+    "measured": {
+      "skew_p95_over_p50": 11.4,
+      "spill_over_input": 0.4,
+      "executor_lost_count": 0.0
+    },
+    "threshold": {
+      "skew_ratio": 3.0,
+      "spill_ratio": 0.1,
+      "gc_ratio": 0.1,
+      "executor_lost_min": 1
+    },
+    "runtime_scope": {},
+    "explanation": "O run bateu num timeout e há sintoma medido ao lado: skew de duração de task, spill sobre o input lido, tempo de GC sobre tempo de task, ou executor removido. Aumentar o limite faz o run durar mais e falhar depois, pelo mesmo motivo, com a conta maior.\n\nEsta regra NÃO diz que o limite atual está certo. Ela diz que a evidência ao lado aponta para outra causa, e que a ordem de investigação começa por ela. Sem sintoma nenhum, a regra não dispara — e aí subir o timeout pode ser exatamente a decisão certa, quando o runtime esperado é legítimo e o SLA permite.\n\nA categoria do timeout está em `spark.timeout.diagnosis.attrs.category`, e muda a ordem: `heartbeat` e `network` apontam para pressão de memória, GC ou partição grande demais; `broadcast` aponta para um lado grande demais para broadcast; `wall_clock` é o relógio do Glue, que é consequência e não causa.",
+    "proposed_change": [
+      "Ler `attrs.category` e `attrs.also_seen` antes de qualquer mudança de configuração — a categoria decide qual investigação vale.",
+      "Investigar o sintoma medido que disparou esta regra, na ordem em que as measures aparecem no fact.",
+      "Só depois de descartar os sintomas, avaliar se o limite é pequeno para o trabalho legítimo do job."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Subir o timeout com skew ou spill presente troca uma falha rápida por uma falha cara — o run consome recurso por mais tempo e termina no mesmo lugar.",
+      "Reduzir o timeout para \"falhar rápido\" pode matar run legítimo em dia de volume maior."
+    ],
+    "tradeoffs": [
+      "Investigar a causa custa tempo de análise; subir o limite custa dinheiro por run, todo run, até alguém revisitar."
+    ],
+    "validation": [
+      "Nova razão p95/p50 de duração de task nos stages do job, depois da mudança.",
+      "Spill sobre input lido, no mesmo stage que disparou.",
+      "Contagem de executores removidos no run seguinte.",
+      "Duração p50 e p95 do run, contra o histórico de `glue.job_run.distribution`."
+    ],
+    "rollback": [
+      "Reverter a mudança de configuração. Nenhuma das ações propostas altera dado, então não há escrita a desfazer."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html",
+        "retrieved": "2026-08-29",
+        "note": "`Timeout` do JobRun é o tempo máximo que a execução pode consumir recursos antes de entrar em `TIMEOUT` — relógio de parede, e não causa.\n"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "Os limiares 3.0 (skew), 0.1 (spill sobre input) e 0.1 (GC sobre tempo de task) são heurística de campo, na mesma faixa que `SF-UI-001` já usa para skew. O limiar de executor removido é 1 porque a ocorrência é o sinal: um executor perdido já muda a ordem de investigação.\n"
+      }
+    ]
+  }
+]

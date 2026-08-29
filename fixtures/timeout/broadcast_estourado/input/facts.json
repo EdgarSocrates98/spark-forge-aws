@@ -1,0 +1,42 @@
+[
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.executor.heartbeatInterval"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.executor.heartbeatInterval",
+      "value": "10s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  },
+  {
+    "kind": "spark.conf_effective",
+    "subject": {
+      "type": "job_run",
+      "symbol": "spark.network.timeout"
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.network.timeout",
+      "value": "120s",
+      "app_id": "application_1699000000000_0031",
+      "source_event": "SparkListenerEnvironmentUpdate"
+    }
+  },
+  {
+    "kind": "spark.stage.failure",
+    "subject": {
+      "type": "stage",
+      "symbol": "broadcast exchange at Join.scala:120",
+      "stage_id": 4
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "org.apache.spark.SparkException: Could not execute broadcast in 300 secs. You can increase the timeout further by setting a larger value in spark.sql.broadcastTimeout"
+    }
+  }
+]

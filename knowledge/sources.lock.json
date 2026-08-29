@@ -204,6 +204,18 @@
         "SF-EMRS-005"
       ]
     },
+    "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_concepts.html": {
+      "checked_at": "2026-08-26",
+      "docs": [
+        "knowledge/glue/observability.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-26"
+      ],
+      "rules": [],
+      "sha256": "670ca2f90816d11fa1f96b83c3a33f02813ac7e9bb282a6c5b631e237f6a662a"
+    },
     "https://docs.aws.amazon.com/athena/latest/ug/partitions.html": {
       "checked_at": "2026-07-31",
       "docs": [
@@ -692,10 +704,18 @@
       "retrieved": [
         "2026-07-29"
       ],
-      "rules": [
-        "SF-GLUE-001"
-      ],
+      "rules": [],
       "sha256": "710eb1d3d6a14435bb7a85e24b1f525378f0678622f0fec510b5e17db696470e"
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-jobs-runs.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-29"
+      ],
+      "rules": [
+        "SF-TIMEOUT-001"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html": {
       "docs": [
@@ -786,14 +806,17 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-07-29"
+        "2026-07-29",
+        "2026-08-29"
       ],
       "rules": [
         "SF-ENV-003",
         "SF-GLUE-002",
         "SF-GLUE-003",
         "SF-UI-001",
-        "SF-UI-005"
+        "SF-UI-005",
+        "SF-WASTE-001",
+        "SF-WASTE-002"
       ],
       "sha256": "db732c3ad0ea1f566cc26dbe6e96226e6dc024c66be1e3755d94c6e8ab367dc3"
     },
@@ -854,6 +877,16 @@
         "SF-GLUE-005"
       ],
       "sha256": "a587377ca988f6727e8031eeb861bcebd9322f7988b6793952f0ef7fd2a95cdb"
+    },
+    "https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": [
+        "SF-GLUE-007"
+      ]
     },
     "https://docs.aws.amazon.com/lake-formation/latest/dg/cross-account-permissions.html": {
       "docs": [],
@@ -1385,6 +1418,66 @@
       ],
       "rules": []
     },
+    "https://raw.githubusercontent.com/apache/spark/v3.1.1/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.3.0/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.4/sql/core/src/main/scala/org/apache/spark/sql/execution/metric/SQLMetrics.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v3.5.6/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/spark/v4.1.1/sql/core/src/main/scala/org/apache/spark/sql/execution/DataSourceScanExec.scala": {
+      "docs": [
+        "knowledge/spark/sql-metrics.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-28"
+      ],
+      "rules": []
+    },
     "https://raw.githubusercontent.com/awslabs/python-deequ/v1.6.0/pydeequ/configs.py": {
       "docs": [
         "knowledge/dq/validation-frameworks.md"
@@ -1623,6 +1716,16 @@
         "SF-PLAN-001"
       ],
       "sha256": "0b640a7519e75ed47c9d3fc074ae7cb109a62420ff0a581302b2ca00c676c627"
+    },
+    "https://spark.apache.org/docs/latest/configuration.html": {
+      "docs": [],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-29"
+      ],
+      "rules": [
+        "SF-TIMEOUT-002"
+      ]
     },
     "https://spark.apache.org/docs/latest/sql-performance-tuning.html": {
       "checked_at": "2026-07-31",

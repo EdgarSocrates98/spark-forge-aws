@@ -1,13 +1,15 @@
 """Token Budget and Cost Estimation Models for SparkForge Economy Engine."""
+
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from dataclasses import asdict, dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
 class TierPricing:
     """Pricing in USD per 1M tokens."""
+
     input_price_per_m: float
     output_price_per_m: float
     cached_input_price_per_m: float = 0.0
@@ -59,16 +61,26 @@ class TaskBudgetGuardrail:
     max_tool_calls: int = 20
     max_retries: int = 2
 
-    def check_exceeded(self, usage: TokenUsage) -> tuple[bool, Optional[str]]:
+    def check_exceeded(self, usage: TokenUsage) -> tuple[bool, str | None]:
         total_tokens = usage.input_tokens + usage.output_tokens
         if total_tokens > self.max_total_tokens:
             return True, f"Total token budget exceeded: {total_tokens} > {self.max_total_tokens}"
         if usage.input_tokens > self.max_input_tokens:
-            return True, f"Input token budget exceeded: {usage.input_tokens} > {self.max_input_tokens}"
+            return (
+                True,
+                f"Input token budget exceeded: {usage.input_tokens} > {self.max_input_tokens}",
+            )
         if usage.output_tokens > self.max_output_tokens:
-            return True, f"Output token budget exceeded: {usage.output_tokens} > {self.max_output_tokens}"
+            return (
+                True,
+                f"Output token budget exceeded: {usage.output_tokens} > {self.max_output_tokens}",
+            )
         if usage.estimate_cost_usd() > self.max_cost_usd:
-            return True, f"Cost budget exceeded: ${usage.estimate_cost_usd():.4f} > ${self.max_cost_usd:.4f}"
+            return (
+                True,
+                f"Cost budget exceeded: ${usage.estimate_cost_usd():.4f} > "
+                f"${self.max_cost_usd:.4f}",
+            )
         if usage.agent_calls > self.max_agent_calls:
             return True, f"Agent call limit exceeded: {usage.agent_calls} > {self.max_agent_calls}"
         if usage.tool_calls > self.max_tool_calls:

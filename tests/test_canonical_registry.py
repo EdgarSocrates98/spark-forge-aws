@@ -3,8 +3,6 @@ import pytest
 
 from sparkforge.registry import (
     AgentManifest,
-    CanonicalRegistry,
-    ExecutionProfile,
     ModelPolicy,
     ModelTier,
     RiskLevel,

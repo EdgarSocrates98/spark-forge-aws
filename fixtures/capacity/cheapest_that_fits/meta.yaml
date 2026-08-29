@@ -1,0 +1,7 @@
+name: cheapest_that_fits
+job_name: etl_pedidos_diario
+job_run_id: jr_hoje_001
+proves: 'Tres capacidades observadas: G.1X x10 estoura o SLA de 10 minutos (roda em 900s).
+  G.2X x10 (500s) e G.2X x20 (200s) cabem as duas. G.2X x20 e a mais RAPIDA (200s) e tambem
+  a mais CARA (2000 dpu-seconds); G.2X x10 e mais lenta mas custa metade (1000 dpu-seconds).
+  O otimizador escolhe G.2X x10 -- a mais barata que cabe, nao a mais rapida.'

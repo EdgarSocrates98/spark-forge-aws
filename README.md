@@ -164,7 +164,7 @@ verdade, para que um erro de API apareça no CI e não na máquina do operador.
 
 ### O que pode ser extraído
 
-Os 19 extratores emitem 118 kinds distintos de fact, e todos são offline: leem
+Os 27 extratores emitem 158 kinds distintos de fact, e todos são offline: leem
 artefato que já está em disco e nunca chamam a AWS. Cada verbo abaixo tem uma
 tool MCP de mesmo nome.
 
@@ -173,6 +173,7 @@ tool MCP de mesmo nome.
 | Código PySpark | `analyze pyspark` | árvore `*.py`, por AST — nunca importa o código |
 | Plano físico | `analyze plan` | saída colada de `explain("formatted")` |
 | Event log do Spark | `analyze event-log` | `*.jsonl` de uma execução |
+| Métricas SQL do plano | `analyze sql-metrics` | o mesmo event log, pela ótica de quanto cada fonte custou |
 | Metadata Iceberg | `analyze iceberg` | dump das metadata tables |
 | Glue Data Catalog | `analyze catalog-schema` | dump de `GetTables`/`GetTable` |
 | Terraform do Glue | `analyze terraform` | HCL com `aws_glue_job` |
@@ -186,16 +187,26 @@ tool MCP de mesmo nome.
 | Consumidores da tabela | `analyze consumers` | inventário declarado, versionado no repositório |
 | Mudança de Terraform | `analyze terraform-diff` | dois estados do mesmo módulo |
 | Grafo de chamadas | `analyze call-graph` | derivado dos facts de PySpark |
+| Métricas do CloudWatch | `analyze cloudwatch` | artefato de `collect cloudwatch` já em disco |
+| Histórico de runs Glue | `analyze glue-job-runs` | diretório de artefatos de run, um JSON por run terminal |
 | **Duas execuções comparadas** | `benchmark` | dois conjuntos de facts de event log, antes e depois |
 | **Plano de validação funcional** | `funcval plan` | facts de `analyze pyspark` e `analyze catalog-schema`, mais a chave que você declarar |
 | **Antes contra depois, por resultado** | `funcval compare` | o plano e os dois resultados que **você** mediu |
 | Correlação de fontes | `fuse` | facts de vários extratores ao mesmo tempo |
+| Perfil de workload | `workload` | facts de `analyze sql-metrics`/`analyze event-log`, mais `--history` e `workload.yaml`, ambos opcionais |
+| Escolha de capacidade sob SLA | `capacity` | facts de `analyze glue-job-runs`, mais `--history` (um arquivo de facts por run anterior) e `workload.yaml` (`sla_minutes`, `reliability_target`, `volume_tolerance`) |
+| Custo por run, e capacidade contra código | `finops` | `glue.job_run`/`glue.run_cost` de `analyze glue-job-runs`, `workload.declared` para o SLA, e os sintomas de `analyze event-log`/`analyze sql-metrics` quando a alavanca é código |
+| Configuração Spark derivada da medida | `tune` | `spark.stage.shuffle` de `analyze event-log` para o shuffle medido, `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` para a procedência de cada propriedade |
 | Runtime | `runtime detect` | todas as fontes acima, cruzadas |
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
 AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
-essa etapa inteira. `rules/catalog/` não tem nenhuma regra com `blocked_on` —
-o que falta para uma regra disparar é sempre coleta, nunca código.
+essa etapa inteira. `collect glue-job-runs` grava um artefato por run em
+estado terminal em `.sparkforge/artifacts/glue_job_run/`; run já em disco com
+hash íntegro é no-op (coleta incremental de graça), e `--max-runs` é teto de
+paginação, não filtro de data. `rules/catalog/` não tem nenhuma regra com
+`blocked_on` — o que falta para uma regra disparar é sempre coleta, nunca
+código.
 
 Sete desses verbos mudam o alcance do projeto, e é por isso que aparecem
 em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
@@ -255,7 +266,7 @@ os agregados vêm do `catalog.table_schema`, e por isso `--facts` é repetível 
 executa consulta, roda Spark ou chama AWS.
 
 Duas propriedades que o desenho não esconde. **A chave de negócio não é
-derivável:** nenhum dos 118 kinds a nomeia, então ou ela entra declarada em
+derivável:** nenhum dos 158 kinds a nomeia, então ou ela entra declarada em
 `funcval plan --key` (e o check sai com `origin: declared`) ou o plano escreve o
 eixo em `undeclared_axes` **com a razão** — declarar chave errada produz P0 sobre
 dado correto, e a procedência de cada check existe para que ninguém confunda o que

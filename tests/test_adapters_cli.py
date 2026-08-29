@@ -2061,3 +2061,554 @@ class TestEmrFlag:
     def test_cli_and_mcp_agree(self, capsys):
         _, output = run(["runtime", "detect", "--emr", "emr-7.5.0"], capsys)
         assert json.loads(output) == call_tool("sparkforge_runtime_detect", {"emr": "emr-7.5.0"})
+
+
+class TestGlueJobRunsCommands:
+    def test_analyze_cloudwatch_prints_metric_facts(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        artifact = tmp_path / "cw.json"
+        artifact.write_text(
+            json.dumps(
+                {
+                    "job_name": "my-job",
+                    "job_run_id": "jr_1",
+                    "start": "2026-08-01T10:00:00Z",
+                    "end": "2026-08-01T10:20:00Z",
+                    "period_seconds": 60,
+                    "metric_data_results": [
+                        {
+                            "Id": "m0",
+                            "Label": "glue.driver.workerUtilization",
+                            "Timestamps": ["t"],
+                            "Values": [0.5],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        assert main(["analyze", "cloudwatch", "--path", str(artifact)]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_kind"]["glue.metric"] == 1
+
+    def test_analyze_glue_job_runs_writes_out_file(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        runs_dir = tmp_path / "runs"
+        runs_dir.mkdir()
+        (runs_dir / "my-job_jr_1.json").write_text(
+            json.dumps(
+                {
+                    "Id": "jr_1",
+                    "JobName": "my-job",
+                    "JobRunState": "SUCCEEDED",
+                    "StartedOn": "2026-08-01T10:00:00+00:00",
+                    "CompletedOn": "2026-08-01T10:20:00+00:00",
+                    "ExecutionTime": 1200,
+                    "GlueVersion": "5.0",
+                    "WorkerType": "G.1X",
+                    "NumberOfWorkers": 10,
+                }
+            ),
+            encoding="utf-8",
+        )
+        out = tmp_path / "facts.json"
+
+        code = main(
+            [
+                "analyze",
+                "glue-job-runs",
+                "--path",
+                str(runs_dir),
+                "--job-name",
+                "my-job",
+                "--out",
+                str(out),
+            ]
+        )
+
+        assert code == 0
+        kinds = {f["kind"] for f in json.loads(out.read_text(encoding="utf-8"))}
+        assert "glue.job_run" in kinds
+        assert "glue.job_run.distribution" in kinds
+
+
+class TestSqlMetricsCommand:
+    def _log(self, tmp_path):
+        alvo = tmp_path / "eventlog.jsonl"
+        alvo.write_text(
+            json.dumps(
+                {
+                    "Event": "org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart",
+                    "executionId": 0,
+                    "description": "save",
+                    "physicalPlanDescription": "== Physical Plan ==",
+                    "sparkPlanInfo": {
+                        "nodeName": "Scan parquet ",
+                        "simpleString": "FileScan parquet db.clientes[id#1]",
+                        "children": [],
+                        "metadata": {"Format": "Parquet"},
+                        "metrics": [
+                            {
+                                "name": "number of files read",
+                                "accumulatorId": 11,
+                                "metricType": "sum",
+                            }
+                        ],
+                    },
+                    "time": 1,
+                }
+            )
+            + "\n"
+            + json.dumps(
+                {
+                    "Event": "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates",
+                    "executionId": 0,
+                    "accumUpdates": [[11, 6]],
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return alvo
+
+    def test_analyze_sql_metrics_prints_scan_facts(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        assert main(["analyze", "sql-metrics", "--path", str(self._log(tmp_path))]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_kind"]["spark.sql.scan"] == 1
+
+    def test_out_file_carries_the_measured_bytes(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        out = tmp_path / "facts.json"
+        code = main(
+            ["analyze", "sql-metrics", "--path", str(self._log(tmp_path)), "--out", str(out)]
+        )
+
+        assert code == 0
+        facts = json.loads(out.read_text(encoding="utf-8"))
+        scan = [f for f in facts if f["kind"] == "spark.sql.scan"][0]
+        assert scan["measures"]["files_read"] == 6
+
+
+class TestWorkloadCommand:
+    def _facts(self, tmp_path):
+        alvo = tmp_path / "facts.json"
+        alvo.write_text(
+            json.dumps(
+                [
+                    {
+                        "id": "a" * 16,
+                        "schema_version": 1,
+                        "kind": "spark.stage.task_duration",
+                        "subject": {"type": "stage", "symbol": "stage-1", "stage_id": 1},
+                        "measures": {"p50_ms": 100, "p95_ms": 1000, "task_count": 20},
+                        "attrs": {},
+                        "provenance": {},
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return alvo
+
+    def test_workload_is_a_top_level_verb(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        code = main(
+            ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
+             "--job-run", "jr_1"]
+        )
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["job_name"] == "etl"
+        assert payload["axes"]["skew_risk"]["confidence"] == "measured"
+
+    def test_axes_without_evidence_are_listed_as_unknown(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        main(
+            ["workload", "--facts", str(self._facts(tmp_path)), "--job-name", "etl",
+             "--job-run", "jr_1"]
+        )
+        payload = json.loads(capsys.readouterr().out)
+
+        assert "scan_intensity" in payload["unknown_axes"]
+
+
+class TestCapacityCommand:
+    def _fact(self, kind, subject, measures=None, attrs=None):
+        return {
+            "id": "0" * 16,
+            "schema_version": 1,
+            "kind": kind,
+            "subject": subject,
+            "measures": measures or {},
+            "attrs": attrs or {},
+            "provenance": {},
+        }
+
+    def _scan(self, bytes_read):
+        return self._fact(
+            "spark.sql.scan",
+            {
+                "type": "plan_node",
+                "node_id": 1,
+                "operator": "Scan parquet",
+                "relation": "db.pedidos",
+                "symbol": "0:1",
+                "execution_id": 0,
+            },
+            {"bytes_read": bytes_read},
+            {"format": "parquet", "scan_api": "v1", "node_name": "Scan parquet"},
+        )
+
+    def _run(self, run_id, segundos, workers, dpu):
+        return self._fact(
+            "glue.job_run",
+            {
+                "type": "job_run",
+                "job_name": "etl",
+                "job_run_id": run_id,
+                "symbol": run_id,
+            },
+            {
+                "execution_time_s": segundos,
+                "number_of_workers": workers,
+                "dpu_seconds": dpu,
+            },
+            {
+                "state": "SUCCEEDED",
+                "worker_type": "G.2X",
+                "glue_version": "5.0",
+                "autoscaling": False,
+                "dpu_source": "derived",
+            },
+        )
+
+    def _monta(self, tmp_path):
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    self._fact(
+                        "workload.declared",
+                        {"type": "job_run", "symbol": "etl"},
+                        {"sla_minutes": 10, "reliability_target": 0.8},
+                    ),
+                    self._scan(1000),
+                ]
+            ),
+            encoding="utf-8",
+        )
+        historico = tmp_path / "history"
+        historico.mkdir()
+        for i in range(6):
+            (historico / f"barato{i}.json").write_text(
+                json.dumps([self._run(f"b{i}", 500, 10, 1000.0), self._scan(1000)]),
+                encoding="utf-8",
+            )
+        for i in range(6):
+            (historico / f"caro{i}.json").write_text(
+                json.dumps([self._run(f"c{i}", 200, 20, 2000.0), self._scan(1000)]),
+                encoding="utf-8",
+            )
+        return facts, historico
+
+    def test_capacity_is_a_top_level_verb(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts, historico = self._monta(tmp_path)
+        code = main(
+            [
+                "capacity",
+                "--facts",
+                str(facts),
+                "--job-name",
+                "etl",
+                "--job-run",
+                "jr_hoje",
+                "--history",
+                str(historico),
+            ]
+        )
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert len(payload["candidates"]) == 2
+        # As duas cabem no SLA de 10 min; a escolha e a mais barata.
+        assert payload["chosen"]["number_of_workers"] == 10
+        assert payload["chosen"]["safety"] == "REVIEW"
+
+    def test_out_file_carries_the_whole_plan(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts, historico = self._monta(tmp_path)
+        out = tmp_path / "plan.json"
+        code = main(
+            [
+                "capacity",
+                "--facts",
+                str(facts),
+                "--job-name",
+                "etl",
+                "--job-run",
+                "jr_hoje",
+                "--history",
+                str(historico),
+                "--out",
+                str(out),
+            ]
+        )
+
+        assert code == 0
+        plano = json.loads(out.read_text(encoding="utf-8"))
+        assert plano["job_run_id"] == "jr_hoje"
+        assert plano["reliability_target"] == 0.8
+
+
+class TestFinopsCommand:
+    def _fact(self, kind, subject, measures=None, attrs=None):
+        return {
+            "id": "0" * 16,
+            "schema_version": 1,
+            "kind": kind,
+            "subject": subject,
+            "measures": measures or {},
+            "attrs": attrs or {},
+            "provenance": {},
+        }
+
+    def _run(self, run_id, segundos, workers, dpu):
+        return self._fact(
+            "glue.job_run",
+            {
+                "type": "job_run",
+                "job_name": "etl",
+                "job_run_id": run_id,
+                "symbol": run_id,
+            },
+            {
+                "execution_time_s": segundos,
+                "number_of_workers": workers,
+                "dpu_seconds": dpu,
+            },
+            {
+                "state": "SUCCEEDED",
+                "worker_type": "G.2X",
+                "glue_version": "5.0",
+                "autoscaling": False,
+                "dpu_source": "derived",
+            },
+        )
+
+    def _monta(self, tmp_path):
+        facts = tmp_path / "facts.json"
+        runs = [self._run(f"b{i}", 500, 10, 1000.0) for i in range(3)]
+        runs += [self._run(f"c{i}", 200, 20, 2000.0) for i in range(3)]
+        facts.write_text(
+            json.dumps(
+                runs
+                + [
+                    self._fact(
+                        "workload.declared",
+                        {"type": "job_run", "symbol": "etl"},
+                        {"sla_minutes": 10, "reliability_target": 0.8},
+                    )
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return facts
+
+    def test_finops_is_a_top_level_verb(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts = self._monta(tmp_path)
+        code = main(["finops", "--facts", str(facts), "--job-name", "etl"])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert len(payload["frontier"]) == 2
+        assert payload["region"] == "UNQUALIFIED"
+
+
+class TestTuneCommand:
+    """`tune` e verbo de TOPO, como `capacity` e `finops`: nao extrai artefato."""
+
+    def _fact(self, kind, subject, measures=None, attrs=None):
+        return {
+            "id": "0" * 16,
+            "schema_version": 1,
+            "kind": kind,
+            "subject": subject,
+            "measures": measures or {},
+            "attrs": attrs or {},
+            "provenance": {},
+        }
+
+    def _monta(self, tmp_path):
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    self._fact(
+                        "spark.stage.shuffle",
+                        {"type": "stage", "symbol": "stage-4", "stage_id": 4},
+                        {"write_bytes": 640 * 1024 * 1024, "read_bytes": 0},
+                    ),
+                    self._fact(
+                        "spark.runtime_version",
+                        {"type": "job_run", "symbol": "app-1"},
+                        {},
+                        {"component": "spark", "version": "3.5.4"},
+                    ),
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return facts
+
+    def test_tune_derives_from_the_measured_shuffle(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts = self._monta(tmp_path)
+        code = main(["tune", "--facts", str(facts)])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        proposta = payload["properties"][0]
+        assert proposta["key"] == "spark.sql.shuffle.partitions"
+        assert proposta["derived"]["value"] == 10
+        assert proposta["safety"] == "REVIEW"
+        assert payload["runtime"]["aqe_default"] is True
+
+    def test_out_writes_the_full_report(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts = self._monta(tmp_path)
+        destino = tmp_path / "tune.json"
+        code = main(["tune", "--facts", str(facts), "--out", str(destino)])
+        capsys.readouterr()
+
+        assert code == 0
+        assert json.loads(destino.read_text(encoding="utf-8"))["properties"]
+
+
+class TestCaseHypothesisSurface:
+    """`add_hypothesis` existia no store e nao tinha superficie nenhuma.
+
+    A funcao estava la desde a Fase 0, alcancavel so por Python: nenhum verbo e
+    nenhuma tool a chamavam, e nada fechava uma hipotese. Como `resume` filtra
+    por `status == "open"`, a secao "Hipoteses abertas" so crescia.
+    """
+
+    def _case(self, tmp_path):
+        from sparkforge.adapters.cli import main
+
+        main(
+            [
+                "case",
+                "open",
+                "--repo",
+                str(tmp_path),
+                "--case-id",
+                "c1",
+                "--now",
+                "2026-08-29T00:00:00Z",
+                "--glue",
+                "5.0",
+            ]
+        )
+        return tmp_path
+
+    def test_the_three_parts_are_required_together(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        capsys.readouterr()
+        code = main(["case", "update", "--repo", str(repo), "--hypothesis", "so a afirmacao"])
+
+        assert code == 2
+        assert "prediction" in capsys.readouterr().err
+
+    def test_a_hypothesis_is_recorded_with_its_experiment(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        capsys.readouterr()
+        code = main(
+            [
+                "case",
+                "update",
+                "--repo",
+                str(repo),
+                "--hypothesis",
+                "spill vem de particao grande demais",
+                "--prediction",
+                "spill cai abaixo de 10% do input",
+                "--experiment",
+                "dobrar shuffle partitions e remedir",
+            ]
+        )
+
+        assert code == 0
+        case = json.loads(capsys.readouterr().out)
+        assert case["hypotheses"][0]["id"] == "h1"
+        assert case["hypotheses"][0]["status"] == "open"
+
+    def test_closing_needs_an_outcome(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        capsys.readouterr()
+        code = main(["case", "update", "--repo", str(repo), "--close-hypothesis", "h1"])
+
+        assert code == 2
+        assert "hypothesis-outcome" in capsys.readouterr().err
+
+    def test_the_loop_closes_and_resume_stops_showing_it(self, tmp_path, capsys):
+        """O ciclo inteiro: abre, fecha, e `resume` para de listar."""
+        from sparkforge.adapters.cli import main
+
+        repo = self._case(tmp_path)
+        main(
+            [
+                "case",
+                "update",
+                "--repo",
+                str(repo),
+                "--hypothesis",
+                "spill vem de particao grande demais",
+                "--prediction",
+                "spill cai abaixo de 10%",
+                "--experiment",
+                "dobrar shuffle partitions",
+            ]
+        )
+        main(
+            [
+                "case",
+                "update",
+                "--repo",
+                str(repo),
+                "--close-hypothesis",
+                "h1",
+                "--hypothesis-outcome",
+                "confirmed",
+                "--now",
+                "2026-08-29T01:00:00Z",
+                "--evidence",
+                "stage 8 do run jr_002",
+            ]
+        )
+        capsys.readouterr()
+        main(["resume", "--repo", str(repo)])
+        payload = json.loads(capsys.readouterr().out)
+
+        assert payload["open_hypotheses"] == []

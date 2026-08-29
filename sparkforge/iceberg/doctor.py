@@ -1,8 +1,9 @@
 """Iceberg Table Doctor for Health Diagnosis and Metadata Inspection."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -38,7 +39,11 @@ class IcebergTableDoctor:
         delete_count = len(delete_files)
         snapshot_count = len(snapshots)
 
-        small_files = [f for f in data_files if f.get("file_size_in_bytes", 0) < small_file_threshold_mb * 1024 * 1024]
+        small_files = [
+            f
+            for f in data_files
+            if f.get("file_size_in_bytes", 0) < small_file_threshold_mb * 1024 * 1024
+        ]
         small_count = len(small_files)
 
         total_files = max(1, data_count + delete_count)
@@ -50,20 +55,31 @@ class IcebergTableDoctor:
 
         # Check delete files ratio
         if del_ratio > 0.15:
-            criticals.append(f"High delete file ratio ({del_ratio*100:.1f}%). Read performance degraded.")
-            recs.append("Run Iceberg row-level merge compaction (`rewrite_data_files` with delete file compaction).")
+            criticals.append(
+                f"High delete file ratio ({del_ratio * 100:.1f}%). Read performance degraded."
+            )
+            recs.append(
+                "Run Iceberg row-level merge compaction (`rewrite_data_files` with delete file "
+                "compaction)."
+            )
         elif del_ratio > 0.05:
-            warnings.append(f"Moderate delete file ratio ({del_ratio*100:.1f}%).")
+            warnings.append(f"Moderate delete file ratio ({del_ratio * 100:.1f}%).")
             recs.append("Schedule compaction maintenance.")
 
         # Check small files
         if small_count > 50:
             warnings.append(f"{small_count} small data files (<{small_file_threshold_mb}MB) found.")
-            recs.append("Execute binpack compaction: `CALL glue_catalog.system.rewrite_data_files(table => '...')`.")
+            recs.append(
+                "Execute binpack compaction: `CALL glue_catalog.system.rewrite_data_files(table "
+                "=> '...')`."
+            )
 
         # Check snapshot accumulation
         if snapshot_count > 100:
-            warnings.append(f"{snapshot_count} active snapshots detected. Manifest metadata overhead increasing.")
+            warnings.append(
+                f"{snapshot_count} active snapshots detected. Manifest metadata overhead "
+                f"increasing."
+            )
             recs.append("Expire snapshots older than retention policy via `expire_snapshots`.")
 
         score = 100 - (len(criticals) * 35) - (len(warnings) * 15)

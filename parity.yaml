@@ -98,9 +98,17 @@ capabilities:
       copilot_ci: [cli, files]
 
   - name: extract facts from a Spark event log
-    tools: [sparkforge_analyze_event_log]
-    cli: [analyze event-log]
-    knowledge: [knowledge/spark/memory-and-oom.md]
+    tools:
+      - sparkforge_analyze_event_log
+      - sparkforge_analyze_cloudwatch
+      - sparkforge_analyze_glue_job_runs
+      - sparkforge_analyze_sql_metrics
+    cli:
+      - analyze event-log
+      - analyze cloudwatch
+      - analyze glue-job-runs
+      - analyze sql-metrics
+    knowledge: [knowledge/spark/memory-and-oom.md, knowledge/spark/sql-metrics.yaml]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
@@ -295,6 +303,39 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  - name: profile a workload by independent axis from already-extracted facts
+    tools: [sparkforge_workload]
+    cli: [workload]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: choose the cheapest observed capacity that meets the SLA
+    tools: [sparkforge_capacity, sparkforge_finops]
+    cli: [capacity, finops]
+    knowledge: [knowledge/spark/execution-model.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: derive Spark configuration from the measured shuffle
+    tools: [sparkforge_tune]
+    cli: [tune]
+    knowledge: [knowledge/spark/shuffle-join-skew.md, knowledge/glue/runtime-matrix.md]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: derive what to measure on both sides of a change
     tools: [sparkforge_funcval_plan]
     cli: [funcval plan]
@@ -440,6 +481,7 @@ capabilities:
       - sparkforge_collect_event_log
       - sparkforge_collect_glue_job
       - sparkforge_collect_cloudwatch
+      - sparkforge_collect_glue_job_runs
       - sparkforge_collect_iceberg_metadata
       - sparkforge_collect_athena_workgroup
       - sparkforge_collect_emr_cluster
@@ -449,12 +491,13 @@ capabilities:
       - collect event-log
       - collect glue-job
       - collect cloudwatch
+      - collect glue-job-runs
       - collect iceberg-metadata
       - collect athena-workgroup
       - collect emr-cluster
       - collect emr-serverless
       - collect verify
-    knowledge: [knowledge/glue/observability.md]
+    knowledge: [knowledge/glue/observability.md, knowledge/glue/observability.yaml]
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

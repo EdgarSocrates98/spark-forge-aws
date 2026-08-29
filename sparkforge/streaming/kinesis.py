@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -33,11 +33,17 @@ class KinesisSpecialist:
         for sid, tput in shard_throughput_mb_sec.items():
             if tput > 0.85:  # Kinesis limit is 1MB/sec write per shard
                 hot_shards = True
-                recs.append(f"Shard '{sid}' is near 1MB/sec write limit ({tput:.2f}MB/s). Partition key entropy is too low.")
+                recs.append(
+                    f"Shard '{sid}' is near 1MB/sec write limit ({tput:.2f}MB/s). Partition key "
+                    f"entropy is too low."
+                )
 
         fanout_rec = consumer_count >= 3
         if fanout_rec:
-            recs.append(f"{consumer_count} concurrent consumers detected. Enable Enhanced Fan-Out (EFO) with dedicated 2MB/sec per consumer pipe.")
+            recs.append(
+                f"{consumer_count} concurrent consumers detected. Enable Enhanced Fan-Out (EFO) "
+                f"with dedicated 2MB/sec per consumer pipe."
+            )
 
         return KinesisHealthReport(
             stream_name=stream_name,

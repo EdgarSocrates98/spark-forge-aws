@@ -1,0 +1,54 @@
+[
+  {
+    "rule_id": "SF-GLUE-007",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "max_capacity definido junto com worker_type (API antiga e nova de capacidade)",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 12,
+      "symbol": "aws_glue_job.etl_max_capacity"
+    },
+    "evidence": [
+      "f_f4f427",
+      "f_8f0643"
+    ],
+    "measured": {
+      "value": 20
+    },
+    "threshold": {},
+    "runtime_scope": {
+      "glue": ">=2.0"
+    },
+    "explanation": "Para jobs Glue 2.0 ou superior, a API do Job documenta que max_capacity não pode ser especificado -- a forma correta de declarar capacidade é worker_type e number_of_workers. Definir os dois ao mesmo tempo não é redundância inofensiva: é o par de campos que a própria fonte descreve como incompatível, e o comportamento efetivo -- qual dos dois a API aplica, ou se a criação do job falha -- fica fora do que a documentação garante.",
+    "proposed_change": [
+      "Remover max_capacity e manter worker_type e number_of_workers.",
+      "Se o job depende de max_capacity por alguma razão de compatibilidade, remover worker_type e number_of_workers em vez do inverso -- nunca manter os dois."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "O job pode estar rodando hoje sob um dos dois campos sendo ignorado silenciosamente pela API; remover o errado sem confirmar qual prevalece muda a capacidade em produção sem aviso."
+    ],
+    "tradeoffs": [
+      "Nenhum. Os dois campos não coexistem na API para esta versão; a única decisão real é qual dos dois manter."
+    ],
+    "validation": [
+      "Definição do job pela API (get-job), não só o Terraform declarado, confirma qual dos dois campos ficou efetivamente aplicado.",
+      "Runtime e DPU-hours antes e depois, em runs de volume comparável."
+    ],
+    "rollback": [
+      "Reverter para a combinação de campos anterior; nenhum efeito sobre o resultado do job."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/webapi/API_Job.html",
+        "retrieved": "2026-08-28"
+      }
+    ]
+  }
+]

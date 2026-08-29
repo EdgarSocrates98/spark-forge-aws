@@ -182,6 +182,46 @@ def build_parser() -> argparse.ArgumentParser:
     event_log_analyze_p.add_argument("--cursor")
     _add_detail_level(event_log_analyze_p)
 
+    sqlm_p = analyze_sub.add_parser(
+        "sql-metrics",
+        help="Extrai metrica por no do plano de um Spark event log ja coletado.",
+    )
+    sqlm_p.add_argument("--path", required=True, help="Event log em JSON Lines.")
+    sqlm_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    sqlm_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    sqlm_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    sqlm_p.add_argument("--cursor")
+    _add_detail_level(sqlm_p)
+
+    cw_analyze_p = analyze_sub.add_parser(
+        "cloudwatch",
+        help="Extrai facts de um artefato de metricas do CloudWatch ja coletado.",
+    )
+    cw_analyze_p.add_argument("--path", required=True, help="Artefato JSON do CloudWatch.")
+    cw_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    cw_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    cw_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    cw_analyze_p.add_argument("--cursor")
+    _add_detail_level(cw_analyze_p)
+
+    runs_analyze_p = analyze_sub.add_parser(
+        "glue-job-runs",
+        help="Extrai facts de historico do diretorio de artefatos de run Glue.",
+    )
+    runs_analyze_p.add_argument(
+        "--path", required=True, help="DIRETORIO de artefatos glue_job_run."
+    )
+    runs_analyze_p.add_argument("--job-name", required=True)
+    runs_analyze_p.add_argument(
+        "--cloudwatch",
+        help="Diretorio de artefatos cloudwatch, para correlacionar por job_run_id.",
+    )
+    runs_analyze_p.add_argument("--out", help="Escreve a lista completa de facts (JSON).")
+    runs_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    runs_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    runs_analyze_p.add_argument("--cursor")
+    _add_detail_level(runs_analyze_p)
+
     plan_p = analyze_sub.add_parser(
         "plan",
         help=(
@@ -476,6 +516,97 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_p.add_argument("--cursor")
     _add_detail_level(benchmark_p)
 
+    # workload ---------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `benchmark` e `fuse`: nao extrai de
+    # artefato -- classifica o que outros verbos ja extrairam.
+    workload_p = sub.add_parser(
+        "workload",
+        help="Perfil de workload por eixos, a partir de facts ja extraidos.",
+    )
+    workload_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
+    )
+    workload_p.add_argument("--job-name", required=True)
+    workload_p.add_argument(
+        "--job-run", required=True, help="Id do run que este perfil descreve."
+    )
+    workload_p.add_argument(
+        "--history",
+        help=(
+            "Diretorio com um arquivo de facts por run anterior "
+            "(`analyze glue-job-runs --out`), para a escala."
+        ),
+    )
+    workload_p.add_argument(
+        "--out", help="Escreve o fingerprint completo (JSON) neste arquivo."
+    )
+
+    # capacity -----------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `benchmark`, `fuse` e `workload`: nao
+    # extrai de artefato -- decide sobre o que outros verbos ja extrairam.
+    capacity_p = sub.add_parser(
+        "capacity",
+        help=(
+            "Escolhe a capacidade mais barata que cumpre o SLA, entre as capacidades "
+            "que o job JA rodou. Nunca aplica a mudanca."
+        ),
+    )
+    capacity_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
+    )
+    capacity_p.add_argument("--job-name", required=True)
+    capacity_p.add_argument(
+        "--job-run", required=True, help="Id do run que este plano descreve."
+    )
+    capacity_p.add_argument(
+        "--history",
+        help=(
+            "Diretorio com um arquivo de facts por run anterior "
+            "(`analyze glue-job-runs --out`), para as capacidades observadas."
+        ),
+    )
+    capacity_p.add_argument(
+        "--out", help="Escreve o plano completo (JSON) neste arquivo."
+    )
+
+    # finops -------------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload` e
+    # `capacity`: nao extrai de artefato -- reune o que outros verbos ja
+    # extrairam sob o eixo financeiro.
+    finops_p = sub.add_parser(
+        "finops",
+        help=(
+            "O relatorio financeiro: custo, a troca recurso-tempo, e onde a "
+            "alavanca esta -- capacidade ou codigo."
+        ),
+    )
+    finops_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
+    )
+    finops_p.add_argument("--job-name", required=True)
+    finops_p.add_argument(
+        "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
+    )
+
+    # tune ---------------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `capacity` e `finops`: nao extrai de
+    # artefato -- deriva configuracao do que outros verbos ja mediram. Nao
+    # aplica nada, e nunca aplicara: o relatorio nomeia o nivel de seguranca de
+    # cada proposta.
+    tune_p = sub.add_parser(
+        "tune",
+        help=(
+            "Configuracao Spark derivada da medida, com a procedencia de cada "
+            "propriedade. Nunca aplica a mudanca."
+        ),
+    )
+    tune_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
+    )
+    tune_p.add_argument(
+        "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
+    )
+
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
     # `plan` deriva de facts ja extraidos, `compare` le o resultado que o
@@ -680,6 +811,36 @@ def build_parser() -> argparse.ArgumentParser:
     update_p.add_argument("--skill")
     update_p.add_argument("--now")
     update_p.add_argument("--outcome")
+    update_p.add_argument(
+        "--hypothesis",
+        help=(
+            "Afirmacao testavel a registrar no case. Exige `--prediction` e "
+            "`--experiment`: afirmacao sem previsao nao e testavel, e previsao "
+            "sem experimento nao diz quem a testa."
+        ),
+    )
+    update_p.add_argument("--prediction", help="O que muda no numero se a hipotese valer.")
+    update_p.add_argument("--experiment", help="Como medir a previsao.")
+    update_p.add_argument(
+        "--close-hypothesis",
+        metavar="ID",
+        help=(
+            "Fecha a hipotese com este id. Exige `--hypothesis-outcome`. O "
+            "registro e acrescimo: a afirmacao original fica onde esta."
+        ),
+    )
+    update_p.add_argument(
+        "--hypothesis-outcome",
+        choices=list(_core.store.HYPOTHESIS_OUTCOMES),
+        help=(
+            "Desfecho do experimento. `abandoned` existe porque a terceira "
+            "coisa que acontece de verdade e o experimento nunca rodar."
+        ),
+    )
+    update_p.add_argument(
+        "--evidence",
+        help="Onde ler o que fechou a hipotese (stage, run, arquivo de facts).",
+    )
     update_p.add_argument(
         "--override-gate",
         help=(
@@ -1030,6 +1191,20 @@ def build_parser() -> argparse.ArgumentParser:
     cloudwatch_p.add_argument("--end", required=True, help="Fim ISO 8601.")
     cloudwatch_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    job_runs_p = collect_sub.add_parser(
+        "glue-job-runs",
+        help="Baixa o historico de execucoes de um job, um artefato por run terminal.",
+    )
+    job_runs_p.add_argument("--repo", required=True)
+    job_runs_p.add_argument("--job-name", required=True)
+    job_runs_p.add_argument(
+        "--max-runs",
+        type=int,
+        default=30,
+        help="Teto de paginacao. A API devolve do mais recente para tras.",
+    )
+    job_runs_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     iceberg_p = collect_sub.add_parser(
         "iceberg-metadata", help="Consulta metadata tables Iceberg de uma tabela via Athena."
     )
@@ -1123,6 +1298,75 @@ def _cmd_analyze_catalog_schema(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_event_log(args: argparse.Namespace) -> int:
     full = _core.analyze_event_log(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_sql_metrics(args: argparse.Namespace) -> int:
+    full = _core.analyze_sql_metrics(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_cloudwatch(args: argparse.Namespace) -> int:
+    full = _core.analyze_cloudwatch(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_glue_job_runs(args: argparse.Namespace) -> int:
+    full = _core.analyze_glue_job_runs(
+        args.path,
+        job_name=args.job_name,
+        cloudwatch=args.cloudwatch,
+        kind=args.kind,
+        limit=None,
+    )
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -1467,6 +1711,56 @@ def _cmd_benchmark(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_workload(args: argparse.Namespace) -> int:
+    payload = _core.workload_fingerprint(
+        args.facts,
+        job_name=args.job_name,
+        job_run_id=args.job_run,
+        history_path=args.history or "",
+    )
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_capacity(args: argparse.Namespace) -> int:
+    payload = _core.capacity_plan(
+        args.facts,
+        job_name=args.job_name,
+        job_run_id=args.job_run,
+        history_path=args.history or "",
+    )
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_finops(args: argparse.Namespace) -> int:
+    payload = _core.finops_report(args.facts, job_name=args.job_name)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
+def _cmd_tune(args: argparse.Namespace) -> int:
+    payload = _core.tune_conf(args.facts)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_funcval_plan(args: argparse.Namespace) -> int:
     """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
 
@@ -1609,6 +1903,12 @@ def _cmd_case_update(args: argparse.Namespace) -> int:
         override_gate=args.override_gate,
         reason=args.reason,
         facts_path=args.facts,
+        hypothesis=args.hypothesis,
+        prediction=args.prediction,
+        experiment=args.experiment,
+        close_hypothesis=args.close_hypothesis,
+        hypothesis_outcome=args.hypothesis_outcome,
+        evidence=args.evidence,
     )
     _print(case)
     return 0
@@ -1734,6 +2034,14 @@ def _cmd_collect_cloudwatch(args: argparse.Namespace) -> int:
         start=args.start,
         end=args.end,
         now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
+def _cmd_collect_glue_job_runs(args: argparse.Namespace) -> int:
+    payload = _core.collect_glue_job_runs(
+        args.repo, job_name=args.job_name, max_runs=args.max_runs, now=args.now
     )
     _print(payload)
     return 0
@@ -1865,6 +2173,9 @@ _DISPATCH = {
     ("analyze", "pyspark"): _cmd_analyze_pyspark,
     ("analyze", "catalog-schema"): _cmd_analyze_catalog_schema,
     ("analyze", "event-log"): _cmd_analyze_event_log,
+    ("analyze", "sql-metrics"): _cmd_analyze_sql_metrics,
+    ("analyze", "cloudwatch"): _cmd_analyze_cloudwatch,
+    ("analyze", "glue-job-runs"): _cmd_analyze_glue_job_runs,
     ("analyze", "plan"): _cmd_analyze_plan,
     ("analyze", "terraform"): _cmd_analyze_terraform,
     ("analyze", "iceberg"): _cmd_analyze_iceberg,
@@ -1882,6 +2193,10 @@ _DISPATCH = {
     ("glue", "dependency-audit"): _cmd_glue_dependency_audit,
     ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
     ("benchmark", None): _cmd_benchmark,
+    ("workload", None): _cmd_workload,
+    ("capacity", None): _cmd_capacity,
+    ("finops", None): _cmd_finops,
+    ("tune", None): _cmd_tune,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,
@@ -1915,6 +2230,7 @@ _DISPATCH = {
     ("collect", "event-log"): _cmd_collect_event_log,
     ("collect", "glue-job"): _cmd_collect_glue_job,
     ("collect", "cloudwatch"): _cmd_collect_cloudwatch,
+    ("collect", "glue-job-runs"): _cmd_collect_glue_job_runs,
     ("collect", "iceberg-metadata"): _cmd_collect_iceberg_metadata,
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,

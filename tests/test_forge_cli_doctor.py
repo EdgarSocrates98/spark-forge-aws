@@ -1,5 +1,4 @@
 """Tests for forge CLI doctor and inspection commands."""
-import pytest
 from sparkforge.cli.forge import main
 
 

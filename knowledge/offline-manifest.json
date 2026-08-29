@@ -111,7 +111,7 @@
     {
       "path": "knowledge/glue/observability.md",
       "title": "observability",
-      "sha256": "49f7497e294c74749125bf553b91a4f50c2bddd50c422c88f6b730887920f22e"
+      "sha256": "f798e0a4c083d57647ed6410c3f13737c7d966f94e6588e368e306bf3af515b2"
     },
     {
       "path": "knowledge/glue/runtime-matrix.md",
@@ -197,6 +197,11 @@
       "path": "knowledge/spark/spark4-migration.md",
       "title": "spark4-migration",
       "sha256": "1c086749a2a97d9909df261f67cabb5f9d7088099312ad4f3787a4ebbf2c0feb"
+    },
+    {
+      "path": "knowledge/spark/sql-metrics.md",
+      "title": "sql-metrics",
+      "sha256": "c6230ba233c1ebfc6415c4c4dc343d38add1d7123c6286bc2d4c286492b00526"
     },
     {
       "path": "knowledge/storage/iceberg-performance.md",

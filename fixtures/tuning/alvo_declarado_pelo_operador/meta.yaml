@@ -1,0 +1,6 @@
+name: alvo_declarado_pelo_operador
+runtime:
+  glue: '5.0'
+proves: 'O operador declarou o tamanho de particao que persegue, e o alvo dele ganha do default:
+  cinco particoes em vez de dez. `target_source` sai `declared`, e nao `spark_default` --
+  a resposta diz qual dos dois usou.'

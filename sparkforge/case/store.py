@@ -366,6 +366,63 @@ def add_hypothesis(
     return new
 
 
+# Os tres desfechos possiveis de uma hipotese, e por que sao tres. `confirmed` e
+# `refuted` sao os dois lados do experimento; `abandoned` existe porque a
+# terceira coisa que acontece de verdade e o experimento nunca rodar -- job
+# descontinuado, ambiente que sumiu, prioridade que mudou. Sem ela a hipotese
+# fica `open` para sempre, e a secao "Hipoteses abertas" do `resume` vira lista
+# de coisa que ninguem vai fazer.
+HYPOTHESIS_OUTCOMES = ("confirmed", "refuted", "abandoned")
+
+
+def close_hypothesis(
+    case: dict[str, Any],
+    hyp_id: str,
+    outcome: str,
+    at: str,
+    evidence: str = "",
+) -> dict[str, Any]:
+    """Fecha uma hipotese com desfecho, sem apagar o que ela afirmava.
+
+    O registro e ACRESCIMO: `status` deixa de ser `open` e ganha `outcome`,
+    `closed_at` e `evidence` ao lado do `statement`, da `prediction` e do
+    `experiment` originais. Reescrever a afirmacao para casar com o resultado e
+    exatamente o vies que uma hipotese registrada por escrito existe para
+    impedir.
+
+    Recusa id desconhecido em vez de criar, e recusa refechar: fechar hipotese
+    que ninguem abriu registra experimento que ninguem desenhou, e reabrir
+    apagaria o desfecho anterior.
+    """
+    if outcome not in HYPOTHESIS_OUTCOMES:
+        raise CaseError(
+            f"desfecho {outcome!r} desconhecido: esperado um de "
+            f"{', '.join(HYPOTHESIS_OUTCOMES)}. `confirmed` e `refuted` sao os "
+            f"dois lados do experimento, e `abandoned` e o experimento que nao "
+            f"vai rodar."
+        )
+    new = copy.deepcopy(case)
+    alvos = [h for h in new["hypotheses"] if h.get("id") == hyp_id]
+    if not alvos:
+        conhecidas = ", ".join(h.get("id", "?") for h in new["hypotheses"]) or "nenhuma"
+        raise CaseError(
+            f"hipotese {hyp_id!r} nao existe neste case (abertas ate agora: "
+            f"{conhecidas}). Fechar uma hipotese que ninguem abriu registraria "
+            f"um experimento que ninguem desenhou."
+        )
+    alvo = alvos[0]
+    if alvo.get("status") != "open":
+        raise CaseError(
+            f"hipotese {hyp_id!r} ja foi fechada como {alvo.get('status')!r} em "
+            f"{alvo.get('closed_at')!r}. Reabrir apagaria o desfecho anterior; "
+            f"se a pergunta voltou, ela e outra hipotese."
+        )
+    alvo["status"] = outcome
+    alvo["closed_at"] = at
+    alvo["evidence"] = evidence
+    return new
+
+
 def record_skill_use(
     case: dict[str, Any], skill: str, at: str, outcome: str
 ) -> dict[str, Any]:

@@ -46,17 +46,17 @@ def _task_end(stage_id, task_id, launch, finish, *, failed=False, executor_id="1
     )
 
 
-def _stage_completed(stage_id, name, num_tasks):
-    return _line(
-        "SparkListenerStageCompleted",
-        **{
-            "Stage Info": {
-                "Stage ID": stage_id,
-                "Stage Name": name,
-                "Number of Tasks": num_tasks,
-            }
-        },
-    )
+def _stage_completed(stage_id, name, num_tasks, failure_reason=None):
+    stage_info = {
+        "Stage ID": stage_id,
+        "Stage Name": name,
+        "Number of Tasks": num_tasks,
+    }
+    # A chave ausente e a chave vazia sao casos DIFERENTES, e os dois tem
+    # teste: o Spark escreve `Failure Reason` so quando a stage falhou.
+    if failure_reason is not None:
+        stage_info["Failure Reason"] = failure_reason
+    return _line("SparkListenerStageCompleted", **{"Stage Info": stage_info})
 
 
 class TestNearestRank:
@@ -401,3 +401,155 @@ class TestStreaming:
         # acumuladores (poucos MB), muito abaixo do que materializar o
         # arquivo inteiro como string ou lista de linhas custaria.
         assert peak < 20 * 1024 * 1024, f"pico de {peak / 1024 / 1024:.1f}MB, esperado < 20MB"
+
+
+class TestShuffleMetrics:
+    def _task_end(self, stage_id, read_bytes=None, write_bytes=None):
+        metrics = {
+            "Executor Run Time": 1000,
+            "JVM GC Time": 10,
+            "Memory Bytes Spilled": 0,
+            "Disk Bytes Spilled": 0,
+            "Input Metrics": {"Bytes Read": 100},
+        }
+        if read_bytes is not None:
+            metrics["Shuffle Read Metrics"] = {
+                "Remote Bytes Read": read_bytes,
+                "Local Bytes Read": 0,
+                "Total Records Read": 7,
+                "Fetch Wait Time": 3,
+            }
+        if write_bytes is not None:
+            metrics["Shuffle Write Metrics"] = {
+                "Shuffle Bytes Written": write_bytes,
+                "Shuffle Records Written": 5,
+                "Shuffle Write Time": 2_000_000,
+            }
+        return json.dumps(
+            {
+                "Event": "SparkListenerTaskEnd",
+                "Stage ID": stage_id,
+                "Task Info": {"Launch Time": 0, "Finish Time": 500, "Failed": False},
+                "Task Metrics": metrics,
+            }
+        )
+
+    def _stage_completed(self, stage_id):
+        return json.dumps(
+            {
+                "Event": "SparkListenerStageCompleted",
+                "Stage Info": {
+                    "Stage ID": stage_id,
+                    "Stage Name": "stage-x",
+                    "Number of Tasks": 1,
+                },
+            }
+        )
+
+    def test_stage_that_moved_data_gets_a_shuffle_fact(self):
+        facts = extract_event_log(
+            [self._task_end(1, read_bytes=4096, write_bytes=8192), self._stage_completed(1)],
+            "log.jsonl",
+        )
+        shuffle = [f for f in facts if f.kind == "spark.stage.shuffle"]
+
+        assert len(shuffle) == 1
+        assert shuffle[0].subject["type"] == "stage"
+        assert shuffle[0].measures["read_bytes"] == 4096
+        assert shuffle[0].measures["write_bytes"] == 8192
+        assert shuffle[0].measures["read_records"] == 7
+        assert shuffle[0].measures["write_records"] == 5
+
+    def test_stage_without_shuffle_produces_no_fact(self):
+        facts = extract_event_log([self._task_end(1), self._stage_completed(1)], "log.jsonl")
+
+        assert not [f for f in facts if f.kind == "spark.stage.shuffle"]
+
+    def test_bytes_are_summed_across_tasks(self):
+        facts = extract_event_log(
+            [
+                self._task_end(1, write_bytes=1000),
+                self._task_end(1, write_bytes=500),
+                self._stage_completed(1),
+            ],
+            "log.jsonl",
+        )
+        shuffle = [f for f in facts if f.kind == "spark.stage.shuffle"][0]
+
+        assert shuffle.measures["write_bytes"] == 1500
+
+    def test_read_only_stage_omits_the_write_measures(self):
+        facts = extract_event_log(
+            [self._task_end(1, read_bytes=2048), self._stage_completed(1)], "log.jsonl"
+        )
+        shuffle = [f for f in facts if f.kind == "spark.stage.shuffle"][0]
+
+        assert shuffle.measures["read_bytes"] == 2048
+        assert "write_bytes" not in shuffle.measures
+
+
+class TestStageFailureReason:
+    """A razao da stage que falhou -- a fonte que o diagnostico de timeout usa.
+
+    Duas das quatro categorias de timeout (broadcast e network) nao tem outra
+    fonte no event log: a frase que as separa e escrita em
+    `Stage Info["Failure Reason"]`, e o handler descartava aquela chave.
+    """
+
+    def test_a_failed_stage_carries_the_literal_reason(self):
+        linhas = [
+            _task_end(1, 1, 0, 1000),
+            _stage_completed(
+                1,
+                "stage-1",
+                1,
+                failure_reason="Could not execute broadcast in 300 secs.",
+            ),
+        ]
+        falhas = facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+        assert len(falhas) == 1
+        assert falhas[0].attrs["reason"] == "Could not execute broadcast in 300 secs."
+        assert falhas[0].subject["stage_id"] == 1
+        assert falhas[0].subject["type"] == "stage"
+
+    def test_a_stage_without_a_failure_reason_produces_nothing(self):
+        """Ausencia de falha nao e falha vazia."""
+        linhas = [_task_end(1, 1, 0, 1000), _stage_completed(1, "stage-1", 1)]
+
+        assert not facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+    def test_an_empty_failure_reason_produces_nothing(self):
+        linhas = [_task_end(1, 1, 0, 1000), _stage_completed(1, "stage-1", 1, failure_reason="")]
+
+        assert not facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+    def test_a_credential_inside_the_reason_is_redacted(self):
+        """`facts.json` e commitado como barramento de handoff.
+
+        Razao de falha carrega URL de JDBC com senha dentro com a mesma
+        facilidade que configuracao carrega, e passa pelo mesmo `redact`.
+        """
+        segredo = (
+            "Job aborted: connection to jdbc:postgresql://usuario:s3nh4_secreta@host/db failed"
+        )
+        linhas = [
+            _task_end(1, 1, 0, 1000),
+            _stage_completed(1, "stage-1", 1, failure_reason=segredo),
+        ]
+        falhas = facts_of("spark.stage.failure", extract_event_log(linhas, "log.json"))
+
+        assert len(falhas) == 1
+        assert "s3nh4_secreta" not in falhas[0].attrs["reason"]
+        assert falhas[0].attrs["redacted"] is True
+
+    def test_the_kind_is_declared_and_validates(self):
+        linhas = [
+            _task_end(1, 1, 0, 1000),
+            _stage_completed(1, "stage-1", 1, failure_reason="Futures timed out after [120 s]"),
+        ]
+        facts = extract_event_log(linhas, "log.json")
+
+        assert "spark.stage.failure" in EMITTED_KINDS
+        for fact in facts:
+            validate_fact(fact.to_dict())

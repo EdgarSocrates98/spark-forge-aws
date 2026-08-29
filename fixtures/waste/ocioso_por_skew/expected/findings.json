@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-WASTE-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Worker ocioso com skew extremo — reduzir capacidade não toca a causa",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "job_run",
+      "symbol": "etl_pedidos_diario"
+    },
+    "evidence": [
+      "f_a27732",
+      "f_a27732"
+    ],
+    "measured": {
+      "worker_utilization_p50": 0.31,
+      "memory_used_pct_p95": 22.0,
+      "disk_used_pct_p95": 9.0,
+      "skew_p95_over_p50": 11.4
+    },
+    "threshold": {
+      "utilization": 0.5,
+      "skew_ratio": 3.0
+    },
+    "runtime_scope": {},
+    "explanation": "A utilização está baixa e o skew é alto ao mesmo tempo. A ociosidade tem explicação medida: o stage termina quando a última task termina, e a maior parte do cluster está esperando por um número pequeno de tasks longas.\n\nReduzir workers aqui reduz o custo por run e deixa a causa intacta — o stage continua preso na mesma task, e a duração sobe. É o par negativo da `SF-WASTE-001`, e as duas nunca disparam juntas: a ausência de skew é condição daquela, e a presença é condição desta.",
+    "proposed_change": [
+      "Tratar o skew antes de tocar em capacidade — `SF-UI-001` e `SF-UI-002` classificam o tipo, e o tratamento difere.",
+      "Depois do skew tratado, medir a utilização de novo; a folga que sobrar aí é a folga real."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Reduzir capacidade com skew presente aumenta a duração e pode estourar o SLA, trocando custo por atraso.",
+      "Tratar skew mexendo na chave de join pode alterar o resultado, por duplicação ou por descarte de nulls — a mesma ressalva de `SF-UI-001`."
+    ],
+    "tradeoffs": [
+      "Investigar skew custa tempo de análise; reduzir capacidade dá economia imediata e um problema maior depois."
+    ],
+    "validation": [
+      "Nova razão p95/p50 de duração de task no stage que disparou.",
+      "Utilização de worker do run seguinte, depois do skew tratado.",
+      "Contagem total e agregados de controle, se a correção mexeu na chave."
+    ],
+    "rollback": [
+      "Reverter o commit. Se houve escrita, usar time travel em Iceberg."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+        "retrieved": "2026-08-29",
+        "note": "A AWS recomenda `workerUtilization` junto de métricas de executor e de skew para avaliar capacidade — e é a leitura conjunta, e não a isolada, que esta regra impõe.\n"
+      },
+      {
+        "origin": "field-heuristic",
+        "note": "O limiar de skew 3.0 é o mesmo de `SF-UI-001` e o mesmo da `SF-WASTE-001`, pela razão registrada lá: a fronteira precisa ser única no catálogo.\n"
+      }
+    ]
+  }
+]
