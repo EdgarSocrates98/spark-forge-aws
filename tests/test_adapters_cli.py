@@ -2436,3 +2436,65 @@ class TestFinopsCommand:
         payload = json.loads(capsys.readouterr().out)
         assert len(payload["frontier"]) == 2
         assert payload["region"] == "UNQUALIFIED"
+
+
+class TestTuneCommand:
+    """`tune` e verbo de TOPO, como `capacity` e `finops`: nao extrai artefato."""
+
+    def _fact(self, kind, subject, measures=None, attrs=None):
+        return {
+            "id": "0" * 16,
+            "schema_version": 1,
+            "kind": kind,
+            "subject": subject,
+            "measures": measures or {},
+            "attrs": attrs or {},
+            "provenance": {},
+        }
+
+    def _monta(self, tmp_path):
+        facts = tmp_path / "facts.json"
+        facts.write_text(
+            json.dumps(
+                [
+                    self._fact(
+                        "spark.stage.shuffle",
+                        {"type": "stage", "symbol": "stage-4", "stage_id": 4},
+                        {"write_bytes": 640 * 1024 * 1024, "read_bytes": 0},
+                    ),
+                    self._fact(
+                        "spark.runtime_version",
+                        {"type": "job_run", "symbol": "app-1"},
+                        {},
+                        {"component": "spark", "version": "3.5.4"},
+                    ),
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return facts
+
+    def test_tune_derives_from_the_measured_shuffle(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts = self._monta(tmp_path)
+        code = main(["tune", "--facts", str(facts)])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        proposta = payload["properties"][0]
+        assert proposta["key"] == "spark.sql.shuffle.partitions"
+        assert proposta["derived"]["value"] == 10
+        assert proposta["safety"] == "REVIEW"
+        assert payload["runtime"]["aqe_default"] is True
+
+    def test_out_writes_the_full_report(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts = self._monta(tmp_path)
+        destino = tmp_path / "tune.json"
+        code = main(["tune", "--facts", str(facts), "--out", str(destino)])
+        capsys.readouterr()
+
+        assert code == 0
+        assert json.loads(destino.read_text(encoding="utf-8"))["properties"]

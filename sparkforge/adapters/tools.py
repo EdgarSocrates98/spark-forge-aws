@@ -2231,6 +2231,113 @@ _FINOPS_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+_TUNE_PROPERTY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["key", "current", "derived", "safety", "supported_in_runtime", "explanation"],
+    "properties": {
+        "key": {"type": "string"},
+        "current": {
+            "type": "object",
+            "required": ["value", "provenance", "evidence"],
+            "properties": {
+                "value": {
+                    "type": "string",
+                    "description": "Vazio quando ninguem definiu a chave.",
+                },
+                "provenance": {
+                    "type": "string",
+                    "enum": [
+                        "code",
+                        "terraform",
+                        "runtime_or_cluster",
+                        "spark_default_explicit",
+                        "unset",
+                    ],
+                    "description": (
+                        "Quem PEDIU o valor, e nao quem venceu. `runtime_or_cluster` "
+                        "significa que o motor aplicou e ninguem no repositorio pediu; "
+                        "`spark_default_explicit` e configuracao escrita a mao com o "
+                        "valor do proprio default, que nao muda nada."
+                    ),
+                },
+                "evidence": {"type": "array", "items": {"type": "string"}},
+            },
+        },
+        "derived": {
+            "type": "object",
+            "required": ["value", "formula", "basis"],
+            "properties": {
+                "value": {"type": "integer"},
+                "formula": {"type": "string"},
+                "basis": {
+                    "type": "object",
+                    "description": (
+                        "A medida e o alvo que sustentam o numero. `target_source` diz "
+                        "se o alvo veio do default documentado do Spark ou de "
+                        "`spark.sql.adaptive.advisoryPartitionSizeInBytes` declarado."
+                    ),
+                },
+            },
+        },
+        "safety": {
+            "type": "string",
+            "enum": ["SAFE", "REVIEW", "EXPERIMENTAL"],
+            "description": (
+                "Nivel do 34 do documento de origem. Nada e aplicado automaticamente."
+            ),
+        },
+        "supported_in_runtime": {"type": "boolean"},
+        "explanation": {
+            "type": "string",
+            "description": (
+                "Muda com AQE: com AQE default o numero e piso inicial que o motor "
+                "coalesce; sem AQE e o numero final de particoes."
+            ),
+        },
+    },
+}
+
+_TUNE_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["runtime", "properties", "refused"],
+    "properties": {
+        "runtime": {
+            "type": "object",
+            "required": ["glue_version", "spark_version", "aqe_default"],
+            "properties": {
+                "glue_version": {"type": "string"},
+                "spark_version": {"type": "string"},
+                "aqe_default": {"type": "boolean"},
+            },
+        },
+        "properties": {"type": "array", "items": _TUNE_PROPERTY_SCHEMA},
+        "refused": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["reason", "property", "detail"],
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "enum": [
+                            "no_shuffle_measured",
+                            "runtime_unknown",
+                            "no_measured_basis",
+                        ],
+                    },
+                    "property": {"type": "string"},
+                    "detail": {"type": "string"},
+                },
+            },
+            "description": (
+                "Toda propriedade que o documento pede e que nenhuma fonte sustenta "
+                "aparece aqui com a medida que a destravaria. Listar a recusa e a "
+                "diferenca entre nao sei e nao perguntei."
+            ),
+        },
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -3592,6 +3699,51 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_tune": {
+        "description": (
+            "Configuracao Spark DERIVADA da medida, com a procedencia de cada "
+            "propriedade. Verbo de topo, nao um `analyze`: nao extrai nada de "
+            "artefato, consome facts JA extraidos -- mesma razao de `benchmark`, "
+            "`fuse`, `sparkforge_workload`, `sparkforge_capacity` e "
+            "`sparkforge_finops`. "
+            "Deriva UMA propriedade, `spark.sql.shuffle.partitions`, a partir de "
+            "`spark.stage.shuffle.write_bytes` medido sobre o alvo de tamanho de "
+            "particao -- o default documentado do AQE, ou "
+            "`spark.sql.adaptive.advisoryPartitionSizeInBytes` quando o run declara "
+            "um. A formula e a base viajam dentro da resposta. "
+            "A VERSAO MUDA O SIGNIFICADO: com AQE default (Spark 3.2+, portanto Glue "
+            "4.0 e 5.x) o numero e o PISO de paralelismo inicial que o motor "
+            "coalesce; sem AQE (Glue 3.0, Spark 3.1.1) e o numero FINAL de "
+            "particoes. "
+            "O QUE ESTA TOOL RECUSA: (1) aplicar -- nenhum caminho do codigo escreve "
+            "configuracao, e cada proposta carrega o nivel de seguranca do 34 "
+            "(`REVIEW` para paralelismo); (2) derivar sem base medida -- as outras "
+            "propriedades do 11 saem em `refused` com a medida que as destravaria, "
+            "nunca omitidas; (3) um valor magico global, que e trocar um numero sem "
+            "razao por outro com aparencia de calculo; (4) ordenar proposta por ganho "
+            "estimado, o mesmo contrafactual que `sparkforge_finops` recusa."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) com `spark.stage.shuffle` do run e, "
+                        "quando houver, `spark.conf_effective`, `pyspark.conf_set` e "
+                        "`tf.spark_conf` -- tipicamente o `--out` de "
+                        "`sparkforge_analyze_event_log`, fundido com os outros."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _TUNE_SUCCESS_SCHEMA,
+            "Relatorio de configuracao derivada, ou erro se `facts_path` nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_funcval_plan": {
         "description": (
             "Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA "
@@ -4790,6 +4942,10 @@ def _h_finops(args: dict[str, Any]) -> dict[str, Any]:
     return _core.finops_report(args["facts_path"], job_name=args["job_name"])
 
 
+def _h_tune(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.tune_conf(args["facts_path"])
+
+
 def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
     return _core.funcval_plan(
         args.get("facts_paths"),
@@ -4990,6 +5146,7 @@ _HANDLERS = {
     "sparkforge_workload": _h_workload,
     "sparkforge_capacity": _h_capacity,
     "sparkforge_finops": _h_finops,
+    "sparkforge_tune": _h_tune,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,

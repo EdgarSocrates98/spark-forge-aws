@@ -1,0 +1,5 @@
+name: valor_atual_vem_do_terraform
+runtime:
+  glue: '5.0'
+proves: 'O mesmo valor, declarado no Terraform: procedencia `terraform`. O par com `valor_atual_vem_do_codigo`
+  prova que a classe vem da FONTE que pediu, e nao do valor.'

@@ -588,6 +588,25 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
     )
 
+    # tune ---------------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `capacity` e `finops`: nao extrai de
+    # artefato -- deriva configuracao do que outros verbos ja mediram. Nao
+    # aplica nada, e nunca aplicara: o relatorio nomeia o nivel de seguranca de
+    # cada proposta.
+    tune_p = sub.add_parser(
+        "tune",
+        help=(
+            "Configuracao Spark derivada da medida, com a procedencia de cada "
+            "propriedade. Nunca aplica a mudanca."
+        ),
+    )
+    tune_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
+    )
+    tune_p.add_argument(
+        "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
+    )
+
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
     # `plan` deriva de facts ja extraidos, `compare` le o resultado que o
@@ -1702,6 +1721,16 @@ def _cmd_finops(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_tune(args: argparse.Namespace) -> int:
+    payload = _core.tune_conf(args.facts)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_funcval_plan(args: argparse.Namespace) -> int:
     """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
 
@@ -2131,6 +2160,7 @@ _DISPATCH = {
     ("workload", None): _cmd_workload,
     ("capacity", None): _cmd_capacity,
     ("finops", None): _cmd_finops,
+    ("tune", None): _cmd_tune,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

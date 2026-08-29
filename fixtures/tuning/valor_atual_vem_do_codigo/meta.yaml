@@ -1,0 +1,5 @@
+name: valor_atual_vem_do_codigo
+runtime:
+  glue: '5.0'
+proves: 'O valor efetivo e 800 e o codigo pediu 800: procedencia `code`. Saber QUEM pediu
+  muda o que fazer -- mexer no codigo e um PR, mexer no cluster e outra conversa.'

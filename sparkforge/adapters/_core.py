@@ -87,6 +87,7 @@ from sparkforge.migration.collect import collect as collect_migration
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
+from sparkforge.tuning import build_conf_advice
 from sparkforge.workload import build_fingerprint
 
 DEFAULT_LIMIT = 50
@@ -1674,6 +1675,30 @@ def finops_report(facts_path: str, job_name: str) -> dict[str, Any]:
     runtime = build_runtime_context(facts=facts).to_dict()
     findings, _skipped = run_judge(facts, rules, runtime, return_skipped=True)
     return build_finops_report(facts, job_name=job_name, findings=findings)
+
+
+# --------------------------------------------------------------------------- #
+# tune
+# --------------------------------------------------------------------------- #
+
+
+def tune_conf(facts_path: str) -> dict[str, Any]:
+    """Deriva configuracao Spark do que foi medido, com procedencia por chave.
+
+    Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload`,
+    `capacity` e `finops`: consome facts ja extraidos e nao le artefato nenhum.
+
+    O runtime e montado como em `finops_report` -- `build_runtime_context` com
+    `facts=facts` --, porque a versao decide o SIGNIFICADO do numero derivado:
+    com AQE default, `spark.sql.shuffle.partitions` e piso inicial; sem AQE, e
+    o numero final de particoes.
+
+    Nada aqui aplica configuracao. O relatorio nomeia o nivel de seguranca de
+    cada proposta, e `REVIEW` significa que alguem olha antes.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
+    runtime = build_runtime_context(facts=facts).to_dict()
+    return build_conf_advice(facts, runtime=runtime)
 
 
 # --------------------------------------------------------------------------- #

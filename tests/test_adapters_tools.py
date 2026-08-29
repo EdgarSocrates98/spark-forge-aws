@@ -65,6 +65,7 @@ class TestToolSurface:
             "sparkforge_workload",
             "sparkforge_capacity",
             "sparkforge_finops",
+            "sparkforge_tune",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
@@ -882,6 +883,35 @@ def _write_finops_facts_file(tmp_path):
     return facts_path
 
 
+def _write_tune_facts_file(tmp_path):
+    """Shuffle medido mais a versao, que e o par minimo que sustenta derivacao.
+
+    Sem `spark.runtime_version` o relatorio recusa por `runtime_unknown` e
+    `properties` sai vazio -- e lista vazia valida contra qualquer schema de
+    array, que e validar pelo motivo errado.
+    """
+    facts_path = tmp_path / "tune_facts.json"
+    facts_path.write_text(
+        json.dumps(
+            [
+                _capacity_fact(
+                    "spark.stage.shuffle",
+                    {"type": "stage", "symbol": "stage-4", "stage_id": 4},
+                    {"write_bytes": 640 * 1024 * 1024, "read_bytes": 0},
+                ),
+                _capacity_fact(
+                    "spark.runtime_version",
+                    {"type": "job_run", "symbol": "app-1"},
+                    {},
+                    {"component": "spark", "version": "3.5.4"},
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return facts_path
+
+
 _FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
 
 
@@ -1623,6 +1653,12 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_finops", {"facts_path": str(facts_path), "job_name": "etl"}
         )
         assert result["frontier"], "a amostra precisa render ao menos uma capacidade"
+        return result
+
+    if name == "sparkforge_tune":
+        facts_path = _write_tune_facts_file(tmp_path)
+        result = call_tool("sparkforge_tune", {"facts_path": str(facts_path)})
+        assert result["properties"], "a amostra precisa render ao menos uma proposta"
         return result
 
     if name == "sparkforge_glue_dependency_audit":
