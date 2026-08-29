@@ -27,6 +27,7 @@ outro verbo já extraiu — nenhum deles lê artefato, e é por isso que não s�
 | Qual a capacidade mais barata que cumpre o SLA? | `capacity` | `glue.job_run` e o SLA declarado em `workload.yaml` |
 | Quanto custou, e onde está a alavanca? | `finops` | `glue.job_run`/`glue.run_cost`, o SLA, e os sintomas ao lado |
 | Que valor de configuração a medida sustenta? | `tune` | `spark.stage.shuffle` medido, mais `spark.conf_effective`, `pyspark.conf_set` e `tf.spark_conf` |
+| Quanto contexto esta execução consumiu? | `economy report` | os spans que `call_tool` grava por chamada, a superfície em repouso, e o transcript do host quando houver |
 | Melhorou ou piorou entre dois runs? | `benchmark` | dois conjuntos de facts de event log |
 | O resultado continua o mesmo? | `funcval plan` / `funcval compare` | os facts, a chave de negócio **declarada**, e os dois resultados que **você** mediu |
 
@@ -75,6 +76,31 @@ Regras que valem para todos eles:
     `--close-hypothesis` com `--hypothesis-outcome` (`confirmed`, `refuted`,
     `abandoned`). Fechar é acréscimo: nunca reescreva a afirmação para casar com
     o resultado.
+22. **Byte e token são unidades diferentes, e nunca se somam.** Byte de
+    payload é o que o SparkForge produziu; token de provider é o que o host
+    gastou. Aparecem lado a lado no relatório, nunca num total comum — somar os
+    dois dá um número que não mede nada.
+23. **O projeto não chama provider nenhum.** Medido: `sparkforge/` não importa
+    `anthropic`, `openai`, `bedrock` nem `litellm`. Quem gasta token é o host
+    que executa os agents. Antes de propor "instrumentar a chamada de modelo",
+    lembre que não existe chamada de modelo aqui para instrumentar.
+24. **Token só com fonte.** `payload_bytes` é medido e sempre existe. Token de
+    provider só aparece quando há transcript do host. Sem fonte sai
+    `tokens_unresolved` — nunca um `len(conteúdo) // 4` vestido de token.
+25. **Custo em dólar exige `cost_basis`.** Preço sem fonte nomeada é número
+    inventado, e chamada de tool local não tem tabela de preço publicada.
+26. **A superfície cresce declarando.** `docs/surface.lock.json` trava o peso de
+    tools, skills e knowledge, com hash da composição — acrescentar tool não é
+    proibido, é obrigado a **dizer de quanto foi**. Rode
+    `python scripts/check_surface_lock.py --update` e declare o crescimento no
+    commit.
+27. **Medição nunca derruba a chamada.** Ledger indisponível, disco cheio, span
+    que falha ao ser montado: a tool devolve o resultado do mesmo jeito.
+    Instrumentação que quebra o produto é defeito, não observabilidade.
+28. **Antes de afirmar que `detail_level` reduz, leia o número.** Essa frase
+    esteve publicada por muito tempo sem medição. Hoje `economy report` traz
+    `detail_level_effect` com os bytes de cada nível pedido — ele mostra os dois
+    e não conclui por você.
 
 ## Verificação antes de fechar
 
@@ -86,7 +112,14 @@ de snippet; fonte citada por regra nova precisa entrar em
 `knowledge/sources.lock.json` via `python scripts/refresh_knowledge.py --offline
 --update`. Número publicado em `docs/vnext/` ou `docs/harness/` passa pelo gate
 de lastro (`python scripts/check_vnext_claims.py`), e remediá-lo é por lista de
-ids tirada da saída do gate, nunca por varredura.
+ids tirada da saída do gate, nunca por varredura. Tool, skill ou documento de
+`knowledge/` novo move a superfície e exige
+`python scripts/check_surface_lock.py --update`, com o crescimento declarado no
+commit.
+
+A suíte inteira num processo só não sobrevive — divida `tests/test_*.py` em seis
+lotes alfabéticos e rode um por vez; o lote dos `test_fixtures_golden_*` precisa
+ser quebrado outra vez, porque cada golden reextrai o corpus.
 
 ## Compressão de output
 

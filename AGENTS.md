@@ -164,7 +164,13 @@ by construction (see `sparkforge.findings.models.Finding.__post_init__`).
 Twenty-seven extractors, all offline — they read artifacts already on disk and
 never call AWS. Each has a CLI verb and an MCP tool with the same name, and
 together they emit 158 distinct fact kinds. The catalogue that judges them has
-134 rules across 58 areas.
+134 rules across 58 areas, and the MCP surface is 59 tools.
+
+Those last numbers are no longer estimates. `sparkforge economy report` measures
+the surface at rest in bytes: **59 tool schemas = 306,845 bytes**, **44 skills =
+278,218 bytes**, **47 knowledge documents = 350,557 bytes**. Everything a client
+loads before asking a single question has a number now, and `docs/surface.lock.json`
+holds it.
 
 The table splits on a boundary that matters: an `analyze *` verb **extracts**
 from an artifact, and a top-level verb **composes** over facts other verbs
@@ -204,6 +210,7 @@ And the verbs that **compose** over facts, never over artifacts:
 | Cheapest capacity that meets the SLA | `capacity` | `glue.job_run` facts and the SLA declared in `workload.yaml` |
 | Cost per run, and where the lever is | `finops` | `glue.job_run`/`glue.run_cost`, the declared SLA, and the symptoms beside it |
 | Spark configuration derived from measurement | `tune` | `spark.stage.shuffle` measured, plus `spark.conf_effective`, `pyspark.conf_set` and `tf.spark_conf` for provenance |
+| What this run put in the context window | `economy report` | the spans `call_tool` writes per call, the surface at rest, and the host transcript when there is one |
 | Runtime | `runtime detect` | every source above, cross-checked |
 | Correlation | `fuse` | facts from several extractors at once |
 
@@ -347,6 +354,57 @@ stay where they are, because rewriting the claim to match the result is the bias
 that writing it down exists to prevent. `resume` lists only open hypotheses, so
 a loop that never closes turns that section into an inventory of questions nobody
 can mark as answered.
+
+### Context accounting, and the provider this project never calls
+
+The engine measures what **it** puts in the context window. That framing is not
+modesty, it is a measurement: `sparkforge/` imports no `anthropic`, no `openai`,
+no `bedrock`, no `litellm` — there is a `providers/mock.py` and a hardcoded
+`estimated_cost_usd = 0.001` in the router, and nothing else. **This project
+never calls a model.** The tokens are spent by the host running these agents, so
+"instrument the model call" has no producer here. What the project controls is
+the bytes it hands over, and that is what it counts.
+
+**One span per tool call.** `call_tool` — the single dispatch the authorization
+chain already bites — records `payload_bytes` for every one of the four return
+paths, refusals included, because a refusal costs context too and an
+investigation full of them would otherwise look cheap. The number is
+`len(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))`, and the formula
+travels in the span as `payload_basis`. It is **not** "what the model saw": the
+host re-serializes with its own spacing, and claiming those are the same number
+would be this phase's comfortable lie.
+
+**Bytes always; tokens only with a source.** A tool response has bytes. Provider
+tokens belong to the host, and a local call has no price table, so
+`input_tokens` and `estimated_cost_usd` stay empty on a tool span — empty here
+means "does not apply", not "measured zero". Ask for tokens with no transcript
+and you get `tokens_unresolved`, never a `len // 4` wearing the name of a token.
+Cost in dollars requires `cost_basis` naming where the price came from.
+
+**Bytes and tokens never sum.** They are different units — one is what this
+project produced, the other what the host spent. The report puts them side by
+side and never in a common total.
+
+**Measurement never breaks the call.** Ledger unavailable, disk full, a span
+that fails to build: the tool returns its result unchanged. Instrumentation that
+takes the product down is a defect, not observability. Spans buffer in memory
+and flush once at process exit — that took a tool call from ~6.0 ms of
+measurement overhead down to ~0.05 ms, and what it costs is spans lost on
+`SIGKILL`, which is written down rather than implied.
+
+**The surface lock is a lock, not a threshold.** No source publishes "20% growth
+is too much". `docs/surface.lock.json` holds today's measurement plus a hash of
+the composition, so growth is not forbidden — it is required to be **declared**.
+The hash catches the compensated swap the totals would miss: moving ten bytes
+from one `SKILL.md` to another leaves both totals identical and the hash
+different. It measures without executing anything, which is why it fits a CI
+that cannot currently run the full suite.
+
+**And one claim that finally has a number.** "`detail_level` reduces the payload"
+was published for a long time and never measured. `detail_level_effect` now
+reports the bytes per requested level, per tool — in one fixture, 1,599 bytes at
+`full` against 849 at `summary`. The report states both and concludes nothing;
+the reader concludes.
 
 ### Three states, never two
 
