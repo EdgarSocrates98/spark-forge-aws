@@ -28,6 +28,63 @@ from sparkforge.capacity.plan import resolution_supports
 from sparkforge.facts.run_cost import extract_run_cost
 from sparkforge.findings.models import Fact
 
+# Areas cujo achado aponta para o CODIGO ou para o layout do dado, e nao para
+# a capacidade. Lista explicita, e nao prefixo generico: `SF-GLUE` e `SF-EMR`
+# sao infraestrutura, e por-los aqui faria a alavanca de codigo sugerir
+# consertar codigo para um problema de Terraform.
+#
+# A separacao existe porque trocar worker para consertar um destes e comprar
+# saida de um defeito: o custo cai um pouco, o defeito fica, e a conta volta
+# maior quando o volume crescer.
+_AREAS_DE_CODIGO = frozenset(
+    {"SF-PY", "SF-PQ", "SF-PLAN", "SF-UI", "SF-SQL", "SF-CG", "SF-GRAPH", "SF-DQ"}
+)
+
+
+def _area_de(rule_id: str) -> str:
+    return rule_id.rsplit("-", 1)[0]
+
+
+def _levers(findings: Sequence[Any]) -> dict[str, Any]:
+    """Qual alavanca se aplica -- nunca QUANTO do custo e de cada lado.
+
+    Atribuir o quanto exigiria o custo do run que nao aconteceu, e a spec
+    recusa isso por escrito. O que este bloco faz e nomear a evidencia que ja
+    existe, agrupada pelo eixo que faltava: o financeiro.
+
+    A ordem e a que o `judge` devolveu. Ordenar por "economia estimada" seria
+    um contrafactual disfarcado de prioridade.
+    """
+    de_codigo = [
+        {
+            "rule_id": f.rule_id,
+            "title": f.title,
+            "severity": f.severity,
+            "subject": f.subject,
+        }
+        for f in findings
+        if _area_de(f.rule_id) in _AREAS_DE_CODIGO
+    ]
+    return {
+        "code": {
+            "findings": de_codigo,
+            "detail": (
+                "Nenhum destes muda trocando worker. Um job que varre dez vezes o que "
+                "precisa e caro em qualquer capacidade."
+            )
+            if de_codigo
+            else "",
+        },
+        "capacity": {
+            "detail": (
+                "A pergunta de capacidade tem resposta com evidencia em "
+                "`sparkforge capacity`, que compara as capacidades observadas contra o "
+                "SLA declarado."
+            )
+        },
+        "none_found": not de_codigo,
+    }
+
 
 def _nearest_rank(ordenados: list[float], pct: int) -> float:
     n = len(ordenados)
@@ -284,5 +341,6 @@ def build_finops_report(
         "frontier": frontier,
         "per_sla_outcome": por_desfecho,
         "symptoms": _symptoms(facts),
+        "levers": _levers(findings),
         "refused": recusas + recusas_sla,
     }

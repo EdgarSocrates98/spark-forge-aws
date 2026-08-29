@@ -185,3 +185,67 @@ class TestSintomas:
         blob = str(relatorio).lower()
         assert "desperd" not in blob
         assert "waste" not in blob
+
+
+class TestAlavanca:
+    def _finding(self, rule_id):
+        from sparkforge.findings.models import Finding
+
+        return Finding(
+            rule_id=rule_id,
+            title=f"achado {rule_id}",
+            severity="P1",
+            confidence="high",
+            status="confirmed",
+            subject={"type": "source_location", "file": "etl.py", "line": 10},
+            evidence=["f_abc123"],
+        )
+
+    def test_code_findings_are_listed_under_the_code_lever(self):
+        facts = [_run(f"a{i}", 300, 10, 6000.0) for i in range(6)]
+        relatorio = build_finops_report(
+            facts,
+            job_name="etl",
+            findings=[self._finding("SF-PY-004"), self._finding("SF-PQ-002")],
+        )
+
+        codigo = relatorio["levers"]["code"]
+        assert sorted(f["rule_id"] for f in codigo["findings"]) == [
+            "SF-PQ-002",
+            "SF-PY-004",
+        ]
+
+    def test_a_code_finding_never_appears_under_the_capacity_lever(self):
+        facts = [_run(f"a{i}", 300, 10, 6000.0) for i in range(6)]
+        relatorio = build_finops_report(
+            facts, job_name="etl", findings=[self._finding("SF-PY-004")]
+        )
+
+        capacidade = str(relatorio["levers"]["capacity"])
+        assert "SF-PY-004" not in capacidade
+
+    def test_infrastructure_findings_are_not_code(self):
+        facts = [_run(f"a{i}", 300, 10, 6000.0) for i in range(6)]
+        relatorio = build_finops_report(
+            facts, job_name="etl", findings=[self._finding("SF-GLUE-007")]
+        )
+
+        assert not relatorio["levers"]["code"]["findings"]
+
+    def test_no_finding_and_sized_capacity_is_an_answer_not_a_gap(self):
+        facts = [_run(f"a{i}", 300, 10, 6000.0) for i in range(6)]
+        relatorio = build_finops_report(facts, job_name="etl", findings=[])
+
+        assert relatorio["levers"]["none_found"] is True
+
+    def test_findings_are_never_ranked_by_estimated_saving(self):
+        facts = [_run(f"a{i}", 300, 10, 6000.0) for i in range(6)]
+        relatorio = build_finops_report(
+            facts,
+            job_name="etl",
+            findings=[self._finding("SF-PY-004"), self._finding("SF-UI-006")],
+        )
+
+        blob = str(relatorio).lower()
+        for palavra in ("estimated_saving", "economia", "saving"):
+            assert palavra not in blob
