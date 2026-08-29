@@ -45,9 +45,9 @@ arquivo ganha.
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
 | Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
-| Extratores de facts | **25** — corrigido ao fechar o subprojeto E, `run_cost.py` é o vigésimo quinto | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 32 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
-| Fact kinds distintos emitidos | **152** — corrigido ao fechar o subprojeto E; os dois novos são `glue.run_cost` e `glue.run_cost.unresolved` | união de `EMITTED_KINDS` sobre os 25 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (sem overlap entre módulos) |
-| Regras de diagnóstico | **130**, sendo **58 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
+| Extratores de facts | **27** — corrigido ao fechar o subprojeto H, `utilization.py` é o vigésimo sétimo | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 34 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
+| Fact kinds distintos emitidos | **158** — corrigido ao fechar o subprojeto H; os seis novos são `spark.stage.failure`, os três `spark.timeout.*` e os dois `glue.utilization.*` | união de `EMITTED_KINDS` sobre os 27 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (sem overlap entre módulos) |
+| Regras de diagnóstico | **134**, sendo **62 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
@@ -4411,6 +4411,309 @@ em todas as sete porque é a mesma pergunta de fundo — decisão sobre dinheiro
 e capacidade só entra com evidência que se sustenta sozinha, nunca com um
 número que parece evidência e é estimativa.
 
+## Auditoria do `prompt_tunning_foco_spark.md` — 41 seções, 20 critérios (2026-08-29)
+
+O roadmap dos cinco subprojetos fechou o que ele mesmo delimitava. O documento
+de origem é maior: 41 seções, 20 critérios de aceite e quatro ondas de
+prioridade. Esta auditoria mede **cada um** contra a árvore — cada linha aponta
+o módulo, o kind ou o teste que a sustenta, e o que está aberto aparece como
+aberto.
+
+### Os 20 critérios de aceite (§41)
+
+| # | Critério | Estado | Onde |
+|---|---|---|---|
+| 1 | Analisar múltiplas fontes independentemente | ENTREGUE | `spark.sql.scan` por nó do plano (C1); `source_count` no fingerprint |
+| 2 | Workload por trabalho físico, não por cardinalidade | ENTREGUE | `sparkforge/workload/fingerprint.py`, oito eixos com procedência |
+| 3 | Fonte dominante do runtime | ENTREGUE | `spark.sql.scan` e `spark.sql.join_input`, correlacionados por nó |
+| 4 | Full scan, pruning e pushdown | ENTREGUE | `sql.predicate.partition_filter`, `sql.projection.enriched` |
+| 5 | Reconstruir join graph | ENTREGUE | C3: `pyspark.join` mais `plan.join` |
+| 6 | Estratégia física dos joins | ENTREGUE | `plan.join`, `spark.sql.join` |
+| 7 | Detectar skew | ENTREGUE | `spark.stage.task_duration`, eixo `skew_risk`, `SF-UI-001` |
+| 8 | Diagnosticar shuffle | ENTREGUE | `spark.stage.shuffle`, eixo `shuffle_intensity` |
+| 9 | Detectar spill | ENTREGUE | `spark.stage.spill`, `spark.job.spill_summary` |
+| 10 | Diagnosticar cache/persist | ENTREGUE | `pyspark.cache`, regras `SF-PY` |
+| 11 | Diferenciar tipos de timeout | **ENTREGUE nesta fase** | `spark.timeout.diagnosis`, `SF-TIMEOUT-001/002` |
+| 12 | Coletar histórico Glue/CloudWatch | ENTREGUE | B: `glue.job_run`, `glue.metric`, coleta incremental |
+| 13 | p50/p95/p99 de runtime | ENTREGUE | `glue.job_run.distribution` |
+| 14 | Consumir DPUSeconds | ENTREGUE | `dpu_seconds` com `dpu_source` |
+| 15 | Comparar WorkerType e NumberOfWorkers | ENTREGUE | D: `sparkforge/capacity/plan.py` |
+| 16 | Auto Scaling contra estático | ENTREGUE | `autoscaling` entra na chave de capacidade em D e em E |
+| 17 | Derivar Spark confs | **ENTREGUE nesta fase** | `sparkforge/tuning/spark_conf.py`, verbo `tune` |
+| 18 | Estimar custo | ENTREGUE | E: `glue.run_cost` |
+| 19 | Probabilidade de cumprir SLA | ENTREGUE | D, com recusa por resolução |
+| 20 | Menor custo que respeita o SLA | ENTREGUE | D e E, `cost_per_sla_success` |
+
+### As quatro ondas (§39)
+
+**P0 — fechada.** Auto Scaling (A), WorkloadFingerprint (C2), footprint de
+dataset (`spark.sql.scan` mais `s3.prefix_summary`), scan multi-fonte (C1),
+coletor de histórico (B), facts de stage/shuffle/spill/skew, modelo de SLA
+(`workload.declared`) e, nesta fase, o classificador de timeout.
+
+**P1 — fechada.** Join, cache, shuffle e scan intelligence existem como regras
+mais C1/C3; `memory_pressure` é eixo do fingerprint; e a derivação de
+configuração — com o cálculo de paralelismo, que é o mesmo bloco — entrou no
+subprojeto G.
+
+**P2 — fechada.** DPUSeconds, custo por run, custo histórico, candidatos de
+capacidade e o otimizador sob SLA estão em B, D e E; a detecção de
+superdimensionamento (§37) entrou no subprojeto H, com o par de regras que
+separa folga de ociosidade por skew.
+
+**P3 — uma lacuna, e uma recusa.** `sparkforge benchmark` compara duas execuções
+e `SF-BENCH-002` acusa regressão; o plano mais barato conhecido e seguro é D. A
+**deriva de workload** está entregue em substância, e não como alarme próprio:
+`_classe_por_historico` classifica scan e shuffle contra os percentis do próprio
+histórico do job, então um eixo que sai `extreme` **é** o sinal de deriva — o que
+não existe é uma linha que diga a palavra. Canary (§35) exige **executar** o job,
+e o projeto inteiro recusa executar. Fica aberto o **histórico de recomendação**:
+os findings vivem por case, e nada os acumula entre cases.
+
+### As seções que não viram critério de aceite
+
+As §1–§38 do documento não aparecem uma a uma nos vinte critérios. Onde cada uma
+caiu:
+
+| § | O que pedia | Estado |
+|---|---|---|
+| 1, 2, 29, 32 | fingerprint por eixos, não por cardinalidade | ENTREGUE (C2) — os eixos sem produtor ficaram fora por decisão registrada |
+| 3, 4 | analisador multi-fonte e orçamento de scan | ENTREGUE (C1) |
+| 5, 6 | join intelligence e o grafo de joins | ENTREGUE (C3, `plan.join`, `spark.sql.join`) |
+| 7 | consciência de layout de dado | ENTREGUE — `SF-PQ`, `SF-ICE` e a fusão de predicado com partição |
+| 8, 9 | especialistas Iceberg e Parquet | ENTREGUE — áreas `SF-ICE` e `SF-PQ`, com corpora próprios |
+| 10, 11, 33 | motor de configuração adaptativa, version-aware | ENTREGUE (G), com as propriedades sem base medida recusadas por nome |
+| 12, 31 | timeout como quatro mecanismos | ENTREGUE (F) |
+| 13, 14 | cache e skew intelligence | ENTREGUE — `pyspark.cache`, `SF-UI-001`/`SF-UI-002` |
+| 15, 16 | coletor de runtime e métricas do Glue | ENTREGUE (B) — `sparkforge collect cloudwatch` e `glue.metric` |
+| 17, 18, 19 | capacidade derivada e otimizador sob SLA | ENTREGUE (D) |
+| 20, 21 | Auto Scaling correto, e não automaticamente mais barato | ENTREGUE (A e D) |
+| 22 | domínio FinOps | ENTREGUE (E) |
+| 23 | a árvore `workload/`, `tuning/`, `finops/` | ENTREGUE — os três pacotes existem; `collect/aws_runtime.py` não, porque `collect/aws.py` já faz o que ele pedia |
+| 24 | catorze facts novos | ENTREGUE em substância — cada um casa um kind existente, com nomes do repositório e não do documento |
+| 25, 26 | um verbo `tune glue --sla` e sete comandos | ENTREGUE em partes, e a diferença é decisão: o relatório único do §25 é a composição de `workload`, `capacity`, `finops`, `tune` e `judge`, e um mega-verbo que os chamasse em sequência esconderia qual evidência sustenta qual conclusão |
+| 27 | a skill `spark-performance-doctor` | ENTREGUE — é o coordenador `spark-performance-architect`, que declara as áreas e despacha os executores |
+| 28 | evidência → recomendação, com onze campos | ENTREGUE — é o schema de `Finding`, e o gate de `benchmark_ref` o defende |
+| 30 | vertical contra horizontal | ENTREGUE (D) — a chave de capacidade é `worker_type` **e** número, e as duas se comparam lado a lado |
+| 34 | níveis SAFE / REVIEW / EXPERIMENTAL | ENTREGUE PARCIAL (G) — toda proposta de `tune` carrega o nível; os findings do catálogo continuam com `severity` e `confidence`, que respondem outra pergunta |
+| 35 | canary tuner | RECUSADO — exige **executar** o job, e nenhum caminho do projeto executa |
+| 36 | guardrail contra over-tuning | ENTREGUE PARCIAL (G) — a procedência por propriedade existe e nomeia o sintoma (`spark_default_explicit`); classificar **toda** propriedade do run, e não só as que `tune` toca, fica aberto |
+| 37 | FinOps encontra desperdício | ENTREGUE (H) |
+| 38 | SLA efficiency e custo por sucesso | ENTREGUE (E) — `cost_per_sla_success` |
+| 40 | dezessete fixtures nomeadas | ENTREGUE em substância — os corpora de `fixtures/` cobrem as classes que a lista pede (skew, small files, spill, broadcast, timeout, metadata, shuffle), com os nomes do repositório; o teste que o documento chama de "importantíssimo" — entrada pequena não implica workload pequeno — é `fixtures/workload/small_batch_extreme_scan` |
+
+**A regra de ouro do documento** — *never size a Spark workload from row count
+alone* — é o invariante que C2 impõe em código: o fingerprint não tem eixo de
+contagem de linhas, e `primary_input_class` é **um** eixo entre oito.
+
+
+## Timeout Intelligence — qual timeout, e por que subir o número não conserta (2026-08-29)
+
+Documentos: [spec](specs/2026-08-29-timeout-intelligence-design.md) ·
+[plan](plans/2026-08-29-timeout-intelligence.md).
+
+Subprojeto F. Fecha o último item P0 do documento de origem e o critério 11.
+Antes desta fase, "timeout" existia em três lugares da árvore que não se
+falavam — o estado `TIMEOUT` do `glue.job_run`, a razão com que
+`spark.executor.lost` registrava a remoção do executor, e as três propriedades
+de configuração em `spark.conf_effective` — e, medido em `load_catalog()`,
+**nenhuma** das 130 regras então carregadas tinha "timeout" no id ou no título.
+
+**`spark.stage.failure`, a fonte que faltava.** O handler de
+`SparkListenerStageCompleted` lia `Stage ID`, `Stage Name` e `Number of Tasks` e
+descartava `Failure Reason` — que é onde o Spark escreve "Could not execute
+broadcast in N secs" e "Futures timed out after [N seconds]". Sem essa chave,
+duas das quatro categorias não teriam evidência nenhuma. A razão é redigida pelo
+mesmo `redact` de `spark.conf_effective`, porque razão de falha carrega URL de
+JDBC com senha dentro com a mesma facilidade que configuração carrega.
+
+**`spark.timeout.diagnosis`** (`sparkforge/facts/timeout_diagnosis.py`) nomeia a
+categoria — `wall_clock`, `broadcast`, `network` ou `heartbeat` — lendo a frase
+que o runtime escreveu, no precedente de `heap_oom_in_log`. Deriva de fact e não
+de caminho, como `run_cost`, porque a evidência mora em três fontes que nenhum
+extrator vê juntas. **64 testes** novos, medidos por coleta
+(`pytest --collect-only`): 22 em `tests/test_facts_timeout_diagnosis.py`, 37 em
+`tests/test_fixtures_golden_timeout.py` e 5 na classe `TestStageFailureReason`
+de `tests/test_facts_event_log.py`.
+
+### Quatro decisões
+
+**A precedência é declarada, e o preterido continua legível.** Heartbeat,
+network, broadcast, wall_clock — do mais específico para o mais genérico, porque
+o genérico é consequência do outro sempre que os dois aparecem: o run estourou o
+relógio do Glue **porque** o executor morreu. `attrs.also_seen` guarda o que a
+precedência não escolheu; escolher em silêncio seria escolher pelo operador.
+
+**O fact mede, a regra decide o limiar.** Os sintomas viajam no próprio
+diagnóstico (`skew_p95_over_p50`, `spill_over_input`, `gc_ratio`,
+`executor_lost_count`) sem limiar nenhum. Sem isso, `SF-TIMEOUT-001` precisaria
+correlacionar quatro kinds dentro do `when`, e a DSL do catálogo casa um fact
+por cláusula. Sintoma sem fonte fica **ausente**, nunca zero — zero diria que
+foi medido e deu zero.
+
+**A relação é conferível; o valor isolado não é.** `spark.network.timeout = 120s`
+não é certo nem errado sozinho. `heartbeatInterval >= network.timeout` é errado
+sempre, porque o driver desiste antes do próximo pulso chegar e passa a declarar
+morto executor vivo. `spark.timeout.relation` converte as duas para segundos e
+só existe com as duas observadas — comparar como string faria "10s" maior que
+"120s" em ordem lexicográfica, e a conclusão sairia invertida.
+
+**`SF-TIMEOUT-001` não dispara por haver timeout.** Dispara por haver timeout
+**com sintoma ao lado**. Sem sintoma, subir o limite pode ser exatamente a
+decisão certa, e o §31 do documento de origem diz isso por escrito.
+`timeout_sem_evidencia` é o golden que trava esse lado negativo.
+
+### O que este subprojeto recusa
+
+**Recomendar um valor novo de timeout.** É o critério 17, é outro subprojeto, e
+entra com a procedência por propriedade que o §36 pede — ou não entra. O corpus
+inteiro é varrido em busca das palavras que denunciariam a recomendação.
+
+**Classificar sem artefato.** Um run em `TIMEOUT` sem event log tem uma resposta
+honesta (`wall_clock`, que é a definição do estado) e uma lacuna nomeada
+(`state_without_log`) dizendo que as outras três não foram descartadas — elas
+não foram sequer procuradas.
+
+## Configuração Spark derivada — o valor que a medida sustenta (2026-08-29)
+
+Documento: [spec](specs/2026-08-29-derived-spark-conf-design.md). **Sem plano
+próprio**, e isso é decisão registrada: a fase é um módulo de composição e um
+verbo, sem fact novo e sem regra nova, e um plano de sete tarefas para isso
+seria cerimônia. O spec traz as decisões e os critérios de aceite; os testes
+trazem o resto.
+
+Subprojeto G. Fecha o critério 17 do §41 e o item "derived Spark
+configurations" da onda P1 — com ele, o "parallelism calculator" da mesma onda,
+que é o mesmo cálculo.
+
+O documento de origem põe em letras grandes: `spark.sql.shuffle.partitions`
+passa a ser **DERIVED**, e não **HARDCODED**. Antes desta fase o catálogo
+**julgava** configuração existente — `SF-UI` lê `spark.conf_effective`, `SF-PY`
+lê `pyspark.conf_set` — e nada no repositório **derivava** valor a partir de
+medida.
+
+`sparkforge/tuning/spark_conf.py` deriva do shuffle medido
+(`spark.stage.shuffle.write_bytes`) sobre o alvo de tamanho de partição, e
+carrega a fórmula e a base dentro da resposta. Verbo de topo `sparkforge tune` e
+tool `sparkforge_tune`, pela mesma razão de `capacity` e `finops`. **44 testes**
+novos, medidos por coleta: 22 em `tests/test_tuning_spark_conf.py`, 20 em
+`tests/test_fixtures_golden_tuning.py` e 2 na classe `TestTuneCommand` de
+`tests/test_adapters_cli.py`.
+
+### Quatro decisões
+
+**Derivar é recomendar, e recomendação tem mecanismo próprio.** Custo (E) e
+categoria de timeout (F) são fact porque são aritmética sobre medida, sem
+escolha. Um valor **proposto** de configuração é escolha — existe um alvo de
+tamanho de partição, e alvo é decisão. A alternativa recusada era emitir
+`spark.conf.derived` como fact: o motor de regras passaria a julgar um número
+que o próprio projeto propôs, e a regra concordaria com a recomendação em vez
+de julgar a evidência.
+
+**O alvo vem da documentação, e diz de onde veio.**
+`spark.sql.adaptive.advisoryPartitionSizeInBytes` tem default documentado de
+64 MiB, e é o tamanho que o próprio AQE persegue ao coalescer. Quando o run
+declara o próprio valor, é ele que vale — e `basis.target_source` diz qual dos
+dois a conta usou, `declared` ou `spark_default`.
+
+**A versão muda o significado, e não o número.** Com AQE default (Spark 3.2+,
+portanto Glue 4.0 e 5.x) o número é o **piso** de paralelismo inicial que o
+motor coalesce com estatística real; sem AQE (Glue 3.0, Spark 3.1.1) é o número
+**final** de partições. `knowledge/glue/runtime-matrix.md` já registrava que
+recomendar "confie no AQE" para Glue 3.0 é erro de versão, e agora o código
+respeita isso — o par de fixtures `shuffle_medido_com_aqe` e
+`shuffle_medido_sem_aqe` trava a diferença.
+
+**Procedência responde quem PEDIU, não quem venceu (§36).** Cinco classes:
+`code`, `terraform`, `runtime_or_cluster`, `spark_default_explicit` e `unset`.
+A quarta existe porque é o sintoma que o documento persegue — configuração que
+alguém escreveu com exatamente o valor do default, ninguém mais entende, e que
+não muda nada.
+
+### Um desvio do spec, medido
+
+O spec listava `property_not_in_version` entre as recusas, e ela **não** foi
+implementada. A razão é a mesma que o repositório aplica aos eixos do
+fingerprint: gate sem produtor é gate que ninguém preenche.
+`spark.sql.shuffle.partitions` existe em toda versão de Spark que o projeto
+suporta, e é a única propriedade derivada — a recusa não teria como disparar, e
+uma recusa que nunca dispara é decoração. `supported_in_runtime` continua no
+relatório porque é o campo onde ela entra no dia em que houver propriedade
+derivada com fronteira de versão.
+
+### O que este subprojeto recusa
+
+**Aplicar.** Nenhum caminho do código escreve configuração, e cada proposta
+carrega o nível de segurança do §34 — `REVIEW` para paralelismo, que significa
+que alguém olha antes.
+
+**Derivar sem base medida.** As outras propriedades do §11 — limiar de
+broadcast, overhead de memória, speculation, `maxPartitionBytes` e os dois
+timeouts — saem em `refused` **com a medida que as destravaria**, nunca
+omitidas. Listar a recusa é a diferença entre "não sei" e "não perguntei". Os
+dois timeouts têm razão extra: propor número novo para eles contradiria a
+`SF-TIMEOUT-001`, que o subprojeto F acabou de escrever.
+
+**Um valor mágico global.** É o que o §10 recusa por escrito, e derivar sem
+base seria trocar um número sem razão por outro com aparência de cálculo.
+
+## Desperdício de capacidade — folga medida, e a ociosidade que é sintoma (2026-08-29)
+
+Subprojeto H. Fecha o item "overprovisioning detection" da onda P2 e a §37 do
+`prompt_tunning_foco_spark.md`. **Sem spec e sem plano próprios**, pela mesma
+razão registrada no subprojeto G: um extrator derivado e duas regras não
+sustentam sete tarefas de plano. A §37 do documento de origem é curta e
+específica o bastante para servir de spec, e os testes trazem o resto.
+
+O documento pede a detecção de desperdício e, no mesmo parágrafo, avisa contra
+ela: utilização baixa **parece** desperdício e às vezes é sintoma. Noventa por
+cento dos executores podem estar ociosos porque uma task ficou catorze minutos
+numa partição torta — e reduzir workers ali não toca a causa, encurta a folga e
+alonga o run.
+
+**`glue.utilization.summary`** (`sparkforge/facts/utilization.py`) põe as duas
+medidas num fact só, porque elas moram em fontes diferentes — utilização vem do
+CloudWatch (`glue.metric`), skew vem do event log
+(`spark.stage.task_duration`) — e a DSL do catálogo casa **um fact por
+cláusula**. Sem esse resumo, a regra que separa "superdimensionado" de "ocioso
+por skew" precisaria correlacionar dois kinds dentro do `when`, e não há como.
+
+**As duas regras são um par, e nunca disparam juntas.** `SF-WASTE-001` exige as
+quatro medidas na mesma direção — worker ocioso, memória e disco com folga, e
+**ausência** de skew — e aponta para `sparkforge capacity`. `SF-WASTE-002` é o
+oposto: utilização baixa **com** skew alto. A ausência de skew é condição de
+uma e a presença é condição da outra, e o corpus tem um teste que trava isso
+sobre todos os cenários.
+
+**35 testes** novos, medidos por coleta: 10 em `tests/test_facts_utilization.py`
+e 25 em `tests/test_fixtures_golden_waste.py`.
+
+### Três decisões
+
+**O limiar de skew é o mesmo do resto do catálogo, e é deliberado.** 3.0, o
+mesmo de `SF-UI-001`. A fronteira entre folga e ociosidade por skew precisa ser
+a mesma que o catálogo usa para chamar skew de skew — duas fronteiras
+diferentes para a mesma palavra produziriam um relatório que se contradiz.
+
+**As quatro condições de `SF-WASTE-001` são um `all`, e o cenário
+`memoria_alta_com_worker_ocioso` prova por quê.** Worker ocioso com pico de
+memória em 88% não é folga: reduzir capacidade ali troca custo por OOM.
+
+**Memória e disco entram pelo p95, não pelo p50.** O pico é o que decide se
+havia folga, e uma média baixa com pico alto não é folga nenhuma.
+
+### O que este subprojeto recusa
+
+**Quantificar a economia.** "Você economizaria X" exige o custo do run que
+**não** aconteceu, e o subprojeto E já recusou esse contrafactual por escrito.
+O que as regras fazem é dizer que a pergunta de capacidade tem base para ser
+feita, e apontar para o verbo que a responde com evidência.
+
+**Afirmar folga sem a medida do eixo.** Sem
+`glue.driver.workerUtilization` não há resumo: sai
+`glue.utilization.unresolved` com o comando que a preencheria. Utilização é o
+eixo da pergunta, e as outras medidas sozinhas não a substituem.
+
 ## Dívidas abertas
 
 A tabela era uma só e misturava **três naturezas**, e a mistura fazia o
@@ -4633,7 +4936,7 @@ também a que carrega o buraco medido de extrator, escrito na própria linha.
 | **EMR on EKS** sem cobertura | Fase 5b, por decisão registrada no spec; **a metade Serverless da linha fechou** com a Fase 5d, em 2026-08-05 | **Fase, sem posição na *Ordem*** — e o "**única**" que esta linha dizia até 2026-08-05 estava **errado desde a própria Fase 5d**, que abriu a linha de job runs também sem posição; com `SF-CFG` são **três**, contadas nesta tabela. Corrigido no lugar, que é o que este arquivo faz com afirmação que a medição derruba. A linha dizia "EMR Serverless e EMR on EKS" e perdeu a primeira metade: `SF-EMRS` tem extrator, seis kinds, 16 fixtures, seis regras e coordenador. O que sobra é EKS, e ele não é o mesmo tamanho de trabalho: traz vocabulário de Kubernetes — virtual cluster, container provider, namespace, pod template — que não existe em lugar nenhum do repositório, e `knowledge/` continua com **zero** linha sobre ele. Enfileirá-lo é decisão de roadmap, e esta triagem não a toma por conta própria: registra que ele está fora da fila. |
 | Job runs e `billedResourceUtilization` do EMR Serverless | Fase 5d, não-objetivo registrado na §2 do spec | **Fase, não dívida — é eixo novo, não código faltando.** `get-application` descreve **definição**; `get-job-run`/`list-job-runs` descrevem **execução**, e uma application tem N runs, o que obriga a decidir amostragem, agregação e "qual run é representativo" — classe de decisão que o eixo de configuração não tem. `billedResourceUtilization` é a evidência de custo mais direta que a AWS expõe em qualquer serviço deste repositório, e por isso merece fase que a trate com cuidado, não apêndice da 5d. Sem posição na *Ordem*. |
 | Pré-init subdimensionada não é acusável | Fase 5d, veto registrado no cabeçalho de `rules/catalog/emr-serverless.yaml` (`D-5d-33`) | **Fase, e é a primeira consumidora concreta da linha acima — não fecha sozinha.** É o veto mais doloroso da 5d justamente porque a fonte descreve o defeito com precisão: *"the initial capacity memory configuration should be greater than the memory that the job and the overhead request"*. O que falta não é regra nem extrator: é **o outro lado da comparação**, que mora no `StartJobRun` e que esta fase não lê. Uma regra que só acusasse quando o job declara a memória na própria application produziria silêncio exatamente onde a prática comum está — pior que não ter regra, porque o silêncio se lê como aprovação. Fechar exige o eixo de job runs; escrever a regra antes dele é impossível com a informação que o artefato de definição carrega. |
-| A área `SF-CFG` foi **planejada e nunca escrita** | **Pré-existente**: declarada no primeiro commit de `rules/catalog/README.md` (`ffcf150`) e nunca implementada; medida na revisão de documentação de 2026-08-04 | **Reclassificada em 2026-08-05, de dívida para fase: a medição que a própria linha exigia foi feita, e ela achou pergunta que nenhuma área faz.** A linha dizia "ninguém mediu qual dos dois é"; medido agora, é o segundo. (1) `knowledge/spark/config-reference.md` documenta **28** propriedades `spark.*` com default exato, em quatro tabelas — **35** contando as outras páginas de `knowledge/` —, e **nenhuma delas é lida por regra nenhuma**. (2) Das 81 regras, **12** tocam superfície de configuração, e o recorte delas é o argumento: **três** leem uma chave nomeada de um bloco `Configurations` do EMR (`SF-EMR-001` lê `maximizeResourceAllocation`, `SF-EMR-003` lê `spark.dynamicAllocation.enabled`, `SF-EMR-005` lê `spark.sql.sources.partitionOverwriteMode`) — e só **duas** dessas nomeiam uma propriedade `spark.*`; **três** leem qualquer chave, e só para caçar segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`); **cinco** nomeiam argumento de job Glue ou atributo de recurso Terraform (`SF-ENV-003`, `SF-GLUE-001`, `SF-GLUE-003`, `SF-GLUE-004`, `SF-GLUE-005`); e **uma** ignora a chave por completo (`SF-PY-012`, cujo `when` é `{fact: pyspark.conf_set}` e mais nada). **Zero regras fora da área EMR leem uma propriedade `spark.*` nomeada.** (3) O sintoma, e ele é literal: **cinco** regras recomendam `spark.sql.adaptive.enabled` no `proposed_change` — `SF-PQ-001`, `SF-PY-005`, `SF-PY-009`, `SF-PY-010` e `SF-UI-006` — e **nenhuma regra do catálogo lê se ela está ligada**. (4) O dado já está no repositório, com procedência: os goldens de `fixtures/emr/` carregam **36** facts `emr.configuration`, os 36 com `provenance` e `artifact_sha256`, cobrindo **cinco** propriedades `spark.*` distintas — e **três delas** (`spark.sql.shuffle.partitions`, `spark.executor.memory`, `spark.executor.instances`) **têm zero consumidores**. Fact extraído, hasheado, versionado em golden, e que nenhuma regra pergunta. (5) Dois buracos de extrator, e os dois medidos. `--conf` não é desmontado: em `fixtures/terraform/unresolvable_values/input/job.tf:21` ele chega num heredoc do Terraform, vira um `tf.unresolved` com `reason: heredoc`, e as duas propriedades de dentro somem — uma delas é `spark.sql.adaptive.enabled=true`, exatamente a que cinco regras recomendam ligar. E o event log **não** emite `SparkListenerEnvironmentUpdate` (`sparkforge/facts/event_log.py:485-486` o lista entre os eventos ignorados de propósito): **a configuração efetivamente aplicada num run não é lida por superfície nenhuma**. **Portanto ela não morre por escrito.** Existe pergunta de configuração que nenhuma das três áreas faz, e responder a ela é trabalho de fase: decidir se o eixo vira área própria ou extensão das existentes, fechar os dois buracos de extrator, e resolver o problema que o próprio `config-reference.md` declara no cabeçalho — default documentado não é valor efetivo, e o Glue sobrescreve parte deles. **Ela não tem posição na *Ordem***, do mesmo jeito que a linha do EMR Serverless não teve até esta semana, e enfileirá-la é decisão de roadmap que esta rodada não toma. **A leitura anterior, da triagem de 2026-08-04, fica abaixo inteira — reclassificar não é reescrever:** **Dívida, e a mais antiga do inventário — nada a reverter, só decidir.** O `README.md` do catálogo declarava a área `CFG` (config Spark) e o arquivo `spark-config.yaml` desde o dia em que foi escrito. Medido: `git log --diff-filter=A -- rules/catalog/spark-config.yaml` não devolve **nada** — o arquivo nunca existiu em commit nenhum —, e `SF-CFG` não aparece em nenhum `.yaml`, `.py` ou teste do repositório. A tabela listava **15** arquivos para **14** reais e implicava **14** áreas contra **13** medidas; as duas linhas foram removidas, e a contagem de áreas passou a ser declarada por escrito (**treze**) para que a próxima divergência apareça. **O que fica em aberto é a decisão, não o texto:** configuração de Spark hoje é julgada de forma dispersa — `pyspark.conf_set` alimenta regras de `SF-PY`, e a configuração declarada em IaC alimenta `SF-GLUE` e `SF-EMR` (que carrega `Configurations` em dois níveis). Ou isso é reconhecido como a resposta definitiva e a `CFG` morre por escrito, ou existe uma pergunta de configuração que nenhuma das três áreas faz e aí ela vira fase. **Ninguém mediu qual dos dois é**, e é essa medição — não código — que fecha esta linha |
+| A área `SF-CFG` foi **planejada e nunca escrita** | **Pré-existente**: declarada no primeiro commit de `rules/catalog/README.md` (`ffcf150`) e nunca implementada; medida na revisão de documentação de 2026-08-04 | **FECHADA em 2026-08-29, pelo subprojeto G.** A pergunta que esta linha dizia que nenhuma área fazia tem resposta, e ela **não** virou área de regra: virou verbo. `sparkforge tune` deriva `spark.sql.shuffle.partitions` do shuffle medido e classifica a procedência de cada propriedade — `code`, `terraform`, `runtime_or_cluster`, `spark_default_explicit`, `unset` —, que é exatamente a "configuração julgada de forma dispersa" que a linha descrevia, agora reunida num lugar só. Duas afirmações desta linha também envelheceram e ficam corrigidas aqui: o event log **passou** a emitir `SparkListenerEnvironmentUpdate` (o fact é `spark.conf_effective`, uma chave por fact), e portanto "a configuração efetivamente aplicada num run não é lida por superfície nenhuma" deixou de ser verdade antes mesmo desta fase. O que continua sem existir é a área `SF-CFG`, e agora por decisão: julgar valor de configuração isolado é o que `SF-EMR`, `SF-PY` e `SF-GLUE` já fazem onde há regra publicada; derivar valor é outra operação, e mora fora do catálogo por escrito. **A leitura de 2026-08-05 fica abaixo inteira — fechar não é apagar:** **Reclassificada em 2026-08-05, de dívida para fase: a medição que a própria linha exigia foi feita, e ela achou pergunta que nenhuma área faz.** A linha dizia "ninguém mediu qual dos dois é"; medido agora, é o segundo. (1) `knowledge/spark/config-reference.md` documenta **28** propriedades `spark.*` com default exato, em quatro tabelas — **35** contando as outras páginas de `knowledge/` —, e **nenhuma delas é lida por regra nenhuma**. (2) Das 81 regras, **12** tocam superfície de configuração, e o recorte delas é o argumento: **três** leem uma chave nomeada de um bloco `Configurations` do EMR (`SF-EMR-001` lê `maximizeResourceAllocation`, `SF-EMR-003` lê `spark.dynamicAllocation.enabled`, `SF-EMR-005` lê `spark.sql.sources.partitionOverwriteMode`) — e só **duas** dessas nomeiam uma propriedade `spark.*`; **três** leem qualquer chave, e só para caçar segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`); **cinco** nomeiam argumento de job Glue ou atributo de recurso Terraform (`SF-ENV-003`, `SF-GLUE-001`, `SF-GLUE-003`, `SF-GLUE-004`, `SF-GLUE-005`); e **uma** ignora a chave por completo (`SF-PY-012`, cujo `when` é `{fact: pyspark.conf_set}` e mais nada). **Zero regras fora da área EMR leem uma propriedade `spark.*` nomeada.** (3) O sintoma, e ele é literal: **cinco** regras recomendam `spark.sql.adaptive.enabled` no `proposed_change` — `SF-PQ-001`, `SF-PY-005`, `SF-PY-009`, `SF-PY-010` e `SF-UI-006` — e **nenhuma regra do catálogo lê se ela está ligada**. (4) O dado já está no repositório, com procedência: os goldens de `fixtures/emr/` carregam **36** facts `emr.configuration`, os 36 com `provenance` e `artifact_sha256`, cobrindo **cinco** propriedades `spark.*` distintas — e **três delas** (`spark.sql.shuffle.partitions`, `spark.executor.memory`, `spark.executor.instances`) **têm zero consumidores**. Fact extraído, hasheado, versionado em golden, e que nenhuma regra pergunta. (5) Dois buracos de extrator, e os dois medidos. `--conf` não é desmontado: em `fixtures/terraform/unresolvable_values/input/job.tf:21` ele chega num heredoc do Terraform, vira um `tf.unresolved` com `reason: heredoc`, e as duas propriedades de dentro somem — uma delas é `spark.sql.adaptive.enabled=true`, exatamente a que cinco regras recomendam ligar. E o event log **não** emite `SparkListenerEnvironmentUpdate` (`sparkforge/facts/event_log.py:485-486` o lista entre os eventos ignorados de propósito): **a configuração efetivamente aplicada num run não é lida por superfície nenhuma**. **Portanto ela não morre por escrito.** Existe pergunta de configuração que nenhuma das três áreas faz, e responder a ela é trabalho de fase: decidir se o eixo vira área própria ou extensão das existentes, fechar os dois buracos de extrator, e resolver o problema que o próprio `config-reference.md` declara no cabeçalho — default documentado não é valor efetivo, e o Glue sobrescreve parte deles. **Ela não tem posição na *Ordem***, do mesmo jeito que a linha do EMR Serverless não teve até esta semana, e enfileirá-la é decisão de roadmap que esta rodada não toma. **A leitura anterior, da triagem de 2026-08-04, fica abaixo inteira — reclassificar não é reescrever:** **Dívida, e a mais antiga do inventário — nada a reverter, só decidir.** O `README.md` do catálogo declarava a área `CFG` (config Spark) e o arquivo `spark-config.yaml` desde o dia em que foi escrito. Medido: `git log --diff-filter=A -- rules/catalog/spark-config.yaml` não devolve **nada** — o arquivo nunca existiu em commit nenhum —, e `SF-CFG` não aparece em nenhum `.yaml`, `.py` ou teste do repositório. A tabela listava **15** arquivos para **14** reais e implicava **14** áreas contra **13** medidas; as duas linhas foram removidas, e a contagem de áreas passou a ser declarada por escrito (**treze**) para que a próxima divergência apareça. **O que fica em aberto é a decisão, não o texto:** configuração de Spark hoje é julgada de forma dispersa — `pyspark.conf_set` alimenta regras de `SF-PY`, e a configuração declarada em IaC alimenta `SF-GLUE` e `SF-EMR` (que carrega `Configurations` em dois níveis). Ou isso é reconhecido como a resposta definitiva e a `CFG` morre por escrito, ou existe uma pergunta de configuração que nenhuma das três áreas faz e aí ela vira fase. **Ninguém mediu qual dos dois é**, e é essa medição — não código — que fecha esta linha |
 | O eixo de resultado é cobrado por **texto**, e o `loader` não o exige de nenhuma regra | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela depende de uma decisão de contrato, não de código.** O que fecharia é um invariante de carga: toda regra que pode mudar o resultado carrega eixo de resultado no `validation`. **O custo medido, e é ele que tira isto de dívida:** a classificação "pode mudar o resultado" **não está no dado**. Das 81 regras, **62** já carregam o eixo e **19** não — e as 19 estão certas: são segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`), destino de log (`SF-EMR-006`, `SF-EMRS-003`, `SF-EMRS-004`, `SF-GLUE-002`), capacidade (`SF-EMR-004`, `SF-EMRS-005`, `SF-GLUE-001`, `SF-GLUE-005`), detecção de runtime (as cinco `SF-ENV`) e metodologia (`SF-PLAN-004`, `SF-UI-002`). Um invariante "todas as regras" reprovaria as 19 corretas; um invariante seletivo exige um **campo declarado por regra** — os 18 campos de regra hoje (`load_catalog()`) não têm nenhum que sirva de gatilho —, e campo novo no contrato de regra é bump de `schema_version`, cujo preço este arquivo declara no cabeçalho: um Finding gravado com `catalog_version: 2` sugere que o limiar que o julgou é outro. São **81** decisões escritas à mão, e cada uma é exatamente a linha *fato versus julgamento* que este repositório traça. **O que existe hoje, e é o piso, não o teto:** `tests/test_rules_result_axis.py` pergunta ao `proposed_change` quais regras trocam a implementação que produz o valor — **7** regras — e cobra o eixo de cada uma, mais os invariantes específicos da `SF-PY-009`. Ele pega a regra que **cala**, que era o estado medido, e não a que fala pouco. Sem posição na *Ordem*. |
 | `validate_output` não rejeita recomendação sem referência de validação funcional, como rejeita ganho sem `benchmark_ref` | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela vem DEPOIS da linha acima — as duas não são paralelas, e essa ordem é o achado.** O molde existe e funciona: `benchmark_ref` cita o `fact_id` de um `bench.run_delta`, e `validate.py` (**116** linhas, **8** menções ao campo) o cobra em duas camadas, forma e pertinência. Um `funcval_ref` citando o `fact_id` de um `funcval.plan` seria a simetria. **O custo medido tem duas parcelas, e a segunda é a que manda.** (1) Campo novo em `findings/models.py` é bump de `schema_version` do contrato de findings, e **113** findings golden em **90** fixtures passariam a ser gravados sob um contrato que os anteriores não declaram. (2) **O gatilho não existe, e é por isso que a ordem importa:** `benchmark_ref` só é exigido quando `expected_effect` é quantificado — um gatilho que **está no próprio finding** e não precisa de julgamento. Não há equivalente para o eixo do dado: "esta recomendação pode mudar o resultado" é precisamente a classificação que a linha acima mede como ausente do catálogo. Sem ela, a rejeição só teria duas formas, e as duas são piores que o texto: exigir de **todas** as recomendações, o que faria o campo virar ritual preenchido para passar — o defeito que a Fase 4a mediu no `benchmark_ref` de texto livre —, ou exigir de nenhuma. **Fechar esta linha é decidir o gatilho, e o gatilho é a fase de cima.** Sem posição na *Ordem*. |
 
