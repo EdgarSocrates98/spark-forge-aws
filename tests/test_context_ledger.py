@@ -6,8 +6,11 @@ nao "deu zero".
 """
 from __future__ import annotations
 
+import sqlite3
+
 import pytest
 
+from sparkforge.observability.store import SQLiteTraceStore
 from sparkforge.observability.tracer import AgentOpsTracker, TraceSpan
 
 
@@ -77,3 +80,64 @@ class TestCustoExigeFonte:
 
         assert span.estimated_cost_usd == 0.0
         assert span.cost_basis == ""
+
+
+class TestMigracaoDeBancoAntigo:
+    def test_save_trace_nao_quebra_num_traces_db_criado_antes_desta_task(self, tmp_path):
+        """Reproduz o achado do revisor: `CREATE TABLE IF NOT EXISTS` nao
+        altera tabela que ja existe, entao um `traces.db` gravado com o
+        schema anterior (sem as seis colunas novas) fazia `save_trace`
+        quebrar com `OperationalError: table spans has no column named
+        payload_bytes`."""
+        db_path = tmp_path / "traces.db"
+
+        # Schema de ANTES desta task -- sem as seis colunas novas.
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("""
+                CREATE TABLE traces (
+                    run_id TEXT PRIMARY KEY,
+                    task_description TEXT,
+                    start_time REAL,
+                    end_time REAL,
+                    profile TEXT,
+                    status TEXT,
+                    total_tokens INTEGER,
+                    total_cost_usd REAL
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE spans (
+                    span_id TEXT PRIMARY KEY,
+                    run_id TEXT,
+                    parent_span_id TEXT,
+                    name TEXT,
+                    component_type TEXT,
+                    start_time REAL,
+                    end_time REAL,
+                    duration_seconds REAL,
+                    input_tokens INTEGER,
+                    output_tokens INTEGER,
+                    cached_tokens INTEGER,
+                    estimated_cost_usd REAL,
+                    status TEXT,
+                    metadata_json TEXT,
+                    FOREIGN KEY(run_id) REFERENCES traces(run_id)
+                )
+            """)
+            conn.commit()
+
+        # Abrir o store sobre esse banco antigo deve migrar em silencio.
+        store = SQLiteTraceStore(db_path=db_path)
+
+        tracker = AgentOpsTracker()
+        trace = tracker.start_trace("t")
+        span = tracker.start_span(trace, "sparkforge_case_get", "tool")
+        span.payload_bytes = 42
+        tracker.end_span(span)
+        tracker.finish_trace(trace)
+
+        store.save_trace(trace)  # nao pode levantar OperationalError
+
+        retrieved = store.get_trace(trace.run_id)
+        assert retrieved is not None
+        assert retrieved["spans"][0]["payload_bytes"] == 42

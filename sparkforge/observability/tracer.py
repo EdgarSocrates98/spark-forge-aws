@@ -33,6 +33,8 @@ class TraceSpan:
     # `None` e nao `0`: zero item e uma resposta vazia de verdade, e ausencia e a
     # tool que nao declara `returned_count`.
     item_count: int | None = None
+    # Dado fino de tool. `status` (linha acima) e o resumo binario que a Task 2
+    # deriva dele: "ok" se `outcome == "ok"`, senao "error".
     outcome: str = "ok"  # ok, unauthorized, error
     # Custo so pode existir com a fonte do preco nomeada. Ver `end_span`.
     cost_basis: str = ""

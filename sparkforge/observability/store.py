@@ -17,7 +17,35 @@ class SQLiteTraceStore:
         self.db_path = db_path or (Path.cwd() / ".sparkforge" / "traces.db")
         self._init_db()
 
+    # Colunas que a Task 1 acrescentou a `spans`, com o tipo de cada uma. Usado
+    # so pela migracao -- ver `_migrar_colunas_novas_de_spans`.
+    _COLUNAS_NOVAS_DE_SPANS = (
+        ("payload_bytes", "INTEGER"),
+        ("payload_basis", "TEXT"),
+        ("detail_level", "TEXT"),
+        ("item_count", "INTEGER"),
+        ("outcome", "TEXT"),
+        ("cost_basis", "TEXT"),
+    )
+
     def _init_db(self) -> None:
+        """Cria as tabelas, e migra `spans` que ja existia antes destas colunas.
+
+        `CREATE TABLE IF NOT EXISTS` nao altera tabela que ja existe -- um
+        `traces.db` gravado antes desta Task ficaria com `spans` faltando as
+        seis colunas novas, e todo `save_trace` seguinte quebraria com
+        `OperationalError: table spans has no column named payload_bytes`.
+
+        `sparkforge/codeintel/db.py` resolve o mesmo problema jogando o banco
+        fora quando a versao diverge (`_descartar_schema_de_versao_anterior`),
+        e a razao la e que aquele indice e descartavel: reindexar reproduz o
+        mesmo dado, entao o DROP nao perde nada que uma nova rodada nao
+        devolva identico. Trace nao tem essa propriedade -- um span registra
+        uma chamada de tool que ja aconteceu, e nao ha "reindexar" que a
+        reproduza. DROP aqui apagaria historico de verdade. Por isso a
+        migracao e aditiva: `ALTER TABLE ADD COLUMN` por coluna, preservando
+        toda linha que ja existia.
+        """
         if self.db_path.parent:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -34,6 +62,7 @@ class SQLiteTraceStore:
                     total_cost_usd REAL
                 )
             """)
+            self._migrar_colunas_novas_de_spans(conn)
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS spans (
                     span_id TEXT PRIMARY KEY,
@@ -60,6 +89,31 @@ class SQLiteTraceStore:
                 )
             """)
             conn.commit()
+
+    def _migrar_colunas_novas_de_spans(self, conn: sqlite3.Connection) -> None:
+        """Adiciona as colunas novas de `spans` numa tabela ja existente.
+
+        Roda ANTES do `CREATE TABLE IF NOT EXISTS spans`. Nos tres casos
+        possiveis o `ALTER TABLE` cai em `OperationalError` e o except
+        engole, entao a ordem em si nao importa -- fica antes por deixar
+        claro que a migracao trata de banco de ONTEM, e a criacao do zero
+        e responsabilidade da instrucao seguinte:
+
+        - banco novo: `spans` ainda nao existe -> "no such table: spans";
+        - banco antigo (o caso que este metodo existe para consertar):
+          `ALTER TABLE` funciona, a coluna e adicionada, e o `CREATE TABLE
+          IF NOT EXISTS` seguinte fica sem efeito porque a tabela ja existe;
+        - banco ja migrado (chamadas seguintes de `_init_db`): a coluna ja
+          existe -> "duplicate column name".
+
+        SQLite nao tem `ADD COLUMN IF NOT EXISTS`, entao o try/except por
+        coluna E a checagem de idempotencia.
+        """
+        for nome, tipo in self._COLUNAS_NOVAS_DE_SPANS:
+            try:
+                conn.execute(f"ALTER TABLE spans ADD COLUMN {nome} {tipo}")
+            except sqlite3.OperationalError:
+                pass
 
     def save_trace(self, trace: ExecutionTrace) -> None:
         with sqlite3.connect(self.db_path) as conn:
