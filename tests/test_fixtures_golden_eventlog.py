@@ -37,6 +37,9 @@ REQUIRED_FIXTURES = {
     "rolling_parts_version_conflict",
     "duration_skew_at_threshold",
     "gc_pressure_at_threshold",
+    # A razao da stage que falhou, do subprojeto F: e a unica fonte no event
+    # log que separa timeout de broadcast de timeout de rede.
+    "broadcast_timeout_stage_failure",
 }
 
 

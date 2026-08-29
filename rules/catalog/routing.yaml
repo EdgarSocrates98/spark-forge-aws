@@ -436,12 +436,24 @@ rules:
         - {findings_area: SF-UI, count_gt: 0}
         - {findings_area: SF-BENCH, count_gt: 0}
         - {findings_area: SF-FVAL, count_gt: 0}
+        - {findings_area: SF-TIMEOUT, count_gt: 0}
+        - {findings_area: SF-WASTE, count_gt: 0}
     recommended_agent: spark-performance-architect
     reason: >
-      O achado veio de uma execução medida — Spark UI, comparação entre duas execuções ou
-      validação funcional de antes e depois —, e nenhuma delas responde sozinha qual é o
-      gargalo dominante. Correlacionar código, plano físico e medição é o trabalho do
-      coordenador geral, e é ele quem decide se a especialização se justifica.
+      O achado veio de uma execução medida — Spark UI, comparação entre duas execuções,
+      validação funcional de antes e depois, diagnóstico de timeout ou folga de capacidade
+      —, e nenhuma delas responde sozinha qual é o gargalo dominante. Correlacionar código,
+      plano físico e medição é o trabalho do coordenador geral, e é ele quem decide se a
+      especialização se justifica.
+
+
+      A PRECEDÊNCIA das duas áreas novas é esta rota, e não uma própria, porque as duas
+      terminam na mesma pergunta que ela já faz. `SF-TIMEOUT` nomeia QUAL timeout, e a
+      categoria só vira decisão depois de cruzar com skew, spill e GC — que são `SF-UI`.
+      `SF-WASTE` é o par que separa folga de ociosidade por skew, e a segunda metade dele
+      é literalmente um limiar de `SF-UI-001`. Rotear qualquer uma das duas para um
+      coordenador que não vê a medição de execução mandaria a pergunta para quem não tem
+      a evidência que a responde.
 
   # `SF-ENV` POR ÚLTIMO, e a razão é que ela é a área que TRÊS coordenadores declaram:
   # `glue-infra-reviewer`, `emr-infra-reviewer` e `glue-incremental-performance-architect`.
