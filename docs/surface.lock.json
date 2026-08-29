@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "basis": "len(json.dumps(obj, ensure_ascii=False).encode(\"utf-8\"))",
+  "tools": {
+    "tool_count": 58,
+    "total_bytes": 304319
+  },
+  "skills": {
+    "document_count": 44,
+    "total_bytes": 278218
+  },
+  "knowledge": {
+    "document_count": 47,
+    "total_bytes": 350557
+  }
+}

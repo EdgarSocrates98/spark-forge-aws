@@ -24,6 +24,9 @@ SERIALIZATION_BASIS = 'len(json.dumps(obj, ensure_ascii=False).encode("utf-8"))'
 
 
 def _bytes_of(obj: Any) -> int:
+    """Sem `default=str`: mascarar objeto nao serializavel com `str()` mediria
+    a conversao em vez do payload, e o `TypeError` e o sinal certo de que um
+    schema tem coisa que nao deveria ter."""
     return len(json.dumps(obj, ensure_ascii=False).encode("utf-8"))
 
 
