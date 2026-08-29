@@ -35,8 +35,9 @@ if str(_ROOT) not in sys.path:
 
 @pytest.fixture(autouse=True, scope="session")
 def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
-    """Isola o ledger de contexto de `call_tool` do `.sparkforge/traces.db`
-    real do repositorio durante toda a sessao de teste.
+    """Isola o ledger de contexto de `call_tool` E de `economy_report` do
+    `.sparkforge/traces.db` real do repositorio durante toda a sessao de
+    teste.
 
     POR QUE AQUI, E NAO NO PRODUTO. `sparkforge.adapters.tools._ledger()`
     materializa `_LEDGER` na primeira chamada de `call_tool` que nao
@@ -51,16 +52,38 @@ def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
     diretorio temporario, resolve sem tocar `context_ledger.py` nem
     `adapters/tools.py`.
 
+    DOIS PONTOS DE ENTRADA, NAO UM. `sparkforge.adapters._core.economy_report`
+    constroi o SEU PROPRIO `ContextLedger()`, sem `db_path` -- ela LE o que
+    quer que esteja no `.sparkforge/traces.db` relativo ao `cwd`, por fora do
+    singleton de `tools.py`. So isolar `tools._LEDGER` nao bastava: depois da
+    correcao de `spans_of()` passar a materializar o store tambem para
+    LEITURA (e nao so escrita), `sparkforge_economy_report` (chamado dentro
+    de `tests/test_adapters_tools.py`, entre outros) passou a criar de
+    verdade o `.sparkforge/traces.db` do repositorio so para checar que ele
+    estava vazio -- medido, 20KB apos uma unica rodada. Por isso este fixture
+    tambem substitui `_core.ContextLedger` por um `functools.partial` que
+    fixa o MESMO `db_path` temporario: `economy_report()` continua chamando
+    `ContextLedger()` sem argumento nenhum, e ainda assim cai no diretorio
+    isolado.
+
     Testes que monkeypatcham `tools._LEDGER` sozinhos (a maioria de
     `tests/test_context_ledger.py`) continuam funcionando: o `monkeypatch`
     de escopo de funcao deles substitui este valor durante o teste e o
     `pytest` restaura o valor DESTA fixture ao fim -- nunca o `None`
     original, porque a substituicao aconteceu depois desta fixture rodar.
     """
-    from sparkforge.adapters import tools
+    import functools
+
+    from sparkforge.adapters import _core, tools
     from sparkforge.observability.context_ledger import ContextLedger
 
     db_path = tmp_path_factory.mktemp("observability") / "traces.db"
     tools._LEDGER = ContextLedger(db_path=db_path, run_id="run_suite_de_teste")
+
+    _context_ledger_original = _core.ContextLedger
+    _core.ContextLedger = functools.partial(ContextLedger, db_path=db_path)
+
     yield
+
     tools._LEDGER.flush(final=True)
+    _core.ContextLedger = _context_ledger_original

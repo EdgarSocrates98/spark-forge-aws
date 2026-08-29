@@ -56,6 +56,13 @@ buffer ANTES de tentar escrever, uma falha na escrita (SQLite travado,
 `db_path` invalido) perderia os spans SEM chance de nova tentativa -- e como
 a excecao e engolida, ninguem saberia. Limpando so depois do `save_trace` ter
 sucesso, o proximo `flush()` tenta de novo com os mesmos spans.
+
+`spans_of()` MATERIALIZA O STORE, IGUAL A `flush()`. E o uso real entre
+processos -- o CLI grava com o processo A e le com `economy report` no
+processo B, que nunca chamou `flush()` naquela instancia. Leitura preguicosa
+e tao valida quanto escrita preguicosa: o que nao pode e a leitura so
+acontecer quando alguem JA escreveu antes NESTA instancia, porque ai uma
+`ContextLedger` nova nunca enxergaria o que outro processo gravou.
 """
 from __future__ import annotations
 
@@ -247,14 +254,27 @@ class ContextLedger:
         """Os spans de um run: os que ainda estao no BUFFER mais os que ja
         foram para o disco. Sem as duas fontes, um teste que grava e le antes
         do `flush()` veria lista vazia -- e `record()` de proposito nao
-        grava mais nada sincronamente."""
+        grava mais nada sincronamente.
+
+        LEITURA TAMBEM MATERIALIZA O STORE, DO MESMO JEITO QUE `flush()`.
+        Achado do revisor: antes desta correcao, `spans_of()` so consultava
+        `self._store` quando ele NAO era `None` -- e `_store` so era
+        materializado dentro de `flush()`. Uma instancia NOVA de
+        `ContextLedger` (o caso real de um processo B lendo o que o processo
+        A gravou, via `economy report`) nunca chamou `flush()`, entao
+        `self._store` ficava `None` para sempre e `spans_of()` devolvia `[]`
+        incondicionalmente -- sem nunca consultar o SQLite, mesmo com o
+        banco cheio de spans de verdade. Leitura preguicosa e tao valida
+        quanto escrita preguicosa: o que nao pode e so ler quando alguem
+        JA escreveu antes NESTA MESMA instancia.
+        """
         em_buffer = [s.to_dict() for s in self._buffer if s.run_id == run_id]
         em_disco: list[dict[str, Any]] = []
-        if self._store is not None:
-            try:
-                trace = self._store.get_trace(run_id)
-            except Exception:  # noqa: BLE001 -- leitura de ledger e best-effort igual
-                trace = None
-            if trace:
-                em_disco = list(trace["spans"])
+        try:
+            store = self._ensure_store()
+            trace = store.get_trace(run_id)
+        except Exception:  # noqa: BLE001 -- leitura de ledger e best-effort igual
+            trace = None
+        if trace:
+            em_disco = list(trace["spans"])
         return em_disco + em_buffer

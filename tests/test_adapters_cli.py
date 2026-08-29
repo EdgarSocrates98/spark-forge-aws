@@ -2615,7 +2615,13 @@ class TestCaseHypothesisSurface:
 
 
 class TestEconomyReportCommand:
-    """`economy report` e verbo de TOPO: compoe sobre o ledger, nao le artefato."""
+    """`economy report` e verbo de TOPO: compoe sobre o ledger, nao le artefato.
+
+    `_core.economy_report` constroi o SEU PROPRIO `ContextLedger()`, sem
+    `db_path` -- por isso a fixture de sessao em `tests/conftest.py` tambem
+    substitui `_core.ContextLedger` (nao so `tools._LEDGER`), garantindo que
+    esta chamada sem argumento nenhum caia no diretorio temporario da suite,
+    e nao no `.sparkforge/traces.db` real do repositorio."""
 
     def test_an_unknown_run_refuses_by_name(self, capsys):
         from sparkforge.adapters.cli import main
@@ -2634,3 +2640,51 @@ class TestEconomyReportCommand:
         payload = json.loads(capsys.readouterr().out)
 
         assert payload["surface"]["tools"]["tool_count"] > 0
+
+    def test_by_tool_is_populated_end_to_end_after_a_real_flush(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """Achado do revisor: `spans_of()` so lia o disco quando `self._store`
+        ja tinha sido materializado -- e isso so acontecia dentro de
+        `flush()`. Entre processos (o uso real do CLI: um processo grava e
+        SAI, outro le por `economy report`), a instancia de leitura nunca
+        chamou `flush()`, entao `by_tool` vinha sempre `{}` -- silenciosamente,
+        mesmo com o banco cheio. Este teste reproduz o caso real: grava com
+        um `ContextLedger` apontado para um `db_path` explicito, descarrega
+        de verdade com `flush(final=True)`, e so DEPOIS chama o verbo
+        `economy report`, que constroi uma instancia NOVA e completamente
+        independente para ler -- apontada para o MESMO arquivo via o
+        monkeypatch de `_core.ContextLedger` feito aqui (sobrepondo, so
+        durante este teste, o da fixture de sessao)."""
+        import functools
+
+        from sparkforge.adapters import _core, tools
+        from sparkforge.adapters.cli import main
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        run_id = "run_ponta_a_ponta"
+        db_path = tmp_path / "traces.db"
+
+        ledger_de_escrita = ContextLedger(db_path=db_path, run_id=run_id)
+        monkeypatch.setattr(tools, "_LEDGER", ledger_de_escrita)
+        monkeypatch.setattr(
+            _core, "ContextLedger", functools.partial(ContextLedger, db_path=db_path)
+        )
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+
+        # o processo A "sai" -- descarrega de verdade, e nao so acumula.
+        ledger_de_escrita.flush(final=True)
+
+        code = main(["economy", "report", "--run-id", run_id])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["by_tool"] != {}
+        assert payload["by_tool"]["sparkforge_analyze_pyspark"]["calls"] == 1
+        assert not any(
+            item.get("reason") == "run_unresolved" for item in payload["unresolved"]
+        )

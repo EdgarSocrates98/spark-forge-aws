@@ -606,3 +606,54 @@ class TestSuiteNaoEscreveNoRepositorioReal:
         assert traces_do_repo.exists() == existia_antes
         if existia_antes:
             assert traces_do_repo.stat().st_size == tamanho_antes
+
+
+class TestIdaEVoltaEntreInstancias:
+    """O caso real do CLI: um processo grava e sai, outro processo le. Achado
+    do revisor: `spans_of()` so consultava o disco quando `self._store` ja
+    tinha sido materializado -- e isso so acontecia dentro de `flush()`. Uma
+    instancia NOVA, que nunca escreveu nada, tinha `_store is None` para
+    sempre e devolvia `[]` sem nunca consultar o SQLite -- mesmo com o banco
+    cheio."""
+
+    def test_um_ledger_novo_no_mesmo_db_path_enxerga_o_que_o_outro_gravou(
+        self, tmp_path
+    ):
+        import time
+
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        db_path = tmp_path / "traces.db"
+
+        ledger_de_escrita = ContextLedger(db_path=db_path, run_id="run_teste")
+        ledger_de_escrita.record(
+            name="sparkforge_case_get",
+            resultado={"ok": True},
+            detail_level="",
+            outcome="ok",
+            start_time=time.time(),
+        )
+        ledger_de_escrita.flush(final=True)
+
+        # instancia NOVA, que nunca chamou `record()` nem `flush()` --
+        # `self._store` comeca `None`, do jeito que comecaria num processo B
+        # que so le.
+        ledger_de_leitura = ContextLedger(db_path=db_path, run_id="run_teste")
+
+        spans = ledger_de_leitura.spans_of("run_teste")
+
+        assert len(spans) == 1
+        assert spans[0]["name"] == "sparkforge_case_get"
+
+    def test_um_ledger_novo_apontando_para_disco_vazio_ainda_devolve_lista_vazia(
+        self, tmp_path
+    ):
+        """A materializacao preguicosa do store nao pode fazer `spans_of`
+        inventar dado: consultar um `run_id` que nunca foi gravado continua
+        devolvendo `[]`, so que agora por TER CONSULTADO o disco, e nao por
+        ter pulado a consulta."""
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+
+        assert ledger.spans_of("run_nunca_gravado") == []
