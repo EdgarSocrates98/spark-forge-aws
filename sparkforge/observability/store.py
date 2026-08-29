@@ -50,6 +50,12 @@ class SQLiteTraceStore:
                     estimated_cost_usd REAL,
                     status TEXT,
                     metadata_json TEXT,
+                    payload_bytes INTEGER,
+                    payload_basis TEXT,
+                    detail_level TEXT,
+                    item_count INTEGER,
+                    outcome TEXT,
+                    cost_basis TEXT,
                     FOREIGN KEY(run_id) REFERENCES traces(run_id)
                 )
             """)
@@ -82,8 +88,10 @@ class SQLiteTraceStore:
                     INSERT OR REPLACE INTO spans (
                         span_id, run_id, parent_span_id, name, component_type,
                         start_time, end_time, duration_seconds, input_tokens, output_tokens,
-                        cached_tokens, estimated_cost_usd, status, metadata_json
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        cached_tokens, estimated_cost_usd, status, metadata_json,
+                        payload_bytes, payload_basis, detail_level, item_count,
+                        outcome, cost_basis
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         span.span_id,
@@ -100,6 +108,12 @@ class SQLiteTraceStore:
                         span.estimated_cost_usd,
                         span.status,
                         json.dumps(span.metadata, default=str),
+                        span.payload_bytes,
+                        span.payload_basis,
+                        span.detail_level,
+                        span.item_count,
+                        span.outcome,
+                        span.cost_basis,
                     ),
                 )
             conn.commit()

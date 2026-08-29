@@ -22,6 +22,20 @@ class TraceSpan:
     estimated_cost_usd: float = 0.0
     status: str = "ok"  # ok, error
     metadata: dict[str, Any] = field(default_factory=dict)
+    # Bytes que ESTE span poe na janela de contexto, e a formula que os produziu.
+    # Nao e "o que o modelo viu": o host reserializa com espacamento proprio, e
+    # afirmar que sao o mesmo numero seria a mentira confortavel desta fase.
+    payload_bytes: int = 0
+    payload_basis: str = ""
+    # O que a chamada PEDIU. Vazio quando a tool nao aceita o parametro -- vazio
+    # aqui significa "nao se aplica", e nao "pediu full".
+    detail_level: str = ""
+    # `None` e nao `0`: zero item e uma resposta vazia de verdade, e ausencia e a
+    # tool que nao declara `returned_count`.
+    item_count: int | None = None
+    outcome: str = "ok"  # ok, unauthorized, error
+    # Custo so pode existir com a fonte do preco nomeada. Ver `end_span`.
+    cost_basis: str = ""
 
     def duration_seconds(self) -> float:
         if self.end_time:
@@ -98,12 +112,26 @@ class AgentOpsTracker:
         cached_tokens: int = 0,
         estimated_cost_usd: float = 0.0,
         status: str = "ok",
+        cost_basis: str = "",
     ) -> None:
+        """Fecha o span. Custo diferente de zero EXIGE `cost_basis`.
+
+        Preco sem fonte e o numero inventado que o subprojeto E recusou por
+        escrito, e um span de tool nao tem preco nenhum: chamada local nao tem
+        tabela publicada. Zero nao afirma preco, entao dispensa a fonte.
+        """
+        if estimated_cost_usd and not cost_basis:
+            raise ValueError(
+                f"custo {estimated_cost_usd} sem `cost_basis`: preco sem fonte e "
+                f"numero inventado. Nomeie de onde o preco veio (ex.: "
+                f"'TIER_PRICING:tier_3') ou deixe o custo em zero."
+            )
         span.end_time = time.time()
         span.input_tokens = input_tokens
         span.output_tokens = output_tokens
         span.cached_tokens = cached_tokens
         span.estimated_cost_usd = estimated_cost_usd
+        span.cost_basis = cost_basis
         span.status = status
 
     def finish_trace(self, trace: ExecutionTrace, status: str = "completed") -> None:
