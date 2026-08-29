@@ -569,6 +569,25 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o plano completo (JSON) neste arquivo."
     )
 
+    # finops -------------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload` e
+    # `capacity`: nao extrai de artefato -- reune o que outros verbos ja
+    # extrairam sob o eixo financeiro.
+    finops_p = sub.add_parser(
+        "finops",
+        help=(
+            "O relatorio financeiro: custo, a troca recurso-tempo, e onde a "
+            "alavanca esta -- capacidade ou codigo."
+        ),
+    )
+    finops_p.add_argument(
+        "--facts", required=True, help="Arquivo de facts (--out de analyze)."
+    )
+    finops_p.add_argument("--job-name", required=True)
+    finops_p.add_argument(
+        "--out", help="Escreve o relatorio completo (JSON) neste arquivo."
+    )
+
     # funcval ---------------------------------------------------------------
     # Verbo de TOPO pela mesma razao de `benchmark`: nao extrai de artefato --
     # `plan` deriva de facts ja extraidos, `compare` le o resultado que o
@@ -1673,6 +1692,16 @@ def _cmd_capacity(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_finops(args: argparse.Namespace) -> int:
+    payload = _core.finops_report(args.facts, job_name=args.job_name)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    _print(payload)
+    return 0
+
+
 def _cmd_funcval_plan(args: argparse.Namespace) -> int:
     """Sem escrita aqui: `_core.funcval_plan` grava o `--out`.
 
@@ -2101,6 +2130,7 @@ _DISPATCH = {
     ("benchmark", None): _cmd_benchmark,
     ("workload", None): _cmd_workload,
     ("capacity", None): _cmd_capacity,
+    ("finops", None): _cmd_finops,
     ("funcval", "plan"): _cmd_funcval_plan,
     ("funcval", "compare"): _cmd_funcval_compare,
     ("fuse", None): _cmd_fuse,

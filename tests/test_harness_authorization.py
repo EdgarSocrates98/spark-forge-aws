@@ -814,7 +814,7 @@ class TestConfinamentoEhUmSoAlgoritmo:
 class TestOCatalogoContinuaCabendoNaVerificacao:
     """O gate que impede a medicao do Passo 1 de envelhecer em silencio.
 
-    Medido: 55 das 56 tools declaram parametro de caminho, e a unica sem
+    Medido: 56 das 57 tools declaram parametro de caminho, e a unica sem
     nenhum e `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`).
     Eram 43 de 44 ate a superficie de Code Intelligence entrar: as SEIS tools
     de `sparkforge_code_*` declaram `repo`, que e a raiz fora da qual nada e
@@ -823,7 +823,8 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     e reconhecido pelo predicado, e a tool foi renomeada para `facts_path` /
     `history_path` -- os mesmos sufixos que o resto do catalogo ja usa --
     em vez de entrar na lista de excecao. `sparkforge_capacity` nasceu ja com
-    `facts_path`/`history_path`, sem passar pela mesma renomeacao. Se uma
+    `facts_path`/`history_path`, sem passar pela mesma renomeacao, e
+    `sparkforge_finops` seguiu a mesma forma com `facts_path` sozinho. Se uma
     tool nova entrar com um caminho batizado de outro jeito (`caminho`,
     `origem`, `destino`), a contagem muda e este teste cai -- que e o ponto.
     O predicado nao adivinha; ele reconhece nomes, e nome novo tem de passar
@@ -844,7 +845,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        assert len(TOOLS) - len(sem_caminho) == 55
+        assert len(TOOLS) - len(sem_caminho) == 56
 
 
 class TestAImposicaoNoDespacho:

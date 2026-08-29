@@ -80,6 +80,7 @@ from sparkforge.findings import signature as _signature
 from sparkforge.findings.models import Fact, RuntimeContext, sort_facts
 from sparkforge.findings.signature import SIGNATURE_RE, compute_signature
 from sparkforge.findings.validate import ValidationFailed, validate_finding
+from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
@@ -1640,6 +1641,39 @@ def capacity_plan(
         facts, job_name=job_name, job_run_id=job_run_id, history=historico
     )
     return plano.to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# finops
+# --------------------------------------------------------------------------- #
+
+
+def finops_report(facts_path: str, job_name: str) -> dict[str, Any]:
+    """Reune o financeiro: custo, a troca recurso-tempo, e onde a alavanca esta.
+
+    Verbo de TOPO pela mesma razao de `benchmark`, `fuse`, `workload` e
+    `capacity`: consome facts ja extraidos e nao le artefato nenhum.
+
+    Os achados vem do `judge` sobre os MESMOS facts -- `build_finops_report`
+    nao escreve regra nenhuma, so agrupa o que o motor ja produz sob o eixo
+    financeiro.
+
+    O runtime para o `judge` e montado exatamente como em `judge_findings`:
+    `build_runtime_context` com as flags de versao ausentes e `facts=facts`,
+    para que um `env.runtime_signal` ja extraido baste. Este verbo nao expoe
+    flag de runtime propria -- a superficie que o Step 1 cobre e so
+    `--facts`/`--job-name` -- entao "so opcional" aqui significa "so vem dos
+    facts", a mesma forma que `judge_findings` usa quando quem chama nao
+    informa nenhuma flag.
+    """
+    facts = _load_facts_file(facts_path, _FACTS_FROM_RUN_AND_SCAN, "--facts")
+    try:
+        rules = load_catalog()
+    except CatalogError as exc:
+        raise AdapterError(str(exc), exit_code=2) from exc
+    runtime = build_runtime_context(facts=facts).to_dict()
+    findings, _skipped = run_judge(facts, rules, runtime, return_skipped=True)
+    return build_finops_report(facts, job_name=job_name, findings=findings)
 
 
 # --------------------------------------------------------------------------- #

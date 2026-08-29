@@ -2055,6 +2055,182 @@ _CAPACITY_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+# `build_finops_report` (`sparkforge/finops/report.py`). Uma linha por
+# capacidade OBSERVADA, ordenada por `cost_per_run_p95` -- a mais barata
+# primeiro, que e o membro `cost_relative: 1.0`. `runtime_p50_s`/`runtime_p95_s`
+# saem `null` quando nenhum membro do grupo publicou `execution_time_s`, e
+# `cost_relative` sai `null` no caso degenerado de a capacidade mais barata
+# custar zero -- divisao por zero vira recusa silenciosa, nao excecao.
+_FINOPS_FRONTIER_LINE: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "glue_version",
+        "worker_type",
+        "number_of_workers",
+        "autoscaling",
+        "runs",
+        "runtime_p50_s",
+        "runtime_p95_s",
+        "cost_per_run_p95",
+        "cost_relative",
+    ],
+    "properties": {
+        "glue_version": {"type": "string"},
+        "worker_type": {"type": "string"},
+        "number_of_workers": {"type": "integer"},
+        "autoscaling": {"type": "boolean"},
+        "runs": {"type": "integer"},
+        "runtime_p50_s": {"type": ["number", "null"]},
+        "runtime_p95_s": {"type": ["number", "null"]},
+        "cost_per_run_p95": {"type": "number"},
+        "cost_relative": {
+            "type": ["number", "null"],
+            "description": "`cost_per_run_p95` dividido pelo da linha mais barata.",
+        },
+    },
+}
+
+# Uma linha por capacidade cujo `resolution_supports` aprovou o alvo de
+# confiabilidade declarado -- capacidade reprovada cai em `refused`, nunca
+# aqui com numero inventado. `cost_per_sla_success` e `null` quando NENHUM run
+# da capacidade ficou dentro do SLA: o denominador seria zero.
+_FINOPS_SLA_OUTCOME_LINE: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "glue_version",
+        "worker_type",
+        "number_of_workers",
+        "autoscaling",
+        "runs",
+        "runs_within_sla",
+        "reliability",
+        "cost_per_sla_success",
+    ],
+    "properties": {
+        "glue_version": {"type": "string"},
+        "worker_type": {"type": "string"},
+        "number_of_workers": {"type": "integer"},
+        "autoscaling": {"type": "boolean"},
+        "runs": {"type": "integer"},
+        "runs_within_sla": {"type": "integer"},
+        "reliability": {"type": "number"},
+        "cost_per_sla_success": {"type": ["number", "null"]},
+    },
+}
+
+# Forma variavel por `reason`: `sla_not_declared` so tem `detail`,
+# `cost_unobservable` e `resolution_too_coarse` tambem carregam `capacity` e
+# `runs`. `additionalProperties: True` no mesmo molde de `_CAPACITY_REFUSED_ITEM`.
+_FINOPS_REFUSED_ITEM: dict[str, Any] = {
+    "type": "object",
+    "required": ["reason", "detail"],
+    "properties": {
+        "reason": {
+            "type": "string",
+            "enum": ["sla_not_declared", "cost_unobservable", "resolution_too_coarse"],
+        },
+        "detail": {"type": "string"},
+        "capacity": {"type": "string"},
+        "runs": {"type": "integer"},
+    },
+    "additionalProperties": True,
+}
+
+# `_levers` (`sparkforge/finops/report.py`) nomeia QUAL alavanca se aplica,
+# nunca QUANTO do custo e de cada lado -- atribuir o quanto exigiria o custo do
+# run que nao aconteceu. `findings` traz so os quatro campos que orientam
+# (`rule_id`, `title`, `severity`, `subject`), nao o Finding inteiro.
+_FINOPS_LEVERS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["code", "capacity", "none_found"],
+    "properties": {
+        "code": {
+            "type": "object",
+            "required": ["findings", "detail"],
+            "properties": {
+                "findings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["rule_id", "title", "severity", "subject"],
+                        "properties": {
+                            "rule_id": {"type": "string"},
+                            "title": {"type": "string"},
+                            "severity": {"type": "string"},
+                            "subject": {"type": "object"},
+                        },
+                    },
+                },
+                "detail": {"type": "string"},
+            },
+        },
+        "capacity": {
+            "type": "object",
+            "required": ["detail"],
+            "properties": {"detail": {"type": "string"}},
+        },
+        "none_found": {
+            "type": "boolean",
+            "description": "Verdadeiro quando `code.findings` esta vazio.",
+        },
+    },
+}
+
+# `_symptoms` (`sparkforge/finops/report.py`): cada chave so aparece quando o
+# fact que a sustenta existe -- sem default de zero para sintoma nao medido.
+_FINOPS_SYMPTOMS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "skew_p95_over_p50": {"type": "number"},
+        "spill_over_input": {"type": "number"},
+        "bytes_read": {"type": "integer"},
+        "worker_utilization_p50": {"type": "number"},
+    },
+    "additionalProperties": False,
+}
+
+_FINOPS_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "job_name",
+        "currency",
+        "region",
+        "runtime_version",
+        "frontier",
+        "per_sla_outcome",
+        "symptoms",
+        "levers",
+        "refused",
+    ],
+    "properties": {
+        "job_name": {"type": "string"},
+        "currency": {
+            "type": "string",
+            "description": "Vazio quando nenhum run tem custo resolvido.",
+        },
+        "region": {
+            "type": "string",
+            "description": (
+                "`UNQUALIFIED` quando a fonte de preco nao qualifica regiao -- "
+                "distinto de vazio, que diria que nenhum custo resolveu."
+            ),
+        },
+        "runtime_version": {
+            "type": "string",
+            "description": "Mesma ressalva de `region`: `UNQUALIFIED` e valor de primeira classe.",
+        },
+        "frontier": {
+            "type": "array",
+            "items": _FINOPS_FRONTIER_LINE,
+            "description": "Capacidades observadas, ordenadas da mais barata para a mais cara.",
+        },
+        "per_sla_outcome": {"type": "array", "items": _FINOPS_SLA_OUTCOME_LINE},
+        "symptoms": _FINOPS_SYMPTOMS_SCHEMA,
+        "levers": _FINOPS_LEVERS_SCHEMA,
+        "refused": {"type": "array", "items": _FINOPS_REFUSED_ITEM},
+    },
+}
+
 TOOLS: dict[str, dict[str, Any]] = {
     "sparkforge_case_open": {
         "description": (
@@ -3372,6 +3548,50 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_finops": {
+        "description": (
+            "O relatorio financeiro: custo, a troca recurso-tempo, e onde a "
+            "alavanca esta -- capacidade ou codigo. Verbo de topo, nao um "
+            "`analyze`: nao extrai nada de artefato, consome facts JA "
+            "extraidos -- mesma razao de `benchmark`, `fuse`, `sparkforge_workload` "
+            "e `sparkforge_capacity`. Os achados vem do `judge` sobre os MESMOS "
+            "facts -- esta tool nao escreve regra nenhuma, so agrupa o que o "
+            "motor ja produz sob o eixo financeiro, separando achado que aponta "
+            "para CODIGO (`levers.code`) de achado que aponta para CAPACIDADE "
+            "(`levers.capacity`, que aponta para `sparkforge_capacity`) -- a "
+            "conta sozinha nao diz qual alavanca e a certa. "
+            "O QUE ESTE RELATORIO RECUSA: (1) atribuir custo a causa -- "
+            "'voce desperdicou X com spill' exigiria o custo do run que NAO "
+            "aconteceu; (2) interpolar entre capacidades observadas -- a curva "
+            "seria bonita e mentiria exatamente entre os pontos; (3) ordenar "
+            "achado por economia estimada -- cada numero desses e um "
+            "contrafactual disfarcado de prioridade; (4) limiar de 'caro' -- "
+            "fonte nenhuma diz que um preco por run e muito. `region` e "
+            "`runtime_version` valem `UNQUALIFIED` quando a fonte de preco foi "
+            "lida e nao qualificou o eixo -- distinto de vazio, que diria que "
+            "nenhum custo resolveu."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["facts_path", "job_name"],
+            "properties": {
+                "facts_path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo de facts (JSON) com `glue.job_run` do job e, quando "
+                        "houver, `workload.declared` (o SLA) -- tipicamente "
+                        "`sparkforge_analyze_glue_job_runs --out`."
+                    ),
+                },
+                "job_name": {"type": "string"},
+            },
+        },
+        "outputSchema": _may_fail(
+            _FINOPS_SUCCESS_SCHEMA,
+            "Relatorio financeiro, ou erro se `facts_path` nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_funcval_plan": {
         "description": (
             "Deriva O QUE MEDIR nos dois lados de uma mudanca, a partir de facts JA "
@@ -4566,6 +4786,10 @@ def _h_capacity(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_finops(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.finops_report(args["facts_path"], job_name=args["job_name"])
+
+
 def _h_funcval_plan(args: dict[str, Any]) -> dict[str, Any]:
     return _core.funcval_plan(
         args.get("facts_paths"),
@@ -4765,6 +4989,7 @@ _HANDLERS = {
     "sparkforge_benchmark": _h_benchmark,
     "sparkforge_workload": _h_workload,
     "sparkforge_capacity": _h_capacity,
+    "sparkforge_finops": _h_finops,
     "sparkforge_funcval_plan": _h_funcval_plan,
     "sparkforge_funcval_compare": _h_funcval_compare,
     "sparkforge_fuse": _h_fuse,

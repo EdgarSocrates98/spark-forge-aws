@@ -49,6 +49,16 @@ ESCOLHE, entre as capacidades que o job JÁ RODOU, a mais barata que cumpre o SL
 escolha sai sempre `safety: "REVIEW"` — nada aqui aplica a mudança, e worker count
 continua decisão de quem pode ser perguntado.
 
+`sparkforge_finops` consome os MESMOS facts que `sparkforge_capacity` e reúne o
+relatório financeiro inteiro — custo por capacidade observada, custo por
+desfecho dentro do SLA, e os achados do `judge` agrupados sob o eixo
+financeiro (`levers.code` vs. `levers.capacity`). Ele existe ao lado de
+`sparkforge_capacity`, não no lugar dela, porque capacidade e código são
+alavancas DIFERENTES e a conta sozinha não diz qual delas é a certa: um job
+caro por variar worker count tem solução em `sparkforge_capacity`; um job caro
+porque varre dez vezes o que precisa continua caro em qualquer capacidade, e
+essa distinção é exatamente o que `levers` separa.
+
 **`sparkforge_analyze_sql_metrics` não é o mesmo dado que `sparkforge_analyze_event_log`
 sobre o mesmo arquivo.** O event log agrega tudo que cai num stage — se duas fontes
 compartilham stage, o custo delas soma num número só, e não há como separar a fonte cara da

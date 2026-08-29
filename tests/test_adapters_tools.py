@@ -64,6 +64,7 @@ class TestToolSurface:
             "sparkforge_fuse",
             "sparkforge_workload",
             "sparkforge_capacity",
+            "sparkforge_finops",
             "sparkforge_judge",
             "sparkforge_rules_lookup",
             "sparkforge_validate_output",
@@ -858,6 +859,29 @@ def _write_capacity_facts_files(tmp_path):
     return facts_path, history_dir
 
 
+def _write_finops_facts_file(tmp_path):
+    """Seis `glue.job_run` de DUAS capacidades e um `workload.declared`, para
+    `frontier` sair com duas linhas e `per_sla_outcome` render (a resolucao de
+    seis runs comparaveis sustenta o alvo padrao de 0.8, mesma amostra de
+    `_write_capacity_facts_files`)."""
+    facts_path = tmp_path / "finops_facts.json"
+    runs = [_capacity_run(f"b{i}", 500, 10, 1000.0) for i in range(6)]
+    facts_path.write_text(
+        json.dumps(
+            runs
+            + [
+                _capacity_fact(
+                    "workload.declared",
+                    {"type": "job_run", "symbol": "etl"},
+                    {"sla_minutes": 10, "reliability_target": 0.8},
+                )
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return facts_path
+
+
 _FUNCVAL_JOB = 'def gravar(df):\n    df.write.mode("overwrite").saveAsTable("db.eventos")\n'
 
 
@@ -1593,6 +1617,14 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert result["chosen"], "a amostra precisa render uma capacidade escolhida"
         return result
 
+    if name == "sparkforge_finops":
+        facts_path = _write_finops_facts_file(tmp_path)
+        result = call_tool(
+            "sparkforge_finops", {"facts_path": str(facts_path), "job_name": "etl"}
+        )
+        assert result["frontier"], "a amostra precisa render ao menos uma capacidade"
+        return result
+
     if name == "sparkforge_glue_dependency_audit":
         # Pin abaixo do piso que `SF-SPARK4-003` declara para Spark 4.1: a
         # amostra precisa render achado, senao valida contra o schema pelo
@@ -1923,3 +1955,11 @@ class TestCapacityTool:
 
         assert "sparkforge_capacity" in tools.TOOLS
         assert "sparkforge_capacity" in tools._HANDLERS
+
+
+class TestFinopsTool:
+    def test_the_tool_is_declared_and_dispatchable(self):
+        from sparkforge.adapters import tools
+
+        assert "sparkforge_finops" in tools.TOOLS
+        assert "sparkforge_finops" in tools._HANDLERS

@@ -2370,3 +2370,69 @@ class TestCapacityCommand:
         plano = json.loads(out.read_text(encoding="utf-8"))
         assert plano["job_run_id"] == "jr_hoje"
         assert plano["reliability_target"] == 0.8
+
+
+class TestFinopsCommand:
+    def _fact(self, kind, subject, measures=None, attrs=None):
+        return {
+            "id": "0" * 16,
+            "schema_version": 1,
+            "kind": kind,
+            "subject": subject,
+            "measures": measures or {},
+            "attrs": attrs or {},
+            "provenance": {},
+        }
+
+    def _run(self, run_id, segundos, workers, dpu):
+        return self._fact(
+            "glue.job_run",
+            {
+                "type": "job_run",
+                "job_name": "etl",
+                "job_run_id": run_id,
+                "symbol": run_id,
+            },
+            {
+                "execution_time_s": segundos,
+                "number_of_workers": workers,
+                "dpu_seconds": dpu,
+            },
+            {
+                "state": "SUCCEEDED",
+                "worker_type": "G.2X",
+                "glue_version": "5.0",
+                "autoscaling": False,
+                "dpu_source": "derived",
+            },
+        )
+
+    def _monta(self, tmp_path):
+        facts = tmp_path / "facts.json"
+        runs = [self._run(f"b{i}", 500, 10, 1000.0) for i in range(3)]
+        runs += [self._run(f"c{i}", 200, 20, 2000.0) for i in range(3)]
+        facts.write_text(
+            json.dumps(
+                runs
+                + [
+                    self._fact(
+                        "workload.declared",
+                        {"type": "job_run", "symbol": "etl"},
+                        {"sla_minutes": 10, "reliability_target": 0.8},
+                    )
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return facts
+
+    def test_finops_is_a_top_level_verb(self, tmp_path, capsys):
+        from sparkforge.adapters.cli import main
+
+        facts = self._monta(tmp_path)
+        code = main(["finops", "--facts", str(facts), "--job-name", "etl"])
+
+        assert code == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert len(payload["frontier"]) == 2
+        assert payload["region"] == "UNQUALIFIED"
