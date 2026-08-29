@@ -63,6 +63,20 @@ processo B, que nunca chamou `flush()` naquela instancia. Leitura preguicosa
 e tao valida quanto escrita preguicosa: o que nao pode e a leitura so
 acontecer quando alguem JA escreveu antes NESTA instancia, porque ai uma
 `ContextLedger` nova nunca enxergaria o que outro processo gravou.
+
+`shared_ledger()` E A FONTE UNICA -- DENTRO DO MESMO PROCESSO TAMBEM. Achado
+do revisor: mesmo depois de `spans_of()` materializar o store para ler,
+`economy_report()` (em `adapters/_core.py`) construia a SUA PROPRIA
+`ContextLedger()`, independente da instancia que `adapters/tools.py:call_tool`
+alimentava. Isso resolvia a leitura ENTRE processos (via disco), mas nao
+DENTRO do mesmo processo: um span ainda no buffer do singleton de `tools.py`
+era invisivel para a instancia nova de `_core`, que so via o disco -- e nada
+tinha sido descarregado ainda, porque o unico gatilho automatico e o
+`atexit`, que so roda quando o processo morre. Numa sessao MCP de vida longa,
+isso deixava o relatorio vazio ATE o processo terminar. `shared_ledger()`
+resolve fazendo `tools.py` e `_core.py` consultarem o MESMO objeto: o buffer
+que `record()` alimenta passa a ser o MESMO que `spans_of()` le, sem
+depender de nenhum `flush()` acontecer no meio do caminho.
 """
 from __future__ import annotations
 
@@ -278,3 +292,45 @@ class ContextLedger:
         if trace:
             em_disco = list(trace["spans"])
         return em_disco + em_buffer
+
+
+# Um ledger por processo, compartilhado por quem grava (`adapters/tools.py:
+# call_tool`) e por quem le (`adapters/_core.py:economy_report`). `None` ate o
+# primeiro uso, de proposito -- ver `shared_ledger()`.
+_SHARED_LEDGER: ContextLedger | None = None
+
+
+def shared_ledger() -> ContextLedger:
+    """Materializa o ledger compartilhado do processo no primeiro uso.
+
+    UMA FONTE SO, DE PROPOSITO. Antes desta funcao, `tools.py` guardava o seu
+    proprio singleton e `_core.economy_report()` construia uma
+    `ContextLedger()` independente para ler -- duas instancias que so se
+    encontravam pelo disco, e so depois de um `flush()`. Isso bastava para o
+    caso ENTRE processos (o CLI: processo A grava e sai, processo B le), mas
+    nao para o caso DENTRO do mesmo processo: um span ainda no buffer da
+    instancia de `tools.py` era invisivel para a instancia de `_core`, que
+    nunca tinha visto aquele buffer e so enxergava o disco -- vazio, porque
+    nada tinha rodado `flush()` ainda (o unico gatilho automatico e o
+    `atexit`, que so dispara quando o processo morre). Numa sessao MCP de
+    vida longa, isso deixava `economy_report()` sempre vazio ATE o processo
+    terminar, contradizendo a recomendacao de consultar o relatorio DURANTE
+    a investigacao.
+
+    Com uma unica instancia compartilhada, `record()` (chamado por
+    `call_tool`) e `spans_of()` (chamado por `economy_report`, dentro de
+    `build_context_report`) operam sobre o MESMO buffer -- a fusao que
+    `spans_of()` ja fazia entre buffer e disco passa a enxergar tambem o que
+    acabou de ser gravado no mesmo processo, sem flush nenhum no meio.
+
+    `None` ATE O PRIMEIRO USO, DE PROPOSITO -- pela mesma razao de sempre:
+    construir aqui, no corpo do modulo, faria `import
+    sparkforge.observability.context_ledger` sozinho custar um
+    `ContextLedger`, e todo processo que so importa o modulo (sem nunca
+    chamar `call_tool` nem `economy_report`) registraria um `atexit` de
+    flush contra o `.sparkforge/traces.db` do repositorio.
+    """
+    global _SHARED_LEDGER
+    if _SHARED_LEDGER is None:
+        _SHARED_LEDGER = ContextLedger()
+    return _SHARED_LEDGER

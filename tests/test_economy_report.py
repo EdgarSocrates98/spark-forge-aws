@@ -7,14 +7,16 @@ porque byte de payload e token de provider nao sao a mesma unidade.
 from __future__ import annotations
 
 from sparkforge.economy.report import build_context_report
-from sparkforge.observability.context_ledger import ContextLedger
+from sparkforge.observability import context_ledger
+
+ContextLedger = context_ledger.ContextLedger
 
 
 def _ledger_com_chamadas(tmp_path, monkeypatch):
     from sparkforge.adapters import tools
 
     ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-    monkeypatch.setattr(tools, "_LEDGER", ledger)
+    monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
     origem = tmp_path / "job"
     origem.mkdir()
     (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
@@ -118,3 +120,40 @@ class TestRecusas:
         ).lower()
         for palavra in ("usd", "cost", "custo"):
             assert palavra not in blob
+
+
+class TestConsultaDentroDoMesmoProcesso:
+    """Critico achado ao ligar o verbo `economy report`: `economy_report()`
+    (em `adapters/_core.py`) construia o SEU PROPRIO `ContextLedger()`, que
+    nao compartilhava o buffer com o singleton de `tools.py`. Numa sessao MCP
+    de vida longa -- sem nenhum `flush()` no meio --, isso deixava o
+    relatorio sempre vazio ate o processo morrer, contradizendo a
+    recomendacao (em `agents/spark-performance-architect.md`) de consultar o
+    relatorio DURANTE a investigacao.
+
+    Este teste vai pelo verbo de verdade (`_core.economy_report`), e nao por
+    `build_context_report` direto -- `build_context_report` sempre recebeu o
+    ledger como parametro, e por isso nunca teria pego este defeito: o bug
+    estava em `economy_report()` ignorar QUAL ledger `call_tool` usou."""
+
+    def test_call_tool_e_economy_report_no_mesmo_processo_sem_flush(
+        self, tmp_path, monkeypatch
+    ):
+        from sparkforge.adapters import _core, tools
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+
+        # nenhum flush aqui -- o span segue so no buffer em memoria.
+        relatorio = _core.economy_report("run_teste")
+
+        assert relatorio["by_tool"] != {}
+        assert relatorio["by_tool"]["sparkforge_analyze_pyspark"]["calls"] == 1
+        assert not any(
+            item.get("reason") == "run_unresolved" for item in relatorio["unresolved"]
+        )

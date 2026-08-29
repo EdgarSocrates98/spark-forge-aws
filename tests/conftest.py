@@ -35,55 +35,55 @@ if str(_ROOT) not in sys.path:
 
 @pytest.fixture(autouse=True, scope="session")
 def _ledger_de_contexto_isolado_da_sessao_de_teste(tmp_path_factory):
-    """Isola o ledger de contexto de `call_tool` E de `economy_report` do
+    """Isola o ledger de contexto compartilhado (`call_tool` E
+    `economy_report`, os dois pelo MESMO `shared_ledger()`) do
     `.sparkforge/traces.db` real do repositorio durante toda a sessao de
     teste.
 
-    POR QUE AQUI, E NAO NO PRODUTO. `sparkforge.adapters.tools._ledger()`
-    materializa `_LEDGER` na primeira chamada de `call_tool` que nao
-    monkeypatcha o proprio ledger -- e o default e `.sparkforge/traces.db`
-    relativo ao `cwd`, que ao rodar a suite E o repositorio. Achado do
-    revisor, medido: rodar so `tests/test_adapters_tools.py` (99 chamadas de
-    `call_tool`, nenhuma monkeypatchando `_LEDGER`) gravou 188 spans no banco
-    real numa unica execucao. Isolamento e responsabilidade de quem TESTA,
-    nao do produto -- nenhuma flag ou variavel de ambiente entra no codigo de
-    producao so para o teste "saber" que esta sob teste. Um autouse de sessao
-    aqui, substituindo `tools._LEDGER` por um ledger apontado para um
-    diretorio temporario, resolve sem tocar `context_ledger.py` nem
-    `adapters/tools.py`.
+    POR QUE AQUI, E NAO NO PRODUTO. `sparkforge.observability.context_ledger.
+    shared_ledger()` materializa o ledger do processo na primeira chamada que
+    nao monkeypatcha o proprio ledger -- e o default e `.sparkforge/
+    traces.db` relativo ao `cwd`, que ao rodar a suite E o repositorio.
+    Achado do revisor, medido: rodar so `tests/test_adapters_tools.py` (99
+    chamadas de `call_tool`, nenhuma monkeypatchando o ledger) gravou 188
+    spans no banco real numa unica execucao. Isolamento e responsabilidade
+    de quem TESTA, nao do produto -- nenhuma flag ou variavel de ambiente
+    entra no codigo de producao so para o teste "saber" que esta sob teste.
 
-    DOIS PONTOS DE ENTRADA, NAO UM. `sparkforge.adapters._core.economy_report`
-    constroi o SEU PROPRIO `ContextLedger()`, sem `db_path` -- ela LE o que
-    quer que esteja no `.sparkforge/traces.db` relativo ao `cwd`, por fora do
-    singleton de `tools.py`. So isolar `tools._LEDGER` nao bastava: depois da
-    correcao de `spans_of()` passar a materializar o store tambem para
-    LEITURA (e nao so escrita), `sparkforge_economy_report` (chamado dentro
-    de `tests/test_adapters_tools.py`, entre outros) passou a criar de
-    verdade o `.sparkforge/traces.db` do repositorio so para checar que ele
-    estava vazio -- medido, 20KB apos uma unica rodada. Por isso este fixture
-    tambem substitui `_core.ContextLedger` por um `functools.partial` que
-    fixa o MESMO `db_path` temporario: `economy_report()` continua chamando
-    `ContextLedger()` sem argumento nenhum, e ainda assim cai no diretorio
-    isolado.
+    UM PONTO SO, DE PROPOSITO. Antes de `shared_ledger()` existir,
+    `tools.py` guardava o seu proprio singleton e `_core.economy_report()`
+    construia uma `ContextLedger()` independente -- esta fixture chegou a
+    precisar substituir OS DOIS por nome. Com uma fonte so, substituir
+    `context_ledger._SHARED_LEDGER` cobre os dois consumidores de uma vez.
 
-    Testes que monkeypatcham `tools._LEDGER` sozinhos (a maioria de
-    `tests/test_context_ledger.py`) continuam funcionando: o `monkeypatch`
-    de escopo de funcao deles substitui este valor durante o teste e o
-    `pytest` restaura o valor DESTA fixture ao fim -- nunca o `None`
-    original, porque a substituicao aconteceu depois desta fixture rodar.
+    Testes que monkeypatcham `context_ledger._SHARED_LEDGER` sozinhos (a
+    maioria de `tests/test_context_ledger.py`) continuam funcionando: o
+    `monkeypatch` de escopo de funcao deles substitui este valor durante o
+    teste e o `pytest` restaura o valor DESTA fixture ao fim -- nunca o
+    `None` original, porque a substituicao aconteceu depois desta fixture
+    rodar.
     """
-    import functools
-
-    from sparkforge.adapters import _core, tools
-    from sparkforge.observability.context_ledger import ContextLedger
+    from sparkforge.observability import context_ledger
 
     db_path = tmp_path_factory.mktemp("observability") / "traces.db"
-    tools._LEDGER = ContextLedger(db_path=db_path, run_id="run_suite_de_teste")
-
-    _context_ledger_original = _core.ContextLedger
-    _core.ContextLedger = functools.partial(ContextLedger, db_path=db_path)
+    context_ledger._SHARED_LEDGER = context_ledger.ContextLedger(
+        db_path=db_path, run_id="run_suite_de_teste"
+    )
 
     yield
 
-    tools._LEDGER.flush(final=True)
-    _core.ContextLedger = _context_ledger_original
+    context_ledger._SHARED_LEDGER.flush(final=True)
+
+    # BACKSTOP ESTRUTURAL. A substituicao acima cobre os pontos de entrada
+    # CONHECIDOS (`shared_ledger()`), mas uma lista de nomes nunca e garantia
+    # -- um terceiro ponto que um dia importe `ContextLedger` e a use por
+    # conta propria escaparia dela, e nenhum teste acusaria. Este backstop
+    # nao depende de saber QUEM construiu o ledger: verifica o EFEITO --
+    # o `.sparkforge/traces.db` do repositorio simplesmente nao pode existir
+    # ao fim da suite. Pega qualquer ponto novo, presente ou futuro.
+    traces_do_repo = _ROOT / ".sparkforge" / "traces.db"
+    assert not traces_do_repo.exists(), (
+        f"{traces_do_repo} foi criado durante a suite -- algum ponto de "
+        "codigo construiu ContextLedger() por fora de shared_ledger() e de "
+        "qualquer db_path isolado de teste."
+    )

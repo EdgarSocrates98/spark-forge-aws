@@ -85,7 +85,7 @@ from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
-from sparkforge.observability.context_ledger import ContextLedger
+from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
 from sparkforge.storage.upgrade import assess_upgrade as assess_iceberg_upgrade
@@ -1717,10 +1717,18 @@ def economy_report(run_id: str, host_transcript: str = "") -> dict[str, Any]:
     `host_transcript` e opcional porque o token de provider e do HOST: sem ele,
     o relatorio traz byte medido e `tokens_unresolved` -- nunca uma estimativa
     com nome de token.
+
+    `shared_ledger()`, E NAO UM `ContextLedger()` PROPRIO. Achado do revisor:
+    uma instancia independente aqui so enxergava o que ja tinha ido para o
+    disco -- e dentro do MESMO processo que `adapters/tools.py:call_tool`
+    acabou de gravar, nada tinha ido para o disco ainda (o unico gatilho
+    automatico e o `atexit`, que so dispara quando o processo morre). Numa
+    sessao MCP de vida longa isso deixava este relatorio sempre vazio ATE o
+    processo terminar. Compartilhar a instancia com `call_tool` faz este
+    verbo enxergar o buffer em memoria tambem, sem esperar flush nenhum.
     """
-    ledger = ContextLedger()
     return build_context_report(
-        ledger,
+        shared_ledger(),
         run_id=run_id,
         host_transcript=host_transcript or None,
     )

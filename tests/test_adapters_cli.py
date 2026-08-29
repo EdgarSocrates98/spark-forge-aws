@@ -2617,11 +2617,11 @@ class TestCaseHypothesisSurface:
 class TestEconomyReportCommand:
     """`economy report` e verbo de TOPO: compoe sobre o ledger, nao le artefato.
 
-    `_core.economy_report` constroi o SEU PROPRIO `ContextLedger()`, sem
-    `db_path` -- por isso a fixture de sessao em `tests/conftest.py` tambem
-    substitui `_core.ContextLedger` (nao so `tools._LEDGER`), garantindo que
-    esta chamada sem argumento nenhum caia no diretorio temporario da suite,
-    e nao no `.sparkforge/traces.db` real do repositorio."""
+    `_core.economy_report` chama `shared_ledger()` -- a MESMA fonte que
+    `adapters/tools.py:call_tool` alimenta -- por isso a fixture de sessao em
+    `tests/conftest.py` so precisa substituir um nome
+    (`context_ledger._SHARED_LEDGER`) para isolar esta chamada do
+    `.sparkforge/traces.db` real do repositorio."""
 
     def test_an_unknown_run_refuses_by_name(self, capsys):
         from sparkforge.adapters.cli import main
@@ -2641,44 +2641,32 @@ class TestEconomyReportCommand:
 
         assert payload["surface"]["tools"]["tool_count"] > 0
 
-    def test_by_tool_is_populated_end_to_end_after_a_real_flush(
+    def test_by_tool_is_populated_in_the_same_process_without_an_explicit_flush(
         self, tmp_path, monkeypatch, capsys
     ):
-        """Achado do revisor: `spans_of()` so lia o disco quando `self._store`
-        ja tinha sido materializado -- e isso so acontecia dentro de
-        `flush()`. Entre processos (o uso real do CLI: um processo grava e
-        SAI, outro le por `economy report`), a instancia de leitura nunca
-        chamou `flush()`, entao `by_tool` vinha sempre `{}` -- silenciosamente,
-        mesmo com o banco cheio. Este teste reproduz o caso real: grava com
-        um `ContextLedger` apontado para um `db_path` explicito, descarrega
-        de verdade com `flush(final=True)`, e so DEPOIS chama o verbo
-        `economy report`, que constroi uma instancia NOVA e completamente
-        independente para ler -- apontada para o MESMO arquivo via o
-        monkeypatch de `_core.ContextLedger` feito aqui (sobrepondo, so
-        durante este teste, o da fixture de sessao)."""
-        import functools
-
-        from sparkforge.adapters import _core, tools
+        """Critico achado ao ligar o verbo: `economy_report()` construia o
+        SEU PROPRIO `ContextLedger()`, independente do singleton que
+        `call_tool` alimentava -- e nada alem do `atexit` (que so roda quando
+        o processo MORRE) descarregava o buffer. Numa sessao MCP de vida
+        longa, isso deixava o relatorio vazio ate o processo terminar. Este
+        e o caso que estava quebrado: SEM `flush()` nenhum, no MESMO
+        processo, `call_tool` grava e `economy report` tem que enxergar."""
+        from sparkforge.adapters import tools
         from sparkforge.adapters.cli import main
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
-        run_id = "run_ponta_a_ponta"
-        db_path = tmp_path / "traces.db"
-
-        ledger_de_escrita = ContextLedger(db_path=db_path, run_id=run_id)
-        monkeypatch.setattr(tools, "_LEDGER", ledger_de_escrita)
-        monkeypatch.setattr(
-            _core, "ContextLedger", functools.partial(ContextLedger, db_path=db_path)
+        run_id = "run_mesmo_processo"
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id=run_id
         )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         origem = tmp_path / "job"
         origem.mkdir()
         (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
         tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
 
-        # o processo A "sai" -- descarrega de verdade, e nao so acumula.
-        ledger_de_escrita.flush(final=True)
-
+        # nenhum flush aqui -- o span segue so no buffer em memoria.
         code = main(["economy", "report", "--run-id", run_id])
 
         assert code == 0

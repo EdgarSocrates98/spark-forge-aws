@@ -165,10 +165,12 @@ class TestOSpanDaChamada:
         import json
 
         from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
-        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         origem = tmp_path / "job"
         origem.mkdir()
@@ -185,10 +187,12 @@ class TestOSpanDaChamada:
 
     def test_the_declared_item_count_is_carried_not_guessed(self, tmp_path, monkeypatch):
         from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
-        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         origem = tmp_path / "job"
         origem.mkdir()
@@ -200,10 +204,12 @@ class TestOSpanDaChamada:
 
     def test_the_requested_detail_level_is_recorded(self, tmp_path, monkeypatch):
         from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
-        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         origem = tmp_path / "job"
         origem.mkdir()
@@ -219,10 +225,12 @@ class TestOSpanDaChamada:
         self, tmp_path, monkeypatch
     ):
         from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
-        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         origem = tmp_path / "job"
         origem.mkdir()
@@ -242,10 +250,12 @@ class TestOsTresCaminhosDeErro:
 
     def test_an_adapter_error_records_a_span(self, tmp_path, monkeypatch):
         from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
-        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         resultado = tools.call_tool(
             "sparkforge_analyze_pyspark", {"path": str(tmp_path / "nao_existe")}
@@ -259,11 +269,13 @@ class TestOsTresCaminhosDeErro:
     def test_an_unauthorized_call_records_a_span(self, tmp_path, monkeypatch):
         from sparkforge.adapters import tools
         from sparkforge.agents.autonomy import CallPolicy
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
         from sparkforge.registry.models import ExecutionProfile
 
-        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         politica = CallPolicy(
             agent="sf-runtime-specialist",
@@ -284,10 +296,12 @@ class TestOsTresCaminhosDeErro:
         import pytest
 
         from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
-        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=tmp_path / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         with pytest.raises(KeyError):
             tools.call_tool("sparkforge_inexistente", {})
@@ -303,12 +317,14 @@ class TestLedgerQuebradoNaoQuebraATool:
         self, tmp_path, monkeypatch
     ):
         from sparkforge.adapters import tools
-        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.observability import context_ledger
 
         impossivel = tmp_path / "arquivo_no_lugar_do_diretorio"
         impossivel.write_text("nao sou diretorio", encoding="utf-8")
-        ledger = ContextLedger(db_path=impossivel / "traces.db", run_id="run_teste")
-        monkeypatch.setattr(tools, "_LEDGER", ledger)
+        ledger = context_ledger.ContextLedger(
+            db_path=impossivel / "traces.db", run_id="run_teste"
+        )
+        monkeypatch.setattr(context_ledger, "_SHARED_LEDGER", ledger)
 
         origem = tmp_path / "job"
         origem.mkdir()
@@ -577,11 +593,11 @@ class TestBufferEFlush:
 
 
 class TestSuiteNaoEscreveNoRepositorioReal:
-    """A fixture autouse em `tests/conftest.py` aponta `tools._LEDGER` para
-    um caminho temporario durante toda a sessao de teste -- entao mesmo uma
-    chamada de `call_tool` que NAO monkeypatcha o ledger (a maioria dos
-    testes de `test_adapters_tools.py`) nao pode tocar o `.sparkforge/
-    traces.db` real do repositorio."""
+    """A fixture autouse em `tests/conftest.py` aponta o ledger compartilhado
+    (`context_ledger._SHARED_LEDGER`) para um caminho temporario durante toda
+    a sessao de teste -- entao mesmo uma chamada de `call_tool` que NAO
+    monkeypatcha o ledger (a maioria dos testes de `test_adapters_tools.py`)
+    nao pode tocar o `.sparkforge/traces.db` real do repositorio."""
 
     def test_chamar_call_tool_sem_monkeypatch_nao_toca_o_traces_db_do_repo(
         self, tmp_path
@@ -589,6 +605,7 @@ class TestSuiteNaoEscreveNoRepositorioReal:
         from pathlib import Path
 
         from sparkforge.adapters import tools
+        from sparkforge.observability import context_ledger
 
         raiz_do_repo = Path(__file__).resolve().parents[1]
         traces_do_repo = raiz_do_repo / ".sparkforge" / "traces.db"
@@ -601,7 +618,7 @@ class TestSuiteNaoEscreveNoRepositorioReal:
         tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
         # forca o descarregamento que so aconteceria no fim da sessao, para
         # o teste nao depender do atexit rodar antes de checar o resultado.
-        tools._LEDGER.flush()
+        context_ledger.shared_ledger().flush()
 
         assert traces_do_repo.exists() == existia_antes
         if existia_antes:
