@@ -27,9 +27,11 @@ outras sao read-only. A lista literal correspondente vive em
 """
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING, Any
 
 from sparkforge.adapters import _core
+from sparkforge.observability.context_ledger import ContextLedger
 
 if TYPE_CHECKING:
     # So para a anotacao. Em tempo de execucao o import de `CallPolicy`
@@ -5220,6 +5222,12 @@ _HANDLERS = {
     "sparkforge_code_sync": _h_code_sync,
 }
 
+# Um ledger por processo. E modulo-level de proposito: `call_tool` e chamado de
+# lugares que nao tem como carregar estado (a CLI, o servidor MCP, um teste), e
+# passar o ledger por parametro obrigaria todos eles a saber que ele existe.
+# Teste que queira inspecionar substitui este nome.
+_LEDGER = ContextLedger()
+
 
 def call_tool(
     name: str, arguments: dict[str, Any], *, policy: CallPolicy | None = None
@@ -5272,6 +5280,8 @@ def call_tool(
         raise KeyError(f"ferramenta desconhecida: {name!r}. Validas: {valid}")
 
     argumentos = arguments or {}
+    detail_level = str(argumentos.get("detail_level") or "")
+    inicio = time.time()
 
     if policy is not None:
         decisao = policy.decide(name, argumentos)
@@ -5283,10 +5293,18 @@ def call_tool(
             }
             if decisao.required_approval is not None:
                 recusa["required_approval"] = decisao.required_approval.value
+            _LEDGER.record(
+                name=name,
+                resultado=recusa,
+                detail_level=detail_level,
+                outcome="unauthorized",
+                start_time=inicio,
+            )
             return recusa
 
     try:
-        return handler(argumentos)
+        resultado = handler(argumentos)
+        desfecho = "ok"
     except _core.CodeIndexError as exc:
         # SPEC 43 exige um corpo MAQUINAVEL na recusa por indice velho --
         # `STALE_INDEX`, `changed_files`, `action`. O envelope uniforme deste
@@ -5294,6 +5312,17 @@ def call_tool(
         # entram ao lado: o codigo sai em `error_code`, e nao em `error`, para
         # nao apagar a frase que diz o que fazer. Cliente que so le `error`
         # continua atendido; cliente que le `error_code` decide sozinho.
-        return {"error": exc.message, "exit_code": exc.exit_code, **exc.detalhes}
+        resultado = {"error": exc.message, "exit_code": exc.exit_code, **exc.detalhes}
+        desfecho = "error"
     except _core.AdapterError as exc:
-        return {"error": exc.message, "exit_code": exc.exit_code}
+        resultado = {"error": exc.message, "exit_code": exc.exit_code}
+        desfecho = "error"
+
+    _LEDGER.record(
+        name=name,
+        resultado=resultado,
+        detail_level=detail_level,
+        outcome=desfecho,
+        start_time=inicio,
+    )
+    return resultado

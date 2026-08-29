@@ -158,3 +158,162 @@ class TestMigracaoDeBancoAntigo:
             colunas = {linha[1] for linha in conn.execute("PRAGMA table_info(spans)").fetchall()}
         assert "payload_bytes" in colunas
         assert "cost_basis" in colunas
+
+
+class TestOSpanDaChamada:
+    def test_a_successful_call_records_the_exact_bytes(self, tmp_path, monkeypatch):
+        import json
+
+        from sparkforge.adapters import tools
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        resultado = tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+
+        spans = ledger.spans_of("run_teste")
+        assert len(spans) == 1
+        esperado = len(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
+        assert spans[0]["payload_bytes"] == esperado
+        assert spans[0]["name"] == "sparkforge_analyze_pyspark"
+        assert spans[0]["component_type"] == "tool"
+        assert spans[0]["outcome"] == "ok"
+
+    def test_the_declared_item_count_is_carried_not_guessed(self, tmp_path, monkeypatch):
+        from sparkforge.adapters import tools
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        resultado = tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+
+        span = ledger.spans_of("run_teste")[0]
+        assert span["item_count"] == resultado["returned_count"]
+
+    def test_the_requested_detail_level_is_recorded(self, tmp_path, monkeypatch):
+        from sparkforge.adapters import tools
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        tools.call_tool(
+            "sparkforge_analyze_pyspark",
+            {"path": str(origem), "detail_level": "summary"},
+        )
+
+        assert ledger.spans_of("run_teste")[0]["detail_level"] == "summary"
+
+    def test_a_tool_span_never_carries_provider_tokens_or_cost(
+        self, tmp_path, monkeypatch
+    ):
+        from sparkforge.adapters import tools
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+
+        span = ledger.spans_of("run_teste")[0]
+        assert span["input_tokens"] == 0
+        assert span["output_tokens"] == 0
+        assert span["estimated_cost_usd"] == 0.0
+        assert span["cost_basis"] == ""
+
+
+class TestOsTresCaminhosDeErro:
+    """Recusa tambem ocupa contexto. Uma investigacao cheia de recusa pareceria
+    barata se elas nao fossem contadas."""
+
+    def test_an_adapter_error_records_a_span(self, tmp_path, monkeypatch):
+        from sparkforge.adapters import tools
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        resultado = tools.call_tool(
+            "sparkforge_analyze_pyspark", {"path": str(tmp_path / "nao_existe")}
+        )
+
+        assert "error" in resultado
+        span = ledger.spans_of("run_teste")[0]
+        assert span["outcome"] == "error"
+        assert span["payload_bytes"] > 0
+
+    def test_an_unauthorized_call_records_a_span(self, tmp_path, monkeypatch):
+        from sparkforge.adapters import tools
+        from sparkforge.agents.autonomy import CallPolicy
+        from sparkforge.observability.context_ledger import ContextLedger
+        from sparkforge.registry.models import ExecutionProfile
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        politica = CallPolicy(
+            agent="sf-runtime-specialist",
+            allowed_tools=["sparkforge_case_get"],
+            profile=ExecutionProfile.ECO,
+            root=tmp_path,
+        )
+        resultado = tools.call_tool(
+            "sparkforge_analyze_pyspark", {"path": str(tmp_path)}, policy=politica
+        )
+
+        assert resultado.get("error_code") == "UNAUTHORIZED"
+        assert ledger.spans_of("run_teste")[0]["outcome"] == "unauthorized"
+
+    def test_an_unknown_tool_records_nothing(self, tmp_path, monkeypatch):
+        """`KeyError` de nome desconhecido e contrato de CATALOGO, e acontece
+        ANTES do despacho: nao houve payload nenhum para medir."""
+        import pytest
+
+        from sparkforge.adapters import tools
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        ledger = ContextLedger(db_path=tmp_path / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        with pytest.raises(KeyError):
+            tools.call_tool("sparkforge_inexistente", {})
+
+        assert ledger.spans_of("run_teste") == []
+
+
+class TestLedgerQuebradoNaoQuebraATool:
+    """O teste que mais importa: instrumentacao que derruba o produto e
+    defeito, nao observabilidade."""
+
+    def test_an_unwritable_ledger_does_not_change_the_result(
+        self, tmp_path, monkeypatch
+    ):
+        from sparkforge.adapters import tools
+        from sparkforge.observability.context_ledger import ContextLedger
+
+        impossivel = tmp_path / "arquivo_no_lugar_do_diretorio"
+        impossivel.write_text("nao sou diretorio", encoding="utf-8")
+        ledger = ContextLedger(db_path=impossivel / "traces.db", run_id="run_teste")
+        monkeypatch.setattr(tools, "_LEDGER", ledger)
+
+        origem = tmp_path / "job"
+        origem.mkdir()
+        (origem / "job.py").write_text("df.collect()\n", encoding="utf-8")
+        resultado = tools.call_tool("sparkforge_analyze_pyspark", {"path": str(origem)})
+
+        assert "items" in resultado
+        assert "error" not in resultado
