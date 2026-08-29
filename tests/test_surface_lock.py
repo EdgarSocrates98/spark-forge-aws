@@ -6,6 +6,7 @@ igual a `docs/claims.lock.json` ja faz com alegacao publicada.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -17,6 +18,15 @@ LOCK = ROOT / "docs" / "surface.lock.json"
 
 def _lock() -> dict:
     return json.loads(LOCK.read_text(encoding="utf-8"))
+
+
+def _by_name_sha256(by_name: dict) -> str:
+    """Mesma formula do gate (`scripts/check_surface_lock.py::_by_name_sha256`),
+    reescrita aqui em vez de importada: o teste precisa continuar acusando se
+    a formula do gate mudar sem querer, e importar a mesma funcao deixaria os
+    dois lados sempre concordarem por construcao."""
+    serializado = json.dumps(by_name, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(serializado.encode("utf-8")).hexdigest()
 
 
 class TestOLockBateComAMedida:
@@ -53,3 +63,16 @@ class TestOLockBateComAMedida:
 
         assert medida["skills"]["unresolved"] == []
         assert medida["knowledge"]["unresolved"] == []
+
+    def test_the_by_name_composition_matches(self):
+        """Trava a composicao fina (nome x bytes de cada item), nao so o
+        total: uma tool que encolhe enquanto outra cresce na mesma proporcao,
+        ou uma skill renomeada com o mesmo tamanho, nao move nenhum agregado
+        mas move este hash."""
+        lock = _lock()
+        medida = measure_surface()
+
+        for secao in ("tools", "skills", "knowledge"):
+            esperado = _by_name_sha256(medida[secao]["by_name"])
+            assert medida[secao]["by_name"] != {}, f"{secao}: by_name vazio"
+            assert lock[secao]["by_name_sha256"] == esperado, secao
