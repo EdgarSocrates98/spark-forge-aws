@@ -43,8 +43,28 @@ _ENV_RUN_ID = "SPARKFORGE_RUN_ID"
 
 
 def payload_bytes(resultado: dict[str, Any]) -> int:
-    """Os bytes da serializacao canonica. A formula esta em `PAYLOAD_BASIS`."""
-    return len(json.dumps(resultado, ensure_ascii=False, default=str).encode("utf-8"))
+    """Os bytes da serializacao canonica. A formula esta em `PAYLOAD_BASIS`.
+
+    SEM `default=str`, DE PROPOSITO. `payload_basis` existe para que quem
+    reproduza a conta pelo texto chegue no mesmo numero -- e o texto nao
+    menciona `default=str`. Adicionar o parametro sem atualizar a constante
+    faria a base declarada mentir sobre a formula real; a base so pode dizer
+    a verdade se o codigo daqui bater com ela.
+
+    O motivo de nao precisar dele: `adapters/mcp.py` ja serializa este MESMO
+    dicionario com `json.dumps(result, ensure_ascii=False, separators=(",",
+    ":"))` -- tambem sem `default=str` -- para devolver a resposta MCP de
+    erro. Se um handler devolvesse `Path`, `datetime` ou `Decimal`, aquele
+    caminho ja quebraria hoje, antes deste ledger existir. `Fact.id` e
+    `Finding` (`sparkforge/findings/models.py:_canonical`) reforçam o mesmo
+    contrato na origem: calculam `json.dumps` tambem sem `default=str` sobre
+    `subject`/`measures`/`attrs`, entao um valor nao serializavel ja
+    quebraria na CRIACAO do fact, bem antes de chegar num payload de tool.
+    Colocar `default=str` aqui esconderia esse defeito de handler atras de
+    `"<Path object at 0x...>"` dentro do numero, em vez de deixar o
+    `TypeError` apontar para a causa real.
+    """
+    return len(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
 
 
 def declared_item_count(resultado: dict[str, Any]) -> int | None:
