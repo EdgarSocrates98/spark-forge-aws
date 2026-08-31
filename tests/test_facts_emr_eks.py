@@ -485,3 +485,114 @@ def test_a_sentinela_conta_as_configuracoes():
     )
     sentinela = _um(extract_emr_eks(payload, "x.json"), "emrc.analyzed")
     assert sentinela.measures["configuration_count"] == 2
+
+
+def _templates(facts: list) -> dict[str, str]:
+    return {
+        f.attrs["role"]: f.attrs["path"]
+        for f in facts
+        if f.kind == "emrc.pod_template.unresolved"
+    }
+
+
+def test_pod_template_declarado_sai_como_recusa_com_o_path():
+    payload = _com_overrides(
+        {
+            "applicationConfiguration": [
+                {
+                    "classification": "spark-defaults",
+                    "properties": {
+                        "spark.kubernetes.driver.podTemplateFile": "s3://bucket/driver.yaml",
+                        "spark.kubernetes.executor.podTemplateFile": "s3://bucket/executor.yaml",
+                    },
+                }
+            ]
+        }
+    )
+    assert _templates(extract_emr_eks(payload, "x.json")) == {
+        "driver": "s3://bucket/driver.yaml",
+        "executor": "s3://bucket/executor.yaml",
+    }
+
+
+def test_pod_template_pedido_pelo_spark_submit_tambem_e_visto():
+    payload = _com_driver(
+        {
+            "sparkSubmitJobDriver": {
+                "sparkSubmitParameters": (
+                    "--conf spark.kubernetes.driver.podTemplateFile=s3://bucket/d.yaml"
+                )
+            }
+        }
+    )
+    assert _templates(extract_emr_eks(payload, "x.json")) == {"driver": "s3://bucket/d.yaml"}
+
+
+def test_a_recusa_diz_de_qual_superficie_o_template_foi_pedido():
+    payload = _com_driver(
+        {
+            "sparkSubmitJobDriver": {
+                "sparkSubmitParameters": (
+                    "--conf spark.kubernetes.executor.podTemplateFile=s3://bucket/e.yaml"
+                )
+            }
+        }
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.pod_template.unresolved")
+    assert fato.attrs["surface"] == "spark_submit_parameters"
+    assert fato.attrs["reason"] == "not_fetched"
+
+
+def test_o_mesmo_papel_nas_duas_superficies_produz_uma_recusa_so():
+    # Saber duas vezes que falta o template do driver nao acrescenta nada.
+    payload = _com_overrides(
+        {
+            "applicationConfiguration": [
+                {
+                    "classification": "spark-defaults",
+                    "properties": {
+                        "spark.kubernetes.driver.podTemplateFile": "s3://bucket/a.yaml"
+                    },
+                }
+            ]
+        }
+    )
+    payload["jobRun"]["jobDriver"] = {
+        "sparkSubmitJobDriver": {
+            "sparkSubmitParameters": (
+                "--conf spark.kubernetes.driver.podTemplateFile=s3://bucket/b.yaml"
+            )
+        }
+    }
+    recusas = [
+        f for f in extract_emr_eks(payload, "x.json") if f.kind == "emrc.pod_template.unresolved"
+    ]
+    assert len(recusas) == 1
+    assert recusas[0].attrs["role"] == "driver"
+
+
+def test_sem_pod_template_nao_ha_recusa():
+    # Recusa sem objeto seria ruido: o operador leria "nao li o template" onde
+    # nenhum template foi pedido.
+    assert _templates(extract_emr_eks(_PAYLOAD_COMPLETO, "x.json")) == {}
+
+
+def test_a_recusa_nao_conta_como_unresolved_de_leitura():
+    # `emrc.pod_template.unresolved` e kind proprio: ele NAO entra na contagem de
+    # `emrc.unresolved`, que conta falha de LEITURA do artefato. Somar os dois
+    # faria um job perfeitamente legivel parecer artefato quebrado.
+    payload = _com_overrides(
+        {
+            "applicationConfiguration": [
+                {
+                    "classification": "spark-defaults",
+                    "properties": {
+                        "spark.kubernetes.driver.podTemplateFile": "s3://bucket/d.yaml"
+                    },
+                }
+            ]
+        }
+    )
+    facts = extract_emr_eks(payload, "x.json")
+    assert _reasons(facts) == []
+    assert _um(facts, "emrc.analyzed").measures["unresolved_count"] == 0

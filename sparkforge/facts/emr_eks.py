@@ -28,7 +28,7 @@ construcao:
 (e o par `executor.podTemplateFile`) aponta para um YAML quase sempre em S3, e
 resolver path->conteudo e mecanismo que NENHUM extrator deste repositorio tem
 -- ele exigiria uma segunda chamada de coleta (`GetObject`) que este modulo
-nao faz. O path sai como `emrc.pod_template.unresolved` na Task 6.
+nao faz. O path sai como recusa visivel em `emrc.pod_template.unresolved`.
 `nodeSelector`, `tolerations` e `resources` moram DENTRO do template, entao
 tambem ficam fora daqui.
 
@@ -564,6 +564,70 @@ def _monitoring_fact(raw: Any, path: str, provenance: dict[str, Any]) -> list[Fa
 
 
 # --------------------------------------------------------------------------- #
+# facts de conteudo -- Task 6 (pod template, recusa visivel)
+# --------------------------------------------------------------------------- #
+
+# `emrc.pod_template.unresolved` NAO e um dado: e uma RECUSA visivel. As duas
+# propriedades abaixo apontam para um YAML que mora fora deste artefato --
+# quase sempre em S3 -- e resolver path->conteudo e mecanismo que NENHUM
+# extrator deste repositorio tem (exigiria uma chamada `GetObject` que este
+# modulo nao faz). O YAML nao lido carrega `nodeSelector`, `tolerations`
+# (onde Spot aparece), `resources`, `initContainers` e `volumes` -- metade do
+# diagnostico de pod pendente vive la. Se o extrator simplesmente ignorasse
+# estas duas chaves, o operador leria o relatorio e concluiria que nada foi
+# omitido; o fact existe para dizer, com o path declarado, exatamente o que
+# esta faltando -- a diferenca entre "nao achei problema" e "nao olhei".
+_POD_TEMPLATE_KEYS = {
+    "spark.kubernetes.driver.podTemplateFile": "driver",
+    "spark.kubernetes.executor.podTemplateFile": "executor",
+}
+
+
+def _pod_template_facts(
+    facts: list[Fact], path: str, provenance: dict[str, Any]
+) -> list[Fact]:
+    """Constroi `emrc.pod_template.unresolved` varrendo os facts JA EXTRAIDOS
+    (`emrc.configuration` e `emrc.spark_submit_parameters`), nunca o payload
+    de novo.
+
+    Duas razoes para varrer facts em vez de reler `configurationOverrides` e
+    `jobDriver`: (1) evita duplicar a leitura das duas superficies de
+    configuracao, que ja foram achatadas nas Tasks 4 e 5; (2) se uma terceira
+    superficie de configuracao existir um dia, ela entra aqui de graca, desde
+    que emita `attrs.key`/`attrs.value` num dos dois kinds ja varridos.
+
+    Um mesmo papel (`driver` ou `executor`) declarado nas duas superficies
+    produz UMA recusa so -- saber duas vezes que falta o template do driver
+    nao acrescenta nada ao operador. Fica com a PRIMEIRA ocorrencia, na ordem
+    em que os facts ja estao.
+    """
+    resultado: list[Fact] = []
+    vistos: set[str] = set()
+    for fact in facts:
+        if fact.kind not in ("emrc.configuration", "emrc.spark_submit_parameters"):
+            continue
+        key = fact.attrs.get("key")
+        role = _POD_TEMPLATE_KEYS.get(key)
+        if role is None or role in vistos:
+            continue
+        vistos.add(role)
+        resultado.append(
+            Fact(
+                kind="emrc.pod_template.unresolved",
+                subject=_file_subject(path),
+                attrs={
+                    "role": role,
+                    "path": fact.attrs.get("value"),
+                    "surface": fact.attrs.get("surface"),
+                    "reason": "not_fetched",
+                },
+                provenance=provenance,
+            )
+        )
+    return resultado
+
+
+# --------------------------------------------------------------------------- #
 # entrada
 # --------------------------------------------------------------------------- #
 
@@ -572,11 +636,12 @@ def extract_emr_eks(payload: Any, path: str, artifact_sha256: str = "") -> list[
     """Extrai Facts de um payload ja carregado (`dict`) de `DescribeJobRun`
     (mais `DescribeVirtualCluster`, sob a mesma chave de topo).
 
-    Esqueleto: so os caminhos de FALHA estao implementados aqui -- os facts de
-    conteudo (virtual cluster, job run, configuracao, monitoring, pod
-    template) sao as Tasks 3 a 6. Nunca levanta excecao por payload
-    malformado: chave ausente, secao com o tipo errado -- tudo vira
-    `emrc.unresolved` e a extracao segue com o que sobrar, mesma convencao de
+    Os oito kinds de `EMITTED_KINDS` sao todos emitidos aqui: virtual cluster,
+    job run, spark_submit_parameters, configuration, monitoring e a recusa
+    visivel de pod template, alem de `emrc.unresolved` e da sentinela
+    `emrc.analyzed`. Nunca levanta excecao por payload malformado: chave
+    ausente, secao com o tipo errado -- tudo vira `emrc.unresolved` e a
+    extracao segue com o que sobrar, mesma convencao de
     `emr_cluster.extract_emr_cluster` e `emr_serverless.extract_emr_serverless`.
     """
     provenance = {"artifact": path, "artifact_sha256": artifact_sha256, "extractor": EXTRACTOR_ID}
@@ -606,9 +671,9 @@ def extract_emr_eks(payload: Any, path: str, artifact_sha256: str = "") -> list[
         facts.append(_unresolved(path, "missing_job_run_id", provenance))
         return _finish(facts, path, provenance)
 
-    # Task 3: virtual cluster e job run. Task 4: spark_submit_parameters. As
-    # Tasks 5 e 6 acrescentam os tres kinds restantes (configuration,
-    # monitoring, pod_template.unresolved) neste mesmo ponto.
+    # Task 3: virtual cluster e job run. Task 4: spark_submit_parameters.
+    # Task 5: configuration e monitoring. Task 6: pod_template.unresolved,
+    # que varre os facts ja extraidos acima -- por isso vem por ultimo.
     facts.extend(_virtual_cluster_fact(payload.get("virtualCluster"), path, provenance))
     facts.append(_job_run_fact(raw, job_run_id, path, provenance))
     facts.extend(_spark_submit_facts(raw.get("jobDriver"), path, provenance))
@@ -619,6 +684,7 @@ def extract_emr_eks(payload: Any, path: str, artifact_sha256: str = "") -> list[
         _configuration_facts(overrides.get("applicationConfiguration"), path, provenance)
     )
     facts.extend(_monitoring_fact(overrides.get("monitoringConfiguration"), path, provenance))
+    facts.extend(_pod_template_facts(facts, path, provenance))
 
     return _finish(facts, path, provenance)
 
