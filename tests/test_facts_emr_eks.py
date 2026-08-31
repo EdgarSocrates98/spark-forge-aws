@@ -308,3 +308,180 @@ def test_a_sentinela_conta_os_pares_de_conf():
     )
     sentinela = _um(extract_emr_eks(payload, "x.json"), "emrc.analyzed")
     assert sentinela.measures["conf_parameter_count"] == 3
+
+
+def _com_overrides(overrides: dict) -> dict:
+    payload = json.loads(json.dumps(_PAYLOAD_COMPLETO))
+    payload["jobRun"]["configurationOverrides"] = overrides
+    return payload
+
+
+def _cfgs(facts: list) -> dict[str, str]:
+    return {
+        f.attrs["key"]: f.attrs["value"] for f in facts if f.kind == "emrc.configuration"
+    }
+
+
+def test_application_configuration_sai_por_propriedade():
+    payload = _com_overrides(
+        {
+            "applicationConfiguration": [
+                {
+                    "classification": "spark-defaults",
+                    "properties": {"spark.sql.shuffle.partitions": "400"},
+                }
+            ]
+        }
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.configuration")
+    assert fato.attrs["classification"] == "spark-defaults"
+    assert fato.attrs["key"] == "spark.sql.shuffle.partitions"
+    assert fato.attrs["value"] == "400"
+    assert fato.attrs["surface"] == "application_configuration"
+
+
+def test_classificacao_aninhada_e_lida():
+    # A API permite `configurations` dentro de `configurations`. Nao descer nela
+    # esconderia exatamente o valor que alguem enterrou.
+    payload = _com_overrides(
+        {
+            "applicationConfiguration": [
+                {
+                    "classification": "spark-defaults",
+                    "properties": {"a.b": "1"},
+                    "configurations": [
+                        {"classification": "spark-env", "properties": {"c.d": "2"}}
+                    ],
+                }
+            ]
+        }
+    )
+    assert _cfgs(extract_emr_eks(payload, "x.json")) == {"a.b": "1", "c.d": "2"}
+
+
+def test_as_duas_superficies_convivem_sem_se_apagar():
+    # A mesma propriedade nas DUAS superficies produz DOIS facts. Fundi-las
+    # apagaria a pergunta que importa quando divergem: qual venceu.
+    payload = _com_overrides(
+        {
+            "applicationConfiguration": [
+                {"classification": "spark-defaults", "properties": {"spark.executor.cores": "8"}}
+            ]
+        }
+    )
+    payload["jobRun"]["jobDriver"] = {
+        "sparkSubmitJobDriver": {"sparkSubmitParameters": "--conf spark.executor.cores=2"}
+    }
+    facts = extract_emr_eks(payload, "x.json")
+    assert {
+        (f.attrs["surface"], f.attrs["value"])
+        for f in facts
+        if f.attrs.get("key") == "spark.executor.cores"
+    } == {("spark_submit_parameters", "2"), ("application_configuration", "8")}
+
+
+def test_application_configuration_com_tipo_errado_vira_unresolved():
+    payload = _com_overrides({"applicationConfiguration": "nao sou lista"})
+    facts = extract_emr_eks(payload, "x.json")
+    assert _reasons(facts) == ["malformed_json"]
+    assert _cfgs(facts) == {}
+
+
+def test_monitoring_conta_os_destinos_de_log():
+    payload = _com_overrides(
+        {
+            "monitoringConfiguration": {
+                "persistentAppUI": "ENABLED",
+                "s3MonitoringConfiguration": {"logUri": "s3://bucket/logs/"},
+            }
+        }
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.monitoring")
+    assert fato.attrs["s3_log_uri_present"] is True
+    assert fato.attrs["cloudwatch_enabled"] is False
+    assert fato.attrs["persistent_app_ui"] == "ENABLED"
+    assert fato.attrs["persistent_app_ui_declared"] is True
+    assert fato.measures["log_destination_count"] == 1
+
+
+def test_monitoring_ausente_e_zero_destinos_e_nao_silencio():
+    # Sem bloco, EMR on EKS nao grava log em lugar nenhum -- ao contrario do
+    # Serverless, cujo armazenamento gerenciado tem default LIGADO. Omitir o fact
+    # deixaria a regra "nenhum destino de log" sem ingrediente no caso mais comum
+    # do estado que ela acusa.
+    fato = _um(extract_emr_eks(_PAYLOAD_COMPLETO, "x.json"), "emrc.monitoring")
+    assert fato.measures["log_destination_count"] == 0
+    assert fato.attrs["monitoring_declared"] is False
+
+
+def test_persistent_app_ui_ausente_nao_presume_default():
+    # O default de persistentAppUI NAO e publicado em lugar nenhum. Presumir
+    # seria materializar default sem fonte.
+    fato = _um(extract_emr_eks(_PAYLOAD_COMPLETO, "x.json"), "emrc.monitoring")
+    assert fato.attrs["persistent_app_ui_declared"] is False
+    assert "persistent_app_ui" not in fato.attrs
+
+
+def test_cloudwatch_conta_como_destino():
+    payload = _com_overrides(
+        {
+            "monitoringConfiguration": {
+                "cloudWatchMonitoringConfiguration": {
+                    "logGroupName": "/emr-containers/jobs",
+                    "logStreamNamePrefix": "etl",
+                }
+            }
+        }
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.monitoring")
+    assert fato.attrs["cloudwatch_enabled"] is True
+    assert fato.measures["log_destination_count"] == 1
+
+
+def test_os_dois_destinos_somam_dois():
+    payload = _com_overrides(
+        {
+            "monitoringConfiguration": {
+                "s3MonitoringConfiguration": {"logUri": "s3://bucket/logs/"},
+                "cloudWatchMonitoringConfiguration": {"logGroupName": "/g"},
+            }
+        }
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.monitoring")
+    assert fato.measures["log_destination_count"] == 2
+
+
+def test_managed_logs_NAO_conta_como_destino():
+    # `managedLogs.allowAWSToRetainLogs` cobre so "system namespace logs when
+    # running a job using Native FGAC", sem default declarado e sem retencao
+    # publicada. Conta-lo como destino faria a regra silenciar sobre um job que
+    # a AWS diz que PRECISA configurar S3 ou CloudWatch.
+    payload = _com_overrides(
+        {"monitoringConfiguration": {"managedLogs": {"allowAWSToRetainLogs": "ENABLED"}}}
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.monitoring")
+    assert fato.measures["log_destination_count"] == 0
+    assert fato.attrs["managed_logs_declared"] is True
+
+
+def test_bloco_de_destino_vazio_nao_conta():
+    # `s3MonitoringConfiguration: {}` sem logUri nao e destino.
+    payload = _com_overrides(
+        {"monitoringConfiguration": {"s3MonitoringConfiguration": {}}}
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.monitoring")
+    assert fato.attrs["s3_log_uri_present"] is False
+    assert fato.measures["log_destination_count"] == 0
+    assert fato.attrs["monitoring_declared"] is True
+
+
+def test_a_sentinela_conta_as_configuracoes():
+    payload = _com_overrides(
+        {
+            "applicationConfiguration": [
+                {"classification": "spark-defaults", "properties": {"a": "1", "b": "2"}}
+            ]
+        }
+    )
+    sentinela = _um(extract_emr_eks(payload, "x.json"), "emrc.analyzed")
+    assert sentinela.measures["configuration_count"] == 2

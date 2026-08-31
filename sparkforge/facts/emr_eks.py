@@ -402,6 +402,168 @@ def _spark_submit_facts(
 
 
 # --------------------------------------------------------------------------- #
+# facts de conteudo -- Task 5 (application configuration e monitoring)
+# --------------------------------------------------------------------------- #
+
+
+def _configuration_entries(
+    entries: list[Any], path: str, provenance: dict[str, Any]
+) -> list[Fact]:
+    """Achata uma lista de `Configuration` (Task 5) em um Fact por propriedade,
+    descendo recursivamente em `configurations` aninhadas.
+
+    `knowledge/emr-eks/job-run-configuration.md` secao 2: `Configuration` tem a
+    mesma forma nos tres runtimes de EMR -- `classification` (String,
+    documentada como obrigatoria, mas o extrator nunca assume presenca de
+    nada), `properties` (map String->String) e `configurations` (array
+    recursivo do mesmo tipo). Nao descer no aninhamento esconderia exatamente
+    o valor que alguem enterrou uma classificacao abaixo.
+    """
+    facts: list[Fact] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        classification = _as_str(entry.get("classification")) or ""
+        properties = entry.get("properties")
+        if isinstance(properties, dict):
+            # Ordenadas por chave: saida deterministica, independente da
+            # ordem em que a API (ou o operador) escreveu o JSON.
+            for key in sorted(properties, key=str):
+                value = properties[key]
+                facts.append(
+                    Fact(
+                        kind="emrc.configuration",
+                        subject=_file_subject(path),
+                        attrs={
+                            "classification": classification,
+                            "key": key,
+                            "value": value if isinstance(value, str) else (
+                                "" if value is None else str(value)
+                            ),
+                            "surface": "application_configuration",
+                        },
+                        provenance=provenance,
+                    )
+                )
+        nested = entry.get("configurations")
+        if isinstance(nested, list):
+            facts.extend(_configuration_entries(nested, path, provenance))
+    return facts
+
+
+def _configuration_facts(
+    raw: Any, path: str, provenance: dict[str, Any]
+) -> list[Fact]:
+    """Constroi `emrc.configuration` a partir de `configurationOverrides.applicationConfiguration`.
+
+    Superficie SEPARADA de `emrc.spark_submit_parameters` (Task 4), de
+    proposito: `attrs.surface` distingue as duas, e a mesma propriedade nas
+    duas superficies produz DOIS facts em vez de um so. A AWS declara a
+    precedencia entre elas (`job-run-configuration.md` secao 3): quando as
+    duas trazem a mesma chave, o valor de `sparkSubmitParameters` vence.
+    Fundir os facts apagaria a unica pergunta que importa quando divergem --
+    qual venceu -- e violaria a regra 19 do CLAUDE.md (procedencia responde
+    quem PEDIU).
+
+    `None` (chave ausente do payload) devolve lista vazia -- overrides sem
+    `applicationConfiguration` e legitimo. Tipo errado (nao-lista) vira
+    `emrc.unresolved` com `section="applicationConfiguration"`.
+    """
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        return [
+            _unresolved(path, "malformed_json", provenance, section="applicationConfiguration")
+        ]
+    return _configuration_entries(raw, path, provenance)
+
+
+def _monitoring_fact(raw: Any, path: str, provenance: dict[str, Any]) -> list[Fact]:
+    """Constroi o fact `emrc.monitoring`, sempre exatamente UM.
+
+    `MonitoringConfiguration` tem CINCO membros
+    (`knowledge/emr-eks/job-run-configuration.md` secao 4), e so DOIS sao
+    destino de log:
+
+    - `s3MonitoringConfiguration.logUri` -- destino.
+    - `cloudWatchMonitoringConfiguration.logGroupName` -- destino.
+    - `managedLogs` -- NAO conta. A fonte ("Encrypting Amazon EMR on EKS logs
+      with managed storage") diz que `allowAWSToRetainLogs` cobre so "system
+      namespace logs when running a job using Native FGAC" -- log de sistema
+      sob um modo de auth especifico, nunca log de aplicacao -- e o campo NAO
+      tem default declarado nem retencao publicada. Isto e o INVERSO do EMR
+      Serverless: la o armazenamento gerenciado tem default LIGADO com 30 dias
+      publicados, e ausencia significa "protegido"; aqui nao ha declaracao
+      equivalente, e contar `managedLogs` como destino faria a regra silenciar
+      justamente sobre o job que a AWS diz, com "must" repetido em duas
+      paginas (secao 4), que PRECISA configurar S3 ou CloudWatch.
+    - `persistentAppUI` -- nao e destino: e a UI de aplicacao (Spark History
+      Server), nao lugar onde o log sobrevive ao pod.
+    - `containerLogRotationConfiguration` -- nao e destino: e rotacao de
+      arquivo de log dentro do container, nao onde ele e enviado.
+
+    O fact sai SEMPRE, inclusive quando `monitoringConfiguration` nao veio no
+    payload -- porque sem o bloco nao ha destino nenhum, e omitir o fact
+    deixaria a regra "nenhum destino de log" sem ingrediente justamente no
+    caso mais comum do estado que ela acusa. `monitoring_declared` distingue
+    "a API nao devolveu o bloco" (`False`) de "o bloco veio" (`True`), mesmo
+    quando o bloco veio vazio.
+
+    `persistent_app_ui` so entra em `attrs` quando o campo VEIO no payload:
+    a secao 5 da fonte e explicita que o default de `persistentAppUI` NAO e
+    publicado -- nem na referencia de API, nem na de CLI, nem no guia de
+    desenvolvimento. Presumir um default aqui materializaria um valor que a
+    fonte nao sustenta, o defeito que este repositorio mais persegue.
+    """
+    declared = isinstance(raw, dict)
+    block = raw if declared else {}
+
+    s3_block = block.get("s3MonitoringConfiguration")
+    s3_log_uri = _as_str(s3_block.get("logUri")) if isinstance(s3_block, dict) else None
+    s3_present = s3_log_uri is not None
+
+    cloudwatch_block = block.get("cloudWatchMonitoringConfiguration")
+    cloudwatch_log_group = (
+        _as_str(cloudwatch_block.get("logGroupName"))
+        if isinstance(cloudwatch_block, dict)
+        else None
+    )
+    cloudwatch_enabled = cloudwatch_log_group is not None
+
+    managed_logs_declared = isinstance(block.get("managedLogs"), dict)
+    container_log_rotation_declared = isinstance(
+        block.get("containerLogRotationConfiguration"), dict
+    )
+
+    attrs: dict[str, Any] = {
+        "monitoring_declared": declared,
+        "s3_log_uri_present": s3_present,
+        "cloudwatch_enabled": cloudwatch_enabled,
+        "managed_logs_declared": managed_logs_declared,
+        "container_log_rotation_declared": container_log_rotation_declared,
+    }
+    if s3_present:
+        attrs["s3_log_uri"] = s3_log_uri
+
+    persistent_app_ui = _as_str(block.get("persistentAppUI"))
+    attrs["persistent_app_ui_declared"] = persistent_app_ui is not None
+    if persistent_app_ui is not None:
+        attrs["persistent_app_ui"] = persistent_app_ui
+
+    measures = {"log_destination_count": int(s3_present) + int(cloudwatch_enabled)}
+
+    return [
+        Fact(
+            kind="emrc.monitoring",
+            subject=_file_subject(path),
+            attrs=attrs,
+            measures=measures,
+            provenance=provenance,
+        )
+    ]
+
+
+# --------------------------------------------------------------------------- #
 # entrada
 # --------------------------------------------------------------------------- #
 
@@ -450,6 +612,13 @@ def extract_emr_eks(payload: Any, path: str, artifact_sha256: str = "") -> list[
     facts.extend(_virtual_cluster_fact(payload.get("virtualCluster"), path, provenance))
     facts.append(_job_run_fact(raw, job_run_id, path, provenance))
     facts.extend(_spark_submit_facts(raw.get("jobDriver"), path, provenance))
+
+    overrides = raw.get("configurationOverrides")
+    overrides = overrides if isinstance(overrides, dict) else {}
+    facts.extend(
+        _configuration_facts(overrides.get("applicationConfiguration"), path, provenance)
+    )
+    facts.extend(_monitoring_fact(overrides.get("monitoringConfiguration"), path, provenance))
 
     return _finish(facts, path, provenance)
 
