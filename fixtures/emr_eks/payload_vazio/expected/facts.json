@@ -1,0 +1,50 @@
+[
+  {
+    "id": "f_e94dd1",
+    "schema_version": 1,
+    "kind": "emrc.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "virtual_cluster_count": 0,
+      "job_run_count": 0,
+      "configuration_count": 0,
+      "conf_parameter_count": 0,
+      "unresolved_count": 1
+    },
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "extractor": "emr_eks@0.1.0"
+    }
+  },
+  {
+    "id": "f_793a08",
+    "schema_version": 1,
+    "kind": "emrc.unresolved",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "reason": "missing_job_run"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "extractor": "emr_eks@0.1.0"
+    }
+  }
+]

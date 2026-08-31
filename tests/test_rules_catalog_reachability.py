@@ -32,6 +32,7 @@ from sparkforge.facts import (
     consumers,
     data_quality,
     emr_cluster,
+    emr_eks,
     emr_serverless,
     event_log,
     funcval,
@@ -75,6 +76,11 @@ EXTRACTORS = (
     # primeira regra de EMR seria obrigada a declarar `blocked_on` sobre um
     # extrator que ja esta no repositorio desde a Task 3 da Fase 5b.
     emr_cluster,
+    # `emr_eks` entra nas DUAS listas no mesmo commit desta Task, ANTES de a area
+    # SF-EMRK existir: sem ele aqui, os oito kinds `emrc.*` contam como orfaos e a
+    # primeira regra de EMR on EKS seria forcada a `blocked_on` sobre um extrator
+    # que ja esta no repositorio desde a Task 6 desta fase.
+    emr_eks,
     # `emr_serverless` pela mesma razao, uma fase depois: sem ele aqui, os seis
     # kinds `emrs.*` contam como orfaos e as regras SF-EMRS da Task 5 seriam
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no

@@ -1,0 +1,22 @@
+name: sem_destino_de_log
+proves: >
+  Nenhum destino de log na execucao. E o analogo de SF-EMRS-003 e SF-EMR-006, com
+  a diferenca que muda a leitura: no EMR Serverless o armazenamento gerenciado tem
+  default LIGADO e zero destinos exige tres atos deliberados; no EMR on EKS nao ha
+  armazenamento gerenciado -- `managedLogs.allowAWSToRetainLogs` cobre so "system
+  namespace logs when running a job using Native FGAC", sem default declarado e sem
+  retencao publicada -- e o bloco ausente JA e zero destino. A AWS declara o dever
+  com `must` literal: "you must configure your jobs to send log information to
+  Amazon S3, Amazon CloudWatch Logs, or both". Por isso `emrc.monitoring` sai
+  mesmo sem o bloco, com `monitoring_declared: false` -- omiti-lo deixaria a regra
+  sem ingrediente no caso mais comum do estado que ela acusa.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules: []
