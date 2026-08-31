@@ -165,3 +165,146 @@ def test_a_sentinela_conta_o_que_saiu():
     assert sentinela.measures["virtual_cluster_count"] == 1
     assert sentinela.measures["job_run_count"] == 1
     assert sentinela.measures["unresolved_count"] == 0
+
+
+def _confs(facts: list) -> dict[str, str]:
+    return {
+        f.attrs["key"]: f.attrs["value"]
+        for f in facts
+        if f.kind == "emrc.spark_submit_parameters"
+    }
+
+
+def _com_driver(driver: dict) -> dict:
+    payload = json.loads(json.dumps(_PAYLOAD_COMPLETO))
+    payload["jobRun"]["jobDriver"] = driver
+    return payload
+
+
+def test_conf_do_spark_submit_sai_par_a_par():
+    payload = _com_driver(
+        {
+            "sparkSubmitJobDriver": {
+                "entryPoint": "s3://bucket/etl.py",
+                "sparkSubmitParameters": (
+                    "--conf spark.executor.instances=4 --conf spark.executor.memory=8g"
+                ),
+            }
+        }
+    )
+    assert _confs(extract_emr_eks(payload, "x.json")) == {
+        "spark.executor.instances": "4",
+        "spark.executor.memory": "8g",
+    }
+
+
+def test_entry_point_arguments_nao_vira_configuracao():
+    # Argumento de aplicacao NAO e configuracao de Spark. Confundir os dois faria
+    # o detector de segredo varrer a superficie errada, e faria uma regra acusar
+    # valor que o Spark nunca leu.
+    payload = _com_driver(
+        {
+            "sparkSubmitJobDriver": {
+                "entryPoint": "s3://bucket/etl.py",
+                "entryPointArguments": ["--conf", "spark.nao.sou.conf=1"],
+                "sparkSubmitParameters": "--conf spark.executor.cores=2",
+            }
+        }
+    )
+    assert _confs(extract_emr_eks(payload, "x.json")) == {"spark.executor.cores": "2"}
+
+
+def test_flag_do_spark_submit_que_nao_e_conf_e_ignorada():
+    payload = _com_driver(
+        {
+            "sparkSubmitJobDriver": {
+                "sparkSubmitParameters": "--class Main --conf spark.executor.cores=2 --verbose"
+            }
+        }
+    )
+    assert _confs(extract_emr_eks(payload, "x.json")) == {"spark.executor.cores": "2"}
+
+
+def test_conf_sem_igual_vira_unresolved_em_vez_de_par_torto():
+    # Aceitar `--conf spark.sem.valor` produziria um fact com valor vazio,
+    # indistinguivel de uma propriedade legitimamente vazia.
+    payload = _com_driver(
+        {"sparkSubmitJobDriver": {"sparkSubmitParameters": "--conf spark.sem.valor"}}
+    )
+    facts = extract_emr_eks(payload, "x.json")
+    assert _reasons(facts) == ["malformed_conf"]
+    assert _confs(facts) == {}
+
+
+def test_conf_no_fim_sem_par_nenhum_vira_unresolved():
+    payload = _com_driver(
+        {"sparkSubmitJobDriver": {"sparkSubmitParameters": "--class Main --conf"}}
+    )
+    facts = extract_emr_eks(payload, "x.json")
+    assert _reasons(facts) == ["malformed_conf"]
+    assert _confs(facts) == {}
+
+
+def test_valor_com_igual_dentro_nao_e_truncado():
+    # `spark.driver.extraJavaOptions=-Da=1` tem `=` no valor. Partir no PRIMEIRO
+    # `=` e o unico jeito de nao truncar.
+    payload = _com_driver(
+        {
+            "sparkSubmitJobDriver": {
+                "sparkSubmitParameters": "--conf spark.driver.extraJavaOptions=-Da=1"
+            }
+        }
+    )
+    assert _confs(extract_emr_eks(payload, "x.json")) == {
+        "spark.driver.extraJavaOptions": "-Da=1"
+    }
+
+
+def test_spark_sql_job_driver_tambem_e_lido():
+    # A API aceita `sparkSqlJobDriver` no lugar de `sparkSubmitJobDriver`. Ler so
+    # o primeiro deixaria todo job SQL sem um unico fact de configuracao.
+    payload = _com_driver(
+        {
+            "sparkSqlJobDriver": {
+                "entryPoint": "s3://bucket/query.sql",
+                "sparkSqlParameters": "--conf spark.sql.shuffle.partitions=800",
+            }
+        }
+    )
+    assert _confs(extract_emr_eks(payload, "x.json")) == {
+        "spark.sql.shuffle.partitions": "800"
+    }
+
+
+def test_o_fact_diz_de_qual_superficie_e_de_qual_driver_o_valor_veio():
+    payload = _com_driver(
+        {"sparkSubmitJobDriver": {"sparkSubmitParameters": "--conf spark.executor.cores=2"}}
+    )
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.spark_submit_parameters")
+    assert fato.attrs["surface"] == "spark_submit_parameters"
+    assert fato.attrs["driver"] == "sparkSubmitJobDriver"
+
+
+def test_sem_job_driver_nao_ha_conf_e_nao_ha_erro():
+    facts = extract_emr_eks(_PAYLOAD_COMPLETO, "x.json")
+    assert _confs(facts) == {}
+    assert _reasons(facts) == []
+
+
+def test_job_driver_com_tipo_errado_nao_derruba_nada():
+    payload = _com_driver(["nao", "sou", "dict"])
+    facts = extract_emr_eks(payload, "x.json")
+    assert _confs(facts) == {}
+    assert "emrc.job_run" in _kinds(facts)
+
+
+def test_a_sentinela_conta_os_pares_de_conf():
+    payload = _com_driver(
+        {
+            "sparkSubmitJobDriver": {
+                "sparkSubmitParameters": "--conf a.b=1 --conf c.d=2 --conf e.f=3"
+            }
+        }
+    )
+    sentinela = _um(extract_emr_eks(payload, "x.json"), "emrc.analyzed")
+    assert sentinela.measures["conf_parameter_count"] == 3

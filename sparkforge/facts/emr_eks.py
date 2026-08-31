@@ -307,6 +307,101 @@ def _job_run_fact(
 
 
 # --------------------------------------------------------------------------- #
+# facts de conteudo -- Task 4 (spark submit parameters)
+# --------------------------------------------------------------------------- #
+
+# `DescribeJobRun` aceita DUAS formas de `jobDriver`, documentadas pela API:
+# `sparkSubmitJobDriver` (campo `sparkSubmitParameters`), para jobs Spark
+# submetidos via spark-submit, e `sparkSqlJobDriver` (campo
+# `sparkSqlParameters`), para jobs SQL. Ler so a primeira forma deixaria todo
+# job SQL sem um unico fact de configuracao -- as duas precisam ser lidas.
+_DRIVER_PARAMETER_FIELDS: tuple[tuple[str, str], ...] = (
+    ("sparkSubmitJobDriver", "sparkSubmitParameters"),
+    ("sparkSqlJobDriver", "sparkSqlParameters"),
+)
+
+
+def _spark_submit_facts(
+    raw_driver: Any, path: str, provenance: dict[str, Any]
+) -> list[Fact]:
+    """Separa os pares `--conf chave=valor` do texto de parametros do
+    spark-submit (ou spark-sql) em `jobDriver`, um Fact por par.
+
+    `entryPointArguments` fica FORA por desenho: e argumento da APLICACAO, e
+    nao configuracao de Spark. Confundir os dois faria o detector de segredo
+    varrer a superficie errada, e faria uma regra acusar valor que o Spark
+    nunca leu -- so o campo de parametros de cada forma de driver (`sparkSubmitParameters`
+    ou `sparkSqlParameters`) e lido, nunca `entryPointArguments`.
+
+    Qualquer flag que nao seja `--conf` (`--class`, `--verbose`, `--jars`) e
+    ignorada em silencio: este fact responde por configuracao de Spark, e
+    mais nada -- nao e um parser geral de linha de comando do spark-submit.
+
+    `raw_driver` que nao seja `dict` devolve lista vazia, sem erro: a
+    ausencia de driver (ou o tipo errado) e legitima, e nao deve derrubar os
+    demais facts desta execucao.
+    """
+    if not isinstance(raw_driver, dict):
+        return []
+
+    facts: list[Fact] = []
+    for driver_key, params_field in _DRIVER_PARAMETER_FIELDS:
+        driver_block = raw_driver.get(driver_key)
+        if not isinstance(driver_block, dict):
+            continue
+        parameters = _as_str(driver_block.get(params_field))
+        if parameters is None:
+            continue
+
+        tokens = parameters.split()
+        i = 0
+        while i < len(tokens):
+            if tokens[i] != "--conf":
+                i += 1
+                continue
+            if i + 1 >= len(tokens):
+                # `--conf` no fim, sem par depois.
+                facts.append(
+                    _unresolved(path, "malformed_conf", provenance, surface=params_field)
+                )
+                i += 1
+                continue
+            pair = tokens[i + 1]
+            if "=" not in pair:
+                # Par sem `=` -- nao ha como separar chave de valor.
+                facts.append(
+                    _unresolved(
+                        path,
+                        "malformed_conf",
+                        provenance,
+                        surface=params_field,
+                        token=pair,
+                    )
+                )
+                i += 2
+                continue
+            # `partition` corta no PRIMEIRO `=` -- necessario porque o valor
+            # pode conter `=` (ex.: `spark.driver.extraJavaOptions=-Da=1`).
+            key, _, value = pair.partition("=")
+            facts.append(
+                Fact(
+                    kind="emrc.spark_submit_parameters",
+                    subject=_file_subject(path),
+                    attrs={
+                        "key": key,
+                        "value": value,
+                        "surface": "spark_submit_parameters",
+                        "driver": driver_key,
+                    },
+                    provenance=provenance,
+                )
+            )
+            i += 2
+
+    return facts
+
+
+# --------------------------------------------------------------------------- #
 # entrada
 # --------------------------------------------------------------------------- #
 
@@ -349,11 +444,12 @@ def extract_emr_eks(payload: Any, path: str, artifact_sha256: str = "") -> list[
         facts.append(_unresolved(path, "missing_job_run_id", provenance))
         return _finish(facts, path, provenance)
 
-    # Task 3: virtual cluster e job run. As Tasks 4 a 6 acrescentam os quatro
-    # kinds restantes (spark_submit_parameters, configuration, monitoring,
-    # pod_template.unresolved) neste mesmo ponto.
+    # Task 3: virtual cluster e job run. Task 4: spark_submit_parameters. As
+    # Tasks 5 e 6 acrescentam os tres kinds restantes (configuration,
+    # monitoring, pod_template.unresolved) neste mesmo ponto.
     facts.extend(_virtual_cluster_fact(payload.get("virtualCluster"), path, provenance))
     facts.append(_job_run_fact(raw, job_run_id, path, provenance))
+    facts.extend(_spark_submit_facts(raw.get("jobDriver"), path, provenance))
 
     return _finish(facts, path, provenance)
 
