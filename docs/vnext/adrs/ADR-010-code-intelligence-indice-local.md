@@ -115,7 +115,7 @@ A fase J3 mediu o índice contra o denominador que menos o favorece: a saída de
 `grep -n "def <nome>"`. O índice **perde**. Mesmo descartando todo símbolo que apenas *contém* o
 termo e ficando só com correspondência exata, a resposta do índice custa **2.3** vezes o que
 aquele `grep` custaria. Contra a pergunta *estrutural* — "quais são os símbolos deste arquivo" — a
-relação se inverte e o índice sai **9.7** vezes à frente, porque a alternativa é abrir o arquivo
+relação se inverte e o índice sai **8.2** vezes à frente, porque a alternativa é abrir o arquivo
 inteiro e fazer o parse do lado de quem perguntou.
 
 As duas coisas respondem perguntas diferentes, e é isso que a medição mostra: o índice não se paga

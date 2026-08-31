@@ -193,7 +193,7 @@ método vem antes do número, e é para ele que quem discordar deve olhar primei
 
 **Método.** Cinco perguntas reais sobre este repositório, uma por símbolo: `iter_source_files`,
 `looks_like_secret`, `project_items`, `tool_class` e `authorize`. O corpus é o mesmo dos dois
-lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **458** nesta árvore.
+lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **462** nesta árvore.
 
 - **Com índice** — `buscar(banco, nome)` sobre o índice do repositório inteiro, serializado como
   a CLI serializa (`json.dumps(..., ensure_ascii=False)` da lista de `Achado`). É o payload que
@@ -211,23 +211,23 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **45
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
 | `iter_source_files` | 1 | 466 | 609082 | 8648 | 102 |
-| `looks_like_secret` | 2 | 465 | 136735 | 2325 | 84 |
-| `project_items` | 1 | 193 | 206318 | 1826 | 52 |
+| `looks_like_secret` | 2 | 466 | 139575 | 2607 | 85 |
+| `project_items` | 1 | 193 | 207861 | 1826 | 52 |
 | `tool_class` | 1 | 188 | 28525 | 2563 | 74 |
 | `authorize` | 4 | 897 | 264128 | 4426 | 107 |
 
-Somadas as cinco perguntas: o índice devolve **2209** bytes; ler os arquivos custaria **1244788**;
-a saída do `grep` pelo nome, **19788**; a saída do `grep` pela definição, **419**.
+Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1249171**;
+a saída do `grep` pelo nome, **20070**; a saída do `grep` pela definição, **420**.
 
 Esta contagem já foi **1940**, e nessa forma era o único número da seção que
 `scripts/check_vnext_claims.py` não auditava: quatro dígitos entre 1900 e 2099 estão na lista de
-tokens ignorados como datação, e ela caía ali. Ao crescer para **2209** saiu da zona cega e passou
+tokens ignorados como datação, e ela caía ali. Ao crescer para **2210** saiu da zona cega e passou
 a ter entrada própria no manifesto — o ponto cego era do intervalo, não do número, e some sozinho
 quando a contagem o atravessa. Vale registrar porque a mesma armadilha volta para qualquer
 contagem que passeie por aquela faixa.
 
-**Contra o denominador do plano, o índice economiza 563.5 vezes.** Contra a saída de um `grep`
-pelo nome, **9.0** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
+**Contra o denominador do plano, o índice economiza 565.2 vezes.** Contra a saída de um `grep`
+pelo nome, **9.1** vezes. E contra a saída de um `grep` pela definição o resultado se inverte: a
 resposta do índice custa **5.3** vezes o que aquele `grep` custaria.
 
 **Esse último número é o resultado honesto desta medição, e ele não agrada.** Medido em bytes de
@@ -245,8 +245,8 @@ economia seria mentir sobre o que foi medido.
 - **O denominador C só funciona se você já souber o nome inteiro e certo.** Para fragmento, o
   `grep` equivalente é `def .*<fragmento>`, e o `grep` pelo nome deixa de ser barato:
   `buscar(banco, "source")` devolve **43** símbolos em **11282** bytes; a saída do `grep` pelo nome,
-  no mesmo corpus, tem **122703** bytes. O `grep` pela definição contendo o fragmento continua menor
-  (**7916** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
+  no mesmo corpus, tem **124007** bytes. O `grep` pela definição contendo o fragmento continua menor
+  (**8004** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que
   `AutonomyController.authorize_tool` é método daquela classe, porque isso exige parse.
 - **O `grep` relê a árvore inteira a cada pergunta**; o índice lê o banco. Isso é CPU e I/O, não
   token, e esta medição não o converte em byte nenhum de propósito.
@@ -254,7 +254,7 @@ economia seria mentir sobre o que foi medido.
 
 **Filtrar por correspondência exata não salva o número.** Metade do que o índice devolve nas
 cinco perguntas é símbolo cujo nome apenas *contém* o termo. Descartando esses e ficando só com
-`name == termo`, a resposta encolhe para **963** bytes — e continua custando **2.3** vezes o
+`name == termo`, a resposta encolhe para **964** bytes — e continua custando **2.3** vezes o
 `grep` pela definição. O recall explica metade da diferença; a outra metade é que um `Achado`
 carrega `node_id`, `qualified_name` e `kind`, que uma linha de `grep` não carrega e que a
 pergunta "onde está X" não pediu.
