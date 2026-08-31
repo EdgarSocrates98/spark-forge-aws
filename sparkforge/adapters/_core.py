@@ -551,6 +551,63 @@ def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, 
     return sources
 
 
+_EKS_NAMESPACE = "emrc."
+_EC2_NAMESPACE = "emr."
+
+
+def _recusar_emr_sobre_eks(emr: str | None, facts: list[Fact] | None) -> None:
+    """A flag `--emr` e de EMR on EC2, e sobre facts de EMR on EKS ela INVENTA.
+
+    `--emr` alimenta a chave `emr_release`, e `detect_runtime` deriva dela
+    `spark`, `python` e `iceberg` pela `EMR_MATRIX` -- que e a matriz de EMR on
+    EC2. Sobre um conjunto de facts `emrc.*` os tres eixos sairiam preenchidos
+    sem que um unico fact de EC2 estivesse presente.
+
+    Para EMR on EKS isso nao e imprecisao, e erro medido. A AWS PUBLICA matriz
+    de release para o EKS, e ela DIVERGE da de EC2 em celulas reais: em 26
+    releases comparaveis, Iceberg diverge em 6 e Spark em 4 -- `emr-6.5.0` nao
+    publica Iceberg nenhum no EKS enquanto o EC2 publica `0.12.0`, e `emr-7.7.0`
+    roda `1.6.1-amzn-2` no EKS contra `1.7.1-amzn-0` no EC2, minor diferente.
+    Python nao e publicado por familia em lugar nenhum do EKS. Ver
+    `knowledge/emr-eks/runtime-matrix.md` §2 e a DV-1 da spec da fase.
+
+    Recusar, e nao apenas deixar de derivar, porque o proprio eixo `emr` e uma
+    afirmacao sobre a plataforma errada: com ele preenchido, regra `SF-EMR-*`
+    guardada por `runtime_scope: {emr: ...}` entraria em escopo sobre um
+    artefato que nao e um cluster.
+
+    A recusa e ESTREITA de proposito. Um conjunto que tenha `emr.*` ao lado de
+    `emrc.*` -- dois artefatos fundidos -- passa, porque ali a flag declara o
+    lado de EC2 que esta de fato presente. O `RuntimeContext` e um so para os
+    dois lados, e isso e limite estrutural anterior a esta guarda.
+
+    A mesma invencao acontece com facts `emrs.*` de EMR Serverless, e ela
+    continua aberta: la a AWS nao publica matriz nenhuma, entao a de EC2 e
+    inaplicavel por FALTA DE FONTE, e nao por divergencia medida. Fechar aquele
+    lado exige decidir o que fazer sem fonte, e essa decisao nao foi tomada
+    aqui.
+    """
+    if not emr or not facts:
+        return
+    kinds = {f.kind for f in facts}
+    if not any(k.startswith(_EKS_NAMESPACE) for k in kinds):
+        return
+    if any(k.startswith(_EC2_NAMESPACE) for k in kinds):
+        return
+    raise AdapterError(
+        f"`--emr {emr}` e release de EMR on EC2, e este conjunto de facts e de "
+        f"EMR on EKS (kinds `{_EKS_NAMESPACE}*`, nenhum `{_EC2_NAMESPACE}*`).\n"
+        f"  A matriz de release do EMR on EKS existe e DIVERGE da de EC2 -- "
+        f"Iceberg em 6 de 26 releases comparaveis, Spark em 4 --, entao derivar "
+        f"`spark`, `python` e `iceberg` do release de EC2 gravaria versao que "
+        f"nunca rodou.\n"
+        f"  Julgue sem a flag; a area SF-EMRK nao restringe por versao:\n"
+        f"    sparkforge judge --facts <arquivo>\n"
+        f"  Ver `knowledge/emr-eks/runtime-matrix.md` (secao 2).",
+        exit_code=2,
+    )
+
+
 def build_runtime(
     glue: str | None = None,
     spark: str | None = None,
@@ -573,6 +630,7 @@ def build_runtime(
     silenciosamente o significado de cada argumento deles. Ordem de assinatura e
     compatibilidade, nao taxonomia.
     """
+    _recusar_emr_sobre_eks(emr, facts)
     raw = {
         "glue_version": glue,
         # `emr_release` e a primeira chave de `_PLATFORM_KEYS["emr"]`, e

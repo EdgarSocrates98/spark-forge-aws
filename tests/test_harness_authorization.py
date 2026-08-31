@@ -814,7 +814,7 @@ class TestConfinamentoEhUmSoAlgoritmo:
 class TestOCatalogoContinuaCabendoNaVerificacao:
     """O gate que impede a medicao do Passo 1 de envelhecer em silencio.
 
-    Medido: 57 das 59 tools declaram parametro de caminho, e as duas sem
+    Medido: 59 das 61 tools declaram parametro de caminho, e as duas sem
     nenhum sao `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`)
     e `sparkforge_economy_report` (`run_id`, `host_transcript`) -- nenhum dos
     dois nomeia arquivo, diretorio ou repo, entao nenhum casa com o predicado.
@@ -831,6 +831,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     `origem`, `destino`), a contagem muda e este teste cai -- que e o ponto.
     O predicado nao adivinha; ele reconhece nomes, e nome novo tem de passar
     por decisao de alguem, nao por default silencioso.
+
+    A fase de EMR on EKS levou 59 para 61: `sparkforge_analyze_emr_eks` declara
+    `path` e `sparkforge_collect_emr_eks` declara `out_dir`, entao as duas caem
+    do lado certo do predicado e o conjunto de excecao NAO mudou. Foi este
+    teste que mediu isso -- ele caiu na contagem, e nao no conjunto.
     """
 
     SEM_CAMINHO = frozenset({"sparkforge_rules_lookup", "sparkforge_economy_report"})
@@ -847,7 +852,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        assert len(TOOLS) - len(sem_caminho) == 57
+        assert len(TOOLS) - len(sem_caminho) == 59
 
 
 class TestAImposicaoNoDespacho:

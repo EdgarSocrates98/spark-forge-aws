@@ -41,39 +41,50 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **6716** passando, 5 skipped, medido em `fa3586c` | `python -m pytest -q` |
+| Testes | **7993** passando, **7** skipped, medido ao fechar a fase de EMR on EKS | **A suíte inteira num processo só não sobrevive**, e por isso o número é a soma de lotes medidos um a um: `test_[a-c]*` 1430 (+2 skipped), `test_[d-e]*` 159, `test_f*` sem golden 1617, `test_fixtures_golden_*` em **quatro** sublotes (158, 716, 604 e 302, soma 1780 — o lote de goldens que `CLAUDE.md` já manda "quebrar outra vez" precisou de quatro partes e não de duas, porque a segunda metade estourou 10 minutos num processo só), `test_[g-z]*` 3007 (+5 skipped). Oito execuções, nenhuma falha na medida final |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **16 de 124** — 11 guardadas por `glue` (3 delas `SF-MIG`), 4 por versão de Spark (`SF-GRAPH-002` e as três `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão | `load_catalog()` |
-| Extratores de facts | **27** — corrigido ao fechar o subprojeto H, `utilization.py` é o vigésimo sétimo | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 34 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
-| Fact kinds distintos emitidos | **158** — corrigido ao fechar o subprojeto H; os seis novos são `spark.stage.failure`, os três `spark.timeout.*` e os dois `glue.utilization.*` | união de `EMITTED_KINDS` sobre os 27 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (sem overlap entre módulos) |
-| Regras de diagnóstico | **134**, sendo **62 `confirmed`** e **66 `structural`** (31 herdadas, 35 novas: uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`) | `load_catalog()` |
+| Regras com `runtime_scope` não-vazio | **18 de 138** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados* | `load_catalog()` |
+| Extratores de facts | **28** — remedido ao fechar a fase de EMR on EKS, `emr_eks.py` é o vigésimo oitavo | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 35 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
+| Fact kinds distintos emitidos | **166** — remedido ao fechar a fase de EMR on EKS; os oito novos são os `emrc.*` | união de `EMITTED_KINDS` sobre os 28 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (166 = 166, sem overlap entre módulos) |
+| Regras de diagnóstico | **138**, sendo **66 `confirmed`**, **37 com `status: structural`** e **35 sem campo `status`** (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
-| Rotas determinísticas | **91** | `rules/catalog/routing.yaml` |
-| Tools MCP | **59** — corrigido ao fechar o subprojeto J; `sparkforge_economy_report` foi a que levou a contagem de 58 para 59 | `sparkforge.adapters.tools.TOOLS` |
-| Tools alcançáveis a partir de algum coordenador | **59 de 59** | `tests/test_agent_coverage.py` |
+| Rotas determinísticas | **97** — remedido ao fechar a fase de EMR on EKS, e o número **não** cresceu por causa dela: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` |
+| Tools MCP | **61** — remedido ao fechar a fase de EMR on EKS; `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` levaram a contagem de 59 para 61 | `sparkforge.adapters.tools.TOOLS` |
+| Tools alcançáveis a partir de algum coordenador | **61 de 61** | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
 | Executores | **5** | `agents/executors/*.md` |
-| Skills | **44** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6) | `skills/*/SKILL.md` |
-| Skills que declaram despacho | **21 de 44**, sendo **8** com `agent:` (declarante único; `diagnose-oom` fica fora porque o único é o orquestrador). As três despacháveis da fase H6 declaram a fronteira que o gate cobra; `iceberg-v3-readiness` é a quarta e **não** é despachável, porque exige o inventário de consumidores | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
+| Skills | **45** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks`) | `skills/*/SKILL.md` |
+| Skills que declaram despacho | **22 de 45**, sendo **9** com `agent:`. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **194** em 23 domínios | `fixtures/` |
+| Fixtures golden | **262** em 32 domínios — remedido ao fechar a fase de EMR on EKS, e **59 dos 68 acrescidos desde as 194 publicadas são de fases anteriores** que não remediram esta linha; `emr_eks` contribui com os outros 9. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **256 guardam o golden em `expected/`**; as 6 de `glue_job_run` o guardam em `runs/`, e essa é a única forma divergente | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
-| Fontes oficiais vigiadas | **143** (131 móveis, 12 fixas) — 69 citadas por regra, 135 por `knowledge/`, 61 pelas duas | `knowledge/sources.lock.json` |
+| Fontes oficiais vigiadas | **215** (201 móveis, 14 fixas) — 87 citadas por regra, 205 por `knowledge/`, 77 pelas duas. A fase de EMR on EKS levou 153 → 213 na pesquisa de fontes e 213 → **215** ao fixar as duas URLs do Spark 3.5.6 que `SF-EMRK-004` cita; **64** das 215 são citadas por `knowledge/emr-eks/` e **16** por regra `SF-EMRK`. A diferença para as 143 publicadas antes é de fases anteriores que não remediram esta linha | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
 
-Regras por área: SF-PY 12, SF-EMR 9, SF-EMRS 6, SF-GLUE 6, SF-UI 6, SF-ATH 5,
-SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5, SF-BENCH 4, SF-DQ 4, SF-GRAPH 4,
-SF-PLAN 4, SF-CG 1.
+Regras por área, medido com `load_catalog()` ao fechar a fase de EMR on EKS —
+**as 59 áreas, e não só as 15 que esta linha listava**: SF-PY 12, SF-EMR 9,
+SF-EMRS 6, SF-GLUE 6, SF-UI 6, SF-ATH 5, SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5,
+SF-BENCH 4, SF-DQ 4, **SF-EMRK 4**, SF-GRAPH 4, SF-MIG 4, SF-PLAN 4, SF-SPARK4 4,
+SF-KMS 2, SF-LF 2, SF-TIMEOUT 2, SF-WASTE 2, e mais **38 áreas com 1 regra cada**
+(SF-AGENTS, SF-AIRFLOW, SF-ANALYTICS, SF-API, SF-ARCH, SF-ATHENA, SF-AWS,
+SF-CATALOG, SF-CG, SF-CONTRACT, SF-COST, SF-DYNAMODB, SF-EVAL, SF-GOVERNANCE,
+SF-IAC, SF-ICEBERG, SF-LAKE, SF-LAMBDA, SF-MODEL, SF-NEPTUNE, SF-NET, SF-NOSQL,
+SF-OPS, SF-ORCH, SF-PARQUET, SF-PIPELINE, SF-REPORT, SF-RULES, SF-S3,
+SF-SECURITY, SF-SERVERLESS, SF-SQL, SF-STEP-FUNCTIONS, SF-STORAGE, SF-TERRAFORM,
+SF-TRANSACTION, SF-VALIDATION, SF-XACC). Soma: 138.
 
-Fixtures por domínio: `graph` 25, `emr_serverless` 19, `pyspark` 17, `emr` 14, `dq` 13,
-`funcval` 10, `iceberg` 9, `terraform` 8, `plan` 7, `runtime` 7, `s3` 7, `bench` 6,
-`fusion` 5, `eventlog` 4, `sql` 4, `athena` 3, `callgraph` 3, `catalog` 3,
-`consumers` 3, `infra_code` 2, `tfdiff` 2.
+Fixtures por domínio, medido ao fechar a fase de EMR on EKS: `graph` 25,
+`emr_serverless` 19, `pyspark` 17, `emr` 14, `migration` 14, `dq` 13, `funcval` 10,
+`sql_metrics` 10, `terraform` 10, **`emr_eks` 9**, `finops` 9, `iceberg` 9,
+`timeout` 8, `bench` 7, `plan` 7, `runtime` 7, `s3` 7, `tuning` 7, `capacity` 6,
+`glue_job_run` 6, `workload` 6, `eventlog` 5, `fusion` 5, `waste` 5,
+`infra_code` 4, `sql` 4, `tfdiff` 4, `athena` 3, `callgraph` 3, `catalog` 3,
+`consumers` 3, `scenarios` 3. Soma: 262.
 
 ---
 
@@ -1862,7 +1873,7 @@ extrator novo → área de regra nova → fixtures com golden bidirecional.
 |---|---|---|
 | EMR | release label, instance fleets, `describe-cluster` | `SF-EMR` — **entregue** pela Fase 5b |
 | EMR Serverless | `get-application`: pré-init, auto-stop, destinos de log, `runtimeConfiguration` | `SF-EMRS` — **entregue** pela Fase 5d. O que ficou de fora tem linha própria em *Dívidas abertas*: job runs (fase) e a matriz de runtime que a AWS não publica (**limite declarado** desde 2026-08-05 — entrou como dívida e foi reclassificada quando o caminho alternativo que ela propunha foi exercitado e não fechou o título dela) |
-| EMR on EKS | virtual cluster, container provider, pod template | sem área, sem `knowledge/` e sem posição na *Ordem* |
+| EMR on EKS | `describe-virtual-cluster` + `describe-job-run` do `emr-containers`: cluster virtual e namespace, papel de execução por job run, as duas superfícies de configuração, destino de log por execução | `SF-EMRK` — **entregue** em 2026-08-31, branch `feat/emr-eks`. Pod template, o lado EKS (nodegroup, Karpenter, pod pendente), o Terraform `aws_emrcontainers_*` e `list-job-runs` ficaram **fora por decisão registrada**, cada um com a razão na seção própria |
 | Testes de dados | ~~saída de Deequ, Great Expectations, dbt tests; schema declarado~~ — **o artefato previsto aqui não é o que entrou.** A Fase 5c leu o **`.py`** e vetou o resultado de execução: repetir o que a suíte já disse não acrescenta garantia. Ver a seção da 5c | `SF-DQ` — **entregue** |
 | Redshift | plano de query, `STL`/`SVL`, distkey e sortkey | `SF-RS` |
 | Streaming | config de Kinesis e MSK, checkpoint de Structured Streaming | `SF-STR` |
@@ -1939,8 +1950,10 @@ O erro caro seria apresentar as três camadas com a mesma cara.
 10. **Fase 5d** — EMR Serverless — **CONCLUÍDA** em 2026-08-05, branch
     `feat/fase5d-emr-serverless`. Ver seção própria acima. Fecha a primeira
     metade da única linha de *Trabalho previsto* que não tinha posição nesta
-    lista; a segunda, EMR on EKS, continua sem posição, e a decisão de enfileirá-la
-    é de roadmap
+    lista. **A segunda metade, EMR on EKS, fechou em 2026-08-31** (branch
+    `feat/emr-eks`, seção própria acima) — entrou sem nunca ter recebido posição
+    nesta ordem, o que é registro de que a fila descreve o que foi planejado e
+    não o que foi feito
 11. **Especialização por banco de dados** — uma fase por ferramenta, na ordem
     `SF-GRAPH`, `SF-DDB`, `SF-NEP`, `SF-MONGO`, decomposta em
     [`specs/2026-08-03-sparkforge-roadmap-bancos.md`](specs/2026-08-03-sparkforge-roadmap-bancos.md).
@@ -4923,6 +4936,164 @@ instância por processo.
 - **Custo em dólar por chamada de tool**: sem tabela de preço publicada para
   chamada local, seria número inventado.
 
+## EMR on EKS — a terceira plataforma, e a outra metade da linha que a 5d encolheu — **CONCLUÍDA** em 2026-08-31
+
+Branch `feat/emr-eks`, doze tasks. Fecha a **segunda metade** da linha de
+*Trabalho previsto* que a Fase 5d encolheu: ela dizia "EMR Serverless e EMR on
+EKS", perdeu a primeira metade em 2026-08-05 e agora perde a segunda. Spec em
+[`specs/2026-08-31-sparkforge-emr-eks-design.md`](specs/2026-08-31-sparkforge-emr-eks-design.md);
+o spec ganhou §11 com quinze desvios (DV-1 a DV-15) e **não foi reescrito**.
+
+**Números medidos no fechamento** (à esquerda, o que esta seção publicava antes;
+cada um foi contado, nenhum somado à mão): extratores 27 → **28**, kinds
+distintos 158 → **166**, regras 134 → **138**, tools MCP 59 → **61**, skills 44 →
+**45**, fixtures 194 em 23 domínios → **262 em 32**, rotas 91 → **97**, fontes
+vigiadas 143 → **215**. **Quatro dos oito não cresceram só por esta fase, e o
+número da esquerda estava velho** — fixtures, rotas e fontes vigiadas tinham
+fases inteiras fechadas sem remedir a linha, e a contribuição desta fase está
+escrita em cada célula da tabela de *Números correntes*. A desta fase, isolada: 1
+extrator, 8 kinds, 4 regras, 2 tools, 1 skill, 9 fixtures, 0 rotas (a `AGENT-007`
+foi estendida, não duplicada) e 62 fontes (60 na pesquisa, 2 ao fixar a versão do
+Spark que `SF-EMRK-004` cita).
+
+Superfície declarada: `docs/surface.lock.json` foi de **935 620** para **1 047
+002** bytes, **+111 382** — tools +11 033 (59 → 61), skills +27 070 (44 → 45) e
+knowledge +73 279 (47 → 49 documentos).
+
+Suíte: **7993** passando, 7 skipped, em oito lotes. A suíte inteira num processo
+só não sobrevive neste repositório, e o lote de goldens precisou de **quatro**
+partes e não das duas que `CLAUDE.md` documenta — a segunda metade estourou 10
+minutos. Fica registrado para quem for medir a próxima.
+
+**O que entrou.** `knowledge/emr-eks/` com dois documentos de fonte datada
+(`runtime-matrix.md` e `job-run-configuration.md`);
+`sparkforge/facts/emr_eks.py` (`emr_eks@0.1.1`) com oito kinds `emrc.*` e redação
+de segredo nas duas superfícies de configuração; `collect_emr_eks` em
+`sparkforge/collect/aws.py`, que faz **duas** chamadas de API e grava **um**
+arquivo; a área `SF-EMRK` em `rules/catalog/emr-eks.yaml` com 4 regras e 2 vetos
+escritos no cabeçalho; 9 fixtures com golden; `analyze emr-eks` e `collect
+emr-eks` na CLI e no MCP; `emr-infra-reviewer` passando a declarar `SF-EMRK`; a
+skill `review-emr-eks`; e `tests/test_emr_eks_area_boundary.py`, que mede a
+fronteira entre as **três** áreas de EMR nos **seis** pares ordenados.
+
+**O que ficou fora, com a razão.**
+
+- **Pod template.** O YAML apontado por `spark.kubernetes.driver.podTemplateFile`
+  é artefato separado, quase sempre em S3, e resolver path→conteúdo é mecanismo
+  que nenhum extrator do repositório tem. Sai como
+  `emrc.pod_template.unresolved` carregando o path declarado: o operador vê que
+  existe e que não foi lido.
+- **O lado EKS** — cluster, nodegroup, Karpenter, pod pendente. Outro serviço
+  AWS, outro IAM, outra matriz de versão (Kubernetes). É onde a causa raiz de pod
+  pendente mora, e é por isso que entra por conta própria em vez de ser enfiado
+  aqui.
+- **Terraform `aws_emrcontainers_*`.** O extrator de Terraform existe e a
+  extensão seria barata, mas cobre o lado de quem **pediu**, não o de quem
+  **rodou**, e não fecha sintoma nenhum de performance.
+- **`list-job-runs`.** Espelha o que `glue.job_run` fez para Glue e merece a
+  mesma fase própria.
+
+**As quatro regras, e a candidata VETADA.**
+
+| Regra | O que ela afirma |
+|---|---|
+| `SF-EMRK-001` | literal de credencial em `emrc.configuration` **ou** `emrc.spark_submit_parameters` — `DescribeJobRun` devolve as duas **sem redação** |
+| `SF-EMRK-002` | `emrc.monitoring` com zero destino de log. Dispara **por ausência**, e o Serverless não podia: aqui não há armazenamento gerenciado com retenção publicada, e a fonte traz um `must` literal repetido em duas páginas |
+| `SF-EMRK-003` | `persistentAppUI` **escrito** `DISABLED`. Nunca por ausência: o default não é publicado em lugar nenhum, e presumi-lo materializaria default sem fonte |
+| `SF-EMRK-004` | alocação dinâmica ligada com `shuffleTracking` desligado **por escrito**, `confidence: medium` |
+
+**A candidata vetada é "imagem de container em tag mutável", e o veto é do tipo
+mais caro de descobrir depois: não é falta de fonte, é fonte que diz o oposto.**
+O exemplo oficial de URI de imagem base é `.../spark/emr-7.13.0:latest`, e o
+release label com sufixo `-latest` é **recomendado** pela AWS — *"to ensure that
+your Amazon EMR version always includes the latest security updates"*. As
+*Considerations for customizing images* têm seis itens e nenhum sobre
+imutabilidade de tag. A regra acusaria a configuração que a AWS ensina. O segundo
+veto é o do destino de log gerenciado: `managedLogs.allowAWSToRetainLogs` cobre
+só *"system namespace logs when running a job using Native FGAC"*, sem default
+declarado e sem retenção publicada, e por isso **não desarma** `SF-EMRK-002`.
+
+**A matriz de release teve o terceiro desfecho, e ele é o oposto do da 5d.** A
+D-4 do spec previa dois — matriz publicada (o produtor de runtime entra) ou não
+publicada como no Serverless (não entra). Medido lendo as 34 páginas por família,
+uma a uma: **a AWS publica**, na linha `Supported applications`, cobrindo Spark,
+Iceberg, Hudi e Delta; não cobre Hadoop (0 de 34) nem Python (2 de 34, em prosa).
+E onde a matriz existe, **ela diverge da de EC2 em células reais**: em 26 releases
+comparáveis, Iceberg diverge em 6 e Spark em 4 — `emr-6.5.0` não publica Iceberg
+nenhum no EKS enquanto o EC2 publica `0.12.0`, e `emr-7.7.0` roda `1.6.1-amzn-2`
+no EKS contra `1.7.1-amzn-0` no EC2, **minor diferente**. No Serverless a
+`EMR_MATRIX` de EC2 é inaplicável **por falta de fonte**; aqui ela é
+**medidamente errada**.
+
+**A consequência disso fechou meia dívida antiga, e a outra metade continua
+aberta.** A tabela de *Dívidas* registra desde 2026-08-05 que `sparkforge judge
+--facts <facts de EMR Serverless> --emr 7.5.0` grava `spark`, `python` e
+`iceberg` derivados da `EMR_MATRIX` — que é de EC2 — sobre um conjunto sem um
+único fact de EC2. A terceira plataforma **não repete o erro**: `--emr` é
+**recusado** com exit 2 e razão nomeada quando o conjunto tem fact `emrc.*` e
+nenhum `emr.*`. A recusa é estreita de propósito — um conjunto fundido que
+carregue os dois continua aceitando a flag, porque ali ela declara o lado de EC2
+que está de fato presente. O contrafactual está em
+`tests/test_emr_eks_area_boundary.py::TestOEixoDeRuntimeNaoVemDaMatrizDeEC2`, com
+as três células divergentes nomeadas uma a uma. **A dívida do Serverless
+continua aberta e agora é assimétrica**: fechá-la exige decidir o que fazer sem
+fonte nenhuma, e essa decisão não foi tomada aqui.
+
+**A fronteira entre plataformas passou de duas direções a seis.**
+`tests/test_rules_emrs_boundary.py` media `SF-EMR` × `SF-EMRS`. Com a terceira
+área, `tests/test_emr_eks_area_boundary.py` generaliza a tabela e mede os **seis
+pares ordenados**, sobre os goldens de facts commitados e pelo `judge` real: 54
+casos, zero invasão. Ele fecha as mesmas três armadilhas do molde — área lida do
+documento e não por prefixo de id (`SF-EMR-` é prefixo de `SF-EMRS-` **e** de
+`SF-EMRK-`), silêncio por `requires_facts` e nunca por `runtime_scope`, e corpus
+vivo — e acrescenta uma quarta: cada corpus precisa ter fixture saudável **e**
+fixture com achado, para que a fronteira valha também quando há texto sendo
+produzido.
+
+**Quatro coisas medidas durante a execução que o spec tinha errado**, todas na
+§11: a candidata (b) fica **mais forte** aqui do que no Serverless, não mais
+fraca (DV-4); a DV-5(d) foi apurada contra `docs/latest` e a releitura na versão
+**fixada** (`docs/3.5.6/`, o Spark de `emr-7.5.0`) inverteu a regra —
+`shuffleTracking.enabled` tem default **`true`**, então ausência é o estado
+**seguro**, e a fixture `alocacao_dinamica_no_default` é o golden negativo que
+trava a volta do erro (DV-12); o extrator não tinha detector de segredo e os dois
+valores saíam **em claro** para o `facts.json` commitado (DV-13); e o plano
+esquecia `tests/test_fixtures_golden_emr_eks.py`, que um gate exige (DV-9).
+
+### O que esta fase deixa aberto, medido
+
+- **O gate de lastro está vermelho na branch, e não estava no ponto de partida.**
+  `python scripts/check_vnext_claims.py` devolve **36 divergências**. Medido em
+  três pontos: **0** no merge-base com `main` (`06c30f2`), **36** no HEAD da
+  branch antes desta task, **36** depois — nenhuma das 36 é desta task. As 36 são
+  das Tasks 1 a 11, e a natureza é a mesma em todas: número publicado em
+  `docs/harness/` e `docs/vnext/` que a fase moveu sem remediar — contagem de
+  tools (59 → 61), de skills (44 → 45), de módulos golden, de fontes, e os
+  números derivados do índice de code intelligence, que se movem com qualquer
+  crescimento de `sparkforge/`. A DV-8 registrava o gate como **não exercitado**
+  (estourou 120 s na Task 1); exercitado, ele mostra que a fase deixou 36
+  alegações sem lastro. **Não foram remediadas aqui**, e a razão é escrita: são 36
+  entradas em 6 documentos, e remediar cada uma exige mexer no texto **e** em
+  `docs/claims.lock.json` (a identidade da alegação é `(doc, tipo, texto)`, então
+  trocar o número órfã a entrada) — é trabalho próprio, com o risco de prosa
+  incoerente, e não cabe como efeito colateral do fechamento. A lista de ids está
+  na saída do gate, que é a forma que este repositório exige para remediar.
+- **Quatro testes reprovavam no lote `[g-z]` e foram consertados aqui**, todos
+  herdados da Task 11 e nenhum de produto:
+  `test_harness_authorization.py::test_toda_tool_menos_duas_declara_caminho`
+  carregava `57` na mão e as duas tools novas o levaram a `59` (o **conjunto** de
+  exceção não mudou, só a contagem — as duas declaram `path` e `out_dir`); e três
+  de `test_skill_content.py` sobre `review-emr-eks`, que não tinha a seção
+  `## Referência rápida`, não citava `detected_from`/`divergences` e não nomeava
+  o motivo `runtime_scope` do `--show-skipped`. A skill ganhou a seção de leitura
+  do `runtime` e do `skipped`, e nela a recusa de `--emr` está documentada.
+- **`knowledge/offline-manifest.json` estava com o checksum antigo** de
+  `job-run-configuration.md`, alterado na Task 10. Fechado aqui, e **não** por
+  `refresh_knowledge.py --offline --update`, que sincroniza o lock de fontes e
+  **não toca** o manifesto offline: o caminho certo é regravar o `sha256` com
+  `sparkforge.tools.offline._content_sha256`, como `docs/gates-por-mudanca.md` já
+  documentava. Só aquele checksum mudou.
+
 ## Dívidas abertas
 
 A tabela era uma só e misturava **três naturezas**, e a mistura fazia o
@@ -5094,7 +5265,7 @@ que a varredura livre achou não estavam em candidato nenhum, nenhuma quebrava t
 todas eram texto que a própria pesquisa já tinha derrubado — sobrevivendo num `.py`, num
 docstring de teste e num arquivo da raiz, três lugares onde ninguém foi procurar.
 
-### Dívidas (5)
+### Dívidas (6)
 
 Fechar exige escrever código. Nada aqui espera fase nem depende de reverter
 decisão. **A tabela tinha oito linhas em 2026-08-05, caiu para uma no mesmo dia
@@ -5106,7 +5277,16 @@ declarados*, com a medição que reclassifica escrita na linha e o texto antigo
 preservado embaixo. As duas que subiram são da própria Fase 6a, e as duas foram
 medidas ao escrever a área — não descobertas depois.
 
-**Nenhuma das três é herdada**, e é isso que este inventário pede de dívida: o
+**A sexta entrou com a fase de EMR on EKS, em 2026-08-31**, e é a única das seis
+que **não** é sobre código de produto: são 36 alegações publicadas sem lastro,
+medidas contra um merge-base que estava **verde**. Ela também é a única que a
+task de fechamento mediu contra o seu próprio trabalho e concluiu que não era
+dele — 36 antes e 36 depois. E a primeira linha da tabela mudou de natureza sem
+mudar de texto: a mesma invenção de eixo de runtime foi **fechada** para EMR on
+EKS na mesma fase, com recusa nomeada, e continua aberta para o Serverless por
+razão diferente. Ver a linha.
+
+**Nenhuma das três primeiras é herdada**, e é isso que este inventário pede de dívida: o
 custo foi medido na hora, o conserto é código nosso, e nada precisa ser desfeito
 para pagá-las. **Tabela curta não é motivo de comemoração e sim de suspeita** —
 o precedente da Fase 4a vale aqui inteiro: fase que fecha declarando nada a dever
@@ -5118,13 +5298,14 @@ com teste. O que sustenta este número é o teste que ficou para trás, não a p
 
 | Dívida | Origem | Impacto |
 |---|---|---|
-| `judge --emr` sobre facts de EMR Serverless grava versão de EC2 num artefato que não a declara | rodada de dívidas abertas, 2026-08-05, medida ao conferir o que o caminho alternativo do Serverless realmente enche | **Dívida, e a única aberta — fechar é escrever código, e ninguém escreveu.** Medido, reproduzível numa linha: `sparkforge judge --facts fixtures/emr_serverless/app_saudavel/expected/facts.json --emr 7.5.0` grava no contexto `{"emr": "7.5.0", "spark": "3.5.2-amzn-1", "python": "3.9", "iceberg": "1.6.1-amzn-1", "detected_from": ["cli"]}`, tudo derivado da `EMR_MATRIX` — **que é de EMR on EC2**. O conjunto de facts não tem um único fact de EC2: são cinco kinds `emrs.*`, todos de `get-application`. **Onde está o número certo:** `knowledge/emr-serverless/runtime-matrix.md:47` mede que `emr-7.5.0` no Serverless publica **`3.5.2`, sem o sufixo do fork**, e a §1 da mesma página (`knowledge/emr-serverless/runtime-matrix.md:30-31`) mede que o sufixo `-amzn-N` **não existe na fonte do Serverless** e que **três das quatro colunas da `EMR_MATRIX` não têm fonte nenhuma do lado do Serverless**. Ou seja: `spark` sai com um sufixo que a fonte não publica, e `python` e `iceberg` saem **inteiros do nada** — não é um campo com ruído, são três campos inventados sobre um artefato que não declara nenhum deles. **Nada no motor impede**, e o custo é do pior tipo: versão errada no contexto invalida toda recomendação versionada que vier depois, e o operador não tem como distinguir um eixo derivado de um eixo lido. É **dívida e não limite** porque o conserto é código nosso e há mais de uma forma de escrevê-lo: recusar `--emr` quando o conjunto tem fact `emrs.*`, avisar e marcar os eixos como derivados de matriz alheia, ou derivar da tabela do Serverless para o componente que ela publica e deixar vazio o que ela não publica. **Escolher entre as três é a decisão; nenhuma delas depende de terceiro.** Nenhum teste cobre a combinação hoje — `--emr` é exercitado com facts de EC2, e o Serverless é exercitado sem `--emr`. |
+| `judge --emr` sobre facts de EMR Serverless grava versão de EC2 num artefato que não a declara | rodada de dívidas abertas, 2026-08-05, medida ao conferir o que o caminho alternativo do Serverless realmente enche | **Dívida, e a única aberta — fechar é escrever código, e ninguém escreveu.** Medido, reproduzível numa linha: `sparkforge judge --facts fixtures/emr_serverless/app_saudavel/expected/facts.json --emr 7.5.0` grava no contexto `{"emr": "7.5.0", "spark": "3.5.2-amzn-1", "python": "3.9", "iceberg": "1.6.1-amzn-1", "detected_from": ["cli"]}`, tudo derivado da `EMR_MATRIX` — **que é de EMR on EC2**. O conjunto de facts não tem um único fact de EC2: são cinco kinds `emrs.*`, todos de `get-application`. **Onde está o número certo:** `knowledge/emr-serverless/runtime-matrix.md:47` mede que `emr-7.5.0` no Serverless publica **`3.5.2`, sem o sufixo do fork**, e a §1 da mesma página (`knowledge/emr-serverless/runtime-matrix.md:30-31`) mede que o sufixo `-amzn-N` **não existe na fonte do Serverless** e que **três das quatro colunas da `EMR_MATRIX` não têm fonte nenhuma do lado do Serverless**. Ou seja: `spark` sai com um sufixo que a fonte não publica, e `python` e `iceberg` saem **inteiros do nada** — não é um campo com ruído, são três campos inventados sobre um artefato que não declara nenhum deles. **Nada no motor impede**, e o custo é do pior tipo: versão errada no contexto invalida toda recomendação versionada que vier depois, e o operador não tem como distinguir um eixo derivado de um eixo lido. É **dívida e não limite** porque o conserto é código nosso e há mais de uma forma de escrevê-lo: recusar `--emr` quando o conjunto tem fact `emrs.*`, avisar e marcar os eixos como derivados de matriz alheia, ou derivar da tabela do Serverless para o componente que ela publica e deixar vazio o que ela não publica. **Escolher entre as três é a decisão; nenhuma delas depende de terceiro.** Nenhum teste cobre a combinação hoje — `--emr` é exercitado com facts de EC2, e o Serverless é exercitado sem `--emr`. **Atualização de 2026-08-31, fase de EMR on EKS:** a MESMA invenção foi medida para a terceira plataforma e **fechada lá**, com a primeira das três formas que esta linha listava — `build_runtime` recusa `--emr` com exit 2 e razão nomeada quando o conjunto tem fact `emrc.*` e nenhum `emr.*`, e a recusa é estreita (conjunto fundido com os dois artefatos continua aceitando a flag). O contrafactual é `tests/test_emr_eks_area_boundary.py::TestOEixoDeRuntimeNaoVemDaMatrizDeEC2`. **Esta linha continua aberta, e a assimetria é deliberada:** no EKS a `EMR_MATRIX` de EC2 é **medidamente errada** (a AWS publica matriz do EKS, e ela diverge em Iceberg em 6 de 26 releases comparáveis e em Spark em 4), o que torna a recusa a única saída defensável; no Serverless ela é inaplicável **por falta de fonte**, e recusar, avisar ou derivar parcialmente continuam as três saídas possíveis. **Escolher entre elas continua sendo a decisão**, e a fase de EKS não a tomou por procuração. |
 | Nenhuma regra consegue dizer "o IaC não declarou o jar de GraphFrames" — falta `absent` filtrado por atributo, e o kind derivado que o substituiria | Fase 6a, veto `V-GR-1` no cabeçalho de `rules/catalog/graph.yaml`, medido ao escrever a regra que a §5 do spec previa | **Dívida — fechar é escrever código, e ninguém escreveu.** Medido: `engine._absent_satisfied` (`rules/engine.py:68-70`) compara **só `kind`**, e o kind é `tf.attribute` dos dois lados do par de fixtures — o que muda é `attrs.key`. Não existe `absent` filtrado por atributo nem `where` negado, então `absent: tf.attribute` seria falso para todo Terraform lido, e a regra acusaria **todo** job de grafo, inclusive quem declarou o jar. **O que fecharia** é um kind derivado no extrator de Terraform, no molde exato de `tf.observability.spark_ui`: o extrator decide uma vez e emite o kind já decidido, e a regra fica com `absent:` sobre ele. É código nosso, tem precedente no próprio repositório e não depende de terceiro. **O que NÃO fecha com ele** está na linha de *Limites declarados* sobre jar de outro minor: a metade **exculpatória** — tratar um `--extra-jars` como resolução — continua vetada na faixa 3.3 mesmo com o kind escrito, e as duas metades envelhecem de formas opostas. O par de fixtures `import_sem_jar_no_iac` × `import_com_jar_declarado` já existe, compartilha o `.py` byte a byte e difere só no `--extra-jars`: o corpus para a regra está pronto, o mecanismo é que não. |
 | `checkpointInterval > 2` tem fonte primária e limiar apurados, e nenhuma fixture o exercita | Fase 6a, veto `V-GR-2` no cabeçalho de `rules/catalog/graph.yaml`, medido contra as 25 fixtures | **Dívida — fechar é escrever corpus, e ninguém escreveu.** É o **único limiar numérico com fonte primária** desta área: `graphframes-api.md` §6 traz o aviso citável (o código adverte em `value <= 0 || value > 2`), e a §4.3.2 autoriza explicitamente "outra regra, com severidade menor". O que falta é golden positivo: o caso `> 2` **não tem fixture nenhuma**, e regra sem ele reprova `test_every_rule_has_a_fixture_that_fires_it`. O caso `<= 0` tem fixture, mas é `saida_intervalo_nao_positivo`, que o próprio `meta.yaml` declara "segunda forma de escrever certo" e que é uma das **cinco** saídas legítimas de `V-GF-1` — acusar o artefato que o corpus declara correto faria o relatório dizer as duas coisas ao mesmo tempo. **Fechar é uma fixture com `checkpointInterval` acima de 2 e um `<= 0` que não seja também saída legítima**, mais a regra. Nada a reverter, nada a esperar de terceiro. |
 | O gate de golden deixou de cobrar as regras `status: structural`, e nada impede que uma regra de detecção real seja marcada assim | expansão agêntica v2, 2026-08-18, medida ao revisar a branch | `tests/test_fixtures_kind_coverage.py` passou a filtrar por `_executable_rules()` para acomodar as 35 áreas de coordenação, que não julgam nada e não podem disparar. A mudança está certa para o que ela acomoda e **abriu uma porta**: `status` é campo livre do YAML, e uma regra com `when` de verdade marcada `structural` sai do gate de fixture, do gate de ramo de severidade e das duas asserções de área muda dos testes ponta a ponta — quatro redes de uma vez, com a suíte verde. Fechar é escrever o invariante que falta: `structural` **exige** `when: {all: []}`, `requires_facts: []` e `sources: []`, e qualquer regra com condição real que se declare `structural` derruba o teste. Não foi escrito nesta branch porque o conjunto de arquivos dela já era o da expansão |
 | `RELACAO_MEDIDA` em `tests/test_sync_render.py` é redefinido por um `update()` no meio do arquivo, e seis chaves ficam com valor morto | expansão agêntica v2, 2026-08-18, medida ao corrigir o lint do arquivo | O dicionário é declarado com as vinte skills e, ~60 linhas abaixo, um `RELACAO_MEDIDA.update({...})` sobrescreve seis entradas (`agentic-orchestration`, `token-efficient-agent`, `tool-specialist-routing`, `analyze-analytics`, `analyze-functional-rules`, `optimize-athena-queries`). O teste que consome lê só o valor final, então o primeiro valor das seis **nunca é exercitado** — quem editar a entrada de cima acha que mudou o teste e não mudou nada. Não é defeito de produto e por isso não bloqueou a branch; é armadilha de manutenção num arquivo cuja função é justamente ser a medida. Fechar é fundir o `update()` na declaração |
+| O gate de lastro está vermelho: **36 alegações de `docs/harness/` e `docs/vnext/` sem lastro**, todas movidas pela fase de EMR on EKS | fase de EMR on EKS, medida ao fechar — `python scripts/check_vnext_claims.py` | **Dívida, e a única desta fase — fechar é editar texto e manifesto, e ninguém editou.** Medida em três pontos: **0** divergências no merge-base com `main` (`06c30f2`), **36** no HEAD da branch **antes** da task de fechamento, **36** depois — nenhuma das 36 é da task que fecha, e as 36 são das Tasks 1 a 11. A DV-8 do spec registrava o gate como **não exercitado** (estourou 120 s na Task 1) e não como verde; exercitado, ele mostra o saldo. **A natureza é a mesma nas 36:** número publicado que a fase moveu sem remediar — contagem de tools (59 → 61, em 6 alegações), de skills (44 → 45), de módulos golden (30 → 31), de fontes, de linhas de teste, e os números derivados do índice de code intelligence, que se movem com qualquer crescimento de `sparkforge/`. Distribuição por documento: `CODEINTEL-GAP.md` 13, `AUTHORIZATION-CHAIN.md` 10, `CURRENT-HARNESS-GAP.md` 10, `CURRENT-STATE.md` 1, `RUNTIME-VS-EVALUATION.md` 1, `ADR-010` 1. **Por que não fechou junto:** a identidade de uma alegação no manifesto é `(doc, tipo, texto)` — trocar o número no documento **órfã** a entrada de `docs/claims.lock.json`, então cada remediação toca dois arquivos e precisa manter a prosa coerente (várias linhas carregam dois números na mesma frase, como "57 das 59 tools"). São 36 dessas em 6 documentos, e fazê-las como efeito colateral do fechamento é a varredura que `CLAUDE.md` proíbe. **Fechar é por lista de ids tirada da saída do gate**, que é a forma que este repositório exige — a saída já nomeia cada id, o valor esperado e o obtido. Nada a reverter, nada a esperar de terceiro. |
 
-### Fases (8)
+### Fases (7)
 
 Trabalho planejado. A coluna de impacto abre dizendo **onde a fase está
 prevista** — e **três** delas registram que a sua ainda não tem posição na fila.
@@ -5142,14 +5323,21 @@ também a que carrega o buraco medido de extrator, escrito na própria linha.
 |---|---|---|
 | Fases 3b, 3c e 3d não iniciadas | §16 do spec da Fase 0 | **Fase, não dívida.** Fechar as três é executar trabalho que já tem lugar na seção *Ordem*; contá-las aqui fazia o roadmap contar duas vezes. **A linha encolheu com a Fase 4c:** ela dizia também "a Fase 4 do roadmap (§16, rigor) está em **um quarto** item aberto", e esse item era a validação funcional automatizada — fechada, com os quatro de rigor completos (benchmark 4a, gates fail-closed e assinatura 4b, validação funcional 4c). A Fase 4 executada (coordenadores, executores e `playbook`) é numeração diferente — ver a nota "Atenção ao nome" na seção própria — e está **concluída** |
 | Great Expectations declarativo e dbt seguem sem cobertura | Fase 5c, por decisão registrada na §2 do spec | **Fase, e a própria linha já dizia:** "as duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado". A linha estava certa e no lugar errado. `great_expectations.yml` e as expectation suites em JSON são artefato declarativo **fora do código**, com parser próprio, e correlacionar suíte com a tabela que o job escreve exige casar por nome — heurística frágil, que produziria `SF-DQ-001` sobre um alvo adivinhado. dbt é mundo próprio e encosta no Spark só via `dbt-glue`/`dbt-spark`. As duas entram em fase própria, agora que os kinds `dq.*` existem para receber o resultado. Fora de escopo pela mesma razão: **resultado de execução** (`VerificationResult`, validation result do GE, `run_results.json` do dbt) — a ferramenta já disse que o check falhou, e repetir isso não acrescenta garantia nenhuma |
-| **EMR on EKS** sem cobertura | Fase 5b, por decisão registrada no spec; **a metade Serverless da linha fechou** com a Fase 5d, em 2026-08-05 | **Fase, sem posição na *Ordem*** — e o "**única**" que esta linha dizia até 2026-08-05 estava **errado desde a própria Fase 5d**, que abriu a linha de job runs também sem posição; com `SF-CFG` são **três**, contadas nesta tabela. Corrigido no lugar, que é o que este arquivo faz com afirmação que a medição derruba. A linha dizia "EMR Serverless e EMR on EKS" e perdeu a primeira metade: `SF-EMRS` tem extrator, seis kinds, 16 fixtures, seis regras e coordenador. O que sobra é EKS, e ele não é o mesmo tamanho de trabalho: traz vocabulário de Kubernetes — virtual cluster, container provider, namespace, pod template — que não existe em lugar nenhum do repositório, e `knowledge/` continua com **zero** linha sobre ele. Enfileirá-lo é decisão de roadmap, e esta triagem não a toma por conta própria: registra que ele está fora da fila. |
 | Job runs e `billedResourceUtilization` do EMR Serverless | Fase 5d, não-objetivo registrado na §2 do spec | **Fase, não dívida — é eixo novo, não código faltando.** `get-application` descreve **definição**; `get-job-run`/`list-job-runs` descrevem **execução**, e uma application tem N runs, o que obriga a decidir amostragem, agregação e "qual run é representativo" — classe de decisão que o eixo de configuração não tem. `billedResourceUtilization` é a evidência de custo mais direta que a AWS expõe em qualquer serviço deste repositório, e por isso merece fase que a trate com cuidado, não apêndice da 5d. Sem posição na *Ordem*. |
 | Pré-init subdimensionada não é acusável | Fase 5d, veto registrado no cabeçalho de `rules/catalog/emr-serverless.yaml` (`D-5d-33`) | **Fase, e é a primeira consumidora concreta da linha acima — não fecha sozinha.** É o veto mais doloroso da 5d justamente porque a fonte descreve o defeito com precisão: *"the initial capacity memory configuration should be greater than the memory that the job and the overhead request"*. O que falta não é regra nem extrator: é **o outro lado da comparação**, que mora no `StartJobRun` e que esta fase não lê. Uma regra que só acusasse quando o job declara a memória na própria application produziria silêncio exatamente onde a prática comum está — pior que não ter regra, porque o silêncio se lê como aprovação. Fechar exige o eixo de job runs; escrever a regra antes dele é impossível com a informação que o artefato de definição carrega. |
 | A área `SF-CFG` foi **planejada e nunca escrita** | **Pré-existente**: declarada no primeiro commit de `rules/catalog/README.md` (`ffcf150`) e nunca implementada; medida na revisão de documentação de 2026-08-04 | **FECHADA em 2026-08-29, pelo subprojeto G.** A pergunta que esta linha dizia que nenhuma área fazia tem resposta, e ela **não** virou área de regra: virou verbo. `sparkforge tune` deriva `spark.sql.shuffle.partitions` do shuffle medido e classifica a procedência de cada propriedade — `code`, `terraform`, `runtime_or_cluster`, `spark_default_explicit`, `unset` —, que é exatamente a "configuração julgada de forma dispersa" que a linha descrevia, agora reunida num lugar só. Duas afirmações desta linha também envelheceram e ficam corrigidas aqui: o event log **passou** a emitir `SparkListenerEnvironmentUpdate` (o fact é `spark.conf_effective`, uma chave por fact), e portanto "a configuração efetivamente aplicada num run não é lida por superfície nenhuma" deixou de ser verdade antes mesmo desta fase. O que continua sem existir é a área `SF-CFG`, e agora por decisão: julgar valor de configuração isolado é o que `SF-EMR`, `SF-PY` e `SF-GLUE` já fazem onde há regra publicada; derivar valor é outra operação, e mora fora do catálogo por escrito. **A leitura de 2026-08-05 fica abaixo inteira — fechar não é apagar:** **Reclassificada em 2026-08-05, de dívida para fase: a medição que a própria linha exigia foi feita, e ela achou pergunta que nenhuma área faz.** A linha dizia "ninguém mediu qual dos dois é"; medido agora, é o segundo. (1) `knowledge/spark/config-reference.md` documenta **28** propriedades `spark.*` com default exato, em quatro tabelas — **35** contando as outras páginas de `knowledge/` —, e **nenhuma delas é lida por regra nenhuma**. (2) Das 81 regras, **12** tocam superfície de configuração, e o recorte delas é o argumento: **três** leem uma chave nomeada de um bloco `Configurations` do EMR (`SF-EMR-001` lê `maximizeResourceAllocation`, `SF-EMR-003` lê `spark.dynamicAllocation.enabled`, `SF-EMR-005` lê `spark.sql.sources.partitionOverwriteMode`) — e só **duas** dessas nomeiam uma propriedade `spark.*`; **três** leem qualquer chave, e só para caçar segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`); **cinco** nomeiam argumento de job Glue ou atributo de recurso Terraform (`SF-ENV-003`, `SF-GLUE-001`, `SF-GLUE-003`, `SF-GLUE-004`, `SF-GLUE-005`); e **uma** ignora a chave por completo (`SF-PY-012`, cujo `when` é `{fact: pyspark.conf_set}` e mais nada). **Zero regras fora da área EMR leem uma propriedade `spark.*` nomeada.** (3) O sintoma, e ele é literal: **cinco** regras recomendam `spark.sql.adaptive.enabled` no `proposed_change` — `SF-PQ-001`, `SF-PY-005`, `SF-PY-009`, `SF-PY-010` e `SF-UI-006` — e **nenhuma regra do catálogo lê se ela está ligada**. (4) O dado já está no repositório, com procedência: os goldens de `fixtures/emr/` carregam **36** facts `emr.configuration`, os 36 com `provenance` e `artifact_sha256`, cobrindo **cinco** propriedades `spark.*` distintas — e **três delas** (`spark.sql.shuffle.partitions`, `spark.executor.memory`, `spark.executor.instances`) **têm zero consumidores**. Fact extraído, hasheado, versionado em golden, e que nenhuma regra pergunta. (5) Dois buracos de extrator, e os dois medidos. `--conf` não é desmontado: em `fixtures/terraform/unresolvable_values/input/job.tf:21` ele chega num heredoc do Terraform, vira um `tf.unresolved` com `reason: heredoc`, e as duas propriedades de dentro somem — uma delas é `spark.sql.adaptive.enabled=true`, exatamente a que cinco regras recomendam ligar. E o event log **não** emite `SparkListenerEnvironmentUpdate` (`sparkforge/facts/event_log.py:485-486` o lista entre os eventos ignorados de propósito): **a configuração efetivamente aplicada num run não é lida por superfície nenhuma**. **Portanto ela não morre por escrito.** Existe pergunta de configuração que nenhuma das três áreas faz, e responder a ela é trabalho de fase: decidir se o eixo vira área própria ou extensão das existentes, fechar os dois buracos de extrator, e resolver o problema que o próprio `config-reference.md` declara no cabeçalho — default documentado não é valor efetivo, e o Glue sobrescreve parte deles. **Ela não tem posição na *Ordem***, do mesmo jeito que a linha do EMR Serverless não teve até esta semana, e enfileirá-la é decisão de roadmap que esta rodada não toma. **A leitura anterior, da triagem de 2026-08-04, fica abaixo inteira — reclassificar não é reescrever:** **Dívida, e a mais antiga do inventário — nada a reverter, só decidir.** O `README.md` do catálogo declarava a área `CFG` (config Spark) e o arquivo `spark-config.yaml` desde o dia em que foi escrito. Medido: `git log --diff-filter=A -- rules/catalog/spark-config.yaml` não devolve **nada** — o arquivo nunca existiu em commit nenhum —, e `SF-CFG` não aparece em nenhum `.yaml`, `.py` ou teste do repositório. A tabela listava **15** arquivos para **14** reais e implicava **14** áreas contra **13** medidas; as duas linhas foram removidas, e a contagem de áreas passou a ser declarada por escrito (**treze**) para que a próxima divergência apareça. **O que fica em aberto é a decisão, não o texto:** configuração de Spark hoje é julgada de forma dispersa — `pyspark.conf_set` alimenta regras de `SF-PY`, e a configuração declarada em IaC alimenta `SF-GLUE` e `SF-EMR` (que carrega `Configurations` em dois níveis). Ou isso é reconhecido como a resposta definitiva e a `CFG` morre por escrito, ou existe uma pergunta de configuração que nenhuma das três áreas faz e aí ela vira fase. **Ninguém mediu qual dos dois é**, e é essa medição — não código — que fecha esta linha |
 | O eixo de resultado é cobrado por **texto**, e o `loader` não o exige de nenhuma regra | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela depende de uma decisão de contrato, não de código.** O que fecharia é um invariante de carga: toda regra que pode mudar o resultado carrega eixo de resultado no `validation`. **O custo medido, e é ele que tira isto de dívida:** a classificação "pode mudar o resultado" **não está no dado**. Das 81 regras, **62** já carregam o eixo e **19** não — e as 19 estão certas: são segredo (`SF-EMR-002`, `SF-EMRS-002`, `SF-GLUE-006`), destino de log (`SF-EMR-006`, `SF-EMRS-003`, `SF-EMRS-004`, `SF-GLUE-002`), capacidade (`SF-EMR-004`, `SF-EMRS-005`, `SF-GLUE-001`, `SF-GLUE-005`), detecção de runtime (as cinco `SF-ENV`) e metodologia (`SF-PLAN-004`, `SF-UI-002`). Um invariante "todas as regras" reprovaria as 19 corretas; um invariante seletivo exige um **campo declarado por regra** — os 18 campos de regra hoje (`load_catalog()`) não têm nenhum que sirva de gatilho —, e campo novo no contrato de regra é bump de `schema_version`, cujo preço este arquivo declara no cabeçalho: um Finding gravado com `catalog_version: 2` sugere que o limiar que o julgou é outro. São **81** decisões escritas à mão, e cada uma é exatamente a linha *fato versus julgamento* que este repositório traça. **O que existe hoje, e é o piso, não o teto:** `tests/test_rules_result_axis.py` pergunta ao `proposed_change` quais regras trocam a implementação que produz o valor — **7** regras — e cobra o eixo de cada uma, mais os invariantes específicos da `SF-PY-009`. Ele pega a regra que **cala**, que era o estado medido, e não a que fala pouco. Sem posição na *Ordem*. |
 | `validate_output` não rejeita recomendação sem referência de validação funcional, como rejeita ganho sem `benchmark_ref` | rodada de preservação semântica, 2026-08-05, medido ao decidir o escopo | **Fase, e ela vem DEPOIS da linha acima — as duas não são paralelas, e essa ordem é o achado.** O molde existe e funciona: `benchmark_ref` cita o `fact_id` de um `bench.run_delta`, e `validate.py` (**116** linhas, **8** menções ao campo) o cobra em duas camadas, forma e pertinência. Um `funcval_ref` citando o `fact_id` de um `funcval.plan` seria a simetria. **O custo medido tem duas parcelas, e a segunda é a que manda.** (1) Campo novo em `findings/models.py` é bump de `schema_version` do contrato de findings, e **113** findings golden em **90** fixtures passariam a ser gravados sob um contrato que os anteriores não declaram. (2) **O gatilho não existe, e é por isso que a ordem importa:** `benchmark_ref` só é exigido quando `expected_effect` é quantificado — um gatilho que **está no próprio finding** e não precisa de julgamento. Não há equivalente para o eixo do dado: "esta recomendação pode mudar o resultado" é precisamente a classificação que a linha acima mede como ausente do catálogo. Sem ela, a rejeição só teria duas formas, e as duas são piores que o texto: exigir de **todas** as recomendações, o que faria o campo virar ritual preenchido para passar — o defeito que a Fase 4a mediu no `benchmark_ref` de texto livre —, ou exigir de nenhuma. **Fechar esta linha é decidir o gatilho, e o gatilho é a fase de cima.** Sem posição na *Ordem*. |
 
-### Limites declarados (24)
+### Limites declarados (29)
+
+**O número era `24` e a tabela tinha `25` linhas** — contado ao fechar a fase de
+EMR on EKS, e corrigido aqui em vez de propagado. A fase acrescentou **quatro**
+(as quatro últimas), e 25 + 4 = 29. As quatro têm em comum uma propriedade que
+vale mais que a contagem: **as quatro trazem o gatilho de reabertura escrito**,
+e em duas delas o gatilho é uma decisão de outra camada — o produtor de
+`RuntimeContext.spark` a partir de `emrc.*`, e a convenção de `except` que vale
+para os 28 extratores de uma vez.
 
 Decisão tomada com o custo registrado. "Fechar" cada uma destas significa
 **reverter** a decisão que a criou — e a coluna de impacto abre nomeando qual.
@@ -5216,8 +5404,12 @@ contada.
 | O eixo **Python** de GraphFrames não vira regra, embora a matriz esteja medida | Fase 6a, veto `V-AV-3` no cabeçalho de `knowledge/graph/availability.md` | **Limite declarado — fechar é reverter a recusa de acusar sem saber a linhagem.** Medido abrindo os dois jars: `graphframes-0.8.2-spark3.2-s_2.12.jar` carrega **13** arquivos `.py` dentro dele e `graphframes-spark3_2.12-0.12.1.jar` carrega **0** — a fratura da `0.9.0` mudou de onde vem o wrapper. O pacote PyPI `graphframes-py` (`0.12.1`, 2026-06-17) exige `requires_python >=3.10`, e cruzando com as matrizes isso corta **toda a série EMR 6.x e Glue 3.0**; o homônimo `graphframes` no PyPI parou em `0.6`, em 2018, e é pacote abandonado com o nome certo. **Por que não é regra:** o `.py` não diz qual linhagem o job usa, e carregar o Python de dentro do jar legado por `--py-files` é caminho válido — acusar seria afirmar sobre uma escolha que o artefato não registra. Fica como **contexto do achado** de disponibilidade, não como condição. Fechar exige uma superfície que diga qual jar está no classpath, que esta fase não lê. |
 | O vocabulário por nome cobra o preço **também em achado**, e não só em fact — `str.find()` em laço e `GraphFrame` sem import | Fase 6a, revisão final de 2026-08-05, medido reproduzindo as duas formas contra o extrator | **Limite declarado, e o que a revisão mudou foi o lugar onde ele está escrito.** O cabeçalho de `sparkforge/facts/graph.py` declarava o preço dos dois níveis **no fact** e calava sobre a consequência: medido, um `"...".find(x)` dentro de laço, num módulo que importa GraphFrames, sai como **`SF-GRAPH-004` (P2)**; e um `GraphFrame(v, e)` **sem import nenhum** sai como `graph.construction` e pode virar **`SF-GRAPH-003` (P2)**, porque `constructors` nasce semeado com `"GraphFrame"`. **As duas metades foram medidas e nenhuma fecha barato.** Exigir import para semear `constructors` é uma linha, e está **errado**: `GraphFrame` é nome publicado e específico da biblioteca — mesmo critério de `connectedComponents`, que é lido sem import —, e a exigência perderia `from minha_lib.grafo import GraphFrame`, que reexporta o símbolo e não deixa `graphframes` nenhum no arquivo. Fechar o `find` exigiria correlacionar o receptor com um nome que **este** arquivo viu ser construído como grafo, o que troca um falso positivo estreito (import presente **E** `str.find` dentro de laço) por um falso negativo largo, porque grafo que chega por parâmetro é forma corrente e o módulo já declara não saltar para o chamador. **Fechar é reverter uma das duas escolhas**, e o preço de cada reversão está medido acima. As duas severidades são P2; nenhuma é a acusação P0 que esta área existe para não cometer. O cabeçalho passa a declarar as duas, com número de regra. |
 | `same_subject` desta área agrupa por **função**, e não por construção nem por laço | Fase 6a, revisão final de 2026-08-05, `D-6a-49` — medido ao escrever a fixture que torna `same_subject` inapagável | **Limite declarado — fechar é mexer na chave de agrupamento do motor, que vale para as quinze áreas de uma vez.** Medido: `engine._subject_group_key` prefere `subject.symbol` quando ele existe, e o `symbol` de todo fact de `facts/graph.py` é a **função** que contém o nó (`_subject`). Consequência: duas construções com arestas não persistidas **dentro da mesma função** caem no mesmo grupo e viram **um** achado, com a evidência das duas — e o remédio de `SF-GRAPH-003` é um `cache()` **por construção**. O mesmo vale para dois laços na mesma função em `SF-GRAPH-004`. **É subnotificação, não acusação falsa**: quem lê o achado vê os dois facts na evidência, e o número de correções está lá. **O que o corpus prova hoje**: `dois_grafos_no_mesmo_arquivo` põe os dois grafos em funções diferentes, sai com quatro achados, e apagar qualquer um dos dois `same_subject` derruba o golden para um — verificado apagando cada um, rodando e restaurando. **Fechar não é código desta área**: a alternativa seria `_subject_group_key` desempatar por linha mesmo quando há `symbol`, e isso mudaria a contagem de achados de toda regra `same_subject` do catálogo — `SF-DQ-001`, `SF-DQ-003`, `SF-ATH-002`, `SF-ATH-003`, `SF-GLUE-002` e as quatro de `SF-BENCH` —, sem medição que sustente a mudança. A decisão não cabe numa regra de grafo. |
+| `--conf` com valor entre aspas fragmenta no split por espaço, e o token solto é descartado em silêncio | fase de EMR on EKS, `DV-11`, medido ao escrever o extrator | **Limite, não dívida — fechar é REVERTER a decisão de tokenizar como a API entrega.** `sparkSubmitParameters` é uma string única de até 102400 caracteres, e o extrator a separa por espaço sem consciência de aspas de shell: `--conf "spark.foo=a b"` vira `spark.foo=a` mais um token solto `b`, e o `b` é descartado **sem virar `emrc.unresolved`** — que é a parte que dói, porque ponto cego não contado é indistinguível de ausência. Os exemplos da AWS nunca mostram valor com espaço em `--conf`, e um `spark-submit` de verdade recebe argv já separado em vez de uma string, então o caso é plausível de nunca aparecer. **Fechar é decidir adotar um tokenizador com aspas**, e essa decisão tem custo — divergir do que a API entrega, e passar a interpretar shell dentro de um extrator — que **ninguém mediu**. Reabre no dia em que aparecer um job run real com valor entre aspas, ou quando alguém medir o custo do tokenizador. |
+| As quatro regras `SF-EMRK` declaram `runtime_scope: {}` apesar de a matriz de release existir e ser publicada | fase de EMR on EKS, `DV-14`, medido ao escrever as regras | **Limite, não dívida — fechar depende de escrever um PRODUTOR, e ele é decisão de outra camada.** A DV-2 mede que regra desta área **pode** restringir por `spark`: a AWS publica `Supported applications` por família de release. A outra ponta é que **nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`**: `runtime_detect` deriva Spark de `GLUE_MATRIX` (por `glue_version`), de `EMR_MATRIX` (por release de EMR on EC2, proibida aqui pela DV-1) e da leitura direta de `spark.runtime_version` no event log — o `releaseLabel` do EKS não entra em nenhuma das três. Uma regra com `{spark: ">=3.0"}` **passaria no golden** (as fixtures declaram `runtime` no `meta.yaml`) e seria **pulada em toda execução real**, porque `in_scope` falha fechada. Golden verde por SKIP é pior que vermelho: ninguém investiga o que passou. A afirmação de versão que `SF-EMRK-004` precisa fazer mora na `explanation` dela, com a URL da versão fixada. **Gatilho de reabertura, escrito:** no dia em que alguém ligar o `releaseLabel` do EKS ao `RuntimeContext` — um produtor em `runtime_detect` que leia `emrc.job_run.attrs.release_label` contra a matriz **do EKS**, nunca a de EC2 —, o escopo passa a valer e as quatro regras podem restringir por `spark`. Por `iceberg` continua proibido mesmo então (DV-2): a linha é publicada por família e não por variante, e `emr-7.7.0-java8-latest` não tem Iceberg. |
+| `SF-EMRK-004` lê **uma** superfície só, e o ponto cego está declarado | fase de EMR on EKS, `DV-15`, medido contra `sparkforge/rules/engine.py` | **Limite, não dívida — fechar é reverter a escolha de errar para o lado do silêncio, ou mexer no motor.** A propriedade pode chegar por `applicationConfiguration` ou por `sparkSubmitParameters`, e o `when` do motor tem um grupo `all` **ou** `any`, sem aninhamento: "(A na superfície 1 ou A na 2) e (B na 1 ou B na 2)" não é escrevível. Das duas saídas, a regra escolhe `sparkSubmitParameters`, que nunca acusa valor derrotado — a AWS declara que *"the Spark submit parameters take precedence"*, então ler o override acusaria valor que pode ter **perdido**, e acusar configuração correta é o pior defeito de regra. **O ponto cego:** um job run que configure alocação dinâmica **apenas** por `applicationConfiguration` não é julgado — não aparece em `findings` nem em `skipped`, porque a regra é avaliada e não casa. A fixture `shuffle_tracking_desligado` prova o outro lado. **Fechar exige uma das duas:** o motor saber aninhar grupos no `when` (vale para as 59 áreas, não para esta), ou o extrator resolver a precedência e emitir a configuração **efetiva** num fact só — saída que `SF-EMR-008` e `graph.checkpoint_required` já usaram, e que é decisão de desenho de extrator. |
+| O `except Exception` das funções `*_tree` engole o `AssertionError` da guarda de namespace de `_finish` | fase de EMR on EKS, medido ao fechar a fase, sobre `emr_eks.py` e as irmãs | **Limite, e a razão de não ser dívida é que a decisão não é desta área.** `_finish` tem uma guarda que levanta `AssertionError` quando um fact sai fora do namespace do extrator — ela existe justamente para pegar **erro de programador**, e é o tipo de erro que precisa explodir. O `except Exception` da varredura de árvore, que existe para que um arquivo ilegível vire `unresolved` em vez de derrubar a coleta inteira, **também captura `AssertionError`**: um extrator que emitisse `emr.foo` em vez de `emrc.foo` viraria um `unresolved` silencioso em vez de um teste vermelho. **Não é defeito desta fase:** é convenção pré-existente, e `emr_serverless.py` faz idêntico. Estreitar o `except` (ou reerguer `AssertionError`) é decisão que vale para **todos** os extratores de uma vez, e tomá-la dentro de uma área só produziria dois comportamentos para o mesmo padrão — que é pior que o comportamento único errado. Reabre quando alguém tratar a convenção no conjunto. |
 
-### Fechadas — registro histórico (31)
+### Fechadas — registro histórico (32)
 
 Fechar não é apagar: a linha fechada é o que impede a dívida de voltar sem que
 alguém perceba, e o modo de falha da linha de EMR — sobreviveu fechada por três
@@ -5274,6 +5466,7 @@ exatamente o tipo que volta sem alarme se ninguém escrever onde estava.
 | ~~`mcp` era declarado para Devin sem dizer como acioná-lo, e o texto dizia que `.mcp.json` já bastava~~ — **fechada** na varredura de completude, 2026-08-04 | varredura de completude do Devin, medida executando o carregador de catálogo | **A família de defeito que o próprio `parity.yaml` cita como razão de ser da regra — o transporte HTTP da Fase 1 — estava de volta, e com um agravante.** Três textos (`README.md`, as `notes` do `parity.yaml` e o docstring do adaptador) diziam que o Devin CLI usa stdio *"que é o que `.mcp.json` já configura"*. O Devin **importa** MCP do Claude Code (`read_config_from.claude`, e a tabela de importação lista `.mcp.json`), mas o `.mcp.json` deste repositório é o do **plugin**: ele parametriza `PYTHONPATH` e `SPARKFORGE_CATALOG` por `${CLAUDE_PLUGIN_ROOT}`, variável do carregador de plugin do Claude Code que **nenhuma página do Devin documenta expandir**. Medido, não inferido: com o valor literal no ambiente, `catalog_dir()` levanta `CatalogError: SPARKFORGE_CATALOG aponta para .../${CLAUDE_PLUGIN_ROOT}/rules/catalog, que nao e um diretorio existente`. Falha alto, que é o único consolo. Fechada com o procedimento **nativo** na §3.4 do `GUIA_DE_USO.md` — `.devin/mcp_config.json` com a chave `mcpServers`, os três escopos, `devin mcp add -s project`, o `serverUrl` do Desktop, e a razão de a configuração **não** declarar `env` —, mais a correção dos outros textos. A pesquisa já tinha tudo isso medido na §9 desde o primeiro dia; o que faltava era alguém escrever o procedimento |
 | ~~`guia_devin_agents_subagents.md` estava na raiz sem marca de que é hipótese contradita~~ — **fechada** na varredura de completude, 2026-08-04 | varredura de completude do Devin, medida contra os onze vetos | Este arquivo é a doc trazida pelo usuário que **motivou** a pesquisa, e seis afirmações dele caíram — as seis estão nomeadas na seção da fase, logo acima. O `STATUS.md` registrava isso; **o arquivo não**. Quem chegasse nele por `grep max-nesting` ou `grep subagent_default_model` leria `swe-1.7` com ponto, um bloco JSON inteiramente inventado, `subagents_enabled` no aninhamento errado, *"crie perfis na pasta `agents/`"* e três atalhos que não existem — tudo com cara de referência. Fechada pela convenção do repositório, que é a mesma do parágrafo preservado do `parity.yaml`: **o corpo fica palavra por palavra**, e o desvio entra ao lado. Cabeçalho com a tabela dos seis pontos e o ponteiro para a fonte, **mais um marcador `> CONTRADITO` dentro de cada uma das seis seções** — porque quem chega por `grep` não passa pelo cabeçalho, e um aviso que só existe no topo protege só quem lê de cima |
 | ~~A frase universal que o V-DV-1 derrubou sobrevivia em `playbook.py` e num docstring de teste~~ — **fechada** na varredura de completude, 2026-08-04 | varredura de completude do Devin, achada por `grep` fora dos arquivos que a fase tocou | *"Existe porque despacho de subagente é capacidade de HARNESS, não conteúdo deste repositório: **Devin, Codex e Copilot não têm equivalente**"* — a segunda metade é exatamente o contraexemplo do V-DV-1, e estava no docstring de módulo de `sparkforge/case/playbook.py`, o arquivo cuja razão de existir a frase explica. Mais duas leituras da mesma coisa (*"quem só tem `playbook` (Devin, Codex, Copilot CI)"*) em `playbook.py` e em `tests/test_router_agents.py`. A fase corrigiu `parity.yaml`, `README.md`, `AGENTS.md` e `GUIA_DE_USO.md`, e **não olhou o `.py` nem os testes**. Corrigidas as três no lugar, com o recorte que sobrou: `codex` e `copilot_ci` sempre; as três que despacham, quando o despacho estiver desligado — e o `playbook` é o **piso das cinco**, não o degrau de quem não tem despacho |
+| ~~**EMR on EKS** sem cobertura~~ — **fechada** pela fase de EMR on EKS em 2026-08-31, branch `feat/emr-eks` | Fase 5b, por decisão registrada no spec; a metade Serverless fechou com a Fase 5d em 2026-08-05, e esta é a outra metade | **Fechada como fase, sem nunca ter recebido posição na *Ordem*** — e isso é registro, não elogio: a fila descreve o que foi planejado, e duas das últimas três entregas entraram por fora dela. `SF-EMRK` tem extrator (`emr_eks@0.1.1`, 8 kinds `emrc.*`), coletor de duas chamadas, 4 regras com 2 vetos, 9 fixtures com golden, 2 tools, skill própria e `knowledge/emr-eks/` com dois documentos de fonte datada — o `zero` que esta linha media virou 64 fontes vigiadas. O vocabulário de Kubernetes que a linha temia entrou **declarado como fronteira**: cluster virtual e namespace entram, pod template sai como `emrc.pod_template.unresolved`, e nodegroup, Karpenter e pod pendente ficam de fora com razão escrita. Ver a seção própria acima. **O texto original desta linha:** **Fase, sem posição na *Ordem*** — e o "**única**" que esta linha dizia até 2026-08-05 estava **errado desde a própria Fase 5d**, que abriu a linha de job runs também sem posição; com `SF-CFG` são **três**, contadas nesta tabela. Corrigido no lugar, que é o que este arquivo faz com afirmação que a medição derruba. A linha dizia "EMR Serverless e EMR on EKS" e perdeu a primeira metade: `SF-EMRS` tem extrator, seis kinds, 16 fixtures, seis regras e coordenador. O que sobra é EKS, e ele não é o mesmo tamanho de trabalho: traz vocabulário de Kubernetes — virtual cluster, container provider, namespace, pod template — que não existe em lugar nenhum do repositório, e `knowledge/` continua com **zero** linha sobre ele. Enfileirá-lo é decisão de roadmap, e esta triagem não a toma por conta própria: registra que ele está fora da fila. |
 
 ## Como manter este arquivo honesto
 

@@ -132,6 +132,31 @@ E a `EMR_MATRIX` do EMR on EC2 **não** vale aqui, por razão mais forte que fal
 `Supported applications` é publicada por família e não por variante, e `emr-7.7.0-java8-latest`
 não tem Iceberg.
 
+**`--emr` é recusado sobre facts `emrc.*`, e a recusa é do produto e não sua.** A flag alimenta
+o release de EMR on EC2 e faria `judge` derivar `spark`, `python` e `iceberg` da `EMR_MATRIX`
+sobre um conjunto que não tem um único fact de EC2 — três eixos inventados, e dois deles com
+valor que a matriz do EKS publica **diferente**. Passar a flag aqui sai com exit 2 e a razão
+nomeada. Um conjunto fundido que carregue `emr.*` **e** `emrc.*` continua aceitando a flag: ali
+ela declara o lado de EC2 que está de fato presente.
+
+### Como ler o `runtime` e o `skipped` da saída
+
+`judge` devolve o campo `runtime` com o contexto que ele usou de fato, e nele dois subcampos
+respondem "de onde veio a versão": **`detected_from`** nomeia a fonte de cada eixo (`terraform`,
+`event_log`, `cli`) e **`divergences`** denuncia fontes que discordam — discordância é achado
+próprio (`SF-ENV-001`), não detalhe de log. Nesta área o esperado é `runtime` vazio e
+`detected_from` vazio: nenhum fact `emrc.*` alimenta eixo nenhum, e isso é o estado correto,
+não uma coleta incompleta.
+
+`--show-skipped` é obrigatório aqui pela mesma razão de sempre — sem ele "nenhum achado" e "não
+consegui avaliar" ficam indistinguíveis. Leia o `reason` de cada linha:
+
+| `reason` | O que significa nesta área |
+|---|---|
+| `requires_facts` | o kind não estava no conjunto. É o motivo legítimo, e é a fronteira contra `SF-EMR`/`SF-EMRS` acontecendo: as regras das outras duas plataformas aparecem aqui, em toda execução |
+| `runtime_scope` | a regra ficou fora do escopo de versão. **Nenhuma regra `SF-EMRK` deve aparecer com este motivo** — as quatro declaram escopo vazio de propósito. Se uma aparecer, alguém restringiu por versão sem que exista produtor de eixo, e ela está sendo pulada em toda execução real em vez de julgar |
+| `blocked_on` | capacidade que ainda não existe; diferente de dado que não foi coletado |
+
 ### 4. Interprete pelas duas superfícies
 
 A mesma propriedade pode chegar por `configurationOverrides.applicationConfiguration` (kind
@@ -146,7 +171,7 @@ Ao reportar, **escreva de qual superfície o valor veio**. Um valor lido só em
 `applicationConfiguration`, sem conferir a linha de submit, pode ser um valor que **perdeu** —
 e acusá-lo é acusar configuração correta.
 
-## O que a área julga — as quatro regras
+## Referência rápida — as quatro regras e o fact que cada uma consome
 
 Limiares e severidades **não** estão aqui de propósito; a lista autoritativa é
 `sparkforge rules lookup --category emr-eks`. Esta tabela é uma foto, e o catálogo cresce.

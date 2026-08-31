@@ -81,7 +81,7 @@
     {
       "path": "knowledge/emr-eks/job-run-configuration.md",
       "title": "job-run-configuration",
-      "sha256": "6ac722420377508c05747c379b8d44fef1c472ae7e83d837cdbc0097a4f14673"
+      "sha256": "d107cf2c310ab6c52c892bb5e28764e2ae60366bafde7f96293643e227ec4d2d"
     },
     {
       "path": "knowledge/emr-eks/runtime-matrix.md",

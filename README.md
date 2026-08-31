@@ -181,6 +181,7 @@ tool MCP de mesmo nome.
 | Workgroup do Athena | `analyze athena-workgroup` | dump de `get_work_group` |
 | **Cluster EMR on EC2** | `analyze emr-cluster` | dump de `describe-cluster` e os cinco que o completam |
 | **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
+| **Job run EMR on EKS** | `analyze emr-eks` | dumps de `describe-virtual-cluster` **e** `describe-job-run` do `emr-containers`, num arquivo só |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
 | **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
 | Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
@@ -202,15 +203,19 @@ tool MCP de mesmo nome.
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
 AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
-essa etapa inteira. `collect glue-job-runs` grava um artefato por run em
+essa etapa inteira. `collect emr-eks` é o único que faz **duas** chamadas de API
+(`describe-virtual-cluster` e `describe-job-run`) e grava **um** arquivo: os dois
+ids são obrigatórios, porque a própria API não aceita um job run sem o cluster
+virtual que o contém. `collect glue-job-runs` grava um artefato por run em
 estado terminal em `.sparkforge/artifacts/glue_job_run/`; run já em disco com
 hash íntegro é no-op (coleta incremental de graça), e `--max-runs` é teto de
 paginação, não filtro de data. `rules/catalog/` não tem nenhuma regra com
 `blocked_on` — o que falta para uma regra disparar é sempre coleta, nunca
 código.
 
-Sete desses verbos mudam o alcance do projeto, e é por isso que aparecem
-em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
+**Oito** desses verbos mudam o alcance do projeto, e é por isso que aparecem
+em negrito — contados na tabela, não somados: a linha dizia "sete" e a tabela já
+trazia sete antes de `analyze emr-eks` entrar. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
 alimenta a release do EMR no `RuntimeContext`, de modo que os limiares passem
@@ -221,7 +226,18 @@ de log e segredo em `runtimeConfiguration` — a partir de uma única chamada
 (`get-application`), em namespace disjunto (`emrs.*`) e área própria (`SF-EMRS`);
 ele **não** alimenta `RuntimeContext`, porque a AWS não publica a matriz de
 release do Serverless, e a razão está escrita em
-`knowledge/emr-serverless/runtime-matrix.md`. `analyze data-quality`
+`knowledge/emr-serverless/runtime-matrix.md`. `analyze emr-eks` faz a mesma
+pergunta sobre o **terceiro** modelo de execução — cluster virtual mapeado a um
+namespace de Kubernetes, papel de execução declarado por job run, destino de log
+por execução, e as **duas** superfícies de configuração
+(`configurationOverrides.applicationConfiguration` e
+`jobDriver.sparkSubmitParameters`, com a segunda vencendo a primeira) —, em
+namespace disjunto (`emrc.*`) e área própria (`SF-EMRK`). Ele também **não**
+alimenta `RuntimeContext`, mas por razão oposta à do Serverless: a AWS **publica**
+a matriz de release do EKS, e ela **diverge** da de EC2 em células reais — por
+isso `--emr` é **recusado** sobre um conjunto de facts `emrc.*`, em vez de
+preencher `spark`, `python` e `iceberg` com a tabela errada. A medida está em
+`knowledge/emr-eks/runtime-matrix.md`. `analyze data-quality`
 responde sobre **onde a validação está**, não sobre se o dado está correto:
 reconhece o check artesanal, a `VerificationSuite` do PyDeequ e o Great
 Expectations pela forma do código — nunca por lista de nomes —, e o achado é
