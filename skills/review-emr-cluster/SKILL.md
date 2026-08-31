@@ -197,11 +197,15 @@ vazio), mas versão que você cite entra **declarada**, nunca derivada do `relea
 - O problema está no código ou no plano físico: comece por `sparkforge-diagnose`.
 - A pergunta é sobre tabela Iceberg, small files ou layout: `optimize-iceberg-table` e
   `optimize-parquet-layout`.
-- Você quer decidir capacidade de **EMR on EKS**: nenhum fact deste repositório descreve
-  virtual cluster, container provider, namespace nem pod template — esse modelo de execução
-  continua sem cobertura, e supor que `SF-EMR` ou `SF-EMRS` vale para ele é inventar.
-  **EMR Serverless deixou de estar nesta lista**: tem extrator, área e verbo próprios, e é a
-  seção acima.
+- O dump é do **`emr-containers`** (`describe-virtual-cluster` + `describe-job-run`): o
+  procedimento inteiro acima não se aplica, a área é `SF-EMRK`, o namespace é `emrc.*` e a
+  skill é `review-emr-eks`. **EMR on EKS deixou de estar nesta lista como "sem cobertura"**,
+  pela mesma razão que o Serverless saiu antes dele: tem extrator, área e verbo próprios.
+- Você quer decidir **capacidade de nó do cluster EKS** — nodegroup, pod pendente,
+  autoscaler, quota de namespace. Isso continua sem cobertura em qualquer área deste
+  repositório, e a `review-emr-eks` diz o mesmo: o `emr-containers` não descreve o lado EKS,
+  e o pod template sai como recusa com o path. Supor que `SF-EMR`, `SF-EMRS` ou `SF-EMRK`
+  responde por isso é inventar.
 
 ## Red flags
 

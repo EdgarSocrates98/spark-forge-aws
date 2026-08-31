@@ -242,6 +242,7 @@ DISPATCHABLE_SKILLS = {
     "optimize-pyspark-code": "mesma forma de `review-pyspark-pr`: extrai, julga, propoe diff",
     "review-data-validation": "revisa a validacao declarada no codigo e devolve achados",
     "review-emr-cluster": "revisa a definicao do cluster que ja esta em disco",
+    "review-emr-eks": "revisa o job run do emr-containers que ja esta em disco",
     "review-glue-terraform": "revisa o .tf que ja esta em disco",
     "review-pyspark-pr": "revisa um diff fechado e classifica risco",
     "analyze-analytics": "Especialista de dominio; despacho por coordenador",

@@ -405,19 +405,32 @@ rules:
   # AGENT-002, que vem antes: nada do despacho já existente muda.
   - id: AGENT-007
     phase_in: [diagnosis, hypothesis]
-    title: Achado dominante em infraestrutura EMR — cluster ou Serverless
+    title: Achado dominante em infraestrutura EMR — cluster, Serverless ou on EKS
     when:
       any:
         - {findings_area: SF-EMR, count_gt: 0}
         - {findings_area: SF-EMRS, count_gt: 0}
+      # `SF-EMRK` entra AQUI pela MESMA razao que `SF-EMRS` entrou na Fase 5d, e o
+      # precedente esta escrito acima: `all:` com uma condicao ja virou `any:` com
+      # duas porque um case so de Serverless voltava de `next_step` com
+      # `recommended_agent: None`. Um case so de EMR on EKS teria o mesmo destino
+      # sem esta linha. O agente e o mesmo, entao nao ha pergunta de precedencia
+      # dentro desta rota.
+        - {findings_area: SF-EMRK, count_gt: 0}
     recommended_agent: emr-infra-reviewer
     reason: >
-      O gargalo ou o risco está na definição do cluster ou da application, não no código:
-      modelo de instância, purchasing option por papel, managed scaling e Configurations em
-      dois níveis no EMR on EC2; capacidade pré-inicializada faturada com a application
-      ociosa, janela de auto-stop e segredo em `runtimeConfiguration` no Serverless. Nenhum
-      deles tem equivalente em Glue, e a correção é o próximo provisionamento — não uma
-      edição no que já está em execução.
+      O gargalo ou o risco está na definição do cluster, da application ou da execução,
+      não no código: modelo de instância, purchasing option por papel, managed scaling e
+      Configurations em dois níveis no EMR on EC2; capacidade pré-inicializada faturada
+      com a application ociosa, janela de auto-stop e segredo em `runtimeConfiguration`
+      no Serverless. Em EMR on EKS o objeto é outro de novo — cluster virtual mapeado a
+      um namespace de Kubernetes, papel de execução declarado por job run, e as DUAS
+      superfícies de configuração (`applicationConfiguration` e `sparkSubmitParameters`,
+      com a segunda vencendo a primeira) —, e o destino de log é por execução: não há
+      armazenamento gerenciado com retenção publicada, então a ausência do bloco de
+      monitoramento já é ausência de log, e não default seguro como no Serverless.
+      Nenhum deles tem equivalente em Glue, e a correção é a próxima submissão ou o
+      próximo provisionamento — não uma edição no que já está em execução.
 
   # AS TRÊS ÁREAS DE MEDIÇÃO, e a posição desta rota é precedência declarada.
   # `SF-UI`, `SF-BENCH` e `SF-FVAL` são as três áreas cujo artefato é uma EXECUÇÃO —

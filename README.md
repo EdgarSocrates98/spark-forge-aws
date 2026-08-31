@@ -449,6 +449,7 @@ Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Us
 | `review-pyspark-pr` | revisar um PR buscando regressões de performance e custo |
 | `review-glue-terraform` | revisar o IaC do job (workers, Auto Scaling, args, observabilidade) |
 | `review-emr-cluster` | o risco estiver na definição do cluster EMR on EC2 (fleets/groups, Spot por papel, managed scaling, `Configurations`, `LogUri`) |
+| `review-emr-eks` | o risco estiver na execução de um job Amazon EMR on EKS (cluster virtual e namespace, as duas superfícies de configuração, destino de log e `persistentAppUI` por job run) |
 | `review-data-validation` | o job validar dado e a pergunta for onde o check está, se ele tem consequência e quanto custa |
 
 ## Coordenadores e executores
@@ -707,6 +708,7 @@ forma portátil de arquivo único é `vendor/caveman/dist/caveman.skill`.
 /analyze-spark-plan
 /optimize-iceberg-table
 /review-emr-cluster
+/review-emr-eks
 /review-data-validation
 ```
 

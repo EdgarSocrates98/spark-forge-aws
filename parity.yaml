@@ -193,14 +193,19 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
-  # Sem `knowledge:`, e a ausencia e decidida: `knowledge/` nao tem documento de
-  # EMR on EKS, e declarar um caminho que nao existe reprovaria em
-  # `test_every_declared_knowledge_file_exists` -- que e exatamente o que esse
-  # teste existe para pegar. A capacidade chega as cinco plataformas pelas
-  # mesmas duas superficies das irmas.
+  # `knowledge:` com DOIS caminhos, e a lista mudou dentro da propria fase: quando
+  # esta entrada foi escrita, `knowledge/` ainda nao tinha documento de EMR on EKS
+  # e declarar um caminho inexistente reprovaria em
+  # `test_every_declared_knowledge_file_exists`. Os dois documentos existem desde a
+  # Task que os escreveu, e a ausencia deixou de ser decidida para virar omissao --
+  # que e o defeito oposto, e o unico que aquele teste NAO pega. A capacidade chega
+  # as cinco plataformas pelas mesmas duas superficies das irmas.
   - name: extract facts from an EMR on EKS job run dump
     tools: [sparkforge_analyze_emr_eks]
     cli: [analyze emr-eks]
+    knowledge:
+      - knowledge/emr-eks/job-run-configuration.md
+      - knowledge/emr-eks/runtime-matrix.md
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]

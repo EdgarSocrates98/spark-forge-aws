@@ -286,6 +286,7 @@ RELACAO_MEDIDA = {
         "sf-schema-registry-specialist",
     ),
     "review-emr-cluster": ("emr-infra-reviewer",),
+    "review-emr-eks": ("emr-infra-reviewer",),
     "review-glue-terraform": (
         "glue-incremental-performance-architect",
         "glue-infra-reviewer",
@@ -770,6 +771,7 @@ class TestSkillsReais:
             "spark4-compatibility": "sf-runtime-specialist",
             "analyze-graph-data": "sf-graph-specialist",
             "review-emr-cluster": "emr-infra-reviewer",
+            "review-emr-eks": "emr-infra-reviewer",
             "verify-agent-evidence": "sf-evidence-verifier",
             "engineer-agent-context": "sf-context-engineer",
             "engineer-agent-memory": "sf-memory-engineer",

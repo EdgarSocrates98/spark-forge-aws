@@ -121,21 +121,27 @@ subagente. Fora do Devin Local agent com o toggle ligado, a coordenação no Des
 
 ### 3.2 Quais skills despacham, e a que não despacha de propósito
 
-**Doze das vinte** skills declaram `subagent: true` no espelho `.agents/skills/`: as
-quatro `review-*` (`review-emr-cluster`, `review-data-validation`,
+**A lista autoritativa é `DISPATCHABLE_SKILLS` em `scripts/sync_skills.py`**, e não este
+parágrafo: o conjunto cresceu a cada fase que acrescentou skill, e um número copiado aqui
+envelhece em silêncio. O que não muda é o critério, e é ele que decide os casos duvidosos.
+
+O recorte medido quando esta seção foi escrita — **doze das vinte** skills de então — era: as
+cinco `review-*` (`review-emr-cluster`, `review-emr-eks`, `review-data-validation`,
 `review-glue-terraform`, `review-pyspark-pr`), as quatro `analyze-*`
 (`analyze-spark-plan`, `analyze-spark-ui`, `analyze-batch-loop`,
 `analyze-library-call-graph`), `diagnose-oom`, `diagnose-data-skew`,
 `optimize-pyspark-code` e `optimize-parquet-layout`. São as investigações fechadas: o
 subagente coleta, julga sobre artefato, e o pai lê e resume o resultado.
 
-**Duas** delas declaram também `agent:` — `review-emr-cluster` → `emr-infra-reviewer` e
-`review-data-validation` → `data-quality-reviewer`. Nas outras **dez**, `agent:` não tem
-resposta única e o Devin escolhe o perfil, que é a forma documentada (o campo tem default
-*none*).
+Uma parte delas declara também `agent:`, e a regra é mecânica — `agent:` sai quando **um só**
+coordenador declara a skill no `skills:` dele, e cala quando há mais de um. `review-emr-cluster`
+e `review-emr-eks` são as duas de EMR, e as duas apontam para `emr-infra-reviewer`, que é o
+dono das três plataformas; `review-data-validation` → `data-quality-reviewer`. Onde `agent:`
+não tem resposta única, o Devin escolhe o perfil, que é a forma documentada (o campo tem
+default *none*).
 
-Nove são ambíguas por serem declaradas por dois a quatro coordenadores. A décima é
-`diagnose-oom`, e a razão dela é diferente: ela **era** declarante único, mas só porque
+As ambíguas o são por serem declaradas por dois a quatro coordenadores. Uma delas não é, e a
+razão dela é diferente — `diagnose-oom`, e a razão dela é diferente: ela **era** declarante único, mas só porque
 `spark-performance-architect` não a lista no `skills:` dele — embora liste
 `diagnose-data-skew`, `analyze-spark-ui` e `tune-glue-job`, toda a vizinhança do mesmo
 diagnóstico. Omissão numa lista pré-existente não é juízo de competência, e o perfil que
