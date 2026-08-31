@@ -109,27 +109,45 @@ def _matrix_path() -> Path:
     return safe_knowledge_file(knowledge_dir(), "glue/runtime-matrix.yaml")
 
 
+# A matriz do EMR Serverless mora ao lado, no mesmo formato de dado externo, e
+# NAO substitui a `EMR_MATRIX` de EMR on EC2: sao plataformas diferentes com
+# fontes diferentes, e a pagina `knowledge/emr-serverless/runtime-matrix.md`
+# mede que tres das quatro colunas da matriz de EC2 nao tem fonte nenhuma do
+# lado do Serverless. Ver o cabecalho do proprio YAML.
+_EMR_SERVERLESS_RELATIVE = "emr-serverless/runtime-matrix.yaml"
+
+
+def _emr_serverless_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _EMR_SERVERLESS_RELATIVE)
+
+
 def _sources_lock_path() -> Path:
     return safe_knowledge_file(knowledge_dir(), "sources.lock.json")
 
 
-def _read() -> dict[str, dict[str, Any]]:
-    """Le o YAML cru, sem resolver evidencia. Nao e cacheada de proposito:
-    `load()` e `evidence()` tem cache proprio, e cada uma limpa o seu -- um
-    cache intermediario aqui sobreviveria ao `cache_clear()` delas e devolveria
-    a matriz do repositorio real dentro de um teste que apontou o
-    `knowledge_dir` para outro lugar."""
-    matrix_path = _matrix_path()
-    with matrix_path.open("r", encoding="utf-8") as arquivo:
-        conteudo = yaml.safe_load(arquivo)
+def _documento(caminho: Path) -> dict[str, Any]:
+    """Le um YAML de matriz cru. Nao e cacheada de proposito: as funcoes
+    publicas tem cache proprio, e cada uma limpa o seu -- um cache intermediario
+    aqui sobreviveria ao `cache_clear()` delas e devolveria a matriz do
+    repositorio real dentro de um teste que apontou o `knowledge_dir` para outro
+    lugar."""
+    with caminho.open("r", encoding="utf-8") as arquivo:
+        return yaml.safe_load(arquivo) or {}
 
-    versoes = (conteudo or {}).get("versions")
+
+def _versoes(caminho: Path) -> dict[str, dict[str, Any]]:
+    versoes = _documento(caminho).get("versions")
     if not versoes:
         raise RuntimeMatrixError(
-            f"{matrix_path}: bloco 'versions' ausente ou vazio -- "
+            f"{caminho}: bloco 'versions' ausente ou vazio -- "
             "toda regra com escopo de versao ficaria muda em silencio"
         )
     return versoes
+
+
+def _read() -> dict[str, dict[str, Any]]:
+    """As versoes do Glue, cruas. Ver `_documento` sobre por que nao ha cache."""
+    return _versoes(_matrix_path())
 
 
 def _validar_evidencia(versao: str, componente: str, registro: dict[str, Any]) -> set[str]:
@@ -265,3 +283,65 @@ def watched_sources() -> frozenset[str]:
 def known_versions() -> list[str]:
     """Versoes de Glue conhecidas pela matriz, em ordem crescente."""
     return sorted(load().keys(), key=lambda v: tuple(int(p) for p in v.split(".")))
+
+
+# --------------------------------------------------------------------------- #
+# EMR Serverless
+# --------------------------------------------------------------------------- #
+
+# Vocabulario FECHADO de componente, pelo mesmo motivo de `SOURCE_TYPES`: a
+# unica forma pratica de esta matriz voltar a inventar eixo e alguem acrescentar
+# uma chave `python:` numa linha porque "o EC2 tem". Chave fora daqui estoura na
+# carga, com o nome do componente e da release.
+EMR_SERVERLESS_COMPONENTS = frozenset({"spark", "iceberg"})
+
+
+@lru_cache(maxsize=1)
+def load_emr_serverless() -> dict[str, dict[str, str]]:
+    """Matriz do EMR Serverless, indexada pelo release label SEM o prefixo
+    `emr-` (`"7.5.0"`, `"spark-8.0.0"`) -- a mesma normalizacao de
+    `sparkforge.facts.runtime_detect._emr_key`.
+
+    So a forma curta (`spark: "3.5.2"`). A forma longa com `claims` existe na
+    matriz do Glue porque la houve disputa entre fontes oficiais a registrar;
+    aqui nao ha celula em disputa -- ha celula AUSENTE, que e outra coisa e ja
+    tem semantica propria neste motor (chave que nao existe faz `in_scope`
+    reprovar o eixo, e a regra e pulada por ausencia). Um registro em forma
+    longa aqui seria vocabulario sem consumidor, entao ele estoura em vez de
+    carregar meio entendido.
+    """
+    caminho = _emr_serverless_path()
+    resolvida: dict[str, dict[str, str]] = {}
+    for release, linha in _versoes(caminho).items():
+        if not isinstance(linha, dict):
+            raise RuntimeMatrixError(
+                f"{caminho}: release {release!r} nao e um mapa de componentes"
+            )
+        fora = sorted(set(linha) - EMR_SERVERLESS_COMPONENTS)
+        if fora:
+            raise RuntimeMatrixError(
+                f"{caminho}: release {release!r} declara {fora} -- a fonte do EMR "
+                f"Serverless publica apenas {sorted(EMR_SERVERLESS_COMPONENTS)}, e "
+                f"componente sem fonte e eixo inventado (ver o cabecalho do YAML)"
+            )
+        for componente, valor in linha.items():
+            if not isinstance(valor, str) or not valor.strip():
+                raise RuntimeMatrixError(
+                    f"{caminho}: {release}.{componente} = {valor!r} -- valor vazio "
+                    f"afirmaria leitura que nao aconteceu; omita a chave"
+                )
+        resolvida[str(release)] = {c: str(v) for c, v in linha.items()}
+    return resolvida
+
+
+@lru_cache(maxsize=1)
+def emr_serverless_sources() -> tuple[str, ...]:
+    """As URLs que a matriz do Serverless declara como fonte.
+
+    Existe para que `tests/test_emr_serverless_runtime_boundary.py` possa exigir
+    que todas estejam em `knowledge/sources.lock.json` -- URL solta na matriz,
+    sem entrada no lock, nao teria hash nem data revalidados por
+    `scripts/refresh_knowledge.py`.
+    """
+    fontes = _documento(_emr_serverless_path()).get("sources") or []
+    return tuple(str(url) for url in fontes)

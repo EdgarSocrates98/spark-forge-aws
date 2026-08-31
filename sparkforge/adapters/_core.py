@@ -553,6 +553,27 @@ def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, 
 
 _EKS_NAMESPACE = "emrc."
 _EC2_NAMESPACE = "emr."
+_SERVERLESS_NAMESPACE = "emrs."
+
+
+def _e_so_de_serverless(facts: list[Fact] | None) -> bool:
+    """True quando o conjunto tem fact `emrs.*` e nenhum `emr.*` de EC2.
+
+    ESTREITA pelo mesmo motivo que `_recusar_emr_sobre_eks` e: um conjunto com
+    os dois artefatos fundidos (`get-application` + `describe-cluster`) tem o
+    lado de EC2 de fato presente, e ali a flag declara aquele lado -- com o
+    fork `-amzn-N`, que a fonte de EC2 publica. Trocar a matriz tambem naquele
+    caso apagaria um dado verdadeiro.
+
+    `emrc.*` (EKS) nao precisa ser testado aqui: `_recusar_emr_sobre_eks` roda
+    ANTES e ja estourou se ele estiver presente sem `emr.*`.
+    """
+    if not facts:
+        return False
+    kinds = {f.kind for f in facts}
+    if not any(k.startswith(_SERVERLESS_NAMESPACE) for k in kinds):
+        return False
+    return not any(k.startswith(_EC2_NAMESPACE) for k in kinds)
 
 
 def _recusar_emr_sobre_eks(emr: str | None, facts: list[Fact] | None) -> None:
@@ -631,6 +652,16 @@ def build_runtime(
     compatibilidade, nao taxonomia.
     """
     _recusar_emr_sobre_eks(emr, facts)
+    # A MESMA flag, a MESMA release, e OUTRA matriz. Sobre um conjunto so de
+    # facts `emrs.*` a derivacao passa pela matriz do EMR Serverless, que
+    # publica `spark` sem o sufixo do fork e NAO publica `python` nem
+    # `iceberg` -- os dois eixos que a matriz de EC2 preenchia do nada. O eixo
+    # `emr` continua sendo lido da flag nos dois caminhos: o release label e o
+    # mesmo namespace nas duas plataformas, e apaga-lo trocaria invencao por
+    # perda de informacao. Ver `knowledge/emr-serverless/runtime-matrix.md`.
+    chave_do_release = (
+        "emr_serverless_release" if _e_so_de_serverless(facts) else "emr_release"
+    )
     raw = {
         "glue_version": glue,
         # `emr_release` e a primeira chave de `_PLATFORM_KEYS["emr"]`, e
@@ -639,7 +670,7 @@ def build_runtime(
         # A flag e uma DECLARACAO, e por isso a fonte e `cli`, abaixo de
         # `event_log` e de `describe_cluster` em `_PRECEDENCE`: discordar de um
         # dump vira divergencia registrada, nunca resolucao silenciosa.
-        "emr_release": emr,
+        chave_do_release: emr,
         "spark_version": spark,
         "python_version": python,
         "iceberg_version": iceberg,

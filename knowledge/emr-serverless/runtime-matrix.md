@@ -4,7 +4,7 @@ Esta página existe para responder **uma** pergunta, registrada como D-5 no spec
 
 **A resposta é não** — não porque as versões divirjam, mas porque **a documentação do Serverless não publica a matriz**. O que ela publica cobre um componente de quatro, e numa precisão menor. Esta página mede o que existe, e declara onde a fonte acaba.
 
-Diferente de [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md), **esta página não tem espelho executável**, e isso é a conclusão, não uma pendência. Nenhuma tabela daqui vira `dict` em `sparkforge/facts/runtime_detect.py`; a §6 explica por quê.
+**Esta página passou a ter espelho executável em 2026-08-31**, e a §6.1 registra exatamente o que mudou e o que não mudou. O espelho é [`runtime-matrix.yaml`](runtime-matrix.yaml), e ele carrega **só as colunas que as tabelas das §2 e §4 medem**: `spark` nas 24 releases numeradas, mais `iceberg` nas duas `emr-spark-8.0*`. Hadoop, Iceberg das numeradas e Python continuam fora — não por pendência, mas porque a fonte não os publica, que é a medição desta página inteira. A decisão da §6 sobre o **extrator** continua valendo palavra por palavra.
 
 ## 1. O que a fonte do Serverless publica, e o que ela não publica
 
@@ -124,6 +124,31 @@ O argumento não é que os números divirjam — nas 24 releases comparáveis a 
 **O que o extrator emite, então:** `releaseLabel` cru em `attrs`, e `release_major`/`release_minor` em `measures` **quando o label tem a forma `emr-<major>.<minor>.<patch>`** — omitidos quando não tem. Nada disso vira `RuntimeContext`. As regras da área `SF-EMRS` declaram `runtime_scope: {}` e leem a série do próprio fact, no padrão de `rules/catalog/emr-infra.yaml:8-19`.
 
 **O que reabriria a decisão:** a AWS publicar, para o Serverless, uma tabela de componentes por release comparável à de EC2 — com Hadoop, Iceberg e Python. Até lá, a divergência fica registrada como dívida no `STATUS.md`.
+
+## 6.1 O que mudou em 2026-08-31, e o que não mudou
+
+A §6 responde **D-5**, que é uma pergunta sobre o **extrator**: o `releaseLabel` que um `get-application` traz não alimenta `RuntimeContext`. **Isso continua exatamente como está escrito acima.** Nada em `emrs.application` vira eixo de runtime.
+
+A dívida que fechou nesta data é **outra pergunta**, e foi medida no `STATUS.md`: com a flag `--emr` na mão, `sparkforge judge --facts <facts `emrs.*`> --emr 7.5.0` gravava `spark: "3.5.2-amzn-1"`, `python: "3.9"` e `iceberg: "1.6.1-amzn-1"` — **os quatro eixos derivados da `EMR_MATRIX` de EMR on EC2**, sobre um conjunto sem um único fact de EC2. Não derivar nada deixava três eixos inventados; **recusar a flag** — a saída que a fase de EMR on EKS tomou para `emrc.*` — deixaria o operador sem o eixo `spark`, que a §2 mede que **esta fonte publica**.
+
+A saída escolhida foi a terceira das três que a dívida listava: **dar o que a fonte publica, e deixar vazio o que ela não publica.**
+
+| | Antes | Depois |
+|---|---|---|
+| `emr` | `7.5.0` (a flag) | `7.5.0` (a flag, inalterado) |
+| `spark` | `3.5.2-amzn-1` — o fork de EC2 | `3.5.2` — o que a §2 mede |
+| `python` | `3.9` — da `EMR_MATRIX` | vazio |
+| `iceberg` | `1.6.1-amzn-1` — da `EMR_MATRIX` | vazio |
+| `detected_from` | `["cli"]` | `["cli", "cli:emr-serverless:matrix"]` |
+
+Quatro coisas que essa troca **não** faz:
+
+1. **Não muda o eixo `emr`.** O release label é o mesmo namespace nas duas plataformas — o próprio `get-application` traz `emr-7.5.0` — e apagá-lo trocaria invenção por perda de informação. Medido junto: **nenhuma regra do catálogo tem `emr` em `runtime_scope`** (13 têm `glue`, 5 `spark`, 1 `iceberg`), então o eixo preenchido não coloca regra de EC2 em escopo.
+2. **Não vale para conjunto com artefato de EC2 junto.** A troca de matriz é estreita, no molde exato da recusa de EKS: com um `describe-cluster` presente, a flag declara o lado de EC2 que está de fato ali, e a matriz de EC2 é a certa — com o fork, que aquela fonte publica.
+3. **Não deriva release que o Serverless não tem.** `emr-6.4.0` e `emr-6.5.0` e as quatro releases de patch da série 6.x não estão no espelho, então `--emr 6.4.0` sobre facts de Serverless deriva **nada** — que é o que a §3 sustenta.
+4. **Não interpola nem completa.** O carregador tem vocabulário fechado de componente (`spark`, `iceberg`) e **estoura** se alguém acrescentar `python:` numa linha — a única forma prática de a invenção voltar era edição distraída de YAML.
+
+O contrafactual inteiro está em `tests/test_emr_serverless_runtime_boundary.py`, e o guard de drift daquele arquivo compara o espelho contra as tabelas desta página célula a célula: **editar a tabela e esquecer o YAML derruba a suíte.**
 
 ## 7. Como manter esta página
 

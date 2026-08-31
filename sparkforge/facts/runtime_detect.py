@@ -305,6 +305,29 @@ EMR_MATRIX: dict[str, dict[str, Any]] = {
     },
 }
 
+# EMR SERVERLESS TEM MATRIZ PROPRIA, E ELA E MENOR DE PROPOSITO.
+#
+# A `EMR_MATRIX` acima e de EMR on EC2. Usa-la para derivar runtime a partir do
+# release label de uma application de EMR Serverless preenchia TRES eixos que a
+# fonte do Serverless nao publica -- e o quarto, `spark`, saia com o sufixo
+# `-amzn-N` do fork, que aquela fonte tambem nao publica. Era a primeira divida
+# aberta do `STATUS.md`, e a saida escolhida foi dar o que a fonte publica e
+# deixar vazio o resto: `knowledge/emr-serverless/runtime-matrix.md` mede, nas
+# 24 releases numeradas comparaveis, que a versao de COMUNIDADE do Spark
+# coincide com a de EC2 truncada no sufixo, e que Hadoop, Iceberg e Python nao
+# aparecem em pagina nenhuma do Serverless.
+#
+# Por que ela nao e derivada da `EMR_MATRIX` por truncamento: as duas nao tem o
+# mesmo conjunto de chaves (o Serverless comeca em 6.6.0 e nao tem as quatro
+# releases de patch da serie 6.x), e as duas releases `emr-spark-8.0*` existem
+# so do lado do Serverless -- e sao justamente as unicas em que a fonte de la
+# publica Iceberg, com sufixo. Truncar a de EC2 acertaria 24 celulas e erraria a
+# fronteira inteira, calada.
+#
+# `python` NAO APARECE em linha nenhuma, e o loader recusa a chave: e a unica
+# forma de a invencao voltar por edicao distraida.
+EMR_SERVERLESS_MATRIX: dict[str, dict[str, str]] = runtime_matrix.load_emr_serverless()
+
 # Precedencia de resolucao quando ha mais de uma fonte para o mesmo
 # componente: event_log (Spark UI / event log do run) e o mais confiavel,
 # depois cli (a flag que o operador digitou), depois terraform (glue_version,
@@ -417,8 +440,19 @@ _PRECEDENCE: tuple[str, ...] = (
 # conta. Glue continua sendo lido por `glue_version` e por mais nada, porque a
 # mesma leitura alimenta GLUE_MATRIX: platform detectada e versao derivada nao
 # podem divergir por lerem chaves diferentes.
+#
+# `emr_serverless_release` carrega o MESMO release label e alimenta o MESMO eixo
+# `emr` -- o Serverless usa o namespace de label do EMR (`emr-7.5.0`), como o
+# proprio `get-application` mostra. O que a chave separada escolhe e a MATRIZ de
+# derivacao, e nada mais: identidade de plataforma continua sendo `emr`, porque
+# inventar uma segunda plataforma mudaria a contagem de `env.platform` e
+# SF-ENV-005 sem que nada tivesse sido observado a mais. Quem decide qual das
+# duas chaves usar e `sparkforge/adapters/_core.py::build_runtime`, que e onde o
+# conjunto de facts esta a mao.
+_EMR_SERVERLESS_KEY = "emr_serverless_release"
+
 _PLATFORM_KEYS: dict[str, tuple[str, ...]] = {
-    "emr": ("emr_release", "emr_version", "emr"),
+    "emr": ("emr_release", "emr_version", "emr", _EMR_SERVERLESS_KEY),
     "glue": ("glue_version",),
 }
 
@@ -594,12 +628,28 @@ def _platform_identity(platforms: dict[str, list[_Observation]]) -> list[_Observ
     ]
 
 
-def _matrix_row(platform: str, value: str) -> dict[str, Any] | None:
+# Sufixo de origem por matriz. Todos terminam em `:matrix` porque e assim que
+# `_resolve` distingue valor DERIVADO de valor LIDO -- derivacao sempre perde
+# para observacao direta, e um sufixo diferente quebraria essa regra em silencio.
+# O nome da matriz entra no meio, e nao some: e ele que aparece em
+# `detected_from` e permite ao operador ver que o eixo `spark` nao veio da mesma
+# fonte que o eixo `emr` que ele declarou.
+_MATRIX_ORIGIN = "matrix"
+_EMR_SERVERLESS_ORIGIN = "emr-serverless:matrix"
+
+
+def _matrix_row(platform: str, value: str, key: str = "") -> dict[str, Any] | None:
     if platform == "glue":
         return GLUE_MATRIX.get(value)
     if platform == "emr":
+        if key == _EMR_SERVERLESS_KEY:
+            return EMR_SERVERLESS_MATRIX.get(_emr_key(value))
         return EMR_MATRIX.get(_emr_key(value))
     return None
+
+
+def _matrix_origin(key: str) -> str:
+    return _EMR_SERVERLESS_ORIGIN if key == _EMR_SERVERLESS_KEY else _MATRIX_ORIGIN
 
 
 def _collect(
@@ -633,9 +683,18 @@ def _collect(
                 value = str(raw)
                 platforms[platform].append((value, source_name))
                 detected_from.add(source_name)
-                row = _matrix_row(platform, value)
+                row = _matrix_row(platform, value, key)
                 if row:
-                    origin = f"{source_name}:matrix"
+                    origin = f"{source_name}:{_matrix_origin(key)}"
+                    # A origem da derivacao entra em `detected_from` quando a
+                    # matriz consultada NAO e a default da plataforma. Sem isso o
+                    # contexto sairia dizendo so `["cli"]` para um caso em que o
+                    # operador declarou UM eixo (`emr`) e o motor derivou OUTRO
+                    # (`spark`) de uma tabela que ele nunca nomeou -- e a divida
+                    # que esta troca fecha era exatamente a de nao dar ao
+                    # operador como distinguir eixo lido de eixo derivado.
+                    if key == _EMR_SERVERLESS_KEY:
+                        detected_from.add(origin)
                     for component in sorted(_DERIVABLE & set(row)):
                         pair = (str(row[component]), origin)
                         observations[component].append(pair)

@@ -4539,7 +4539,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (201,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
@@ -4558,26 +4558,26 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (201,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco; remedido de novo em 2026-08-31, na divida do --emr sobre facts de EMR Serverless: build_runtime passou a escolher a matriz de derivacao pelo namespace dos facts, e _core.py cresceu com _e_so_de_serverless e com o comentario que justifica a troca",
       "proof": {
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "201,5"
+          "value": "203,0"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "201,5",
+      "text": "203,0",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (201,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-324",
       "line": 83,
@@ -4597,7 +4597,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (201,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-325",
       "line": 83,
@@ -4617,7 +4617,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (201,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-326",
       "line": 83,
@@ -4637,7 +4637,7 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (201,5 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-327",
       "line": 83,

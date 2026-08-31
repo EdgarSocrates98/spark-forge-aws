@@ -118,11 +118,16 @@ def _apply_detail_level(payload: dict[str, Any], detail_level: str) -> dict[str,
 # Uma unica redacao para os tres verbos que aceitam a flag. Repetir o texto tres
 # vezes e como uma delas fica desatualizada.
 _EMR_FLAG_HELP = (
-    "Release do EMR on EC2. Aceita as duas grafias -- `emr-7.5.0` e `7.5.0`. "
+    "Release do EMR. Aceita as duas grafias -- `emr-7.5.0` e `7.5.0`. "
     "E DECLARACAO, nao observacao: perde para o event log e para um dump de "
     "`describe-cluster`, e discordar de um deles vira divergencia reportada, "
     "nunca valor substituido em silencio. Serve a quem sabe a release e nao tem "
-    "o dump -- com o dump, `--facts` ja resolve sozinho."
+    "o dump -- com o dump, `--facts` ja resolve sozinho. A MATRIZ consultada "
+    "segue o conjunto de facts: num conjunto so de `emrs.*` (EMR Serverless) "
+    "deriva da matriz do Serverless, que publica `spark` sem o sufixo do fork e "
+    "nao publica `python` nem `iceberg` -- os dois saem vazios. Sobre facts "
+    "`emrc.*` (EMR on EKS) a flag e RECUSADA com exit 2: la a matriz de EC2 e "
+    "medidamente errada."
 )
 
 _CODE_DB_HELP = (
