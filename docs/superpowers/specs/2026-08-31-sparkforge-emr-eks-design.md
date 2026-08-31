@@ -452,3 +452,94 @@ Os exemplos da AWS nunca mostram valor com espaço em `--conf`, e um
 caso é plausível de nunca aparecer. Fica registrado como **limite declarado**, não
 como dívida: fechá-lo é decidir adotar um tokenizador com aspas, e essa decisão
 tem custo (divergir do que a API entrega) que ninguém mediu ainda.
+
+### DV-12 — a DV-5(d) foi medida contra a versão FIXADA, e as duas leituras estão erradas
+
+Medido pelo implementador da Task 10, relendo as duas páginas do Spark na
+versão que este repositório fixa para fonte que sustenta regra. A Task 1 citou
+`spark.apache.org/docs/latest/`; a versão fixada correspondente ao Spark de EMR
+on EKS 7.5.0 (`3.5.2-amzn-1`) é `docs/3.5.6/`. Duas divergências, e a segunda
+inverte a regra:
+
+| Registrado na DV-5(d) | `docs/3.5.6/` | `docs/latest/` **hoje** |
+|---|---|---|
+| disjunção de **dois** ramos | **quatro** ramos (os dois, mais decommission de blocos de shuffle, mais `ShuffleDataIO` customizado — experimental) | quatro, texto idêntico |
+| `shuffleTracking.enabled` com default **`false`** | default **`true`**, `Since Version: 3.0.0` | default **`true`** |
+| a frase de Kubernetes vive em *Stage Level Scheduling Overview* | confere | confere |
+
+A primeira divergência não é entre versões: o texto de dois ramos não é o que
+`latest` publica hoje, é redação de uma série anterior do Spark. A segunda é a
+que decide a forma da regra — **com default `true`, alocação dinâmica ligada
+sem `shuffleTracking` declarado está no default SEGURO**, e uma regra que
+disparasse por ausência acusaria configuração correta.
+
+`SF-EMRK-004` exige, por isso, os **dois valores explícitos** —
+`enabled=true` **e** `shuffleTracking.enabled=false` escritos — e a fixture
+`alocacao_dinamica_no_default` é o golden negativo que trava a volta do erro. Os
+ramos 3 e 4 da disjunção **não são observados** pela regra (o motor não sabe
+exigir ausência de chave): estão declarados no `explanation`, e é por isso que
+ela é `confidence: medium`. As duas URLs fixadas entraram em
+`knowledge/sources.lock.json`, e `knowledge/emr-eks/job-run-configuration.md`
+ganhou a §12 com a medida.
+
+### DV-13 — a DV-5(a) não era implementável: o extrator não tinha detector de segredo
+
+Medido pelo implementador da Task 10, ao escrever `SF-EMRK-001`.
+`sparkforge/facts/emr_eks.py` não importava `facts/secrets.py` e não emitia
+`attrs.secret_pattern_match` em nenhum dos dois kinds de configuração — regra
+que citasse esse campo nunca dispararia, em silêncio. Pior: os dois valores
+saíam **em claro** para o `facts.json`, que é o artefato commitado do handoff.
+
+A Task 10 acrescentou `_mark_secret` ao extrator, aplicado às **duas**
+superfícies (`emrc.configuration` e `emrc.spark_submit_parameters`), porque a
+§7 do knowledge mede que as duas voltam sem redação no *Response Syntax*. O
+`EXTRACTOR_ID` foi para `emr_eks@0.1.1`, e os quatro goldens existentes
+mudaram só na proveniência.
+
+**O que NÃO foi transportado do `emr_serverless.py`:** a precedência de
+`EMR.secret@{{Nome}}` sobre a heurística. Lá ela existe para não acusar a
+própria correção; aqui a anotação **não está documentada** para
+`emr-containers`, e criar a isenção seria construir um ponto cego a partir de
+uma suposição.
+
+### DV-14 — a DV-2 permite `runtime_scope: {spark: ...}`, e as quatro regras declaram `{}`
+
+Medido pelo implementador da Task 10. A DV-2 está certa e continua valendo: a
+AWS publica matriz de release para EMR on EKS, então regra desta área **pode**
+restringir por `spark`. A medida que faltava é a outra ponta: **nenhuma fonte
+alimenta `RuntimeContext.spark` a partir de um artefato `emrc.*`**.
+`sparkforge/facts/runtime_detect.py` deriva Spark de `GLUE_MATRIX` (por
+`glue_version`), de `EMR_MATRIX` (por release de EMR on EC2 — proibida aqui pela
+DV-2) e da leitura direta de `spark.runtime_version` do event log; o
+`releaseLabel` do EKS não entra em nenhuma das três.
+
+Uma regra desta área com `{spark: ">=3.0"}` passaria no golden — as fixtures
+declaram `runtime` no `meta.yaml` — e seria **pulada em toda execução real**,
+porque `in_scope` falha fechada. Golden verde por SKIP é pior que vermelho:
+ninguém investiga o que passou. A afirmação de versão que `SF-EMRK-004` precisa
+fazer mora no `explanation` dela, com a URL da versão fixada. A decisão se
+reabre quando alguém ligar o `releaseLabel` do EKS ao `RuntimeContext`.
+
+### DV-15 — `SF-EMRK-004` lê uma superfície só, e o ponto cego está declarado
+
+Medido pelo implementador da Task 10 contra `sparkforge/rules/engine.py`. A
+propriedade pode chegar por `applicationConfiguration` ou por
+`sparkSubmitParameters`, e `when` tem um grupo `all` **ou** `any`, sem
+aninhamento: "(A na superfície 1 ou A na 2) e (B na 1 ou B na 2)" não é
+escrevível.
+
+Das duas saídas, a regra escolhe a que erra para o lado do **silêncio**: ler
+`applicationConfiguration` acusaria valor que pode ter **perdido** (a AWS
+declara que *"the Spark submit parameters take precedence"*), e acusar
+configuração correta é o pior defeito de regra. Ler `sparkSubmitParameters`
+nunca acusa valor derrotado — ele só perde para `spark.conf.set` no código, que
+é invisível para a área inteira.
+
+**O ponto cego:** um job run que configure alocação dinâmica apenas por
+`applicationConfiguration` não é julgado — não aparece em `findings` nem em
+`skipped`. A fixture `shuffle_tracking_desligado` prova o outro lado: o
+override diz `true`, a linha de submit diz `false`, e o achado sai. Fechar o
+ponto cego exige o motor saber aninhar grupos, ou o extrator resolver a
+precedência e emitir a configuração efetiva num fact só — a segunda é a saída
+que `SF-EMR-008` e `graph.checkpoint_required` já usaram, e é decisão de desenho
+de extrator, não de regra.

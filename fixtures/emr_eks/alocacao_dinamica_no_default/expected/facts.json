@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_d00e72",
+    "id": "f_5ecee1",
     "schema_version": 1,
     "kind": "emrc.analyzed",
     "subject": {
@@ -14,64 +14,14 @@
     "measures": {
       "virtual_cluster_count": 1,
       "job_run_count": 1,
-      "configuration_count": 3,
-      "conf_parameter_count": 1,
+      "configuration_count": 1,
+      "conf_parameter_count": 2,
       "unresolved_count": 0
     },
     "attrs": {},
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_f8ceb2",
-    "schema_version": 1,
-    "kind": "emrc.configuration",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "classification": "spark-defaults",
-      "key": "spark.kubernetes.driver.podTemplateFile",
-      "value": "s3://bucket/templates/driver.yaml",
-      "surface": "application_configuration"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_f8ceb2",
-    "schema_version": 1,
-    "kind": "emrc.configuration",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "classification": "spark-defaults",
-      "key": "spark.kubernetes.executor.podTemplateFile",
-      "value": "s3://bucket/templates/executor.yaml",
-      "surface": "application_configuration"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -96,7 +46,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -117,8 +67,8 @@
       "release_minor": 5
     },
     "attrs": {
-      "job_run_id": "0000000uvwxyzabcd",
-      "name": "etl-com-template",
+      "job_run_id": "0000000default003",
+      "name": "etl-alocacao-dinamica-default",
       "virtual_cluster_id": "0abcdefghijklmnop",
       "state": "COMPLETED",
       "release_label": "emr-7.5.0-latest",
@@ -126,7 +76,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -157,57 +107,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_71832e",
-    "schema_version": 1,
-    "kind": "emrc.pod_template.unresolved",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "role": "driver",
-      "path": "s3://bucket/templates/driver.yaml",
-      "surface": "application_configuration",
-      "reason": "not_fetched"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_71832e",
-    "schema_version": 1,
-    "kind": "emrc.pod_template.unresolved",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "role": "executor",
-      "path": "s3://bucket/templates/executor.yaml",
-      "surface": "application_configuration",
-      "reason": "not_fetched"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -225,14 +125,39 @@
     },
     "measures": {},
     "attrs": {
-      "key": "spark.executor.instances",
-      "value": "4",
+      "key": "spark.dynamicAllocation.enabled",
+      "value": "true",
       "surface": "spark_submit_parameters",
       "driver": "sparkSubmitJobDriver"
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
+      "extractor": "emr_eks@0.1.1"
+    }
+  },
+  {
+    "id": "f_843e9a",
+    "schema_version": 1,
+    "kind": "emrc.spark_submit_parameters",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "key": "spark.dynamicAllocation.maxExecutors",
+      "value": "40",
+      "surface": "spark_submit_parameters",
+      "driver": "sparkSubmitJobDriver"
+    },
+    "provenance": {
+      "artifact": "job.json",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -259,7 +184,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "c698c68336b85cb84b32b3457c8197ba801ccdb6afff8d2153be9cd028d9e347",
       "extractor": "emr_eks@0.1.1"
     }
   }

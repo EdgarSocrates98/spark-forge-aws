@@ -1,1 +1,79 @@
-[]
+[
+  {
+    "rule_id": "SF-EMRK-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Nenhum destino de log neste job run — o rastro morre com o pod",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_afee6a"
+    ],
+    "measured": {
+      "log_destination_count": 0
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Não é problema de performance; é de capacidade de diagnóstico. É o análogo de SF-EMRS-003 (EMR Serverless) e de SF-EMR-006 (EMR on EC2), e a leitura difere dos dois — mais forte que a do primeiro, igual à do segundo. No EMR Serverless esta regra NÃO pode disparar por ausência: managedPersistenceMonitoringConfiguration.enabled \"defaults to true\" e \"by default, EMR Serverless stores application logs securely in Amazon EMR managed storage for a maximum of 30 days\", então o bloco ausente significa PROTEGIDO e disparar por ausência acusaria toda application que nunca tocou em monitoramento — que é a maioria das corretas. Em EMR on EKS não foi encontrada nenhuma declaração equivalente, e o que a fonte diz é o contrário, com must literal repetido em duas páginas: \"to be able to monitor the job progress and to troubleshoot failures, you must configure your jobs to send log information to Amazon S3, Amazon CloudWatch Logs, or both\". Aqui a ausência do bloco JÁ É zero destino, e é por isso que o fact emrc.monitoring sai sempre, inclusive quando monitoringConfiguration não veio no payload. managedLogs não é o managed storage do Serverless, e confundir os dois seria o erro caro desta área: o que a fonte declara sobre allowAWSToRetainLogs é estreito — \"allows AWS to retain system namespace logs when running a job using Native FGAC\" —, é log de sistema sob um modo de auth específico e não log de aplicação, não tem default declarado nem na referência de API nem na de CLI, e nenhuma retenção é publicada para ele. Por isso ele não conta como destino, e sua presença não desarma este achado. Sem destino, os logs de submitter, driver e executor vivem e morrem dentro do pod, e o event log — o insumo mais rico que este motor consome — não chega a lugar nenhum que sobreviva à execução. As áreas SF-UI, SF-PLAN e metade de SF-PY dependem de artefato de execução que ninguém está gravando. E aqui o limite de camada do cabeçalho corta numa direção só, o que torna o achado mais duro que o do Serverless: não existe um job run posterior que traga o seu próprio destino, porque ESTE artefato já é o job run. O que ele não prova é o inverso — que nenhum log existe em lugar nenhum: um pod template pode montar um sidecar de coleta, e o pod template é a superfície que este extrator declaradamente não lê. Ver knowledge/emr-eks/job-run-configuration.md seção 4.",
+    "proposed_change": [
+      "Acrescentar s3MonitoringConfiguration.logUri ao configurationOverrides.monitoringConfiguration das próximas submissões, com prefixo dedicado e política de ciclo de vida no bucket.",
+      "Ou acrescentar cloudWatchMonitoringConfiguration.logGroupName quando a operação já vive no CloudWatch; a fonte trata os dois como alternativas legítimas ('Amazon S3, Amazon CloudWatch Logs, or both').",
+      "Declarar persistentAppUI: ENABLED junto — é ele que faz o event log existir, e os três exemplos de start-job-run do guia o escrevem explicitamente. Destino de log sem event log dá log de container e nenhuma Spark UI.",
+      "Antes de mudar, perguntar por que não havia destino: dado de aplicação no log de container é a razão legítima mais comum, e a resposta para ela é política de acesso no prefixo e no log group, não ausência de log.",
+      "Corrigir onde a submissão é montada, não neste job run: o artefato é uma execução que já aconteceu, e não há update-job-run."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Log de container pode conter dado de aplicação; o destino precisa da mesma política de acesso do dado que o job processa.",
+      "Logs consomem armazenamento continuamente; sem política de ciclo de vida no prefixo S3 ou sem retenção no log group, o custo cresce sem teto — e o EMR on EKS não publica retenção para nenhum destino, então nada expira sozinho.",
+      "O papel de execução do job precisa de permissão de escrita no destino. Sem ela o job passa a falhar na inicialização por uma razão que não tem relação com o que ele processa, e isso costuma ser lido como regressão do job.",
+      "A mudança não é retroativa: o que já executou sem destino não deixou rastro, e nenhuma configuração futura o recupera."
+    ],
+    "tradeoffs": [
+      "Custo marginal de armazenamento contra a possibilidade de diagnosticar qualquer coisa depois do fato. Não gravar log é uma economia real, e a contrapartida é a que a própria AWS nomeia com must.",
+      "Gravar nos dois destinos duplica o log de container. Vale quando S3 é o arquivo longo e o CloudWatch é o alarme operacional; não vale só por simetria."
+    ],
+    "validation": [
+      "DescribeJobRun de uma submissão nova mostrando s3MonitoringConfiguration.logUri ou cloudWatchMonitoringConfiguration.logGroupName preenchido.",
+      "Objetos efetivamente gravados no destino escolhido para esse job novo — configuração declarada e objeto escrito são duas afirmações diferentes, e é a segunda que fecha.",
+      "O event log localizado e legível por sparkforge analyze_event_log, que é a capacidade que o achado diz estar perdida.",
+      "Contagem total e contagem por chave de negócio do destino de dados iguais às do último run comparável: acrescentar destino de log não pode mudar o resultado do job, e se mudou, a mudança foi outra."
+    ],
+    "rollback": [
+      "Remover o bloco de monitoramento da submissão devolve o estado anterior. O que não volta é o log dos jobs executados no intervalo — e não há por que voltar, porque o estado anterior é o que este achado acusa.",
+      "Se o custo de armazenamento for o problema, o rollback correto é política de ciclo de vida no prefixo, não remover o destino."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-s3.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-cloudwatch.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_MonitoringConfiguration.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ManagedLogs.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html",
+        "retrieved": "2026-08-31"
+      }
+    ]
+  }
+]

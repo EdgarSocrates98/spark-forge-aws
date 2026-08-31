@@ -1,0 +1,76 @@
+[
+  {
+    "rule_id": "SF-EMRK-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "persistentAppUI desligado por escrito — este job run não gerou event log, e a Spark UI não existe",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_2b8d9d"
+    ],
+    "measured": {
+      "log_destination_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "persistentAppUI é String com Valid Values ENABLED | DISABLED e Required: No, e o default NÃO foi encontrado declarado — nem na referência de API de MonitoringConfiguration, nem na referência de CLI de start-job-run, nem nas páginas de logging do guia de desenvolvimento. Por isso este achado exige o valor DISABLED ESCRITO: disparar por ausência do campo afirmaria um default que esta coleta não mediu. O que a fonte declara não é o default, é o EFEITO, e ela o declara em duas páginas: \"the persistentAppUI configuration allows AWS to save event logs which are used to generate the Spark UI\", e, no guia de rotação de event log, \"you start a long running Spark job with an event log enabled with the persistentAppUI parameter. The Spark driver generates an event log file\". Isso liga persistentAppUI diretamente à existência do EVENT LOG — que é o artefato que este motor lê em analyze_event_log, e a origem das áreas SF-UI e SF-PLAN. DISABLED não é uma preferência de interface: é a ausência do insumo de diagnóstico mais rico que o SparkForge consome, e ela é irreversível para esta execução. Um destino de log declarado NÃO desarma este achado, e é aí que a leitura difere de SF-EMRS-004. Lá o log em S3 e o event log são o mesmo objeto, e o achado só existe no cruzamento entre ter destino e perder a UI. Aqui a fonte separa os dois: s3MonitoringConfiguration e cloudWatchMonitoringConfiguration levam log de submitter, driver e executor — log de container —, e é persistentAppUI que faz o event log existir. Um job run com log em S3 e persistentAppUI DISABLED grava bastante coisa e mesmo assim não tem plano, não tem métrica de stage e não tem Spark UI. Vale registrar o único ponto em que a documentação toma partido, e ele é evidência de prática recomendada e NÃO de default: os três exemplos de start-job-run do guia — os dois de sparkSubmitJobDriver e o de sparkSqlJobDriver — escrevem \"persistentAppUI\": \"ENABLED\" explicitamente. Existe um motivo legítimo para o DISABLED, e ele é de dados e não de custo: o campo autoriza a AWS a GUARDAR o event log, e um requisito de residência ou de não-retenção por terceiro pode proibir isso. Este achado não pede que a decisão seja revertida; pede que ela fique declarada junto com o que ela custa. Ver knowledge/emr-eks/job-run-configuration.md seção 5.",
+    "proposed_change": [
+      "Passar persistentAppUI: ENABLED em configurationOverrides.monitoringConfiguration nas próximas submissões, que é o que os três exemplos de start-job-run do guia fazem.",
+      "Se a retenção do event log pela AWS é o que se quer evitar, declarar encryptionKeyArn em managedLogs para que o log guardado use chave própria — a fonte declara esse campo exatamente para isso — e registrar a decisão junto com o custo de diagnóstico, em vez de desligar a UI.",
+      "Se a residência do dado proíbe qualquer retenção pela AWS, manter DISABLED é a decisão certa, e nesse caso configurar spark.eventLog.dir para um prefixo próprio no pod template passa a ser o caminho — com a ressalva de que o pod template é a superfície que este extrator não lê, então nenhum achado desta área vai confirmar que funcionou.",
+      "Verificar que existe destino de log declarado de qualquer forma: sem persistentAppUI e sem s3/CloudWatch, o job run cai também em SF-EMRK-002, que é outra ordem de problema."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Ligar persistentAppUI autoriza a AWS a guardar o event log, e nenhuma retenção é publicada para EMR on EKS — nem para esse armazenamento, nem para os outros destinos. Em ambiente com requisito de residência ou de chave própria, isso precisa ser conferido antes, não depois.",
+      "Event log de job longo cresce, e é para isso que existe rotação (containerLogRotationConfiguration). Ligar a UI sem rotação num job de horas troca um problema de diagnóstico por um de tamanho de arquivo.",
+      "A mudança não recupera nada: o event log deste job run não existe e não vai passar a existir. Toda investigação sobre esta execução específica continua sem plano e sem métrica de stage."
+    ],
+    "tradeoffs": [
+      "Retenção do event log pela AWS contra a capacidade de investigar. As duas são reais, e a fonte não decide por ninguém — ela só declara o que o campo liga.",
+      "Este achado é P2 de propósito: o job executou, e log de container pode existir. Tratá-lo como P1 o poria no mesmo patamar de não haver destino nenhum, que é uma perda maior."
+    ],
+    "validation": [
+      "DescribeJobRun de uma submissão nova mostrando persistentAppUI com o valor ENABLED.",
+      "O event log daquele job novo localizado e legível por sparkforge analyze_event_log, com stages e métricas — é a capacidade que o achado diz estar perdida, e só o artefato prova que ela voltou.",
+      "Contagem total e contagem por chave de negócio do destino de dados iguais às do run anterior comparável: ligar a UI é mudança de observabilidade e não pode mudar o resultado; se mudou, mudou outra coisa junto."
+    ],
+    "rollback": [
+      "Voltar a passar persistentAppUI: DISABLED nas submissões. É alteração no que monta o start-job-run, não no job run já executado — não existe update-job-run.",
+      "Se o motivo do rollback for retenção de dado, ele é legítimo, e o que precisa ficar registrado é a perda de diagnóstico que vem junto."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_MonitoringConfiguration.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-log-rotation.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-submit.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/cli/latest/reference/emr-containers/start-job-run.html",
+        "retrieved": "2026-08-31"
+      }
+    ]
+  }
+]

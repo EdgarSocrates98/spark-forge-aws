@@ -1,6 +1,6 @@
 [
   {
-    "id": "f_d00e72",
+    "id": "f_c661a2",
     "schema_version": 1,
     "kind": "emrc.analyzed",
     "subject": {
@@ -14,64 +14,14 @@
     "measures": {
       "virtual_cluster_count": 1,
       "job_run_count": 1,
-      "configuration_count": 3,
+      "configuration_count": 1,
       "conf_parameter_count": 1,
       "unresolved_count": 0
     },
     "attrs": {},
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_f8ceb2",
-    "schema_version": 1,
-    "kind": "emrc.configuration",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "classification": "spark-defaults",
-      "key": "spark.kubernetes.driver.podTemplateFile",
-      "value": "s3://bucket/templates/driver.yaml",
-      "surface": "application_configuration"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_f8ceb2",
-    "schema_version": 1,
-    "kind": "emrc.configuration",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "classification": "spark-defaults",
-      "key": "spark.kubernetes.executor.podTemplateFile",
-      "value": "s3://bucket/templates/executor.yaml",
-      "surface": "application_configuration"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "1fefe6c25d7dfe34d09c0115a90057df2d8a4859f18a4b60a8a1ee2c6f63b4df",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -96,7 +46,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "1fefe6c25d7dfe34d09c0115a90057df2d8a4859f18a4b60a8a1ee2c6f63b4df",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -117,8 +67,8 @@
       "release_minor": 5
     },
     "attrs": {
-      "job_run_id": "0000000uvwxyzabcd",
-      "name": "etl-com-template",
+      "job_run_id": "0000000semui45678",
+      "name": "etl-sem-spark-ui",
       "virtual_cluster_id": "0abcdefghijklmnop",
       "state": "COMPLETED",
       "release_label": "emr-7.5.0-latest",
@@ -126,7 +76,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "1fefe6c25d7dfe34d09c0115a90057df2d8a4859f18a4b60a8a1ee2c6f63b4df",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -150,64 +100,14 @@
       "s3_log_uri_present": true,
       "cloudwatch_enabled": false,
       "managed_logs_declared": false,
-      "container_log_rotation_declared": false,
+      "container_log_rotation_declared": true,
       "s3_log_uri": "s3://bucket/logs/",
       "persistent_app_ui_declared": true,
-      "persistent_app_ui": "ENABLED"
+      "persistent_app_ui": "DISABLED"
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_71832e",
-    "schema_version": 1,
-    "kind": "emrc.pod_template.unresolved",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "role": "driver",
-      "path": "s3://bucket/templates/driver.yaml",
-      "surface": "application_configuration",
-      "reason": "not_fetched"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
-      "extractor": "emr_eks@0.1.1"
-    }
-  },
-  {
-    "id": "f_71832e",
-    "schema_version": 1,
-    "kind": "emrc.pod_template.unresolved",
-    "subject": {
-      "type": "source_location",
-      "file": "job.json",
-      "line": 0,
-      "col": 0,
-      "symbol": "",
-      "snippet": ""
-    },
-    "measures": {},
-    "attrs": {
-      "role": "executor",
-      "path": "s3://bucket/templates/executor.yaml",
-      "surface": "application_configuration",
-      "reason": "not_fetched"
-    },
-    "provenance": {
-      "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "1fefe6c25d7dfe34d09c0115a90057df2d8a4859f18a4b60a8a1ee2c6f63b4df",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -232,7 +132,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "1fefe6c25d7dfe34d09c0115a90057df2d8a4859f18a4b60a8a1ee2c6f63b4df",
       "extractor": "emr_eks@0.1.1"
     }
   },
@@ -259,7 +159,7 @@
     },
     "provenance": {
       "artifact": "job.json",
-      "artifact_sha256": "0fd22ba6c65d689351f87e7160934c1cbed90718dcdd14918da44ced817ff883",
+      "artifact_sha256": "1fefe6c25d7dfe34d09c0115a90057df2d8a4859f18a4b60a8a1ee2c6f63b4df",
       "extractor": "emr_eks@0.1.1"
     }
   }

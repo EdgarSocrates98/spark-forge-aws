@@ -211,7 +211,7 @@ lados — os arquivos `*.py` que `iter_source_files(root, "*.py")` entrega, **45
 | Símbolo | Achados | Com índice | A: ler arquivos | B: `grep` nome | C: `grep` definição |
 |---|---|---|---|---|---|
 | `iter_source_files` | 1 | 466 | 574180 | 8476 | 102 |
-| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |
+| `looks_like_secret` | 2 | 465 | 136735 | 2325 | 84 |
 | `project_items` | 1 | 193 | 200521 | 1826 | 52 |
 | `tool_class` | 1 | 188 | 28525 | 2563 | 74 |
 | `authorize` | 4 | 897 | 257870 | 4426 | 107 |

@@ -10,6 +10,11 @@ proves: >
   Amazon S3, Amazon CloudWatch Logs, or both". Por isso `emrc.monitoring` sai
   mesmo sem o bloco, com `monitoring_declared: false` -- omiti-lo deixaria a regra
   sem ingrediente no caso mais comum do estado que ela acusa.
+  E o positivo de SF-EMRK-002. O par negativo e `job_run_saudavel`, que declara
+  `s3MonitoringConfiguration.logUri` e por isso conta um destino. SF-EMRK-003 nao
+  dispara aqui, e isso e o outro lado da mesma disciplina: sem o bloco de
+  monitoramento nao ha `persistentAppUI` nenhum, e o default do campo nao e
+  publicado -- disparar por ausencia afirmaria um default que ninguem mediu.
 runtime:
   spark: "3.5.2-amzn-1"
 expects_kinds:
@@ -19,4 +24,5 @@ expects_kinds:
   - emrc.monitoring
   - emrc.spark_submit_parameters
   - emrc.virtual_cluster
-expects_rules: []
+expects_rules:
+  - SF-EMRK-002

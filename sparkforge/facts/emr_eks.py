@@ -38,6 +38,16 @@ versao. Um achado desta area NUNCA pode dizer "o pod ficou pendente por falta
 de no" -- essa afirmacao exigiria fact de um extrator que este pacote ainda
 nao tem.
 
+## Segredo nunca chega ao Fact
+
+As duas superficies de configuracao (`emrc.configuration` e
+`emrc.spark_submit_parameters`) passam por `facts.secrets.looks_like_secret`.
+Quando ele casa, o valor vira `<redigido>` e o fact carrega
+`attrs.redacted: true` e `attrs.secret_pattern_match: true` -- o suficiente para
+`SF-EMRK-001` acusar sem que o proprio corpus de analise vire a segunda copia da
+credencial. Ver `_mark_secret` para a razao de a precedencia de `EMR.secret@`
+do EMR Serverless NAO existir aqui.
+
 ## Shape esperado do payload
 
 Um arquivo por execucao, com as DUAS respostas sob chaves de topo
@@ -93,9 +103,11 @@ from pathlib import Path
 from typing import Any
 
 from sparkforge.facts.scan import iter_source_files
+from sparkforge.facts.secrets import REDACTED
+from sparkforge.facts.secrets import looks_like_secret as _looks_like_secret
 from sparkforge.findings.models import Fact, sort_facts
 
-EXTRACTOR_ID = "emr_eks@0.1.0"
+EXTRACTOR_ID = "emr_eks@0.1.1"
 
 EMITTED_KINDS = frozenset(
     {
@@ -162,6 +174,34 @@ def _unresolved(path: str, reason: str, provenance: dict[str, Any], **extra: Any
         attrs={"reason": reason, **extra},
         provenance=provenance,
     )
+
+
+def _mark_secret(attrs: dict[str, Any], key: str, value: str) -> None:
+    """Redige o valor e marca `secret_pattern_match` quando o par tem forma de
+    credencial. Vale para as DUAS superficies de configuracao deste extrator.
+
+    POR QUE AS DUAS. `job-run-configuration.md` secao 7 mede a superficie de
+    exposicao pelo *Response Syntax*: `DescribeJobRun` devolve
+    `configurationOverrides.applicationConfiguration[].properties` como
+    `{"string": "string"}` SEM redacao declarada, e `sparkSubmitParameters`
+    como string crua de ate 102400 caracteres. As duas voltam para qualquer
+    principal com permissao de LEITURA sobre o job run, entao redigir so uma
+    delas deixaria a outra publicar a credencial no `facts.json` do handoff.
+
+    O QUE ESTE EXTRATOR NAO TEM, e por que a ausencia e deliberada:
+    `emr_serverless.py` checa `EMR.secret@{{Nome}}` ANTES da heuristica, porque
+    ali a anotacao e a correcao documentada e acusa-la seria acusar o proprio
+    conserto. Para `emr-containers` essa anotacao NAO esta documentada -- a
+    pagina que enumera as integracoes do EMR com o Secrets Manager tem secao
+    para EC2 e para Serverless e nao tem para o EKS (secao 7). Transportar a
+    precedencia para ca criaria uma isencao sobre um mecanismo que nenhuma
+    fonte declara existir aqui, o que e pior que a redacao a mais: seria um
+    ponto cego construido a partir de uma suposicao.
+    """
+    if _looks_like_secret(key, value):
+        attrs["value"] = REDACTED
+        attrs["redacted"] = True
+        attrs["secret_pattern_match"] = True
 
 
 # --------------------------------------------------------------------------- #
@@ -383,16 +423,18 @@ def _spark_submit_facts(
             # `partition` corta no PRIMEIRO `=` -- necessario porque o valor
             # pode conter `=` (ex.: `spark.driver.extraJavaOptions=-Da=1`).
             key, _, value = pair.partition("=")
+            attrs: dict[str, Any] = {
+                "key": key,
+                "value": value,
+                "surface": "spark_submit_parameters",
+                "driver": driver_key,
+            }
+            _mark_secret(attrs, key, value)
             facts.append(
                 Fact(
                     kind="emrc.spark_submit_parameters",
                     subject=_file_subject(path),
-                    attrs={
-                        "key": key,
-                        "value": value,
-                        "surface": "spark_submit_parameters",
-                        "driver": driver_key,
-                    },
+                    attrs=attrs,
                     provenance=provenance,
                 )
             )
@@ -429,19 +471,24 @@ def _configuration_entries(
             # Ordenadas por chave: saida deterministica, independente da
             # ordem em que a API (ou o operador) escreveu o JSON.
             for key in sorted(properties, key=str):
-                value = properties[key]
+                raw_value = properties[key]
+                value = (
+                    raw_value
+                    if isinstance(raw_value, str)
+                    else ("" if raw_value is None else str(raw_value))
+                )
+                attrs: dict[str, Any] = {
+                    "classification": classification,
+                    "key": key,
+                    "value": value,
+                    "surface": "application_configuration",
+                }
+                _mark_secret(attrs, str(key), value)
                 facts.append(
                     Fact(
                         kind="emrc.configuration",
                         subject=_file_subject(path),
-                        attrs={
-                            "classification": classification,
-                            "key": key,
-                            "value": value if isinstance(value, str) else (
-                                "" if value is None else str(value)
-                            ),
-                            "surface": "application_configuration",
-                        },
+                        attrs=attrs,
                         provenance=provenance,
                     )
                 )

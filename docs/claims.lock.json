@@ -2967,7 +2967,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "context": "| `looks_like_secret` | 2 | 465 | 136735 | 2325 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-646",
       "line": 214,
@@ -2987,7 +2987,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "context": "| `looks_like_secret` | 2 | 465 | 136735 | 2325 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-647",
       "line": 214,
@@ -3007,7 +3007,7 @@
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "context": "| `looks_like_secret` | 2 | 465 | 136735 | 2325 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-648",
       "line": 214,
@@ -3017,17 +3017,17 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 101833
+          "value": 136735
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "101833",
+      "text": "136735",
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "context": "| `looks_like_secret` | 2 | 465 | 136735 | 2325 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-649",
       "line": 214,
@@ -3037,17 +3037,17 @@
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 2107
+          "value": 2325
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "2107",
+      "text": "2325",
       "type": "number"
     },
     {
-      "context": "| `looks_like_secret` | 2 | 465 | 101833 | 2107 | 84 |",
+      "context": "| `looks_like_secret` | 2 | 465 | 136735 | 2325 | 84 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-650",
       "line": 214,

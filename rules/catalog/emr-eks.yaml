@@ -1,0 +1,656 @@
+# Catálogo de regras — execução de job Amazon EMR on EKS (`emr-containers`)
+#
+# Depende do extrator `sparkforge/facts/emr_eks.py`, que lê o dump já coletado
+# de DUAS chamadas guardadas no mesmo arquivo — `describe-virtual-cluster` e
+# `describe-job-run` —, sob as chaves de topo `virtualCluster` e `jobRun`. A
+# pesquisa de fontes que decidiu o que entra e o que fica de fora está em
+# `knowledge/emr-eks/job-run-configuration.md` (a forma do job run) e
+# `knowledge/emr-eks/runtime-matrix.md` (a matriz de release).
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O LIMITE QUE VALE PARA AS QUATRO REGRAS, e ele é o INVERSO do EMR Serverless.
+#
+# `get-application` do Serverless devolve o PADRÃO da application, e por isso
+# nenhum achado de lá prova o que um job run executou. `describe-job-run`
+# devolve UMA EXECUÇÃO, e a frase que o `emr-serverless.yaml` não podia dizer
+# aqui pode: o `configurationOverrides` que voltou é o que AQUELE job run
+# carregou. Ninguém o sobrepõe depois — já é o job run.
+#
+# O que continua não podendo ser dito é a outra metade, e ela é maior aqui do
+# que lá. `DescribeJobRun` devolve o que o CHAMADOR PEDIU, e não a configuração
+# efetiva dentro do executor. Duas camadas ficam fora por construção:
+#
+#   1. `spark.conf.set` no código do job. A AWS declara a lista de precedência
+#      de cinco níveis e o nível 1, o MAIS ALTO, é "Configuration supplied when
+#      creating SparkSession" — que este artefato não vê. Toda regra desta área
+#      que afirme um valor efetivo diz isso no `explanation`.
+#   2. "Optimized configurations chosen by Amazon EMR for the release", o nível
+#      4, que a AWS declara existir e NÃO publica em tabela nenhuma. Por isso
+#      ausência de uma propriedade no artefato significa "o chamador não pediu",
+#      NUNCA "o valor não está setado" — e nenhuma regra desta área dispara por
+#      ausência de propriedade.
+#
+# E há um terceiro limite, que é de serviço e não de camada: o lado EKS não
+# existe neste artefato. Nodegroup, Karpenter, capacidade de nó e pod pendente
+# são `eks`/`ec2`, outro IAM e outra matriz. Nenhum achado desta área pode dizer
+# "o pod ficou pendente por falta de nó".
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `runtime_scope` desta area -- RESOLVIDO pela Task 1, ver DV-1 e DV-2 da spec.
+# A AWS PUBLICA matriz de release para EMR on EKS, entao regra daqui PODE
+# restringir por `spark`. NAO PODE restringir por `iceberg`: a linha
+# `Supported applications` e publicada por FAMILIA e nao por variante, e
+# `emr-7.7.0-java8-latest` nao tem Iceberg. NAO PODE por `python` nem `hadoop`:
+# 2 de 34 paginas declaram Python, em prosa; 0 de 34 declaram Hadoop.
+# A EMR_MATRIX de EMR on EC2 nao entra aqui em hipotese nenhuma, e a razao e mais
+# forte que falta de fonte: ela e MEDIDAMENTE ERRADA para EKS -- Iceberg diverge
+# em 6 de 26 releases comparaveis e Spark em 4.
+#
+# E MESMO ASSIM as quatro regras declaram `runtime_scope: {}`. "Poder" não é
+# "dever", e o que decide é uma medida a mais, feita nesta Task: **nenhuma fonte
+# alimenta `RuntimeContext.spark` a partir de um artefato `emrc.*`**.
+# `sparkforge/facts/runtime_detect.py` deriva Spark de `GLUE_MATRIX` (por
+# `glue_version`) e de `EMR_MATRIX` (por release de EMR on EC2, proibida aqui),
+# e lê direto de `spark.runtime_version` do event log. O `releaseLabel` do EMR
+# on EKS não entra em nenhuma das três — a matriz existe publicada pela AWS, e
+# ninguém a wireou. Uma regra desta área com `{spark: ">=3.0"}` passaria no
+# golden (as fixtures declaram `runtime` no `meta.yaml`) e seria PULADA em toda
+# execução real de `sparkforge judge` sobre um dump de EMR on EKS, porque
+# `in_scope` falha FECHADA. Golden verde por SKIP é pior que vermelho: ninguém
+# investiga o que passou. É a mesma conclusão de `emr-serverless.yaml`, por um
+# caminho diferente — lá a matriz não existia; aqui ela existe e não está ligada.
+#
+# A afirmação de versão que `SF-EMRK-004` precisa fazer — `shuffleTracking`
+# existe desde o Spark 3.0.0 — mora no `explanation` dela, com a URL da versão
+# FIXADA. Quando alguém ligar o `releaseLabel` do EKS ao `RuntimeContext`, o
+# escopo passa a ser possível e a decisão se reabre; até lá, declará-lo seria
+# cobertura apagada.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# VETOS APURADOS NA PESQUISA DE FONTES (2026-08-31). Não reintroduzir.
+# Detalhe e URLs: knowledge/emr-eks/job-run-configuration.md §8 e §9,
+# knowledge/emr-eks/runtime-matrix.md §6.
+#
+# V-EK-1  Imagem de container em TAG MOVEL (`:latest` no fim do URI de ECR).
+#         VETADA, e nao por falta de fonte: por fonte que diz o OPOSTO. A
+#         pagina *Details for selecting a base image URI* da o formato e o
+#         exemplo oficial, e a tag do exemplo E `:latest` --
+#         `895885662937.dkr.ecr.us-west-2.amazonaws.com/spark/emr-7.13.0:latest`
+#         --, os tres URIs da pagina (`spark/`, `notebook-spark/`,
+#         `notebook-python/`) usam a mesma tag, e as *Considerations for
+#         customizing images* tem SEIS itens (usuario `hadoop:hadoop`,
+#         `applicationOverrides` em vez de editar `spark-defaults.conf`, seis
+#         diretorios montados em runtime, repositorio Docker, aviso de preco) e
+#         NENHUM sobre imutabilidade de tag, digest ou fixar versao. A regra
+#         acusaria a configuracao que a AWS ensina no proprio exemplo.
+#         O QUE DESTRAVA ESTE VETO nao e medida nenhuma -- nenhum plano fisico,
+#         nenhum baseline, nenhum event log muda a conta. E a AWS mudar de
+#         recomendacao: publicar pagina que desaconselhe tag movel, ou trocar a
+#         tag dos proprios exemplos. Enquanto o exemplo oficial for `:latest`,
+#         medir mais nao ajuda, e por isso este veto nao tem `blocked_on`.
+#
+# V-EK-2  Release label com sufixo `-latest` (`emr-7.13.0-latest`) como
+#         DEFEITO. VETADA pelo mesmo tipo de fonte, e o objeto e OUTRO -- e
+#         confundir os dois e o erro mais facil desta area. A pagina de releases
+#         declara a forma `emr-x.x.x-latest` OU `emr-x.x.x-yyyymmdd` como as
+#         duas formas legitimas, e o `-latest` e RECOMENDADO: "When you use the
+#         `-latest` suffix, you ensure that your Amazon EMR version always
+#         includes the latest security updates".
+#
+# A TENSAO QUE A PESQUISA ACHOU, e que vai confundir quem vier depois, porque as
+# duas metades sao verdade ao mesmo tempo:
+#
+#   - `job-run-configuration.md` §8 conclui que mobilidade de ponteiro NAO e
+#     defeito de seguranca -- e o que os dois vetos acima registram.
+#   - `job-run-configuration.md` §9 e `runtime-matrix.md` §6 concluem que a
+#     mobilidade E problema de DIAGNOSTICO: duas execucoes com o mesmo
+#     `emr-7.13.0-latest` podem ter rodado imagens diferentes, porque o ponteiro
+#     se move para pegar patch de seguranca. Uma comparacao entre dois runs que
+#     assuma runtime identico porque o `releaseLabel` e identico esta errada por
+#     construcao quando o sufixo e `-latest`; com `-yyyymmdd`, e solida.
+#
+# O que sobra disso e RESSALVA DE COMPARABILIDADE dentro de um `explanation`, e
+# nunca um `Finding`. Um achado que dissesse "voce usou tag movel" acusaria a
+# recomendacao da AWS; uma ressalva que diz "estes dois runs nao provam o mesmo
+# binario" limita a inferencia sem acusar ninguem. A diferenca entre as duas e a
+# fronteira desta area inteira.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# AS DUAS SUPERFICIES DE CONFIGURACAO, e por que elas nao se fundem.
+#
+# A mesma propriedade pode chegar por `configurationOverrides.
+# applicationConfiguration` (kind `emrc.configuration`) ou por
+# `jobDriver.sparkSubmitParameters` (kind `emrc.spark_submit_parameters`), e o
+# extrator emite DOIS facts em vez de um. A AWS declara quem vence:
+#
+#   > "If you pass the same configuration in an application override and in
+#   > Spark submit parameters, the Spark submit parameters take precedence."
+#
+# Consequencia para quem escrever a proxima regra desta area: uma regra que leia
+# um valor em `emrc.configuration` e nao cheque `emrc.spark_submit_parameters`
+# acusa um valor que PERDEU. E o motor nao consegue expressar a checagem: `when`
+# tem um grupo `all` OU `any`, sem aninhamento, entao "(A na superficie 1 ou A na
+# superficie 2) e (B na superficie 1 ou B na superficie 2)" nao e escrivel. A
+# saida que `SF-EMRK-004` usa esta declarada na propria regra: ler SO a
+# superficie vencedora, e escrever o ponto cego que isso cria.
+#
+# `SF-EMRK-001` e o caso em que as duas superficies entram JUNTAS num `any`, e
+# ali isso e correto e nao contradiz o paragrafo acima: o que aquela regra acusa
+# nao e um valor EFETIVO -- e a EXPOSICAO do literal na resposta da API. Um
+# segredo que perdeu a precedencia continua vazado.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O QUE O EXTRATOR EMITE E NENHUMA REGRA LE -- e por que nada disso e divida.
+#
+# Criterio herdado de `emr-infra.yaml:107-147` e `emr-serverless.yaml`:
+# capacidade de extrator sem consumidor e divida; atributo descritivo transcrito
+# de uma resposta que o extrator JA le por outro motivo, nao e. Aqui o coletor
+# faz duas chamadas e as duas produzem dado julgado, entao nao ha chamada de API
+# que so alimente campo inerte.
+#
+# - `emrc.pod_template.unresolved` INTEIRO -- o unico kind da area que nenhuma
+#   regra le, e ele existe exatamente para isso: e uma RECUSA VISIVEL. O YAML
+#   apontado por `spark.kubernetes.{driver,executor}.podTemplateFile` mora fora
+#   deste artefato e carrega `nodeSelector`, `tolerations`, `resources` --
+#   metade do diagnostico de pod pendente. O fact diz, com o path, o que NAO foi
+#   lido. Transforma-lo em `Finding` seria acusar o operador de ter usado um
+#   recurso legitimo; omiti-lo faria o relatorio parecer completo.
+# - `emrc.virtual_cluster` INTEIRO. E deliberado, e a fonte e quem decide: "a
+#   single virtual cluster maps to a single Kubernetes namespace" e "virtual
+#   clusters do not create any active resources that contribute to your bill or
+#   that require lifecycle management outside the service". Nao existe regra de
+#   capacidade ociosa nesta area -- o `SF-EMR-009` (cluster EC2 ocioso) e a
+#   regra de pre-init do Serverless NAO tem analogo aqui. Um `virtualCluster` em
+#   `RUNNING` sem job nenhum nao e sintoma de nada. E `nodeLabel` traz a propria
+#   ressalva na descricao ("it requires relevant scaling and policy engine
+#   addons"): o campo pode estar preenchido e nao ter efeito, e uma regra que o
+#   lesse estaria afirmando sobre o EKS, nao sobre o EMR.
+# - `attrs.state` do job run (`PENDING|SUBMITTED|RUNNING|FAILED|CANCELLED|
+#   CANCEL_PENDING|COMPLETED`) e `attrs.failure_reason` (`INTERNAL_ERROR|
+#   USER_ERROR|VALIDATION_ERROR|CLUSTER_UNAVAILABLE`) -- DESCRITIVOS. Estado nao
+#   e defeito, e falha de execucao nao e configuracao errada. `ARRESTED`, no
+#   estado do virtual cluster, esta nos `Valid Values` e NENHUMA pagina
+#   encontrada o define: valor conhecido, semantica desconhecida, e afirmar
+#   sobre ele seria inventar a metade que falta.
+# - `measures.release_major`/`release_minor` -- CONTEXTO, e a razao de existirem
+#   e negativa: elas provam que o label casou a forma numerica. Sao OMITIDAS em
+#   `emr-spark-8.0.0-*` e em qualquer forma com barra
+#   (`notebook-spark/emr-7.13.0-latest`), que o pattern da API aceita. Nenhuma
+#   regra desta area varia com a serie hoje.
+# - `attrs.container_log_rotation_declared` -- DESCRITIVO. Rotacao e quanto o
+#   arquivo dura dentro do container, nao para onde ele vai; contar rotacao como
+#   destino de log faria `SF-EMRK-002` silenciar sobre o job que a AWS diz que
+#   PRECISA configurar destino.
+# - `attrs.managed_logs_declared` -- LIDO POR HUMANO, e a sua ausencia do `when`
+#   de `SF-EMRK-002` e a decisao mais delicada da area. Ver o comentario daquela
+#   regra.
+# ─────────────────────────────────────────────────────────────────────────────
+
+catalog_version: 1
+schema_version: 1
+area: SF-EMRK
+retrieved: 2026-08-31
+
+rules:
+
+  # Este e o TERCEIRO exemplar do mesmo julgamento no catalogo -- `SF-EMRS-002`
+  # (EMR Serverless), `SF-EMR-002` (EMR on EC2) e este. Tres areas, tres
+  # artefatos diferentes, uma frase so: literal de credencial numa superficie de
+  # LEITURA de API e exposicao, e exposicao e P0.
+  #
+  # A alternativa -- generalizar as tres numa area unica de segredo em
+  # configuracao -- foi avaliada e RECUSADA, e o custo esta medido: reescreveria
+  # duas areas ja entregues e invalidaria 33 fixtures verdes, para economizar
+  # tres blocos de YAML cujas FONTES sao diferentes entre si. E sao mesmo: o
+  # `SF-EMR-002` se apoia no *Warning* de texto claro da ReleaseGuide, o
+  # `SF-EMRS-002` na pagina de Secrets Manager do Serverless, e este em nenhum
+  # dos dois (ver o `explanation`). Uma regra unica teria que citar as tres e
+  # afirmar que valem umas pelas outras, que e exatamente a transposicao de
+  # fonte entre runtimes de EMR que a §11 do knowledge mede como sempre errada.
+  #
+  # `requires_facts` traz SO `emrc.job_run`, e nao as duas superficies. Exigir
+  # `emrc.configuration` faria a regra ser PULADA num job run que so usa
+  # `sparkSubmitParameters` -- onde o segredo cabe igual, numa string de ate
+  # 102400 caracteres. `emrc.job_run` e a ancora certa porque ele sai sempre que
+  # o payload foi legivel: um dump ilegivel reporta `requires_facts`, que e a
+  # verdade, em vez de sumir de `findings` E de `skipped`.
+  #
+  # `any` e nao `all`: as duas superficies sao alternativas de ONDE o literal
+  # esta, nunca uma conjuncao. `all` exigiria segredo nas DUAS para acusar.
+  - id: SF-EMRK-001
+    category: emr-eks
+    title: Segredo em texto claro na configuração deste job run — DescribeJobRun devolve o literal sem redação
+    requires_facts: [emrc.job_run]
+    when:
+      same_subject: true
+      any:
+        - fact: emrc.configuration
+          where: {attrs.secret_pattern_match: true}
+        - fact: emrc.spark_submit_parameters
+          where: {attrs.secret_pattern_match: true}
+    status: confirmed
+    severity_default: P0
+    runtime_scope: {}
+    explanation: >
+      A fonte desta regra é mais fraca que a das duas irmãs, e dizer isso é
+      parte do achado. O bloco Warning sobre texto claro em operações Describe e
+      List — "The Amazon EMR describe and list API operations that emit custom
+      configuration data (such as DescribeCluster and ListInstanceGroups) do so
+      in plaintext" — é de EMR on EC2: ele nomeia DescribeCluster e
+      ListInstanceGroups, fala em service role for Amazon EMR e em "when you
+      launch your cluster", e nada nele é emr-containers. Esta regra NÃO o cita.
+      O que ela cita é o que está medido do lado do EKS: o Response Syntax de
+      DescribeJobRun devolve
+      configurationOverrides.applicationConfiguration[].properties como map de
+      string para string, SEM redação declarada, e sparkSubmitParameters como
+      string crua de até 102400 caracteres — as duas para qualquer principal com
+      permissão de LEITURA sobre o job run. A página Data protection do guia do
+      EKS acrescenta só a recomendação genérica sobre campos livres ("we
+      strongly recommend that you never put sensitive identifying information
+      into free-form fields"), que é sobre campo livre e não sobre properties de
+      configuração, e as security best practices do EKS têm sete tópicos e
+      nenhum sobre segredo em configuração — o que elas dizem sobre segredo é
+      sobre Secret do Kubernetes e RBAC, outro objeto.
+      E há uma ausência que precisa ser lida com cuidado, porque ela decide o
+      REMÉDIO e não o achado: existe uma página da AWS cuja função é enumerar
+      quais deployments de EMR integram com o Secrets Manager, e ela tem
+      exatamente duas seções — "How Amazon EMR running on Amazon EC2 uses
+      Secrets Manager" e "How EMR Serverless uses Secrets Manager". EMR on EKS
+      não aparece. Isso é mais forte do que não achar, porque é ausência numa
+      lista que existe para ser completa — e ainda assim mede apenas que a
+      integração NÃO ESTÁ DOCUMENTADA para emr-containers, nunca que ela não
+      exista. Por isso este achado não recomenda a anotação EMR.secret@ que o
+      SF-EMRS-002 recomenda: propor um mecanismo que nenhuma fonte declara
+      disponível aqui seria inventar o conserto, e um conserto inventado é pior
+      que nenhum, porque ele fecha a investigação.
+      Ao contrário das demais regras desta área, o limite de precedência do
+      cabeçalho não enfraquece este achado. Um valor que perdeu para
+      sparkSubmitParameters, ou para um spark.conf.set no código, continua
+      dentro da resposta de DescribeJobRun — o que a precedência decide é qual
+      valor o Spark usou, não qual literal a API devolve. O valor nunca aparece
+      no Fact: o extrator o substitui por <redigido> e marca
+      attrs.secret_pattern_match, para que o próprio corpus de análise não vire
+      a segunda cópia do segredo. É achado de segurança e tem precedência sobre
+      qualquer recomendação de performance no mesmo relatório. Ver
+      knowledge/emr-eks/job-run-configuration.md seção 7.
+    proposed_change:
+      - "Tirar o literal da submissão e passar o valor por Secret do Kubernetes montado no pod — é o mecanismo que a fonte deste serviço sustenta, porque o job roda num namespace de EKS e o pod template é a superfície que a AWS documenta para customizar o pod."
+      - "Restringir quem lê esse Secret: as security best practices do EMR on EKS pedem exatamente isso — 'Kubernetes RBAC permissions to read Kubernetes secrets ‐ to prevent users from reading confidential data stored in these secrets'. Secret sem RBAC troca uma superfície de leitura por outra."
+      - "NÃO usar a anotação EMR.secret@{{NomeDoSegredo}}: ela está documentada para EMR on EC2 e para EMR Serverless, e a página que enumera as integrações com o Secrets Manager não tem seção para EMR on EKS. Se for testá-la mesmo assim, trate como não suportada até provar num job run real que o valor foi resolvido."
+      - Rotacionar o segredo exposto. Ele deve ser considerado comprometido, porque não há como saber quem chamou DescribeJobRun ou ListJobRuns desde que a submissão aconteceu — e a submissão já ocorreu, diferente de uma definição que ainda pode ser corrigida antes do primeiro uso.
+      - Revisar o código, o IaC e o orquestrador que MONTAM o start-job-run, onde o literal costuma persistir depois de removido de um lugar só, e revisar quem tem emr-containers:DescribeJobRun e ListJobRuns na conta.
+    risks:
+      - Rotacionar segredo em uso exige coordenação com todos os consumidores; a janela entre rotação e reconfiguração derruba o próximo job.
+      - "Montar Secret do Kubernetes muda o pod template, e o pod template é a superfície que este extrator declaradamente NÃO lê (emrc.pod_template.unresolved). Depois da correção, a ausência do literal aqui deixa de provar que ele não está em lugar nenhum — ela passa a provar só que não está nesta superfície."
+      - "Corrigir a submissão não corrige as execuções passadas: um job run já submetido guarda o literal na sua própria resposta enquanto o histórico existir, e nenhuma mudança futura o apaga."
+    tradeoffs:
+      - Nenhum. Não existe justificativa de performance para manter segredo em texto claro numa superfície de leitura de API.
+    validation:
+      - DescribeJobRun de uma submissão nova não contém mais o literal, em nenhuma das duas superfícies — applicationConfiguration e sparkSubmitParameters.
+      - "Um job novo executa com sucesso lendo do Secret montado, e produz contagem total e contagem por chave de negócio iguais às do último run bom: trocar a origem da credencial não pode mudar o conjunto de linhas escrito, e é isso que prova que a troca foi só de origem."
+      - O segredo anterior está revogado, confirmado por uma tentativa de uso que falha.
+      - "Uma chamada de DescribeJobRun feita por um principal com permissão apenas de leitura confirma que ele não vê mais o valor — é o ângulo pelo qual o segredo estava exposto."
+    rollback: >
+      Não reverter para o literal em texto claro. Se a leitura do Secret falha, a
+      correção é a política de RBAC do namespace e o service account do job, não
+      o método de armazenamento.
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeJobRun.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security-best-practices.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/data-protection.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/secretsmanager/latest/userguide/integrating-emr.html", retrieved: 2026-08-31}
+      - {origin: field-heuristic, note: "A SUPERFICIE de exposicao e da fonte (o Response Syntax de DescribeJobRun devolve `properties` como map de string sem redacao, e `sparkSubmitParameters` cru). O que e heuristica de campo e o RECONHECIMENTO: `facts/secrets.py::looks_like_secret` decide que um par chave/valor carrega credencial por padrao publicado do emissor, por senha embutida em URL, ou por nome de chave com valor de alta entropia -- e nenhuma pagina da AWS enumera nomes de propriedade sensiveis. Diferente de SF-EMRS-002, aqui NAO ha isencao para valor ja anotado: a anotacao `EMR.secret@` nao esta documentada para emr-containers, entao criar a isencao seria construir um ponto cego sobre uma suposicao."}
+
+  # A REGRA QUE O SERVERLESS OBRIGOU A ABANDONAR, e que aqui volta na forma
+  # original. `SF-EMRS-003` NAO pode disparar por ausencia, porque
+  # `managedPersistenceMonitoringConfiguration.enabled` "defaults to true" e a
+  # AWS declara "by default, EMR Serverless stores application logs securely in
+  # Amazon EMR managed storage for a maximum of 30 days": la ausencia significa
+  # PROTEGIDO, e uma regra por ausencia acusaria toda application que nunca
+  # tocou em monitoramento. `SF-EMR-006` (EMR on EC2) e o oposto: `LogUri`
+  # ausente significa sem destino, e a regra dispara por ausencia.
+  #
+  # EMR on EKS fica do lado do EC2, e a fonte e quem decide: nao existe
+  # declaracao equivalente a do Serverless, e a AWS declara o DEVER com `must`
+  # literal, repetido em duas paginas.
+  #
+  # `managedLogs` NAO entra na condicao, e essa e a decisao mais delicada da
+  # area. A tentacao e trata-lo como o `managedPersistence` do Serverless e
+  # exigir que ele esteja desligado -- e seria errado por tres medidas:
+  # (1) o ESCOPO declarado e "system namespace logs when running a job using
+  # Native FGAC", log de SISTEMA sob um modo de auth especifico, nunca log de
+  # aplicacao; (2) `allowAWSToRetainLogs` NAO tem default declarado, nem na
+  # referencia de API nem na de CLI, entao exigi-lo `false` exigiria escrito o
+  # que pode ser o estado normal; (3) nenhuma retencao e publicada -- o
+  # Serverless publica 30 dias, aqui nao ha prazo para destino nenhum. Incluir
+  # `managedLogs` na conjuncao transportaria para ca uma semantica que a fonte
+  # do EKS nao sustenta, e faria a regra silenciar exatamente sobre o job que a
+  # AWS diz que PRECISA configurar S3 ou CloudWatch.
+  #
+  # A condicao e UMA, sobre `measures.log_destination_count`, pela mesma razao
+  # de `SF-EMRS-003`: a decomposicao mora no extrator, que ja resolveu quais dos
+  # cinco membros de `MonitoringConfiguration` sao destino (dois) e quais nao
+  # sao (tres). `== 0` e nao `<= 0`: e contagem, e negativo nao existe.
+  - id: SF-EMRK-002
+    category: emr-eks
+    title: Nenhum destino de log neste job run — o rastro morre com o pod
+    requires_facts: [emrc.job_run, emrc.monitoring]
+    when:
+      same_subject: true
+      all:
+        - fact: emrc.monitoring
+          expr: "measures.log_destination_count == 0"
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Não é problema de performance; é de capacidade de diagnóstico. É o análogo
+      de SF-EMRS-003 (EMR Serverless) e de SF-EMR-006 (EMR on EC2), e a leitura
+      difere dos dois — mais forte que a do primeiro, igual à do segundo.
+      No EMR Serverless esta regra NÃO pode disparar por ausência:
+      managedPersistenceMonitoringConfiguration.enabled "defaults to true" e "by
+      default, EMR Serverless stores application logs securely in Amazon EMR
+      managed storage for a maximum of 30 days", então o bloco ausente significa
+      PROTEGIDO e disparar por ausência acusaria toda application que nunca
+      tocou em monitoramento — que é a maioria das corretas. Em EMR on EKS não
+      foi encontrada nenhuma declaração equivalente, e o que a fonte diz é o
+      contrário, com must literal repetido em duas páginas: "to be able to
+      monitor the job progress and to troubleshoot failures, you must configure
+      your jobs to send log information to Amazon S3, Amazon CloudWatch Logs, or
+      both". Aqui a ausência do bloco JÁ É zero destino, e é por isso que o fact
+      emrc.monitoring sai sempre, inclusive quando monitoringConfiguration não
+      veio no payload.
+      managedLogs não é o managed storage do Serverless, e confundir os dois
+      seria o erro caro desta área: o que a fonte declara sobre
+      allowAWSToRetainLogs é estreito — "allows AWS to retain system namespace
+      logs when running a job using Native FGAC" —, é log de sistema sob um modo
+      de auth específico e não log de aplicação, não tem default declarado nem
+      na referência de API nem na de CLI, e nenhuma retenção é publicada para
+      ele. Por isso ele não conta como destino, e sua presença não desarma este
+      achado.
+      Sem destino, os logs de submitter, driver e executor vivem e morrem dentro
+      do pod, e o event log — o insumo mais rico que este motor consome — não
+      chega a lugar nenhum que sobreviva à execução. As áreas SF-UI, SF-PLAN e
+      metade de SF-PY dependem de artefato de execução que ninguém está
+      gravando. E aqui o limite de camada do cabeçalho corta numa direção só, o
+      que torna o achado mais duro que o do Serverless: não existe um job run
+      posterior que traga o seu próprio destino, porque ESTE artefato já é o job
+      run. O que ele não prova é o inverso — que nenhum log existe em lugar
+      nenhum: um pod template pode montar um sidecar de coleta, e o pod template
+      é a superfície que este extrator declaradamente não lê. Ver
+      knowledge/emr-eks/job-run-configuration.md seção 4.
+    proposed_change:
+      - "Acrescentar s3MonitoringConfiguration.logUri ao configurationOverrides.monitoringConfiguration das próximas submissões, com prefixo dedicado e política de ciclo de vida no bucket."
+      - "Ou acrescentar cloudWatchMonitoringConfiguration.logGroupName quando a operação já vive no CloudWatch; a fonte trata os dois como alternativas legítimas ('Amazon S3, Amazon CloudWatch Logs, or both')."
+      - "Declarar persistentAppUI: ENABLED junto — é ele que faz o event log existir, e os três exemplos de start-job-run do guia o escrevem explicitamente. Destino de log sem event log dá log de container e nenhuma Spark UI."
+      - "Antes de mudar, perguntar por que não havia destino: dado de aplicação no log de container é a razão legítima mais comum, e a resposta para ela é política de acesso no prefixo e no log group, não ausência de log."
+      - "Corrigir onde a submissão é montada, não neste job run: o artefato é uma execução que já aconteceu, e não há update-job-run."
+    risks:
+      - Log de container pode conter dado de aplicação; o destino precisa da mesma política de acesso do dado que o job processa.
+      - "Logs consomem armazenamento continuamente; sem política de ciclo de vida no prefixo S3 ou sem retenção no log group, o custo cresce sem teto — e o EMR on EKS não publica retenção para nenhum destino, então nada expira sozinho."
+      - "O papel de execução do job precisa de permissão de escrita no destino. Sem ela o job passa a falhar na inicialização por uma razão que não tem relação com o que ele processa, e isso costuma ser lido como regressão do job."
+      - "A mudança não é retroativa: o que já executou sem destino não deixou rastro, e nenhuma configuração futura o recupera."
+    tradeoffs:
+      - Custo marginal de armazenamento contra a possibilidade de diagnosticar qualquer coisa depois do fato. Não gravar log é uma economia real, e a contrapartida é a que a própria AWS nomeia com must.
+      - "Gravar nos dois destinos duplica o log de container. Vale quando S3 é o arquivo longo e o CloudWatch é o alarme operacional; não vale só por simetria."
+    validation:
+      - DescribeJobRun de uma submissão nova mostrando s3MonitoringConfiguration.logUri ou cloudWatchMonitoringConfiguration.logGroupName preenchido.
+      - "Objetos efetivamente gravados no destino escolhido para esse job novo — configuração declarada e objeto escrito são duas afirmações diferentes, e é a segunda que fecha."
+      - "O event log localizado e legível por sparkforge analyze_event_log, que é a capacidade que o achado diz estar perdida."
+      - "Contagem total e contagem por chave de negócio do destino de dados iguais às do último run comparável: acrescentar destino de log não pode mudar o resultado do job, e se mudou, a mudança foi outra."
+    rollback:
+      - Remover o bloco de monitoramento da submissão devolve o estado anterior. O que não volta é o log dos jobs executados no intervalo — e não há por que voltar, porque o estado anterior é o que este achado acusa.
+      - "Se o custo de armazenamento for o problema, o rollback correto é política de ciclo de vida no prefixo, não remover o destino."
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-s3.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-cloudwatch.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_MonitoringConfiguration.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ManagedLogs.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html", retrieved: 2026-08-31}
+
+  # UM TERMO, e a decisao foi tomada contra o molde de `SF-EMRS-004`.
+  #
+  # `SF-EMRS-004` precisa de dois termos porque la o destino de log e o event log
+  # sao o MESMO objeto: com log em S3 e managed storage desligado, o log existe
+  # e so a UI se perde, entao o achado so faz sentido no cruzamento. Aqui a
+  # fonte separa os dois: `persistentAppUI` e o que "allows AWS to save event
+  # logs which are used to generate the Spark UI", e um destino de log
+  # (S3/CloudWatch) leva log de submitter, driver e executor -- log de
+  # CONTAINER. Com `persistentAppUI: DISABLED`, o event log nao existe INDEPENDENTE
+  # de haver destino, entao cruzar com destino de log so produziria silencio no
+  # caso em que o operador acha que esta protegido porque grava em S3 -- o pior
+  # lugar para silenciar.
+  #
+  # `where` exige o valor EXPLICITO `DISABLED`, e nunca a ausencia do campo. O
+  # default de `persistentAppUI` NAO E PUBLICADO em lugar nenhum: nem na
+  # referencia de API (`MonitoringConfiguration`), nem na referencia de CLI de
+  # `start-job-run`, nem nas paginas de logging do guia. Disparar por ausencia
+  # afirmaria que o default e desligado, que esta coleta NAO mediu -- e presumir
+  # default sem fonte e o defeito que este repositorio mais persegue. O extrator
+  # carrega `attrs.persistent_app_ui_declared` justamente para essa distincao, e
+  # a chave OMITIDA ja faz o `where` nao casar (`_where_matches` reprova caminho
+  # ausente), entao nenhuma regra precisa dele no `when`.
+  #
+  # A disciplina e a MESMA de `SF-EMRS-003`, aplicada ao caso inverso: la se
+  # sabia o default e ele era seguro, e por isso a regra nao podia disparar por
+  # ausencia; aqui NAO SE SABE, e nao saber tambem proibe o disparo.
+  - id: SF-EMRK-003
+    category: emr-eks
+    title: persistentAppUI desligado por escrito — este job run não gerou event log, e a Spark UI não existe
+    requires_facts: [emrc.job_run, emrc.monitoring]
+    when:
+      same_subject: true
+      all:
+        - fact: emrc.monitoring
+          where: {attrs.persistent_app_ui: "DISABLED"}
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      persistentAppUI é String com Valid Values ENABLED | DISABLED e Required:
+      No, e o default NÃO foi encontrado declarado — nem na referência de API de
+      MonitoringConfiguration, nem na referência de CLI de start-job-run, nem
+      nas páginas de logging do guia de desenvolvimento. Por isso este achado
+      exige o valor DISABLED ESCRITO: disparar por ausência do campo afirmaria
+      um default que esta coleta não mediu.
+      O que a fonte declara não é o default, é o EFEITO, e ela o declara em duas
+      páginas: "the persistentAppUI configuration allows AWS to save event logs
+      which are used to generate the Spark UI", e, no guia de rotação de event
+      log, "you start a long running Spark job with an event log enabled with
+      the persistentAppUI parameter. The Spark driver generates an event log
+      file". Isso liga persistentAppUI diretamente à existência do EVENT LOG —
+      que é o artefato que este motor lê em analyze_event_log, e a origem das
+      áreas SF-UI e SF-PLAN. DISABLED não é uma preferência de interface: é a
+      ausência do insumo de diagnóstico mais rico que o SparkForge consome, e
+      ela é irreversível para esta execução.
+      Um destino de log declarado NÃO desarma este achado, e é aí que a leitura
+      difere de SF-EMRS-004. Lá o log em S3 e o event log são o mesmo objeto, e
+      o achado só existe no cruzamento entre ter destino e perder a UI. Aqui a
+      fonte separa os dois: s3MonitoringConfiguration e
+      cloudWatchMonitoringConfiguration levam log de submitter, driver e
+      executor — log de container —, e é persistentAppUI que faz o event log
+      existir. Um job run com log em S3 e persistentAppUI DISABLED grava
+      bastante coisa e mesmo assim não tem plano, não tem métrica de stage e não
+      tem Spark UI.
+      Vale registrar o único ponto em que a documentação toma partido, e ele é
+      evidência de prática recomendada e NÃO de default: os três exemplos de
+      start-job-run do guia — os dois de sparkSubmitJobDriver e o de
+      sparkSqlJobDriver — escrevem "persistentAppUI": "ENABLED" explicitamente.
+      Existe um motivo legítimo para o DISABLED, e ele é de dados e não de
+      custo: o campo autoriza a AWS a GUARDAR o event log, e um requisito de
+      residência ou de não-retenção por terceiro pode proibir isso. Este achado
+      não pede que a decisão seja revertida; pede que ela fique declarada junto
+      com o que ela custa. Ver knowledge/emr-eks/job-run-configuration.md seção 5.
+    proposed_change:
+      - "Passar persistentAppUI: ENABLED em configurationOverrides.monitoringConfiguration nas próximas submissões, que é o que os três exemplos de start-job-run do guia fazem."
+      - "Se a retenção do event log pela AWS é o que se quer evitar, declarar encryptionKeyArn em managedLogs para que o log guardado use chave própria — a fonte declara esse campo exatamente para isso — e registrar a decisão junto com o custo de diagnóstico, em vez de desligar a UI."
+      - "Se a residência do dado proíbe qualquer retenção pela AWS, manter DISABLED é a decisão certa, e nesse caso configurar spark.eventLog.dir para um prefixo próprio no pod template passa a ser o caminho — com a ressalva de que o pod template é a superfície que este extrator não lê, então nenhum achado desta área vai confirmar que funcionou."
+      - "Verificar que existe destino de log declarado de qualquer forma: sem persistentAppUI e sem s3/CloudWatch, o job run cai também em SF-EMRK-002, que é outra ordem de problema."
+    risks:
+      - "Ligar persistentAppUI autoriza a AWS a guardar o event log, e nenhuma retenção é publicada para EMR on EKS — nem para esse armazenamento, nem para os outros destinos. Em ambiente com requisito de residência ou de chave própria, isso precisa ser conferido antes, não depois."
+      - "Event log de job longo cresce, e é para isso que existe rotação (containerLogRotationConfiguration). Ligar a UI sem rotação num job de horas troca um problema de diagnóstico por um de tamanho de arquivo."
+      - "A mudança não recupera nada: o event log deste job run não existe e não vai passar a existir. Toda investigação sobre esta execução específica continua sem plano e sem métrica de stage."
+    tradeoffs:
+      - "Retenção do event log pela AWS contra a capacidade de investigar. As duas são reais, e a fonte não decide por ninguém — ela só declara o que o campo liga."
+      - "Este achado é P2 de propósito: o job executou, e log de container pode existir. Tratá-lo como P1 o poria no mesmo patamar de não haver destino nenhum, que é uma perda maior."
+    validation:
+      - DescribeJobRun de uma submissão nova mostrando persistentAppUI com o valor ENABLED.
+      - "O event log daquele job novo localizado e legível por sparkforge analyze_event_log, com stages e métricas — é a capacidade que o achado diz estar perdida, e só o artefato prova que ela voltou."
+      - "Contagem total e contagem por chave de negócio do destino de dados iguais às do run anterior comparável: ligar a UI é mudança de observabilidade e não pode mudar o resultado; se mudou, mudou outra coisa junto."
+    rollback:
+      - "Voltar a passar persistentAppUI: DISABLED nas submissões. É alteração no que monta o start-job-run, não no job run já executado — não existe update-job-run."
+      - "Se o motivo do rollback for retenção de dado, ele é legítimo, e o que precisa ficar registrado é a perda de diagnóstico que vem junto."
+    sources:
+      - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_MonitoringConfiguration.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-log-rotation.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-submit.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/cli/latest/reference/emr-containers/start-job-run.html", retrieved: 2026-08-31}
+
+  # RELACAO ENTRE DUAS PROPRIEDADES, no padrao da regra 16 do `CLAUDE.md`:
+  # `spark.dynamicAllocation.enabled` sozinho nao e certo nem errado, e esta
+  # regra nunca o julga sozinho.
+  #
+  # OS DOIS VALORES SAO EXPLICITOS, e isso e uma CORRECAO medida nesta Task
+  # contra o que a pesquisa da Task 1 registrou. A Task 1 citou
+  # `spark.apache.org/docs/latest/` e anotou `shuffleTracking.enabled` com
+  # default `false`. A releitura na versao FIXADA (`docs/3.5.6/`, a que
+  # corresponde ao Spark `3.5.2-amzn-1` de `emr-7.5.0`) mede default `true` --
+  # e `docs/latest/` diz `true` tambem, hoje. Com o default `true`,
+  # `dynamicAllocation` ligada SEM `shuffleTracking` declarada esta no default
+  # SEGURO, e uma regra que disparasse por ausencia acusaria configuracao
+  # correta. So o `false` ESCRITO e acusavel. A medida e a divergencia estao em
+  # `knowledge/emr-eks/job-run-configuration.md` §12.
+  #
+  # A DISJUNCAO TEM QUATRO RAMOS, e nao dois -- outra correcao da mesma
+  # releitura. O `explanation` cita o texto inteiro e declara que os ramos 3 e 4
+  # NAO sao observados por esta regra. Por isso `confidence: medium`: o achado
+  # nomeia uma relacao declarada, nao um defeito provado.
+  #
+  # UMA SUPERFICIE SO, e o ponto cego esta declarado. A propriedade pode chegar
+  # por `applicationConfiguration` ou por `sparkSubmitParameters`, e o motor nao
+  # sabe escrever "(A na 1 ou A na 2) e (B na 1 ou B na 2)" -- `when` tem um
+  # grupo `all` OU `any`, sem aninhamento. Das duas saidas possiveis, esta regra
+  # escolhe a que erra para o lado do SILENCIO:
+  #
+  #   - Ler `applicationConfiguration` acusaria um valor que PODE TER PERDIDO: a
+  #     AWS declara que "the Spark submit parameters take precedence", entao um
+  #     `--conf ...shuffleTracking.enabled=true` na linha de submit derrubaria o
+  #     `false` do override e o achado estaria acusando configuracao correta.
+  #   - Ler `sparkSubmitParameters` nunca acusa valor derrotado, porque ele e o
+  #     nivel 2 da precedencia e so perde para `spark.conf.set` no codigo -- que
+  #     e invisivel para TODA regra desta area, e esta declarado no cabecalho.
+  #
+  # O PONTO CEGO, escrito: um job run que configure alocacao dinamica APENAS por
+  # `applicationConfiguration` nao e julgado por esta regra. Ele nao aparece em
+  # `findings` nem em `skipped` -- a regra e avaliada e nao casa. Fechar isso
+  # exige o motor saber aninhar grupos, ou o extrator resolver a precedencia e
+  # emitir a configuracao efetiva num fact so; a segunda e a saida que este
+  # repositorio ja usou em `SF-EMR-008` e em `graph.checkpoint_required`, e ela
+  # nao foi feita aqui porque resolver precedencia entre duas superficies e
+  # decisao de desenho de extrator, nao de regra.
+  #
+  # `same_subject: true` nao e estilo: as duas condicoes leem o MESMO kind, e
+  # sem ele um diretorio com varios dumps casaria o `enabled` de um job run com
+  # o `shuffleTracking` de outro -- duas execucoes corretas acusadas como uma
+  # errada. O subject destes facts e `<arquivo>:0`, entao o agrupamento e por
+  # payload, que e por execucao.
+  - id: SF-EMRK-004
+    category: emr-eks
+    title: Alocação dinâmica ligada com shuffleTracking desligado por escrito — no Kubernetes não sobra o ramo da disjunção que a AWS documenta
+    requires_facts: [emrc.job_run, emrc.spark_submit_parameters]
+    confidence: medium
+    when:
+      same_subject: true
+      all:
+        - fact: emrc.spark_submit_parameters
+          where:
+            attrs.key: spark.dynamicAllocation.enabled
+            attrs.value: "true"
+        - fact: emrc.spark_submit_parameters
+          where:
+            attrs.key: spark.dynamicAllocation.shuffleTracking.enabled
+            attrs.value: "false"
+    status: confirmed
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Nenhuma fonte da AWS sobre EMR on EKS nomeia esta combinação como defeito,
+      e este achado não finge que alguma nomeia. O que existe é uma relação
+      declarada entre duas propriedades, montada por composição de duas páginas
+      do Apache Spark, na versão FIXADA que corresponde ao Spark de EMR on EKS
+      (docs/3.5.6/ — o Spark de emr-7.5.0 é 3.5.2-amzn-1).
+      A primeira metade é uma disjunção, e ela tem QUATRO ramos, não dois. Na
+      descrição de spark.dynamicAllocation.enabled (default false, desde 1.2.0):
+      "This requires one of the following conditions: 1) enabling external
+      shuffle service through spark.shuffle.service.enabled, or 2) enabling
+      shuffle tracking through spark.dynamicAllocation.shuffleTracking.enabled,
+      or 3) enabling shuffle blocks decommission through
+      spark.decommission.enabled and
+      spark.storage.decommission.shuffleBlocks.enabled, or 4) (Experimental)
+      configuring spark.shuffle.sort.io.plugin.class to use a custom
+      ShuffleDataIO who's ShuffleDriverComponents supports reliable storage."
+      A segunda metade fecha o ramo 1 no Kubernetes, e é literal: "This also
+      requires spark.dynamicAllocation.shuffleTracking.enabled to be enabled
+      since Kubernetes doesn't support an external shuffle service at this
+      time." E aqui vai a ressalva que quem for conferir precisa ter: essa frase
+      NÃO está numa seção sobre alocação dinâmica. Ela está em Configuration →
+      Stage Level Scheduling Overview — seção irmã de Resource Level Scheduling
+      Overview, as duas penduradas direto em Configuration —, num parágrafo cujo
+      assunto é ResourceProfile, e a página running-on-kubernetes.html não tem
+      seção dedicada a alocação dinâmica. O raciocínio é curto e a fonte fornece
+      as duas metades; o que ela não fornece é alguém chamando isso de erro.
+      O QUE ESTE ACHADO NÃO OBSERVA, e é preciso dizer antes de agir: os ramos 3
+      e 4 da disjunção. Se este job run habilitar decommission de blocos de
+      shuffle, ou um ShuffleDataIO customizado com armazenamento confiável, o
+      requisito está satisfeito sem shuffleTracking e não há defeito nenhum. O
+      motor de regras avalia um fact por vez e por igualdade, e não consegue
+      exigir a ausência de uma chave; então a checagem dos dois ramos restantes
+      é do operador, não deste achado. Por isso a confiança é medium e o
+      vocabulário é "relação a conferir", nunca "o job vai falhar" — a fonte
+      declara o REQUISITO e não declara o COMPORTAMENTO na violação, e afirmar
+      que o job falha ao iniciar, ou que os executores nunca são liberados,
+      exigiria medida própria que ninguém fez.
+      Os dois valores precisam estar ESCRITOS, e nunca ausentes. Na versão
+      fixada, spark.dynamicAllocation.shuffleTracking.enabled tem default true
+      (Since Version 3.0.0) — então alocação dinâmica ligada sem a propriedade
+      declarada está no default seguro, e disparar por ausência acusaria
+      configuração correta. Uma coleta anterior desta área registrou default
+      false; a releitura na versão fixada mede true, e a versão fixada vence.
+      A leitura é de uma superfície só: sparkSubmitParameters, o nível 2 da
+      precedência declarada pela AWS ("if you pass the same configuration in an
+      application override and in Spark submit parameters, the Spark submit
+      parameters take precedence"). O ponto cego que isso cria está declarado —
+      um job run que configure alocação dinâmica apenas por
+      applicationConfiguration não é julgado aqui — e a alternativa seria pior:
+      ler o override sem poder conferir a linha de submit acusaria um valor que
+      perdeu. E o limite que vale para a área inteira vale aqui também, e é o
+      único acima de sparkSubmitParameters: spark.conf.set dentro do código do
+      job é o nível 1 da precedência e nenhum artefato desta área o vê. Ver
+      knowledge/emr-eks/job-run-configuration.md seções 3, 6 e 12.
+    proposed_change:
+      - "Antes de mudar qualquer coisa, conferir os dois ramos que este achado não observa: --conf spark.decommission.enabled e --conf spark.storage.decommission.shuffleBlocks.enabled, e --conf spark.shuffle.sort.io.plugin.class. Se algum deles estiver habilitado, o requisito já está satisfeito e não há nada a corrigir."
+      - "Se nenhum estiver, remover --conf spark.dynamicAllocation.shuffleTracking.enabled=false da linha de submit e deixar o default do Spark 3.x valer, que é true na versão fixada. Remover é preferível a escrever true: o default é o que a documentação sustenta, e uma propriedade escrita à mão com o valor do próprio default é o sintoma de procedência que a regra 19 do CLAUDE.md manda caçar."
+      - "Se a alocação dinâmica não for requisito deste job — carga de tamanho estável, executores fixos —, remover --conf spark.dynamicAllocation.enabled=true é a mudança menor e resolve a relação inteira."
+      - "Conferir também se as duas propriedades não estão sendo escritas em applicationConfiguration ao mesmo tempo, com valores diferentes: a linha de submit vence, e um override que discorda dela é ruído que a próxima pessoa vai ler como verdade."
+    risks:
+      - "Ligar shuffle tracking muda quando o executor é liberado: a fonte diz que a opção 'will try to keep alive executors that are storing shuffle data for active jobs'. Executores que hoje somem passam a ficar de pé mais tempo, e isso aparece na fatura antes de aparecer no tempo de execução."
+      - "Remover a alocação dinâmica fixa o paralelismo no que estiver declarado em spark.executor.instances. Num job cuja carga varia entre execuções, isso troca um problema por outro — e o outro só aparece no dia do pico."
+      - "Nenhuma das duas mudanças é validada por este artefato: DescribeJobRun mostra o que foi pedido, e o efeito sobre o número de executores só existe no event log. Sem persistentAppUI e sem destino de log, a mudança fica sem prova (ver SF-EMRK-002 e SF-EMRK-003)."
+    tradeoffs:
+      - "Manter executor vivo por causa de shuffle data custa dinheiro enquanto ele não trabalha; perder shuffle data porque o executor foi liberado custa recomputação. A alocação dinâmica no Kubernetes é a escolha entre os dois, e a documentação só diz qual mecanismo torna a escolha possível."
+      - "Este achado é P2 e confidence medium de propósito. A relação é conferível, e é isso que ele afirma; a violação não tem comportamento declarado por nenhuma fonte, e tratá-la como P1 daria ao achado uma certeza que a fonte não dá."
+    validation:
+      - DescribeJobRun de uma submissão nova mostrando a linha de submit sem o shuffleTracking.enabled=false, ou sem o dynamicAllocation.enabled=true, conforme a decisão tomada.
+      - "Event log do job novo comparado ao do job anterior: número de executores ao longo do tempo, tarefas com FetchFailed e stages reexecutados. É o único lugar onde o efeito da relação aparece, e é o que separa 'mudei a configuração' de 'mudou o comportamento'."
+      - "Contagem total, contagem por chave de negócio e agregados de controle do destino iguais aos do run anterior comparável, e resultado idêntico linha a linha na chave declarada: alocação dinâmica muda quantos executores existem, nunca o conjunto de linhas — e se o resultado mudou, o achado não era sobre isso."
+      - "Duração de ponta a ponta e DPU/vCPU-segundos dos dois runs lado a lado, para saber de que lado do trade-off a mudança caiu."
+    rollback:
+      - "Devolver a linha de submit anterior na próxima submissão. Não existe update-job-run: a correção e o rollback acontecem onde o start-job-run é montado, nunca no job run já executado."
+      - "Se o rollback for necessário porque o custo subiu com executores mais longevos, a resposta provavelmente não é voltar o shuffleTracking para false — é reduzir maxExecutors ou desligar a alocação dinâmica, que é o que o achado propõe como alternativa."
+    sources:
+      - {url: "https://spark.apache.org/docs/3.5.6/configuration.html", retrieved: 2026-08-31}
+      - {url: "https://spark.apache.org/docs/3.5.6/running-on-kubernetes.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-CLI.html", retrieved: 2026-08-31}
+      - {url: "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html", retrieved: 2026-08-31}

@@ -241,7 +241,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-003"
+      ]
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ConfigurationOverrides.html": {
       "docs": [
@@ -271,7 +273,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-001"
+      ]
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeVirtualCluster.html": {
       "docs": [
@@ -321,7 +325,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-002"
+      ]
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_MonitoringConfiguration.html": {
       "docs": [
@@ -331,7 +337,10 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-002",
+        "SF-EMRK-003"
+      ]
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html": {
       "docs": [
@@ -341,7 +350,10 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-001",
+        "SF-EMRK-004"
+      ]
     },
     "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_VirtualCluster.html": {
       "docs": [
@@ -607,7 +619,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-001"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/docker-custom-images-considerations.html": {
       "docs": [
@@ -977,7 +991,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-004"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-cloudwatch.html": {
       "docs": [
@@ -987,7 +1003,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-002"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-s3.html": {
       "docs": [
@@ -997,7 +1015,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-002"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-submit.html": {
       "docs": [
@@ -1007,7 +1027,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-003"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-log-rotation.html": {
       "docs": [
@@ -1017,7 +1039,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-003"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-releases.html": {
       "docs": [
@@ -1048,7 +1072,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-001"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html": {
       "docs": [
@@ -1058,7 +1084,10 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-002",
+        "SF-EMRK-003"
+      ]
     },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html": {
       "docs": [
@@ -1527,7 +1556,9 @@
       "retrieved": [
         "2026-08-31"
       ],
-      "rules": []
+      "rules": [
+        "SF-EMRK-001"
+      ]
     },
     "https://docs.devin.ai/cli/changelog/stable.md": {
       "docs": [
@@ -2243,6 +2274,30 @@
       ],
       "rules": [
         "SF-GRAPH-002"
+      ]
+    },
+    "https://spark.apache.org/docs/3.5.6/configuration.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": [
+        "SF-EMRK-004"
+      ]
+    },
+    "https://spark.apache.org/docs/3.5.6/running-on-kubernetes.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": [
+        "SF-EMRK-004"
       ]
     },
     "https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html": {

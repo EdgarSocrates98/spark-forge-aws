@@ -271,17 +271,33 @@ defeito, e a frase específica de Kubernetes vive num parágrafo sobre outro
 assunto.** Os três achados, separados:
 
 **(a) O requisito genérico está na referência de configuração do Spark, e é uma
-disjunção.** Na descrição de `spark.dynamicAllocation.enabled` (default `false`,
-desde 1.2.0):
+disjunção — de QUATRO ramos, não de dois.** Esta é a leitura da versão FIXADA
+`docs/3.5.6/`, que é a que corresponde ao Spark de EMR on EKS 7.5.0
+(`3.5.2-amzn-1`), e ela **corrige** a leitura anterior desta seção. Na descrição
+de `spark.dynamicAllocation.enabled` (default `false`, desde 1.2.0):
 
-> *"This requires `spark.shuffle.service.enabled` **or**
-> `spark.dynamicAllocation.shuffleTracking.enabled` to be set."*
+> *"This requires one of the following conditions: 1) enabling external shuffle
+> service through `spark.shuffle.service.enabled`, or 2) enabling shuffle
+> tracking through `spark.dynamicAllocation.shuffleTracking.enabled`, or 3)
+> enabling shuffle blocks decommission through `spark.decommission.enabled` and
+> `spark.storage.decommission.shuffleBlocks.enabled`, or 4) (Experimental)
+> configuring `spark.shuffle.sort.io.plugin.class` to use a custom
+> `ShuffleDataIO` who's `ShuffleDriverComponents` supports reliable storage."*
 
-`spark.dynamicAllocation.shuffleTracking.enabled` tem default `false`, desde
-3.0.0, com a descrição: *"Whether to track shuffle files on the executors so
-that the dynamic allocation can scale down the executors without losing the
-shuffle data."* Nenhuma das duas descrições usa a palavra "erro" ou
-"não suportado".
+E `spark.dynamicAllocation.shuffleTracking.enabled` tem **default `true`** na
+`docs/3.5.6/`, com `Since Version: 3.0.0` e a descrição *"Enables shuffle file
+tracking for executors, which allows dynamic allocation without the need for an
+external shuffle service. This option will try to keep alive executors that are
+storing shuffle data for active jobs."* Nenhuma das descrições usa a palavra
+"erro" ou "não suportado".
+
+**As duas correções mudam a forma da regra, e a segunda a inverte.** A coleta
+anterior desta seção registrou `default false` e uma disjunção de dois ramos; a
+releitura na versão fixada mede `default true` e quatro ramos. Com o default
+`true`, `dynamicAllocation` ligada **sem** `shuffleTracking` declarada está no
+default SEGURO, e uma regra que disparasse por ausência acusaria configuração
+correta. Só o `false` **explícito** é acusável. A divergência com a citação de
+`latest` que a Task 1 registrou está aferida na §12.
 
 **(b) O fechamento da disjunção no Kubernetes está declarado, e é literal:**
 
@@ -309,13 +325,13 @@ combinação como defeito** nesta coleta.
 
 **O que isso permite à Task 10:** a regra entra como **relação entre duas
 propriedades**, no padrão da regra 16 do `CLAUDE.md` — `dynamicAllocation.enabled`
-verdadeiro **e** `shuffle.service.enabled` não verdadeiro **e**
-`shuffleTracking.enabled` não verdadeiro, com `runtime_scope` de Spark ≥ 3.0.0
-(a data em que `shuffleTracking` passou a existir), e com a nota de que a frase
-que fecha a disjunção vive num parágrafo de stage-level scheduling. Ela **não**
-entra citando uma fonte que a chame de defeito, porque não há. E a leitura das
-três propriedades tem que respeitar a precedência da §3, senão acusa o valor que
-perdeu.
+declarado `true` **e** `shuffleTracking.enabled` declarado `false`, os DOIS
+explícitos, e nunca por ausência de nenhum dos dois. Ela **não** entra citando
+uma fonte que a chame de defeito, porque não há; e ela carrega escrito que os
+ramos 3 e 4 da disjunção existem e não são observados por ela. A leitura das
+propriedades tem que respeitar a precedência da §3, senão acusa o valor que
+perdeu — e é por isso que `SF-EMRK-004` lê **só** `sparkSubmitParameters`, a
+superfície que a fonte declara vencedora entre as duas que este artefato traz.
 
 ## 7. Segredo em texto claro — a página que enumera não enumera o EKS
 
@@ -549,6 +565,38 @@ sobrevive numa forma que o runtime irmão proibia.** Nenhuma das quatro entra co
 a mesma fonte que a sua equivalente de EMR on EC2 ou de EMR Serverless — a
 transposição de fonte entre runtimes de EMR é, nesta área, sempre errada.
 
+## 12. A releitura na versão fixada do Spark, e as duas divergências que ela mediu
+
+A Task 1 citou `spark.apache.org/docs/latest/`. Este repositório **fixa versão**
+nas fontes de Spark que sustentam regra — `docs/3.5.6/` e `docs/4.1.1/` já estão
+em `knowledge/sources.lock.json` —, e `emr-7.5.0-latest`, a release das quatro
+fixtures desta área, roda Spark `3.5.2-amzn-1`. A versão fixada correspondente é
+`docs/3.5.6/`, e é dela que `SF-EMRK-004` cita.
+
+Medido em 2026-08-31, nas duas páginas, comparando `docs/3.5.6/` com
+`docs/latest/`:
+
+| Afirmação registrada pela Task 1 (de `latest`) | O que a `docs/3.5.6/` diz | O que a `docs/latest/` diz **hoje** |
+|---|---|---|
+| a disjunção tem dois ramos: `shuffle.service.enabled` **ou** `shuffleTracking.enabled` | **quatro** ramos: os dois, mais decommission de blocos de shuffle, mais `ShuffleDataIO` customizado (experimental) | **quatro** ramos, texto idêntico ao da 3.5.6 |
+| `spark.dynamicAllocation.shuffleTracking.enabled` tem default `false` | default **`true`**, `Since Version: 3.0.0` | default **`true`** |
+| a frase que fecha a disjunção no Kubernetes vive em *Stage Level Scheduling Overview* | **confere** — mesma seção, mesma frase literal | confere |
+
+**Duas leituras, e a segunda é a que importa.** A primeira divergência é entre a
+coleta da Task 1 e as páginas: o texto de dois ramos não é o que `latest` publica
+hoje, nem o que a 3.5.6 publica — ele é redação de uma série anterior do Spark.
+A segunda é a que inverte a regra: com `shuffleTracking` em `true` por default,
+disparar por **ausência** acusaria o default seguro da AWS e do Apache, que é o
+pior defeito de regra segundo `rules/catalog/README.md`.
+
+A regra que sobrevive exige os **dois valores explícitos**. E ela declara o que
+não observa: os ramos 3 e 4 satisfazem o requisito sem `shuffleTracking`, e nem
+o motor de regras (que compara um fact por vez, por igualdade) nem este artefato
+(que não vê `spark.conf.set` no código) conseguem descartá-los. Por isso o
+achado nomeia uma **relação declarada entre duas propriedades**, e nunca afirma
+que o job falha — a §"O que estas fontes NÃO sustentam" já proibia essa
+afirmação por outro caminho.
+
 ## Fontes
 
 - DescribeJobRun (Response Syntax e erros). https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeJobRun.html (retrieved 2026-08-31)
@@ -579,6 +627,8 @@ transposição de fonte entre runtimes de EMR é, nesta área, sempre errada.
 - start-job-run (AWS CLI Command Reference — sem default para `persistentAppUI` nem para `allowAWSToRetainLogs`). https://docs.aws.amazon.com/cli/latest/reference/emr-containers/start-job-run.html (retrieved 2026-08-31)
 - Running Spark on Kubernetes (a frase sobre external shuffle service, e a seção em que ela está). https://spark.apache.org/docs/latest/running-on-kubernetes.html (retrieved 2026-08-31)
 - Spark Configuration (defaults de `spark.dynamicAllocation.enabled` e `.shuffleTracking.enabled`). https://spark.apache.org/docs/latest/configuration.html (retrieved 2026-08-31)
+- Spark Configuration, VERSÃO FIXADA — a que `SF-EMRK-004` cita, e a que corresponde ao Spark 3.5.2-amzn-1 de `emr-7.5.0`. Disjunção de quatro ramos, e `shuffleTracking.enabled` com default `true` (§12). https://spark.apache.org/docs/3.5.6/configuration.html (retrieved 2026-08-31)
+- Running Spark on Kubernetes, VERSÃO FIXADA — *"since Kubernetes doesn't support an external shuffle service at this time"*, dentro de *Stage Level Scheduling Overview* (§12). https://spark.apache.org/docs/3.5.6/running-on-kubernetes.html (retrieved 2026-08-31)
 
 ### O que estas fontes NÃO sustentam
 

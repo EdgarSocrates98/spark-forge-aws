@@ -22,7 +22,7 @@
     "provenance": {
       "artifact": "job.json",
       "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-      "extractor": "emr_eks@0.1.0"
+      "extractor": "emr_eks@0.1.1"
     }
   },
   {
@@ -44,7 +44,7 @@
     "provenance": {
       "artifact": "job.json",
       "artifact_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-      "extractor": "emr_eks@0.1.0"
+      "extractor": "emr_eks@0.1.1"
     }
   }
 ]

@@ -19,14 +19,19 @@ escrita em `scripts/regen_fixtures.py:regen_emr_eks`: e a funcao que o produto
 chama quando o `--path` e diretorio, e golden e teste precisam extrair pela
 MESMA porta por onde o produto extrai.
 
-**Todo `expects_rules` nasce vazio, e isso e projeto, nao lacuna.** A area
+**Todo `expects_rules` nasceu vazio, e isso era projeto, nao lacuna.** A area
 `SF-EMRK` e a Task 10; este corpus e a Task 7. Extrator e corpus antes de regra
 e a ordem que o repositorio ja usou na Fase 5b (EMR on EC2), na 5d (EMR
 Serverless) e na 4c (`SF-FVAL`): regra sem fixture e regra que nunca foi
 provada, e escrever as duas coisas juntas apaga a chance de a fixture
-contradizer a regra. Quando a Task 10 chegar, `python scripts/regen_fixtures.py`
-reescreve os `findings.json` e os `[]` que sobrarem passam a ser goldens
-NEGATIVOS reais.
+contradizer a regra.
+
+A Task 10 chegou, e o corpus dobrou de quatro para nove. Tres `expects_rules`
+deixaram de ser vazios (`sem_destino_de_log` -> `SF-EMRK-002`, e as duas fixtures
+positivas novas), e os `[]` que sobraram passaram a ser goldens NEGATIVOS reais:
+`job_run_saudavel` continua com `findings: []` e e a prova de que nenhuma das
+quatro regras acusa configuracao correta -- se alguma disparar la, o conserto e
+na regra, nunca na fixture.
 """
 import json
 from pathlib import Path
@@ -55,6 +60,22 @@ REQUIRED_FIXTURES = {
     "payload_vazio",
     # A recusa VISIVEL: o unico kind da area que nao alimenta regra nenhuma.
     "pod_template_declarado",
+    # ---- Task 10 (area SF-EMRK). Positivo e negativo por regra. ----
+    # SF-EMRK-001 nas DUAS superficies de configuracao ao mesmo tempo, com os
+    # dois valores redigidos no golden.
+    "segredo_nas_duas_superficies",
+    # SF-EMRK-003 com `persistentAppUI: DISABLED` ESCRITO -- e com destino de log
+    # declarado, que e o que separa esta area do molde de SF-EMRS-004.
+    "spark_ui_desligada",
+    # SF-EMRK-004 positivo, e com o override de `applicationConfiguration`
+    # dizendo o CONTRARIO da linha de submit: a linha de submit vence.
+    "shuffle_tracking_desligado",
+    # O negativo do SEGUNDO termo de SF-EMRK-004: identico ao positivo menos o
+    # valor. Sem ele, a regra poderia acusar so o primeiro termo.
+    "shuffle_tracking_ligado",
+    # O negativo da AUSENCIA: `shuffleTracking` tem default `true` na versao
+    # fixada da doc, entao nao declara-lo e o estado seguro.
+    "alocacao_dinamica_no_default",
 }
 
 

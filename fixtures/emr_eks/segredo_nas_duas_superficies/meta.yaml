@@ -1,0 +1,32 @@
+name: segredo_nas_duas_superficies
+proves: >
+  O positivo de SF-EMRK-001, nas DUAS superficies de configuracao ao mesmo tempo,
+  porque as duas voltam sem redacao na resposta de `DescribeJobRun`: uma access
+  key da AWS em `applicationConfiguration.properties` e uma senha embutida na URL
+  de um catalogo dentro de `sparkSubmitParameters`. Um `any` que so casasse uma
+  delas passaria neste golden se a outra sumisse do `when`, e e por isso que as
+  duas estao aqui.
+  Prova tambem a REDACAO: nenhum dos dois valores aparece no `facts.json`. O
+  extrator os substitui por `<redigido>` e marca `secret_pattern_match`, para que
+  o proprio corpus de analise nao vire a segunda copia da credencial -- um golden
+  commitado com o literal seria o vazamento que a regra existe para acusar.
+  O par NEGATIVO e `job_run_saudavel`, e a diferenca e so o valor: la a mesma
+  classificacao `spark-defaults` e a mesma linha de submit carregam
+  `spark.sql.shuffle.partitions=400` e `spark.executor.instances=4`, que nao
+  casam padrao de credencial nenhum. A regra pega por VALOR, nunca por nome de
+  classificacao nem por superficie -- se pegasse por superficie, acusaria toda
+  execucao que declara qualquer coisa.
+  Nao dispara SF-EMRK-002 nem SF-EMRK-003 de proposito: ha destino S3 declarado e
+  `persistentAppUI: ENABLED`. Um positivo que disparasse tres regras nao provaria
+  qual delas esta certa.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules:
+  - SF-EMRK-001

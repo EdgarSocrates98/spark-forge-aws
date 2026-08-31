@@ -1,0 +1,26 @@
+name: shuffle_tracking_ligado
+proves: >
+  O golden NEGATIVO de SF-EMRK-004 pelo segundo termo, e sem ele a regra poderia
+  estar acusando so o primeiro sem que ninguem soubesse. A linha de submit e
+  identica a de `shuffle_tracking_desligado` em tudo -- alocacao dinamica ligada,
+  `maxExecutors=40`, mesma release, mesmo cluster virtual -- menos no valor de
+  `spark.dynamicAllocation.shuffleTracking.enabled`, que aqui e `true`. Se o
+  `where` do segundo termo fosse apagado do catalogo, ou se ele comparasse a
+  chave sem comparar o valor, esta fixture ficaria vermelha e a positiva
+  continuaria verde: e essa assimetria que o par existe para produzir.
+  Alocacao dinamica ligada COM shuffle tracking e exatamente o arranjo que a doc
+  do Spark descreve para Kubernetes -- "this also requires
+  spark.dynamicAllocation.shuffleTracking.enabled to be enabled since Kubernetes
+  doesn't support an external shuffle service at this time". Acusar aqui seria
+  acusar a configuracao que a fonte recomenda.
+  `expects_rules` vazio: nenhuma das quatro regras da area dispara.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules: []
