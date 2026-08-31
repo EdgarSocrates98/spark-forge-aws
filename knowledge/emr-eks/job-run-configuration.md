@@ -191,7 +191,7 @@ fonte diz é o contrário, em duas páginas, com a mesma frase quase literal:
 Um `must` da própria AWS, repetido em duas páginas, sobre exatamente a condição
 que a regra acusa.
 
-Os quatro membros de `MonitoringConfiguration`, e o que a fonte diz de cada:
+Os **cinco** membros de `MonitoringConfiguration`, e o que a fonte diz de cada:
 
 | Membro | Tipo | Default declarado | O que sustenta |
 |---|---|---|---|
@@ -295,8 +295,9 @@ serviço que a fonte diz não existir no Kubernetes, sobra um ramo só. O racioc
 
 **(c) E aqui está a ressalva que precisa ir na regra:** essa frase **não** está
 numa seção sobre dynamic allocation. Ela está em
-*Configuration → Resource Level Scheduling Overview → **Stage Level Scheduling
-Overview***, num parágrafo cujo assunto é `ResourceProfile` — o período completo
+*Configuration → **Stage Level Scheduling Overview*** — seção **irmã** de
+*Resource Level Scheduling Overview*, não filha dela, as duas penduradas direto em
+*Configuration* —, num parágrafo cujo assunto é `ResourceProfile` — o período completo
 começa em *"When dynamic allocation is enabled: It allows users to specify task
 and executor resource requirements at the stage level and will request the extra
 executors."*. A página `running-on-kubernetes.html` **não tem** seção dedicada a
@@ -367,45 +368,62 @@ documentado seria inventar o conserto. O remédio que a fonte sustenta é o do
 Kubernetes: `Secret` montado, com a ressalva de RBAC das *security best
 practices*.
 
-## 8. Imagem de container em tag móvel — a fonte recomenda o contrário
+## 8. Imagem de container em tag móvel — a fonte usa a tag móvel no próprio exemplo
 
-**Veredito: vetada. A documentação da AWS não só deixa de desaconselhar a tag
-móvel — ela a usa nos próprios exemplos e recomenda o comportamento móvel duas
-vezes.**
+**Veredito: vetada.** E o veto precisa ser exatamente do tamanho da fonte, porque a
+Task 10 vai herdá-lo. São **dois objetos diferentes**, e só um deles é o objeto da
+candidata (e):
 
-O formato de URI da imagem base, com o exemplo literal da página:
+| Objeto | O que carrega a parte móvel | É o objeto da candidata (e)? |
+|---|---|---|
+| **tag de imagem de container** | `:latest` no fim do URI de ECR | **sim** |
+| **release label** | sufixo `-latest` em `emr-7.13.0-latest` | não — é outro campo, ver §9 |
+
+**A perna que sustenta o veto é a primeira, e ela é sozinha suficiente.** A página
+*Details for selecting a base image URI* dá o formato e o exemplo:
 
 ```
 {ECR-registry-account}.dkr.ecr.{Region}.amazonaws.com/spark/{container-image-tag}
 895885662937.dkr.ecr.us-west-2.amazonaws.com/spark/emr-7.13.0:latest
 ```
 
-A tag do exemplo oficial é `:latest`. E o argumento vem explícito, nos dois
-lugares onde a AWS fala de frescor de imagem:
+A tag do exemplo oficial da AWS, para o objeto que a regra acusaria, **é `:latest`**.
+Os três exemplos de URI da página (`spark/`, `notebook-spark/`, `notebook-python/`)
+usam a mesma tag. E as *Considerations for customizing images* têm seis itens —
+usuário `hadoop:hadoop`, `applicationOverrides` em vez de editar
+`spark-defaults.conf`, seis diretórios montados em runtime, repositório Docker, e o
+aviso de preço — e **nenhum** sobre imutabilidade de tag, digest, ou fixar versão.
+Uma regra "imagem em tag móvel" acusaria o que a AWS escreve no próprio exemplo, sem
+nenhuma página que desaconselhe a prática. É o defeito que o
+`rules/catalog/README.md` chama de pior: acusar configuração correta.
 
-> *"When you use the `-latest` suffix, you ensure that your Amazon EMR version
-> always includes the latest security updates."*
-> — *Amazon EMR on EKS releases*, sobre o **release label**
+**A segunda perna corrobora a disposição da AWS, e não é sobre a tag.** Ela vale
+como contexto e não como fundamento:
 
 > *"Amazon EMR on EKS images are regularly patched with latest security patches.
-> **To get the latest image, you must rebuild the custom images whenever there
-> is a new base image version** of the Amazon EMR release."*
+> **To get the latest image, you must rebuild the custom images whenever there is a
+> new base image version** of the Amazon EMR release."*
 > — *Amazon EMR on EKS security best practices*
 
-As *Considerations for customizing images* têm seis itens — usuário `hadoop:hadoop`,
-`applicationOverrides` em vez de editar `spark-defaults.conf`, seis diretórios
-montados em runtime, registro Docker, e o aviso de preço — e **nenhum** sobre
-imutabilidade de tag, digest, ou fixar versão.
+Essa frase é sobre **imagem**, e empurra na direção de frescor — mas o mecanismo que
+ela pede é *rebuildar*, não *apontar para tag móvel*. Já a frase que a versão anterior
+desta página usava no mesmo fôlego — *"When you use the `-latest` suffix, you ensure
+that your Amazon EMR version always includes the latest security updates"*, da página
+de releases — é sobre **release label**, objeto diferente. Ela **não** entra no veto.
 
-Uma regra "imagem em tag móvel" acusaria, portanto, exatamente o que a AWS
-escreve nos seus próprios exemplos e recomenda pelo argumento de segurança. Isso
-é o defeito que o `rules/catalog/README.md` chama de pior: acusar configuração
-correta. **A candidata (e) não entra na Task 10, e este parágrafo é o veto
-escrito.**
+**A tensão, dita em voz alta.** Esta seção conclui que a mobilidade não é defeito de
+segurança; a §9 desta página e a §6 de [`runtime-matrix.md`](runtime-matrix.md)
+concluem que a mobilidade **é** um problema de **diagnóstico** — dois runs com o mesmo
+ponteiro móvel não provam o mesmo binário, e uma comparação entre eles é inválida por
+construção. As duas coisas são verdade ao mesmo tempo, e a fonte só sustenta a
+segunda como **limite de inferência**, nunca como acusação contra a configuração.
 
-Se alguma regra dessa família ainda fizer sentido, ela é outra pergunta —
-reprodutibilidade de execução, não segurança — e precisaria de fonte própria que
-esta coleta não achou.
+Então o que sobra para a Task 10 é estreito e precisa ficar estreito: **nada acusa a
+tag móvel**; o que existe é uma **ressalva de comparável** — quando o artefato traz
+ponteiro móvel (tag `:latest` ou release label `-latest`), qualquer achado que compare
+dois runs declara que o runtime não foi provado idêntico. Isso é nota em `explanation`,
+não `Finding`. Uma regra de verdade sobre reprodutibilidade precisaria de fonte
+própria, e esta coleta não achou nenhuma.
 
 ## 9. O formato do `releaseLabel` — a hipótese estava certa, e é pior do que ela supunha
 
@@ -524,7 +542,7 @@ preenchido e não ter efeito, se o addon não estiver instalado. Regra que leia
 | (b) Nenhum destino de log | **sobrevive, e na forma original que o Serverless obrigou a abandonar** | *"you must configure your jobs to send log information to Amazon S3, Amazon CloudWatch Logs, or both"*, em duas páginas. **Não existe** managed persistence ligada por default como no Serverless; `managedLogs` cobre log de namespace de sistema sob Native FGAC, com escopo estreito e sem default declarado (§4) |
 | (c) `persistentAppUI` desligado | **sobrevive só com `DISABLED` explícito** | O efeito é declarado (*"allows AWS to save event logs which are used to generate the Spark UI"*), o **default não é**. Disparar por ausência afirmaria um default que esta coleta não mediu (§5) |
 | (d) `dynamicAllocation` sem `shuffleTracking` | **sobrevive como relação entre propriedades, sem fonte que a chame de defeito** | O requisito é declarado em `configuration.html` como **disjunção**; o fechamento no Kubernetes é declarado em `running-on-kubernetes.html`, mas dentro de *Stage Level Scheduling Overview*. Nenhuma fonte da AWS sobre EMR on EKS nomeia a combinação (§6) |
-| (e) Imagem de container em tag móvel | **VETADA** | A fonte recomenda o oposto: o exemplo oficial de URI usa `:latest`, o release label `-latest` é recomendado *"to ensure that your Amazon EMR version always includes the latest security updates"*, e as *security best practices* mandam **rebuildar** a imagem a cada base nova. Acusaria a configuração que a AWS ensina (§8) |
+| (e) Imagem de container em tag móvel | **VETADA** | O exemplo oficial de URI de imagem base usa **`:latest`** — a própria tag que a regra acusaria — e nenhuma página desaconselha tag móvel; as *Considerations for customizing images* têm seis itens e nenhum sobre imutabilidade. Acusaria a configuração que a AWS ensina. O `-latest` de **release label** é outro objeto e não entra no veto (§8) |
 
 **Quatro sobrevivem, uma é vetada por fonte que recomenda o contrário, e a (b)
 sobrevive numa forma que o runtime irmão proibia.** Nenhuma das quatro entra com

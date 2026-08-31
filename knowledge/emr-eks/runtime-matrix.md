@@ -27,8 +27,12 @@ podem fazer (§6).
 
 ## 1. Onde a fonte publica, e em que formato
 
-Não existe página-resumo com tabela de componentes, como as *Application
-versions* de EMR on EC2. O que existe é **uma página por família de release**, e
+Não existe página-resumo com tabela de componentes. A página-índice do EKS
+(`https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-releases.html`,
+lida em 2026-08-31) traz só prosa mais uma lista *Topics* de links por release — nenhuma
+tabela. Confronte com as duas *Application versions* de EMR on EC2
+(`.../ReleaseGuide/emr-release-app-versions-7.x.html` e `-6.x.html`), que são exatamente
+a tabela que o EKS não tem. O que existe é **uma página por família de release**, e
 o dado mora numa linha de release note:
 
 > *"**Supported applications** ‐ AWS SDK for Java 2.42.12 and 1.12.797, Apache
@@ -45,13 +49,26 @@ O que cada coluna tem, e com que confiança:
 
 | Componente | Publicado? | Formato | Confiança |
 |---|---|---|---|
-| Spark | **sim**, em 34 de 34 | `{comunidade}-amzn-{N}`, com **duas exceções** (§3) | **alta** — lido verbatim |
-| Iceberg | **sim**, em 22 de 34 | `{versão}-amzn-{N}`, com exceções antigas sem sufixo | **alta** onde existe; **ausente**, não zero, onde não existe |
-| Hudi | sim, em 24 de 34 | idem | alta |
-| Delta | sim, em 16 de 34 | idem | alta |
+| Spark | **sim**, em 34 de 34 | `{comunidade}-amzn-{N}`, com **duas exceções** (§2) | **alta** — lido verbatim |
+| Iceberg | **sim**, em 25 de 34 | `{versão}-amzn-{N}`, com exceções antigas sem sufixo | **alta** onde existe; **ausente**, não zero, onde não existe |
+| Hudi | sim, em 26 de 34 | idem | alta |
+| Delta | sim, em 22 de 34 | idem | alta |
 | Spark RAPIDS, Flink, Flink Operator, JEG, AWS SDK | sim, parcial | variado | alta, fora de escopo do motor |
 | **Hadoop** | **NÃO, em 34 de 34** | — | **não publicado** (§4) |
 | **Python** | **quase não** — 2 de 34 | prosa, não tabela | **não publicado por release** (§4) |
+
+**As contagens acima são das células das §2, §3 e da tabela de Hudi/Delta, e são
+conferíveis linha a linha.** Quem não publica o quê:
+
+| Componente | Releases em que a fonte **não** publica |
+|---|---|
+| Iceberg (9) | `emr-6.5.0`, `emr-6.4.0`, `emr-6.3.0`, `emr-6.2.0` e as cinco de 5.x |
+| Hudi (8) | `emr-6.5.0`, `emr-6.4.0`, `emr-6.3.0`, `emr-6.2.0`, `emr-5.36.0`, `emr-5.34.0`, `emr-5.33.0`, `emr-5.32.0` |
+| Delta (12) | as oito acima, mais `emr-6.8.0`, `emr-6.7.0`, `emr-6.6.0` e `emr-5.35.0` |
+
+Ausente aqui significa **a linha *Supported applications* daquela release não nomeia o
+componente**. Não significa que ele não exista na imagem — significa que a fonte não
+o declara, e o extrator omite a chave.
 
 Confronte com a de EC2, que publica Hadoop e Python por release em tabela, e com
 a do Serverless, que publica só Spark, Hive e Tez. As três fontes têm **três
@@ -282,14 +299,41 @@ a lista de labels não é.
 ## Fontes
 
 - Amazon EMR on EKS releases (índice, o piso 5.32.0/6.2.0 e a forma declarada do release label). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-releases.html (retrieved 2026-08-31)
-- AWS runtime for Apache Spark (emr-spark-8.0.0) on EKS. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-spark-8.0.0.html (retrieved 2026-08-31)
-- Amazon EMR on EKS 7.13.0 releases (a única página numerada que declara Python). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.13.0.html (retrieved 2026-08-31)
-- Amazon EMR on EKS 7.7.0 releases (Iceberg excluído das imagens Java 8). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.7.0.html (retrieved 2026-08-31)
-- Amazon EMR on EKS 7.0.0 releases (Java 17 como default, e Amazon Linux 2023). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.0.0.html (retrieved 2026-08-31)
-- Amazon EMR on EKS 6.15.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.15.0.html (retrieved 2026-08-31)
-- Amazon EMR on EKS 6.2.0 releases (a release mais antiga da série 6.x). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.2.0.html (retrieved 2026-08-31)
-- Amazon EMR on EKS 5.32.0 releases (a release mais antiga que existe). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.32.0.html (retrieved 2026-08-31)
-- As demais páginas por família de release das §2 e §3, lidas uma a uma em 2026-08-31, no padrão `https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-<X.Y.Z>.html`, onde `<X.Y.Z>` é a release com pontos: `7.12.0`, `7.11.0`, `7.10.0`, `7.9.0`, `7.8.0`, `7.6.0`, `7.5.0`, `7.4.0`, `7.3.0`, `7.2.0`, `7.1.0`, `6.14.0`, `6.13.0`, `6.12.0`, `6.11.0`, `6.10.0`, `6.9.0`, `6.8.0`, `6.7.0`, `6.6.0`, `6.5.0`, `6.4.0`, `6.3.0`, `5.36.0`, `5.35.0`, `5.34.0`, `5.33.0`. Cada uma foi lida pela linha *Supported applications*.
+- **As 34 páginas por família de release**, lidas uma a uma em 2026-08-31 pela linha *Supported applications*. Elas são a fonte de **todas** as células das §2, §3 e da tabela de Hudi/Delta, e por isso estão listadas uma a uma — são o que a §7 mede como tendo o **maior** drift do documento, e descrevê-las por padrão de URL as deixaria fora da vigilância de frescor:
+  - AWS runtime for Apache Spark (emr-spark-8.0.0) on EKS (Spark 4.0.2-amzn-0; declara Python 3.11 default). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-spark-8.0.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.13.0 releases (a única página numerada que declara Python). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.13.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.12.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.12.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.11.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.11.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.10.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.10.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.9.0 releases (Spark **sem** sufixo de fork — divergência da §2). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.9.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.8.0 releases (Spark **sem** sufixo de fork — divergência da §2). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.8.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.7.0 releases (Iceberg excluído das imagens Java 8; diverge do EC2 em Spark **e** Iceberg). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.7.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.6.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.6.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.5.0 releases (Iceberg diverge do EC2). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.5.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.4.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.4.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.3.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.3.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.2.0 releases (Spark diverge do EC2). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.2.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.1.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.1.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 7.0.0 releases (Java 17 como default, e Amazon Linux 2023). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.0.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.15.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.15.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.14.0 releases (Iceberg diverge do EC2). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.14.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.13.0 releases (Iceberg diverge do EC2). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.13.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.12.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.12.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.11.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.11.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.10.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.10.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.9.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.9.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.8.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.8.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.7.0 releases (Iceberg sem sufixo, e Hudi em dois segmentos: `0.11-amzn-0`). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.7.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.6.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.6.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.5.0 releases (**não publica Iceberg**, enquanto o EC2 publica `0.12.0`). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.5.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.4.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.4.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.3.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.3.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 6.2.0 releases (piso da série 6.x). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.2.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 5.36.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.36.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 5.35.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.35.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 5.34.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.34.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 5.33.0 releases. https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.33.0.html (retrieved 2026-08-31)
+  - Amazon EMR on EKS 5.32.0 releases (a release mais antiga que existe). https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.32.0.html (retrieved 2026-08-31)
 - Matriz de runtime Amazon EMR on EC2 (a coluna *EC2* das §2 e §3 vem daqui, não de coleta nova). [`../emr/runtime-matrix.md`](../emr/runtime-matrix.md)
 
 ### O que estas fontes NÃO sustentam
