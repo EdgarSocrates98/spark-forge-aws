@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "133c8da9f502ca3a09d2953b5c6dfa16a38f2ff4c6ca03247234217bba5e79a9"
+      "sha256": "b05cf773cb816e756ef2f6afdda1e1b11122c457d6aef4e34a2acbb5c8730ced"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -77,6 +77,16 @@
       "path": "knowledge/dq/validation-frameworks.md",
       "title": "validation-frameworks",
       "sha256": "f9eb3880b318a2bca3c911ab799338b3928b29ac086df2608979e2df09771946"
+    },
+    {
+      "path": "knowledge/emr-eks/job-run-configuration.md",
+      "title": "job-run-configuration",
+      "sha256": "d2c85afbaccaea1426a46c14d9c98a15681c4c8425360dbff37cac4cf0222738"
+    },
+    {
+      "path": "knowledge/emr-eks/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "5e7e488cd87cf7e2ea2ec82bac67d2adb4ee420db168d83fee8d90b4e7c1d8f7"
     },
     {
       "path": "knowledge/emr-serverless/application-configuration.md",

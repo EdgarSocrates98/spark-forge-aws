@@ -233,6 +233,126 @@
       ],
       "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
     },
+    "https://docs.aws.amazon.com/cli/latest/reference/emr-containers/start-job-run.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ConfigurationOverrides.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ContainerProvider.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeJobRun.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_DescribeVirtualCluster.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_EksInfo.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_JobDriver.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_JobRun.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_ManagedLogs.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_MonitoringConfiguration.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_VirtualCluster.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Application.html": {
       "docs": [
         "knowledge/emr-serverless/application-configuration.md"
@@ -479,6 +599,197 @@
       ],
       "rules": []
     },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/data-protection.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/docker-custom-images-considerations.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/docker-custom-images-tag.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/docker-custom-images.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.32.0.html": {
+      "docs": [
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.15.0.html": {
+      "docs": [
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.2.0.html": {
+      "docs": [
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.0.0.html": {
+      "docs": [
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.13.0.html": {
+      "docs": [
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.7.0.html": {
+      "docs": [
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-CLI.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-cloudwatch.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-s3.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-submit.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-log-rotation.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-releases.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md",
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-spark-8.0.0.html": {
+      "docs": [
+        "knowledge/emr-eks/runtime-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security-best-practices.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/security_iam_fgac-logging-kms.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-auto-termination-policy.html": {
       "docs": [
         "knowledge/emr/cluster-configuration.md"
@@ -683,11 +994,13 @@
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/storing-sensitive-data.html": {
       "docs": [
+        "knowledge/emr-eks/job-run-configuration.md",
         "knowledge/emr/cluster-configuration.md"
       ],
       "pinned": false,
       "retrieved": [
-        "2026-08-01"
+        "2026-08-01",
+        "2026-08-31"
       ],
       "rules": [
         "SF-EMR-002"
@@ -935,6 +1248,16 @@
         "SF-PLAN-002"
       ],
       "sha256": "e426dc396a6cb32e557e8600437593c20ff8ee5cb024dbee0de7a99385816777"
+    },
+    "https://docs.aws.amazon.com/secretsmanager/latest/userguide/integrating-emr.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
     },
     "https://docs.devin.ai/cli/changelog/stable.md": {
       "docs": [
@@ -1718,14 +2041,27 @@
       "sha256": "0b640a7519e75ed47c9d3fc074ae7cb109a62420ff0a581302b2ca00c676c627"
     },
     "https://spark.apache.org/docs/latest/configuration.html": {
-      "docs": [],
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
       "pinned": false,
       "retrieved": [
-        "2026-08-29"
+        "2026-08-29",
+        "2026-08-31"
       ],
       "rules": [
         "SF-TIMEOUT-002"
       ]
+    },
+    "https://spark.apache.org/docs/latest/running-on-kubernetes.html": {
+      "docs": [
+        "knowledge/emr-eks/job-run-configuration.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-08-31"
+      ],
+      "rules": []
     },
     "https://spark.apache.org/docs/latest/sql-performance-tuning.html": {
       "checked_at": "2026-07-31",
