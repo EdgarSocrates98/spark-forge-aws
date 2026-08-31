@@ -165,6 +165,148 @@ def _unresolved(path: str, reason: str, provenance: dict[str, Any], **extra: Any
 
 
 # --------------------------------------------------------------------------- #
+# facts de conteudo -- Task 3 (virtual cluster e job run)
+# --------------------------------------------------------------------------- #
+
+
+def _release_numbers(label: str | None) -> tuple[int | None, int | None]:
+    """Extrai (major, minor) de um release label no formato `emr-<major>.<minor>.<patch>`.
+
+    O par sai como MEASURE, nao attr: uma regra do catalogo pergunta "serie
+    7.x?" com um operador numerico, e o avaliador de expressoes do catalogo
+    nao tem comparacao de string -- so measure sustenta esse tipo de condicao.
+    Isso tambem evita depender de deteccao de runtime: o proprio payload prova
+    a release. Formas fora do padrao (`emr-spark-8.0.0-latest`,
+    `notebook-spark/emr-7.13.0-latest`, `custom-build`) devolvem `(None, None)`
+    em vez de inventar um par. O sufixo, quando existe (`-latest`, `-java8`,
+    `-spark-rapids-java8-latest`), NUNCA entra no par: ele nomeia o canal de
+    distribuicao ou a variante de imagem, nao a versao.
+    """
+    if label is None:
+        return None, None
+    match = _RELEASE_RE.match(label)
+    if match is None:
+        return None, None
+    return int(match.group(1)), int(match.group(2))
+
+
+def _virtual_cluster_fact(raw: Any, path: str, provenance: dict[str, Any]) -> list[Fact]:
+    """Constroi o fact `emrc.virtual_cluster` a partir do bloco `virtualCluster`.
+
+    Bloco ausente (`None`) devolve lista vazia -- e isso NAO e erro: as duas
+    respostas (`DescribeVirtualCluster` e `DescribeJobRun`) vem de chamadas
+    separadas, e o operador pode ter trazido so uma. Bloco presente mas de
+    tipo errado vira `emrc.unresolved` com `section="virtualCluster"`. `id`
+    ausente vira `emrc.unresolved` com reason `"missing_virtual_cluster_id"`,
+    porque e a chave de ancoragem do fact.
+    """
+    if raw is None:
+        return []
+    if not isinstance(raw, dict):
+        return [_unresolved(path, "malformed_json", provenance, section="virtualCluster")]
+
+    virtual_cluster_id = _as_str(raw.get("id"))
+    if virtual_cluster_id is None:
+        return [_unresolved(path, "missing_virtual_cluster_id", provenance)]
+
+    attrs: dict[str, Any] = {"virtual_cluster_id": virtual_cluster_id}
+
+    name = _as_str(raw.get("name"))
+    if name is not None:
+        attrs["name"] = name
+
+    state = _as_str(raw.get("state"))
+    if state is not None:
+        attrs["state"] = state
+
+    # Guarda de tipo em cada nivel de aninhamento: `containerProvider`,
+    # `info` e `eksInfo` podem vir com o tipo errado (ou ausentes) sem que
+    # isso derrube a leitura das chaves de nivel mais alto.
+    container_provider = raw.get("containerProvider")
+    if isinstance(container_provider, dict):
+        provider_type = _as_str(container_provider.get("type"))
+        if provider_type is not None:
+            attrs["container_provider_type"] = provider_type
+
+        eks_cluster_name = _as_str(container_provider.get("id"))
+        if eks_cluster_name is not None:
+            attrs["eks_cluster_name"] = eks_cluster_name
+
+        info = container_provider.get("info")
+        if isinstance(info, dict):
+            eks_info = info.get("eksInfo")
+            if isinstance(eks_info, dict):
+                namespace = _as_str(eks_info.get("namespace"))
+                if namespace is not None:
+                    attrs["namespace"] = namespace
+
+    return [
+        Fact(
+            kind="emrc.virtual_cluster",
+            subject=_file_subject(path),
+            attrs=attrs,
+            provenance=provenance,
+        )
+    ]
+
+
+def _job_run_fact(
+    raw: dict[str, Any], job_run_id: str, path: str, provenance: dict[str, Any]
+) -> Fact:
+    """Constroi o fact `emrc.job_run` a partir do bloco `jobRun`.
+
+    `job_run_id` e obrigatorio (ja validado por quem chama). As demais chaves
+    de `attrs` e as duas measures de release entram SO quando o valor
+    correspondente existe e e legivel -- chave ausente do payload fica
+    OMITIDA do fact, nunca escrita como `None`: o avaliador de regras rejeita
+    caminho ausente, e e assim que o motor diz "nao sei". Escrever `None`
+    diria "sei que nao ha", que e uma afirmacao diferente e mais forte do que
+    o payload sustenta.
+    """
+    attrs: dict[str, Any] = {"job_run_id": job_run_id}
+
+    name = _as_str(raw.get("name"))
+    if name is not None:
+        attrs["name"] = name
+
+    virtual_cluster_id = _as_str(raw.get("virtualClusterId"))
+    if virtual_cluster_id is not None:
+        attrs["virtual_cluster_id"] = virtual_cluster_id
+
+    state = _as_str(raw.get("state"))
+    if state is not None:
+        attrs["state"] = state
+
+    release_label = _as_str(raw.get("releaseLabel"))
+    if release_label is not None:
+        attrs["release_label"] = release_label
+
+    execution_role_arn = _as_str(raw.get("executionRoleArn"))
+    if execution_role_arn is not None:
+        attrs["execution_role_arn"] = execution_role_arn
+
+    failure_reason = _as_str(raw.get("failureReason"))
+    if failure_reason is not None:
+        attrs["failure_reason"] = failure_reason
+
+    measures: dict[str, Any] = {}
+    release_major, release_minor = _release_numbers(release_label)
+    # So entra measure quando os DOIS numeros existem -- release fora da
+    # forma nao produz measure nenhuma, em vez de inventar um par parcial.
+    if release_major is not None and release_minor is not None:
+        measures["release_major"] = release_major
+        measures["release_minor"] = release_minor
+
+    return Fact(
+        kind="emrc.job_run",
+        subject=_file_subject(path),
+        attrs=attrs,
+        measures=measures,
+        provenance=provenance,
+    )
+
+
+# --------------------------------------------------------------------------- #
 # entrada
 # --------------------------------------------------------------------------- #
 
@@ -207,9 +349,11 @@ def extract_emr_eks(payload: Any, path: str, artifact_sha256: str = "") -> list[
         facts.append(_unresolved(path, "missing_job_run_id", provenance))
         return _finish(facts, path, provenance)
 
-    # Os facts de conteudo (virtual cluster, job run, spark submit parameters,
-    # configuration, monitoring, pod template) entram aqui nas Tasks 3 a 6.
-    # Ate la, um payload com `jobRun.id` legivel produz so a sentinela.
+    # Task 3: virtual cluster e job run. As Tasks 4 a 6 acrescentam os quatro
+    # kinds restantes (spark_submit_parameters, configuration, monitoring,
+    # pod_template.unresolved) neste mesmo ponto.
+    facts.extend(_virtual_cluster_fact(payload.get("virtualCluster"), path, provenance))
+    facts.append(_job_run_fact(raw, job_run_id, path, provenance))
 
     return _finish(facts, path, provenance)
 

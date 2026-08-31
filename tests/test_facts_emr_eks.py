@@ -57,3 +57,111 @@ def test_json_invalido_vira_malformed_json(tmp_path: Path):
     alvo = tmp_path / "quebrado.json"
     alvo.write_text("{isto nao e json", encoding="utf-8")
     assert _reasons(extract_emr_eks_path(alvo, repo_root=tmp_path)) == ["malformed_json"]
+
+
+_PAYLOAD_COMPLETO = {
+    "virtualCluster": {
+        "id": "0abc",
+        "name": "analytics",
+        "state": "RUNNING",
+        "containerProvider": {
+            "type": "EKS",
+            "id": "meu-cluster-eks",
+            "info": {"eksInfo": {"namespace": "spark"}},
+        },
+    },
+    "jobRun": {
+        "id": "0000000abc",
+        "name": "etl-diario",
+        "virtualClusterId": "0abc",
+        "state": "COMPLETED",
+        "releaseLabel": "emr-7.5.0-latest",
+        "executionRoleArn": "arn:aws:iam::111122223333:role/EMRContainers-JobRole",
+    },
+}
+
+
+def _um(facts: list, kind: str):
+    encontrados = [f for f in facts if f.kind == kind]
+    assert len(encontrados) == 1, f"esperado 1 {kind}, achei {len(encontrados)}"
+    return encontrados[0]
+
+
+def test_virtual_cluster_carrega_eks_e_namespace():
+    fato = _um(extract_emr_eks(_PAYLOAD_COMPLETO, "x.json"), "emrc.virtual_cluster")
+    assert fato.attrs["virtual_cluster_id"] == "0abc"
+    assert fato.attrs["state"] == "RUNNING"
+    assert fato.attrs["container_provider_type"] == "EKS"
+    assert fato.attrs["eks_cluster_name"] == "meu-cluster-eks"
+    assert fato.attrs["namespace"] == "spark"
+
+
+def test_job_run_carrega_release_e_role():
+    fato = _um(extract_emr_eks(_PAYLOAD_COMPLETO, "x.json"), "emrc.job_run")
+    assert fato.attrs["job_run_id"] == "0000000abc"
+    assert fato.attrs["release_label"] == "emr-7.5.0-latest"
+    assert fato.attrs["execution_role_arn"].endswith("EMRContainers-JobRole")
+    assert fato.measures["release_major"] == 7
+    assert fato.measures["release_minor"] == 5
+
+
+def test_variante_de_imagem_nao_impede_a_leitura_da_serie():
+    # O EKS publica sufixos que o Serverless nao tem, e ate TRES segmentos:
+    # `emr-7.7.0-spark-rapids-java8-latest`. Uma regex que rejeitasse o sufixo
+    # deixaria a maior parte dos job runs de EKS sem serie.
+    for label, esperado in [
+        ("emr-6.15.0", (6, 15)),
+        ("emr-7.7.0-java8-latest", (7, 7)),
+        ("emr-7.7.0-spark-rapids-java8-latest", (7, 7)),
+    ]:
+        payload = json.loads(json.dumps(_PAYLOAD_COMPLETO))
+        payload["jobRun"]["releaseLabel"] = label
+        fato = _um(extract_emr_eks(payload, "x.json"), "emrc.job_run")
+        assert (fato.measures["release_major"], fato.measures["release_minor"]) == esperado
+
+
+def test_release_fora_da_forma_omite_a_serie_em_vez_de_inventar():
+    # `emr-spark-8.0.0-latest` (o runtime AWS para Apache Spark) e
+    # `notebook-spark/emr-7.13.0-latest` NAO sao `emr-<major>.<minor>`, e
+    # forcar um par deles seria inventar versao.
+    for label in ["custom-build", "emr-spark-8.0.0-latest", "notebook-spark/emr-7.13.0-latest"]:
+        payload = json.loads(json.dumps(_PAYLOAD_COMPLETO))
+        payload["jobRun"]["releaseLabel"] = label
+        fato = _um(extract_emr_eks(payload, "x.json"), "emrc.job_run")
+        assert "release_major" not in fato.measures
+        assert fato.attrs["release_label"] == label
+
+
+def test_campo_ausente_e_chave_OMITIDA_e_nao_valor_nulo():
+    # `engine._where_matches` rejeita caminho ausente, e e assim que o motor diz
+    # "nao sei". Escrever None diria "sei que nao ha".
+    payload = {"jobRun": {"id": "0000000abc"}}
+    fato = _um(extract_emr_eks(payload, "x.json"), "emrc.job_run")
+    assert fato.attrs == {"job_run_id": "0000000abc"}
+    assert fato.measures == {}
+
+
+def test_virtual_cluster_ausente_nao_impede_o_job_run():
+    # Os dois artefatos vem de chamadas separadas, e o operador pode trazer so
+    # um. O job run sozinho ainda sustenta regra.
+    payload = {"jobRun": _PAYLOAD_COMPLETO["jobRun"]}
+    facts = extract_emr_eks(payload, "x.json")
+    assert _kinds(facts) >= {"emrc.job_run", "emrc.analyzed"}
+    assert "emrc.virtual_cluster" not in _kinds(facts)
+    assert _reasons(facts) == []
+
+
+def test_virtual_cluster_sem_id_vira_unresolved_e_nao_derruba_o_job_run():
+    payload = json.loads(json.dumps(_PAYLOAD_COMPLETO))
+    del payload["virtualCluster"]["id"]
+    facts = extract_emr_eks(payload, "x.json")
+    assert _reasons(facts) == ["missing_virtual_cluster_id"]
+    assert "emrc.job_run" in _kinds(facts)
+
+
+def test_a_sentinela_conta_o_que_saiu():
+    facts = extract_emr_eks(_PAYLOAD_COMPLETO, "x.json")
+    sentinela = _um(facts, "emrc.analyzed")
+    assert sentinela.measures["virtual_cluster_count"] == 1
+    assert sentinela.measures["job_run_count"] == 1
+    assert sentinela.measures["unresolved_count"] == 0
