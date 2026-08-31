@@ -287,9 +287,21 @@ EMITTED_KINDS = frozenset(
     }
 )
 
-# `emr-7.5.0-latest` -> (7, 5). O sufixo e opcional e NAO entra no par: ele
-# nomeia o canal (`-latest`), nao a versao.
-_RELEASE_RE = re.compile(r"^emr-(\d+)\.(\d+)(?:\.\d+)?(?:-[a-z0-9]+)?$", re.IGNORECASE)
+# ATENCAO -- a regex abaixo esta ERRADA e foi corrigida na execucao. Ver DV-7 da
+# spec. Ela nao casa `emr-7.7.0-java8-latest` (DOIS segmentos de sufixo) nem
+# `emr-7.7.0-spark-rapids-java8-latest` (tres). As seis formas medidas pela
+# Task 1 que a regex precisa tratar, e o que ela deve fazer com cada uma:
+#
+#   emr-7.5.0-latest                      casa -> (7, 5)
+#   emr-7.7.0-java8-latest                casa -> (7, 7)
+#   emr-7.7.0-spark-rapids-java8-latest   casa -> (7, 7)
+#   emr-6.15.0                            casa -> (6, 15)
+#   emr-spark-8.0.0-latest                REJEITA
+#   notebook-spark/emr-7.13.0-latest      REJEITA
+#
+# O sufixo NAO entra no par: ele nomeia o canal (`-latest`) ou a variante
+# (`-java8`), nao a versao.
+_RELEASE_RE = re.compile(r"^emr-(\d+)\.(\d+)(?:\.\d+)?(?:-[a-z0-9-]+)?$", re.IGNORECASE)
 
 
 def _file_subject(path: str, line: int = 0) -> dict[str, Any]:
@@ -1307,13 +1319,23 @@ proves: >
   esconde segredo, nao pede pod template e nao contradiz a si mesma. Se
   qualquer regra SF-EMRK disparar aqui, ela acusa configuracao correta -- que
   e o pior tipo de defeito de regra segundo rules/catalog/README.md.
-# ATENCAO: o valor abaixo depende da Task 1. Se a Task 1 mediu que a AWS PUBLICA
-# matriz de release para EMR on EKS, preencha os eixos que a matriz sustenta e
-# nada alem deles. Se mediu que NAO publica, deixe `{}` e escreva aqui a mesma
-# razao que knowledge/emr-eks/runtime-matrix.md registrou -- no molde do que a
-# Fase 5d escreveu para o Serverless. Em nenhum dos dois casos derive da
-# EMR_MATRIX de EMR on EC2.
-runtime: {}
+# RESOLVIDO pela Task 1 (commit c724c80) -- ver DV-1 e DV-2 da spec.
+# A AWS PUBLICA matriz de release para EMR on EKS, na linha `Supported
+# applications` de cada release note. Preencha `spark` a partir dela.
+# NAO preencha `iceberg`: a linha e publicada por FAMILIA e nao por variante, e
+# `emr-7.7.0-java8-latest` nao tem Iceberg nenhum -- derivar do label erraria
+# exatamente nas imagens Java 8.
+# NAO preencha `python` nem `hadoop`: 2 de 34 paginas declaram Python (em prosa,
+# nao em tabela) e 0 de 34 declaram Hadoop.
+# A EMR_MATRIX de EMR on EC2 continua proibida, e agora por razao mais forte que
+# a da D-4 original: ela nao e inaplicavel por falta de fonte como no Serverless
+# -- ela e MEDIDAMENTE ERRADA aqui (Iceberg diverge em 6 de 26 releases, Spark em
+# 4; `emr-6.5.0` no EKS nao publica Iceberg e no EC2 publica 0.12.0).
+# Preencha `spark` com o valor que a §2 de knowledge/emr-eks/runtime-matrix.md
+# publica PARA A RELEASE DESTA FIXTURE (`emr-7.5.0-latest`), copiado da tabela --
+# nao de memoria, e nao da coluna de EC2, que e a coluna ao lado e diverge.
+runtime:
+  spark: "<da §2 de knowledge/emr-eks/runtime-matrix.md, linha emr-7.5.0>"
 expects_kinds:
   - emrc.analyzed
   - emrc.configuration
@@ -1806,27 +1828,48 @@ git commit -m "feat(adapters): analyze e collect de EMR on EKS em CLI e MCP"
 
 Para cada candidata da §5 da spec, decida e **escreva a decisão**:
 
-| Candidata | Entra se |
-|---|---|
-| segredo em claro em `applicationConfiguration` ou em `--conf` | sempre — o detector unificado da fase J0 já existe e pega por valor. É o **terceiro exemplar** do mesmo julgamento (`SF-EMRS-002`, `SF-EMR-002`); anote isso no comentário da regra (D-6) |
-| nenhum destino de log em `monitoringConfiguration` | sempre — o shape da API sustenta. **Segundo exemplar** de `SF-EMRS-003`; o comentário precisa dizer por que a leitura difere (sem armazenamento gerenciado, ausência já é zero) |
-| `persistentAppUI` desligado | só se a Task 1 achou fonte que declare a consequência |
-| `dynamicAllocation` sem `shuffleTracking.enabled` | só se a Task 1 achou fonte que **nomeie** o defeito |
-| imagem em tag mutável | só se a Task 1 achou fonte |
+**A triagem já foi feita pela Task 1** (commit `c724c80`). O resultado está nas
+DV-3, DV-4 e DV-5 da spec, e é este — leia a DV correspondente antes de escrever
+cada regra, porque a ressalva de cada uma muda o texto dela:
 
-Candidata que não entra vira comentário de veto no cabeçalho de `rules/catalog/emr-eks.yaml`, no molde dos vetos `V-GR-1`/`V-GR-2` no topo de `rules/catalog/graph.yaml`: o que falta, e a medida que destravaria.
+| Candidata | Veredito medido | Ressalva que entra na regra |
+|---|---|---|
+| segredo em claro em `applicationConfiguration` ou em `--conf` | **entra**, com fonte mais fraca que a das áreas irmãs (DV-5) | o apoio é o *Response Syntax* de `DescribeJobRun`, que devolve `properties` sem redação — **não** o *Warning* da ReleaseGuide, que é de EC2. **Não recomendar `EMR.secret@` como remédio**: não há fonte que o declare disponível aqui. Terceiro exemplar do julgamento (`SF-EMRS-002`, `SF-EMR-002`) — anote a triplicação (D-6) |
+| nenhum destino de log em `monitoringConfiguration` | **entra, e mais forte que no Serverless** (DV-4) | não existe armazenamento gerenciado no EKS — `managedLogs.allowAWSToRetainLogs` cobre só *"system namespace logs when running a job using Native FGAC"*, sem default nem retenção publicados. Há `must` literal em duas páginas: *"you must configure your jobs to send log information to Amazon S3, Amazon CloudWatch Logs, or both."* A ausência do bloco **já é** zero destino |
+| `persistentAppUI` desligado | **entra, só com `DISABLED` explícito** (DV-5) | o default não é publicado em lugar nenhum — API, CLI nem guia. Presumi-lo seria materializar default sem fonte |
+| `dynamicAllocation` sem `shuffleTracking.enabled` | **entra como relação entre propriedades** (DV-5) | o requisito é nomeado por **composição de duas páginas**, e nenhuma o chama de defeito: `configuration.html` declara a disjunção, `running-on-kubernetes.html` a fecha (*"since Kubernetes doesn't support an external shuffle service at this time"*) — mas dentro de *Stage Level Scheduling Overview*. §16 do `CLAUDE.md`: relação entre duas propriedades é conferível, valor isolado não é. A composição fica escrita na regra |
+| imagem em tag mutável | **VETADA** (DV-3) | não por falta de fonte — **por fonte que diz o oposto**. O exemplo oficial é `.../spark/emr-7.13.0:latest`, `-latest` é recomendado *"to ensure that your Amazon EMR version always includes the latest security updates"*, e as *Considerations for customizing images* têm seis itens e nenhum sobre imutabilidade de tag. A regra acusaria o que a AWS ensina |
+
+A candidata vetada vira comentário de veto no cabeçalho de
+`rules/catalog/emr-eks.yaml`, no molde dos vetos `V-GR-1`/`V-GR-2` no topo de
+`rules/catalog/graph.yaml`: o que falta, e a medida que destravaria. No caso da
+(e), o que "destravaria" não é medida nenhuma — é a AWS mudar de recomendação, e
+o veto precisa dizer isso.
+
+**Antes de escrever a regra (d)**, releia a página de configuração do Spark **na
+versão fixada** que o repositório vigia (`docs/3.5.6/...`, `docs/4.1.1/...`), não
+em `docs/latest/`. A Task 1 citou de `latest`, e o repositório fixa versão nas
+fontes de Spark que sustentam regra.
 
 - [ ] **Step 2: Escrever o cabeçalho do catálogo**
 
 `rules/catalog/emr-eks.yaml` começa com o bloco de metadados no formato que `rules/catalog/emr-serverless.yaml` usa (leia as linhas 1–242 dele antes de escrever), com `area: SF-EMRK`, os vetos do Step 1, e este comentário literal:
 
 ```yaml
-# `runtime_scope` de TODA regra desta area sai da Task 1, e nao ha terceira opcao.
-# Se `knowledge/emr-eks/runtime-matrix.md` registrou que a AWS publica matriz,
-# use os eixos que ela sustenta. Se registrou que NAO publica, `{}` em todas --
-# restricao de versao sobre corpus sem versao deixa o golden verde por SKIP, que
-# e pior que ficar vermelho (precedente: as seis regras SF-EMRS).
-# A EMR_MATRIX de EMR on EC2 nao entra aqui em hipotese nenhuma.
+# `runtime_scope` -- RESOLVIDO pela Task 1 (commit c724c80), ver DV-1 e DV-2.
+# A AWS PUBLICA matriz de release para EMR on EKS. Regra desta area PODE
+# restringir por versao de `spark`.
+# NAO PODE restringir por `iceberg`: a linha `Supported applications` e publicada
+# por FAMILIA e nao por variante, e `emr-7.7.0-java8-latest` nao tem Iceberg
+# ("Iceberg is excluded from the following Java 8 images"). Derivar `iceberg` do
+# release label erraria exatamente nas imagens Java 8.
+# NAO PODE restringir por `python` nem `hadoop`: 2 de 34 paginas declaram Python,
+# em prosa e nao em tabela; 0 de 34 declaram Hadoop.
+# A EMR_MATRIX de EMR on EC2 nao entra aqui em hipotese nenhuma, e a razao ficou
+# MAIS forte que a da D-4 original: ela nao e inaplicavel por falta de fonte como
+# no Serverless -- ela e MEDIDAMENTE ERRADA aqui. Iceberg diverge em 6 de 26
+# releases comparaveis e Spark em 4; `emr-7.7.0` roda Iceberg 1.6.1-amzn-2 no EKS
+# e 1.7.1-amzn-0 no EC2, que e MINOR diferente.
 ```
 
 - [ ] **Step 3: Escrever cada regra que passou na triagem**

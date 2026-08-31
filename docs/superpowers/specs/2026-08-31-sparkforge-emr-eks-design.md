@@ -292,5 +292,110 @@ sugere e sem posição de fila comprometida:
 
 ## 11. Desvios
 
-Vazio. Preenchido quando a implementação medir algo que torne o texto acima
-errado; a correção mora aqui, não na reescrita do que está acima.
+### DV-1 — a D-4 tinha duas saídas, e a medida achou uma terceira, pior
+
+**Medido na Task 1** (commit `c724c80`, `knowledge/emr-eks/runtime-matrix.md`),
+lendo o índice de releases do EMR on EKS e as 34 páginas por família, uma a uma,
+em 2026-08-31.
+
+A D-4 previa duas saídas: matriz publicada, ou matriz não publicada como no
+Serverless. **A AWS publica** — na linha `Supported applications` de cada release
+note, cobrindo Spark, Iceberg, Hudi e Delta. Não cobre Hadoop (0 de 34 páginas)
+nem Python (2 de 34, e em prosa, não em tabela).
+
+O que a D-4 não previa é o que a comparação achou: **onde a matriz existe, ela
+diverge da de EC2 em células reais.** Em 26 releases comparáveis, Spark diverge
+em 4 e Iceberg em 6:
+
+| Release | Divergência |
+|---|---|
+| `emr-7.7.0` | Iceberg `1.6.1-amzn-2` no EKS contra `1.7.1-amzn-0` no EC2 — **minor diferente**, o que muda a aplicabilidade de qualquer `SF-ICE-*` com range |
+| `emr-6.5.0` | o EKS **não publica Iceberg nenhum**; o EC2 publica `0.12.0` |
+| `emr-7.7.0`, `emr-7.2.0` | patch do fork Spark diferente (`-amzn-0` contra `-amzn-1`, e o inverso) |
+| `emr-7.9.0`, `emr-7.8.0` | o EKS omite o sufixo `-amzn-N` que as vizinhas trazem |
+
+A proibição da D-4 fica **mais forte**, não mais fraca, e a razão muda: a
+`EMR_MATRIX` de EC2 não é inaplicável ao EKS por falta de fonte, como acontece no
+Serverless. Ela é **medidamente errada**.
+
+### DV-2 — `runtime_scope` pode carregar `spark`, e não pode carregar `iceberg`
+
+Corolário da DV-1, e corrige a §D-4 e a Task 10 do plano, que assumiam o
+precedente do Serverless (`{}` em todas).
+
+Regra desta área **pode** restringir por versão de Spark. **Não pode** restringir
+por Iceberg: `emr-7.7.0-java8-latest` não tem Iceberg (*"Iceberg is excluded from
+the following Java 8 images"*), a linha `Supported applications` é publicada **por
+família e não por variante**, e não existe tabela por variante. Derivar `iceberg`
+do release label erraria exatamente nas imagens Java 8.
+
+### DV-3 — a candidata (e) é vetada por fonte que recomenda o contrário
+
+A §5 listava "imagem de container em tag mutável" como candidata sem análogo. A
+Task 1 mediu que o exemplo oficial de URI de imagem base é
+`.../spark/emr-7.13.0:latest`, e que o release label `-latest` é **recomendado**
+*"to ensure that your Amazon EMR version always includes the latest security
+updates"*. As *Considerations for customizing images* têm seis itens e nenhum
+sobre imutabilidade de tag.
+
+A regra acusaria a configuração que a AWS ensina. **Vetada**, e o veto é do tipo
+mais caro de descobrir depois: não é falta de fonte, é fonte que diz o oposto.
+
+### DV-4 — a candidata (b) volta à forma que o Serverless obrigou a abandonar
+
+A §5 registrava "nenhum destino de log" como **segundo exemplar** de
+`SF-EMRS-003`, com a leitura enfraquecida pelo armazenamento gerenciado.
+
+A Task 1 mediu que **não existe** equivalente no EMR on EKS:
+`managedLogs.allowAWSToRetainLogs` cobre só *"system namespace logs when running
+a job using Native FGAC"*, sem default declarado e sem retenção publicada. E há
+um `must` literal, repetido em duas páginas: *"you must configure your jobs to
+send log information to Amazon S3, Amazon CloudWatch Logs, or both."*
+
+A regra fica **mais forte** aqui do que no Serverless, não mais fraca. A decisão
+do extrator de emitir `emrc.monitoring` mesmo com o bloco ausente (Task 5) estava
+certa pela razão certa.
+
+### DV-5 — as outras três candidatas, com a ressalva de cada uma
+
+- **(a) segredo em claro** — sobrevive com fonte **mais fraca** que a das áreas
+  irmãs. O *Warning* de texto claro é da ReleaseGuide e é de EC2; a página que
+  enumera integrações com Secrets Manager tem seção para EC2 e para Serverless e
+  **não tem para o EKS**. O apoio real é o *Response Syntax* de `DescribeJobRun`,
+  que devolve `properties` sem redação. **Não recomendar `EMR.secret@` como
+  remédio** — não há fonte que o declare disponível aqui.
+- **(c) `persistentAppUI` desligado** — só com `DISABLED` **explícito**. O default
+  não é publicado em lugar nenhum (API, CLI, guia), e presumi-lo seria
+  materializar default sem fonte.
+- **(d) `dynamicAllocation` sem `shuffleTracking`** — o requisito é nomeado, mas
+  por **composição de duas páginas**, e nenhuma o chama de defeito.
+  `configuration.html` declara uma disjunção (`shuffle.service.enabled` **ou**
+  `shuffleTracking.enabled`); `running-on-kubernetes.html` fecha a disjunção
+  (*"since Kubernetes doesn't support an external shuffle service at this
+  time"*), mas essa frase vive dentro de *Stage Level Scheduling Overview*, num
+  parágrafo sobre `ResourceProfile`. Entra como **relação entre propriedades**
+  (§16 do `CLAUDE.md`), nunca como julgamento de valor isolado, e a composição
+  fica escrita na regra.
+
+### DV-6 — `-latest` quebra comparação entre execuções
+
+Fora do escopo desta fase, e registrado aqui porque ninguém vai procurar depois:
+duas execuções com o mesmo `emr-7.13.0-latest` podem ter rodado imagens
+diferentes — a fonte diz que o ponteiro se move de propósito. Qualquer
+`benchmark` que assuma runtime idêntico por `releaseLabel` idêntico está errado
+por construção quando o sufixo é `-latest`.
+
+### DV-7 — a forma do release label, e a regex que o plano errou
+
+O plano (Task 2) trazia `^emr-(\d+)\.(\d+)(?:\.\d+)?(?:-[a-z0-9]+)?$`, que não
+casa `emr-7.7.0-java8-latest` (dois segmentos de sufixo) nem
+`emr-7.7.0-spark-rapids-java8-latest` (três), e casaria formas que não deve. As
+seis formas medidas que a regex precisa tratar estão em
+`knowledge/emr-eks/runtime-matrix.md`; `emr-spark-8.0.0-latest` e
+`notebook-spark/emr-7.13.0-latest` são as duas que ela deve **rejeitar**.
+
+### DV-8 — o `check_vnext_claims.py` não rodou na Task 1
+
+Passou de 120 s e foi interrompido. Ele cobre números publicados em `docs/vnext/`
+e `docs/harness/`, e a Task 1 não tocou nenhum dos dois. Fica registrado como
+gate não exercitado, não como gate verde.
