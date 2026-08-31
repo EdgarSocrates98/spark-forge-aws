@@ -36,6 +36,7 @@ ARTIFACT_KINDS = (
     "athena_workgroup",
     "emr_cluster",
     "emr_serverless",
+    "emr_eks",
     "source",
 )
 
