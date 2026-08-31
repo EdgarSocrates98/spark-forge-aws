@@ -399,3 +399,56 @@ seis formas medidas que a regex precisa tratar estão em
 Passou de 120 s e foi interrompido. Ele cobre números publicados em `docs/vnext/`
 e `docs/harness/`, e a Task 1 não tocou nenhum dos dois. Fica registrado como
 gate não exercitado, não como gate verde.
+
+### DV-9 — o plano esqueceu um arquivo que um gate exige
+
+Medido na Task 7 (commit `6ec0028`). A tabela de arquivos do plano nomeava as
+duas listas manuais, o regenerador e as fixtures, e **não** nomeava
+`tests/test_fixtures_golden_emr_eks.py`.
+
+O gate `test_every_fixture_domain_has_a_golden_module` cruza diretório de fixture
+contra módulo que declare `FIXTURES = ROOT / "fixtures" / "<dominio>"`. Criar
+`fixtures/emr_eks/` sem esse módulo o reprova com `dominios de fixture sem modulo
+golden: ['emr_eks']` — e o comentário do próprio teste nomeia EMR on EKS como o
+risco para o qual ele foi escrito. O módulo entrou no mesmo commit.
+
+Duas coisas menores medidas junto, e a segunda é armadilha real:
+
+- `regen_fixtures.py` trata `sem_destino_de_log` como nome ambíguo — a fixture
+  existe em `emr_serverless` **e** em `emr_eks` — e regenera as duas. A de
+  Serverless voltou byte a byte idêntica.
+- A varredura de corpus completo precisou de guarda `is_dir()` em
+  `FIXTURES_EMR_EKS`: sem ela, uma regeneração total a partir de um checkout
+  anterior a este commit morre com `FileNotFoundError` **depois** de já ter
+  reescrito todos os corpora acima dele.
+
+### DV-10 — dois testes da Task 6 passavam antes da implementação
+
+Reportado pelo próprio implementador. Dos 6 testes novos de
+`emrc.pod_template.unresolved`, `test_sem_pod_template_nao_ha_recusa` e
+`test_a_recusa_nao_conta_como_unresolved_de_leitura` passavam **antes** de o kind
+existir, porque asseguram dicionário vazio e contagem zero. Só 4 ficaram
+vermelhos no passo de TDD.
+
+Não é defeito de produto e não invalida nenhum dos seis; é registro de que o
+vermelho prévio cobriu 4 e não 6. Vale para quem for reusar o par
+positivo/negativo desta área: teste que passa vazio não prova o mecanismo.
+
+O mesmo padrão apareceu na Task 7 por outra via, e ali é mais interessante: o
+contrafactual da lista manual (`tirar a linha reprova nomeando os oito kinds`) é
+**inmensurável antes de os goldens existirem** — sem golden carregando `emrc.*`,
+remover a linha faz tudo passar. Ele foi medido depois do Step 5, e aí sim
+reprova nomeando exatamente os oito.
+
+### DV-11 — `--conf` com valor entre aspas fragmenta
+
+Medido pelo implementador da Task 4. `sparkSubmitParameters` é uma string única e
+o extrator a separa por espaço, sem consciência de aspas de shell. Um par como
+`--conf "spark.foo=a b"` vira `spark.foo=a` mais um token solto `b`, que é
+descartado em silêncio em vez de virar `malformed_conf`.
+
+Os exemplos da AWS nunca mostram valor com espaço em `--conf`, e um
+`spark-submit` de verdade recebe argv já separado em vez de uma string — então o
+caso é plausível de nunca aparecer. Fica registrado como **limite declarado**, não
+como dívida: fechá-lo é decidir adotar um tokenizador com aspas, e essa decisão
+tem custo (divergir do que a API entrega) que ninguém mediu ainda.
