@@ -117,6 +117,59 @@ POSITIVOS_POR_NOME_DE_CHAVE = [
     ),
 ]
 
+# O gatilho 3 (nome da chave + forma de material criptografico) acusava estes
+# ate a revisao final de EMR on EKS. Todos sao IDENTIFICADOR SEGMENTADO -- nome
+# de classe Java totalmente qualificado, ou nome de service account do
+# Kubernetes -- e nenhum e material criptografico. Dois deles sao o pior defeito
+# que uma regra pode ter: `credentials.provider` apontando para um provider de
+# papel e a configuracao que existe PARA nao haver credencial literal, e
+# `serviceAccountName` e o idioma canonico do EMR on EKS. Um P0 sobre eles manda
+# o operador desfazer o que esta certo, e a redacao ainda apaga o valor do
+# handoff antes de a regra chegar.
+IDENTIFICADORES_SEGMENTADOS = [
+    (
+        "provider_de_credencial_por_papel",
+        "spark.hadoop.fs.s3a.aws.credentials.provider",
+        "com.amazonaws.auth.InstanceProfileCredentialsProvider",
+    ),
+    (
+        "provider_default_da_cadeia",
+        "spark.hadoop.fs.s3a.aws.credentials.provider",
+        "com.amazonaws.auth.DefaultAWSCredentialsProviderChain",
+    ),
+    (
+        "service_account_do_emr_on_eks",
+        "spark.kubernetes.authenticate.driver.serviceAccountName",
+        "emr-containers-sa-spark",
+    ),
+    (
+        "service_account_do_executor",
+        "spark.kubernetes.authenticate.executor.serviceAccountName",
+        "emr-containers-sa-spark-driver",
+    ),
+    (
+        "classe_java_em_chave_com_dica",
+        "spark.authenticate.credentialProviderClass",
+        "org.apache.spark.deploy.security.HadoopDelegationTokenProvider",
+    ),
+]
+
+# A EXCLUSAO acima e uma porta, e estes travam a largura dela. Exigir tres ou
+# mais segmentos e o que impede que uma senha escolhida por humano com um hifen
+# no meio passe pela mesma porta -- ela continua sendo redigida.
+POSITIVOS_APESAR_DO_HIFEN = [
+    (
+        "senha_humana_com_um_hifen",
+        "spark.authenticate.secret",
+        "correcthorse-batterystaple",
+    ),
+    (
+        "material_com_digito_entre_segmentos",
+        "spark.hadoop.fs.s3a.secret.key",
+        "aB3xY9zQw7-Lm2Kd8Rt5N-Pq7Wz",
+    ),
+]
+
 NEGATIVOS = [
     ("caminho_s3", "spark.sql.warehouse.dir", "s3://bucket/warehouse/prefixo/longo"),
     ("sha_de_commit", "revision", "a" * 40),
@@ -146,6 +199,8 @@ CORPUS = (
     [(nome, chave, valor, True) for nome, chave, valor in POSITIVOS]
     + [(nome, chave, valor, True) for nome, chave, valor, _ in POSITIVOS_EMBUTIDOS]
     + [(nome, chave, valor, True) for nome, chave, valor in POSITIVOS_POR_NOME_DE_CHAVE]
+    + [(nome, chave, valor, True) for nome, chave, valor in POSITIVOS_APESAR_DO_HIFEN]
+    + [(nome, chave, valor, False) for nome, chave, valor in IDENTIFICADORES_SEGMENTADOS]
     + [(nome, chave, valor, False) for nome, chave, valor in NEGATIVOS]
     + [(nome, chave, valor, False) for nome, chave, valor in QUASE_VALIDOS]
 )
@@ -222,6 +277,49 @@ def test_quase_valido_nao_vira_positivo(nome, chave, valor):
     )
     assert detectores(chave, valor) == (), (
         f"{nome}: `detectores` disparou para um valor a um caractere de ser credencial"
+    )
+
+
+@pytest.mark.parametrize(
+    "nome,chave,valor",
+    IDENTIFICADORES_SEGMENTADOS,
+    ids=[c[0] for c in IDENTIFICADORES_SEGMENTADOS],
+)
+def test_identificador_segmentado_nao_e_material_criptografico(nome, chave, valor):
+    """O gatilho do nome da chave nao pode acusar a propria correcao.
+
+    `com.amazonaws.auth.InstanceProfileCredentialsProvider` e o valor que
+    substitui a credencial literal; `emr-containers-sa-spark` e o nome de conta
+    de servico que a AWS publica para EMR on EKS. Os dois passavam nos dois
+    testes do gatilho 3 -- dica no nome da chave, e alfabeto de material
+    criptografico -- porque esse alfabeto inclui `.` e `-`.
+    """
+    assert looks_like_secret(chave, valor) is False, (
+        f"{nome}: identificador segmentado foi tratado como segredo -- a regra"
+        " acusaria a propria correcao, e o valor sumiria do handoff"
+    )
+    assert detectores(chave, valor) == (), (
+        f"{nome}: `detectores` disparou para um identificador segmentado"
+    )
+
+
+@pytest.mark.parametrize(
+    "nome,chave,valor",
+    POSITIVOS_APESAR_DO_HIFEN,
+    ids=[c[0] for c in POSITIVOS_APESAR_DO_HIFEN],
+)
+def test_exclusao_de_identificador_nao_abre_a_porta_para_material(nome, chave, valor):
+    """Toda exclusao e uma porta; esta linha mede a largura da porta.
+
+    A exclusao exige TRES ou mais segmentos de letras puras. Um valor com dois
+    segmentos, ou com digito dentro de qualquer segmento, continua sendo
+    redigido.
+    """
+    assert looks_like_secret(chave, valor) is True, (
+        f"{nome}: a exclusao de identificador segmentado abriu demais"
+    )
+    assert detectores(chave, valor) == ("nome_de_chave_com_entropia",), (
+        f"{nome}: deveria continuar disparando so o gatilho do nome da chave"
     )
 
 

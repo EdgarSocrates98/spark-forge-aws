@@ -76,6 +76,13 @@ REQUIRED_FIXTURES = {
     # O negativo da AUSENCIA: `shuffleTracking` tem default `true` na versao
     # fixada da doc, entao nao declara-lo e o estado seguro.
     "alocacao_dinamica_no_default",
+    # O negativo que trava a volta do pior defeito de SF-EMRK-001: ela ja acusou
+    # a propria correcao. `credentials.provider` com nome de classe Java e
+    # `serviceAccountName` com o nome de conta publicado pela AWS casavam o
+    # gatilho do nome da chave no detector compartilhado, porque o alfabeto de
+    # material criptografico inclui `.` e `-`. Os dois idiomas estao aqui, nas
+    # duas superficies, sem achado nenhum.
+    "idioma_de_autenticacao_sem_segredo",
 }
 
 

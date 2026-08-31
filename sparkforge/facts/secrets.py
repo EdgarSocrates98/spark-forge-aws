@@ -26,6 +26,14 @@ nunca "isto E segredo": um falso positivo redige um valor que o operador podia
 ler, e um falso negativo publica credencial num `facts.json` que vai para o
 handoff commitado. A assimetria e obvia e o codigo escolhe o lado dela.
 
+COM UMA EXCECAO MEDIDA, e ela vale mais que a assimetria. Quando o valor
+redigido e a PROPRIA CORRECAO -- `credentials.provider` apontando para um
+provider de papel, `serviceAccountName` do EMR on EKS --, o falso positivo deixa
+de ser "evidencia apagada" e vira regra que manda o operador desfazer o que esta
+certo, com o valor sumido do handoff antes de a regra chegar. Foi por isso que o
+gatilho 3 ganhou a exclusao de `_IDENTIFICADOR_SEGMENTADO_RE`. A exclusao e uma
+porta, e o que ela abre esta escrito ao lado dela.
+
 LIMITE CONHECIDO, registrado e NAO corrigido: a guarda `isinstance` e fail-open.
 `looks_like_secret` devolve `False` para `dict`, `list`, `None` e qualquer
 nao-string, e `redact` entao devolve o valor SEM redigir. Isso escolhe o lado
@@ -40,6 +48,7 @@ excecao -- servem a chamadores diferentes, e nenhum existe para escolher. Quem
 escrever o primeiro chamador que passe nao-string decide junto com o caso de
 uso, e ate la o limite fica escrito aqui em vez de implicito no codigo.
 """
+
 from __future__ import annotations
 
 import re
@@ -67,8 +76,49 @@ _SECRET_KEY_HINTS = (
 )
 
 # Valor com cara de material criptografico: longo e sem espaco. O piso de 16
-# evita redigir `true`, `128MB` e nome de classe.
+# evita redigir `true`, `128MB` e nome de classe curto.
 _HIGH_ENTROPY_RE = re.compile(r"^[A-Za-z0-9/+=_.\-]{16,}$")
+
+# EXCLUSAO DE FORMA para o gatilho 3. Identificador SEGMENTADO: tres ou mais
+# palavras de letras puras unidas por `.`, `-` ou `_`. E a forma de nome de
+# classe Java totalmente qualificado
+# (`com.amazonaws.auth.InstanceProfileCredentialsProvider`) e de nome de service
+# account do Kubernetes (`emr-containers-sa-spark`), e NAO e a forma de material
+# criptografico: base64 de 16 bytes carrega digito ou `+`/`/`/`=` em ~96% dos
+# casos, e hex sempre carrega. O alfabeto de `_HIGH_ENTROPY_RE` inclui `.` e `-`,
+# e era por isso que os dois passavam.
+#
+# Por que exclusao de FORMA e nao lista de nomes de chave: lista de nome
+# envelhece e vira varredura -- `provider`, `serviceAccountName`, e o proximo
+# idioma que ninguem previu. A forma e conferivel numa linha, e cobre os tres
+# casos medidos sem nomear chave nenhuma.
+#
+# O QUE ESTA PORTA ABRE, e toda exclusao abre uma: um segredo que TENHA esta
+# forma escapa. Na pratica isso e uma senha escolhida por humano com dois ou
+# mais delimitadores e nenhum digito -- `alpha-bravo-charlie`. O piso de tres
+# segmentos e o que mantem a porta estreita: `hunter-two` continua sendo
+# redigido. Fica de fora tambem, como falso positivo residual, o identificador
+# de DOIS segmentos com 16+ caracteres (`spark-serviceaccount`) e o que tem
+# digito dentro de um segmento (`emr-containers-sa-v2`) -- nenhum apareceu em
+# artefato medido, e errar para o lado da redacao e o lado que este modulo
+# escolhe.
+_IDENTIFICADOR_SEGMENTADO_RE = re.compile(r"^[A-Za-z]+(?:[._-][A-Za-z]+){2,}$")
+
+
+def _nome_de_chave_com_entropia(key: str, value: str) -> bool:
+    """Gatilho 3, com a exclusao de forma aplicada.
+
+    Vive numa funcao so porque `looks_like_secret` e `detectores` repetem a
+    varredura de proposito (ver o teste que prende as duas): a exclusao escrita
+    em dois lugares seria a divergencia silenciosa que este modulo existe para
+    nao ter.
+    """
+    if not any(hint in key.lower() for hint in _SECRET_KEY_HINTS):
+        return False
+    if not _HIGH_ENTROPY_RE.fullmatch(value):
+        return False
+    return _IDENTIFICADOR_SEGMENTADO_RE.fullmatch(value) is None
+
 
 # Padroes que identificam credencial pelo VALOR, sem depender do nome da chave.
 # Cada um tem prefixo publicado pelo emissor, o que os torna reconheciveis sem
@@ -109,7 +159,11 @@ def looks_like_secret(key: str, value: str) -> bool:
        so o nome da chave denuncia. Os dois juntos:
        `spark.hadoop.fs.s3a.secret.key` com valor `true` nao e segredo, e um
        hash de 40 caracteres numa chave chamada `spark.sql.warehouse.dir`
-       tambem nao.
+       tambem nao. Este gatilho tem UMA exclusao de forma, e ela e a diferenca
+       entre acusar credencial e acusar a propria correcao: valor que e
+       identificador segmentado -- classe Java totalmente qualificada, nome de
+       service account -- nao e material criptografico. Ver
+       `_IDENTIFICADOR_SEGMENTADO_RE` para o que a exclusao abre.
     """
     if not isinstance(key, str) or not isinstance(value, str):
         return False
@@ -118,8 +172,7 @@ def looks_like_secret(key: str, value: str) -> bool:
             return True
     if _URL_PASSWORD_RE.search(value):
         return True
-    key_lower = key.lower()
-    if any(hint in key_lower for hint in _SECRET_KEY_HINTS) and _HIGH_ENTROPY_RE.fullmatch(value):
+    if _nome_de_chave_com_entropia(key, value):
         return True
     return False
 
@@ -136,8 +189,7 @@ def detectores(key: str, value: str) -> tuple[str, ...]:
     achados = [nome for nome, padrao in _PADROES_POR_VALOR if padrao.search(value)]
     if _URL_PASSWORD_RE.search(value):
         achados.append("url_password")
-    key_lower = key.lower()
-    if any(h in key_lower for h in _SECRET_KEY_HINTS) and _HIGH_ENTROPY_RE.fullmatch(value):
+    if _nome_de_chave_com_entropia(key, value):
         achados.append("nome_de_chave_com_entropia")
     return tuple(achados)
 
