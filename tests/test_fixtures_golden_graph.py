@@ -97,9 +97,21 @@ REQUIRED_FIXTURES = {
     "import_dinamico",
     "fonte_que_nao_compila",
     # O PAR da disponibilidade: mesmo `.py`, mesmo runtime sem jar, e a unica
-    # diferenca e o `--extra-jars` no IaC.
+    # diferenca e o `--extra-jars` no IaC. Com o kind derivado
+    # `tf.graphframes.jar`, o par passou a ser tambem o positivo e o negativo de
+    # SF-GRAPH-005 -- a metade ACUSATORIA que o veto V-GR-1 barrava.
     "import_sem_jar_no_iac",
     "import_com_jar_declarado",
+    # A terceira ponta do mesmo eixo: o jar declarado com valor que so o
+    # `terraform apply` resolve. E o unico golden que reprova a remocao de
+    # `absent: tf.graphframes.unknown` do catalogo.
+    "jar_com_valor_ilegivel_no_iac",
+    # AS DUAS QUE O VETO V-GR-2 REGISTRAVA COMO FALTANDO, uma por ramo do unico
+    # limiar numerico com fonte primaria desta area. A do `<= 0` e sobre
+    # `labelPropagation` de proposito: em `connectedComponents` o valor nao
+    # positivo E saida legitima, e `saida_intervalo_nao_positivo` continua muda.
+    "intervalo_de_checkpoint_acima_do_limite",
+    "checkpoint_desligado_fora_da_saida",
 }
 
 

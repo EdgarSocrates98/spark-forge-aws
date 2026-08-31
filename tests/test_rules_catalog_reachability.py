@@ -332,6 +332,17 @@ class TestAbsentSemSameSubjectSeJustifica:
             "nao ha versao por grupo dessa pergunta; `same_subject` faria a "
             "regra nunca disparar."
         ),
+        # A pergunta e sobre as DUAS metades do repositorio: "este `.py`
+        # importa GraphFrames, e a definicao Terraform do job entrega a
+        # biblioteca?". `graph.import` tem subject `source_location` num `.py` e
+        # `tf.resource` tem subject `tf_resource` num `.tf`: os dois nunca
+        # coincidem. Verificado: com `same_subject: true` nenhum grupo contem as
+        # duas metades e a regra deixa de disparar em qualquer entrada,
+        # inclusive em `import_sem_jar_no_iac`. Mesma natureza de SF-ENV-003.
+        "SF-GRAPH-005": (
+            "correlaciona codigo Python com Terraform; os subjects nunca "
+            "coincidem e `same_subject` faria a regra nunca disparar."
+        ),
         # SF-GLUE-005 saiu desta lista ao ser desbloqueada. A isencao existia
         # para justificar `absent: spark.stage.spill` sem `same_subject`, e
         # desbloquear a regra mostrou que o `absent:` era errado por um motivo

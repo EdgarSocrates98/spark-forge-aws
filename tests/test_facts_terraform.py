@@ -17,6 +17,8 @@ EXPECTED_KINDS = {
     "tf.module_analyzed",
     "tf.observability.spark_ui",
     "tf.observability.unknown",
+    "tf.graphframes.jar",
+    "tf.graphframes.unknown",
 }
 
 
@@ -68,7 +70,7 @@ def job_with_args(*lines: str) -> str:
 
 def test_kind_namespace_is_complete_and_documented():
     assert EMITTED_KINDS == EXPECTED_KINDS
-    assert len(EMITTED_KINDS) == 7
+    assert len(EMITTED_KINDS) == 9
     assert EXTRACTOR_ID.startswith("terraform@")
 
 
@@ -251,6 +253,121 @@ class TestObservabilityUnknown:
             facts = extract_terraform(src, "main.tf")
             emitted = [f for f in facts if f.kind.startswith("tf.observability")]
             assert len(emitted) <= 1
+
+
+class TestGraphFramesJarSentinel:
+    """O kind derivado que substitui o `absent` filtrado por atributo.
+
+    `engine._absent_satisfied` compara SO `kind`, e `tf.attribute` existe nos
+    dois lados do par de fixtures de grafo -- o que muda e `attrs.key`. Sem um
+    kind ja decidido, `absent: tf.attribute` seria falso para todo Terraform
+    lido e a regra acusaria tambem quem declarou o jar. Molde exato de
+    `tf.observability.spark_ui`: o extrator decide UMA vez, e a regra fica com
+    `absent:` sobre a decisao.
+    """
+
+    def test_extra_jars_com_o_jar_da_biblioteca_emite_o_fact(self):
+        src = job_with_args(
+            '"--extra-jars" = "s3://artefatos/jars/graphframes-0.8.2-spark3.2-s_2.12.jar"'
+        )
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.graphframes.jar", facts)
+        assert not facts_of("tf.graphframes.unknown", facts)
+
+    def test_extra_py_files_tambem_entrega_o_jar(self):
+        """V-AV-3: o jar legado carrega 13 arquivos `.py` dentro dele, e o
+        caminho por `--extra-py-files` sobre o proprio jar continua valido."""
+        src = job_with_args(
+            '"--extra-py-files" = "s3://artefatos/jars/graphframes-0.8.2-spark3.2-s_2.12.jar"'
+        )
+        assert facts_of("tf.graphframes.jar", extract_terraform(src, "main.tf"))
+
+    def test_spark_jars_packages_no_conf_tambem_declara(self):
+        src = job_with_args(
+            '"--conf" = "spark.jars.packages=graphframes:graphframes:0.8.2-spark3.2-s_2.12"'
+        )
+        assert facts_of("tf.graphframes.jar", extract_terraform(src, "main.tf"))
+
+    def test_sem_nenhuma_porta_de_entrega_nao_emite_nada(self):
+        facts = extract_terraform(job_with_args('"--job-language" = "python"'), "main.tf")
+        assert not facts_of("tf.graphframes.jar", facts)
+        assert not facts_of("tf.graphframes.unknown", facts)
+
+    def test_lista_de_jars_lida_e_sem_graphframes_e_ausencia_medida(self):
+        """A lista foi LIDA e a biblioteca nao esta nela: isso e ausencia, nao
+        duvida. Chamar de indeterminado calaria a regra em todo job que declara
+        qualquer outro jar -- que e a maioria."""
+        src = job_with_args('"--extra-jars" = "s3://artefatos/jars/conector-jdbc.jar"')
+        facts = extract_terraform(src, "main.tf")
+        assert not facts_of("tf.graphframes.jar", facts)
+        assert not facts_of("tf.graphframes.unknown", facts)
+
+    def test_valor_interpolado_e_indeterminado_e_nao_ausencia(self):
+        src = job_with_args('"--extra-jars" = "s3://${var.artefatos}/jars/graphframes.jar"')
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.graphframes.unknown", facts)
+        assert not facts_of("tf.graphframes.jar", facts)
+
+    def test_conf_em_heredoc_e_indeterminado(self):
+        """O heredoc pode conter `spark.jars.packages`, e o extrator nunca o
+        adivinha -- ver `unresolvable_values`."""
+        src = textwrap.dedent(
+            """
+            resource "aws_glue_job" "etl" {
+              name = "etl"
+
+              default_arguments = {
+                "--conf" = <<-EOT
+                spark.sql.adaptive.enabled=true
+                EOT
+              }
+            }
+            """
+        )
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.graphframes.unknown", facts)
+
+    def test_par_de_conf_sem_valor_nao_e_valor_escondido(self):
+        """`malformed_conf_pair` e leitura completa com um `=` faltando, e nao
+        valor que o apply resolve: a string inteira esta visivel, e nenhum par
+        sem valor pode ser `spark.jars.packages=...`. Tratar isso como
+        indeterminado calaria a regra sobre um `--conf` inteiramente lido."""
+        src = job_with_args(
+            '"--conf" = "spark.sql.shuffle.partitions=200 --conf spark.sql.autoBroadcastJoinThreshold"'
+        )
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.unresolved", facts), "a fixture precisa produzir o par malformado"
+        assert not facts_of("tf.graphframes.unknown", facts)
+        assert not facts_of("tf.graphframes.jar", facts)
+
+    def test_o_jar_declarado_vence_um_argumento_ilegivel_ao_lado(self):
+        src = job_with_args(
+            '"--extra-jars" = "s3://artefatos/jars/graphframes-0.8.2-spark3.2-s_2.12.jar"',
+            '"--extra-py-files" = "s3://${var.bucket}/libs.zip"',
+        )
+        facts = extract_terraform(src, "main.tf")
+        assert facts_of("tf.graphframes.jar", facts)
+        assert not facts_of("tf.graphframes.unknown", facts)
+
+    def test_os_dois_estados_sao_mutuamente_exclusivos(self):
+        for src in (
+            job_with_args('"--extra-jars" = "s3://a/graphframes-0.8.2-spark3.2-s_2.12.jar"'),
+            job_with_args('"--extra-jars" = "s3://${var.b}/gf.jar"'),
+            job_with_args('"--extra-jars" = "s3://a/conector-jdbc.jar"'),
+            job_with_args(),
+        ):
+            facts = extract_terraform(src, "main.tf")
+            emitido = [f for f in facts if f.kind.startswith("tf.graphframes")]
+            assert len(emitido) <= 1
+
+    def test_o_fact_e_ancorado_no_recurso_e_nao_no_arquivo(self):
+        """`same_subject` de outra regra qualquer precisa poder agrupar por
+        recurso: subject de linha faria o fact cair no grupo errado."""
+        fato = one(
+            "tf.graphframes.jar",
+            job_with_args('"--extra-jars" = "s3://a/graphframes-0.8.2-spark3.2-s_2.12.jar"'),
+        )
+        assert fato.subject["symbol"] == "aws_glue_job.etl"
 
 
 class TestSecretDetection:

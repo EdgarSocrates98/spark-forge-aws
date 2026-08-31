@@ -61,6 +61,12 @@ EMITTED_KINDS = frozenset(
         # heredoc, chamada de funcao). Nem confirmado nem ausente -- ver
         # `_check_observability`.
         "tf.observability.unknown",
+        # O IaC entrega o jar de GraphFrames a este job? Kind DERIVADO, no
+        # mesmo molde dos dois acima e pela mesma razao de motor: o `absent`
+        # do catalogo compara so `kind`, e `--extra-jars` e `tf.attribute`
+        # como qualquer outro argumento -- ver `_check_graphframes_jar`.
+        "tf.graphframes.jar",
+        "tf.graphframes.unknown",
     }
 )
 
@@ -729,6 +735,93 @@ def _check_observability(resource_facts: list[Fact]) -> str:
     return "unknown" if indeterminate else "absent"
 
 
+# Argumentos de job Glue que ENTREGAM um artefato ao driver e aos executores.
+# `--extra-py-files` entra ao lado de `--extra-jars` porque o jar legado de
+# GraphFrames carrega treze arquivos `.py` DENTRO dele (medido em
+# `knowledge/graph/availability.md`, veto V-AV-3): apontar o proprio jar em
+# `--extra-py-files` e caminho valido e documentado, nao engano.
+_JAR_DELIVERY_ARGS = frozenset({"--extra-jars", "--extra-py-files"})
+
+# As mesmas portas, abertas pelo outro lado. `--conf` no Glue carrega uma
+# string com varias propriedades, e `_spark_conf_facts` ja a desmonta -- entao
+# aqui a chave lida e a propriedade, nao o argumento.
+_JAR_DELIVERY_CONFS = frozenset({"spark.jars", "spark.jars.packages"})
+
+# O nome do artefato, nas duas linhagens: `graphframes-0.8.2-spark3.2-s_2.12.jar`
+# (spark-packages) e `graphframes-spark3_2.12-0.12.1.jar` (io.graphframes), mais
+# a coordenada Maven `graphframes:graphframes:...`. Um substring, e nao um
+# regex de versao: a pergunta e "a biblioteca aparece aqui?", e travar o formato
+# do nome faria a leitura envelhecer a cada release nova.
+_GRAPHFRAMES_TOKEN = "graphframes"
+
+# `--conf` ilegivel esconde `spark.jars.packages` inteiro, entao ele conta como
+# porta aberta que nao deu para ler -- nunca como ausencia.
+_UNREADABLE_DELIVERY_KEYS = _JAR_DELIVERY_ARGS | {"--conf"}
+
+# ...COM UMA EXCECAO MEDIDA. `malformed_conf_pair` nao e valor escondido: a
+# string do `--conf` FOI lida e desmontada, e o que falta e o `=` de UM par
+# (`fixtures/terraform/spark_conf_in_arguments` tem exatamente isso). Um par sem
+# valor nao pode conter `spark.jars.packages=...`, entao trata-lo como "nao deu
+# para ler" calaria a regra sobre um job cujo `--conf` esta inteiramente
+# visivel.
+_READ_DESPITE_UNRESOLVED = frozenset({"malformed_conf_pair"})
+
+
+def _check_graphframes_jar(resource_facts: list[Fact]) -> str:
+    """O IaC entrega GraphFrames a este job? `declared`, `unknown` ou `absent`.
+
+    Tres estados pela mesma razao de `_check_observability`, e o kind derivado
+    existe pela razao registrada no veto `V-GR-1` de `rules/catalog/graph.yaml`:
+    `engine._absent_satisfied` compara SO `kind`, e `--extra-jars` sai como
+    `tf.attribute` igual a qualquer outro argumento. Uma regra escrita com
+    `absent: tf.attribute` seria falsa para todo Terraform lido e acusaria
+    tambem o job que declarou o jar. Quem enxerga a pergunta inteira e o
+    extrator, e por isso ele decide UMA vez.
+
+    `absent` EXIGE que a lista tenha sido lida e a biblioteca nao esteja nela.
+    Um `--extra-jars` literal apontando para outro jar e ausencia MEDIDA -- a
+    lista existe, foi lida, e GraphFrames nao esta la --, e nao duvida:
+    chamar isso de indeterminado calaria a regra em todo job que declara
+    qualquer outro jar, que e a maioria dos jobs reais. O residual conhecido --
+    um jar renomeado, ou um fat jar que carregue a biblioteca sem dize-lo no
+    nome -- vai escrito DENTRO do achado, no padrao de `V-AS-2`, e nao apagado
+    daqui transformando a regra em silencio.
+
+    `unknown` e o valor que so o `terraform apply` resolve: interpolacao,
+    heredoc ou chamada de funcao numa das portas de entrega. Ausencia de
+    evidencia nao e evidencia de ausencia.
+    """
+    declared = False
+    indeterminate = False
+
+    for fact in resource_facts:
+        if fact.attrs.get("block") != "default_arguments":
+            continue
+        key = fact.attrs.get("key")
+        if fact.kind == "tf.unresolved":
+            if (
+                key in _UNREADABLE_DELIVERY_KEYS
+                and fact.attrs.get("reason") not in _READ_DESPITE_UNRESOLVED
+            ):
+                indeterminate = True
+            continue
+        if fact.kind == "tf.attribute":
+            if key not in _JAR_DELIVERY_ARGS or not fact.attrs.get("literal"):
+                continue
+        elif fact.kind == "tf.spark_conf":
+            if key not in _JAR_DELIVERY_CONFS:
+                continue
+        else:
+            continue
+        value = fact.attrs.get("value")
+        if isinstance(value, str) and _GRAPHFRAMES_TOKEN in value.lower():
+            declared = True
+
+    if declared:
+        return "declared"
+    return "unknown" if indeterminate else "absent"
+
+
 def extract_terraform(source: str, path: str) -> list[Fact]:
     """Extrai Facts de um arquivo `.tf` ja lido, dado como string.
 
@@ -815,6 +908,19 @@ def extract_terraform(source: str, path: str) -> list[Fact]:
                             "tf.observability.spark_ui"
                             if observability == "confirmed"
                             else "tf.observability.unknown"
+                        ),
+                        subject=_resource_subject(path, header_line, symbol),
+                        provenance=provenance,
+                    )
+                )
+            graphframes_jar = _check_graphframes_jar(body_facts)
+            if graphframes_jar != "absent":
+                facts.append(
+                    Fact(
+                        kind=(
+                            "tf.graphframes.jar"
+                            if graphframes_jar == "declared"
+                            else "tf.graphframes.unknown"
                         ),
                         subject=_resource_subject(path, header_line, symbol),
                         provenance=provenance,

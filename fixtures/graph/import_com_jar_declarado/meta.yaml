@@ -15,6 +15,13 @@ proves: >
   necessario: que a acusacao e sobre o ARTEFATO e nao sobre o IaC, e que
   declarar um jar nao a fecha. Sem esta fixture, alguem escreveria a condicao
   sobre `tf.attribute` achando que fecha, e nenhum golden reclamaria.
+  EM 2026-08-31 ELA GANHOU O SEGUNDO PAPEL, e e o que faltava: com o kind
+  derivado `tf.graphframes.jar` (`facts/terraform.py::_check_graphframes_jar`),
+  ela e o golden NEGATIVO de `SF-GRAPH-005` -- a metade acusatoria que o veto
+  V-GR-1 barrava. `import_sem_jar_no_iac` dispara `SF-GRAPH-005`; esta nao, e
+  as duas continuam disparando `SF-GRAPH-002`. E a assimetria e exatamente o
+  que o veto dizia: declarar o jar fecha a pergunta do IaC e nao fecha a do
+  artefato.
 runtime:
   glue: "4.0"
   spark: "3.3.0"
@@ -27,6 +34,7 @@ expects_kinds:
   - graph.checkpoint_dir
   - graph.module_analyzed
   - tf.attribute
+  - tf.graphframes.jar
   - tf.module_analyzed
   - tf.observability.spark_ui
   - tf.resource

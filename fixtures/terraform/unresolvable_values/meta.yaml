@@ -13,6 +13,12 @@ proves: >
   `tf.observability.unknown` e a regra exige a ausencia dos dois. Ausencia de
   evidencia nao e evidencia de ausencia; `fixtures/terraform/no_observability`
   continua disparando, porque la a ausencia e real.
+  A MESMA leitura vale, desde 2026-08-31, para o segundo kind derivado deste
+  extrator: `--extra-py-files = join(",", var.bibliotecas)` e uma porta de
+  entrega de jar que nao deu para ler, entao o recurso sai com
+  `tf.graphframes.unknown` e nao com ausencia. Sem isso, `SF-GRAPH-005`
+  acusaria de nao entregar a biblioteca um job cuja lista de artefatos so o
+  `terraform apply` resolve.
 runtime:
   glue: "5.0"
   spark: "3.5.4"
@@ -24,4 +30,5 @@ expects_kinds:
   - tf.attribute
   - tf.unresolved
   - tf.observability.unknown
+  - tf.graphframes.unknown
 expects_rules: []

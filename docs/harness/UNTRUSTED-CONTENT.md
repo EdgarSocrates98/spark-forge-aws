@@ -34,7 +34,7 @@ modelo — pelo payload do próprio `Fact`, não pelo `Finding`.
 
 **4** extratores produzem `subject.snippet` não vazio: `pyspark_ast`,
 `event_log`, `graph` e `spark_plan`. Nos demais a chave ou vem vazia ou nem
-existe no `subject` — em `terraform`, 232 dos 247 facts do corpus de fixtures
+existe no `subject` — em `terraform`, 233 dos 248 facts do corpus de fixtures
 não têm a chave.
 
 Esse número foi medido errado uma vez, e a forma do erro importa. `terraform`
