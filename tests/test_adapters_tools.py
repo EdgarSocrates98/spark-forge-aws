@@ -49,6 +49,7 @@ class TestToolSurface:
             "sparkforge_analyze_athena_workgroup",
             "sparkforge_analyze_emr_cluster",
             "sparkforge_analyze_emr_serverless",
+            "sparkforge_analyze_emr_eks",
             "sparkforge_analyze_data_quality",
             "sparkforge_analyze_graph",
             "sparkforge_analyze_call_graph",
@@ -80,6 +81,7 @@ class TestToolSurface:
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
             "sparkforge_collect_emr_serverless",
+            "sparkforge_collect_emr_eks",
             "sparkforge_collect_verify",
             # SPEC 56-77: SEIS tools de Code Intelligence, e nao as onze que as
             # secoes 57 a 67 listam. A justificativa por nome esta no comentario
@@ -128,6 +130,7 @@ class TestToolSurface:
             "sparkforge_collect_athena_workgroup",
             "sparkforge_collect_emr_cluster",
             "sparkforge_collect_emr_serverless",
+            "sparkforge_collect_emr_eks",
         }
 
     def test_every_open_world_tool_also_writes_locally(self):
@@ -1204,6 +1207,38 @@ class _FakeEmrServerlessClient:
         }
 
 
+class _FakeEmrContainersClient:
+    """DUAS chamadas, em contraste com `_FakeEmrServerlessClient` (uma):
+    `DescribeVirtualCluster` e `DescribeJobRun` sao APIs separadas do
+    `emr-containers`, e o coletor precisa das duas para montar o arquivo
+    autocontido."""
+
+    def describe_virtual_cluster(self, **kwargs):
+        return {
+            "virtualCluster": {
+                "id": kwargs["id"],
+                "name": "meu-cluster",
+                "state": "RUNNING",
+                "containerProvider": {
+                    "type": "EKS",
+                    "id": "meu-cluster-eks",
+                    "info": {"eksInfo": {"namespace": "spark-jobs"}},
+                },
+            }
+        }
+
+    def describe_job_run(self, **kwargs):
+        return {
+            "jobRun": {
+                "id": kwargs["id"],
+                "name": "etl-diario",
+                "virtualClusterId": kwargs["virtualClusterId"],
+                "state": "COMPLETED",
+                "releaseLabel": "emr-7.5.0-latest",
+            }
+        }
+
+
 class _FakeBoto3ForCollect:
     def __init__(self):
         self._clients = {
@@ -1213,6 +1248,7 @@ class _FakeBoto3ForCollect:
             "athena": _FakeAthenaClient(),
             "emr": _FakeEmrClient(),
             "emr-serverless": _FakeEmrServerlessClient(),
+            "emr-containers": _FakeEmrContainersClient(),
         }
 
     def client(self, name, **kwargs):
@@ -1289,6 +1325,46 @@ _EMR_SERVERLESS_DUMP = json.dumps(
                 "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrs-logs/"}
             },
         }
+    }
+)
+
+_EMR_EKS_DUMP = json.dumps(
+    {
+        "virtualCluster": {
+            "id": "0abcEXAMPLE",
+            "name": "analytics",
+            "state": "RUNNING",
+            "containerProvider": {
+                "type": "EKS",
+                "id": "analytics-eks",
+                "info": {"eksInfo": {"namespace": "spark-jobs"}},
+            },
+        },
+        "jobRun": {
+            "id": "0runEXAMPLE",
+            "name": "etl-diario",
+            "virtualClusterId": "0abcEXAMPLE",
+            "state": "COMPLETED",
+            "releaseLabel": "emr-7.5.0-latest",
+            "executionRoleArn": "arn:aws:iam::123456789012:role/emr-eks",
+            "jobDriver": {
+                "sparkSubmitJobDriver": {
+                    "entryPoint": "s3://bucket/job.py",
+                    "sparkSubmitParameters": "--conf spark.executor.cores=4",
+                }
+            },
+            "configurationOverrides": {
+                "applicationConfiguration": [
+                    {
+                        "classification": "spark-defaults",
+                        "properties": {"spark.dynamicAllocation.enabled": "true"},
+                    }
+                ],
+                "monitoringConfiguration": {
+                    "s3MonitoringConfiguration": {"logUri": "s3://bucket/emrc-logs/"}
+                },
+            },
+        },
     }
 )
 
@@ -1558,6 +1634,11 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         emrs_path.write_text(_EMR_SERVERLESS_DUMP, encoding="utf-8")
         return call_tool("sparkforge_analyze_emr_serverless", {"path": str(emrs_path)})
 
+    if name == "sparkforge_analyze_emr_eks":
+        emrc_path = tmp_path / "job_run.json"
+        emrc_path.write_text(_EMR_EKS_DUMP, encoding="utf-8")
+        return call_tool("sparkforge_analyze_emr_eks", {"path": str(emrc_path)})
+
     if name == "sparkforge_analyze_data_quality":
         dq_path = tmp_path / "validacao.py"
         dq_path.write_text(_DQ_SOURCE, encoding="utf-8")
@@ -1722,6 +1803,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_collect_athena_workgroup",
         "sparkforge_collect_emr_cluster",
         "sparkforge_collect_emr_serverless",
+        "sparkforge_collect_emr_eks",
     ):
         assert monkeypatch is not None, f"{name} precisa de monkeypatch para o client AWS falso"
         _fake_collect_boto3(monkeypatch)
@@ -1771,6 +1853,14 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
             "sparkforge_collect_emr_serverless": {
                 "repo": str(tmp_path),
                 "application_id": "00fEXAMPLE",
+                "now": "2026-07-30T00:00:00Z",
+            },
+            # Os DOIS ids, porque `DescribeJobRun` exige `virtualClusterId`
+            # junto do `id` -- nao ha forma de pedir um job run sozinho.
+            "sparkforge_collect_emr_eks": {
+                "repo": str(tmp_path),
+                "virtual_cluster_id": "0abcEXAMPLE",
+                "job_run_id": "0runEXAMPLE",
                 "now": "2026-07-30T00:00:00Z",
             },
         }[name]
@@ -1853,6 +1943,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_athena_workgroup", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_emr_serverless", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_emr_eks", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_graph", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),

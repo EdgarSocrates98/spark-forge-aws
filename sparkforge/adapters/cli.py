@@ -321,6 +321,25 @@ def build_parser() -> argparse.ArgumentParser:
     emrs_analyze_p.add_argument("--cursor")
     _add_detail_level(emrs_analyze_p)
 
+    emrc_analyze_p = analyze_sub.add_parser(
+        "emr-eks",
+        help="Extrai facts de um dump JSON de execucao Amazon EMR on EKS "
+        "(describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o "
+        "que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e "
+        "lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe "
+        "neste dump.",
+    )
+    emrc_analyze_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps de execucao EMR on EKS."
+    )
+    emrc_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    emrc_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    emrc_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    emrc_analyze_p.add_argument("--cursor")
+    _add_detail_level(emrc_analyze_p)
+
     dq_p = analyze_sub.add_parser(
         "data-quality",
         help="Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great "
@@ -1267,6 +1286,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     emrs_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    emrc_collect_p = collect_sub.add_parser(
+        "emr-eks",
+        help="Baixa describe-virtual-cluster e describe-job-run de uma execucao Amazon "
+        "EMR on EKS e grava as duas respostas num arquivo so. Duas chamadas, nao uma: "
+        "no `emr-containers` cluster virtual e execucao sao APIs separadas.",
+    )
+    emrc_collect_p.add_argument("--repo", required=True)
+    emrc_collect_p.add_argument(
+        "--virtual-cluster-id",
+        required=True,
+        help="Id do cluster virtual. Nome NAO serve: `DescribeJobRun` exige o id.",
+    )
+    emrc_collect_p.add_argument(
+        "--job-run-id",
+        required=True,
+        help="Id da execucao. Os DOIS ids sao obrigatorios porque `DescribeJobRun` "
+        "exige `virtualClusterId` junto do `id`.",
+    )
+    emrc_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
     )
@@ -1604,6 +1643,27 @@ def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
     full = _core.analyze_emr_cluster(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_emr_eks(args: argparse.Namespace) -> int:
+    full = _core.analyze_emr_eks(args.path, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -2111,6 +2171,17 @@ def _cmd_collect_emr_serverless(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_emr_eks(args: argparse.Namespace) -> int:
+    payload = _core.collect_emr_eks(
+        args.repo,
+        virtual_cluster_id=args.virtual_cluster_id,
+        job_run_id=args.job_run_id,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_verify(args: argparse.Namespace) -> int:
     _print(_core.collect_verify(args.repo))
     return 0
@@ -2215,6 +2286,7 @@ _DISPATCH = {
     ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
     ("analyze", "emr-cluster"): _cmd_analyze_emr_cluster,
     ("analyze", "emr-serverless"): _cmd_analyze_emr_serverless,
+    ("analyze", "emr-eks"): _cmd_analyze_emr_eks,
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "graph"): _cmd_analyze_graph,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
@@ -2268,6 +2340,7 @@ _DISPATCH = {
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
+    ("collect", "emr-eks"): _cmd_collect_emr_eks,
     ("collect", "verify"): _cmd_collect_verify,
 }
 

@@ -53,6 +53,7 @@ from sparkforge.facts.data_quality import (
     extract_data_quality_tree,
 )
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
+from sparkforge.facts.emr_eks import extract_emr_eks_path, extract_emr_eks_tree
 from sparkforge.facts.emr_serverless import (
     extract_emr_serverless_path,
     extract_emr_serverless_tree,
@@ -1179,6 +1180,56 @@ def analyze_emr_serverless(
 ) -> dict[str, Any]:
     facts = _extract_emr_serverless_facts(path)
     return _facts_page(facts, "emrs.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
+# analyze emr-eks
+# --------------------------------------------------------------------------- #
+#
+# NAO ha produtor de `RuntimeContext` aqui, pela razao do irmao Serverless
+# levada um passo adiante: `releaseLabel` do EMR on EKS (`emr-6.15.0-latest`)
+# carrega um sufixo de canal que a matriz de release do EMR on EC2 nao tem
+# chave para casar, e o que roda de fato vem da imagem do container, que este
+# extrator NAO le. Derivar versao de Spark, Python ou Iceberg daqui seria
+# afirmar sobre a imagem a partir do rotulo -- exatamente a inferencia que a
+# area recusa.
+#
+# A fronteira da area inteira, repetida onde a superficie a expoe: os facts
+# `emrc.*` descrevem o que UMA EXECUCAO PEDIU (`DescribeJobRun` mais
+# `DescribeVirtualCluster`), nunca o que o pod recebeu. O pod template
+# referenciado pela configuracao nao e lido -- ele sai como recusa com o path,
+# porque le-lo exigiria um `GetObject` no S3 que este caminho nao faz. E o lado
+# EKS (nodegroup, autoscaling, pod pendente) nao existe neste dump: outro
+# servico, outro IAM, outra matriz de versao.
+
+
+def _extract_emr_eks_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com dumps de execucao EMR on EKS ou para "
+            f"um arquivo .json:\n"
+            f"    sparkforge collect emr-eks --repo . --virtual-cluster-id 0abcXXXX "
+            f"--job-run-id 0runXXXX --now <iso>\n"
+            f"    sparkforge analyze emr-eks --path <dir-ou-arquivo> "
+            f"--out .sparkforge/facts_emr_eks.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_emr_eks_tree(target, repo_root=target)
+    return extract_emr_eks_path(target, repo_root=target.parent)
+
+
+def analyze_emr_eks(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_emr_eks_facts(path)
+    return _facts_page(facts, "emrc.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -3598,6 +3649,21 @@ def collect_emr_serverless(repo: str, *, application_id: str, now: str) -> dict[
     rel_path = collect_aws.emr_serverless_path(application_id)
     try:
         entry = collect_aws.collect_emr_serverless(application_id, Path(repo), now=now)
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_emr_eks(
+    repo: str, *, virtual_cluster_id: str, job_run_id: str, now: str
+) -> dict[str, Any]:
+    # Os DOIS ids sao obrigatorios porque `DescribeJobRun` exige
+    # `virtualClusterId` junto do `id` -- ver o docstring do coletor.
+    rel_path = collect_aws.emr_eks_path(virtual_cluster_id, job_run_id)
+    try:
+        entry = collect_aws.collect_emr_eks(
+            virtual_cluster_id, job_run_id, Path(repo), now=now
+        )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)

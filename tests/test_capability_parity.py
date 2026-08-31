@@ -759,3 +759,61 @@ class TestNoPrecedenceSourceIsAnUndeclaredProducerGap:
 
         assert "event_log" in named, sorted(named)
         assert "cli" in named, sorted(named)
+
+
+class TestEmrEksAlcancaAsQuatroSuperficies:
+    """Amazon EMR on EKS entra pelas MESMAS quatro portas que EMR on EC2 e EMR
+    Serverless ja tem, e este teste cobra as quatro de uma vez.
+
+    Os testes acima deste arquivo sao data-driven sobre `parity.yaml`, e por
+    isso reprovariam DEPOIS: sem entrada no manifesto, `TestManifestMatchesReality`
+    e `TestNoCliVerbIsAnUndeclaredMcpGap` so acendem quando as tools e os verbos
+    ja existem. A area nova precisa de um teste que reprove ANTES de qualquer
+    linha de `tools.py` ou de `cli.py` ser escrita -- e este e ele.
+
+    Quatro superficies, nao duas: tool MCP de analyze, tool MCP de collect,
+    subcomando de CLI de analyze, subcomando de CLI de collect. Uma tool sem
+    verbo (ou o inverso) e o defeito que `parity.yaml` existe para nao deixar
+    passar calado.
+    """
+
+    TOOLS_ESPERADAS = ("sparkforge_analyze_emr_eks", "sparkforge_collect_emr_eks")
+    VERBOS_ESPERADOS = ("analyze emr-eks", "collect emr-eks")
+
+    def _leaf_cli_verbs(self):
+        return TestNoCliVerbIsAnUndeclaredMcpGap()._leaf_cli_verbs()  # noqa: SLF001
+
+    def test_as_duas_tools_mcp_existem(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        assert set(self.TOOLS_ESPERADAS) <= set(TOOLS)
+
+    def test_as_duas_tools_mcp_despacham(self):
+        """Declarar no dicionario sem entrada no mapa de despacho e uma tool que
+        aparece no `tools/list` e explode no `tools/call`."""
+        from sparkforge.adapters import tools
+
+        assert set(self.TOOLS_ESPERADAS) <= set(tools._HANDLERS)  # noqa: SLF001
+
+    def test_os_dois_subcomandos_de_cli_existem(self):
+        assert set(self.VERBOS_ESPERADOS) <= set(self._leaf_cli_verbs())
+
+    def test_a_capacidade_esta_declarada_no_manifesto_de_paridade(self):
+        """`parity.yaml` e o que uma plataforma le para saber que a capacidade
+        existe. Tool e verbo sem declaracao sao capacidade invisivel."""
+        declaradas_tools: set[str] = set()
+        declarados_cli: set[str] = set()
+        for capability in manifest()["capabilities"]:
+            declaradas_tools.update(capability.get("tools") or [])
+            declarados_cli.update(capability.get("cli") or [])
+
+        assert set(self.TOOLS_ESPERADAS) <= declaradas_tools
+        assert set(self.VERBOS_ESPERADOS) <= declarados_cli
+
+    def test_o_analyze_le_arquivo_e_diretorio_pelo_core(self):
+        """A terceira ponta: `_core` e o que as duas superficies chamam. Sem ele
+        a paridade seria duas copias da mesma logica, e nao uma capacidade."""
+        from sparkforge.adapters import _core
+
+        assert callable(_core.analyze_emr_eks)
+        assert callable(_core.collect_emr_eks)

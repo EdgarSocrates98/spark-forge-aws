@@ -3128,6 +3128,60 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_emr_eks": {
+        "description": (
+            "Extrai facts de um dump JSON de execucao Amazon EMR on EKS "
+            "(`describe-virtual-cluster` mais `describe-job-run`, as DUAS respostas no "
+            "mesmo arquivo sob `virtualCluster` e `jobRun`): identidade e estado do "
+            "cluster virtual (`emrc.virtual_cluster`), a execucao com release label, "
+            "role de execucao e estado (`emrc.job_run`), as propriedades de "
+            "`sparkSubmitParameters` (`emrc.spark_submit_parameters`), as "
+            "`configurationOverrides` achatadas por classificacao "
+            "(`emrc.configuration`) e os destinos de log (`emrc.monitoring`). NAO chama "
+            "a API do `emr-containers` -- so le o JSON ja salvo em disco "
+            "(`sparkforge_collect_emr_eks` ou `aws emr-containers describe-job-run` "
+            "a mao fazem isso). "
+            "FRONTEIRA QUE VALE PARA TODO FACT DAQUI, e ela e mais estreita que a do "
+            "EMR Serverless: estes facts descrevem o que UMA EXECUCAO PEDIU, nunca o "
+            "que o pod RECEBEU. O que roda de fato sai da imagem do container e do "
+            "escalonador do Kubernetes, e nenhum dos dois esta neste dump. "
+            "O POD TEMPLATE NAO E LIDO: quando a configuracao aponta um "
+            "(`spark.kubernetes.driver.podTemplateFile` e o par do executor), o modulo "
+            "emite a RECUSA com o path do template em vez de adivinhar o que ele "
+            "contem -- le-lo exigiria um `GetObject` no S3 que este caminho nao faz. "
+            "E O LADO EKS NAO EXISTE AQUI: nodegroup, autoscaling do cluster, pod "
+            "pendente por falta de no, quota de namespace -- nada disso aparece em "
+            "`emr-containers`. Sao outro servico, outro IAM e outra matriz de versao; "
+            "pergunta sobre eles nao tem resposta nesta area, e a ausencia e decidida. "
+            "Classificacao ou unidade fora do documentado vira `emrc.unresolved` "
+            "contado, nunca valor adivinhado."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo ou diretorio com dumps de execucao EMR on EKS."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_data_quality": {
         "description": (
             "Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do "
@@ -4452,6 +4506,56 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_emr_eks": {
+        "description": (
+            "Baixa `describe-virtual-cluster` e `describe-job-run` de uma execucao "
+            "Amazon EMR on EKS e grava as DUAS respostas num unico arquivo "
+            "autocontido, sob as chaves de topo `virtualCluster` e `jobRun`, no mesmo "
+            "shape camelCase que `aws emr-containers ...` devolve -- coleta manual e "
+            "automatica produzem o mesmo arquivo, que e o que "
+            "`sparkforge_analyze_emr_eks` le. "
+            "DUAS chamadas, nem uma nem seis: diferente do EMR Serverless, onde "
+            "`GetApplication` devolve tudo num objeto so, aqui identidade do cluster "
+            "virtual e execucao sao APIS SEPARADAS do servico `emr-containers`, e "
+            "nenhuma contem a outra. "
+            "OS DOIS IDS SAO OBRIGATORIOS, e nao ha resolucao por nome: "
+            "`DescribeJobRun` exige `virtual_cluster_id` junto do `job_run_id` -- a "
+            "propria API nao aceita um job run sem o cluster virtual que o contem. "
+            "Nome NAO serve: escolher uma entre homonimas em silencio gravaria o "
+            "artefato errado com aparencia de certo. "
+            "Ficam FORA por decisao, nao por limitacao da API: `list-job-runs` "
+            "(listagem, nao coleta de uma execucao identificada), o pod template "
+            "apontado pela configuracao (outra chamada, `GetObject`) e todo o lado EKS. "
+            "Mesma politica offline-first de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "virtual_cluster_id", "job_run_id", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "virtual_cluster_id": {
+                    "type": "string",
+                    "description": (
+                        "Id do cluster virtual. Nome NAO serve -- `DescribeJobRun` "
+                        "exige o id."
+                    ),
+                },
+                "job_run_id": {
+                    "type": "string",
+                    "description": (
+                        "Id da execucao. Obrigatorio junto do cluster virtual, porque "
+                        "a API exige os dois."
+                    ),
+                },
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_verify": {
         "description": (
             "Verifica presenca e integridade (sha256 recalculado) de todos os artefatos "
@@ -4997,6 +5101,16 @@ def _h_analyze_emr_serverless(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_emr_eks(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_emr_eks(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_data_quality(
         args["path"],
@@ -5177,6 +5291,15 @@ def _h_collect_emr_serverless(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_emr_eks(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_emr_eks(
+        args["repo"],
+        virtual_cluster_id=args["virtual_cluster_id"],
+        job_run_id=args["job_run_id"],
+        now=args["now"],
+    )
+
+
 def _h_collect_verify(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_verify(args["repo"])
 
@@ -5259,6 +5382,7 @@ _HANDLERS = {
     "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
     "sparkforge_analyze_emr_cluster": _h_analyze_emr_cluster,
     "sparkforge_analyze_emr_serverless": _h_analyze_emr_serverless,
+    "sparkforge_analyze_emr_eks": _h_analyze_emr_eks,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
@@ -5290,6 +5414,7 @@ _HANDLERS = {
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
     "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,
     "sparkforge_collect_emr_serverless": _h_collect_emr_serverless,
+    "sparkforge_collect_emr_eks": _h_collect_emr_eks,
     "sparkforge_collect_verify": _h_collect_verify,
     "sparkforge_code_context": _h_code_context,
     "sparkforge_code_search": _h_code_search,

@@ -193,6 +193,21 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # Sem `knowledge:`, e a ausencia e decidida: `knowledge/` nao tem documento de
+  # EMR on EKS, e declarar um caminho que nao existe reprovaria em
+  # `test_every_declared_knowledge_file_exists` -- que e exatamente o que esse
+  # teste existe para pegar. A capacidade chega as cinco plataformas pelas
+  # mesmas duas superficies das irmas.
+  - name: extract facts from an EMR on EKS job run dump
+    tools: [sparkforge_analyze_emr_eks]
+    cli: [analyze emr-eks]
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts about data validation in PySpark code
     tools: [sparkforge_analyze_data_quality]
     cli: [analyze data-quality]
@@ -497,6 +512,7 @@ capabilities:
       - sparkforge_collect_athena_workgroup
       - sparkforge_collect_emr_cluster
       - sparkforge_collect_emr_serverless
+      - sparkforge_collect_emr_eks
       - sparkforge_collect_verify
     cli:
       - collect event-log
@@ -507,6 +523,7 @@ capabilities:
       - collect athena-workgroup
       - collect emr-cluster
       - collect emr-serverless
+      - collect emr-eks
       - collect verify
     knowledge: [knowledge/glue/observability.md, knowledge/glue/observability.yaml]
     platforms:
