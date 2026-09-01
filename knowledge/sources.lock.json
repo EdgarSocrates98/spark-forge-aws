@@ -233,6 +233,36 @@
       ],
       "sha256": "2e528d70cdceef28dd2e969e8c0893dc8083bcd6d82ecd884fa3c557fc7fb835"
     },
+    "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-evolving-table-schema.html": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-01"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-updating-iceberg-table-data.html": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-01"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-01"
+      ],
+      "rules": []
+    },
     "https://docs.aws.amazon.com/cli/latest/reference/emr-containers/start-job-run.html": {
       "docs": [
         "knowledge/emr-eks/job-run-configuration.md"
@@ -1197,7 +1227,8 @@
         "2026-08-05"
       ],
       "rules": [
-        "SF-GRAPH-002"
+        "SF-GRAPH-002",
+        "SF-GRAPH-005"
       ]
     },
     "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html": {
@@ -1335,9 +1366,12 @@
       ],
       "pinned": false,
       "retrieved": [
-        "2026-08-03"
+        "2026-08-03",
+        "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-005"
+      ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html": {
       "docs": [
@@ -1348,7 +1382,8 @@
         "2026-08-05"
       ],
       "rules": [
-        "SF-GRAPH-002"
+        "SF-GRAPH-002",
+        "SF-GRAPH-005"
       ]
     },
     "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-release-notes.rss": {
@@ -1358,6 +1393,16 @@
       "pinned": false,
       "retrieved": [
         "2026-07-29"
+      ],
+      "rules": []
+    },
+    "https://docs.aws.amazon.com/glue/latest/dg/connect-glu-iceberg-rest.html": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-01"
       ],
       "rules": []
     },
@@ -1930,7 +1975,8 @@
         "2026-08-05"
       ],
       "rules": [
-        "SF-GRAPH-002"
+        "SF-GRAPH-002",
+        "SF-GRAPH-005"
       ]
     },
     "https://graphframes.io/04-user-guide/03-centralities.html": {
@@ -1952,7 +1998,8 @@
         "2026-08-05"
       ],
       "rules": [
-        "SF-GRAPH-001"
+        "SF-GRAPH-001",
+        "SF-GRAPH-006"
       ]
     },
     "https://graphframes.io/04-user-guide/06-graph-clustering.html": {
@@ -1963,7 +2010,9 @@
       "retrieved": [
         "2026-08-05"
       ],
-      "rules": []
+      "rules": [
+        "SF-GRAPH-006"
+      ]
     },
     "https://iceberg.apache.org/docs/latest/spark-procedures/": {
       "checked_at": "2026-07-31",
@@ -2039,6 +2088,16 @@
       "pinned": true,
       "retrieved": [
         "2026-08-22"
+      ],
+      "rules": []
+    },
+    "https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/site/docs/releases.md": {
+      "docs": [
+        "knowledge/storage/iceberg-v3.md"
+      ],
+      "pinned": true,
+      "retrieved": [
+        "2026-09-01"
       ],
       "rules": []
     },
@@ -2133,7 +2192,8 @@
         "2026-08-05"
       ],
       "rules": [
-        "SF-GRAPH-001"
+        "SF-GRAPH-001",
+        "SF-GRAPH-006"
       ]
     },
     "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/python/graphframes/__init__.py": {
@@ -2185,7 +2245,8 @@
         "2026-08-05"
       ],
       "rules": [
-        "SF-GRAPH-001"
+        "SF-GRAPH-001",
+        "SF-GRAPH-006"
       ]
     },
     "https://raw.githubusercontent.com/great-expectations/great_expectations/1.19.1/great_expectations/validator/validator.py": {

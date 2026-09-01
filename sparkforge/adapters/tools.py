@@ -3840,7 +3840,13 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": (
                         "Diretorio do job, com o inventario em "
-                        "`.sparkforge/consumers.yaml`."
+                        "`.sparkforge/consumers.yaml`. Cada consumidor aceita um "
+                        "`release:` OPCIONAL (`emr-7.7.0`): com ele, a resposta "
+                        "cruza a versao de Iceberg daquela release com o minimo de "
+                        "biblioteca da feature, e por isso `emr_ec2` e `emr_eks` "
+                        "respondem DIFERENTE na mesma release, como as fontes dizem "
+                        "que respondem. Sem ele, a resposta e a da engine sem "
+                        "recorte de versao -- mais fraca, e nao errada."
                     ),
                 },
                 "source": {"type": "integer", "description": "Format version de origem."},
@@ -3885,6 +3891,18 @@ TOOLS: dict[str, dict[str, Any]] = {
                                 "status": {"type": "string"},
                                 "source": {"type": "string"},
                                 "note": {"type": "string"},
+                                "reason": {
+                                    "type": "string",
+                                    "description": (
+                                        "Razao do cruzamento por release, no "
+                                        "vocabulario fechado de "
+                                        "`sparkforge/storage/readiness.py:REASONS`. "
+                                        "Vazia quando o inventario nao declarou "
+                                        "`release` para o consumidor."
+                                    ),
+                                },
+                                "library_version": {"type": "string"},
+                                "min_library_version": {"type": "string"},
                             },
                         },
                     },
@@ -3892,6 +3910,17 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "O que falta para resolver cada celula UNKNOWN.",
+                    },
+                    "unevaluated_consumers": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "Consumidor DECLARADO que a matriz nao avaliou -- nao "
+                            "tem linha nenhuma nela. Diferente de ter linha e nao "
+                            "ter fonte, e o unico dos dois que uma pessoa consegue "
+                            "consertar. `emr` cai aqui de proposito: as tres "
+                            "plataformas publicam Iceberg diferente."
+                        ),
                     },
                 },
             },

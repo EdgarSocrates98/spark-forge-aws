@@ -246,3 +246,50 @@ class TestPathEntryPoints:
 
         facts = extract_consumers_tree(tmp_path, repo_root=tmp_path)
         assert {f.attrs["table"] for f in _consumers(facts)} == {"db.pedidos", "db.entregas"}
+
+
+class TestReleaseDeclarada:
+    """`release` e opcional, e a ausencia dele e resposta -- nunca um palpite.
+    `emr-7.7.0` traz Iceberg 1.7.1-amzn-0 no EC2 e 1.6.1-amzn-2 no EKS, e
+    adivinhar a release a partir do nome do servico seria escolher a resposta.
+    """
+
+    def test_release_e_transcrita_crua(self):
+        facts = _extract(
+            _inventory({"table": "db.t", "service": "emr_eks", "release": "emr-7.7.0"})
+        )
+        assert _consumers(facts)[0].attrs["release"] == "emr-7.7.0"
+
+    def test_variante_de_imagem_chega_inteira(self):
+        """Normalizar aqui esconderia a variante de quem sabe recusa-la: a
+        fonte diz que `emr-7.7.0-java8-latest` NAO tem Iceberg enquanto
+        `emr-7.7.0` tem."""
+        facts = _extract(
+            _inventory(
+                {
+                    "table": "db.t",
+                    "service": "emr_eks",
+                    "release": "emr-7.7.0-java8-latest",
+                }
+            )
+        )
+        assert _consumers(facts)[0].attrs["release"] == "emr-7.7.0-java8-latest"
+
+    def test_sem_release_a_chave_nao_aparece(self):
+        """Chave ausente e diferente de string vazia: a segunda afirmaria uma
+        declaracao que ninguem fez."""
+        facts = _extract(_inventory({"table": "db.t", "service": "emr_eks"}))
+        assert "release" not in _consumers(facts)[0].attrs
+
+    def test_as_tres_plataformas_de_emr_sao_reconhecidas(self):
+        for servico in ("emr_ec2", "emr_serverless", "emr_eks"):
+            facts = _extract(_inventory({"table": "db.t", "service": servico}))
+            assert _consumers(facts)[0].attrs["known_service"] is True, servico
+
+    def test_emr_continua_reconhecido_porque_o_problema_dele_e_outro(self):
+        """Tirar `emr` da lista converteria todo inventario ja escrito em
+        `known_service: false`, o que e um alarme sobre GRAFIA para um problema
+        que e de AMBIGUIDADE. Quem o resolve e
+        `sparkforge/storage/upgrade.py`, com `UNKNOWN` NOMEADO."""
+        facts = _extract(_inventory({"table": "db.t", "service": "emr"}))
+        assert _consumers(facts)[0].attrs["known_service"] is True

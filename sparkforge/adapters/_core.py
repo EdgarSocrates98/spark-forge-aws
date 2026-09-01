@@ -1697,8 +1697,23 @@ def iceberg_assess_upgrade(path: str, source: int, target: int) -> dict[str, Any
             if f.kind == "env.consumer" and f.attrs.get("service")
         }
     )
+    # `release` e opcional no inventario. Quando o operador declara DUAS
+    # releases para o mesmo servico, a ultima em ordem NAO vence por sorteio:
+    # duas releases da mesma plataforma sao dois consumidores, e escolher uma
+    # responderia pela outra. O caso e raro e a saida honesta e a mais simples
+    # possivel -- fica sem release, e a resposta cai para a da engine sem
+    # recorte de versao, que e mais fraca e nao errada.
+    declaradas: dict[str, set[str]] = {}
+    for fato in facts:
+        if fato.kind != "env.consumer":
+            continue
+        servico = str(fato.attrs.get("service", ""))
+        release = str(fato.attrs.get("release", "")).strip()
+        if servico and release:
+            declaradas.setdefault(servico, set()).add(release)
+    releases = {s: next(iter(r)) for s, r in declaradas.items() if len(r) == 1}
     try:
-        resultado = assess_iceberg_upgrade(engines, target_spec_version=target)
+        resultado = assess_iceberg_upgrade(engines, target_spec_version=target, releases=releases)
     except ValueError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 

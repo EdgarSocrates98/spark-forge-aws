@@ -146,7 +146,120 @@ class TestInvariantesDoCarregador:
             feature_support.load()
 
 
+class TestMinimoDeBiblioteca:
+    """`min_library_version` e o campo que permite NAO repetir a versao de
+    Iceberg na matriz de feature. Ele restringe -- e por isso parece
+    inofensivo -- mas ele PRODUZ `UNSUPPORTED` no cruzamento por release, e um
+    `UNSUPPORTED` fabricado bloqueia uma migracao que talvez estivesse
+    liberada. Restringir sem fonte erra tao caro quanto liberar sem fonte."""
+
+    def _corpo_com_minimo(self, bloco: str) -> str:
+        return (
+            "schema_version: 1\n"
+            "features:\n"
+            "  feature_sintetica:\n"
+            f"{bloco}"
+            "    engines:\n"
+            "      glue:\n"
+            '        "9.9": UNKNOWN\n'
+        )
+
+    def test_minimo_sem_fonte_estoura(self, tmp_path, monkeypatch):
+        bloco = "    min_library_version:\n" '      value: "1.9.0"\n'
+        _matriz_sintetica(tmp_path, monkeypatch, self._corpo_com_minimo(bloco))
+        with pytest.raises(feature_support.FeatureSupportError, match="sem `source`"):
+            feature_support.load()
+
+    def test_minimo_sem_value_estoura(self, tmp_path, monkeypatch):
+        bloco = (
+            "    min_library_version:\n"
+            '      source: "https://exemplo.invalido/fonte"\n'
+            "      source_type: UPSTREAM_RELEASE\n"
+            '      retrieved: "2026-01-01"\n'
+        )
+        _matriz_sintetica(tmp_path, monkeypatch, self._corpo_com_minimo(bloco))
+        with pytest.raises(feature_support.FeatureSupportError, match="sem `value`"):
+            feature_support.load()
+
+    def test_minimo_com_source_type_fora_do_vocabulario_estoura(self, tmp_path, monkeypatch):
+        bloco = (
+            "    min_library_version:\n"
+            '      value: "1.9.0"\n'
+            '      source: "https://exemplo.invalido/fonte"\n'
+            "      source_type: ALGUM_BLOG_QUALQUER\n"
+            '      retrieved: "2026-01-01"\n'
+        )
+        _matriz_sintetica(tmp_path, monkeypatch, self._corpo_com_minimo(bloco))
+        with pytest.raises(feature_support.FeatureSupportError, match="source_type"):
+            feature_support.load()
+
+    def test_ausencia_do_minimo_e_lacuna_e_nao_erro(self):
+        """Duas features publicadas nao tem minimo, e isso e o dado: as notas
+        curadas lidas nao as nomeiam em release nenhuma. Um default aqui --
+        "1.0.0", ou a menor release conhecida -- inventaria um limite inferior
+        que nenhuma fonte sustenta."""
+        assert feature_support.min_library_version("variant_shredding") is None
+        assert feature_support.min_library_version("multi_argument_transforms") is None
+
+    def test_minimo_publicado_carrega_a_citacao_que_o_sustenta(self):
+        minimo = feature_support.min_library_version("nanosecond_timestamp")
+        assert minimo["value"] == "1.7.0"
+        assert minimo["source_type"] in runtime_matrix.SOURCE_TYPES
+        assert "timestamp_ns" in minimo["note"], (
+            "o minimo precisa carregar a CITACAO da nota curada -- um numero "
+            "solto nao e conferivel"
+        )
+
+
 class TestMatrizPublicada:
+    def test_emr_nao_e_mais_uma_engine(self):
+        """O defeito que esta entrega existe para consertar. Uma linha `emr`
+        respondia por tres plataformas que publicam Iceberg diferente em 6 de
+        26 releases comparaveis -- e celula que responde por tres coisas que
+        divergem e pior que celula ausente: ausencia e recusa, e aquela celula
+        era uma afirmacao."""
+        declaradas = feature_support.engines()
+        assert "emr" not in declaradas
+        assert {"emr_ec2", "emr_serverless", "emr_eks"} <= declaradas
+
+    def test_nenhuma_celula_e_vazia(self):
+        """Toda celula da matriz: ou tem estado com fonte, ou e `UNKNOWN`.
+        Nenhuma vazia, nenhuma ausente. Celula ausente mente dizendo que a
+        pergunta nunca foi feita."""
+        for feature, dados in feature_support.load().items():
+            for engine in feature_support.engines():
+                versoes = dados["engines"].get(engine)
+                assert versoes, f"{feature}.{engine}: linha ausente"
+                for versao, celula in versoes.items():
+                    assert celula.get("status") in feature_support.SUPPORT_STATUS, (
+                        f"{feature}.{engine}.{versao}"
+                    )
+                    if celula["status"] != "UNKNOWN":
+                        assert celula.get("source"), f"{feature}.{engine}.{versao}"
+
+    def test_toda_engine_declara_a_propria_nota(self):
+        """Engine sem `note` e engine cujo desconhecimento nao foi explicado.
+        A note e onde o conhecimento mora enquanto nao sustenta celula -- sem
+        ela, `UNKNOWN` vira silencio."""
+        import yaml
+
+        from sparkforge.knowledge_ref import knowledge_dir, safe_knowledge_file
+
+        caminho = safe_knowledge_file(
+            knowledge_dir(), "storage/iceberg-feature-support.yaml"
+        )
+        documento = yaml.safe_load(caminho.read_text(encoding="utf-8"))
+        for engine in feature_support.engines():
+            nota = (documento["engines"].get(engine) or {}).get("note")
+            assert nota and nota.strip(), engine
+
+    def test_o_minimo_de_biblioteca_tambem_tem_fonte_vigiada(self):
+        vigiadas = runtime_matrix.watched_sources()
+        for feature in feature_support.load():
+            minimo = feature_support.min_library_version(feature)
+            if minimo:
+                assert minimo["source"] in vigiadas, feature
+
     def test_toda_celula_afirmativa_tem_fonte_vigiada_no_lock(self):
         """URL solta na matriz, sem entrada no lock, nao teria hash nem data
         revalidados por `scripts/refresh_knowledge.py` -- que e o unico
@@ -168,20 +281,38 @@ class TestMatrizPublicada:
         assert ("default_values", "pyiceberg", "*") in desconhecidas
         assert ("variant", "glue", "6.0") not in desconhecidas
 
-    def test_athena_tem_exatamente_uma_celula_afirmativa(self):
+    def test_athena_so_tem_celula_com_pagina_propria(self):
         """A fonte diz que tabela `format-version = 3` nao e lida pelo Athena --
         uma afirmacao sobre o FORMATO, nao sobre feature. Estende-la para as
         outras seis features da v3 preencheria celula por raciocinio, que e o
         mesmo defeito da inferencia entre engines na direcao negativa. Este
         teste existe porque a proxima pessoa a editar a matriz vai achar a
         assimetria estranha e "consertar" -- e ai o gate precisa aparecer antes
-        do commit, com a explicacao em `engines.athena.note`."""
+        do commit, com a explicacao em `engines.athena.note`.
+
+        O conjunto CRESCEU de uma para tres celulas, e o que guarda a invariante
+        nao e o numero: e a exigencia de que cada celula tenha uma PAGINA
+        PROPRIA. As tres afirmativas do Athena vem de tres URLs diferentes --
+        a de migracao do Glue 6.0, a de atualizacao de dado e a de evolucao de
+        schema. Duas celulas do Athena compartilhando a mesma fonte seria o
+        sinal de que alguem estendeu uma frase para uma feature de que ela nao
+        fala, que e exatamente o defeito guardado aqui.
+        """
         afirmativas = [
-            (feature, versao)
+            (feature, versao, celula["source"])
             for feature, engine, versao, celula in feature_support.cells()
             if engine == "athena" and celula["status"] != "UNKNOWN"
         ]
-        assert afirmativas == [("variant", "*")]
+        assert [(f, v) for f, v, _ in afirmativas] == [
+            ("merge_into", "*"),
+            ("schema_evolution", "*"),
+            ("variant", "*"),
+        ]
+        fontes = [fonte for _, _, fonte in afirmativas]
+        assert len(set(fontes)) == len(fontes), (
+            "duas celulas de Athena com a MESMA fonte: uma frase foi estendida "
+            "para uma feature de que ela nao fala"
+        )
 
     def test_suporte_nao_se_propaga_entre_engines(self):
         """A inferencia proibida da secao 20: "o Iceberg suporta, logo o Athena

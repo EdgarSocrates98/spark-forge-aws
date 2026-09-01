@@ -1,7 +1,9 @@
 # SparkForge AWS — Iceberg × consumidores × Lake Formation: `emr` não é uma engine
 
 **Data:** 2026-09-01
-**Status:** **proposta**.
+**Status:** **entregue** em 2026-09-01, branch `feat/emr-eks`. Estado corrente e
+números medidos: [`../STATUS.md`](../STATUS.md), seção *Iceberg × consumidores ×
+Lake Formation*. Os desvios estão na §7.
 **Origem:** quarto e último sub-projeto da decomposição do
 `PROMPT MESTRE — EVOLUÇÃO TOTAL GLUE + EMR DO SPARKFORGE AWS.md` (§7).
 Os três anteriores estão fechados.
@@ -144,4 +146,44 @@ inventário de consumidores; preserve essa fronteira.
 
 ## 7. Desvios
 
-Vazio.
+Quatro, e os quatro são de *como*, não de *o quê*. A spec é registro histórico;
+o estado corrente está em [`../STATUS.md`](../STATUS.md).
+
+1. **A D-1 dizia "a versão de Iceberg vem da matriz de runtime" e não dizia
+   COMO.** O mecanismo escolhido é `min_library_version` por feature — a primeira
+   release cujas notas curadas do Apache Iceberg nomeiam a capacidade — e um
+   módulo novo, `sparkforge/storage/readiness.py`, que cruza esse limite inferior
+   com a versão publicada por cada plataforma. A escolha carrega uma restrição
+   que a spec não previa e que está gravada em código: atender o mínimo **nunca**
+   promove uma célula a `SUPPORTED`. O mínimo só decide na direção negativa.
+
+2. **Duas features ficaram sem mínimo, e isso não estava previsto.**
+   `variant_shredding` e `multi_argument_transforms` não são nomeadas em release
+   nenhuma nas notas curadas lidas (1.6.0 a 1.10.1). Elas saem `UNKNOWN` com a
+   razão `min_library_version_ausente` em vez de receberem um número plausível.
+
+3. **Dois status novos entraram no vocabulário fechado.** O §7 do prompt mestre
+   lista `ENGINE_DEPENDENT` e `VERSION_DEPENDENT`, e a matriz não os tinha. Eles
+   entraram **com consumidor real** — `ENGINE_DEPENDENT` em
+   `rest_catalog.rest_client`, `VERSION_DEPENDENT` disponível para célula cuja
+   resposta só existe com a release na mão. Vocabulário sem consumidor seria
+   etiqueta decorativa, e este repositório recusa isso em toda parte.
+
+4. **`emr` continua reconhecido pelo `ConsumerGraph`.** A D-2 pedia que
+   consumidor sem linha na matriz produzisse `UNKNOWN` nomeado, e a leitura mais
+   simples seria remover `emr` de `KNOWN_SERVICES`. Medido antes de decidir:
+   remover converteria todo inventário já escrito em `known_service: false`, que
+   é um alarme sobre **grafia** para um problema que é de **ambiguidade**. O nome
+   fica reconhecido, e quem o resolve é `assess_upgrade`, com uma frase própria
+   que nomeia as três plataformas a declarar.
+
+### O que ficou como lacuna registrada
+
+- Nenhuma fonte de feature de Iceberg foi lida para `emr_ec2`, `emr_serverless`,
+  `emr_eks`, `redshift`, `trino`, `spark`, `flink`, `pyiceberg`, `bigquery` e
+  `s3_tables`. As células de engine dessas dez são `UNKNOWN`; o que responde por
+  três delas é o cruzamento por release.
+- `quicksight` e `sagemaker` continuam declaráveis no inventário e **não têm
+  linha** na matriz: saem como `UNKNOWN` nomeado, com a medida que destravaria.
+- `v3 × FGAC` e `REST Catalog × Lake Formation` ficaram `UNKNOWN`. As medidas que
+  as destravariam estão escritas em `engines.lakeformation.note`.

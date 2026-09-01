@@ -5183,6 +5183,137 @@ assessment: eles **ganharam** `platform`, `coverage`, `component_diff` e
 `component_diff_unresolved`, e nenhum achado, degrau, gate ou recomendação mudou de
 valor. Regenerados por `scripts/regen_fixtures.py`.
 
+## Iceberg × consumidores × Lake Formation — `emr` não é uma engine — **CONCLUÍDA** em 2026-09-01
+
+Quarto e último sub-projeto da evolução Glue + EMR. Spec:
+[`specs/2026-09-01-sparkforge-iceberg-consumidores-design.md`](specs/2026-09-01-sparkforge-iceberg-consumidores-design.md).
+
+### O defeito, e ele era de granularidade
+
+`knowledge/storage/iceberg-feature-support.yaml` tinha **uma** engine `emr`;
+`sparkforge/facts/consumers.py` reconhecia **um** serviço `emr`. As três
+plataformas publicam Iceberg **diferente** — divergência em **6 de 26** releases
+comparáveis entre EC2 e EKS, medida no sub-projeto de EMR on EKS. Em `emr-7.7.0`
+o EC2 traz `1.7.1-amzn-0` e o EKS traz `1.6.1-amzn-2`; em `emr-6.5.0` o EC2 traz
+`0.12.0` e o EKS **não traz Iceberg nenhum**. Uma resposta de prontidão dada para
+"EMR" está errada para pelo menos uma das três, e o operador não tem como saber
+qual. Célula que responde por três coisas que divergem é pior que célula ausente:
+ausência é recusa, e aquela célula era uma afirmação.
+
+### O que a matriz ganhou, e o que ela recusou ganhar
+
+De **63 células** (9 features × 6 engines, 51 `UNKNOWN`, 12 com fonte) para
+**191 células** (13 features × 14 engines, **174 `UNKNOWN`**, **17 com fonte**).
+Engines novas: `emr_ec2`, `emr_serverless`, `emr_eks` (no lugar de `emr`),
+`redshift`, `trino`, `spark`, `flink`, `bigquery`, `rest_client`. Features novas:
+`merge_into`, `schema_evolution`, `rest_catalog`, `remote_scan_planning`.
+
+Cinco células afirmativas novas, cada uma com página própria: `merge_into.athena`
+(`PARTIAL` — `MERGE INTO` existe e é sempre merge-on-read, com
+`write.merge.mode = copy-on-write` ignorado em silêncio), `merge_into.lakeformation`
+(`UNSUPPORTED` — Lake Formation não gerencia permissão para `VACUUM`, `MERGE`,
+`UPDATE` ou `OPTIMIZE`), `schema_evolution.athena` (`PARTIAL` — a página lista o
+que o *formato* suporta e as DDL que o *Athena* expõe, e as duas listas não
+coincidem), `rest_catalog.glue` (`PARTIAL` — o endpoint suporta v1 e v2, e **não
+nomeia v3**) e `rest_catalog.rest_client` (`ENGINE_DEPENDENT`).
+
+**A versão de Iceberg NÃO foi copiada para a matriz de feature.** Ela já mora em
+`knowledge/<plataforma>/runtime-matrix.yaml`; uma coluna aqui seria a terceira
+cópia do mesmo fato. O que entrou foi `min_library_version` — a primeira release
+cujas notas curadas do Apache Iceberg nomeiam a capacidade, com a citação exata —
+e `sparkforge/storage/readiness.py` calcula o cruzamento com a release da
+plataforma.
+
+`min_library_version` é **limite inferior**: biblioteca anterior ao mínimo é
+`UNSUPPORTED`; biblioteca que atende o mínimo **não** vira `SUPPORTED` — o
+resultado continua sendo o da célula da engine. Promover "atende o mínimo" a
+`SUPPORTED` seria a inferência proibida entrando por uma porta nova: a versão da
+biblioteca no lugar da spec.
+
+Duas features ficaram **sem** mínimo, e a lacuna está registrada:
+`variant_shredding` e `multi_argument_transforms` não são nomeadas em release
+nenhuma nas notas curadas de 1.6.0 a 1.10.1.
+
+### O contrafactual da granularidade
+
+`tests/test_storage_readiness.py::TestContrafactualDaGranularidade`. Em
+`emr-7.7.0`, feature `nanosecond_timestamp` (mínimo `1.7.0`, que cai **entre** as
+duas bibliotecas):
+
+| plataforma | Iceberg | resposta | razão |
+|---|---|---|---|
+| `emr_ec2` | `1.7.1-amzn-0` | `UNKNOWN` | `biblioteca_atende_o_minimo` |
+| `emr_serverless` | — | `UNKNOWN` | `iceberg_ausente_na_release` |
+| `emr_eks` | `1.6.1-amzn-2` | `UNSUPPORTED` | `biblioteca_anterior_ao_minimo` |
+
+O teste **não pode ficar verde antes da mudança**: `emr_ec2` e `emr_eks` não
+existiam como engines, e `readiness.py` não existia. E ele vem com o
+contrafactual do contrafactual — `deletion_vectors` (mínimo `1.8.0`) responde
+**igual** nas duas, porque as duas bibliotecas estão abaixo dele. Um mecanismo que
+fizesse tudo divergir não estaria medindo nada.
+
+### As recusas ganharam nome
+
+Vocabulário fechado em `readiness.REASONS`, com teste que exige um caso por razão
+e uma razão por caso: `engine_sem_matriz_de_runtime`, `release_desconhecida`,
+`variante_de_imagem_fora_da_matriz`, `iceberg_ausente_na_release`,
+`min_library_version_ausente`, `biblioteca_anterior_ao_minimo`,
+`biblioteca_atende_o_minimo`.
+
+`emr-6.5.0` no EKS produz `iceberg_ausente_na_release` e `UNKNOWN` — **nunca**
+`UNSUPPORTED`. Não saber que versão roda é diferente de saber que não suporta, e a
+diferença decide uma migração.
+
+**O limite da granularidade está escrito e enforçado:** variante de imagem não é
+chave da matriz de runtime. `emr-7.7.0-java8-latest` devolve `UNKNOWN` com
+`variante_de_imagem_fora_da_matriz`, nunca a resposta da família — a própria fonte
+declara que essa variante não tem Iceberg enquanto `emr-7.7.0` tem.
+
+### Consumidor declarado sem linha na matriz sai `UNKNOWN` NOMEADO
+
+`UpgradeAssessment` ganhou `unevaluated_consumers`, e `unresolved` ganhou uma
+frase por consumidor não avaliado. `emr` continua reconhecido pelo `ConsumerGraph`
+— tirá-lo converteria todo inventário já escrito em `known_service: false`, o que
+é alarme de **grafia** para um problema de **ambiguidade** — mas não tem linha na
+matriz, e por isso sai com a frase que diz qual das três declarar. `quicksight` e
+`sagemaker` caem na outra frase: ausente da matriz, com a medida que destrava.
+
+`KNOWN_SERVICES` ganhou `emr_ec2`, `emr_serverless`, `emr_eks`, `flink`,
+`pyiceberg`, `bigquery`, `rest_client` e `s3_tables`. O inventário ganhou um campo
+opcional `release:`, transcrito **cru** — normalizar esconderia a variante de
+imagem de quem sabe recusá-la.
+
+### IAM não é prova de acesso ao dado
+
+Das quatro combinações que a §7 do prompt mestre nomeia, **duas confirmadas por
+fonte** e **duas `UNKNOWN` com a medida que as destravaria**:
+
+| combinação | estado |
+|---|---|
+| `VARIANT × FGAC` | confirmado — FGAC não é suportado com coluna VARIANT |
+| `DELETE/MERGE × FGAC` | confirmado — Lake Formation não gerencia permissão para `VACUUM`, `MERGE`, `UPDATE`, `OPTIMIZE` |
+| `v3 × FGAC` | `UNKNOWN` — nenhuma fonte lida fala de FGAC contra o *formato* da tabela |
+| `REST Catalog × Lake Formation` | `UNKNOWN` — a página do endpoint REST do Glue não menciona Lake Formation |
+
+Uma quinta afirmação lida ficou em `engines.lakeformation.note` porque é sobre
+**metadata** e não sobre feature: com filtro de linha ou célula na tabela base, as
+metadata tables `$partitions`, `$files`, `$manifests`, `$snapshots` e a coluna
+`$path` falham com `AccessDeniedException` no Athena.
+
+### Zero regressão
+
+`sparkforge_iceberg_assess_upgrade` mantém veredito, número de células e
+`consumers` para toda entrada anterior — `releases` é opcional e vazio por padrão.
+Os goldens de `fixtures/consumers/` e `fixtures/iceberg/` passam **sem mudança**:
+as fixtures declaram `athena` e `quicksight`, nenhuma declara `release`, e os dois
+campos novos do payload são aditivos. Um teste antigo mudou de nome e de asserção
+(`test_athena_tem_exatamente_uma_celula_afirmativa` →
+`test_athena_so_tem_celula_com_pagina_propria`): o número de células afirmativas do
+Athena cresceu de uma para três, e o que passou a guardar a invariante não é o
+número, é a exigência de que **cada célula tenha uma página própria** — duas
+células de Athena com a mesma fonte continuam sendo falha.
+
+
 ## Dívidas abertas
 
 A tabela era uma só e misturava **três naturezas**, e a mistura fazia o

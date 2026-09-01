@@ -133,25 +133,90 @@ A armadilha do format-version 3 contra Athena, essa sim, já é judicável — e
 
 A separação entre as duas metades deste documento existe também como dado, em
 [`iceberg-feature-support.yaml`](iceberg-feature-support.yaml), carregado por
-`sparkforge/storage/feature_support.py`. O YAML é uma matriz de feature contra engine
-(`glue`, `athena`, `emr`, `pyiceberg`, `s3_tables`, `lakeformation`) em que **cada célula
-carrega a própria evidência** — e o carregador recusa a matriz inteira se alguma célula
-afirmar suporte sem `source`, `source_type` e `retrieved`.
+`sparkforge/storage/feature_support.py`. O YAML é uma matriz de **13 features contra 14
+engines** (`glue`, `athena`, `emr_ec2`, `emr_serverless`, `emr_eks`, `redshift`, `trino`,
+`spark`, `flink`, `pyiceberg`, `bigquery`, `rest_client`, `s3_tables`, `lakeformation`) em
+que **cada célula carrega a própria evidência** — e o carregador recusa a matriz inteira se
+alguma célula afirmar suporte sem `source`, `source_type` e `retrieved`.
 
-`UNKNOWN` é o único status que dispensa fonte, e é o status da maioria das células: **51 das
-63**. Isso não é lacuna do dado, é o resultado honesto de só existir documentação oficial
-enumerando feature de v3 por nome para uma engine. A alternativa — preencher a linha do
-Athena a partir do que o Iceberg suporta — é a inferência que a metade 1 deste documento
+`UNKNOWN` é o único status que dispensa fonte, e é o status da maioria das células: **174
+das 191**. Isso não é lacuna do dado, é o resultado honesto de só existir documentação
+oficial enumerando feature de v3 por nome para uma engine. A alternativa — preencher a linha
+do Athena a partir do que o Iceberg suporta — é a inferência que a metade 1 deste documento
 proíbe, e agora há um teste que falha quando ela acontece.
 
-O Athena tem **uma única célula preenchida** (`variant`, `UNSUPPORTED`). A frase da seção 5
-fala do *formato da tabela*, não de cada feature; estendê-la para as outras seis features da
-v3 fabricaria célula por raciocínio, que é o mesmo defeito na direção negativa. O que se sabe
-e não sustenta célula mora em `engines.athena.note`, dentro do YAML.
+O Athena tem **três células preenchidas**, e as três vêm de **páginas diferentes**:
+`variant` (`UNSUPPORTED`, da página de migração do Glue 6.0), `merge_into` (`PARTIAL`, da
+página de atualização de dado do Athena) e `schema_evolution` (`PARTIAL`, da página de
+evolução de schema). A frase da seção 5 fala do *formato da tabela*, não de cada feature;
+estendê-la para as outras seis features da v3 fabricaria célula por raciocínio, que é o mesmo
+defeito na direção negativa. O que se sabe e não sustenta célula mora em
+`engines.athena.note`, dentro do YAML.
 
 Um caso vale ser lido junto com a seção 5: `multi_argument_transforms` é `UNSUPPORTED` no
 Glue 6.0 **apesar** de estar na spec v3. É a linha em que a spec implica o contrário da
 engine.
+
+## 8. `emr` não é uma engine, e por que isso mudou a matriz
+
+Até 2026-09-01 a matriz tinha uma única linha `emr`. As três plataformas publicam Iceberg
+**diferente** — divergência em **6 de 26** releases comparáveis entre EC2 e EKS, medida em
+[`../emr-eks/runtime-matrix.md`](../emr-eks/runtime-matrix.md):
+
+| release | EMR on EC2 | EMR on EKS |
+|---|---|---|
+| `emr-7.7.0` | `1.7.1-amzn-0` | `1.6.1-amzn-2` |
+| `emr-6.5.0` | `0.12.0` | *nenhum Iceberg publicado* |
+
+Uma resposta de prontidão dada para "EMR" está errada para pelo menos uma das três, e o
+operador não tem como saber qual. Célula que responde por três coisas que divergem é pior que
+célula ausente: ausência é recusa, e aquela célula era uma afirmação. Hoje são `emr_ec2`,
+`emr_serverless` e `emr_eks`.
+
+**A versão de Iceberg não foi copiada para cá.** Ela já mora em
+`knowledge/<plataforma>/runtime-matrix.yaml` e uma coluna aqui seria a terceira cópia do mesmo
+fato. O que a matriz de feature declara é `min_library_version` — a partir de qual release da
+**biblioteca** a capacidade aparece, com a citação exata das notas curadas do Apache Iceberg —
+e `sparkforge/storage/readiness.py` calcula o cruzamento.
+
+`min_library_version` é **limite inferior**, nunca prova de suporte:
+
+- biblioteca **anterior** ao mínimo → `UNSUPPORTED`. Uma biblioteca publicada antes da
+  primeira release que nomeia a capacidade não pode tê-la.
+- biblioteca **atende** o mínimo → **não** vira `SUPPORTED`. O resultado é o que a célula da
+  engine disser, que quase sempre é `UNKNOWN`. Atender é condição necessária, nunca
+  suficiente: a AWS repackaga (`-amzn-N`) e pode desabilitar o que a upstream entrega.
+
+O efeito é conferível em `emr-7.7.0`, com `nanosecond_timestamp` (mínimo `1.7.0`):
+
+| plataforma | Iceberg | resposta | razão |
+|---|---|---|---|
+| `emr_ec2` | `1.7.1-amzn-0` | `UNKNOWN` | `biblioteca_atende_o_minimo` |
+| `emr_serverless` | — | `UNKNOWN` | `iceberg_ausente_na_release` |
+| `emr_eks` | `1.6.1-amzn-2` | `UNSUPPORTED` | `biblioteca_anterior_ao_minimo` |
+
+**O limite da granularidade está declarado.** A linha de componentes do EMR on EKS é publicada
+por *família*, não por variante de imagem: a própria fonte diz que `emr-7.7.0-java8-latest`
+**não** tem Iceberg enquanto `emr-7.7.0` tem. Perguntar por um label com variante devolve
+`UNKNOWN` com a razão `variante_de_imagem_fora_da_matriz`, nunca a resposta da família.
+
+## 9. IAM não é prova de acesso ao dado
+
+Lake Formation, S3, KMS e Glue Catalog são camadas **separadas**: uma feature pode ser
+suportada pela engine e inalcançável pela FGAC. As quatro combinações que o prompt mestre
+nomeia, e o estado de cada uma nesta coleta:
+
+| combinação | estado | fonte |
+|---|---|---|
+| `VARIANT × FGAC` | **confirmado** — FGAC não é suportado com coluna VARIANT | migração do Glue 6.0 |
+| `DELETE/MERGE × FGAC` | **confirmado** — Lake Formation não gerencia permissão para `VACUUM`, `MERGE`, `UPDATE` ou `OPTIMIZE` em Iceberg | Iceberg no Athena |
+| `v3 × FGAC` | `UNKNOWN` — nenhuma fonte lida fala de FGAC contra o **formato** da tabela | — |
+| `REST Catalog × Lake Formation` | `UNKNOWN` — a página do endpoint Iceberg REST do Glue não menciona Lake Formation | — |
+
+Uma quinta afirmação lida é sobre **metadata** e não sobre feature: com filtro de linha ou de
+célula do Lake Formation na tabela base, as metadata tables `$partitions`, `$files`,
+`$manifests` e `$snapshots` e a coluna `$path` falham com `AccessDeniedException` no Athena.
+É o caso limpo de "a engine suporta, e a camada de governança não deixa chegar ao dado".
 
 ## Fontes
 
@@ -159,5 +224,12 @@ engine.
 - Apache Iceberg 1.11.0 release. https://github.com/apache/iceberg/releases/tag/apache-iceberg-1.11.0 (retrieved 2026-08-22)
 - Migrating AWS Glue for Spark jobs to AWS Glue version 6.0. https://docs.aws.amazon.com/glue/latest/dg/migrating-version-60.html (retrieved 2026-08-22)
 - Iceberg release history (Amazon EMR). https://docs.aws.amazon.com/emr/latest/ReleaseGuide/Iceberg-release-history.html (retrieved 2026-08-22)
+- Notas curadas por release do Apache Iceberg (tag 1.11.0), fonte de `min_library_version`. https://raw.githubusercontent.com/apache/iceberg/apache-iceberg-1.11.0/site/docs/releases.md (retrieved 2026-09-01)
+- Query Apache Iceberg tables (Amazon Athena): considerações, limitações e as duas afirmações sobre Lake Formation. https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html (retrieved 2026-09-01)
+- Update Iceberg table data (Amazon Athena): `INSERT`/`UPDATE`/`DELETE`/`MERGE INTO` e o recorte de merge-on-read. https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-updating-iceberg-table-data.html (retrieved 2026-09-01)
+- Evolve Iceberg table schema (Amazon Athena): as mudanças de schema e as DDL que o Athena expõe. https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-evolving-table-schema.html (retrieved 2026-09-01)
+- Connecting to the Data Catalog using AWS Glue Iceberg REST endpoint: as especificações suportadas e as operações REST expostas. https://docs.aws.amazon.com/glue/latest/dg/connect-glu-iceberg-rest.html (retrieved 2026-09-01)
 - Custo de leitura, pruning e efeito de shredding sobre o plano em colunas VARIANT não foram lidos nesta coleta. A verificar.
 - Alcance exato do suporte inicial a `MERGE INTO` com evolução de schema no Spark 4.1 não foi lido nesta coleta. A verificar.
+- `variant_shredding` e `multi_argument_transforms` ficaram **sem** `min_library_version`: as notas curadas de 1.6.0 a 1.10.1 não nomeiam nenhuma das duas em release alguma. A medida que destrava é a nota curada de 1.11.0, que não está no `releases.md` da própria tag 1.11.0. A verificar.
+- Nenhuma fonte de feature de Iceberg foi lida para `emr_ec2`, `emr_serverless`, `emr_eks`, `redshift`, `trino`, `spark`, `flink`, `pyiceberg`, `bigquery` e `s3_tables`: as células de engine dessas dez continuam `UNKNOWN`, e o que responde por três delas é o cruzamento por release. A verificar.
