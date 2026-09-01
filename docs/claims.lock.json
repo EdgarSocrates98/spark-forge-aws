@@ -4405,17 +4405,17 @@
       "line": 62,
       "note": "Remedida: as tres rotas de AGENT-079/080/081, dos eixos de plataforma, cresceram o arquivo. A prova le o tamanho em disco, entao o numero vem da medicao, nao da mao. Remedido na entrega de `Jobs-as-Code` do Control-M (2026-09-01): o extrator `sparkforge/facts/controlm_jobs.py`, a area de regra SF-CTM, a tool `sparkforge_analyze_controlm_jobs` (64 -> 65 no catalogo) e o corpus `fixtures/controlm/` moveram o numero. Numero relido pela propria prova.",
       "proof": {
-        "cmd": "python -c 'import os; print(os.path.getsize(\"rules/catalog/routing.yaml\")//1024)'",
+        "cmd": "python -c 'import pathlib; b = pathlib.Path(\"rules/catalog/routing.yaml\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(len(b) // 1024)'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 52
+          "value": 51
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "52",
+      "text": "51",
       "type": "number"
     },
     {
