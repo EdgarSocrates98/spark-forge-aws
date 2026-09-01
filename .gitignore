@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+*.whl
 # Ancorados na raiz de proposito: `dist/` solto tambem casava com
 # `vendor/caveman/dist/`, que E codigo vendorizado e precisa ser commitado.
 /build/
