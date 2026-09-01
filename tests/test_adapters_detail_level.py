@@ -437,3 +437,142 @@ class TestEnvelopeDoCore:
             json.dumps(_core.analyze_pyspark(FIXTURE, limit=None)["items"]), encoding="utf-8"
         )
         self._conferir(_core.fuse_facts([str(arquivo)], limit=None, detail_level=nivel))
+
+
+class TestControlmDescribeDetailLevel:
+    """`controlm_describe` NAO devolve `items` de fact -- devolve dois
+    dicionarios (`capabilities`, `deprecated`) mais um terceiro so de recusa
+    (`unresolved_detail`). Por isso os niveis sao proprios (`full`/`compact`/
+    `minimal`) e a projecao e `_core._project_controlm_describe`, nao
+    `project_items`. Ver o comentario ao lado de `NIVEIS_DE_DETALHE_CONTROLM`
+    em `_core.py` para a razao completa.
+
+    Medido nesta versao de amostra (`9.0.22.010`, a mesma que
+    `tests/test_adapters_tools.py` usa por resolver os dois eixos de uma vez):
+    `full` sai com 12.145 bytes, `compact` com 2.648 (reducao de 78,2%) e
+    `minimal` com 183 (reducao de 98,5%). Medido tambem sobre as 31 versoes da
+    faixa inteira: `compact` reduz 79,4% em media e `minimal` reduz 98,4% --
+    os dois folgam o alvo de ~70% que motivou o desenho.
+    """
+
+    VERSAO = "9.0.22.010"
+
+    def _bytes(self, payload: dict) -> int:
+        return len(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+
+    def test_o_default_e_full(self):
+        assert _core.controlm_describe(self.VERSAO) == _core.controlm_describe(
+            self.VERSAO, detail_level="full"
+        )
+
+    def test_compact_e_menor_que_full_e_minimal_e_menor_que_compact(self):
+        tamanhos = {
+            n: self._bytes(_core.controlm_describe(self.VERSAO, detail_level=n))
+            for n in ("minimal", "compact", "full")
+        }
+        assert tamanhos["minimal"] < tamanhos["compact"] < tamanhos["full"], tamanhos
+
+    def test_compact_corta_pelo_menos_70_por_cento(self):
+        """O criterio do desenho: nivel que corta evidencia a ponto de o
+        operador ter que pedir de novo gasta MAIS token, nao menos. Medido:
+        se `compact` nao cortasse pelo menos ~70%, o desenho estaria errado."""
+        cheio = self._bytes(_core.controlm_describe(self.VERSAO, detail_level="full"))
+        compacto = self._bytes(_core.controlm_describe(self.VERSAO, detail_level="compact"))
+        reducao = 1 - (compacto / cheio)
+        assert reducao >= 0.70, reducao
+
+    def test_compact_reduz_capabilities_a_lista_de_slugs_ordenada(self):
+        cheio = _core.controlm_describe(self.VERSAO, detail_level="full")
+        compacto = _core.controlm_describe(self.VERSAO, detail_level="compact")
+        assert compacto["capabilities"] == sorted(cheio["capabilities"])
+
+    def test_compact_tira_unresolved_detail_mas_unresolved_fica(self):
+        cheio = _core.controlm_describe(self.VERSAO, detail_level="full")
+        compacto = _core.controlm_describe(self.VERSAO, detail_level="compact")
+        assert "unresolved_detail" not in compacto
+        assert compacto["unresolved"] == cheio["unresolved"]
+
+    def test_compact_mantem_deprecated_inteiro(self):
+        """`deprecated` NAO e cortado em `compact`: e a resposta direta a "o
+        que eu nao posso mais usar", e cortar obrigaria uma segunda chamada
+        para a MESMA pergunta que motivou a primeira."""
+        cheio = _core.controlm_describe(self.VERSAO, detail_level="full")
+        compacto = _core.controlm_describe(self.VERSAO, detail_level="compact")
+        assert compacto["deprecated"] == cheio["deprecated"]
+        assert compacto["deprecated"], "a versao de amostra precisa render depreciacao"
+
+    def test_minimal_nao_perde_o_sinal_de_recusa(self):
+        """A regra que nao se quebra: `minimal` nunca omite a EXISTENCIA da
+        recusa, so a lista de razoes. Sem isso o operador leria o silencio da
+        matriz como aprovacao -- o pior defeito deste motor."""
+        cheio = _core.controlm_describe(self.VERSAO, detail_level="full")
+        minimo = _core.controlm_describe(self.VERSAO, detail_level="minimal")
+        assert minimo["unresolved_count"] == len(cheio["unresolved"])
+        assert minimo["unresolved_count"] > 0, "a faixa precisa ter recusa para o teste valer"
+        assert "unresolved" not in minimo
+        assert "unresolved_detail" not in minimo
+
+    def test_minimal_reduz_deprecated_a_slugs_e_capabilities_a_contagem(self):
+        cheio = _core.controlm_describe(self.VERSAO, detail_level="full")
+        minimo = _core.controlm_describe(self.VERSAO, detail_level="minimal")
+        assert minimo["deprecated"] == sorted(cheio["deprecated"])
+        assert minimo["capabilities_count"] == len(cheio["capabilities"])
+
+    def test_minimal_mantem_version_e_covers(self):
+        cheio = _core.controlm_describe(self.VERSAO, detail_level="full")
+        minimo = _core.controlm_describe(self.VERSAO, detail_level="minimal")
+        assert minimo["version"] == cheio["version"]
+        assert minimo["covers"] == cheio["covers"]
+
+    def test_detail_level_invalido_e_recusado_no_core(self):
+        with pytest.raises(_core.AdapterError):
+            _core.controlm_describe(self.VERSAO, detail_level="normal")
+
+    def test_detail_level_invalido_e_recusado_na_cli(self):
+        proc = subprocess.run(
+            [sys.executable, "-m", "sparkforge.adapters.cli", "controlm", "describe",
+             "--version", self.VERSAO, "--detail-level", "normal"],
+            capture_output=True, text=True,
+        )
+        assert proc.returncode != 0
+
+    @pytest.mark.parametrize("nivel", ["minimal", "compact", "full"])
+    def test_cli_e_mcp_concordam_em_todos_os_niveis(self, nivel):
+        from sparkforge.adapters.tools import call_tool
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "sparkforge.adapters.cli", "controlm", "describe",
+             "--version", self.VERSAO, "--detail-level", nivel],
+            capture_output=True, text=True, check=True,
+        )
+        cli_payload = json.loads(proc.stdout)
+        mcp_payload = call_tool(
+            "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
+        )
+        assert cli_payload == mcp_payload
+
+    @pytest.mark.parametrize("nivel", ["minimal", "compact", "full"])
+    def test_saida_projetada_valida_contra_o_proprio_schema(self, nivel):
+        import jsonschema
+
+        from sparkforge.adapters.tools import TOOLS, call_tool
+
+        resultado = call_tool(
+            "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": nivel}
+        )
+        jsonschema.validate(resultado, TOOLS["sparkforge_controlm_describe"]["outputSchema"])
+
+    def test_a_tool_declara_detail_level_com_os_tres_niveis_proprios(self):
+        from sparkforge.adapters.tools import TOOLS
+
+        propriedade = TOOLS["sparkforge_controlm_describe"]["inputSchema"]["properties"]
+        assert propriedade["detail_level"]["enum"] == ["minimal", "compact", "full"]
+
+    def test_detail_level_invalido_vira_erro_estruturado_e_nao_excecao_no_mcp(self):
+        from sparkforge.adapters.tools import call_tool
+
+        resultado = call_tool(
+            "sparkforge_controlm_describe", {"version": self.VERSAO, "detail_level": "normal"}
+        )
+        assert resultado["exit_code"] == 2
+        assert "detail_level" in resultado["error"]
