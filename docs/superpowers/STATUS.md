@@ -41,13 +41,13 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **7993** passando, **7** skipped, medido ao fechar a fase de EMR on EKS | **A suíte inteira num processo só não sobrevive**, e por isso o número é a soma de lotes medidos um a um: `test_[a-c]*` 1430 (+2 skipped), `test_[d-e]*` 159, `test_f*` sem golden 1617, `test_fixtures_golden_*` em **quatro** sublotes (158, 716, 604 e 302, soma 1780 — o lote de goldens que `CLAUDE.md` já manda "quebrar outra vez" precisou de quatro partes e não de duas, porque a segunda metade estourou 10 minutos num processo só), `test_[g-z]*` 3007 (+5 skipped). Oito execuções, nenhuma falha na medida final |
+| Testes | **8565** passando, **7** skipped, medido ao fechar o QUARTO sub-projeto (2026-09-01) | **A suíte inteira num processo só não sobrevive**, e por isso o número é a soma de lotes medidos um a um: `test_[a-c]*` 1440 (+2 skipped), `test_[d-e]*` 173, `test_f*` sem golden 1654, `test_fixtures_golden_*` em **cinco** sublotes (135, 348, 410, 460 e 458, soma 1811 — o lote de goldens que `CLAUDE.md` já manda "quebrar outra vez" precisou de cinco partes, porque cada golden reextrai o corpus e o corpus cresceu), `test_[g-z]*` 3487 (+5 skipped). **Nove** execuções, nenhuma falha |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
 | Regras com eixo de resultado no `validation` | **62 de 116** — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **18 de 138** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados* | `load_catalog()` |
+| Regras com `runtime_scope` não-vazio | **18 de 140** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados* | `load_catalog()` |
 | Extratores de facts | **28** — remedido ao fechar a fase de EMR on EKS, `emr_eks.py` é o vigésimo oitavo | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 35 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
-| Fact kinds distintos emitidos | **166** — remedido ao fechar a fase de EMR on EKS; os oito novos são os `emrc.*` | união de `EMITTED_KINDS` sobre os 28 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (166 = 166, sem overlap entre módulos) |
-| Regras de diagnóstico | **138**, sendo **66 `confirmed`**, **37 com `status: structural`** e **35 sem campo `status`** (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` |
+| Fact kinds distintos emitidos | **168** — remedido ao fechar o quarto sub-projeto; os oito de EMR on EKS são `emrc.*`, e os dois últimos vieram do kind derivado de GraphFrames no extrator de Terraform (`tf.graphframes.jar` e `tf.graphframes.unknown`, da rodada de dívidas) | união de `EMITTED_KINDS` sobre os 28 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (168 = 168, sem overlap entre módulos) |
+| Regras de diagnóstico | **140**, sendo **66 `confirmed`**, **39 com `status: structural`** e **35 sem campo `status`** (as duas últimas `structural` são `SF-GRAPH-005` e `SF-GRAPH-006`, da rodada de dívidas) (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **97** — remedido ao fechar a fase de EMR on EKS, e o número **não** cresceu por causa dela: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` |
@@ -59,7 +59,7 @@ arquivo ganha.
 | Skills | **46** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases`) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **23 de 46**, sendo **10** com `agent:`. `compare-releases` é a vigésima terceira, e ela declara `agent: sf-runtime-specialist` por ser o único coordenador que a declara — o mesmo que já declara `migrate-glue-6` e `spark4-compatibility`, porque a fronteira das três é a mesma: versão de runtime. Medido em `.agents/skills/*/SKILL.md`, não somado à mão. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **262** em 32 domínios — remedido ao fechar a fase de EMR on EKS, e **59 dos 68 acrescidos desde as 194 publicadas são de fases anteriores** que não remediram esta linha; `emr_eks` contribui com os outros 9. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **256 guardam o golden em `expected/`**; as 6 de `glue_job_run` o guardam em `runs/`, e essa é a única forma divergente | `fixtures/` |
+| Fixtures golden | **266** em 32 domínios — remedido ao fechar a fase de EMR on EKS, e **59 dos 68 acrescidos desde as 194 publicadas são de fases anteriores** que não remediram esta linha; `emr_eks` contribui com os outros 9. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **260 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 260 + 6 = 266, e a conta fecha — a linha anterior publicava 262, que não fechava com nenhuma das duas contagens | `fixtures/` |
 | Ramos de severidade com golden que os produz | **89 de 89** (15 deles nas 7 regras com `severity_by`; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **215** (201 móveis, 14 fixas) — 87 citadas por regra, 205 por `knowledge/`, 77 pelas duas. A fase de EMR on EKS levou 153 → 213 na pesquisa de fontes e 213 → **215** ao fixar as duas URLs do Spark 3.5.6 que `SF-EMRK-004` cita; **64** das 215 são citadas por `knowledge/emr-eks/` e **16** por regra `SF-EMRK`. A diferença para as 143 publicadas antes é de fases anteriores que não remediram esta linha | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
@@ -5093,6 +5093,69 @@ esquecia `tests/test_fixtures_golden_emr_eks.py`, que um gate exige (DV-9).
   **não toca** o manifesto offline: o caminho certo é regravar o `sha256` com
   `sparkforge.tools.offline._content_sha256`, como `docs/gates-por-mudanca.md` já
   documentava. Só aquele checksum mudou.
+
+## `ReleaseDescriptor` e `ReleaseDiff` — as quatro matrizes na mesma forma — **CONCLUÍDA** em 2026-08-31
+
+Documento: [spec](specs/2026-08-31-sparkforge-release-diff-design.md).
+Segundo sub-projeto da decomposição do prompt mestre de evolução Glue + EMR.
+Commits `ff06ade`, `31f3262`, `6080faf`.
+
+**A lacuna que a spec achou não era a que ela procurava.** O objetivo era o diff;
+o que faltava antes dele era **dado**. As quatro matrizes de runtime estavam em
+**três formas**: Glue e EMR Serverless em YAML com fonte por célula, EMR on EC2
+num dicionário Python dentro de `facts/runtime_detect.py`, e EMR on EKS só em
+prosa. Um diff que lesse as três seriam três mecanismos com um nome só.
+
+Hoje as quatro estão em `knowledge/<plataforma>/runtime-matrix.yaml` — Glue 5,
+EMR on EC2 30, EMR Serverless 26, EMR on EKS 34 releases — com `sources` e
+`retrieved` por célula, e o código lê delas.
+
+**O que a normalização achou, e não era o que se esperava.** `EMR_MATRIX` e a
+prosa de EC2 **não divergiam** em nenhuma das 150 células; mover o dado deu
+procedência ao que já estava certo. A divergência apareceu em **Glue**: `scala`
+era `2.12.18` no YAML (com URL e data) e `2.12` no `.md`. Ganhou a célula com
+procedência.
+
+**E a spec errou uma afirmação, corrigida na §8 dela.** Ela dizia que
+`GLUE_MATRIX` duplicava o YAML sem lastro; medido, ela já lia do YAML desde a
+fase SF-MIG. Havia **uma** cópia em código, a de EC2.
+
+**O guard de drift reduziu dois parsers a um.** `tests/test_runtime_matrix_drift.py`
+compara cada YAML contra a tabela do `.md`, parametrizado **por célula**, e
+absorveu a assimetria que a página de EC2 já media: a série 6.x é estável e exige
+conjunto idêntico; a 7.x tem churn garantido e avisa em vez de falhar. Dois
+parsers de markdown que existiam antes saíram.
+
+**Das sete dimensões de diff que o §8.2 do prompt mestre pede, duas têm lastro.**
+`added` e `removed`, porque a presença da célula por release é o que as matrizes
+carregam. As outras cinco saem em `unresolved` **com a medida que destrava cada
+uma** — e a mais próxima de ter, `default_changes`, é instrutiva: a §2 de
+`knowledge/glue/runtime-matrix.md` **discute** mudança de default, mas em prosa,
+chaveada por versão de **Spark** e não por release de plataforma, e só para Glue.
+Emitir para uma das quatro e nada para três seria pior que recusar — o operador
+de EMR leria lista vazia como "nenhum default mudou".
+
+**O eixo da comparação é resultado, não entrada.** `diff` de `emr-7.7.0` no EC2
+contra o mesmo rótulo no EKS sai com `axis: platform` e mostra a divergência que
+o sub-projeto 1 mediu — Iceberg `1.7.1-amzn-0` × `1.6.1-amzn-2`, minor diferente,
+e Spark `3.5.3-amzn-1` × `3.5.3-amzn-0`. Com os **dois** eixos variando, o verbo
+emite e recusa a **atribuição** por nome: nenhuma linha de `changed` pode ser
+creditada a release ou a plataforma isoladamente.
+
+**Uma inversão de causa que a spec não previa, achada na implementação:** se
+`hadoop` caísse em `removed` no diff EC2 × EKS, a saída afirmaria "o EKS removeu
+o Hadoop". Componente que **uma das duas** plataformas não publica vai para
+`unresolved`, não para `removed`.
+
+**Dívida latente medida e não paga:** `runtime_matrix.load()` (Glue) devolve
+`sources` e `retrieved` como se fossem componente — as três matrizes de EMR
+filtram, o caminho do Glue não. Ficou latente porque `runtime_detect` filtra para
+três colunas. Não foi consertada aqui: mudar a forma de retorno de `load()` é
+mudança de contrato com consumidores em golden. O descritor filtra, e
+`TestChavesReservadasNaoSaoComponente` trava isso nas cinco releases de Glue.
+
+Custo declarado: import de `runtime_detect` subiu **21 ms** na mediana, porque o
+`pyyaml` desta máquina não tem `libyaml`. Por chamada, zero — `lru_cache`.
 
 ## `MigrationAssessment` para as quatro plataformas — a ponte é o Spark, e a cobertura é declarada — **CONCLUÍDA** em 2026-09-01
 
