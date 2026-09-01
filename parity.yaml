@@ -316,6 +316,29 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # CAPACIDADE PROPRIA, e nao uma quinta plataforma da de cima. A de cima
+  # responde "o que esta release publica" para as QUATRO plataformas de Spark,
+  # com um eixo (componente -> versao). Esta responde por versao do Control-M
+  # Automation API, com DOIS eixos -- capacidade com fronteira, e componente com
+  # exigencia -- e sobre um produto que nao roda Spark. Colapsar as duas faria o
+  # manifesto prometer, para Glue e EMR, um eixo de capacidade que aquelas
+  # fontes nao publicam.
+  #
+  # `knowledge:` com a pagina da matriz, que e onde mora o que a fonte NAO
+  # sustenta -- inclusive o limite entre o Automation API e o produto Control-M,
+  # e o fato de `WebFetch` devolver 403 contra `documents.bmc.com`.
+  - name: describe what a Control-M Automation API version supports
+    tools: [sparkforge_controlm_describe]
+    cli: [controlm describe]
+    knowledge:
+      - knowledge/controlm/automation-api-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: diff component versions between two runtime releases
     tools: [sparkforge_release_diff]
     cli: [release diff]

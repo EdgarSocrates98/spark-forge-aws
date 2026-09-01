@@ -61,6 +61,7 @@ class TestToolSurface:
             "sparkforge_iceberg_assess_upgrade",
             "sparkforge_release_describe",
             "sparkforge_release_diff",
+            "sparkforge_controlm_describe",
             "sparkforge_benchmark",
             "sparkforge_funcval_plan",
             "sparkforge_funcval_compare",
@@ -1808,6 +1809,20 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         assert resultado["unresolved"], "as cinco dimensoes sem lastro saem sempre"
         return resultado
 
+    if name == "sparkforge_controlm_describe":
+        # `9.0.22.010` de proposito: e a versao que resolve os DOIS eixos de uma
+        # vez -- capacidades introduzidas, uma capacidade DEPRECIADA
+        # (`config em:param::set`, de `9.0.21.300`) e exigencia de componente
+        # (`java`, `python`, `pip`). Uma versao do piso da faixa validaria contra
+        # o schema pelo motivo errado: `deprecated` e `components` sairiam
+        # vazios, e objeto vazio passa em qualquer schema de objeto.
+        resultado = call_tool("sparkforge_controlm_describe", {"version": "9.0.22.010"})
+        assert resultado["capabilities"], "a amostra precisa resolver capacidade"
+        assert resultado["deprecated"], "a amostra precisa render o eixo de depreciacao"
+        assert resultado["components"], "a amostra precisa render exigencia de componente"
+        assert resultado["unresolved"], "as recusas nomeadas saem sempre"
+        return resultado
+
     if name == "sparkforge_migration_assess":
         # Um job com SDK v1 e um pin de PyArrow abaixo do piso do Spark 4.1:
         # o primeiro faz `SF-MIG-001` nascer, o segundo faz `SF-SPARK4-003`
@@ -1997,6 +2012,11 @@ class TestErrorShapesValidateToo:
         # cobra e o SEGUNDO. A plataforma fora das quatro tem o seu proprio
         # caminho, com a lista das quatro na mensagem.
         ("sparkforge_release_describe", {"platform": "glue", "release": "99.9"}),
+        # Versao ACIMA do teto da faixa, e ela existe de verdade na fonte
+        # (`9.0.22.125`, agosto de 2026). O erro que se cobra nao e "numero
+        # invalido": e a recusa de EXTRAPOLAR para fora do passado fechado que a
+        # matriz leu.
+        ("sparkforge_controlm_describe", {"version": "9.0.22.125"}),
         (
             "sparkforge_release_diff",
             {

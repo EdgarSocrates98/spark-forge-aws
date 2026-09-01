@@ -47,6 +47,11 @@ Esta base é a fonte de verdade sobre **como Spark, Glue, Athena, Parquet e Iceb
 | [`emr-eks/runtime-matrix.md`](emr-eks/runtime-matrix.md) | A resposta da D-4: a AWS **publica** matriz por release para EMR on EKS — Spark, Iceberg, Hudi e Delta — e **não** publica Hadoop nem Python. Comparação release a release contra o EC2, com as **4 divergências de Spark e 6 de Iceberg** que provam que a `EMR_MATRIX` não se reaproveita, e a condição que permite derivar `spark` mas veta derivar `iceberg` |
 | [`emr-eks/job-run-configuration.md`](emr-eks/job-run-configuration.md) | A definição de um job run (`describe-job-run`) e do virtual cluster (`describe-virtual-cluster`): tipos reais dos campos, a lista de **cinco níveis de precedência** entre `sparkSubmitParameters` e `applicationConfiguration`, os destinos de log **sem** o managed storage ligado por default do Serverless, `persistentAppUI` sem default publicado, `dynamicAllocation` sem `shuffleTracking`, e o formato do release label com sufixo obrigatório. Traz o placar das cinco regras candidatas, com **uma vetada** |
 
+### Control-M (BMC)
+| Arquivo | Conteúdo |
+|---|---|
+| [`controlm/automation-api-matrix.md`](controlm/automation-api-matrix.md) | O **Automation API**, não o produto Control-M — a distinção não é formal, e o cabeçalho diz por quê. **Dois eixos**, porque a fonte tem dois tipos de afirmação: **51** capacidades com fronteira de versão (`Job:DetachedEmbeddedScript` a partir de `9.0.22.005`) e **6** exigências de componente (Java 11 fora em `9.0.21.325`). Faixa `9.0.21.200`–`9.0.22.100`, **31** versões citadas, **22** com afirmação e **9** recusadas por nome. Traz o procedimento do alarme mensal, e o aviso de que **`WebFetch` devolve 403** contra `documents.bmc.com` — o bloqueio é de user-agent |
+
 ### Amazon Athena
 | Arquivo | Conteúdo |
 |---|---|
@@ -92,7 +97,9 @@ Ler [`../rules/catalog/README.md`](../rules/catalog/README.md) antes de escrever
 
 ## Fontes e frescor
 
-Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, `devin/` e `emr-serverless/` em **2026-08-04**, `graph/` em **2026-08-05**, e `emr-eks/` em **2026-08-31**.
+Cada arquivo declara `Fontes` com URL e data de coleta no rodapé. Coleta desta rodada: **2026-07-29**; `emr/` foi coletado em **2026-08-01**, `dq/` em **2026-08-03**, `devin/` e `emr-serverless/` em **2026-08-04**, `graph/` em **2026-08-05**, `emr-eks/` em **2026-08-31** e `controlm/` em **2026-09-01**.
+
+`controlm/` tem um perfil de frescor que nenhuma das outras tem, e ele está escrito na própria página: a fonte é a `Monthly` da BMC e **rola ~12×/ano**, contra as ~4×/ano da página 7.x da AWS. Ela **fica** vigiada mesmo assim, porque a faixa que a matriz cobre é passado fechado — ao alarme, confere-se se alguma célula **da faixa** mudou, e quase sempre a resposta é não. E a releitura exige **UA de browser**: `WebFetch` devolve 403 contra `documents.bmc.com`, e quem não souber disso vai concluir que a fonte morreu.
 
 **A seção `Fontes` de cada arquivo daqui é vigiada.** `scripts/refresh_knowledge.py::watchlist` deriva a lista de URLs de **duas** origens, e nenhuma das duas é mantida à mão: `sources[].url` das regras do catálogo (campo `rules` no lock) e as URLs que aparecem nos blocos `Fontes` destas páginas (campo `docs`). `tests/test_refresh_knowledge.py::test_the_committed_lock_matches_the_watchlist` exige igualdade exata entre o lock e a união das duas.
 

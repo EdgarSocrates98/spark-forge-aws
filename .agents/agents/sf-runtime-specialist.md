@@ -38,6 +38,31 @@ versao de Spark que o exige. A saida traz a dependencia observada ao lado do
 achado que ela produziu, e o runtime que decidiu quais regras avaliaram -- sem
 ele, achado ausente e indistinguivel de regra pulada por versao.
 
+## Control-M (BMC) — conhecimento versionado, e a fronteira dele
+
+Quando o caso pergunta *"estou na versão X do Control-M Automation API, o que
+posso usar?"*, use `sparkforge_controlm_describe` com a versão. Ele responde
+pelos **dois eixos** que a fonte publica — capacidade com fronteira de versão, e
+exigência de componente — e cada item traz `declared_at`, a versão onde a
+fronteira foi lida.
+
+Este coordenador atende a pergunta pela mesma razão que já atende
+`sparkforge_release_describe`: a fronteira é **versão**, e é a mesma que separa
+`migrate-glue-6` de `spark4-compatibility`. O que muda é o produto, não o tipo
+de pergunta.
+
+Três limites, e nenhum deles é opcional:
+
+- **A matriz é do Automation API, não do produto Control-M.** As duas usam a
+  grafia `9.0.2x.yyy` e não são a mesma coisa. Número do produto não se deriva
+  do número do Automation API.
+- **A faixa é `9.0.21.200`–`9.0.22.100` e é fechada.** Versão fora dela é recusa
+  nomeada, com o intervalo. Não extrapole da fronteira mais próxima.
+- **Não há regra de Control-M, e não é lacuna.** Não há artefato para extrair —
+  o operador não tem Control-M instalado —, e regra sem corpus é o que este motor
+  recusa. Este verbo entrega dado e consulta; julgar definição de job depende de
+  um extrator de `Jobs-as-Code` que não existe.
+
 ## Não faz
 
 Nao executa manutencao destrutiva nem altera dados sem confirmacao explicita.
