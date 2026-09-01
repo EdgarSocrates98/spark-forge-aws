@@ -318,6 +318,35 @@ python -m pytest tests/test_router_agents.py tests/test_case_router.py \
   tests/test_case_store.py tests/test_artifact_contents.py -q
 ```
 
+## Alterar a tabela *Números correntes* do `STATUS.md`
+
+```bash
+python scripts/check_status_numbers.py --strict
+```
+
+**Gate diferente do de lastro, e a fronteira é medida.** `check_vnext_claims.py`
+audita `docs/vnext/` e `docs/harness/`; ele **não** audita o `STATUS.md`, que é a
+fonte da verdade sobre onde o projeto está. A auditoria de 2026-09-01 mediu a
+consequência: **oito** números da tabela errados, com aquele gate em `exit 0`.
+
+Estender o gate de lastro ao `STATUS.md` foi medido antes de ser recusado:
+o arquivo inteiro produz **1797** alegações (2,5× o manifesto de hoje), a seção
+*Números correntes* sozinha produz **189** — porque o extrator pega todo número,
+inclusive os que são explicação de defeito passado —, e a alegação de verdade são
+as **24** da coluna `Valor`, uma por dimensão. Os 1214 números das seções de fase
+são de época, e auditá-los contra o hoje seria errado por construção.
+
+`scripts/check_status_numbers.py` tem o recorte que o outro não tem — seção,
+tabela e coluna — e não tem manifesto: a **medição é código** e o valor publicado
+está no `STATUS.md`. O par é o contrato, e não há terceiro arquivo de verdade.
+
+Linha nova na tabela precisa de medida em `MEDIDAS` **ou** de recusa com razão em
+`SEM_MEDIDA`; `--strict` reprova o que não tem nem uma nem outra. O gate falha
+também no sentido inverso: medida sem linha na tabela é dimensão que sumiu do
+documento com a medida esquecida.
+
+O teste que prova que ele reprova é `tests/test_status_numbers_gate.py`.
+
 ## Alterar `scripts/check_vnext_claims.py`, `docs/claims.lock.json`, ou alegação em
 ## `docs/vnext/` ou `docs/harness/`
 

@@ -88,6 +88,12 @@ jobs:
         run: python scripts/check_evals.py
       - name: vNext claims lastro
         run: python scripts/check_vnext_claims.py
+      # O gate acima audita `docs/vnext/` e `docs/harness/`, e NAO o STATUS.md
+      # -- que e a fonte da verdade sobre onde o projeto esta. A auditoria de
+      # 2026-09-01 mediu a consequencia: oito numeros errados na tabela
+      # *Numeros correntes* com o gate acima em exit 0.
+      - name: STATUS.md numeros correntes
+        run: python scripts/check_status_numbers.py --strict
       - name: Surface lock
         run: python scripts/check_surface_lock.py
       - name: Catalog loads with expression validation
