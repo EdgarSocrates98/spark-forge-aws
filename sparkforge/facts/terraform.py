@@ -752,7 +752,10 @@ _JAR_DELIVERY_CONFS = frozenset({"spark.jars", "spark.jars.packages"})
 # a coordenada Maven `graphframes:graphframes:...`. Um substring, e nao um
 # regex de versao: a pergunta e "a biblioteca aparece aqui?", e travar o formato
 # do nome faria a leitura envelhecer a cada release nova.
-_GRAPHFRAMES_TOKEN = "graphframes"
+# NAO chamar de `_TOKEN`: o `S105` do ruff acusa constante com esse sufixo
+# como senha embutida, e o achado seria falso -- isto e a marca textual da
+# biblioteca, procurada por substring.
+_GRAPHFRAMES_MARCA = "graphframes"
 
 # `--conf` ilegivel esconde `spark.jars.packages` inteiro, entao ele conta como
 # porta aberta que nao deu para ler -- nunca como ausencia.
@@ -814,7 +817,7 @@ def _check_graphframes_jar(resource_facts: list[Fact]) -> str:
         else:
             continue
         value = fact.attrs.get("value")
-        if isinstance(value, str) and _GRAPHFRAMES_TOKEN in value.lower():
+        if isinstance(value, str) and _GRAPHFRAMES_MARCA in value.lower():
             declared = True
 
     if declared:

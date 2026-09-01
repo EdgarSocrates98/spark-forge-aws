@@ -333,7 +333,8 @@ class TestGraphFramesJarSentinel:
         sem valor pode ser `spark.jars.packages=...`. Tratar isso como
         indeterminado calaria a regra sobre um `--conf` inteiramente lido."""
         src = job_with_args(
-            '"--conf" = "spark.sql.shuffle.partitions=200 --conf spark.sql.autoBroadcastJoinThreshold"'
+            '"--conf" = "spark.sql.shuffle.partitions=200 '
+            '--conf spark.sql.autoBroadcastJoinThreshold"'
         )
         facts = extract_terraform(src, "main.tf")
         assert facts_of("tf.unresolved", facts), "a fixture precisa produzir o par malformado"
