@@ -1,0 +1,275 @@
+# Matriz do Control-M Automation API. Dado, nunca constante em Python.
+#
+# ESCOPO, E ELE VEM ANTES DE TUDO: esta matriz e do AUTOMATION API, nao do
+# produto Control-M inteiro. A distincao nao e formal. Medido em 2026-09-01: do
+# lado do PRODUTO, so `9.0.21.300` e `9.0.22` abrem raiz de documentacao;
+# `9.0.22.100` esta atras de login de entitlement e `9.0.21.200` nao tem raiz
+# propria. Celula sobre o produto fora do Automation API sai em `unresolved`
+# com a razao -- nunca preenchida por analogia com o numero do Automation API,
+# que carrega o mesmo `9.0.2x.yyy` e NAO e a mesma coisa.
+#
+# DOIS EIXOS, PORQUE A FONTE TEM DOIS TIPOS DE AFIRMACAO. As quatro matrizes de
+# runtime deste repositorio tem uma forma so -- componente -> versao
+# (`spark: 3.5.3-amzn-0`). A pagina What's New da BMC tem duas, e forcar as duas
+# num eixo so foi avaliado e RECUSADO:
+#
+#   capabilities  capacidade com FRONTEIRA de versao. `Job:DetachedEmbeddedScript`
+#                 existe a partir de `9.0.22.005`; `config em:param::set` esta
+#                 depreciado a partir de `9.0.21.300`. O molde e a matriz de
+#                 feature do Iceberg (`min_library_version`).
+#   components    componente com EXIGENCIA por versao. Java 11 deixa de ser
+#                 suportado em `9.0.21.325`; Python `3.8.4+` passa a ser exigido
+#                 em `9.0.22.010`. O molde sao as quatro matrizes de runtime.
+#
+# `Java 11` NAO e componente com versao: e fronteira de exigencia. Celula que
+# responde por coisas de naturezas diferentes e pior que celula ausente, porque
+# ausencia e recusa e a celula e afirmacao.
+#
+# O VOCABULARIO E FECHADO nos dois eixos, pelo mesmo motivo de
+# `_carrega_matriz_fechada` nas tres matrizes de EMR: a unica forma pratica de
+# esta matriz voltar a inventar eixo e alguem acrescentar uma chave nova numa
+# linha porque "faz sentido". Chave fora do conjunto estoura na carga, com o
+# nome da chave e da entrada. As fronteiras conhecidas sao quatro --
+# `introduced_in`, `changed_in`, `deprecated_from`, `discontinued_in` -- e cada
+# capacidade declara ao menos uma.
+#
+# A FAIXA E `9.0.21.200`--`9.0.22.100`, E ELA E PASSADO FECHADO. `covers`
+# declara isso como dado, e nao como comentario, porque `describe` recusa por
+# NOME fora dela em vez de extrapolar. A pagina e `Monthly` e ROLA: em
+# 2026-09-01 ela declarava `9.0.22.125` no rodape, tres degraus acima do topo da
+# faixa. Nada que role muda o que aconteceu no `9.0.21.300`.
+#
+# 31 VERSOES DA FAIXA SAO CITADAS, 22 CARREGAM AFIRMACAO, 9 NAO -- e as 9 saem
+# nomeadas em `unresolved` em vez de ausentes. Oito delas so tem linha de
+# *Corrected Problems*, e a nona e `9.0.22.100`, o TOPO da faixa pedida, que
+# aparece na pagina so como pre-requisito de Control-M/Agent e de Control-M/EM.
+# Deixa-las fora faria a matriz parecer nao ter lido a pagina daquelas versoes.
+#
+# `9.0.21.100` APARECE E ESTA ABAIXO DO PISO, de proposito:
+# `config_server_params_get` foi depreciado la e DESCONTINUADO em `9.0.21.300`,
+# que esta dentro. A fronteira de fora e leitura literal da mesma linha, nao
+# extrapolacao -- e `describe` nunca responde por `9.0.21.100`.
+#
+# ACESSO: `WebFetch` devolve 403 contra `documents.bmc.com`. O bloqueio e de
+# user-agent, nao de produto. Toda releitura desta fonte exige UA de browser
+# (`curl -A "Mozilla/5.0 ..."`). Ver a secao 2 do `.md` irmao.
+schema_version: 1
+retrieved: "2026-09-01"
+covers:
+  from: "9.0.21.200"
+  to: "9.0.22.100"
+sources:
+  - "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm"
+
+# EIXO 1 -- capacidade com fronteira de versao.
+capabilities:
+  deploy_jobtype_get:
+    summary: "`deploy jobtype::get` baixa um job type customizado do Control-M/Server em formato `*.ctmai`."
+    introduced_in: "9.0.21.200"
+  run_userdaily_missing:
+    summary: "`run userDaily:missing::list|poll|run` reordena jobs perdidos por Order Method interrompido; substitui o utilitario `ctmudchk`."
+    introduced_in: "9.0.21.200"
+  run_ondemand:
+    summary: "`run ondemand` executa jobs sem deploy no banco do Control-M/EM e sem User Daily; substitui o utilitario `ctmcreate`."
+    introduced_in: "9.0.21.200"
+  config_em_high_availability:
+    summary: "`config em::failover|setasprimary|fallback` e `config em:highavailabilitystatus::get` configuram alta disponibilidade do Control-M/EM."
+    introduced_in: "9.0.21.200"
+  file_transfer_job_new_parameters:
+    summary: "Definicoes de job File Transfer passam a aceitar novos parametros."
+    introduced_in: "9.0.21.200"
+  config_item_recycle_service:
+    summary: "`config item::recycle` recicla um servico do Control-M, alem de um Agent."
+    introduced_in: "9.0.21.200"
+  config_server_notification_list_setactive:
+    summary: "`config server:notification:list::setactive` ativa uma lista de destinos de notificacao; substitui o utilitario `ctmshtb`."
+    introduced_in: "9.0.21.200"
+  agentless_host_configuration:
+    summary: "Configuracao e gestao de Agentless Hosts pelo Automation API."
+    introduced_in: "9.0.21.200"
+  ssh_key_configuration:
+    summary: "Configuracao e gestao de chaves SSH pelo Automation API."
+    introduced_in: "9.0.21.200"
+  load_balancer_router_management:
+    summary: "`config server:loadbalancer::get|update` e o parametro `agentType=LoadBalancer` em `config server:agent::add` gerenciam Load Balancer Routers."
+    introduced_in: "9.0.21.200"
+  config_server_agent_test:
+    summary: "`config server:agent::test` testa a conectividade de um Agent com o Control-M/Server, aceitando arquivo de configuracao para simular parametros."
+    introduced_in: "9.0.21.200"
+  mfte_processing_rules:
+    summary: "`config mfte:site:processingRule::add|update|delete|disable|enable` e `config mfte:site:processingRules::get` gerenciam regras de processamento no MFTE B2B."
+    introduced_in: "9.0.21.200"
+  deploy_zip_package_with_descriptor:
+    summary: "O servico deploy passa a transformar um pacote ZIP de arquivos JSON com Deploy Descriptor, alem de um JSON unico."
+    introduced_in: "9.0.21.200"
+  deploy_folders_get:
+    summary: "`deploy folders::get` obtem detalhes de folders que casam com um criterio de busca, em JSON."
+    introduced_in: "9.0.21.205"
+  config_server_failover_async:
+    summary: "`config server::failover` aceita a opcao `async` para rodar em modo assincrono."
+    introduced_in: "9.0.21.215"
+  run_jobs_status_history_run_date:
+    summary: "O campo `historyRunDate` filtra `run jobs:status::get` por data de execucao."
+    introduced_in: "9.0.21.215"
+  workbench_docker_image:
+    summary: "Control-M Workbench passa a ser distribuido como imagem Docker em `containers.bmc.com`."
+    introduced_in: "9.0.21.220"
+  workflow_insights_data_export:
+    summary: "`config workflowinsights:dataexport:parameters::get|set` e `:status::get` exportam metricas de Workflow Insights para CSV indexado em OpenSearch. Exigem Control-M/EM 9.0.21.200 ou superior."
+    introduced_in: "9.0.21.225"
+  host_restriction_params_inline:
+    summary: "`config server:hostRestriction::add|update` passam a receber `nodePrefix`, `maxJobsAllowed` e `maxCPUPct` pelo comando, nao por arquivo JSON."
+    changed_in: "9.0.21.235"
+  config_server_high_availability:
+    summary: "`config server::fallback`, `config server:highavailabilitystatus::get`, `config server:database::replicateDatabase` e `::databaseActivateSync` configuram alta disponibilidade de Control-M/Servers."
+    introduced_in: "9.0.21.300"
+  config_server_definition_management:
+    summary: "`config server:definition::get` e `config server::define|desiredState|managed|disable|enable|pause|resume|update` gerenciam a configuracao do Control-M/Server. Exigem Control-M/EM 9.0.21.300 ou superior."
+    introduced_in: "9.0.21.300"
+  external_vault_cyberark_secrets:
+    summary: "O objeto `Secret` recupera segredos de vault CyberArk externo em connection profiles centralizados. Exige Control-M/EM 9.0.21.300 ou superior."
+    introduced_in: "9.0.21.300"
+  resources_array_duplicate_names:
+    summary: "O array `Resources` permite pool e lock com o mesmo nome no mesmo job, sob `allowDuplicateResourceNames=true`. Exige Control-M/EM 9.0.21.300 ou superior."
+    introduced_in: "9.0.21.300"
+  rbc_exception_policy_shift:
+    summary: "Rule-based calendars ganham opcoes de politica de excecao que deslocam a data antes do ajuste de dia util."
+    introduced_in: "9.0.21.300"
+  mssql_agentjob_rerun_from_step:
+    summary: "`Job:Database:MSSQL:AgentJob` ganha rerun a partir do passo que falhou e execucao a partir de um passo especifico."
+    introduced_in: "9.0.21.300"
+  config_em_param_set:
+    summary: "`config em:param::set` esta depreciado a partir desta versao."
+    deprecated_from: "9.0.21.300"
+    replaced_by: "config systemsettings::set"
+  config_server_params_get:
+    summary: "`config server:params::get` foi depreciado em 9.0.21.100 -- abaixo do piso desta matriz -- e descontinuado nesta versao."
+    discontinued_in: "9.0.21.300"
+    replaced_by: "config systemsettings:server::get"
+  run_job_bypass:
+    summary: "`run job::bypass` ignora opcoes do job (recurso, evento, limite de tempo) na submissao."
+    introduced_in: "9.0.21.310"
+  run_forecast_timeline:
+    summary: "`run forecast:timeline::get` e `::poll` geram previsao de linha do tempo de meses ou anos."
+    introduced_in: "9.0.21.310"
+  deploy_connectionprofile_centralized_test:
+    summary: "`deploy connectionprofile:centralized::test` testa um connection profile centralizado num Agent especifico."
+    introduced_in: "9.0.21.315"
+  hostgroup_application_type_filter:
+    summary: "O parametro `applicationType` no Host Group Data File filtra hosts por plug-in instalado e job type suportado."
+    introduced_in: "9.0.21.315"
+  run_order_job_subset:
+    summary: "`run order` passa a rodar um subconjunto de jobs de um folder, por virgulas no parametro `jobs`."
+    changed_in: "9.0.21.330"
+  apm_monitoring_java_processes:
+    summary: "Ferramentas de APM (AppDynamics, Dynatrace, Datadog) passam a monitorar os processos Java do Automation API."
+    introduced_in: "9.0.22.000"
+  folders_array_structure:
+    summary: "Estruturas de array `Folders`/`SubFolders` permitem mais de um folder ou sub-folder com o mesmo nome; a leitura e controlada por `useArrayFormat` em `deploy jobs::get`."
+    introduced_in: "9.0.22.000"
+  delete_user_tokens_on_user_delete:
+    summary: "A query `deleteUserTokens=true` em `config authorization:user::delete` apaga todos os tokens de API criados pelo usuario removido."
+    introduced_in: "9.0.22.000"
+  em_ha_status_step_detail:
+    summary: "`config em:highavailabilitystatus::get` passa a devolver o status geral do processo e o de cada passo."
+    changed_in: "9.0.22.000"
+  job_detached_embedded_script:
+    summary: "O job type `Job:DetachedEmbeddedScript` roda um script embutido como processo em background."
+    introduced_in: "9.0.22.005"
+  cli_python_based:
+    summary: "O componente CLI do Automation API passa a ser baseado em Python, e nao mais em Node.js."
+    changed_in: "9.0.22.010"
+  config_em_alerts_delete:
+    summary: "`config em:alerts::delete` apaga alertas antigos do banco do Control-M/EM."
+    introduced_in: "9.0.22.015"
+  run_job_modify_zos:
+    summary: "`run job::modify` passa a suportar `Job:zOS:Member`, `Job:zOS:InStreamJCL` e `Job:SLAManagement` para jobs z/OS."
+    changed_in: "9.0.22.015"
+  run_jobs_status_event_filters:
+    summary: "Os campos `eventDate`, `eventName`, `waitForEventDate` e `waitForEventName` filtram `run jobs:status::get` por eventos definidos."
+    introduced_in: "9.0.22.025"
+  deploy_descriptor_map_condition:
+    summary: "O elemento `MapCondition` no Deploy Descriptor filtra por itens `key:value` dentro de arrays do tipo mapa."
+    introduced_in: "9.0.22.025"
+  deploy_descriptor_rename_action:
+    summary: "A acao `Rename` no Deploy Descriptor troca nomes de chaves em itens `key:value` de arrays do tipo mapa."
+    introduced_in: "9.0.22.025"
+  run_job_related:
+    summary: "`run job::related` lista todos os servicos relacionados a um job especifico."
+    introduced_in: "9.0.22.030"
+  deploy_descriptor_numeric_condition:
+    summary: "O elemento `Condition` sob `ApplyOn` no Deploy Descriptor filtra por valor numerico de um campo e atribui um novo valor numerico."
+    introduced_in: "9.0.22.030"
+  created_by_under_strict_author_security:
+    summary: "A propriedade de job `CreatedBy` passa a valer com `AuthorSecurity` em Restrictive (Strict), sob `allowDeployIfAuthorIsNotCurrentUser=true` em `automation-api.properties`."
+    introduced_in: "9.0.22.035"
+  allowed_port_443:
+    summary: "A propriedade `<allowedPort>` de `automation_api_config` passa a aceitar a porta 443, alem da faixa 1025-65535."
+    changed_in: "9.0.22.045"
+  ssh_key_management_v2:
+    summary: "`config server:sshkey::deleteSshKey` e `config server:sshkey:getSshKey::get` substituem `config server:sshkey::delete` e `::get`, que a fonte declara com depreciacao PLANEJADA e sem versao."
+    introduced_in: "9.0.22.055"
+  agentless_and_remote_host_85_chars:
+    summary: "`config server:agentlesshost::add` e `config server:remotehost::add` passam a aceitar nomes de host com ate 85 caracteres."
+    changed_in: "9.0.22.060"
+  openapi_31_spec:
+    summary: "O Automation API migra de Swagger 2 para OpenAPI 3.1, com o YAML novo em `/automation-api/yaml/v3`."
+    changed_in: "9.0.22.060"
+  provision_upgrade_activity_name_validated:
+    summary: "O parametro `activityName` de `provision upgrade::install|uninstall` passa a ser validado como unico entre atividades de upgrade em andamento."
+    changed_in: "9.0.22.060"
+
+# EIXO 2 -- componente com exigencia por versao.
+components:
+  solaris:
+    "9.0.21.230":
+      summary: "O Automation API deixa de ser suportado em Solaris; pacotes de instalacao param de ser fornecidos."
+      supported: false
+  java:
+    "9.0.21.325":
+      summary: "Java 11 deixa de ser suportado e Java 17 ou superior passa a ser exigido."
+      minimum: "17"
+      unsupported: ["11"]
+  python:
+    "9.0.22.010":
+      summary: "Com o CLI baseado em Python, as versoes suportadas sao 3.8.4 e superiores."
+      minimum: "3.8.4"
+  pip:
+    "9.0.22.010":
+      summary: "Com o CLI baseado em Python, exige-se pip 20.1.1 ou superior."
+      minimum: "20.1.1"
+  control_m_em_in_workbench_image:
+    "9.0.22.045":
+      summary: "A imagem do Control-M Workbench passa a conter Control-M/EM 9.0.22.000, no lugar de 9.0.21.100."
+      value: "9.0.22.000"
+  ctm_python_client:
+    "9.0.22.045":
+      summary: "O Control-M Python client 2.5.7 passa a conversar com o Automation API 9.0.22, no lugar de 9.0.20."
+      value: "2.5.7"
+
+# O QUE A FONTE NAO SUSTENTA, nomeado. Ver a secao 6 do .md.
+unresolved:
+  "9.0.21.210":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.21.305":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.21.320":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.21.335":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.21.340":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.22.020":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.22.040":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.22.050":
+    reason: "a pagina so traz linhas de Corrected Problems nesta versao; defeito corrigido nao e capacidade nem exigencia de componente"
+  "9.0.22.100":
+    reason: "topo da faixa pedida, citada so como pre-requisito de Control-M/Agent e de Control-M/EM -- nunca como versao do Automation API que introduz ou muda algo"
+  "corrected_problems":
+    reason: "as 175 linhas de Corrected Problems da faixa nao entram em eixo nenhum; defeito corrigido nao e capacidade nem exigencia de componente"
+  "nodejs_version":
+    reason: "a fonte declara a troca de Node.js para Python em 9.0.22.010 e nunca declara qual versao de Node.js era exigida antes"
+  "control_m_product_versions":
+    reason: "esta matriz e do Automation API; do lado do produto so 9.0.21.300 e 9.0.22 abrem, 9.0.22.100 exige login de entitlement e 9.0.21.200 nao tem raiz de doc propria"

@@ -161,4 +161,60 @@ equivalente, em paridade.
 
 ## 8. Desvios
 
-Vazio.
+Registrados na implementação (2026-09-01). A spec **não** foi reescrita: o que
+está acima é o registro histórico do desenho, e o que segue é onde a medição
+divergiu dele.
+
+**D-a — `Job:DetachedEmbeddedScript` é `9.0.22.005`, não `9.0.22.010`.** A §2
+desta spec cita a versão errada. A causa está identificada e vale mais que a
+correção: a leitura original foi feita sobre o **texto achatado** da página, onde
+a coluna *Version* aparece **depois** da descrição — e ali um desalinhamento de
+uma linha desloca todo o par. A releitura desta entrega foi feita sobre as
+tabelas HTML, `<tr>` a `<tr>`, e conferida no HTML cru: o job type e
+`9.0.22.005 (March 2025)` estão no mesmo `<tr>`. `9.0.22.010` é a linha
+**seguinte** — o CLI baseado em Python. **O contrafactual da §5 continua
+valendo** sem alteração, porque `9.0.21.300 < 9.0.22.005 < 9.0.22.010`.
+
+**D-b — as duas outras fronteiras literais da §2 estão certas**, verbatim:
+*"Control-M Automation API no longer supports Java 11 as of version
+9.0.21.325"* e *"API command `config em:param::set` is deprecated from version
+9.0.21.300"*.
+
+**D-c — as contagens de versão da §2 estão certas, e agora com o denominador.**
+45 versões citadas na página inteira (incluindo `9.0.20.200`, que não é da série
+21/22) e 31 na faixa. O que a spec não separava: das 31, apenas **22** carregam
+afirmação, e **9** são nomeadas em `unresolved`. Oito delas só têm linha de
+*Corrected Problems*; a nona é **`9.0.22.100`, o topo da faixa pedida**, que a
+página cita apenas como pré-requisito de Control-M/Agent e de Control-M/EM — a
+leitura honesta é que o Automation API não teve release mensal com esse número, e
+ele é do **produto**. É a D-5 desta spec aparecendo no lugar mais caro possível.
+
+**D-d — surgiu um terceiro tipo de afirmação, e ele não entrou em eixo nenhum.**
+As **175** linhas de *Corrected Problems* na faixa não são capacidade (nada de
+novo se pode fazer) nem exigência de componente. A D-1 manda que afirmação sem
+eixo saia `unresolved` **nomeada**, e é o que foi feito: a classe inteira, com a
+contagem e a razão. Nenhuma foi promovida a `capabilities`.
+
+**D-e — o carregador ganhou pacote próprio, e não entrou em
+`runtime_matrix.py`.** A §4 não decidia; o prompt de implementação mandou medir.
+Medido: as três funções que sustentam `_carrega_matriz_fechada` (`_versoes`,
+`_carrega_matriz_fechada`, `_procedencia_por_release`) keyam todas pelo bloco
+`versions:`, com uma release por chave e um escalar por célula — que é
+exatamente a forma que os dois eixos **não** têm. O código mora em
+`sparkforge/controlm/`, com `matrix.py` carregando e `descriptor.py` compondo, e
+a razão está no `__init__.py`.
+
+**D-f — o guard de drift foi ESTENDIDO, não duplicado.** A §4 previa isso e ele
+coube: `matrix.drift_view()` achata os dois eixos e as recusas em
+`{chave: {coluna: valor}}`, que é a forma que `test_runtime_matrix_drift.py` já
+compara. Control-M entrou como a quinta entrada de `PLATAFORMAS`, com três
+tabelas e cinco colunas próprias — 69 chaves, e nenhum parser novo. O `churn`
+dela é **vazio**, ao contrário da intuição: a página rola mais que qualquer das
+quatro, e a faixa é passado fechado, então célula da faixa que mudar tem de
+falhar duro em vez de virar `UserWarning`.
+
+**D-g — a recusa por versão tem DOIS nomes, e não um.** A §5 pedia "recusa
+nomeada com o intervalo". A implementação separou
+`version_outside_covered_range` (fora de `covers`) de
+`version_not_published_by_source` (dentro da faixa, e a fonte anda de 5 em 5 —
+`9.0.21.301` não existe), porque as duas destravam com medidas diferentes.

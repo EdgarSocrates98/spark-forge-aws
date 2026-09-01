@@ -2018,6 +2018,56 @@ class TestCliMcpEquivalence:
         # `emr-7.7.0` entra e `7.7.0` sai, nas duas.
         assert cli_payload["release"] == "7.7.0"
 
+    def test_controlm_describe_matches(self, repo, capsys):
+        _, output = run(
+            ["controlm", "describe", "--version", "9.0.22.010"], capsys
+        )
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool(
+            "sparkforge_controlm_describe", {"version": "9.0.22.010"}
+        )
+        assert cli_payload == mcp_payload
+        # O CONTRAFACTUAL DA FRONTEIRA, nas duas superficies de uma vez: o job
+        # type `Job:DetachedEmbeddedScript` entra em `9.0.22.005`, entao ele
+        # EXISTE aqui e NAO existe em `9.0.21.300`. Se as duas respostas fossem
+        # iguais, a fronteira seria decorativa.
+        assert "job_detached_embedded_script" in cli_payload["capabilities"]
+
+    def test_controlm_describe_before_the_boundary_answers_differently(
+        self, repo, capsys
+    ):
+        """A fronteira nao e decorativa: duas versoes, duas respostas."""
+        _, antes = run(["controlm", "describe", "--version", "9.0.21.300"], capsys)
+        antes = json.loads(antes)
+        _, depois = run(["controlm", "describe", "--version", "9.0.22.010"], capsys)
+        depois = json.loads(depois)
+
+        assert "job_detached_embedded_script" not in antes["capabilities"]
+        assert "job_detached_embedded_script" in depois["capabilities"]
+        assert (
+            depois["capabilities"]["job_detached_embedded_script"]["declared_at"]
+            == "9.0.22.005"
+        )
+        # E a exigencia de componente muda junto, no outro eixo: Java 17 entra em
+        # `9.0.21.325`, que esta ENTRE as duas.
+        assert "java" not in antes["components"]
+        assert depois["components"]["java"]["minimum"] == "17"
+        assert depois["components"]["java"]["unsupported"] == ["11"]
+
+    def test_controlm_version_outside_the_range_is_refused_by_name(self, repo, capsys):
+        """Fora da faixa e recusa NOMEADA com o intervalo, nunca extrapolacao."""
+        assert main(["controlm", "describe", "--version", "9.0.22.125"]) == 2
+        cli_message = capsys.readouterr().err.strip()
+
+        mcp_payload = call_tool(
+            "sparkforge_controlm_describe", {"version": "9.0.22.125"}
+        )
+        assert "error" in mcp_payload
+        assert cli_message == mcp_payload["error"].strip()
+        # A mensagem ENSINA: o intervalo que a matriz sustenta vem junto.
+        assert "9.0.21.200" in cli_message and "9.0.22.100" in cli_message
+
     def test_release_diff_matches(self, repo, capsys):
         argumentos = {
             "left_platform": "emr_ec2",

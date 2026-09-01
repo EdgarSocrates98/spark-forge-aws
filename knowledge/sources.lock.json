@@ -1895,6 +1895,16 @@
       ],
       "rules": []
     },
+    "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm": {
+      "docs": [
+        "knowledge/controlm/automation-api-matrix.md"
+      ],
+      "pinned": false,
+      "retrieved": [
+        "2026-09-01"
+      ],
+      "rules": []
+    },
     "https://github.com/apache/iceberg/blob/apache-iceberg-1.0.0/format/spec.md": {
       "docs": [
         "knowledge/storage/iceberg-performance.md"

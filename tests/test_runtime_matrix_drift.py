@@ -40,6 +40,25 @@ serie estavel (6.x, 5.x) nao ganha linha nova, entao linha so na pagina e falha;
 serie com churn garantido (7.x, e as `spark-8*`) ganha um minor a cada 90 dias,
 e exigir igualdade faria o guard falhar ~4x/ano por motivo que nao e drift do
 que a matriz ja conhece. Ali sai `UserWarning`, como o guard de EC2 ja fazia.
+
+A QUINTA ENTRADA NAO E UM RUNTIME, e ela cabe aqui sem mecanismo novo. A matriz
+do Control-M Automation API (`knowledge/controlm/`) tem DOIS eixos e nao um --
+capacidade com fronteira de versao, e componente com exigencia por versao --,
+entao ela nao tem `versions:` e nao carrega por `_carrega_matriz_fechada` (a
+razao mora em `sparkforge/controlm/__init__.py`). O que ela tem em comum com as
+quatro e exatamente o que ESTE arquivo precisa: um `.md` com tabelas e um
+`.yaml` que ninguem obriga a concordar com elas. `matrix.drift_view()` achata os
+dois eixos e as recusas em `{chave: {coluna: valor}}`, que e a forma que o
+mecanismo ja compara -- entao Control-M entra como uma entrada em `PLATAFORMAS`,
+com tres tabelas e cinco colunas proprias, e nao como um quinto parser de
+markdown para o mesmo formato de tabela.
+
+E o `churn` dela e VAZIO de proposito, ao contrario da intuicao. A pagina da BMC
+e `Monthly` e rola ~12x/ano -- mais churn que qualquer das quatro. Mas a FAIXA
+que a matriz cobre (`9.0.21.200`-`9.0.22.100`) e passado FECHADO: nada que role
+muda o que aconteceu no `9.0.21.300`. Linha nova na pagina cai fora da faixa e
+nao entra na tabela; linha da faixa que mudar e errata da BMC, e tem de falhar
+duro. Aqui `UserWarning` seria o alarme errado.
 """
 from __future__ import annotations
 
@@ -51,6 +70,7 @@ from typing import Any
 
 import pytest
 
+from sparkforge.controlm import matrix as controlm_matrix
 from sparkforge.facts import runtime_matrix
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -305,6 +325,38 @@ PLATAFORMAS: tuple[Plataforma, ...] = (
                 cabecalho=("Release", "Hudi (EKS)", "Delta (EKS)"),
                 chave="Release",
                 colunas={"hudi": "Hudi (EKS)", "delta": "Delta (EKS)"},
+            ),
+        ),
+    ),
+    # Control-M Automation API -- dois eixos e as recusas, tres tabelas. Ver o
+    # ultimo paragrafo do docstring deste modulo sobre por que ela cabe aqui e
+    # por que o `churn` e vazio.
+    Plataforma(
+        nome="controlm",
+        doc="controlm/automation-api-matrix.md",
+        yaml="controlm/automation-api-matrix.yaml",
+        carrega=controlm_matrix.drift_view,
+        minimo=69,
+        componentes=controlm_matrix.DRIFT_COLUMNS,
+        tabelas=(
+            Tabela(
+                cabecalho=("Capacidade", "Fronteira", "Versão", "Substituída por"),
+                chave="Capacidade",
+                colunas={
+                    "boundary": "Fronteira",
+                    "at_version": "Versão",
+                    "replaced_by": "Substituída por",
+                },
+            ),
+            Tabela(
+                cabecalho=("Componente", "Versão", "Exigência"),
+                chave="Componente",
+                colunas={"at_version": "Versão", "requirement": "Exigência"},
+            ),
+            Tabela(
+                cabecalho=("Item", "Razão da recusa"),
+                chave="Item",
+                colunas={"unresolved_reason": "Razão da recusa"},
             ),
         ),
     ),

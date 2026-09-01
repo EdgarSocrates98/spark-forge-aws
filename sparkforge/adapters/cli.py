@@ -582,6 +582,36 @@ def build_parser() -> argparse.ArgumentParser:
         help="O rotulo da release, com ou sem o prefixo `emr-` (ex.: 7.7.0, emr-7.7.0, 5.1).",
     )
 
+    # controlm ---------------------------------------------------------------
+    # VERBO PROPRIO, e nao uma quinta `--platform` de `release describe`: a
+    # resposta tem DOIS eixos (capacidade com fronteira, componente com
+    # exigencia) onde a daquele verbo tem um, e Control-M nao e plataforma de
+    # Spark. A razao inteira mora ao lado de `_core.controlm_describe`.
+    controlm_p = sub.add_parser(
+        "controlm",
+        help=(
+            "Conhecimento versionado do Control-M Automation API. Le matriz de "
+            "versao; NAO le artefato, NAO chama BMC e NAO julga."
+        ),
+    )
+    controlm_sub = controlm_p.add_subparsers(dest="controlm_action", required=True)
+
+    controlm_describe_p = controlm_sub.add_parser(
+        "describe",
+        help=(
+            "O que vale numa versao do Automation API. Versao fora da faixa "
+            "coberta sai como recusa NOMEADA, com o intervalo."
+        ),
+    )
+    controlm_describe_p.add_argument(
+        "--version",
+        required=True,
+        help=(
+            "A versao do Automation API (ex.: 9.0.21.300). A faixa coberta e "
+            f"{_core.controlm_covers()[0]}--{_core.controlm_covers()[1]}."
+        ),
+    )
+
     # OS QUATRO ARGUMENTOS, e nao `--platform` mais `--from`/`--to`.
     #
     # Os verbos irmaos que comparam dois lados nomeiam a direcao: `benchmark` e
@@ -1757,6 +1787,11 @@ def _cmd_iceberg_assess_upgrade(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_controlm_describe(args: argparse.Namespace) -> int:
+    _print(_core.controlm_describe(args.version))
+    return 0
+
+
 def _cmd_release_describe(args: argparse.Namespace) -> int:
     _print(_core.release_describe(args.platform, args.release))
     return 0
@@ -2453,6 +2488,7 @@ _DISPATCH = {
     ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
     ("release", "describe"): _cmd_release_describe,
     ("release", "diff"): _cmd_release_diff,
+    ("controlm", "describe"): _cmd_controlm_describe,
     ("benchmark", None): _cmd_benchmark,
     ("workload", None): _cmd_workload,
     ("capacity", None): _cmd_capacity,
@@ -2517,6 +2553,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "glue_action", None)
         or getattr(args, "iceberg_action", None)
         or getattr(args, "release_action", None)
+        or getattr(args, "controlm_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))

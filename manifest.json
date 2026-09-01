@@ -121,6 +121,7 @@
     "sparkforge_collect_glue_job_runs",
     "sparkforge_collect_iceberg_metadata",
     "sparkforge_collect_verify",
+    "sparkforge_controlm_describe",
     "sparkforge_economy_report",
     "sparkforge_finops",
     "sparkforge_funcval_compare",

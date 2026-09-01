@@ -35,6 +35,21 @@ from sparkforge.codeintel import security as _codeintel_security
 from sparkforge.codeintel import staleness as _codeintel_staleness
 from sparkforge.collect import aws as collect_aws
 from sparkforge.collect.base import CollectorUnavailable, verify_all
+from sparkforge.controlm.descriptor import (
+    UnknownVersion as UnknownControlMVersion,
+)
+from sparkforge.controlm.descriptor import (
+    describe as describe_controlm,
+)
+from sparkforge.controlm.descriptor import (
+    known_versions as known_controlm_versions,
+)
+from sparkforge.controlm.matrix import (
+    BOUNDARIES as _CONTROLM_BOUNDARIES,
+)
+from sparkforge.controlm.matrix import (
+    covers as controlm_covered_range,
+)
 from sparkforge.economy.report import build_context_report
 from sparkforge.facts.athena_workgroup import (
     extract_athena_workgroup_path,
@@ -120,6 +135,12 @@ DEFAULT_LIMIT = 50
 # de uma lista escrita a mao ao lado -- que e a familia de defeito que este
 # repositorio ja mediu em duas listas paralelas de extrator.
 RELEASE_UNRESOLVED_KINDS: frozenset[str] = _RELEASE_UNRESOLVED_KINDS
+
+# Pela MESMA razao, e num caso em que a lista paralela seria especialmente
+# convidativa: as quatro fronteiras do Control-M sao curtas e faceis de
+# redigitar no `enum` do schema, e uma quinta que entrasse no modelo nunca
+# chegaria la. `matrix.BOUNDARIES` e a unica lista.
+CONTROLM_BOUNDARIES: tuple[str, ...] = _CONTROLM_BOUNDARIES
 
 
 class AdapterError(Exception):
@@ -1811,6 +1832,68 @@ def release_diff(
         _release_descriptor(left_platform, left_release),
         _release_descriptor(right_platform, right_release),
     ).to_dict()
+
+
+# --------------------------------------------------------------------------- #
+# controlm describe
+# --------------------------------------------------------------------------- #
+
+# VERBO DE TOPO PROPRIO, e nao uma quinta `platform` de `release describe`.
+# `release describe` recebe `(platform, release)` e responde componente ->
+# versao para as QUATRO plataformas de Spark. Control-M nao e uma delas em
+# nenhum sentido util: nao tem Spark, nao tem release label, e a resposta dele
+# tem DOIS eixos (capacidade com fronteira, e componente com exigencia) onde a
+# daquele verbo tem um. Enfia-lo ali obrigaria `ReleaseDescriptor` a carregar um
+# eixo que nenhuma das quatro plataformas tem, e `release diff` -- que consome o
+# mesmo modelo -- passaria a comparar campos que so existem para uma delas.
+#
+# E ele NAO JULGA, pela mesma razao dos dois vizinhos: nao ha artefato de
+# Control-M para extrair e nao ha corpus que sustente regra. Este verbo entrega
+# DADO e CONSULTA.
+
+
+def controlm_covers() -> tuple[str, str]:
+    """O intervalo `(from, to)` que a matriz do Control-M sustenta.
+
+    Funcao e nao constante de modulo: uma constante leria o YAML na IMPORTACAO
+    de `_core`, que e o modo de falha que `sparkforge/facts/runtime_matrix.py`
+    documenta ter transformado um bug latente em `import` quebrado num wheel
+    instalado. As duas superficies (CLI e MCP) a chamam quando montam a ajuda,
+    e ai o `knowledge_dir` ja esta resolvido.
+    """
+    return controlm_covered_range()
+
+
+def controlm_describe(version: str) -> dict[str, Any]:
+    """O que vale numa versao do Control-M Automation API, segundo a pagina
+    What's New da BMC e so ela.
+
+    Responde a pergunta do operador que atua em varios clientes -- *"estou na
+    `9.0.21.300`, o que posso usar?"* -- com as capacidades cuja fronteira ja
+    passou, as que ja foram depreciadas ou descontinuadas, e as exigencias de
+    componente em vigor. Cada item carrega `declared_at`, a versao onde a
+    fronteira foi LIDA, para que a resposta sobre Java em `9.0.22.060` diga na
+    propria linha que vem de `9.0.21.325`.
+
+    VERSAO FORA DA FAIXA E RECUSA NOMEADA, com o intervalo que a matriz
+    sustenta, e ha DUAS: `version_outside_covered_range` (a faixa e passado
+    fechado -- a fonte publica ate `9.0.22.125`, e trazer isso exige LER, nao
+    extrapolar) e `version_not_published_by_source` (dentro da faixa, e a fonte
+    anda de 5 em 5: `9.0.21.301` nao existe, e responder pelo degrau de baixo
+    seria interpolar entre duas versoes observadas).
+    """
+    try:
+        return describe_controlm(version).to_dict()
+    except UnknownControlMVersion as exc:
+        conhecidas = known_controlm_versions()
+        raise AdapterError(
+            f"{exc}\n"
+            f"  A matriz e do Control-M AUTOMATION API, nao do produto Control-M:\n"
+            f"  as duas coisas usam a grafia `9.0.2x.yyy` e nao sao a mesma.\n"
+            f"    sparkforge controlm describe --version "
+            f"{(conhecidas or ('<versao>',))[0]}",
+            exit_code=2,
+        ) from exc
 
 
 # --------------------------------------------------------------------------- #

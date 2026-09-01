@@ -1177,6 +1177,137 @@ _RELEASE_DESCRIPTOR_SCHEMA: dict[str, Any] = {
     },
 }
 
+# --------------------------------------------------------------------------- #
+# controlm describe
+# --------------------------------------------------------------------------- #
+
+# SCHEMA PROPRIO E NAO `_RELEASE_DESCRIPTOR_SCHEMA`, e a razao e a mesma que
+# separa os dois verbos: a resposta do Control-M tem DOIS eixos onde a das
+# quatro plataformas de Spark tem um. `capabilities`/`deprecated` sao capacidade
+# com FRONTEIRA de versao e nao existem naquele modelo; `components` aqui carrega
+# EXIGENCIA (`minimum`, `unsupported`, `supported`) e nao so um valor de versao.
+_CONTROLM_CAPABILITY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["summary", "boundary", "declared_at", "replaced_by"],
+    "properties": {
+        "summary": {"type": "string"},
+        "boundary": {
+            "type": "string",
+            "enum": list(_core.CONTROLM_BOUNDARIES),
+            "description": (
+                "Qual fronteira a fonte declarou. `introduced_in`/`changed_in` "
+                "disponibilizam; `deprecated_from`/`discontinued_in` retiram, e "
+                "por isso saem em `deprecated` e nao em `capabilities`."
+            ),
+        },
+        "declared_at": {
+            "type": "string",
+            "description": (
+                "A versao onde a fronteira foi LIDA -- pode ser anterior a "
+                "consultada. Existe para que a resposta nao pareca leitura nova."
+            ),
+        },
+        "replaced_by": {"type": ["string", "null"]},
+    },
+}
+
+_CONTROLM_COMPONENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["summary", "declared_at"],
+    "properties": {
+        "summary": {"type": "string"},
+        "declared_at": {"type": "string"},
+        "minimum": {"type": "string", "description": "Versao minima EXIGIDA."},
+        "unsupported": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Versoes que deixaram de ser suportadas nesta fronteira.",
+        },
+        "supported": {
+            "type": "boolean",
+            "description": "False quando a plataforma inteira foi retirada (`solaris`).",
+        },
+        "value": {
+            "type": "string",
+            "description": (
+                "O que uma imagem ou cliente companheiro CONTEM. NAO e exigencia "
+                "-- ver a secao 4 de knowledge/controlm/automation-api-matrix.md."
+            ),
+        },
+    },
+}
+
+_CONTROLM_DESCRIPTOR_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "domain",
+        "version",
+        "covers",
+        "capabilities",
+        "deprecated",
+        "components",
+        "declared_here",
+        "unresolved",
+        "unresolved_detail",
+        "sources",
+        "retrieved",
+    ],
+    "properties": {
+        "domain": {"type": "string", "enum": ["controlm_automation_api"]},
+        "version": {"type": "string"},
+        "covers": {
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {"from": {"type": "string"}, "to": {"type": "string"}},
+            "description": "O intervalo que esta matriz SUSTENTA. Fora dele e recusa.",
+        },
+        "capabilities": {
+            "type": "object",
+            "additionalProperties": _CONTROLM_CAPABILITY_SCHEMA,
+            "description": "As capacidades cuja fronteira de disponibilizacao ja passou.",
+        },
+        "deprecated": {
+            "type": "object",
+            "additionalProperties": _CONTROLM_CAPABILITY_SCHEMA,
+            "description": "As que ja foram depreciadas ou descontinuadas nesta versao.",
+        },
+        "components": {
+            "type": "object",
+            "additionalProperties": _CONTROLM_COMPONENT_SCHEMA,
+            "description": "As exigencias de componente em vigor nesta versao.",
+        },
+        "declared_here": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "As capacidades cuja fronteira e EXATAMENTE esta versao -- de "
+                "QUALQUER das quatro. Inclui depreciacao: `9.0.21.300` declara "
+                "seis capacidades novas e retira duas, e as oito estao aqui. "
+                "Nao e `introduced_here`, e o nome ja foi esse -- ele mentia "
+                "sobre as duas que a versao retira."
+            ),
+        },
+        "unresolved": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "O que a fonte NAO sustenta, nomeado. Inclui as versoes da faixa "
+                "que a pagina cita sem afirmar nada, `9.0.22.100` entre elas."
+            ),
+        },
+        "unresolved_detail": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "required": ["item", "reason"],
+                "properties": {"item": {"type": "string"}, "reason": {"type": "string"}},
+            },
+        },
+        "sources": {"type": "array", "items": {"type": "string"}},
+        "retrieved": {"type": "string"},
+    },
+}
+
 _RELEASE_DIFF_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
@@ -3973,6 +4104,51 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_controlm_describe": {
+        "description": (
+            "O que vale numa versao do Control-M AUTOMATION API: quais "
+            "capacidades existem, quais ja foram depreciadas, e quais exigencias "
+            "de componente estao em vigor. Le a matriz de "
+            "`knowledge/controlm/` -- nao le artefato do operador, nao chama a "
+            "BMC e NAO JULGA. "
+            "O ESCOPO VEM ANTES DA RESPOSTA: esta matriz e do Automation API e "
+            "NAO do produto Control-M. As duas coisas usam a grafia `9.0.2x.yyy` "
+            "e nao sao a mesma -- do lado do produto, so `9.0.21.300` e `9.0.22` "
+            "abrem raiz de documentacao, e `9.0.22.100` esta atras de login de "
+            "entitlement. "
+            "DOIS EIXOS, porque a fonte tem dois tipos de afirmacao: "
+            "`capabilities`/`deprecated` sao capacidade com FRONTEIRA de versao "
+            "(`Job:DetachedEmbeddedScript` existe a partir de `9.0.22.005`), e "
+            "`components` e componente com EXIGENCIA (Java 11 deixa de ser "
+            "suportado em `9.0.21.325`). Cada item traz `declared_at`, a versao "
+            "onde a fronteira foi lida, porque a resposta em `9.0.22.060` sobre "
+            "Java vem de `9.0.21.325` e nao de leitura nova. "
+            "VERSAO FORA DA FAIXA E RECUSA NOMEADA com o intervalo, nunca "
+            "extrapolacao: a faixa e passado FECHADO, e a fonte publica versoes "
+            "acima dela. Dentro da faixa, versao que a fonte nao publica tambem "
+            "e recusa -- ela anda de 5 em 5, e `9.0.21.301` nao existe. "
+            "`unresolved` nomeia o que a fonte nao sustenta, incluindo as 9 "
+            "versoes da faixa que a pagina cita sem afirmar nada."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["version"],
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "description": (
+                        "A versao do Automation API (`9.0.21.300`). A faixa "
+                        "coberta e `9.0.21.200` a `9.0.22.100`."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _CONTROLM_DESCRIPTOR_SCHEMA,
+            "Descritor da versao, ou erro se ela esta fora da faixa ou nao e publicada.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_release_diff": {
         "description": (
             "O que muda de COMPONENTE entre duas releases, cada lado dado por um "
@@ -5604,6 +5780,10 @@ def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_describe(args["platform"], args["release"])
 
 
+def _h_controlm_describe(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.controlm_describe(args["version"])
+
+
 def _h_release_diff(args: dict[str, Any]) -> dict[str, Any]:
     return _core.release_diff(
         args["left_platform"],
@@ -5876,6 +6056,7 @@ _HANDLERS = {
     "sparkforge_iceberg_assess_upgrade": _h_iceberg_assess_upgrade,
     "sparkforge_release_describe": _h_release_describe,
     "sparkforge_release_diff": _h_release_diff,
+    "sparkforge_controlm_describe": _h_controlm_describe,
     "sparkforge_benchmark": _h_benchmark,
     "sparkforge_workload": _h_workload,
     "sparkforge_capacity": _h_capacity,

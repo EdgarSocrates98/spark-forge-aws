@@ -845,6 +845,11 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     pacote carrega. Nao ha o que confinar, e inventar um `path` para caber no
     predicado seria parametro sem consumidor. O conjunto sai de dois para
     QUATRO, e este teste e o lugar onde essa decisao fica escrita.
+
+    A entrega de Control-M repete o caso, e pelo mesmo motivo:
+    `sparkforge_controlm_describe` recebe uma VERSAO e le a matriz de
+    `knowledge/controlm/` -- artefato do operador, nenhum. O conjunto sai de
+    quatro para CINCO e a contagem de 59 nao se move.
     """
 
     SEM_CAMINHO = frozenset(
@@ -853,6 +858,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             "sparkforge_economy_report",
             "sparkforge_release_describe",
             "sparkforge_release_diff",
+            "sparkforge_controlm_describe",
         }
     )
 

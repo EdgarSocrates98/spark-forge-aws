@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "99b0b5f941bac65e70a4406d1d7eb4234836391b139cb67e1edd77b2737a4a91"
+      "sha256": "37958c15ff03abce222ce5c7bac66f2b60910de02f94f917ce7464bcb1cbe26a"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -37,6 +37,11 @@
       "path": "knowledge/athena/performance.md",
       "title": "performance",
       "sha256": "bc76127d18a4fbfc6e97ae538671b9f275fadd4d46f00c57ad9197d422e8a777"
+    },
+    {
+      "path": "knowledge/controlm/automation-api-matrix.md",
+      "title": "automation-api-matrix",
+      "sha256": "cd1eca0409f8dc4e74f99463efb4098f6d6921ce695da27f49375c659e027b35"
     },
     {
       "path": "knowledge/cross-service-constraints.md",
