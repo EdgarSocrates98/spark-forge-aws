@@ -1868,7 +1868,66 @@ def controlm_covers() -> tuple[str, str]:
     return controlm_covered_range()
 
 
-def controlm_describe(version: str) -> dict[str, Any]:
+# `full`/`compact`/`minimal`, e NAO os mesmos tres nomes de `NIVEIS_DE_DETALHE`
+# (`summary`/`normal`/`full`) que as 27 tools de FACT usam. A razao e o shape:
+# aquele mecanismo projeta `payload["items"]` -- uma LISTA de facts, cada um
+# com `provenance` proprio -- e `controlm describe` nao devolve items, devolve
+# DOIS dicionarios (`capabilities`, `deprecated`) mais um terceiro
+# (`unresolved_detail`) sem `provenance` nenhuma. `project_items` aplicado a
+# este payload devolveria dict vazio -- ver o aviso na docstring dele.
+# `code_symbol`/`code_status` reaproveitam os nomes `summary`/`normal`/`full`
+# para um shape tambem proprio; aqui o nome ficou distinto de proposito, para
+# nao description prometer "reduz a id/kind/measures" (o que `summary`
+# significa nas 27 tools) quando o corte real e outro.
+NIVEIS_DE_DETALHE_CONTROLM: tuple[str, ...] = ("minimal", "compact", "full")
+
+
+def _project_controlm_describe(payload: dict[str, Any], detail_level: str) -> dict[str, Any]:
+    """Projeta a saida de `controlm_describe` para o nivel pedido.
+
+    Medido antes desta fase: `capabilities` e `unresolved_detail` somavam 84%
+    dos 9.844 bytes do payload em `full` (62% e 22%). Os dois sao os unicos
+    campos que mudam de forma; nada mais e tocado.
+
+    `full` -- o dict inteiro de `VersionDescriptor.to_dict()`, sem mudanca.
+
+    `compact` -- `capabilities` vira LISTA de slugs (ja ordenada -- `to_dict`
+    ordena o dict antes de serializar) em vez do dict com `summary`/
+    `boundary`/`declared_at`/`replaced_by` por item. `unresolved_detail` sai
+    inteiro: `unresolved` (a mesma lista de slugs, sem a razao) ja fica.
+    `deprecated` fica INTEIRO de proposito -- e a resposta direta a "o que eu
+    nao posso mais usar", e cortar obrigaria uma segunda chamada em `full` para
+    responder a MESMA pergunta que motivou a primeira. `components`, `covers`,
+    `declared_here`, `domain`, `sources`, `version` e `retrieved` nao mudam:
+    nenhum deles foi medido como caro.
+
+    `minimal` -- so o que responde "o que vale nesta versao" sem a lista
+    inteira: `version`, `covers`, a CONTAGEM de `capabilities`, os SLUGS de
+    `deprecated` (sem o resumo de cada um) e a CONTAGEM de `unresolved`.
+    `unresolved_count` nunca sai, mesmo quando e zero -- e a recusa nomeada da
+    matriz (9 das 31 versoes da faixa nao tem afirmacao propria, medido na
+    Fase 1) tem que sobreviver a QUALQUER nivel, ou o operador le silencio como
+    aprovacao. A LISTA de slugs e a razao de cada recusa exigem `compact`/
+    `full` -- so a contagem basta para saber que ela existe.
+    """
+    if detail_level == "full":
+        return payload
+    if detail_level == "compact":
+        projetado = dict(payload)
+        projetado["capabilities"] = sorted(payload["capabilities"])
+        del projetado["unresolved_detail"]
+        return projetado
+    # minimal
+    return {
+        "version": payload["version"],
+        "covers": payload["covers"],
+        "capabilities_count": len(payload["capabilities"]),
+        "deprecated": sorted(payload["deprecated"]),
+        "unresolved_count": len(payload["unresolved"]),
+    }
+
+
+def controlm_describe(version: str, detail_level: str = "full") -> dict[str, Any]:
     """O que vale numa versao do Control-M Automation API, segundo a pagina
     What's New da BMC e so ela.
 
@@ -1885,9 +1944,20 @@ def controlm_describe(version: str) -> dict[str, Any]:
     extrapolar) e `version_not_published_by_source` (dentro da faixa, e a fonte
     anda de 5 em 5: `9.0.21.301` nao existe, e responder pelo degrau de baixo
     seria interpolar entre duas versoes observadas).
+
+    `detail_level` e proprio deste verbo -- ver `_project_controlm_describe` e
+    o comentario acima de `NIVEIS_DE_DETALHE_CONTROLM` para a razao do shape
+    nao caber em `NIVEIS_DE_DETALHE`/`project_items`, o mecanismo das outras 27
+    tools de FACT.
     """
+    if detail_level not in NIVEIS_DE_DETALHE_CONTROLM:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de "
+            f"{NIVEIS_DE_DETALHE_CONTROLM}",
+            exit_code=2,
+        )
     try:
-        return describe_controlm(version).to_dict()
+        payload = describe_controlm(version).to_dict()
     except UnknownControlMVersion as exc:
         conhecidas = known_controlm_versions()
         raise AdapterError(
@@ -1898,6 +1968,7 @@ def controlm_describe(version: str) -> dict[str, Any]:
             f"{(conhecidas or ('<versao>',))[0]}",
             exit_code=2,
         ) from exc
+    return _project_controlm_describe(payload, detail_level)
 
 
 # --------------------------------------------------------------------------- #

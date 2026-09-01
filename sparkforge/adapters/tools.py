@@ -119,6 +119,20 @@ _DETAIL_LEVEL_DESC = (
     "mesmo fato numa execucao `full`."
 )
 
+# NOMES PROPRIOS (`full`/`compact`/`minimal`), so de `sparkforge_controlm_describe`
+# -- ver o comentario ao lado de `NIVEIS_DE_DETALHE_CONTROLM` em `_core.py`.
+_CONTROLM_DETAIL_LEVEL_DESC = (
+    "Verbosidade da saida. `full` (default) devolve o descritor inteiro -- e o "
+    "modo de reauditoria. `compact` reduz `capabilities` a lista de slugs e "
+    "tira `unresolved_detail` (`unresolved`, a mesma lista sem a razao, fica); "
+    "`deprecated` continua INTEIRO, porque e a resposta direta a `o que eu nao "
+    "posso mais usar` e cortar obrigaria uma segunda chamada para a MESMA "
+    "pergunta. `minimal` reduz a `version`, `covers`, a CONTAGEM de "
+    "`capabilities`, os SLUGS de `deprecated` e a CONTAGEM de `unresolved` -- "
+    "a contagem nunca some, mesmo em zero, porque e a recusa nomeada da "
+    "matriz; a lista de slugs e a razao de cada uma exigem `compact`/`full`."
+)
+
 # `provenance` so aparece quando `detail_level` e `normal` ou `summary`: e a
 # tabela que `provenance_ref` indexa. Declarada uma vez aqui e espalhada nos
 # TRES schemas de pagina de fact que existem -- `_ANALYZE_PYSPARK_SCHEMA` (que
@@ -1237,7 +1251,43 @@ _CONTROLM_COMPONENT_SCHEMA: dict[str, Any] = {
     },
 }
 
-_CONTROLM_DESCRIPTOR_SCHEMA: dict[str, Any] = {
+_CONTROLM_COVERS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["from", "to"],
+    "properties": {"from": {"type": "string"}, "to": {"type": "string"}},
+    "description": "O intervalo que esta matriz SUSTENTA. Fora dele e recusa.",
+}
+
+_CONTROLM_DECLARED_HERE_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "items": {"type": "string"},
+    "description": (
+        "As capacidades cuja fronteira e EXATAMENTE esta versao -- de QUALQUER "
+        "das quatro. Inclui depreciacao: `9.0.21.300` declara seis capacidades "
+        "novas e retira duas, e as oito estao aqui. Nao e `introduced_here`, e "
+        "o nome ja foi esse -- ele mentia sobre as duas que a versao retira."
+    ),
+}
+
+_CONTROLM_UNRESOLVED_SLUGS_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "items": {"type": "string"},
+    "description": (
+        "O que a fonte NAO sustenta, nomeado. Inclui as versoes da faixa que a "
+        "pagina cita sem afirmar nada, `9.0.22.100` entre elas."
+    ),
+}
+
+# TRES RAMOS, um por `detail_level` -- `full`/`compact`/`minimal` nao sao os
+# mesmos tres nomes das outras 27 tools de FACT (ver o comentario ao lado de
+# `NIVEIS_DE_DETALHE_CONTROLM` em `_core.py`), e por isso o schema tambem nao
+# reaproveita `_FACT_ITEM`. Cada ramo discrimina pelos proprios `required`: o
+# `full` exige `unresolved_detail`, que os outros dois nao tem; o `compact`
+# exige `components`/`declared_here`/`sources`/`retrieved`, que so `minimal`
+# nao tem; e so `minimal` exige `capabilities_count`/`unresolved_count`. Os
+# tres sao mutuamente exclusivos por CONSTRUCAO -- e e o mesmo desenho de
+# `_FACT_ITEM`, testado em `TestSuperficieMCP` (test_adapters_detail_level.py).
+_CONTROLM_DESCRIPTOR_SCHEMA_FULL: dict[str, Any] = {
     "type": "object",
     "required": [
         "domain",
@@ -1255,12 +1305,7 @@ _CONTROLM_DESCRIPTOR_SCHEMA: dict[str, Any] = {
     "properties": {
         "domain": {"type": "string", "enum": ["controlm_automation_api"]},
         "version": {"type": "string"},
-        "covers": {
-            "type": "object",
-            "required": ["from", "to"],
-            "properties": {"from": {"type": "string"}, "to": {"type": "string"}},
-            "description": "O intervalo que esta matriz SUSTENTA. Fora dele e recusa.",
-        },
+        "covers": _CONTROLM_COVERS_SCHEMA,
         "capabilities": {
             "type": "object",
             "additionalProperties": _CONTROLM_CAPABILITY_SCHEMA,
@@ -1276,25 +1321,8 @@ _CONTROLM_DESCRIPTOR_SCHEMA: dict[str, Any] = {
             "additionalProperties": _CONTROLM_COMPONENT_SCHEMA,
             "description": "As exigencias de componente em vigor nesta versao.",
         },
-        "declared_here": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": (
-                "As capacidades cuja fronteira e EXATAMENTE esta versao -- de "
-                "QUALQUER das quatro. Inclui depreciacao: `9.0.21.300` declara "
-                "seis capacidades novas e retira duas, e as oito estao aqui. "
-                "Nao e `introduced_here`, e o nome ja foi esse -- ele mentia "
-                "sobre as duas que a versao retira."
-            ),
-        },
-        "unresolved": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": (
-                "O que a fonte NAO sustenta, nomeado. Inclui as versoes da faixa "
-                "que a pagina cita sem afirmar nada, `9.0.22.100` entre elas."
-            ),
-        },
+        "declared_here": _CONTROLM_DECLARED_HERE_SCHEMA,
+        "unresolved": _CONTROLM_UNRESOLVED_SLUGS_SCHEMA,
         "unresolved_detail": {
             "type": "object",
             "additionalProperties": {
@@ -1306,6 +1334,99 @@ _CONTROLM_DESCRIPTOR_SCHEMA: dict[str, Any] = {
         "sources": {"type": "array", "items": {"type": "string"}},
         "retrieved": {"type": "string"},
     },
+}
+
+_CONTROLM_DESCRIPTOR_SCHEMA_COMPACT: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "domain",
+        "version",
+        "covers",
+        "capabilities",
+        "deprecated",
+        "components",
+        "declared_here",
+        "unresolved",
+        "sources",
+        "retrieved",
+    ],
+    "properties": {
+        "domain": {"type": "string", "enum": ["controlm_automation_api"]},
+        "version": {"type": "string"},
+        "covers": _CONTROLM_COVERS_SCHEMA,
+        "capabilities": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Slugs, ja ordenados -- sem `summary`/`boundary`/`declared_at`/"
+                "`replaced_by` por item. `compact` corta SO isto e "
+                "`unresolved_detail`."
+            ),
+        },
+        "deprecated": {
+            "type": "object",
+            "additionalProperties": _CONTROLM_CAPABILITY_SCHEMA,
+            "description": (
+                "INTEIRO, igual a `full` -- e a resposta a `o que eu nao posso "
+                "mais usar`, e cortar obrigaria uma segunda chamada para a "
+                "MESMA pergunta."
+            ),
+        },
+        "components": {
+            "type": "object",
+            "additionalProperties": _CONTROLM_COMPONENT_SCHEMA,
+            "description": "As exigencias de componente em vigor nesta versao.",
+        },
+        "declared_here": _CONTROLM_DECLARED_HERE_SCHEMA,
+        "unresolved": _CONTROLM_UNRESOLVED_SLUGS_SCHEMA,
+        "sources": {"type": "array", "items": {"type": "string"}},
+        "retrieved": {"type": "string"},
+    },
+}
+
+_CONTROLM_DESCRIPTOR_SCHEMA_MINIMAL: dict[str, Any] = {
+    "type": "object",
+    "required": ["version", "covers", "capabilities_count", "deprecated", "unresolved_count"],
+    "properties": {
+        "version": {"type": "string"},
+        "covers": _CONTROLM_COVERS_SCHEMA,
+        "capabilities_count": {
+            "type": "integer",
+            "description": "len(capabilities) de `full` -- a lista pede `compact`.",
+        },
+        "deprecated": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Slugs, ja ordenados -- sem o resumo de cada um.",
+        },
+        "unresolved_count": {
+            "type": "integer",
+            "description": (
+                "len(unresolved) de `full`. NUNCA omitido, mesmo em zero -- e a "
+                "recusa nomeada da matriz. A lista de slugs e a razao de cada "
+                "uma exigem `compact`/`full`."
+            ),
+        },
+    },
+}
+
+# FLAT, e nao `_may_fail(oneOf-de-tres, ...)`: `_may_fail` aninharia um `oneOf`
+# de tres dentro do ramo de sucesso do `oneOf` de dois, e
+# `TestOutputSchemasAreReal._branches` so olha um nivel -- o ramo de sucesso
+# apareceria sem `properties`/`required` proprios e os dois testes daquela
+# classe quebrariam. QUATRO ramos no mesmo nivel: full/compact/minimal, mais o
+# erro de fronteira que `_may_fail` sempre acrescenta.
+_CONTROLM_DESCRIPTOR_SCHEMA: dict[str, Any] = {
+    "description": (
+        "Descritor da versao no nivel pedido (`full`/`compact`/`minimal`), ou "
+        "erro se ela esta fora da faixa ou nao e publicada."
+    ),
+    "oneOf": [
+        _CONTROLM_DESCRIPTOR_SCHEMA_FULL,
+        _CONTROLM_DESCRIPTOR_SCHEMA_COMPACT,
+        _CONTROLM_DESCRIPTOR_SCHEMA_MINIMAL,
+        _ERROR_SCHEMA,
+    ],
 }
 
 _RELEASE_DIFF_SCHEMA: dict[str, Any] = {
@@ -4214,12 +4335,16 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "coberta e `9.0.21.200` a `9.0.22.100`."
                     ),
                 },
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE_CONTROLM),
+                    "description": _CONTROLM_DETAIL_LEVEL_DESC,
+                },
             },
         },
-        "outputSchema": _may_fail(
-            _CONTROLM_DESCRIPTOR_SCHEMA,
-            "Descritor da versao, ou erro se ela esta fora da faixa ou nao e publicada.",
-        ),
+        # NAO `_may_fail(...)`: `_CONTROLM_DESCRIPTOR_SCHEMA` ja e o `oneOf`
+        # completo (full/compact/minimal/erro) -- ver o comentario ao lado dela.
+        "outputSchema": _CONTROLM_DESCRIPTOR_SCHEMA,
         "annotations": _READ_ONLY,
     },
     "sparkforge_release_diff": {
@@ -5869,7 +5994,7 @@ def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _h_controlm_describe(args: dict[str, Any]) -> dict[str, Any]:
-    return _core.controlm_describe(args["version"])
+    return _core.controlm_describe(args["version"], detail_level=args.get("detail_level", "full"))
 
 
 def _h_release_diff(args: dict[str, Any]) -> dict[str, Any]:
