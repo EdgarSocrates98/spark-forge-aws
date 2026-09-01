@@ -82,6 +82,7 @@ from test_rules_emrs_boundary import (
 from sparkforge.facts.data_quality import extract_data_quality_tree
 from sparkforge.facts.graph import extract_graph_tree
 from sparkforge.facts.pyspark_ast import extract_tree as extract_pyspark_tree
+from sparkforge.facts.terraform import extract_terraform_tree
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
 
@@ -173,6 +174,19 @@ ESPERADO_PY_SOBRE_GRAFO = {
     # precisa converter para nada -- a afirmacao dele e sobre a conf sobrescrever
     # o default argument, e independe do valor.
     "conf_local_checkpoints_nao_booleano": ("SF-PY-008", "SF-PY-012"),
+    # As TRES da rodada de dividas de 2026-08-31, que fecharam `V-GR-1` (metade
+    # acusatoria) e `V-GR-2`. NAO e invasao, e a resposta por escrito e a mesma
+    # das vinte acima: as tres persistem vertices e arestas com `.cache()` e
+    # nenhuma libera, porque o eixo em teste e o jar no IaC ou o valor de
+    # `checkpointInterval` -- escrever `unpersist` nelas so trocaria o ruido de
+    # lugar e nao mudaria o que cada uma prova.
+    #
+    # Medido: as tres citam `pyspark.cache` como unica evidencia de SF-PY-008,
+    # nenhuma cita fact `graph.`; a afirmacao de SF-PY e sobre ciclo de vida de
+    # cache e vale para qualquer job PySpark, de grafo ou nao.
+    "checkpoint_desligado_fora_da_saida": ("SF-PY-008",),
+    "intervalo_de_checkpoint_acima_do_limite": ("SF-PY-008",),
+    "jar_com_valor_ilegivel_no_iac": ("SF-PY-008",),
 }
 
 # As cinco de grafo em que SF-PY nao tem o que dizer, e a razao e a mesma da
@@ -198,16 +212,28 @@ def _dirs(raiz: Path) -> list[Path]:
 
 @cache
 def _facts(input_dir: Path) -> tuple:
-    """Os tres extratores sobre o mesmo `.py`, na ordem em que um agente os
-    chamaria: `analyze graph`, `analyze data-quality`, `analyze pyspark`.
+    """Os QUATRO extratores sobre o mesmo diretorio, na ordem em que um agente
+    os chamaria: `analyze graph`, `analyze data-quality`, `analyze pyspark`,
+    `analyze terraform`.
 
     `lru_cache` porque cada corpus e julgado sob dois runtimes e a extracao e a
     parte cara; sem ele o arquivo faz o trabalho de AST duas vezes por fixture.
+
+    O QUARTO entrou com `SF-GRAPH-005`, e a razao e o modo de falha que ele
+    provocou: essa e a primeira regra de `SF-GRAPH` cuja evidencia mora no IaC
+    (`requires_facts: ['graph.import', 'tf.resource']`). Sem o extrator de
+    Terraform aqui, `judge` a PULAVA por falta de ingrediente, e
+    `TestOsTresCorporaEstaoVivos` acusava corretamente que ela "nao disparou em
+    nenhuma fixture" -- quando o golden da propria fixture `import_sem_jar_no_iac`
+    mostra que ela dispara. A fronteira e medida sobre o que o produto extrai, e
+    o produto extrai Terraform; um harness que extrai menos que o produto mede
+    silencio que nao existe.
     """
     return (
         tuple(extract_graph_tree(input_dir, repo_root=input_dir))
         + tuple(extract_data_quality_tree(input_dir, repo_root=input_dir))
         + tuple(extract_pyspark_tree(input_dir, repo_root=input_dir))
+        + tuple(extract_terraform_tree(input_dir, repo_root=input_dir))
     )
 
 
@@ -691,7 +717,31 @@ class TestNenhumAchadoCitaFactDeOutraArea:
     errado" -- aparece como achado citando um fact que responde outra pergunta
     sobre o mesmo arquivo. Este e o teste que pegaria uma regra escrita para ler
     os dois vocabularios ao mesmo tempo.
+
+    O QUE ELE PROTEGE, e o que nao: o defeito que ele existe para pegar e a
+    mistura dos TRES vocabularios irmaos -- `graph.`, `dq.`, `pyspark.` -- sobre
+    o MESMO `.py`. Evidencia vinda de OUTRO ARTEFATO nao e esse defeito: e
+    correlacao entre artefatos, que e o que este motor faz de proposito. Por isso
+    a excecao abaixo e por rule_id e por namespace, e nao um afrouxamento do
+    `startswith`: uma regra `SF-GRAPH` citando `dq.` ou `pyspark.` continua
+    reprovando, que e o caso que o docstring acima descreve.
     """
+
+    # Excecao declarada, com o argumento medido. NUNCA apagar a linha para fazer
+    # o teste passar -- e o mesmo criterio de `ESPERADO_PY_SOBRE_GRAFO`.
+    #
+    # `SF-GRAPH-005` e a primeira regra destas tres areas cuja AFIRMACAO abrange
+    # dois artefatos: "o job importa GraphFrames (`.py`) e o IaC nao entrega a
+    # biblioteca (`.tf`)". `tf.resource` nao e evidencia de outra pergunta -- e
+    # metade DESTA. Suprimi-la do achado deixaria o operador com "falta o jar" e
+    # sem o recurso de Terraform onde ele falta.
+    #
+    # `tf.` nao e vocabulario irmao: nao existe area `SF-TF` competindo com
+    # `SF-GRAPH` pela leitura do mesmo arquivo. As tres areas leem `.py`; o
+    # extrator de Terraform le `.tf`.
+    CITACAO_CRUZADA_DECLARADA: dict[str, tuple[str, ...]] = {
+        "SF-GRAPH-005": ("tf.",),
+    }
 
     @pytest.mark.parametrize("corpus", AREAS)
     def test_toda_regra_das_tres_areas_cita_so_o_proprio_namespace(
@@ -704,11 +754,33 @@ class TestNenhumAchadoCitaFactDeOutraArea:
                 area = _area_do_id(finding.rule_id)
                 if area not in NAMESPACE:
                     continue
+                permitidos = (NAMESPACE[area],) + self.CITACAO_CRUZADA_DECLARADA.get(
+                    finding.rule_id, ()
+                )
                 citados = sorted({por_id[e] for e in finding.evidence})
-                fora = [k for k in citados if not k.startswith(NAMESPACE[area])]
+                fora = [k for k in citados if not k.startswith(permitidos)]
                 assert not fora, (
                     f"`fixtures/{CORPUS[corpus].name}/{j['nome']}`: "
                     f"{finding.rule_id} ({area}) cita {fora}, de fora de "
                     f"`{NAMESPACE[area]}`. O achado sai do relatorio afirmando uma "
-                    f"coisa e apontando para a evidencia de outra."
+                    f"coisa e apontando para a evidencia de outra. Se a citacao "
+                    f"cruzada for metade da AFIRMACAO da regra -- e nao evidencia "
+                    f"de outra pergunta --, declare-a em "
+                    f"`CITACAO_CRUZADA_DECLARADA` com o argumento medido."
                 )
+
+    def test_a_excecao_declarada_nao_cobre_vocabulario_irmao(self):
+        """A excecao acima nao pode virar porta para o defeito que o teste pega.
+
+        Declarar `dq.` ou `pyspark.` ali seria exatamente a regra que le dois
+        vocabularios sobre o mesmo `.py` -- o caso que o docstring da classe
+        descreve. Este teste prende isso.
+        """
+        irmaos = tuple(NAMESPACE.values())
+        for rule_id, prefixos in self.CITACAO_CRUZADA_DECLARADA.items():
+            invalidos = [p for p in prefixos if p in irmaos]
+            assert not invalidos, (
+                f"{rule_id} declara citacao cruzada para {invalidos}, que e "
+                f"vocabulario IRMAO ({irmaos}). A excecao existe para artefato "
+                f"de outro tipo, nunca para outra area sobre o mesmo `.py`."
+            )
