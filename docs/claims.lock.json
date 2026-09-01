@@ -1,6 +1,4 @@
 {
-  "schema_version": 1,
-  "extracted_from": "e9d28f1551d4b0c2a71254b7610a357eefeb8a29",
   "claims": [
     {
       "context": "`sparkforge/economy/budget.py`, que define tiers de 0 a 6 (`TIER_PRICING`)",
@@ -2967,23 +2965,23 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **463** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **467** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
-      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 463
+          "value": 467
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "463",
+      "text": "467",
       "type": "number"
     },
     {
@@ -3684,43 +3682,43 @@
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **124829** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **127547** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 124829
+          "value": 127547
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "124829",
+      "text": "127547",
       "type": "number"
     },
     {
-      "context": "(**8162** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
+      "context": "(**8270** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-675",
       "line": 249,
-      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 8162
+          "value": 8270
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "8162",
+      "text": "8270",
       "type": "number"
     },
     {
@@ -11021,5 +11019,7 @@
       "text": "`docs/vnext/adrs/ADR-001` até `ADR-008` (Decisões arquiteturais registradas)",
       "type": "capability"
     }
-  ]
+  ],
+  "extracted_from": "e9d28f1551d4b0c2a71254b7610a357eefeb8a29",
+  "schema_version": 1
 }

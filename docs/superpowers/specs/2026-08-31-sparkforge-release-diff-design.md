@@ -244,3 +244,144 @@ na mediana. Por chamada o custo é **zero** — `load_emr()` tem `lru_cache`, e 
 onde vêm os ~20 ms. Se algum dia isso incomodar, a saída é tornar `EMR_MATRIX`
 preguiçosa via `__getattr__` de módulo; não foi feito porque seria complexidade
 sem consumidor medido.
+
+---
+
+Preenchido pelas **frentes B e C** (o modelo `ReleaseDescriptor` e o verbo
+`ReleaseDiff`).
+
+### Onde o par ficou, e por que não em `sparkforge/facts/`
+
+`sparkforge/migration/release_descriptor.py` e
+`sparkforge/migration/release_diff.py`.
+
+`facts/` é onde **extração** mora: cada módulo de lá lê um artefato e devolve
+fact. `ReleaseDescriptor` não extrai de artefato nenhum — ele **compõe** sobre o
+dado que `runtime_matrix` já carregou de `knowledge/`, que é exatamente a linha
+que o `CLAUDE.md` deste repositório desenha entre `analyze *` e os verbos de
+topo. `migration/` é onde a pergunta já vive: `version_path.py` responde "quais
+degraus existem entre estas duas versões" para o Glue, e o `MigrationAssessment`
+para EMR — sub-projeto 3 — é o consumidor declarado deste modelo.
+
+### A recusa não é uma, são duas, e elas destravam com medidas diferentes
+
+A D-3 pede `unresolved` com o componente **nomeado**. Medido nas 95 releases:
+há duas ausências distintas, e colapsá-las num "não sei" faria o operador
+procurar no lugar errado.
+
+| nome | o que é | exemplo medido | o que destrava |
+|---|---|---|---|
+| `platform_source_does_not_publish` | a fonte daquela plataforma não publica o componente em release **nenhuma** | `hadoop` no EMR on EKS (0 de 34 páginas) | uma **fonte** nova |
+| `release_cell_absent` | a fonte publica o eixo, e a célula **daquela** release não está lá | `iceberg` em `emr-6.4.0` (célula vazia na página); `java` em Glue 5.1, que as outras quatro releases têm | uma **leitura** daquela página |
+
+`unresolved` continua sendo a lista de nomes que a D-3 declara; `refused` carrega
+o par (tipo, razão) de cada nome, porque a §20 do `CLAUDE.md` pede a recusa
+**com a medida que a destravaria**.
+
+O universo contra o qual cada descritor se declara é a **união das quatro
+matrizes** — nove componentes (`spark`, `python`, `python_installed`, `scala`,
+`java`, `hadoop`, `iceberg`, `hudi`, `delta`) —, derivada dos quatro
+vocabulários e nunca escrita à mão.
+
+### A §2 acertou a assimetria, e ela é maior do que a tabela sugeria
+
+Medido: `java` é publicado em **4 de 5** releases de Glue, não em 5. A
+assimetria não é só entre plataformas — ela existe **dentro** de uma plataforma,
+release a release, e é por isso que a recusa é calculada por release e não por
+plataforma.
+
+### O caso de dois eixos: emitir declarando os dois, e recusar a atribuição
+
+A D-4 não decidiu o que fazer quando plataforma **e** release mudam juntas.
+Decidido: **emitir**, com `axis` carregando as duas dimensões em ordem fixa
+(`platform` antes de `release`), e a **atribuição** saindo em `unresolved`.
+
+A razão é medida, não estética: *"estou em `emr-6.15.0` no EC2 e vou para
+`emr-7.5.0` no EKS"* é a pergunta literal de uma migração real. Recusá-la
+deixaria o operador sem a única resposta que a matriz sustenta — os números dos
+dois lados — para proteger uma inferência que ele não pediu. O que **não** tem
+base é a atribuição: nenhuma linha de `changed` pode ser creditada a release ou
+a plataforma isoladamente. Então é a atribuição que sai recusada por nome, com o
+que a destrava (dois diffs de um eixo cada). Emitir calado seria a terceira
+saída, e é a única que não está disponível.
+
+`axis` é a tupla das dimensões que **efetivamente variam**: uma release contra
+ela mesma sai com `axis: []`, porque nada varia e nada é atribuível a nada.
+
+### `added`/`removed` não podem absorver diferença de vocabulário
+
+Consequência direta da D-4 que a spec não previa. Se `hadoop` (que o EC2 publica
+e o EKS não) caísse em `removed` no diff EC2 × EKS, a saída afirmaria *"o EKS
+removeu o Hadoop"* — que é a mesma inversão de causa que a D-4 existe para
+impedir, só que num campo diferente. Componente que **uma das duas** plataformas
+não publica como eixo nunca vira `added` nem `removed`: sai em `unresolved`, com
+a chave `component.<nome>`. O contrafactual `emr-7.7.0` EC2 × EKS produz, por
+isso, `changed` com dois componentes e `added`/`removed` **vazios** — e sete
+`component.*` recusados.
+
+### O que `added`/`removed` medem, declarado
+
+Matriz de versão mede **o que a fonte publica**. Quando `python` aparece em
+`emr-7.0.0` e não em `emr-6.15.0`, o medido é que a AWS passou a reafirmar o
+default do PySpark por release na série 7.x — não que a 6.15.0 não tivesse
+Python. A presença da célula é fact; a leitura causal dela não é, e é a mesma
+lacuna que põe `deprecated` em `unresolved`.
+
+### As sete dimensões do §8.2, medidas contra `knowledge/`
+
+Duas têm lastro; cinco não, e cada uma sai com a medida que a destravaria.
+
+| dimensão | lastro | razão medida |
+|---|---|---|
+| `added`, `removed` | **sim** | a presença da célula por release é o que as quatro matrizes carregam |
+| `default_changes` | **não** — e é a que mais parece ter | a §2 de `knowledge/glue/runtime-matrix.md` *discute* mudança de default ("AQE é default desde Spark 3.2", "ANSI mode é default no Spark 4.1"), mas em **prosa**, chaveada por versão de **Spark** e não por release de plataforma, e só para o Glue; `knowledge/emr/`, `knowledge/emr-eks/` e `knowledge/emr-serverless/` não têm nem a prosa. Emitir para uma das quatro e nada para três seria pior que recusar: o operador de EMR leria lista vazia como "nenhum default mudou". Destrava com `knowledge/<plataforma>/default-changes.yaml` chaveado por release |
+| `compatibility_changes` | **não** | mesma razão, com um agravante: o que existe estruturado sobre compatibilidade é o **catálogo de regras** (`rules/catalog/glue-migration.yaml`, `SF-MIG-*`, com `runtime_scope` real). Consumi-lo aqui transformaria o diff de leitor em juiz, e a **D-6 é explícita**: este sub-projeto entrega dado, modelo e verbo, nenhuma regra |
+| `deprecated` | **não** | exige release notes estruturadas por release; hoje as quatro áreas de `knowledge/` têm prosa e tabela de **componentes**, não changelog. Destrava com `knowledge/<plataforma>/release-notes.yaml` com `deprecated: [{api, desde, substituto, source, retrieved}]` |
+| `security_changes` | **não** | nenhuma das quatro páginas cita CVE; as matrizes carregam versão de componente e nada mais. Destrava com `knowledge/<plataforma>/security-bulletins.yaml` e fonte oficial em `sources.lock.json` |
+| `performance_changes` | **não** | não é lacuna de documento: mudança de desempenho é diferença de tempo e de recurso no **mesmo** workload. Destrava com dois conjuntos de facts de event log e o verbo `benchmark`, que já existe neste motor para essa pergunta |
+
+### O rótulo na saída é a chave da matriz, e não as duas grafias
+
+A D-3 pede "o rótulo como a fonte publica". As duas grafias são publicadas — a
+página do EMR escreve `emr-7.7.0` no título e `7.7.0` na tabela. `describe`
+aceita as duas e emite **uma**, a chave que indexa a matriz, normalizada pela
+mesma conta de `runtime_detect._emr_key`. Duas grafias na saída dariam dois
+descritores diferentes para a mesma release, e o diff deixaria de ser
+determinístico.
+
+### `runtime_matrix.load()` vaza `sources` e `retrieved` como se fossem componente
+
+Medido em 2026-08-31, e é defeito da carga do Glue, não do descritor:
+`_carrega_matriz_fechada` filtra as duas chaves reservadas nas três matrizes de
+EMR, e `load()` — que tem caminho próprio por causa da forma longa com `claims`
+— **não** filtra. A linha resolvida de Glue devolve `sources` e `retrieved` ao
+lado dos cinco componentes. Não foi corrigido aqui porque `load()` tem
+consumidores com golden (`runtime_detect` monta `GLUE_MATRIX` filtrando para
+`spark`/`python`/`iceberg` e não é afetado), e mudar a forma de retorno é
+mudança de contrato que merece a sua própria entrega. O descritor filtra as duas,
+e `tests/test_release_descriptor.py::TestChavesReservadasNaoSaoComponente` trava
+o comportamento nas cinco releases de Glue.
+
+### O que entrou em `runtime_matrix.py`, e por quê
+
+- `GLUE_COMPONENTS` — o vocabulário do Glue como constante, ao lado dos três de
+  EMR que já existiam. Não é **enforçado** em `load()`, e a diferença é
+  deliberada: as três de EMR passam por `_carrega_matriz_fechada`, que estoura
+  numa chave fora do conjunto; a do Glue tem o caminho da forma longa, e
+  enforçar ali exigiria refazê-lo sem consumidor que peça. O drift é travado por
+  teste, comparando a constante com a união das chaves do YAML.
+- `release_provenance()`, `emr_release_provenance()`,
+  `emr_eks_release_provenance()` e `emr_serverless_release_provenance()` — fonte
+  e data **por release**, que os `*_sources()` existentes não davam (eles
+  achatam todas as URLs do documento numa lista só). As duas escalas **somam**
+  em `sources`, como o cabeçalho do YAML de EMR on EC2 já declarava em prosa; em
+  `retrieved` a mais específica **vence**, porque duas datas para a mesma célula
+  não são duas leituras.
+
+### Custo medido, e o que não moveu
+
+`docs/surface.lock.json` **não mudou**: nenhuma tool, skill ou documento de
+`knowledge/` entrou — só quatro arquivos `.py`. O gate de lastro pegou os três
+ids que contam `*.py` na árvore (`VNX-640`, `VNX-674` e `VNX-675`, todos em
+`docs/harness/CODEINTEL-GAP.md`), remediados pela lista da saída do gate: 463 →
+467 arquivos, 124829 → 127547 bytes, 8162 → 8270 bytes.

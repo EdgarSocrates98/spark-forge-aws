@@ -285,6 +285,67 @@ def known_versions() -> list[str]:
     return sorted(load().keys(), key=lambda v: tuple(int(p) for p in v.split(".")))
 
 
+# O que a FONTE do Glue publica, como as tres matrizes de EMR ja declaram o
+# seu (`EMR_COMPONENTS`, `EMR_EKS_COMPONENTS`, `EMR_SERVERLESS_COMPONENTS`).
+# Existe porque `ReleaseDescriptor` precisa distinguir duas recusas que sao
+# diferentes: componente que a fonte daquela plataforma NAO PUBLICA em release
+# nenhuma (`hadoop` no Glue) e componente que ela publica mas cuja CELULA
+# daquela release nao foi lida (`java` em Glue 5.1, 4 de 5 releases o tem).
+#
+# DIFERENCA DELIBERADA EM RELACAO AS TRES DE EMR: este conjunto NAO e enforcado
+# em `load()`. As tres matrizes de EMR passam por `_carrega_matriz_fechada`, que
+# estoura numa chave fora do vocabulario; a do Glue tem a forma longa com
+# `claims`, um caminho de carga proprio, e enforcar aqui exigiria refazer
+# aquele caminho sem consumidor que peca. O que trava o drift e
+# `tests/test_release_descriptor.py::TestVocabularioBateComOsDados`, que compara
+# este conjunto com a uniao das chaves do YAML.
+GLUE_COMPONENTS = frozenset({"spark", "python", "scala", "java", "iceberg"})
+
+
+def _procedencia_por_release(caminho: Path) -> dict[str, dict[str, Any]]:
+    """`{release: {"sources": (...), "retrieved": "YYYY-MM-DD" | None}}`.
+
+    As duas escalas de procedencia SOMAM, e isso e o que o cabecalho do YAML de
+    EMR on EC2 declara em prosa: a pagina-tabela do documento cobre a linha
+    inteira, e a release com fonte propria -- `python` de `7.13.0`, que vem da
+    release note daquela release -- acrescenta a sua sem descartar a do
+    documento. `retrieved`, ao contrario, NAO soma: a data da leitura mais
+    especifica vence, porque duas datas para a mesma celula nao sao duas
+    leituras, sao uma leitura e um valor herdado.
+
+    As quatro matrizes usam formas diferentes deste mesmo mecanismo, e as
+    quatro sao reais: Glue declara so por release (5 de 5), EMR on EKS tambem
+    (34 de 34, porque a secao 7 do .md mede que as paginas por familia sao a
+    parte de maior drift), EMR Serverless so por documento (0 de 26, porque as
+    24 paginas por release ficaram fora da watchlist de proposito) e EMR on EC2
+    e misto (1 de 30).
+    """
+    documento = _documento(caminho)
+    doc_sources = tuple(str(u) for u in (documento.get("sources") or []))
+    doc_retrieved = documento.get("retrieved")
+    saida: dict[str, dict[str, Any]] = {}
+    for release, linha in (documento.get("versions") or {}).items():
+        proprias: tuple[str, ...] = ()
+        retrieved = None
+        if isinstance(linha, dict):
+            proprias = tuple(str(u) for u in (linha.get("sources") or []))
+            retrieved = linha.get("retrieved")
+        vistas: dict[str, None] = {}
+        for url in doc_sources + proprias:
+            vistas.setdefault(url, None)
+        saida[str(release)] = {
+            "sources": tuple(vistas),
+            "retrieved": str(retrieved or doc_retrieved) if (retrieved or doc_retrieved) else None,
+        }
+    return saida
+
+
+@lru_cache(maxsize=1)
+def release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do Glue."""
+    return _procedencia_por_release(_matrix_path())
+
+
 # --------------------------------------------------------------------------- #
 # As tres matrizes de EMR: on EC2, Serverless e on EKS
 # --------------------------------------------------------------------------- #
@@ -429,6 +490,12 @@ def emr_sources() -> tuple[str, ...]:
     return _fontes_declaradas(_emr_path())
 
 
+@lru_cache(maxsize=1)
+def emr_release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do EMR on EC2. Ver `_procedencia_por_release`."""
+    return _procedencia_por_release(_emr_path())
+
+
 # --------------------------------------------------------------------------- #
 # EMR on EKS
 # --------------------------------------------------------------------------- #
@@ -468,6 +535,12 @@ def emr_eks_sources() -> tuple[str, ...]:
     return _fontes_declaradas(_emr_eks_path())
 
 
+@lru_cache(maxsize=1)
+def emr_eks_release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do EMR on EKS. Ver `_procedencia_por_release`."""
+    return _procedencia_por_release(_emr_eks_path())
+
+
 # --------------------------------------------------------------------------- #
 # EMR Serverless
 # --------------------------------------------------------------------------- #
@@ -496,3 +569,9 @@ def emr_serverless_sources() -> tuple[str, ...]:
     `scripts/refresh_knowledge.py`.
     """
     return _fontes_declaradas(_emr_serverless_path())
+
+
+@lru_cache(maxsize=1)
+def emr_serverless_release_provenance() -> dict[str, dict[str, Any]]:
+    """Fonte e data por release do EMR Serverless. Ver `_procedencia_por_release`."""
+    return _procedencia_por_release(_emr_serverless_path())
