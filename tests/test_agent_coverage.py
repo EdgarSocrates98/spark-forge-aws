@@ -295,3 +295,73 @@ class TestEMRonEKSTemDespachoCompleto:
             f"{orphans} nao sao alcancaveis a partir de nenhum coordenador. Cite-as no "
             f"coordenador, numa skill que ele declare, ou num executor que ele despache."
         )
+
+
+class TestAAreaSF_CTM_TemRotaCoordenadorETool:
+    """As TRES metades do despacho, cobradas juntas para `SF-CTM`.
+
+    Mesmo molde da classe acima, e pela mesma razao: `SF-EMRS` conseguiu ficar
+    declarada num coordenador e sem rota nenhuma por uma fase inteira porque cada
+    invariante generico olhava para um lado so, e cada um passava sozinho.
+
+    1. `SF-CTM` casa uma rota `AGENT-*` em `routing.yaml`;
+    2. a rota aponta para um coordenador que DECLARA a area em `rule_areas`;
+    3. a tool de `Jobs-as-Code` e alcancavel a partir de algum coordenador.
+
+    A tool de CONSULTA (`sparkforge_controlm_describe`) entra na lista junto, e
+    nao sozinha: as duas respondem lados opostos da mesma pergunta -- uma diz o
+    que a versao alvo TEM, a outra diz o que o job USA -- e o achado de
+    `SF-CTM-001` manda explicitamente consultar a primeira. Uma alcancavel sem a
+    outra deixaria o operador com metade do caminho.
+    """
+
+    AREA = "SF-CTM"
+    TOOLS_DA_AREA = ("sparkforge_analyze_controlm_jobs", "sparkforge_controlm_describe")
+
+    def _routing(self) -> dict:
+        path = ROOT / "rules" / "catalog" / "routing.yaml"
+        return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    def _rotas_da_area(self) -> list[dict]:
+        rotas = []
+        for rule in self._routing()["rules"]:
+            if not rule.get("recommended_agent"):
+                continue
+            grupo = rule.get("when") or {}
+            condicoes = (grupo.get("any") or []) + (grupo.get("all") or [])
+            if any(c.get("findings_area") == self.AREA for c in condicoes):
+                rotas.append(rule)
+        return rotas
+
+    def test_a_area_existe_no_catalogo(self):
+        """Guarda contra os tres testes abaixo passarem sobre uma area que
+        deixou de existir -- verde sobre nada."""
+        areas = {r["id"].rsplit("-", 1)[0] for r in load_catalog()}
+        assert self.AREA in areas, f"{self.AREA} nao esta no catalogo"
+
+    def test_a_area_casa_uma_rota(self):
+        rotas = self._rotas_da_area()
+        assert rotas, (
+            f"{self.AREA} nao aparece em condicao `findings_area` de rota nenhuma em "
+            f"routing.yaml: um case so com achados desta area volta de `next_step` "
+            f"com `recommended_agent: None`."
+        )
+
+    def test_o_agente_da_rota_declara_a_area(self):
+        declarado = {p.stem: set(_frontmatter(p).get("rule_areas") or []) for p in coordinators()}
+        for rota in self._rotas_da_area():
+            agente = rota["recommended_agent"]
+            assert agente in declarado, f"{rota['id']} aponta para {agente}, inexistente"
+            assert self.AREA in declarado[agente], (
+                f"{rota['id']} roteia {self.AREA} para {agente}, que nao a declara em "
+                f"`rule_areas`: despacho sem declaracao manda o case para quem nao "
+                f"sabe que a area existe."
+            )
+
+    def test_as_duas_tools_de_controlm_sao_alcancaveis(self):
+        reachable = "".join(_corpus_of(p) for p in coordinators())
+        orphans = [name for name in self.TOOLS_DA_AREA if name not in reachable]
+        assert not orphans, (
+            f"{orphans} nao sao alcancaveis a partir de nenhum coordenador. Cite-as no "
+            f"coordenador, numa skill que ele declare, ou num executor que ele despache."
+        )

@@ -7,7 +7,7 @@ skills:
   - compare-releases
   - migrate-glue-6
   - spark4-compatibility
-rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4]
+rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4, SF-CTM]
 executors: [sf-inventory, sf-extractor, sf-judge, sf-verifier, sf-synthesizer]
 ---
 
@@ -52,17 +52,46 @@ Este coordenador atende a pergunta pela mesma razão que já atende
 `migrate-glue-6` de `spark4-compatibility`. O que muda é o produto, não o tipo
 de pergunta.
 
-Três limites, e nenhum deles é opcional:
+Dois limites, e nenhum deles é opcional:
 
 - **A matriz é do Automation API, não do produto Control-M.** As duas usam a
   grafia `9.0.2x.yyy` e não são a mesma coisa. Número do produto não se deriva
   do número do Automation API.
 - **A faixa é `9.0.21.200`–`9.0.22.100` e é fechada.** Versão fora dela é recusa
   nomeada, com o intervalo. Não extrapole da fronteira mais próxima.
-- **Não há regra de Control-M, e não é lacuna.** Não há artefato para extrair —
-  o operador não tem Control-M instalado —, e regra sem corpus é o que este motor
-  recusa. Este verbo entrega dado e consulta; julgar definição de job depende de
-  um extrator de `Jobs-as-Code` que não existe.
+
+O terceiro limite **caiu**, e vale registrar como: até o incremento 1 estava
+escrito aqui que *"não há regra de Control-M, e não é lacuna"*, porque não havia
+artefato para extrair. Isso valia para `describe-job-run`, que é saída de
+runtime. **Não vale para `Jobs-as-Code`**, que é código-fonte versionado no
+repositório do cliente — o operador plausivelmente o tem mesmo sem ter o
+Control-M instalado. É a mesma natureza de um `main.tf`.
+
+## Control-M — julgar a definição de job contra a versão do ambiente
+
+Quando o caso traz o **JSON de definição de job** (`Jobs-as-Code`, o que
+`ctm build` valida e `ctm deploy` publica), use
+`sparkforge_analyze_controlm_jobs` sobre o arquivo ou o diretório. Ele extrai o
+inventário — folder, job com `Type`/`RunAs`/`Application`, agendamento,
+dependência por evento e por `Flow`, ação condicional, variável — e, **com
+`version`**, cruza as capacidades observadas com a matriz e emite o veredito já
+decidido. A área de regra é `SF-CTM`.
+
+Três coisas decidem se a resposta vale:
+
+- **A versão é DECLARAÇÃO sua, não leitura do artefato.** O JSON não a carrega —
+  conferido campo a campo em *Job Properties* —, e deduzi-la do conteúdo seria
+  adivinhar. Confirme a versão real do ambiente alvo antes de declarar: um
+  achado sobre uma declaração errada é ruído caro.
+- **Sem `version` a regra não dispara, e isso é resposta.** As capacidades
+  observadas saem em `ctm.capability_unresolved` com `reason:
+  version_not_declared`, e `SF-CTM-001` aparece em `judge --show-skipped` com
+  `reason: requires_facts`. Não invente um número para preencher o parâmetro.
+- **Ausência de achado NUNCA significa compatível.** A matriz nomeia um job type
+  dentro da faixa e a página *Job Types* publica 71; o que ela não nomeia não é
+  sondado, porque acusá-lo diria que uma versão não suporta `Job:Command`. Leia
+  `capability_unresolved_count` na sentinela `ctm.analyzed` antes de concluir
+  qualquer coisa sobre o que não apareceu.
 
 ## Não faz
 

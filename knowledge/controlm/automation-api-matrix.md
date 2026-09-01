@@ -41,15 +41,43 @@ diz por quê.
 
 ---
 
-## 1. A pergunta, e por que não há extrator nem regra
+## 1. A pergunta, e o que esta matriz passou a sustentar
 
-O operador **não tem Control-M instalado**, não tem artefato, e pediu
+O operador **não tem Control-M instalado**, não tem artefato de runtime, e pediu
 *"conhecimento para atuar em todas as versões entre `9.0.21.200` e
-`9.0.22.100`"*. Sem artefato não há extrator validado, e sem extrator não há
-regra que julgue definição de job. Este incremento entrega **dado e consulta**;
-regra sobre dependência, janela ou SLA depende do extrator de `Jobs-as-Code`,
-que é o incremento 2 e não existe aqui. Escrevê-la agora produziria regra sem
-corpus, que é o que este repositório recusa.
+`9.0.22.100`"*. O incremento 1 entregou **dado e consulta** — `sparkforge
+controlm describe --version <v>` — e registrou aqui que não havia extrator nem
+regra, porque sem artefato não há corpus e regra sem corpus é o que este
+repositório recusa.
+
+**Metade dessa frase caiu, e vale ler qual metade.** Ela valia para
+`describe-job-run`, que é saída de runtime e exige a instância. Não vale para
+`Jobs-as-Code`: definição de job em JSON, **versionada no repositório do
+cliente**, que `ctm build` valida e `ctm deploy` publica. O operador
+plausivelmente a tem mesmo sem ter o Control-M — é a mesma natureza de um
+`main.tf` ou de um `.py` de PySpark, que este motor já lê.
+
+Sobre esse artefato nasceu o extrator `sparkforge/facts/controlm_jobs.py` e a
+área de regra `SF-CTM`, com **uma** regra: capacidade usada pelo job que a
+versão declarada não tem. A fronteira de versão **não é repetida na regra** —
+ela mora neste documento e no YAML irmão, e o cruzamento acontece no extrator,
+que emite o kind já decidido. Ver
+`docs/superpowers/specs/2026-09-01-sparkforge-controlm-jobs-as-code-design.md`.
+
+Duas coisas continuam **não** existindo, e as duas por falta de fonte, não por
+falta de tempo:
+
+- **Regra sobre dependência, janela ou SLA.** A página *What's New* não sustenta
+  o que é *defeito* nesses eixos. Os facts saem (`ctm.dependency`,
+  `ctm.schedule`) porque a fonte nomeia os campos; julgá-los exige pesquisa nova
+  no `API_CodeRef`, e é o incremento 3.
+- **Regra de segredo em texto claro.** Medido na leitura de
+  `API_CodeRef_JobProperties.htm`: os 44 blocos que ela publica **não têm campo
+  de credencial**. `Password` existe em *connection profile*, que é outro
+  artefato, e lá a BMC publica a forma correta — `"Password": {"Secret":
+  "<nome>"}`, resolvida de vault no deploy. O extrator **redige** valor de
+  `Variables` que casa o detector compartilhado, e isso não é julgamento: é
+  impedir que o próprio `facts.json` do handoff vire a segunda cópia do segredo.
 
 ## 2. A fonte, e o que ela publica em tabela
 
@@ -254,7 +282,16 @@ classe inteira sai nomeada, com a contagem, e a razão está escrita.
 
 ## Fontes
 
+A primeira é a fonte de **toda** fronteira de versão desta matriz. As três
+seguintes descrevem a **forma** do artefato `Jobs-as-Code` e não publicam
+fronteira nenhuma — foram lidas no incremento 2 (§8) e alimentam o extrator, não
+as células das §3 e §4.
+
 - Control-M Automation API — What's New (as quatro tabelas: *Enhancements*, *What's Changed*, *Corrected Problems*, *Deprecated and Discontinued*; a fonte de **todas** as células das §3 e §4). https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm (retrieved 2026-09-01)
+- Job Properties — os 44 blocos de propriedade de job, folder e sub-folder. https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm (retrieved 2026-09-01)
+- Job Types — os 71 tipos de job publicados. https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm (retrieved 2026-09-01)
+- Folders and Flows — `Folder`, `SubFolder`, `Simple Folder` e `Flow`, e a estrutura de array. https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm (retrieved 2026-09-01)
+- Secrets in Code — a forma correta de credencial (`{"Secret": "<nome>"}`), em connection profile e **não** em definição de job. https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_SecretsInCode.htm (retrieved 2026-09-01)
 
 ### O que esta fonte NÃO sustenta
 
@@ -280,6 +317,105 @@ classe inteira sai nomeada, com a contagem, e a razão está escrita.
   devolve. Classificá-las exigiria ler o que o comando fazia antes, e a página
   não publica isso — por isso a classe sai `unresolved` inteira, e não
   parcialmente promovida a `capabilities`.
-- **A definição de job (`Jobs-as-Code`).** `API_CodeRef_JobProperties.htm` e
-  `API_CodeRef_JobTypes.htm` abrem com o mesmo UA de browser e **não** foram
-  lidas nesta coleta. São o insumo do incremento 2.
+- **A versão do Control-M que executa uma definição de job.** Medido campo a
+  campo em *Job Properties* (§8): nenhum dos 44 blocos a nomeia. É por isso que
+  ela é **declarada** pelo operador — `--version` — e nunca inferida do
+  conteúdo, e é por isso que sem declaração a regra `SF-CTM-001` não dispara.
+- **Quando um job type foi introduzido, fora do único que a *What's New*
+  data.** *Job Types* publica 71 tipos e não carrega coluna de versão. Um tipo
+  ausente desta matriz pode ser anterior à faixa ou posterior ao teto, e esta
+  fonte não separa os dois casos — por isso o extrator não o sonda, e a
+  contagem do que ele não perguntou sai em `capability_unresolved_count`.
+
+---
+
+## 8. O schema de `Jobs-as-Code`, lido no incremento 2
+
+Três páginas, lidas em 2026-09-01 com o mesmo UA de browser da seção 2:
+
+```
+https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm
+https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm
+https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm
+```
+
+### 8.1 O acesso — a armadilha da seção 2, com uma correção
+
+O incremento 1 registrou que `WebFetch` devolve 403 e que UA de browser resolve.
+**A segunda metade é mais dura do que se pensava**, e a correção fica aqui
+porque quem for reler a fonte vai bater nela:
+
+`documents.bmc.com` serve um **desafio interativo do Cloudflare** (`<title>Just
+a moment...</title>`, `challenges.cloudflare.com` no CSP), e ele **não** é um
+rate limit que passa com pausa. Medido nesta coleta: `API_CodeRef_JobProperties`
+e `API_CodeRef_JobTypes` devolveram 403 em **três tentativas cada**, com pausas
+de 50 s entre elas e UA de browser em todas — nove 403 no total —, enquanto
+`API_CodeRef_Folder` devolveu **200 na primeira tentativa**, na mesma sessão e
+com o mesmo cabeçalho. O bloqueio é **por URL e intermitente**, não por janela de
+tempo.
+
+O que funciona é um **navegador de verdade**, que executa o desafio. Conclusão
+prática, e ela substitui o conselho de "espere 45 s": se `curl` com UA falhar
+duas vezes na mesma página, **troque de mecanismo** em vez de esperar mais.
+
+### 8.2 A forma do artefato
+
+Objeto nomeado com `Type` é a unidade. `Folder`, `SimpleFolder` e `SubFolder`
+são container; `Job:*` é job; `Flow` declara sequência; `If` declara ação
+condicional. `Defaults` é chave reservada de topo e não é nem folder nem job.
+
+```json
+{
+  "Defaults": {"Application": "SampleApp", "RunAs": "USERNAME"},
+  "AutomationAPISampleFlow": {
+    "Type": "Folder",
+    "CommandJob": {"Type": "Job:Command", "Command": "echo my 1st job"},
+    "Flow": {"Type": "Flow", "Sequence": ["CommandJob", "ScriptJob"]}
+  }
+}
+```
+
+### 8.3 Três coisas medidas que contradizem o que se supunha
+
+**`ActionIfFailure` não é propriedade do schema.** Ela aparece no
+`AutomationAPISampleFlow.json` oficial e no exemplo de *If:CompletionStatus*, e
+nos dois é apenas o **nome que o autor deu** ao objeto — o que o schema define é
+`"Type": "If"`. Procurar a chave literal acharia o exemplo da BMC e perderia
+todo `If` batizado de outro jeito. O extrator reconhece pelo `Type`.
+
+**A definição de job não tem campo de credencial.** Os 44 blocos de *Job
+Properties* cobrem tipo, agendamento, dependência, ação, recurso e identidade.
+`Password` é de *connection profile*, e a página *Secrets in Code* publica a
+forma correta lá: `"Password": {"Secret": "<nome>"}`, com o valor resolvido de
+Control-M Vault ou de vault CyberArk externo no deploy. A única superfície livre
+da definição de job é `Variables`, uma lista de pares `{nome: valor}`.
+
+**A página *Job Types* publica 71 tipos**, e a *What's New* nomeia **um** deles
+dentro da faixa desta matriz (`Job:DetachedEmbeddedScript`, `9.0.22.005`). Os
+outros 70 são anteriores à faixa ou não datados por esta fonte, e é por isso que
+o extrator **não os sonda**: acusá-los diria que uma versão não suporta
+`Job:Command`, que é falso.
+
+### 8.4 O que o cruzamento observa, e o que ele recusa
+
+Duas sondas, e as duas apontam para uma entrada **desta** matriz:
+
+| Evidência no artefato | Capacidade | Fronteira (deste documento) |
+|---|---|---|
+| `Type: Job:DetachedEmbeddedScript` | `job_detached_embedded_script` | `introduced_in 9.0.22.005` |
+| `Folders`/`SubFolders` como **lista** | `folders_array_structure` | `introduced_in 9.0.22.000` |
+
+Cinco capacidades foram avaliadas e **recusadas** como sonda, com a razão em
+`sparkforge/facts/controlm_jobs.py`: `mssql_agentjob_rerun_from_step` (a
+capacidade é o rerun a partir do passo, não o job type, que é anterior),
+`created_by_under_strict_author_security` (a fronteira é sobre configuração do
+Control-M/EM, fora do artefato), `external_vault_cyberark_secrets` (mora em
+connection profile centralizado), `file_transfer_job_new_parameters` (a fonte diz
+"novos parâmetros" e não os nomeia) e `resources_array_duplicate_names` (exige
+uma flag de `automation-api.properties`, fora do artefato).
+
+E o cruzamento tem **três** saídas, não duas. A terceira é o que impede o
+silêncio desta matriz — 9 versões sem afirmação, 175 linhas de *Corrected
+Problems* — de virar aprovação: capacidade que a matriz não nomeia, versão acima
+do teto e versão que a fonte não publica saem como recusa **nomeada**, com a
+medida que a destrava.

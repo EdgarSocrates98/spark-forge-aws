@@ -1,0 +1,156 @@
+[
+  {
+    "id": "f_9b1c63",
+    "schema_version": 1,
+    "kind": "ctm.analyzed",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {
+      "folder_count": 1,
+      "job_count": 2,
+      "dependency_count": 1,
+      "capability_probe_count": 0,
+      "capability_unresolved_count": 0,
+      "unresolved_count": 0
+    },
+    "attrs": {
+      "version_declared": true
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0b8336948cab7826be8a3896867b7cf042a914a9419b3a64154f6cc30c36d988",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_4cfe04",
+    "schema_version": 1,
+    "kind": "ctm.dependency",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "AutomationAPISampleFlow/Flow",
+      "snippet": ""
+    },
+    "measures": {
+      "step_count": 2
+    },
+    "attrs": {
+      "direction": "sequence",
+      "container": "Flow",
+      "flow": "Flow",
+      "sequence": [
+        "CommandJob",
+        "ScriptJob"
+      ]
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0b8336948cab7826be8a3896867b7cf042a914a9419b3a64154f6cc30c36d988",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_866c2b",
+    "schema_version": 1,
+    "kind": "ctm.folder",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "AutomationAPISampleFlow",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "folder_type": "Folder",
+      "name": "AutomationAPISampleFlow"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0b8336948cab7826be8a3896867b7cf042a914a9419b3a64154f6cc30c36d988",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_f14768",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "AutomationAPISampleFlow/CommandJob",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Command",
+      "name": "CommandJob"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0b8336948cab7826be8a3896867b7cf042a914a9419b3a64154f6cc30c36d988",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_7d9d90",
+    "schema_version": 1,
+    "kind": "ctm.job",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "AutomationAPISampleFlow/ScriptJob",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "job_type": "Job:Script",
+      "name": "ScriptJob"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0b8336948cab7826be8a3896867b7cf042a914a9419b3a64154f6cc30c36d988",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  },
+  {
+    "id": "f_1a6026",
+    "schema_version": 1,
+    "kind": "ctm.version_declared",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "measures": {},
+    "attrs": {
+      "version": "9.0.22.010",
+      "source": "operator_declaration",
+      "read_from_artifact": false,
+      "matrix_covers_from": "9.0.21.200",
+      "matrix_covers_to": "9.0.22.100"
+    },
+    "provenance": {
+      "artifact": "jobs.json",
+      "artifact_sha256": "0b8336948cab7826be8a3896867b7cf042a914a9419b3a64154f6cc30c36d988",
+      "extractor": "controlm_jobs@0.1.0"
+    }
+  }
+]

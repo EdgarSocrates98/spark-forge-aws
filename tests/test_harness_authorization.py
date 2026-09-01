@@ -850,6 +850,15 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     `sparkforge_controlm_describe` recebe uma VERSAO e le a matriz de
     `knowledge/controlm/` -- artefato do operador, nenhum. O conjunto sai de
     quatro para CINCO e a contagem de 59 nao se move.
+
+    O incremento de `Jobs-as-Code` e o caso OPOSTO da mesma entrega, e vale ler
+    os dois lado a lado: `sparkforge_analyze_controlm_jobs` le artefato -- a
+    definicao de job versionada no repositorio do cliente -- e por isso declara
+    `path`, cai do lado certo do predicado, e move a CONTAGEM de 59 para 60 sem
+    tocar no conjunto de excecao. Foi este teste que mediu isso: ele caiu na
+    contagem, e nao no conjunto. A tool tem tambem um parametro `version`, que
+    NAO e caminho e nao entra na conta -- ela e declaracao do operador, e o
+    predicado reconhece nome de caminho, nao qualquer parametro.
     """
 
     SEM_CAMINHO = frozenset(
@@ -874,7 +883,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        assert len(TOOLS) - len(sem_caminho) == 59
+        assert len(TOOLS) - len(sem_caminho) == 60
 
 
 class TestAImposicaoNoDespacho:

@@ -475,6 +475,50 @@ rules:
   # e leva o case. Esta só casa quando SF-ENV é TUDO que há, e aí a pergunta é sobre a
   # definição do job (versão de Glue, `glueContext`, default de AQE, format version do
   # Iceberg), que é o assunto do `glue-infra-reviewer`.
+  # `SF-CTM` VAI PARA O ESPECIALISTA DE RUNTIME, e a razão é a mesma que já leva
+  # `SF-MIG` e `SF-SPARK4` para lá: a pergunta é de **compatibilidade entre
+  # versões**, e o que muda é o produto, não o tipo de pergunta. O coordenador
+  # declara a área em `rule_areas` e já cita `sparkforge_controlm_describe` — o
+  # verbo que responde o outro lado da mesma pergunta ("o que a versão alvo tem?").
+  #
+  # ROTA PRÓPRIA, e não uma linha a mais na AGENT-007 (infraestrutura EMR). Ali o
+  # `any:` cresceu porque as três áreas são a mesma plataforma vista de três
+  # ângulos e o destino é o mesmo agente. Control-M não é EMR, não roda Spark e
+  # não tem cluster: enfiá-lo naquele `any:` mandaria o case para um coordenador
+  # cujo vocabulário inteiro — instance fleet, purchasing option, namespace de
+  # Kubernetes — não descreve nada do artefato.
+  #
+  # POSIÇÃO: antes da AGENT-010 (`SF-ENV` sozinha, que é a rota de desempate por
+  # último) e depois de todas as que decidem por evidência de plataforma. Um case
+  # que tenha achado de Glue, EMR, Iceberg ou código continua indo para a rota
+  # daquela área, exatamente como antes desta linha existir — medido: antes daqui
+  # `SF-CTM` não casava rota nenhuma e um case só de Control-M voltava de
+  # `next_step` com `recommended_agent: None`, que é o defeito que `SF-EMRS` teve
+  # por uma fase inteira.
+  #
+  # O ID É `AGENT-082` e a POSIÇÃO é aqui — os dois são independentes. A
+  # numeração `AGENT-0NN` é só identidade, e o espaço até `AGENT-081` já está
+  # tomado pela expansão agêntica; o que decide precedência é a ORDEM de
+  # avaliação, e ela põe esta rota antes da AGENT-010 e depois de todas as que
+  # decidem por evidência de plataforma.
+  - id: AGENT-082
+    phase_in: [diagnosis, hypothesis]
+    title: Achado em definição Jobs-as-Code do Control-M
+    when:
+      all:
+        - {findings_area: SF-CTM, count_gt: 0}
+    recommended_agent: sf-runtime-specialist
+    reason: >
+      O achado é sobre a definição de job do Control-M cruzada com a versão do
+      Automation API do ambiente alvo, e a fronteira é de VERSÃO — a mesma
+      natureza de pergunta que `SF-MIG` e `SF-SPARK4` já fazem, sobre outro
+      produto. Quem responde precisa ler os dois eixos que a matriz publica
+      (capacidade com fronteira, e exigência de componente: Java, Python, pip),
+      porque trocar o job type e esbarrar na exigência de Java seria descobrir a
+      segunda barreira depois de já ter pago a primeira. E precisa lembrar que a
+      versão foi DECLARADA pelo operador, nunca lida do artefato: confirmar a
+      versão real do ambiente vem antes de qualquer edição no JSON.
+
   - id: AGENT-010
     phase_in: [diagnosis, hypothesis]
     title: Achado apenas em ambiente e runtime

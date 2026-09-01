@@ -1,0 +1,18 @@
+name: artefato_ilegivel
+proves: >
+  JSON truncado nao derruba a extracao nem sai calado: vira `ctm.unresolved` com
+  `reason: malformed_json`, a sentinela `ctm.analyzed` sai do mesmo jeito com o
+  ponto cego CONTADO, e `ctm.version_declared` continua saindo -- a declaracao do
+  operador vale independentemente de o artefato ter sido legivel.
+  O ponto cego que para de contar devolve zero, e zero e exatamente o que uma
+  extracao limpa devolve: e por isso que a contagem tem de existir mesmo no
+  caminho que aborta cedo.
+  Este NAO e o caminho de validacao de schema: `ctm build` faz isso e e da BMC
+  (veto V-CTM-3). O que aqui vira recusa e o que nao deu para LER.
+runtime: {}
+controlm_version: "9.0.21.300"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.unresolved
+  - ctm.version_declared
+expects_rules: []

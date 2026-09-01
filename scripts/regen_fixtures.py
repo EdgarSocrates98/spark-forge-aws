@@ -27,6 +27,7 @@ from sparkforge.facts.catalog_schema import (  # noqa: E402
     extract_catalog_schema_tree,
 )
 from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
+from sparkforge.facts.controlm_jobs import extract_controlm_jobs_tree  # noqa: E402
 from sparkforge.facts.data_quality import extract_data_quality_tree  # noqa: E402
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
 from sparkforge.facts.emr_eks import extract_emr_eks_tree  # noqa: E402
@@ -66,6 +67,7 @@ FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
 FIXTURES_EMR = ROOT / "fixtures" / "emr"
 FIXTURES_EMR_SERVERLESS = ROOT / "fixtures" / "emr_serverless"
 FIXTURES_EMR_EKS = ROOT / "fixtures" / "emr_eks"
+FIXTURES_CONTROLM = ROOT / "fixtures" / "controlm"
 FIXTURES_DQ = ROOT / "fixtures" / "dq"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
@@ -328,6 +330,34 @@ def regen_emr_eks(directory: Path) -> None:
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     input_dir = directory / "input"
     facts = extract_emr_eks_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_controlm(directory: Path) -> None:
+    """Definicoes `Jobs-as-Code` do Control-M: `*.json` sob input/.
+
+    UNICO CORPUS CUJA EXTRACAO RECEBE UM PARAMETRO QUE NAO VEM DO ARTEFATO, e a
+    razao e a D-1 da spec: a versao do Control-M e DECLARADA pelo operador, nunca
+    lida do JSON. Ela mora em `controlm_version` no `meta.yaml`, e nao em
+    `runtime:`, porque `runtime` alimenta `runtime_scope` -- guarda de versao do
+    RuntimeContext (Glue, Spark, Python, Iceberg) -- e nada ali conhece
+    `9.0.2x.yyy`. Poe-la em `runtime` faria o golden parecer versionado por um
+    mecanismo que nao a le.
+
+    A CHAVE E OPCIONAL, e a ausencia dela e o que a fixture `versao_nao_declarada`
+    exercita: sem versao o cruzamento com a matriz nao acontece e as capacidades
+    observadas saem em `ctm.capability_unresolved` com a medida que as destrava.
+
+    Usa a variante `_tree` pela mesma razao de `regen_emr_eks`: e a funcao que o
+    produto chama quando o `--path` e diretorio, e golden e produto precisam
+    extrair pela MESMA porta.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_controlm_jobs_tree(
+        input_dir, repo_root=input_dir, declared_version=meta.get("controlm_version")
+    )
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -615,6 +645,7 @@ def main() -> int:
                 (FIXTURES_EMR / name, regen_emr),
                 (FIXTURES_EMR_SERVERLESS / name, regen_emr_serverless),
                 (FIXTURES_EMR_EKS / name, regen_emr_eks),
+                (FIXTURES_CONTROLM / name, regen_controlm),
                 (FIXTURES_DQ / name, regen_dq),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
@@ -669,6 +700,12 @@ def main() -> int:
     if FIXTURES_EMR_EKS.is_dir():
         for directory in sorted(p for p in FIXTURES_EMR_EKS.iterdir() if p.is_dir()):
             regen_emr_eks(directory)
+    # Mesma guarda de existencia: `fixtures/controlm/` nasce nesta entrega, e uma
+    # regeneracao completa rodada antes dela nao pode morrer com FileNotFoundError
+    # depois de ja ter regenerado todos os corpus acima.
+    if FIXTURES_CONTROLM.is_dir():
+        for directory in sorted(p for p in FIXTURES_CONTROLM.iterdir() if p.is_dir()):
+            regen_controlm(directory)
     for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()):
         regen_dq(directory)
     for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):

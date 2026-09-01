@@ -50,6 +50,7 @@ class TestToolSurface:
             "sparkforge_analyze_emr_cluster",
             "sparkforge_analyze_emr_serverless",
             "sparkforge_analyze_emr_eks",
+            "sparkforge_analyze_controlm_jobs",
             "sparkforge_analyze_data_quality",
             "sparkforge_analyze_graph",
             "sparkforge_analyze_call_graph",
@@ -1371,6 +1372,25 @@ _EMR_EKS_DUMP = json.dumps(
     }
 )
 
+# Definicao `Jobs-as-Code` com o UNICO job type que a matriz do Automation API
+# data dentro da faixa. E de proposito: um payload com `Job:Command` validaria
+# contra o schema pelo motivo errado -- nenhum fact de capacidade sairia, e o
+# bloco derivado que esta tool existe para produzir ficaria vazio. Objeto vazio
+# passa em qualquer schema de objeto.
+_CONTROLM_JOBS = json.dumps(
+    {
+        "PagamentosDiarios": {
+            "Type": "Folder",
+            "Application": "Financeiro",
+            "ExtraiExtrato": {
+                "Type": "Job:DetachedEmbeddedScript",
+                "RunAs": "ctmagent",
+                "Script": "extrai.sh",
+            },
+        }
+    }
+)
+
 _CONSUMER_INVENTORY = """consumers:
   - table: glue_catalog.curated.pedidos
     service: athena
@@ -1641,6 +1661,22 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         emrc_path = tmp_path / "job_run.json"
         emrc_path.write_text(_EMR_EKS_DUMP, encoding="utf-8")
         return call_tool("sparkforge_analyze_emr_eks", {"path": str(emrc_path)})
+
+    if name == "sparkforge_analyze_controlm_jobs":
+        # `version` DECLARADA e abaixo da fronteira que a matriz le em
+        # `9.0.22.005`: e a unica combinacao que resolve os tres blocos que esta
+        # tool existe para produzir -- inventario, `ctm.version_declared` e o
+        # kind derivado do cruzamento. Sem `version` o derivado sairia como
+        # recusa, e a saida validaria contra o schema sem provar o cruzamento.
+        ctm_path = tmp_path / "jobs.json"
+        ctm_path.write_text(_CONTROLM_JOBS, encoding="utf-8")
+        resultado = call_tool(
+            "sparkforge_analyze_controlm_jobs",
+            {"path": str(ctm_path), "version": "9.0.21.300"},
+        )
+        assert resultado["by_kind"].get("ctm.capability_incompatible") == 1, resultado["by_kind"]
+        assert resultado["by_kind"].get("ctm.version_declared") == 1, resultado["by_kind"]
+        return resultado
 
     if name == "sparkforge_analyze_data_quality":
         dq_path = tmp_path / "validacao.py"
@@ -1991,6 +2027,7 @@ class TestErrorShapesValidateToo:
         ("sparkforge_analyze_emr_cluster", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_emr_serverless", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_emr_eks", {"path": "<tmp>/inexistente"}),
+        ("sparkforge_analyze_controlm_jobs", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_data_quality", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_graph", {"path": "<tmp>/inexistente"}),
         ("sparkforge_analyze_call_graph", {"facts_path": "<tmp>/nao-existe.json"}),
