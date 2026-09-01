@@ -104,6 +104,9 @@ from sparkforge.migration.release_descriptor import (
     known_releases as known_releases_of,
 )
 from sparkforge.migration.release_diff import diff as diff_releases
+from sparkforge.migration.version_path import (
+    DEFAULT_PLATFORM as MIGRATION_DEFAULT_PLATFORM,
+)
 from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
@@ -1526,8 +1529,24 @@ def analyze_call_graph(
 # --------------------------------------------------------------------------- #
 
 
-def migration_assess(path: str, source: str, target: str) -> dict[str, Any]:
-    """Julga a migracao de um job Glue entre um par de versoes, pelo catalogo.
+def migration_assess(
+    path: str, source: str, target: str, platform: str = MIGRATION_DEFAULT_PLATFORM
+) -> dict[str, Any]:
+    """Julga a migracao de um job entre um par de versoes, pelo catalogo.
+
+    PARAMETRO NOVO, TOOL A MESMA (D-4 da spec de EMR). Medido antes de decidir:
+    `sparkforge_migration_assess` ja compunha os artefatos, ja expandia o par em
+    degraus e ja agregava com gates; o que ela nao aceitava era a PLATAFORMA.
+    Uma tool nova duplicaria as tres coisas para trocar uma matriz, e cada tool
+    nova entra em quatro gates de paridade e la fica -- a §70 manda expandir em
+    vez de multiplicar. `platform` tem default `glue` porque essa era a unica
+    resposta possivel antes, e mudar o default silenciosamente trocaria a
+    resposta de quem ja chamava.
+
+    A COBERTURA SAI JUNTO, SEMPRE. Para EMR o catalogo tem ZERO regras por
+    `emr`: sem o campo `coverage`, este verbo devolveria um assessment sem
+    achado que o operador leria como "nada quebra". Ver a DECISAO 3 no
+    docstring de `sparkforge/migration/assessment.py`.
 
     Composicao, nao motor novo: `sparkforge.migration.assessment.assess()` ja
     expande o par em degraus, julga cada degrau com o `judge` e agrega com
@@ -1558,15 +1577,20 @@ def migration_assess(path: str, source: str, target: str) -> dict[str, Any]:
     facts = collect_migration(target_path)
 
     try:
-        return assess_migration(facts, source=source, target=target).to_dict()
+        return assess_migration(
+            facts, source=source, target=target, platform=platform
+        ).to_dict()
     except ValueError as exc:
         # `version_path.steps` ja nomeia o defeito ("alvo anterior a origem",
-        # "versao fora da matriz; conhecidas: ..."). Traduzir para um erro
-        # generico perderia a unica informacao util da falha.
+        # "versao fora da matriz de <plataforma>; conhecidas: ...", "rotulo
+        # fora do padrao de versao"). Traduzir para um erro generico perderia
+        # a unica informacao util da falha.
         raise AdapterError(
             f"{exc}\n"
-            f"  Confira o par contra a matriz de runtime:\n"
-            f"    sparkforge runtime detect --glue 6.0",
+            f"  As quatro plataformas: {', '.join(RELEASE_PLATFORMS)}.\n"
+            f"  Confira o par contra a matriz daquela plataforma:\n"
+            f"    sparkforge release describe --platform {platform} "
+            f"--release <release>",
             exit_code=2,
         ) from exc
 

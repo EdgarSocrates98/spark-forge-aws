@@ -1,6 +1,6 @@
 ---
 name: compare-releases
-description: Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — "vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter", "o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?", "que versão de Python o Glue 5.1 publica" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge release describe` e `sparkforge release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge migrate glue`, hoje só Glue). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`.
+description: Use quando precisar saber o que muda de COMPONENTE entre dois runtimes antes de uma migração — "vou de emr-6.15.0 para emr-7.5.0, que versão de Spark e de Iceberg eu passo a ter", "o mesmo emr-7.7.0 no EC2 e no EKS é a mesma coisa?", "que versão de Python o Glue 5.1 publica" — e também quando alguém já escreveu um número de versão num plano de migração e ninguém conferiu de onde ele veio. Rode `sparkforge release describe` e `sparkforge release diff` em vez de ler a página da AWS no olho. Esta skill NÃO responde se algo quebra: diff de versão não é avaliação de compatibilidade, e essa pergunta é do MigrationAssessment (`sparkforge migrate glue` e `sparkforge migrate emr`, que hoje cobrem as quatro plataformas). Para julgar a migração de um job Glue degrau a degrau, a skill é `migrate-glue-6`.
 subagent: true
 agent: sf-runtime-specialist
 ---
@@ -12,14 +12,19 @@ agent: sf-runtime-specialist
 **Esta skill não responde "isso quebra".** Ela lê matriz de versão e devolve números com
 fonte. Um diff que diga *"Iceberg foi de 1.6.1 para 1.7.1"* não afirma nada sobre o seu job:
 não sabe que API você chama, não leu o seu código, não consultou regra nenhuma. A pergunta
-"o que quebra" é do `MigrationAssessment` — `sparkforge migrate glue`, tool
-`sparkforge_migration_assess` —, que julga o caminho degrau a degrau contra o catálogo
-versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`). Ele existe **só para Glue** hoje; para EMR ele
-ainda não existe, e usar o diff no lugar dele seria trocar julgamento por aritmética de
-string de versão.
+"o que quebra" é do `MigrationAssessment` — `sparkforge migrate glue` e
+`sparkforge migrate emr`, tool `sparkforge_migration_assess` com `platform` —, que julga o
+caminho degrau a degrau contra o catálogo versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`). Ele
+cobre as **quatro** plataformas desde 2026-09-01, e cobre com a cobertura DECLARADA: para
+EMR o catálogo tem **zero** regras guardadas por versão de plataforma, e o campo
+`coverage.statement` diz isso em voz alta, porque um assessment de EMR sem achado não pode
+ser lido como "nada quebra". O que ele avalia num caminho de EMR é Spark (as cinco regras
+guardadas por versão de Spark, alcançáveis porque a matriz publica o Spark de cada release)
+e componente. Usar o diff no lugar do assessment continua sendo trocar julgamento por
+aritmética de string de versão.
 
 A ordem correta é: **primeiro** este verbo, para saber com que números você está lidando;
-**depois** o assessment, onde ele existe.
+**depois** o assessment, e ler `coverage.statement` antes de concluir do silêncio dele.
 
 **Duas das sete dimensões do §8.2 têm lastro; cinco saem recusadas por nome.** As quatro
 matrizes de `knowledge/` sustentam **versão de componente por release**, e nada mais. O que
@@ -135,7 +140,8 @@ Esta skill não consulta o catálogo, e nenhum `Finding` nasce dela.
 ## Quando NÃO usar
 
 - A pergunta é **"o que quebra se eu migrar"**: isso é `migrate-glue-6` e
-  `sparkforge migrate glue` (Glue), ou `spark4-compatibility` para a fronteira do Spark 4.
+  `sparkforge migrate glue` (Glue), `sparkforge migrate emr --platform ...` (as três de EMR),
+  ou `spark4-compatibility` para a fronteira do Spark 4.
   Diff de versão não é avaliação de compatibilidade.
 - A pergunta é **em que runtime este job rodou**: `sparkforge runtime detect` sobre facts já
   extraídos. O diff não lê artefato nenhum do operador.

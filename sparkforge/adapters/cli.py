@@ -464,6 +464,60 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o assessment completo (JSON) neste arquivo."
     )
 
+    # DOIS VERBOS, E NAO UM `--platform` EM `migrate glue`.
+    #
+    # `migrate glue` foi publicado com a plataforma NO NOME, e um `--platform`
+    # ali criaria a combinacao absurda `migrate glue --platform emr_eks`. As
+    # tres de EMR, ao contrario, dividem tudo o que importa aqui -- o mesmo
+    # vocabulario de rotulo de release, a mesma normalizacao do prefixo `emr-`,
+    # e o mesmo eixo `emr` valendo zero no catalogo --, e o que as separa e
+    # exatamente qual matriz responde. Isso e um parametro, nao tres verbos:
+    # `release describe` ja nomeia a plataforma por flag pela mesma razao.
+    #
+    # A uniao dos dois verbos cobre as quatro plataformas que
+    # `sparkforge_migration_assess` aceita, que e o que a paridade CLI/MCP
+    # cobra.
+    migrate_emr_p = migrate_sub.add_parser(
+        "emr",
+        help=(
+            "Julga a migracao de um job EMR entre um par de releases, degrau a "
+            "degrau, na matriz da plataforma escolhida."
+        ),
+    )
+    migrate_emr_p.add_argument(
+        "path",
+        help=(
+            "Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando "
+            "existem e o inventario de consumidores em .sparkforge/consumers.yaml "
+            "--, ou um .py sozinho."
+        ),
+    )
+    # Sem default, e nao `emr_ec2`: a matriz de EC2 NAO descreve EKS nem
+    # Serverless, e o sub-projeto 1 mediu que elas divergem (Iceberg em 6 de 26
+    # releases comparaveis). Um default aqui responderia sobre a plataforma
+    # errada com a mesma cara de qualquer outra resposta.
+    migrate_emr_p.add_argument(
+        "--platform",
+        required=True,
+        choices=[p for p in _core.RELEASE_PLATFORMS if p.startswith("emr")],
+        help="Qual matriz de EMR ordena o caminho e da o runtime de cada degrau.",
+    )
+    migrate_emr_p.add_argument(
+        "--from",
+        dest="from_runtime",
+        required=True,
+        help="Release de origem, com ou sem o prefixo `emr-`.",
+    )
+    migrate_emr_p.add_argument(
+        "--to",
+        dest="to_runtime",
+        required=True,
+        help="Release alvo, com ou sem o prefixo `emr-`.",
+    )
+    migrate_emr_p.add_argument(
+        "--out", help="Escreve o assessment completo (JSON) neste arquivo."
+    )
+
     # glue / iceberg -------------------------------------------------------
     # Verbos de TOPO por SERVICO, e nao mais um degrau sob `analyze`: os dois
     # comandos abaixo extraem E julgam, e `analyze` para na extracao. Cada um
@@ -1670,9 +1724,10 @@ def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_migrate_glue(args: argparse.Namespace) -> int:
+def _migrate(args: argparse.Namespace, platform: str) -> int:
+    """O corpo comum dos dois verbos de `migrate`. Um motor, nao dois."""
     payload = _core.migration_assess(
-        args.path, source=args.from_runtime, target=args.to_runtime
+        args.path, source=args.from_runtime, target=args.to_runtime, platform=platform
     )
     if args.out:
         Path(args.out).write_text(
@@ -1680,6 +1735,14 @@ def _cmd_migrate_glue(args: argparse.Namespace) -> int:
         )
     _print(payload)
     return 0
+
+
+def _cmd_migrate_glue(args: argparse.Namespace) -> int:
+    return _migrate(args, _core.MIGRATION_DEFAULT_PLATFORM)
+
+
+def _cmd_migrate_emr(args: argparse.Namespace) -> int:
+    return _migrate(args, args.platform)
 
 
 def _cmd_glue_dependency_audit(args: argparse.Namespace) -> int:
@@ -2385,6 +2448,7 @@ _DISPATCH = {
     ("analyze", "consumers"): _cmd_analyze_consumers,
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
     ("migrate", "glue"): _cmd_migrate_glue,
+    ("migrate", "emr"): _cmd_migrate_emr,
     ("glue", "dependency-audit"): _cmd_glue_dependency_audit,
     ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
     ("release", "describe"): _cmd_release_describe,

@@ -51,7 +51,7 @@ arquivo ganha.
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
 | Regras com golden que dispara | **55 de 55 executáveis** (mais 26 `structural` herdadas que também disparam). O gate passou a filtrar `status: structural` nesta branch — ver a dívida registrada abaixo | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **97** — remedido ao fechar a fase de EMR on EKS, e o número **não** cresceu por causa dela: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` |
-| Tools MCP | **63** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 | `sparkforge.adapters.tools.TOOLS` |
+| Tools MCP | **63** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **63 de 63** — as duas novas chegam por `sf-runtime-specialist`, que declara a skill `compare-releases` | `tests/test_agent_coverage.py` |
 | Gates do case | **4**, sendo **3** com produtor declarado | bloco `gates` de `rules/catalog/routing.yaml` |
 | Coordenadores | **38** (8 herdados + 30 `sf-*` da expansão agêntica) | `agents/*.md` |
@@ -5093,6 +5093,95 @@ esquecia `tests/test_fixtures_golden_emr_eks.py`, que um gate exige (DV-9).
   **não toca** o manifesto offline: o caminho certo é regravar o `sha256` com
   `sparkforge.tools.offline._content_sha256`, como `docs/gates-por-mudanca.md` já
   documentava. Só aquele checksum mudou.
+
+## `MigrationAssessment` para as quatro plataformas — a ponte é o Spark, e a cobertura é declarada — **CONCLUÍDA** em 2026-09-01
+
+Spec: [`specs/2026-08-31-sparkforge-migration-emr-design.md`](specs/2026-08-31-sparkforge-migration-emr-design.md).
+Terceiro sub-projeto da decomposição do `PROMPT MESTRE — EVOLUÇÃO TOTAL GLUE + EMR`,
+depois de [`ReleaseDescriptor`/`ReleaseDiff`](specs/2026-08-31-sparkforge-release-diff-design.md).
+
+### A medição que decidiu a forma
+
+Contado no catálogo de 140 regras: `runtime_scope` por eixo é
+`{glue: 13, spark: 5, iceberg: 1}`. **Zero por `emr`.** A leitura ingênua deste
+sub-projeto — "é só trocar `glue` por `emr` no `version_path`" — produziria um
+`assess` que roda o catálogo inteiro por degrau, **não acha nada** e sai verde. Que
+o operador leria como "nada quebra". É o defeito que a entrega existe para não
+cometer, e por isso a entrega **não é** a plataforma nova: é o campo `coverage`.
+
+A ponte que salva o verbo é o Spark. Cinco regras são guardadas por versão de
+**Spark**, não de plataforma, e as quatro matrizes publicam o Spark de cada release.
+Derivando o runtime de cada degrau da matriz **daquela** plataforma, as cinco passam
+a ser julgáveis para EMR pela primeira vez.
+
+### O que foi entregue
+
+- `version_path.steps(source, target, platform)` — a ordem vem da **matriz**
+  (`release_descriptor.known_releases`), nunca de lista nova em código. Caminho entre
+  as duas séries do EMR (`6.15.0 → 7.5.0`) é legítimo e sai como os pares adjacentes
+  da matriz; rótulo fora do padrão de versão (`spark-8.0.0`, `spark-8.0-preview`) é
+  **recusado pelo nome**, porque ordenação alfabética colocaria a prévia antes da
+  release por acidente de escrita. As duas grafias da fonte (`emr-7.5.0` e `7.5.0`)
+  entram; só a chave da matriz sai.
+- `assessment.assess(..., platform=...)` — **sem bifurcar o motor**: o mesmo `judge`
+  por degrau, com o runtime do alvo derivado da matriz daquela plataforma.
+  `_runtime_for` chama `release_descriptor.describe(platform, ...)` e não tem
+  fallback, porque a matriz de EC2 não descreve EKS nem Serverless e o sub-projeto 1
+  mediu que elas divergem (Iceberg em 6 de 26 releases comparáveis). Não há chave
+  `emr` no runtime: o eixo não existe em regra nenhuma, e inventá-lo seria mecanismo
+  sem consumidor.
+- **A declaração de cobertura**, que é a entrega. `coverage` carrega, por eixo de
+  `runtime_scope`, quantas regras o catálogo tem, quantas o caminho alcançou, e se a
+  chave chegou a existir no runtime — mais a prosa que o operador lê. O eixo `emr`
+  aparece **valendo zero**, porque é o único jeito de a saída dizer "nenhuma regra
+  deste catálogo descreve breaking change de EMR" em vez de não falar do assunto.
+- `component_diff` — o `ReleaseDiff` do sub-projeto 2, projetado, uma entrada por
+  degrau. Não há comparação reimplementada.
+
+### Uma extensão, não uma tool nova
+
+`sparkforge_migration_assess` ganhou o parâmetro `platform` com default `glue`. A
+fronteira foi **medida** antes: a tool já compunha os artefatos, já expandia o par
+em degraus e já agregava com gates — o que faltava era a matriz. Tool nova
+duplicaria as três coisas para trocar uma delas, e cada tool nova entra em quatro
+gates de paridade e lá fica. Catálogo: **63 tools antes, 63 depois**; a superfície
+de tools cresceu **4851 bytes** (329500 → 334351: schema de `coverage` e
+`component_diff`, mais a descrição), e a de skills **619** (318488 → 319107, a
+correção de `compare-releases`, que ainda dizia "hoje só Glue"). Declarado em
+`docs/surface.lock.json`.
+
+Na CLI a leitura é outra e está registrada como desvio D-a da spec: `migrate glue`
+carrega a plataforma no nome, então as três de EMR entraram por `migrate emr
+--platform`, sem default — a matriz errada responderia com a mesma cara da certa.
+
+### Três decisões
+
+1. **A cobertura sai sempre, inclusive para Glue.** Bifurcar em "EMR declara, Glue
+   não" faria a declaração parecer uma desculpa da plataforma nova. Ela é do verbo.
+2. **`statement` é propriedade derivada, não campo guardado.** Texto solto sobrevive
+   à mudança do número que o sustentava, e uma frase de cobertura errada é pior que
+   frase nenhuma: ela afirma cobertura.
+3. **Julgável e alcançada são medidas diferentes** (desvio D-b). No caminho da §5 as
+   cinco regras de `spark` são julgáveis e **zero** entram no escopo — quatro pedem
+   Spark 4, e a série 7.x do EMR está na 3.5. As duas saem lado a lado.
+
+### O que ficou de fora, com razão escrita
+
+- **Regra `SF-MIG` para EMR.** Regra exige fonte primária, golden positivo e
+  negativo, e área com rota; como efeito colateral deste sub-projeto produziria regra
+  sem corpus. É trabalho próprio, e a cobertura declarada é o que torna a ausência
+  legível em vez de invisível.
+- **`runtime_scope: {emr: ...}`.** O eixo não existe em `version_scope` e nenhuma
+  regra o usaria hoje.
+
+### Zero regressão no assessment de Glue
+
+Os goldens de `fixtures/migration/` passam **sem mudança** — eles chamam `judge()`
+direto, e o ramo de Glue de `_runtime_for` não foi tocado. O que mudou foi
+`fixtures/scenarios/` e `evals/holdout/`, cujos goldens são o `to_dict()` do
+assessment: eles **ganharam** `platform`, `coverage`, `component_diff` e
+`component_diff_unresolved`, e nenhum achado, degrau, gate ou recomendação mudou de
+valor. Regenerados por `scripts/regen_fixtures.py`.
 
 ## Dívidas abertas
 

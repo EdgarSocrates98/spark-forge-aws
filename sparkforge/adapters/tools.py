@@ -1255,9 +1255,126 @@ _MIGRATION_STEP: dict[str, Any] = {
     "description": "Degrau do caminho, no par [origem, alvo].",
 }
 
+_MIGRATION_AXIS_COVERAGE: dict[str, Any] = {
+    "type": "object",
+    "required": ["axis", "catalog_rules", "reachable_rules", "runtime_key_present"],
+    "properties": {
+        "axis": {
+            "type": "string",
+            "description": (
+                "Eixo de `runtime_scope`. O eixo da PLATAFORMA aparece mesmo "
+                "valendo zero -- e assim que a saida consegue dizer `nenhuma "
+                "regra deste catalogo descreve breaking change de EMR` em vez "
+                "de simplesmente nao falar do assunto."
+            ),
+        },
+        "catalog_rules": {
+            "type": "integer",
+            "description": "Regras do catalogo guardadas por este eixo.",
+        },
+        "reachable_rules": {
+            "type": "integer",
+            "description": (
+                "Quantas dessas passaram `in_scope` em ao menos um degrau. "
+                "Alcancavel nao e o mesmo que disparada: a regra alcancavel que "
+                "nao disparou por falta de fact ja aparece em `missing_evidence`."
+            ),
+        },
+        "runtime_key_present": {
+            "type": "boolean",
+            "description": (
+                "Se algum degrau chegou a preencher a chave. Eixo com regra no "
+                "catalogo e sem chave no runtime nao foi avaliado."
+            ),
+        },
+    },
+}
+
+_MIGRATION_COVERAGE: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "platform",
+        "platform_axis",
+        "catalog_rules",
+        "axes",
+        "activated_axes",
+        "statement",
+    ],
+    "description": (
+        "A COBERTURA DECLARADA: o que este caminho sequer podia perguntar. Nao e "
+        "um gate -- gate diz se algo passou, isto diz o que era perguntavel. Para "
+        "as tres plataformas de EMR o eixo `emr` vale ZERO no catalogo, e por isso "
+        "um assessment de EMR sem achado NUNCA deve ser lido como `nada quebra`."
+    ),
+    "properties": {
+        "platform": {"type": "string"},
+        "platform_axis": {
+            "type": "string",
+            "description": "`glue` para Glue, `emr` para as tres de EMR.",
+        },
+        "source_runtime": {"type": "string"},
+        "target_runtime": {"type": "string"},
+        "steps": {"type": "integer"},
+        "catalog_rules": {"type": "integer"},
+        "version_guarded_rules": {"type": "integer"},
+        "unguarded_rules": {"type": "integer"},
+        "reachable_rules": {"type": "integer"},
+        "axes": {"type": "array", "items": _MIGRATION_AXIS_COVERAGE},
+        "activated_axes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Os eixos com ao menos uma regra alcancada.",
+        },
+        "statement": {
+            "type": "string",
+            "description": (
+                "A declaracao em prosa, derivada dos numeros ao lado. E o campo a "
+                "LER antes de concluir qualquer coisa de um assessment sem achado."
+            ),
+        },
+    },
+}
+
+_MIGRATION_COMPONENT_DIFF: dict[str, Any] = {
+    "type": "object",
+    "required": ["step", "changed", "added", "removed", "unchanged", "unresolved"],
+    "description": (
+        "O que muda de COMPONENTE naquele degrau, projetado de `ReleaseDiff` -- "
+        "mesma comparacao de `sparkforge_release_diff`, nao uma reimplementacao."
+    ),
+    "properties": {
+        "step": _MIGRATION_STEP,
+        "changed": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "component": {"type": "string"},
+                    "from": {},
+                    "to": {},
+                },
+            },
+        },
+        "added": {"type": "array", "items": {"type": "string"}},
+        "removed": {"type": "array", "items": {"type": "string"}},
+        "unchanged": {"type": "array", "items": {"type": "string"}},
+        "unresolved": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": (
+                "Recusa DAQUELE par de releases (celula ausente de um lado). A "
+                "recusa que e da PLATAFORMA -- eixo que a fonte nao publica em "
+                "release nenhuma -- sobe para `component_diff_unresolved` e sai "
+                "uma vez so."
+            ),
+        },
+    },
+}
+
 _MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
+        "platform",
         "source_runtime",
         "target_runtime",
         "steps",
@@ -1267,8 +1384,19 @@ _MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
         "gates",
         "missing_evidence",
         "recommendation",
+        "coverage",
+        "component_diff",
+        "component_diff_unresolved",
     ],
     "properties": {
+        "platform": {
+            "type": "string",
+            "description": (
+                "Qual das quatro matrizes ordenou o caminho e forneceu o runtime "
+                "de cada degrau. Nenhum runtime de uma plataforma sai da matriz "
+                "de outra."
+            ),
+        },
         "source_runtime": {"type": "string"},
         "target_runtime": {"type": "string"},
         "steps": {
@@ -1338,6 +1466,23 @@ _MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
             "description": (
                 "Nunca GO nesta analise: GO exigiria todo gate em PASS, e os quatro "
                 "de execucao real nascem BLOCKED."
+            ),
+        },
+        "coverage": _MIGRATION_COVERAGE,
+        "component_diff": {
+            "type": "array",
+            "items": _MIGRATION_COMPONENT_DIFF,
+        },
+        "component_diff_unresolved": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": (
+                "O que a comparacao de componentes NAO sustenta, e vale para o "
+                "caminho inteiro: as cinco dimensoes do §8.2 sem lastro "
+                "(`deprecated`, `default_changes`, `compatibility_changes`, "
+                "`security_changes`, `performance_changes`) mais os eixos que a "
+                "fonte daquela plataforma nao publica em release nenhuma. Lista "
+                "vazia aqui seria lida como `nao mudou nada`."
             ),
         },
     },
@@ -3545,7 +3690,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_migration_assess": {
         "description": (
-            "Julga a migracao de um job Glue entre um par de versoes com o catalogo "
+            "Julga a migracao de um job entre um par de versoes com o catalogo "
             "versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`), uma vez por DEGRAU do "
             "caminho -- 4.0 para 6.0 passa por 5.0 e 5.1, porque os breaking changes "
             "se acumulam e um salto esconde os do meio. Entrada: o diretorio do job "
@@ -3553,14 +3698,22 @@ TOOLS: dict[str, dict[str, Any]] = {
             "e o caso que interessa, porque um pin de dependencia e um binario Scala "
             "nao tem linha de fonte Python e sobrevivem a troca de runtime. `source` "
             "e `target` nao tem default: um par embutido responderia sobre um alvo "
-            "que ninguem declarou. Devolve `findings` (cardinalidade por degrau), "
-            "`report` (cada problema uma vez, com os degraus em que vale), `gates` e "
-            "`missing_evidence`. Compoe o job inteiro: codigo, `.tf` quando existe "
-            "(sem ele a area `SF-LF` fica sem produtor, porque a topologia de FGAC "
-            "e declarada no Terraform) e o inventario de consumidores em "
-            "`.sparkforge/consumers.yaml`. Todo eixo sem evidencia nasce BLOCKED "
-            "com o motivo, nunca PASS -- inclusive os que o contrato nomeia e "
-            "nenhuma regra preenche (`iam_kms`, `rede`, `cross_account`)."
+            "que ninguem declarou. `platform` aceita as QUATRO (`glue`, `emr_ec2`, "
+            "`emr_serverless`, `emr_eks`) e tem default `glue`; a ordem das releases "
+            "e o runtime de cada degrau vem da matriz DAQUELA plataforma, nunca de "
+            "outra -- a de EC2 nao descreve EKS nem Serverless, e elas divergem em "
+            "celulas reais. Devolve `findings` (cardinalidade por degrau), `report` "
+            "(cada problema uma vez, com os degraus em que vale), `gates`, "
+            "`missing_evidence`, `component_diff` (o que muda de componente por "
+            "degrau, do `ReleaseDiff`) e `coverage`. LEIA `coverage.statement` ANTES "
+            "de concluir qualquer coisa de um assessment sem achado: o catalogo tem "
+            "ZERO regras guardadas por versao de EMR, entao um caminho de EMR avalia "
+            "Spark e componente e NAO avalia breaking change de plataforma -- sem "
+            "esse campo, 'nenhum achado' e indistinguivel de 'nada quebra'. Compoe o "
+            "job inteiro: codigo, `.tf` quando existe (sem ele a area `SF-LF` fica "
+            "sem produtor, porque a topologia de FGAC e declarada no Terraform) e o "
+            "inventario de consumidores em `.sparkforge/consumers.yaml`. Todo eixo "
+            "sem evidencia nasce BLOCKED com o motivo, nunca PASS."
         ),
         "inputSchema": {
             "type": "object",
@@ -3570,8 +3723,28 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": "Diretorio do job, ou um arquivo .py.",
                 },
-                "source": {"type": "string", "description": "Versao de Glue de origem."},
-                "target": {"type": "string", "description": "Versao de Glue alvo."},
+                "source": {
+                    "type": "string",
+                    "description": (
+                        "Release de origem, na matriz da plataforma. Aceita as duas "
+                        "grafias que a fonte publica (`emr-7.5.0` e `7.5.0`) e emite "
+                        "uma."
+                    ),
+                },
+                "target": {
+                    "type": "string",
+                    "description": "Release alvo, mesma convencao de `source`.",
+                },
+                "platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "default": _core.MIGRATION_DEFAULT_PLATFORM,
+                    "description": (
+                        "Qual das quatro matrizes ordena o caminho e fornece o "
+                        "runtime de cada degrau. Default `glue`, que era a unica "
+                        "resposta possivel antes desta extensao."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -5331,7 +5504,10 @@ def _h_iceberg_assess_upgrade(args: dict[str, Any]) -> dict[str, Any]:
 
 def _h_migration_assess(args: dict[str, Any]) -> dict[str, Any]:
     return _core.migration_assess(
-        args["path"], source=args["source"], target=args["target"]
+        args["path"],
+        source=args["source"],
+        target=args["target"],
+        platform=args.get("platform", _core.MIGRATION_DEFAULT_PLATFORM),
     )
 
 

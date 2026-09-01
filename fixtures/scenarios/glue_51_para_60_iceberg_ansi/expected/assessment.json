@@ -1,4 +1,5 @@
 {
+  "platform": "glue",
   "source_runtime": "5.1",
   "target_runtime": "6.0",
   "steps": [
@@ -206,5 +207,89 @@
     "custo": "comparacao de custo exige DPU-hours medidos nos dois runtimes -- nenhuma execucao nem fatura da AWS coletada",
     "canary": "canary exige execucao paralela controlada em producao, com trafego real, contra os dois runtimes -- nenhum canary executado"
   },
-  "recommendation": "NO_GO"
+  "recommendation": "NO_GO",
+  "coverage": {
+    "platform": "glue",
+    "platform_axis": "glue",
+    "source_runtime": "5.1",
+    "target_runtime": "6.0",
+    "steps": 1,
+    "catalog_rules": 140,
+    "version_guarded_rules": 18,
+    "unguarded_rules": 122,
+    "reachable_rules": 139,
+    "axes": [
+      {
+        "axis": "glue",
+        "catalog_rules": 13,
+        "reachable_rules": 13,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "iceberg",
+        "catalog_rules": 1,
+        "reachable_rules": 1,
+        "runtime_key_present": true
+      },
+      {
+        "axis": "spark",
+        "catalog_rules": 5,
+        "reachable_rules": 4,
+        "runtime_key_present": true
+      }
+    ],
+    "activated_axes": [
+      "glue",
+      "iceberg",
+      "spark"
+    ],
+    "statement": "COBERTURA DECLARADA. Plataforma: AWS Glue. Caminho: 5.1 -> 6.0, 1 degrau(s). Catalogo: 140 regras, das quais 18 guardadas por versao (19 contagens por eixo -- uma regra com dois eixos conta nos dois) e 122 sem guarda, alcancaveis em qualquer runtime. Por eixo de `runtime_scope` -- `glue`: 13 no catalogo, 13 alcancadas por este caminho, chave de runtime presente; `iceberg`: 1 no catalogo, 1 alcancadas por este caminho, chave de runtime presente; `spark`: 5 no catalogo, 4 alcancadas por este caminho, chave de runtime presente. O eixo `glue` tem 13 regras neste catalogo, e este caminho alcancou 13 delas. Portanto: assessment sem achado significa `nenhuma das regras alcancaveis disparou`, e nunca `nada quebra`. O que este verbo nao cobre esta nomeado -- aqui, em `missing_evidence` e em `component_diff_unresolved` --, porque listar a recusa e a diferenca entre nao saber e nao ter perguntado."
+  },
+  "component_diff": [
+    {
+      "step": [
+        "5.1",
+        "6.0"
+      ],
+      "changed": [
+        {
+          "component": "iceberg",
+          "from": "1.10.0",
+          "to": "1.11.0"
+        },
+        {
+          "component": "python",
+          "from": "3.11",
+          "to": "3.13"
+        },
+        {
+          "component": "scala",
+          "from": "2.12.18",
+          "to": "2.13.17"
+        },
+        {
+          "component": "spark",
+          "from": "3.5.6",
+          "to": "4.1.1"
+        }
+      ],
+      "added": [
+        "java"
+      ],
+      "removed": [],
+      "unchanged": [],
+      "unresolved": {}
+    }
+  ],
+  "component_diff_unresolved": {
+    "compatibility_changes": "exige uma tabela de compatibilidade por release, com o par (componente, versao) e a consequencia declarada; hoje o que existe estruturado sobre compatibilidade e o CATALOGO DE REGRAS (rules/catalog/glue-migration.yaml, SF-MIG-*, com runtime_scope real), e consumi-lo aqui transformaria este verbo de leitor em juiz -- a D-6 da spec proibe regra neste sub-projeto. Em knowledge/ ha prosa (secao 2 de knowledge/glue/runtime-matrix.md, knowledge/runtime-compatibility.md), so para o Glue e nao por release",
+    "component.delta": "a fonte do AWS Glue nao publica `delta` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `delta` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hadoop": "a fonte do AWS Glue nao publica `hadoop` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hadoop` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.hudi": "a fonte do AWS Glue nao publica `hudi` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `hudi` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "component.python_installed": "a fonte do AWS Glue nao publica `python_installed` em release nenhuma -- ele nao e coluna daquela matriz. Destrava com uma FONTE nova que publique `python_installed` por release, declarada em knowledge/glue/runtime-matrix.yaml e em knowledge/sources.lock.json; nao destrava copiando o valor de outra plataforma, que e o que o sub-projeto 1 mediu divergir",
+    "default_changes": "exige as viradas de default declaradas por release e com fonte; hoje knowledge/glue/runtime-matrix.md as discute em PROSA e chaveadas por versao de Spark ('AQE e default desde Spark 3.2', 'ANSI mode e default no Spark 4.1'), e knowledge/emr/, knowledge/emr-eks/ e knowledge/emr-serverless/ nao tem nem a prosa. Destrava com knowledge/<plataforma>/default-changes.yaml, chaveado por release, com propriedade, valor antes, valor depois e fonte",
+    "deprecated": "exige release notes estruturadas por release; hoje knowledge/emr/, knowledge/emr-eks/, knowledge/emr-serverless/ e knowledge/glue/ tem prosa e tabela de COMPONENTES, nao changelog. Destrava com knowledge/<plataforma>/release-notes.yaml carregando, por release, entradas `deprecated: [{api, desde, substituto, source, retrieved}]`. Sem isso este verbo nao distingue 'a plataforma parou de embarcar' de 'a fonte parou de publicar', que e a mesma ausencia de celula vista de dois lados",
+    "performance_changes": "exige baseline medido dos dois lados, nao documento: mudanca de desempenho entre releases e diferenca de tempo e de recurso no MESMO workload, e nenhuma matriz de knowledge/ carrega medida de execucao. Destrava com dois conjuntos de facts de event log e o verbo `benchmark`, que ja existe neste motor para exatamente essa pergunta -- nao com uma coluna nova de knowledge/",
+    "security_changes": "exige boletim de seguranca por release, com CVE e componente afetado; hoje nenhuma das quatro paginas de knowledge/<plataforma>/runtime-matrix.md cita CVE, e as matrizes carregam versao de componente e nada mais. Destrava com knowledge/<plataforma>/security-bulletins.yaml chaveado por release, com CVE, componente, severidade e fonte oficial em knowledge/sources.lock.json"
+  }
 }

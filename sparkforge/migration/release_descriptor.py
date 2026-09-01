@@ -284,6 +284,31 @@ def _normaliza(platform: str, release: str) -> str:
     return texto[4:] if texto.lower().startswith("emr-") else texto
 
 
+def normalize_release(platform: str, release: str) -> str:
+    """A grafia UNICA de uma release, aceitando as duas que a fonte publica.
+
+    Publica porque `version_path` precisa da MESMA conta para que o degrau que
+    ele emite seja conferivel contra `known_releases()` sem traducao no meio --
+    duas normalizacoes independentes divergiriam no primeiro caso de borda, e o
+    caso de borda aqui e um prefixo de tres letras.
+    """
+    if platform not in PLATFORMS:
+        raise UnknownPlatform(_recusa_de_plataforma(platform))
+    return _normaliza(platform, release)
+
+
+def platform_label(platform: str) -> str:
+    """O nome da plataforma como a prosa a escreve (`Amazon EMR on EC2`).
+
+    Publica pela mesma razao de `normalize_release`: a declaracao de cobertura
+    de `MigrationAssessment` nomeia a plataforma para o operador, e uma segunda
+    tabela de nomes divergiria desta na primeira plataforma nova.
+    """
+    if platform not in PLATFORMS:
+        raise UnknownPlatform(_recusa_de_plataforma(platform))
+    return _NOME_HUMANO[platform]
+
+
 def known_releases(platform: str) -> tuple[str, ...]:
     """As releases que aquela plataforma conhece, na ordem em que o YAML as
     declara -- que e a ordem editorial da fonte (mais nova primeiro), e nao uma

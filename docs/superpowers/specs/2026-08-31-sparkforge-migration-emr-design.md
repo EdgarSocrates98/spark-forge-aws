@@ -1,7 +1,7 @@
 # SparkForge AWS — `MigrationAssessment` para EMR: a ponte é o Spark, não o EMR
 
 **Data:** 2026-08-31
-**Status:** **proposta**.
+**Status:** **CONCLUÍDA** em 2026-09-01.
 **Origem:** terceiro sub-projeto da decomposição do
 `PROMPT MESTRE — EVOLUÇÃO TOTAL GLUE + EMR DO SPARKFORGE AWS.md` (§8.2, §11-E).
 Depende do segundo — [`ReleaseDescriptor` / `ReleaseDiff`](2026-08-31-sparkforge-release-diff-design.md) —, que está fechado.
@@ -129,4 +129,37 @@ fronteira medida exigir.
 
 ## 7. Desvios
 
-Vazio.
+Três, todos medidos durante a construção. Nenhum muda o objetivo da §3.
+
+**D-a — a CLI ganhou um verbo, `migrate emr`, e não uma flag em `migrate glue`.**
+A D-4 falava da tool MCP, e ali a medida deu extensão: `sparkforge_migration_assess`
+já compunha os artefatos, já expandia o par e já agregava, e o que faltava era só a
+plataforma — virou o parâmetro `platform`, sem tool nova (63 antes, 63 depois). Na
+CLI a mesma leitura não cabe: `migrate glue` carrega a plataforma **no nome**, e um
+`--platform` ali criaria `migrate glue --platform emr_eks`. As três de EMR, ao
+contrário, dividem tudo o que importa aqui — o mesmo vocabulário de rótulo, a mesma
+normalização do prefixo `emr-`, o mesmo eixo `emr` valendo zero —, e o que as separa
+é qual matriz responde: isso é parâmetro, e `migrate emr --platform` o expõe. A
+união dos dois verbos cobre as quatro plataformas que a tool aceita, que é o que a
+paridade CLI/MCP cobra.
+
+**D-b — a declaração de cobertura separa *julgável* de *alcançada*, e a §2 falava
+só de uma.** A §2 lê "5 regras por `spark`, 0 por `emr`", e as duas contagens são do
+CATÁLOGO. Medido no caminho da §5 (`emr_ec2`, `6.15.0 → 7.5.0`): as cinco regras de
+`spark` ficam **julgáveis** — a chave `spark` existe no runtime de todo degrau,
+porque a matriz publica o Spark de cada release —, e **zero** delas entram no escopo,
+porque quatro pedem Spark 4 e a série 7.x do EMR está na 3.5. Dizer "5 alcançáveis"
+seria falso; dizer só "0" esconderia que a ponte existe e funciona. `coverage` emite
+as três medidas por eixo (`catalog_rules`, `reachable_rules`, `runtime_key_present`)
+e a prosa as usa nessa ordem.
+
+**D-c — `component_diff` separa a recusa do degrau da recusa da plataforma.** A §2
+pede "o que muda de componente por degrau", e a implementação projeta o `ReleaseDiff`
+uma vez por degrau. O que a construção obrigou a decidir foi o `unresolved`: as cinco
+dimensões do §8.2 sem lastro são constantes do verbo, e um eixo que a fonte daquela
+plataforma não publica em release nenhuma (`hudi` e `delta` no EC2, `hadoop` no EKS)
+é constante da plataforma — repetir os textos inteiros em cada degrau de um caminho
+de seis degraus é payload sem informação nova. Os dois grupos sobem para
+`component_diff_unresolved`, uma vez; `RELEASE_CELL_ABSENT`, que é de um lado
+específico, fica no degrau que a encontrou. Nada é omitido: lista vazia seria lida
+como "não mudou nada".

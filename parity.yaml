@@ -331,10 +331,20 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
-  - name: assess a Glue version migration step by step
+  # As quatro plataformas atravessam o MESMO verbo, e por isso uma capacidade
+  # so: `sparkforge_migration_assess` ganhou o parametro `platform` em vez de
+  # uma tool nova por plataforma, e a CLI cobre a mesma superficie com
+  # `migrate glue` (a plataforma esta no nome, publicada antes das quatro
+  # existirem) mais `migrate emr --platform`, que escolhe entre as tres
+  # matrizes de EMR. Nenhum runtime sai da matriz de outra plataforma.
+  - name: assess a runtime version migration step by step, on any of the four platforms
     tools: [sparkforge_migration_assess]
-    cli: [migrate glue]
-    knowledge: [knowledge/glue/runtime-matrix.md]
+    cli: [migrate glue, migrate emr]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
