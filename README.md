@@ -467,6 +467,7 @@ Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Us
 | `review-emr-cluster` | o risco estiver na definição do cluster EMR on EC2 (fleets/groups, Spot por papel, managed scaling, `Configurations`, `LogUri`) |
 | `review-emr-eks` | o risco estiver na execução de um job Amazon EMR on EKS (cluster virtual e namespace, as duas superfícies de configuração, destino de log e `persistentAppUI` por job run) |
 | `review-data-validation` | o job validar dado e a pergunta for onde o check está, se ele tem consequência e quanto custa |
+| `compare-releases` | precisar saber o que muda de **componente** entre dois runtimes (release contra release, ou o mesmo rótulo entre duas plataformas) — ela lê matriz de versão e **não** avalia compatibilidade |
 
 ## Coordenadores e executores
 

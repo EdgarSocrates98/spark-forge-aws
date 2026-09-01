@@ -385,3 +385,70 @@ o comportamento nas cinco releases de Glue.
 ids que contam `*.py` na árvore (`VNX-640`, `VNX-674` e `VNX-675`, todos em
 `docs/harness/CODEINTEL-GAP.md`), remediados pela lista da saída do gate: 463 →
 467 arquivos, 124829 → 127547 bytes, 8162 → 8270 bytes.
+
+---
+
+Preenchido pela **frente D** (CLI, MCP e a skill).
+
+### A forma de argumento do `diff`: dois pares explícitos, e a razão é o eixo
+
+`--left-platform`/`--left-release` e `--right-platform`/`--right-release`.
+
+Os verbos irmãos que comparam dois lados nomeiam a **direção**: `benchmark` e
+`analyze terraform-diff` usam `--before`/`--after`; `migrate glue` e
+`iceberg assess-upgrade` usam `--from`/`--to`. Os dois pares foram considerados e
+recusados pela mesma razão: eles prometem que o eixo da comparação é o **tempo**
+(ou o degrau da migração) e que ele é **entrada**. Aqui o eixo é **resultado** —
+`axis` sai calculado das dimensões que efetivamente variam — e ele pode ser
+`platform`, que nenhum `--before/--after` descreveria sem mentir.
+
+`--platform` único com duas releases foi a terceira forma considerada, e é a
+única que torna **inexprimível** a pergunta que motiva o sub-projeto: o mesmo
+`emr-7.7.0` no EC2 contra o EKS. Ela está fora por isso, não por estética.
+
+`left`/`right` são os nomes que `release_diff.diff(left, right)` já usa no
+modelo. A superfície não inventou vocabulário novo.
+
+### O que a varredura por `analyze_emr_eks` revelou, e o que cada linha decidiu
+
+O método da fase anterior valeu de novo: além de `tools.py`, `cli.py`, `_core.py`
+e `parity.yaml`, a superfície é cobrada por **`manifest.json`** (as listas de
+tools **e** de skills, as duas por igualdade exata em `tests/test_docs_coverage.py`),
+por **`docs/surface.lock.json`**, e por **cinco** registros escritos à mão em
+teste — quatro em `tests/test_adapters_tools.py` (a lista fechada de `TOOLS`,
+`_real_output_for`, a tupla `FAILABLE`, e a lista de `openWorldHint`, que **não**
+mudou porque as duas tools novas são `_READ_ONLY`) e um em
+`tests/test_sync_render.py` (`RELACAO_MEDIDA`, mais o mapa literal de
+`test_agent_so_aparece_onde_ha_um_coordenador_so`, que a varredura por
+`analyze_emr_eks` **não** teria achado — ele só acende quando a skill nova tem
+coordenador único).
+
+### `_core` reexporta `UNRESOLVED_KINDS`, e o `enum` do schema vem dele
+
+`sparkforge_release_describe` declara o `enum` de `unresolved_detail[].kind`
+**derivado do modelo** (`_core.RELEASE_UNRESOLVED_KINDS`), e não de uma lista
+escrita ao lado. É a mesma disciplina que a fase 5c aplicou às duas listas de
+extrator mantidas à mão: uma cresce, a outra não, e o desacordo é mudo.
+
+### A skill não chama `judge`, e citá-lo custava um invariante
+
+`skills/compare-releases/SKILL.md` mencionava `sparkforge judge` numa frase de
+encaminhamento, e três invariantes de `tests/test_skill_content.py` acenderam de
+uma vez: toda skill que **cita** o verbo passa a dever `--show-skipped`, a origem
+do runtime e a explicação do `runtime_scope`. Os três estão certos, e a skill é
+que estava errada — ela não julga nada. A menção saiu, e no lugar ficou a
+fronteira escrita: *"esta skill não chama o motor de regras"*.
+
+### Custo medido
+
+`docs/surface.lock.json`: tools **61 → 63** (317878 → 329500 bytes, **+11622**),
+skills **45 → 46** (305288 → 318488 bytes, **+13200**), `knowledge/` **sem
+mudança**. Crescimento total da superfície: **+24822 bytes**.
+
+O gate de lastro pegou **20** ids, remediados pela lista da sua saída: sete que
+contam tools (`VNX-482`, `VNX-637`, `VNX-732`, `VNX-733`, `VNX-558`, `VNX-639`,
+`VNX-734`), dois que classificam tools por anotação (`VNX-484`, `VNX-631`), um
+que conta skills (`VNX-053`), dois que medem o tamanho de `tools.py` e `_core.py`
+(`VNX-431`, `VNX-322`) e oito do corpus de code intelligence, que reindexa a
+árvore (`VNX-653`, `VNX-654`, `VNX-663`, `VNX-666`, `VNX-667`, `VNX-669`,
+`VNX-670`, `VNX-674`).

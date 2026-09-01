@@ -191,23 +191,23 @@
       "type": "number"
     },
     {
-      "context": "| **Skills** | 45 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
+      "context": "| **Skills** | 46 | `skills/*/SKILL.md` | Habilidades especializadas com procedimentos e regras |",
       "doc": "docs/vnext/CURRENT-STATE.md",
       "id": "VNX-053",
       "line": 53,
-      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao.",
+      "note": "Remedida na fase H6: quatro skills de Glue 6 entraram (migrate-glue-6, spark4-compatibility, iceberg-v3-readiness, lakeformation-fgac-guard). A prova conta os arquivos em disco, entao o numero vem da contagem, nao da mao. Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c \"import pathlib;print(len(list(pathlib.Path('skills').glob('*/SKILL.md'))), 'skills')\"",
         "expect": {
           "kind": "number",
           "pattern": "(\\d+) skills",
-          "value": 45
+          "value": 46
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "45",
+      "text": "46",
       "type": "number"
     },
     {
@@ -877,43 +877,43 @@
       "type": "capability"
     },
     {
-      "context": "61 tools:",
+      "context": "63 tools:",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-482",
       "line": 80,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 61
+          "value": 63
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "61",
+      "text": "63",
       "type": "number"
     },
     {
-      "context": "| `READ_ONLY` | 41 |",
+      "context": "| `READ_ONLY` | 43 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-484",
       "line": 84,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class; print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 41
+          "value": 43
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "41",
+      "text": "43",
       "type": "number"
     },
     {
@@ -1017,23 +1017,23 @@
       "type": "number"
     },
     {
-      "context": "| `READ_ONLY` | 39 | 2 |",
+      "context": "| `READ_ONLY` | 39 | 4 |",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-631",
       "line": 172,
-      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate",
+      "note": "reexecutado -- conta pelo PREDICADO que a propria cadeia usa (`_e_chave_de_caminho`), lendo o inputSchema real e derivando a classe com tool_class(); nao ha lista paralela no manifesto. tests/test_harness_authorization.py::TestOCatalogoContinuaCabendoNaVerificacao tranca a contagem, entao tool nova com caminho batizado de outro jeito derruba o teste antes de derrubar este gate Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; from sparkforge.agents.autonomy import ToolClass, tool_class, _e_chave_de_caminho as K; tem = lambda n: any(K(p) for p in TOOLS[n][\"inputSchema\"].get(\"properties\", {})); print(sum(1 for n in TOOLS if tool_class(n) is ToolClass.READ_ONLY and not tem(n)))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 2
+          "value": 4
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "2",
+      "text": "4",
       "type": "number"
     },
     {
@@ -1157,63 +1157,63 @@
       "type": "number"
     },
     {
-      "context": "**59** de 61 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
+      "context": "**59** de 63 — as onze `LOCAL_MUTATION` e as nove `CLOUD_MUTATION` declaram",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-637",
       "line": 182,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 61
+          "value": 63
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "61",
+      "text": "63",
       "type": "number"
     },
     {
-      "context": "> `CallPolicy.decide`, e o despacho é único para as 61 tools, então fechar ali",
+      "context": "> `CallPolicy.decide`, e o despacho é único para as 63 tools, então fechar ali",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-732",
       "line": 264,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 61
+          "value": 63
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "61",
+      "text": "63",
       "type": "number"
     },
     {
-      "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 61",
+      "context": "a cadeia antes de despachar. O ponto foi escolhido por ser **único**: as 63",
       "doc": "docs/harness/AUTHORIZATION-CHAIN.md",
       "id": "VNX-733",
       "line": 310,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 61
+          "value": 63
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "61",
+      "text": "63",
       "type": "number"
     },
     {
@@ -3225,43 +3225,43 @@
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 207861 | 1826 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 213064 | 1826 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-653",
       "line": 215,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 207861
+          "value": 213064
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "207861",
+      "text": "213064",
       "type": "number"
     },
     {
-      "context": "| `project_items` | 1 | 193 | 207861 | 1826 | 52 |",
+      "context": "| `project_items` | 1 | 193 | 207861 | 1827 | 52 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-654",
       "line": 215,
-      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real",
+      "note": "remedido no fechamento das fases J: o pacote cresceu com os modulos de codeintel, e a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1826
+          "value": 1827
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1826",
+      "text": "1827",
       "type": "number"
     },
     {
@@ -3425,23 +3425,23 @@
       "type": "number"
     },
     {
-      "context": "| `authorize` | 4 | 897 | 264128 | 4426 | 107 |",
+      "context": "| `authorize` | 4 | 897 | 275830 | 4426 | 107 |",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-663",
       "line": 217,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge/capacity/plan.py e os testes novos sao codigo novo varrido por iter_source_files; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge/capacity/plan.py e os testes novos sao codigo novo varrido por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 264128
+          "value": 275830
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "264128",
+      "text": "275830",
       "type": "number"
     },
     {
@@ -3505,43 +3505,43 @@
       "type": "number"
     },
     {
-      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1249171**;",
+      "context": "Somadas as cinco perguntas: o índice devolve **2210** bytes; ler os arquivos custaria **1266076**;",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-666",
       "line": 219,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 1249171
+          "value": 1266076
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "1249171",
+      "text": "1266076",
       "type": "number"
     },
     {
-      "context": "a saída do `grep` pelo nome, **20070**; a saída do `grep` pela definição, **420**.",
+      "context": "a saída do `grep` pelo nome, **20071**; a saída do `grep` pela definição, **420**.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-667",
       "line": 220,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 20070
+          "value": 20071
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "20070",
+      "text": "20071",
       "type": "number"
     },
     {
@@ -3585,22 +3585,22 @@
       "type": "number"
     },
     {
-      "context": "**Contra o denominador do plano, o índice economiza 565.2 vezes.** Contra a saída de um `grep`",
+      "context": "**Contra o denominador do plano, o índice economiza 572.9 vezes.** Contra a saída de um `grep`",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-669",
       "line": 229,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): a razao move junto com os dois lados que ela divide, e os dois cresceram com o corpus da entrega; a prova le o artefato real",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): a razao move junto com os dois lados que ela divide, e os dois cresceram com o corpus da entrega; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); H = [(r, t) for r, t in F if O.search(t)]; K = [i for i, (r, t) in enumerate(H) if any(D.match(l.lstrip()) for l in t.splitlines())]; total += sum(len(t.encode(\"utf-8\")) for r, t in H[:(K[0] + 1 if K else len(H))]); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "1249171 / 2210 = 565.2"
+          "value": "1266076 / 2210 = 572.9"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "565.2",
+      "text": "572.9",
       "type": "number"
     },
     {
@@ -3608,12 +3608,12 @@
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-670",
       "line": 230,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): a razao move junto com os dois lados que ela divide, e os dois cresceram com o corpus da entrega; a prova le o artefato real",
+      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): a razao move junto com os dois lados que ela divide, e os dois cresceram com o corpus da entrega; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import json, tempfile, pathlib; from dataclasses import asdict; from sparkforge.codeintel.index import indexar; from sparkforge.codeintel.search import buscar; d = pathlib.Path(tempfile.mkdtemp()) / \"g.sqlite3\"; indexar(\".\", d); com = 0; com += len(json.dumps([asdict(a) for a in buscar(d, \"iter_source_files\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"looks_like_secret\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"project_items\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"tool_class\")], ensure_ascii=False).encode(\"utf-8\")); com += len(json.dumps([asdict(a) for a in buscar(d, \"authorize\")], ensure_ascii=False).encode(\"utf-8\")); import re; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"iter_source_files\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"iter_source_files\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"looks_like_secret\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"looks_like_secret\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"project_items\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"project_items\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"tool_class\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"tool_class\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); D = re.compile(\"^(?:async +def|def|class) +\" + re.escape(\"authorize\")); O = re.compile(\"(?<![A-Za-z0-9_])\" + re.escape(\"authorize\") + \"(?![A-Za-z0-9_])\"); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(str(total) + \" / \" + str(com) + \" = \" + str(round(total / com, 1)))'",
         "expect": {
           "kind": "contains",
-          "value": "20070 / 2210 = 9.1"
+          "value": "20071 / 2210 = 9.1"
         },
         "kind": "command",
         "tier": "fast"
@@ -3682,23 +3682,23 @@
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **127547** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **128249** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na entrega de `ReleaseDescriptor`/`ReleaseDiff` (2026-08-31): o corpus de *.py cresceu com sparkforge/migration/release_descriptor.py, sparkforge/migration/release_diff.py, tests/test_release_descriptor.py e tests/test_release_diff.py, os quatro varridos por iter_source_files; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 127547
+          "value": 128249
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "127547",
+      "text": "128249",
       "type": "number"
     },
     {
@@ -3857,23 +3857,23 @@
       "type": "number"
     },
     {
-      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **26** das **61** tools do catálogo: ",
+      "context": "| Controle de verbosidade na resposta | EXISTE PARCIAL | `detail_level` aparece em **26** das **63** tools do catálogo: ",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-558",
       "line": 305,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 61
+          "value": 63
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "61",
+      "text": "63",
       "type": "number"
     },
     {
@@ -4187,19 +4187,19 @@
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-639",
       "line": 42,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 61
+          "value": 63
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "61",
+      "text": "63",
       "type": "number"
     },
     {
@@ -4537,41 +4537,41 @@
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (241,5 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-431",
       "line": 83,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/tools.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "230,1"
+          "value": "241,5"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "230,1",
+      "text": "241,5",
       "type": "number"
     },
     {
-      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (203,0 KB) são, disparado, os dois maiores arquivos do pacote",
+      "context": "Confirmado por tamanho: `tools.py` (230,1 KB) e `_core.py` (208,1 KB) são, disparado, os dois maiores arquivos do pacote",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-322",
       "line": 83,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco; remedido de novo em 2026-08-31, na divida do --emr sobre facts de EMR Serverless: build_runtime passou a escolher a matriz de derivacao pelo namespace dos facts, e _core.py cresceu com _e_so_de_serverless e com o comentario que justifica a troca",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): tools.py e _core.py cresceram com o verbo e a tool sparkforge_capacity; a prova le o tamanho real do arquivo em disco; remedido de novo em 2026-08-31, na divida do --emr sobre facts de EMR Serverless: build_runtime passou a escolher a matriz de derivacao pelo namespace dos facts, e _core.py cresceu com _e_so_de_serverless e com o comentario que justifica a troca Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'import pathlib; b = pathlib.Path(\"sparkforge/adapters/_core.py\").read_bytes().replace(bytes([13, 10]), bytes([10])); print(str(round(len(b) / 1024, 1)).replace(chr(46), chr(44)))'",
         "expect": {
           "kind": "contains",
-          "value": "203,0"
+          "value": "208,1"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "203,0",
+      "text": "208,1",
       "type": "number"
     },
     {
@@ -4655,23 +4655,23 @@
       "type": "number"
     },
     {
-      "context": "o que cobre as 61 tools num ponto só. O que resta é o que nunca passa por `call_tool`:",
+      "context": "o que cobre as 63 tools num ponto só. O que resta é o que nunca passa por `call_tool`:",
       "doc": "docs/harness/CURRENT-HARNESS-GAP.md",
       "id": "VNX-734",
       "line": 107,
-      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real",
+      "note": "remedido na fase do capacity optimizer (2026-08-28): sparkforge_capacity entrou no catalogo de tools; a prova le o artefato real Remedido na frente D do sub-projeto ReleaseDiff (2026-08-31): `sparkforge_release_describe` e `sparkforge_release_diff` levaram o catalogo de 61 para 63 tools, a skill `compare-releases` levou as skills de 45 para 46, e `tools.py`/`_core.py` cresceram com os dois verbos. Numero relido pela propria prova.",
       "proof": {
         "cmd": "python -c 'from sparkforge.adapters.tools import TOOLS; print(len(TOOLS))'",
         "expect": {
           "kind": "number",
           "pattern": "^(\\d+)",
-          "value": 61
+          "value": 63
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "61",
+      "text": "63",
       "type": "number"
     },
     {

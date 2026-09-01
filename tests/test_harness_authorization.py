@@ -836,9 +836,25 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     `path` e `sparkforge_collect_emr_eks` declara `out_dir`, entao as duas caem
     do lado certo do predicado e o conjunto de excecao NAO mudou. Foi este
     teste que mediu isso -- ele caiu na contagem, e nao no conjunto.
+
+    A frente D do sub-projeto `ReleaseDiff` foi o caso inverso, e o primeiro:
+    `sparkforge_release_describe` e `sparkforge_release_diff` entram no conjunto
+    de EXCECAO, e a contagem de 59 nao se move. Nao e caminho batizado de outro
+    jeito -- e a AUSENCIA de caminho, e ela e correta: os dois verbos nao leem
+    artefato nenhum do operador, so as matrizes de `knowledge/` que o proprio
+    pacote carrega. Nao ha o que confinar, e inventar um `path` para caber no
+    predicado seria parametro sem consumidor. O conjunto sai de dois para
+    QUATRO, e este teste e o lugar onde essa decisao fica escrita.
     """
 
-    SEM_CAMINHO = frozenset({"sparkforge_rules_lookup", "sparkforge_economy_report"})
+    SEM_CAMINHO = frozenset(
+        {
+            "sparkforge_rules_lookup",
+            "sparkforge_economy_report",
+            "sparkforge_release_describe",
+            "sparkforge_release_diff",
+        }
+    )
 
     def test_toda_tool_menos_duas_declara_caminho(self):
         from sparkforge.agents.autonomy import _e_chave_de_caminho

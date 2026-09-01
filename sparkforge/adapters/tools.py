@@ -1088,6 +1088,165 @@ _JUDGE_SCHEMA: dict[str, Any] = {
     "oneOf": [_JUDGE_SUCCESS_SCHEMA, _ERROR_SCHEMA],
 }
 
+# --------------------------------------------------------------------------- #
+# release describe / release diff
+# --------------------------------------------------------------------------- #
+
+# `version` e string OU array, e o `oneOf` nao e frouxidao de schema: e a forma
+# que a FONTE publica. A pagina do EMR on EC2 declara os interpretadores
+# INSTALADOS como conjunto (`3.9, 3.11`), e achata-lo num valor so escolheria
+# por conta propria qual deles o PySpark usa -- que e outra pergunta, e a AWS a
+# responde numa coluna separada. `is_set` diz qual das duas formas veio, para o
+# cliente nao ter de descobrir por `isinstance`.
+_RELEASE_COMPONENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["name", "version", "is_set", "sources", "retrieved"],
+    "properties": {
+        "name": {"type": "string"},
+        "version": {
+            "oneOf": [
+                {"type": "string"},
+                {"type": "array", "items": {"type": "string"}},
+            ],
+            "description": "Valor unico, ou o CONJUNTO quando a fonte publica conjunto.",
+        },
+        "is_set": {
+            "type": "boolean",
+            "description": "True quando `version` e conjunto e nao valor.",
+        },
+        "sources": {"type": "array", "items": {"type": "string"}},
+        "retrieved": {"type": ["string", "null"]},
+    },
+}
+
+_RELEASE_UNRESOLVED_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["component", "kind", "reason"],
+    "properties": {
+        "component": {"type": "string"},
+        "kind": {
+            "type": "string",
+            "enum": list(sorted(_core.RELEASE_UNRESOLVED_KINDS)),
+            "description": (
+                "As DUAS recusas, que destravam com medidas diferentes: "
+                "`platform_source_does_not_publish` com uma FONTE nova, "
+                "`release_cell_absent` com uma LEITURA daquela pagina."
+            ),
+        },
+        "reason": {"type": "string"},
+    },
+}
+
+_RELEASE_DESCRIPTOR_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "platform",
+        "release",
+        "components",
+        "unresolved",
+        "unresolved_detail",
+        "sources",
+        "retrieved",
+    ],
+    "properties": {
+        "platform": {"type": "string", "enum": list(_core.RELEASE_PLATFORMS)},
+        "release": {
+            "type": "string",
+            "description": "A chave que INDEXA a matriz -- uma grafia so, sempre.",
+        },
+        "components": {
+            "type": "object",
+            "additionalProperties": _RELEASE_COMPONENT_SCHEMA,
+            "description": "So o que a fonte daquela plataforma publica para esta release.",
+        },
+        "unresolved": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Os componentes NOMEADOS que esta release nao resolve. Nunca "
+                "string vazia e nunca ausencia calada."
+            ),
+        },
+        "unresolved_detail": {
+            "type": "object",
+            "additionalProperties": _RELEASE_UNRESOLVED_SCHEMA,
+            "description": "Cada recusa com o tipo e a medida que a destravaria.",
+        },
+        "sources": {"type": "array", "items": {"type": "string"}},
+        "retrieved": {"type": ["string", "null"]},
+    },
+}
+
+_RELEASE_DIFF_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "axis",
+        "left",
+        "right",
+        "changed",
+        "added",
+        "removed",
+        "unchanged",
+        "unresolved",
+    ],
+    "properties": {
+        "axis": {
+            "type": "array",
+            "items": {"type": "string", "enum": ["platform", "release"]},
+            "description": (
+                "As dimensoes que EFETIVAMENTE variam, `platform` antes de "
+                "`release`. Vazio quando nada varia."
+            ),
+        },
+        "left": _RELEASE_DESCRIPTOR_SCHEMA,
+        "right": _RELEASE_DESCRIPTOR_SCHEMA,
+        "changed": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["component", "from", "to"],
+                "properties": {
+                    "component": {"type": "string"},
+                    "from": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {"type": "array", "items": {"type": "string"}},
+                        ]
+                    },
+                    "to": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {"type": "array", "items": {"type": "string"}},
+                        ]
+                    },
+                },
+            },
+        },
+        "added": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Componente cuja CELULA aparece so a direita. Mede presenca de "
+                "celula, nunca 'a plataforma passou a embarcar'."
+            ),
+        },
+        "removed": {"type": "array", "items": {"type": "string"}},
+        "unchanged": {"type": "array", "items": {"type": "string"}},
+        "unresolved": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": (
+                "O que este verbo NAO afirma, por nome e com a medida que "
+                "destrava: as cinco dimensoes do §8.2 sem lastro "
+                "(`deprecated`, `default_changes`, `compatibility_changes`, "
+                "`security_changes`, `performance_changes`), cada "
+                "`component.<nome>` que uma das duas plataformas nao publica "
+                "como eixo, e `attribution` quando os DOIS eixos variam."
+            ),
+        },
+    },
+}
+
 _MIGRATION_STEP: dict[str, Any] = {
     "type": "array",
     "items": {"type": "string"},
@@ -3567,6 +3726,111 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_release_describe": {
+        "description": (
+            "O que uma release E, segundo a fonte DAQUELA plataforma e so ela: "
+            "cada componente com versao, as fontes e a data de leitura. Le as "
+            "quatro matrizes de `knowledge/` -- nao le artefato do operador, nao "
+            "chama AWS e NAO JULGA. "
+            "A FRONTEIRA, e ela vem antes da capacidade: o descritor afirma o que "
+            "aquela fonte PUBLICA, e as quatro publicam conjuntos DIFERENTES. "
+            "Componente que a fonte nao publica sai em `unresolved` NOMEADO -- "
+            "nunca string vazia, nunca chave ausente em silencio, que o leitor "
+            "confundiria com 'nao tem'. `unresolved_detail` diz de qual das DUAS "
+            "recusas se trata, porque elas destravam com medidas diferentes: "
+            "`platform_source_does_not_publish` (a fonte nao publica aquele eixo "
+            "em release NENHUMA -- `hadoop` no EMR on EKS, 0 de 34 paginas) "
+            "destrava com uma FONTE nova; `release_cell_absent` (a fonte publica "
+            "o eixo e a celula DAQUELA release nao esta la -- `iceberg` em "
+            "`emr-6.4.0`, `java` em Glue 5.1) destrava com uma LEITURA daquela "
+            "pagina. Nenhum valor e herdado de outra plataforma: o mesmo "
+            "`emr-7.7.0` publica Iceberg `1.7.1-amzn-0` no EC2 e `1.6.1-amzn-2` no "
+            "EKS. `release` sai como a matriz o indexa, uma grafia so."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["platform", "release"],
+            "properties": {
+                "platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "description": "Uma das quatro plataformas que este motor conhece.",
+                },
+                "release": {
+                    "type": "string",
+                    "description": (
+                        "O rotulo da release, com ou sem o prefixo `emr-` "
+                        "(`7.7.0`, `emr-7.7.0`, `5.1`). A saida emite UMA grafia."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _RELEASE_DESCRIPTOR_SCHEMA,
+            "Descritor da release, ou erro se a plataforma ou a release e desconhecida.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_release_diff": {
+        "description": (
+            "O que muda de COMPONENTE entre duas releases, cada lado dado por um "
+            "par (plataforma, release). Le matriz de versao; NAO avalia "
+            "compatibilidade e NAO diz se algo quebra -- essa pergunta e do "
+            "`sparkforge_migration_assess`. "
+            "O EIXO SAI DECLARADO em `axis`, e ele e resultado e nao entrada: "
+            "`release` quando so a release varia, `platform` quando o mesmo rotulo "
+            "e comparado entre duas plataformas (`emr-7.7.0` no EC2 contra o EKS "
+            "publica Iceberg minor DIFERENTE), os dois quando os dois variam, e "
+            "vazio quando nada varia. COM OS DOIS EIXOS VARIANDO ELE RECUSA A "
+            "ATRIBUICAO por nome (`unresolved.attribution`): nenhuma linha de "
+            "`changed` pode ser creditada a release ou a plataforma isoladamente, "
+            "e o que destrava sao dois diffs de um eixo cada. "
+            "CINCO DAS SETE DIMENSOES SAEM EM `unresolved` COM A RAZAO -- "
+            "`deprecated`, `default_changes`, `compatibility_changes`, "
+            "`security_changes` e `performance_changes` --, porque as matrizes "
+            "sustentam versao de componente e nada mais; lista vazia seria lida "
+            "como 'nao mudou nada'. So `added` e `removed` tem lastro, e eles "
+            "medem a PRESENCA DA CELULA, nao 'a plataforma passou a embarcar'. "
+            "Componente que UMA DAS DUAS plataformas nao publica como eixo nunca "
+            "vira `added` nem `removed`: sai em `unresolved` com a chave "
+            "`component.<nome>`, para a saida nao afirmar que 'o EKS removeu o "
+            "Hadoop' quando a fonte do EKS nunca o publicou."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": [
+                "left_platform",
+                "left_release",
+                "right_platform",
+                "right_release",
+            ],
+            "properties": {
+                "left_platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "description": "Plataforma do lado de ONDE o operador sai.",
+                },
+                "left_release": {
+                    "type": "string",
+                    "description": "Release do lado de ONDE o operador sai.",
+                },
+                "right_platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "description": "Plataforma do lado PARA ONDE o operador vai.",
+                },
+                "right_release": {
+                    "type": "string",
+                    "description": "Release do lado PARA ONDE o operador vai.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _RELEASE_DIFF_SCHEMA,
+            "Diff das duas releases, ou erro se uma plataforma ou release e desconhecida.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_call_graph": {
         "description": (
             "Deriva grafo de chamadas e alcance de trabalho Spark a partir de facts JA "
@@ -5131,6 +5395,19 @@ def _h_analyze_graph(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.release_describe(args["platform"], args["release"])
+
+
+def _h_release_diff(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.release_diff(
+        args["left_platform"],
+        args["left_release"],
+        args["right_platform"],
+        args["right_release"],
+    )
+
+
 def _h_analyze_call_graph(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_call_graph(
         args["facts_path"],
@@ -5392,6 +5669,8 @@ _HANDLERS = {
     "sparkforge_migration_assess": _h_migration_assess,
     "sparkforge_glue_dependency_audit": _h_glue_dependency_audit,
     "sparkforge_iceberg_assess_upgrade": _h_iceberg_assess_upgrade,
+    "sparkforge_release_describe": _h_release_describe,
+    "sparkforge_release_diff": _h_release_diff,
     "sparkforge_benchmark": _h_benchmark,
     "sparkforge_workload": _h_workload,
     "sparkforge_capacity": _h_capacity,

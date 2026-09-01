@@ -254,6 +254,13 @@ DISPATCHABLE_SKILLS = {
     "migrate-glue-6": "extrai a arvore do job e julga degrau a degrau; leitura fechada",
     "spark4-compatibility": "julga o codigo e os pins contra a fronteira do Spark 4",
     "lakeformation-fgac-guard": "correlaciona FGAC e classpath no .tf que ja esta em disco",
+    # Le as quatro matrizes de `knowledge/` e devolve numero com fonte. Nao ha
+    # artefato do operador para faltar, nao ha decisao de terceiro no caminho, e
+    # nenhum Finding nasce dela -- a leitura e fechada por construcao.
+    "compare-releases": (
+        "le as quatro matrizes de versao e devolve o diff com o eixo declarado; "
+        "nao le artefato do operador e nao julga"
+    ),
 }
 
 NON_DISPATCHABLE_SKILLS = {

@@ -86,6 +86,24 @@ from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
+from sparkforge.migration.release_descriptor import (
+    PLATFORMS as RELEASE_PLATFORMS,
+)
+from sparkforge.migration.release_descriptor import (
+    UNRESOLVED_KINDS as _RELEASE_UNRESOLVED_KINDS,
+)
+from sparkforge.migration.release_descriptor import (
+    ReleaseDescriptor,
+    UnknownPlatform,
+    UnknownRelease,
+)
+from sparkforge.migration.release_descriptor import (
+    describe as describe_release,
+)
+from sparkforge.migration.release_descriptor import (
+    known_releases as known_releases_of,
+)
+from sparkforge.migration.release_diff import diff as diff_releases
 from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
@@ -94,6 +112,11 @@ from sparkforge.tuning import build_conf_advice
 from sparkforge.workload import build_fingerprint
 
 DEFAULT_LIMIT = 50
+
+# Reexportado para que `tools.py` derive o `enum` do schema DO MODELO, e nunca
+# de uma lista escrita a mao ao lado -- que e a familia de defeito que este
+# repositorio ja mediu em duas listas paralelas de extrator.
+RELEASE_UNRESOLVED_KINDS: frozenset[str] = _RELEASE_UNRESOLVED_KINDS
 
 
 class AdapterError(Exception):
@@ -1659,6 +1682,96 @@ def iceberg_assess_upgrade(path: str, source: int, target: int) -> dict[str, Any
     payload["source_spec_version"] = source
     payload["path"] = str(alvo)
     return payload
+
+
+# --------------------------------------------------------------------------- #
+# release describe / release diff
+# --------------------------------------------------------------------------- #
+
+# VERBOS DE TOPO, e nao `analyze release`: tudo sob `analyze` le um ARTEFATO do
+# operador e para ali. Estes dois nao leem artefato nenhum -- eles compoem sobre
+# as quatro matrizes de `knowledge/`, que e a mesma linha que separa `benchmark`,
+# `workload` e `fuse` dos extratores.
+#
+# E os dois NAO JULGAM. A D-6 da spec de `ReleaseDiff` e explicita: este
+# sub-projeto entrega dado, modelo e verbo, e nenhuma regra. Nenhum `Finding`
+# nasce aqui, e nenhuma linha da saida diz se algo quebra -- essa pergunta e do
+# `MigrationAssessment` (`migration_assess`, hoje so Glue).
+#
+# O UNICO trabalho desta camada e traduzir a recusa NOMEADA do modelo
+# (`UnknownPlatform`, `UnknownRelease`) para `AdapterError` com exit 2, no molde
+# dos `_extract_*_facts`: a mensagem ensina o que existe. Ela precisa ensinar
+# porque as quatro matrizes tem fronteiras DIFERENTES -- `6.3.0` existe no EMR
+# on EKS (que desce ate `5.32.0`) e nao no EC2 (que comeca em `6.4.0`), e
+# `spark-8.0-preview` so existe no Serverless. Um `KeyError` nao diria qual das
+# quatro fronteiras foi cruzada.
+
+
+def _release_descriptor(platform: str, release: str) -> ReleaseDescriptor:
+    """`describe()` com a recusa vestida de erro de fronteira acionavel."""
+    try:
+        return describe_release(platform, release)
+    except UnknownPlatform as exc:
+        raise AdapterError(
+            f"{exc}\n"
+            f"  As quatro plataformas: {', '.join(RELEASE_PLATFORMS)}.\n"
+            f"    sparkforge release describe --platform emr_ec2 --release 7.7.0",
+            exit_code=2,
+        ) from exc
+    except UnknownRelease as exc:
+        raise AdapterError(
+            f"{exc}\n"
+            f"  Cada plataforma tem a sua matriz, e as fronteiras nao coincidem:\n"
+            f"  uma release conhecida por uma pode nao existir na outra.\n"
+            f"    sparkforge release describe --platform {platform} "
+            f"--release {(known_releases_of(platform) or ('<release>',))[0]}",
+            exit_code=2,
+        ) from exc
+
+
+def release_describe(platform: str, release: str) -> dict[str, Any]:
+    """O que uma release E, segundo a fonte daquela plataforma e so ela.
+
+    Componente que a fonte daquela plataforma NAO publica sai em `unresolved`
+    NOMEADO -- nunca string vazia, nunca chave ausente em silencio. As quatro
+    plataformas publicam conjuntos diferentes (o EMR on EKS nao publica Hadoop
+    em release nenhuma: 0 de 34 paginas), e um descritor que apagasse essa
+    diferenca mentiria por omissao. `unresolved_detail` carrega o tipo da
+    recusa e a medida que a destravaria, porque `platform_source_does_not_publish`
+    destrava com uma FONTE nova e `release_cell_absent` com uma LEITURA daquela
+    pagina -- colapsar as duas faria o operador procurar no lugar errado.
+    """
+    return _release_descriptor(platform, release).to_dict()
+
+
+def release_diff(
+    left_platform: str,
+    left_release: str,
+    right_platform: str,
+    right_release: str,
+) -> dict[str, Any]:
+    """O que mudou entre duas releases, com o EIXO da comparacao declarado.
+
+    QUATRO argumentos e nao tres, e a razao esta na D-4 da spec: comparar
+    `emr-7.7.0` no EC2 com o MESMO rotulo no EKS e comparacao legitima -- e onde
+    mora o achado medido, que o mesmo rotulo publica Iceberg `1.7.1-amzn-0` num
+    e `1.6.1-amzn-2` no outro. Um verbo que recebesse UMA plataforma e duas
+    releases nao teria como fazer essa pergunta.
+
+    `axis` sai com as dimensoes que EFETIVAMENTE variam (`platform`, `release`,
+    ou as duas, nessa ordem). Com as duas variando a ATRIBUICAO sai em
+    `unresolved`: nenhuma linha de `changed` pode ser creditada a release ou a
+    plataforma isoladamente.
+
+    Cinco das sete dimensoes do §8.2 saem em `unresolved` com a razao --
+    `deprecated`, `default_changes`, `compatibility_changes`, `security_changes`
+    e `performance_changes` --, porque as matrizes sustentam versao de componente
+    e nada mais. Lista vazia seria lida como "nao mudou nada".
+    """
+    return diff_releases(
+        _release_descriptor(left_platform, left_release),
+        _release_descriptor(right_platform, right_release),
+    ).to_dict()
 
 
 # --------------------------------------------------------------------------- #

@@ -290,6 +290,47 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # DUAS capacidades e nao uma, porque a fronteira das duas e diferente e
+  # `parity.yaml` e o que uma plataforma le para saber o que existe. `describe`
+  # responde "o que esta release publica" -- e o que ela NAO publica, nomeado.
+  # `diff` responde "o que muda entre duas", com o eixo declarado. Nenhuma das
+  # duas responde "isso quebra?": essa e a capacidade de cima, `assess a Glue
+  # version migration step by step`, e colapsar as tres numa so faria o
+  # manifesto prometer avaliacao de compatibilidade onde ha leitura de matriz.
+  #
+  # `knowledge:` com as QUATRO paginas de matriz, e nao com uma: o verbo le as
+  # quatro, e declarar so a de Glue faria o degrau `files` -- o que chega a quem
+  # nao tem MCP nem Python -- apontar para um quarto do dado.
+  - name: describe what a runtime release publishes, and what it does not
+    tools: [sparkforge_release_describe]
+    cli: [release describe]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: diff component versions between two runtime releases
+    tools: [sparkforge_release_diff]
+    cli: [release diff]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: assess a Glue version migration step by step
     tools: [sparkforge_migration_assess]
     cli: [migrate glue]
