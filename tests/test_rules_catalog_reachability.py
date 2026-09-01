@@ -30,6 +30,7 @@ from sparkforge.facts import (
     catalog_schema,
     cloudwatch,
     consumers,
+    controlm_jobs,
     data_quality,
     emr_cluster,
     emr_eks,
@@ -68,6 +69,13 @@ EXTRACTORS = (
     # historico de runs Glue; `sql_metrics`, com a metrica por no do plano.
     cloudwatch,
     consumers,
+    # `controlm_jobs` entra nas DUAS listas manuais no MESMO commit da area
+    # SF-CTM -- esta e a de `tests/test_fixtures_kind_coverage.py` --, e esquecer
+    # uma delas NAO quebra nada, que e o modo de falha documentado nos dois
+    # arquivos. Sem ele aqui, os doze kinds `ctm.*` contam como orfaos e
+    # `SF-CTM-001` seria forcada a `blocked_on` sobre um extrator que esta no
+    # repositorio desde este mesmo commit.
+    controlm_jobs,
     # Esta lista e manual e duplicada em `tests/test_fixtures_kind_coverage.py`:
     # extrator novo entra nas DUAS, e esquecer uma nao quebra nada aqui.
     data_quality,

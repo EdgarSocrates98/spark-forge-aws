@@ -138,4 +138,73 @@ esta é a segunda metade da mesma armadilha.
 
 ## 7. Desvios
 
-Vazio.
+Registrados na implementação (2026-09-01). A spec **não** foi reescrita: o que
+está acima é o registro histórico do desenho, e o que segue é onde a medição
+divergiu dele.
+
+**D-a — a D-5 desta spec está errada, e o erro é o mesmo tipo que ela existia
+para evitar.** Ela diz que o 403 do `documents.bmc.com` "era rate limit, não
+gate", medido por 403 com UA seguido de 200 após ~45 s. A releitura desta
+entrega mostra outra coisa: o site serve um **desafio interativo do Cloudflare**
+(`<title>Just a moment...</title>`, `challenges.cloudflare.com` no CSP), e ele
+não passa com pausa. Medido: `API_CodeRef_JobProperties` e
+`API_CodeRef_JobTypes` deram **403 em três tentativas cada**, com pausas de 50 s
+e UA de browser em todas — nove 403 —, enquanto `API_CodeRef_Folder` deu **200
+na primeira**, na mesma sessão e com o mesmo cabeçalho. O bloqueio é **por URL e
+intermitente**, e o que resolveu foi um navegador de verdade, que executa o
+desafio. O conselho prático mudou de "espere 45 s" para "se `curl` com UA falhar
+duas vezes na mesma página, troque de mecanismo". Escrito na §8.1 de
+`knowledge/controlm/automation-api-matrix.md`.
+
+**D-b — `ActionIfFailure` não é propriedade do schema.** A §"O que entregar" do
+prompt de implementação e o exemplo oficial da BMC a tratam como campo. Medido
+em *Job Properties* e no `AutomationAPISampleFlow.json`: ela é apenas o **nome
+que o autor deu** ao objeto, cujo `Type` é `If`. Um extrator que procurasse a
+chave literal acharia o exemplo da BMC e perderia todo `If` batizado de outro
+jeito. O módulo reconhece por `Type: If`, e o nome escolhido sai em
+`attrs.name`.
+
+**D-c — a regra de segredo continuou fora, e agora com a medida que decide.** A
+§3 desta spec a admitia "se e somente se a leitura do `API_CodeRef` mostrar campo
+que carregue credencial por desenho". A leitura foi feita: os **44 blocos** de
+*Job Properties* não têm campo de credencial. `Password` existe em **connection
+profile**, outro artefato, e lá a página *Secrets in Code* publica a forma
+correta — `{"Secret": "<nome>"}`, resolvida de vault no deploy. O veto V-CTM-1
+fica escrito em `rules/catalog/controlm.yaml`. A **redação** de `Variables`
+continua, porque não é julgamento: ela impede que o `facts.json` do handoff vire
+a segunda cópia do segredo.
+
+**D-d — o cruzamento tem TRÊS saídas, e a spec previa duas.** A §"O que
+entregar" fala em `ctm.capability_incompatible` / `ctm.capability_unknown`.
+Faltava a terceira, e ela é necessária pelo próprio teste que a §5 cobra: sem
+`ctm.capability_supported`, o lado "acima da fronteira" do contrafactual produz
+**ausência**, e ausência é indistinguível de "o extrator parou de ver o job".
+Com ela, `test_o_veredito_e_oposto` compara a MESMA capacidade nos dois lados. O
+nome da recusa também mudou — `ctm.capability_unresolved`, não `_unknown` —,
+para casar com a convenção `*.unresolved` do resto do motor, e as quatro razões
+saem em `attrs.reason` com `attrs.unblocked_by` ao lado.
+
+**D-e — as sondas são DUAS, e a segunda não é job type.** A D-3 fala em "a
+capacidade que o job usa" sem dizer quantas são. Medido: a matriz tem 50
+capacidades na faixa, e a maioria é comando de CLI ou comportamento de servidor,
+que não aparece numa definição de job. As que aparecem:
+`Job:DetachedEmbeddedScript` e a **estrutura de array** `Folders`/`SubFolders`.
+Cinco outras foram avaliadas e recusadas, cada uma com a razão escrita em
+`sparkforge/facts/controlm_jobs.py`.
+
+**D-f — a versão declarada mora em `controlm_version` no `meta.yaml`, e não em
+`runtime:`.** O corpus de fixtures estreia essa forma porque a extração recebe
+um parâmetro que não vem do artefato — nenhum outro corpus tem isso. `runtime:`
+foi avaliado e recusado: ele alimenta `runtime_scope`, guarda de versão do
+`RuntimeContext`, e nada ali conhece `9.0.2x.yyy`. Pô-la lá faria o golden
+parecer versionado por um mecanismo que não a lê.
+
+**D-g — `SF-CTM` ganhou rota PRÓPRIA (`AGENT-082`), e não uma linha num `any:`
+existente.** O precedente de `SF-EMRK` foi estender a `AGENT-007`, porque as
+três áreas de EMR são a mesma plataforma vista de três ângulos e o destino é o
+mesmo agente. Control-M não é EMR, não roda Spark e não tem cluster: enfiá-lo
+naquele `any:` mandaria o case para um coordenador cujo vocabulário inteiro —
+instance fleet, purchasing option, namespace de Kubernetes — não descreve nada
+do artefato. O destino é `sf-runtime-specialist`, pela mesma razão que já leva
+`SF-MIG` e `SF-SPARK4` para lá: a pergunta é de compatibilidade entre versões, e
+o que muda é o produto, não o tipo de pergunta.

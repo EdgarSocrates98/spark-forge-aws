@@ -339,6 +339,34 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # A CAPACIDADE IRMA DA DE CIMA, E A DIFERENCA ENTRE AS DUAS E O QUE ELAS LEEM.
+  # `controlm describe` le SO a matriz de `knowledge/` e responde por VERSAO --
+  # nao ha artefato do operador em jogo. Esta le o artefato: a definicao
+  # `Jobs-as-Code` versionada no repositorio do cliente, que e codigo-fonte da
+  # mesma natureza de um `main.tf`. Colapsar as duas numa so faria o manifesto
+  # prometer, para quem so quer consultar a matriz, uma capacidade que exige ter
+  # o JSON de definicao em maos.
+  #
+  # `knowledge:` com a pagina da matriz porque e la que mora a FRONTEIRA que o
+  # cruzamento usa -- e tambem o que a fonte NAO sustenta, incluindo as 9 versoes
+  # da faixa sem afirmacao propria e o fato de `WebFetch` devolver 403 contra
+  # `documents.bmc.com`.
+  #
+  # NAO HA `collect` PAR, e a ausencia e decidida: `Jobs-as-Code` e codigo-fonte
+  # no repositorio do cliente, nao resposta de API. Nao ha o que baixar, e um
+  # verbo de coleta aqui seria parametro sem consumidor.
+  - name: extract facts from a Control-M Jobs-as-Code definition
+    tools: [sparkforge_analyze_controlm_jobs]
+    cli: [analyze controlm-jobs]
+    knowledge:
+      - knowledge/controlm/automation-api-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: diff component versions between two runtime releases
     tools: [sparkforge_release_diff]
     cli: [release diff]

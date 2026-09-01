@@ -1,0 +1,50 @@
+{
+  "Defaults": {
+    "Application": "Financeiro",
+    "RunAs": "ctmagent"
+  },
+  "PagamentosDiarios": {
+    "Type": "Folder",
+    "Application": "Financeiro",
+    "SubApplication": "ContasAPagar",
+    "CreatedBy": "esteira",
+    "When": {
+      "WeekDays": ["MON", "TUE", "WED", "THU", "FRI"],
+      "FromTime": "0300",
+      "ToTime": "0600"
+    },
+    "ExtraiExtrato": {
+      "Type": "Job:DetachedEmbeddedScript",
+      "RunAs": "ctmagent",
+      "Host": "agente-fin-01",
+      "Description": "Dispara a extracao do extrato em background",
+      "Script": "extrai_extrato.sh --data %%DataDeCorte",
+      "Variables": [
+        {"DataDeCorte": "%%$DATE"},
+        {"TOKEN_DO_PORTAL": "ghp_A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"}
+      ],
+      "AddEvents": [{"Event": "EXTRATO-PRONTO"}],
+      "ActionIfFailure": {
+        "Type": "If",
+        "CompletionStatus": "NOTOK",
+        "avisaOTime": {
+          "Type": "Action:Mail",
+          "Message": "%%JOBNAME falhou",
+          "To": "financeiro@exemplo.com"
+        }
+      }
+    },
+    "ConciliaExtrato": {
+      "Type": "Job:Command",
+      "Command": "concilia --data %%$DATE",
+      "RunAs": "ctmagent",
+      "Critical": true,
+      "When": {"FromTime": "0400"},
+      "WaitForEvents": [{"Event": "EXTRATO-PRONTO"}]
+    },
+    "Sequencia": {
+      "Type": "Flow",
+      "Sequence": ["ExtraiExtrato", "ConciliaExtrato"]
+    }
+  }
+}

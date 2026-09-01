@@ -1,0 +1,24 @@
+name: folder_em_array
+proves: >
+  A segunda sonda de capacidade, que NAO e job type: a estrutura de array
+  `Folders`, que a matriz nomeia com fronteira em `9.0.22.000` e que permite dois
+  folders com o MESMO nome.
+  Prova tres coisas de uma vez. Primeira: a sonda exige que o valor seja uma
+  LISTA -- `SubFolder1` como objeto nomeado e a forma antiga e nao pode casar.
+  Segunda: os jobs DENTRO do array sao lidos, e sem o laco proprio do array eles
+  sumiriam, porque folder em array nao e filho nomeado (o nome vem da propriedade
+  `Name`). Terceira: dois folders homonimos produzem dois `ctm.folder` com
+  subjects DIFERENTES (`Folders[0]/CargaNoturna` e `Folders[1]/CargaNoturna`),
+  porque agrupar por nome faria o segundo mascarar o primeiro em `same_subject`
+  -- e permitir folder homonimo e justamente o que esta capacidade introduz.
+  Versao declarada acima da fronteira, entao a capacidade sai `supported` e
+  nenhum achado nasce.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.capability_supported
+  - ctm.folder
+  - ctm.job
+  - ctm.version_declared
+expects_rules: []

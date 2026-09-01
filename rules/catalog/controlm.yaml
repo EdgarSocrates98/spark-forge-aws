@@ -1,0 +1,225 @@
+# Catálogo de regras — definição `Jobs-as-Code` do Control-M (BMC)
+#
+# Depende do extrator `sparkforge/facts/controlm_jobs.py`, que lê o JSON de
+# definição de job versionado no repositório do cliente — o mesmo que `ctm build`
+# valida e `ctm deploy` publica. A pesquisa de fontes que decidiu o que entra e o
+# que fica de fora está em `knowledge/controlm/automation-api-matrix.md`, e o
+# desenho está em
+# `docs/superpowers/specs/2026-09-01-sparkforge-controlm-jobs-as-code-design.md`.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# A REGRA NÃO REPETE A FRONTEIRA DE VERSÃO. ELA PERGUNTA À MATRIZ.
+#
+# Procure por `9.0.` neste arquivo: não há. A fronteira (`Job:DetachedEmbeddedScript`
+# existe a partir de `9.0.22.005`) mora em
+# `knowledge/controlm/automation-api-matrix.yaml`, e repeti-la aqui criaria a
+# segunda cópia do mesmo fato — o defeito que o sub-projeto 2 existiu para
+# remover.
+#
+# Como o motor avalia `where`/`expr` SEMPRE contra o contexto de um fact só
+# (`rules/engine.py::_fact_context`), o cruzamento entre o artefato e a matriz
+# **não cabe numa condição**. Ele acontece no extrator, num kind derivado, no
+# molde exato de `tf.observability.spark_ui` e `tf.graphframes.jar` — o extrator
+# decide UMA vez e emite o kind já decidido, e a regra fica com a condição
+# simples sobre ele. O veto `V-GR-1` de `graph.yaml` registra a mesma mecânica.
+#
+# O CONTRAFACTUAL QUE PROVA QUE O CRUZAMENTO EXISTE: o mesmo job julgado contra
+# `9.0.21.300` e contra `9.0.22.010` produz achado diferente, e a diferença vem
+# da matriz. As duas fixtures `capacidade_*` são exatamente o mesmo `jobs.json`
+# com o `controlm_version` do `meta.yaml` trocado.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# A VERSÃO É DECLARADA, E A REGRA DEPENDE DISSO PARA EXISTIR.
+#
+# O JSON de `Jobs-as-Code` não carrega a versão do Control-M que vai executá-lo —
+# conferido campo a campo na página *Job Properties*, cujos 44 blocos descrevem
+# tipo, agendamento, dependência, ação, recurso e identidade, e nenhum deles
+# nomeia a versão do Automation API. Ela entra declarada pelo operador
+# (`--version 9.0.21.300`), e `ctm.version_declared` marca no próprio fact que é
+# **declaração**, não leitura.
+#
+# Por isso `ctm.version_declared` está em `requires_facts`: sem versão declarada
+# a regra é **pulada com `reason: requires_facts`**, visível em
+# `judge --show-skipped`, e o extrator emite `ctm.capability_unresolved` com
+# `reason: version_not_declared` e a medida que o destrava. Recusa nomeada nos
+# dois lados — o inverso do erro que a dívida do `judge --emr` cometeu por três
+# fases.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# O SILÊNCIO DA MATRIZ NUNCA VIRA APROVAÇÃO.
+#
+# O incremento 1 mediu: das 31 versões da faixa, **9 não carregam afirmação
+# própria**, e **175 linhas de *Corrected Problems*** não couberam em eixo
+# nenhum. O silêncio é grande.
+#
+# Por isso o cruzamento tem TRÊS saídas e não duas —
+# `ctm.capability_supported`, `ctm.capability_incompatible` e
+# `ctm.capability_unresolved` —, e **esta regra só dispara sobre a segunda**.
+# Capacidade que a matriz não nomeia, versão fora da faixa e versão que a fonte
+# não publica saem em `ctm.capability_unresolved` com `attrs.reason` e
+# `attrs.unblocked_by`, e produzem **zero** achados. Ausência de achado desta
+# área nunca significa "compatível": significa "esta é a única incompatibilidade
+# que a matriz sustenta afirmar", e o operador lê o resto em
+# `capability_unresolved_count` na sentinela `ctm.analyzed`.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# `runtime_scope: {}`, E A ESCOLHA É MEDIDA.
+#
+# A tentação é declarar algo aqui, já que a regra é inteiramente sobre versão. É
+# errado por mecanismo: `runtime_scope` guarda a versão do **RuntimeContext** —
+# Glue, Spark, Python, Iceberg —, e nada alimenta `RuntimeContext` com a versão
+# do Control-M. `sparkforge/facts/runtime_detect.py` deriva de `GLUE_MATRIX`, de
+# `EMR_MATRIX` e de `spark.runtime_version`; nenhuma das três conhece
+# `9.0.2x.yyy`. O guarda falha FECHADO, então declarar qualquer chave faria a
+# regra ser pulada em toda execução real — golden verde por SKIP, que é pior que
+# vermelho porque ninguém investiga o que passou. É a mesma conclusão de
+# `emr-eks.yaml`, pelo mesmo caminho.
+#
+# A versão que esta regra usa **é dado do artefato**, não do runtime: ela chega
+# em `ctm.version_declared` e em `attrs.declared_version` do próprio fact
+# derivado, e por isso viaja dentro do achado em vez de gatear a avaliação dele.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# VETOS APURADOS NA LEITURA DA FONTE (2026-09-01). Não reintroduzir.
+#
+# V-CTM-1  **Segredo em texto claro numa definição de job.** VETADO, e não por
+#          preguiça: seria o QUARTO exemplar do mesmo julgamento
+#          (`SF-EMR-002`, `SF-EMRS-002`, `SF-EMRK-001`) e a fonte não o sustenta
+#          aqui. Medido: os 44 blocos de *Job Properties* não têm campo de
+#          credencial; `Password` existe em CONNECTION PROFILE, que é outro
+#          artefato, e lá a página *Secrets in Code* publica a forma correta —
+#          `"Password": {"Secret": "<nome>"}`, resolvida do vault no deploy. A
+#          única superfície livre da definição de job é `Variables`, e o extrator
+#          **redige** o valor que casa o detector compartilhado, marcando
+#          `attrs.secret_pattern_match`. Redação não é julgamento: ela impede que
+#          o `facts.json` do handoff vire a segunda cópia do segredo. A regra
+#          entra no dia em que a BMC publicar, para definição de job, o
+#          equivalente ao *Warning* de texto claro que a AWS publica para
+#          `DescribeCluster` — e não antes.
+#
+# V-CTM-2  **Dependência, janela e SLA.** VETADOS neste incremento. Os facts
+#          `ctm.dependency` e `ctm.schedule` saem porque a fonte nomeia os campos
+#          (`WaitForEvents`, `AddEvents`, `DeleteEvents`, `Flow.Sequence`,
+#          `When`), mas a página *What's New* — a única lida — não sustenta o que
+#          é DEFEITO nesses eixos. Julgar "esta janela é curta demais" ou "esta
+#          dependência é circular" exigiria pesquisa nova no `API_CodeRef`, e é o
+#          incremento 3. O QUE DESTRAVA: uma página da BMC que declare limite,
+#          default ou anti-padrão nesses eixos.
+#
+# V-CTM-3  **Validar o JSON contra o schema completo.** VETADO por concorrência
+#          com a ferramenta oficial: `ctm build` faz isso e é da BMC. O que vira
+#          `ctm.unresolved` aqui é o que não deu para LER, nunca o que está
+#          errado segundo um schema que este motor não carrega. Uma segunda
+#          implementação de validação divergiria da primeira e o operador não
+#          teria como saber qual das duas está certa.
+#
+# V-CTM-4  **Job type que a matriz não nomeia.** VETADO como ACHADO, e presente
+#          como recusa. A matriz cobre `9.0.21.200`–`9.0.22.100` e nomeia um job
+#          type só nessa faixa; a página *Job Types* publica 71. Acusar os outros
+#          70 diria "esta versão não suporta `Job:Command`", que é falso — eles
+#          são anteriores à faixa. Por isso o extrator só sonda o que a matriz
+#          nomeia, e a contagem do que ele NÃO perguntou sai na sentinela.
+
+catalog_version: 1
+schema_version: 1
+area: SF-CTM
+retrieved: 2026-09-01
+
+rules:
+
+  # A ÂNCORA É `ctm.job`, E NÃO `ctm.capability_incompatible`. A distinção decide
+  # o que o operador lê quando não há achado: com o fact derivado em
+  # `requires_facts`, um artefato limpo faria a regra sumir de `findings` E de
+  # `skipped` — indistinguível de "o extrator nunca rodou". Com `ctm.job`, um
+  # artefato lido e compatível reporta a regra como avaliada e silenciosa, que é
+  # a verdade. Mesma escolha de `SF-EMRK-001`, que ancora em `emrc.job_run`.
+  #
+  # `ctm.version_declared` acompanha porque sem ela o cruzamento não aconteceu, e
+  # avaliar a condição seria perguntar sobre um fact que o extrator sabe que não
+  # pôde produzir.
+  #
+  # `same_subject: true` com UMA condição não é redundante: o subject de
+  # `ctm.capability_incompatible` é o job (`Folder/Job`), e é ele que faz a regra
+  # emitir **um Finding por job** em vez de um só para o artefato inteiro. Quatro
+  # jobs com o mesmo defeito são quatro achados — reportar um faria o operador
+  # corrigir aquele, rodar de novo e descobrir o próximo, sem nunca saber quantos
+  # faltam.
+  - id: SF-CTM-001
+    category: controlm-jobs-as-code
+    title: Job usa capacidade que a versão declarada do Control-M Automation API não tem
+    requires_facts: [ctm.job, ctm.version_declared]
+    when:
+      same_subject: true
+      all:
+        - fact: ctm.capability_incompatible
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      A definição usa uma capacidade cuja fronteira de versão a fonte da BMC
+      declara literalmente, e a versão que o operador declarou está do lado
+      errado dessa fronteira. O achado carrega, no próprio fact de evidência,
+      qual capacidade (attrs.capability), qual fronteira (attrs.boundary — uma
+      de introduced_in, changed_in, deprecated_from, discontinued_in), em qual
+      versão ela foi lida (attrs.boundary_version) e qual versão foi declarada
+      (attrs.declared_version).
+      DE ONDE VEM O NÚMERO, e por que ele não está nesta regra. A fronteira mora
+      em knowledge/controlm/automation-api-matrix.yaml, lida da página What's New
+      do Automation API, e o cruzamento acontece no extrator porque o motor de
+      regras avalia expressão sobre um fact de cada vez e esta pergunta cruza
+      duas fontes. Repetir o número aqui faria a segunda cópia do mesmo fato, e
+      duas cópias divergem na primeira atualização.
+      O QUE A VERSÃO É, E O QUE ELA NÃO É. Ela é DECLARAÇÃO do operador, não
+      leitura do artefato: o JSON de Jobs-as-Code não carrega a versão do
+      Control-M que vai executá-lo, e nenhum dos blocos de Job Properties a
+      nomeia. Se a declaração estiver errada, o achado está errado junto — e é
+      por isso que ctm.version_declared marca source operator_declaration e
+      read_from_artifact false. Sem declaração, esta regra não é avaliada: ela
+      sai em skipped com reason requires_facts, e o extrator emite
+      ctm.capability_unresolved com reason version_not_declared.
+      O LIMITE, e ele é grande. Esta é a única incompatibilidade que a fonte
+      sustenta afirmar hoje. Das 31 versões da faixa, 9 não carregam afirmação
+      própria, e 175 linhas de Corrected Problems não couberam em eixo nenhum. A
+      matriz nomeia UM job type na faixa, e a página Job Types publica 71 — os
+      outros 70 são anteriores à faixa e não são sondados, porque acusá-los seria
+      dizer que uma versão não suporta Job:Command. Ausência de achado desta área
+      NUNCA significa compatível: significa que nada do que a matriz sustenta
+      afirmar foi contrariado. O que ficou sem resposta sai em
+      ctm.capability_unresolved e é contado em capability_unresolved_count na
+      sentinela ctm.analyzed.
+      O CUSTO é de DEPLOY, não de execução degradada. Um job type que o
+      Control-M/Server alvo não conhece é rejeitado por ctm deploy, ou aceito e
+      falha na primeira ordenação — e a descoberta acontece no ambiente alvo,
+      depois de o código ter passado por revisão e merge. Ver
+      knowledge/controlm/automation-api-matrix.md.
+    proposed_change:
+      - "Confirmar a versão real do Automation API do ambiente alvo antes de qualquer edição: `ctm --version` no cliente, ou a versão que o endpoint publica. A versão deste achado foi DECLARADA, não medida, e um achado sobre uma declaração errada é ruído caro."
+      - "Se a versão declarada está certa, trocar a capacidade pela alternativa que a versão alvo tem. Para `Job:DetachedEmbeddedScript` abaixo da fronteira, a alternativa é `Job:EmbeddedScript` (que a página Job Types publica e a matriz não datava dentro da faixa) mais o desacoplamento explícito no próprio script — o comportamento em background passa a ser do script, não do job type."
+      - "Se a alternativa não existe, atualizar o Control-M do ambiente alvo até a versão que a fronteira nomeia — e tratar isso como mudança de plataforma, com janela e plano próprios, nunca como parte do merge do job."
+      - "Consultar `sparkforge controlm describe --version <alvo>` para ver o que a versão alvo sustenta nos DOIS eixos antes de escolher: capacidade com fronteira, e exigência de componente (Java, Python, pip). Trocar o job type e esbarrar na exigência de Java seria descobrir a segunda barreira depois de já ter pago a primeira."
+      - "Se o achado for falso — a capacidade existe no ambiente e a matriz não sabe —, a correção é a MATRIZ: leia a página What's New da versão e acrescente ou corrija a entrada em knowledge/controlm/automation-api-matrix.yaml. Não silencie a regra."
+    risks:
+      - "A versão é declarada pelo operador. Uma declaração desatualizada — o ambiente foi atualizado e ninguém trocou o parâmetro — produz achado sobre uma barreira que já não existe."
+      - "Trocar o job type muda o modelo de execução, não só o nome: `Job:EmbeddedScript` roda em primeiro plano e o Control-M espera o fim; `Job:DetachedEmbeddedScript` desacopla. Trocar sem tratar isso muda o tempo de ocupação do Agent e a semântica de conclusão do job."
+      - "Atualizar o Control-M para cruzar a fronteira arrasta as exigências de componente da mesma faixa — Java 17 a partir de 9.0.21.325, Python 3.8.4 e pip 20.1.1 a partir de 9.0.22.010 — e essas são do Agent e do ambiente, não do JSON."
+      - "A matriz cobre 9.0.21.200 a 9.0.22.100 e é passado FECHADO. Ambiente acima do teto sai em ctm.capability_unresolved e não gera este achado: corrigir com base na fronteira mais próxima seria extrapolar."
+    tradeoffs:
+      - "Manter a capacidade e adiar a atualização é escolha legítima quando o job ainda não foi publicado no ambiente alvo — o custo é o deploy que falha depois, não agora."
+      - "Não há tradeoff de performance: a fronteira é de disponibilidade da capacidade, não de eficiência. A capacidade existe ou não existe naquela versão."
+    validation:
+      - "`ctm build` sobre o JSON corrigido, executado contra o endpoint da versão declarada, retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a definição é aceita naquela versão."
+      - "EIXO DE RESULTADO — o workflow produz o mesmo conjunto de jobs. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Trocar o job type não pode acrescentar, remover nem renomear job."
+      - "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e a lista de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item. É o que prova que a troca foi de mecanismo de execução e não de topologia do fluxo."
+      - "EIXO DE RESULTADO — o efeito do job é o mesmo. Uma ordenação (`run order`) no ambiente alvo termina em OK e o artefato que o job produz — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job type novo que roda sem erro e escreve outra coisa é a falha que este eixo existe para pegar."
+      - "`sparkforge analyze controlm-jobs --path <arquivo> --version <a mesma>` não produz mais SF-CTM-001, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
+    rollback: >
+      Reverter o commit da definição e reimplantar a versão anterior com `ctm
+      deploy`. O rollback é barato porque a definição é código versionado, e não
+      estado — mas ele NÃO desfaz uma ordenação já submetida no ambiente alvo: o
+      job que já entrou no Active continua com a definição com que entrou, e
+      cancelá-lo é operação de runtime, com confirmação de escopo.
+    sources:
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_What_s_New.htm", retrieved: 2026-09-01}
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm", retrieved: 2026-09-01}
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm", retrieved: 2026-09-01}
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm", retrieved: 2026-09-01}

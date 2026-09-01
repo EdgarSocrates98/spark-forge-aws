@@ -27,6 +27,7 @@ from sparkforge.facts import (
     call_graph,
     catalog_schema,
     consumers,
+    controlm_jobs,
     data_quality,
     emr_cluster,
     emr_eks,
@@ -59,6 +60,16 @@ EXTRACTORS = {
     "call_graph": call_graph,
     "catalog_schema": catalog_schema,
     "consumers": consumers,
+    # `controlm_jobs` entra nas DUAS listas manuais no MESMO commit da area
+    # SF-CTM -- a outra e `tests/test_rules_catalog_reachability.py` --, e
+    # esquecer uma delas NAO quebra nada: e o modo de falha silencioso que os
+    # dois arquivos documentam. Sem ele aqui, os doze kinds `ctm.*` nao sao
+    # verificados por ninguem e o criterio de golden -- todo kind de
+    # `EMITTED_KINDS` em algum golden -- passa sem ser avaliado, que e pior do
+    # que falhar. Medido pelo contrafactual: tirando esta linha,
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova nomeando
+    # os doze.
+    "controlm_jobs": controlm_jobs,
     "data_quality": data_quality,
     "emr_cluster": emr_cluster,
     # `emr_eks` entra nas DUAS listas no mesmo commit desta Task, ANTES de a area

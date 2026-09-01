@@ -12,7 +12,7 @@ defende.
 |---|---|---|
 | O que faz | executa tasks | **mede** o runtime |
 | Onde mora | `sparkforge/` menos `sparkforge/evals/` | `sparkforge/evals/`, `evals/`, `tests/test_fixtures_golden_*.py`, `scripts/check_evals.py` |
-| Superfície | CLI `sparkforge analyze/judge/case/next-step/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fase0.xml`, `evals/holdout/`, os 32 corpora de `fixtures/` |
+| Superfície | CLI `sparkforge analyze/judge/case/next-step/resume/migrate`, as tools MCP, `rules/catalog/` | `evals/fase0.xml`, `evals/holdout/`, os 33 corpora de `fixtures/` |
 
 ## O invariante, e a direção dele
 

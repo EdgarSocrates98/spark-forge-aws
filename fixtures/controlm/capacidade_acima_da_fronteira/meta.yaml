@@ -1,0 +1,23 @@
+name: capacidade_acima_da_fronteira
+proves: >
+  A segunda metade do contrafactual: `jobs.json` IDENTICO ao de
+  `capacidade_abaixo_da_fronteira`, e so `controlm_version` muda -- de
+  `9.0.21.300` para `9.0.22.010`, acima da fronteira que a matriz le em
+  `9.0.22.005`. O mesmo job sai como `ctm.capability_supported` e SF-CTM-001 nao
+  dispara.
+  E o golden NEGATIVO da regra pelo caminho que importa: nao e um artefato limpo
+  que nunca teve a capacidade, e o MESMO artefato numa versao que a tem. Uma
+  regra com a fronteira embutida acusaria os dois.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.action
+  - ctm.analyzed
+  - ctm.capability_supported
+  - ctm.dependency
+  - ctm.folder
+  - ctm.job
+  - ctm.schedule
+  - ctm.variable
+  - ctm.version_declared
+expects_rules: []

@@ -63,6 +63,10 @@ from sparkforge.facts.catalog_schema import (
 )
 from sparkforge.facts.cloudwatch import extract_cloudwatch_path
 from sparkforge.facts.consumers import extract_consumers_path, extract_consumers_tree
+from sparkforge.facts.controlm_jobs import (
+    extract_controlm_jobs_path,
+    extract_controlm_jobs_tree,
+)
 from sparkforge.facts.data_quality import (
     extract_data_quality_path,
     extract_data_quality_tree,
@@ -1894,6 +1898,54 @@ def controlm_describe(version: str) -> dict[str, Any]:
             f"{(conhecidas or ('<versao>',))[0]}",
             exit_code=2,
         ) from exc
+
+
+# --------------------------------------------------------------------------- #
+# analyze controlm-jobs
+# --------------------------------------------------------------------------- #
+#
+# A VERSAO E PARAMETRO, E ELA E OPCIONAL DE PROPOSITO. `--version` ausente NAO e
+# erro: o extrator le o artefato do mesmo jeito, emite folder, job, agendamento,
+# dependencia, acao e variavel, e devolve as capacidades observadas em
+# `ctm.capability_unresolved` com `reason: version_not_declared` e a medida que
+# as destrava. Exigir a versao faria o operador que so quer INVENTARIAR os jobs
+# ter de inventar um numero -- e um numero inventado atravessaria o cruzamento e
+# viraria achado.
+#
+# A FRONTEIRA DESTE VERBO, repetida onde a superficie a expoe: ele le DEFINICAO
+# de job, que e codigo-fonte, e nunca execucao. Nada aqui diz se o job rodou, em
+# quanto tempo, ou se a dependencia foi satisfeita -- isso e `run jobs:status`,
+# outra API, e exige a instancia do Control-M que este caminho nao tem.
+
+
+def _extract_controlm_jobs_facts(path: str, version: str | None) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com definicoes `Jobs-as-Code` ou para um "
+            f"arquivo .json:\n"
+            f"    sparkforge analyze controlm-jobs --path jobs/ --version 9.0.21.300 "
+            f"--out .sparkforge/facts_controlm.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_controlm_jobs_tree(target, repo_root=target, declared_version=version)
+    return extract_controlm_jobs_path(
+        target, repo_root=target.parent, declared_version=version
+    )
+
+
+def analyze_controlm_jobs(
+    path: str,
+    version: str | None = None,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_controlm_jobs_facts(path, version)
+    return _facts_page(facts, "ctm.unresolved", kind, limit, cursor, detail_level)
 
 
 # --------------------------------------------------------------------------- #
