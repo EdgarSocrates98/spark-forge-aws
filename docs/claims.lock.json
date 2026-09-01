@@ -527,22 +527,22 @@
       "type": "number"
     },
     {
-      "context": "O motivo dominante é o que diz onde está o limite. **91,8%** das não resolvidas são",
+      "context": "O motivo dominante é o que diz onde está o limite. **91,7%** das não resolvidas são",
       "doc": "docs/vnext/adrs/ADR-010-code-intelligence-indice-local.md",
       "id": "VNX-726",
       "line": 90,
-      "note": "fatia de UNKNOWN_RECEIVER sobre o total de nao resolvidas -- razao entre duas contagens que se movem juntas com a arvore, ao contrario dos valores absolutos, que por isso NAO entraram no texto do ADR",
+      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c \"import collections, pathlib, tempfile\nfrom sparkforge.codeintel.db import abrir\nfrom sparkforge.codeintel.index import indexar\nfrom sparkforge.codeintel.refs import extrair_referencias\nfrom sparkforge.codeintel.resolve import catalogo_do_banco, resolver\nfrom sparkforge.facts.scan import iter_source_files\nR = pathlib.Path('.').resolve()\nb = pathlib.Path(tempfile.mkdtemp()) / 'g.sqlite3'\nindexar(R, b)\ncat = catalogo_do_banco(abrir(b))\nrefs = {}\nfor p in iter_source_files(R, '*.py'):\n    rel = p.resolve().relative_to(R).as_posix()\n    try:\n        refs[rel] = extrair_referencias(p.read_text(encoding='utf-8'), rel)\n    except (OSError, UnicodeDecodeError, SyntaxError):\n        continue\nr = resolver(refs, cat)\nu = collections.Counter(n.reason for n in r.nao_resolvidas)['UNKNOWN_RECEIVER']\nprint('unknownreceiver=%s%%' % str(round(100 * u / len(r.nao_resolvidas), 1)).replace('.', ','))\"\n",
         "expect": {
           "kind": "contains",
-          "value": "unknownreceiver=91,8%"
+          "value": "unknownreceiver=91,7%"
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "91,8%",
+      "text": "91,7%",
       "type": "number"
     },
     {
@@ -2967,23 +2967,23 @@
       "type": "number"
     },
     {
-      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **462** nesta árvore.",
+      "context": "lados — os arquivos `*.py` que `iter_source_files(root, \"*.py\")` entrega, **463** nesta árvore.",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-640",
       "line": 196,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import pathlib; from sparkforge.facts.scan import iter_source_files; print(len(list(iter_source_files(pathlib.Path(\".\").resolve(), \"*.py\"))))'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 462
+          "value": 463
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "462",
+      "text": "463",
       "type": "number"
     },
     {
@@ -3684,43 +3684,43 @@
       "type": "number"
     },
     {
-      "context": "no mesmo corpus, tem **124007** bytes. O `grep` pela definição contendo o fragmento continua menor",
+      "context": "no mesmo corpus, tem **124829** bytes. O `grep` pela definição contendo o fragmento continua menor",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-674",
       "line": 248,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if O.search(l)); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 124007
+          "value": 124829
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "124007",
+      "text": "124829",
       "type": "number"
     },
     {
-      "context": "(**8004** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
+      "context": "(**8162** bytes), mas responde outra coisa — ele lista linhas de definição, e não diz que",
       "doc": "docs/harness/CODEINTEL-GAP.md",
       "id": "VNX-675",
       "line": 249,
-      "note": "remedido no fechamento da area EMR on EKS (2026-08-31): o corpus de *.py cresceu com sparkforge/facts/emr_eks.py e os arquivos de teste novos da entrega, varridos por iter_source_files; a prova le o artefato real",
+      "note": "remedido na entrega de `ReleaseDescriptor` (2026-08-31): o corpus de *.py cresceu com tests/test_runtime_matrix_drift.py, o guard de drift das quatro matrizes de runtime, varrido por iter_source_files; a prova le o artefato real",
       "proof": {
         "cmd": "python -c 'import re, pathlib; from sparkforge.facts.scan import iter_source_files; R = pathlib.Path(\".\").resolve(); F = [(p.relative_to(R).as_posix(), p.read_text(encoding=\"utf-8\")) for p in sorted(iter_source_files(R, \"*.py\"))]; total = 0; D = re.compile(\"^(?:async +def|def|class) +\" + \"[A-Za-z0-9_]*\" + re.escape(\"source\")); O = re.compile(re.escape(\"source\")); total += sum(len((r + \":\" + str(i) + \":\" + l + chr(10)).encode(\"utf-8\")) for r, t in F for i, l in enumerate(t.splitlines(), 1) if D.match(l.lstrip())); print(total)'",
         "expect": {
           "kind": "number",
           "pattern": "^(-?[0-9]+)",
-          "value": 8004
+          "value": 8162
         },
         "kind": "command",
         "tier": "fast"
       },
       "state": "PROVADA",
-      "text": "8004",
+      "text": "8162",
       "type": "number"
     },
     {

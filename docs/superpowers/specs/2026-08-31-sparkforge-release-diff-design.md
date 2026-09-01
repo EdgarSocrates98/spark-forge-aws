@@ -184,5 +184,63 @@ repositório.
 
 ## 8. Desvios
 
-Vazio. Preenchido quando a implementação medir algo que torne o texto acima
-errado.
+Preenchido pela **frente 1** (a base de dado: as quatro matrizes na mesma forma,
+os carregadores, o guard). As frentes 2 a 4 acrescentam abaixo.
+
+### D-1 da §2 estava desatualizada: `GLUE_MATRIX` já não era literal
+
+A §2 e a D-2 afirmam que `GLUE_MATRIX` "repete as cinco versões do YAML de Glue
+com os mesmos valores". **Medido em 2026-08-31:** ela já era derivada —
+`runtime_detect.py` a monta com uma compreensão sobre `runtime_matrix.load()`,
+filtrando para `spark`/`python`/`iceberg`, desde a Task 2 da fase SF-MIG. Não
+havia duas cópias do fato de Glue; havia **uma** cópia em código, a de EMR on
+EC2, e foi ela que saiu. A afirmação da §2 descreve o estado anterior àquela
+fase, não o estado medido.
+
+O que a §2 acerta e continua valendo: a matriz de Glue em `runtime_detect` tem
+**menos colunas** que o YAML (`scala` e `java` ficam de fora), e isso é
+deliberado — chave sem consumidor não deve vazar para `RuntimeContext` nem para
+golden.
+
+### O guard de drift achou uma célula divergente no par `.md`/`.yaml` de Glue
+
+`knowledge/glue/runtime-matrix.yaml` declara `scala: "2.12.18"` para Glue 5.0,
+com fonte (`migrating-version-50.html`) e data (2026-08-21); a tabela da §1 de
+`knowledge/glue/runtime-matrix.md` dizia `2.12`. **A célula com fonte e data
+venceu**, e a tabela do `.md` foi corrigida para `2.12.18` — que é também a
+forma que a linha de Glue 5.1 (Spark 3.5.6, mesmo Scala) já usava na mesma
+tabela. Nenhum outro par divergiu nas quatro plataformas.
+
+### `EMR_MATRIX` e a página de EMR on EC2 **não** divergiam
+
+A frente 1 previa achado aqui e não houve: as 30 releases e as cinco colunas
+coincidem célula a célula. Mover o dado para `knowledge/emr/runtime-matrix.yaml`
+deu **procedência** ao que já estava certo; não corrigiu valor nenhum, e
+`detect_runtime` devolve exatamente o mesmo para as 30 releases de EMR e as 5
+versões de Glue.
+
+### O guard ficou um mecanismo, e ele reduziu o número de parsers de dois para um
+
+`tests/test_runtime_matrix_drift.py` lê as quatro páginas com o mesmo parser,
+identificando a tabela pelo **cabeçalho** e recebendo por plataforma o
+vocabulário de componentes e o perfil de drift da série. Os dois parsers que
+existiam antes — um em `tests/test_runtime_emr_matrix.py`, outro em
+`tests/test_emr_serverless_runtime_boundary.py` — saíram; os dois arquivos
+ficaram com o que o guard não responde (comportamento no motor, e a invariante
+de vocabulário do Serverless).
+
+### O que o guard **não** cobre, declarado
+
+Componente que o YAML carrega e a página não publica **em tabela** não entra na
+comparação. Hoje isso é só `java` no YAML do Glue, cuja tabela da §1 não tem
+coluna de Java.
+
+### Custo de import medido
+
+Tirar a `EMR_MATRIX` do código custa uma leitura de YAML a mais na importação de
+`runtime_detect`: **+29 ms** no mínimo de 15 execuções (64 ms → 93 ms), **+21 ms**
+na mediana. Por chamada o custo é **zero** — `load_emr()` tem `lru_cache`, e o
+`pyyaml` desta máquina não tem `libyaml` (`yaml.CSafeLoader` ausente), que é de
+onde vêm os ~20 ms. Se algum dia isso incomodar, a saída é tornar `EMR_MATRIX`
+preguiçosa via `__getattr__` de módulo; não foi feito porque seria complexidade
+sem consumidor medido.

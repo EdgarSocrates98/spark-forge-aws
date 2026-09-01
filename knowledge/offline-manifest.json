@@ -126,7 +126,7 @@
     {
       "path": "knowledge/glue/runtime-matrix.md",
       "title": "runtime-matrix",
-      "sha256": "3397dd2338dbcf2e42cc6223502f496d54ebb1f30028877428a28664d7ac3130"
+      "sha256": "cf96ed744c571e3173850e833a5d9a2d7e061470861b67fc0a7be146f9a9dff7"
     },
     {
       "path": "knowledge/glue/workers-and-capacity.md",

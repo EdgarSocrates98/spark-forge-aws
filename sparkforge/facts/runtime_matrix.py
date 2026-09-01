@@ -286,13 +286,192 @@ def known_versions() -> list[str]:
 
 
 # --------------------------------------------------------------------------- #
+# As tres matrizes de EMR: on EC2, Serverless e on EKS
+# --------------------------------------------------------------------------- #
+#
+# AS TRES SAO A MESMA MECANICA E TRES VOCABULARIOS DIFERENTES, e essa e a coisa
+# toda. Nenhuma das tres deriva das outras -- a de EKS diverge da de EC2 em
+# celulas REAIS (4 de 26 releases comparaveis em Spark, 6 de 26 em Iceberg), e a
+# do Serverless nao publica tres das cinco colunas de EC2. O que elas
+# compartilham e o formato e as garantias de carga; o que as separa e o conjunto
+# de componentes que a respectiva fonte publica, e por isso o conjunto e um
+# parametro e nao um `if`.
+#
+# Chaves RESERVADAS numa linha de release: `sources` e `retrieved` declaram
+# procedencia daquela release especifica, quando ela difere da do documento --
+# `python` de `emr-7.13.0` no EC2 vem da release note daquela release, e as 34
+# linhas de EKS declaram cada uma a sua propria pagina. Elas nao sao componentes
+# e nao entram na matriz resolvida.
+_RESERVADAS = frozenset({"sources", "retrieved"})
+
+
+def _carrega_matriz_fechada(
+    caminho: Path,
+    componentes: frozenset[str],
+    plataforma: str,
+    listas: frozenset[str] = frozenset(),
+) -> dict[str, dict[str, Any]]:
+    """Carrega uma matriz de release com vocabulario FECHADO de componente.
+
+    Vocabulario fechado pelo mesmo motivo de `SOURCE_TYPES`: a unica forma
+    pratica de uma destas matrizes voltar a inventar eixo e alguem acrescentar
+    uma chave `python:` numa linha porque "o EC2 tem". Chave fora do conjunto
+    estoura na carga, com o nome do componente, da release e da plataforma.
+
+    So a forma curta (`spark: "3.5.2"`), com uma excecao declarada: os
+    componentes em `listas` chegam como sequencia e saem como `tuple`, porque a
+    fonte os publica como CONJUNTO e nao como valor -- e o unico caso hoje e
+    `python_installed` de EMR on EC2, a coluna de interpretadores instalados.
+    Achatar um conjunto num valor escolheria por conta propria qual deles o
+    PySpark usa.
+
+    A forma longa com `claims` existe so na matriz do Glue, onde houve disputa
+    entre fontes oficiais a registrar. Aqui nao ha celula em disputa -- ha
+    celula AUSENTE, que e outra coisa e ja tem semantica propria neste motor
+    (chave que nao existe faz `in_scope` reprovar o eixo, e a regra e pulada por
+    ausencia). Um registro em forma longa seria vocabulario sem consumidor,
+    entao ele estoura em vez de carregar meio entendido.
+    """
+    resolvida: dict[str, dict[str, Any]] = {}
+    for release, linha in _versoes(caminho).items():
+        if not isinstance(linha, dict):
+            raise RuntimeMatrixError(
+                f"{caminho}: release {release!r} nao e um mapa de componentes"
+            )
+        fora = sorted(set(linha) - componentes - _RESERVADAS)
+        if fora:
+            raise RuntimeMatrixError(
+                f"{caminho}: release {release!r} declara {fora} -- a fonte do "
+                f"{plataforma} publica apenas {sorted(componentes)}, e componente "
+                f"sem fonte e eixo inventado (ver o cabecalho do YAML)"
+            )
+        celulas: dict[str, Any] = {}
+        for componente, valor in linha.items():
+            if componente in _RESERVADAS:
+                continue
+            if componente in listas:
+                if not isinstance(valor, (list, tuple)) or not valor:
+                    raise RuntimeMatrixError(
+                        f"{caminho}: {release}.{componente} = {valor!r} -- este "
+                        f"componente e um CONJUNTO na fonte e precisa de lista nao "
+                        f"vazia; um escalar aqui achataria a coluna"
+                    )
+                celulas[componente] = tuple(str(v) for v in valor)
+                continue
+            if not isinstance(valor, str) or not valor.strip():
+                raise RuntimeMatrixError(
+                    f"{caminho}: {release}.{componente} = {valor!r} -- valor vazio "
+                    f"afirmaria leitura que nao aconteceu; omita a chave"
+                )
+            celulas[componente] = str(valor)
+        resolvida[str(release)] = celulas
+    return resolvida
+
+
+def _fontes_declaradas(caminho: Path) -> tuple[str, ...]:
+    """Toda URL que a matriz declara como fonte -- no documento e por release.
+
+    As duas escalas contam: a de documento cobre as celulas que uma pagina-tabela
+    sustenta inteiras, e a de release existe para a celula com procedencia
+    propria. Uma URL solta em qualquer das duas, sem entrada em
+    `knowledge/sources.lock.json`, nao teria hash nem data revalidados por
+    `scripts/refresh_knowledge.py`.
+    """
+    documento = _documento(caminho)
+    urls: list[str] = [str(u) for u in (documento.get("sources") or [])]
+    for linha in (documento.get("versions") or {}).values():
+        if isinstance(linha, dict):
+            urls.extend(str(u) for u in (linha.get("sources") or []))
+    vistas: dict[str, None] = {}
+    for url in urls:
+        vistas.setdefault(url, None)
+    return tuple(vistas)
+
+
+# --------------------------------------------------------------------------- #
+# EMR on EC2
+# --------------------------------------------------------------------------- #
+
+# `hadoop` E GUARDADO E NAO DERIVA: nenhuma regra do catalogo o tem em
+# `runtime_scope`. Fica na matriz porque e fato conferido e porque o guard de
+# drift compara a matriz contra a pagina de knowledge, que tem a coluna.
+# `python_installed` e a coluna de interpretadores INSTALADOS, que e conjunto;
+# `python` e o default do PySpark, que a AWS so documenta na serie 7.x.
+EMR_COMPONENTS = frozenset({"spark", "hadoop", "iceberg", "python_installed", "python"})
+_EMR_LISTAS = frozenset({"python_installed"})
+
+_EMR_RELATIVE = "emr/runtime-matrix.yaml"
+
+
+def _emr_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _EMR_RELATIVE)
+
+
+@lru_cache(maxsize=1)
+def load_emr() -> dict[str, dict[str, Any]]:
+    """Matriz do EMR on EC2, indexada pelo release label SEM o prefixo `emr-`.
+
+    Ate a entrega de `ReleaseDescriptor` este dado morava como LITERAL em
+    `sparkforge/facts/runtime_detect.py::EMR_MATRIX` -- 30 releases escritas a
+    mao, sem fonte e sem data de consulta. Medido celula a celula antes de
+    mover: o literal e as tabelas das secoes 2 e 3 de
+    `knowledge/emr/runtime-matrix.md` coincidiam nas 30 releases e nas cinco
+    colunas, sem uma divergencia. Mover deu procedencia ao dado; nao mudou
+    valor nenhum.
+    """
+    return _carrega_matriz_fechada(
+        _emr_path(), EMR_COMPONENTS, "EMR on EC2", _EMR_LISTAS
+    )
+
+
+@lru_cache(maxsize=1)
+def emr_sources() -> tuple[str, ...]:
+    return _fontes_declaradas(_emr_path())
+
+
+# --------------------------------------------------------------------------- #
+# EMR on EKS
+# --------------------------------------------------------------------------- #
+
+# Quatro componentes, e as duas ausencias sao o achado da area: a fonte do EKS
+# NAO publica `hadoop` (0 de 34 paginas -- `hadoop-client` na linha *Supported
+# components* e um nome, nao uma versao) e NAO publica `python` por release (2
+# de 34, e as duas em prosa, anunciando uma virada). Aceitar qualquer das duas
+# aqui seria copiar numero da matriz de EC2, que e a plataforma de onde ele
+# NAO pode vir -- as duas divergem em celulas reais.
+EMR_EKS_COMPONENTS = frozenset({"spark", "iceberg", "hudi", "delta"})
+
+_EMR_EKS_RELATIVE = "emr-eks/runtime-matrix.yaml"
+
+
+def _emr_eks_path() -> Path:
+    return safe_knowledge_file(knowledge_dir(), _EMR_EKS_RELATIVE)
+
+
+@lru_cache(maxsize=1)
+def load_emr_eks() -> dict[str, dict[str, Any]]:
+    """Matriz do EMR on EKS, indexada pela FAMILIA de release sem o prefixo
+    `emr-` (`"7.13.0"`, `"spark-8.0.0"`).
+
+    FAMILIA, nao variante de release label, e a limitacao e medida: a linha
+    *Supported applications* da fonte e publicada por familia, e a propria
+    `emr-7.7.0` declara que `emr-7.7.0-java8-latest` NAO tem Iceberg enquanto
+    `emr-7.7.0` tem. Derivar `iceberg` de um label com variante de Java erra
+    essa celula, e a secao 6 de `knowledge/emr-eks/runtime-matrix.md` registra
+    a recomendacao conservadora que decorre disso.
+    """
+    return _carrega_matriz_fechada(_emr_eks_path(), EMR_EKS_COMPONENTS, "EMR on EKS")
+
+
+@lru_cache(maxsize=1)
+def emr_eks_sources() -> tuple[str, ...]:
+    return _fontes_declaradas(_emr_eks_path())
+
+
+# --------------------------------------------------------------------------- #
 # EMR Serverless
 # --------------------------------------------------------------------------- #
 
-# Vocabulario FECHADO de componente, pelo mesmo motivo de `SOURCE_TYPES`: a
-# unica forma pratica de esta matriz voltar a inventar eixo e alguem acrescentar
-# uma chave `python:` numa linha porque "o EC2 tem". Chave fora daqui estoura na
-# carga, com o nome do componente e da release.
 EMR_SERVERLESS_COMPONENTS = frozenset({"spark", "iceberg"})
 
 
@@ -301,37 +480,10 @@ def load_emr_serverless() -> dict[str, dict[str, str]]:
     """Matriz do EMR Serverless, indexada pelo release label SEM o prefixo
     `emr-` (`"7.5.0"`, `"spark-8.0.0"`) -- a mesma normalizacao de
     `sparkforge.facts.runtime_detect._emr_key`.
-
-    So a forma curta (`spark: "3.5.2"`). A forma longa com `claims` existe na
-    matriz do Glue porque la houve disputa entre fontes oficiais a registrar;
-    aqui nao ha celula em disputa -- ha celula AUSENTE, que e outra coisa e ja
-    tem semantica propria neste motor (chave que nao existe faz `in_scope`
-    reprovar o eixo, e a regra e pulada por ausencia). Um registro em forma
-    longa aqui seria vocabulario sem consumidor, entao ele estoura em vez de
-    carregar meio entendido.
     """
-    caminho = _emr_serverless_path()
-    resolvida: dict[str, dict[str, str]] = {}
-    for release, linha in _versoes(caminho).items():
-        if not isinstance(linha, dict):
-            raise RuntimeMatrixError(
-                f"{caminho}: release {release!r} nao e um mapa de componentes"
-            )
-        fora = sorted(set(linha) - EMR_SERVERLESS_COMPONENTS)
-        if fora:
-            raise RuntimeMatrixError(
-                f"{caminho}: release {release!r} declara {fora} -- a fonte do EMR "
-                f"Serverless publica apenas {sorted(EMR_SERVERLESS_COMPONENTS)}, e "
-                f"componente sem fonte e eixo inventado (ver o cabecalho do YAML)"
-            )
-        for componente, valor in linha.items():
-            if not isinstance(valor, str) or not valor.strip():
-                raise RuntimeMatrixError(
-                    f"{caminho}: {release}.{componente} = {valor!r} -- valor vazio "
-                    f"afirmaria leitura que nao aconteceu; omita a chave"
-                )
-        resolvida[str(release)] = {c: str(v) for c, v in linha.items()}
-    return resolvida
+    return _carrega_matriz_fechada(
+        _emr_serverless_path(), EMR_SERVERLESS_COMPONENTS, "EMR Serverless"
+    )
 
 
 @lru_cache(maxsize=1)
@@ -343,5 +495,4 @@ def emr_serverless_sources() -> tuple[str, ...]:
     sem entrada no lock, nao teria hash nem data revalidados por
     `scripts/refresh_knowledge.py`.
     """
-    fontes = _documento(_emr_serverless_path()).get("sources") or []
-    return tuple(str(url) for url in fontes)
+    return _fontes_declaradas(_emr_serverless_path())

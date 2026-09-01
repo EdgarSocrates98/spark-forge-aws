@@ -37,10 +37,13 @@ import json
 from pathlib import Path
 
 import pytest
+from test_runtime_matrix_drift import PLATAFORMAS, tabela_do_documento
 
 from sparkforge.adapters._core import AdapterError, judge_findings
 from sparkforge.facts import runtime_matrix
 from sparkforge.facts.runtime_detect import EMR_MATRIX, EMR_SERVERLESS_MATRIX
+
+_SERVERLESS = next(p for p in PLATAFORMAS if p.nome == "emr-serverless")
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC = ROOT / "knowledge" / "emr-serverless" / "runtime-matrix.md"
@@ -65,49 +68,20 @@ SPARK_NO_SERVERLESS = "3.5.2"
 # de procedimento para 6.6.0).
 EIXOS_SEM_FONTE = ("python", "iceberg")
 
-_AUSENTE = {"**nao existe**", "**não existe**", "—", "-", ""}
-
-
 def _judge(release: str | None = None, facts_path: Path = FACTS_EMRS) -> dict:
     return judge_findings(facts_path=str(facts_path), emr=release)
 
 
-def _tabela_do_knowledge() -> dict[str, dict[str, str]]:
-    """Le as tabelas das secoes 2 e 4 de `knowledge/emr-serverless/runtime-matrix.md`.
-
-    Parsear o markdown em vez de reescrever os valores aqui e o que faz deste um
-    guard de DRIFT e nao uma terceira copia da matriz: ela existe em dois
-    lugares -- a pagina auditada e o YAML legivel por maquina -- e este teste e
-    a ponte entre eles. Mesmo mecanismo de
-    `tests/test_runtime_emr_matrix.py::_committed_matrix`.
-
-    As duas tabelas tem quatro colunas e se distinguem pelo rotulo: as da secao
-    2 sao `emr-<major>.<minor>.<patch>` e trazem (EC2, Serverless, bate); as da
-    secao 4 sao `emr-spark-*` e trazem (Spark, Iceberg, observacao).
-    """
-    linhas: dict[str, dict[str, str]] = {}
-    for linha in DOC.read_text(encoding="utf-8").splitlines():
-        if not linha.startswith("|"):
-            continue
-        # As duas tabelas nao escrevem o rotulo do mesmo jeito -- a da secao 4
-        # o poe entre crases --, e um parser que so aceite uma das formas leria
-        # metade da matriz e deixaria a outra metade sem guard nenhum.
-        celulas = [c.strip().strip("`") for c in linha.strip().strip("|").split("|")]
-        rotulo = celulas[0]
-        if not rotulo.startswith("emr-"):
-            continue
-        chave = rotulo[4:] if rotulo.lower().startswith("emr-") else rotulo
-        if rotulo.startswith("emr-spark-"):
-            linhas[chave] = {"spark": celulas[1], "iceberg": celulas[2]}
-            continue
-        serverless = celulas[2]
-        if serverless in _AUSENTE:
-            continue
-        linhas[chave] = {"spark": serverless}
-    return linhas
+# A tabela da pagina, lida pelo MESMO parser que serve as quatro plataformas.
+# Este arquivo tinha um parser proprio de markdown, e `tests/test_runtime_emr_
+# matrix.py` tinha outro; a entrega de `ReleaseDescriptor` juntou os dois num
+# mecanismo so, em `tests/test_runtime_matrix_drift.py`, e e la que o guard de
+# drift do YAML contra a pagina passou a morar. O que sobrou aqui e o uso da
+# tabela como CONTRAFACTUAL -- as duas matrizes discordam nesta release, e a
+# release que o Serverless nao publica --, que e outra pergunta.
+COMMITTED = tabela_do_documento(_SERVERLESS)
 
 
-COMMITTED = _tabela_do_knowledge()
 
 
 class TestAPremissa:
@@ -255,26 +229,20 @@ class TestOEksContinuaRecusando:
         assert erro.value.exit_code == 2
 
 
-class TestGuardDeDriftContraOKnowledge:
-    """A matriz legivel por maquina espelha a pagina auditada, celula a celula."""
+class TestOVocabularioDaMatrizContinuaFechado:
+    """A invariante que separa esta matriz da de EC2: coluna sem fonte nao
+    existe.
 
-    def test_a_pagina_foi_parseada_de_verdade(self):
-        assert len(COMMITTED) >= 26, (
-            f"o parser leu {len(COMMITTED)} linhas -- se o formato da tabela mudar, "
-            f"este guard passaria vazio"
-        )
-
-    def test_o_conjunto_de_releases_e_identico(self):
-        assert set(EMR_SERVERLESS_MATRIX) == set(COMMITTED)
-
-    @pytest.mark.parametrize("release", sorted(COMMITTED))
-    def test_cada_celula_casa_com_a_pagina(self, release):
-        assert EMR_SERVERLESS_MATRIX[release] == COMMITTED[release]
+    O guard de DRIFT (YAML contra a tabela da pagina, celula a celula) mora em
+    `tests/test_runtime_matrix_drift.py`, com as outras tres plataformas. O que
+    fica aqui e a invariante de VOCABULARIO, que e afirmacao sobre esta fonte e
+    nao sobre o espelho: nenhuma release numerada do Serverless publica `python`
+    ou `iceberg`.
+    """
 
     def test_nenhuma_release_numerada_carrega_python_ou_iceberg(self):
-        """A invariante que separa esta matriz da de EC2: coluna sem fonte nao
-        existe. As duas unicas com `iceberg` sao as `emr-spark-8.0*` da secao 4,
-        que a fonte do Serverless publica com sufixo."""
+        """As duas unicas com `iceberg` sao as `emr-spark-8.0*` da secao 4, que
+        a fonte do Serverless publica com sufixo."""
         for release, linha in EMR_SERVERLESS_MATRIX.items():
             assert "python" not in linha, (
                 f"{release} carrega `python`, e a fonte do Serverless nao o publica "

@@ -1,0 +1,297 @@
+# Matriz de runtime do Amazon EMR on EKS. Dado, nunca constante em Python.
+#
+# POR QUE ESTE ARQUIVO EXISTE, e por que ele nao existia. A pagina irma
+# `runtime-matrix.md` foi escrita para responder a bifurcacao D-4 da fase de EMR
+# on EKS -- "a AWS publica uma matriz de release para este runtime?" -- e
+# respondeu SIM, para Spark, Iceberg, Hudi e Delta. Ate esta entrega a resposta
+# ficou so em prosa: das quatro plataformas que este motor conhece, EMR on EKS
+# era a unica sem espelho executavel nenhum.
+#
+# A CHAVE E POR FAMILIA DE RELEASE, E ISSO E UMA LIMITACAO MEDIDA, nao um
+# atalho. A linha *Supported applications* da fonte e publicada por FAMILIA
+# (`emr-7.7.0`), nunca por variante de release label. E a propria 7.7.0 declara
+# que `emr-7.7.0-java8-latest` NAO TEM Iceberg, enquanto `emr-7.7.0` tem. Isto
+# e: a variante muda a resposta, e este arquivo nao a conhece. A variante NAO
+# entra como chave -- inventar uma linha `7.7.0-java8` seria afirmar uma tabela
+# por variante que a fonte nao publica. Quem consome esta matriz a partir de um
+# release label com variante precisa saber que a derivacao de `iceberg` ali e
+# insegura; a secao 6 do .md registra a recomendacao conservadora que decorre
+# disso (derivar `spark` sim, `iceberg` nao).
+#
+# O VOCABULARIO E FECHADO, e sao quatro componentes -- `spark`, `iceberg`,
+# `hudi`, `delta`. Uma chave fora desses quatro estoura na carga, e as duas que
+# mais tentam entrar sao justamente as duas que a fonte NAO publica:
+#
+#   hadoop  0 de 34 paginas. A linha *Supported components* nomeia
+#           `hadoop-client` -- um NOME de componente, nao uma versao. A coluna
+#           `hadoop` da matriz de EMR on EC2 nao tem contraparte aqui, e
+#           copia-la seria afirmar um numero que esta fonte nao publica.
+#   python  2 de 34 paginas, e nas duas em PROSA de "Changes and features", nao
+#           em tabela -- e as duas anunciam uma VIRADA (`emr-7.13.0` e
+#           `emr-spark-8.0.0`), nao um estado por release. Dois pontos nao sao
+#           uma matriz, e interpolar para as outras 32 seria inventar.
+#
+# E ELA NAO E DERIVAVEL DA DE EC2, o que aqui e mais forte do que no Serverless:
+# la a matriz de EC2 era inaplicavel por FALTA de fonte; aqui a fonte publica, e
+# em 4 de 26 releases comparaveis o Spark discorda e em 6 de 26 o Iceberg
+# discorda (secoes 2, 3 e 6 do .md). `emr-7.7.0` roda Iceberg `1.6.1-amzn-2`
+# aqui e `1.7.1-amzn-0` no EC2 -- minor diferente, que muda a aplicabilidade de
+# qualquer regra `SF-ICE-*` com range. Reusar a de EC2 nao seria afirmar sem
+# base: seria afirmar CONTRA a base.
+#
+# FONTE POR CELULA, e aqui ela e literal. Diferente do Serverless -- onde as 24
+# paginas por release ficaram fora da watchlist de proposito, e o lastro celula
+# a celula mora na tabela do .md --, as 34 paginas por familia de release do EKS
+# estao TODAS em `knowledge/sources.lock.json`, uma a uma, porque a secao 7 do
+# .md mede que elas sao a parte de MAIOR drift do documento. Entao cada linha
+# abaixo declara a sua propria pagina e a sua propria data de leitura.
+#
+# DUAS FORMAS DE VERSAO RARAS E REAIS, que qualquer parser desta area precisa
+# tolerar: `0.11-amzn-0` em `6.7.0` tem DOIS segmentos antes do sufixo, e
+# `4.0.0-amzn-1-spark` em `spark-8.0.0` tem um segmento DEPOIS do sufixo.
+schema_version: 1
+retrieved: "2026-08-31"
+versions:
+  "spark-8.0.0":
+    spark: "4.0.2-amzn-0"
+    iceberg: "1.10.1-amzn-0"
+    hudi: "1.1.0-amzn-0"
+    delta: "4.0.0-amzn-1-spark"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-spark-8.0.0.html"
+    retrieved: "2026-08-31"
+  "7.13.0":
+    spark: "3.5.6-amzn-2"
+    iceberg: "1.10.0-amzn-1"
+    hudi: "1.0.2-amzn-2"
+    delta: "3.3.2-amzn-2"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.13.0.html"
+    retrieved: "2026-08-31"
+  "7.12.0":
+    spark: "3.5.6-amzn-1"
+    iceberg: "1.10.0-amzn-0"
+    hudi: "1.0.2-amzn-1"
+    delta: "3.3.2-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.12.0.html"
+    retrieved: "2026-08-31"
+  "7.11.0":
+    spark: "3.5.6-amzn-0"
+    iceberg: "1.9.1-amzn-0"
+    hudi: "1.0.2-amzn-0"
+    delta: "3.3.2-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.11.0.html"
+    retrieved: "2026-08-31"
+  "7.10.0":
+    spark: "3.5.5-amzn-1"
+    iceberg: "1.8.1-amzn-0"
+    hudi: "0.15.0-amzn-7"
+    delta: "3.3.0-amzn-2"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.10.0.html"
+    retrieved: "2026-08-31"
+  "7.9.0":
+    spark: "3.5.5"
+    iceberg: "1.7.1-amzn-2"
+    hudi: "0.15.0-amzn-6"
+    delta: "3.3.0-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.9.0.html"
+    retrieved: "2026-08-31"
+  "7.8.0":
+    spark: "3.5.4"
+    iceberg: "1.7.1-amzn-1"
+    hudi: "0.15.0-amzn-5"
+    delta: "3.3.0-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.8.0.html"
+    retrieved: "2026-08-31"
+  "7.7.0":
+    spark: "3.5.3-amzn-0"
+    iceberg: "1.6.1-amzn-2"
+    hudi: "0.15.0-amzn-3"
+    delta: "3.2.1-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.7.0.html"
+    retrieved: "2026-08-31"
+  "7.6.0":
+    spark: "3.5.3-amzn-0"
+    iceberg: "1.6.1-amzn-2"
+    hudi: "0.15.0-amzn-3"
+    delta: "3.2.1-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.6.0.html"
+    retrieved: "2026-08-31"
+  "7.5.0":
+    spark: "3.5.2-amzn-1"
+    iceberg: "1.6.1-amzn-0"
+    hudi: "0.15.0-amzn-1"
+    delta: "3.2.0-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.5.0.html"
+    retrieved: "2026-08-31"
+  "7.4.0":
+    spark: "3.5.2-amzn-0"
+    iceberg: "1.6.1-amzn-0"
+    hudi: "0.15.0-amzn-1"
+    delta: "3.2.0-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.4.0.html"
+    retrieved: "2026-08-31"
+  "7.3.0":
+    spark: "3.5.1-amzn-1"
+    iceberg: "1.5.2-amzn-0"
+    hudi: "0.15.0-amzn-0"
+    delta: "3.2.0-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.3.0.html"
+    retrieved: "2026-08-31"
+  "7.2.0":
+    spark: "3.5.1-amzn-1"
+    iceberg: "1.5.0-amzn-0"
+    hudi: "0.14.1-amzn-0"
+    delta: "3.1.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.2.0.html"
+    retrieved: "2026-08-31"
+  "7.1.0":
+    spark: "3.5.0-amzn-1"
+    iceberg: "1.4.3-amzn-0"
+    hudi: "0.14.1-amzn-0"
+    delta: "3.0.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.1.0.html"
+    retrieved: "2026-08-31"
+  "7.0.0":
+    spark: "3.5.0-amzn-0"
+    iceberg: "1.4.2-amzn-0"
+    hudi: "0.14.0-amzn-1"
+    delta: "3.0.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-7.0.0.html"
+    retrieved: "2026-08-31"
+  "6.15.0":
+    spark: "3.4.1-amzn-2"
+    iceberg: "1.4.0-amzn-0"
+    hudi: "0.14.0-amzn-0"
+    delta: "2.4.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.15.0.html"
+    retrieved: "2026-08-31"
+  "6.14.0":
+    spark: "3.4.1-amzn-1"
+    iceberg: "1.3.0-amzn-0"
+    hudi: "0.13.1-amzn-2"
+    delta: "2.4.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.14.0.html"
+    retrieved: "2026-08-31"
+  "6.13.0":
+    spark: "3.4.1-amzn-0"
+    iceberg: "1.3.0-amzn-0"
+    hudi: "0.13.1-amzn-0"
+    delta: "2.4.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.13.0.html"
+    retrieved: "2026-08-31"
+  "6.12.0":
+    spark: "3.4.0-amzn-0"
+    iceberg: "1.3.0-amzn-0"
+    hudi: "0.13.1-amzn-0"
+    delta: "2.4.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.12.0.html"
+    retrieved: "2026-08-31"
+  "6.11.0":
+    spark: "3.3.2-amzn-0"
+    iceberg: "1.2.0-amzn-0"
+    hudi: "0.13.0-amzn-0"
+    delta: "2.2.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.11.0.html"
+    retrieved: "2026-08-31"
+  "6.10.0":
+    spark: "3.3.1-amzn-0"
+    iceberg: "1.1.0-amzn-0"
+    hudi: "0.12.2-amzn-0"
+    delta: "2.2.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.10.0.html"
+    retrieved: "2026-08-31"
+  "6.9.0":
+    spark: "3.3.0-amzn-1"
+    iceberg: "0.14.1-amzn-0"
+    hudi: "0.12.1-amzn-0"
+    delta: "2.1.0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.9.0.html"
+    retrieved: "2026-08-31"
+  "6.8.0":
+    spark: "3.3.0-amzn-0"
+    iceberg: "0.14.0-amzn-0"
+    hudi: "0.11.1-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.8.0.html"
+    retrieved: "2026-08-31"
+  "6.7.0":
+    spark: "3.2.1-amzn-0"
+    iceberg: "0.13.1"
+    hudi: "0.11-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.7.0.html"
+    retrieved: "2026-08-31"
+  "6.6.0":
+    spark: "3.2.0-amzn-0"
+    iceberg: "0.13.1"
+    hudi: "0.10.1-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.6.0.html"
+    retrieved: "2026-08-31"
+  "6.5.0":
+    spark: "3.1.2-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.5.0.html"
+    retrieved: "2026-08-31"
+  "6.4.0":
+    spark: "3.1.2-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.4.0.html"
+    retrieved: "2026-08-31"
+  "6.3.0":
+    spark: "3.1.1-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.3.0.html"
+    retrieved: "2026-08-31"
+  "6.2.0":
+    spark: "3.0.1-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-6.2.0.html"
+    retrieved: "2026-08-31"
+  "5.36.0":
+    spark: "2.4.8-amzn-2"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.36.0.html"
+    retrieved: "2026-08-31"
+  "5.35.0":
+    spark: "2.4.8-amzn-1"
+    hudi: "0.9.0-amzn-2"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.35.0.html"
+    retrieved: "2026-08-31"
+  "5.34.0":
+    spark: "2.4.8-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.34.0.html"
+    retrieved: "2026-08-31"
+  "5.33.0":
+    spark: "2.4.7-amzn-1"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.33.0.html"
+    retrieved: "2026-08-31"
+  "5.32.0":
+    spark: "2.4.7-amzn-0"
+    sources:
+      - "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-5.32.0.html"
+    retrieved: "2026-08-31"
