@@ -133,28 +133,74 @@ usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
 mensagem explícita em vez de comparar o repositório consigo mesmo.
 
-#### Os dois transportes MCP
+#### Ligando o servidor MCP
+
+Instale o extra `mcp` (ele traz `mcp>=1.0,<2`, `starlette`, `uvicorn` e os pins de
+segurança das transitivas):
 
 ```bash
-pip install -e ".[mcp]"
-
-# stdio — Claude Code, Devin CLI, CI. É o que .mcp.json configura no Claude Code.
-python -m sparkforge.adapters.mcp --transport stdio
-
-# streamable HTTP — Devin Desktop, que configura MCP por serverUrl.
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
-# serverUrl: http://127.0.0.1:8765/mcp
+pip install "sparkforge-aws[mcp]"
 ```
 
-**No Devin, `.mcp.json` não basta, e o motivo é medido.** O Devin CLI importa MCP do
-Claude Code (`read_config_from.claude`), mas o `.mcp.json` deste repositório é o do
-**plugin**: ele parametriza `PYTHONPATH` e `SPARKFORGE_CATALOG` por
-`${CLAUDE_PLUGIN_ROOT}`, variável do carregador de plugin do Claude Code que nenhuma
-página do Devin documenta expandir — sem expansão, o servidor sobe e morre na primeira
-leitura do catálogo com `CatalogError`. O Devin tem arquivo próprio
-(`.devin/mcp_config.json`, chave `mcpServers`) e comando próprio (`devin mcp add`): o
-procedimento dos dois, com o do Desktop por `serverUrl`, está em
-[`GUIA_DE_USO.md`](GUIA_DE_USO.md) seção 3.4.
+Depois escolha o transporte pela plataforma.
+
+**Claude Code, Devin CLI e CI — stdio.** O arquivo `.mcp.json` na raiz configura o
+Claude Code. Para o Devin CLI, o arquivo correto é `.devin/mcp_config.json`, porque
+`.mcp.json` usa `${CLAUDE_PLUGIN_ROOT}` — variável do carregador de plugin do Claude Code
+que nenhuma página do Devin documenta expandir; sem expansão, o servidor sobe e morre na
+primeira leitura do catálogo com `CatalogError`.
+
+```jsonc
+// .devin/mcp_config.json
+{
+  "mcpServers": {
+    "sparkforge": {
+      "command": "python",
+      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
+    }
+  }
+}
+```
+
+Ou, sem editar arquivo:
+
+```bash
+devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+devin mcp list
+```
+
+**Devin Desktop — streamable HTTP.** O Desktop configura MCP por `serverUrl`. Sobe o
+servidor localmente:
+
+```bash
+python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+```
+
+E aponte o Desktop para `http://127.0.0.1:8765/mcp`. Mantenha o processo rodando durante
+a sessão.
+
+##### Verificação rápida
+
+Em qualquer plataforma, após conectar o MCP, peça ao agente:
+
+```text
+Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+```
+
+Na linha de comando, sem MCP, a CLI faz o mesmo:
+
+```bash
+sparkforge runtime detect --glue 5.0
+```
+
+##### Troubleshooting
+
+- **`CatalogError: .../${CLAUDE_PLUGIN_ROOT}/...`:** você usou `.mcp.json` no Devin em vez de `.devin/mcp_config.json`.
+- **`ModuleNotFoundError` para `mcp`:** instale o extra `[mcp]`; a CLI sozinha não precisa dele, mas o servidor sim.
+- **No Desktop, `connection refused`:** o servidor HTTP não está rodando na URL e porta configuradas.
+- **`devin mcp list` vazio ou sem `sparkforge`:** o escopo do `mcp_config.json` pode ser global em vez de projeto; confira `.devin/mcp_config.json`.
+
+Para detalhes completos, veja [`GUIA_DE_USO.md`](GUIA_DE_USO.md) seção 3.4.
 
 O extra `mcp` fixa `mcp>=1.0,<2`: o SDK 2.x removeu os decoradores que
 `build_server()` usa para registrar os tools, e sem o teto uma instalação

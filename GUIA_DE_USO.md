@@ -228,9 +228,54 @@ python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
 # serverUrl: http://127.0.0.1:8765/mcp
 ```
 
+No Desktop va em **Devin Settings > MCP**, adicione um servidor com a URL acima e
+confirme. O processo do servidor precisa ficar rodando enquanto a sessao estiver ativa.
+
 **E quando não houver MCP nenhum:** a CLI `sparkforge` faz tudo o que as 44 tools fazem
 (seção 11), e é o que Codex e Copilot CI usam por não manterem sessão MCP interativa.
 Subagente não perde o MCP: *"Subagents can now call MCP tools directly"* (2026-04-30).
+
+### 3.5 Verificar que o MCP funciona
+
+Apos conectar:
+
+```text
+Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+```
+
+Ou, sem depender do agente, teste o stdio diretamente:
+
+```bash
+devin mcp list
+```
+
+Para o transporte HTTP, abra em outro terminal:
+
+```bash
+curl -i http://127.0.0.1:8765/mcp
+```
+
+Deve responder `405 Method Not Allowed` ou similar — isso confirma que o endpoint esta
+ativo. Um `connection refused` indica que o servidor nao subiu ou a porta esta errada.
+
+### 3.6 Troubleshooting comum
+
+| Sintoma | Causa provavel | Correcao |
+|---|---|---|
+| `CatalogError: .../${CLAUDE_PLUGIN_ROOT}/...` | `.mcp.json` sendo usado no Devin | Use `.devin/mcp_config.json` ou `devin mcp add` |
+| `ModuleNotFoundError: mcp` | extra `[mcp]` nao instalado | `pip install "sparkforge-aws[mcp]"` |
+| `devin mcp list` nao mostra `sparkforge` | arquivo no escopo global em vez de projeto | confira se `.devin/mcp_config.json` existe na raiz do repo |
+| Desktop nao conecta ao `serverUrl` | servidor HTTP nao rodando ou porta errada | suba com `python -m sparkforge.adapters.mcp --transport http ...` e verifique o endereco |
+| Tools aparecem, mas chamadas falham com `CatalogError` | `SPARKFORGE_CATALOG` aponta para caminho inexistente | remova a variavel ou aponte para um diretorio real |
+
+Para reinstalar do zero:
+
+```bash
+pip uninstall sparkforge-aws -y
+pip install "sparkforge-aws[mcp]"
+devin mcp remove -s project sparkforge || true
+devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+```
 
 ## 4. GitHub Copilot
 

@@ -34,6 +34,35 @@ Os dois arquivos ao lado já fazem o resto:
 As **46 skills** e os **38 coordenadores** o Devin lê sozinho de `.agents/`, que
 é formato nativo dele. Não há nada a configurar para isso.
 
+## Verificar se o MCP subiu
+
+Apos iniciar uma sessao Devin neste repositorio, pergunte:
+
+```text
+Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+```
+
+Ou, no Devin CLI:
+
+```bash
+devin mcp list
+```
+
+A saida deve conter `sparkforge`. Se nao aparecer, veja `GUIA_DE_USO.md` secao 3.6
+(Troubleshooting).
+
+## Transporte HTTP para o Devin Desktop
+
+O `.devin/mcp_config.json` e stdio. No Desktop, o MCP e configurado por `serverUrl`.
+Suba o servidor antes de abrir a sessao:
+
+```bash
+python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+```
+
+E aponte o Desktop para `http://127.0.0.1:8765/mcp`. O arquivo de referencia para
+Desktop esta em `payloads/devin/mcp_config_desktop.json`.
+
 ## As cinco regras que o motor impõe, e que o operador precisa aceitar
 
 Elas não são estilo. Violá-las produz o tipo de resultado que este projeto
