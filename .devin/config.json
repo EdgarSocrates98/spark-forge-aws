@@ -1,0 +1,81 @@
+// Configuração de PROJETO do Devin, versionada.
+//
+// Só três chaves são declaráveis por repositório -- `permissions`,
+// `read_config_from` e `hooks`. Todo o resto é "(user only)" e não se
+// parametriza por arquivo versionado, inclusive `subagents_enabled`,
+// `max-nesting` e modelo de subagente. Medido e citado em
+// `knowledge/devin/agents-and-subagents.md` §7.4.
+//
+// `hooks` está listada como disponível e NÃO está documentada -- a referência
+// não publica schema nem exemplo. Por isso ela não aparece aqui: declarar
+// forma que a fonte não sustenta é o defeito que este repositório persegue em
+// toda parte.
+{
+  // Por que `claude: false`.
+  //
+  // `.agents/skills/<nome>/SKILL.md` é formato NATIVO do Devin -- a tabela
+  // "Where Skills Live" da documentação o lista ao lado de `.devin/skills/` e
+  // `.windsurf/skills/` (medido em `knowledge/devin/agents-and-subagents.md`
+  // §8). Este repositório renderiza as MESMAS 46 skills nos dois espelhos:
+  // `.agents/skills/` e `.claude/skills/` têm 46 diretórios cada, mantidos em
+  // sincronia por `python scripts/sync_skills.py`.
+  //
+  // Importar `.claude/` junto carregaria cada skill duas vezes. `.agents/` é o
+  // espelho que o Devin lê sozinho, então ele basta.
+  //
+  // O gatilho que inverteria isto: se `.claude/` passar a carregar algo que
+  // `.agents/` não carrega. Hoje não carrega, e `python scripts/sync_skills.py
+  // --check` é o gate que prova a igualdade -- ele roda no CI.
+  "read_config_from": {
+    "claude": false,
+    "cursor": false,
+    "windsurf": false
+  },
+
+  // Os verbos de LEITURA do SparkForge não escrevem em lugar nenhum: extraem
+  // fact de artefato já em disco, aplicam o catálogo e imprimem JSON. Pedir
+  // confirmação a cada um transformaria uma investigação de dez chamadas em dez
+  // interrupções.
+  //
+  // Os verbos abaixo são os que `sparkforge --help` publica; conferidos contra
+  // a CLI, não escritos de memória.
+  //
+  // `collect` fica FORA do `allow` e dentro do `ask`, e a razão é de natureza:
+  // ele é o único que chama a AWS e grava artefato novo no repositório. Os
+  // demais leem o que já está lá.
+  "permissions": {
+    "allow": [
+      "Exec(sparkforge analyze)",
+      "Exec(sparkforge judge)",
+      "Exec(sparkforge rules)",
+      "Exec(sparkforge release)",
+      "Exec(sparkforge migrate)",
+      "Exec(sparkforge iceberg)",
+      "Exec(sparkforge glue)",
+      "Exec(sparkforge workload)",
+      "Exec(sparkforge capacity)",
+      "Exec(sparkforge finops)",
+      "Exec(sparkforge tune)",
+      "Exec(sparkforge benchmark)",
+      "Exec(sparkforge funcval)",
+      "Exec(sparkforge fuse)",
+      "Exec(sparkforge runtime)",
+      "Exec(sparkforge knowledge)",
+      "Exec(sparkforge code)",
+      "Exec(sparkforge economy)",
+      "Exec(sparkforge case)",
+      "Exec(sparkforge next-step)",
+      "Exec(sparkforge resume)",
+      "Exec(sparkforge handoff)",
+      "Exec(sparkforge playbook)",
+      "Exec(sparkforge report)",
+      "Exec(sparkforge validate)",
+      "Exec(git status)",
+      "Exec(git diff)",
+      "Exec(git log)"
+    ],
+    "ask": [
+      "Exec(sparkforge collect)"
+    ]
+  }
+}

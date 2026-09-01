@@ -2003,6 +2003,72 @@ class TestCliMcpEquivalence:
         )
         assert cli_payload == mcp_payload
 
+    def test_release_describe_matches(self, repo, capsys):
+        _, output = run(
+            ["release", "describe", "--platform", "emr_eks", "--release", "emr-7.7.0"],
+            capsys,
+        )
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool(
+            "sparkforge_release_describe", {"platform": "emr_eks", "release": "emr-7.7.0"}
+        )
+        assert cli_payload == mcp_payload
+        # As duas superficies precisam concordar tambem na NORMALIZACAO do rotulo:
+        # `emr-7.7.0` entra e `7.7.0` sai, nas duas.
+        assert cli_payload["release"] == "7.7.0"
+
+    def test_release_diff_matches(self, repo, capsys):
+        argumentos = {
+            "left_platform": "emr_ec2",
+            "left_release": "7.7.0",
+            "right_platform": "emr_eks",
+            "right_release": "7.7.0",
+        }
+        _, output = run(
+            [
+                "release", "diff",
+                "--left-platform", "emr_ec2", "--left-release", "7.7.0",
+                "--right-platform", "emr_eks", "--right-release", "7.7.0",
+            ],
+            capsys,
+        )
+        cli_payload = json.loads(output)
+
+        mcp_payload = call_tool("sparkforge_release_diff", argumentos)
+        assert cli_payload == mcp_payload
+        # O contrafactual do sub-projeto 1, nas duas superficies de uma vez: o
+        # MESMO rotulo publica Iceberg minor diferente no EC2 e no EKS, e o eixo
+        # sai `platform` -- nao `release`.
+        assert cli_payload["axis"] == ["platform"]
+        iceberg = next(c for c in cli_payload["changed"] if c["component"] == "iceberg")
+        assert iceberg["from"].startswith("1.7.1")
+        assert iceberg["to"].startswith("1.6.1")
+
+    def test_release_unknown_release_matches(self, repo, capsys):
+        """Erro de fronteira nas duas superficies, com a MESMA mensagem: exit 2
+        na CLI, dict de erro no MCP."""
+        assert main(
+            ["release", "describe", "--platform", "glue", "--release", "99.9"]
+        ) == 2
+        cli_message = capsys.readouterr().err.strip()
+
+        mcp_payload = call_tool(
+            "sparkforge_release_describe", {"platform": "glue", "release": "99.9"}
+        )
+        assert "error" in mcp_payload
+        assert cli_message == mcp_payload["error"].strip()
+        # A mensagem ENSINA: as releases conhecidas daquela plataforma vem junto.
+        assert "conhecidas:" in cli_message
+
+    def test_release_unknown_platform_names_the_four(self, repo, capsys):
+        assert main(
+            ["release", "describe", "--platform", "databricks", "--release", "1.0"]
+        ) == 2
+        erro = capsys.readouterr().err
+        for plataforma in ("glue", "emr_ec2", "emr_serverless", "emr_eks"):
+            assert plataforma in erro, plataforma
+
     def test_collect_verify_matches(self, repo, capsys):
         from sparkforge.collect.base import ArtifactEntry, register_artifact
 

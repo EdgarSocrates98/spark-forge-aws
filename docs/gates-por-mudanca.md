@@ -208,6 +208,16 @@ a partir dela no nível de módulo, `version_path` deriva os degraus da ordem da
 versões, e todo `runtime_scope` é comparado contra o que ela resolve. Uma versão
 acrescentada muda o conjunto de degraus de todo par que a atravessa.
 
+**Vale para as quatro matrizes desde 2026-09-01.** `version_path.steps` e
+`assessment.assess` recebem `platform` e leem `knowledge/emr/`, `knowledge/emr-eks/`
+e `knowledge/emr-serverless/` pela mesma porta (`release_descriptor`), então uma
+release nova em qualquer uma delas muda os degraus daquela plataforma — e só dela.
+Rode o mesmo lote, mais `tests/test_release_descriptor.py` e
+`tests/test_release_diff.py`. Rótulo fora do padrão de versão (`spark-8.0.0`,
+`spark-8.0-preview`) **não** entra na ordem: ele é recusado pelo nome, e o teste
+`test_rotulo_fora_do_padrao_e_recusado_pelo_nome` varre os quatro YAMLs procurando
+por eles.
+
 Componente pode ser escalar ou vir na **forma longa** (`status` + `claims`). Nesse
 caso a fonte de cada claim precisa estar em `knowledge/sources.lock.json` — o
 mesmo lock da lista `sources` da linha, e conferido por teste próprio. Fonte nova

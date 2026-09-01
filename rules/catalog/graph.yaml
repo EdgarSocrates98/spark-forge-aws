@@ -16,19 +16,25 @@
 # faixa de UM minor de Spark, e é ela que justifica o `runtime_scope` desta área.
 #
 # ─────────────────────────────────────────────────────────────────────────────
-# ESCOPO. Três regras declaram `runtime_scope: {}` e UMA declara
-# `{spark: [">=3.3", "<3.4"]}`, e a assimetria é decisão medida.
+# ESCOPO. Cinco regras declaram `runtime_scope: {}` e UMA declara
+# `{spark: [">=3.3", "<3.4"]}`, e a assimetria é decisão medida. (Eram três e
+# uma até 2026-08-31; `SF-GRAPH-005` e `SF-GRAPH-006` entraram do lado vazio, e
+# cada uma diz na própria linha por que — nenhuma das duas copiou por analogia.)
 #
 # O critério é o da Fase 5a (`README.md` deste diretório, seção "O que
 # `runtime_scope` é, e o que ele não é"): escopo não-vazio só quando o GATILHO
 # genuinamente varia com a versão E essa versão vem do RUNTIME, não de um fact
 # que a regra já lê.
 #
-# SF-GRAPH-001, -003 e -004 têm gatilho de ESTRUTURA de código — um argumento de
-# chamada, uma persistência ausente, um laço Python. Nenhum deles muda com a
-# versão do Spark, e um `runtime_scope` não-vazio ali apagaria a regra inteira
-# num `sparkforge judge` sobre um `.py` solto, porque `RuntimeContext.spark` não
-# vem de arquivo Python nenhum e `in_scope` falha FECHADA.
+# SF-GRAPH-001, -003, -004 e -006 têm gatilho de ESTRUTURA de código — um
+# argumento de chamada, uma persistência ausente, um laço Python. Nenhum deles
+# muda com a versão do Spark, e um `runtime_scope` não-vazio ali apagaria a
+# regra inteira num `sparkforge judge` sobre um `.py` solto, porque
+# `RuntimeContext.spark` não vem de arquivo Python nenhum e `in_scope` falha
+# FECHADA. SF-GRAPH-005 chega ao mesmo escopo por outro caminho: o gatilho dela
+# é a ausência de entrega no IaC, e a ausência da biblioteca na PLATAFORMA foi
+# medida em toda versão (cinco listas do Glue, quatro do release 7.13.0 do EMR,
+# V-AV-4) — não há faixa a declarar porque não há versão que preencha a lacuna.
 #
 # SF-GRAPH-002 é o inverso exato, e a §D-4 do spec desta fase registra por quê:
 # a afirmação é "não há artefato publicado para ESTE Spark". Sem saber o Spark,
@@ -123,24 +129,31 @@
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # O QUE ESTA TASK VETOU OU REDUZIU, medindo contra o motor e contra o corpus.
-# Os vetos acima vieram da FONTE; estes vieram do que o motor e as 25 fixtures
+# Os vetos acima vieram da FONTE; estes vieram do que o motor e as fixtures
 # conseguem provar (eram 19 quando a Task 5 os escreveu; a revisão final da
-# Fase 6a acrescentou seis, e nenhuma delas move estes vetos).
+# Fase 6a levou a 25, e a rodada de dívidas de 2026-08-31 a 28 -- as três novas
+# fecham V-GR-2 e guardam a metade acusatória de V-GR-1).
 #
-# V-GR-1  A REGRA DO IaC NAO ENTRA COMO REGRA PROPRIA, e por dois motivos
-#         independentes -- basta um.
+# V-GR-1  O VETO ENCOLHEU EM 2026-08-31, e nao sumiu: ele tinha duas metades
+#         independentes, e so uma delas era sobre o motor.
 #
-#         (a) O motor nao sabe dizer "esta chave nao esta la".
-#         `engine._absent_satisfied` (68-70) compara SO `kind`, e o kind aqui e
-#         `tf.attribute`, que existe nos dois lados do par: o job com
-#         `--extra-jars` e o job sem ele emitem `tf.attribute` igualmente, e o
-#         que muda e `attrs.key`. Nao ha `absent` filtrado por atributo, nem
-#         `where` negado. `absent: tf.attribute` seria falso para todo Terraform
-#         que o extrator leu. A saida seria um kind DERIVADO no extrator de
-#         Terraform, no molde de `tf.observability.spark_ui` -- capacidade que
-#         esta fase nao construiu, e que nao se inventa num catalogo.
+#         (a) FECHADA. O que faltava era um kind DERIVADO no extrator de
+#         Terraform, e ele existe:
+#         `facts/terraform.py::_check_graphframes_jar` decide UMA vez, por
+#         recurso, e emite `tf.graphframes.jar` ou `tf.graphframes.unknown` --
+#         molde exato de `tf.observability.spark_ui`. `SF-GRAPH-005` fica com
+#         `absent:` sobre a decisao ja tomada. A medicao que criou o veto
+#         continua valendo e e o motivo de o kind existir:
+#         `engine._absent_satisfied` (68-70) compara SO `kind`, e `tf.attribute`
+#         e o kind dos dois lados do par -- o job com `--extra-jars` e o job sem
+#         ele emitem `tf.attribute` igualmente, e o que muda e `attrs.key`. Nao
+#         ha `absent` filtrado por atributo nem `where` negado, e nao passou a
+#         haver: o motor nao mudou, o extrator e que passou a responder.
 #
-#         (b) Mesmo se o motor soubesse, a FONTE nao sustenta a metade negativa.
+#         (b) CONTINUA VETADA, e e a metade EXCULPATORIA -- tratar um
+#         `--extra-jars` presente como resolucao do problema de disponibilidade.
+#         Ela nunca foi sobre o motor, e o kind derivado nao a toca.
+#         A FONTE nao sustenta a metade negativa.
 #         `availability.md` §7 recusa afirmar que um jar de outro minor roda no
 #         Spark corrente ("Nao afirmar que um jar de Spark 3.4 roda em Spark
 #         3.3"): compatibilidade binaria entre minors nao e declarada por fonte
@@ -153,29 +166,41 @@
 #         achado como o que ele e: uma tentativa de contornar, nao uma prova de
 #         que a lacuna fechou.
 #
-# V-GR-2  A REGRA DE `checkpointInterval` FORA DA FAIXA NAO ENTRA NESTA FASE,
-#         embora a fonte de fato a autorize -- e ela e o unico limiar numerico
-#         com fonte primaria desta area. A doc diz "It is recommended to keep
-#         this value at 2 or below" e o codigo avisa em `value <= 0 || value >
-#         2`. Sao DOIS casos, e o corpus nao tem nenhum dos dois em condicao de
-#         virar regra:
+#         AS DUAS METADES ENVELHECEM DE FORMAS OPOSTAS, e e por isso que fechar
+#         uma nao fecha a outra. (a) valia enquanto ninguem escrevesse o kind, e
+#         escrever o kind a encerrou para sempre. (b) vale enquanto Spark 3.3
+#         nao tiver artefato publicado, e so uma release nova da biblioteca --
+#         ou uma declaracao de compatibilidade binaria entre minors, que nao
+#         existe hoje em fonte nenhuma -- a moveria. `SF-GRAPH-005` acusa "o IaC
+#         nao entrega a biblioteca"; ela NAO absolve quem entrega, e
+#         `SF-GRAPH-002` continua disparando nos dois lados do par.
 #
-#         - `> 2` nao tem fixture nenhuma. Regra sem golden positivo reprova
-#           `test_every_rule_has_a_fixture_that_fires_it`, e escrever a fixture
-#           e trabalho da Task 4, nao desta.
-#         - `<= 0` tem fixture (`saida_intervalo_nao_positivo`), mas ela e
-#           declarada no proprio `meta.yaml` como "segunda forma de escrever
-#           certo" e e uma das TRES saidas legitimas de V-GF-1. Acusar o mesmo
-#           artefato que o corpus declara correto -- ainda que por outra regra e
-#           com severidade menor, que e o que `graphframes-api.md` §4.3.2
-#           autoriza -- transformaria a saida documentada num achado, e o
-#           operador leria as duas coisas ao mesmo tempo: "voce escapou da
-#           exigencia" e "voce escapou errado".
+# V-GR-2  FECHADO EM 2026-08-31. Era veto de CORPUS e nao de fonte: a doc diz
+#         "It is recommended to keep this value at 2 or below", o codigo avisa
+#         em `value <= 0 || value > 2`, e a §4.3.2 autoriza explicitamente
+#         "outra regra, com severidade menor". Faltavam as duas fixtures, e elas
+#         existem:
 #
-#         Fica registrado como o proximo candidato desta area, com a fonte e o
-#         limiar ja apurados: `threshold: {max_interval: 2}` sobre
-#         `measures.checkpoint_interval`, assim que o corpus tiver o caso `> 2`
-#         e uma fixture de `<= 0` que NAO seja tambem a saida legitima.
+#         - `> 2` nao tinha fixture nenhuma, e regra sem golden positivo reprova
+#           `test_every_rule_has_a_fixture_that_fires_it`. Hoje:
+#           `intervalo_de_checkpoint_acima_do_limite`
+#           (`connectedComponents(checkpointInterval=10)`, com o diretorio
+#           configurado e tudo persistido -- um eixo so).
+#         - `<= 0` so tinha `saida_intervalo_nao_positivo`, que e uma das cinco
+#           saidas legitimas de V-GF-1 e que o proprio `meta.yaml` declara
+#           correta. Hoje: `checkpoint_desligado_fora_da_saida`
+#           (`labelPropagation(checkpoint_interval=0)`), onde nao ha
+#           `IOException` da qual escapar.
+#
+#         `SF-GRAPH-006` e a regra, com `threshold: {max_interval: 2}` sobre
+#         `measures.checkpoint_interval`, exatamente como esta linha previa.
+#
+#         O QUE O VETO PROTEGIA CONTINUA PROTEGIDO, e virou condicao no `when`:
+#         a carve-out por `attrs.name != "connectedComponents"` no ramo `<= 0`.
+#         Acusar o artefato que o corpus declara correto faria o relatorio dizer
+#         as duas coisas ao mesmo tempo -- "voce escapou da exigencia" e "voce
+#         escapou errado" --, e `saida_intervalo_nao_positivo` continua com
+#         `expects_rules: []`. Nao reintroduzir a condicao sem a carve-out.
 #
 # V-GR-3  NENHUMA REGRA DESTA AREA DECLARA `severity_by`. Toda faixa de
 #         severidade precisa de golden que a produza
@@ -497,3 +522,209 @@ rules:
           `SF-PY-004`, que acusa action dentro de laço sobre outro sujeito. A severidade
           é P2 e não maior justamente porque o laço pode ser a forma correta quando os
           grafos são independentes, e a análise estática não distingue.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # A METADE ACUSATORIA do que o veto V-GR-1 barrava, e SO ela. O kind derivado
+  # `tf.graphframes.jar` existe agora (`facts/terraform.py::_check_graphframes_jar`),
+  # no molde exato de `tf.observability.spark_ui`: o extrator decide UMA vez se
+  # o IaC entrega a biblioteca, e a regra fica com `absent:` sobre a decisao.
+  # A metade EXCULPATORIA continua vetada -- ver V-GR-1 no cabecalho.
+  #
+  # `absent:` SEM `same_subject`, e a isencao esta declarada em
+  # `tests/test_rules_catalog_reachability.py::ALLOWED_SET_LEVEL` pela mesma
+  # razao de `SF-ENV-003`: `graph.import` e `source_location` num `.py` e
+  # `tf.resource` e `tf_resource` num `.tf`. Os dois subjects nunca coincidem,
+  # entao `same_subject: true` faria a regra nao disparar em entrada nenhuma --
+  # verificado sobre `import_sem_jar_no_iac`. E a pergunta e mesmo sobre o
+  # conjunto: "este job usa a biblioteca, e a definicao dele entrega a
+  # biblioteca?" e uma pergunta sobre as duas metades do repositorio.
+  - id: SF-GRAPH-005
+    category: graph
+    title: Job usa GraphFrames e o IaC não entrega a biblioteca
+    # `graph.import` e nao `graph.algorithm`: o import e a evidencia honesta de
+    # "este job carrega a biblioteca", e e ele que falha primeiro, no driver,
+    # antes de qualquer stage. `tf.resource` e exigido junto para que um
+    # repositorio SEM Terraform saia como `skipped` com `requires_facts`, e
+    # nunca como "revisei o IaC e nao achei o jar" -- que e o que a ausencia
+    # sem explicacao le como.
+    requires_facts: [graph.import, tf.resource]
+    when:
+      all:
+        - fact: graph.import
+        - fact: tf.resource
+          where: {attrs.resource_type: aws_glue_job}
+        - absent: tf.graphframes.jar
+        # A segunda condicao e a que separa "nao declarou" de "o valor so
+        # existe depois do apply". `"--extra-jars" = "s3://${var.artefatos}/..."`
+        # e a forma NORMAL de escrever Terraform, e sem esta guarda a regra
+        # acusaria em P1 um job que entrega a biblioteca. Mesma guarda de
+        # `absent: tf.observability.unknown` em SF-GLUE-002.
+        - absent: tf.graphframes.unknown
+    status: structural
+    severity_default: P1
+    # ESCOPO VAZIO, e a decisao NAO e por analogia com SF-GRAPH-001. Aqui o
+    # gatilho e a ausencia de entrega no IaC, e a ausencia da biblioteca na
+    # plataforma foi medida em TODA versao, nao numa faixa: cinco listas de
+    # modulos do Glue (2.0, 3.0, 4.0, 5.0, 5.1) e quatro listas do release
+    # 7.13.0 do EMR, nenhuma citando GraphFrames (V-AV-4). Nao ha versao de
+    # runtime em que a plataforma preencha a lacuna, entao nao ha faixa a
+    # declarar. E o inverso exato de SF-GRAPH-002, cujo gatilho E o minor de
+    # Spark: aquela regra pergunta "ha o que instalar?", esta pergunta "alguem
+    # mandou instalar?", e as duas respostas envelhecem de formas diferentes.
+    runtime_scope: {}
+    explanation: >
+      Este job importa GraphFrames e a definição Terraform do job Glue não entrega a
+      biblioteca por porta nenhuma: nem `--extra-jars`, nem `--extra-py-files`, nem
+      `spark.jars`/`spark.jars.packages` dentro de `--conf`. GraphFrames nunca é
+      provido de fábrica — medido por ausência nas cinco listas de módulos Python do
+      Glue e nas quatro listas do release 7.13.0 do EMR —, então sem declaração o
+      `from graphframes import GraphFrame` levanta `ModuleNotFoundError` no driver,
+      antes de qualquer stage.
+      A AUSÊNCIA AQUI É MEDIDA, E NÃO INFERIDA DO SILÊNCIO. O extrator de Terraform
+      decide uma vez, por recurso, e emite o kind já decidido: `tf.graphframes.jar`
+      quando alguma das portas nomeia a biblioteca, `tf.graphframes.unknown` quando
+      uma delas existe com valor que só o `terraform apply` resolve. Esta regra só
+      dispara quando NENHUM dos dois foi emitido — ou seja, quando as portas foram
+      lidas e a biblioteca não estava em nenhuma. Sem o kind derivado a condição teria
+      de ser `absent: tf.attribute`, que é o kind dos dois lados do par de fixtures, e
+      a regra acusaria todo job de grafo, inclusive quem declarou o jar.
+      O QUE ESTE ACHADO NÃO AFIRMA, e a ressalva é parte dele: que o job vai falhar.
+      A definição efetiva pode ter sido alterada fora do IaC, o jar pode chegar por um
+      `--extra-jars` acrescentado na submissão, e um jar renomeado ou um fat jar
+      corporativo pode carregar a biblioteca sem dizê-lo no nome do arquivo. Confira a
+      definição pela API (`get-job`) antes de mexer no Terraform — o achado é sobre o
+      que o IaC declara.
+      E ELE NÃO É O INVERSO DE `SF-GRAPH-002`. Declarar o jar fecha ESTE achado e não
+      fecha aquele: na faixa de Spark 3.3 não existe artefato publicado, então
+      qualquer jar declarado ali foi construído para outro minor, e compatibilidade
+      binária entre minors não é declarada por fonte nenhuma. Um job pode disparar as
+      duas regras, e elas dizem coisas diferentes sobre a mesma linha.
+    proposed_change:
+      - "Declarar o jar de GraphFrames em `--extra-jars` no `default_arguments` do job, apontando para um caminho S3 versionado do artefato da linhagem compatível com o Spark do runtime."
+      - "Se a biblioteca já chega por outro caminho — jar renomeado, fat jar interno, `--conf spark.jars.packages` montado fora do IaC —, trazer essa declaração para o Terraform, para que a definição versionada diga a verdade sobre a dependência do job."
+      - "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência — aí não há jar a declarar."
+    risks:
+      - "Apontar `--extra-jars` para um jar construído contra outro minor de Spark pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança."
+      - "Acrescentar jar ao classpath do job muda o classpath inteiro: uma dependência transitiva do jar pode entrar em conflito com uma que o runtime já provê."
+      - "A biblioteca é dependência do cliente, sob responsabilidade compartilhada: declará-la no IaC assume a manutenção dela, sem SLA e sem correção de compatibilidade vinda da AWS."
+    tradeoffs:
+      - Declarar a dependência no IaC deixa a definição do job verdadeira e acopla o job a um artefato que alguém precisa manter; deixá-la implícita é barato hoje e quebra em silêncio na próxima recriação do job.
+    validation:
+      - "Executar o job e confirmar que ele passa do `import` — a falha de biblioteca ausente aparece no driver, antes de qualquer stage, e é a primeira coisa que muda."
+      - "Contagem de vértices, contagem de arestas e número de componentes do resultado, comparadas com a execução de referência: acrescentar o jar não pode mudar nenhuma das três."
+      - "`get-job` pela API, e não só o Terraform declarado, confirma qual `default_arguments` ficou efetivamente aplicado."
+    rollback:
+      - "Remover o argumento acrescentado restaura a definição anterior; nenhum efeito sobre o dado já escrito."
+    sources:
+      - url: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html
+        retrieved: 2026-08-05
+      - url: https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html
+        retrieved: 2026-08-05
+      - url: https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html
+        retrieved: 2026-08-05
+      - url: https://graphframes.io/02-quick-start/01-installation.html
+        retrieved: 2026-08-05
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # O UNICO LIMIAR NUMERICO COM FONTE PRIMARIA DESTA AREA, e o que o veto V-GR-2
+  # barrava por falta de corpus. As duas fixtures que faltavam existem agora, e
+  # a condicao e literalmente a do codigo da biblioteca -- `value <= 0 || value
+  # > 2` --, com UMA carve-out medida: em `connectedComponents`, o valor nao
+  # positivo E uma das saidas legitimas de V-GF-1, e o corpus declara
+  # `saida_intervalo_nao_positivo` correta no proprio `meta.yaml`. Acusa-la
+  # faria o relatorio dizer as duas coisas ao mesmo tempo sobre o mesmo
+  # artefato: "voce escapou da exigencia" e "voce escapou errado".
+  #
+  # A CARVE-OUT E POR `attrs.name`, e nao por `attrs.checkpoint_required`, e a
+  # razao e de motor: `checkpoint_required` esta AUSENTE em todo algoritmo que
+  # nao seja `connectedComponents`, e `_where_matches` reprova caminho ausente
+  # enquanto `_resolve_path` levanta `ExprError` -- que `_expr_matches` engole
+  # devolvendo `False` para a expressao INTEIRA. Uma condicao escrita sobre a
+  # ausencia do atributo apagaria justamente o ramo `<= 0`. `attrs.name` existe
+  # em todo `graph.algorithm`, e a pergunta que ele responde e a certa: existe
+  # excecao da qual escapar nesta chamada?
+  - id: SF-GRAPH-006
+    category: graph
+    title: checkpointInterval fora da faixa que a fonte recomenda
+    requires_facts: [graph.algorithm]
+    # `same_subject`: o remedio e um valor POR chamada, entao duas chamadas
+    # defeituosas sao dois achados e duas correcoes -- mesma decisao de
+    # SF-GRAPH-003 e SF-GRAPH-004, e mesmo limite declarado: a entidade medida
+    # e a FUNCAO (`engine._subject_group_key` usa `subject.symbol`), entao duas
+    # chamadas dentro da mesma funcao saem num achado so, com a evidencia das
+    # duas.
+    when:
+      same_subject: true
+      all:
+        - fact: graph.algorithm
+          expr: 'measures.checkpoint_interval > threshold.max_interval or (measures.checkpoint_interval <= 0 and attrs.name != "connectedComponents")'
+    threshold:
+      max_interval: 2
+    status: structural
+    severity_default: P2
+    # Escopo vazio, e pela razao da secao ESCOPO do cabecalho: o gatilho e um
+    # ARGUMENTO da chamada, lido do AST, e o limiar vem da biblioteca e nao do
+    # Spark. Nenhuma versao de Spark move o `2`. Um escopo nao-vazio aqui
+    # apagaria a regra inteira num `sparkforge judge` sobre um `.py` solto,
+    # porque `in_scope` falha FECHADA.
+    runtime_scope: {}
+    explanation: >
+      O valor de `checkpointInterval` desta chamada está fora da faixa que a
+      documentação recomenda, e o próprio código da biblioteca avisa nessa condição:
+      `if (value <= 0 || value > 2) logWarn("Set checkpointInterval to $value. This
+      would blow up the query plan and hang the driver for large graphs.")`. A
+      documentação é explícita no mesmo sentido — "It is recommended to keep this
+      value at `2` or below" — e o default é `2`. É o único limiar numérico desta área
+      com fonte primária: não é heurística de campo, é o número que a biblioteca
+      publica.
+      OS DOIS LADOS DA FAIXA DOEM PELO MESMO MECANISMO, e é o lineage. Acima de `2`, o
+      truncamento acontece raro demais: o plano lógico cresce a cada superpasso, o
+      Catalyst passa a gastar mais tempo otimizando do que o cluster gasta executando,
+      e o sintoma aparece no driver, não nos executores. Não positivo, o checkpoint é
+      desligado por inteiro (`shouldCheckpoint = checkpointInterval > 0`, e o bloco é
+      pulado), o que é a mesma doença sem o teto.
+      A EXCEÇÃO É MEDIDA, E É UMA SÓ. Em `connectedComponents`, um valor não positivo
+      não é descuido: é uma das saídas legítimas da exigência de checkpoint que
+      `SF-GRAPH-001` julga — sem diretório configurado, o algoritmo default levanta
+      `java.io.IOException` na primeira iteração, e desligar o checkpoint é o que a
+      documentação oferece como escape ("Set a nonpositive value to disable
+      checkpointing"). Acusar essa forma faria o relatório dizer duas coisas ao mesmo
+      tempo sobre o mesmo artefato. Fora de `connectedComponents` não há exceção da
+      qual escapar, e o valor não positivo é só checkpointing desligado num algoritmo
+      iterativo. O lado `> 2` não tem exceção nenhuma, e vale para toda chamada que
+      declare o argumento.
+      A SEVERIDADE É MENOR QUE A DE `SF-GRAPH-001` POR EXIGÊNCIA DA FONTE, e não por
+      calibragem: a documentação registra o caso como "outra regra, com severidade
+      menor". Aqui a biblioteca avisa (`logWarn`) e segue; lá ela lança exceção e o
+      job não passa da primeira iteração. Um plano que cresce é caro e diagnosticável;
+      uma `IOException` é um job que nunca roda.
+      O QUE ESTA REGRA NÃO LÊ: se a chamada declarou o argumento. Ausência de
+      `checkpointInterval` é o default `2`, que está dentro da faixa, e
+      `_expr_matches` devolve `False` para caminho ausente — então a regra é calada, e
+      não acusadora, sobre toda chamada que não nomeou o valor. Nenhuma ausência vira
+      achado aqui.
+    proposed_change:
+      - "Levar `checkpointInterval` para `1` ou `2` — `2` é o default e é o teto recomendado pela documentação."
+      - "Se o intervalo alto existia para economizar I/O de checkpoint, medir antes de mudar: o custo que ele evita é escrita em S3, e o custo que ele cria é tempo de planejamento no driver, que aparece como driver ocupado e cluster ocioso."
+      - "Se o objetivo era desligar o checkpoint num algoritmo que não é `connectedComponents`, avaliar se o grafo é mesmo pequeno o bastante para o lineage não crescer — a alternativa suportada é `use_local_checkpoints=True` na linhagem `io.graphframes`, que trunca sem exigir diretório persistente."
+    risks:
+      - "Baixar o intervalo aumenta a frequência de checkpoint e, com ela, escrita em S3 e I/O por iteração: o remédio de um gargalo do driver pode virar gargalo de escrita."
+      - "Diretório de checkpoint em S3 acumula dados entre execuções e não é limpo pelo Spark; aumentar a frequência sem política de expiração faz o custo de armazenamento crescer em silêncio."
+      - "`use_local_checkpoints` grava no disco do executor e a documentação declara que é mais rápido e MENOS confiável: a perda de um executor força recomputação."
+    tradeoffs:
+      - Checkpoint troca I/O por truncamento de lineage, e o intervalo é onde essa troca é calibrada; qual valor é melhor depende de qual dos dois recursos está saturado, e a fonte só declara o teto.
+    validation:
+      - "Contagem de vértices do resultado igual à contagem de vértices de entrada, e contagem distinta de componentes (ou de rótulos, conforme o algoritmo) idêntica antes e depois — mudar o intervalo é mudança de desempenho e não pode mover o resultado."
+      - "Tempo de planejamento no driver antes e depois: na Spark UI, o intervalo entre o fim de um job e a submissão do próximo é onde o crescimento do plano aparece."
+      - "Número de jobs Spark submetidos e presença dos jobs de checkpoint no intervalo esperado."
+    rollback:
+      - "Restaurar o valor anterior de `checkpointInterval`; é um argumento de chamada, a mudança é de uma linha e não toca dado escrito."
+    sources:
+      - url: https://graphframes.io/04-user-guide/05-traversals.html
+        retrieved: 2026-08-05
+      - url: https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/src/main/scala/org/graphframes/lib/ConnectedComponents.scala
+        retrieved: 2026-08-05
+      - url: https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/graphframes/lib/TwoPhase.scala
+        retrieved: 2026-08-05
+      - url: https://graphframes.io/04-user-guide/06-graph-clustering.html
+        retrieved: 2026-08-05

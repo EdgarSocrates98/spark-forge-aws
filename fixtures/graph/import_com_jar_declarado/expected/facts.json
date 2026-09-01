@@ -483,6 +483,24 @@
     }
   },
   {
+    "id": "f_e04b2a",
+    "schema_version": 1,
+    "kind": "tf.graphframes.jar",
+    "subject": {
+      "type": "tf_resource",
+      "file": "main.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.grafo_com_jar"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "main.tf",
+      "artifact_sha256": "a170d7794a3625a62530bd123eaa7cc0454d4c3627df1a230acdc09c069735fa",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
     "id": "f_adbdf8",
     "schema_version": 1,
     "kind": "tf.module_analyzed",

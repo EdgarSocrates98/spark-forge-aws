@@ -32,6 +32,7 @@ from sparkforge.facts import (
     consumers,
     data_quality,
     emr_cluster,
+    emr_eks,
     emr_serverless,
     event_log,
     funcval,
@@ -75,6 +76,11 @@ EXTRACTORS = (
     # primeira regra de EMR seria obrigada a declarar `blocked_on` sobre um
     # extrator que ja esta no repositorio desde a Task 3 da Fase 5b.
     emr_cluster,
+    # `emr_eks` entra nas DUAS listas no mesmo commit desta Task, ANTES de a area
+    # SF-EMRK existir: sem ele aqui, os oito kinds `emrc.*` contam como orfaos e a
+    # primeira regra de EMR on EKS seria forcada a `blocked_on` sobre um extrator
+    # que ja esta no repositorio desde a Task 6 desta fase.
+    emr_eks,
     # `emr_serverless` pela mesma razao, uma fase depois: sem ele aqui, os seis
     # kinds `emrs.*` contam como orfaos e as regras SF-EMRS da Task 5 seriam
     # obrigadas a declarar `blocked_on` sobre um extrator que ja esta no
@@ -325,6 +331,17 @@ class TestAbsentSemSameSubjectSeJustifica:
             "onde o ApplicationMaster roda -- o ResourceManager e um so, entao "
             "nao ha versao por grupo dessa pergunta; `same_subject` faria a "
             "regra nunca disparar."
+        ),
+        # A pergunta e sobre as DUAS metades do repositorio: "este `.py`
+        # importa GraphFrames, e a definicao Terraform do job entrega a
+        # biblioteca?". `graph.import` tem subject `source_location` num `.py` e
+        # `tf.resource` tem subject `tf_resource` num `.tf`: os dois nunca
+        # coincidem. Verificado: com `same_subject: true` nenhum grupo contem as
+        # duas metades e a regra deixa de disparar em qualquer entrada,
+        # inclusive em `import_sem_jar_no_iac`. Mesma natureza de SF-ENV-003.
+        "SF-GRAPH-005": (
+            "correlaciona codigo Python com Terraform; os subjects nunca "
+            "coincidem e `same_subject` faria a regra nunca disparar."
         ),
         # SF-GLUE-005 saiu desta lista ao ser desbloqueada. A isencao existia
         # para justificar `absent: spark.stage.spill` sem `same_subject`, e

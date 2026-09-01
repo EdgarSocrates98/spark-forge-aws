@@ -1,0 +1,42 @@
+{
+  "read_config_from": {
+    "claude": false,
+    "cursor": false,
+    "windsurf": false
+  },
+  "permissions": {
+    "allow": [
+      "Exec(sparkforge analyze)",
+      "Exec(sparkforge judge)",
+      "Exec(sparkforge rules)",
+      "Exec(sparkforge release)",
+      "Exec(sparkforge migrate)",
+      "Exec(sparkforge iceberg)",
+      "Exec(sparkforge glue)",
+      "Exec(sparkforge workload)",
+      "Exec(sparkforge capacity)",
+      "Exec(sparkforge finops)",
+      "Exec(sparkforge tune)",
+      "Exec(sparkforge benchmark)",
+      "Exec(sparkforge funcval)",
+      "Exec(sparkforge fuse)",
+      "Exec(sparkforge runtime)",
+      "Exec(sparkforge knowledge)",
+      "Exec(sparkforge code)",
+      "Exec(sparkforge economy)",
+      "Exec(sparkforge case)",
+      "Exec(sparkforge next-step)",
+      "Exec(sparkforge resume)",
+      "Exec(sparkforge handoff)",
+      "Exec(sparkforge playbook)",
+      "Exec(sparkforge report)",
+      "Exec(sparkforge validate)",
+      "Exec(git status)",
+      "Exec(git diff)",
+      "Exec(git log)"
+    ],
+    "ask": [
+      "Exec(sparkforge collect)"
+    ]
+  }
+}

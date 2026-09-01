@@ -78,5 +78,74 @@
         "retrieved": "2026-08-05"
       }
     ]
+  },
+  {
+    "rule_id": "SF-GRAPH-005",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Job usa GraphFrames e o IaC não entrega a biblioteca",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 12,
+      "col": 0,
+      "end_line": 12,
+      "symbol": "",
+      "snippet": "from graphframes import GraphFrame"
+    },
+    "evidence": [
+      "f_32bc0d",
+      "f_d9303b"
+    ],
+    "measured": {
+      "line": 12
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Este job importa GraphFrames e a definição Terraform do job Glue não entrega a biblioteca por porta nenhuma: nem `--extra-jars`, nem `--extra-py-files`, nem `spark.jars`/`spark.jars.packages` dentro de `--conf`. GraphFrames nunca é provido de fábrica — medido por ausência nas cinco listas de módulos Python do Glue e nas quatro listas do release 7.13.0 do EMR —, então sem declaração o `from graphframes import GraphFrame` levanta `ModuleNotFoundError` no driver, antes de qualquer stage. A AUSÊNCIA AQUI É MEDIDA, E NÃO INFERIDA DO SILÊNCIO. O extrator de Terraform decide uma vez, por recurso, e emite o kind já decidido: `tf.graphframes.jar` quando alguma das portas nomeia a biblioteca, `tf.graphframes.unknown` quando uma delas existe com valor que só o `terraform apply` resolve. Esta regra só dispara quando NENHUM dos dois foi emitido — ou seja, quando as portas foram lidas e a biblioteca não estava em nenhuma. Sem o kind derivado a condição teria de ser `absent: tf.attribute`, que é o kind dos dois lados do par de fixtures, e a regra acusaria todo job de grafo, inclusive quem declarou o jar. O QUE ESTE ACHADO NÃO AFIRMA, e a ressalva é parte dele: que o job vai falhar. A definição efetiva pode ter sido alterada fora do IaC, o jar pode chegar por um `--extra-jars` acrescentado na submissão, e um jar renomeado ou um fat jar corporativo pode carregar a biblioteca sem dizê-lo no nome do arquivo. Confira a definição pela API (`get-job`) antes de mexer no Terraform — o achado é sobre o que o IaC declara. E ELE NÃO É O INVERSO DE `SF-GRAPH-002`. Declarar o jar fecha ESTE achado e não fecha aquele: na faixa de Spark 3.3 não existe artefato publicado, então qualquer jar declarado ali foi construído para outro minor, e compatibilidade binária entre minors não é declarada por fonte nenhuma. Um job pode disparar as duas regras, e elas dizem coisas diferentes sobre a mesma linha.",
+    "proposed_change": [
+      "Declarar o jar de GraphFrames em `--extra-jars` no `default_arguments` do job, apontando para um caminho S3 versionado do artefato da linhagem compatível com o Spark do runtime.",
+      "Se a biblioteca já chega por outro caminho — jar renomeado, fat jar interno, `--conf spark.jars.packages` montado fora do IaC —, trazer essa declaração para o Terraform, para que a definição versionada diga a verdade sobre a dependência do job.",
+      "Se o algoritmo em uso é simples (componentes conexos, graus, contagem de triângulos), avaliar reescrevê-lo em Spark SQL nativo e remover a dependência — aí não há jar a declarar."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Apontar `--extra-jars` para um jar construído contra outro minor de Spark pode funcionar em teste e falhar em produção com `NoSuchMethodError`, num ponto distante da mudança.",
+      "Acrescentar jar ao classpath do job muda o classpath inteiro: uma dependência transitiva do jar pode entrar em conflito com uma que o runtime já provê.",
+      "A biblioteca é dependência do cliente, sob responsabilidade compartilhada: declará-la no IaC assume a manutenção dela, sem SLA e sem correção de compatibilidade vinda da AWS."
+    ],
+    "tradeoffs": [
+      "Declarar a dependência no IaC deixa a definição do job verdadeira e acopla o job a um artefato que alguém precisa manter; deixá-la implícita é barato hoje e quebra em silêncio na próxima recriação do job."
+    ],
+    "validation": [
+      "Executar o job e confirmar que ele passa do `import` — a falha de biblioteca ausente aparece no driver, antes de qualquer stage, e é a primeira coisa que muda.",
+      "Contagem de vértices, contagem de arestas e número de componentes do resultado, comparadas com a execução de referência: acrescentar o jar não pode mudar nenhuma das três.",
+      "`get-job` pela API, e não só o Terraform declarado, confirma qual `default_arguments` ficou efetivamente aplicado."
+    ],
+    "rollback": [
+      "Remover o argumento acrescentado restaura a definição anterior; nenhum efeito sobre o dado já escrito."
+    ],
+    "sources": [
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-python-libraries.html",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-7130-release.html",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://graphframes.io/02-quick-start/01-installation.html",
+        "retrieved": "2026-08-05"
+      }
+    ]
   }
 ]

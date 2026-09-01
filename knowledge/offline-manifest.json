@@ -6,7 +6,7 @@
     {
       "path": "knowledge/INDEX.md",
       "title": "INDEX",
-      "sha256": "133c8da9f502ca3a09d2953b5c6dfa16a38f2ff4c6ca03247234217bba5e79a9"
+      "sha256": "99b0b5f941bac65e70a4406d1d7eb4234836391b139cb67e1edd77b2737a4a91"
     },
     {
       "path": "knowledge/agent-creation.md",
@@ -79,6 +79,16 @@
       "sha256": "f9eb3880b318a2bca3c911ab799338b3928b29ac086df2608979e2df09771946"
     },
     {
+      "path": "knowledge/emr-eks/job-run-configuration.md",
+      "title": "job-run-configuration",
+      "sha256": "d107cf2c310ab6c52c892bb5e28764e2ae60366bafde7f96293643e227ec4d2d"
+    },
+    {
+      "path": "knowledge/emr-eks/runtime-matrix.md",
+      "title": "runtime-matrix",
+      "sha256": "d05b25f99422412d01962c475293602aa0340c6682272dd82994ebcb9729293c"
+    },
+    {
       "path": "knowledge/emr-serverless/application-configuration.md",
       "title": "application-configuration",
       "sha256": "4b2fe40ba32aa556f8fc817031811ab8b717728b11a681a81a22be3814b66137"
@@ -86,7 +96,7 @@
     {
       "path": "knowledge/emr-serverless/runtime-matrix.md",
       "title": "runtime-matrix",
-      "sha256": "8cc4e2a5873d4224896cf9e9931668fe968e111021aa1c8f23f8120cc3476a73"
+      "sha256": "e8f6d71104544bb6d8e9879bb73e410797c52e896daee15b1a747d13a6755fc1"
     },
     {
       "path": "knowledge/emr/cluster-configuration.md",
@@ -116,7 +126,7 @@
     {
       "path": "knowledge/glue/runtime-matrix.md",
       "title": "runtime-matrix",
-      "sha256": "3397dd2338dbcf2e42cc6223502f496d54ebb1f30028877428a28664d7ac3130"
+      "sha256": "cf96ed744c571e3173850e833a5d9a2d7e061470861b67fc0a7be146f9a9dff7"
     },
     {
       "path": "knowledge/glue/workers-and-capacity.md",
@@ -211,7 +221,7 @@
     {
       "path": "knowledge/storage/iceberg-v3.md",
       "title": "iceberg-v3",
-      "sha256": "325f1dafdd0abe5af5861fb406738289e78cc4e6c9cad2f203b76c001c4c2ac2"
+      "sha256": "2bcaacd3037dac96401b4a245526fd06f7869c1dc9770a8946ae52d2621a8b49"
     },
     {
       "path": "knowledge/storage/parquet-layout.md",

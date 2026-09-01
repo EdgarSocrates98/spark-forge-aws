@@ -129,8 +129,9 @@ Use the emr-infra-reviewer profile as a subagent to review this EMR cluster.
 ```
 
 A dispatchable skill is invoked by name, and the harness decides whether it runs inline or
-as a subagent (`subagent: true` says it is safe to dispatch; only two of the twelve also
-name an `agent:`):
+as a subagent (`subagent: true` says it is safe to dispatch; a skill also names an `agent:`
+only when exactly one coordinator declares it — the authoritative list is
+`DISPATCHABLE_SKILLS` in `scripts/sync_skills.py`, never a count copied here):
 
 ```text
 Use the review-emr-cluster skill on this cluster dump.

@@ -761,6 +761,85 @@ class TestCollectEmrServerless:
         )
 
 
+class FakeEmrContainersClient:
+    """DUAS operacoes, em contraste deliberado com `FakeEmrServerlessClient`
+    (uma) e `FakeEmrClient` (seis): `DescribeVirtualCluster` e `DescribeJobRun`
+    moram em APIs separadas e o coletor precisa das duas para montar o
+    arquivo autocontido que o extrator le."""
+
+    def __init__(self):
+        self.calls: list[tuple[str, dict]] = []
+
+    def describe_virtual_cluster(self, **kwargs):
+        self.calls.append(("describe_virtual_cluster", kwargs))
+        return {
+            "virtualCluster": {
+                "id": kwargs["id"],
+                "name": "meu-cluster",
+                "state": "RUNNING",
+                "containerProvider": {
+                    "type": "EKS",
+                    "id": "meu-cluster-eks",
+                    "info": {"eksInfo": {"namespace": "spark-jobs"}},
+                },
+            }
+        }
+
+    def describe_job_run(self, **kwargs):
+        self.calls.append(("describe_job_run", kwargs))
+        return {
+            "jobRun": {
+                "id": kwargs["id"],
+                "name": "etl-diario",
+                "virtualClusterId": kwargs["virtualClusterId"],
+                "state": "COMPLETED",
+                "releaseLabel": "emr-7.5.0-latest",
+            }
+        }
+
+
+class TestCollectEmrEks:
+    def _collect(self, tmp_path, monkeypatch, now="2026-08-31T00:00:00Z"):
+        emrc = FakeEmrContainersClient()
+        monkeypatch.setattr(
+            aws, "require_boto3", lambda: FakeBoto3(**{"emr-containers": emrc})
+        )
+        entry = aws.collect_emr_eks("0abc", "0run", tmp_path, now=now)
+        return emrc, entry, json.loads((tmp_path / entry.path).read_text(encoding="utf-8"))
+
+    def test_collect_emr_eks_grava_as_duas_respostas_num_arquivo(self, tmp_path, monkeypatch):
+        emrc, entry, gravado = self._collect(tmp_path, monkeypatch)
+        assert set(gravado) == {"virtualCluster", "jobRun"}
+        assert gravado["jobRun"]["id"] == "0run"
+        assert gravado["virtualCluster"]["state"] == "RUNNING"
+        assert entry.path == ".sparkforge/artifacts/emr_eks/0abc_0run.json"
+        assert emrc.calls == [
+            ("describe_virtual_cluster", {"id": "0abc"}),
+            ("describe_job_run", {"id": "0run", "virtualClusterId": "0abc"}),
+        ]
+
+    def test_the_written_artifact_is_readable_by_the_extractor(self, tmp_path, monkeypatch):
+        """O contrato entre coletor e extrator, provado ponta a ponta: se o
+        shape divergir, este teste fica vermelho."""
+        from sparkforge.facts.emr_eks import extract_emr_eks_path
+
+        _, entry, _ = self._collect(tmp_path, monkeypatch)
+        facts = extract_emr_eks_path(tmp_path / entry.path, repo_root=tmp_path)
+        kinds = {f.kind for f in facts}
+        assert "emrc.unresolved" not in kinds
+        assert {"emrc.virtual_cluster", "emrc.job_run"} <= kinds
+
+    def test_offline_hit_does_not_touch_boto3(self, tmp_path, monkeypatch):
+        emrc, first, _ = self._collect(tmp_path, monkeypatch)
+        before = len(emrc.calls)
+        monkeypatch.setattr(
+            aws, "require_boto3", lambda: FakeBoto3(**{"emr-containers": emrc})
+        )
+        second = aws.collect_emr_eks("0abc", "0run", tmp_path, now="2026-08-31T01:00:00Z")
+        assert second.collected_at == first.collected_at
+        assert len(emrc.calls) == before
+
+
 class TestCollectVerifyIntegration:
     def test_verify_reports_missing_artifact_with_its_recollect_command(self, tmp_path):
         from sparkforge.collect.base import ArtifactEntry, register_artifact

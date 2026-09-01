@@ -4,6 +4,7 @@ description: Analisar Glue, EMR, runtimes, capacidade, infraestrutura e compatib
 tools: Read, Grep, Glob, Bash
 skills:
   - tool-specialist-routing
+  - compare-releases
   - migrate-glue-6
   - spark4-compatibility
 rule_areas: [SF-GLUE, SF-EMR, SF-ENV, SF-MIG, SF-SPARK4]

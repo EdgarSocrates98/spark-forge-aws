@@ -133,28 +133,74 @@ usa, não um corpus à parte. Se `sparkforge` acabar sendo importado do
 repositório em vez do `site-packages` nesse processo, o gate falha com
 mensagem explícita em vez de comparar o repositório consigo mesmo.
 
-#### Os dois transportes MCP
+#### Ligando o servidor MCP
+
+Instale o extra `mcp` (ele traz `mcp>=1.0,<2`, `starlette`, `uvicorn` e os pins de
+segurança das transitivas):
 
 ```bash
-pip install -e ".[mcp]"
-
-# stdio — Claude Code, Devin CLI, CI. É o que .mcp.json configura no Claude Code.
-python -m sparkforge.adapters.mcp --transport stdio
-
-# streamable HTTP — Devin Desktop, que configura MCP por serverUrl.
-python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
-# serverUrl: http://127.0.0.1:8765/mcp
+pip install "sparkforge-aws[mcp]"
 ```
 
-**No Devin, `.mcp.json` não basta, e o motivo é medido.** O Devin CLI importa MCP do
-Claude Code (`read_config_from.claude`), mas o `.mcp.json` deste repositório é o do
-**plugin**: ele parametriza `PYTHONPATH` e `SPARKFORGE_CATALOG` por
-`${CLAUDE_PLUGIN_ROOT}`, variável do carregador de plugin do Claude Code que nenhuma
-página do Devin documenta expandir — sem expansão, o servidor sobe e morre na primeira
-leitura do catálogo com `CatalogError`. O Devin tem arquivo próprio
-(`.devin/mcp_config.json`, chave `mcpServers`) e comando próprio (`devin mcp add`): o
-procedimento dos dois, com o do Desktop por `serverUrl`, está em
-[`GUIA_DE_USO.md`](GUIA_DE_USO.md) seção 3.4.
+Depois escolha o transporte pela plataforma.
+
+**Claude Code, Devin CLI e CI — stdio.** O arquivo `.mcp.json` na raiz configura o
+Claude Code. Para o Devin CLI, o arquivo correto é `.devin/mcp_config.json`, porque
+`.mcp.json` usa `${CLAUDE_PLUGIN_ROOT}` — variável do carregador de plugin do Claude Code
+que nenhuma página do Devin documenta expandir; sem expansão, o servidor sobe e morre na
+primeira leitura do catálogo com `CatalogError`.
+
+```jsonc
+// .devin/mcp_config.json
+{
+  "mcpServers": {
+    "sparkforge": {
+      "command": "python",
+      "args": ["-m", "sparkforge.adapters.mcp", "--transport", "stdio"]
+    }
+  }
+}
+```
+
+Ou, sem editar arquivo:
+
+```bash
+devin mcp add -s project sparkforge -- python -m sparkforge.adapters.mcp --transport stdio
+devin mcp list
+```
+
+**Devin Desktop — streamable HTTP.** O Desktop configura MCP por `serverUrl`. Sobe o
+servidor localmente:
+
+```bash
+python -m sparkforge.adapters.mcp --transport http --host 127.0.0.1 --port 8765
+```
+
+E aponte o Desktop para `http://127.0.0.1:8765/mcp`. Mantenha o processo rodando durante
+a sessão.
+
+##### Verificação rápida
+
+Em qualquer plataforma, após conectar o MCP, peça ao agente:
+
+```text
+Liste as tools MCP do sparkforge e confirme que consegue chamar sparkforge_runtime_detect.
+```
+
+Na linha de comando, sem MCP, a CLI faz o mesmo:
+
+```bash
+sparkforge runtime detect --glue 5.0
+```
+
+##### Troubleshooting
+
+- **`CatalogError: .../${CLAUDE_PLUGIN_ROOT}/...`:** você usou `.mcp.json` no Devin em vez de `.devin/mcp_config.json`.
+- **`ModuleNotFoundError` para `mcp`:** instale o extra `[mcp]`; a CLI sozinha não precisa dele, mas o servidor sim.
+- **No Desktop, `connection refused`:** o servidor HTTP não está rodando na URL e porta configuradas.
+- **`devin mcp list` vazio ou sem `sparkforge`:** o escopo do `mcp_config.json` pode ser global em vez de projeto; confira `.devin/mcp_config.json`.
+
+Para detalhes completos, veja [`GUIA_DE_USO.md`](GUIA_DE_USO.md) seção 3.4.
 
 O extra `mcp` fixa `mcp>=1.0,<2`: o SDK 2.x removeu os decoradores que
 `build_server()` usa para registrar os tools, e sem o teto uma instalação
@@ -181,6 +227,7 @@ tool MCP de mesmo nome.
 | Workgroup do Athena | `analyze athena-workgroup` | dump de `get_work_group` |
 | **Cluster EMR on EC2** | `analyze emr-cluster` | dump de `describe-cluster` e os cinco que o completam |
 | **Application EMR Serverless** | `analyze emr-serverless` | dump de `get-application` |
+| **Job run EMR on EKS** | `analyze emr-eks` | dumps de `describe-virtual-cluster` **e** `describe-job-run` do `emr-containers`, num arquivo só |
 | **Validação de dados** | `analyze data-quality` | os mesmos `*.py`, pela ótica do check |
 | **Processamento de grafo** | `analyze graph` | os mesmos `*.py`, pela ótica do GraphFrames |
 | Listagem S3 | `analyze s3-listing` | dump de `s3api list-objects-v2` |
@@ -202,15 +249,19 @@ tool MCP de mesmo nome.
 
 Coletar o artefato bruto (`sparkforge collect *`) é a única parte que toca a
 AWS, exige boto3 e credencial, e é opcional: quem já tem o dump em disco pula
-essa etapa inteira. `collect glue-job-runs` grava um artefato por run em
+essa etapa inteira. `collect emr-eks` é o único que faz **duas** chamadas de API
+(`describe-virtual-cluster` e `describe-job-run`) e grava **um** arquivo: os dois
+ids são obrigatórios, porque a própria API não aceita um job run sem o cluster
+virtual que o contém. `collect glue-job-runs` grava um artefato por run em
 estado terminal em `.sparkforge/artifacts/glue_job_run/`; run já em disco com
 hash íntegro é no-op (coleta incremental de graça), e `--max-runs` é teto de
 paginação, não filtro de data. `rules/catalog/` não tem nenhuma regra com
 `blocked_on` — o que falta para uma regra disparar é sempre coleta, nunca
 código.
 
-Sete desses verbos mudam o alcance do projeto, e é por isso que aparecem
-em negrito. `analyze emr-cluster` responde sobre a **definição do cluster** —
+**Oito** desses verbos mudam o alcance do projeto, e é por isso que aparecem
+em negrito — contados na tabela, não somados: a linha dizia "sete" e a tabela já
+trazia sete antes de `analyze emr-eks` entrar. `analyze emr-cluster` responde sobre a **definição do cluster** —
 instance fleets contra instance groups, opção de compra por papel, managed
 scaling, `Configurations` em dois níveis, bootstrap actions, `LogUri` — e
 alimenta a release do EMR no `RuntimeContext`, de modo que os limiares passem
@@ -221,7 +272,18 @@ de log e segredo em `runtimeConfiguration` — a partir de uma única chamada
 (`get-application`), em namespace disjunto (`emrs.*`) e área própria (`SF-EMRS`);
 ele **não** alimenta `RuntimeContext`, porque a AWS não publica a matriz de
 release do Serverless, e a razão está escrita em
-`knowledge/emr-serverless/runtime-matrix.md`. `analyze data-quality`
+`knowledge/emr-serverless/runtime-matrix.md`. `analyze emr-eks` faz a mesma
+pergunta sobre o **terceiro** modelo de execução — cluster virtual mapeado a um
+namespace de Kubernetes, papel de execução declarado por job run, destino de log
+por execução, e as **duas** superfícies de configuração
+(`configurationOverrides.applicationConfiguration` e
+`jobDriver.sparkSubmitParameters`, com a segunda vencendo a primeira) —, em
+namespace disjunto (`emrc.*`) e área própria (`SF-EMRK`). Ele também **não**
+alimenta `RuntimeContext`, mas por razão oposta à do Serverless: a AWS **publica**
+a matriz de release do EKS, e ela **diverge** da de EC2 em células reais — por
+isso `--emr` é **recusado** sobre um conjunto de facts `emrc.*`, em vez de
+preencher `spark`, `python` e `iceberg` com a tabela errada. A medida está em
+`knowledge/emr-eks/runtime-matrix.md`. `analyze data-quality`
 responde sobre **onde a validação está**, não sobre se o dado está correto:
 reconhece o check artesanal, a `VerificationSuite` do PyDeequ e o Great
 Expectations pela forma do código — nunca por lista de nomes —, e o achado é
@@ -449,7 +511,9 @@ Cada skill segue um formato padronizado: `description` orientada ao gatilho ("Us
 | `review-pyspark-pr` | revisar um PR buscando regressões de performance e custo |
 | `review-glue-terraform` | revisar o IaC do job (workers, Auto Scaling, args, observabilidade) |
 | `review-emr-cluster` | o risco estiver na definição do cluster EMR on EC2 (fleets/groups, Spot por papel, managed scaling, `Configurations`, `LogUri`) |
+| `review-emr-eks` | o risco estiver na execução de um job Amazon EMR on EKS (cluster virtual e namespace, as duas superfícies de configuração, destino de log e `persistentAppUI` por job run) |
 | `review-data-validation` | o job validar dado e a pergunta for onde o check está, se ele tem consequência e quanto custa |
+| `compare-releases` | precisar saber o que muda de **componente** entre dois runtimes (release contra release, ou o mesmo rótulo entre duas plataformas) — ela lê matriz de versão e **não** avalia compatibilidade |
 
 ## Coordenadores e executores
 
@@ -707,6 +771,7 @@ forma portátil de arquivo único é `vendor/caveman/dist/caveman.skill`.
 /analyze-spark-plan
 /optimize-iceberg-table
 /review-emr-cluster
+/review-emr-eks
 /review-data-validation
 ```
 

@@ -814,7 +814,7 @@ class TestConfinamentoEhUmSoAlgoritmo:
 class TestOCatalogoContinuaCabendoNaVerificacao:
     """O gate que impede a medicao do Passo 1 de envelhecer em silencio.
 
-    Medido: 57 das 59 tools declaram parametro de caminho, e as duas sem
+    Medido: 59 das 61 tools declaram parametro de caminho, e as duas sem
     nenhum sao `sparkforge_rules_lookup` (`category`, `id`, `limit`, `cursor`)
     e `sparkforge_economy_report` (`run_id`, `host_transcript`) -- nenhum dos
     dois nomeia arquivo, diretorio ou repo, entao nenhum casa com o predicado.
@@ -831,9 +831,30 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
     `origem`, `destino`), a contagem muda e este teste cai -- que e o ponto.
     O predicado nao adivinha; ele reconhece nomes, e nome novo tem de passar
     por decisao de alguem, nao por default silencioso.
+
+    A fase de EMR on EKS levou 59 para 61: `sparkforge_analyze_emr_eks` declara
+    `path` e `sparkforge_collect_emr_eks` declara `out_dir`, entao as duas caem
+    do lado certo do predicado e o conjunto de excecao NAO mudou. Foi este
+    teste que mediu isso -- ele caiu na contagem, e nao no conjunto.
+
+    A frente D do sub-projeto `ReleaseDiff` foi o caso inverso, e o primeiro:
+    `sparkforge_release_describe` e `sparkforge_release_diff` entram no conjunto
+    de EXCECAO, e a contagem de 59 nao se move. Nao e caminho batizado de outro
+    jeito -- e a AUSENCIA de caminho, e ela e correta: os dois verbos nao leem
+    artefato nenhum do operador, so as matrizes de `knowledge/` que o proprio
+    pacote carrega. Nao ha o que confinar, e inventar um `path` para caber no
+    predicado seria parametro sem consumidor. O conjunto sai de dois para
+    QUATRO, e este teste e o lugar onde essa decisao fica escrita.
     """
 
-    SEM_CAMINHO = frozenset({"sparkforge_rules_lookup", "sparkforge_economy_report"})
+    SEM_CAMINHO = frozenset(
+        {
+            "sparkforge_rules_lookup",
+            "sparkforge_economy_report",
+            "sparkforge_release_describe",
+            "sparkforge_release_diff",
+        }
+    )
 
     def test_toda_tool_menos_duas_declara_caminho(self):
         from sparkforge.agents.autonomy import _e_chave_de_caminho
@@ -847,7 +868,7 @@ class TestOCatalogoContinuaCabendoNaVerificacao:
             )
         }
         assert sem_caminho == self.SEM_CAMINHO
-        assert len(TOOLS) - len(sem_caminho) == 57
+        assert len(TOOLS) - len(sem_caminho) == 59
 
 
 class TestAImposicaoNoDespacho:

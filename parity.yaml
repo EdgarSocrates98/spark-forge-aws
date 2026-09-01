@@ -193,6 +193,26 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
+  # `knowledge:` com DOIS caminhos, e a lista mudou dentro da propria fase: quando
+  # esta entrada foi escrita, `knowledge/` ainda nao tinha documento de EMR on EKS
+  # e declarar um caminho inexistente reprovaria em
+  # `test_every_declared_knowledge_file_exists`. Os dois documentos existem desde a
+  # Task que os escreveu, e a ausencia deixou de ser decidida para virar omissao --
+  # que e o defeito oposto, e o unico que aquele teste NAO pega. A capacidade chega
+  # as cinco plataformas pelas mesmas duas superficies das irmas.
+  - name: extract facts from an EMR on EKS job run dump
+    tools: [sparkforge_analyze_emr_eks]
+    cli: [analyze emr-eks]
+    knowledge:
+      - knowledge/emr-eks/job-run-configuration.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
   - name: extract facts about data validation in PySpark code
     tools: [sparkforge_analyze_data_quality]
     cli: [analyze data-quality]
@@ -270,10 +290,61 @@ capabilities:
       codex: [cli, files]
       copilot_ci: [cli, files]
 
-  - name: assess a Glue version migration step by step
+  # DUAS capacidades e nao uma, porque a fronteira das duas e diferente e
+  # `parity.yaml` e o que uma plataforma le para saber o que existe. `describe`
+  # responde "o que esta release publica" -- e o que ela NAO publica, nomeado.
+  # `diff` responde "o que muda entre duas", com o eixo declarado. Nenhuma das
+  # duas responde "isso quebra?": essa e a capacidade de cima, `assess a Glue
+  # version migration step by step`, e colapsar as tres numa so faria o
+  # manifesto prometer avaliacao de compatibilidade onde ha leitura de matriz.
+  #
+  # `knowledge:` com as QUATRO paginas de matriz, e nao com uma: o verbo le as
+  # quatro, e declarar so a de Glue faria o degrau `files` -- o que chega a quem
+  # nao tem MCP nem Python -- apontar para um quarto do dado.
+  - name: describe what a runtime release publishes, and what it does not
+    tools: [sparkforge_release_describe]
+    cli: [release describe]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  - name: diff component versions between two runtime releases
+    tools: [sparkforge_release_diff]
+    cli: [release diff]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
+    platforms:
+      claude_code: [mcp, cli, files]
+      devin_desktop: [mcp, cli, files]
+      devin_cli: [mcp, cli, files]
+      codex: [cli, files]
+      copilot_ci: [cli, files]
+
+  # As quatro plataformas atravessam o MESMO verbo, e por isso uma capacidade
+  # so: `sparkforge_migration_assess` ganhou o parametro `platform` em vez de
+  # uma tool nova por plataforma, e a CLI cobre a mesma superficie com
+  # `migrate glue` (a plataforma esta no nome, publicada antes das quatro
+  # existirem) mais `migrate emr --platform`, que escolhe entre as tres
+  # matrizes de EMR. Nenhum runtime sai da matriz de outra plataforma.
+  - name: assess a runtime version migration step by step, on any of the four platforms
     tools: [sparkforge_migration_assess]
-    cli: [migrate glue]
-    knowledge: [knowledge/glue/runtime-matrix.md]
+    cli: [migrate glue, migrate emr]
+    knowledge:
+      - knowledge/glue/runtime-matrix.md
+      - knowledge/emr/runtime-matrix.md
+      - knowledge/emr-serverless/runtime-matrix.md
+      - knowledge/emr-eks/runtime-matrix.md
     platforms:
       claude_code: [mcp, cli, files]
       devin_desktop: [mcp, cli, files]
@@ -497,6 +568,7 @@ capabilities:
       - sparkforge_collect_athena_workgroup
       - sparkforge_collect_emr_cluster
       - sparkforge_collect_emr_serverless
+      - sparkforge_collect_emr_eks
       - sparkforge_collect_verify
     cli:
       - collect event-log
@@ -507,6 +579,7 @@ capabilities:
       - collect athena-workgroup
       - collect emr-cluster
       - collect emr-serverless
+      - collect emr-eks
       - collect verify
     knowledge: [knowledge/glue/observability.md, knowledge/glue/observability.yaml]
     platforms:

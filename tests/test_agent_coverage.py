@@ -224,3 +224,74 @@ def _section(text: str, title: str) -> str:
     """Corpo de uma secao `## <title>` ate a proxima `##` ou o fim."""
     match = re.search(rf"^## {re.escape(title)}\n(.*?)(?=^## |\Z)", text, re.M | re.S)
     return match.group(1).strip() if match else ""
+
+
+class TestEMRonEKSTemDespachoCompleto:
+    """As TRES metades do despacho de uma area, cobradas juntas para `SF-EMRK`.
+
+    Os invariantes genericos deste arquivo e do `test_router_agents.py` ja
+    cobrem cada metade em separado, e foi assim que `SF-EMRS` conseguiu ficar
+    declarada num coordenador e sem rota nenhuma por uma fase inteira: cada
+    teste passava sozinho porque cada um olhava para um lado so.
+
+    Aqui as tres sao a mesma assercao, sobre a area que a fase de EMR on EKS
+    acrescentou:
+
+    1. `SF-EMRK` casa uma rota `AGENT-*` em `routing.yaml`;
+    2. a rota aponta para um coordenador que DECLARA a area em `rule_areas` --
+       rota para agente que nao conhece a area e ponteiro para o nada;
+    3. as duas tools de `emr-containers` sao alcancaveis a partir de algum
+       coordenador, pelo mesmo corpus de `TestEveryToolIsReachable`.
+    """
+
+    AREA = "SF-EMRK"
+    TOOLS_DA_AREA = ("sparkforge_analyze_emr_eks", "sparkforge_collect_emr_eks")
+
+    def _routing(self) -> dict:
+        path = ROOT / "rules" / "catalog" / "routing.yaml"
+        return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    def _rotas_da_area(self) -> list[dict]:
+        rotas = []
+        for rule in self._routing()["rules"]:
+            if not rule.get("recommended_agent"):
+                continue
+            grupo = rule.get("when") or {}
+            condicoes = (grupo.get("any") or []) + (grupo.get("all") or [])
+            if any(c.get("findings_area") == self.AREA for c in condicoes):
+                rotas.append(rule)
+        return rotas
+
+    def test_a_area_existe_no_catalogo(self):
+        """Guarda contra os tres testes abaixo passarem sobre uma area que
+        deixou de existir -- verde sobre nada e o defeito que este arquivo
+        inteiro persegue."""
+        areas = {r["id"].rsplit("-", 1)[0] for r in load_catalog()}
+        assert self.AREA in areas, f"{self.AREA} nao esta no catalogo"
+
+    def test_a_area_casa_uma_rota(self):
+        rotas = self._rotas_da_area()
+        assert rotas, (
+            f"{self.AREA} nao aparece em condicao `findings_area` de rota nenhuma em "
+            f"routing.yaml: um case so com achados desta area volta de `next_step` "
+            f"com `recommended_agent: None`."
+        )
+
+    def test_o_agente_da_rota_declara_a_area(self):
+        declarado = {p.stem: set(_frontmatter(p).get("rule_areas") or []) for p in coordinators()}
+        for rota in self._rotas_da_area():
+            agente = rota["recommended_agent"]
+            assert agente in declarado, f"{rota['id']} aponta para {agente}, inexistente"
+            assert self.AREA in declarado[agente], (
+                f"{rota['id']} roteia {self.AREA} para {agente}, que nao a declara em "
+                f"`rule_areas`: despacho sem declaracao manda o case para quem nao "
+                f"sabe que a area existe."
+            )
+
+    def test_as_duas_tools_de_emr_containers_sao_alcancaveis(self):
+        reachable = "".join(_corpus_of(p) for p in coordinators())
+        orphans = [name for name in self.TOOLS_DA_AREA if name not in reachable]
+        assert not orphans, (
+            f"{orphans} nao sao alcancaveis a partir de nenhum coordenador. Cite-as no "
+            f"coordenador, numa skill que ele declare, ou num executor que ele despache."
+        )

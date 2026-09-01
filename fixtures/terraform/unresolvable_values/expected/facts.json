@@ -292,6 +292,24 @@
     }
   },
   {
+    "id": "f_a29e2f",
+    "schema_version": 1,
+    "kind": "tf.graphframes.unknown",
+    "subject": {
+      "type": "tf_resource",
+      "file": "job.tf",
+      "line": 1,
+      "symbol": "aws_glue_job.etl_interpolado"
+    },
+    "measures": {},
+    "attrs": {},
+    "provenance": {
+      "artifact": "job.tf",
+      "artifact_sha256": "56636051cf868b3b45f196a7a0639e84199690ddfe28a00eadd895fc9a45288f",
+      "extractor": "terraform@0.1.0"
+    }
+  },
+  {
     "id": "f_c4dba2",
     "schema_version": 1,
     "kind": "tf.module_analyzed",

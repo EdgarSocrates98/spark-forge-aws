@@ -30,6 +30,56 @@ mesmo job de 5.1 para 6.0 sem que nada de fato seja pior. `report()` colapsa por
 degraus em que o problema vale -- deduplicar sem dizer onde vale trocaria ruido
 por perda de informacao.
 
+DECISAO 1c -- as quatro plataformas atravessam o MESMO motor.
+
+`assess(facts, source, target, platform=...)` nao bifurca nada: o degrau vem de
+`version_path.steps(..., platform)` e o runtime do ALVO daquele degrau vem da
+matriz DAQUELA plataforma. Nao ha ramo de EMR, e nao pode haver: a matriz de
+EMR on EC2 nao descreve EKS nem Serverless -- o sub-projeto 1 mediu que elas
+DIVERGEM, Iceberg em 6 de 26 releases comparaveis -- e
+`sparkforge/adapters/_core.py::_recusar_emr_sobre_eks` ja fecha uma porta para
+essa heranca. Aqui a porta fica fechada por construcao: `_runtime_for` chama
+`release_descriptor.describe(platform, alvo)`, que le uma matriz so.
+
+DECISAO 3 -- a cobertura e DECLARADA, e ela e a entrega, nao um enfeite.
+
+Contado no catalogo de 140 regras em 2026-08-31, `runtime_scope` por eixo e
+`{glue: 13, spark: 5, iceberg: 1}`. ZERO regras por `emr`. Um `assess` de EMR
+que apenas trocasse a plataforma rodaria o catalogo inteiro por degrau, nao
+acharia nada, e sairia VERDE -- que o operador leria como "nada quebra". Esse e
+o defeito que esta entrega existe para nao cometer.
+
+A ponte que salva o verbo e o Spark: cinco regras sao guardadas por versao de
+SPARK, nao de plataforma, e as quatro matrizes publicam a versao de Spark de
+cada release. Derivando o runtime de cada degrau da matriz da plataforma, as
+cinco passam a ser alcancaveis para EMR pela primeira vez.
+
+Por isso `MigrationAssessment.coverage` sai SEMPRE, com quantas regras cada
+eixo de `runtime_scope` tem no catalogo, quantas o caminho alcancou, e a
+declaracao em prosa que o operador le. Sem esse campo, assessment sem achado e
+indistinguivel de job sem problema. E a §20 do `CLAUDE.md` aplicada ao verbo
+inteiro em vez de a uma propriedade -- listar a recusa e a diferenca entre "nao
+sei" e "nao perguntei".
+
+O que este modulo NAO faz, e a razao esta registrada: nao escreve regra `SF-MIG`
+para EMR (regra exige fonte primaria, golden positivo e negativo e area com
+rota; como efeito colateral produziria regra sem corpus) e nao inventa
+`runtime_scope: {emr: ...}` (o eixo nao existe em `version_scope`, e
+acrescenta-lo sem regra que o use seria mecanismo sem consumidor). O eixo `emr`
+aparece na COBERTURA justamente para dizer que ele vale zero.
+
+DECISAO 4 -- o "o que muda de componente" por degrau vem do `ReleaseDiff`.
+
+`component_diff` e uma projecao de `sparkforge/migration/release_diff.py`, uma
+entrada por degrau, e nao uma comparacao reimplementada aqui. A projecao separa
+duas coisas que tem escalas diferentes: as recusas `component.*` sao do PAR de
+releases e ficam no degrau; as cinco dimensoes do §8.2 que a matriz nao sustenta
+(`deprecated`, `default_changes`, `compatibility_changes`, `security_changes`,
+`performance_changes`) sao constantes do verbo e saem UMA vez, em
+`component_diff_unresolved`. Repetir os cinco textos por degrau nao
+acrescentaria informacao, e omiti-los faria o operador ler lista vazia como
+"nao mudou nada".
+
 DECISAO 2 -- o gate de compatibilidade usa severidade, nao so presenca.
 
 Presenca de finding sozinha nao diferencia um P2 (config EMRFS morta, silenciosa,
@@ -43,6 +93,7 @@ so houver P2 a P4; `PASS` sem nenhum finding.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -54,9 +105,10 @@ from sparkforge.findings.models import (
     area_of,
     sort_findings,
 )
-from sparkforge.migration import version_path
+from sparkforge.migration import release_descriptor, release_diff, version_path
 from sparkforge.rules.engine import judge
 from sparkforge.rules.loader import load_catalog
+from sparkforge.rules.version_scope import in_scope
 from sparkforge.storage import upgrade as storage_upgrade
 
 # Severidades que fecham o gate de compatibilidade: breaking change confirmado
@@ -155,6 +207,128 @@ _EVIDENCIA_DOS_EIXOS: dict[str, str] = {
 _EIXOS_SEM_PRODUTOR: dict[str, str] = {}
 
 
+# O eixo de `runtime_scope` que NOMEIA a plataforma daquele caminho. As tres de
+# EMR compartilham `emr` porque o catalogo, se um dia guardar regra por versao
+# de plataforma EMR, guardara por rotulo de release -- e o rotulo e o mesmo
+# vocabulario nas tres. Hoje o eixo vale ZERO nas tres, e e exatamente isso que
+# a declaracao de cobertura existe para dizer em voz alta.
+_EIXO_DA_PLATAFORMA: dict[str, str] = {
+    "glue": "glue",
+    "emr_ec2": "emr",
+    "emr_serverless": "emr",
+    "emr_eks": "emr",
+}
+
+
+@dataclass(frozen=True)
+class AxisCoverage:
+    """Um eixo de `runtime_scope`, com o que o catalogo tem e o que o caminho
+    alcancou.
+
+    `catalog_rules` conta as regras do catalogo guardadas por este eixo, e nao
+    depende do caminho; `reachable_rules` conta quantas dessas passaram
+    `in_scope` em ao menos UM degrau. As duas juntas separam "o catalogo nao
+    tem regra para isto" de "tem, e este caminho nao a cruza" -- que sao
+    silencios diferentes e destravam com trabalho diferente.
+
+    `runtime_key_present` diz se algum degrau chegou a preencher a chave. Um
+    eixo com regra no catalogo e sem chave no runtime nao foi avaliado: toda
+    regra dele foi pulada por `runtime_scope`, e ninguem leu isso como ausencia
+    de problema por acidente.
+    """
+
+    axis: str
+    catalog_rules: int
+    reachable_rules: int
+    runtime_key_present: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "axis": self.axis,
+            "catalog_rules": self.catalog_rules,
+            "reachable_rules": self.reachable_rules,
+            "runtime_key_present": self.runtime_key_present,
+        }
+
+
+@dataclass(frozen=True)
+class CoverageDeclaration:
+    """Quanto do catalogo este caminho podia alcancar, e a frase que diz isso.
+
+    Ver DECISAO 3 no docstring do modulo. `statement` e o campo que o operador
+    LE; os numeros ao lado sao o que o sustenta, para que a frase possa ser
+    conferida em vez de acreditada.
+    """
+
+    platform: str
+    platform_axis: str
+    source: str
+    target: str
+    steps: int
+    catalog_rules: int
+    version_guarded_rules: int
+    unguarded_rules: int
+    reachable_rules: int
+    axes: tuple[AxisCoverage, ...]
+    activated_axes: tuple[str, ...]
+
+    @property
+    def statement(self) -> str:
+        """A frase que o operador LE, derivada dos numeros ao lado.
+
+        Propriedade e nao campo para que ela NAO POSSA divergir deles: uma
+        declaracao guardada como texto solto sobrevive a mudanca do numero que
+        a sustentava, e a frase errada aqui e pior que frase nenhuma -- ela
+        afirma cobertura. Escrita neste modulo, e nao em quem consome, porque a
+        leitura errada que ela previne ("saiu verde, entao nada quebra") e
+        exatamente a que acontece quando cada superficie escreve a sua.
+        """
+        return _declaracao_de_cobertura(self)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "platform": self.platform,
+            "platform_axis": self.platform_axis,
+            "source_runtime": self.source,
+            "target_runtime": self.target,
+            "steps": self.steps,
+            "catalog_rules": self.catalog_rules,
+            "version_guarded_rules": self.version_guarded_rules,
+            "unguarded_rules": self.unguarded_rules,
+            "reachable_rules": self.reachable_rules,
+            "axes": [eixo.to_dict() for eixo in self.axes],
+            "activated_axes": list(self.activated_axes),
+            "statement": self.statement,
+        }
+
+
+@dataclass(frozen=True)
+class StepComponentDiff:
+    """O que muda de COMPONENTE num degrau, projetado do `ReleaseDiff`.
+
+    Ver DECISAO 4. `unresolved` carrega so as recusas que sao DAQUELE par de
+    releases (as chaves `component.*`); as cinco dimensoes do §8.2 sem lastro
+    saem uma vez so, ao lado, porque sao constantes do verbo.
+    """
+
+    step: tuple[str, str]
+    changed: tuple[dict[str, Any], ...]
+    added: tuple[str, ...]
+    removed: tuple[str, ...]
+    unchanged: tuple[str, ...]
+    unresolved: dict[str, str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "step": list(self.step),
+            "changed": [dict(entrada) for entrada in self.changed],
+            "added": list(self.added),
+            "removed": list(self.removed),
+            "unchanged": list(self.unchanged),
+            "unresolved": dict(sorted(self.unresolved.items())),
+        }
+
+
 @dataclass
 class ReportedFinding:
     """Um problema, uma vez, com todos os degraus em que ele vale.
@@ -206,6 +380,17 @@ class MigrationAssessment:
     gates: dict[str, str] = field(default_factory=dict)
     missing_evidence: dict[str, str] = field(default_factory=dict)
     recommendation: str = "NO_GO"
+    # Plataforma com DEFAULT, e o par de versoes sem: `migrate glue` foi a
+    # interface publicada antes das quatro plataformas existirem, e obrigar
+    # `platform=` em quem ja chamava trocaria uma extensao por uma quebra.
+    platform: str = version_path.DEFAULT_PLATFORM
+    # `None` so no objeto montado a mao (os testes que fixam a deduplicacao o
+    # fazem). Todo `MigrationAssessment` que sai de `assess()` carrega a
+    # declaracao -- e o invariante que a DECISAO 3 existe para sustentar, e ha
+    # teste que reprova se o campo sumir da saida.
+    coverage: CoverageDeclaration | None = None
+    component_diff: list[StepComponentDiff] = field(default_factory=list)
+    component_diff_unresolved: dict[str, str] = field(default_factory=dict)
 
     def report(self) -> list[ReportedFinding]:
         """A visao para o RELATORIO: cada problema uma vez so.
@@ -244,6 +429,7 @@ class MigrationAssessment:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "platform": self.platform,
             "source_runtime": self.source,
             "target_runtime": self.target,
             "steps": [list(step) for step in self.steps],
@@ -259,22 +445,251 @@ class MigrationAssessment:
             "gates": dict(self.gates),
             "missing_evidence": dict(self.missing_evidence),
             "recommendation": self.recommendation,
+            # A cobertura entra ao lado dos gates, e nao dentro deles, porque
+            # ela nao e um veredito: um gate diz se algo passou, e este campo
+            # diz o que sequer podia ser perguntado. Confundir os dois faria
+            # "0 regras por `emr`" parecer um gate verde.
+            "coverage": self.coverage.to_dict() if self.coverage else None,
+            "component_diff": [entrada.to_dict() for entrada in self.component_diff],
+            "component_diff_unresolved": dict(
+                sorted(self.component_diff_unresolved.items())
+            ),
         }
 
 
-def _runtime_for(target_version: str) -> dict[str, str]:
+def _runtime_for(
+    target_version: str, platform: str = version_path.DEFAULT_PLATFORM
+) -> dict[str, str]:
     """Runtime do ALVO de um degrau, no formato que `judge`/`in_scope` esperam.
 
     O julgamento de um degrau `(a, b)` usa o runtime de `b`, nao de `a`: uma
     regra como SF-MIG-001 (`runtime_scope: {glue: ">=5.0"}`) descreve o que
     quebra depois que o job passa a rodar no alvo, nao no que ele roda hoje.
+
+    O CAMINHO DE GLUE FICOU COMO ESTAVA, e de proposito: mesma matriz, mesmas
+    quatro chaves, mesmo valor. Zero regressao no assessment de Glue e criterio
+    de conclusao deste sub-projeto, e a forma barata de garanti-lo e nao mexer
+    no ramo que ja passava.
+
+    O CAMINHO DE EMR LE A MATRIZ DAQUELA PLATAFORMA, E SO DELA (D-2 da spec).
+    `describe(platform, ...)` e a unica fonte, e ele nao tem fallback: a matriz
+    de EC2 nao descreve EKS nem Serverless, e o sub-projeto 1 mediu a
+    divergencia em celulas reais (Iceberg em 6 de 26 releases comparaveis).
+    Herdar valor de uma plataforma para outra aqui reabriria por dentro a porta
+    que `_recusar_emr_sobre_eks` fecha por fora.
+
+    NAO HA CHAVE `emr` NO RUNTIME, e a ausencia e a decisao. O eixo nao existe
+    em `runtime_scope` de regra nenhuma; acrescenta-lo aqui seria mecanismo sem
+    consumidor, e daria a impressao de cobertura que a declaracao de cobertura
+    existe justamente para desmentir. Componente publicado como CONJUNTO
+    (`python_installed`, os interpretadores instalados no EMR on EC2) tambem
+    fica de fora: `in_scope` compara VERSAO, e achatar um conjunto num valor
+    escolheria por conta propria qual deles o PySpark usa.
     """
-    linha = runtime_matrix.load()[target_version]
-    runtime = {"glue": target_version}
-    for chave in ("spark", "python", "iceberg"):
-        if linha.get(chave):
-            runtime[chave] = linha[chave]
-    return runtime
+    if platform == version_path.DEFAULT_PLATFORM:
+        linha = runtime_matrix.load()[target_version]
+        runtime = {"glue": target_version}
+        for chave in ("spark", "python", "iceberg"):
+            if linha.get(chave):
+                runtime[chave] = linha[chave]
+        return runtime
+
+    descritor = release_descriptor.describe(platform, target_version)
+    return {
+        nome: componente.version
+        for nome, componente in sorted(descritor.components.items())
+        if not componente.is_set
+    }
+
+
+def _cobertura(
+    catalogo: list[dict[str, Any]],
+    platform: str,
+    source: str,
+    target: str,
+    runtimes: list[dict[str, str]],
+) -> CoverageDeclaration:
+    """Quantas regras do catalogo este caminho podia alcancar, por eixo.
+
+    "Alcancavel" e uma medida sobre `in_scope`, nao sobre disparo: uma regra
+    alcancavel pode nao disparar porque o fact nao esta la, e essa e outra
+    lacuna, ja nomeada em `missing_evidence`. O que este campo separa e a
+    lacuna anterior a todas -- a regra que NAO EXISTE, e que nenhum artefato
+    coletado faria aparecer.
+    """
+    eixo_da_plataforma = _EIXO_DA_PLATAFORMA[platform]
+
+    no_catalogo: Counter[str] = Counter()
+    guardadas = 0
+    for regra in catalogo:
+        escopo = regra.get("runtime_scope") or {}
+        if escopo:
+            guardadas += 1
+        for chave in escopo:
+            no_catalogo[chave] += 1
+
+    alcancadas: set[str] = set()
+    for runtime in runtimes:
+        for regra in catalogo:
+            if in_scope(regra.get("runtime_scope") or {}, runtime):
+                alcancadas.add(regra["id"])
+
+    alcancadas_por_eixo: Counter[str] = Counter()
+    for regra in catalogo:
+        if regra["id"] not in alcancadas:
+            continue
+        for chave in regra.get("runtime_scope") or {}:
+            alcancadas_por_eixo[chave] += 1
+
+    chaves_no_runtime = {chave for runtime in runtimes for chave in runtime}
+    eixos = tuple(
+        AxisCoverage(
+            axis=eixo,
+            catalog_rules=no_catalogo.get(eixo, 0),
+            reachable_rules=alcancadas_por_eixo.get(eixo, 0),
+            runtime_key_present=eixo in chaves_no_runtime,
+        )
+        # O eixo da PLATAFORMA entra mesmo valendo zero: e o unico jeito de a
+        # saida dizer "nenhuma regra deste catalogo descreve breaking change de
+        # EMR" em vez de simplesmente nao falar do assunto.
+        for eixo in sorted(set(no_catalogo) | {eixo_da_plataforma})
+    )
+    return CoverageDeclaration(
+        platform=platform,
+        platform_axis=eixo_da_plataforma,
+        source=source,
+        target=target,
+        steps=len(runtimes),
+        catalog_rules=len(catalogo),
+        version_guarded_rules=guardadas,
+        unguarded_rules=len(catalogo) - guardadas,
+        reachable_rules=len(alcancadas),
+        axes=eixos,
+        activated_axes=tuple(e.axis for e in eixos if e.reachable_rules),
+    )
+
+
+def _declaracao_de_cobertura(cobertura: CoverageDeclaration) -> str:
+    """O texto de `CoverageDeclaration.statement`. Ver a propriedade.
+
+    Tres frases, e cada uma responde uma pergunta diferente: o que existe no
+    catalogo, o que ESTE caminho alcancou, e como ler o silencio. A terceira e
+    a que importa -- ela e a unica coisa entre um assessment sem achado e a
+    leitura "nada quebra".
+
+    A distincao entre JULGAVEL e ALCANCADA e deliberada e foi medida: no
+    caminho de EMR on EC2 entre as duas series, as cinco regras de `spark` sao
+    julgaveis (a matriz publica a versao de Spark de cada degrau, entao a chave
+    existe no runtime) e NENHUMA e alcancada (as quatro de `SF-SPARK4` pedem
+    Spark 4, e a serie 7.x do EMR ainda esta na 3.5). Dizer "cinco alcancaveis"
+    seria mentira; dizer so "zero" esconderia que a ponte existe e funciona.
+    """
+    nome = release_descriptor.platform_label(cobertura.platform)
+    eixo = cobertura.platform_axis
+    da_plataforma = next(e for e in cobertura.axes if e.axis == eixo)
+    contagens_por_eixo = sum(e.catalog_rules for e in cobertura.axes)
+
+    por_eixo = "; ".join(
+        f"`{e.axis}`: {e.catalog_rules} no catalogo, "
+        f"{e.reachable_rules} alcancadas por este caminho, chave de runtime "
+        f"{'presente' if e.runtime_key_present else 'AUSENTE'}"
+        for e in cobertura.axes
+    )
+    partes = [
+        f"COBERTURA DECLARADA. Plataforma: {nome}. Caminho: {cobertura.source} -> "
+        f"{cobertura.target}, {cobertura.steps} degrau(s). Catalogo: "
+        f"{cobertura.catalog_rules} regras, das quais "
+        f"{cobertura.version_guarded_rules} guardadas por versao "
+        f"({contagens_por_eixo} contagens por eixo -- uma regra com dois eixos "
+        f"conta nos dois) e {cobertura.unguarded_rules} sem guarda, alcancaveis "
+        f"em qualquer runtime.",
+        f"Por eixo de `runtime_scope` -- {por_eixo}.",
+    ]
+    if da_plataforma.catalog_rules == 0:
+        de_spark = next((e for e in cobertura.axes if e.axis == "spark"), None)
+        no_catalogo = de_spark.catalog_rules if de_spark else 0
+        alcancadas = de_spark.reachable_rules if de_spark else 0
+        julgavel = bool(de_spark and de_spark.runtime_key_present)
+        partes.append(
+            f"NENHUMA regra deste catalogo declara `{eixo}` em `runtime_scope`: "
+            f"nada aqui descreve breaking change de {nome} por versao de "
+            f"plataforma, e este assessment nao pode encontrar o que ninguem "
+            f"escreveu. O que foi avaliado e Spark e componente. A ponte e a "
+            f"matriz de {nome}, que publica a versao de Spark de cada release: "
+            f"com ela, as {no_catalogo} regras guardadas por `spark` ficam "
+            f"{'julgaveis' if julgavel else 'sem chave de runtime e portanto mudas'} "
+            f"neste caminho, e {alcancadas} delas entraram no escopo. O que muda "
+            f"de componente por degrau esta em `component_diff`."
+        )
+    else:
+        partes.append(
+            f"O eixo `{eixo}` tem {da_plataforma.catalog_rules} regras neste "
+            f"catalogo, e este caminho alcancou "
+            f"{da_plataforma.reachable_rules} delas."
+        )
+    partes.append(
+        "Portanto: assessment sem achado significa `nenhuma das regras "
+        "alcancaveis disparou`, e nunca `nada quebra`. O que este verbo nao "
+        "cobre esta nomeado -- aqui, em `missing_evidence` e em "
+        "`component_diff_unresolved` --, porque listar a recusa e a diferenca "
+        "entre nao saber e nao ter perguntado."
+    )
+    return " ".join(partes)
+
+
+def _diff_de_componentes(
+    platform: str, degraus: list[tuple[str, str]]
+) -> tuple[list[StepComponentDiff], dict[str, str]]:
+    """`ReleaseDiff` por degrau, projetado. Ver DECISAO 4 no docstring.
+
+    A projecao separa a recusa que e do DEGRAU da que e da PLATAFORMA, e a
+    segunda sobe uma vez so. Uma recusa `PLATFORM_DOES_NOT_PUBLISH` dos dois
+    lados -- `hudi` e `delta` em EMR on EC2, `hadoop` em EMR on EKS -- nao
+    muda entre degraus: a fonte daquela plataforma nao publica aquele eixo em
+    release nenhuma, e repetir o texto inteiro seis vezes num caminho de seis
+    degraus e payload sem informacao nova. Ja `RELEASE_CELL_ABSENT` e de um
+    LADO especifico (a celula de `iceberg` em `emr-6.4.0`), e por isso fica no
+    degrau que a encontrou.
+    """
+    descritores: dict[str, release_descriptor.ReleaseDescriptor] = {}
+
+    def _descritor(release: str) -> release_descriptor.ReleaseDescriptor:
+        if release not in descritores:
+            descritores[release] = release_descriptor.describe(platform, release)
+        return descritores[release]
+
+    por_degrau: list[StepComponentDiff] = []
+    da_plataforma: dict[str, str] = {}
+    for origem, alvo in degraus:
+        esquerda, direita = _descritor(origem), _descritor(alvo)
+        comparacao = release_diff.diff(esquerda, direita)
+        do_degrau: dict[str, str] = {}
+        for chave, razao in comparacao.unresolved.items():
+            if chave in release_diff.DIMENSOES_SEM_LASTRO:
+                da_plataforma.setdefault(chave, razao)
+                continue
+            nome = chave[len("component.") :] if chave.startswith("component.") else ""
+            eixo_inexistente = bool(nome) and all(
+                nome in lado.refused
+                and lado.refused[nome].kind
+                == release_descriptor.PLATFORM_DOES_NOT_PUBLISH
+                for lado in (esquerda, direita)
+            )
+            if eixo_inexistente:
+                da_plataforma.setdefault(chave, esquerda.refused[nome].reason)
+            else:
+                do_degrau[chave] = razao
+        por_degrau.append(
+            StepComponentDiff(
+                step=(origem, alvo),
+                changed=tuple(entrada.to_dict() for entrada in comparacao.changed),
+                added=comparacao.added,
+                removed=comparacao.removed,
+                unchanged=comparacao.unchanged,
+                unresolved=do_degrau,
+            )
+        )
+    return por_degrau, da_plataforma
 
 
 def _compatibility_gate(findings: list[Finding]) -> str:
@@ -411,24 +826,36 @@ def _gate_de_consumidor(facts: list[Fact], por_regra: str) -> tuple[str, str]:
     return por_regra, ""
 
 
-def assess(facts: list[Fact], source: str, target: str) -> MigrationAssessment:
-    """Julga `facts` contra o catalogo `SF-MIG`, uma vez por degrau de `source`
-    ate `target`.
+def assess(
+    facts: list[Fact],
+    source: str,
+    target: str,
+    platform: str = version_path.DEFAULT_PLATFORM,
+) -> MigrationAssessment:
+    """Julga `facts` contra o catalogo, uma vez por degrau de `source` ate
+    `target`, na matriz de `platform`.
 
     Propaga os `ValueError` de `version_path.steps` (versao fora da matriz,
-    alvo anterior a origem) em vez de engoli-los: um assessment vazio devolvido
-    para um par invalido pareceria "sem breaking change encontrado", quando o
-    par nem chegou a ser avaliado. Melhor estourar aqui do que produzir um
-    NO_GO ou GO que ninguem pediu.
+    alvo anterior a origem, rotulo fora do padrao de versao, plataforma
+    desconhecida) em vez de engoli-los: um assessment vazio devolvido para um
+    par invalido pareceria "sem breaking change encontrado", quando o par nem
+    chegou a ser avaliado. Melhor estourar aqui do que produzir um NO_GO ou GO
+    que ninguem pediu.
+
+    `source` e `target` saem normalizados na chave da matriz -- `emr-7.5.0`
+    entra e `7.5.0` sai --, para que o par relatado seja o par conferivel
+    contra `known_releases()`.
     """
-    degraus = version_path.steps(source, target)
+    degraus = version_path.steps(source, target, platform)
     catalogo = load_catalog()
 
     findings: list[Finding] = []
     by_step: list[tuple[Finding, tuple[str, str]]] = []
+    runtimes: list[dict[str, str]] = []
     for degrau in degraus:
         _, alvo = degrau
-        runtime = _runtime_for(alvo)
+        runtime = _runtime_for(alvo, platform)
+        runtimes.append(runtime)
         for finding in judge(facts, catalogo, runtime):
             findings.append(finding)
             by_step.append((finding, degrau))
@@ -479,13 +906,20 @@ def assess(facts: list[Fact], source: str, target: str) -> MigrationAssessment:
         # desfecho possivel aqui e CONDITIONAL_GO -- nunca GO.
         recommendation = "CONDITIONAL_GO"
 
+    origem = release_descriptor.normalize_release(platform, source)
+    alvo_final = release_descriptor.normalize_release(platform, target)
+    componentes, sem_lastro = _diff_de_componentes(platform, degraus)
     return MigrationAssessment(
-        source=source,
-        target=target,
+        source=origem,
+        target=alvo_final,
         steps=degraus,
         findings=findings,
         by_step=by_step,
         gates=gates,
         missing_evidence=missing_evidence,
         recommendation=recommendation,
+        platform=platform,
+        coverage=_cobertura(catalogo, platform, origem, alvo_final, runtimes),
+        component_diff=componentes,
+        component_diff_unresolved=sem_lastro,
     )

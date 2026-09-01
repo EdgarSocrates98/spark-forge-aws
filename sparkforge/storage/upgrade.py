@@ -41,7 +41,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from sparkforge.storage import feature_support
+from sparkforge.storage import feature_support, readiness
 
 # Fechado, e na ordem de precedencia -- do pior desfecho para o melhor.
 VERDICTS = ("BLOCKED", "UNRESOLVED", "CONDITIONAL", "SAFE")
@@ -52,7 +52,29 @@ _BLOQUEIA = frozenset({"UNSUPPORTED"})
 # Status que nao bloqueia mas tambem nao libera sem que alguem leia a nota da
 # celula. `CONFLICTING` entra aqui de proposito: duas fontes incompativeis e
 # uma condicao a resolver por leitura, nao um desconhecimento a coletar.
-_CONDICIONA = frozenset({"PARTIAL", "READ_ONLY", "WRITE_ONLY", "PREVIEW", "CONFLICTING"})
+# `ENGINE_DEPENDENT` e `VERSION_DEPENDENT` entram pela mesma razao: as duas sao
+# "depende de algo que voce ainda nao me disse", e isso e condicao a resolver,
+# nunca liberacao.
+_CONDICIONA = frozenset(
+    {
+        "PARTIAL",
+        "READ_ONLY",
+        "WRITE_ONLY",
+        "PREVIEW",
+        "CONFLICTING",
+        "ENGINE_DEPENDENT",
+        "VERSION_DEPENDENT",
+    }
+)
+
+# Nomes que o `ConsumerGraph` reconhece e que a matriz NAO tem como responder,
+# porque cada um responde por mais de uma coisa que diverge. Mapeia para o que
+# o operador precisa declarar no lugar.
+#
+# `emr` e o unico hoje, e ele e o motivo desta entrega: as tres plataformas
+# publicam Iceberg diferente em 6 de 26 releases comparaveis. Responder "EMR"
+# e responder errado para pelo menos uma das tres, sem dizer qual.
+AMBIGUOUS_SERVICES: dict[str, tuple[str, ...]] = {"emr": readiness.EMR_PLATFORMS}
 
 
 @dataclass(frozen=True)
@@ -65,6 +87,13 @@ class SupportCell:
     status: str
     source: str = ""
     note: str = ""
+    # Preenchidos so quando o operador declarou a release do consumidor e a
+    # plataforma tem matriz de runtime. Vazios, dizem que o veredito daquela
+    # celula veio da engine sem recorte de versao -- que e resposta mais fraca,
+    # e nao resposta errada.
+    reason: str = ""
+    library_version: str = ""
+    min_library_version: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -74,6 +103,9 @@ class SupportCell:
             "status": self.status,
             "source": self.source,
             "note": self.note,
+            "reason": self.reason,
+            "library_version": self.library_version,
+            "min_library_version": self.min_library_version,
         }
 
 
@@ -91,6 +123,11 @@ class UpgradeAssessment:
     verdict: str
     cells: list[SupportCell] = field(default_factory=list)
     unresolved: list[str] = field(default_factory=list)
+    # Consumidor DECLARADO pelo operador que a matriz nao avaliou -- nao tem
+    # linha nenhuma nela. Sai em campo proprio porque a diferenca entre "a
+    # matriz tem a linha e nao ha fonte" e "ninguem abriu a linha" desaparece
+    # se as duas so aparecerem como `UNKNOWN` no meio das celulas.
+    unevaluated_consumers: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -99,6 +136,7 @@ class UpgradeAssessment:
             "verdict": self.verdict,
             "cells": [c.to_dict() for c in self.cells],
             "unresolved": list(self.unresolved),
+            "unevaluated_consumers": list(self.unevaluated_consumers),
         }
 
 
@@ -110,13 +148,55 @@ def _features_da_spec(target_spec_version: int) -> list[str]:
     )
 
 
-def assess_upgrade(consumers: list[str], target_spec_version: int) -> UpgradeAssessment:
+def _lacuna_nomeada(engine: str) -> str:
+    """A frase de um consumidor DECLARADO que a matriz nao avaliou.
+
+    Silencio aqui seria a pior saida possivel: o operador declarou o consumidor,
+    e nao receber nada de volta se le como "esta bem". `SUPPORTED` por omissao
+    seria pior ainda. A frase precisa dizer as duas coisas -- que ninguem
+    avaliou, e qual medida destravaria.
+    """
+    alternativas = AMBIGUOUS_SERVICES.get(engine)
+    if alternativas:
+        return (
+            f"{engine}: consumidor declarado e AMBIGUO -- as tres plataformas "
+            f"publicam Iceberg diferente (em `emr-7.7.0` o EC2 traz 1.7.1-amzn-0 "
+            f"e o EKS traz 1.6.1-amzn-2), entao uma resposta unica estaria errada "
+            f"para pelo menos uma delas. Declare "
+            f"{', '.join(f'`{a}`' for a in alternativas)} em "
+            f"`.sparkforge/consumers.yaml`, com `release:` quando souber"
+        )
+    return (
+        f"{engine}: consumidor declarado e AUSENTE da matriz -- nenhuma celula "
+        f"foi avaliada para ele, o que e diferente de ter sido avaliado e dado "
+        f"UNKNOWN. A medida que destrava: uma fonte da propria engine sobre a "
+        f"feature, registrada em `knowledge/storage/iceberg-feature-support.yaml`"
+    )
+
+
+def assess_upgrade(
+    consumers: list[str],
+    target_spec_version: int,
+    releases: dict[str, str] | None = None,
+) -> UpgradeAssessment:
     """Veredito de subir para `target_spec_version` dado quem consome.
 
     `consumers` sao nomes de engine no vocabulario de
-    `sparkforge/facts/consumers.py:KNOWN_SERVICES`. Um nome fora da matriz nao
-    e erro: ele cai em `UNKNOWN`, que e a resposta certa -- ninguem coletou
-    fonte sobre ele.
+    `sparkforge/facts/consumers.py:KNOWN_SERVICES`.
+
+    `releases` mapeia engine -> release label declarada pelo operador (`emr_eks`
+    -> `emr-7.7.0`). E OPCIONAL, e a ausencia dele nao inventa nada: sem
+    release, a celula consultada e a da engine sem recorte de versao. Com
+    release, `sparkforge/storage/readiness.py` cruza a versao de Iceberg daquela
+    release com o minimo de biblioteca da feature -- que e o unico jeito de a
+    resposta diferir entre `emr_ec2` e `emr_eks` na MESMA release, como as
+    fontes dizem que ela difere.
+
+    CONSUMIDOR SEM LINHA NA MATRIZ NAO CAI EM SILENCIO. Ele sai em
+    `unevaluated_consumers` e com uma frase propria em `unresolved`: "a matriz
+    tem a linha e nao ha fonte" e "ninguem abriu a linha" sao dois
+    desconhecimentos diferentes, e o segundo e o unico que uma pessoa consegue
+    consertar.
 
     Inventario VAZIO devolve `UNRESOLVED`, nunca `SAFE`. Ausencia de
     declaracao nao e declaracao de ausencia: um job sem inventario nao e um job
@@ -130,12 +210,42 @@ def assess_upgrade(consumers: list[str], target_spec_version: int) -> UpgradeAss
         )
 
     features = _features_da_spec(target_spec_version)
+    declaradas = feature_support.engines()
+    releases = releases or {}
     consultadas: list[SupportCell] = []
     nao_resolvido: list[str] = []
+    nao_avaliados: list[str] = []
 
     for engine in sorted(set(consumers)):
+        if engine not in declaradas:
+            nao_avaliados.append(engine)
+            nao_resolvido.append(_lacuna_nomeada(engine))
+        release = releases.get(engine, "")
         for feature in features:
             celula = feature_support.cell(feature, engine)
+            if release:
+                cruzada = readiness.readiness(feature, engine, release)
+                consultadas.append(
+                    SupportCell(
+                        feature=feature,
+                        engine=engine,
+                        engine_version=release,
+                        status=cruzada["status"],
+                        source=cruzada["source"],
+                        note=cruzada["note"],
+                        reason=cruzada["reason"],
+                        library_version=cruzada["library_version"],
+                        min_library_version=cruzada["min_library_version"],
+                    )
+                )
+                status = cruzada["status"]
+                if status == "UNKNOWN":
+                    nao_resolvido.append(
+                        f"{engine} em `{release}`: `{feature}` fica UNKNOWN por "
+                        f"`{cruzada['reason']}` -- ver a razao em "
+                        f"`sparkforge/storage/readiness.py:REASONS`"
+                    )
+                continue
             consultadas.append(
                 SupportCell(
                     feature=feature,
@@ -148,7 +258,7 @@ def assess_upgrade(consumers: list[str], target_spec_version: int) -> UpgradeAss
                     note=celula.get("note", ""),
                 )
             )
-            if celula["status"] == "UNKNOWN":
+            if celula["status"] == "UNKNOWN" and engine in declaradas:
                 nao_resolvido.append(
                     f"{engine}: nenhuma fonte sobre `{feature}` -- a matriz tem "
                     f"UNKNOWN, e UNKNOWN e desconhecimento declarado, nao ausencia "
@@ -183,4 +293,5 @@ def assess_upgrade(consumers: list[str], target_spec_version: int) -> UpgradeAss
         verdict=veredito,
         cells=consultadas,
         unresolved=nao_resolvido,
+        unevaluated_consumers=nao_avaliados,
     )

@@ -1,0 +1,72 @@
+[
+  {
+    "rule_id": "SF-EMRK-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Alocação dinâmica ligada com shuffleTracking desligado por escrito — no Kubernetes não sobra o ramo da disjunção que a AWS documenta",
+    "severity": "P2",
+    "confidence": "medium",
+    "status": "confirmed",
+    "subject": {
+      "type": "source_location",
+      "file": "job.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_843e9a",
+      "f_843e9a"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Nenhuma fonte da AWS sobre EMR on EKS nomeia esta combinação como defeito, e este achado não finge que alguma nomeia. O que existe é uma relação declarada entre duas propriedades, montada por composição de duas páginas do Apache Spark, na versão FIXADA que corresponde ao Spark de EMR on EKS (docs/3.5.6/ — o Spark de emr-7.5.0 é 3.5.2-amzn-1). A primeira metade é uma disjunção, e ela tem QUATRO ramos, não dois. Na descrição de spark.dynamicAllocation.enabled (default false, desde 1.2.0): \"This requires one of the following conditions: 1) enabling external shuffle service through spark.shuffle.service.enabled, or 2) enabling shuffle tracking through spark.dynamicAllocation.shuffleTracking.enabled, or 3) enabling shuffle blocks decommission through spark.decommission.enabled and spark.storage.decommission.shuffleBlocks.enabled, or 4) (Experimental) configuring spark.shuffle.sort.io.plugin.class to use a custom ShuffleDataIO who's ShuffleDriverComponents supports reliable storage.\" A segunda metade fecha o ramo 1 no Kubernetes, e é literal: \"This also requires spark.dynamicAllocation.shuffleTracking.enabled to be enabled since Kubernetes doesn't support an external shuffle service at this time.\" E aqui vai a ressalva que quem for conferir precisa ter: essa frase NÃO está numa seção sobre alocação dinâmica. Ela está em Configuration → Stage Level Scheduling Overview — seção irmã de Resource Level Scheduling Overview, as duas penduradas direto em Configuration —, num parágrafo cujo assunto é ResourceProfile, e a página running-on-kubernetes.html não tem seção dedicada a alocação dinâmica. O raciocínio é curto e a fonte fornece as duas metades; o que ela não fornece é alguém chamando isso de erro. O QUE ESTE ACHADO NÃO OBSERVA, e é preciso dizer antes de agir: os ramos 3 e 4 da disjunção. Se este job run habilitar decommission de blocos de shuffle, ou um ShuffleDataIO customizado com armazenamento confiável, o requisito está satisfeito sem shuffleTracking e não há defeito nenhum. O motor de regras avalia um fact por vez e por igualdade, e não consegue exigir a ausência de uma chave; então a checagem dos dois ramos restantes é do operador, não deste achado. Por isso a confiança é medium e o vocabulário é \"relação a conferir\", nunca \"o job vai falhar\" — a fonte declara o REQUISITO e não declara o COMPORTAMENTO na violação, e afirmar que o job falha ao iniciar, ou que os executores nunca são liberados, exigiria medida própria que ninguém fez. Os dois valores precisam estar ESCRITOS, e nunca ausentes. Na versão fixada, spark.dynamicAllocation.shuffleTracking.enabled tem default true (Since Version 3.0.0) — então alocação dinâmica ligada sem a propriedade declarada está no default seguro, e disparar por ausência acusaria configuração correta. Uma coleta anterior desta área registrou default false; a releitura na versão fixada mede true, e a versão fixada vence. A leitura é de uma superfície só: sparkSubmitParameters, o nível 2 da precedência declarada pela AWS (\"if you pass the same configuration in an application override and in Spark submit parameters, the Spark submit parameters take precedence\"). O ponto cego que isso cria está declarado — um job run que configure alocação dinâmica apenas por applicationConfiguration não é julgado aqui — e a alternativa seria pior: ler o override sem poder conferir a linha de submit acusaria um valor que perdeu. E o limite que vale para a área inteira vale aqui também, e é o único acima de sparkSubmitParameters: spark.conf.set dentro do código do job é o nível 1 da precedência e nenhum artefato desta área o vê. Ver knowledge/emr-eks/job-run-configuration.md seções 3, 6 e 12.",
+    "proposed_change": [
+      "Antes de mudar qualquer coisa, conferir os dois ramos que este achado não observa: --conf spark.decommission.enabled e --conf spark.storage.decommission.shuffleBlocks.enabled, e --conf spark.shuffle.sort.io.plugin.class. Se algum deles estiver habilitado, o requisito já está satisfeito e não há nada a corrigir.",
+      "Se nenhum estiver, remover --conf spark.dynamicAllocation.shuffleTracking.enabled=false da linha de submit e deixar o default do Spark 3.x valer, que é true na versão fixada. Remover é preferível a escrever true: o default é o que a documentação sustenta, e uma propriedade escrita à mão com o valor do próprio default é o sintoma de procedência que a regra 19 do CLAUDE.md manda caçar.",
+      "Se a alocação dinâmica não for requisito deste job — carga de tamanho estável, executores fixos —, remover --conf spark.dynamicAllocation.enabled=true é a mudança menor e resolve a relação inteira.",
+      "Conferir também se as duas propriedades não estão sendo escritas em applicationConfiguration ao mesmo tempo, com valores diferentes: a linha de submit vence, e um override que discorda dela é ruído que a próxima pessoa vai ler como verdade."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Ligar shuffle tracking muda quando o executor é liberado: a fonte diz que a opção 'will try to keep alive executors that are storing shuffle data for active jobs'. Executores que hoje somem passam a ficar de pé mais tempo, e isso aparece na fatura antes de aparecer no tempo de execução.",
+      "Remover a alocação dinâmica fixa o paralelismo no que estiver declarado em spark.executor.instances. Num job cuja carga varia entre execuções, isso troca um problema por outro — e o outro só aparece no dia do pico.",
+      "Nenhuma das duas mudanças é validada por este artefato: DescribeJobRun mostra o que foi pedido, e o efeito sobre o número de executores só existe no event log. Sem persistentAppUI e sem destino de log, a mudança fica sem prova (ver SF-EMRK-002 e SF-EMRK-003)."
+    ],
+    "tradeoffs": [
+      "Manter executor vivo por causa de shuffle data custa dinheiro enquanto ele não trabalha; perder shuffle data porque o executor foi liberado custa recomputação. A alocação dinâmica no Kubernetes é a escolha entre os dois, e a documentação só diz qual mecanismo torna a escolha possível.",
+      "Este achado é P2 e confidence medium de propósito. A relação é conferível, e é isso que ele afirma; a violação não tem comportamento declarado por nenhuma fonte, e tratá-la como P1 daria ao achado uma certeza que a fonte não dá."
+    ],
+    "validation": [
+      "DescribeJobRun de uma submissão nova mostrando a linha de submit sem o shuffleTracking.enabled=false, ou sem o dynamicAllocation.enabled=true, conforme a decisão tomada.",
+      "Event log do job novo comparado ao do job anterior: número de executores ao longo do tempo, tarefas com FetchFailed e stages reexecutados. É o único lugar onde o efeito da relação aparece, e é o que separa 'mudei a configuração' de 'mudou o comportamento'.",
+      "Contagem total, contagem por chave de negócio e agregados de controle do destino iguais aos do run anterior comparável, e resultado idêntico linha a linha na chave declarada: alocação dinâmica muda quantos executores existem, nunca o conjunto de linhas — e se o resultado mudou, o achado não era sobre isso.",
+      "Duração de ponta a ponta e DPU/vCPU-segundos dos dois runs lado a lado, para saber de que lado do trade-off a mudança caiu."
+    ],
+    "rollback": [
+      "Devolver a linha de submit anterior na próxima submissão. Não existe update-job-run: a correção e o rollback acontecem onde o start-job-run é montado, nunca no job run já executado.",
+      "Se o rollback for necessário porque o custo subiu com executores mais longevos, a resposta provavelmente não é voltar o shuffleTracking para false — é reduzir maxExecutors ou desligar a alocação dinâmica, que é o que o achado propõe como alternativa."
+    ],
+    "sources": [
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/configuration.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://spark.apache.org/docs/3.5.6/running-on-kubernetes.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks-jobs-CLI.html",
+        "retrieved": "2026-08-31"
+      },
+      {
+        "url": "https://docs.aws.amazon.com/emr-on-eks/latest/APIReference/API_SparkSubmitJobDriver.html",
+        "retrieved": "2026-08-31"
+      }
+    ]
+  }
+]

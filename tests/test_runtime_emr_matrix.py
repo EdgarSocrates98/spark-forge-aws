@@ -1,121 +1,29 @@
-"""EMR_MATRIX: guard de drift contra o knowledge, e as quatro decisoes de desenho.
+"""EMR on EC2: as quatro decisoes de desenho da matriz, exercitadas no motor.
 
-O guard segue o mecanismo de `test_runtime_detect.py::test_matrix_matches_
-committed_knowledge` -- a matriz do codigo tem que espelhar a pagina de
-knowledge --, mas nao pode ser o mesmo teste literal: sao 30 releases e quatro
-colunas, e transcrever isso a mao no assert produziria uma segunda copia para
-manter desatualizada. Aqui a fonte e `knowledge/emr/runtime-matrix.md`, lida e
-comparada celula a celula.
+O GUARD DE DRIFT NAO MORA MAIS AQUI, e a mudanca e de mecanismo, nao de escopo.
+Este arquivo tinha o seu proprio parser de `knowledge/emr/runtime-matrix.md`, e
+o do Serverless tinha outro; acrescentar EMR on EKS e Glue faria QUATRO parsers
+para o mesmo formato de tabela. O guard das quatro plataformas passou a ser
+`tests/test_runtime_matrix_drift.py`, com um mecanismo so e o que varia
+(cabecalho da tabela, vocabulario de componentes, perfil de drift da serie)
+virado dado. A assimetria 6.x/7.x que este arquivo media -- serie estavel exige
+conjunto identico, serie com churn avisa em vez de falhar -- sobreviveu inteira
+la, como o campo `churn` da plataforma.
 
-As duas paginas oficiais tem perfis de drift OPOSTOS, e por isso as duas metades
-do guard sao diferentes:
-
-  6.x  Estavel. A serie nao recebe minors novos; o ultimo e emr-6.15.0. O
-       conjunto de releases tem que ser IDENTICO nos dois lados -- linha nova ou
-       removida e falha.
-
-  7.x  Churn estrutural garantido: a AWS lanca um minor a cada 90 dias no
-       maximo, e cada minor PREPENDE uma coluna. Exigir igualdade de conjunto
-       faria o guard falhar ~4x/ano por motivo que nao e drift do que a matriz
-       ja conhece, e guard ruidoso e guard ignorado. Entao: toda release que
-       EMR_MATRIX conhece tem que casar celula a celula (celula alterada e
-       drift, e falha), e release nova so na pagina vira UserWarning
-       informativo.
+O que fica AQUI e o que aquele guard nao responde: se a matriz, seja de onde
+vier, produz no motor o comportamento que as quatro decisoes de desenho
+prometem -- sufixo de fork guardado e ainda assim comparavel, Python como
+conjunto e nao valor, Iceberg ausente antes de 6.5.0, e Hadoop fora do
+`RuntimeContext`.
 """
-import warnings
-from pathlib import Path
-
 import pytest
 
 from sparkforge.facts.runtime_detect import (
     EMR_MATRIX,
     _apache_version,
-    _emr_key,
     detect_runtime,
 )
 from sparkforge.rules.version_scope import _parse, in_scope
-
-ROOT = Path(__file__).resolve().parents[1]
-DOC = ROOT / "knowledge" / "emr" / "runtime-matrix.md"
-
-_ABSENT = {"—", "-", ""}
-
-
-def _committed_matrix() -> dict[str, dict[str, str]]:
-    """Le as tabelas das secoes 2 e 3 do documento de knowledge.
-
-    Parsear o markdown em vez de reescrever os valores no teste e o que faz
-    deste um guard de DRIFT e nao uma terceira copia: so ha dois lugares onde a
-    matriz existe, e este teste e a ponte entre eles.
-    """
-    rows: dict[str, dict[str, str]] = {}
-    for line in DOC.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("| emr-"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        release, spark, hadoop, iceberg, installed, pyspark = cells[:6]
-        row = {
-            "spark": spark,
-            "hadoop": hadoop,
-            "python_installed": tuple(
-                p.strip() for p in installed.split(",") if p.strip()
-            ),
-        }
-        if iceberg not in _ABSENT:
-            row["iceberg"] = iceberg
-        if pyspark not in _ABSENT:
-            row["python"] = pyspark
-        rows[_emr_key(release)] = row
-    return rows
-
-
-def _series(releases, major: str) -> set[str]:
-    return {r for r in releases if r.startswith(f"{major}.")}
-
-
-COMMITTED = _committed_matrix()
-
-
-class TestDocumentIsParseable:
-    def test_the_tables_were_actually_found(self):
-        """Se o formato da tabela mudar, o parser devolve pouco ou nada e todo
-        o resto deste arquivo passaria vazio -- guard que nao guarda nada."""
-        assert len(COMMITTED) == len(EMR_MATRIX) >= 30
-        assert _series(COMMITTED, "7") and _series(COMMITTED, "6")
-
-
-class TestDriftGuardSixX:
-    """Serie estavel: igualdade estrita nos dois sentidos."""
-
-    def test_release_set_is_identical(self):
-        assert _series(EMR_MATRIX, "6") == _series(COMMITTED, "6")
-
-    @pytest.mark.parametrize("release", sorted(_series(EMR_MATRIX, "6")))
-    def test_every_cell_matches_the_committed_knowledge(self, release):
-        assert EMR_MATRIX[release] == COMMITTED[release]
-
-
-class TestDriftGuardSevenX:
-    """Serie com churn: celula alterada falha, coluna nova so avisa."""
-
-    @pytest.mark.parametrize("release", sorted(_series(EMR_MATRIX, "7")))
-    def test_every_known_cell_matches_the_committed_knowledge(self, release):
-        assert release in COMMITTED, (
-            f"emr-{release} esta em EMR_MATRIX e nao na pagina de knowledge. "
-            f"Este sentido E falha: o codigo afirmando o que o documento nao diz."
-        )
-        assert EMR_MATRIX[release] == COMMITTED[release]
-
-    def test_a_release_only_in_the_document_is_informative_not_a_failure(self):
-        extra = sorted(_series(COMMITTED, "7") - _series(EMR_MATRIX, "7"))
-        if extra:
-            warnings.warn(
-                f"EMR_MATRIX desatualizada: a pagina de knowledge ja tem "
-                f"{', '.join('emr-' + r for r in extra)}. Considere acrescentar. "
-                f"Isto NAO e drift do que a matriz conhece.",
-                UserWarning,
-                stacklevel=1,
-            )
 
 
 class TestAmznSuffixIsKeptAndStillCompares:

@@ -219,6 +219,10 @@ SKILL_DIRS = tuple(sorted(p for p in SKILLS.iterdir() if p.is_dir()))
 RELACAO_MEDIDA = {
     # As quatro de Glue 6 entraram na fase H6, cada uma com UM coordenador so:
     # a fronteira que cada skill cobre e a mesma que separa os coordenadores.
+    # `compare-releases` entrou na frente D do sub-projeto ReleaseDiff, e pelo
+    # mesmo criterio: a fronteira da skill -- versao de runtime entre plataformas
+    # -- e a mesma do coordenador que a declara.
+    "compare-releases": ("sf-runtime-specialist",),
     "iceberg-v3-readiness": ("sf-iceberg-specialist",),
     "lakeformation-fgac-guard": ("sf-lake-formation-specialist",),
     "migrate-glue-6": ("sf-runtime-specialist",),
@@ -286,6 +290,7 @@ RELACAO_MEDIDA = {
         "sf-schema-registry-specialist",
     ),
     "review-emr-cluster": ("emr-infra-reviewer",),
+    "review-emr-eks": ("emr-infra-reviewer",),
     "review-glue-terraform": (
         "glue-incremental-performance-architect",
         "glue-infra-reviewer",
@@ -766,10 +771,14 @@ class TestSkillsReais:
             # `iceberg-v3-readiness`, e NAO despachavel -- exige o inventario de
             # consumidores, que e conhecimento da organizacao.
             "lakeformation-fgac-guard": "sf-lake-formation-specialist",
+            # A frente D do sub-projeto ReleaseDiff: mesmo coordenador, e ele e
+            # o unico que declara a skill.
+            "compare-releases": "sf-runtime-specialist",
             "migrate-glue-6": "sf-runtime-specialist",
             "spark4-compatibility": "sf-runtime-specialist",
             "analyze-graph-data": "sf-graph-specialist",
             "review-emr-cluster": "emr-infra-reviewer",
+            "review-emr-eks": "emr-infra-reviewer",
             "verify-agent-evidence": "sf-evidence-verifier",
             "engineer-agent-context": "sf-context-engineer",
             "engineer-agent-memory": "sf-memory-engineer",

@@ -1,0 +1,31 @@
+name: idioma_de_autenticacao_sem_segredo
+proves: >
+  O NEGATIVO que trava a volta do pior defeito que SF-EMRK-001 ja teve: por um
+  tempo ela acusou a propria correcao. O detector compartilhado
+  (`facts/secrets.py`) casava o gatilho do nome da chave com o alfabeto de
+  material criptografico, e esse alfabeto inclui `.` e `-` -- entao
+  `spark.hadoop.fs.s3a.aws.credentials.provider =
+  com.amazonaws.auth.InstanceProfileCredentialsProvider`, que e exatamente a
+  configuracao que existe PARA nao haver credencial literal, virava P0 "segredo
+  em texto claro". `spark.kubernetes.authenticate.*.serviceAccountName =
+  emr-containers-sa-spark`, o idioma canonico do EMR on EKS, virava o mesmo P0.
+  Os dois valores ainda sumiam do `facts.json` antes de a regra chegar: o
+  operador perdia a evidencia E ganhava o achado.
+  Esta execucao poe os dois idiomas nas DUAS superficies -- o provider em
+  `applicationConfiguration.properties`, os dois service accounts em
+  `sparkSubmitParameters` -- e nao espera achado nenhum. O par positivo e
+  `segredo_nas_duas_superficies`, e a diferenca continua sendo so o VALOR: la ha
+  access key da AWS e senha embutida em URL, aqui ha nome de classe e nome de
+  conta de servico.
+  Declara destino de log e `persistentAppUI: ENABLED` de proposito, para que
+  qualquer achado que aparecer aqui seja inequivocamente o de segredo.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules: []

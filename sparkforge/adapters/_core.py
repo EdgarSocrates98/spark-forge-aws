@@ -53,6 +53,7 @@ from sparkforge.facts.data_quality import (
     extract_data_quality_tree,
 )
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path, extract_emr_cluster_tree
+from sparkforge.facts.emr_eks import extract_emr_eks_path, extract_emr_eks_tree
 from sparkforge.facts.emr_serverless import (
     extract_emr_serverless_path,
     extract_emr_serverless_tree,
@@ -85,6 +86,27 @@ from sparkforge.finops import build_finops_report
 from sparkforge.knowledge_ref import KnowledgeError, knowledge_dir, safe_knowledge_file
 from sparkforge.migration.assessment import assess as assess_migration
 from sparkforge.migration.collect import collect as collect_migration
+from sparkforge.migration.release_descriptor import (
+    PLATFORMS as RELEASE_PLATFORMS,
+)
+from sparkforge.migration.release_descriptor import (
+    UNRESOLVED_KINDS as _RELEASE_UNRESOLVED_KINDS,
+)
+from sparkforge.migration.release_descriptor import (
+    ReleaseDescriptor,
+    UnknownPlatform,
+    UnknownRelease,
+)
+from sparkforge.migration.release_descriptor import (
+    describe as describe_release,
+)
+from sparkforge.migration.release_descriptor import (
+    known_releases as known_releases_of,
+)
+from sparkforge.migration.release_diff import diff as diff_releases
+from sparkforge.migration.version_path import (
+    DEFAULT_PLATFORM as MIGRATION_DEFAULT_PLATFORM,
+)
 from sparkforge.observability.context_ledger import shared_ledger
 from sparkforge.rules.engine import judge as run_judge
 from sparkforge.rules.loader import CatalogError, load_catalog
@@ -93,6 +115,11 @@ from sparkforge.tuning import build_conf_advice
 from sparkforge.workload import build_fingerprint
 
 DEFAULT_LIMIT = 50
+
+# Reexportado para que `tools.py` derive o `enum` do schema DO MODELO, e nunca
+# de uma lista escrita a mao ao lado -- que e a familia de defeito que este
+# repositorio ja mediu em duas listas paralelas de extrator.
+RELEASE_UNRESOLVED_KINDS: frozenset[str] = _RELEASE_UNRESOLVED_KINDS
 
 
 class AdapterError(Exception):
@@ -550,6 +577,84 @@ def runtime_sources_from_facts(facts: list[Fact] | None) -> dict[str, dict[str, 
     return sources
 
 
+_EKS_NAMESPACE = "emrc."
+_EC2_NAMESPACE = "emr."
+_SERVERLESS_NAMESPACE = "emrs."
+
+
+def _e_so_de_serverless(facts: list[Fact] | None) -> bool:
+    """True quando o conjunto tem fact `emrs.*` e nenhum `emr.*` de EC2.
+
+    ESTREITA pelo mesmo motivo que `_recusar_emr_sobre_eks` e: um conjunto com
+    os dois artefatos fundidos (`get-application` + `describe-cluster`) tem o
+    lado de EC2 de fato presente, e ali a flag declara aquele lado -- com o
+    fork `-amzn-N`, que a fonte de EC2 publica. Trocar a matriz tambem naquele
+    caso apagaria um dado verdadeiro.
+
+    `emrc.*` (EKS) nao precisa ser testado aqui: `_recusar_emr_sobre_eks` roda
+    ANTES e ja estourou se ele estiver presente sem `emr.*`.
+    """
+    if not facts:
+        return False
+    kinds = {f.kind for f in facts}
+    if not any(k.startswith(_SERVERLESS_NAMESPACE) for k in kinds):
+        return False
+    return not any(k.startswith(_EC2_NAMESPACE) for k in kinds)
+
+
+def _recusar_emr_sobre_eks(emr: str | None, facts: list[Fact] | None) -> None:
+    """A flag `--emr` e de EMR on EC2, e sobre facts de EMR on EKS ela INVENTA.
+
+    `--emr` alimenta a chave `emr_release`, e `detect_runtime` deriva dela
+    `spark`, `python` e `iceberg` pela `EMR_MATRIX` -- que e a matriz de EMR on
+    EC2. Sobre um conjunto de facts `emrc.*` os tres eixos sairiam preenchidos
+    sem que um unico fact de EC2 estivesse presente.
+
+    Para EMR on EKS isso nao e imprecisao, e erro medido. A AWS PUBLICA matriz
+    de release para o EKS, e ela DIVERGE da de EC2 em celulas reais: em 26
+    releases comparaveis, Iceberg diverge em 6 e Spark em 4 -- `emr-6.5.0` nao
+    publica Iceberg nenhum no EKS enquanto o EC2 publica `0.12.0`, e `emr-7.7.0`
+    roda `1.6.1-amzn-2` no EKS contra `1.7.1-amzn-0` no EC2, minor diferente.
+    Python nao e publicado por familia em lugar nenhum do EKS. Ver
+    `knowledge/emr-eks/runtime-matrix.md` §2 e a DV-1 da spec da fase.
+
+    Recusar, e nao apenas deixar de derivar, porque o proprio eixo `emr` e uma
+    afirmacao sobre a plataforma errada: com ele preenchido, regra `SF-EMR-*`
+    guardada por `runtime_scope: {emr: ...}` entraria em escopo sobre um
+    artefato que nao e um cluster.
+
+    A recusa e ESTREITA de proposito. Um conjunto que tenha `emr.*` ao lado de
+    `emrc.*` -- dois artefatos fundidos -- passa, porque ali a flag declara o
+    lado de EC2 que esta de fato presente. O `RuntimeContext` e um so para os
+    dois lados, e isso e limite estrutural anterior a esta guarda.
+
+    A mesma invencao acontece com facts `emrs.*` de EMR Serverless, e ela
+    continua aberta: la a AWS nao publica matriz nenhuma, entao a de EC2 e
+    inaplicavel por FALTA DE FONTE, e nao por divergencia medida. Fechar aquele
+    lado exige decidir o que fazer sem fonte, e essa decisao nao foi tomada
+    aqui.
+    """
+    if not emr or not facts:
+        return
+    kinds = {f.kind for f in facts}
+    if not any(k.startswith(_EKS_NAMESPACE) for k in kinds):
+        return
+    if any(k.startswith(_EC2_NAMESPACE) for k in kinds):
+        return
+    raise AdapterError(
+        f"`--emr {emr}` e release de EMR on EC2, e este conjunto de facts e de "
+        f"EMR on EKS (kinds `{_EKS_NAMESPACE}*`, nenhum `{_EC2_NAMESPACE}*`).\n"
+        f"  A matriz de release do EMR on EKS existe e DIVERGE da de EC2 -- "
+        f"Iceberg em 6 de 26 releases comparaveis, Spark em 4 --, entao derivar "
+        f"`spark`, `python` e `iceberg` do release de EC2 gravaria versao que "
+        f"nunca rodou.\n"
+        f"  Julgue sem a flag; a area SF-EMRK nao restringe por versao:\n"
+        f"    sparkforge judge --facts <arquivo>\n"
+        f"  Ver `knowledge/emr-eks/runtime-matrix.md` (secao 2).",
+        exit_code=2,
+    )
+
+
 def build_runtime(
     glue: str | None = None,
     spark: str | None = None,
@@ -572,6 +677,17 @@ def build_runtime(
     silenciosamente o significado de cada argumento deles. Ordem de assinatura e
     compatibilidade, nao taxonomia.
     """
+    _recusar_emr_sobre_eks(emr, facts)
+    # A MESMA flag, a MESMA release, e OUTRA matriz. Sobre um conjunto so de
+    # facts `emrs.*` a derivacao passa pela matriz do EMR Serverless, que
+    # publica `spark` sem o sufixo do fork e NAO publica `python` nem
+    # `iceberg` -- os dois eixos que a matriz de EC2 preenchia do nada. O eixo
+    # `emr` continua sendo lido da flag nos dois caminhos: o release label e o
+    # mesmo namespace nas duas plataformas, e apaga-lo trocaria invencao por
+    # perda de informacao. Ver `knowledge/emr-serverless/runtime-matrix.md`.
+    chave_do_release = (
+        "emr_serverless_release" if _e_so_de_serverless(facts) else "emr_release"
+    )
     raw = {
         "glue_version": glue,
         # `emr_release` e a primeira chave de `_PLATFORM_KEYS["emr"]`, e
@@ -580,7 +696,7 @@ def build_runtime(
         # A flag e uma DECLARACAO, e por isso a fonte e `cli`, abaixo de
         # `event_log` e de `describe_cluster` em `_PRECEDENCE`: discordar de um
         # dump vira divergencia registrada, nunca resolucao silenciosa.
-        "emr_release": emr,
+        chave_do_release: emr,
         "spark_version": spark,
         "python_version": python,
         "iceberg_version": iceberg,
@@ -1182,6 +1298,56 @@ def analyze_emr_serverless(
 
 
 # --------------------------------------------------------------------------- #
+# analyze emr-eks
+# --------------------------------------------------------------------------- #
+#
+# NAO ha produtor de `RuntimeContext` aqui, pela razao do irmao Serverless
+# levada um passo adiante: `releaseLabel` do EMR on EKS (`emr-6.15.0-latest`)
+# carrega um sufixo de canal que a matriz de release do EMR on EC2 nao tem
+# chave para casar, e o que roda de fato vem da imagem do container, que este
+# extrator NAO le. Derivar versao de Spark, Python ou Iceberg daqui seria
+# afirmar sobre a imagem a partir do rotulo -- exatamente a inferencia que a
+# area recusa.
+#
+# A fronteira da area inteira, repetida onde a superficie a expoe: os facts
+# `emrc.*` descrevem o que UMA EXECUCAO PEDIU (`DescribeJobRun` mais
+# `DescribeVirtualCluster`), nunca o que o pod recebeu. O pod template
+# referenciado pela configuracao nao e lido -- ele sai como recusa com o path,
+# porque le-lo exigiria um `GetObject` no S3 que este caminho nao faz. E o lado
+# EKS (nodegroup, autoscaling, pod pendente) nao existe neste dump: outro
+# servico, outro IAM, outra matriz de versao.
+
+
+def _extract_emr_eks_facts(path: str) -> list[Fact]:
+    target = Path(path)
+    if not target.exists():
+        raise AdapterError(
+            f"Caminho nao encontrado para analise: {path}\n"
+            f"  Aponte para o diretorio com dumps de execucao EMR on EKS ou para "
+            f"um arquivo .json:\n"
+            f"    sparkforge collect emr-eks --repo . --virtual-cluster-id 0abcXXXX "
+            f"--job-run-id 0runXXXX --now <iso>\n"
+            f"    sparkforge analyze emr-eks --path <dir-ou-arquivo> "
+            f"--out .sparkforge/facts_emr_eks.json",
+            exit_code=2,
+        )
+    if target.is_dir():
+        return extract_emr_eks_tree(target, repo_root=target)
+    return extract_emr_eks_path(target, repo_root=target.parent)
+
+
+def analyze_emr_eks(
+    path: str,
+    kind: list[str] | None = None,
+    limit: int | None = DEFAULT_LIMIT,
+    cursor: str | None = None,
+    detail_level: str = "full",
+) -> dict[str, Any]:
+    facts = _extract_emr_eks_facts(path)
+    return _facts_page(facts, "emrc.unresolved", kind, limit, cursor, detail_level)
+
+
+# --------------------------------------------------------------------------- #
 # analyze data-quality
 # --------------------------------------------------------------------------- #
 
@@ -1363,8 +1529,24 @@ def analyze_call_graph(
 # --------------------------------------------------------------------------- #
 
 
-def migration_assess(path: str, source: str, target: str) -> dict[str, Any]:
-    """Julga a migracao de um job Glue entre um par de versoes, pelo catalogo.
+def migration_assess(
+    path: str, source: str, target: str, platform: str = MIGRATION_DEFAULT_PLATFORM
+) -> dict[str, Any]:
+    """Julga a migracao de um job entre um par de versoes, pelo catalogo.
+
+    PARAMETRO NOVO, TOOL A MESMA (D-4 da spec de EMR). Medido antes de decidir:
+    `sparkforge_migration_assess` ja compunha os artefatos, ja expandia o par em
+    degraus e ja agregava com gates; o que ela nao aceitava era a PLATAFORMA.
+    Uma tool nova duplicaria as tres coisas para trocar uma matriz, e cada tool
+    nova entra em quatro gates de paridade e la fica -- a §70 manda expandir em
+    vez de multiplicar. `platform` tem default `glue` porque essa era a unica
+    resposta possivel antes, e mudar o default silenciosamente trocaria a
+    resposta de quem ja chamava.
+
+    A COBERTURA SAI JUNTO, SEMPRE. Para EMR o catalogo tem ZERO regras por
+    `emr`: sem o campo `coverage`, este verbo devolveria um assessment sem
+    achado que o operador leria como "nada quebra". Ver a DECISAO 3 no
+    docstring de `sparkforge/migration/assessment.py`.
 
     Composicao, nao motor novo: `sparkforge.migration.assessment.assess()` ja
     expande o par em degraus, julga cada degrau com o `judge` e agrega com
@@ -1395,15 +1577,20 @@ def migration_assess(path: str, source: str, target: str) -> dict[str, Any]:
     facts = collect_migration(target_path)
 
     try:
-        return assess_migration(facts, source=source, target=target).to_dict()
+        return assess_migration(
+            facts, source=source, target=target, platform=platform
+        ).to_dict()
     except ValueError as exc:
         # `version_path.steps` ja nomeia o defeito ("alvo anterior a origem",
-        # "versao fora da matriz; conhecidas: ..."). Traduzir para um erro
-        # generico perderia a unica informacao util da falha.
+        # "versao fora da matriz de <plataforma>; conhecidas: ...", "rotulo
+        # fora do padrao de versao"). Traduzir para um erro generico perderia
+        # a unica informacao util da falha.
         raise AdapterError(
             f"{exc}\n"
-            f"  Confira o par contra a matriz de runtime:\n"
-            f"    sparkforge runtime detect --glue 6.0",
+            f"  As quatro plataformas: {', '.join(RELEASE_PLATFORMS)}.\n"
+            f"  Confira o par contra a matriz daquela plataforma:\n"
+            f"    sparkforge release describe --platform {platform} "
+            f"--release <release>",
             exit_code=2,
         ) from exc
 
@@ -1510,8 +1697,23 @@ def iceberg_assess_upgrade(path: str, source: int, target: int) -> dict[str, Any
             if f.kind == "env.consumer" and f.attrs.get("service")
         }
     )
+    # `release` e opcional no inventario. Quando o operador declara DUAS
+    # releases para o mesmo servico, a ultima em ordem NAO vence por sorteio:
+    # duas releases da mesma plataforma sao dois consumidores, e escolher uma
+    # responderia pela outra. O caso e raro e a saida honesta e a mais simples
+    # possivel -- fica sem release, e a resposta cai para a da engine sem
+    # recorte de versao, que e mais fraca e nao errada.
+    declaradas: dict[str, set[str]] = {}
+    for fato in facts:
+        if fato.kind != "env.consumer":
+            continue
+        servico = str(fato.attrs.get("service", ""))
+        release = str(fato.attrs.get("release", "")).strip()
+        if servico and release:
+            declaradas.setdefault(servico, set()).add(release)
+    releases = {s: next(iter(r)) for s, r in declaradas.items() if len(r) == 1}
     try:
-        resultado = assess_iceberg_upgrade(engines, target_spec_version=target)
+        resultado = assess_iceberg_upgrade(engines, target_spec_version=target, releases=releases)
     except ValueError as exc:
         raise AdapterError(str(exc), exit_code=2) from exc
 
@@ -1519,6 +1721,96 @@ def iceberg_assess_upgrade(path: str, source: int, target: int) -> dict[str, Any
     payload["source_spec_version"] = source
     payload["path"] = str(alvo)
     return payload
+
+
+# --------------------------------------------------------------------------- #
+# release describe / release diff
+# --------------------------------------------------------------------------- #
+
+# VERBOS DE TOPO, e nao `analyze release`: tudo sob `analyze` le um ARTEFATO do
+# operador e para ali. Estes dois nao leem artefato nenhum -- eles compoem sobre
+# as quatro matrizes de `knowledge/`, que e a mesma linha que separa `benchmark`,
+# `workload` e `fuse` dos extratores.
+#
+# E os dois NAO JULGAM. A D-6 da spec de `ReleaseDiff` e explicita: este
+# sub-projeto entrega dado, modelo e verbo, e nenhuma regra. Nenhum `Finding`
+# nasce aqui, e nenhuma linha da saida diz se algo quebra -- essa pergunta e do
+# `MigrationAssessment` (`migration_assess`, hoje so Glue).
+#
+# O UNICO trabalho desta camada e traduzir a recusa NOMEADA do modelo
+# (`UnknownPlatform`, `UnknownRelease`) para `AdapterError` com exit 2, no molde
+# dos `_extract_*_facts`: a mensagem ensina o que existe. Ela precisa ensinar
+# porque as quatro matrizes tem fronteiras DIFERENTES -- `6.3.0` existe no EMR
+# on EKS (que desce ate `5.32.0`) e nao no EC2 (que comeca em `6.4.0`), e
+# `spark-8.0-preview` so existe no Serverless. Um `KeyError` nao diria qual das
+# quatro fronteiras foi cruzada.
+
+
+def _release_descriptor(platform: str, release: str) -> ReleaseDescriptor:
+    """`describe()` com a recusa vestida de erro de fronteira acionavel."""
+    try:
+        return describe_release(platform, release)
+    except UnknownPlatform as exc:
+        raise AdapterError(
+            f"{exc}\n"
+            f"  As quatro plataformas: {', '.join(RELEASE_PLATFORMS)}.\n"
+            f"    sparkforge release describe --platform emr_ec2 --release 7.7.0",
+            exit_code=2,
+        ) from exc
+    except UnknownRelease as exc:
+        raise AdapterError(
+            f"{exc}\n"
+            f"  Cada plataforma tem a sua matriz, e as fronteiras nao coincidem:\n"
+            f"  uma release conhecida por uma pode nao existir na outra.\n"
+            f"    sparkforge release describe --platform {platform} "
+            f"--release {(known_releases_of(platform) or ('<release>',))[0]}",
+            exit_code=2,
+        ) from exc
+
+
+def release_describe(platform: str, release: str) -> dict[str, Any]:
+    """O que uma release E, segundo a fonte daquela plataforma e so ela.
+
+    Componente que a fonte daquela plataforma NAO publica sai em `unresolved`
+    NOMEADO -- nunca string vazia, nunca chave ausente em silencio. As quatro
+    plataformas publicam conjuntos diferentes (o EMR on EKS nao publica Hadoop
+    em release nenhuma: 0 de 34 paginas), e um descritor que apagasse essa
+    diferenca mentiria por omissao. `unresolved_detail` carrega o tipo da
+    recusa e a medida que a destravaria, porque `platform_source_does_not_publish`
+    destrava com uma FONTE nova e `release_cell_absent` com uma LEITURA daquela
+    pagina -- colapsar as duas faria o operador procurar no lugar errado.
+    """
+    return _release_descriptor(platform, release).to_dict()
+
+
+def release_diff(
+    left_platform: str,
+    left_release: str,
+    right_platform: str,
+    right_release: str,
+) -> dict[str, Any]:
+    """O que mudou entre duas releases, com o EIXO da comparacao declarado.
+
+    QUATRO argumentos e nao tres, e a razao esta na D-4 da spec: comparar
+    `emr-7.7.0` no EC2 com o MESMO rotulo no EKS e comparacao legitima -- e onde
+    mora o achado medido, que o mesmo rotulo publica Iceberg `1.7.1-amzn-0` num
+    e `1.6.1-amzn-2` no outro. Um verbo que recebesse UMA plataforma e duas
+    releases nao teria como fazer essa pergunta.
+
+    `axis` sai com as dimensoes que EFETIVAMENTE variam (`platform`, `release`,
+    ou as duas, nessa ordem). Com as duas variando a ATRIBUICAO sai em
+    `unresolved`: nenhuma linha de `changed` pode ser creditada a release ou a
+    plataforma isoladamente.
+
+    Cinco das sete dimensoes do §8.2 saem em `unresolved` com a razao --
+    `deprecated`, `default_changes`, `compatibility_changes`, `security_changes`
+    e `performance_changes` --, porque as matrizes sustentam versao de componente
+    e nada mais. Lista vazia seria lida como "nao mudou nada".
+    """
+    return diff_releases(
+        _release_descriptor(left_platform, left_release),
+        _release_descriptor(right_platform, right_release),
+    ).to_dict()
 
 
 # --------------------------------------------------------------------------- #
@@ -3598,6 +3890,21 @@ def collect_emr_serverless(repo: str, *, application_id: str, now: str) -> dict[
     rel_path = collect_aws.emr_serverless_path(application_id)
     try:
         entry = collect_aws.collect_emr_serverless(application_id, Path(repo), now=now)
+    except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
+        raise _collect_error(exc, repo, rel_path) from exc
+    return _collect_payload(entry, now)
+
+
+def collect_emr_eks(
+    repo: str, *, virtual_cluster_id: str, job_run_id: str, now: str
+) -> dict[str, Any]:
+    # Os DOIS ids sao obrigatorios porque `DescribeJobRun` exige
+    # `virtualClusterId` junto do `id` -- ver o docstring do coletor.
+    rel_path = collect_aws.emr_eks_path(virtual_cluster_id, job_run_id)
+    try:
+        entry = collect_aws.collect_emr_eks(
+            virtual_cluster_id, job_run_id, Path(repo), now=now
+        )
     except (CollectorUnavailable, collect_aws.CollectionFailed) as exc:
         raise _collect_error(exc, repo, rel_path) from exc
     return _collect_payload(entry, now)

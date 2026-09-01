@@ -17,7 +17,17 @@ consumers:
     service: athena
     owner: squad-analytics          # opcional
     note: dashboard executivo       # opcional
+    release: emr-7.7.0              # opcional; so faz sentido com plataforma
 ```
+
+`release` E OPCIONAL, E A AUSENCIA DELE E RESPOSTA. Quando o servico e uma das
+plataformas com matriz de runtime (`glue`, `emr_ec2`, `emr_serverless`,
+`emr_eks`), declarar a release deixa `sparkforge/storage/readiness.py` cruzar a
+versao de Iceberg daquela release com o minimo de biblioteca da feature. Sem
+`release`, a resposta e a da engine sem recorte -- que e mais fraca, e nao
+errada. O que seria errado e ADIVINHAR a release a partir do nome do servico:
+`emr-7.7.0` traz Iceberg 1.7.1-amzn-0 no EC2 e 1.6.1-amzn-2 no EKS, e escolher
+uma delas por conta propria e escolher a resposta.
 
 Este extrator desbloqueia SF-ENV-002, a armadilha mais cara documentada em
 `knowledge/glue/runtime-matrix.md` secao 3: Glue 5.1 escreve Iceberg format
@@ -56,8 +66,36 @@ EMITTED_KINDS = frozenset(
 # regras do catalogo referenciam por nome, entao errar a grafia ("Athena",
 # "athena-sql") faria SF-ENV-002 silenciosamente nao casar. Por isso a
 # normalizacao e minima e previsivel: minusculas, sem espaco nas bordas.
+#
+# `emr` CONTINUA AQUI, e continuar e uma decisao. A matriz de feature quebrou
+# `emr` em `emr_ec2`, `emr_serverless` e `emr_eks` porque as tres publicam
+# Iceberg DIFERENTE -- em `emr-7.7.0` o EC2 traz 1.7.1-amzn-0 e o EKS traz
+# 1.6.1-amzn-2. Remover `emr` daqui converteria todo inventario ja escrito em
+# `known_service: false` de um dia para o outro, o que e um alarme sobre GRAFIA
+# para um problema que e de AMBIGUIDADE. O nome fica reconhecido, e quem o
+# resolve e `sparkforge/storage/upgrade.py`: `emr` nao tem linha na matriz, e
+# por isso sai `UNKNOWN` NOMEADO, com a frase que diz qual das tres declarar.
+# Ambiguidade dita em voz alta e melhor que ambiguidade transformada em erro de
+# digitacao.
 KNOWN_SERVICES = frozenset(
-    {"athena", "redshift", "emr", "quicksight", "sagemaker", "glue", "spark", "trino"}
+    {
+        "athena",
+        "redshift",
+        "emr",
+        "emr_ec2",
+        "emr_serverless",
+        "emr_eks",
+        "quicksight",
+        "sagemaker",
+        "glue",
+        "spark",
+        "trino",
+        "flink",
+        "pyiceberg",
+        "bigquery",
+        "rest_client",
+        "s3_tables",
+    }
 )
 
 
@@ -140,7 +178,14 @@ def extract_consumers(payload: Any, path: str, artifact_sha256: str = "") -> lis
             "service": service,
             "known_service": service in KNOWN_SERVICES,
         }
-        for optional in ("owner", "note"):
+        # `release` entra junto de `owner` e `note` porque as tres tem a mesma
+        # natureza -- declaracao do operador, opcional, sem default inventado.
+        # A diferenca e o consumidor: `release` alimenta o cruzamento por
+        # versao de biblioteca, e por isso ela e transcrita CRUA (`emr-7.7.0`,
+        # nao `7.7.0`): normalizar aqui esconderia do relatorio o que a pessoa
+        # escreveu, e a variante de imagem (`emr-7.7.0-java8-latest`) precisa
+        # chegar inteira em quem sabe recusa-la.
+        for optional in ("owner", "note", "release"):
             value = entry.get(optional)
             if isinstance(value, str) and value.strip():
                 attrs[optional] = value.strip()

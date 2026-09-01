@@ -57,6 +57,21 @@ class FeatureSupportError(ValueError):
 #   PREVIEW      disponivel sem garantia de estabilidade.
 #   UNKNOWN      nao ha fonte. O unico status que dispensa evidencia.
 #   CONFLICTING  duas fontes afirmam coisas incompativeis, e nenhuma vence.
+#
+# Os dois ULTIMOS entraram com a separacao de `emr` em tres plataformas, e cada
+# um entrou com um consumidor real -- vocabulario sem consumidor e etiqueta
+# decorativa, e este repositorio recusa isso em toda parte:
+#   ENGINE_DEPENDENT   a fonte descreve um CAMINHO, e o que se consegue por ele
+#                      depende da engine do outro lado. O caso e
+#                      `rest_catalog.rest_client`: a pagina do endpoint Iceberg
+#                      REST do Glue fala do endpoint, nunca de um cliente
+#                      concreto. Nem afirmar suporte generico, nem esconder que
+#                      o caminho existe.
+#   VERSION_DEPENDENT  a resposta so existe com a RELEASE na mao, e quem a
+#                      calcula e `sparkforge/storage/readiness.py` cruzando
+#                      `min_library_version` com a matriz de runtime da
+#                      plataforma. Uma celula assim diz "me pergunte de novo com
+#                      a release", que e diferente de "nao sei".
 SUPPORT_STATUS = frozenset(
     {
         "SUPPORTED",
@@ -65,6 +80,8 @@ SUPPORT_STATUS = frozenset(
         "READ_ONLY",
         "WRITE_ONLY",
         "PREVIEW",
+        "ENGINE_DEPENDENT",
+        "VERSION_DEPENDENT",
         "UNKNOWN",
         "CONFLICTING",
     }
@@ -88,6 +105,22 @@ ANY_VERSION = "*"
 _DISPENSA_FONTE = "UNKNOWN"
 
 _CAMPOS_DE_EVIDENCIA = ("source", "source_type", "retrieved")
+
+# `min_library_version` -- o campo que permite NAO repetir a versao de Iceberg.
+#
+# A versao de Iceberg de cada release de Glue, EMR on EC2, EMR Serverless e EMR
+# on EKS ja mora em `knowledge/<plataforma>/runtime-matrix.yaml`. Repeti-la aqui
+# criaria a terceira copia do mesmo fato -- o defeito que a normalizacao das
+# matrizes de runtime existiu para remover. O que a matriz de feature declara e
+# A PARTIR DE QUAL release da BIBLIOTECA a capacidade aparece; o cruzamento com
+# a release da plataforma e calculado em `sparkforge/storage/readiness.py`.
+#
+# O campo e OPCIONAL e a ausencia dele e informacao: significa que as notas
+# curadas lidas nao nomeiam a capacidade em release nenhuma, e o cruzamento sai
+# `UNKNOWN` com essa razao em vez de sair um numero inventado. Quando presente,
+# ele carrega evidencia propria pelo mesmo motivo que uma celula carrega: um
+# limite inferior sem fonte e opiniao sobre o passado da biblioteca.
+_CAMPOS_DO_MINIMO = ("value", *_CAMPOS_DE_EVIDENCIA)
 
 
 def _matrix_path() -> Path:
@@ -145,13 +178,42 @@ def _validar_celula(coordenada: str, celula: dict[str, Any]) -> None:
         )
 
 
+def _validar_minimo(feature: str, registro: Any) -> dict[str, Any]:
+    """Valida o bloco `min_library_version` de uma feature.
+
+    DEFEITO IMPEDIDO: um limite inferior escrito de cabeca ("acho que veio na
+    1.9"). Ele parece inofensivo porque so restringe -- mas ele PRODUZ
+    `UNSUPPORTED` no cruzamento, e um `UNSUPPORTED` fabricado bloqueia uma
+    migracao que talvez estivesse liberada. Restringir sem fonte erra tao caro
+    quanto liberar sem fonte.
+    """
+    if not isinstance(registro, dict):
+        raise FeatureSupportError(
+            f"{feature}.min_library_version: esperava um mapa com `value` e "
+            f"evidencia, veio {registro!r}"
+        )
+    for campo in _CAMPOS_DO_MINIMO:
+        if not registro.get(campo):
+            raise FeatureSupportError(
+                f"{feature}.min_library_version: sem `{campo}` -- limite inferior "
+                "sem fonte produz UNSUPPORTED fabricado no cruzamento por release"
+            )
+    if registro["source_type"] not in SOURCE_TYPES:
+        raise FeatureSupportError(
+            f"{feature}.min_library_version: source_type {registro['source_type']!r} "
+            f"fora de {sorted(SOURCE_TYPES)}"
+        )
+    return registro
+
+
 @lru_cache(maxsize=1)
 def load() -> dict[str, dict[str, Any]]:
     """As features validadas, indexadas pelo nome da feature.
 
-    Cada feature devolve `{"spec_version": int | None, "engines": {engine:
-    {versao: celula}}}`, com toda celula ja na forma longa. Cache com
-    `lru_cache` porque o arquivo nao muda durante a vida do processo.
+    Cada feature devolve `{"spec_version": int | None, "min_library_version":
+    dict | None, "engines": {engine: {versao: celula}}}`, com toda celula ja na
+    forma longa. Cache com `lru_cache` porque o arquivo nao muda durante a vida
+    do processo.
     """
     caminho = _matrix_path()
     with caminho.open("r", encoding="utf-8") as arquivo:
@@ -177,6 +239,10 @@ def load() -> dict[str, dict[str, Any]]:
                 f"{feature}: spec_version {spec_version!r} fora de {sorted(SPEC_VERSIONS)}"
             )
 
+        minimo = dados.get("min_library_version")
+        if minimo is not None:
+            minimo = _validar_minimo(feature, minimo)
+
         engines: dict[str, dict[str, dict[str, Any]]] = {}
         for engine, versoes in (dados.get("engines") or {}).items():
             engines[engine] = {}
@@ -185,8 +251,36 @@ def load() -> dict[str, dict[str, Any]]:
                 _validar_celula(f"{feature}.{engine}.{versao}", normalizada)
                 engines[engine][str(versao)] = normalizada
 
-        resolvida[feature] = {"spec_version": spec_version, "engines": engines}
+        resolvida[feature] = {
+            "spec_version": spec_version,
+            "min_library_version": minimo,
+            "engines": engines,
+        }
     return resolvida
+
+
+def engines() -> frozenset[str]:
+    """Toda engine que a matriz DECLARA, em qualquer feature.
+
+    Existe para uma pergunta que `cell()` nao responde: um consumidor declarado
+    pelo operador esta ou nao esta na matriz? As duas respostas saem `UNKNOWN`
+    em `support()`, e sao coisas diferentes -- "a matriz tem a linha e nao ha
+    fonte" contra "ninguem sequer abriu a linha". A segunda precisa ser NOMEADA
+    ao operador, e nao silenciada por um `UNKNOWN` que parece igual.
+    """
+    return frozenset(
+        engine for dados in load().values() for engine in dados["engines"]
+    )
+
+
+def min_library_version(feature: str) -> dict[str, Any] | None:
+    """O limite inferior de biblioteca da feature, com evidencia, ou `None`.
+
+    `None` NAO e falha: e a lacuna registrada de uma capacidade que as notas
+    curadas lidas nao nomeiam em release nenhuma. Quem cruza precisa distinguir
+    "a biblioteca e antiga demais" de "ninguem sabe a partir de quando".
+    """
+    return load().get(feature, {}).get("min_library_version")
 
 
 def cell(feature: str, engine: str, version: str = ANY_VERSION) -> dict[str, Any]:

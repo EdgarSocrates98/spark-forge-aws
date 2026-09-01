@@ -160,6 +160,10 @@ def emr_serverless_path(application_id: str) -> str:
     return f".sparkforge/artifacts/emr_serverless/{application_id}.json"
 
 
+def emr_eks_path(virtual_cluster_id: str, job_run_id: str) -> str:
+    return f".sparkforge/artifacts/emr_eks/{virtual_cluster_id}_{job_run_id}.json"
+
+
 def _sha256_bytes(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
@@ -915,6 +919,82 @@ def collect_emr_serverless(application_id: str, root: Path, *, now: str) -> Arti
     )
 
 
+# --------------------------------------------------------------------------- #
+# execucao EMR on EKS (`describe-virtual-cluster` + `describe-job-run`)
+# --------------------------------------------------------------------------- #
+
+
+def collect_emr_eks(
+    virtual_cluster_id: str, job_run_id: str, root: Path, *, now: str
+) -> ArtifactEntry:
+    """Baixa `DescribeVirtualCluster` e `DescribeJobRun` de uma execucao EMR
+    on EKS e grava as duas respostas num arquivo autocontido.
+
+    DUAS chamadas, nem uma nem seis. Diferente do EMR Serverless, onde
+    `GetApplication` ja devolve tudo num objeto so, e diferente do EMR on EC2,
+    onde `describe-cluster` mais cinco listagens vivem todas na API `emr`: no
+    EMR on EKS, `DescribeVirtualCluster` (identidade e estado do cluster
+    virtual) e `DescribeJobRun` (a execucao em si) sao duas APIS SEPARADAS do
+    servico `emr-containers`, e nenhuma delas contem a outra.
+
+    As duas respostas vao para o MESMO arquivo, sob as chaves de topo
+    `virtualCluster` e `jobRun` -- exatamente o shape que
+    `sparkforge.facts.emr_eks` documenta ler. Correlacionar as duas e trabalho
+    do extrator, nao deste coletor; o que este coletor garante e um artefato
+    autocontido por execucao, a mesma decisao de `collect_emr_cluster` (seis
+    dumps, um arquivo).
+
+    **Os dois ids sao obrigatorios, e nao ha resolucao por nome.**
+    `DescribeJobRun` exige `virtualClusterId` junto do `id` -- a propria API
+    nao aceita um job run sem o cluster virtual que o contem. Um coletor que
+    aceitasse nome escolheria uma entre N homonimas em silencio e gravaria o
+    artefato errado com aparencia de certo, a classe de resultado que este
+    pacote existe para nao produzir. Mesma disciplina de `collect_emr_cluster`
+    (so aceita `j-XXXX`) e `collect_emr_serverless` (so aceita
+    `applicationId`).
+
+    Fora do escopo desta fase, por decisao e nao por limitacao da API:
+    `list-job-runs` (listagem, nao coleta de uma execucao identificada), o pod
+    template apontado pela configuracao (exigiria uma segunda chamada,
+    `GetObject`, fora do que este coletor faz), e todo o lado EKS (nodegroup,
+    autoscaling, pods) -- outro servico, outro IAM, outra matriz de versao.
+    """
+    rel_path = emr_eks_path(virtual_cluster_id, job_run_id)
+    hit = _offline_hit(root, rel_path)
+    if hit is not None:
+        return hit
+
+    boto3 = require_boto3()
+    client = boto3.client("emr-containers")
+
+    virtual_cluster = (
+        client.describe_virtual_cluster(id=virtual_cluster_id).get("virtualCluster") or {}
+    )
+    job_run = (
+        client.describe_job_run(id=job_run_id, virtualClusterId=virtual_cluster_id).get(
+            "jobRun"
+        )
+        or {}
+    )
+    payload: dict[str, Any] = {"virtualCluster": virtual_cluster, "jobRun": job_run}
+
+    content = json.dumps(payload, indent=2, sort_keys=True, default=str, ensure_ascii=False).encode(
+        "utf-8"
+    )
+    return _write_and_register(
+        root,
+        rel_path,
+        content,
+        kind="emr_eks",
+        source=f"emr-containers:describe_job_run:{virtual_cluster_id}:{job_run_id}",
+        collect_command=(
+            f"sparkforge collect emr-eks --virtual-cluster-id {virtual_cluster_id} "
+            f"--job-run-id {job_run_id}"
+        ),
+        now=now,
+    )
+
+
 __all__ = [
     "CLOUDWATCH_METRICS",
     "CLOUDWATCH_METRIC_NAMES",
@@ -926,11 +1006,13 @@ __all__ = [
     "collect_athena_workgroup",
     "collect_cloudwatch",
     "collect_emr_cluster",
+    "collect_emr_eks",
     "collect_emr_serverless",
     "collect_event_log",
     "collect_glue_job",
     "collect_iceberg_metadata",
     "emr_cluster_path",
+    "emr_eks_path",
     "emr_serverless_path",
     "event_log_path",
     "glue_job_path",

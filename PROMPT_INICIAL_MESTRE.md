@@ -101,6 +101,9 @@ Depois acione, conforme as evidências:
 - `review-emr-cluster` — se o Spark roda em Amazon EMR on EC2 e não no Glue, esta
   substitui `review-glue-terraform`: o artefato de infraestrutura passa a ser o dump de
   `describe-cluster`, e o resto da investigação não muda
+- `review-emr-eks` — se o Spark roda em Amazon EMR on EKS, o artefato é outro de novo: o
+  par `describe-virtual-cluster` + `describe-job-run` do `emr-containers`. Ela **não** julga
+  capacidade de nó, pod pendente nem pod template — isso é do EKS, não do EMR
 - `review-data-validation` — se a biblioteca valida dado em qualquer forma (check
   artesanal, PyDeequ, Great Expectations). A pergunta é onde o check está, se ele tem
   consequência e quanto custa, nunca se o dado está correto

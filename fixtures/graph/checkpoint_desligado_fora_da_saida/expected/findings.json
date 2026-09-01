@@ -1,0 +1,74 @@
+[
+  {
+    "rule_id": "SF-GRAPH-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "checkpointInterval fora da faixa que a fonte recomenda",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "job.py",
+      "line": 29,
+      "col": 11,
+      "end_line": 29,
+      "symbol": "comunidades",
+      "snippet": "return g.labelPropagation(maxIter=5, checkpoint_interval=0)"
+    },
+    "evidence": [
+      "f_8e5327"
+    ],
+    "measured": {
+      "line": 29,
+      "iteration_literal": 5,
+      "checkpoint_interval": 0
+    },
+    "threshold": {
+      "max_interval": 2
+    },
+    "runtime_scope": {},
+    "explanation": "O valor de `checkpointInterval` desta chamada está fora da faixa que a documentação recomenda, e o próprio código da biblioteca avisa nessa condição: `if (value <= 0 || value > 2) logWarn(\"Set checkpointInterval to $value. This would blow up the query plan and hang the driver for large graphs.\")`. A documentação é explícita no mesmo sentido — \"It is recommended to keep this value at `2` or below\" — e o default é `2`. É o único limiar numérico desta área com fonte primária: não é heurística de campo, é o número que a biblioteca publica. OS DOIS LADOS DA FAIXA DOEM PELO MESMO MECANISMO, e é o lineage. Acima de `2`, o truncamento acontece raro demais: o plano lógico cresce a cada superpasso, o Catalyst passa a gastar mais tempo otimizando do que o cluster gasta executando, e o sintoma aparece no driver, não nos executores. Não positivo, o checkpoint é desligado por inteiro (`shouldCheckpoint = checkpointInterval > 0`, e o bloco é pulado), o que é a mesma doença sem o teto. A EXCEÇÃO É MEDIDA, E É UMA SÓ. Em `connectedComponents`, um valor não positivo não é descuido: é uma das saídas legítimas da exigência de checkpoint que `SF-GRAPH-001` julga — sem diretório configurado, o algoritmo default levanta `java.io.IOException` na primeira iteração, e desligar o checkpoint é o que a documentação oferece como escape (\"Set a nonpositive value to disable checkpointing\"). Acusar essa forma faria o relatório dizer duas coisas ao mesmo tempo sobre o mesmo artefato. Fora de `connectedComponents` não há exceção da qual escapar, e o valor não positivo é só checkpointing desligado num algoritmo iterativo. O lado `> 2` não tem exceção nenhuma, e vale para toda chamada que declare o argumento. A SEVERIDADE É MENOR QUE A DE `SF-GRAPH-001` POR EXIGÊNCIA DA FONTE, e não por calibragem: a documentação registra o caso como \"outra regra, com severidade menor\". Aqui a biblioteca avisa (`logWarn`) e segue; lá ela lança exceção e o job não passa da primeira iteração. Um plano que cresce é caro e diagnosticável; uma `IOException` é um job que nunca roda. O QUE ESTA REGRA NÃO LÊ: se a chamada declarou o argumento. Ausência de `checkpointInterval` é o default `2`, que está dentro da faixa, e `_expr_matches` devolve `False` para caminho ausente — então a regra é calada, e não acusadora, sobre toda chamada que não nomeou o valor. Nenhuma ausência vira achado aqui.",
+    "proposed_change": [
+      "Levar `checkpointInterval` para `1` ou `2` — `2` é o default e é o teto recomendado pela documentação.",
+      "Se o intervalo alto existia para economizar I/O de checkpoint, medir antes de mudar: o custo que ele evita é escrita em S3, e o custo que ele cria é tempo de planejamento no driver, que aparece como driver ocupado e cluster ocioso.",
+      "Se o objetivo era desligar o checkpoint num algoritmo que não é `connectedComponents`, avaliar se o grafo é mesmo pequeno o bastante para o lineage não crescer — a alternativa suportada é `use_local_checkpoints=True` na linhagem `io.graphframes`, que trunca sem exigir diretório persistente."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Baixar o intervalo aumenta a frequência de checkpoint e, com ela, escrita em S3 e I/O por iteração: o remédio de um gargalo do driver pode virar gargalo de escrita.",
+      "Diretório de checkpoint em S3 acumula dados entre execuções e não é limpo pelo Spark; aumentar a frequência sem política de expiração faz o custo de armazenamento crescer em silêncio.",
+      "`use_local_checkpoints` grava no disco do executor e a documentação declara que é mais rápido e MENOS confiável: a perda de um executor força recomputação."
+    ],
+    "tradeoffs": [
+      "Checkpoint troca I/O por truncamento de lineage, e o intervalo é onde essa troca é calibrada; qual valor é melhor depende de qual dos dois recursos está saturado, e a fonte só declara o teto."
+    ],
+    "validation": [
+      "Contagem de vértices do resultado igual à contagem de vértices de entrada, e contagem distinta de componentes (ou de rótulos, conforme o algoritmo) idêntica antes e depois — mudar o intervalo é mudança de desempenho e não pode mover o resultado.",
+      "Tempo de planejamento no driver antes e depois: na Spark UI, o intervalo entre o fim de um job e a submissão do próximo é onde o crescimento do plano aparece.",
+      "Número de jobs Spark submetidos e presença dos jobs de checkpoint no intervalo esperado."
+    ],
+    "rollback": [
+      "Restaurar o valor anterior de `checkpointInterval`; é um argumento de chamada, a mudança é de uma linha e não toca dado escrito."
+    ],
+    "sources": [
+      {
+        "url": "https://graphframes.io/04-user-guide/05-traversals.html",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/graphframes/graphframes/v0.8.3/src/main/scala/org/graphframes/lib/ConnectedComponents.scala",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/graphframes/graphframes/v0.12.1/core/src/main/scala/org/graphframes/lib/TwoPhase.scala",
+        "retrieved": "2026-08-05"
+      },
+      {
+        "url": "https://graphframes.io/04-user-guide/06-graph-clustering.html",
+        "retrieved": "2026-08-05"
+      }
+    ]
+  }
+]

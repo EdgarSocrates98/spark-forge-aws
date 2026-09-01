@@ -1,0 +1,12 @@
+name: payload_vazio
+proves: >
+  A sentinela sai mesmo quando nada pode ser lido, e `emrc.unresolved` nomeia o
+  comando que falta em vez de o extrator levantar excecao. Sem esta fixture,
+  nenhum golden carrega `emrc.unresolved` e o kind fica sem prova.
+# `runtime: {}` aqui e correto e nao e omissao: sem `jobRun` nao ha release
+# label, e declarar versao sobre um payload que nao a traz seria inventa-la.
+runtime: {}
+expects_kinds:
+  - emrc.analyzed
+  - emrc.unresolved
+expects_rules: []

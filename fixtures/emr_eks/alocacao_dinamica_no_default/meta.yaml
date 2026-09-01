@@ -1,0 +1,29 @@
+name: alocacao_dinamica_no_default
+proves: >
+  O golden NEGATIVO que existe por causa de uma correcao medida, e sem ele a
+  correcao nao teria prova. A pesquisa que abriu esta area registrou
+  `spark.dynamicAllocation.shuffleTracking.enabled` com default `false`, citando
+  `spark.apache.org/docs/latest/`. A releitura na versao FIXADA -- `docs/3.5.6/`,
+  a que corresponde ao Spark `3.5.2-amzn-1` de `emr-7.5.0` -- mede default
+  `true`, e `docs/latest/` diz `true` tambem hoje. Ver
+  `knowledge/emr-eks/job-run-configuration.md` secao 12.
+  Com o default `true`, ALOCACAO DINAMICA LIGADA SEM `shuffleTracking` DECLARADO
+  ESTA NO DEFAULT SEGURO. Esta fixture e exatamente esse caso -- `--conf
+  spark.dynamicAllocation.enabled=true` sozinho, sem a segunda propriedade em
+  nenhuma das duas superficies -- e `expects_rules` vazio e a afirmacao de que
+  SF-EMRK-004 NAO dispara por ausencia. Uma regra escrita sobre a leitura antiga
+  (dispara quando `shuffleTracking` nao aparece) ficaria vermelha aqui, e essa e
+  a unica maneira de a suite acusar a volta do erro.
+  E a distincao contra `shuffle_tracking_ligado`: la o `true` esta ESCRITO e
+  prova que o segundo termo compara valor; aqui nao ha nada escrito e prova que a
+  condicao reprova caminho AUSENTE em vez de trata-lo como falso.
+runtime:
+  spark: "3.5.2-amzn-1"
+expects_kinds:
+  - emrc.analyzed
+  - emrc.configuration
+  - emrc.job_run
+  - emrc.monitoring
+  - emrc.spark_submit_parameters
+  - emrc.virtual_cluster
+expects_rules: []

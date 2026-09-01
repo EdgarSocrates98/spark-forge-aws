@@ -1,7 +1,7 @@
 import pytest
 
 from sparkforge.facts import migration as facts_migration
-from sparkforge.migration import assessment
+from sparkforge.migration import assessment, version_path
 
 JOB = (
     "import com.amazonaws.services.s3.AmazonS3\n"
@@ -572,3 +572,266 @@ class TestEixosDePlataformaDeixamDeSerDecorativos:
         )
         for nome in ("iam_kms", "rede", "cross_account"):
             assert resultado.gates[nome] != "FAIL", nome
+
+
+class TestAsQuatroPlataformasNoMesmoMotor:
+    """DECISAO 1c: `assess` atende as quatro sem bifurcar o motor.
+
+    Um `assess` de EMR que so trocasse a plataforma rodaria o catalogo inteiro
+    por degrau, nao acharia nada e sairia verde. O que impede essa leitura e a
+    declaracao de cobertura, medida abaixo em `TestCoberturaDeclarada`.
+    """
+
+    def test_caminho_de_emr_entre_series_tem_um_degrau_por_release(self, tmp_path):
+        resultado = assessment.assess(
+            _facts(tmp_path), source="6.15.0", target="7.5.0", platform="emr_ec2"
+        )
+        assert resultado.platform == "emr_ec2"
+        assert resultado.steps == version_path.steps(
+            "6.15.0", "7.5.0", platform="emr_ec2"
+        )
+        assert resultado.steps[0][0] == "6.15.0"
+        assert resultado.steps[-1][1] == "7.5.0"
+
+    def test_cada_degrau_de_emr_tem_runtime_com_spark_preenchido(self, tmp_path):
+        """A PONTE. As cinco regras guardadas por `spark` so alcancam o EMR
+        porque a matriz da plataforma publica a versao de Spark de cada
+        release; um degrau sem `spark` no runtime deixaria as cinco mudas por
+        ausencia de chave, e o assessment sairia vazio pelo motivo errado."""
+        for _, alvo in version_path.steps("6.15.0", "7.5.0", platform="emr_ec2"):
+            runtime = assessment._runtime_for(alvo, "emr_ec2")
+            assert runtime.get("spark"), alvo
+
+    def test_o_runtime_de_um_degrau_de_eks_nunca_sai_da_matriz_de_ec2(self):
+        """O contrafactual da divida que o sub-projeto 1 fechou (D-2 da spec).
+
+        As duas matrizes DIVERGEM em celulas reais. Este teste procura as
+        divergencias no dado em vez de fixar uma release: se a AWS reconciliar
+        as paginas, ele deixa de ter caso e diz isso, em vez de passar a medir
+        outra coisa em silencio.
+        """
+        from sparkforge.facts import runtime_matrix as rm
+
+        ec2, eks = rm.load_emr(), rm.load_emr_eks()
+        divergentes = [
+            release
+            for release in eks
+            if release in ec2
+            and any(
+                ec2[release].get(c) != eks[release].get(c)
+                for c in ("spark", "iceberg")
+            )
+        ]
+        assert divergentes, "sem divergencia medida, este teste nao prova nada"
+        for release in divergentes:
+            do_eks = assessment._runtime_for(release, "emr_eks")
+            for componente in ("spark", "iceberg"):
+                esperado = eks[release].get(componente)
+                if esperado is None:
+                    assert componente not in do_eks, (release, componente)
+                    continue
+                assert do_eks[componente] == esperado, (release, componente)
+                if ec2[release].get(componente) != esperado:
+                    assert do_eks[componente] != ec2[release].get(componente)
+
+    def test_as_quatro_plataformas_produzem_assessment(self, tmp_path):
+        facts = _facts(tmp_path)
+        for plataforma in version_path.platforms():
+            ordenadas = version_path.ordered_releases(plataforma)
+            resultado = assessment.assess(
+                facts,
+                source=ordenadas[-2],
+                target=ordenadas[-1],
+                platform=plataforma,
+            )
+            assert resultado.platform == plataforma
+            assert len(resultado.steps) == 1
+
+    def test_rotulo_fora_do_padrao_propaga_a_recusa_por_nome(self, tmp_path):
+        with pytest.raises(ValueError, match="fora do padrao de versao"):
+            assessment.assess(
+                _facts(tmp_path),
+                source="7.13.0",
+                target="spark-8.0.0",
+                platform="emr_eks",
+            )
+
+
+class TestCoberturaDeclarada:
+    """DECISAO 3, e a entrega mais importante deste sub-projeto.
+
+    Sem `coverage`, um assessment de EMR sem achado e indistinguivel de um job
+    sem problema -- porque ZERO regras do catalogo declaram `emr` em
+    `runtime_scope`, e nenhum artefato coletado faria uma aparecer.
+    """
+
+    @staticmethod
+    def _emr(tmp_path):
+        return assessment.assess(
+            _facts(tmp_path), source="6.15.0", target="7.5.0", platform="emr_ec2"
+        )
+
+    def test_o_campo_existe_na_saida_serializada(self, tmp_path):
+        """O teste que reprova se o campo sumir. `coverage` nao e opcional na
+        saida de `assess()`: e ele que separa "nao achei" de "nao perguntei"."""
+        d = self._emr(tmp_path).to_dict()
+        assert d["coverage"] is not None
+        assert d["coverage"]["statement"].strip()
+        assert {"axes", "activated_axes", "platform_axis"} <= set(d["coverage"])
+
+    def test_o_contrafactual_zero_regras_por_eixo_emr(self, tmp_path):
+        """O contrafactual que a secao 5 da spec cobra: assessment de EMR SEM
+        achado precisa DECLARAR `0 regras por eixo emr`, e nao ficar calado."""
+        resultado = self._emr(tmp_path)
+        assert resultado.findings == [], "este caso so mede se nada disparar"
+        cobertura = resultado.coverage
+        assert cobertura.platform_axis == "emr"
+        (eixo_emr,) = [e for e in cobertura.axes if e.axis == "emr"]
+        assert eixo_emr.catalog_rules == 0
+        assert eixo_emr.reachable_rules == 0
+        assert "emr" not in cobertura.activated_axes
+        assert "`emr`: 0 no catalogo" in cobertura.statement
+
+    def test_a_declaracao_recusa_a_leitura_nada_quebra(self, tmp_path):
+        texto = self._emr(tmp_path).coverage.statement
+        assert "NENHUMA regra deste catalogo declara `emr`" in texto
+        assert "nunca `nada quebra`" in texto
+
+    def test_a_contagem_por_eixo_bate_com_o_catalogo(self, tmp_path):
+        """A frase e derivada dos numeros, e os numeros sao contados no
+        catalogo -- nao escritos a mao em lugar nenhum."""
+        from sparkforge.rules.loader import load_catalog
+
+        catalogo = load_catalog()
+        esperado: dict[str, int] = {}
+        for regra in catalogo:
+            for chave in regra.get("runtime_scope") or {}:
+                esperado[chave] = esperado.get(chave, 0) + 1
+
+        cobertura = self._emr(tmp_path).coverage
+        assert cobertura.catalog_rules == len(catalogo)
+        for eixo in cobertura.axes:
+            assert eixo.catalog_rules == esperado.get(eixo.axis, 0), eixo.axis
+
+    def test_o_eixo_glue_fica_fora_de_alcance_num_caminho_de_emr(self, tmp_path):
+        """As regras guardadas por `glue` continuam no catalogo e ficam MUDAS:
+        o runtime de um degrau de EMR nao carrega a chave `glue`. Dizer isso e
+        o que impede de contar o catalogo inteiro como se tivesse sido
+        perguntado."""
+        (eixo_glue,) = [e for e in self._emr(tmp_path).coverage.axes if e.axis == "glue"]
+        assert eixo_glue.catalog_rules > 0
+        assert eixo_glue.reachable_rules == 0
+        assert eixo_glue.runtime_key_present is False
+
+    def test_no_caminho_de_glue_o_eixo_da_plataforma_e_alcancado(self, tmp_path):
+        cobertura = assessment.assess(
+            _facts(tmp_path), source="4.0", target="6.0"
+        ).coverage
+        assert cobertura.platform_axis == "glue"
+        (eixo_glue,) = [e for e in cobertura.axes if e.axis == "glue"]
+        assert eixo_glue.runtime_key_present is True
+        assert eixo_glue.reachable_rules > 0
+        assert "glue" in cobertura.activated_axes
+
+    def test_alcancavel_nao_e_o_mesmo_que_disparada(self, tmp_path):
+        """Regra alcancavel que nao disparou por falta de fact ja tem lugar
+        proprio (`missing_evidence`). A cobertura mede a lacuna ANTERIOR: a
+        regra que nem existe."""
+        resultado = assessment.assess(_facts(tmp_path), source="4.0", target="6.0")
+        assert resultado.coverage.reachable_rules > len(
+            {f.rule_id for f in resultado.findings}
+        )
+
+
+class TestDiffDeComponentePorDegrau:
+    """DECISAO 4: o `ReleaseDiff` do sub-projeto 2, projetado, uma entrada por
+    degrau -- nao uma comparacao reimplementada."""
+
+    def test_uma_entrada_por_degrau_na_mesma_ordem(self, tmp_path):
+        resultado = assessment.assess(
+            _facts(tmp_path), source="6.15.0", target="7.5.0", platform="emr_ec2"
+        )
+        assert [e.step for e in resultado.component_diff] == resultado.steps
+
+    def test_o_que_muda_bate_com_o_release_diff_daquele_par(self, tmp_path):
+        from sparkforge.migration import release_descriptor, release_diff
+
+        resultado = assessment.assess(
+            _facts(tmp_path), source="6.15.0", target="7.0.0", platform="emr_ec2"
+        )
+        (entrada,) = resultado.component_diff
+        esperado = release_diff.diff(
+            release_descriptor.describe("emr_ec2", "6.15.0"),
+            release_descriptor.describe("emr_ec2", "7.0.0"),
+        )
+        assert [c["component"] for c in entrada.changed] == [
+            c.component for c in esperado.changed
+        ]
+        assert entrada.added == esperado.added
+        assert entrada.removed == esperado.removed
+
+    def test_as_cinco_dimensoes_sem_lastro_saem_uma_vez_so(self, tmp_path):
+        """Repetir os cinco textos por degrau seria payload sem informacao
+        nova; omiti-los faria o operador ler lista vazia como "nao mudou
+        nada"."""
+        from sparkforge.migration import release_diff
+
+        resultado = assessment.assess(
+            _facts(tmp_path), source="6.15.0", target="7.5.0", platform="emr_ec2"
+        )
+        for dimensao in release_diff.DIMENSOES_SEM_LASTRO:
+            assert resultado.component_diff_unresolved[dimensao].strip()
+            for entrada in resultado.component_diff:
+                assert dimensao not in entrada.unresolved
+
+    def test_eixo_que_a_fonte_nao_publica_sobe_para_o_nivel_do_caminho(self, tmp_path):
+        """`hudi` e `delta` nao sao coluna da matriz de EMR on EC2 em release
+        nenhuma: a recusa e da PLATAFORMA e nao muda entre degraus."""
+        resultado = assessment.assess(
+            _facts(tmp_path), source="6.15.0", target="7.5.0", platform="emr_ec2"
+        )
+        assert "component.hudi" in resultado.component_diff_unresolved
+        for entrada in resultado.component_diff:
+            assert "component.hudi" not in entrada.unresolved
+
+
+class TestZeroRegressaoNoAssessmentDeGlue:
+    """Criterio de conclusao do sub-projeto: o caminho de Glue nao muda.
+
+    O que pode mudar e a saida GANHAR campos (`platform`, `coverage`,
+    `component_diff`); o que nao pode e o veredito, os degraus, os achados ou o
+    runtime derivado.
+    """
+
+    def test_o_runtime_derivado_de_glue_e_o_da_matriz(self):
+        from sparkforge.facts import runtime_matrix as rm
+
+        for versao, linha in rm.load().items():
+            runtime = assessment._runtime_for(versao)
+            assert runtime["glue"] == versao
+            for chave in ("spark", "python", "iceberg"):
+                if linha.get(chave):
+                    assert runtime[chave] == linha[chave]
+            assert set(runtime) <= {"glue", "spark", "python", "iceberg"}
+
+    def test_a_plataforma_default_produz_o_mesmo_veredito(self, tmp_path):
+        facts = _facts(tmp_path)
+        implicito = assessment.assess(facts, source="4.0", target="6.0")
+        explicito = assessment.assess(facts, source="4.0", target="6.0", platform="glue")
+        assert implicito.to_dict() == explicito.to_dict()
+        assert implicito.platform == "glue"
+
+    def test_os_campos_antigos_continuam_todos_na_saida(self, tmp_path):
+        d = assessment.assess(_facts(tmp_path), source="4.0", target="6.0").to_dict()
+        antigos = {
+            "source_runtime",
+            "target_runtime",
+            "steps",
+            "findings",
+            "by_step",
+            "report",
+            "gates",
+            "missing_evidence",
+            "recommendation",
+        }
+        assert antigos <= set(d)

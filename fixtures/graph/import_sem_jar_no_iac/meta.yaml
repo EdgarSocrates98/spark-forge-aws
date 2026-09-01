@@ -8,6 +8,13 @@ proves: >
   O `runtime` do meta e Glue 4.0 de proposito, e nao 5.0 como o resto do corpus:
   o discriminador da regra e Spark 3.3.x, e uma fixture em 5.0 nao poderia
   exercita-la.
+  EM 2026-08-31 ELA PASSOU A DISPARAR DUAS REGRAS, e a segunda e o fechamento
+  da metade acusatoria do veto V-GR-1: com o kind derivado
+  `tf.graphframes.jar`, `SF-GRAPH-005` diz "o IaC nao entrega a biblioteca", que
+  e uma afirmacao sobre o Terraform e nao sobre o artefato publicado. As duas
+  convivem de proposito e dizem coisas diferentes sobre o mesmo job:
+  `SF-GRAPH-002` continua disparando tambem em `import_com_jar_declarado`, e
+  `SF-GRAPH-005` nao.
 runtime:
   glue: "4.0"
   spark: "3.3.0"
@@ -25,3 +32,4 @@ expects_kinds:
   - tf.resource
 expects_rules:
   - SF-GRAPH-002
+  - SF-GRAPH-005

@@ -29,6 +29,7 @@ from sparkforge.facts.catalog_schema import (  # noqa: E402
 from sparkforge.facts.consumers import extract_consumers_path  # noqa: E402
 from sparkforge.facts.data_quality import extract_data_quality_tree  # noqa: E402
 from sparkforge.facts.emr_cluster import extract_emr_cluster_path  # noqa: E402
+from sparkforge.facts.emr_eks import extract_emr_eks_tree  # noqa: E402
 from sparkforge.facts.emr_serverless import extract_emr_serverless_tree  # noqa: E402
 from sparkforge.facts.event_log import extract_event_log_path  # noqa: E402
 from sparkforge.facts.funcval import build_comparison, build_plan  # noqa: E402
@@ -64,6 +65,7 @@ FIXTURES_PLAN = ROOT / "fixtures" / "plan"
 FIXTURES_ATHENA = ROOT / "fixtures" / "athena"
 FIXTURES_EMR = ROOT / "fixtures" / "emr"
 FIXTURES_EMR_SERVERLESS = ROOT / "fixtures" / "emr_serverless"
+FIXTURES_EMR_EKS = ROOT / "fixtures" / "emr_eks"
 FIXTURES_DQ = ROOT / "fixtures" / "dq"
 FIXTURES_RUNTIME = ROOT / "fixtures" / "runtime"
 FIXTURES_CALLGRAPH = ROOT / "fixtures" / "callgraph"
@@ -309,6 +311,23 @@ def regen_emr_serverless(directory: Path) -> None:
     meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
     input_dir = directory / "input"
     facts = extract_emr_serverless_tree(input_dir, repo_root=input_dir)
+    findings = judge(facts, load_catalog(), meta["runtime"])
+    _write_expected(directory, facts, findings)
+
+
+def regen_emr_eks(directory: Path) -> None:
+    """Dumps de `describe-job-run` de EMR on EKS: `*.json` sob input/.
+
+    Usa a variante `_tree` pela mesma razao de `regen_emr_serverless`: e a
+    funcao que o produto chama quando o `--path` e diretorio, e um laco por
+    arquivo produziria uma ordem GLOBAL diferente da que a `_tree` devolve. O
+    corpus desta Task tem um payload por fixture -- com um arquivo so as duas
+    ordens coincidem --, mas o golden precisa descrever a ordenacao que a
+    superficie do produto emite, nao a que este script escolheu.
+    """
+    meta = yaml.safe_load((directory / "meta.yaml").read_text(encoding="utf-8"))
+    input_dir = directory / "input"
+    facts = extract_emr_eks_tree(input_dir, repo_root=input_dir)
     findings = judge(facts, load_catalog(), meta["runtime"])
     _write_expected(directory, facts, findings)
 
@@ -595,6 +614,7 @@ def main() -> int:
                 (FIXTURES_ATHENA / name, regen_athena),
                 (FIXTURES_EMR / name, regen_emr),
                 (FIXTURES_EMR_SERVERLESS / name, regen_emr_serverless),
+                (FIXTURES_EMR_EKS / name, regen_emr_eks),
                 (FIXTURES_DQ / name, regen_dq),
                 (FIXTURES_RUNTIME / name, regen_runtime),
                 (FIXTURES_CALLGRAPH / name, regen_callgraph),
@@ -642,6 +662,13 @@ def main() -> int:
         regen_emr(directory)
     for directory in sorted(p for p in FIXTURES_EMR_SERVERLESS.iterdir() if p.is_dir()):
         regen_emr_serverless(directory)
+    # Mesma guarda de existencia dos demais corpus recentes (D-4a-18):
+    # `fixtures/emr_eks/` nasce nesta Task, e uma regeneracao completa rodada
+    # antes dela nao pode morrer com FileNotFoundError depois de ja ter
+    # regenerado todos os corpus acima.
+    if FIXTURES_EMR_EKS.is_dir():
+        for directory in sorted(p for p in FIXTURES_EMR_EKS.iterdir() if p.is_dir()):
+            regen_emr_eks(directory)
     for directory in sorted(p for p in FIXTURES_DQ.iterdir() if p.is_dir()):
         regen_dq(directory)
     for directory in sorted(p for p in FIXTURES_RUNTIME.iterdir() if p.is_dir()):

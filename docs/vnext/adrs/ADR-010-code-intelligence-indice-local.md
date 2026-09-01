@@ -87,7 +87,7 @@ propósito. Os valores absolutos moram em `sparkforge/codeintel/resolve.py`, dat
 módulo, e **não** são copiados para cá: eles se movem a cada arquivo novo da árvore, e número
 copiado envelhece no documento sem que nada acuse.
 
-O motivo dominante é o que diz onde está o limite. **91,9%** das não resolvidas são
+O motivo dominante é o que diz onde está o limite. **91,8%** das não resolvidas são
 `UNKNOWN_RECEIVER` — `df.filtrar()` sem saber o tipo de `df`. Inferir tipo aqui seria adivinhação
 vestida de análise, e é por isso que a próxima fase tem o que ganhar exatamente ali, e não afinando
 estas regras. Número baixo medido vale mais que número alto inventado, e a fase anterior já havia
@@ -115,7 +115,7 @@ A fase J3 mediu o índice contra o denominador que menos o favorece: a saída de
 `grep -n "def <nome>"`. O índice **perde**. Mesmo descartando todo símbolo que apenas *contém* o
 termo e ficando só com correspondência exata, a resposta do índice custa **2.3** vezes o que
 aquele `grep` custaria. Contra a pergunta *estrutural* — "quais são os símbolos deste arquivo" — a
-relação se inverte e o índice sai **9.7** vezes à frente, porque a alternativa é abrir o arquivo
+relação se inverte e o índice sai **8.2** vezes à frente, porque a alternativa é abrir o arquivo
 inteiro e fazer o parse do lado de quem perguntou.
 
 As duas coisas respondem perguntas diferentes, e é isso que a medição mostra: o índice não se paga

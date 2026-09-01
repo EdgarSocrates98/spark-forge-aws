@@ -118,11 +118,16 @@ def _apply_detail_level(payload: dict[str, Any], detail_level: str) -> dict[str,
 # Uma unica redacao para os tres verbos que aceitam a flag. Repetir o texto tres
 # vezes e como uma delas fica desatualizada.
 _EMR_FLAG_HELP = (
-    "Release do EMR on EC2. Aceita as duas grafias -- `emr-7.5.0` e `7.5.0`. "
+    "Release do EMR. Aceita as duas grafias -- `emr-7.5.0` e `7.5.0`. "
     "E DECLARACAO, nao observacao: perde para o event log e para um dump de "
     "`describe-cluster`, e discordar de um deles vira divergencia reportada, "
     "nunca valor substituido em silencio. Serve a quem sabe a release e nao tem "
-    "o dump -- com o dump, `--facts` ja resolve sozinho."
+    "o dump -- com o dump, `--facts` ja resolve sozinho. A MATRIZ consultada "
+    "segue o conjunto de facts: num conjunto so de `emrs.*` (EMR Serverless) "
+    "deriva da matriz do Serverless, que publica `spark` sem o sufixo do fork e "
+    "nao publica `python` nem `iceberg` -- os dois saem vazios. Sobre facts "
+    "`emrc.*` (EMR on EKS) a flag e RECUSADA com exit 2: la a matriz de EC2 e "
+    "medidamente errada."
 )
 
 _CODE_DB_HELP = (
@@ -321,6 +326,25 @@ def build_parser() -> argparse.ArgumentParser:
     emrs_analyze_p.add_argument("--cursor")
     _add_detail_level(emrs_analyze_p)
 
+    emrc_analyze_p = analyze_sub.add_parser(
+        "emr-eks",
+        help="Extrai facts de um dump JSON de execucao Amazon EMR on EKS "
+        "(describe-virtual-cluster e describe-job-run no mesmo arquivo). Descreve o "
+        "que a EXECUCAO PEDIU, nunca o que o pod recebeu -- o pod template nao e "
+        "lido e sai como recusa, e o lado EKS (nodegroup, autoscaling) nao existe "
+        "neste dump.",
+    )
+    emrc_analyze_p.add_argument(
+        "--path", required=True, help="Arquivo ou diretorio com dumps de execucao EMR on EKS."
+    )
+    emrc_analyze_p.add_argument(
+        "--out", help="Escreve a lista completa de facts (JSON) neste arquivo."
+    )
+    emrc_analyze_p.add_argument("--kind", action="append", help="Filtra por kind. Repetivel.")
+    emrc_analyze_p.add_argument("--limit", type=int, default=_core.DEFAULT_LIMIT)
+    emrc_analyze_p.add_argument("--cursor")
+    _add_detail_level(emrc_analyze_p)
+
     dq_p = analyze_sub.add_parser(
         "data-quality",
         help="Extrai facts de validacao de dado no codigo PySpark (PyDeequ, Great "
@@ -440,6 +464,60 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", help="Escreve o assessment completo (JSON) neste arquivo."
     )
 
+    # DOIS VERBOS, E NAO UM `--platform` EM `migrate glue`.
+    #
+    # `migrate glue` foi publicado com a plataforma NO NOME, e um `--platform`
+    # ali criaria a combinacao absurda `migrate glue --platform emr_eks`. As
+    # tres de EMR, ao contrario, dividem tudo o que importa aqui -- o mesmo
+    # vocabulario de rotulo de release, a mesma normalizacao do prefixo `emr-`,
+    # e o mesmo eixo `emr` valendo zero no catalogo --, e o que as separa e
+    # exatamente qual matriz responde. Isso e um parametro, nao tres verbos:
+    # `release describe` ja nomeia a plataforma por flag pela mesma razao.
+    #
+    # A uniao dos dois verbos cobre as quatro plataformas que
+    # `sparkforge_migration_assess` aceita, que e o que a paridade CLI/MCP
+    # cobra.
+    migrate_emr_p = migrate_sub.add_parser(
+        "emr",
+        help=(
+            "Julga a migracao de um job EMR entre um par de releases, degrau a "
+            "degrau, na matriz da plataforma escolhida."
+        ),
+    )
+    migrate_emr_p.add_argument(
+        "path",
+        help=(
+            "Diretorio do job -- codigo, requirements*.txt, .jar, os .tf quando "
+            "existem e o inventario de consumidores em .sparkforge/consumers.yaml "
+            "--, ou um .py sozinho."
+        ),
+    )
+    # Sem default, e nao `emr_ec2`: a matriz de EC2 NAO descreve EKS nem
+    # Serverless, e o sub-projeto 1 mediu que elas divergem (Iceberg em 6 de 26
+    # releases comparaveis). Um default aqui responderia sobre a plataforma
+    # errada com a mesma cara de qualquer outra resposta.
+    migrate_emr_p.add_argument(
+        "--platform",
+        required=True,
+        choices=[p for p in _core.RELEASE_PLATFORMS if p.startswith("emr")],
+        help="Qual matriz de EMR ordena o caminho e da o runtime de cada degrau.",
+    )
+    migrate_emr_p.add_argument(
+        "--from",
+        dest="from_runtime",
+        required=True,
+        help="Release de origem, com ou sem o prefixo `emr-`.",
+    )
+    migrate_emr_p.add_argument(
+        "--to",
+        dest="to_runtime",
+        required=True,
+        help="Release alvo, com ou sem o prefixo `emr-`.",
+    )
+    migrate_emr_p.add_argument(
+        "--out", help="Escreve o assessment completo (JSON) neste arquivo."
+    )
+
     # glue / iceberg -------------------------------------------------------
     # Verbos de TOPO por SERVICO, e nao mais um degrau sob `analyze`: os dois
     # comandos abaixo extraem E julgam, e `analyze` para na extracao. Cada um
@@ -472,6 +550,75 @@ def build_parser() -> argparse.ArgumentParser:
     )
     upgrade_p.add_argument(
         "--to", dest="to_spec", type=int, required=True, help="Format version alvo."
+    )
+
+    # release --------------------------------------------------------------
+    # Verbo de TOPO pela mesma razao de `benchmark` e `fuse`: nao le artefato do
+    # operador -- compoe sobre as quatro matrizes de `knowledge/`.
+    release_p = sub.add_parser(
+        "release",
+        help=(
+            "O que uma release publica, e o que muda entre duas. Le matriz de "
+            "versao; NAO avalia se algo quebra."
+        ),
+    )
+    release_sub = release_p.add_subparsers(dest="release_action", required=True)
+
+    release_describe_p = release_sub.add_parser(
+        "describe",
+        help=(
+            "O que a fonte daquela plataforma publica para uma release. "
+            "Componente nao publicado sai em `unresolved` NOMEADO."
+        ),
+    )
+    release_describe_p.add_argument(
+        "--platform",
+        required=True,
+        help=f"Uma das quatro: {', '.join(_core.RELEASE_PLATFORMS)}.",
+    )
+    release_describe_p.add_argument(
+        "--release",
+        required=True,
+        help="O rotulo da release, com ou sem o prefixo `emr-` (ex.: 7.7.0, emr-7.7.0, 5.1).",
+    )
+
+    # OS QUATRO ARGUMENTOS, e nao `--platform` mais `--from`/`--to`.
+    #
+    # Os verbos irmaos que comparam dois lados nomeiam a direcao: `benchmark` e
+    # `analyze terraform-diff` usam `--before`/`--after`, `migrate glue` e
+    # `iceberg assess-upgrade` usam `--from`/`--to`. Os dois pares carregam uma
+    # promessa que este verbo NAO pode cumprir: que o eixo da comparacao e o
+    # tempo (ou o degrau de migracao) e que ele e ENTRADA. Aqui o eixo e
+    # RESULTADO -- `axis` sai calculado das dimensoes que efetivamente variam --,
+    # e ele pode ser `platform`, o que nenhum `--before/--after` descreveria.
+    #
+    # Por isso dois PARES `(plataforma, release)` explicitos, com os prefixos
+    # `--left-`/`--right-` que sao os nomes que `release_diff.diff(left, right)`
+    # ja usa no modelo. Um `--platform` unico com duas releases tornaria a
+    # pergunta que motiva o verbo -- `emr-7.7.0` no EC2 contra o MESMO rotulo no
+    # EKS -- inexprimivel.
+    release_diff_p = release_sub.add_parser(
+        "diff",
+        help=(
+            "O que muda entre duas releases, com o eixo (`release`, `platform` ou "
+            "os dois) DECLARADO na saida."
+        ),
+    )
+    release_diff_p.add_argument(
+        "--left-platform", dest="left_platform", required=True,
+        help="Plataforma do lado de ONDE o operador sai.",
+    )
+    release_diff_p.add_argument(
+        "--left-release", dest="left_release", required=True,
+        help="Release do lado de ONDE o operador sai.",
+    )
+    release_diff_p.add_argument(
+        "--right-platform", dest="right_platform", required=True,
+        help="Plataforma do lado PARA ONDE o operador vai.",
+    )
+    release_diff_p.add_argument(
+        "--right-release", dest="right_release", required=True,
+        help="Release do lado PARA ONDE o operador vai.",
     )
 
     # benchmark ------------------------------------------------------------
@@ -1267,6 +1414,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     emrs_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
 
+    emrc_collect_p = collect_sub.add_parser(
+        "emr-eks",
+        help="Baixa describe-virtual-cluster e describe-job-run de uma execucao Amazon "
+        "EMR on EKS e grava as duas respostas num arquivo so. Duas chamadas, nao uma: "
+        "no `emr-containers` cluster virtual e execucao sao APIs separadas.",
+    )
+    emrc_collect_p.add_argument("--repo", required=True)
+    emrc_collect_p.add_argument(
+        "--virtual-cluster-id",
+        required=True,
+        help="Id do cluster virtual. Nome NAO serve: `DescribeJobRun` exige o id.",
+    )
+    emrc_collect_p.add_argument(
+        "--job-run-id",
+        required=True,
+        help="Id da execucao. Os DOIS ids sao obrigatorios porque `DescribeJobRun` "
+        "exige `virtualClusterId` junto do `id`.",
+    )
+    emrc_collect_p.add_argument("--now", required=True, help="Timestamp ISO 8601.")
+
     verify_p = collect_sub.add_parser(
         "verify", help="Verifica presenca e integridade de todos os artefatos do manifesto."
     )
@@ -1557,9 +1724,10 @@ def _cmd_analyze_terraform_diff(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_migrate_glue(args: argparse.Namespace) -> int:
+def _migrate(args: argparse.Namespace, platform: str) -> int:
+    """O corpo comum dos dois verbos de `migrate`. Um motor, nao dois."""
     payload = _core.migration_assess(
-        args.path, source=args.from_runtime, target=args.to_runtime
+        args.path, source=args.from_runtime, target=args.to_runtime, platform=platform
     )
     if args.out:
         Path(args.out).write_text(
@@ -1567,6 +1735,14 @@ def _cmd_migrate_glue(args: argparse.Namespace) -> int:
         )
     _print(payload)
     return 0
+
+
+def _cmd_migrate_glue(args: argparse.Namespace) -> int:
+    return _migrate(args, _core.MIGRATION_DEFAULT_PLATFORM)
+
+
+def _cmd_migrate_emr(args: argparse.Namespace) -> int:
+    return _migrate(args, args.platform)
 
 
 def _cmd_glue_dependency_audit(args: argparse.Namespace) -> int:
@@ -1577,6 +1753,23 @@ def _cmd_glue_dependency_audit(args: argparse.Namespace) -> int:
 def _cmd_iceberg_assess_upgrade(args: argparse.Namespace) -> int:
     _print(
         _core.iceberg_assess_upgrade(args.path, source=args.from_spec, target=args.to_spec)
+    )
+    return 0
+
+
+def _cmd_release_describe(args: argparse.Namespace) -> int:
+    _print(_core.release_describe(args.platform, args.release))
+    return 0
+
+
+def _cmd_release_diff(args: argparse.Namespace) -> int:
+    _print(
+        _core.release_diff(
+            args.left_platform,
+            args.left_release,
+            args.right_platform,
+            args.right_release,
+        )
     )
     return 0
 
@@ -1604,6 +1797,27 @@ def _cmd_analyze_athena_workgroup(args: argparse.Namespace) -> int:
 
 def _cmd_analyze_emr_cluster(args: argparse.Namespace) -> int:
     full = _core.analyze_emr_cluster(args.path, kind=args.kind, limit=None)
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    page, next_cursor = _core.paginate_items(full["items"], args.limit, args.cursor)
+    payload = {
+        "total_count": full["total_count"],
+        "returned_count": len(page),
+        "next_cursor": next_cursor,
+        "filters_applied": {"kind": args.kind, "limit": args.limit, "cursor": args.cursor},
+        "by_kind": full["by_kind"],
+        "unresolved": full["unresolved"],
+        "unresolved_at": full["unresolved_at"],
+        "items": page,
+    }
+    _print(_apply_detail_level(payload, args.detail_level))
+    return 0
+
+
+def _cmd_analyze_emr_eks(args: argparse.Namespace) -> int:
+    full = _core.analyze_emr_eks(args.path, kind=args.kind, limit=None)
     if args.out:
         Path(args.out).write_text(
             json.dumps(full["items"], indent=2, ensure_ascii=False), encoding="utf-8"
@@ -2111,6 +2325,17 @@ def _cmd_collect_emr_serverless(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_collect_emr_eks(args: argparse.Namespace) -> int:
+    payload = _core.collect_emr_eks(
+        args.repo,
+        virtual_cluster_id=args.virtual_cluster_id,
+        job_run_id=args.job_run_id,
+        now=args.now,
+    )
+    _print(payload)
+    return 0
+
+
 def _cmd_collect_verify(args: argparse.Namespace) -> int:
     _print(_core.collect_verify(args.repo))
     return 0
@@ -2215,6 +2440,7 @@ _DISPATCH = {
     ("analyze", "athena-workgroup"): _cmd_analyze_athena_workgroup,
     ("analyze", "emr-cluster"): _cmd_analyze_emr_cluster,
     ("analyze", "emr-serverless"): _cmd_analyze_emr_serverless,
+    ("analyze", "emr-eks"): _cmd_analyze_emr_eks,
     ("analyze", "data-quality"): _cmd_analyze_data_quality,
     ("analyze", "graph"): _cmd_analyze_graph,
     ("analyze", "call-graph"): _cmd_analyze_call_graph,
@@ -2222,8 +2448,11 @@ _DISPATCH = {
     ("analyze", "consumers"): _cmd_analyze_consumers,
     ("analyze", "terraform-diff"): _cmd_analyze_terraform_diff,
     ("migrate", "glue"): _cmd_migrate_glue,
+    ("migrate", "emr"): _cmd_migrate_emr,
     ("glue", "dependency-audit"): _cmd_glue_dependency_audit,
     ("iceberg", "assess-upgrade"): _cmd_iceberg_assess_upgrade,
+    ("release", "describe"): _cmd_release_describe,
+    ("release", "diff"): _cmd_release_diff,
     ("benchmark", None): _cmd_benchmark,
     ("workload", None): _cmd_workload,
     ("capacity", None): _cmd_capacity,
@@ -2268,6 +2497,7 @@ _DISPATCH = {
     ("collect", "athena-workgroup"): _cmd_collect_athena_workgroup,
     ("collect", "emr-cluster"): _cmd_collect_emr_cluster,
     ("collect", "emr-serverless"): _cmd_collect_emr_serverless,
+    ("collect", "emr-eks"): _cmd_collect_emr_eks,
     ("collect", "verify"): _cmd_collect_verify,
 }
 
@@ -2286,6 +2516,7 @@ def _dispatch(args: argparse.Namespace) -> int:
         or getattr(args, "migrate_action", None)
         or getattr(args, "glue_action", None)
         or getattr(args, "iceberg_action", None)
+        or getattr(args, "release_action", None)
         or getattr(args, "subcommand", None)
     )
     handler = _DISPATCH.get((args.command, sub_action))

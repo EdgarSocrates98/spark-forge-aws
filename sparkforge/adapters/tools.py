@@ -1088,6 +1088,165 @@ _JUDGE_SCHEMA: dict[str, Any] = {
     "oneOf": [_JUDGE_SUCCESS_SCHEMA, _ERROR_SCHEMA],
 }
 
+# --------------------------------------------------------------------------- #
+# release describe / release diff
+# --------------------------------------------------------------------------- #
+
+# `version` e string OU array, e o `oneOf` nao e frouxidao de schema: e a forma
+# que a FONTE publica. A pagina do EMR on EC2 declara os interpretadores
+# INSTALADOS como conjunto (`3.9, 3.11`), e achata-lo num valor so escolheria
+# por conta propria qual deles o PySpark usa -- que e outra pergunta, e a AWS a
+# responde numa coluna separada. `is_set` diz qual das duas formas veio, para o
+# cliente nao ter de descobrir por `isinstance`.
+_RELEASE_COMPONENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["name", "version", "is_set", "sources", "retrieved"],
+    "properties": {
+        "name": {"type": "string"},
+        "version": {
+            "oneOf": [
+                {"type": "string"},
+                {"type": "array", "items": {"type": "string"}},
+            ],
+            "description": "Valor unico, ou o CONJUNTO quando a fonte publica conjunto.",
+        },
+        "is_set": {
+            "type": "boolean",
+            "description": "True quando `version` e conjunto e nao valor.",
+        },
+        "sources": {"type": "array", "items": {"type": "string"}},
+        "retrieved": {"type": ["string", "null"]},
+    },
+}
+
+_RELEASE_UNRESOLVED_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["component", "kind", "reason"],
+    "properties": {
+        "component": {"type": "string"},
+        "kind": {
+            "type": "string",
+            "enum": list(sorted(_core.RELEASE_UNRESOLVED_KINDS)),
+            "description": (
+                "As DUAS recusas, que destravam com medidas diferentes: "
+                "`platform_source_does_not_publish` com uma FONTE nova, "
+                "`release_cell_absent` com uma LEITURA daquela pagina."
+            ),
+        },
+        "reason": {"type": "string"},
+    },
+}
+
+_RELEASE_DESCRIPTOR_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "platform",
+        "release",
+        "components",
+        "unresolved",
+        "unresolved_detail",
+        "sources",
+        "retrieved",
+    ],
+    "properties": {
+        "platform": {"type": "string", "enum": list(_core.RELEASE_PLATFORMS)},
+        "release": {
+            "type": "string",
+            "description": "A chave que INDEXA a matriz -- uma grafia so, sempre.",
+        },
+        "components": {
+            "type": "object",
+            "additionalProperties": _RELEASE_COMPONENT_SCHEMA,
+            "description": "So o que a fonte daquela plataforma publica para esta release.",
+        },
+        "unresolved": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Os componentes NOMEADOS que esta release nao resolve. Nunca "
+                "string vazia e nunca ausencia calada."
+            ),
+        },
+        "unresolved_detail": {
+            "type": "object",
+            "additionalProperties": _RELEASE_UNRESOLVED_SCHEMA,
+            "description": "Cada recusa com o tipo e a medida que a destravaria.",
+        },
+        "sources": {"type": "array", "items": {"type": "string"}},
+        "retrieved": {"type": ["string", "null"]},
+    },
+}
+
+_RELEASE_DIFF_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "axis",
+        "left",
+        "right",
+        "changed",
+        "added",
+        "removed",
+        "unchanged",
+        "unresolved",
+    ],
+    "properties": {
+        "axis": {
+            "type": "array",
+            "items": {"type": "string", "enum": ["platform", "release"]},
+            "description": (
+                "As dimensoes que EFETIVAMENTE variam, `platform` antes de "
+                "`release`. Vazio quando nada varia."
+            ),
+        },
+        "left": _RELEASE_DESCRIPTOR_SCHEMA,
+        "right": _RELEASE_DESCRIPTOR_SCHEMA,
+        "changed": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["component", "from", "to"],
+                "properties": {
+                    "component": {"type": "string"},
+                    "from": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {"type": "array", "items": {"type": "string"}},
+                        ]
+                    },
+                    "to": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {"type": "array", "items": {"type": "string"}},
+                        ]
+                    },
+                },
+            },
+        },
+        "added": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": (
+                "Componente cuja CELULA aparece so a direita. Mede presenca de "
+                "celula, nunca 'a plataforma passou a embarcar'."
+            ),
+        },
+        "removed": {"type": "array", "items": {"type": "string"}},
+        "unchanged": {"type": "array", "items": {"type": "string"}},
+        "unresolved": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": (
+                "O que este verbo NAO afirma, por nome e com a medida que "
+                "destrava: as cinco dimensoes do §8.2 sem lastro "
+                "(`deprecated`, `default_changes`, `compatibility_changes`, "
+                "`security_changes`, `performance_changes`), cada "
+                "`component.<nome>` que uma das duas plataformas nao publica "
+                "como eixo, e `attribution` quando os DOIS eixos variam."
+            ),
+        },
+    },
+}
+
 _MIGRATION_STEP: dict[str, Any] = {
     "type": "array",
     "items": {"type": "string"},
@@ -1096,9 +1255,126 @@ _MIGRATION_STEP: dict[str, Any] = {
     "description": "Degrau do caminho, no par [origem, alvo].",
 }
 
+_MIGRATION_AXIS_COVERAGE: dict[str, Any] = {
+    "type": "object",
+    "required": ["axis", "catalog_rules", "reachable_rules", "runtime_key_present"],
+    "properties": {
+        "axis": {
+            "type": "string",
+            "description": (
+                "Eixo de `runtime_scope`. O eixo da PLATAFORMA aparece mesmo "
+                "valendo zero -- e assim que a saida consegue dizer `nenhuma "
+                "regra deste catalogo descreve breaking change de EMR` em vez "
+                "de simplesmente nao falar do assunto."
+            ),
+        },
+        "catalog_rules": {
+            "type": "integer",
+            "description": "Regras do catalogo guardadas por este eixo.",
+        },
+        "reachable_rules": {
+            "type": "integer",
+            "description": (
+                "Quantas dessas passaram `in_scope` em ao menos um degrau. "
+                "Alcancavel nao e o mesmo que disparada: a regra alcancavel que "
+                "nao disparou por falta de fact ja aparece em `missing_evidence`."
+            ),
+        },
+        "runtime_key_present": {
+            "type": "boolean",
+            "description": (
+                "Se algum degrau chegou a preencher a chave. Eixo com regra no "
+                "catalogo e sem chave no runtime nao foi avaliado."
+            ),
+        },
+    },
+}
+
+_MIGRATION_COVERAGE: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "platform",
+        "platform_axis",
+        "catalog_rules",
+        "axes",
+        "activated_axes",
+        "statement",
+    ],
+    "description": (
+        "A COBERTURA DECLARADA: o que este caminho sequer podia perguntar. Nao e "
+        "um gate -- gate diz se algo passou, isto diz o que era perguntavel. Para "
+        "as tres plataformas de EMR o eixo `emr` vale ZERO no catalogo, e por isso "
+        "um assessment de EMR sem achado NUNCA deve ser lido como `nada quebra`."
+    ),
+    "properties": {
+        "platform": {"type": "string"},
+        "platform_axis": {
+            "type": "string",
+            "description": "`glue` para Glue, `emr` para as tres de EMR.",
+        },
+        "source_runtime": {"type": "string"},
+        "target_runtime": {"type": "string"},
+        "steps": {"type": "integer"},
+        "catalog_rules": {"type": "integer"},
+        "version_guarded_rules": {"type": "integer"},
+        "unguarded_rules": {"type": "integer"},
+        "reachable_rules": {"type": "integer"},
+        "axes": {"type": "array", "items": _MIGRATION_AXIS_COVERAGE},
+        "activated_axes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Os eixos com ao menos uma regra alcancada.",
+        },
+        "statement": {
+            "type": "string",
+            "description": (
+                "A declaracao em prosa, derivada dos numeros ao lado. E o campo a "
+                "LER antes de concluir qualquer coisa de um assessment sem achado."
+            ),
+        },
+    },
+}
+
+_MIGRATION_COMPONENT_DIFF: dict[str, Any] = {
+    "type": "object",
+    "required": ["step", "changed", "added", "removed", "unchanged", "unresolved"],
+    "description": (
+        "O que muda de COMPONENTE naquele degrau, projetado de `ReleaseDiff` -- "
+        "mesma comparacao de `sparkforge_release_diff`, nao uma reimplementacao."
+    ),
+    "properties": {
+        "step": _MIGRATION_STEP,
+        "changed": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "component": {"type": "string"},
+                    "from": {},
+                    "to": {},
+                },
+            },
+        },
+        "added": {"type": "array", "items": {"type": "string"}},
+        "removed": {"type": "array", "items": {"type": "string"}},
+        "unchanged": {"type": "array", "items": {"type": "string"}},
+        "unresolved": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": (
+                "Recusa DAQUELE par de releases (celula ausente de um lado). A "
+                "recusa que e da PLATAFORMA -- eixo que a fonte nao publica em "
+                "release nenhuma -- sobe para `component_diff_unresolved` e sai "
+                "uma vez so."
+            ),
+        },
+    },
+}
+
 _MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": [
+        "platform",
         "source_runtime",
         "target_runtime",
         "steps",
@@ -1108,8 +1384,19 @@ _MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
         "gates",
         "missing_evidence",
         "recommendation",
+        "coverage",
+        "component_diff",
+        "component_diff_unresolved",
     ],
     "properties": {
+        "platform": {
+            "type": "string",
+            "description": (
+                "Qual das quatro matrizes ordenou o caminho e forneceu o runtime "
+                "de cada degrau. Nenhum runtime de uma plataforma sai da matriz "
+                "de outra."
+            ),
+        },
         "source_runtime": {"type": "string"},
         "target_runtime": {"type": "string"},
         "steps": {
@@ -1179,6 +1466,23 @@ _MIGRATION_ASSESS_SUCCESS_SCHEMA: dict[str, Any] = {
             "description": (
                 "Nunca GO nesta analise: GO exigiria todo gate em PASS, e os quatro "
                 "de execucao real nascem BLOCKED."
+            ),
+        },
+        "coverage": _MIGRATION_COVERAGE,
+        "component_diff": {
+            "type": "array",
+            "items": _MIGRATION_COMPONENT_DIFF,
+        },
+        "component_diff_unresolved": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": (
+                "O que a comparacao de componentes NAO sustenta, e vale para o "
+                "caminho inteiro: as cinco dimensoes do §8.2 sem lastro "
+                "(`deprecated`, `default_changes`, `compatibility_changes`, "
+                "`security_changes`, `performance_changes`) mais os eixos que a "
+                "fonte daquela plataforma nao publica em release nenhuma. Lista "
+                "vazia aqui seria lida como `nao mudou nada`."
             ),
         },
     },
@@ -3128,6 +3432,60 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _READ_ONLY,
     },
+    "sparkforge_analyze_emr_eks": {
+        "description": (
+            "Extrai facts de um dump JSON de execucao Amazon EMR on EKS "
+            "(`describe-virtual-cluster` mais `describe-job-run`, as DUAS respostas no "
+            "mesmo arquivo sob `virtualCluster` e `jobRun`): identidade e estado do "
+            "cluster virtual (`emrc.virtual_cluster`), a execucao com release label, "
+            "role de execucao e estado (`emrc.job_run`), as propriedades de "
+            "`sparkSubmitParameters` (`emrc.spark_submit_parameters`), as "
+            "`configurationOverrides` achatadas por classificacao "
+            "(`emrc.configuration`) e os destinos de log (`emrc.monitoring`). NAO chama "
+            "a API do `emr-containers` -- so le o JSON ja salvo em disco "
+            "(`sparkforge_collect_emr_eks` ou `aws emr-containers describe-job-run` "
+            "a mao fazem isso). "
+            "FRONTEIRA QUE VALE PARA TODO FACT DAQUI, e ela e mais estreita que a do "
+            "EMR Serverless: estes facts descrevem o que UMA EXECUCAO PEDIU, nunca o "
+            "que o pod RECEBEU. O que roda de fato sai da imagem do container e do "
+            "escalonador do Kubernetes, e nenhum dos dois esta neste dump. "
+            "O POD TEMPLATE NAO E LIDO: quando a configuracao aponta um "
+            "(`spark.kubernetes.driver.podTemplateFile` e o par do executor), o modulo "
+            "emite a RECUSA com o path do template em vez de adivinhar o que ele "
+            "contem -- le-lo exigiria um `GetObject` no S3 que este caminho nao faz. "
+            "E O LADO EKS NAO EXISTE AQUI: nodegroup, autoscaling do cluster, pod "
+            "pendente por falta de no, quota de namespace -- nada disso aparece em "
+            "`emr-containers`. Sao outro servico, outro IAM e outra matriz de versao; "
+            "pergunta sobre eles nao tem resposta nesta area, e a ausencia e decidida. "
+            "Classificacao ou unidade fora do documentado vira `emrc.unresolved` "
+            "contado, nunca valor adivinhado."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": (
+                        "Arquivo ou diretorio com dumps de execucao EMR on EKS."
+                    ),
+                },
+                "kind": {"type": "array", "items": {"type": "string"}},
+                "limit": {"type": "integer"},
+                "cursor": {"type": "string"},
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": _DETAIL_LEVEL_DESC,
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _ANALYZE_FACTS_SCHEMA,
+            "Facts extraidos, ou erro se o path nao existe.",
+        ),
+        "annotations": _READ_ONLY,
+    },
     "sparkforge_analyze_data_quality": {
         "description": (
             "Extrai facts de VALIDACAO DE DADO do proprio codigo PySpark (`.py` do "
@@ -3332,7 +3690,7 @@ TOOLS: dict[str, dict[str, Any]] = {
     },
     "sparkforge_migration_assess": {
         "description": (
-            "Julga a migracao de um job Glue entre um par de versoes com o catalogo "
+            "Julga a migracao de um job entre um par de versoes com o catalogo "
             "versionado (`SF-MIG`, `SF-SPARK4`, `SF-LF`), uma vez por DEGRAU do "
             "caminho -- 4.0 para 6.0 passa por 5.0 e 5.1, porque os breaking changes "
             "se acumulam e um salto esconde os do meio. Entrada: o diretorio do job "
@@ -3340,14 +3698,22 @@ TOOLS: dict[str, dict[str, Any]] = {
             "e o caso que interessa, porque um pin de dependencia e um binario Scala "
             "nao tem linha de fonte Python e sobrevivem a troca de runtime. `source` "
             "e `target` nao tem default: um par embutido responderia sobre um alvo "
-            "que ninguem declarou. Devolve `findings` (cardinalidade por degrau), "
-            "`report` (cada problema uma vez, com os degraus em que vale), `gates` e "
-            "`missing_evidence`. Compoe o job inteiro: codigo, `.tf` quando existe "
-            "(sem ele a area `SF-LF` fica sem produtor, porque a topologia de FGAC "
-            "e declarada no Terraform) e o inventario de consumidores em "
-            "`.sparkforge/consumers.yaml`. Todo eixo sem evidencia nasce BLOCKED "
-            "com o motivo, nunca PASS -- inclusive os que o contrato nomeia e "
-            "nenhuma regra preenche (`iam_kms`, `rede`, `cross_account`)."
+            "que ninguem declarou. `platform` aceita as QUATRO (`glue`, `emr_ec2`, "
+            "`emr_serverless`, `emr_eks`) e tem default `glue`; a ordem das releases "
+            "e o runtime de cada degrau vem da matriz DAQUELA plataforma, nunca de "
+            "outra -- a de EC2 nao descreve EKS nem Serverless, e elas divergem em "
+            "celulas reais. Devolve `findings` (cardinalidade por degrau), `report` "
+            "(cada problema uma vez, com os degraus em que vale), `gates`, "
+            "`missing_evidence`, `component_diff` (o que muda de componente por "
+            "degrau, do `ReleaseDiff`) e `coverage`. LEIA `coverage.statement` ANTES "
+            "de concluir qualquer coisa de um assessment sem achado: o catalogo tem "
+            "ZERO regras guardadas por versao de EMR, entao um caminho de EMR avalia "
+            "Spark e componente e NAO avalia breaking change de plataforma -- sem "
+            "esse campo, 'nenhum achado' e indistinguivel de 'nada quebra'. Compoe o "
+            "job inteiro: codigo, `.tf` quando existe (sem ele a area `SF-LF` fica "
+            "sem produtor, porque a topologia de FGAC e declarada no Terraform) e o "
+            "inventario de consumidores em `.sparkforge/consumers.yaml`. Todo eixo "
+            "sem evidencia nasce BLOCKED com o motivo, nunca PASS."
         ),
         "inputSchema": {
             "type": "object",
@@ -3357,8 +3723,28 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": "Diretorio do job, ou um arquivo .py.",
                 },
-                "source": {"type": "string", "description": "Versao de Glue de origem."},
-                "target": {"type": "string", "description": "Versao de Glue alvo."},
+                "source": {
+                    "type": "string",
+                    "description": (
+                        "Release de origem, na matriz da plataforma. Aceita as duas "
+                        "grafias que a fonte publica (`emr-7.5.0` e `7.5.0`) e emite "
+                        "uma."
+                    ),
+                },
+                "target": {
+                    "type": "string",
+                    "description": "Release alvo, mesma convencao de `source`.",
+                },
+                "platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "default": _core.MIGRATION_DEFAULT_PLATFORM,
+                    "description": (
+                        "Qual das quatro matrizes ordena o caminho e fornece o "
+                        "runtime de cada degrau. Default `glue`, que era a unica "
+                        "resposta possivel antes desta extensao."
+                    ),
+                },
             },
         },
         "outputSchema": _may_fail(
@@ -3454,7 +3840,13 @@ TOOLS: dict[str, dict[str, Any]] = {
                     "type": "string",
                     "description": (
                         "Diretorio do job, com o inventario em "
-                        "`.sparkforge/consumers.yaml`."
+                        "`.sparkforge/consumers.yaml`. Cada consumidor aceita um "
+                        "`release:` OPCIONAL (`emr-7.7.0`): com ele, a resposta "
+                        "cruza a versao de Iceberg daquela release com o minimo de "
+                        "biblioteca da feature, e por isso `emr_ec2` e `emr_eks` "
+                        "respondem DIFERENTE na mesma release, como as fontes dizem "
+                        "que respondem. Sem ele, a resposta e a da engine sem "
+                        "recorte de versao -- mais fraca, e nao errada."
                     ),
                 },
                 "source": {"type": "integer", "description": "Format version de origem."},
@@ -3499,6 +3891,18 @@ TOOLS: dict[str, dict[str, Any]] = {
                                 "status": {"type": "string"},
                                 "source": {"type": "string"},
                                 "note": {"type": "string"},
+                                "reason": {
+                                    "type": "string",
+                                    "description": (
+                                        "Razao do cruzamento por release, no "
+                                        "vocabulario fechado de "
+                                        "`sparkforge/storage/readiness.py:REASONS`. "
+                                        "Vazia quando o inventario nao declarou "
+                                        "`release` para o consumidor."
+                                    ),
+                                },
+                                "library_version": {"type": "string"},
+                                "min_library_version": {"type": "string"},
                             },
                         },
                     },
@@ -3507,9 +3911,125 @@ TOOLS: dict[str, dict[str, Any]] = {
                         "items": {"type": "string"},
                         "description": "O que falta para resolver cada celula UNKNOWN.",
                     },
+                    "unevaluated_consumers": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "Consumidor DECLARADO que a matriz nao avaliou -- nao "
+                            "tem linha nenhuma nela. Diferente de ter linha e nao "
+                            "ter fonte, e o unico dos dois que uma pessoa consegue "
+                            "consertar. `emr` cai aqui de proposito: as tres "
+                            "plataformas publicam Iceberg diferente."
+                        ),
+                    },
                 },
             },
             "Veredito do upgrade, ou erro se o caminho nao existe ou o alvo nao e upgrade.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_release_describe": {
+        "description": (
+            "O que uma release E, segundo a fonte DAQUELA plataforma e so ela: "
+            "cada componente com versao, as fontes e a data de leitura. Le as "
+            "quatro matrizes de `knowledge/` -- nao le artefato do operador, nao "
+            "chama AWS e NAO JULGA. "
+            "A FRONTEIRA, e ela vem antes da capacidade: o descritor afirma o que "
+            "aquela fonte PUBLICA, e as quatro publicam conjuntos DIFERENTES. "
+            "Componente que a fonte nao publica sai em `unresolved` NOMEADO -- "
+            "nunca string vazia, nunca chave ausente em silencio, que o leitor "
+            "confundiria com 'nao tem'. `unresolved_detail` diz de qual das DUAS "
+            "recusas se trata, porque elas destravam com medidas diferentes: "
+            "`platform_source_does_not_publish` (a fonte nao publica aquele eixo "
+            "em release NENHUMA -- `hadoop` no EMR on EKS, 0 de 34 paginas) "
+            "destrava com uma FONTE nova; `release_cell_absent` (a fonte publica "
+            "o eixo e a celula DAQUELA release nao esta la -- `iceberg` em "
+            "`emr-6.4.0`, `java` em Glue 5.1) destrava com uma LEITURA daquela "
+            "pagina. Nenhum valor e herdado de outra plataforma: o mesmo "
+            "`emr-7.7.0` publica Iceberg `1.7.1-amzn-0` no EC2 e `1.6.1-amzn-2` no "
+            "EKS. `release` sai como a matriz o indexa, uma grafia so."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["platform", "release"],
+            "properties": {
+                "platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "description": "Uma das quatro plataformas que este motor conhece.",
+                },
+                "release": {
+                    "type": "string",
+                    "description": (
+                        "O rotulo da release, com ou sem o prefixo `emr-` "
+                        "(`7.7.0`, `emr-7.7.0`, `5.1`). A saida emite UMA grafia."
+                    ),
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _RELEASE_DESCRIPTOR_SCHEMA,
+            "Descritor da release, ou erro se a plataforma ou a release e desconhecida.",
+        ),
+        "annotations": _READ_ONLY,
+    },
+    "sparkforge_release_diff": {
+        "description": (
+            "O que muda de COMPONENTE entre duas releases, cada lado dado por um "
+            "par (plataforma, release). Le matriz de versao; NAO avalia "
+            "compatibilidade e NAO diz se algo quebra -- essa pergunta e do "
+            "`sparkforge_migration_assess`. "
+            "O EIXO SAI DECLARADO em `axis`, e ele e resultado e nao entrada: "
+            "`release` quando so a release varia, `platform` quando o mesmo rotulo "
+            "e comparado entre duas plataformas (`emr-7.7.0` no EC2 contra o EKS "
+            "publica Iceberg minor DIFERENTE), os dois quando os dois variam, e "
+            "vazio quando nada varia. COM OS DOIS EIXOS VARIANDO ELE RECUSA A "
+            "ATRIBUICAO por nome (`unresolved.attribution`): nenhuma linha de "
+            "`changed` pode ser creditada a release ou a plataforma isoladamente, "
+            "e o que destrava sao dois diffs de um eixo cada. "
+            "CINCO DAS SETE DIMENSOES SAEM EM `unresolved` COM A RAZAO -- "
+            "`deprecated`, `default_changes`, `compatibility_changes`, "
+            "`security_changes` e `performance_changes` --, porque as matrizes "
+            "sustentam versao de componente e nada mais; lista vazia seria lida "
+            "como 'nao mudou nada'. So `added` e `removed` tem lastro, e eles "
+            "medem a PRESENCA DA CELULA, nao 'a plataforma passou a embarcar'. "
+            "Componente que UMA DAS DUAS plataformas nao publica como eixo nunca "
+            "vira `added` nem `removed`: sai em `unresolved` com a chave "
+            "`component.<nome>`, para a saida nao afirmar que 'o EKS removeu o "
+            "Hadoop' quando a fonte do EKS nunca o publicou."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": [
+                "left_platform",
+                "left_release",
+                "right_platform",
+                "right_release",
+            ],
+            "properties": {
+                "left_platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "description": "Plataforma do lado de ONDE o operador sai.",
+                },
+                "left_release": {
+                    "type": "string",
+                    "description": "Release do lado de ONDE o operador sai.",
+                },
+                "right_platform": {
+                    "type": "string",
+                    "enum": list(_core.RELEASE_PLATFORMS),
+                    "description": "Plataforma do lado PARA ONDE o operador vai.",
+                },
+                "right_release": {
+                    "type": "string",
+                    "description": "Release do lado PARA ONDE o operador vai.",
+                },
+            },
+        },
+        "outputSchema": _may_fail(
+            _RELEASE_DIFF_SCHEMA,
+            "Diff das duas releases, ou erro se uma plataforma ou release e desconhecida.",
         ),
         "annotations": _READ_ONLY,
     },
@@ -4452,6 +4972,56 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _WRITE_LOCAL_OPEN_WORLD,
     },
+    "sparkforge_collect_emr_eks": {
+        "description": (
+            "Baixa `describe-virtual-cluster` e `describe-job-run` de uma execucao "
+            "Amazon EMR on EKS e grava as DUAS respostas num unico arquivo "
+            "autocontido, sob as chaves de topo `virtualCluster` e `jobRun`, no mesmo "
+            "shape camelCase que `aws emr-containers ...` devolve -- coleta manual e "
+            "automatica produzem o mesmo arquivo, que e o que "
+            "`sparkforge_analyze_emr_eks` le. "
+            "DUAS chamadas, nem uma nem seis: diferente do EMR Serverless, onde "
+            "`GetApplication` devolve tudo num objeto so, aqui identidade do cluster "
+            "virtual e execucao sao APIS SEPARADAS do servico `emr-containers`, e "
+            "nenhuma contem a outra. "
+            "OS DOIS IDS SAO OBRIGATORIOS, e nao ha resolucao por nome: "
+            "`DescribeJobRun` exige `virtual_cluster_id` junto do `job_run_id` -- a "
+            "propria API nao aceita um job run sem o cluster virtual que o contem. "
+            "Nome NAO serve: escolher uma entre homonimas em silencio gravaria o "
+            "artefato errado com aparencia de certo. "
+            "Ficam FORA por decisao, nao por limitacao da API: `list-job-runs` "
+            "(listagem, nao coleta de uma execucao identificada), o pod template "
+            "apontado pela configuracao (outra chamada, `GetObject`) e todo o lado EKS. "
+            "Mesma politica offline-first de `sparkforge_collect_event_log`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "required": ["repo", "virtual_cluster_id", "job_run_id", "now"],
+            "properties": {
+                "repo": {"type": "string"},
+                "virtual_cluster_id": {
+                    "type": "string",
+                    "description": (
+                        "Id do cluster virtual. Nome NAO serve -- `DescribeJobRun` "
+                        "exige o id."
+                    ),
+                },
+                "job_run_id": {
+                    "type": "string",
+                    "description": (
+                        "Id da execucao. Obrigatorio junto do cluster virtual, porque "
+                        "a API exige os dois."
+                    ),
+                },
+                "now": {"type": "string", "description": "Timestamp ISO 8601."},
+            },
+        },
+        "outputSchema": _may_fail(
+            _COLLECT_ARTIFACT_SCHEMA,
+            "Artefato coletado (ou cache hit local), ou erro de fronteira.",
+        ),
+        "annotations": _WRITE_LOCAL_OPEN_WORLD,
+    },
     "sparkforge_collect_verify": {
         "description": (
             "Verifica presenca e integridade (sha256 recalculado) de todos os artefatos "
@@ -4963,7 +5533,10 @@ def _h_iceberg_assess_upgrade(args: dict[str, Any]) -> dict[str, Any]:
 
 def _h_migration_assess(args: dict[str, Any]) -> dict[str, Any]:
     return _core.migration_assess(
-        args["path"], source=args["source"], target=args["target"]
+        args["path"],
+        source=args["source"],
+        target=args["target"],
+        platform=args.get("platform", _core.MIGRATION_DEFAULT_PLATFORM),
     )
 
 
@@ -4997,6 +5570,16 @@ def _h_analyze_emr_serverless(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_analyze_emr_eks(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.analyze_emr_eks(
+        args["path"],
+        kind=args.get("kind"),
+        limit=args.get("limit", _core.DEFAULT_LIMIT),
+        cursor=args.get("cursor"),
+        detail_level=args.get("detail_level", "full"),
+    )
+
+
 def _h_analyze_data_quality(args: dict[str, Any]) -> dict[str, Any]:
     return _core.analyze_data_quality(
         args["path"],
@@ -5014,6 +5597,19 @@ def _h_analyze_graph(args: dict[str, Any]) -> dict[str, Any]:
         limit=args.get("limit", _core.DEFAULT_LIMIT),
         cursor=args.get("cursor"),
         detail_level=args.get("detail_level", "full"),
+    )
+
+
+def _h_release_describe(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.release_describe(args["platform"], args["release"])
+
+
+def _h_release_diff(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.release_diff(
+        args["left_platform"],
+        args["left_release"],
+        args["right_platform"],
+        args["right_release"],
     )
 
 
@@ -5177,6 +5773,15 @@ def _h_collect_emr_serverless(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_collect_emr_eks(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.collect_emr_eks(
+        args["repo"],
+        virtual_cluster_id=args["virtual_cluster_id"],
+        job_run_id=args["job_run_id"],
+        now=args["now"],
+    )
+
+
 def _h_collect_verify(args: dict[str, Any]) -> dict[str, Any]:
     return _core.collect_verify(args["repo"])
 
@@ -5259,6 +5864,7 @@ _HANDLERS = {
     "sparkforge_analyze_athena_workgroup": _h_analyze_athena_workgroup,
     "sparkforge_analyze_emr_cluster": _h_analyze_emr_cluster,
     "sparkforge_analyze_emr_serverless": _h_analyze_emr_serverless,
+    "sparkforge_analyze_emr_eks": _h_analyze_emr_eks,
     "sparkforge_analyze_data_quality": _h_analyze_data_quality,
     "sparkforge_analyze_graph": _h_analyze_graph,
     "sparkforge_analyze_s3_listing": _h_analyze_s3_listing,
@@ -5268,6 +5874,8 @@ _HANDLERS = {
     "sparkforge_migration_assess": _h_migration_assess,
     "sparkforge_glue_dependency_audit": _h_glue_dependency_audit,
     "sparkforge_iceberg_assess_upgrade": _h_iceberg_assess_upgrade,
+    "sparkforge_release_describe": _h_release_describe,
+    "sparkforge_release_diff": _h_release_diff,
     "sparkforge_benchmark": _h_benchmark,
     "sparkforge_workload": _h_workload,
     "sparkforge_capacity": _h_capacity,
@@ -5290,6 +5898,7 @@ _HANDLERS = {
     "sparkforge_collect_athena_workgroup": _h_collect_athena_workgroup,
     "sparkforge_collect_emr_cluster": _h_collect_emr_cluster,
     "sparkforge_collect_emr_serverless": _h_collect_emr_serverless,
+    "sparkforge_collect_emr_eks": _h_collect_emr_eks,
     "sparkforge_collect_verify": _h_collect_verify,
     "sparkforge_code_context": _h_code_context,
     "sparkforge_code_search": _h_code_search,

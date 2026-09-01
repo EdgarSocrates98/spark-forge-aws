@@ -29,6 +29,7 @@ from sparkforge.facts import (
     consumers,
     data_quality,
     emr_cluster,
+    emr_eks,
     emr_serverless,
     event_log,
     funcval,
@@ -60,6 +61,14 @@ EXTRACTORS = {
     "consumers": consumers,
     "data_quality": data_quality,
     "emr_cluster": emr_cluster,
+    # `emr_eks` entra nas DUAS listas no mesmo commit desta Task, ANTES de a area
+    # SF-EMRK existir. Sem ele aqui, os oito kinds `emrc.*` nao sao verificados
+    # por ninguem e o criterio de golden -- todo kind de `EMITTED_KINDS` em algum
+    # golden -- passa sem ser avaliado, que e pior do que falhar. Medido pelo
+    # contrafactual: tirando esta linha,
+    # `test_no_golden_carries_a_kind_that_no_extractor_declares` reprova nomeando
+    # os oito.
+    "emr_eks": emr_eks,
     # `emr_serverless` entra nas DUAS listas no mesmo commit da Task 4 da Fase
     # 5d, ANTES de a area SF-EMRS existir. Sem ele aqui, os seis kinds `emrs.*`
     # nao sao verificados por ninguem e o criterio 3 do spec -- todo kind de
