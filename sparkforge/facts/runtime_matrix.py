@@ -217,11 +217,33 @@ def load() -> dict[str, dict[str, Any]]:
     simplesmente NAO APARECE quando o status retem o valor -- ver
     `_SEM_VALOR_RESOLVIDO`. Quem precisa da evidencia por tras chama
     `evidence()`.
+
+    ## `sources` e `retrieved` NAO sao componente, e ate 2026-09-01 saiam como se
+    ## fossem
+
+    As tres matrizes de EMR passam por `_carrega_matriz_fechada`, que filtra
+    `_RESERVADAS`; este caminho -- que existe por causa da forma longa com
+    `claims` -- nao filtrava. Medido: `load()["5.0"]` devolvia SETE chaves
+    (`iceberg, java, python, retrieved, scala, sources, spark`) contra as CINCO
+    de `load_emr()["7.7.0"]`.
+
+    Nenhuma garantia se perde ao filtrar: procedencia por release ja tem acessor
+    proprio, `release_provenance()`, que existe exatamente para essa pergunta e
+    resolve a heranca do nivel de documento para o nivel de release -- coisa que
+    ler a chave crua da linha nao fazia. O guard de "toda versao declara fonte e
+    data" mudou de acessor em `tests/test_runtime_matrix.py`, nao sumiu.
+
+    A auditoria de 2026-09-01 classificou isto como DIVIDA e nao como limite
+    declarado, e a razao vale registro: o adiamento anterior citava "mudanca de
+    contrato com consumidores em golden" como motivo. Isso e CUSTO, nao
+    categoria -- e medido, o custo era um teste trocando de acessor.
     """
     resolvida: dict[str, dict[str, Any]] = {}
     for versao, linha in _read().items():
         resolvida[versao] = {}
         for componente, valor in linha.items():
+            if componente in _RESERVADAS:
+                continue
             if not isinstance(valor, dict) or "claims" not in valor:
                 resolvida[versao][componente] = valor
                 continue

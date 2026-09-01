@@ -17,16 +17,41 @@ class TestMatrizDeVersoes:
             assert versao in matriz, versao
 
     def test_cada_versao_declara_runtime_e_procedencia(self):
+        """A procedencia sai de `release_provenance()`, nao de `load()`.
+
+        Ate 2026-09-01 as duas metades liam a mesma linha, porque `load()`
+        devolvia `sources` e `retrieved` COMO SE FOSSEM COMPONENTE -- sete
+        chaves em Glue contra cinco nas tres matrizes de EMR, que filtram. A
+        garantia nao mudou; o acessor mudou, e `release_provenance()` ainda
+        resolve a heranca do nivel de documento para o nivel de release, coisa
+        que ler a chave crua nao fazia.
+        """
+        procedencia = runtime_matrix.release_provenance()
         for versao, linha in runtime_matrix.load().items():
             assert linha["spark"], versao
             assert linha["python"], versao
-            assert linha["sources"], f"{versao} sem fonte"
-            assert linha["retrieved"], f"{versao} sem data de consulta"
+            assert procedencia[versao]["sources"], f"{versao} sem fonte"
+            assert procedencia[versao]["retrieved"], f"{versao} sem data de consulta"
+
+    def test_load_nao_devolve_chave_reservada_como_componente(self):
+        """O contrafactual da divida que a auditoria de 2026-09-01 achou.
+
+        `sources` e `retrieved` descrevem a LINHA, nao um componente do runtime.
+        Vazá-los em `load()` fazia qualquer consumidor que iterasse componentes
+        -- um descritor de release, por exemplo -- tratar procedencia como se
+        fosse versao de biblioteca.
+        """
+        for versao, linha in runtime_matrix.load().items():
+            vazadas = sorted(set(linha) & {"sources", "retrieved"})
+            assert not vazadas, (
+                f"{versao}: `load()` devolveu {vazadas} como componente. "
+                f"Procedencia se le em `release_provenance()`."
+            )
 
     def test_toda_fonte_esta_no_lock_de_fontes(self):
         vigiadas = runtime_matrix.watched_sources()
-        for versao, linha in runtime_matrix.load().items():
-            for fonte in linha["sources"]:
+        for versao, dados in runtime_matrix.release_provenance().items():
+            for fonte in dados["sources"]:
                 assert fonte in vigiadas, f"{versao}: {fonte} fora do sources.lock.json"
 
     def test_toda_fonte_de_claim_tambem_esta_no_lock(self):
@@ -103,13 +128,16 @@ class TestResolucaoDeCaminhoNoPacoteInstalado:
         runtime_matrix.load.cache_clear()
         runtime_matrix.watched_sources.cache_clear()
         try:
+            # `sources` e `retrieved` estao no YAML acima e NAO aparecem aqui:
+            # desde 2026-09-01 `load()` filtra as duas, como as tres matrizes de
+            # EMR sempre filtraram. O que este teste mede e resolucao de CAMINHO
+            # no layout de pacote instalado, nao a forma da procedencia -- ela
+            # se le em `release_provenance()`.
             assert runtime_matrix.load() == {
                 "9.9": {
                     "spark": "9.9.9",
                     "python": "9.9",
                     "iceberg": "9.9.9",
-                    "sources": [],
-                    "retrieved": "2026-01-01",
                 }
             }
             assert runtime_matrix.watched_sources() == frozenset()

@@ -117,9 +117,20 @@ ids tirada da saída do gate, nunca por varredura. Tool, skill ou documento de
 `python scripts/check_surface_lock.py --update`, com o crescimento declarado no
 commit.
 
-A suíte inteira num processo só não sobrevive — divida `tests/test_*.py` em seis
-lotes alfabéticos e rode um por vez; o lote dos `test_fixtures_golden_*` precisa
-ser quebrado outra vez, porque cada golden reextrai o corpus.
+A suíte inteira num processo só não sobrevive — rode em lotes, um por vez. **A
+receita é executável e mora em `tests/test_suite_batches.py`, na constante
+`LOTES`**; esta página aponta para ela em vez de repeti-la, e a razão é medida.
+
+Enquanto a receita era prosa, `tests/test_fixtures_golden.py` — **90 testes** —
+não caía em lote nenhum: o lote `f` se escrevia `ls tests/test_f*.py | grep -v
+golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não
+é (falta o underscore). A suíte coletava 8662 e a receita somava 8572. Quem
+seguisse o procedimento publicado fechava verde com 90 testes sem execução, e
+nada acusava.
+
+Hoje `test_suite_batches.py` trava três invariantes: todo arquivo cai em ao menos
+um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Arquivo de
+teste com nome que nenhum lote pega passa a derrubar o gate.
 
 ## Compressão de output
 
