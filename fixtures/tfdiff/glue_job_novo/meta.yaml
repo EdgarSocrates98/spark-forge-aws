@@ -1,21 +1,21 @@
 name: glue_job_novo
-proves: >
-  A metade que impede SF-MIG-004 de virar ruído: o PR CRIA um `aws_glue_job`
-  novo, já nascido em Glue 6.0. O atributo `glue_version` também chega com
-  `changed: true` -- ele não existia antes -- mas não existe migração nenhuma
-  para avaliar, porque não existe job anterior. Um achado aqui mandaria o
-  revisor procurar uma versão de origem que nunca houve.
-  O que separa os dois casos é `previous_value`, que só aparece quando o
-  atributo existia antes com outro valor. Por isso a regra exige a comparação
-  entre `previous_value` e `value`, e não apenas `changed: true`.
+proves: 'A metade que impede SF-MIG-004 de virar ruído: o PR CRIA um `aws_glue_job` novo,
+  já nascido em Glue 6.0. O atributo `glue_version` também chega com `changed: true` -- ele
+  não existia antes -- mas não existe migração nenhuma para avaliar, porque não existe job
+  anterior. Um achado aqui mandaria o revisor procurar uma versão de origem que nunca houve.
+  O que separa os dois casos é `previous_value`, que só aparece quando o atributo existia
+  antes com outro valor. Por isso a regra exige a comparação entre `previous_value` e `value`,
+  e não apenas `changed: true`.
+
+  '
 runtime:
-  glue: "6.0"
-  spark: "4.1.1"
-  python: "3.13"
-  iceberg: "1.11.0"
+  glue: '6.0'
+  spark: 4.1.1
+  python: '3.13'
+  iceberg: 1.11.0
 expects_kinds:
-  - tf.module_analyzed
-  - tf.resource
-  - tf.attribute
-  - tf.observability.spark_ui
+- tf.attribute
+- tf.module_analyzed
+- tf.observability.spark_ui
+- tf.resource
 expects_rules: []

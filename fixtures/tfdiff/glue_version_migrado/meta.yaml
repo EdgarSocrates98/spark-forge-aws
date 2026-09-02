@@ -1,25 +1,23 @@
 name: glue_version_migrado
-proves: >
-  O PR muda uma linha -- `glue_version` de 4.0 para 6.0 -- e nada mais. No diff
-  isso tem o tamanho de um ajuste de configuração; no efeito é troca inteira de
-  runtime: Spark 3.3 vira 4.1, Python 3.10 vira 3.13, Scala 2.12 vira 2.13, Java
-  8 vira 17, Iceberg 1.0 vira 1.11, e o sistema de arquivos S3 deixou de ser
-  EMRFS no caminho. SF-MIG-004 dispara e nomeia isso como migração de runtime,
-  com a versão de origem e a de destino vindas do próprio fact
-  (`previous_value` e `value`), não de uma flag que alguém precisou lembrar de
-  passar.
-  Nenhuma outra regra dispara aqui de propósito: o worker não mudou, a
-  observabilidade continua declarada, e o job não tem código anexado nesta
-  fixture. O achado é sobre a mudança de versão e só.
+proves: 'O PR muda uma linha -- `glue_version` de 4.0 para 6.0 -- e nada mais. No diff isso
+  tem o tamanho de um ajuste de configuração; no efeito é troca inteira de runtime: Spark
+  3.3 vira 4.1, Python 3.10 vira 3.13, Scala 2.12 vira 2.13, Java 8 vira 17, Iceberg 1.0 vira
+  1.11, e o sistema de arquivos S3 deixou de ser EMRFS no caminho. SF-MIG-004 dispara e nomeia
+  isso como migração de runtime, com a versão de origem e a de destino vindas do próprio fact
+  (`previous_value` e `value`), não de uma flag que alguém precisou lembrar de passar. Nenhuma
+  outra regra dispara aqui de propósito: o worker não mudou, a observabilidade continua declarada,
+  e o job não tem código anexado nesta fixture. O achado é sobre a mudança de versão e só.
+
+  '
 runtime:
-  glue: "6.0"
-  spark: "4.1.1"
-  python: "3.13"
-  iceberg: "1.11.0"
+  glue: '6.0'
+  spark: 4.1.1
+  python: '3.13'
+  iceberg: 1.11.0
 expects_kinds:
-  - tf.module_analyzed
-  - tf.resource
-  - tf.attribute
-  - tf.observability.spark_ui
+- tf.attribute
+- tf.module_analyzed
+- tf.observability.spark_ui
+- tf.resource
 expects_rules:
-  - SF-MIG-004
+- SF-MIG-004
