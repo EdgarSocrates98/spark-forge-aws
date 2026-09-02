@@ -95,6 +95,7 @@ class TestToolSurface:
             # 60 fica separada de proposito por ser a unica que devolve fonte.
             "sparkforge_code_context",
             "sparkforge_code_search",
+            "sparkforge_code_path",
             "sparkforge_code_symbol",
             "sparkforge_code_read",
             "sparkforge_code_status",
@@ -238,6 +239,7 @@ class TestToolSurface:
             # `tests/test_adapters_code_surface.py`, nao aqui.
             "sparkforge_code_context",
             "sparkforge_code_read",
+            "sparkforge_code_path",
             "sparkforge_code_search",
             "sparkforge_code_status",
             "sparkforge_code_symbol",
@@ -1455,7 +1457,7 @@ def _code_tree(tmp_path):
 
 
 def _real_code_output_for(name, tmp_path):
-    """Saida REAL das seis tools de Code Intelligence, sobre uma arvore de verdade.
+    """Saida REAL das sete tools de Code Intelligence, sobre uma arvore de verdade.
 
     Cada uma passa pela porta de frescor da SPEC 43 antes de responder, entao
     construir o indice com `sparkforge_code_sync` aqui nao e conveniencia: e o
@@ -1500,6 +1502,21 @@ def _real_code_output_for(name, tmp_path):
         return achados
 
     node_id = achados["results"][0]["node_id"]
+    if name == "sparkforge_code_path":
+        # Origem e destino SAO o mesmo no, e de proposito: a amostra tem um
+        # chamador resolvido mas nao garante um par a distancia conhecida, e um
+        # caminho de zero saltos exercita o schema inteiro -- `found`, `reason`
+        # nulo, `path` de um item e as cinco contagens de `graph`. O que este
+        # teste prende e a FORMA da resposta; a topologia esta em
+        # `tests/test_codeintel_graph_caminho.py`, sobre corpus sintetico.
+        resultado = call_tool(
+            "sparkforge_code_path",
+            {"repo": str(raiz), "origem": node_id, "destino": node_id},
+        )
+        assert resultado["found"] is True
+        assert resultado["reason"] is None
+        return resultado
+
     if name == "sparkforge_code_symbol":
         resultado = call_tool(
             "sparkforge_code_symbol", {"repo": str(raiz), "node_id": node_id}
@@ -1978,6 +1995,7 @@ def _real_output_for(name, tmp_path, monkeypatch=None):
         "sparkforge_code_context",
         "sparkforge_code_search",
         "sparkforge_code_symbol",
+        "sparkforge_code_path",
         "sparkforge_code_read",
         "sparkforge_code_status",
         "sparkforge_code_sync",

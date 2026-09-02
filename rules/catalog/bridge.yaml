@@ -1,0 +1,119 @@
+# SF-BRIDGE — o codigo lido contra a execucao medida
+#
+# A LACUNA QUE ESTA AREA FECHA, MEDIDA
+#
+# Em 2026-09-02, sobre as 146 regras do catalogo, por `requires_facts`:
+#
+#     20  usam so fato ESTATICO   (callgraph.*, graph.*, pyspark.*, sql.*)
+#     35  usam so fato de RUNTIME (spark.*, glue.*, emr*)
+#      0  cruzam os dois
+#
+# Zero. O motor lia codigo e lia execucao, e nunca os punha lado a lado.
+#
+# A ANCORA SEMPRE ESTEVE NO ARTEFATO
+#
+# O Spark escreve o nome do stage no formato de callsite -- `collect at
+# job.py:42` --, e `facts/event_log.py` guarda esse nome verbatim desde a
+# primeira versao. `spark.stage.callsite` faz o parse; `facts/bridge.py` faz o
+# cruzamento e emite `bridge.driver_collect_confirmed`.
+#
+# POR QUE AREA PROPRIA
+#
+# Nao entra em `SF-PY` (que e estatico) nem em `SF-SPARK` (que e runtime): a
+# regra e sobre a JUNCAO. Enfia-la num dos dois mandaria o caso para um
+# coordenador que so sabe pedir metade do artefato.
+#
+# VETOS DESTA AREA
+#
+# V-BR-1 -- ATRIBUIR CUSTO A UMA LINHA DE CODIGO. O callsite diz onde o RDD
+#   NASCEU, nao quanto aquela linha custou. "Este collect gastou X" exige o
+#   custo do run que NAO aconteceu, e a regra 13 do CLAUDE.md o proibe por
+#   escrito. As medidas saem com prefixo `stage_` para que a leitura errada nao
+#   seja possivel.
+#   Destravaria: um run comparativo com e sem a linha, que e experimento e nao
+#   leitura de artefato.
+#
+# V-BR-2 -- CORRELACIONAR ALGORITMO GRAPHFRAMES COM STAGE. `connectedComponents`
+#   roda em Scala, e o callsite aponta para dentro da biblioteca
+#   (`GraphFrame.scala`), nao para o `.py` do operador. `spark.stage.callsite`
+#   recusa esse caso com `arquivo_nao_python`, e promove-lo a achado exigiria um
+#   mapa de biblioteca que ninguem publica.
+#   Destravaria: fonte que ligue metodo de GraphFrames a operacao de usuario.
+#
+# V-BR-3 -- FAN-IN ALTO COM SHUFFLE. O prompt de origem lista essa projecao, e
+#   ela NAO TEM FONTE: `fan_in > N` e limiar inventado, e "chamada de muitos
+#   lugares e faz shuffle" e descricao, nao defeito. Um numero escolhido aqui
+#   viraria, no relatorio, uma afirmacao com cara de medida.
+#   Destravaria: fonte que publique limiar de fan-in, ou medicao que ligue
+#   fan-in a custo neste corpus.
+
+area: SF-BRIDGE
+
+rules:
+  - id: SF-BRIDGE-001
+    category: bridge
+    title: collect() sem limite CONFIRMADO por stage no event log
+    requires_facts:
+      - bridge.driver_collect_confirmed
+    when:
+      all:
+        - fact: bridge.driver_collect_confirmed
+          where:
+            attrs.bounded: false
+    status: confirmed
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      `SF-PY-002` ja diz que este `collect()` PODE puxar tudo para o driver --
+      leitura estatica, sem execucao ao lado. Esta regra diz outra coisa: o
+      mesmo callsite apareceu no event log como stage, com volume medido.
+
+      A diferenca e de natureza, nao de grau. Uma afirma risco; a outra afirma
+      que a linha executou e traz o stage como evidencia. Por isso esta e
+      `confirmed` e aquela e `structural`.
+
+      As medidas saem com prefixo `stage_` de proposito: elas sao do STAGE, e
+      nao o custo desta linha. Atribuir custo a uma causa exigiria o custo do
+      run que nao aconteceu.
+    proposed_change:
+      - >
+        Trocar por escrita distribuida (`write`) ou por agregacao que devolva
+        poucas linhas -- a mesma mudanca que `SF-PY-002` propoe, agora com o
+        volume do stage ao lado para dimensionar a urgencia.
+      - >
+        Se a inspecao e mesmo necessaria, `limit(n)` explicito antes, ou
+        `take(n)`. `toLocalIterator` reduz o pico de memoria as custas de mais
+        round-trips.
+    risks:
+      - >
+        Logica downstream pode assumir uma lista Python em memoria, e trocar por
+        escrita distribuida quebra quem itera sobre o retorno.
+    tradeoffs:
+      - >
+        Manter o `collect()` e aceitar que o pico de heap do driver cresca com o
+        dado, sem que o codigo mude -- o modo de falha e OOM de driver por
+        crescimento, e ele chega sem aviso.
+    validation:
+      - Contagem de linhas processadas identica.
+      - >
+        Resultado final identico por contagem, schema, chaves e agregados de
+        controle.
+      - >
+        No proximo event log, o stage daquele callsite deve sumir ou trocar de
+        metodo -- e a confirmacao de que a mudanca chegou a execucao, e nao so
+        ao codigo.
+    rollback:
+      - Reverter o commit.
+    sources:
+      - origin: spark-doc
+        note: >
+          O nome do stage no event log e o callsite do RDD -- `<metodo> at
+          <arquivo>:<linha>` --, e e a mesma string que a Spark UI mostra na
+          coluna Description. `facts/event_log.py` a guarda verbatim desde a
+          primeira versao; `spark.stage.callsite` faz o parse.
+      - origin: field-heuristic
+        note: >
+          Consequencia de `collect()` sem limite: serializa no driver o que era
+          distribuido, e o pico de heap cresce com o resultado. Esta regra nao
+          acrescenta essa heuristica -- ela acrescenta a evidencia de que o
+          caminho executou.

@@ -4170,6 +4170,13 @@ CODE_SEARCH_DEFAULT_LIMIT = 20
 # SPEC 61. Profundidade maxima do raio de impacto.
 CODE_MAX_DEPTH = 5
 
+# Teto de `code_path`. MAIOR que `CODE_MAX_DEPTH` porque as perguntas tem
+# formas diferentes: raio devolve TUDO ate N saltos e o custo cresce com a
+# vizinhanca; caminho devolve UMA sequencia, e parar cedo transforma 'existe
+# caminho longo' em 'nao existe caminho'. A recusa sai nomeada como
+# `depth_exhausted`, entao o teto nunca vira uma afirmacao de ausencia.
+CODE_MAX_PATH_DEPTH = 6
+
 # SPEC 63. Teto de arquivos alterados que viram simbolo + chamador na resposta
 # de `code_status`. Acima disto a resposta diz `changes_truncated: true` em vez
 # de crescer sem limite -- uma arvore com 400 arquivos mexidos produziria um
@@ -4967,6 +4974,117 @@ def code_symbol(
     return corpo
 
 
+def code_path(
+    repo: str,
+    *,
+    origem: str,
+    destino: str,
+    depth: int = CODE_MAX_PATH_DEPTH,
+    detail_level: str = "full",
+    db: str | None = None,
+) -> dict[str, Any]:
+    """O caminho mais curto de chamadas entre dois simbolos, e o tamanho do grafo.
+
+    Responde o que `code_symbol` nao responde. Aquela diz O QUE um simbolo
+    alcanca -- o raio; esta diz COMO ele chega num alvo especifico. As duas
+    perguntas se parecem e decidem coisas diferentes: o raio diz se ha ligacao,
+    o caminho diz por onde ela passa, e e por onde ela passa que se escolhe
+    onde intervir.
+
+    ## As tres respostas negativas saem SEPARADAS
+
+    `found: false` vem sempre com `reason`, e as tres razoes nao querem dizer a
+    mesma coisa:
+
+    - `node_not_indexed` -- origem ou destino fora do indice.
+    - `depth_exhausted` -- a busca foi ate o teto e o alvo nao apareceu. E
+      RECUSA, nao afirmacao: subir `depth` pode mudar a resposta.
+    - `no_resolved_path` -- o grafo esgotou antes do teto. Ai a ausencia e
+      afirmacao, dentro do que a resolucao consegue ver.
+
+    Colapsa-las num `found: false` mudo faria 'nao procurei fundo o bastante'
+    ser lido como 'nao existe' -- a leitura mais forte das tres, e a errada.
+
+    ## O ponto cego sai no corpo, e nao so na documentacao
+
+    O caminho percorre aresta RESOLVIDA. `df.filtrar()` com tipo de `df`
+    desconhecido nao e aresta, entao rota que so existiria por ela nao aparece.
+    `graph.unresolved_refs` sai junto para que quem le saiba o tamanho do ponto
+    cego sem ter de pedir outra tool -- num indice com taxa de resolucao de
+    36%, 'nao ha caminho' pesa muito menos do que pesaria em um de 95%.
+
+    `detail_level`: `summary` traz so o veredito e as contagens; `normal` e
+    `full` acrescentam os nos do caminho. CORPO DE FONTE NUNCA SAI DAQUI, pela
+    mesma razao de `code_symbol` -- fonte sai por `sparkforge_code_read`, que e
+    a unica superficie com os tetos duros e o objeto de confianca.
+    """
+    if detail_level not in NIVEIS_DE_DETALHE:
+        raise AdapterError(
+            f"detail_level invalido: {detail_level!r}; use um de {NIVEIS_DE_DETALHE}",
+            exit_code=2,
+        )
+    raiz = _code_raiz(repo)
+    banco = _code_banco(raiz, db)
+    indice = _code_frescor(raiz, banco)
+
+    profundidade = max(0, min(int(depth), CODE_MAX_PATH_DEPTH))
+    achado = _codeintel_graph.caminho(banco, origem, destino, profundidade)
+    medida = _codeintel_graph.estatisticas(banco)
+
+    if achado.existe:
+        razao = None
+    elif achado.truncado:
+        razao = "depth_exhausted"
+    elif not _code_no_existe(banco, origem) or not _code_no_existe(banco, destino):
+        razao = "node_not_indexed"
+    else:
+        razao = "no_resolved_path"
+
+    corpo: dict[str, Any] = {
+        "index": indice,
+        "from": origem,
+        "to": destino,
+        "found": achado.existe,
+        "reason": razao,
+        "hops": achado.saltos,
+        "max_depth": achado.profundidade_maxima,
+        "path": [],
+        # As duas contagens dizem o TAMANHO do ponto cego. Sem elas, um
+        # `found: false` num indice de 36% de resolucao teria o mesmo peso
+        # aparente que num de 95%.
+        "graph": {
+            "resolved_edges": medida.arestas_resolvidas,
+            "unresolved_refs": medida.referencias_nao_resolvidas,
+            "resolution_rate": round(medida.taxa_de_resolucao, 4),
+            "nodes": medida.nos,
+            "files": medida.arquivos,
+        },
+        "unresolved_note": (
+            "o caminho percorre somente aresta resolvida pelo indice; rota "
+            "que so existiria por chamada com receptor de tipo desconhecido "
+            "nao aparece"
+        ),
+        # Determinismo nao e unicidade: pode haver mais de um caminho minimo,
+        # e esta resposta traz UM, sempre o mesmo. Dizer 'o caminho' sem esta
+        # nota afirmaria mais do que foi medido.
+        "ties_note": (
+            "entre caminhos de mesmo numero de saltos a escolha e estavel, "
+            "mas nao necessariamente unica"
+        ),
+    }
+    if detail_level in ("normal", "full"):
+        corpo["path"] = [_code_vizinho(n) for n in achado.nos]
+    return corpo
+
+
+def _code_no_existe(banco: Any, node_id: str) -> bool:
+    """Se `node_id` esta no indice. Usado so para separar as razoes de recusa."""
+    try:
+        return bool(_code_no(banco, node_id))
+    except Exception:  # noqa: BLE001 - a pergunta e binaria; erro nao e 'existe'
+        return False
+
+
 def code_read(
     repo: str,
     *,
@@ -5224,6 +5342,7 @@ CODE_TOOLS = (
     "sparkforge_code_context",
     "sparkforge_code_search",
     "sparkforge_code_symbol",
+    "sparkforge_code_path",
     "sparkforge_code_read",
     "sparkforge_code_status",
     "sparkforge_code_sync",

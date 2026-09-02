@@ -2260,6 +2260,59 @@ _CODE_SYMBOL_SUCCESS_SCHEMA: dict[str, Any] = {
     },
 }
 
+_CODE_PATH_SUCCESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "index",
+        "from",
+        "to",
+        "found",
+        "reason",
+        "hops",
+        "max_depth",
+        "path",
+        "graph",
+        "unresolved_note",
+        "ties_note",
+    ],
+    "properties": {
+        "index": _CODE_INDEX_SCHEMA,
+        "from": {"type": "string"},
+        "to": {"type": "string"},
+        "found": {"type": "boolean"},
+        # `reason` e obrigatorio e ANULAVEL: ele existe sempre, e vale `null`
+        # quando houve caminho. Torna-lo opcional faria a ausencia da chave e o
+        # sucesso serem a mesma coisa para quem le, e as tres razoes de recusa
+        # -- que nao querem dizer o mesmo -- perderiam o campo que as separa.
+        "reason": {
+            "type": ["string", "null"],
+            "enum": [None, "node_not_indexed", "depth_exhausted", "no_resolved_path"],
+        },
+        "hops": {"type": "integer", "minimum": 0},
+        "max_depth": {"type": "integer"},
+        "path": {"type": "array", "items": _CODE_SYMBOL_REF},
+        "graph": {
+            "type": "object",
+            "required": [
+                "resolved_edges",
+                "unresolved_refs",
+                "resolution_rate",
+                "nodes",
+                "files",
+            ],
+            "properties": {
+                "resolved_edges": {"type": "integer", "minimum": 0},
+                "unresolved_refs": {"type": "integer", "minimum": 0},
+                "resolution_rate": {"type": "number", "minimum": 0, "maximum": 1},
+                "nodes": {"type": "integer", "minimum": 0},
+                "files": {"type": "integer", "minimum": 0},
+            },
+        },
+        "unresolved_note": {"type": "string"},
+        "ties_note": {"type": "string"},
+    },
+}
+
 _CODE_READ_SUCCESS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["index", "target", "snippet"],
@@ -5495,6 +5548,64 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "annotations": _CODE_WRITES_INDEX,
     },
+    "sparkforge_code_path": {
+        "description": (
+            "O caminho MAIS CURTO de chamadas de um simbolo ate outro, descendo "
+            "pelas chamadas. Responde o que `sparkforge_code_symbol` nao responde: "
+            "aquela diz O QUE um simbolo alcanca (o raio), esta diz COMO ele chega "
+            "num alvo -- e e por onde o caminho passa que se decide onde intervir. "
+            "Quando nao ha caminho, `reason` separa TRES casos que nao querem dizer "
+            "o mesmo: `node_not_indexed`, `depth_exhausted` (recusa por teto -- "
+            "subir `depth` pode mudar a resposta) e `no_resolved_path` (o grafo "
+            "esgotou antes do teto). O caminho percorre somente aresta RESOLVIDA, e "
+            "`graph.resolution_rate` diz o tamanho do ponto cego. CORPO DE FONTE "
+            "NUNCA SAI DAQUI -- para o codigo use `sparkforge_code_read`."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["repo", "origem", "destino"],
+            "properties": {
+                "repo": _CODE_REPO_PROP,
+                "origem": {
+                    "type": "string",
+                    "description": (
+                        "Id de onde o caminho comeca, de `sparkforge_code_search`."
+                    ),
+                },
+                "destino": {
+                    "type": "string",
+                    "description": (
+                        "Id de onde o caminho termina. Para o sentido inverso, "
+                        "troque os dois: nao ha parametro de direcao."
+                    ),
+                },
+                "depth": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 6,
+                    "description": (
+                        "Teto de saltos. Satura no maximo, nao recusa; atingi-lo "
+                        "sai como `reason: depth_exhausted`."
+                    ),
+                },
+                "detail_level": {
+                    "type": "string",
+                    "enum": list(_core.NIVEIS_DE_DETALHE),
+                    "description": (
+                        "`summary` para o veredito e as contagens do grafo; "
+                        "`normal` e `full` acrescentam os nos do caminho."
+                    ),
+                },
+                "db": _CODE_DB_PROP,
+            },
+        },
+        "outputSchema": _may_fail(
+            _CODE_PATH_SUCCESS_SCHEMA,
+            "Caminho mais curto com o veredito e as contagens do grafo, ou erro de indice.",
+        ),
+        "annotations": _CODE_WRITES_INDEX,
+    },
     "sparkforge_code_symbol": {
         "description": (
             "Tudo que o indice sabe sobre UM simbolo: metadado, assinatura normalizada, "
@@ -6201,6 +6312,17 @@ def _h_code_search(args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _h_code_path(args: dict[str, Any]) -> dict[str, Any]:
+    return _core.code_path(
+        args["repo"],
+        origem=args["origem"],
+        destino=args["destino"],
+        depth=int(args.get("depth", _core.CODE_MAX_PATH_DEPTH)),
+        detail_level=args.get("detail_level", "full"),
+        db=args.get("db"),
+    )
+
+
 def _h_code_symbol(args: dict[str, Any]) -> dict[str, Any]:
     return _core.code_symbol(
         args["repo"],
@@ -6297,6 +6419,7 @@ _HANDLERS = {
     "sparkforge_collect_verify": _h_collect_verify,
     "sparkforge_code_context": _h_code_context,
     "sparkforge_code_search": _h_code_search,
+    "sparkforge_code_path": _h_code_path,
     "sparkforge_code_symbol": _h_code_symbol,
     "sparkforge_code_read": _h_code_read,
     "sparkforge_code_status": _h_code_status,

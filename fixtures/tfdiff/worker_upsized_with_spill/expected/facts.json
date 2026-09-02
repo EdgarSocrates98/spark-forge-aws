@@ -425,6 +425,26 @@
     }
   },
   {
+    "id": "f_dfba6b",
+    "schema_version": 1,
+    "kind": "spark.stage.callsite",
+    "subject": {
+      "type": "stage",
+      "symbol": "join pedidos x itens",
+      "stage_id": 0
+    },
+    "measures": {},
+    "attrs": {
+      "resolved": false,
+      "reason": "sem_forma_de_callsite"
+    },
+    "provenance": {
+      "artifact": "run.jsonl",
+      "artifact_sha256": "",
+      "extractor": "event_log@0.1.0"
+    }
+  },
+  {
     "id": "f_b68c9c",
     "schema_version": 1,
     "kind": "spark.stage.gc",
