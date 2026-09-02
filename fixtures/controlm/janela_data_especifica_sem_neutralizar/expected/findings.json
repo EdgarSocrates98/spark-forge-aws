@@ -1,0 +1,58 @@
+[
+  {
+    "rule_id": "SF-CTM-002",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "SpecificDates sem anular WeekDays, Months ou MonthDays",
+    "severity": "P1",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "FechamentoContabil/ApuraImpostos",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_bc9a26"
+    ],
+    "measured": {
+      "specific_dates_count": 4
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Este bloco When usa SpecificDates junto com pelo menos uma de WeekDays, Months ou MonthDays, e a fonte da BMC diz literalmente que a combinação não é permitida: \"The SpecificDates option cannot be used in combination with options WeekDays, Months, or MonthDays.\" A SEGUNDA FRASE DA FONTE É A QUE TORNA ISTO VERIFICÁVEL, e é ela que explica por que este achado pode estar apontando para uma linha que não existe: \"However, since the default for these options is ALL, you must specify these options with a value of NONE.\" Omitir WeekDays não é neutralidade — é declarar ALL por default, e portanto é a combinação proibida acontecendo em silêncio. LEIA attrs.specific_dates_conflict_by_omission ANTES DE EDITAR. Ele lista as opções que NÃO estão no arquivo e que por isso valem ALL; attrs.specific_dates_conflict_declared lista as que estão escritas com outro valor. As duas formas são o mesmo defeito para a fonte e correções diferentes na prática: a primeira exige acrescentar linha, a segunda exige trocar valor. Um achado com by_omission cheio e declared vazio é o caso que ninguém vê lendo o JSON. A DECISÃO VEM DO EXTRATOR, e isso não é detalhe de implementação. O motor de regras reprova caminho ausente por construção — é assim que ele diz \"não sei\" —, então nenhuma condição deste catálogo consegue perguntar \"esta chave não foi escrita\". Quem enxerga as três opções de uma vez é sparkforge/facts/controlm_jobs.py::_specific_dates, e ele emite o veredito pronto. Severidade e recomendação continuam aqui. O QUE ESTE ACHADO NÃO AFIRMA: em que dias o job vai efetivamente rodar. A fonte declara a combinação inválida e declara o default; ela não publica o resultado da combinação, e afirmá-lo seria inventar semântica. O que se sabe é que a definição não expressa o que o autor escreveu. AS DUAS GRAFIAS DE NONE CONTAM. O exemplo da própria página escreve o valor como lista (WeekDays com [\"NONE\"]), e o escalar também anula. Lista com mais de um item não anula: [\"NONE\", \"MON\"] declara segunda-feira ao lado da anulação, e isso é a combinação que a fonte proíbe. A comparação ignora caixa, porque a página publica NONE em maiúscula e não declara se o Control-M aceita none — acusar por caixa afirmaria mais do que a fonte sustenta, e ctm build é o validador oficial.",
+    "proposed_change": [
+      "Acrescentar as três opções com valor NONE ao bloco `When`, na forma que a própria página usa: `\"WeekDays\": [\"NONE\"], \"Months\": [\"NONE\"], \"MonthDays\": [\"NONE\"]`. É a correção literal que a fonte prescreve, e vale igualmente para a opção omitida e para a escrita com outro valor.",
+      "Se o agendamento pretendido era mesmo por dia da semana ou por dia do mês, remover `SpecificDates` em vez de anular as outras três — as duas formas de agendar são alternativas, e manter as duas no arquivo deixa a intenção ambígua para o próximo leitor.",
+      "Se o job precisa das duas coisas — datas fixas E uma regra semanal —, são dois agendamentos e a fonte não os junta num bloco só: avaliar dois jobs, ou um calendário predefinido no Control-M referenciado por `MonthDaysCalendar`, que é o mecanismo que a página publica para regra composta."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Acrescentar `NONE` às três opções muda o conjunto de dias em que o job é ordenado se o autor de fato dependia do default `ALL` de alguma delas. O achado diz que a definição é inválida segundo a fonte, não que o comportamento atual é indesejado — confirme a intenção antes de editar.",
+      "A correção é no bloco `When`, que folder e job compartilham: um `When` de folder é herdado pelos jobs que não têm o seu próprio, então anular as opções no folder muda o agendamento de todos os jobs que herdam dele.",
+      "Nem toda opção vale em todo objeto. A página declara `SpecificDates` disponível em job e em folder e NÃO disponível em sub-folder; copiar a correção para um sub-folder introduz uma propriedade que aquele objeto não aceita."
+    ],
+    "tradeoffs": [
+      "Anular as três opções é a correção mínima e mantém a definição num bloco só; separar em dois jobs deixa cada agendamento legível por si e dobra o número de objetos a manter."
+    ],
+    "validation": [
+      "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a combinação é aceita.",
+      "EIXO DE RESULTADO — o conjunto de datas em que o job é ordenado. `run jobs:status::get` sobre uma janela que cubra as `SpecificDates` declaradas devolve exatamente uma ordenação por data listada, e nenhuma fora delas. É o que prova que a correção fixou o agendamento no que o autor escreveu, em vez de somar o default `ALL`.",
+      "EIXO DE RESULTADO — o efeito do job não mudou. O artefato que ele produz numa das datas declaradas — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Mexer em `When` é mudança de QUANDO, e não pode mover o QUE.",
+      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-002, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e reimplantar com `ctm deploy`. A definição é código versionado e o rollback é barato, mas ele NÃO desfaz ordenações já submetidas: o job que entrou no Active continua com a definição com que entrou."
+    ],
+    "sources": [
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
+        "retrieved": "2026-09-02"
+      }
+    ]
+  }
+]

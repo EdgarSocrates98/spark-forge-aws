@@ -1,0 +1,110 @@
+[
+  {
+    "rule_id": "SF-CTM-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Job definido em array depende do system setting allowDuplicateJobNames",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria/Jobs[0]/Job1",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_2d0f4c"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Este job é declarado em formato de array, e a fonte liga essa forma a um interruptor que não está no artefato: \"To enable job definitions in an array format, the allowDuplicateJobNames system setting must be set to true (the default value).\" O PARÊNTESE DA FONTE É METADE DO ACHADO, e é por isso que a severidade é P3. O default já é true, então o caso comum funciona e esta definição provavelmente roda como está. O que o achado afirma é mais estreito e mais útil: esta definição depende de uma configuração de SISTEMA que não viaja com ela. O JSON pode ser revisado, aprovado e mergeado sem que ninguém saiba que o ambiente alvo precisa ter aquele interruptor ligado, e o sintoma aparece no deploy, num ambiente onde alguém o desligou. O QUE DISPARA É JOB EM ARRAY, E NÃO ARRAY. A leitura é literal porque a frase é literal: ela fala de \"job definitions in an array format\". Um artefato com FOLDERS em array cujos jobs são objetos nomeados não dispara esta regra, e o corpus prova isso com a fixture folder_em_array. Ler array em geral acusaria uma forma que a fonte não condiciona a interruptor nenhum. A EVIDÊNCIA ESTÁ NO CAMINHO, E NÃO NO JOB. Nenhuma propriedade do job diz que ele foi declarado em array; quem sabe é a travessia, e por isso o extrator emite ctm.job_array_format com attrs.array_key. attrs.name_declared diz se a entrada trouxe a propriedade Name — a página descreve Name como a propriedade que nomeia um objeto EM estrutura de array, então uma entrada de array sem Name é a forma que a fonte não descreve. O QUE ESTE ACHADO NÃO AFIRMA: qual é o valor efetivo de allowDuplicateJobNames no ambiente alvo. Ele vive em automation-api.properties, fora do repositório, e este motor não o lê — pela mesma razão que o extrator recusa sondar a capacidade resources_array_duplicate_names, cuja flag também é de sistema. Confirme o valor antes de decidir; o achado é sobre o que a definição depende, nunca sobre o que o ambiente tem.",
+    "proposed_change": [
+      "Confirmar `allowDuplicateJobNames` no ambiente alvo antes de qualquer edição: é configuração de `automation-api.properties`, o default é `true`, e se ele estiver ligado a definição está correta como está — o achado terá cumprido o papel de tornar a dependência visível.",
+      "Registrar a dependência onde ela é revisável: um comentário no README do repositório de jobs, ou uma checagem no pipeline que valide o setting do endpoint antes do `ctm deploy`. A definição depende de algo que o pull request não mostra, e é isso que a torna frágil.",
+      "Se os nomes duplicados não são necessários — os jobs do array têm nomes distintos —, avaliar a forma de objeto nomeado, em que cada job é uma chave do folder. Ela não depende do setting, e é a forma que o resto do corpus usa."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Trocar a forma de array por objetos nomeados EXIGE que os nomes sejam únicos dentro do folder: se dois jobs do array compartilham nome, a conversão perde um deles em silêncio, porque a segunda chave sobrescreve a primeira no JSON.",
+      "Desligar `allowDuplicateJobNames` no ambiente para forçar disciplina de nomes quebra toda definição em array já publicada, e não só esta — é mudança de plataforma, com alcance muito maior que o deste achado.",
+      "A forma de array é a que permite dois jobs com o mesmo nome, e é justamente isso que torna o subject de cada um dependente do índice: renumerar as entradas do array muda a identidade dos achados entre execuções."
+    ],
+    "tradeoffs": [
+      "Manter a forma de array é legítimo e às vezes necessário (nomes repetidos são o caso que ela existe para atender); o custo é uma dependência de configuração que o repositório não declara. Objetos nomeados são autocontidos e não permitem nome repetido."
+    ],
+    "validation": [
+      "`ctm build` sobre o JSON, executado contra o endpoint do ambiente alvo, retorna sucesso — é a validação oficial da BMC e é a que enxerga o setting do servidor.",
+      "EIXO DE RESULTADO — o conjunto de jobs publicado é o mesmo. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Converter forma de declaração não pode acrescentar, remover nem renomear job, e é exatamente aqui que a conversão com nomes duplicados falharia.",
+      "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e as listas de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item.",
+      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção foi no ambiente e não no arquivo — religar o setting —, o rollback é de configuração de plataforma e afeta todas as definições em array, não só esta."
+    ],
+    "sources": [
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
+        "retrieved": "2026-09-02"
+      }
+    ]
+  },
+  {
+    "rule_id": "SF-CTM-004",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Job definido em array depende do system setting allowDuplicateJobNames",
+    "severity": "P3",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "CargaDiaria/Jobs[1]/Job1",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_ff44e3"
+    ],
+    "measured": {},
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Este job é declarado em formato de array, e a fonte liga essa forma a um interruptor que não está no artefato: \"To enable job definitions in an array format, the allowDuplicateJobNames system setting must be set to true (the default value).\" O PARÊNTESE DA FONTE É METADE DO ACHADO, e é por isso que a severidade é P3. O default já é true, então o caso comum funciona e esta definição provavelmente roda como está. O que o achado afirma é mais estreito e mais útil: esta definição depende de uma configuração de SISTEMA que não viaja com ela. O JSON pode ser revisado, aprovado e mergeado sem que ninguém saiba que o ambiente alvo precisa ter aquele interruptor ligado, e o sintoma aparece no deploy, num ambiente onde alguém o desligou. O QUE DISPARA É JOB EM ARRAY, E NÃO ARRAY. A leitura é literal porque a frase é literal: ela fala de \"job definitions in an array format\". Um artefato com FOLDERS em array cujos jobs são objetos nomeados não dispara esta regra, e o corpus prova isso com a fixture folder_em_array. Ler array em geral acusaria uma forma que a fonte não condiciona a interruptor nenhum. A EVIDÊNCIA ESTÁ NO CAMINHO, E NÃO NO JOB. Nenhuma propriedade do job diz que ele foi declarado em array; quem sabe é a travessia, e por isso o extrator emite ctm.job_array_format com attrs.array_key. attrs.name_declared diz se a entrada trouxe a propriedade Name — a página descreve Name como a propriedade que nomeia um objeto EM estrutura de array, então uma entrada de array sem Name é a forma que a fonte não descreve. O QUE ESTE ACHADO NÃO AFIRMA: qual é o valor efetivo de allowDuplicateJobNames no ambiente alvo. Ele vive em automation-api.properties, fora do repositório, e este motor não o lê — pela mesma razão que o extrator recusa sondar a capacidade resources_array_duplicate_names, cuja flag também é de sistema. Confirme o valor antes de decidir; o achado é sobre o que a definição depende, nunca sobre o que o ambiente tem.",
+    "proposed_change": [
+      "Confirmar `allowDuplicateJobNames` no ambiente alvo antes de qualquer edição: é configuração de `automation-api.properties`, o default é `true`, e se ele estiver ligado a definição está correta como está — o achado terá cumprido o papel de tornar a dependência visível.",
+      "Registrar a dependência onde ela é revisável: um comentário no README do repositório de jobs, ou uma checagem no pipeline que valide o setting do endpoint antes do `ctm deploy`. A definição depende de algo que o pull request não mostra, e é isso que a torna frágil.",
+      "Se os nomes duplicados não são necessários — os jobs do array têm nomes distintos —, avaliar a forma de objeto nomeado, em que cada job é uma chave do folder. Ela não depende do setting, e é a forma que o resto do corpus usa."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Trocar a forma de array por objetos nomeados EXIGE que os nomes sejam únicos dentro do folder: se dois jobs do array compartilham nome, a conversão perde um deles em silêncio, porque a segunda chave sobrescreve a primeira no JSON.",
+      "Desligar `allowDuplicateJobNames` no ambiente para forçar disciplina de nomes quebra toda definição em array já publicada, e não só esta — é mudança de plataforma, com alcance muito maior que o deste achado.",
+      "A forma de array é a que permite dois jobs com o mesmo nome, e é justamente isso que torna o subject de cada um dependente do índice: renumerar as entradas do array muda a identidade dos achados entre execuções."
+    ],
+    "tradeoffs": [
+      "Manter a forma de array é legítimo e às vezes necessário (nomes repetidos são o caso que ela existe para atender); o custo é uma dependência de configuração que o repositório não declara. Objetos nomeados são autocontidos e não permitem nome repetido."
+    ],
+    "validation": [
+      "`ctm build` sobre o JSON, executado contra o endpoint do ambiente alvo, retorna sucesso — é a validação oficial da BMC e é a que enxerga o setting do servidor.",
+      "EIXO DE RESULTADO — o conjunto de jobs publicado é o mesmo. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Converter forma de declaração não pode acrescentar, remover nem renomear job, e é exatamente aqui que a conversão com nomes duplicados falharia.",
+      "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e as listas de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item.",
+      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção foi no ambiente e não no arquivo — religar o setting —, o rollback é de configuração de plataforma e afeta todas as definições em array, não só esta."
+    ],
+    "sources": [
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
+        "retrieved": "2026-09-02"
+      }
+    ]
+  }
+]

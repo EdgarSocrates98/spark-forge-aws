@@ -97,14 +97,74 @@
 #          equivalente ao *Warning* de texto claro que a AWS publica para
 #          `DescribeCluster` — e não antes.
 #
-# V-CTM-2  **Dependência, janela e SLA.** VETADOS neste incremento. Os facts
-#          `ctm.dependency` e `ctm.schedule` saem porque a fonte nomeia os campos
-#          (`WaitForEvents`, `AddEvents`, `DeleteEvents`, `Flow.Sequence`,
-#          `When`), mas a página *What's New* — a única lida — não sustenta o que
-#          é DEFEITO nesses eixos. Julgar "esta janela é curta demais" ou "esta
-#          dependência é circular" exigiria pesquisa nova no `API_CodeRef`, e é o
-#          incremento 3. O QUE DESTRAVA: uma página da BMC que declare limite,
-#          default ou anti-padrão nesses eixos.
+# V-CTM-2  **ENCOLHEU EM 2026-09-02, e o que sobrou dele é o veto `V-CTM-5`.**
+#          Ele vetava dependência, janela e SLA de uma vez, e a razão escrita era
+#          honesta: a página *What's New* — a única lida no incremento 2 — não
+#          sustentava o que é DEFEITO nesses eixos. O que o destravava estava
+#          nomeado: "uma página da BMC que declare limite, default ou
+#          anti-padrão". Ela foi lida (`API_CodeRef_JobProperties.htm`, 423 KB,
+#          2026-09-02), varrida por PADRÃO DE DEFEITO (`must`, `cannot`, `is not
+#          supported`, `up to \d+`) em vez de por conceito, e o resultado foi
+#          desigual entre os três eixos: **3** defeitos nomeados em janela, **2**
+#          em dependência, **0** em SLA.
+#
+#          Então **janela e dependência saíram do veto** e viraram
+#          `SF-CTM-002` a `SF-CTM-006`, cada uma com a frase literal em
+#          `sources`. **SLA continua vetado** e ganhou veto próprio, porque a
+#          razão dele agora é outra: não é "ninguém leu a página", é "a página
+#          foi lida e não diz nada".
+#
+#          CONTINUA VETADO NESTES EIXOS, e nenhuma das cinco regras o toca:
+#          **julgar SEMÂNTICA de dependência**. "Este job espera um evento que
+#          ninguém produz" é achado valioso e sem fonte — exigiria o grafo do
+#          site inteiro, e a página não declara que evento órfão seja defeito.
+#          `SF-CTM-005` julga a SINTAXE que a fonte declara não suportada
+#          (parêntese dentro de parêntese), nunca o significado da expressão.
+#
+# V-CTM-5  **SLA.** VETADO por AUSÊNCIA MEDIDA, e a medida é o que separa este
+#          veto de um encolher de ombros. Varridos os 423 KB de
+#          `API_CodeRef_JobProperties.htm` em 2026-09-02: `SLA`, `ServiceLevel`,
+#          `Deadline`, `MaxWait` e `CompletionTime` têm **zero** ocorrência na
+#          página inteira — nem como propriedade, nem como bloco, nem como
+#          menção em prosa. Não há campo a extrair, e portanto não há defeito a
+#          nomear: uma regra de SLA aqui seria julgamento sobre um eixo que o
+#          artefato não declara.
+#          Isto NÃO é lacuna a preencher por inferência a partir de `ToTime`,
+#          `FromTime` ou `Rerun`. `ToTime` é restrição de submissão ("o job não
+#          começa depois desta hora"), não compromisso de conclusão, e tratá-lo
+#          como SLA trocaria uma coisa medida por outra que ninguém publicou.
+#          O QUE DESTRAVA: uma página da BMC que publique limite, default ou
+#          obrigação de SLA para definição de job — o equivalente, neste eixo, ao
+#          `up to 400` que `SF-CTM-003` usa. Enquanto ela não existir, ausência de
+#          achado de SLA nesta área significa "a fonte não nomeia o eixo", nunca
+#          "o SLA está bom".
+#
+# V-CTM-6  **Eixo de Enterprise Manager na matriz.** VETADO sem fonte própria, e
+#          a decisão foi MEDIDA em 2026-09-02, não herdada por analogia.
+#          `SF-CTM-006` carrega uma fronteira na mesma frase do defeito — *"This
+#          feature requires Control-M/Enterprise Manager version 9.0.21 or
+#          higher"* —, e a tentação é levá-la para
+#          `knowledge/controlm/automation-api-matrix.yaml`. É errado por PRODUTO:
+#          a matriz é do **Automation API** e declara isso na primeira linha; EM
+#          é outro produto, com outra numeração (`9.0.21`, três segmentos, contra
+#          `9.0.21.300`, quatro), e a D-5 do incremento 1 já mediu essa distinção
+#          ao recusar `9.0.22.100` como número de API.
+#          O PRECEDENTE JÁ EXISTE E É UNÂNIME, e foi conferido antes desta
+#          decisão: a matriz encontrou exigência de EM **cinco** vezes
+#          (`workflow_insights_data_export`, `config_server_definition`,
+#          `external_vault_cyberark_secrets`, `resources_array_duplicate_names`,
+#          e a nota de `9.0.22.100` em `unresolved`) e nas cinco a registrou como
+#          **prosa dentro de `summary`**, nunca como fronteira legível por
+#          máquina. Criar o eixo agora quebraria o padrão em favor de um único
+#          caso, e o vocabulário dos dois eixos é FECHADO (`_carrega_matriz_fechada`)
+#          justamente para que ninguém acrescente chave "porque faz sentido".
+#          POR ISSO `SF-CTM-006` declara `runtime_scope: {}` e cita a fronteira no
+#          `explanation` **sem julgá-la**: o achado dela é o `must not`, que é
+#          verificável no artefato em qualquer versão. O QUE DESTRAVA: uma página
+#          de documentação do Control-M/Enterprise Manager, lida e citada, que
+#          publique a faixa de versões de EM — e aí é pesquisa nova, com eixo
+#          próprio e `covers` próprio, nunca uma coluna a mais na matriz do
+#          Automation API.
 #
 # V-CTM-3  **Validar o JSON contra o schema completo.** VETADO por concorrência
 #          com a ferramenta oficial: `ctm build` faz isso e é da BMC. O que vira
@@ -123,7 +183,7 @@
 catalog_version: 1
 schema_version: 1
 area: SF-CTM
-retrieved: 2026-09-01
+retrieved: 2026-09-02
 
 rules:
 
@@ -223,3 +283,478 @@ rules:
       - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobTypes.htm", retrieved: 2026-09-01}
       - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm", retrieved: 2026-09-01}
       - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_Folder.htm", retrieved: 2026-09-01}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AS CINCO REGRAS DE 2026-09-02 (incremento 3), e o que as separa da primeira.
+  #
+  # `SF-CTM-001` cruza o artefato com uma MATRIZ, e por isso o veredito dela é
+  # calculado no extrator contra `knowledge/`. Estas cinco não cruzam nada: cada
+  # uma tem, na própria página *Job Properties*, uma frase que diz que algo está
+  # errado — um `cannot`, um `must`, um `must not`, um `is not supported`, um
+  # `up to 400`. Campo documentado nunca sustentou regra aqui; frase que nomeia
+  # defeito sustenta, e é a frase inteira que viaja em `sources`.
+  #
+  # DUAS DELAS AINDA ASSIM PRECISAM DE KIND DERIVADO, e a razão é de MOTOR e não
+  # de conhecimento — ver a seção de `J-1` em `SF-CTM-002` e a de parênteses em
+  # `SF-CTM-005`. As outras três leem um atributo que o artefato declara direto.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # J-1 — A REGRA MAIS CARA DE ESCREVER DAS CINCO, E A ÚNICA CUJA CONDIÇÃO ÓBVIA
+  # ERRA O CASO COMUM.
+  #
+  # A fonte tem duas frases, e é a segunda que decide o desenho:
+  #
+  #   "The SpecificDates option cannot be used in combination with options
+  #    WeekDays, Months, or MonthDays. However, since the default for these
+  #    options is "ALL", you must specify these options with a value of "NONE"."
+  #
+  # O `where` óbvio — `SpecificDates` presente E `WeekDays` presente — só pega
+  # quem escreveu as duas coisas, que é o autor que qualquer revisor humano já
+  # pegaria lendo o JSON. O caso que importa é o inverso: `SpecificDates` sozinho,
+  # sem `WeekDays` nenhum. Como o default é `ALL`, esse job JÁ está combinando as
+  # duas opções, e não há uma linha no arquivo que o denuncie.
+  #
+  # E é exatamente esse caso que o motor não consegue exprimir.
+  # `engine._where_matches` (linhas 31-37) compara por IGUALDADE e REPROVA caminho
+  # ausente; `_expr_matches` (40-45) engole `ExprError` devolvendo `False`. Logo
+  # `attrs.week_days != "NONE"` é FALSO quando a chave não existe — o motor está
+  # dizendo "não sei", que é o comportamento certo dele e a resposta errada aqui.
+  #
+  # Então a decisão sai do extrator já tomada, no molde de `tf.graphframes.jar` e
+  # de `graph.algorithm.checkpoint_required`: `_specific_dates` olha as três
+  # opções de uma vez e emite `attrs.specific_dates_conflict`, com
+  # `_by_omission` separado de `_declared` para que o achado saiba dizer QUAL das
+  # duas formas encontrou. É a mesma dívida que a área `SF-GRAPH` pagou em
+  # 2026-08-31 (`V-GR-1`, metade (a)), e a solução é a mesma.
+  #
+  # AS TRÊS FIXTURES SÃO O TESTE DO DESENHO, e não decoração:
+  # `janela_data_especifica_sem_neutralizar` (omissão pura — o caso que a regra
+  # existe para pegar), `janela_data_especifica_com_dia_da_semana` (`WeekDays`
+  # escrito com `ALL`) e `janela_no_teto_de_datas` (as três com `NONE`, e nenhum
+  # achado). Uma regra que julgasse só a presença passaria verde na primeira.
+  #
+  # `same_subject: true`: a correção é por bloco `When`, e `When` é de UM job ou
+  # de UM folder. Quatro jobs com o mesmo defeito são quatro achados e quatro
+  # edições — reportar um faria o operador corrigir aquele, rodar de novo e
+  # descobrir o próximo, sem nunca saber quantos faltam.
+  - id: SF-CTM-002
+    category: controlm-jobs-as-code
+    title: SpecificDates sem anular WeekDays, Months ou MonthDays
+    requires_facts: [ctm.schedule]
+    when:
+      same_subject: true
+      all:
+        - fact: ctm.schedule
+          where: {attrs.specific_dates_conflict: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Este bloco When usa SpecificDates junto com pelo menos uma de WeekDays,
+      Months ou MonthDays, e a fonte da BMC diz literalmente que a combinação não
+      é permitida: "The SpecificDates option cannot be used in combination with
+      options WeekDays, Months, or MonthDays."
+      A SEGUNDA FRASE DA FONTE É A QUE TORNA ISTO VERIFICÁVEL, e é ela que
+      explica por que este achado pode estar apontando para uma linha que não
+      existe: "However, since the default for these options is ALL, you must
+      specify these options with a value of NONE." Omitir WeekDays não é
+      neutralidade — é declarar ALL por default, e portanto é a combinação
+      proibida acontecendo em silêncio.
+      LEIA attrs.specific_dates_conflict_by_omission ANTES DE EDITAR. Ele lista
+      as opções que NÃO estão no arquivo e que por isso valem ALL;
+      attrs.specific_dates_conflict_declared lista as que estão escritas com
+      outro valor. As duas formas são o mesmo defeito para a fonte e correções
+      diferentes na prática: a primeira exige acrescentar linha, a segunda exige
+      trocar valor. Um achado com by_omission cheio e declared vazio é o caso que
+      ninguém vê lendo o JSON.
+      A DECISÃO VEM DO EXTRATOR, e isso não é detalhe de implementação. O motor
+      de regras reprova caminho ausente por construção — é assim que ele diz "não
+      sei" —, então nenhuma condição deste catálogo consegue perguntar "esta
+      chave não foi escrita". Quem enxerga as três opções de uma vez é
+      sparkforge/facts/controlm_jobs.py::_specific_dates, e ele emite o veredito
+      pronto. Severidade e recomendação continuam aqui.
+      O QUE ESTE ACHADO NÃO AFIRMA: em que dias o job vai efetivamente rodar. A
+      fonte declara a combinação inválida e declara o default; ela não publica o
+      resultado da combinação, e afirmá-lo seria inventar semântica. O que se
+      sabe é que a definição não expressa o que o autor escreveu.
+      AS DUAS GRAFIAS DE NONE CONTAM. O exemplo da própria página escreve o valor
+      como lista (WeekDays com ["NONE"]), e o escalar também anula. Lista com
+      mais de um item não anula: ["NONE", "MON"] declara segunda-feira ao lado da
+      anulação, e isso é a combinação que a fonte proíbe. A comparação ignora
+      caixa, porque a página publica NONE em maiúscula e não declara se o
+      Control-M aceita none — acusar por caixa afirmaria mais do que a fonte
+      sustenta, e ctm build é o validador oficial.
+    proposed_change:
+      - "Acrescentar as três opções com valor NONE ao bloco `When`, na forma que a própria página usa: `\"WeekDays\": [\"NONE\"], \"Months\": [\"NONE\"], \"MonthDays\": [\"NONE\"]`. É a correção literal que a fonte prescreve, e vale igualmente para a opção omitida e para a escrita com outro valor."
+      - "Se o agendamento pretendido era mesmo por dia da semana ou por dia do mês, remover `SpecificDates` em vez de anular as outras três — as duas formas de agendar são alternativas, e manter as duas no arquivo deixa a intenção ambígua para o próximo leitor."
+      - "Se o job precisa das duas coisas — datas fixas E uma regra semanal —, são dois agendamentos e a fonte não os junta num bloco só: avaliar dois jobs, ou um calendário predefinido no Control-M referenciado por `MonthDaysCalendar`, que é o mecanismo que a página publica para regra composta."
+    risks:
+      - "Acrescentar `NONE` às três opções muda o conjunto de dias em que o job é ordenado se o autor de fato dependia do default `ALL` de alguma delas. O achado diz que a definição é inválida segundo a fonte, não que o comportamento atual é indesejado — confirme a intenção antes de editar."
+      - "A correção é no bloco `When`, que folder e job compartilham: um `When` de folder é herdado pelos jobs que não têm o seu próprio, então anular as opções no folder muda o agendamento de todos os jobs que herdam dele."
+      - "Nem toda opção vale em todo objeto. A página declara `SpecificDates` disponível em job e em folder e NÃO disponível em sub-folder; copiar a correção para um sub-folder introduz uma propriedade que aquele objeto não aceita."
+    tradeoffs:
+      - "Anular as três opções é a correção mínima e mantém a definição num bloco só; separar em dois jobs deixa cada agendamento legível por si e dobra o número de objetos a manter."
+    validation:
+      - "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a combinação é aceita."
+      - "EIXO DE RESULTADO — o conjunto de datas em que o job é ordenado. `run jobs:status::get` sobre uma janela que cubra as `SpecificDates` declaradas devolve exatamente uma ordenação por data listada, e nenhuma fora delas. É o que prova que a correção fixou o agendamento no que o autor escreveu, em vez de somar o default `ALL`."
+      - "EIXO DE RESULTADO — o efeito do job não mudou. O artefato que ele produz numa das datas declaradas — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Mexer em `When` é mudança de QUANDO, e não pode mover o QUE."
+      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-002, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — regra que para de disparar porque o extrator parou de ler os jobs é verde falso."
+    rollback:
+      - "Reverter o commit da definição e reimplantar com `ctm deploy`. A definição é código versionado e o rollback é barato, mas ele NÃO desfaz ordenações já submetidas: o job que entrou no Active continua com a definição com que entrou."
+    sources:
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm", retrieved: 2026-09-02}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # J-2 — LIMITE NUMÉRICO COM FONTE PRIMÁRIA, e o único desta área.
+  #
+  # "You can list up to 400 dates." O número é da fonte, mora em `threshold` —
+  # que é onde limiar mora, pela seção 11 do `CLAUDE.md` — e o extrator só CONTA.
+  #
+  # A FRONTEIRA É EXATA E TEM AS DUAS FIXTURES: `janela_no_teto_de_datas` (400,
+  # passa) e `janela_acima_do_teto_de_datas` (401, dispara). "up to 400" inclui
+  # 400, e uma regra que disparasse em 400 contradiria a fonte.
+  #
+  # UMA MEDIÇÃO QUE A FONTE NÃO COMENTA E QUE O CORPUS EXPÔS: o formato declarado
+  # é "MM/DD", sem ano, então existem no máximo 366 datas DISTINTAS. Um teto de
+  # 400 está acima disso, e portanto qualquer lista que o exceda repete datas por
+  # construção. Isto NÃO vira regra — a fonte não declara que repetir seja
+  # defeito, e inventá-lo seria o sexto defeito sem fonte. Fica registrado aqui
+  # porque explica a forma da fixture de 401.
+  - id: SF-CTM-003
+    category: controlm-jobs-as-code
+    title: Lista de SpecificDates acima do teto que a fonte publica
+    requires_facts: [ctm.schedule]
+    when:
+      same_subject: true
+      all:
+        - fact: ctm.schedule
+          expr: 'measures.specific_dates_count > threshold.max_dates'
+    threshold:
+      max_dates: 400
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Este bloco When lista mais datas em SpecificDates do que a fonte permite. A
+      página é explícita e o número é dela: "You can list up to 400 dates. For
+      each date, use the format MM/DD (enclosed in quotes). Separate multiple
+      dates with commas."
+      O NÚMERO ESTÁ EM threshold, E O EXTRATOR SÓ CONTA.
+      measures.specific_dates_count é o comprimento da lista lida do artefato; o
+      400 é limiar e mora na regra. A fronteira é exata: "up to 400" inclui 400,
+      e o corpus prova os dois lados — 400 passa em silêncio, 401 dispara.
+      O CUSTO É DE DEPLOY, e não de execução degradada. Um limite de schema
+      declarado pela ferramenta é verificado por ctm build e por ctm deploy, e a
+      descoberta acontece no ambiente alvo — depois de o código ter passado por
+      revisão e merge.
+      UMA CONSEQUÊNCIA DO FORMATO QUE A FONTE NÃO COMENTA, e que vale ler antes
+      de cortar a lista: o formato declarado é MM/DD, sem ano, então existem no
+      máximo 366 datas distintas. Um teto de 400 está acima disso, e portanto
+      toda lista que o exceda repete datas por construção. Isto NÃO é acusação —
+      a página não declara que repetir seja defeito, e este achado não julga
+      duplicata. É o sinal prático de que uma lista acima do teto quase sempre
+      quer dizer outra coisa: agendamento por regra, e não por enumeração.
+      O QUE ESTE ACHADO NÃO AFIRMA: que datas serão perdidas, nem quais. A fonte
+      publica o teto e não publica o comportamento acima dele — se o Control-M
+      trunca, rejeita ou aceita, nenhuma página lida diz. Afirmá-lo seria
+      inventar semântica.
+    proposed_change:
+      - "Trocar a enumeração por uma regra de calendário: `MonthDaysCalendar` referencia um calendário predefinido no Control-M, e a página publica esse mecanismo exatamente para o caso em que a lista de datas é grande. Um calendário nomeado também é revisável por quem não lê JSON."
+      - "Se as datas são de mais de um ano, separar em jobs ou folders por período — o formato `MM/DD` não carrega ano, então uma lista longa está enumerando o mesmo dia do calendário repetidas vezes, não datas diferentes."
+      - "Se a lista longa existe porque o agendamento real é por dia da semana ou dia do mês com exceções, escrever o agendamento por regra (`WeekDays`/`MonthDays`, com a sintaxe de dia relativo que a página publica) e reservar `SpecificDates` para as exceções."
+    risks:
+      - "Trocar enumeração por calendário move a definição do agendamento para FORA do repositório: o calendário vive no Control-M e deixa de ser código versionado, então a revisão por pull request deixa de cobri-lo."
+      - "Cortar a lista para caber no teto muda o conjunto de dias em que o job roda, e a diferença pode passar despercebida por meses — o job simplesmente não é ordenado numa data que ninguém está observando."
+      - "`SpecificDates` não vale em sub-folder (a página declara job Sim, folder Sim, sub-folder Não): mover o agendamento de nível para reduzir a lista pode esbarrar nisso."
+    tradeoffs:
+      - "Calendário nomeado é legível e reutilizável entre jobs, e tira o agendamento do controle de versão; enumeração é auditável no diff e não escala."
+    validation:
+      - "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a lista é aceita naquela versão."
+      - "EIXO DE RESULTADO — o conjunto de datas ordenadas é o mesmo que se pretendia. `run jobs:status::get` sobre a janela de interesse devolve uma ordenação para cada data pretendida e nenhuma a mais; comparar a lista de datas ordenadas antes e depois, item a item, é o que prova que a troca de mecanismo não perdeu nem acrescentou dia."
+      - "EIXO DE RESULTADO — o efeito do job não mudou. O artefato que ele produz numa data que existe nos dois desenhos confere com o do último run bom: contagem total e contagem por chave de negócio iguais."
+      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-003, e `ctm.schedule` mostra `specific_dates_count` dentro do teto — e `job_count` inalterado, porque regra que cala por o extrator ter parado de ler é verde falso."
+    rollback:
+      - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um calendário no Control-M, removê-lo é operação de runtime e exige confirmação de escopo: outros jobs podem tê-lo passado a referenciar."
+    sources:
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm", retrieved: 2026-09-02}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # J-3 — A ÚNICA DAS CINCO QUE ACUSA UMA DEPENDÊNCIA, E NÃO UM ERRO.
+  #
+  # "To enable job definitions in an array format, the allowDuplicateJobNames
+  #  system setting must be set to true (the default value)."
+  #
+  # O `must` é da fonte, e por isso a regra existe. Mas o parêntese também é da
+  # fonte, e por isso ela é P3: o default JÁ é `true`, então o caso comum
+  # funciona. O achado diz "esta definição depende de um interruptor que não está
+  # nela", nunca "isto está quebrado" — e o texto do achado tem de ser lido assim.
+  #
+  # A LITERALIDADE DO GATILHO DECIDE O CORPUS. A frase é sobre "job definitions in
+  # an array format", e não sobre array em geral. A fixture `folder_em_array` —
+  # que existe desde o incremento 2 — tem FOLDERS em array com jobs declarados da
+  # forma antiga, como objetos nomeados, e ela continua sem disparar esta regra.
+  # É o negativo de referência, e ele é grátis porque a leitura foi literal.
+  # Ler "array" em vez de "job em array" acusaria aquele artefato correto.
+  #
+  # O KIND `ctm.job_array_format` É DERIVADO porque a evidência não está em campo
+  # nenhum do job: está no CAMINHO até ele. Só a travessia sabe se o objeto foi
+  # alcançado por chave nomeada ou por índice de array, e por isso ela emite o
+  # fact com `array_key` em vez de deixar a regra adivinhar pelo `subject.symbol`.
+  #
+  # `same_subject: true`: o array existe justamente para permitir dois jobs com o
+  # mesmo nome, e a trilha (`Jobs[0]/Job1`, `Jobs[1]/Job1`) é o que os separa. Sem
+  # ela, dois jobs homônimos virariam um achado só — e a fixture do exemplo
+  # oficial da BMC tem exatamente esse par.
+  - id: SF-CTM-004
+    category: controlm-jobs-as-code
+    title: Job definido em array depende do system setting allowDuplicateJobNames
+    requires_facts: [ctm.job_array_format]
+    when:
+      same_subject: true
+      all:
+        - fact: ctm.job_array_format
+    status: structural
+    severity_default: P3
+    runtime_scope: {}
+    explanation: >
+      Este job é declarado em formato de array, e a fonte liga essa forma a um
+      interruptor que não está no artefato: "To enable job definitions in an
+      array format, the allowDuplicateJobNames system setting must be set to true
+      (the default value)."
+      O PARÊNTESE DA FONTE É METADE DO ACHADO, e é por isso que a severidade é
+      P3. O default já é true, então o caso comum funciona e esta definição
+      provavelmente roda como está. O que o achado afirma é mais estreito e mais
+      útil: esta definição depende de uma configuração de SISTEMA que não viaja
+      com ela. O JSON pode ser revisado, aprovado e mergeado sem que ninguém
+      saiba que o ambiente alvo precisa ter aquele interruptor ligado, e o
+      sintoma aparece no deploy, num ambiente onde alguém o desligou.
+      O QUE DISPARA É JOB EM ARRAY, E NÃO ARRAY. A leitura é literal porque a
+      frase é literal: ela fala de "job definitions in an array format". Um
+      artefato com FOLDERS em array cujos jobs são objetos nomeados não dispara
+      esta regra, e o corpus prova isso com a fixture folder_em_array. Ler array
+      em geral acusaria uma forma que a fonte não condiciona a interruptor nenhum.
+      A EVIDÊNCIA ESTÁ NO CAMINHO, E NÃO NO JOB. Nenhuma propriedade do job diz
+      que ele foi declarado em array; quem sabe é a travessia, e por isso o
+      extrator emite ctm.job_array_format com attrs.array_key.
+      attrs.name_declared diz se a entrada trouxe a propriedade Name — a página
+      descreve Name como a propriedade que nomeia um objeto EM estrutura de
+      array, então uma entrada de array sem Name é a forma que a fonte não
+      descreve.
+      O QUE ESTE ACHADO NÃO AFIRMA: qual é o valor efetivo de
+      allowDuplicateJobNames no ambiente alvo. Ele vive em
+      automation-api.properties, fora do repositório, e este motor não o lê —
+      pela mesma razão que o extrator recusa sondar a capacidade
+      resources_array_duplicate_names, cuja flag também é de sistema. Confirme o
+      valor antes de decidir; o achado é sobre o que a definição depende, nunca
+      sobre o que o ambiente tem.
+    proposed_change:
+      - "Confirmar `allowDuplicateJobNames` no ambiente alvo antes de qualquer edição: é configuração de `automation-api.properties`, o default é `true`, e se ele estiver ligado a definição está correta como está — o achado terá cumprido o papel de tornar a dependência visível."
+      - "Registrar a dependência onde ela é revisável: um comentário no README do repositório de jobs, ou uma checagem no pipeline que valide o setting do endpoint antes do `ctm deploy`. A definição depende de algo que o pull request não mostra, e é isso que a torna frágil."
+      - "Se os nomes duplicados não são necessários — os jobs do array têm nomes distintos —, avaliar a forma de objeto nomeado, em que cada job é uma chave do folder. Ela não depende do setting, e é a forma que o resto do corpus usa."
+    risks:
+      - "Trocar a forma de array por objetos nomeados EXIGE que os nomes sejam únicos dentro do folder: se dois jobs do array compartilham nome, a conversão perde um deles em silêncio, porque a segunda chave sobrescreve a primeira no JSON."
+      - "Desligar `allowDuplicateJobNames` no ambiente para forçar disciplina de nomes quebra toda definição em array já publicada, e não só esta — é mudança de plataforma, com alcance muito maior que o deste achado."
+      - "A forma de array é a que permite dois jobs com o mesmo nome, e é justamente isso que torna o subject de cada um dependente do índice: renumerar as entradas do array muda a identidade dos achados entre execuções."
+    tradeoffs:
+      - "Manter a forma de array é legítimo e às vezes necessário (nomes repetidos são o caso que ela existe para atender); o custo é uma dependência de configuração que o repositório não declara. Objetos nomeados são autocontidos e não permitem nome repetido."
+    validation:
+      - "`ctm build` sobre o JSON, executado contra o endpoint do ambiente alvo, retorna sucesso — é a validação oficial da BMC e é a que enxerga o setting do servidor."
+      - "EIXO DE RESULTADO — o conjunto de jobs publicado é o mesmo. `deploy jobs::get` sobre o folder, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. Converter forma de declaração não pode acrescentar, remover nem renomear job, e é exatamente aqui que a conversão com nomes duplicados falharia."
+      - "EIXO DE RESULTADO — a ordem e as dependências não mudaram. A `Sequence` de cada `Flow` e as listas de `WaitForEvents`/`AddEvents`/`DeleteEvents` de cada job são idênticas às de antes, item a item."
+      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-004, e a sentinela `ctm.analyzed` mostra `job_count` inalterado — se a contagem caiu, a conversão perdeu um job homônimo."
+    rollback:
+      - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção foi no ambiente e não no arquivo — religar o setting —, o rollback é de configuração de plataforma e afeta todas as definições em array, não só esta."
+    sources:
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm", retrieved: 2026-09-02}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # D-1 — "Note that nesting of parentheses within parentheses is not supported."
+  #
+  # É a frase mais curta das cinco e a que mais depende do extrator, porque os
+  # parênteses da fonte não são um campo: são ELEMENTOS STRING dentro da própria
+  # lista de eventos, ao lado dos objetos de evento. O exemplo da página:
+  #
+  #   "Events": ["(", {"Event":"ev1"}, "OR", {"Event":"ev2"}, ")", "OR",
+  #              "(", {"Event":"ev3"}, {"Event":"ev4"}, ")"]
+  #
+  # Profundidade é CONTAGEM, e nenhum `expr` deste motor conta token. Então
+  # `_event_logic_facts` percorre a lista uma vez, mede `max_paren_depth` e emite
+  # `attrs.nested_parentheses` já decidido. A regra fica com um booleano.
+  #
+  # O EXEMPLO ACIMA É O NEGATIVO, E ESTÁ NO CORPUS. Ele tem dois grupos IRMÃOS,
+  # profundidade 1 — é a forma que a fonte publica como correta, e
+  # `evento_com_parenteses_no_mesmo_nivel` prova que a regra não a acusa. Uma
+  # regra que disparasse em "tem parêntese" acusaria o exemplo oficial da BMC.
+  #
+  # O DESBALANCEAMENTO VIAJA NO FACT E NÃO VIRA ACHADO. `attrs.balanced` está lá
+  # para quem lê, e nenhuma regra o julga: a fonte fala de aninhamento e só, e
+  # `ctm build` é o validador de schema (veto `V-CTM-3`).
+  #
+  # `same_subject: true`: o subject é o bloco de eventos, e um job pode ter mais
+  # de um. Dois blocos aninhados são dois achados e duas edições.
+  - id: SF-CTM-005
+    category: controlm-jobs-as-code
+    title: Parênteses aninhados na expressão de eventos
+    requires_facts: [ctm.event_logic]
+    when:
+      same_subject: true
+      all:
+        - fact: ctm.event_logic
+          where: {attrs.nested_parentheses: true}
+    status: structural
+    severity_default: P1
+    runtime_scope: {}
+    explanation: >
+      Esta expressão de eventos abre um parêntese dentro de outro, e a fonte
+      declara que a forma não é suportada: "You can specify the logical
+      relationship between events, using logical operators (AND/OR) and
+      parentheses. The default relationship is AND. Note that nesting of
+      parentheses within parentheses is not supported."
+      measures.max_paren_depth É A EVIDÊNCIA, e ela é contagem e não opinião: o
+      extrator percorre a lista de eventos uma vez e registra a profundidade
+      máxima alcançada. Profundidade 1 é a forma correta — grupos irmãos, que é
+      o que o exemplo da própria página faz; profundidade 2 ou mais é o que a
+      frase acima proíbe.
+      OS PARÊNTESES NÃO SÃO UM CAMPO, e é por isso que a decisão vem do extrator.
+      A fonte os publica como elementos string dentro da mesma lista dos objetos
+      de evento, e contar aninhamento é percorrer a lista — coisa que nenhuma
+      condição deste catálogo sabe fazer, porque o motor avalia expressão sobre
+      atributo, não sobre sequência.
+      O CUSTO É A EXPRESSÃO NÃO SER A QUE O AUTOR ESCREVEU, e é isso que sustenta
+      a severidade. Uma condição de espera é o que decide se o job roda cedo,
+      tarde ou nunca; se o agrupamento lógico não é o declarado, o job passa a
+      esperar por um conjunto de eventos diferente do pretendido, e o sintoma é
+      um job que dispara antes da hora ou fica parado — nos dois casos longe do
+      arquivo que o causou.
+      O QUE ESTE ACHADO NÃO AFIRMA — e o limite é grande: como o Control-M
+      efetivamente interpreta a expressão aninhada. A fonte diz "is not
+      supported" e não publica o que acontece: se rejeita no deploy, se ignora os
+      parênteses internos, ou se avalia de outro jeito. Nenhuma das três é
+      afirmada aqui.
+      E ELE NÃO JULGA SEMÂNTICA DE DEPENDÊNCIA. "Este job espera um evento que
+      ninguém produz" continua vetado (V-CTM-2): exigiria o grafo do site
+      inteiro, e a página não declara que evento órfão seja defeito. Esta regra
+      julga a SINTAXE que a fonte nomeia, e só. attrs.balanced viaja no fact como
+      evidência de leitura e não alimenta regra nenhuma, pela mesma razão —
+      parêntese que abre e não fecha é assunto de ctm build.
+    proposed_change:
+      - "Achatar a expressão para um nível: escrever os grupos como irmãos, na forma que o exemplo da própria página usa — dois grupos entre parênteses ligados por um operador, sem parêntese dentro de parêntese. É a correção literal, e mantém a lista num bloco só."
+      - "Se a lógica pretendida realmente precisa de dois níveis, ela não cabe numa expressão de eventos: introduzir um evento intermediário, adicionado por um job que represente o grupo interno, e esperar por ele no lugar do parêntese aninhado. O agrupamento passa a ser um objeto do fluxo, visível no Control-M, em vez de sintaxe."
+      - "Se o aninhamento existia só para deixar a intenção legível, remover os parênteses redundantes: a fonte declara que o relacionamento default é `AND`, então um grupo que só contém `AND` não precisa de parênteses nenhum."
+    risks:
+      - "Achatar a expressão MUDA a condição de espera se a lógica original dependia mesmo do agrupamento — `A OR (B AND C)` e `A OR B AND C` não são a mesma pergunta. Confirme a intenção antes de editar; a fonte não publica como o aninhamento é interpretado hoje, então não há como derivar o comportamento atual do arquivo."
+      - "Introduzir um evento intermediário acrescenta um job ao fluxo e, com ele, um ponto de falha e uma dependência a mais para operar. O ganho é a lógica ficar explícita; o custo é o fluxo crescer."
+      - "Evento é global no Control-M: o nome escolhido para o evento intermediário pode colidir com um evento já usado por outro folder, e a colisão faz dois fluxos independentes passarem a se esperar."
+    tradeoffs:
+      - "Achatar é a correção mínima e cabe no mesmo bloco; decompor em evento intermediário é mais trabalho e deixa o agrupamento visível para quem opera o fluxo pela interface, e não só para quem lê o JSON."
+    validation:
+      - "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a expressão é aceita."
+      - "EIXO DE RESULTADO — o job espera pelo mesmo conjunto de eventos. A lista de `WaitForEvents` do job, antes e depois, tem os mesmos nomes de evento e as mesmas datas, item a item: achatar parênteses é mudança de AGRUPAMENTO, e não pode acrescentar nem remover evento esperado."
+      - "EIXO DE RESULTADO — a ordem efetiva de execução não mudou. Uma ordenação (`run order`) do fluxo no ambiente alvo termina em OK e a sequência de horários de início dos jobs é a mesma da última execução boa — é isso que prova que a condição de espera continua sendo satisfeita nos mesmos pontos."
+      - "EIXO DE RESULTADO — o efeito do job é o mesmo. O artefato que ele produz confere com o do último run bom: contagem total e contagem por chave de negócio iguais. Job que passa a rodar antes da hora roda sobre dado incompleto e termina em OK — é essa falha que este eixo existe para pegar."
+      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-005, e `ctm.event_logic` mostra `max_paren_depth` igual a 1 — com `dependency_count` inalterado na sentinela, porque regra que cala por o extrator ter parado de ler os eventos é verde falso."
+    rollback:
+      - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um evento intermediário, o rollback precisa também remover o job que o adiciona — deixá-lo publicado faz o Control-M acumular um evento que ninguém mais consome."
+    sources:
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm", retrieved: 2026-09-02}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # D-2 — A FRASE CARREGA DUAS COISAS, E A REGRA JULGA UMA SÓ.
+  #
+  #   "Note that a sub-folder that contains the ReferencePath property must not
+  #    contain any explicit job objects. This feature requires Control-M/
+  #    Enterprise Manager version 9.0.21 or higher."
+  #
+  # A primeira frase é um `must not` verificável no artefato, em qualquer versão.
+  # A segunda é uma FRONTEIRA DE VERSÃO, e ela NÃO é julgada aqui — a decisão
+  # está medida no veto `V-CTM-6` e o resumo é: `9.0.21` é numeração de
+  # **Enterprise Manager**, e a matriz deste repositório é do **Automation API**.
+  # São produtos diferentes, com numerações de tamanho diferente (`9.0.21` contra
+  # `9.0.21.300`), e a matriz já encontrou exigência de EM cinco vezes e nas
+  # cinco a registrou como prosa em `summary`, nunca como eixo. Inventar o eixo
+  # agora seria exatamente o erro que a D-5 do incremento 1 nomeou.
+  #
+  # Por isso: `runtime_scope: {}`, a fronteira citada no `explanation` como
+  # contexto, e nenhuma condição sobre ela. O achado não depende de versão
+  # nenhuma, porque o `must not` não depende.
+  #
+  # O VEREDITO É SÓ PARA `SubFolder`, e a literalidade é deliberada — a frase diz
+  # "a sub-folder", e a descrição da propriedade diz que ela serve para
+  # referenciar "from within a sub-folder". Um `Folder` de topo com
+  # `ReferencePath` registra `attrs.reference_path` (a evidência existe) e não
+  # recebe veredito, porque a fonte não declara defeito ali.
+  #
+  # AS DUAS FIXTURES SÃO UM PAR, no molde de `capacidade_abaixo/acima`: o mesmo
+  # `Parent` com o mesmo `JobTemplate`, e a única diferença é o job explícito
+  # dentro do sub-folder. `subpasta_com_referencia_sem_job_explicito` é o exemplo
+  # que a própria página publica, e ele não dispara.
+  - id: SF-CTM-006
+    category: controlm-jobs-as-code
+    title: Sub-folder com ReferencePath contém job explícito
+    requires_facts: [ctm.folder]
+    when:
+      same_subject: true
+      all:
+        - fact: ctm.folder
+          where: {attrs.reference_path_with_explicit_jobs: true}
+    status: structural
+    severity_default: P2
+    runtime_scope: {}
+    explanation: >
+      Este sub-folder usa ReferencePath e também declara job explícito dentro
+      dele, e a fonte proíbe a combinação: "Note that a sub-folder that contains
+      the ReferencePath property must not contain any explicit job objects."
+      O QUE ReferencePath FAZ, e por que a proibição faz sentido: a página o
+      descreve como o mecanismo de reusar um job ou folder "as a dynamic
+      template, instead of specifying full job definitions in the sub-folder",
+      com sobrescrita de variáveis a partir do sub-folder que referencia. O
+      sub-folder é, nesse desenho, uma INSTÂNCIA do template — e um job escrito à
+      mão dentro dele é conteúdo que o template não tem e que ninguém sabe dizer
+      de onde vem.
+      measures.explicit_job_count DIZ QUANTOS SÃO. Contam como job explícito os
+      objetos nomeados com Type Job dentro do próprio sub-folder e as entradas do
+      array Jobs — as duas formas que a página publica para declarar um job.
+      Sub-folder aninhado NÃO conta: a frase da fonte fala de job, e um container
+      não é um job.
+      O VEREDITO É SÓ PARA SubFolder, e a literalidade é deliberada. A frase diz
+      "a sub-folder", e a descrição da propriedade diz que ela referencia "from
+      within a sub-folder". Um Folder de topo com ReferencePath registra
+      attrs.reference_path — a evidência fica no fact — e não é acusado, porque a
+      fonte não declara defeito ali. Estender por simetria seria acusar o que
+      ninguém publicou.
+      A FRONTEIRA DE VERSÃO DA MESMA FRASE NÃO É JULGADA AQUI, e a razão é de
+      produto. A fonte continua: "This feature requires Control-M/Enterprise
+      Manager version 9.0.21 or higher." Isso é numeração de ENTERPRISE MANAGER,
+      e a matriz deste repositório
+      (knowledge/controlm/automation-api-matrix.yaml) é do AUTOMATION API —
+      produtos diferentes, com numerações de tamanho diferente (9.0.21 contra
+      9.0.21.300). A matriz já encontrou exigência de EM cinco vezes e nas cinco
+      a registrou como prosa dentro de summary, nunca como fronteira legível por
+      máquina; criar o eixo para este caso exigiria uma página de documentação do
+      Enterprise Manager, lida e citada, e isso é pesquisa nova. Ver o veto
+      V-CTM-6. Este achado não depende de versão nenhuma, porque o must not não
+      depende: ele vale no artefato, hoje, em qualquer EM.
+      SE O AMBIENTE ALVO FOR ANTERIOR A 9.0.21 DE EM, o problema é outro e maior
+      — a propriedade inteira não existe lá, e nem esta regra nem este motor
+      medem a versão do Enterprise Manager. Confirme-a antes de reescrever o
+      sub-folder.
+    proposed_change:
+      - "Tirar os jobs explícitos do sub-folder que tem `ReferencePath`: ou eles pertencem ao template referenciado — e então vão para lá, onde todas as instâncias os herdam —, ou pertencem a este fluxo em particular, e então vão para um sub-folder irmão, sem `ReferencePath`."
+      - "Se o job explícito existia para variar o comportamento da instância, usar o mecanismo que a página publica para isso: sobrescrever variáveis do job ou folder referenciado a partir do sub-folder que referencia. É o que `ReferencePath` foi desenhado para permitir, e mantém uma definição só."
+      - "Se o template não serve mais para este caso, abandonar `ReferencePath` neste sub-folder e escrever as definições completas — a fonte não obriga a usar template, e um sub-folder normal com jobs explícitos é forma válida."
+    risks:
+      - "Mover o job para o folder referenciado o entrega a TODAS as instâncias daquele template, e não só a esta. Confira quem mais referencia o mesmo caminho antes de mover, ou um sub-folder que não pedia nada passa a executar um job a mais."
+      - "Trocar job explícito por sobrescrita de variável muda o mecanismo de variação: a diferença deixa de ser visível como um objeto no fluxo e passa a ser um valor — mais compacto, e mais difícil de descobrir por quem opera o Control-M pela interface."
+      - "`ReferencePath` usa a barra para caminho (`Folder2/Job2`): mover o template de folder quebra toda referência que aponte para ele, e a quebra aparece no deploy, não no arquivo que foi editado."
+    tradeoffs:
+      - "Template com sobrescrita de variáveis mantém uma definição só e concentra a manutenção; definições completas por sub-folder são repetitivas e independentes — a mudança numa não arrasta as outras."
+    validation:
+      - "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a combinação é aceita naquela versão de Enterprise Manager."
+      - "EIXO DE RESULTADO — o conjunto de jobs efetivamente publicado é o mesmo. `deploy jobs::get` sobre o folder pai, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. É o eixo crítico aqui, porque mover um job para o template MULTIPLICA-O por instância — e essa contagem é onde a multiplicação aparece."
+      - "EIXO DE RESULTADO — as outras instâncias do mesmo template não mudaram. `deploy jobs::get` sobre cada sub-folder que referencia o mesmo `ReferencePath` devolve a mesma contagem de antes: sub-folder que ganhou um job sem ter pedido é a falha que este eixo existe para pegar."
+      - "EIXO DE RESULTADO — o efeito é o mesmo. Uma ordenação (`run order`) termina em OK e o artefato produzido — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais."
+      - "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-006, e `ctm.folder` mostra `explicit_job_count` zero no sub-folder — com o `job_count` do artefato inteiro conferido à parte, porque um job que sumiu da contagem foi apagado, não movido."
+    rollback:
+      - "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção moveu um job para o folder referenciado, o rollback precisa alcançar todas as instâncias que passaram a herdá-lo — republicar só este sub-folder deixaria as outras com o job a mais."
+    sources:
+      - {url: "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm", retrieved: 2026-09-02}

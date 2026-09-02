@@ -50,9 +50,32 @@ REQUIRED_FIXTURES = {
     # nao data. Nenhum fact de capacidade, nenhum achado.
     "fluxo_sem_capacidade_datada",
     # A segunda sonda, que nao e job type: a estrutura de array `Folders`.
+    # DESDE 2026-09-02 ela e tambem o NEGATIVO de `SF-CTM-004`: folder em array
+    # com os jobs declarados como objetos nomeados nao e "job definitions in an
+    # array format", e a regra tem de continuar calada sobre ela.
     "folder_em_array",
     # A sentinela e o ponto cego contado quando o JSON nao abre.
     "artefato_ilegivel",
+    # ── incremento 3 (2026-09-02): janela e dependencia ──────────────────────
+    # As TRES de `SF-CTM-002`, e as tres sao necessarias porque o defeito tem
+    # duas formas e a fonte declara um default. A primeira e a que testa o
+    # DESENHO: sem o kind derivado no extrator ela produz zero achados.
+    "janela_data_especifica_sem_neutralizar",
+    "janela_data_especifica_com_dia_da_semana",
+    # Esta acumula dois papeis declarados: a terceira de `SF-CTM-002` (as tres
+    # opcoes anuladas) e a metade que PASSA da fronteira de `SF-CTM-003` (400).
+    "janela_no_teto_de_datas",
+    "janela_acima_do_teto_de_datas",
+    # `SF-CTM-004`, com o exemplo de dois jobs homonimos da propria pagina.
+    "job_em_array_com_nome",
+    # O par de `SF-CTM-005`: o aninhado, e o exemplo `Wait2` da pagina, que tem
+    # parenteses IRMAOS e nao pode ser acusado.
+    "evento_com_parenteses_aninhados",
+    "evento_com_parenteses_no_mesmo_nivel",
+    # O par de `SF-CTM-006`: o mesmo `Parent`, e a unica diferenca e o job
+    # explicito dentro do sub-folder que tem `ReferencePath`.
+    "subpasta_com_referencia_e_job_explicito",
+    "subpasta_com_referencia_sem_job_explicito",
 }
 
 
@@ -391,3 +414,336 @@ class TestAdversarial:
         _, facts, _, _ = run_fixture(FIXTURES / "capacidade_abaixo_da_fronteira")
         direcoes = sorted(f.attrs["direction"] for f in _by_kind(facts, "ctm.dependency"))
         assert direcoes == ["add", "sequence", "wait"]
+
+
+class TestAOmissaoEDecididaNoExtrator:
+    """A D-1 do incremento 3, e o teste que separa a regra certa da regra fácil.
+
+    A fonte diz que `SpecificDates` não pode acompanhar `WeekDays`, `Months` nem
+    `MonthDays`, **e** que o default das três é `ALL` -- portanto omitir já é
+    combinar. O `where` óbvio (as duas propriedades presentes) pega só quem
+    escreveu o defeito, e erra quem o herdou do default.
+
+    O motor não consegue exprimir a omissão: `engine._where_matches` reprova
+    caminho AUSENTE por construção. Então a decisão vira kind derivado, e esta
+    classe é o que prova que ela existe -- desligando-a e medindo o silêncio.
+    """
+
+    def test_o_defeito_por_omissao_dispara(self):
+        _, facts, findings, _ = run_fixture(
+            FIXTURES / "janela_data_especifica_sem_neutralizar"
+        )
+        agenda = _by_kind(facts, "ctm.schedule")
+        assert len(agenda) == 1
+        attrs = agenda[0].attrs
+        assert attrs["specific_dates_conflict"] is True
+        # As TRES estao ausentes, e nenhuma esta escrita com outro valor: e o
+        # caso puro de omissao, que e o que a regra existe para pegar.
+        assert attrs["specific_dates_conflict_by_omission"] == [
+            "MonthDays",
+            "Months",
+            "WeekDays",
+        ]
+        assert attrs["specific_dates_conflict_declared"] == []
+        assert [f.rule_id for f in findings] == ["SF-CTM-002"]
+
+    def test_sem_o_kind_derivado_a_fixture_de_omissao_fica_verde(self, monkeypatch):
+        """O CONTRAFACTUAL, e ele é a razão de o extrator ter mudado.
+
+        `_specific_dates` é a função que não existia antes de 2026-09-02.
+        Desligá-la reproduz exatamente o `ctm.schedule` anterior -- sem
+        `specific_dates_conflict` --, e `_where_matches` reprova caminho ausente:
+        a regra fica calada sobre um artefato defeituoso.
+
+        Se este teste passar a falhar porque a fixture continua vermelha com a
+        decisão desligada, alguém moveu o julgamento para uma condição do
+        catálogo, e aquela condição não pode estar vendo a omissão.
+        """
+        from sparkforge.facts import controlm_jobs as cj
+
+        monkeypatch.setattr(cj, "_specific_dates", lambda quando, measures, attrs: None)
+        directory = FIXTURES / "janela_data_especifica_sem_neutralizar"
+        _, facts, findings, _ = run_fixture(directory)
+        agenda = _by_kind(facts, "ctm.schedule")
+        assert "specific_dates_conflict" not in agenda[0].attrs
+        assert findings == []
+
+    def test_a_opcao_escrita_com_outro_valor_sai_no_campo_certo(self):
+        """A segunda forma do mesmo defeito. Ela e a omissao produzem o MESMO
+        `rule_id` e evidências diferentes -- e é a diferença que decide se a
+        correção acrescenta linha ou troca valor."""
+        _, facts, findings, _ = run_fixture(
+            FIXTURES / "janela_data_especifica_com_dia_da_semana"
+        )
+        attrs = _by_kind(facts, "ctm.schedule")[0].attrs
+        assert attrs["specific_dates_conflict"] is True
+        assert attrs["specific_dates_conflict_declared"] == ["WeekDays"]
+        assert attrs["specific_dates_conflict_by_omission"] == []
+        assert [f.rule_id for f in findings] == ["SF-CTM-002"]
+
+    def test_as_tres_anuladas_com_none_nao_disparam(self):
+        """O negativo, na forma que o exemplo da própria página publica: `NONE`
+        dentro de uma LISTA de um item, e não como escalar. Aceitar só o escalar
+        acusaria o exemplo oficial da BMC."""
+        _, facts, findings, _ = run_fixture(FIXTURES / "janela_no_teto_de_datas")
+        attrs = _by_kind(facts, "ctm.schedule")[0].attrs
+        assert attrs["specific_dates"] is True
+        assert attrs["specific_dates_conflict"] is False
+        assert findings == []
+
+    def test_none_conta_nas_duas_grafias_e_lista_com_dois_itens_nao_anula(self):
+        """As três decisões de `_neutralized`, medidas direto: lista de um item,
+        escalar, e a lista que declara um dia AO LADO da anulação -- que é a
+        combinação que a fonte proíbe, e não uma anulação."""
+        from sparkforge.facts.controlm_jobs import _neutralized
+
+        assert _neutralized(["NONE"]) is True
+        assert _neutralized("NONE") is True
+        assert _neutralized("none") is True  # caixa nao e julgada: ver o docstring
+        assert _neutralized(["NONE", "MON"]) is False
+        assert _neutralized(["ALL"]) is False
+        assert _neutralized([]) is False
+        assert _neutralized(None) is False
+
+
+class TestOTetoDeDatasEExato:
+    """`J-2`: *"You can list up to 400 dates."* -- e "up to 400" INCLUI 400.
+
+    O par de fixtures existe porque um limiar escrito com `>=` em vez de `>`
+    passaria toda a suíte com uma fixture só.
+    """
+
+    def test_quatrocentas_datas_passam(self):
+        _, facts, findings, _ = run_fixture(FIXTURES / "janela_no_teto_de_datas")
+        assert _by_kind(facts, "ctm.schedule")[0].measures["specific_dates_count"] == 400
+        assert findings == []
+
+    def test_quatrocentas_e_uma_disparam(self):
+        _, facts, findings, _ = run_fixture(FIXTURES / "janela_acima_do_teto_de_datas")
+        assert _by_kind(facts, "ctm.schedule")[0].measures["specific_dates_count"] == 401
+        assert [f.rule_id for f in findings] == ["SF-CTM-003"]
+
+    def test_o_numero_quatrocentos_esta_na_regra_e_nao_no_extrator(self):
+        """Limiar é regra (seção 11 do `CLAUDE.md`), e o extrator só CONTA.
+
+        É o mesmo contrafactual que `SF-CTM-001` faz com `9.0.` no catálogo: se o
+        número estiver nos dois lugares, um deles vai divergir na primeira
+        atualização da fonte.
+
+        A busca é sobre o AST e não sobre o texto, e a diferença importa: o
+        docstring do módulo cita `400` ao EXPLICAR que o limiar mora na regra, e
+        uma busca textual reprovaria justamente a prosa que documenta a decisão.
+        O que não pode existir é um literal `400` em código executável.
+        """
+        import ast
+        from pathlib import Path as _Path
+
+        import sparkforge.facts.controlm_jobs as cj
+
+        arvore = ast.parse(_Path(cj.__file__).read_text(encoding="utf-8"))
+        literais = [
+            n.value
+            for n in ast.walk(arvore)
+            if isinstance(n, ast.Constant) and isinstance(n.value, int)
+        ]
+        assert 400 not in literais
+        regra = next(r for r in load_catalog() if r["id"] == "SF-CTM-003")
+        assert regra["threshold"] == {"max_dates": 400}
+
+
+class TestOAninhamentoDeParenteses:
+    """`D-1`: *"nesting of parentheses within parentheses is not supported."*
+
+    Os parênteses são elementos STRING da mesma lista dos eventos, e
+    profundidade é contagem -- coisa que nenhum `expr` deste motor faz. O
+    extrator percorre a lista uma vez e emite o veredito pronto.
+    """
+
+    def test_o_aninhado_dispara_com_profundidade_dois(self):
+        _, facts, findings, _ = run_fixture(FIXTURES / "evento_com_parenteses_aninhados")
+        logicas = _by_kind(facts, "ctm.event_logic")
+        assert len(logicas) == 1
+        assert logicas[0].measures["max_paren_depth"] == 2
+        assert logicas[0].attrs["nested_parentheses"] is True
+        assert logicas[0].attrs["balanced"] is True
+        assert [f.rule_id for f in findings] == ["SF-CTM-005"]
+
+    def test_o_exemplo_da_propria_pagina_nao_dispara(self):
+        """Dois grupos IRMÃOS -- a forma que a BMC publica como correta. Uma
+        regra escrita sobre "tem parêntese" acusaria o exemplo oficial."""
+        _, facts, findings, _ = run_fixture(
+            FIXTURES / "evento_com_parenteses_no_mesmo_nivel"
+        )
+        logica = _by_kind(facts, "ctm.event_logic")[0]
+        assert logica.measures["max_paren_depth"] == 1
+        assert logica.measures["open_paren_count"] == 2
+        assert logica.attrs["nested_parentheses"] is False
+        assert findings == []
+
+    def test_bloco_de_evento_sem_token_logico_nao_produz_fact(self):
+        """O `WaitForEvents` simples do corpus antigo não declara relação
+        nenhuma -- o default é `AND` --, e um fact dizendo "profundidade zero"
+        sobre ele responderia uma pergunta que ninguém fez. É também o que
+        mantém os seis goldens do incremento 2 intactos."""
+        _, facts, _, _ = run_fixture(FIXTURES / "capacidade_abaixo_da_fronteira")
+        assert _by_kind(facts, "ctm.dependency")
+        assert _by_kind(facts, "ctm.event_logic") == []
+
+    def test_a_forma_de_objeto_nomeado_de_waitforevents_e_lida(self):
+        """A página escreve `WaitForEvents` como objeto com `Type`, e o corpus do
+        incremento 2 o escreve como chave direta no job. As duas formas existem,
+        e até 2026-09-02 só a segunda era lida -- um artefato escrito como a
+        fonte o escreve saía com zero dependências."""
+        _, facts, _, _ = run_fixture(FIXTURES / "evento_com_parenteses_aninhados")
+        dependencias = _by_kind(facts, "ctm.dependency")
+        assert sorted(f.attrs["event"] for f in dependencias) == [
+            "CARGA-CLIENTES",
+            "CARGA-ITENS",
+            "CARGA-PEDIDOS",
+        ]
+        assert {f.attrs["direction"] for f in dependencias} == {"wait"}
+        assert {f.attrs["container"] for f in dependencias} == {"WaitForEvents"}
+
+    def test_o_desbalanceamento_e_evidencia_e_nao_achado(self):
+        """`attrs.balanced` viaja no fact e nenhuma regra o julga: a fonte fala
+        de aninhamento e só, e `ctm build` é o validador de schema (`V-CTM-3`).
+        Inventar a acusação aqui seria o sexto defeito sem fonte."""
+        from sparkforge.facts.controlm_jobs import _event_logic_facts
+
+        facts = _event_logic_facts(
+            ["(", {"Event": "a"}, "OR", {"Event": "b"}],
+            "WaitForEvents",
+            "WaitForEvents",
+            {"type": "source_location", "file": "x.json", "line": 0, "col": 0,
+             "symbol": "F/J", "snippet": ""},
+            {},
+        )
+        assert len(facts) == 1
+        assert facts[0].attrs["balanced"] is False
+        assert facts[0].attrs["nested_parentheses"] is False
+        assert not any(
+            "balanced" in str(r.get("when")) for r in load_catalog()
+        )
+
+
+class TestJobEmArrayEReferencePath:
+    """`J-3` e `D-2`, e as duas se defendem pela LITERALIDADE da frase da fonte."""
+
+    def test_dois_jobs_homonimos_no_array_sao_dois_achados(self):
+        """O array existe para permitir nome repetido, e o índice na trilha é o
+        que separa os dois. Sem ele, `same_subject` juntaria os dois num achado
+        só -- o relatório diria "um job" quando são dois."""
+        _, facts, findings, _ = run_fixture(FIXTURES / "job_em_array_com_nome")
+        formatos = _by_kind(facts, "ctm.job_array_format")
+        assert [f.subject["symbol"] for f in formatos] == [
+            "CargaDiaria/Jobs[0]/Job1",
+            "CargaDiaria/Jobs[1]/Job1",
+        ]
+        assert {f.attrs["array_key"] for f in formatos} == {"Jobs"}
+        assert {f.attrs["name"] for f in formatos} == {"Job1"}
+        assert sorted(f.rule_id for f in findings) == ["SF-CTM-004", "SF-CTM-004"]
+
+    def test_folder_em_array_com_job_nomeado_nao_dispara(self):
+        """O negativo de `SF-CTM-004`, e ele é grátis porque a leitura foi
+        literal: a fonte condiciona o setting a "job definitions in an array
+        format". Ler "array" acusaria este artefato, que o corpus do incremento
+        2 declara correto."""
+        _, facts, findings, _ = run_fixture(FIXTURES / "folder_em_array")
+        assert _by_kind(facts, "ctm.job") != []
+        assert _by_kind(facts, "ctm.job_array_format") == []
+        assert findings == []
+
+    def test_o_par_de_reference_path_difere_so_pelo_job_explicito(self):
+        """O contrafactual de `D-2`: mesmo `Parent`, mesmo `JobTemplate`, e a
+        única diferença é o job dentro do sub-folder. Se os dois produzirem o
+        mesmo veredito, há booleano constante em algum lugar."""
+        _, com, achados_com, _ = run_fixture(
+            FIXTURES / "subpasta_com_referencia_e_job_explicito"
+        )
+        _, sem, achados_sem, _ = run_fixture(
+            FIXTURES / "subpasta_com_referencia_sem_job_explicito"
+        )
+
+        def _sub(facts):
+            return next(
+                f for f in _by_kind(facts, "ctm.folder")
+                if f.attrs.get("folder_type") == "SubFolder"
+            )
+
+        assert _sub(com).attrs["reference_path"] == "JobTemplate"
+        assert _sub(com).attrs["reference_path_with_explicit_jobs"] is True
+        assert _sub(com).measures["explicit_job_count"] == 1
+        assert _sub(sem).attrs["reference_path_with_explicit_jobs"] is False
+        assert _sub(sem).measures["explicit_job_count"] == 0
+        assert [f.rule_id for f in achados_com] == ["SF-CTM-006"]
+        assert achados_sem == []
+
+    def test_o_folder_de_topo_sem_reference_path_nao_ganha_atributo(self):
+        """`ReferencePath` ausente não produz veredito nenhum, e é isso que
+        mantém os seis goldens do incremento 2 intactos: contar job explícito em
+        todo folder responderia uma pergunta que ninguém fez."""
+        _, facts, _, _ = run_fixture(
+            FIXTURES / "subpasta_com_referencia_e_job_explicito"
+        )
+        topo = next(
+            f for f in _by_kind(facts, "ctm.folder") if f.subject["symbol"] == "Parent"
+        )
+        assert "reference_path" not in topo.attrs
+        assert "reference_path_with_explicit_jobs" not in topo.attrs
+        assert topo.measures == {}
+
+
+class TestOSLAContinuaSemFonteEComVeto:
+    """O não-objetivo declarado, e o único dos três eixos que sobreviveu ao veto.
+
+    Medido em 2026-09-02 sobre `API_CodeRef_JobProperties.htm`: `SLA`,
+    `ServiceLevel`, `Deadline`, `MaxWait` e `CompletionTime` têm ZERO ocorrência.
+    Sem campo não há fact, e sem fonte que nomeie defeito não há regra.
+    """
+
+    def test_nenhuma_regra_da_area_julga_sla(self):
+        regras = [r for r in load_catalog() if r["id"].startswith("SF-CTM-")]
+        assert len(regras) == 6
+        for regra in regras:
+            texto = " ".join(
+                [regra["title"], str(regra["when"]), " ".join(regra["requires_facts"])]
+            ).lower()
+            for palavra in ("sla", "servicelevel", "deadline", "maxwait", "completiontime"):
+                assert palavra not in texto, (regra["id"], palavra)
+
+    def test_o_extrator_nao_emite_kind_de_sla(self):
+        from sparkforge.facts.controlm_jobs import EMITTED_KINDS
+
+        for kind in EMITTED_KINDS:
+            assert "sla" not in kind.lower()
+
+    def test_o_veto_esta_escrito_com_a_medida_que_o_destrava(self):
+        """Veto sem medida que o destrave é encolher de ombros, e o molde é o
+        `V-GR-1`/`V-GR-2` de `graph.yaml`. `V-CTM-6` guarda a decisão sobre a
+        fronteira de Enterprise Manager pela mesma razão."""
+        texto = CATALOGO.read_text(encoding="utf-8")
+        assert "V-CTM-5" in texto
+        assert "V-CTM-6" in texto
+        for palavra in ("ServiceLevel", "Deadline", "MaxWait", "CompletionTime"):
+            assert palavra in texto
+        assert "O QUE DESTRAVA" in texto
+
+    def test_a_fronteira_de_enterprise_manager_nao_virou_eixo_da_matriz(self):
+        """A D-2 do incremento 3, medida e não herdada.
+
+        `9.0.21` da frase de `ReferencePath` é numeração de Enterprise Manager, e
+        a matriz é do Automation API -- produtos diferentes. A matriz já
+        encontrou exigência de EM e sempre a registrou como prosa em `summary`,
+        nunca como fronteira legível por máquina, e o vocabulário dos dois eixos
+        é FECHADO justamente para que ninguém acrescente chave por analogia.
+        """
+        from sparkforge.controlm import matrix as cm
+
+        matriz = cm.load()
+        for slug, entrada in matriz["capabilities"].items():
+            assert set(entrada) <= set(cm.BOUNDARIES) | {"summary", "replaced_by"}, slug
+        regra = next(r for r in load_catalog() if r["id"] == "SF-CTM-006")
+        assert regra["runtime_scope"] == {}
+        # A fronteira e CITADA no achado e nao julgada por condicao nenhuma.
+        assert "Enterprise Manager" in regra["explanation"]
+        assert "9.0.21" not in str(regra["when"])

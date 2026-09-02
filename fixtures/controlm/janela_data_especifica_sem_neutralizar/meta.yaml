@@ -1,0 +1,25 @@
+name: janela_data_especifica_sem_neutralizar
+proves: >
+  O POSITIVO de `SF-CTM-002` na forma que a regra existe para pegar: o defeito
+  POR OMISSAO. O bloco `When` do job traz `SpecificDates` e NAO traz `WeekDays`,
+  `Months` nem `MonthDays` -- e por isso as tres valem "ALL" por default, que e
+  a combinacao que a fonte proibe. Nao ha uma linha neste arquivo que um revisor
+  humano pudesse apontar: o defeito e o que nao esta escrito.
+  E POR ISSO ESTA E A FIXTURE QUE TESTA O DESENHO, e nao so a regra.
+  `engine._where_matches` reprova caminho ausente, entao nenhuma condicao do
+  catalogo consegue perguntar "esta chave nao foi escrita". Medido em 2026-09-02
+  desligando `_specific_dates` no extrator: sem a decisao derivada, esta fixture
+  produz ZERO achados. Uma regra que julgasse so a presenca passaria verde aqui.
+  O par completo de `SF-CTM-002` sao tres: esta (omissao),
+  `janela_data_especifica_com_dia_da_semana` (declarada com outro valor) e
+  `janela_no_teto_de_datas` (as tres anuladas, sem achado).
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.folder
+  - ctm.job
+  - ctm.schedule
+  - ctm.version_declared
+expects_rules:
+  - SF-CTM-002

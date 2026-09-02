@@ -1,0 +1,23 @@
+name: evento_com_parenteses_aninhados
+proves: >
+  O POSITIVO de `SF-CTM-005`: um parentese ABERTO DENTRO DE OUTRO na lista de
+  eventos de um `WaitForEvents`, que e a forma que a fonte declara nao suportada.
+  `max_paren_depth` sai 2, e o veredito ja vem decidido em
+  `attrs.nested_parentheses`.
+  ESTA FIXTURE TAMBEM EXERCITA A OUTRA FORMA DE `WaitForEvents`, e ela e a que a
+  pagina usa nos exemplos: objeto NOMEADO com `Type` igual a `WaitForEvents` e
+  uma lista `Events` dentro, em vez da chave direta no job. Ate 2026-09-02 o
+  extrator so lia a segunda forma, e um artefato escrito como a fonte o escreve
+  saia com zero dependencias.
+  O par e `evento_com_parenteses_no_mesmo_nivel`.
+runtime: {}
+controlm_version: "9.0.22.010"
+expects_kinds:
+  - ctm.analyzed
+  - ctm.dependency
+  - ctm.event_logic
+  - ctm.folder
+  - ctm.job
+  - ctm.version_declared
+expects_rules:
+  - SF-CTM-005

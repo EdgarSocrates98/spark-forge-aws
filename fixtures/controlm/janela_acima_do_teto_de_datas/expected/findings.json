@@ -1,0 +1,63 @@
+[
+  {
+    "rule_id": "SF-CTM-003",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Lista de SpecificDates acima do teto que a fonte publica",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "FechamentoContabil/ApuraImpostos",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_47b50c"
+    ],
+    "measured": {
+      "months_count": 1,
+      "month_days_count": 1,
+      "week_days_count": 1,
+      "specific_dates_count": 401
+    },
+    "threshold": {
+      "max_dates": 400
+    },
+    "runtime_scope": {},
+    "explanation": "Este bloco When lista mais datas em SpecificDates do que a fonte permite. A página é explícita e o número é dela: \"You can list up to 400 dates. For each date, use the format MM/DD (enclosed in quotes). Separate multiple dates with commas.\" O NÚMERO ESTÁ EM threshold, E O EXTRATOR SÓ CONTA. measures.specific_dates_count é o comprimento da lista lida do artefato; o 400 é limiar e mora na regra. A fronteira é exata: \"up to 400\" inclui 400, e o corpus prova os dois lados — 400 passa em silêncio, 401 dispara. O CUSTO É DE DEPLOY, e não de execução degradada. Um limite de schema declarado pela ferramenta é verificado por ctm build e por ctm deploy, e a descoberta acontece no ambiente alvo — depois de o código ter passado por revisão e merge. UMA CONSEQUÊNCIA DO FORMATO QUE A FONTE NÃO COMENTA, e que vale ler antes de cortar a lista: o formato declarado é MM/DD, sem ano, então existem no máximo 366 datas distintas. Um teto de 400 está acima disso, e portanto toda lista que o exceda repete datas por construção. Isto NÃO é acusação — a página não declara que repetir seja defeito, e este achado não julga duplicata. É o sinal prático de que uma lista acima do teto quase sempre quer dizer outra coisa: agendamento por regra, e não por enumeração. O QUE ESTE ACHADO NÃO AFIRMA: que datas serão perdidas, nem quais. A fonte publica o teto e não publica o comportamento acima dele — se o Control-M trunca, rejeita ou aceita, nenhuma página lida diz. Afirmá-lo seria inventar semântica.",
+    "proposed_change": [
+      "Trocar a enumeração por uma regra de calendário: `MonthDaysCalendar` referencia um calendário predefinido no Control-M, e a página publica esse mecanismo exatamente para o caso em que a lista de datas é grande. Um calendário nomeado também é revisável por quem não lê JSON.",
+      "Se as datas são de mais de um ano, separar em jobs ou folders por período — o formato `MM/DD` não carrega ano, então uma lista longa está enumerando o mesmo dia do calendário repetidas vezes, não datas diferentes.",
+      "Se a lista longa existe porque o agendamento real é por dia da semana ou dia do mês com exceções, escrever o agendamento por regra (`WeekDays`/`MonthDays`, com a sintaxe de dia relativo que a página publica) e reservar `SpecificDates` para as exceções."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Trocar enumeração por calendário move a definição do agendamento para FORA do repositório: o calendário vive no Control-M e deixa de ser código versionado, então a revisão por pull request deixa de cobri-lo.",
+      "Cortar a lista para caber no teto muda o conjunto de dias em que o job roda, e a diferença pode passar despercebida por meses — o job simplesmente não é ordenado numa data que ninguém está observando.",
+      "`SpecificDates` não vale em sub-folder (a página declara job Sim, folder Sim, sub-folder Não): mover o agendamento de nível para reduzir a lista pode esbarrar nisso."
+    ],
+    "tradeoffs": [
+      "Calendário nomeado é legível e reutilizável entre jobs, e tira o agendamento do controle de versão; enumeração é auditável no diff e não escala."
+    ],
+    "validation": [
+      "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a lista é aceita naquela versão.",
+      "EIXO DE RESULTADO — o conjunto de datas ordenadas é o mesmo que se pretendia. `run jobs:status::get` sobre a janela de interesse devolve uma ordenação para cada data pretendida e nenhuma a mais; comparar a lista de datas ordenadas antes e depois, item a item, é o que prova que a troca de mecanismo não perdeu nem acrescentou dia.",
+      "EIXO DE RESULTADO — o efeito do job não mudou. O artefato que ele produz numa data que existe nos dois desenhos confere com o do último run bom: contagem total e contagem por chave de negócio iguais.",
+      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-003, e `ctm.schedule` mostra `specific_dates_count` dentro do teto — e `job_count` inalterado, porque regra que cala por o extrator ter parado de ler é verde falso."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção criou um calendário no Control-M, removê-lo é operação de runtime e exige confirmação de escopo: outros jobs podem tê-lo passado a referenciar."
+    ],
+    "sources": [
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
+        "retrieved": "2026-09-02"
+      }
+    ]
+  }
+]

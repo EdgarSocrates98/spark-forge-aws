@@ -41,15 +41,15 @@ arquivo ganha.
 
 | Dimensão | Valor | Onde conferir |
 |---|---|---|
-| Testes | **9201** passando, **7** skipped, **remedido** na entrega de `Jobs-as-Code` do Control-M (2026-09-01) — o número anterior (8660) estava defasado em ~430 antes desta entrega, de fases que fecharam sem remedir a linha; os 104 desta são `test_fixtures_golden_controlm.py` (64) e `test_rules_ctm_boundary.py` (40) | **A receita de lotes é EXECUTÁVEL e mora em `tests/test_suite_batches.py`, na constante `LOTES`** — esta linha aponta para ela em vez de repeti-la, e a razão é medida. Enquanto era prosa, `tests/test_fixtures_golden.py` (**90 testes**) não caía em lote nenhum: o lote `f` se escrevia `grep -v golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não é. A suíte coletava 8662 e a receita somava 8572 — quem seguisse o procedimento publicado fechava verde com 90 testes sem execução, e nada acusava. Hoje três invariantes travam isso: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Os nove lotes, **recontados por `--collect-only` em 2026-09-01**: 1486 (+2 skipped), 173, 1745, 772, 443, 202, 106, 352, 3929 (+5 skipped). Soma: 9208, e ela fecha com a suíte — 9201 passando mais 7 skipped |
+| Testes | **9357** passando, **7** skipped, **remedido em 2026-09-02** na entrega de dependência e janela do Control-M — os 156 acrescidos desde os 9201 saem de três arquivos: `tests/test_fixtures_golden_controlm.py` (93, entre as 9 fixtures novas do `parametrize` e as cinco classes adversariais do incremento) e o crescimento por parametrização de regra nos gates de catálogo, que ganham um caso por regra nova | **A receita de lotes é EXECUTÁVEL e mora em `tests/test_suite_batches.py`, na constante `LOTES`** — esta linha aponta para ela em vez de repeti-la, e a razão é medida. Enquanto era prosa, `tests/test_fixtures_golden.py` (**90 testes**) não caía em lote nenhum: o lote `f` se escrevia `grep -v golden`, e o `grep` o excluía junto com os `test_fixtures_golden_*`, que ele não é. A suíte coletava 8662 e a receita somava 8572 — quem seguisse o procedimento publicado fechava verde com 90 testes sem execução, e nada acusava. Hoje três invariantes travam isso: todo arquivo cai em ao menos um lote, nenhum cai em dois, e a soma dos lotes é o tamanho da suíte. Os nove lotes, **rodados um a um em 2026-09-02**: 1503 (+2 skipped), 173, 1745, 865, 443, 202, 106, 352, 3968 (+5 skipped). Soma: 9364, e ela fecha com a suíte — 9357 passando mais 7 skipped |
 | Regras do `AGENT_PROTOCOL.md` | **10** | `AGENT_PROTOCOL.md`, seção *Regras* |
-| Regras com eixo de resultado no `validation` | **106 de 141 têm `validation`** — `SF-CTM-001` é a 106ª, e os três eixos de resultado dela são explícitos (mesma contagem de jobs, mesmas dependências item a item, mesmo artefato produzido); recontado em 2026-09-01 — recontado em 2026-09-01. **O número anterior ("62 de 116") não tinha produtor**: a coluna ao lado aponta `tests/test_rules_result_axis.py`, que tem três testes e guarda só as regras que propõem trocar UDF Python por função nativa. Ele nunca contou 62 nem 116. Número publicado sem comando que o produza é a mesma família de defeito que a regra 5 do `AGENT_PROTOCOL.md` fechou para o `benchmark_ref` — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
-| Regras com `runtime_scope` não-vazio | **18 de 141** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados*. **`SF-CTM-001` também não entra, e o caso dela é o mais claro dos três**: a regra é inteiramente sobre versão, e mesmo assim declara `{}` — `runtime_scope` guarda a versão do `RuntimeContext` (Glue, Spark, Python, Iceberg), e nada alimenta o `RuntimeContext` com `9.0.2x.yyy`. A versão do Control-M é **dado do artefato**, e viaja dentro do achado em `ctm.version_declared` e em `attrs.declared_version` | `load_catalog()` |
+| Regras com eixo de resultado no `validation` | **111 de 146 têm `validation`** — as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, da entrega de dependência e janela do Control-M (2026-09-02), e cada uma declara os eixos de resultado que a mudança dela pode mover: conjunto de datas ordenadas em `SF-CTM-002` e `SF-CTM-003`, conjunto de jobs publicado em `SF-CTM-004` e `SF-CTM-006`, e conjunto de eventos esperados mais ordem de execução em `SF-CTM-005`. `SF-CTM-001` foi a 106ª, com os três eixos dela explícitos (mesma contagem de jobs, mesmas dependências item a item, mesmo artefato produzido); recontado em 2026-09-01. **O número anterior ("62 de 116") não tinha produtor**: a coluna ao lado aponta `tests/test_rules_result_axis.py`, que tem três testes e guarda só as regras que propõem trocar UDF Python por função nativa. Ele nunca contou 62 nem 116. Número publicado sem comando que o produza é a mesma família de defeito que a regra 5 do `AGENT_PROTOCOL.md` fechou para o `benchmark_ref` — as 19 restantes entre as executáveis são segredo, log, capacidade, detecção de runtime e metodologia; as 35 áreas `structural` da expansão agêntica não têm `validation` porque não julgam nada | `tests/test_rules_result_axis.py` |
+| Regras com `runtime_scope` não-vazio | **18 de 146** — remedido ao fechar a fase de EMR on EKS: 13 guardadas por `glue` (3 delas `SF-MIG`), 5 por versão de Spark (`SF-GRAPH-002` e as **quatro** `SF-SPARK4`). `SF-MIG-004` NÃO entra: declara `{}` de propósito, porque afirma que o diff mudou `glue_version` e isso não depende de fronteira de versão. **As quatro `SF-EMRK` também não entram, e por razão diferente** — a matriz de release do EMR on EKS existe e é publicada, mas nada alimenta `RuntimeContext.spark` a partir de um fact `emrc.*`; ver a linha própria em *Limites declarados*. **`SF-CTM-001` também não entra, e o caso dela é o mais claro dos três**: a regra é inteiramente sobre versão, e mesmo assim declara `{}` — `runtime_scope` guarda a versão do `RuntimeContext` (Glue, Spark, Python, Iceberg), e nada alimenta o `RuntimeContext` com `9.0.2x.yyy`. A versão do Control-M é **dado do artefato**, e viaja dentro do achado em `ctm.version_declared` e em `attrs.declared_version`. **As cinco `SF-CTM` de 2026-09-02 também declaram `{}`**, e uma delas pelo caminho mais interessante: `SF-CTM-006` cita, no `explanation`, uma fronteira de versão que a própria fonte publica (`Control-M/Enterprise Manager 9.0.21 or higher`) e **não a julga** — o defeito dela é um `must not` verificável no artefato em qualquer versão, e a fronteira é de um produto que nenhuma matriz deste repositório cobre (veto `V-CTM-6`) | `load_catalog()` |
 | Extratores de facts | **29** — `controlm_jobs.py` é o vigésimo nono, da entrega de `Jobs-as-Code` do Control-M (2026-09-01); `emr_eks.py` era o vigésimo oitavo | modulo de `sparkforge/facts/` com `EMITTED_KINDS`; o diretorio tem 36 `.py`, e `runtime_matrix.py`, `pricing.py`, `cloudwatch_retention.py`, `scan.py`, `secrets.py`, `sql_metric_names.py` e `__init__.py` nao emitem kind — os quatro primeiros sao carregadores de conhecimento, `scan.py` é a varredura única compartilhada, nenhum dos sete é extrator |
-| Fact kinds distintos emitidos | **180** — os **doze** últimos são `ctm.*`, da entrega de `Jobs-as-Code`: seis de inventário (`folder`, `job`, `schedule`, `dependency`, `action`, `variable`), a declaração de versão (`version_declared`), **três** de cruzamento com a matriz (`capability_supported`, `capability_incompatible`, `capability_unresolved`) e o par recusa/sentinela (`unresolved`, `analyzed`). Os oito de EMR on EKS são `emrc.*` | união de `EMITTED_KINDS` sobre os 29 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (180 = 180, sem overlap entre módulos) |
-| Regras de diagnóstico | **141**, sendo **66 `confirmed`**, **40 com `status: structural`** e **35 sem campo `status`** (`SF-CTM-001` é a quadragésima `structural`: ela julga análise estática de código-fonte, sem nenhuma medida de execução) (as duas últimas `structural` são `SF-GRAPH-005` e `SF-GRAPH-006`, da rodada de dívidas) (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` |
+| Fact kinds distintos emitidos | **182** — os **catorze** últimos são `ctm.*`: doze da entrega de `Jobs-as-Code` (seis de inventário — `folder`, `job`, `schedule`, `dependency`, `action`, `variable` —, a declaração de versão `version_declared`, **três** de cruzamento com a matriz — `capability_supported`, `capability_incompatible`, `capability_unresolved` — e o par recusa/sentinela `unresolved`/`analyzed`) e **dois** da entrega de dependência e janela (2026-09-02): `ctm.event_logic` e `ctm.job_array_format`. Os dois novos são DERIVADOS pela mesma razão de `tf.graphframes.jar` — a evidência não está em campo nenhum do artefato. `event_logic` mede a profundidade de parênteses de uma lista de eventos, que é contagem e nenhum `expr` do motor conta; `job_array_format` diz que o job foi alcançado por índice de array, que só a travessia sabe. A terceira decisão do incremento **não** virou kind: `specific_dates_conflict` e `reference_path_with_explicit_jobs` são atributos já decididos sobre `ctm.schedule` e `ctm.folder`, no molde de `graph.algorithm.checkpoint_required`, porque nenhuma regra precisa de `absent:` sobre eles. Os oito de EMR on EKS são `emrc.*` | união de `EMITTED_KINDS` sobre os 29 módulos acima, medida somando `len(EMITTED_KINDS)` por módulo e conferindo que a soma bate com o tamanho da união (182 = 182, sem overlap entre módulos) |
+| Regras de diagnóstico | **146**, sendo **66 `confirmed`**, **45 com `status: structural`** e **35 sem campo `status`** (as cinco últimas `structural` são `SF-CTM-002` a `SF-CTM-006`, de 2026-09-02: como `SF-CTM-001`, elas julgam análise estática de código-fonte, sem nenhuma medida de execução) (`SF-CTM-001` foi a quadragésima) (as duas anteriores são `SF-GRAPH-005` e `SF-GRAPH-006`, da rodada de dívidas) (uma por área de coordenação da expansão agêntica, sem `requires_facts`, sem `when` e sem `sources`). As quatro `SF-EMRK` são `confirmed`. **A linha anterior dizia "134, sendo 62 e 66" e não fechava a conta** (62+66=128): ela somava as `structural` herdadas às da expansão e reportava o subtotal errado. Aqui as três parcelas somam o total, e cada uma é contada por `load_catalog()` | `load_catalog()` |
 | Regras bloqueadas (`blocked_on`) | **0** | `rules/catalog/*.yaml` |
-| Regras com golden que dispara | **105 de 105 executáveis** — recontado em 2026-09-01; o número anterior (55 de 55, mais 26) é de antes da expansão agêntica e de três fases que não remediram a linha. `_executable_rules()` filtra por `executable`, **nunca** por `status` | `tests/test_fixtures_kind_coverage.py` |
+| Regras com golden que dispara | **111 de 111 executáveis** — recontado em 2026-09-02 sobre `_executable_rules()`; as cinco últimas são `SF-CTM-002` a `SF-CTM-006`, e cada uma tem golden positivo **e** negativo. A leitura anterior publicava 105 e já estava defasada em 1 antes desta entrega. `_executable_rules()` filtra por `executable`, **nunca** por `status` | `tests/test_fixtures_kind_coverage.py` |
 | Rotas determinísticas | **98** — a `AGENT-082` da entrega de Control-M é a nonagésima oitava, e ela é rota **própria** e não uma linha a mais num `any:` existente: Control-M não é EMR, não roda Spark e não tem cluster, então enfiá-la na `AGENT-007` mandaria o case para um coordenador cujo vocabulário inteiro não descreve o artefato. A fase de EMR on EKS, ao contrário, **não** moveu esta linha: `SF-EMRK` entrou estendendo o `any:` de `AGENT-007`, que já despachava `SF-EMR` e `SF-EMRS` para o mesmo coordenador. A diferença para as 91 publicadas antes é de fases anteriores que fecharam sem remedir esta linha | `rules/catalog/routing.yaml`, chave `rules` |
 | Tools MCP | **65** — remedido ao fechar a frente D do sub-projeto `ReleaseDiff`; `sparkforge_release_describe` e `sparkforge_release_diff` levaram a contagem de 61 para 63, como `sparkforge_analyze_emr_eks` e `sparkforge_collect_emr_eks` haviam levado de 59 para 61 . O sub-projeto `MigrationAssessment` para EMR (2026-09-01) **não** moveu a contagem: `sparkforge_migration_assess` ganhou o parâmetro `platform` em vez de uma tool nova, e a superfície de tools cresceu 4851 bytes (329500 para 334351) só de schema e descrição, com as skills em 619 (318488 para 319107) A entrega de Control-M (2026-09-01) levou de 63 para **64**: `sparkforge_controlm_describe` e a unica tool nova, e a superficie de tools cresceu 5886 bytes (335344 para 341230) -- schema proprio, porque a resposta do Control-M tem DOIS eixos onde a de `release describe` tem um. Numero relido pela propria prova. A entrega de `Jobs-as-Code` (2026-09-01) levou de 64 para **65**: `sparkforge_analyze_controlm_jobs` e a unica tool nova, e a superficie de tools cresceu **9251 bytes** (341230 para 350481). Ela declara `path` e por isso NAO entra no conjunto de excecao de `tests/test_harness_authorization.py`, ao contrario de `sparkforge_controlm_describe` -- uma le artefato, a outra so a matriz | `sparkforge.adapters.tools.TOOLS` |
 | Tools alcançáveis a partir de algum coordenador | **65 de 65** — as quatro novas chegam por `sf-runtime-specialist`: as duas de `ReleaseDiff` pela skill `compare-releases`, e `sparkforge_controlm_describe` por citacao direta no proprio coordenador. Nao ha skill de Control-M, e a razao esta escrita la: a fronteira da pergunta e **versao**, a mesma que ja separa `migrate-glue-6` de `spark4-compatibility`. `sparkforge_analyze_controlm_jobs` chega pelo mesmo caminho, e `tests/test_agent_coverage.py` ganhou a classe que cobra as TRES metades do despacho de `SF-CTM` juntas -- rota, coordenador que declara a area, e as duas tools alcancaveis -- porque `SF-EMRS` ja ficou declarada num coordenador e sem rota nenhuma por uma fase inteira, com cada invariante generico passando sozinho | `tests/test_agent_coverage.py` |
@@ -59,38 +59,40 @@ arquivo ganha.
 | Skills | **46** (20 herdadas + 20 da expansão agêntica + 4 de Glue 6, da fase H6 + `review-emr-eks` + `compare-releases`) | `skills/*/SKILL.md` |
 | Skills que declaram despacho | **23 de 46**, sendo **10** com `agent:`. `compare-releases` é a vigésima terceira, e ela declara `agent: sf-runtime-specialist` por ser o único coordenador que a declara — o mesmo que já declara `migrate-glue-6` e `spark4-compatibility`, porque a fronteira das três é a mesma: versão de runtime. Medido em `.agents/skills/*/SKILL.md`, não somado à mão. `review-emr-eks` é a vigésima segunda, e ela quebra a leitura de "declarante único" que a linha anterior fazia: `agent: emr-infra-reviewer` agora é declarado por **duas** skills (`review-emr-cluster` é a outra), porque o coordenador é o mesmo para as três plataformas de EMR por decisão medida (D-1 da 5d, repetida na D-1 desta fase) | `grep -l "subagent: true" .agents/skills/*/SKILL.md` |
 | Plataformas que despacham subagente | **3 de 5** (`claude_code`, `devin_cli`, `devin_desktop` com recorte) | mecanismo `subagent` em `parity.yaml` |
-| Fixtures golden | **272** em 33 domínios — remedido ao fechar a fase de EMR on EKS, e **59 dos 68 acrescidos desde as 194 publicadas são de fases anteriores** que não remediram esta linha; `emr_eks` contribui com os outros 9. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **266 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 266 + 6 = 272, e a conta fecha. O domínio novo é `controlm`, com **6** fixtures, e ele estreia uma forma que nenhum outro tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy` — a linha anterior publicava 262, que não fechava com nenhuma das duas contagens | `fixtures/` |
-| Ramos de severidade com golden que os produz | **113 de 113** — recontado em 2026-09-01 (o sub-número **15 deles nas 7 regras com `severity_by`** continua certo; `SF-GRAPH` não tem nenhuma, ver `V-GR-3`) | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
+| Fixtures golden | **281** em 33 domínios — recontado em 2026-09-02; as **9** acrescidas desde as 272 são todas de `controlm`, da entrega de dependência e janela. Contagem: diretório de fixture sob `fixtures/<domínio>/`. **275 guardam o golden em `expected/` e têm `meta.yaml`**; as 6 de `glue_job_run` o guardam em `runs/` e não têm `meta.yaml`, e essa continua sendo a única forma divergente. 275 + 6 = 281, e a conta fecha. `controlm` tem **15** fixtures e estreia uma forma que nenhum outro domínio tem: o `meta.yaml` carrega `controlm_version`, porque a extração recebe um parâmetro que **não vem do artefato**. Ele não mora em `runtime:` de propósito — `runtime` alimenta `runtime_scope`, e nada ali conhece `9.0.2x.yyy`. **Cinco das nove novas existem em par**, e o par é o teste: `janela_no_teto_de_datas` (400 datas, cala) contra `janela_acima_do_teto_de_datas` (401, dispara) prova que o limiar é estritamente maior; `evento_com_parenteses_no_mesmo_nivel` (o exemplo `Wait2` da própria BMC) contra `evento_com_parenteses_aninhados` prova que a regra não acusa "tem parêntese"; e as duas de `ReferencePath` diferem só pelo job explícito dentro do sub-folder | `fixtures/` |
+| Ramos de severidade com golden que os produz | **119 de 119** — recontado em 2026-09-02 (o sub-número **15 deles nas 7 regras com `severity_by`** continua certo; nenhuma das cinco `SF-CTM` de 2026-09-02 declara `severity_by`, então cada uma acrescenta um ramo só, o de `severity_default`. `SF-GRAPH` também não tem nenhuma, ver `V-GR-3`). A leitura anterior publicava 113 e já estava defasada em 1 antes desta entrega | `tests/test_fixtures_kind_coverage.py::test_every_severity_branch_has_a_golden_that_produces_it` |
 | Fontes oficiais vigiadas | **225** (210 móveis, 15 fixas) — 93 citadas por regra, 215 por `knowledge/`, 83 pelas duas. As cinco parcelas foram **recontadas** em 2026-09-01 sobre o lock: as anteriores (201/14 e 87/205/77) somavam 215 e não fechavam com o total publicado. A entrega de conhecimento do Control-M acrescentou **uma** — a página What's New do Automation API —, e a de `Jobs-as-Code` acrescentou **quatro**: as três páginas do `API_CodeRef` que descrevem a forma do artefato (*Job Properties*, *Job Types*, *Folders and Flows*, citadas por `knowledge/controlm/` **e** por `SF-CTM-001`) e *Secrets in Code*, citada só por `knowledge/` — é ela que sustenta o veto V-CTM-1, porque publica que a credencial mora em connection profile e não em definição de job. A frase anterior desta linha, *"por regra nenhuma, porque não há regra de Control-M"*, deixou de valer com `SF-CTM`. A fase de EMR on EKS levou 153 → 213 na pesquisa de fontes e 213 → **215** ao fixar as duas URLs do Spark 3.5.6 que `SF-EMRK-004` cita; **64** das 215 são citadas por `knowledge/emr-eks/` e **16** por regra `SF-EMRK`. A diferença para as 143 publicadas antes é de fases anteriores que não remediram esta linha | `knowledge/sources.lock.json` |
 | Pares de eval | 10 | `evals/fase0.xml` |
 | Arquivos de terceiro vendorizados | **127**, em 2 projetos MIT | `python scripts/vendor_caveman.py --check` |
 | Plugins de agente ligados por padrão | **2** (`caveman`, `ck`), do marketplace local `sparkforge-caveman` | `.claude/settings.json` |
 
 Regras por área, **recontado com `load_catalog()` em 2026-09-01** e a soma
-fecha em 141 — a leitura anterior somava 138 porque `SF-GRAPH` estava em 4 e as
-duas regras da rodada de dívidas a levaram a 6, sem que este parágrafo fosse
-remedido, e agora `SF-CTM` acrescenta a sexagésima área. **As 60 áreas, e
-não só as 15 que esta linha listava**: SF-PY 12, SF-EMR 9,
-SF-EMRS 6, SF-GLUE 6, **SF-GRAPH 6**, SF-UI 6, SF-ATH 5, SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5,
-SF-BENCH 4, SF-DQ 4, **SF-EMRK 4**, SF-MIG 4, SF-PLAN 4, SF-SPARK4 4,
-SF-KMS 2, SF-LF 2, SF-TIMEOUT 2, SF-WASTE 2, e mais **39 áreas com 1 regra cada**
+fecha em 146 — **recontado em 2026-09-02**, quando `SF-CTM` saiu de 1 para 6 com
+a entrega de dependência e janela. A leitura de 2026-09-01 somava 141 e a
+anterior a ela 138, porque `SF-GRAPH` estava em 4 e as duas regras da rodada de
+dívidas a levaram a 6 sem que este parágrafo fosse remedido. **As 60 áreas, e
+não só as 15 que esta linha já listou**: SF-PY 12, SF-EMR 9,
+**SF-CTM 6**, SF-EMRS 6, SF-GLUE 6, SF-GRAPH 6, SF-UI 6, SF-ATH 5, SF-ENV 5, SF-FVAL 5, SF-ICE 5, SF-PQ 5,
+SF-BENCH 4, SF-DQ 4, SF-EMRK 4, SF-MIG 4, SF-PLAN 4, SF-SPARK4 4,
+SF-KMS 2, SF-LF 2, SF-TIMEOUT 2, SF-WASTE 2, e mais **38 áreas com 1 regra cada**
 (SF-AGENTS, SF-AIRFLOW, SF-ANALYTICS, SF-API, SF-ARCH, SF-ATHENA, SF-AWS,
-SF-CATALOG, SF-CG, SF-CONTRACT, SF-COST, **SF-CTM**, SF-DYNAMODB, SF-EVAL, SF-GOVERNANCE,
+SF-CATALOG, SF-CG, SF-CONTRACT, SF-COST, SF-DYNAMODB, SF-EVAL, SF-GOVERNANCE,
 SF-IAC, SF-ICEBERG, SF-LAKE, SF-LAMBDA, SF-MODEL, SF-NEPTUNE, SF-NET, SF-NOSQL,
 SF-OPS, SF-ORCH, SF-PARQUET, SF-PIPELINE, SF-REPORT, SF-RULES, SF-S3,
 SF-SECURITY, SF-SERVERLESS, SF-SQL, SF-STEP-FUNCTIONS, SF-STORAGE, SF-TERRAFORM,
-SF-TRANSACTION, SF-VALIDATION, SF-XACC). Soma: 141.
+SF-TRANSACTION, SF-VALIDATION, SF-XACC). Soma: 146.
 
-Fixtures por domínio, **recontado em 2026-09-01** e a soma fecha em 266 — a
-leitura anterior somava 262 porque `graph` estava em 25 (a rodada de dívidas
-acrescentou 3) e `emr_eks` em 9 (a correção do falso positivo de segredo
-acrescentou 1): `graph` 28,
-`emr_serverless` 19, `pyspark` 17, `emr` 14, `migration` 14, `dq` 13, `funcval` 10,
-`sql_metrics` 10, `terraform` 10, **`emr_eks` 10**, `finops` 9, `iceberg` 9,
-`timeout` 8, `bench` 7, `plan` 7, `runtime` 7, `s3` 7, `tuning` 7, `capacity` 6,
-`glue_job_run` 6, `workload` 6, `eventlog` 5, `fusion` 5, `waste` 5,
+Fixtures por domínio, **recontado em 2026-09-02** e a soma fecha em 275 — e ela
+fecha de verdade desta vez: a leitura anterior dizia "fecha em 266" e a lista ao
+lado somava 262, porque `controlm` nunca entrou nela e o total foi remedido sem
+que as parcelas fossem. Os 32 domínios com `expected/`: `graph` 28,
+`emr_serverless` 19, `pyspark` 17, **`controlm` 15**, `emr` 14, `migration` 14,
+`dq` 13, `emr_eks` 10, `funcval` 10, `sql_metrics` 10, `terraform` 10,
+`finops` 9, `iceberg` 9, `timeout` 8, `bench` 7, `plan` 7, `runtime` 7, `s3` 7,
+`tuning` 7, `capacity` 6, `workload` 6, `eventlog` 5, `fusion` 5, `waste` 5,
 `infra_code` 4, `sql` 4, `tfdiff` 4, `athena` 3, `callgraph` 3, `catalog` 3,
-`consumers` 3, `scenarios` 3. Soma: 262.
+`consumers` 3, `scenarios` 3. Soma: 275, mais as 6 de `glue_job_run` — que
+guardam o golden em `runs/` e não têm `meta.yaml` — dá os 281 da tabela.
 
 ---
 
@@ -5497,6 +5499,133 @@ E uma segunda contradição, menor e mais cara se passasse batido:
 nos dois é apenas o **nome que o autor deu** ao objeto — o schema define
 `"Type": "If"`. Um extrator que procurasse a chave literal acharia o exemplo da
 BMC e perderia todo `If` batizado de outro jeito.
+
+
+## Control-M — dependência e janela têm fonte; SLA não tem — **CONCLUÍDA** em 2026-09-02
+
+Terceiro incremento da avaliação de `prompt_evo_spark_bmc.md`, e o que fechou o
+veto `V-CTM-2` pela metade que ele mesmo declarava destravável. Desenho em
+[`specs/2026-09-02-sparkforge-controlm-dependencia-janela-design.md`](specs/2026-09-02-sparkforge-controlm-dependencia-janela-design.md).
+
+**A pergunta era binária, e a resposta foi desigual.** O incremento 2 registrou
+que a página *What's New* não sustenta julgamento sobre dependência, janela e
+SLA, e nomeou o que destravaria: uma página que declare limite, default ou
+anti-padrão. Ela foi lida — `API_CodeRef_JobProperties.htm`, 423 KB, `curl` com
+UA de browser, **200 na primeira tentativa** — e varrida por PADRÃO DE DEFEITO
+(`must`, `cannot`, `is not supported`, `up to \d+`) em vez de por conceito:
+
+| Eixo | Defeitos nomeados | O que virou |
+|---|---|---|
+| **janela** | **3** | `SF-CTM-002`, `SF-CTM-003`, `SF-CTM-004` |
+| **dependência** | **2** | `SF-CTM-005`, `SF-CTM-006` |
+| **SLA** | **0** | veto `V-CTM-5`, com a medida que o destrava |
+
+### O que entrou
+
+- `rules/catalog/controlm.yaml` — cinco regras novas, cada uma com a frase
+  literal da fonte em `sources`. `SF-CTM-002` (P1, `SpecificDates` sem anular as
+  três opções exclusivas), `SF-CTM-003` (P2, mais de 400 datas), `SF-CTM-004`
+  (P3, job em array depende de `allowDuplicateJobNames`), `SF-CTM-005` (P1,
+  parênteses aninhados em `WaitForEvents`), `SF-CTM-006` (P2, sub-folder com
+  `ReferencePath` e job explícito). A área foi de 1 para **6** regras.
+- `sparkforge/facts/controlm_jobs.py` — dois kinds novos (`ctm.event_logic`,
+  `ctm.job_array_format`), dois atributos já decididos
+  (`specific_dates_conflict` em `ctm.schedule`,
+  `reference_path_with_explicit_jobs` em `ctm.folder`), e a leitura da segunda
+  forma de `WaitForEvents` — a que a própria página usa nos exemplos.
+- `fixtures/controlm/` — de 6 para **15**, com par positivo/negativo por regra.
+
+### A decisão que carrega o peso: `J-1` julga a OMISSÃO
+
+A fonte diz duas coisas sobre `SpecificDates`, e é a segunda que decide o
+desenho: *"cannot be used in combination with options `WeekDays`, `Months`, or
+`MonthDays`"* **e** *"since the default for these options is "ALL", you must
+specify these options with a value of "NONE""*.
+
+O `where` óbvio — as duas propriedades presentes — pega só quem escreveu o
+defeito. O caso comum é `SpecificDates` sozinho: como o default é `ALL`, esse
+job **já** está combinando, e não há uma linha no arquivo que o denuncie.
+
+E é exatamente esse caso que o motor não consegue exprimir:
+`engine._where_matches` reprova caminho AUSENTE por construção — é assim que ele
+diz "não sei". Então a decisão virou atributo já decidido no extrator, no molde
+de `tf.graphframes.jar` e de `graph.algorithm.checkpoint_required`, com
+`_by_omission` separado de `_declared` porque a correção é diferente: uma
+acrescenta linha, a outra troca valor.
+
+**O contrafactual está medido e é teste.**
+`TestAOmissaoEDecididaNoExtrator::test_sem_o_kind_derivado_a_fixture_de_omissao_fica_verde`
+desliga `_specific_dates` e afirma **zero achados** sobre um artefato
+defeituoso. Sem ele, uma regra que julgasse só a presença passaria verde na
+fixture que a regra existe para pegar.
+
+### A decisão que exigiu medição: a fronteira de Enterprise Manager
+
+`SF-CTM-006` carrega, na mesma frase do defeito, *"This feature requires
+Control-M/Enterprise Manager version 9.0.21 or higher"*. A tentação era levar
+`9.0.21` para a matriz. **Recusado, e a razão foi medida, não herdada:** a matriz
+é do **Automation API** e declara isso na primeira linha; EM é outro produto,
+com outra numeração (`9.0.21`, três segmentos, contra `9.0.21.300`, quatro), e a
+D-5 do incremento 1 já mediu essa distinção ao recusar `9.0.22.100` como número
+de API.
+
+**O precedente existe e é unânime:** a matriz encontrou exigência de EM **cinco**
+vezes (`workflow_insights_data_export`, `config_server_definition`,
+`external_vault_cyberark_secrets`, `resources_array_duplicate_names`, e a nota
+de `9.0.22.100` em `unresolved`) e nas cinco a registrou como **prosa dentro de
+`summary`**, nunca como fronteira legível por máquina. Criar o eixo agora
+quebraria o padrão em favor de um caso só, e o vocabulário dos dois eixos é
+FECHADO justamente para impedir isso.
+
+Então `SF-CTM-006` declara `runtime_scope: {}` e cita a fronteira no
+`explanation` **sem julgá-la** — o `must not` é verificável no artefato em
+qualquer versão. O veto `V-CTM-6` guarda a decisão, com a medida que a
+destravaria: uma página de documentação do Enterprise Manager, lida e citada, e
+aí é pesquisa nova com eixo e `covers` próprios.
+
+### O que ficou de fora, com razão escrita
+
+- **SLA.** `SLA`, `ServiceLevel`, `Deadline`, `MaxWait` e `CompletionTime` têm
+  **zero** ocorrência nos 423 KB da página. Não há campo a extrair e portanto não
+  há defeito a nomear. Veto `V-CTM-5`, e ele proíbe explicitamente inferir SLA a
+  partir de `ToTime` — que é restrição de submissão, não compromisso de
+  conclusão. **O QUE DESTRAVA:** uma página que publique limite, default ou
+  obrigação de SLA para definição de job.
+- **Semântica de dependência.** "Este job espera evento que ninguém produz"
+  exigiria o grafo do site inteiro, e a página não declara que evento órfão seja
+  defeito. `SF-CTM-005` julga a **sintaxe** que a fonte nomeia, e só.
+- **Desbalanceamento de parênteses.** `attrs.balanced` viaja no fact como
+  evidência e nenhuma regra o julga: a fonte fala de aninhamento e só, e
+  `ctm build` é o validador de schema (`V-CTM-3`).
+- **Repetição de datas.** O formato `MM/DD` não carrega ano, então existem no
+  máximo **366** datas distintas — e o teto de 400 está acima disso, o que faz
+  toda lista acima do teto repetir datas por construção. A página não declara que
+  repetir seja defeito, e inventá-lo seria o sexto defeito sem fonte. Fica
+  registrado no comentário de `SF-CTM-003`, porque explica a forma da fixture.
+
+### O que a leitura contradisse
+
+**Duas coisas, e as duas mudaram o código.**
+
+O incremento 2 registrou que `API_CodeRef_JobProperties` deu **403 em três
+tentativas** e só cedeu a um navegador de verdade. Nesta leitura, `curl` com UA
+de browser deu **200 na primeira**, mesma URL. O bloqueio é intermitente por
+URL, como a §8.1 de `knowledge/controlm/automation-api-matrix.md` já dizia — mas
+"exige navegador" é forte demais para o que foi medido, e quem for reler a fonte
+deve tentar `curl` antes.
+
+E a mais cara: **o exemplo oficial escreve `NONE` como LISTA**
+(`"WeekDays": ["NONE"]`), não como escalar. Um `_neutralized` que só aceitasse
+o escalar acusaria o artefato que a própria BMC publica como correto. Pela mesma
+razão, `["NONE", "MON"]` **não** anula — declara segunda-feira ao lado da
+anulação, que é a combinação proibida.
+
+**E uma terceira, sobre o extrator do incremento 2:** o docstring dele afirmava
+que a página publica as duas formas de `WaitForEvents`, e ele só lia uma — a
+chave direta no job. A forma que a página de fato usa nos exemplos é um objeto
+nomeado com `"Type": "WaitForEvents"` e uma lista `Events` dentro, e ela saía com
+zero dependências. É a forma em que a fonte demonstra os parênteses, então
+`SF-CTM-005` não teria como ver o exemplo do próprio defeito.
 
 ## Dívidas abertas
 

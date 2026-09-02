@@ -1,7 +1,8 @@
 # SparkForge AWS — Control-M: dependência e janela têm fonte; SLA não tem
 
 **Data:** 2026-09-02
-**Status:** **proposta**.
+**Status:** **entregue** em 2026-09-02. Ver a seção 8 para os desvios medidos, e
+[`../STATUS.md`](../STATUS.md) para o registro da entrega.
 **Origem:** terceiro incremento da avaliação de `prompt_evo_spark_bmc.md`.
 **Depende de:** [incremento 1](2026-09-01-sparkforge-controlm-conhecimento-design.md)
 (matriz versionada, PR #23) e [incremento 2](2026-09-01-sparkforge-controlm-jobs-as-code-design.md)
@@ -152,4 +153,62 @@ registrado porque o erro foi de quem escreveu o briefing, não de quem o executo
 
 ## 8. Desvios
 
-Vazio.
+Cinco, medidos na execução de 2026-09-02. As cinco citações da seção 2 bateram
+**literalmente** na fonte, e nenhuma regra precisou mudar de forma por causa
+disso.
+
+**D-a — o acesso foi mais fácil do que o registrado.** A seção 8.1 de
+`knowledge/controlm/automation-api-matrix.md` registra que
+`API_CodeRef_JobProperties` deu **403 em três tentativas** no incremento 2 e só
+cedeu a um navegador de verdade. Nesta leitura, `curl` com UA de browser deu
+**200 na primeira**, mesma URL, 423 239 bytes. O bloqueio é intermitente por URL,
+como aquela seção já dizia; o que estava forte demais era a conclusão prática.
+Quem for reler a fonte tenta `curl` antes de abrir navegador.
+
+**D-b — `NONE` é publicado como LISTA, e isso mudou o código.** A seção 5 desta
+spec pede a fixture com `WeekDays: "NONE"`, escalar. O exemplo da própria página
+escreve `"WeekDays": ["NONE"], "Months": ["NONE"], "MonthDays": ["NONE"]` —
+lista de um item. `_neutralized` aceita **as duas** formas, e a fixture usa a da
+fonte. Um extrator que só aceitasse o escalar acusaria o artefato que a BMC
+publica como correto. Pela mesma leitura, `["NONE", "MON"]` **não** anula: ele
+declara segunda-feira ao lado da anulação, que é a combinação proibida.
+
+**D-c — três fixtures de `J-1`, mas uma delas acumula dois papéis.** A seção 5
+pede três (`NONE`, ausente, `ALL`) e a seção 5 também pede o par 400/401 de
+`J-2`. `janela_no_teto_de_datas` é as duas coisas: as três opções anuladas com
+`["NONE"]` **e** exatamente 400 datas. Acumular foi escolha, e o `proves` dela
+declara os dois papéis — separá-las produziria duas fixtures cujo único
+diferencial seria o comprimento de uma lista.
+
+**D-d — o extrator não lia a forma de `WaitForEvents` em que a fonte demonstra o
+defeito.** O docstring de `_dependency_facts` afirmava que a página publica as
+duas formas dos blocos de evento, e o módulo só lia uma: a chave direta no job
+(`"WaitForEvents": [{"Event": "e1"}]`). A forma que a página de fato usa nos
+exemplos é um objeto nomeado com `"Type": "WaitForEvents"` e uma lista `Events`
+dentro — e é nela que o exemplo `Wait2`, o dos parênteses, está escrito. Sem
+lê-la, `D-1` não teria como ver o exemplo do próprio defeito. `_EVENT_OBJECT_TYPES`
+e `_event_object_facts` fecham isso, e nenhum golden do incremento 2 mudou:
+nenhuma fixture usava a forma que faltava.
+
+**D-e — `J-3` precisou de uma chave de array que o extrator não percorria.** A
+frase da fonte é sobre "job definitions in an array format", e o array de jobs é
+`Jobs` — não `Folders` nem `SubFolders`, que são os dois que o incremento 2
+percorria. `Jobs` entrou numa tupla **separada** (`_JOB_ARRAY_KEYS`) de
+propósito: somá-la a `_ARRAY_STRUCTURE_KEYS` faria a sonda da capacidade
+`folders_array_structure` disparar sobre um array de jobs, que a matriz não
+data — exatamente o veto `V-CTM-4`.
+
+### O que a spec previu e se confirmou sem ajuste
+
+- A `D-1` da seção 4: `engine._where_matches` reprova caminho ausente, a decisão
+  teve de sair do extrator, e o contrafactual está medido em teste
+  (`test_sem_o_kind_derivado_a_fixture_de_omissao_fica_verde`, zero achados com
+  a decisão desligada).
+- A `D-2` da seção 4: a fronteira de EM ficou **fora** da matriz, com
+  `runtime_scope: {}` e citação no `explanation`. A razão é mais forte do que a
+  spec previa — a matriz já registrara exigência de EM **cinco** vezes, e nas
+  cinco como prosa em `summary`.
+- A `D-3`: severidade por natureza. `J-1` e `D-1` em P1; `J-2` e `D-2` em P2;
+  `J-3` em P3, e o P3 vem do parêntese da própria fonte ("the default value"),
+  que torna o achado uma dependência declarada e não um erro.
+- O não-objetivo de SLA virou o veto `V-CTM-5`, com a medida que o destravaria.

@@ -358,6 +358,18 @@ O que funciona é um **navegador de verdade**, que executa o desafio. Conclusão
 prática, e ela substitui o conselho de "espere 45 s": se `curl` com UA falhar
 duas vezes na mesma página, **troque de mecanismo** em vez de esperar mais.
 
+**Correção de 2026-09-02, e ela suaviza a frase acima sem a apagar.** A releitura
+de `API_CodeRef_JobProperties` para o incremento 3 devolveu **200 na primeira
+tentativa**, com `curl` e UA de browser — 423 239 bytes, a mesma URL que dera
+nove 403 no dia anterior. Isso **confirma** o diagnóstico de intermitência por
+URL e **contradiz** a conclusão prática de "exige navegador": a página não exige,
+ela às vezes recusa.
+
+Então a ordem de tentativa é: **`curl` com UA primeiro**, sempre; navegador só
+depois de duas recusas na mesma página. Abrir navegador por padrão paga um custo
+alto por uma barreira que, medida em dois dias diferentes, esteve aberta num
+deles.
+
 ### 8.2 A forma do artefato
 
 Objeto nomeado com `Type` é a unidade. `Folder`, `SimpleFolder` e `SubFolder`

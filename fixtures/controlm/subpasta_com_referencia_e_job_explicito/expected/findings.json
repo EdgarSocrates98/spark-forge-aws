@@ -1,0 +1,59 @@
+[
+  {
+    "rule_id": "SF-CTM-006",
+    "schema_version": 1,
+    "catalog_version": 1,
+    "title": "Sub-folder com ReferencePath contém job explícito",
+    "severity": "P2",
+    "confidence": "high",
+    "status": "structural",
+    "subject": {
+      "type": "source_location",
+      "file": "jobs.json",
+      "line": 0,
+      "col": 0,
+      "symbol": "Parent/JobImpl",
+      "snippet": ""
+    },
+    "evidence": [
+      "f_a6d7a8"
+    ],
+    "measured": {
+      "explicit_job_count": 1
+    },
+    "threshold": {},
+    "runtime_scope": {},
+    "explanation": "Este sub-folder usa ReferencePath e também declara job explícito dentro dele, e a fonte proíbe a combinação: \"Note that a sub-folder that contains the ReferencePath property must not contain any explicit job objects.\" O QUE ReferencePath FAZ, e por que a proibição faz sentido: a página o descreve como o mecanismo de reusar um job ou folder \"as a dynamic template, instead of specifying full job definitions in the sub-folder\", com sobrescrita de variáveis a partir do sub-folder que referencia. O sub-folder é, nesse desenho, uma INSTÂNCIA do template — e um job escrito à mão dentro dele é conteúdo que o template não tem e que ninguém sabe dizer de onde vem. measures.explicit_job_count DIZ QUANTOS SÃO. Contam como job explícito os objetos nomeados com Type Job dentro do próprio sub-folder e as entradas do array Jobs — as duas formas que a página publica para declarar um job. Sub-folder aninhado NÃO conta: a frase da fonte fala de job, e um container não é um job. O VEREDITO É SÓ PARA SubFolder, e a literalidade é deliberada. A frase diz \"a sub-folder\", e a descrição da propriedade diz que ela referencia \"from within a sub-folder\". Um Folder de topo com ReferencePath registra attrs.reference_path — a evidência fica no fact — e não é acusado, porque a fonte não declara defeito ali. Estender por simetria seria acusar o que ninguém publicou. A FRONTEIRA DE VERSÃO DA MESMA FRASE NÃO É JULGADA AQUI, e a razão é de produto. A fonte continua: \"This feature requires Control-M/Enterprise Manager version 9.0.21 or higher.\" Isso é numeração de ENTERPRISE MANAGER, e a matriz deste repositório (knowledge/controlm/automation-api-matrix.yaml) é do AUTOMATION API — produtos diferentes, com numerações de tamanho diferente (9.0.21 contra 9.0.21.300). A matriz já encontrou exigência de EM cinco vezes e nas cinco a registrou como prosa dentro de summary, nunca como fronteira legível por máquina; criar o eixo para este caso exigiria uma página de documentação do Enterprise Manager, lida e citada, e isso é pesquisa nova. Ver o veto V-CTM-6. Este achado não depende de versão nenhuma, porque o must not não depende: ele vale no artefato, hoje, em qualquer EM. SE O AMBIENTE ALVO FOR ANTERIOR A 9.0.21 DE EM, o problema é outro e maior — a propriedade inteira não existe lá, e nem esta regra nem este motor medem a versão do Enterprise Manager. Confirme-a antes de reescrever o sub-folder.",
+    "proposed_change": [
+      "Tirar os jobs explícitos do sub-folder que tem `ReferencePath`: ou eles pertencem ao template referenciado — e então vão para lá, onde todas as instâncias os herdam —, ou pertencem a este fluxo em particular, e então vão para um sub-folder irmão, sem `ReferencePath`.",
+      "Se o job explícito existia para variar o comportamento da instância, usar o mecanismo que a página publica para isso: sobrescrever variáveis do job ou folder referenciado a partir do sub-folder que referencia. É o que `ReferencePath` foi desenhado para permitir, e mantém uma definição só.",
+      "Se o template não serve mais para este caso, abandonar `ReferencePath` neste sub-folder e escrever as definições completas — a fonte não obriga a usar template, e um sub-folder normal com jobs explícitos é forma válida."
+    ],
+    "expected_effect": "",
+    "benchmark_ref": "",
+    "risks": [
+      "Mover o job para o folder referenciado o entrega a TODAS as instâncias daquele template, e não só a esta. Confira quem mais referencia o mesmo caminho antes de mover, ou um sub-folder que não pedia nada passa a executar um job a mais.",
+      "Trocar job explícito por sobrescrita de variável muda o mecanismo de variação: a diferença deixa de ser visível como um objeto no fluxo e passa a ser um valor — mais compacto, e mais difícil de descobrir por quem opera o Control-M pela interface.",
+      "`ReferencePath` usa a barra para caminho (`Folder2/Job2`): mover o template de folder quebra toda referência que aponte para ele, e a quebra aparece no deploy, não no arquivo que foi editado."
+    ],
+    "tradeoffs": [
+      "Template com sobrescrita de variáveis mantém uma definição só e concentra a manutenção; definições completas por sub-folder são repetitivas e independentes — a mudança numa não arrasta as outras."
+    ],
+    "validation": [
+      "`ctm build` sobre o JSON corrigido retorna sucesso: é a validação de schema oficial da BMC, e é ela que decide se a combinação é aceita naquela versão de Enterprise Manager.",
+      "EIXO DE RESULTADO — o conjunto de jobs efetivamente publicado é o mesmo. `deploy jobs::get` sobre o folder pai, antes e depois, devolve a mesma contagem de jobs, os mesmos nomes e os mesmos pares Application/SubApplication. É o eixo crítico aqui, porque mover um job para o template MULTIPLICA-O por instância — e essa contagem é onde a multiplicação aparece.",
+      "EIXO DE RESULTADO — as outras instâncias do mesmo template não mudaram. `deploy jobs::get` sobre cada sub-folder que referencia o mesmo `ReferencePath` devolve a mesma contagem de antes: sub-folder que ganhou um job sem ter pedido é a falha que este eixo existe para pegar.",
+      "EIXO DE RESULTADO — o efeito é o mesmo. Uma ordenação (`run order`) termina em OK e o artefato produzido — arquivo, tabela, evento — confere com o do último run bom: contagem total e contagem por chave de negócio iguais.",
+      "`sparkforge analyze controlm-jobs --path <arquivo>` não produz mais SF-CTM-006, e `ctm.folder` mostra `explicit_job_count` zero no sub-folder — com o `job_count` do artefato inteiro conferido à parte, porque um job que sumiu da contagem foi apagado, não movido."
+    ],
+    "rollback": [
+      "Reverter o commit da definição e reimplantar com `ctm deploy`. Se a correção moveu um job para o folder referenciado, o rollback precisa alcançar todas as instâncias que passaram a herdá-lo — republicar só este sub-folder deixaria as outras com o job a mais."
+    ],
+    "sources": [
+      {
+        "url": "https://documents.bmc.com/supportu/API/Monthly/en-US/Documentation/API_CodeRef_JobProperties.htm",
+        "retrieved": "2026-09-02"
+      }
+    ]
+  }
+]
